@@ -22,6 +22,7 @@ function shadow(root, r) {
     new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.15, depthWrite: false }));
   blob.position.y = 0.01;
   root.add(blob);
+  return blob;
 }
 // A pair of eyes, each with a little white glint so they read from afar.
 // (tests/zoo.test.mjs checks no eye is buried inside its head.)
@@ -161,7 +162,7 @@ function ruminant(c, sheep) {
 }
 
 // Pig-tailed macaque: chibi, with a big head. Olive-brown fur, a dark flat
-// cap on the crown, a long pale pink muzzle, amber eyes under a brow, and the
+// cap on the crown, a short pale pink muzzle set high, white eyes with dark pupils under a brow, and the
 // short tail held up in a curl like a pig's. Arms are their own groups
 // (shoulder pivots) so the zoo can wave, scratch and grab with them.
 function macaque(c) {
@@ -175,14 +176,14 @@ function macaque(c) {
   part(head, sphere(0.17, 12, 6), '#5a4632', 0, 0.21, -0.02, 1, 0.28, 1); // the flat dark cap of hair on the crown
   part(head, sphere(0.19, 12, 10), '#d8a08a', 0, -0.04, 0.13, 1.05, 0.95, 0.75); // bare face
   part(head, sphere(0.2, 10, 6), c.color, 0, 0.11, 0.12, 1.05, 0.3, 0.7); // brow
-  part(head, sphere(0.1, 10, 8), '#e0ae98', 0, -0.11, 0.27, 1.05, 0.8, 1.15); // long muzzle
+  part(head, sphere(0.1, 10, 8), '#e0ae98', 0, -0.07, 0.24, 1.05, 0.8, 0.8); // the muzzle, short and high
   for (const s of [-1, 1]) {
-    part(head, sphere(0.022, 6, 6), '#3a2420', 0.03 * s, -0.08, 0.38); // nostrils
-    part(head, sphere(0.032, 8, 6), '#c98a2a', 0.075 * s, 0.04, 0.26).userData.eye = true; // amber eyes
+    part(head, sphere(0.022, 6, 6), '#3a2420', 0.03 * s, -0.04, 0.315); // nostrils
+    part(head, sphere(0.032, 8, 6), '#f4f2ec', 0.075 * s, 0.04, 0.26).userData.eye = true; // eye whites (not yellow: that read as jaundice)
     part(head, sphere(0.018, 6, 6), '#1e1a1c', 0.075 * s, 0.04, 0.285).userData.eye = true; // pupils
     part(head, sphere(0.06, 8, 6), '#c8907a', 0.26 * s, 0.0, -0.01, 0.5, 1, 0.9); // ears
   }
-  const mouth = part(head, new THREE.BoxGeometry(0.1, 0.012, 0.02), '#7a3a34', 0, -0.17, 0.33);
+  const mouth = part(head, new THREE.BoxGeometry(0.1, 0.012, 0.02), '#7a3a34', 0, -0.125, 0.3);
   const legs = [];
   for (const x of [-0.1, 0.1]) legs.push(part(body, cyl(0.045, 0.05, 0.3, 6), c.color, x, 0.15, 0.02));
   const arms = [];
@@ -270,6 +271,68 @@ function bird(c, kind) {
   }
   shadow(root, bodyR * 1.4);
   return { root, body, head, tail, legs, wings, fan, bird: true };
+}
+
+// Cinereous vulture (독수리, the bird Koreans call "doksuri"; it winters in
+// Korea): dark brown all over, a pale downy head over a dark ruff, a heavy
+// hooked bill. The wings are groups hinged at the shoulder: folded along the
+// back (spread 0) or held straight out (spread 1), so the zoo can fly them
+// (zoo.js _raptor). Stands about 1 m tall.
+function raptor(c) {
+  const { root, body } = start();
+  const legH = 0.26, R = 0.27, by = legH + R * 0.8;
+  part(body, sphere(R), c.color, 0, by, 0, 0.95, 0.85, 1.35);
+  part(body, sphere(R * 0.75), c.accent, 0, by - 0.06, 0.08, 0.9, 0.8, 1.1); // the paler belly
+  // The ruff: a fluffy collar at the base of the neck.
+  part(body, sphere(0.15, 10, 8), '#2e241f', 0, by + R * 0.75, R * 0.85, 1.25, 0.8, 1);
+  const head = new THREE.Group();
+  head.position.set(0, by + R * 0.75 + 0.15, R * 0.85 + 0.08);
+  body.add(head);
+  part(head, sphere(0.1, 10, 8), '#c8b8a2', 0, 0, 0, 1, 0.95, 1.1); // pale downy head
+  part(head, sphere(0.07, 8, 6), '#4a3a32', 0, 0.0, 0.05, 1.25, 0.7, 1); // the dark face around the eyes
+  eyes(head, 0.06, 0.02, 0.085, 0.016);
+  part(head, sphere(0.045, 8, 6), '#b9a7c4', 0, -0.015, 0.1, 0.9, 0.8, 1); // the cere, pale lilac
+  const bill = part(head, new THREE.ConeGeometry(0.035, 0.13, 6), '#59616b', 0, -0.03, 0.15);
+  bill.rotation.x = Math.PI / 2 + 0.35; // hooked down at the tip
+  part(head, sphere(0.022, 6, 5), '#2c2f34', 0, -0.06, 0.2); // the dark hook
+  const wings = [];
+  for (const s of [-1, 1]) {
+    const w = new THREE.Group();
+    w.position.set(0.16 * s, by + 0.08, 0.06);
+    body.add(w);
+    // The arm of the wing, then the long primaries at the tip, splayed like fingers.
+    const arm = part(w, new THREE.BoxGeometry(0.85, 0.05, 0.42).translate(0.38, 0, -0.12), c.color, 0, 0, 0);
+    arm.scale.x = s;
+    for (let i = 0; i < 5; i++) {
+      const f = part(w, new THREE.BoxGeometry(0.42, 0.03, 0.07).translate(0.2, 0, 0), '#241c18', s * 0.76, 0, -0.03 - i * 0.075);
+      f.rotation.y = -s * (i - 1) * 0.12;
+      f.scale.x = s;
+    }
+    w.userData.s = s;
+    wings.push(w);
+  }
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const l = part(body, cyl(0.035, 0.03, legH + 0.06, 6), '#9b958e', 0.09 * s, legH / 2 + 0.03, 0.02);
+    part(l, new THREE.BoxGeometry(0.1, 0.03, 0.12), '#7e7871', 0, -(legH + 0.06) / 2, 0.03); // the foot
+    legs.push(l);
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, by, -R * 1.2);
+  body.add(tail);
+  part(tail, new THREE.BoxGeometry(0.26, 0.04, 0.34).translate(0, 0, -0.1), '#241c18', 0, 0, 0).rotation.x = 0.25;
+  const blob = shadow(root, 0.45);
+  const out = { root, body, head, tail, legs, wings, shadow: blob, bird: true, flies: true };
+  foldWings(out, 0, 0);
+  return out;
+}
+// The vulture's wings: spread 0 folded along the back … 1 held straight out;
+// flap tilts them up (+) or down (-) from the shoulder.
+export function foldWings(a, spread, flap = 0) {
+  for (const w of a.wings) {
+    const s = w.userData.s;
+    w.rotation.set(0, s * (1 - spread) * 1.35, s * (flap + (1 - spread) * -0.25), 'YZX');
+  }
 }
 
 // Tiger stripes: one canvas wrapped round the body (the sphere's pole runs
@@ -380,7 +443,7 @@ function bear(c, polar) {
   const { root, body } = start();
   const s = polar ? 1.15 : 1;
   part(body, sphere(0.45 * s), c.color, 0, 0.66 * s, 0, 0.9, 0.85, 1.4);
-  part(body, sphere(0.3 * s), c.color, 0, 0.86 * s, -0.3 * s, 1, 0.9, 1); // the hump
+  if (!polar) part(body, sphere(0.26), c.color, 0, 0.9, 0.36, 1, 0.75, 1); // the brown bear's hump, over the shoulders (a polar bear has none)
   part(body, sphere(0.34 * s), c.color, 0, 0.7 * s, 0.4 * s, 1, 1, 1); // shoulders, up to the head
   const head = new THREE.Group();
   head.position.set(0, 0.86 * s, 0.7 * s);
@@ -452,7 +515,19 @@ function hippo(c) {
     part(head, sphere(0.06, 6, 6), '#3a2c30', 0.14 * k, 0.17, 0.62); // nostrils on top
     part(head, sphere(0.09, 8, 6), c.color, 0.22 * k, 0.32, -0.05); // eye bumps
     part(head, sphere(0.035, 8, 6), '#231d20', 0.22 * k, 0.36, 0.02).userData.eye = true; // eyes
-    part(head, sphere(0.07, 8, 6), c.color, 0.24 * k, 0.25, -0.16, 1, 0.85, 0.6); // little ears, sat on the head
+  }
+  // The ears: small round cups up on the back corners of the head, pink
+  // inside, each on its own hinge so it can flick fast (core/zoo.js).
+  const flaps = [];
+  for (const k of [-1, 1]) {
+    const ear = new THREE.Group();
+    ear.position.set(0.25 * k, 0.33, -0.18);
+    ear.rotation.z = -0.35 * k; // tipped out a little
+    head.add(ear);
+    part(ear, cyl(0.035, 0.05, 0.08, 6), c.color, 0, 0.03, 0); // the stalk
+    part(ear, sphere(0.1, 10, 8), c.color, 0, 0.13, 0, 0.85, 1.05, 0.42); // the cup
+    part(ear, sphere(0.07, 10, 8), c.accent, 0, 0.13, 0.025, 0.7, 0.85, 0.25); // pink inside, facing forward
+    flaps.push(ear);
   }
   const jaw = new THREE.Group(); // the lower jaw, hinged at the back of the mouth
   jaw.position.set(0, -0.12, 0.1);
@@ -470,25 +545,36 @@ function hippo(c) {
   part(tail, cyl(0.014, 0.03, 0.34, 6), c.color, 0, -0.14, -0.06).rotation.x = 0.35; // thin
   part(tail, sphere(0.025, 6, 6), '#5d5462', 0, -0.31, -0.12, 1.4, 1.2, 0.8);
   shadow(root, 1.25);
-  return { root, body, head, tail, legs, jaw, swims: true };
+  return { root, body, head, tail, legs, jaw, flaps, swims: true };
 }
 
-// Snake: a chain of beads that slithers in S curves behind its head
-// (zoo.js moves the beads), with a flicking tongue.
+// Snake: a chain of beads, thick behind the head and tapering to a thin
+// tail, a flat head that sits a little up, and a flicking forked tongue.
+// The beads follow the head's own track (core/zoo.js), so the body bends
+// where the head went, in S curves as it slithers, and curls into a coil
+// when it rests.
+export const SNAKE = { n: 30, gap: 0.055 };
 function snake(c) {
   const { root, body } = start();
   const segs = [];
-  for (let i = 0; i < 22; i++) { // beads close enough to overlap: one body
-    const r = 0.09 * (1 - i / 40);
-    const m = part(body, sphere(r, 8, 6), i % 3 === 1 ? c.accent : c.color, 0, r, -i * 0.06);
+  for (let i = 0; i < SNAKE.n; i++) { // beads close enough to overlap: one body
+    const u = i / (SNAKE.n - 1);
+    const r = 0.085 * (u < 0.15 ? 0.8 + u * 1.3 : 1 - (u - 0.15) * 0.8); // a neck, a thick middle, a thin tail
+    const m = part(body, sphere(r, 8, 6), i % 4 === 2 ? c.accent : c.color, 0, r, -i * SNAKE.gap, 1, 0.8, 1.1);
+    m.userData.r = r;
     segs.push(m);
   }
   const head = new THREE.Group();
-  head.position.set(0, 0.09, 0.1);
+  head.position.set(0, 0.09, 0.07);
   body.add(head);
-  part(head, sphere(0.1, 10, 8), c.color, 0, 0, 0, 1, 0.7, 1.4);
-  eyes(head, 0.05, 0.04, 0.08, 0.018);
-  const tongue = part(head, new THREE.BoxGeometry(0.015, 0.005, 0.14), '#d6334a', 0, -0.01, 0.18);
+  part(head, sphere(0.085, 10, 8), c.color, 0, 0, 0.04, 1.1, 0.6, 1.5); // a flat, wide head
+  part(head, sphere(0.05, 8, 6), c.accent, 0, -0.01, 0.13, 1, 0.5, 1); // the snout
+  eyes(head, 0.07, 0.035, 0.07, 0.016);
+  const tongue = new THREE.Group();
+  tongue.position.set(0, -0.015, 0.17);
+  head.add(tongue);
+  part(tongue, new THREE.BoxGeometry(0.012, 0.005, 0.1), '#d6334a', 0, 0, 0.05);
+  for (const k of [-1, 1]) part(tongue, new THREE.BoxGeometry(0.008, 0.004, 0.04), '#d6334a', 0.01 * k, 0, 0.11).rotation.y = 0.35 * k; // forked
   shadow(root, 0.3);
   return { root, body, head, tail: new THREE.Group(), legs: [], segs, tongue, slithers: true };
 }
@@ -617,14 +703,24 @@ function giraffe(c) {
   neck.position.set(0, 2.1, 0.5);
   neck.rotation.x = 0.35;
   body.add(neck);
-  const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.17, 1.8, 10), coatMat('giraffe'));
-  nk.position.y = 0.85;
-  neck.add(nk);
-  part(neck, new THREE.BoxGeometry(0.05, 1.6, 0.08), '#7a4a24', 0, 0.85, -0.12).rotation.x = -0.04; // the mane
+  // The neck in two parts, a joint halfway, so it can curve: down to drink,
+  // up to the treetops, swinging at a friend (core/zoo.js).
+  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.135, 0.17, 1.0, 10), coatMat('giraffe'));
+  lower.position.y = 0.48;
+  neck.add(lower);
+  part(neck, new THREE.BoxGeometry(0.05, 0.9, 0.08), '#7a4a24', 0, 0.5, -0.14).rotation.x = -0.04; // the mane
+  part(neck, sphere(0.135, 10, 8), c.color, 0, 0.95, 0); // the joint
+  const neck2 = new THREE.Group();
+  neck2.position.set(0, 0.95, 0);
+  neck.add(neck2);
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.135, 0.95, 10), coatMat('giraffe'));
+  upper.position.y = 0.45;
+  neck2.add(upper);
+  part(neck2, new THREE.BoxGeometry(0.05, 0.82, 0.08), '#7a4a24', 0, 0.42, -0.11).rotation.x = -0.04;
   const head = new THREE.Group();
-  head.position.set(0, 1.78, 0.02);
+  head.position.set(0, 0.88, 0.02);
   head.rotation.x = -0.35; // level again
-  neck.add(head);
+  neck2.add(head);
   part(head, sphere(0.17, 12, 10), c.color, 0, 0, 0.04, 0.85, 0.85, 1);
   part(head, sphere(0.13, 10, 8), c.color, 0, -0.05, 0.22, 0.8, 0.75, 1.2); // long face
   part(head, sphere(0.08, 8, 6), c.accent, 0, -0.07, 0.34, 1, 0.8, 0.9); // muzzle
@@ -637,7 +733,7 @@ function giraffe(c) {
   const legs = hipLegs(body, [[-0.22, 0.42, c.color], [0.22, 0.42, c.color], [-0.22, -0.45, c.color], [0.22, -0.45, c.color]], 1.85, 0.07, 0.065, '#3a2a22');
   const tail = tuftTail(body, 2.05, -0.65, 0.8, 0.025, c.color, '#3a2a22');
   shadow(root, 0.8);
-  return { root, body, head, tail, legs, neck };
+  return { root, body, head, tail, legs, neck, neck2 };
 }
 
 // Zebra: a striped pony, a black-and-white standing mane, a dark muzzle.
@@ -669,7 +765,97 @@ function zebra(c) {
   return { root, body, head, tail, legs, neck };
 }
 
+// Red kangaroo: sits up on big hind feet and a thick tail, small arms held
+// in front, tall ears; it hops (both feet together) instead of walking.
+function kangaroo(c) {
+  const { root, body } = start();
+  const lean = new THREE.Group(); // the upper body leans forward over the feet
+  lean.position.set(0, 0.42, 0);
+  lean.rotation.x = 0.45;
+  body.add(lean);
+  part(lean, sphere(0.24, 14, 12), c.color, 0, 0.12, 0, 0.9, 1.25, 0.95); // belly and chest
+  part(lean, sphere(0.15, 10, 8), c.accent, 0, 0.12, 0.13, 0.85, 1.2, 0.5); // pale front
+  const head = new THREE.Group();
+  head.position.set(0, 0.86, 0.14);
+  body.add(head);
+  part(head, sphere(0.12, 12, 10), c.color, 0, 0, 0, 0.85, 0.9, 1);
+  part(head, sphere(0.08, 10, 8), c.color, 0, -0.03, 0.11, 0.75, 0.7, 1.2); // snout
+  part(head, sphere(0.022, 6, 6), '#2a2224', 0, -0.02, 0.2); // nose
+  for (const s of [-1, 1]) {
+    const ear = part(head, sphere(0.045, 8, 6), c.color, 0.06 * s, 0.14, -0.03, 0.55, 1.9, 0.4);
+    ear.rotation.z = -0.25 * s;
+    part(head, sphere(0.03, 6, 6), c.accent, 0.06 * s, 0.14, -0.015, 0.35, 1.5, 0.2);
+  }
+  eyes(head, 0.06, 0.03, 0.08, 0.02);
+  for (const s of [-1, 1]) { // little arms, held in front of the chest
+    const arm = part(body, cyl(0.025, 0.02, 0.2, 6), c.color, 0.09 * s, 0.6, 0.2);
+    arm.rotation.x = -0.9;
+  }
+  // The hind legs: a big thigh and a long foot flat on the ground, both
+  // together (legs[] for the zoo, though a hopper doesn't swing them).
+  const legs = [];
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Group();
+    leg.position.set(0.12 * s, 0.3, -0.02);
+    body.add(leg);
+    part(leg, sphere(0.13, 10, 8), c.color, 0, 0, 0, 0.75, 1.1, 1.25); // thigh
+    part(leg, cyl(0.035, 0.03, 0.26, 6), c.color, 0, -0.17, -0.04).rotation.x = 0.3;
+    part(leg, sphere(0.05, 8, 6), c.color, 0, -0.29, 0.06, 0.8, 0.45, 2.4); // the long foot
+    legs.push(leg);
+  }
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.3, -0.16);
+  body.add(tail);
+  tube(tail, [[0, 0, 0], [0, -0.14, -0.2], [0, -0.26, -0.45], [0, -0.28, -0.62]], 0.07, c.color, 0.025);
+  shadow(root, 0.32);
+  return { root, body, head, tail, legs, hop: true, hopH: 0.35, hopRate: 5 };
+}
+
+// Bactrian camel: two humps on a sandy body, a long neck that dips and then
+// rises to the head (a group the zoo can lower to graze), shaggy at the top
+// of the legs, wide pads for feet.
+function camel(c) {
+  const { root, body } = start();
+  part(body, sphere(0.32, 16, 12), c.color, 0, 0.98, 0, 0.85, 0.75, 1.45);
+  for (const z of [0.16, -0.2]) { // the two humps, a shaggy tuft on each
+    part(body, sphere(0.15, 10, 8), c.color, 0, 1.22, z, 0.8, 1.1, 0.95);
+    part(body, sphere(0.08, 8, 6), c.accent, 0, 1.37, z, 0.9, 0.7, 0.9);
+  }
+  const neck = new THREE.Group();
+  neck.position.set(0, 1.0, 0.38);
+  neck.rotation.x = 1.0; // out forward first…
+  body.add(neck);
+  const nk = part(neck, cyl(0.08, 0.12, 0.42, 8), c.color, 0, 0.2, 0);
+  part(neck, sphere(0.1, 8, 6), c.accent, 0, 0.12, 0.06, 1, 1.4, 0.8); // the shaggy beard under the neck
+  const head = new THREE.Group();
+  head.position.set(0, 0.42, 0);
+  head.rotation.x = -1.0; // …then the head comes level
+  neck.add(head);
+  const up = part(head, cyl(0.06, 0.08, 0.26, 8), c.color, 0, 0.1, 0); // the upper neck, rising
+  up.rotation.x = -0.5;
+  const face = new THREE.Group();
+  face.position.set(0, 0.22, 0.06);
+  head.add(face);
+  part(face, sphere(0.1, 10, 8), c.color, 0, 0, 0, 0.8, 0.85, 1);
+  part(face, sphere(0.08, 10, 8), c.color, 0, -0.03, 0.12, 0.75, 0.75, 1.15); // long muzzle
+  part(face, sphere(0.06, 8, 6), c.accent, 0, -0.05, 0.19, 0.95, 0.7, 0.8); // droopy lips
+  for (const s of [-1, 1]) part(face, sphere(0.025, 6, 6), c.color, 0.065 * s, 0.07, -0.04, 0.8, 1.2, 0.6); // little round ears
+  eyes(face, 0.06, 0.03, 0.06, 0.02);
+  nk.userData.neck = true;
+  const legs = hipLegs(body, [[-0.13, 0.3, c.color], [0.13, 0.3, c.color], [-0.13, -0.3, c.color], [0.13, -0.3, c.color]], 0.9, 0.055, 0.04, '#6b5a48');
+  for (const l of legs) part(l, sphere(0.07, 8, 6), c.accent, 0, -0.12, 0, 1, 1.4, 1); // shaggy knees… at the top of the leg
+  const tail = tuftTail(body, 1.0, -0.45, 0.32, 0.02, c.color, c.accent);
+  shadow(root, 0.5);
+  return { root, body, head, tail, legs, neck };
+}
+
 // kind -> builder; c: { color, accent }.
+// The big herbivores drawn larger than their first models, nearer the real
+// thing next to a person: a zebra about 1.4 m at the shoulder, an elephant
+// over 3 m tall, a giraffe's head near 5 m up.
+export const SIZE = { zebra: 1.45, elephant: 1.25, giraffe: 1.25, kangaroo: 1.35, camel: 1.6 };
+const sized = (a, k) => { a.root.scale.setScalar(k); a.size = k; return a; };
+
 export function makeZooAnimal(kind, c) {
   if (kind === 'rabbit') return rabbit(c);
   if (kind === 'guineapig') return guineapig(c);
@@ -682,9 +868,12 @@ export function makeZooAnimal(kind, c) {
   if (kind === 'seal' || kind === 'walrus') return pinniped(c, kind === 'walrus');
   if (kind === 'hippo') return hippo(c);
   if (kind === 'snake') return snake(c);
-  if (kind === 'elephant') return elephant(c);
-  if (kind === 'giraffe') return giraffe(c);
-  if (kind === 'zebra') return zebra(c);
+  if (kind === 'elephant') return sized(elephant(c), SIZE.elephant);
+  if (kind === 'giraffe') return sized(giraffe(c), SIZE.giraffe);
+  if (kind === 'zebra') return sized(zebra(c), SIZE.zebra);
+  if (kind === 'vulture') return raptor(c);
+  if (kind === 'kangaroo') return sized(kangaroo(c), SIZE.kangaroo);
+  if (kind === 'camel') return sized(camel(c), SIZE.camel);
   throw new Error('no zoo animal ' + kind);
 }
 
@@ -708,5 +897,8 @@ export const ZOO_LOOKS = {
   snake: [{ color: '#5e8a3a', accent: '#d9c45a' }],
   elephant: [{ color: '#8d8a8f', accent: '#d9a5b0' }, { color: '#98949a', accent: '#e0b0ba', calf: true }],
   giraffe: [{ color: '#d9a35a', accent: '#5a4636' }, { color: '#d39a52', accent: '#5a4636' }],
+  vulture: [{ color: '#3d3029', accent: '#57463b' }, { color: '#45362d', accent: '#5e4c40' }, { color: '#382c26', accent: '#52423a' }],
   zebra: [{ color: '#f7f5f0', accent: '#1f1c1e' }, { color: '#f4f2ec', accent: '#1f1c1e' }, { color: '#f7f5f0', accent: '#1f1c1e' }],
+  kangaroo: [{ color: '#c06a3e', accent: '#ecd2b4' }, { color: '#b9653c', accent: '#e8ccad' }, { color: '#a77856', accent: '#e6d2bc' }, { color: '#c27247', accent: '#efd7bb' }],
+  camel: [{ color: '#c49a64', accent: '#8f6a43' }, { color: '#b98f5c', accent: '#86623d' }],
 };

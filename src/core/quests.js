@@ -50,6 +50,33 @@ export const TRIP = [
   { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
   { step: 'cheonggye', on: 'place', target: 'B-2' }, // Cheonggye Plaza (zones.json)
 ];
+// The same first errand for new players who start in Bukchon (region.json
+// spawn.first, the welcome guide there): a look inside the Open House hanok,
+// down into Anguk Station, the train to Seongsu, then up to Seongsu Square,
+// where the square guide takes the report. No taxi: it ends at the guide.
+// A trip taken from the square guide, or saved before this, keeps TRIP.
+export const BUKCHON_TRIP = [
+  { step: 'openHouse', on: 'place', target: 'open-house' }, // through the Open House's gate (data/bukchon.js)
+  { step: 'angukWalk', on: 'place', target: 'subway' }, // Anguk Station, just outside Bukchon's gate
+  { step: 'down', on: 'subwayIn' },
+  { step: 'seongsuStop', on: 'subway', target: 'seongsu-station' },
+  { step: 'square', on: 'place', target: 'A-1' }, // Seongsu Square (zones.json)
+];
+// For new players who start by the river or in Seoul Forest (region.json
+// spawn.starts): by bike to the nearest station, down, the train to Anguk,
+// and up into Bukchon. The guide at Bukchon's Information Center, by the
+// gate, takes the report.
+export const TO_BUKCHON_TRIP = [
+  { step: 'bike', on: 'bike' },
+  { step: 'stationNear', on: 'place', target: 'subway' }, // the nearest subway exit
+  { step: 'down', on: 'subwayIn' },
+  { step: 'anguk', on: 'subway', target: 'anguk-station' },
+  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
+];
+const TRIPS = { bukchon: BUKCHON_TRIP, toBukchon: TO_BUKCHON_TRIP };
+export const TRIP_ROUTES = Object.keys(TRIPS);
+// The steps of a trip errand: by where it was handed out.
+export const tripOf = (q) => TRIPS[q?.route] || TRIP;
 export const QUESTS_PER_DAY = 5;
 const KEY = 'mk.quests';
 // Saved first-path steps count from 0. Version 2 put the trip in front and
@@ -107,7 +134,10 @@ export class SquareQuests {
     if (this.onStarter) {
       const st = STARTER[this.s.starter];
       this.s.active = { kind: st.kind, target: st.target, need: st.need || 1, n: 0, starter: this.s.starter };
-      if (st.kind === 'trip') this.s.active.stage = 0;
+      if (st.kind === 'trip') {
+        this.s.active.stage = 0;
+        if (TRIP_ROUTES.includes(pool?.route)) this.s.active.route = pool.route; // from the welcome guide where they started
+      }
     } else this.s.active = pickQuest(pool, rand, this.s.last);
     this._save();
     return this.s.active;
@@ -118,10 +148,10 @@ export class SquareQuests {
     const q = this.s.active;
     if (!q || q.n >= q.need) return false;
     if (q.kind === 'trip') { // one step at a time
-      const st = TRIP[q.stage | 0];
+      const steps = tripOf(q), st = steps[q.stage | 0];
       if (!st || type !== st.on || (st.target && target !== st.target)) return false;
       q.stage = (q.stage | 0) + 1;
-      if (q.stage >= TRIP.length) q.n = q.need;
+      if (q.stage >= steps.length) q.n = q.need;
       this._save();
       return true;
     }

@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
 import { RINK, RAIL, GATE, HOMES, CAR_COLORS } from './bumper-cars.js';
+import { bakeColors } from './merge-static.js';
 
 const mat = matCache({ flatShading: true });
 const CANDY = ['#ff8fb8', '#8fe3c7', '#ffe27a', '#c9a8ff', '#8fd0ff', '#ffad6b'];
@@ -75,7 +76,7 @@ export function makeBumperCar(color) {
   g.add(light);
   add(new THREE.BoxGeometry(0.02, 0.18, 0.28), '#fffaf3', 0, 1.65, -0.41); // pennant
   g.userData.light = light;
-  return g;
+  return bakeColors(g); // (one draw call for the car, one for its light)
 }
 
 // Builds the rink into `scene`; block(x, z, sx, sz) adds a walking collider.

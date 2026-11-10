@@ -382,8 +382,6 @@ const SPECIES = {
   } },
 };
 
-export const SPECIES_NAMES = Object.keys(SPECIES);
-
 // The swimming motion, in the model's own units (bent before the instance
 // matrix places it): `ph` runs with time and differs per fish.
 const BEND = {

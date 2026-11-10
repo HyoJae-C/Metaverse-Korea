@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { FAN_KEEP, FAN_NOTE, FAN_LOOKS, FAN_ROUTINE, FAN_CYCLE, FAN_BLEND, fanSlot, fanPart, assignSlots, tripPose, TRIP_EVERY, TRIP_RUN, ROYAL_ROUTE, ROYAL_ORDER, ROYAL_PAUSE, nextStop, ringPoly } from '../src/core/palace-show.js';
 import { CollisionMap, pointInPoly } from '../src/core/collision.js';
+import { toGame } from '../src/core/seoul-grid.js';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
-const FAN = [-38, -28]; // main.js: the palace offset + (-38, -28), in the front court
+const FAN = [-36, -15]; // main.js: the palace offset + (-36, -15), in the front court
 
 test('the fan dance has an unseen ring you cannot walk into', () => {
   const ring = ringPoly(FAN[0], FAN[1], FAN_KEEP);
@@ -23,7 +26,7 @@ test('the fan dance has an unseen ring you cannot walk into', () => {
 });
 
 test('the fan dancers wear a bun and red lips', () => {
-  assert.equal(FAN_LOOKS.length, 20);
+  assert.equal(FAN_LOOKS.length, 10);
   for (const l of FAN_LOOKS) { assert.equal(l.hairStyle, 'bun'); assert.equal(l.lip, 'scarlet'); }
 });
 
@@ -33,16 +36,16 @@ test('the fan dance is a 30-second routine of varied formations, all inside the 
   for (const p of FAN_ROUTINE) assert.ok(p.len > FAN_BLEND + 2, p.name + ' holds a while after blending in');
   for (let t = 0; t < FAN_CYCLE * 2; t += 0.25) {
     const P = fanPart(t);
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < FAN_LOOKS.length; i++) {
       const [x, z] = fanSlot(P.part, i, t, P.u);
       assert.ok(Math.hypot(x, z) < FAN_KEEP - 1, `${P.part} slot ${i} at ${t}s strays to the ring`);
     }
   }
   // the line really is one row, and the flower gathers in close
-  const line = Array.from({ length: 20 }, (_, i) => fanSlot('line', i, 3));
+  const line = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('line', i, 3));
   assert.ok(line.every(([, z]) => Math.abs(z) < 0.5));
-  assert.equal(new Set(line.map(([x]) => x.toFixed(2))).size, 20);
-  const flower = Array.from({ length: 20 }, (_, i) => Math.hypot(...fanSlot('flower', i, 3, 0.5).slice(0, 2)));
+  assert.equal(new Set(line.map(([x]) => x.toFixed(2))).size, FAN_LOOKS.length);
+  const flower = Array.from({ length: FAN_LOOKS.length }, (_, i) => Math.hypot(...fanSlot('flower', i, 3, 0.5).slice(0, 2)));
   assert.ok(Math.max(...flower) < 6);
   // parts come round in order and blend in smoothly
   assert.equal(fanPart(0).part, 'rings');
@@ -53,11 +56,11 @@ test('the fan dance is a 30-second routine of varied formations, all inside the 
 });
 
 test('each dancer takes a different place in the next formation, near where she is', () => {
-  const from = Array.from({ length: 20 }, (_, i) => fanSlot('rings', i, 8));
-  const to = Array.from({ length: 20 }, (_, i) => fanSlot('flower', i, 10, 0.3));
+  const from = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('rings', i, 8));
+  const to = Array.from({ length: FAN_LOOKS.length }, (_, i) => fanSlot('flower', i, 10, 0.3));
   const slots = assignSlots(from, to);
-  assert.equal(new Set(slots).size, 20);
-  assert.ok(slots.every((s) => s >= 0 && s < 20));
+  assert.equal(new Set(slots).size, FAN_LOOKS.length);
+  assert.ok(slots.every((s) => s >= 0 && s < FAN_LOOKS.length));
   const same = assignSlots(to, to);
   assert.deepEqual(same, to.map((_, i) => i));
 });
@@ -86,8 +89,8 @@ test('the royal procession walks paths clear of halls, walls and the fan dance',
 
 test('the procession picks a new way on, pausing about 10 s for photos', () => {
   assert.ok(ROYAL_PAUSE >= 8 && ROYAL_PAUSE <= 12);
-  for (let i = 0; i < 50; i++) assert.notEqual(nextStop(ROYAL_ROUTE, 1, 0, Math.random), 0); // stop 1 has other ways on
-  assert.equal(nextStop(ROYAL_ROUTE, 0, 1, Math.random), 2);
+  for (let i = 0; i < 50; i++) assert.notEqual(nextStop(ROYAL_ROUTE, 0, 1, Math.random), 1); // stop 0 has other ways on
+  assert.equal(nextStop(ROYAL_ROUTE, 1, 0, Math.random), 0); // at the throne hall's steps: back the way he came
 });
 
 test('the procession stays round Geunjeongjeon, where Enter brings you', () => {
@@ -114,16 +117,56 @@ test('now and then the last court lady trips, gets up flustered and hurries afte
   assert.equal(ROYAL_ORDER.filter((o) => o.who === 'lady').length, 2);
 });
 
-test('the palace is smaller and the king never leaves its inner court', () => {
-  const walls = map.landmarks.filter((l) => l.type === 'wall');
-  const outer = walls[0].p, xs = outer.map(([x]) => x), zs = outer.map(([, z]) => z);
-  assert.ok(Math.max(...xs) - Math.min(...xs) <= 170 && -Math.min(...zs) <= 270, 'about 60% of the old 270 x 440 m');
-  assert.deepEqual(map.meta.enclosure.box, [Math.min(...xs), 0, Math.max(...xs), Math.min(...zs)]);
-  // inside Heungnyemun's walls: the inner court round Geunjeongjeon
-  const inner = walls[1].p, ix = Math.max(...inner.map(([x]) => Math.abs(x))), iz = inner.map(([, z]) => z);
-  for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(Math.abs(x) < ix - 3 && z < Math.max(...iz) - 3 && z > Math.min(...iz) + 3, `stop ${x},${z} is outside the inner court`);
-  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -8) and Heungnyemun's wall
-  assert.ok(FAN[1] + FAN_KEEP < -8 && FAN[1] - FAN_KEEP > Math.max(...iz), 'the fan dance is in the front court');
-  const pass = Math.min(...outer.map(([x]) => x));
-  assert.ok(FAN[0] - FAN_KEEP > pass && FAN[0] + FAN_NOTE < 0, 'off the way from gate to gate, inside the wall');
+test('the palace stands on its real ground at 1/4, and the king keeps to the way in to the throne hall', () => {
+  // The wall is OSM's outline of the palace grounds, measured from Gwanghwamun (scripts/build-gyeongbokgung.mjs).
+  const osm = JSON.parse(readFileSync(new URL('../scripts/data/gyeongbokgung-osm.json', import.meta.url)));
+  const local = (pts) => { const g = osm.elements.find((e) => e.name === '광화문').pts.slice(0, -1), c = g.reduce((a, p) => [a[0] + p[0] / g.length, a[1] + p[1] / g.length], [0, 0]), [gx, gz] = toGame(...c); return pts.map(([la, lo]) => { const [x, z] = toGame(la, lo); return [x - gx, z - gz]; }); };
+  const real = local(osm.elements.find((e) => e.kind === 'palace').pts);
+  const outer = map.landmarks.find((l) => l.type === 'wall' && l.gb).p;
+  const box = (P) => [Math.min(...P.map((p) => p[0])), Math.min(...P.map((p) => p[1])), Math.max(...P.map((p) => p[0])), Math.max(...P.map((p) => p[1]))];
+  const [a, b] = [box(real), box(outer)];
+  for (let i = 0; i < 3; i++) assert.ok(Math.abs(a[i] - b[i]) < 1, `the wall on its real line (${a} vs ${b})`);
+  assert.ok(a[2] - a[0] > 130 && a[2] - a[0] < 145 && -a[1] > 210 && -a[1] < 222, 'about 555 x 870 m in Seoul, at 1/4');
+  assert.deepEqual(map.meta.enclosure.box, [Math.floor(b[0]), 0, Math.ceil(b[2]), Math.floor(b[1])]);
+  // the stops are in Geunjeongjeon's court (the gates are too narrow for the procession); to the steps, on the middle line
+  const at = (type, name) => map.landmarks.find((l) => l.type === type && (!name || l.name?.en === name));
+  const heung = at('palacegate', 'Heungnyemun'), geun = at('palacegate', 'Geunjeongmun'), hall = at('throne');
+  for (const [x, z] of ROYAL_ROUTE.stops) {
+    assert.ok(z < geun.z - 3 && z > hall.z && z < heung.z, `stop ${x},${z} is in Geunjeongjeon's court`);
+  }
+  for (const s of [0, 1]) { // the way to the steps is the middle path
+    const [x, z] = ROYAL_ROUTE.stops[s], mid = geun.x + ((hall.x - geun.x) * (z - geun.z)) / (hall.z - geun.z);
+    assert.ok(Math.abs(x - mid) < 0.6, 'the king walks the middle path to the throne hall');
+  }
+  // the fan dance is in the front court, between Gwanghwamun (its piers reach z -2.1) and Heungnyemun's corridors (z -27)
+  assert.ok(FAN[1] + FAN_KEEP < -2.1 && FAN[1] - FAN_KEEP > -27, 'the fan dance is in the front court');
+  assert.ok(FAN[0] - FAN_KEEP > -53 && FAN[0] + FAN_NOTE < -2, 'off the way from gate to gate, inside the wall');
+});
+
+test('palace buildings: footprints at 30% of the real ones (Gwanghwamun 50%), heights at half', () => {
+  const at = (type) => map.landmarks.find((l) => l.type === type);
+  for (const t of ['palacegate', 'throne', 'yeongjegyo', 'amisan', 'hexpavilion']) assert.deepEqual(at(t).sc, [0.6, 1], t + ': drawn at 50%, 60% of that across');
+  // Gwanghwamun is 50% across too, like its height, so it isn't a narrow tower (Yozi).
+  assert.deepEqual(at('gwanghwamun').sc, [1, 1], 'Gwanghwamun: drawn at 50% both ways');
+  assert.ok(Math.abs(at('gwanghwamun').w - 31.2 * 0.5) < 0.5, 'Gwanghwamun (31 m wide in Seoul)');
+  assert.ok(Math.abs(at('throne').hs * 30 * 0.6 - 32 * 0.3) < 1, 'Geunjeongjeon (32 m wide on the map)');
+  assert.deepEqual(at('pavilion').sc, [0.3, 0.5], 'Gyeonghoeru (its model is full size)');
+  assert.equal(at('palacehalls').v, 1);
+});
+
+test('the palace has about a quarter of its buildings, and every hall and yard can be walked to', () => {
+  const out = execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/build-gyeongbokgung.mjs', import.meta.url)), '--dry', '--check'], { encoding: 'utf8' });
+  const [, n, all] = out.match(/buildings (\d+) of (\d+)/).map(Number);
+  assert.equal(n, 30);
+  assert.ok(n < all / 2);
+  assert.match(out, /every hall and yard can be walked to/);
+});
+
+test('left-out buildings stand as plain blocks, and the two museums stay empty', () => {
+  const halls = map.landmarks.find((l) => l.type === 'palacehalls').halls, blocks = halls.filter((h) => h[5] === 'r');
+  assert.ok(blocks.length >= 10 && blocks.length <= 30, `a few plain blocks (${blocks.length})`);
+  for (const [x, z] of blocks) {
+    assert.ok(!(x > 45 && z < -95) && !(x > 25 && z < -150), `no block on or beside the Folk Museum's grounds (${x},${z})`);
+    assert.ok(!(x < -30 && z > -70 && z < -20), `no block on the National Palace Museum (${x},${z})`);
+  }
 });

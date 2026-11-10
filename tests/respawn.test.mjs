@@ -61,7 +61,8 @@ test('every district box in Seoul holds the ground it names', () => {
   const parts = region.districts.map((d) => ({ ...d, map: JSON.parse(readFileSync(new URL(d.map, dir))) }));
   const boxes = districtBoxes(mergeDistricts(parts, region.links || [], region.water || []));
   for (const b of boxes) assert.ok(b.x0 < b.x1 && b.z0 < b.z1, b.id);
-  // Heunginjimun (Euljiro, local [-4, -318]) is in Euljiro's box now.
+  // Heunginjimun (Euljiro's map, world -1004, -843) is in Euljiro's box now.
+  const gate = parts.find((d) => d.id === 'euljiro').map.landmarks.find((l) => l.type === 'heunginjimun');
   const e = region.districts.find((d) => d.id === 'euljiro').offset;
-  assert.ok(onMap(e[0] - 4, e[1] - 318, { boxes: boxes.filter((b) => b.id === 'euljiro') }, 0));
+  assert.ok(onMap(e[0] + gate.x, e[1] + gate.z, { boxes: boxes.filter((b) => b.id === 'euljiro') }, 0));
 });

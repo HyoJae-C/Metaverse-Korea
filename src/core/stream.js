@@ -4,13 +4,15 @@
 //
 // Map data ("streams" in a district map, local metres; the district offset
 // moves `at`). The channel runs east (+x) from `at` (its west end, centre
-// line) for `len` metres:
+// line) for `len` metres, or, with a `path`, along that centre line instead
+// (corners as [dx, dz] from `at`, the first [0, 0]; `len` is its length):
 //   { "id": "cheonggyecheon", "at": [120, 409], "len": 330, "w": 24,
 //     "water": 8, "depth": 4, "name": { "ko": "청계천", "en": "…" },
 //     "falls": true,                                  // waterfall at the west end
 //     "bridges": [{ "u": 80, "w": 8, "style": "arch" }], // u: metres from the west end
 //     "stairs": [{ "u": 4, "side": -1, "dir": 1 }],   // side -1 north bank, 1 south; dir: way down (±x)
 //     "stones": [{ "u": 125 }],                       // stepping stones across the water
+//     "path": [[0, 0], [120, 8], [330, -20]],         // optional: a bending stream
 //     "heron": true,                                  // a grey heron (core/heron.js)
 //     "lanterns": { … } }                             // the lantern festival (core/lanterns.js)
 //
@@ -28,7 +30,76 @@ import { buildLanternFestival, WishLanterns } from './lanterns.js';
 export const STAIR = { w: 2.4, run: 9, landing: 3 };
 const WALL = 0.3;
 
-const rect = (x0, z0, x1, z1) => [[Math.min(x0, x1), Math.min(z0, z1)], [Math.max(x0, x1), Math.min(z0, z1)], [Math.max(x0, x1), Math.max(z0, z1)], [Math.min(x0, x1), Math.max(z0, z1)]];
+
+// ---------- the stream's frame ----------
+// Everything is laid out along the channel in (u, v): u along the centre
+// line from the west end, v across it (+ on the right going downstream:
+// south for a stream running east). frameOf(s) maps that onto the ground.
+// A straight stream is just shifted by `at`. A bending one is drawn stretch
+// by stretch: neighbouring stretches meet on the line that halves the corner
+// (mitred, like a picture frame), and points along a stretch are spread
+// evenly between its two mitres, so the map is exact on the centre line,
+// has no seams, and a box in (u, v) stays a box (sheared a hair at corners).
+const EPS = 1e-6;
+const frames = new WeakMap();
+export function frameOf(s) {
+  const key = s.at[0] + ',' + s.at[1];
+  const hit = frames.get(s);
+  if (hit?.key === key) return hit;
+  const pts = (s.path || [[0, 0], [s.len, 0]]).map(([x, z]) => [s.at[0] + x, s.at[1] + z]);
+  const segs = [];
+  let s0 = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i], b = pts[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (L < EPS) continue;
+    const d = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    segs.push({ a, d, n: [-d[1], d[0]], s0, L, ang: Math.atan2(d[1], d[0]), k0: 0, k1: 0 });
+    s0 += L;
+  }
+  for (let i = 0; i + 1 < segs.length; i++) { // the mitre: how far along each side's end moves per metre across
+    const p = segs[i].d, q = segs[i + 1].d;
+    const t = Math.tan(Math.atan2(p[0] * q[1] - p[1] * q[0], p[0] * q[0] + p[1] * q[1]) / 2);
+    segs[i].k1 = -t;
+    segs[i + 1].k0 = t;
+  }
+  const last = segs.length - 1;
+  const segAt = (u) => { let i = 0; while (i < last && u > segs[i].s0 + segs[i].L) i++; return segs[i]; };
+  const f = {
+    key, segs, bent: segs.length > 1,
+    joints: segs.slice(1).map((S) => S.s0),
+    segAt,
+    angAt: (u) => segAt(u).ang,
+    toWorld(u, v) {
+      const S = segAt(u), tau = v * S.k0 + (u - S.s0) * (1 + v * (S.k1 - S.k0) / S.L);
+      return [S.a[0] + S.d[0] * tau + S.n[0] * v, S.a[1] + S.d[1] * tau + S.n[1] * v];
+    },
+    // (u, v) of a point on the ground: the stretch it falls in nearest the line.
+    toStream(x, z) {
+      let best = null;
+      for (let i = 0; i <= last; i++) {
+        const S = segs[i], rx = x - S.a[0], rz = z - S.a[1];
+        const v = rx * S.n[0] + rz * S.n[1], tau = rx * S.d[0] + rz * S.d[1];
+        if (i > 0 && tau < v * S.k0 - EPS) continue;
+        if (i < last && tau > S.L + v * S.k1 + EPS) continue;
+        if (best && Math.abs(best[1]) <= Math.abs(v)) continue;
+        best = [S.s0 + (tau - v * S.k0) / (1 + v * (S.k1 - S.k0) / S.L), v];
+      }
+      return best || [-Infinity, Infinity];
+    },
+    // A rectangle in (u, v) on the ground: one quad per stretch it crosses.
+    quads(u0, u1, v0, v1) {
+      const a = Math.min(u0, u1), b = Math.max(u0, u1), lo = Math.min(v0, v1), hi = Math.max(v0, v1);
+      const cuts = [a, ...f.joints.filter((j) => j > a + EPS && j < b - EPS), b];
+      const out = [];
+      for (let i = 0; i + 1 < cuts.length; i++) out.push([f.toWorld(cuts[i], lo), f.toWorld(cuts[i + 1], lo), f.toWorld(cuts[i + 1], hi), f.toWorld(cuts[i], hi)]);
+      return out;
+    },
+  };
+  frames.set(s, f);
+  return f;
+}
+// (u, v) of a point for stream s (main.js: the lantern festival).
+export const streamUV = (s, x, z) => frameOf(s).toStream(x, z);
 
 // A stair's lane in the stream's frame: u from the mouth to the far end,
 // v from the channel wall outwards.
@@ -52,32 +123,32 @@ const cut = (len, gaps) => {
 
 // The street layer's walls: the channel between bridges, and each stair's
 // outer wall and far end.
+const walls = (F, u0, u1, v0, v1) => F.quads(u0, u1, v0, v1).map((p) => ({ p }));
 export function streetBlockers(s) {
-  const [X, Z] = s.at, hw = s.w / 2;
-  const out = cut(s.len, (s.bridges || []).map((b) => [b.u - b.w / 2, b.u + b.w / 2]))
-    .map(([a, b]) => ({ p: rect(X + a, Z - hw, X + b, Z + hw) }));
+  const F = frameOf(s), hw = s.w / 2;
+  const out = cut(s.len, (s.bridges || []).map((b) => [b.u - b.w / 2, b.u + b.w / 2])).flatMap(([a, b]) => walls(F, a, b, -hw, hw));
   for (const st of s.stairs || []) out.push(...laneWalls(s, st));
   return out;
 }
 function laneWalls(s, st) {
-  const [X, Z] = s.at, L = lane(s, st), out = st.side;
+  const F = frameOf(s), L = lane(s, st), out = st.side;
   return [
-    { p: rect(X + L.u0, Z + L.v1, X + L.u1 + st.dir * WALL, Z + L.v1 + out * WALL) }, // outer wall
-    { p: rect(X + L.u1, Z + L.v0, X + L.u1 + st.dir * WALL, Z + L.v1) }, // far end
+    ...walls(F, L.u0, L.u1 + st.dir * WALL, L.v1, L.v1 + out * WALL), // outer wall
+    ...walls(F, L.u1, L.u1 + st.dir * WALL, L.v0, L.v1), // far end
   ];
 }
 
 // The low layer's walls: both banks (open at each landing), the two ends,
 // the water (but for the stepping stones) and the stairs' walls.
 export function lowBlockers(s) {
-  const [X, Z] = s.at, hw = s.w / 2, out = [];
+  const F = frameOf(s), hw = s.w / 2, out = [];
   for (const side of [-1, 1]) {
     const gaps = (s.stairs || []).filter((st) => st.side === side).map((st) => { const L = lane(s, st); return [L.uLand, L.u1]; });
-    for (const [a, b] of cut(s.len, gaps)) out.push({ p: rect(X + a, Z + side * hw, X + b, Z + side * (hw - WALL)) });
+    for (const [a, b] of cut(s.len, gaps)) out.push(...walls(F, a, b, side * hw, side * (hw - WALL)));
   }
-  out.push({ p: rect(X - WALL, Z - hw, X, Z + hw) }, { p: rect(X + s.len, Z - hw, X + s.len + WALL, Z + hw) });
+  out.push(...walls(F, -WALL, 0, -hw, hw), ...walls(F, s.len, s.len + WALL, -hw, hw));
   const ww = (s.water || 8) / 2;
-  for (const [a, b] of cut(s.len, (s.stones || []).map((t) => [t.u - 0.9, t.u + 0.9]))) out.push({ p: rect(X + a, Z - ww, X + b, Z + ww) });
+  for (const [a, b] of cut(s.len, (s.stones || []).map((t) => [t.u - 0.9, t.u + 0.9]))) out.push(...walls(F, a, b, -ww, ww));
   for (const st of s.stairs || []) out.push(...laneWalls(s, st));
   return out;
 }
@@ -86,15 +157,23 @@ export function lowBlockers(s) {
 // channel with a notch out for each stair). Separate holes that touch or
 // overlap break the ground's triangulation and leave the channel covered.
 export function holesOf(s) {
-  const [X, Z] = s.at, hw = s.w / 2, pts = [];
+  const F = frameOf(s), hw = s.w / 2, uv = [];
   const span = (side) => (s.stairs || []).filter((st) => st.side === side).map((st) => { const L = lane(s, st); return [Math.min(L.u0, L.u1), Math.max(L.u0, L.u1)]; }).sort((p, q) => p[0] - q[0]);
-  pts.push([X, Z - hw]);
-  for (const [a, b] of span(-1)) pts.push([X + a, Z - hw], [X + a, Z - hw - STAIR.w], [X + b, Z - hw - STAIR.w], [X + b, Z - hw]);
-  pts.push([X + s.len, Z - hw], [X + s.len, Z + hw]);
-  for (const [a, b] of span(1).reverse()) pts.push([X + b, Z + hw], [X + b, Z + hw + STAIR.w], [X + a, Z + hw + STAIR.w], [X + a, Z + hw]);
-  pts.push([X, Z + hw]);
-  // Drop repeated points (a stair that starts right at the west end).
-  return [pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1])];
+  uv.push([0, -hw]);
+  for (const [a, b] of span(-1)) uv.push([a, -hw], [a, -hw - STAIR.w], [b, -hw - STAIR.w], [b, -hw]);
+  uv.push([s.len, -hw], [s.len, hw]);
+  for (const [a, b] of span(1).reverse()) uv.push([b, hw], [b, hw + STAIR.w], [a, hw + STAIR.w], [a, hw]);
+  uv.push([0, hw]);
+  // Drop repeated points (a stair that starts right at the west end), and
+  // put a point on each corner of a bending stream along the banks.
+  const out = [];
+  uv.forEach((p, i) => {
+    const q = uv[i - 1];
+    if (q && p[0] === q[0] && p[1] === q[1]) return;
+    if (q && p[1] === q[1]) for (const j of (p[0] > q[0] ? F.joints : [...F.joints].reverse())) if ((j - q[0]) * (p[0] - j) > 0) out.push(F.toWorld(j, p[1]));
+    out.push(F.toWorld(p[0], p[1]));
+  });
+  return [out];
 }
 
 // Places to sit on the stone edge of the water, your legs out over it, as
@@ -106,15 +185,15 @@ export const EDGE_SEAT = { every: 1.5, sink: 0.22 };
 export function edgeSeats(streams) {
   const out = [];
   for (const s of streams) {
-    const ww = (s.water || 8) / 2, D = s.depth || 4;
+    const ww = (s.water || 8) / 2, D = s.depth || 4, F = frameOf(s);
     const clear = (u) => u > 3 && u < s.len - 1
       && !(s.bridges || []).some((b) => Math.abs(u - b.u) < b.w / 2 + 0.8)
       && !(s.stones || []).some((st) => Math.abs(u - st.u) < 1.6);
     for (let u = EDGE_SEAT.every; u < s.len; u += EDGE_SEAT.every) {
       if (!clear(u)) continue;
       for (const sd of [-1, 1]) {
-        const x = s.at[0] + u, z = s.at[1] + sd * (ww + 0.18);
-        out.push({ x, z, y: -D - EDGE_SEAT.sink, ry: sd > 0 ? Math.PI : 0, stand: [x, s.at[1] + sd * (ww + 1)], standY: -D, street: true, edge: true });
+        const [x, z] = F.toWorld(u, sd * (ww + 0.18));
+        out.push({ x, z, y: -D - EDGE_SEAT.sink, ry: (sd > 0 ? Math.PI : 0) - F.angAt(u), stand: F.toWorld(u, sd * (ww + 1)), standY: -D, street: true, edge: true });
       }
     }
   }
@@ -126,7 +205,8 @@ export function edgeSeats(streams) {
 // decides whether a spot under a bridge is on the deck or below it.
 export function streamAt(streams, x, z, low) {
   for (let i = 0; i < streams.length; i++) {
-    const s = streams[i], u = x - s.at[0], v = z - s.at[1], hw = s.w / 2, D = s.depth || 4;
+    const s = streams[i], hw = s.w / 2, D = s.depth || 4;
+    const F = frameOf(s), [u, v] = F.bent ? F.toStream(x, z) : [x - s.at[0], z - s.at[1]];
     for (const st of s.stairs || []) {
       const L = lane(s, st);
       if (u < Math.min(L.u0, L.u1) || u > Math.max(L.u0, L.u1) || st.side * v < hw || st.side * v > hw + STAIR.w) continue;
@@ -152,8 +232,9 @@ export function buildStreams(streams, scene) {
   const ticks = [];
   for (const s of streams) {
     const g = new THREE.Group();
-    g.position.set(s.at[0], 0, s.at[1]);
-    ticks.push(buildOne(g, s));
+    const F = frameOf(s);
+    if (!F.bent) g.position.set(s.at[0], 0, s.at[1]); // a bending one is built in (u, v) and bent onto the ground
+    ticks.push(buildOne(g, s, F.bent ? F : null));
     if (g.userData.wish && !root.userData.wish) root.userData.wish = g.userData.wish; // core/lanterns.js
     root.add(g);
   }
@@ -163,13 +244,20 @@ export function buildStreams(streams, scene) {
   return root;
 }
 
-function buildOne(g, s) {
+function buildOne(g, s, F) {
   const { len, w } = s, hw = w / 2, D = s.depth || 4, ww = (s.water || 8) / 2;
-  // Boxes are given by their u (x), y and v (z) ranges.
+  // Boxes are given by their u (x), y and v (z) ranges. On a bending stream
+  // a long one is cut at each corner, so that it bends there.
   const box = (u0, u1, y0, y1, v0, v1, c, o) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(u1 - u0), Math.abs(y1 - y0), Math.abs(v1 - v0)), typeof c === 'string' ? mat(c, o) : c);
-    m.position.set((u0 + u1) / 2, (y0 + y1) / 2, (v0 + v1) / 2);
-    g.add(m);
+    const a = Math.min(u0, u1), b = Math.max(u0, u1);
+    const cuts = F ? F.joints.filter((j) => j > a + 0.01 && j < b - 0.01) : [];
+    const ends = [a, ...cuts, b];
+    let m;
+    for (let i = 0; i + 1 < ends.length; i++) {
+      m = new THREE.Mesh(new THREE.BoxGeometry(ends[i + 1] - ends[i], Math.abs(y1 - y0), Math.abs(v1 - v0)), typeof c === 'string' ? mat(c, o) : c);
+      m.position.set((ends[i] + ends[i + 1]) / 2, (y0 + y1) / 2, (v0 + v1) / 2);
+      g.add(m);
+    }
     return m;
   };
   // Walkways on both banks, a grass strip at the foot of each wall, the
@@ -185,10 +273,11 @@ function buildOne(g, s) {
   // Ripples: pale streaks drifting downstream (east).
   const streaks = [];
   for (let k = 0; k < Math.floor(len / 6); k++) {
-    const m = box(0, 1.6, -D - 0.29, -D - 0.285, 0, 0.12, mat('#d8f0f8', { transparent: true, opacity: 0.7 }));
+    const m = box(-0.8, 0.8, -D - 0.29, -D - 0.285, -0.06, 0.06, mat('#d8f0f8', { transparent: true, opacity: 0.7 }));
     m.userData.noShadow = true;
+    m.userData.mover = true;
     m.position.z = ((k * 37) % 13) / 13 * (ww * 2 - 1) - ww + 0.5;
-    streaks.push({ m, u: (k * 6 + (k * 17) % 5) % len, sp: 0.6 + ((k * 7) % 5) / 10 });
+    streaks.push({ m, v: m.position.z, u: (k * 6 + (k * 17) % 5) % len, sp: 0.6 + ((k * 7) % 5) / 10 });
   }
   // Clumps of reeds and water plants along the edges of the water.
   const spots = [];
@@ -304,17 +393,75 @@ function buildOne(g, s) {
   // Walls, railing posts, steps, stones and bridges never move: one mesh per
   // colour (core/merge-static.js). Hundreds of draw calls became a handful.
   mergeStatic(g);
-  const heron = s.heron ? buildHeron(g, s) : null; // a grey heron fishing in the water (core/heron.js)
+  const heron = s.heron ? buildHeron(g, s, F) : null; // a grey heron fishing in the water (core/heron.js)
   // The lantern festival and the wish lanterns (core/lanterns.js).
   const fest = s.lanterns ? buildLanternFestival(g, s) : null;
-  if (s.lanterns) g.userData.wish = new WishLanterns(g, s);
+  if (s.lanterns) g.userData.wish = new WishLanterns(g, s, F);
+  if (F) bend(g, F);
   return (t) => {
     heron?.();
     fest?.tick(t);
     g.userData.wish?.tick(Date.now() / 1000);
-    for (const q of streaks) q.m.position.x = (q.u + t * q.sp * 2) % len;
+    for (const q of streaks) {
+      const u = (q.u + t * q.sp * 2) % len;
+      if (!F) { q.m.position.x = u; continue; }
+      const [x, z] = F.toWorld(u, q.v);
+      q.m.position.x = x; q.m.position.z = z;
+      q.m.rotation.y = -F.angAt(u);
+    }
     if (fallTex) fallTex.offset.y = (t * 1.6) % 1;
   };
+}
+
+// Bend a stream built straight (in u, y, v) onto its path: every mesh that
+// stays put has its points moved onto the ground (frameOf), and each copy in
+// an instanced mesh is moved and turned with the stretch it stands in.
+// Things that move (`userData.mover`) place themselves each frame instead.
+const _m = new THREE.Matrix4(), _p = new THREE.Vector3(), _r = new THREE.Matrix4(), _up = new THREE.Vector3(0, 1, 0);
+function bend(g, F) {
+  g.updateMatrixWorld(true);
+  const toG = new THREE.Matrix4().copy(g.matrixWorld).invert();
+  const list = [];
+  const walk = (o) => {
+    if (o.userData.mover) return;
+    if (o.isMesh) list.push(o);
+    for (const c of o.children) walk(c);
+  };
+  walk(g);
+  for (const m of list) {
+    const full = new THREE.Matrix4().multiplyMatrices(toG, m.matrixWorld); // mesh → stream (u, y, v)
+    if (m.isInstancedMesh) {
+      for (let i = 0; i < m.count; i++) {
+        m.getMatrixAt(i, _m);
+        _m.premultiply(full);
+        _p.setFromMatrixPosition(_m);
+        const [x, z] = F.toWorld(_p.x, _p.z);
+        _r.makeRotationAxis(_up, -F.angAt(_p.x));
+        _m.setPosition(0, 0, 0).premultiply(_r).setPosition(x, _p.y, z);
+        m.setMatrixAt(i, _m);
+      }
+      m.instanceMatrix.needsUpdate = true;
+      m.computeBoundingSphere?.();
+      m.computeBoundingBox?.();
+    } else {
+      const geo = m.geometry.clone().applyMatrix4(full);
+      const pos = geo.attributes.position, nor = geo.attributes.normal;
+      for (let i = 0; i < pos.count; i++) {
+        const u = pos.getX(i), v = pos.getZ(i), a = -F.angAt(u), c = Math.cos(a), sn = Math.sin(a);
+        const [x, z] = F.toWorld(u, v);
+        pos.setXYZ(i, x, pos.getY(i), z);
+        if (nor) { const nx = nor.getX(i), nz = nor.getZ(i); nor.setXYZ(i, nx * c + nz * sn, nor.getY(i), -nx * sn + nz * c); }
+      }
+      geo.computeBoundingSphere();
+      geo.computeBoundingBox();
+      m.geometry = geo;
+    }
+    // Undo the mesh's own place: its points (or copies) are now in g's frame.
+    _m.copy(m.matrix).multiply(full.invert());
+    _m.decompose(m.position, m.quaternion, m.scale);
+    m.updateMatrix();
+  }
+  g.updateMatrixWorld(true);
 }
 
 // A bridge across the channel at street level: "arch" (a stone arch, like

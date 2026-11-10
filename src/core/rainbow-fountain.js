@@ -7,16 +7,17 @@
 // of about 20 minutes (and one at noon), and stops for rain or strong wind.
 // The exact times change from year to year, so the game doesn't copy them:
 // here a 20-minute show starts at half past most hours (Korean time), all
-// year, so whoever walks to Banpo soon gets to see one. Like the fireworks,
+// year (except while the Yeouido fireworks are on), so whoever walks to
+// Banpo soon gets to see one. Like the fireworks,
 // the sky turns to night only around the bridge during a show.
 //
 // Everyone's clock gives the same jets at the same moment (like the drone
 // show and the fireworks), so friends on the lawn watch the same show.
 
+import { smooth, showStarts, FIREWORKS } from './show-clock.js';
+import { SHOW_SECONDS as FIREWORKS_SECONDS } from './fireworks-show.js';
+
 export const FOUNTAIN_MINUTE = 30; // shows start at hh:30 KST
-// No show while Yeouido's hour of fireworks is on (09:00, 21:00 KST:
-// fireworks-show.js), so nobody has to choose between the two.
-export const SKIP_HOURS_KST = [9, 21];
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const DUSK_SECONDS = 60; // before the start: the sky round the bridge darkens
 export const DAWN_SECONDS = 60; // after the end: it brightens again
@@ -24,16 +25,23 @@ export const NOTICE_SECONDS = 60; // the "starts in a minute" notice, near the b
 export const FINALE = [SHOW_SECONDS - 60, SHOW_SECONDS]; // photo time: every jet full, in rainbow
 
 const MIN = 60e3, HOUR = 60 * MIN, KST = 9 * HOUR;
-const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
+
+// No show while Yeouido's fireworks are on (fireworks-show.js: every other
+// night of the game's day), so nobody has to choose between the two.
+export function clashesWithFireworks(start) {
+  const a0 = start - DUSK_SECONDS * 1000, a1 = start + (SHOW_SECONDS + DAWN_SECONDS) * 1000;
+  return showStarts(start, FIREWORKS).some((f) => a0 < f + FIREWORKS_SECONDS * 1000 && f < a1);
+}
 const frac = (x) => x - Math.floor(x);
 
-// Show start times (ms) around `now`: from two hours before to two after.
+// Show start times (ms) around `now`: from two hours before to two after
+// (a skipped one can leave a gap of two hours).
 function startsAround(now) {
   const hour = Math.floor((now + KST) / HOUR); // hours since the epoch, Korean time
   const out = [];
   for (let h = hour - 2; h <= hour + 2; h++) {
-    if (SKIP_HOURS_KST.includes(((h % 24) + 24) % 24)) continue;
-    out.push(h * HOUR - KST + FOUNTAIN_MINUTE * MIN);
+    const start = h * HOUR - KST + FOUNTAIN_MINUTE * MIN;
+    if (!clashesWithFireworks(start)) out.push(start);
   }
   return out;
 }
@@ -66,7 +74,7 @@ export function nextFountain(now = Date.now()) {
 // The middle of Banpo Bridge over Jamsu Bridge (the "jamsu" landmark of
 // districts/banpo-jamwon.json, moved by the district's offset), and the
 // bridge's direction: the jets line both sides of the upper deck.
-export const BRIDGE = { x: -1261.5, z: 756.8 };
+export const BRIDGE = { x: -1316.6, z: 807.3 };
 // How much the show's night reaches a spot: 1 on the bridge, the park's
 // lawn and the riverside, fading out over the next 120 m.
 export function nearBridge(x, z) {

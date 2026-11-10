@@ -22,7 +22,7 @@ const T0 = Math.ceil(Date.UTC(2026, 10, 9, 3, 0, 0) / 180000) * 180000; // a fli
 // The clock pinned at t seconds into the flight, then running on from there
 // (pinned, the page stops drawing).
 const at = async (t) => { await page.clock.setFixedTime(T0 + t * 1000); await page.clock.resume(); };
-const GATE = [-2790.1, 352.6]; // in front of the gate
+const GATE = [-2895.9, 479.9]; // in front of the gate
 let ok = false;
 try {
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=e2e' + Math.random().toString(36).slice(2, 8));
@@ -33,7 +33,7 @@ try {
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   await at(2);
   await mk('coins', 100000);
-  await mk('place', ...GATE); await mk('face', 2.5055 + Math.PI); await mk('cam', { pitch: 0.25, dist: 16 });
+  await mk('place', ...GATE); await mk('face', 2.3387 + Math.PI); await mk('cam', { pitch: 0.25, dist: 16 });
   await until(async () => (await mk('action'))?.includes('🎈'), 30000, 'the gate button');
   await wait(6000);
   console.log('gate:', await mk('action'));
@@ -76,7 +76,7 @@ try {
   await at(360 + 181); await wait(1500);
   // From the fireworks lawn across Yunjung-ro: the balloon up over the park.
   await at(100);
-  await mk('place', -2728, 300); await mk('face', 2.5055); await mk('cam', { yaw: 2.5055 + Math.PI, pitch: 0.05, dist: 7 });
+  await mk('place', -2869.7, 454.1); await mk('face', 2.3387); await mk('cam', { yaw: 2.3387 + Math.PI, pitch: 0.05, dist: 7 });
   await wait(4000);
   if (shotDir) await page.screenshot({ path: `${shotDir}/5-from-lawn.png` });
   if (errors.length) throw new Error('page errors: ' + errors.join(' | '));

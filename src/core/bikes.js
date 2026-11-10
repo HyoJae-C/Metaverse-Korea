@@ -4,31 +4,7 @@ import * as THREE from 'three';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
-const FRAME = '#3fb59a', DARK = '#2b2f36';
-
-// A small bike, wheels on the ground, front towards +z.
-export function makeBike(color = FRAME) {
-  const g = new THREE.Group();
-  const wheelGeo = new THREE.TorusGeometry(0.27, 0.045, 6, 18).rotateY(Math.PI / 2);
-  for (const z of [-0.48, 0.48]) {
-    const w = new THREE.Mesh(wheelGeo, mat(DARK));
-    w.position.set(0, 0.3, z);
-    g.add(w);
-  }
-  const bar = (sx, sy, sz, x, y, z, rx = 0, c = color) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-    m.position.set(x, y, z);
-    m.rotation.x = rx;
-    g.add(m);
-  };
-  bar(0.06, 0.06, 0.8, 0, 0.5, 0); // top tube
-  bar(0.06, 0.45, 0.06, 0, 0.42, -0.2, 0.25); // seat tube
-  bar(0.06, 0.55, 0.06, 0, 0.55, 0.45, -0.25); // fork
-  bar(0.2, 0.06, 0.28, 0, 0.64, -0.24, 0, DARK); // seat
-  bar(0.55, 0.05, 0.05, 0, 0.86, 0.5, 0, DARK); // handlebar
-  bar(0.3, 0.16, 0.22, 0, 0.72, 0.62, 0, '#ffffff'); // basket
-  return g;
-}
+const DARK = '#2b2f36';
 
 // A red sports motorbike (fairing, tank, a low windscreen), front towards
 // +z. The rider sits where a bike's rider sits, leaning on the tank.
@@ -374,12 +350,51 @@ export function makeLimo(color = '#f8f8f5') {
   return g;
 }
 
+// The zoo's four-seat electric cart (Children's Grand Park): two benches of
+// two under a striped canopy in the park's colours, a cream body and a
+// green bumper. Driver's seat at the origin, front towards +z, like the cars.
+export function makeZooCart() {
+  const g = new THREE.Group();
+  const add = (geo, m, x, y, z, rx = 0) => {
+    const o = new THREE.Mesh(geo, m);
+    o.position.set(x, y, z);
+    o.rotation.x = rx;
+    g.add(o);
+    return o;
+  };
+  const B = (sx, sy, sz) => new THREE.BoxGeometry(sx, sy, sz);
+  const cx = -0.45, W = 1.6, body = shiny('#f6efdc'), green = mat('#3f9b5a');
+  add(B(W, 0.18, 3.0), body, cx, 0.36, -0.35); // floor
+  add(B(W, 0.5, 0.7), body, cx, 0.6, 0.95, -0.15); // the nose (cowl)
+  add(B(W - 0.1, 0.06, 0.5), mat('#2f3338'), cx, 0.88, 0.7, -0.5); // dash
+  add(B(W + 0.08, 0.14, 0.14), green, cx, 0.34, 1.33); // front bumper
+  add(B(W + 0.08, 0.14, 0.14), green, cx, 0.34, -1.88); // back bumper
+  add(B(0.34, 0.34, 0.04), mat('#2a2c31'), 0, 0.98, 0.42, -0.9); // steering wheel
+  for (const s of [-1, 1]) add(new THREE.CylinderGeometry(0.09, 0.09, 0.04, 12).rotateX(Math.PI / 2), shiny('#fffbe0'), cx + s * 0.55, 0.66, 1.31); // headlights
+  // Two benches: cushion and back, green
+  for (const z of [0, -1.2]) {
+    add(B(W - 0.12, 0.14, 0.52), green, cx, 0.58, z - 0.1);
+    add(B(W - 0.12, 0.48, 0.1), green, cx, 0.86, z - 0.4, -0.15);
+  }
+  // Canopy: four posts and a striped roof
+  for (const sx of [-1, 1]) for (const z of [0.45, -1.75]) add(B(0.06, 1.6, 0.06), mat('#d9d4c7'), cx + sx * (W / 2 - 0.05), 1.15, z);
+  const STRIPE = ['#ef6f6c', '#f6efdc', '#f2c94c', '#f6efdc', '#56b4e9', '#f6efdc', '#7bc96f'];
+  STRIPE.forEach((c, i) => add(B(W + 0.16, 0.07, 2.5 / STRIPE.length + 0.01), mat(c), cx, 1.97, 0.55 - (i + 0.5) * (2.5 / STRIPE.length)));
+  for (const s of [-1, 1]) for (const z of [0.95, -1.5]) {
+    const w = carWheel(0.27, 0.2);
+    w.position.set(cx + s * 0.72, 0.27, z);
+    g.add(w);
+  }
+  return g;
+}
+
 // Passenger seats relative to the driver ([x, z], driver facing +z).
 export const SEATS = {
   2: [[0, -TANDEM_GAP]], // tandem back seat
   4: [[-0.9, 0]], // open sports car: one passenger beside the driver
   5: [[0, -0.5]], // motorbike: one passenger behind the rider
   6: [[-0.95, 0], [0, -1.3], [-0.95, -1.3]], // limousine: front passenger + two in the back
+  7: [[-0.9, 0], [0, -1.2], [-0.9, -1.2]], // the zoo cart: beside the driver + the back bench
 };
 
 // Where seat n of the driver's vehicle is in the world.

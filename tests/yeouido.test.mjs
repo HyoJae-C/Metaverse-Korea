@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fishById, chanceAt, legendPark, rollCatch, PARK_LEGENDS } from '../src/core/fishing.js';
+import { fishById, chanceAt, parkOf, rollCatch, PARK_FISH, TIER_SHARE } from '../src/core/fishing.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
@@ -26,27 +26,36 @@ test('Yeouido is an island in the Han River, in Yeongdeungpo-gu', () => {
   const gu = seoul.gu.find((g) => g.id === 'yeongdeungpo');
   assert.ok(gu.open && gu.districts.includes('yeouido'), 'Yeongdeungpo-gu is open');
   for (const a of map.areas.filter((x) => x.k !== 'water')) for (const p of a.p) assert.ok(inPolygon(...world(p), gu.p), `${a.k} ${world(p)} is in Yeongdeungpo-gu`);
-  // Walk round the island 6 m off its shore: water and a blocker all the way.
-  let dry = [];
-  const cx = island.reduce((a, p) => a + p[0], 0) / island.length, cz = island.reduce((a, p) => a + p[1], 0) / island.length;
+  // Walk round the island 6 m off its shore: the Han on the north, the
+  // Saetgang on the south, water and a blocker all the way, except Seogang
+  // Bridge and the streets that cross the Saetgang.
+  const streets = map.roads.filter((r) => r.k !== 'walk').map((r) => ({ w: r.w, p: r.p.map(world) }));
+  const segDist = (q, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz; const t = L ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L)) : 0; return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz); };
+  const onStreet = (q) => streets.some((r) => r.p.some((_, i) => i > 0 && segDist(q, r.p[i - 1], r.p[i]) < r.w / 2 + 14));
+  const bridge = map.roads.find((r) => r.n?.en === 'Seogang Bridge').p.map(world);
+  const open = [];
+  let wetAround = 0;
   for (let i = 0; i < island.length; i++) {
     const [x1, z1] = island[i], [x2, z2] = island[(i + 1) % island.length];
+    const len = Math.hypot(x2 - x1, z2 - z1);
+    if (!len) continue;
     for (let t = 0.02; t < 1; t += 0.04) {
       const x = x1 + (x2 - x1) * t, z = z1 + (z2 - z1) * t;
-      const d = Math.hypot(x - cx, z - cz), ox = x + ((x - cx) / d) * 6, oz = z + ((z - cz) / d) * 6;
-      if (!wet(ox, oz)) dry.push([Math.round(ox), Math.round(oz)]);
-      else if (!solid.blocked(ox, oz, 0.5)) {
-        // only Seogang Bridge's gap is open water you can stand on
-        const bridge = map.roads.find((r) => r.n?.en === 'Seogang Bridge').p.map(world);
-        const [a, b] = bridge, len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        const off = Math.abs(((b[0] - a[0]) * (oz - a[1]) - (b[1] - a[1]) * (ox - a[0])) / len);
-        assert.ok(off < 8, `open water at ${Math.round(ox)},${Math.round(oz)} is the bridge`);
-      }
+      let ox = x + ((z2 - z1) / len) * 6, oz = z - ((x2 - x1) / len) * 6;
+      if (inPolygon(ox, oz, island)) { ox = x - ((z2 - z1) / len) * 6; oz = z + ((x2 - x1) / len) * 6; }
+      if (inPolygon(ox, oz, island)) continue; // (a narrow corner)
+      if (wet(ox, oz)) wetAround++;
+      if (solid.blocked(ox, oz, 0.5)) continue;
+      const [a, b] = bridge, bl = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const off = Math.abs(((b[0] - a[0]) * (oz - a[1]) - (b[1] - a[1]) * (ox - a[0])) / bl);
+      if (off < 8 || onStreet([ox, oz])) continue;
+      open.push([Math.round(ox), Math.round(oz)]);
     }
   }
-  assert.deepEqual(dry, [], 'water all round the island');
+  assert.deepEqual(open, [], 'no way off the island but the bridges');
+  assert.ok(wetAround > 600, 'water all round the island');
   // and no river on the island itself
-  for (const [u, v] of [[0, 20], [-200, 100], [200, 120], [0, 170], [-300, 90], [300, 90]]) {
+  for (const [u, v] of [[0, 20], [-200, 100], [150, 60], [0, 170], [-300, 90], [-470, 300]]) {
     const [x, z] = world(at(u, v));
     assert.ok(!wet(x, z) && !solid.blocked(x, z, 0.5), `${u},${v} is dry land`);
   }
@@ -86,14 +95,14 @@ test('the park: a big open lawn for mats, Mul-bit Square, Yunjung-ro\'s cherry t
   assert.ok(inPolygon(...zone.at, lawn.p.map(world)), 'people already on the lawn');
 });
 
-test('the park door and the Information Center stand in front of their buildings', () => {
+test('the Information Center stands in front of its building', () => {
   const park = stores.find((s) => s.id === 'yeouido-hangang');
   const info = stores.find((s) => s.id === 'info-yeouido');
   assert.equal(park.category, 'park');
   assert.equal(info.workshop, 'info');
   assert.equal(info.district, 'yeouido');
   const polys = map.buildings.map((b) => b.p.map(world));
-  for (const s of [park, info]) {
+  for (const s of [info]) { // (the park is laid on the street: tests/han-park.test.mjs)
     assert.ok(!polys.some((p) => inPolygon(...s.at, p)), `${s.id} is not inside a building`);
     const near = Math.min(...polys.flat().map(([x, z]) => Math.hypot(x - s.at[0], z - s.at[1])));
     assert.ok(near < 12, `${s.id} is next to its building (${near.toFixed(1)} m)`);
@@ -110,16 +119,16 @@ test('the park door and the Information Center stand in front of their buildings
   for (const p of park.products) assert.ok(p.kiosk || ids.has(p.stall), p.id);
   const others = new Set(stores.filter((s) => s !== park).flatMap((s) => (s.products || []).map((p) => p.id)));
   for (const p of park.products) assert.ok(!others.has(p.id), `${p.id} is the park's own`);
-  assert.ok(STAMPS.some((s) => s.place.store === 'yeouido-hangang'), 'a stamp in the park');
+  assert.ok(STAMPS.some((s) => s.id === 'yeouido' && Array.isArray(s.place.at) && !s.place.room), 'a stamp in the park, on the street');
 });
 
 test('the blobfish is Yeouido\'s legend, and only bites there', () => {
   const blob = fishById('blobfish');
   assert.ok(blob.released);
   for (const id of ['sea-cucumber', 'sunfish', 'anglerfish']) assert.ok(fishById(id).released, `${id} opens with the park`);
-  assert.equal(legendPark('blobfish').name.en, 'Yeouido');
-  assert.ok(Math.abs(chanceAt(blob, 'yeouido-hangang') - 0.4) < 1e-9);
-  for (const park of Object.keys(PARK_LEGENDS).filter((p) => p !== 'yeouido-hangang')) assert.equal(chanceAt(blob, park), 0, park);
+  assert.equal(parkOf('blobfish').name.en, 'Yeouido');
+  assert.ok(Math.abs(chanceAt(blob, 'yeouido-hangang') - TIER_SHARE[5]) < 1e-9);
+  for (const park of Object.keys(PARK_FISH).filter((p) => p !== 'yeouido-hangang')) assert.equal(chanceAt(blob, park), 0, park);
   for (const id of ['whale', 'giant-squid', 'manta']) assert.equal(chanceAt(fishById(id), 'yeouido-hangang'), 0, id);
   let seed = 11;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);

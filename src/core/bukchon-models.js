@@ -3,6 +3,7 @@
 // magpie), the rooftop view terrace and Changdeokgung's roofs seen from the
 // east edge. Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
 import { HANOK, curvedRoof } from './hanok.js';
@@ -57,14 +58,8 @@ function signTexture(ko, en) {
   return t;
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
-function box(g, sx, sy, sz, x, y, z, c) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const mat = matCache({ flatShading: true });
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 const C = { base: '#b9ae98', wall: '#f1e7d2', wood: '#6b4630', lattice: '#8a6446', roof: '#4a5059', ridge: '#30353c', stone: '#cfc6b4', dark: '#9c927f' };
 
 function roof(g, w, d, h, y, x = 0, z = 0, ry = 0) {

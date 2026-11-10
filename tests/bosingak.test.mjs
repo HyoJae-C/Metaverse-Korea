@@ -1,21 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { toGame } from '../src/core/seoul-grid.js';
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearStroke, newYearRinging, nearBell, strikePose, bellGain, BELL_HOUSE } from '../src/data/bosingak.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
 
-test('Bosingak stands on the north side of Jongno, east of Sejong-daero', () => {
+test('Bosingak stands on the south side of Jongno, by Cheonggyecheon-ro, near its real spot', () => {
   const jongno = map.roads.find((r) => r.n?.en === 'Jong-ro');
   const sejong = map.roads.find((r) => r.n?.en === 'Sejong-daero');
   const [x, z] = BOSINGAK.at;
-  assert.ok(z < jongno.p[0][1] - jongno.w / 2, 'north of Jongno');
+  const south = jongno.p[0][1] + jongno.w / 2;
+  assert.ok(BOSINGAK.base[1] > south, 'its base is south of Jongno');
   assert.ok(x > sejong.p[0][0], 'east of Sejong-daero');
-  assert.ok(BOSINGAK.plaza[3] <= jongno.p[0][1] - jongno.w / 2 + 0.01, 'its square stops at the street');
+  assert.ok(BOSINGAK.plaza[1] >= south - 0.01, 'its square starts at the street');
+  // Cheonggyecheon-ro's north edge below the square, all the way across
+  const cg = map.roads.filter((r) => r.n?.en === 'Cheonggyecheon-ro');
+  const edgeZ = (px) => Math.min(...cg.flatMap((r) => r.p.slice(1).map(([x1, z1], i) => {
+    const [x0, z0] = r.p[i];
+    return px >= Math.min(x0, x1) && px <= Math.max(x0, x1) ? z0 + ((px - x0) / (x1 - x0)) * (z1 - z0) - r.w / 2 : Infinity;
+  })));
+  const off = region.districts.find((d) => d.id === BOSINGAK.district).offset;
+  for (const px of [BOSINGAK.plaza[0], BOSINGAK.plaza[2], ...BOSINGAK.ring.at.slice(0, 1)]) assert.ok(BOSINGAK.plaza[3] <= edgeZ(px), 'its square stops at Cheonggyecheon-ro');
+  const [rx, rz] = toGame(BOSINGAK.real.lat, BOSINGAK.real.lon);
+  assert.ok(Math.hypot(off[0] + x - rx, off[1] + z - rz) <= 15, 'within 15 m of the real pavilion');
   assert.ok(map.landmarks.some((l) => l.type === 'bosingak' && l.x === x && l.z === z));
-  assert.ok(map.pois.some((p) => p.name.ko === '보신각'));
+  assert.ok(map.pois.some((p) => p.name.ko === '보신각' && p.x === x && p.z === z));
 });
 
 test('its base is a blocker, nothing else stands on its square, and the ringing spot is free', () => {

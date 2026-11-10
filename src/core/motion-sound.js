@@ -1,5 +1,6 @@
 // Quiet movement sounds, made with Web Audio (no sound files):
-// - footsteps when walking, a little quicker and firmer when running,
+// - soft synthesised footsteps when walking, a little quicker and firmer
+//   when running (recorded steps sounded too real for the cute characters),
 // - a soft wind while riding (stronger the faster you go),
 // - an engine purr on the motorbike and car (pitch follows speed),
 // - the bicycle bell and the horn, which nearby players hear too.
@@ -7,7 +8,7 @@
 // Pure helpers are exported for tests.
 
 export const STEP_GAP = { walk: 0.48, run: 0.32 }; // seconds between steps
-export const STEP_VOL = { walk: 0.05, run: 0.075 };
+export const STEP_VOL = { walk: 0.043, run: 0.064 }; // ~15% under the first version
 export const WIND_MAX = 0.035; // wind gain at full speed
 export const ENGINE_MAX = 0.05; // engine gain
 export const HORN_VOL = 0.09;
@@ -19,7 +20,7 @@ export const engineHz = (speed01, car = false) => (car ? 30 : 38) + Math.max(0, 
 // How loud someone else's bell or horn is at distance d (0 = silent).
 export const hearGain = (d) => (d >= HEAR_RADIUS ? 0 : Math.max(0, 1 - d / HEAR_RADIUS) ** 1.5);
 // Which "honk" a vehicle has: bicycles ring, motor vehicles beep.
-export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 || riding === 6 ? 'horn' : null);
+export const honkKind = (riding) => (riding === 1 || riding === 2 || riding === 3 ? 'bell' : riding === 4 || riding === 5 || riding === 6 || riding === 7 ? 'horn' : null);
 export const honkMsg = (kind) => `honk:${kind}`;
 export function parseHonk(e) {
   const m = /^honk:(bell|horn)$/.exec(String(e));
@@ -28,8 +29,10 @@ export function parseHonk(e) {
 
 export class MotionSound {
   // sfx: core/music.js Sfx (its audio context and on/off switch).
-  constructor(sfx) {
+  // files: core/sound-files.js SoundFiles (shop blips), optional.
+  constructor(sfx, files = null) {
     this.sfx = sfx;
+    this.files = files;
     this.stepT = 0;
     this.noise = null;
     this.wind = null; // { src, filter, gain }
@@ -39,6 +42,7 @@ export class MotionSound {
     if (typeof addEventListener === 'function') {
       const unlock = () => {
         if (this.sfx.on) this.sfx._ctx();
+        this.files?.load('pay', 'short');
         if (this.sfx.ctx?.state === 'running') { removeEventListener('pointerdown', unlock); removeEventListener('keydown', unlock); }
       };
       addEventListener('pointerdown', unlock);
@@ -63,13 +67,14 @@ export class MotionSound {
       if (this.stepT <= 0) {
         const kind = st.running ? 'run' : 'walk';
         this.stepT = STEP_GAP[kind] * (0.94 + Math.random() * 0.12);
-        this._step(c, STEP_VOL[kind] * (st.indoor ? 0.8 : 1), st.indoor);
+        const vol = STEP_VOL[kind] * (st.indoor ? 0.8 : 1);
+        this._step(c, vol, st.indoor);
       }
     } else this.stepT = 0.05;
     // Wind and engine.
     // (Sound switched off: let them fade out.)
     this._setWind(c, c && st.riding ? WIND_MAX * st.speed01 * (st.riding >= 4 ? 1 : 0.7) : 0);
-    this._setEngine(c, c && st.riding >= 4 ? st.speed01 : -1, st.riding === 4 || st.riding === 6);
+    this._setEngine(c, c && st.riding >= 4 && st.riding !== 7 ? st.speed01 : -1, st.riding === 4 || st.riding === 6);
   }
   stopAll() { this._setWind(null, 0); this._setEngine(null, -1); }
 

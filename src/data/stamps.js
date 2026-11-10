@@ -35,21 +35,22 @@ export const STAMPS = [
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',
   },
   {
-    id: 'seongsu', place: { at: [92, 219] }, color: '#e0662a', shape: 'square',
+    // on the little plaza in the middle of the Yeonmujang-gil block
+    id: 'seongsu', place: { at: [23, 92] }, color: '#e0662a', shape: 'square',
     name: { ko: '성수 팝업스토어', en: 'Seongsu Pop-up', ja: '聖水ポップアップ', zh: '圣水快闪店' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M64 84 l36 -26 l36 26 z M68 84 v40 h64 v-40"/><path d="M64 84 q9 10 18 0 q9 10 18 0 q9 10 18 0 q9 10 18 0"/><rect x="90" y="100" width="20" height="24"/>',
   },
   {
-    id: 'seoul-forest', place: { at: [-196.6, 224], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
+    id: 'seoul-forest', place: { at: [-334.6, 92], ry: -1.5708 }, color: '#3f8a52', shape: 'circle', // at the far (south) end of Metasequoia Avenue
     name: { ko: '서울숲', en: 'Seoul Forest', ja: 'ソウルの森', zh: '首尔林' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M78 128 v-20 M78 108 l-20 0 l20 -30 l20 30 z M78 92 l-14 0 l14 -22 l14 22 z"/><path d="M128 128 l-14 -44 h28 z"/><path d="M112 84 a16 14 0 0 1 32 0 a16 10 0 0 1 -32 0 z"/><path d="M56 128 h88"/>',
   },
   {
-    // in the Ttukseom Han River Park room, on the lawn just inside the
-    // entrance, facing you as you walk in (the river and the pier ahead)
-    id: 'hangang', place: { store: 'ttukseom-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1d6fb8', shape: 'square',
+    // at the west end of the drone show's lawn, in the park laid on the
+    // street (scripts/build-seongsu.mjs), the river ahead
+    id: 'hangang', place: { at: [283.8, 419.7], ry: 2.981 }, color: '#1d6fb8', shape: 'square',
     name: { ko: '뚝섬 한강공원', en: 'Ttukseom Han River Park', ja: 'トゥクソム漢江公園', zh: '纛岛汉江公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a duck boat (오리배) on the river
@@ -57,15 +58,15 @@ export const STAMPS = [
   },
   {
     // Ttukseom's drone light show (core/drone-show.js): the stand is only on
-    // the lawn while the drones are up, so this stamp means you saw a show.
-    id: 'drone-show', place: { store: 'ttukseom-hangang', room: true, at: [-3.6, 4.6], ry: 0 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
+    // the lawn (in front of the barge) while the drones are up, so this stamp means you saw a show.
+    id: 'drone-show', place: { at: [308.9, 424.7], ry: 2.981 }, onlyDuring: 'droneShow', color: '#3b3f9e', shape: 'circle',
     name: { ko: '뚝섬 드론쇼', en: 'Ttukseom Drone Show', ja: 'トゥクソム・ドローンショー', zh: '纛岛无人机表演' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // drones drawing a heart over the river
     icon: '<path d="M100 122 l-26 -26 a14 14 0 0 1 26 -18 a14 14 0 0 1 26 18 z" stroke-dasharray="3 7" stroke-linecap="round"/><circle cx="72" cy="70" r="3"/><circle cx="130" cy="66" r="3"/><circle cx="140" cy="92" r="2.5"/><circle cx="62" cy="96" r="2.5"/><path d="M64 136 q9 -6 18 0 q9 6 18 0 q9 -6 18 0 q9 6 18 0"/>',
   },
   {
-    id: 'gyeongbokgung', place: { at: [-1734, -900] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
+    id: 'gyeongbokgung', place: { at: [-1734, -860] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
@@ -80,7 +81,7 @@ export const STAMPS = [
   },
   {
     // on Jongmyo Square, beside Oedaemun (the shrine's main gate on Jongno)
-    id: 'jongmyo', place: { at: [-1371, -781] }, color: '#7a2e22', shape: 'circle',
+    id: 'jongmyo', place: { at: [-1371, -741] }, color: '#7a2e22', shape: 'circle',
     name: { ko: '종묘', en: 'Jongmyo Shrine', ja: '宗廟', zh: '宗庙' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // the long hall on its terrace, with the three-strip stone path
@@ -88,7 +89,7 @@ export const STAMPS = [
   },
   {
     // on Heunginjimun's lawn, by the walk up from Ogansugyo Bridge
-    id: 'heunginjimun', place: { at: [-1011, -817] }, color: '#2b5f8a', shape: 'square',
+    id: 'heunginjimun', place: { at: [-1029, -742] }, color: '#2b5f8a', shape: 'square',
     name: { ko: '흥인지문', en: 'Heunginjimun', ja: '興仁之門', zh: '兴仁之门' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // the gate with the half-moon ongseong in front
@@ -96,7 +97,7 @@ export const STAMPS = [
   },
   {
     // in Dongdaemun History & Culture Park, by the city wall's water gate
-    id: 'igansumun', place: { at: [-1096, -503] }, color: '#6a5a3a', shape: 'circle',
+    id: 'igansumun', place: { at: [-1037, -609] }, color: '#6a5a3a', shape: 'circle',
     name: { ko: '이간수문', en: 'Igansumun Water Gate', ja: '二間水門', zh: '二间水门' },
     gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
     // the wall with its two arches over water
@@ -112,7 +113,7 @@ export const STAMPS = [
   },
   {
     // on DDP's front plaza
-    id: 'ddp', place: { at: [-1035, -468] }, color: '#5d6470', shape: 'circle',
+    id: 'ddp', place: { at: [-976, -577] }, color: '#5d6470', shape: 'circle',
     name: { ko: '동대문디자인플라자', en: 'Dongdaemun Design Plaza', ja: '東大門デザインプラザ', zh: '东大门设计广场' },
     gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
     // the long, curved building with its roof walk
@@ -125,7 +126,8 @@ export const STAMPS = [
     icon: '<path d="M64 98 h72 q-4 26 -36 26 q-32 0 -36 -26 z M60 98 h80"/><path d="M84 88 q-6 -8 0 -16 q6 -8 0 -16 M100 88 q-6 -8 0 -16 q6 -8 0 -16 M116 88 q-6 -8 0 -16 q6 -8 0 -16"/>',
   },
   {
-    id: 'seokchon', place: { at: [263, 576] }, color: '#1e7fa8', shape: 'circle',
+    // on the west lake's south shore (Songpa's map, local 470, 345)
+    id: 'seokchon', place: { at: [958, 1071] }, color: '#1e7fa8', shape: 'circle',
     name: { ko: '석촌호수', en: 'Seokchon Lake', ja: '石村湖', zh: '石村湖' },
     gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
     icon: '<path d="M58 104 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0 M58 120 q10 -8 21 0 q10 8 21 0 q10 -8 21 0 q10 8 21 0"/><path d="M80 92 v-22 M80 70 q-14 4 -12 16 M80 70 q14 4 12 16 M80 70 q-8 -10 -18 -6 M80 70 q8 -10 18 -6"/><path d="M118 92 q0 -16 12 -24 q-2 14 8 24 z"/>',
@@ -137,40 +139,40 @@ export const STAMPS = [
     icon: '<path d="M100 60 l42 16 l-42 16 l-42 -16 z M76 84 v18 q24 14 48 0 v-18 M138 78 v22"/><path d="M70 120 h28 q2 0 2 3 q0 -3 2 -3 h28 v10 h-28 q-2 0 -2 3 q0 -3 -2 -3 h-28 z"/>',
   },
   {
-    // on the forest path's lawn in Yeonnam-dong, beside the old rails
-    id: 'yeonnam', place: { at: [-2971, -425], ry: Math.PI / 2 }, color: '#3f7a4f', shape: 'circle',
+    // on the forest park's lawn in Yeonnam-dong, beside the path (scripts/build-yeonnam.mjs: 85 m down the park line, 4.5 m off it)
+    id: 'yeonnam', place: { at: [-2919.8, -471.1], ry: -1.0044 }, color: '#3f7a4f', shape: 'circle',
     name: { ko: '경의선숲길', en: 'Gyeongui Line Forest Park', ja: '京義線森の道', zh: '京义线林荫路' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a tree beside a stretch of railway
     icon: '<path d="M60 132 l20 -60 M140 132 l-20 -60 M66 116 h68 M71 100 h58 M76 86 h48"/><path d="M100 70 q-22 -2 -18 -20 q4 -16 18 -12 q14 -4 18 12 q4 18 -18 20 z M100 70 v26"/>',
   },
   {
-    // at the south gate of Mangwon Market, on Poeun-ro
-    id: 'mangwon-market', place: { at: [-3282, -276] }, color: '#c0392b', shape: 'square',
+    // beside the south gate of Mangwon Market (scripts/build-mangwon.mjs: market.gate)
+    id: 'mangwon-market', place: { at: [-3275.5, -262.5] }, color: '#c0392b', shape: 'square',
     name: { ko: '망원시장', en: 'Mangwon Market', ja: '望遠市場', zh: '望远市场' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // the arcade roof over a stall, a croquette on a skewer
     icon: '<path d="M56 96 q44 -40 88 0 M60 96 v32 M140 96 v32 M56 128 h88"/><path d="M72 112 h56 v16 h-56 z"/><ellipse cx="100" cy="84" rx="12" ry="8"/><path d="M100 92 v12"/>',
   },
   {
-    // in the Mangwon Fishing Pier room (the same lawn spot as Ttukseom's)
-    id: 'mangwon-pier', place: { store: 'mangwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#2f78b0', shape: 'circle',
+    // where the way down from Mangwon-ro meets the river, in the park laid on the street (scripts/build-mapo.mjs prints the spot)
+    id: 'mangwon-pier', place: { at: [-3524.9, -267.9], ry: 3.9794 }, color: '#2f78b0', shape: 'circle',
     name: { ko: '망원한강공원', en: 'Mangwon Han River Park', ja: '望遠漢江公園', zh: '望远汉江公园' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a fishing rod with a fish on the line, over the waves
     icon: '<path d="M58 70 q40 -10 70 30 M128 100 v12"/><path d="M114 116 q14 -12 28 0 q-14 12 -28 0 z M142 116 l8 -6 v12 z"/><path d="M52 136 q12 -7 24 0 q12 7 24 0 q12 -7 24 0 q12 7 24 0"/>',
   },
   {
-    // in the Banpo-Jamwon Han River Park room (the same lawn spot as the other parks)
-    id: 'banpo-jamwon', place: { store: 'banpo-jamwon-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#3a6fc9', shape: 'circle',
+    // at the west end of Moonlight Square, in the park laid on the street (scripts/build-banpo.mjs prints the spot)
+    id: 'banpo-jamwon', place: { at: [-1324.4, 914.6], ry: 1.9369 }, color: '#3a6fc9', shape: 'circle',
     name: { ko: '반포·잠원 한강공원', en: 'Banpo-Jamwon Han River Park', ja: '盤浦・蚕院漢江公園', zh: '盘浦·蚕院汉江公园' },
     gu: { ko: '서초구', en: 'Seocho-gu', ja: '瑞草区', zh: '瑞草区' },
     // Banpo Bridge on its piers, with arcs of water falling from its side
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
-    // in the Yeouido Han River Park room (the same lawn spot as the other parks)
-    id: 'yeouido', place: { store: 'yeouido-hangang', room: true, at: [2.4, 11], ry: 0 }, color: '#1f8fa3', shape: 'circle',
+    // in the fishing corner towards the 63 tower, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
+    id: 'yeouido', place: { at: [-2491.3, 655.1], ry: 0.7679 }, color: '#1f8fa3', shape: 'circle',
     name: { ko: '여의도 한강공원', en: 'Yeouido Han River Park', ja: '汝矣島漢江公園', zh: '汝矣岛汉江公园' },
     gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
     // the island in the river, the 63 tower on its tip and Seogang Bridge's arch
@@ -178,14 +180,14 @@ export const STAMPS = [
   },
   {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate
-    id: 'grand-park', place: { at: [452, -72], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
-    name: { ko: '서울어린이대공원', en: "Children's Grand Park", ja: 'ソウル子供大公園', zh: '首尔儿童大公园' },
+    id: 'grand-park', place: { at: [452, -81], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
+    name: { ko: '서울어른도대공원', en: "Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园' },
     gu: { ko: '광진구', en: 'Gwangjin-gu', ja: '広津区', zh: '广津区' },
     // a lion's face in its mane
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [115, 847], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [149, 874], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave

@@ -9,6 +9,8 @@ import { setLanguage, getSavedLanguage, loadLanguage } from './core/i18n.js';
 import { renderLangDropdown } from './ui/lang-picker.js';
 
 const $ = (id) => document.getElementById(id);
+// Android phones get the tool buttons in a bar along the bottom (style.css).
+if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add('android');
 
 const game = import('./main.js'); // start downloading now; main.js takes over when it runs
 $('next-btn').disabled = true;

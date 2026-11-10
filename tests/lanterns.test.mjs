@@ -21,7 +21,10 @@ test('the festival data: known figures in the water, clear of the stones and the
     for (const b of s.bridges) assert.ok(Math.abs(x.u - b.u) > b.w / 2 + 2, `figure under ${b.name.en}`);
   }
   // The mural, the tunnel and the wish corner don't overlap, and stairs don't cut through the mural or tunnel.
-  assert.ok(f.mural.to <= f.tunnel.to && f.tunnel.to < f.wish.from);
+  const spans = [f.mural, f.tunnel, f.wish].sort((p, q) => p.from - q.from);
+  for (let i = 1; i < spans.length; i++) assert.ok(spans[i - 1].to < spans[i].from, 'festival corners overlap');
+  // Nor do they run under a bridge.
+  for (const c of spans) for (const b of s.bridges) assert.ok(c.to < b.u - b.w / 2 || c.from > b.u + b.w / 2, `under ${b.name.en}`);
   for (const st of s.stairs) {
     const [a, b] = [Math.min(st.u, st.u + st.dir * 12), Math.max(st.u, st.u + st.dir * 12)];
     if (st.side === f.mural.side) assert.ok(b < f.mural.from || a > f.mural.to, 'a stair through the mural');

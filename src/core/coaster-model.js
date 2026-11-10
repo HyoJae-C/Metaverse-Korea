@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { matCache } from './three-kit.js';
 import { mergeStatic } from './merge-static.js';
 import { COASTER_NAME } from './park-rides.js';
-import { BOARD_S, CARS, CAR_GAP, GATE, PLATFORM, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
+import { BOARD_S, CARS, CAR_GAP, GATE, PLATFORM, S_LOOP, S_LOOP_TOP, S_TUNNEL, TRAINS, frameAt, trackPoints, trainAt, LENGTH } from './coaster.js';
 
 const mat = matCache({ flatShading: true });
 export const TRAIN_PINK = '#ff5f9e';
@@ -128,10 +128,12 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
   for (const side of [-0.34, 0.34]) scene.add(new THREE.Mesh(new THREE.TubeGeometry(rail(side, 0), tubes, 0.07, 6, true), mat(ICING)));
   scene.add(new THREE.Mesh(new THREE.TubeGeometry(rail(0, 0.26), tubes, 0.15, 7, true), mat('#ff8fb8')));
 
-  // Sleepers every 1.1 m.
+  // Sleepers every 1.1 m, in sprinkle colours (lemon, lilac, sky, mint, pink).
   const sleepN = Math.floor(LENGTH / 1.1);
-  const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.86, 0.07, 0.16), mat('#ff8fb8'), sleepN);
+  const sleepers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.86, 0.07, 0.16), new THREE.MeshLambertMaterial({ flatShading: true }), sleepN);
+  const sprinkles = ['#ffe27a', '#c9a8ff', '#8fd0ff', '#8fe3c7', '#ff8fb8'].map((c) => new THREE.Color(c));
   for (let i = 0; i < sleepN; i++) {
+    sleepers.setColorAt(i, sprinkles[i % 5]);
     frameAt(i * 1.1, f);
     basis(f);
     _m.setPosition(f.x - f.ux * 0.12, f.y - f.uy * 0.12, f.z - f.uz * 0.12);
@@ -143,10 +145,28 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
   // cap on each. Low stretches rest on short blocks instead.
   const gap = lowSpec ? 7 : 5;
   const legs = [];
+  const inLoop = (s) => s > S_LOOP[0] && s < S_LOOP[1];
   for (let s = 2; s < LENGTH; s += gap) {
     frameAt(s, f);
-    if (f.y < 1.1) continue;
+    if (f.y < 1.1 || (inLoop(s) && f.uy < 0.7)) continue; // (no column up through the loop)
     legs.push([f.x - f.ux * 0.3, f.y - f.uy * 0.3 - 0.12, f.z - f.uz * 0.3]);
+  }
+  // The loop's top is held up from either side by a leaning pair of legs,
+  // clear of the train going round inside.
+  {
+    frameAt(S_LOOP_TOP, f);
+    const top = new THREE.Vector3(f.x, f.y + 0.35, f.z);
+    for (const k of [-1, 1]) {
+      const head = top.clone().setZ(f.z + k * 1.3), foot = new THREE.Vector3(f.x, 0, f.z + k * 4.6), len = head.distanceTo(foot);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.28, len, 8), mat(CHOC));
+      leg.position.copy(head).add(foot).multiplyScalar(0.5);
+      leg.quaternion.setFromUnitVectors(_y.set(0, 1, 0), _v.subVectors(head, foot).normalize());
+      scene.add(leg);
+      block(foot.x, foot.z, 0.6, 0.6);
+    }
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 3.1), mat('#ff8fb8')); // (over the rails, the train hangs below)
+    cap.position.copy(top).setY(top.y + 0.1);
+    scene.add(cap);
   }
   const legMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.22, 1, 7).translate(0, 0.5, 0), mat(CHOC), legs.length);
   legs.forEach(([x, y, z], i) => { legMesh.setMatrixAt(i, _m.compose(_v.set(x, 0, z), _q.identity(), _s.set(1, y, 1))); block(x, z, 0.5, 0.5); });
@@ -205,7 +225,9 @@ export function buildCoaster(scene, block, { lowSpec = false } = {}) {
   const flagCols = ['#ff8fb8', '#8fe3c7', '#ffe27a', '#c9a8ff', '#8fd0ff'].map((c) => new THREE.Color(c));
   const flagAt = [];
   for (let i = 0; i < flagN; i++) {
-    frameAt(((i + 0.5) / flagN) * LENGTH, f);
+    let fs = ((i + 0.5) / flagN) * LENGTH;
+    if (inLoop(fs)) fs = S_LOOP[1] + 2; // (none in the loop)
+    frameAt(fs, f);
     const side = i % 2 ? 1 : -1;
     flagAt.push({ x: f.x + f.rx * side * 1.25, y: f.y + 1.5, z: f.z + f.rz * side * 1.25, ry: Math.atan2(f.fx, f.fz) + Math.PI });
     flags.setColorAt(i, flagCols[i % flagCols.length]);

@@ -7,7 +7,8 @@ import {
 import { TarotQueue } from '../src/core/tarot-queue.js';
 import { RIDES } from '../src/core/themepark.js';
 import { HAUNT } from '../src/core/haunted.js';
-import { ROOM_SIZES } from '../src/core/interior.js';
+import { ROOM_SIZES, roomBox } from '../src/core/interior.js';
+import { FOOD_TRUCKS } from '../src/core/park-rides.js';
 
 const run = (car, dx, dz, secs, others = []) => { for (let t = 0; t < secs; t += 1 / 60) { car.drive(dx, dz, 1 / 60); car.bump(others); } };
 
@@ -23,15 +24,15 @@ test('six cars, six different colours, parked inside the rink', () => {
 });
 
 test('the rink fits in the park and stays clear of the other rides', () => {
-  const { w, d } = ROOM_SIZES.park;
+  const bx = roomBox(ROOM_SIZES.themepark);
   const x0 = RINK.x - RINK.hx - 0.5, x1 = RINK.x + RINK.hx + 0.5, z0 = RINK.z - RINK.hz - 0.5, z1 = RINK.z + RINK.hz + 0.5;
-  assert.ok(x1 < w / 2 && z1 < d / 2 && z0 > -d / 2, 'inside the park fence');
+  assert.ok(x0 > bx.x0 && x1 < bx.x1 && z0 > bx.z0 && z1 < bx.z1, 'inside the park fence');
   const clear = (x, z, r) => x + r < x0 || x - r > x1 || z + r < z0 || z - r > z1;
   assert.ok(clear(RIDES.drop.x, RIDES.drop.z, RIDES.drop.r + 1.2), 'drop tower');
   assert.ok(clear(RIDES.wheel.x, RIDES.wheel.z, 3.2), 'Ferris wheel');
   assert.ok(clear(HAUNT.x, HAUNT.z, 3.5), 'haunted house');
-  assert.ok(clear(12, 6, 0.9), 'bench');
-  assert.ok(GATE.x < x0 && GATE.x > 13, 'the gate spot is outside, by the plaza');
+  for (const f of FOOD_TRUCKS) assert.ok(clear(f.x, f.z, 3), f.id + ' truck');
+  assert.ok(GATE.x < x0 && GATE.x > 13, 'the gate spot is outside, at the end of the food truck lane');
 });
 
 test('the rink is bigger than the first one (8.8 × 8 m)', () => {

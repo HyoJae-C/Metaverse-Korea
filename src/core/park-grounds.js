@@ -7,61 +7,55 @@
 // themepark.js merges (merge-static.js), so the whole lot is a few draw calls.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
-import { PLAZA, RIDES, RIDE_GATES, RIDE_NAME, RIDE_EMOJI } from './park-rides.js';
+import { PLAZA, RIDES, RIDE_GATES, UNDER_RIDES, FOOD_TRUCKS, CLOWN, MAZE, TRAIN_TRACK, FLUME_TRACK, FLUME_POOL, trackDist } from './park-rides.js';
+import { YARDS, gateSign, inYard, yardKit } from './park-yards.js';
+import { RINK as RINK_AT } from './bumper-cars.js';
 
 const mat = matCache({ flatShading: true });
 const PAVE = '#f4e4c6', CURB = '#d9a77c', PLAZA_PINK = '#f9cdd8';
 const ICING = '#fffaf3', PINK = '#ff8fb8', HOT = '#ff5f9e', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff';
 
-// The paths (room metres, [x0, z0, x1, z1]): Main Street, the gate square,
-// the avenues west (to the coaster) and east (to the bumper cars), and the
-// short spurs from the central plaza to each ride's gate.
+// The paths (room metres): each a strip `w` wide along its points, paved
+// with rounded joints so the bends read as one winding walk, theme-park
+// style. Main Street from the gate square up to the central plaza; the
+// coaster's avenue west, with spurs to the carousel, the pirate ship and the
+// haunted house's lane; the long east promenade; the food truck lane
+// south-east to the bumper cars, joined back to the promenade, with a spur
+// south to the teacups and on round the bumper cars to the train's station;
+// off the promenade, the
+// mirror maze and the walk up to the log flume; and the walk north under
+// the coaster's helix.
 export const PATHS = [
-  [-10, 7, 10, 13.6], // gate square
-  [-2.5, 3, 2.5, 13.6], // Main Street
-  [-28.6, 2.6, -2, 6.2], // west avenue, to the coaster's platform
-  [2, 2.6, 12.6, 6.2], // east avenue
-  [11, 2.6, 14.2, 9.6], // to the bumper cars' gate
-  [-9.6, -3.5, -4, -0.5], // plaza → carousel
-  [-6.6, -7.2, -2.4, -3], // plaza → pirate ship
-  [-1.6, -34, 1.6, -5], // north, under the coaster
-  [4, -3.5, 14.4, -0.5], // plaza → drop tower
-  [7.4, -6.6, 10.6, -1], // → Ferris wheel
-  [-23.2, -7.6, -19.8, 2.8], // → balloon shooting
-  [-15.6, 6, -12.4, 7.9], // the haunted house's door
+  { w: 6.6, pts: [[-10, 30.3], [10, 30.3]] }, // gate square
+  { w: 5, pts: [[0, 33.6], [0, 9]] }, // Main Street
+  { w: 3.6, pts: [[-5, 4.2], [-13, 3.4], [-21, 4], [-28.6, 4.4]] }, // west avenue, to the coaster's platform
+  { w: 2.8, pts: [[-6.4, 5.4], [-6.8, 10.6], [-8.2, 12], [-10.6, 12]] }, // → carousel
+  { w: 3, pts: [[-9.2, 3.6], [-8.8, -1.6], [-8.4, -6.4]] }, // → pirate ship
+  { w: 3, pts: [[-2.4, 19.6], [-8.6, 19], [-15, 20.4]] }, // → haunted house
+  { w: 3.2, pts: [[0, -1.5], [0, -34]] }, // north, under the coaster
+  { w: 3.6, pts: [[5.6, 2.6], [13, 0.4], [22, -1.4], [31, -0.6], [40, 0.2], [44, -3.4]] }, // the east promenade
+  { w: 3.4, pts: [[4.6, 7.2], [11, 11.6], [19, 13.6], [27, 15.4], [33.6, 16]] }, // food truck lane → bumper cars
+  { w: 3, pts: [[31, -0.6], [29.6, 7], [28.4, 15]] }, // promenade ↔ food truck lane
+  { w: 2.8, pts: [[29.3, 15.6], [29.5, 23.3]] }, // → teacups
+  { w: 2.6, pts: [[29.5, 21.6], [33.15, 22.8], [36.5, 24.4], [42, 24.6], [45.9, 24.2]] }, // round the bumper cars → the train
+  { w: 2.8, pts: [[MAZE.door[0], -0.4], [MAZE.door[0], MAZE.door[1] + 0.2]] }, // → mirror maze
+  { w: 2.4, pts: [[MAZE.exit[0] - 0.2, MAZE.exit[1]], [42.4, MAZE.exit[1] + 0.4], [43.4, -6]] }, // out of the maze, back to the flume walk
+  { w: 3, pts: [[43, -2.6], [44, -9], [50, -11.8], [54.5, -12.6]] }, // promenade → log flume
 ];
-// Each ride's yard fence: a ring (r, gap facing the gate) or a box.
-export const YARDS = {
-  carousel: { ring: RIDES.carousel.r + 1.6, gap: 0 },
-  drop: { ring: 3.6, gap: Math.PI },
-  viking: { box: [RIDES.viking.x - 7.5, RIDES.viking.z - 2.8, RIDES.viking.x + 7.5, RIDES.viking.z + 2.8], gap: [RIDES.viking.x + 3.4, RIDES.viking.x + 5.8] },
-  wheel: { box: [RIDES.wheel.x - 4.5, RIDES.wheel.z - 3, RIDES.wheel.x + 4.5, RIDES.wheel.z + 2.7], gap: [RIDES.wheel.x - 3.2, RIDES.wheel.x - 0.8] },
-};
-
-// A sign board over a gate: Korean as built (with the English under it), or
-// the player's language when the signs are translated.
-function gateSign(names, emoji, w = 512, h = 160, color = HOT) {
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  const g = c.getContext('2d');
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const draw = (lang) => {
-    g.fillStyle = color; g.fillRect(0, 0, w, h);
-    g.fillStyle = ICING;
-    for (let i = 0; i < w; i += 40) { g.beginPath(); g.arc(i + 20, 0, 16, 0, Math.PI); g.fill(); } // frosting drips
-    g.strokeStyle = ICING; g.lineWidth = 8; g.strokeRect(6, 6, w - 12, h - 12);
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    const big = (emoji ? emoji + ' ' : '') + (lang ? names[lang] || names.en : names.ko);
-    g.font = `900 ${big.length > 13 ? 46 : 60}px "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif`;
-    g.lineWidth = 9; g.strokeStyle = 'rgba(120,20,60,0.55)'; g.strokeText(big, w / 2, h * 0.47, w - 40);
-    g.fillStyle = ICING; g.fillText(big, w / 2, h * 0.47, w - 40);
-    if (!lang) { g.font = '800 24px system-ui, sans-serif'; g.fillStyle = LEMON; g.fillText(names.en.toUpperCase(), w / 2, h * 0.82, w - 40); }
-    tex.needsUpdate = true;
-  };
-  draw(null);
-  return { tex, draw };
+// Where a path's paving is: within half its width of one of its stretches.
+export function pathDist(path, x, z) {
+  let best = Infinity;
+  for (let i = 1; i < path.pts.length; i++) {
+    const [ax, az] = path.pts[i - 1], [bx, bz] = path.pts[i], dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const t = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0;
+    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+  }
+  return best;
 }
+export const onPath = (x, z, m = 0) => PATHS.some((p) => pathDist(p, x, z) < p.w / 2 + m);
+// The room's rides with a fenced yard (the train and the flume board from
+// their platforms).
+const UNDER_YARDS = UNDER_RIDES.filter((k) => YARDS[k]);
 
 export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   const add = (geo, color, x, y, z) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); scene.add(m); return m; };
@@ -70,10 +64,22 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
 
   // Grass, then the paving: each path a pale slab on a slightly wider curb.
   add(new THREE.PlaneGeometry(260, 200).rotateX(-Math.PI / 2), '#a6d98a', (X0 + X1) / 2, 0, (Z0 + Z1) / 2);
-  for (const [x0, z0, x1, z1] of PATHS) {
-    box(x1 - x0 + 0.5, 0.05, z1 - z0 + 0.5, (x0 + x1) / 2, 0, (z0 + z1) / 2, CURB);
-    box(x1 - x0, 0.06, z1 - z0, (x0 + x1) / 2, 0, (z0 + z1) / 2, PAVE);
-  }
+  // (each stretch a slab on a slightly wider curb, a round pad at every
+  // point so the bends are smooth; later paths sit a hair higher so
+  // crossings don't flicker)
+  PATHS.forEach(({ w, pts }, k) => {
+    const y = k * 0.0015;
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, az] = pts[i - 1], [bx, bz] = pts[i], len = Math.hypot(bx - ax, bz - az), ry = -Math.atan2(bz - az, bx - ax);
+      box(len, 0.05, w + 0.5, (ax + bx) / 2, y, (az + bz) / 2, CURB).rotation.y = ry;
+      box(len, 0.06, w, (ax + bx) / 2, y, (az + bz) / 2, PAVE).rotation.y = ry;
+    }
+    for (const [i, [x, z]] of pts.entries()) {
+      if (i === 0 || i === pts.length - 1) continue; // (the ends meet another path or a gate)
+      add(new THREE.CylinderGeometry(w / 2 + 0.25, w / 2 + 0.25, 0.05, 20), CURB, x, y, z);
+      add(new THREE.CylinderGeometry(w / 2, w / 2, 0.06, 20), PAVE, x, y, z);
+    }
+  });
   // The central plaza: rings of pink and cream paving round the fountain.
   for (const [r, c, y] of [[PLAZA.r + 0.25, CURB, 0.026], [PLAZA.r, PAVE, 0.032], [PLAZA.r - 1.2, PLAZA_PINK, 0.036], [PLAZA.r - 2, PAVE, 0.04]]) add(new THREE.CylinderGeometry(r, r, 0.02, 40), c, PLAZA.x, y - 0.01, PLAZA.z);
 
@@ -97,86 +103,15 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   add(new THREE.SphereGeometry(0.28, 12, 8), '#ff3b55', F.x, 2.45, F.z);
   block(F.x, F.z, 4.6, 4.6);
 
-  // Instanced things, collected as we go: fence posts, lamps, flowers.
-  const posts = [], lamps = [], flowers = [], beds = [], trees = [];
-  const fenceRail = (ax, az, bx, bz, h = 0.9, color = PINK) => {
-    const len = Math.hypot(bx - ax, bz - az);
-    const r = new THREE.Mesh(new THREE.BoxGeometry(len, 0.09, 0.09), mat(color));
-    r.position.set((ax + bx) / 2, h, (az + bz) / 2);
-    r.rotation.y = -Math.atan2(bz - az, bx - ax);
-    scene.add(r);
-    const r2 = r.clone();
-    r2.position.y = h * 0.5;
-    scene.add(r2);
-  };
-  // A fence along a line: posts every ~1.2 m and two rails; blocked.
-  const fenceLine = (ax, az, bx, bz, h = 0.9, color = PINK, solid = true) => {
-    const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.2));
-    for (let i = 0; i <= n; i++) posts.push([ax + ((bx - ax) * i) / n, az + ((bz - az) * i) / n, h]);
-    fenceRail(ax, az, bx, bz, h, color);
-    if (!solid) return;
-    const steps = Math.max(1, Math.ceil(len / 0.5));
-    for (let i = 0; i <= steps; i++) block(ax + ((bx - ax) * i) / steps, az + ((bz - az) * i) / steps, 0.5, 0.5);
-  };
-  // A ring fence round (x, z) with a gate gap facing angle `gap` (0 = +x).
-  const fenceRing = (x, z, r, gap) => {
-    const n = Math.round((Math.PI * 2 * r) / 1.3), skip = 0.75 / r * 2; // the gap is about 1.5 m wide each side
-    for (let i = 0; i < n; i++) {
-      const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, mid = (a0 + a1) / 2;
-      const d = Math.abs(Math.atan2(Math.sin(mid - gap), Math.cos(mid - gap)));
-      if (d < skip + 0.12) continue;
-      fenceLine(x + Math.cos(a0) * r, z + Math.sin(a0) * r, x + Math.cos(a1) * r, z + Math.sin(a1) * r);
-    }
-  };
-  const fenceBox = ([x0, z0, x1, z1], [g0, g1]) => {
-    fenceLine(x0, z0, x1, z0);
-    fenceLine(x0, z0, x0, z1);
-    fenceLine(x1, z0, x1, z1);
-    fenceLine(x0, z1, g0, z1);
-    fenceLine(g1, z1, x1, z1);
-  };
-  fenceRing(RIDES.carousel.x, RIDES.carousel.z, YARDS.carousel.ring, YARDS.carousel.gap);
-  fenceRing(RIDES.drop.x, RIDES.drop.z, YARDS.drop.ring, YARDS.drop.gap);
-  fenceBox(YARDS.viking.box, YARDS.viking.gap);
-  fenceBox(YARDS.wheel.box, YARDS.wheel.gap);
+  // Instanced things, collected as we go: lamps, flowers. The yards' fences
+  // and gates, and the park's fence, come from the yard kit (park-yards.js).
+  const lamps = [], flowers = [], beds = [], trees = [];
+  const kit = yardKit(scene, block), { fenceLine } = kit;
+  for (const k of UNDER_YARDS) kit.yard(k);
 
-  // Each ride's gate: two striped posts and its name on a board over the way in.
-  const gateArch = (kind, x, z, along) => {
-    const s = gateSign(RIDE_NAME[kind], RIDE_EMOJI[kind]);
-    signs.push(s);
-    const dx = along ? 1 : 0, dz = along ? 0 : 1; // the posts stand apart along x (or z)
-    for (const k of [-1, 1]) {
-      for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(0.12, 0.12, 0.7, 10), i % 2 ? ICING : HOT, x + dx * k * 1.25, 0.35 + i * 0.7, z + dz * k * 1.25);
-      add(new THREE.SphereGeometry(0.22, 10, 8), MINT, x + dx * k * 1.25, 2.95, z + dz * k * 1.25);
-      block(x + dx * k * 1.25, z + dz * k * 1.25, 0.3, 0.3);
-    }
-    const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.81), new THREE.MeshBasicMaterial({ map: s.tex, side: THREE.DoubleSide }));
-    board.position.set(x, 2.55, z);
-    board.rotation.y = along ? 0 : Math.PI / 2;
-    scene.add(board);
-    box(along ? 2.7 : 0.08, 0.9, along ? 0.08 : 2.7, x - (along ? 0 : 0.06), 2.55, z - (along ? 0.06 : 0), '#b8336e');
-  };
-  const C = RIDES.carousel, D = RIDES.drop;
-  gateArch('carousel', C.x + YARDS.carousel.ring, C.z, false);
-  gateArch('drop', D.x - YARDS.drop.ring, D.z, false);
-  gateArch('viking', (YARDS.viking.gap[0] + YARDS.viking.gap[1]) / 2, YARDS.viking.box[3], true);
-  gateArch('wheel', (YARDS.wheel.gap[0] + YARDS.wheel.gap[1]) / 2, YARDS.wheel.box[3], true);
-  // A short queue rail at each gate, so the way in reads at a glance.
-  for (const [kind, g] of Object.entries(RIDE_GATES)) {
-    const side = kind === 'carousel' || kind === 'drop';
-    const sx = side ? Math.sign(g.x - RIDES[kind].x) : 0, sz = side ? 0 : 1;
-    for (const k of [-1, 1]) {
-      const ax = g.x + (side ? -sx * 0.6 : k * 1.25), az = g.z + (side ? k * 1.25 : -0.6);
-      for (let i = 0; i < 3; i++) {
-        const px = ax + sx * i * 0.8, pz = az + sz * i * 0.8;
-        add(new THREE.CylinderGeometry(0.05, 0.05, 0.85, 8), '#d4a73a', px, 0.42, pz);
-        add(new THREE.SphereGeometry(0.08, 8, 6), LEMON, px, 0.88, pz);
-      }
-      const r = new THREE.Mesh(new THREE.BoxGeometry(side ? 1.6 : 0.04, 0.04, side ? 0.04 : 1.6), mat(HOT));
-      r.position.set(ax + sx * 0.8, 0.78, az + sz * 0.8);
-      scene.add(r);
-    }
-  }
+  kit.gateArch('train', RIDE_GATES.train.x - 1.2, RIDE_GATES.train.z, false); // (at the platform's west edge)
+  kit.gateArch('flume', RIDE_GATES.flume.x, RIDE_GATES.flume.z + 0.9, true); // (at the platform's south edge)
+  kit.gateArch('maze', MAZE.door[0], MAZE.door[1] + 0.3, true);
 
   // The park's own fence, all round, with the way in and out at the south.
   for (const [ax, az, bx, bz] of [[X0, Z0, X1, Z0], [X0, Z0, X0, Z1], [X1, Z0, X1, Z1], [X0, Z1, -4.2, Z1], [4.2, Z1, X1, Z1]]) fenceLine(ax, az, bx, bz, 1.2, HOT);
@@ -208,31 +143,50 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   // Lamps and flower beds along the paths' edges, wherever the lawn is free
   // (not on another path, a ride's yard, a stall or the coaster's land).
   const taken = [
-    [-14, 10, 7, 5.4], [-6, 9.5, 2.6, 2], [6, 9.5, 2.2, 1.6], [-21.5, -9.5, 5, 3.4], // haunted house, booth, churros, balloon shooting
-    [19.9, 8.4, 12.4, 11.6], [0, AZ, 9, 1.6], // bumper cars (and its queue), the entrance arch
-    [-11, 7, 2.4, 2.4], [8.5, 7, 2.4, 2.4], // the avenues' benches
+    [-15, 24, 7.4, 5.4], [-6, Z1 - 4.5, 2.6, 2], [-20, -1, 5, 3.4], // haunted house, booth, balloon shooting
+    [RINK_AT.x, RINK_AT.z + 0.3, 13.4, 11.6], [0, AZ, 9, 1.6], // bumper cars (and its queue), the entrance arch
+    [-12, 6.8, 2.4, 2.4], [15, 2.6, 2.4, 2.4], [36, 2.6, 2.4, 2.4], // the avenues' benches
     [-24.5, -6.5, 3.4, 2.6], // the cotton candy cart and its customer (themepark.js)
-    ...Object.values(RIDE_GATES).map((g) => [g.staff.x, g.staff.z, 1.4, 1.4]), // the attendants
+    ...FOOD_TRUCKS.map((f) => [f.x, f.z, 5.4, 5]), // the food trucks and their queues
+    [CLOWN.x, CLOWN.z, 2.6, 2.6], // the balloon clown
+    [RIDES.train.x - RIDES.train.rx - 1.4, RIDES.train.z + 1.5, 3.4, 9.4], // the train's station
+    [53.4, -14.2, 8, 2.6], // the flume's platform
+    ...UNDER_RIDES.map((k) => RIDE_GATES[k]).map((g) => [g.staff.x, g.staff.z, 1.4, 1.4]), // the attendants
   ];
-  const onPath = (x, z, m) => PATHS.some(([x0, z0, x1, z1]) => x > x0 - m && x < x1 + m && z > z0 - m && z < z1 + m);
   const free = (x, z, m) => {
-    if (x < -24 || x > X1 - 1.5 || z < -14 || z > Z1 - 1.2) return false;
+    if (x < -24 || x > X1 - 1.5 || z > Z1 - 1.2 || (z < -14 && x < 18) || z < Z0 + 2) return false; // (not on the coaster's land)
     if (onPath(x, z, m) || Math.hypot(x - PLAZA.x, z - PLAZA.z) < PLAZA.r + m + 0.3) return false;
-    if (Math.hypot(x - C.x, z - C.z) < YARDS.carousel.ring + m + 0.4 || Math.hypot(x - D.x, z - D.z) < YARDS.drop.ring + m + 0.4) return false;
-    for (const [x0, z0, x1, z1] of [YARDS.viking.box, YARDS.wheel.box]) if (x > x0 - m - 0.4 && x < x1 + m + 0.4 && z > z0 - m - 0.4 && z < z1 + m + 0.4) return false;
+    if (UNDER_YARDS.some((k) => inYard(k, x, z, m + 0.4))) return false;
+    if (x > MAZE.x0 - m - 0.4 && x < MAZE.x1 + m + 0.4 && z > MAZE.z0 - m - 0.4 && z < MAZE.z1 + m + 0.4) return false;
+    if (trackDist(TRAIN_TRACK, x, z) < 1.4 + m || trackDist(FLUME_TRACK, x, z) < 1.6 + m) return false; // (off the rails and the channel)
+    if (Math.hypot(x - FLUME_POOL.x, (z - FLUME_POOL.z) / FLUME_POOL.sz) < FLUME_POOL.r + m + 0.6) return false;
     return !taken.some(([tx, tz, w, d]) => Math.abs(x - tx) < w / 2 + m && Math.abs(z - tz) < d / 2 + m);
   };
   const near = (list, x, z, d) => list.some(([a, b]) => Math.hypot(a - x, b - z) < d);
-  const edges = ([x0, z0, x1, z1], off, cb) => {
-    const long = x1 - x0 > z1 - z0;
-    if (long) for (const z of [z0 - off, z1 + off]) for (let x = x0 + 1; x < x1; x += 0.5) cb(x, z, true);
-    else for (const x of [x0 - off, x1 + off]) for (let z = z0 + 1; z < z1; z += 0.5) cb(x, z, false);
+  // Walk both edges of every path, `off` out from its side.
+  const edges = ({ w, pts }, off, cb) => {
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, az] = pts[i - 1], [bx, bz] = pts[i], len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len;
+      const long = Math.abs(ux) > Math.abs(uz);
+      for (const sd of [-1, 1]) for (let d = 1; d < len; d += 0.5) cb(ax + ux * d - uz * sd * (w / 2 + off), az + uz * d + ux * sd * (w / 2 + off), long);
+    }
   };
   for (const p of PATHS) edges(p, 0.55, (x, z) => { if (free(x, z, 0.15) && !near(lamps, x, z, 5.5)) lamps.push([x, z]); });
   for (const p of PATHS) edges(p, 1.3, (x, z, long) => {
     const sx = long ? 2.2 : 1.1, sz = long ? 1.1 : 2.2;
     if (free(x, z, 1.15) && !near(beds, x, z, 3.6) && !near(lamps, x, z, 1.3)) bed(x, z, sx, sz);
   });
+  // Lollipop trees and gumdrop bushes on the lawns between the paths, so a
+  // walk from ride to ride goes through a candy garden, not bare grass.
+  let gseed = 3;
+  const grnd = () => ((gseed = (gseed * 16807) % 2147483647) / 2147483647);
+  const garden = [];
+  for (let gx = -22; gx < X1 - 2; gx += 4.2) for (let gz = Z0 + 4; gz < Z1 - 2; gz += 4.2) {
+    const x = gx + (grnd() - 0.5) * 2.6, z = gz + (grnd() - 0.5) * 2.6, r = grnd();
+    if (!free(x, z, 1.9) || near(beds, x, z, 2.6) || near(lamps, x, z, 2.2)) continue;
+    garden.push([x, z, r]);
+    block(x, z, 1.2, 1.2);
+  }
   for (const [x, z] of lamps) block(x, z, 0.3, 0.3);
 
   // Benches round the plaza, facing the fountain, and on the avenues.
@@ -255,8 +209,9 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
     const bx = PLAZA.x + Math.cos(a) * (PLAZA.r - 0.9), bz = PLAZA.z + Math.sin(a) * (PLAZA.r - 0.9);
     bench(bx, bz, Math.atan2(PLAZA.x - bx, PLAZA.z - bz));
   }
-  bench(-11, 7, Math.PI); // on the west avenue, by the haunted house
-  bench(8.5, 7, Math.PI);
+  bench(-12, 6.8, Math.PI); // on the west avenue, by the carousel
+  bench(15, 2.6, Math.PI); // on the east promenade
+  bench(36, 2.6, Math.PI); // further along, by the mirror maze
 
   // Bunting over Main Street and round the plaza: strings of little flags.
   const flags = [];
@@ -306,8 +261,7 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
     return im;
   };
   const tinted = () => new THREE.MeshLambertMaterial({ flatShading: true });
-  inst(new THREE.CylinderGeometry(0.07, 0.07, 1, 6).translate(0, 0.5, 0), mat(ICING), posts, (im, [x, z, h], i) => im.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, h + 0.08, 1))));
-  inst(new THREE.OctahedronGeometry(0.12), tinted(), posts, (im, [x, z, h], i) => { im.setMatrixAt(i, m4.compose(v.set(x, h + 0.12, z), q.identity(), sc.set(1, 1, 1))); im.setColorAt(i, col.set([PINK, MINT, LEMON, LILAC][i % 4])); });
+  kit.done(); // (the fence posts)
   inst(new THREE.CylinderGeometry(0.06, 0.09, 3.2, 8).translate(0, 1.6, 0), mat('#7a4a2e'), lamps, (im, [x, z], i) => im.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, 1, 1))));
   inst(new THREE.SphereGeometry(0.24, 10, 8), new THREE.MeshBasicMaterial({ color: '#fff4c4' }), lamps, (im, [x, z], i) => im.setMatrixAt(i, m4.compose(v.set(x, 3.35, z), q.identity(), sc.set(1, 1, 1))));
   inst(new THREE.ConeGeometry(0.3, 0.25, 10), mat(HOT), lamps, (im, [x, z], i) => im.setMatrixAt(i, m4.compose(v.set(x, 3.62, z), q.identity(), sc.set(1, 1, 1))));
@@ -317,10 +271,11 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   flagGeo.computeVertexNormals();
   const flagMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
   inst(flagGeo, flagMat, flags, (im, [x, y, z, ry], i) => { q.setFromAxisAngle(v.set(0, 1, 0), ry); im.setMatrixAt(i, m4.compose(v.set(x, y, z), q, sc.set(1, 1, 1))); im.setColorAt(i, col.set([HOT, LEMON, MINT, '#8fd0ff', LILAC][i % 5])); });
+  trees.push(...garden);
   const pops = trees.filter((_, i) => i % 2 === 0), gums = trees.filter((_, i) => i % 2);
   inst(new THREE.CylinderGeometry(0.1, 0.1, 3, 6).translate(0, 1.5, 0), mat(ICING), pops, (im, [x, z, r], i) => im.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, 0.8 + r * 0.6, 1))));
   inst(new THREE.CylinderGeometry(1.1, 1.1, 0.3, 16).rotateX(Math.PI / 2), tinted(), pops, (im, [x, z, r], i) => { const k = 0.8 + r * 0.6; q.setFromAxisAngle(v.set(0, 1, 0), r * 6.28); im.setMatrixAt(i, m4.compose(v.set(x, 3.9 * k, z), q, sc.set(k, k, k))); im.setColorAt(i, col.set([PINK, LILAC, MINT, LEMON][i % 4])); });
   inst(new THREE.SphereGeometry(1.3, 12, 8), tinted(), gums, (im, [x, z, r], i) => { const k = 0.8 + r * 0.8; im.setMatrixAt(i, m4.compose(v.set(x, 0.5 * k, z), q.identity(), sc.set(k, 0.8 * k, k))); im.setColorAt(i, col.set(['#ffe27a', '#ff5a5f', '#8fd0ff', '#ffad6b', '#a6e3a1'][i % 5])); });
 
-  return { setSignLang: (lang) => signs.forEach((x) => x.draw(lang)) };
+  return { setSignLang: (lang) => { signs.forEach((x) => x.draw(lang)); kit.setSignLang(lang); } };
 }

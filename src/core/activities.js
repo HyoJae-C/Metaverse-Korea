@@ -1,50 +1,28 @@
 // Rules for three modern-city activities, no DOM so they can be unit-tested:
-//   bowling   (볼링장)      a quick 5-frame game with real strike/spare scoring
+//   bowling   (볼링장)      10 frames, real ball and pin physics and scoring
 //   climbing  (클라이밍짐)  bouldering problems graded V0-V5 by hold colour
 //   aim       (PC방)        a 30-second target practice with e-sports tiers
 // Like the batting cage (core/arcade.js) they are free to play and pay out
 // no coins: you chase your own records, kept in this browser.
 
+import { PINS, PIN_GAP } from './bowling-physics.js';
+
 export const ACTIVITY_KEY = 'mk.activity';
 
 // ── Bowling ──────────────────────────────────────────────────────────────
-// Real lane sizes in metres: pins stand 0.3048 m apart in a triangle, the
-// lane is 1.054 m wide, the ball's radius is 0.109 m.
-export const FRAMES = 5;
-export const LANE_HALF = 0.527;
-const BALL_R = 0.109, PIN_R = 0.06, PIN_GAP = 0.3048, ROW_GAP = 0.2639;
-// Pins 1-10 in the usual numbering: 1 at the front, 7-10 in the back row.
-export const PINS = [[0], [-1, 1], [-2, 0, 2], [-3, -1, 1, 3]].flatMap((row, r) => row.map((k) => ({ x: (k * PIN_GAP) / 2, z: r * ROW_GAP, row: r })));
-// Where the ball rolls for an aim from -1 (left gutter edge) to 1 (right).
-export const ballX = (aim) => aim * (LANE_HALF - 0.03);
-// The pocket: between pins 1 and 3 (right-handed) or 1 and 2.
-const POCKET = PIN_GAP / 4;
+// A full 10-frame game. The ball and the pins are simulated in
+// core/bowling-physics.js; here are the score sheet rules.
+export { PINS, LANE_HALF } from './bowling-physics.js';
+export const FRAMES = 10;
 
-// How hard you threw (0..1) → how well the pins scatter (0..1). Too soft and
-// the pins barely fall; a full-power throw skids a little.
-export const powerQuality = (power) => Math.max(0, Math.min(1, 1 - Math.abs(power - 0.82) / 0.55));
-
-// Throw at the standing pins (indexes into PINS). Returns the indexes that
-// fell. The ball takes every pin in its path; each falling pin can knock
-// over its neighbours beside and behind it.
-export function rollBall({ aim, power, standing, first = true, rand = Math.random }) {
-  const x = ballX(Math.max(-1.2, Math.min(1.2, aim)));
-  if (Math.abs(x) > LANE_HALF - BALL_R) return []; // in the gutter
-  const up = new Set(standing);
-  const down = [];
-  for (const i of standing) if (Math.abs(PINS[i].x - x) < BALL_R + PIN_R) { up.delete(i); down.push(i); }
-  const q = powerQuality(power);
-  const pocket = first && Math.min(Math.abs(x - POCKET), Math.abs(x + POCKET)) < 0.045;
-  const chance = Math.min(0.95, 0.1 + 0.4 * q + (pocket ? 0.27 : 0));
-  for (let k = 0; k < down.length; k++) {
-    const f = PINS[down[k]];
-    for (const i of [...up]) {
-      const p = PINS[i];
-      if (p.row < f.row || Math.hypot(p.x - f.x, p.z - f.z) > PIN_GAP + 0.02) continue;
-      if (rand() < chance) { up.delete(i); down.push(i); }
-    }
-  }
-  return down.sort((a, b) => a - b);
+// A split: the head pin is down and what is left stands in two or more
+// groups with a gap between them (7-10, 4-6, 3-10…). 6-10 is not one.
+export function isSplit(left) {
+  if (left.includes(0) || left.length < 2) return false;
+  const near = (a, b) => Math.hypot(PINS[a].x - PINS[b].x, PINS[a].z - PINS[b].z) < PIN_GAP + 0.01;
+  const seen = new Set([left[0]]), todo = [left[0]];
+  while (todo.length) { const a = todo.pop(); for (const b of left) if (!seen.has(b) && near(a, b)) { seen.add(b); todo.push(b); } }
+  return seen.size < left.length;
 }
 
 // Split rolls (pins down per ball) into frames; the last frame has up to 3.
@@ -129,7 +107,6 @@ export const CLIMB_ROUTES = [
   { id: 'v4', grade: 'V4', color: '#9b6bd6', holds: 11, period: 0.9, window: 0.105, drain: 0.075 },
   { id: 'v5', grade: 'V5', color: '#2b2b2e', holds: 12, period: 0.8, window: 0.09, drain: 0.085 },
 ];
-export const routeById = (id) => CLIMB_ROUTES.find((r) => r.id === id) || null;
 
 // The holds of a route, bottom to top, in wall units (x 0..1, y 0..1). The
 // same every time (seeded by the route), zig-zagging further on harder ones.

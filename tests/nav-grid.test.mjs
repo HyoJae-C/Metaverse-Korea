@@ -21,6 +21,17 @@ test('a closed-off spot has no route', () => {
   assert.equal(g.route(-20, 0, 0, 0), null);
 });
 
+test('a place the search gave up on is not searched again right away', () => {
+  const g = new NavGrid([box(-2, -20, 2, 20)], [], bounds);
+  assert.equal(g.route(-10, 0, 10, 0, 50), null); // gives up after 50 cells
+  let searched = 0;
+  const search = g._search.bind(g);
+  g._search = (...a) => { searched++; return search(...a); };
+  assert.equal(g.route(-9, 1, 10, 0), null);
+  assert.equal(searched, 0);
+  assert.ok(g.route(-10, 0, -10, 10)); // another place: searched as usual
+});
+
 test('trim and look-ahead follow the route', () => {
   const poly = [[0, 0], [10, 0], [10, 10]];
   assert.deepEqual(trimPoly(poly, 9, 1), [[9, 1], [10, 0], [10, 10]]);

@@ -573,8 +573,9 @@ export function muralSign(s) {
 // The floating wish lanterns: a little square paper lantern on a wooden
 // float, glowing in its colour. One InstancedMesh per part, refilled each frame.
 export class WishLanterns {
-  constructor(g, s) {
+  constructor(g, s, F = null) { // F: a bending stream's frame (core/stream.js frameOf)
     this.s = s;
+    this.F = F;
     this.mine = []; // { L, name }: ours and other players'
     const n = WISH.max;
     const body = new THREE.MeshBasicMaterial({ color: '#ffffff' });
@@ -584,7 +585,7 @@ export class WishLanterns {
       new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.05, 0.5).translate(0, 0.61, 0), lam('#6a4a2a'), n),
       new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 0.05, 0.5).translate(0, 0.13, 0), lam('#6a4a2a'), n),
     ];
-    for (const p of this.parts) { p.count = 0; p.userData.noShadow = true; p.frustumCulled = false; g.add(p); }
+    for (const p of this.parts) { p.count = 0; p.userData.noShadow = true; p.userData.mover = true; p.frustumCulled = false; g.add(p); }
     this.y = -(s.depth || 4) - 0.3;
     this.m4 = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.p = new THREE.Vector3(); this.sc = new THREE.Vector3(1, 1, 1); this.up = new THREE.Vector3(0, 1, 0); this.col = new THREE.Color();
   }
@@ -607,8 +608,13 @@ export class WishLanterns {
     const all = this.list(t);
     all.forEach(({ L, at }, i) => {
       const fade = Math.min(1, at.left / 3, at.age / 1.5);
-      this.p.set(at.u, this.y + at.y, at.v);
-      this.q.setFromAxisAngle(this.up, at.age * 0.2 + L.v);
+      let yaw = at.age * 0.2 + L.v;
+      if (this.F) {
+        const [x, z] = this.F.toWorld(at.u, at.v);
+        this.p.set(x, this.y + at.y, z);
+        yaw -= this.F.angAt(at.u);
+      } else this.p.set(at.u, this.y + at.y, at.v);
+      this.q.setFromAxisAngle(this.up, yaw);
       this.sc.setScalar(Math.max(0.01, fade));
       this.m4.compose(this.p, this.q, this.sc);
       for (const part of this.parts) part.setMatrixAt(i, this.m4);

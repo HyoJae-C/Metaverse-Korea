@@ -8,18 +8,13 @@
 // tick here animates it. main.js calls it when someone rings, and on every
 // New Year's stroke.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
 import { strikePose, sinceStrike, BELL_HOUSE } from '../data/bosingak.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
-function box(g, sx, sy, sz, x, y, z, c) {
-  const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  o.position.set(x, y, z);
-  g.add(o);
-  return o;
-}
+const mat = matCache({ flatShading: true });
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 const C = {
   stone: '#cfc6b2', stoneDark: '#aaa08a', post: '#9a3428', beam: '#2f7a62', beamRed: '#a23a2c', floor: '#7a5236',
   rail: '#8a3226', bronze: '#5d6b5a', bronzeDark: '#46524a', log: '#8a6a44', rope: '#d9c9a0',

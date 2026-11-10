@@ -126,11 +126,12 @@ export class DartsUI {
   // you [{ id, name }], closest first; invite(): a pending invite { from,
   // name } or null; clearInvite(); send(to, kind, thrown, total, extra);
   // sendGo(to, mode, ids) (the start message); onThrow(points); onDart(at,
-  // color) as a dart of ours leaves the hand (it sticks in the wall board for
-  // the room); colors(ids) → a flight colour (DART_COLORS index) per player;
-  // rand for tests.
-  constructor({ root, store, myId = 'me', nameOf = () => '?', friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, rand = Math.random }) {
-    Object.assign(this, { root, store, myId, nameOf, friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, rand });
+  // color) as a dart of ours lands (it sticks in the wall board for the
+  // room); colors(ids) → a flight colour (DART_COLORS index) per player;
+  // view: the game in the bar's real wall board (game/darts-view.js; without
+  // it the panel draws its own board); rand for tests.
+  constructor({ root, store, myId = 'me', nameOf = () => '?', friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, view = null, rand = Math.random }) {
+    Object.assign(this, { root, store, myId, nameOf, friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, view, rand });
     this.raf = 0;
     this.lobby = null; // hosting: { list: [{ id, name, ready, at }] }
     this.joined = null; // a guest waiting for the host: { id, name }
@@ -159,6 +160,8 @@ export class DartsUI {
     clearTimeout(this.timer);
     clearInterval(this.tick); this.tick = 0;
     window.removeEventListener('keydown', this.onKey, true);
+    this.view?.stop();
+    this.root.classList.remove('arcade-live');
     this.game = null;
   }
 
@@ -353,7 +356,18 @@ export class DartsUI {
     vsLine.hidden = ids.length < 2;
     const btn = el('button', 'primary karaoke-pad', '🎯 ' + tt('throw'));
     btn.onpointerdown = (e) => { e.preventDefault(); this.throwDart(); };
-    this.root.append(cv, status, vsLine, btn);
+    // In the bar: the camera looks at the real wall board and the panel
+    // shrinks to the score, the clock and the button.
+    const live = !!this.view?.start(this.root);
+    let clock = null;
+    if (live) {
+      this.root.classList.add('arcade-live');
+      clock = el('div', 'arcade-meter');
+      const track = el('span');
+      track.append(el('i'));
+      clock.append(track, el('b'));
+      this.root.append(status, clock, vsLine, btn);
+    } else this.root.append(cv, status, vsLine, btn);
     const colors = this.colors?.(ids) || ids.map((_, i) => i % DART_COLORS.length);
     const players = ids.map((id, i) => ({
       id, me: id === this.myId, name: id === this.myId ? tt('you') : known.find((p) => p.id === id)?.name || this.nameOf(id) || '?',
@@ -361,7 +375,7 @@ export class DartsUI {
     }));
     const multi = ids.length > 1;
     this.game = {
-      cv, status, vsLine, btn, players, mode: multi ? mode : 'solo', multi, me: players.findIndex((p) => p.me),
+      cv, status, vsLine, btn, players, live, clock, mode: multi ? mode : 'solo', multi, me: players.findIndex((p) => p.me),
       each: multi ? dartsEach(ids.length) : TOTAL, recent: [], flying: null, over: false, turn: null, last: null,
       n: 0, inbox: [], t0: performance.now() / 1000, sway: this.rand() * 20,
     };
@@ -464,13 +478,17 @@ export class DartsUI {
     g.btn.disabled = true;
     g.flying = { at, t: now, idx: t.idx };
     if (g.multi) this._tell('h', g.n, dartPack(at.x), dartPack(at.y));
-    this.onDart?.(at, g.players[t.idx].color);
   }
 
+  // The dart in the air reaches the board: ours sticks in the wall board for
+  // the room; a friend's sticks in ours on this screen.
   land() {
     const g = this.game;
     const { at, idx } = g.flying;
     g.flying = null;
+    const p = g.players[idx];
+    if (p.me) this.onDart?.(at, p.color);
+    else if (g.live) this.view.pin(p.id, p.color, at.x, at.y);
     this._record(idx, { ...dartScore(at.x, at.y), x: at.x, y: at.y });
   }
 
@@ -531,6 +549,7 @@ export class DartsUI {
   draw(now) {
     const g = this.game;
     if (!g) return;
+    if (g.live) { this.drawLive(now); return; }
     const c = g.cv.getContext('2d');
     c.fillStyle = '#3a2a20'; c.fillRect(0, 0, S, S);
     c.drawImage(this.board, 0, 0);
@@ -566,6 +585,30 @@ export class DartsUI {
       c.font = 'bold 26px system-ui'; c.textAlign = 'right'; c.textBaseline = 'top';
       c.fillText('⏱ ' + Math.ceil(left), S - 10, 16);
     }
+  }
+  // In the world: the aim and the dart in the air go to the wall board (the
+  // stuck darts are already there), the 7-second clock to the panel.
+  drawLive(now) {
+    const g = this.game;
+    let aim = null, color = null, flying = null;
+    if (g.flying) {
+      const k = Math.min(1, (now - g.flying.t) / FLY);
+      flying = { x: g.flying.at.x, y: g.flying.at.y, k, color: g.players[g.flying.idx].color };
+    } else if (g.turn?.started && !g.over) {
+      aim = dartAim(now - g.turn.t0 + g.turn.sway);
+      color = g.turn.mine ? null : g.players[g.turn.idx].color;
+    }
+    this.view.show(aim, color, flying);
+    const t = g.turn, ticking = !!(t?.started && !g.over && !g.flying);
+    g.clock.style.visibility = ticking ? 'visible' : 'hidden';
+    if (ticking) {
+      const left = Math.max(0, Math.min(DART_SECONDS, t.deadline - now));
+      const bar = g.clock.firstChild.firstChild;
+      bar.style.width = `${(100 * left) / DART_SECONDS}%`;
+      bar.style.background = left <= 3 ? '#ff5a4e' : t.mine ? '#ffd36e' : DART_COLORS[g.players[t.idx].color];
+      g.clock.lastChild.textContent = '⏱ ' + Math.ceil(left);
+    }
+    if (flying?.k >= 1) this.land();
   }
   // A dart stuck at (x, y) with flights in DART_COLORS[color].
   dart(c, x, y, s, color = 0) {

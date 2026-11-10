@@ -12,6 +12,7 @@
 import { createNet } from './index.js';
 
 const LEAVE_DELAY = 1500; // ms; hides the brief gap while a peer changes cell
+const RETRY_MS = 8000; // a cell that couldn't be joined is tried again after this
 
 // Crowds are split into groups. Realtime services count every message once
 // per receiver, so a crowd of k people costs about k² messages: with
@@ -88,8 +89,15 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     const adapter = await createNet(provider, cellHandlers, cfg);
     const entry = { adapter, listenOnly };
     entry.ready = adapter.connect({ room: key, self: me, listenOnly }).catch((err) => {
-      console.warn('Realtime cell unavailable:', key, err);
       entry.failed = true;
+      if (closed || cells.get(key) !== entry) return; // closed while joining: nothing to report
+      console.warn('Realtime cell unavailable:', key, err);
+      // Try that cell again in a while, if we still want it by then.
+      entry.retry = setTimeout(() => {
+        if (closed || cells.get(key) !== entry) return;
+        close(key);
+        open(key, key !== ownKey);
+      }, RETRY_MS);
     });
     cells.set(key, entry);
     return entry;
@@ -99,6 +107,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     const entry = cells.get(key);
     if (!entry) return;
     cells.delete(key);
+    clearTimeout(entry.retry);
     entry.adapter.disconnect();
     for (const [id, set] of peerCells) if (set.has(key)) gone(id, key);
   }
@@ -113,13 +122,20 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     for (const k of [...cells.keys()]) if (!wanted.has(k)) close(k);
     // Stop announcing ourselves in the old cell, start in the new one.
     if (prevOwn && cells.has(prevOwn)) cells.get(prevOwn).adapter.setListenOnly?.(true);
-    const pending = [];
-    for (const k of wanted) {
+    let mine = null;
+    // Our own cell first: joins on one connection are answered in order.
+    for (const k of [key, ...[...wanted].filter((k) => k !== key)]) {
       const entry = cells.get(k);
-      if (!entry) pending.push(open(k, k !== key).then((e) => e.ready));
-      else if (k === key) entry.adapter.setListenOnly?.(false);
+      if (!entry) {
+        const opening = open(k, k !== key);
+        if (k === key) mine = opening.then((e) => e.ready);
+      } else if (k === key) entry.adapter.setListenOnly?.(false);
     }
-    await Promise.all(pending);
+    // Only our own cell is waited for: that's where we are seen and send
+    // from. The cells around us join in the background; one that is slow to
+    // answer used to hold everything up for its full timeout, and all we
+    // sent meanwhile went nowhere.
+    await mine;
   }
 
   // Too many people around us right after we arrived: move on to the next
@@ -137,9 +153,18 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   }
 
   await moveTo(x, z);
-  checkCrowd();
   const own = () => cells.get(ownKey)?.adapter;
-  if (!own() || cells.get(ownKey).failed) throw new Error('Realtime unavailable');
+  if (!own() || cells.get(ownKey).failed) {
+    // Leave every cell we opened: one that gets in late would otherwise
+    // show us to others, frozen where we joined, while we play solo.
+    for (const k of [...cells.keys()]) close(k);
+    closed = true;
+    for (const [id, t] of leaveTimers) { clearTimeout(t); handlers.onLeave(id); }
+    leaveTimers.clear();
+    peerCells.clear();
+    throw new Error('Realtime unavailable');
+  }
+  checkCrowd();
   // One private chat channel for the whole region, opened a moment after the
   // rooms so its (slower, checked) join never holds up joining them.
   const chatTimer = privateChat && own().openChat && setTimeout(() => {
@@ -172,6 +197,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
       chatLink?.close();
       chatLink = null;
       for (const k of [...cells.keys()]) {
+        clearTimeout(cells.get(k).retry);
         cells.get(k).adapter.disconnect();
         cells.delete(k);
       }

@@ -2,16 +2,20 @@
 // district's metres (districts/gyeongbokgung.json). Its landmark model is in
 // core/bosingak-model.js; ringing the bell is in main.js (bosingakAct).
 //
-// The spot: on the north side of Jongno, east of Sejong-daero, where the
-// real pavilion stands by Jonggak Station (the game's Jongno is 1/4 scale
-// between districts, so this is about where it falls, not to the metre).
+// The spot: on the south side of Jongno, at the corner of Ujeongguk-ro
+// (the game's Gwanggyo walk), between Jongno and Cheonggyecheon-ro, where
+// the real pavilion stands by Jonggak Station (OSM way 141957163, `real`).
+// The pavilion is 11 m north of its real 1/4 spot: the game's Jongno is
+// 12 m south of its real line and Cheonggyecheon (game width) needs the
+// room south of it, so the strip between them is only 18 m deep.
 
 export const BOSINGAK = {
   district: 'gyeongbokgung',
-  at: [155, 106], // the pavilion's centre (its front faces Jongno, +z)
-  base: [144.5, 100, 163, 112], // the stone base and its steps up the west side: a blocker in the map
-  plaza: [124, 84, 186, 140], // the open paving round it, up to Jongno's edge
-  ring: { at: [155, 116], r: 4 }, // stand here, in front of the steps, to ring the bell
+  real: { lat: 37.56979, lon: 126.98344 }, // the real pavilion's centre (OSM way 141957163)
+  at: [149, 159], // the pavilion's centre (its front faces Cheonggyecheon, +z)
+  base: [138.5, 153, 157, 165], // the stone base and its steps up the west side: a blocker in the map
+  plaza: [124, 152, 166, 168], // the open paving round it, from Jongno's edge to Cheonggyecheon-ro
+  ring: { at: [149, 169], r: 4 }, // stand here, in front of the steps, to ring the bell
   cooldown: 7, // seconds before the bell can be rung again (it hums that long)
   firstRing: 10000, // won for the first ring (once; reward rule 'view')
   // The New Year's ringings on 1 January (KST): at midnight (제야의 종) and
@@ -22,8 +26,8 @@ export const BOSINGAK = {
   // only round the square; the New Year's ringings along all of Jongno.
   hear: { ring: 20, ceremony: 450 },
   // The few people already on the square, facing the pavilion: [x, z, what].
-  people: [[150, 129, 'photo'], [151, 122, 'pose'], [173, 127, 'coffee'], [133, 97, 'look']],
-  keeper: { who: 'official', at: [161, 106.8], ry: -Math.PI / 2 }, // on the upper floor, behind the striker, facing the bell ('official' in Joseon dress or 'monk')
+  people: [[127, 165, 'photo'], [134, 160, 'pose'], [162, 158, 'coffee'], [129, 155, 'look']],
+  keeper: { who: 'official', at: [155, 159.8], ry: -Math.PI / 2 }, // on the upper floor, behind the striker, facing the bell ('official' in Joseon dress or 'monk')
 };
 
 // The pavilion's size, in metres (core/bosingak-model.js draws it; the base is
@@ -82,17 +86,6 @@ export const BOSINGAK_CARD = {
     ko: '보신각은 서울의 옛 큰길인 종로에 서 있어요. 조선 시대에는 이곳의 큰 종을 쳐서 도성의 문을 열고 닫았어요. 밤에는 28번(인정), 새벽에는 33번(파루) 울렸어요. 지금의 누각은 1979년에 다시 지었고, 옛 종은 국립중앙박물관에 있어요. 해마다 12월 31일 자정에는 제야의 종을 33번 울리고, 종로가 사람들로 가득 차요. 실제 보신각은 1호선 종각역 옆이에요. 타종 행사는 해마다 바뀌니 가기 전에 서울시 공식 누리집에서 확인하세요.',
     ja: '普信閣はソウルの昔の大通り、鍾路に建っています。朝鮮時代、ここの大きな鐘をついて都の門を開け閉めしました。夜は28回、夜明けは33回。今の楼閣は1979年に建て直され、昔の鐘は国立中央博物館にあります。毎年大みそかの午前0時には除夜の鐘を33回つき、鍾路は人でいっぱいになります。実際の普信閣は1号線鍾閣駅のそば。鐘つき行事は年によって変わるので、行く前にソウル市の公式サイトで確認を。',
     zh: '普信阁坐落在首尔的老大街钟路上。朝鲜时代，人们敲响这里的大钟来开关都城的城门：夜里敲28下，黎明敲33下。现在的楼阁是1979年重建的，旧钟收藏在国立中央博物馆。每年除夕午夜都会敲响33声除夕钟，钟路挤满了来听钟声的人。现实中的普信阁在1号线钟阁站旁。敲钟活动每年不同，出发前请在首尔市官网确认。',
-  },
-};
-
-// The board in front of the pavilion (a park sign, core/park-signs.js).
-export const BOSINGAK_SIGN = {
-  title: BOSINGAK_TEXT.name,
-  text: {
-    en: 'Joseon\'s bell pavilion on Jongno. Its bell opened and closed the city gates; now it rings in every New Year with 33 strokes.',
-    ko: '종로의 조선 종루. 종을 쳐서 도성의 문을 열고 닫았고, 지금은 해마다 33번 울려 새해를 맞아요.',
-    ja: '鍾路にある朝鮮の鐘楼。鐘で都の門を開け閉めし、今は毎年33回ついて新年を迎えます。',
-    zh: '钟路上的朝鲜钟楼。钟声曾开关都城城门，如今每年敲33下迎接新年。',
   },
 };
 

@@ -7,6 +7,13 @@
 //
 // The props' solid parts (SOLID) go into euljiro.json's blockers through
 // scripts/build-euljiro.mjs, which places the yard at the plaza's centre.
+
+// The yard is hidden for now (Yozi, 2026-11-10: hardly anyone goes in): no
+// props, no locals, no "Play" buttons, and no solid parts on the plaza. The
+// code stays as it is. To bring it back, set this to true and run
+// node scripts/build-euljiro.mjs (it puts the props' blockers back).
+export const FOLK_GAMES_ON = false;
+
 export const FOLK_YARD = {
   ry: Math.PI,
   // Each game's prop, at [x, z] from the yard's centre.
@@ -53,10 +60,6 @@ export function folkBlockers(yard) {
   return out;
 }
 
-// Yard metres (before or after the props' turn) to world metres.
-export function yardToWorld(yard, [x, z]) {
-  return [yard.x + x, yard.z + z];
-}
 // A point in a prop's own frame to world metres.
 export function propToWorld(yard, game, [lx, lz]) {
   const [px, pz] = FOLK_YARD.props[game];

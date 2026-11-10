@@ -12,13 +12,83 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
 // (a frisbee also carries its colour: 'gift:frisbee.2')
 export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
 export const COFFEE_SIPS = 5; // taps to finish a cup
+
+// Another Land's food truck snacks (park-food.js): an ice cream cone, a
+// churro, a hot dog, in metres at hand size (the trucks scale them up).
+export const SNACKS = ['icecream', 'churro', 'hotdog'];
+export function snackModel(id) {
+  const g = new THREE.Group();
+  const part = (geo, c, x, y, z) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); g.add(m); return m; };
+  if (id === 'icecream') {
+    part(new THREE.ConeGeometry(0.04, 0.12, 10).rotateX(Math.PI), '#c98b4f', 0, 0.06, 0);
+    part(new THREE.SphereGeometry(0.045, 10, 8), '#fffaf3', 0, 0.13, 0);
+    part(new THREE.SphereGeometry(0.035, 10, 8), '#ff8fb8', 0, 0.18, 0);
+  } else if (id === 'churro') {
+    const c = part(new THREE.CylinderGeometry(0.016, 0.016, 0.24, 8), '#c98b4f', 0, 0.12, 0);
+    c.rotation.z = 0.12;
+    part(new THREE.CylinderGeometry(0.03, 0.026, 0.07, 10), '#fffaf3', 0, 0.035, 0); // paper sleeve
+  } else {
+    part(new THREE.CapsuleGeometry(0.03, 0.14, 4, 10).rotateZ(Math.PI / 2), '#ffd36e', 0, 0.03, 0); // the bun
+    part(new THREE.CapsuleGeometry(0.018, 0.17, 4, 8).rotateZ(Math.PI / 2), '#ff5a5f', 0, 0.055, 0); // the sausage
+    part(new THREE.BoxGeometry(0.15, 0.006, 0.012), '#ffe27a', 0, 0.075, 0); // mustard
+  }
+  return g;
+}
+
+// Balloon art from Another Land's clown (game/balloon-clown.js): a sword or
+// a dog in the hand, a crown worn on the head ('balloon:crown'). Twisted
+// glossy sausages of latex, in metres (the crown in the head's own units).
+export const BALLOONS = ['sword', 'dog', 'crown'];
+const glossy = (c) => (mats['b' + c] ||= new THREE.MeshPhongMaterial({ color: c, shininess: 90, specular: 0x666666 }));
+function sausage(g, c, len, r, x, y, z, rx = 0, rz = 0) {
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), glossy(c));
+  m.position.set(x, y, z);
+  m.rotation.set(rx, 0, rz);
+  g.add(m);
+  return m;
+}
+function balloonLook(g, sub) {
+  if (sub === 'sword') {
+    sausage(g, '#8fd0ff', 0.42, 0.018, 0, 0.3, 0); // the blade
+    sausage(g, '#ffe27a', 0.1, 0.02, 0, 0.06, 0, 0, Math.PI / 2); // the guard
+    sausage(g, '#ffe27a', 0.05, 0.02, 0, 0.02, 0); // the grip
+  } else if (sub === 'dog') {
+    const c = '#ff8fb8';
+    sausage(g, c, 0.08, 0.026, 0, 0.12, 0, Math.PI / 2); // body
+    for (const z of [-0.05, 0.05]) for (const x of [-0.025, 0.025]) sausage(g, c, 0.04, 0.02, x, 0.08, z); // legs
+    sausage(g, c, 0.03, 0.026, 0, 0.18, 0.07); // neck
+    sausage(g, c, 0.03, 0.024, 0, 0.21, 0.1, Math.PI / 2); // snout
+    for (const x of [-0.03, 0.03]) sausage(g, c, 0.035, 0.018, x, 0.24, 0.07, 0, x * 8); // ears
+    sausage(g, c, 0.035, 0.016, 0, 0.17, -0.08, -0.6); // tail
+    g.position.y = 0.0;
+  } else {
+    // The crown: a band round the head and five upright loops, a ball on each.
+    const cols = ['#ff5f9e', '#ffe27a', '#8fe3c7', '#c9a8ff', '#8fd0ff'];
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.04, 8, 24), glossy('#ffd23a'));
+    band.rotation.x = Math.PI / 2;
+    band.position.y = 0.22;
+    g.add(band);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.03, 6, 14), glossy(cols[i]));
+      loop.position.set(Math.sin(a) * 0.3, 0.32, Math.cos(a) * 0.3);
+      loop.rotation.y = a;
+      g.add(loop);
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), glossy(cols[(i + 2) % 5]));
+      ball.position.set(Math.sin(a) * 0.3, 0.44, Math.cos(a) * 0.3);
+      g.add(ball);
+    }
+    g.userData.onHead = true;
+  }
+  return g;
+}
 
 // A META COFFEE takeaway cup: white cup, black sleeve, black lid.
 export function makeHeld(kind) {
@@ -28,6 +98,8 @@ export function makeHeld(kind) {
   const skin = rodSkin(sub);
   kind = heldBase(kind);
   if (kind === 'gift' && GIFT_LOOKS.includes(String(sub).split('.')[0])) return giftLook(g, sub);
+  if (kind === 'food' && SNACKS.includes(sub)) { const m = snackModel(sub); m.name = g.name; return m; }
+  if (kind === 'balloon') return balloonLook(g, sub);
   if (kind === 'coffee') {
     const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.032, 0.12, 14), mat('#fbfaf6'));
     cup.position.y = 0.06;

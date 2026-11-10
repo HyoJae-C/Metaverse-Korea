@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { localName } from './i18n.js';
 import { farFree } from './far-textures.js';
+import { bakeColors } from './merge-static.js';
 
 const boards = []; // { l, mat } of every sign built, redrawn on a language change
 const W = 2.2, H = 1.5;
@@ -71,6 +72,7 @@ export function sign(g, l) {
   face.userData.noShadow = true;
   g.add(face);
   boards.push({ l, mat });
+  bakeColors(g); // the posts, back and roof: one mesh (the face keeps its own, for the language)
 }
 
 // lang: the player's language, or null for the Korean original.

@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { matCache } from './three-kit.js';
+import { bakeColors } from './merge-static.js';
 
 const mat = matCache();
 
@@ -617,4 +618,74 @@ function flowergarden(g, l) {
     });
   }
 }
-export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill, greenhouse, pond, flowergarden };
+
+// A patch of wildflowers (l.r): little clumps in soft colours scattered
+// over the grass, thicker in the middle, no hedge, nothing to trip on.
+const MEADOW = ['#ff8fab', '#ffd166', '#ffffff', '#c9a6f0', '#ffb3c7', '#9ad0ff', '#ffe08a'];
+function meadow(g, l) {
+  const R = l.r || 6, spots = [];
+  for (let i = 0; spots.length < R * R * 6 && i < R * R * 18; i++) {
+    const h = (k) => { const v = Math.sin((i + 1) * (12.9898 + k * 4.1) + l.x * 0.7 + l.z * 1.3) * 43758.5453; return v - Math.floor(v); };
+    const a = h(1) * Math.PI * 2, d = R * Math.sqrt(h(2)) * (0.6 + 0.4 * h(3));
+    spots.push([Math.cos(a) * d, Math.sin(a) * d, h(4)]);
+  }
+  const n = spots.length;
+  const leaf = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.2, 0), mat('#6fae55'), n);
+  const bloom = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.15, 0), new THREE.MeshLambertMaterial({ color: '#ffffff' }), n);
+  leaf.userData.noShadow = bloom.userData.noShadow = true;
+  const m4 = new THREE.Matrix4(), c = new THREE.Color();
+  spots.forEach(([x, z, h], i) => {
+    const s = 0.8 + h * 0.5;
+    m4.makeScale(s, s * 0.8, s).setPosition(x, 0.12 * s, z); leaf.setMatrixAt(i, m4);
+    m4.makeScale(s, s, s).setPosition(x, (0.3 + h * 0.15) * s, z); bloom.setMatrixAt(i, m4);
+    bloom.setColorAt(i, c.set(MEADOW[Math.floor(h * 997) % MEADOW.length]));
+  });
+  g.add(leaf, bloom);
+}
+
+// The deer meadow (l.p: the paddock's corners, map metres): a low wooden
+// rail fence round it and a hay rack. The deer (core/forest-deer.js) are
+// loaded the first time the fence is drawn on screen, so nobody downloads
+// them who never comes near Seoul Forest.
+function deerpen(g, l) {
+  const pts = l.p.map(([x, z]) => [x - l.x, z - l.z]); // (the group sits at l.x, l.z)
+  const wood = mat('#a8774f'), posts = [], rails = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, z1] = pts[i], [x2, z2] = pts[(i + 1) % pts.length];
+    const len = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.round(len / 2.4));
+    for (let k = 0; k < n; k++) posts.push([x1 + ((x2 - x1) * k) / n, z1 + ((z2 - z1) * k) / n]);
+    rails.push([(x1 + x2) / 2, (z1 + z2) / 2, len, Math.atan2(-(z2 - z1), x2 - x1)]);
+  }
+  const post = new THREE.InstancedMesh(new THREE.BoxGeometry(0.14, 1.1, 0.14).translate(0, 0.55, 0), wood, posts.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  posts.forEach(([x, z], i) => post.setMatrixAt(i, m4.makeTranslation(x, 0, z)));
+  const rail = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.09, 0.06), wood, rails.length * 2);
+  rails.forEach(([x, z, len, ry], i) => {
+    q.setFromAxisAngle(up, ry);
+    for (const [k, y] of [[0, 0.5], [1, 0.95]]) rail.setMatrixAt(i * 2 + k, m4.compose(v.set(x, y, z), q, sc.set(len, 1, 1)));
+  });
+  post.userData.noSplit = true; // (its onBeforeRender below brings the deer)
+  g.add(post, rail);
+  // a hay rack in the middle
+  const rack = new THREE.Group();
+  const add = (geo, color, x, y, z) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); rack.add(m); return m; };
+  add(new THREE.BoxGeometry(1.8, 0.5, 0.7), '#e6c76a', 0, 0.7, 0);
+  add(new THREE.ConeGeometry(1.4, 0.6, 4).rotateY(Math.PI / 4), '#8a5a3a', 0, 1.55, 0).scale.set(1, 1, 0.55);
+  for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.1, 1.3, 0.1), '#8a5a3a', 0.85 * s, 0.65, 0);
+  g.add(rack);
+  // the deer, once the fence first comes on screen
+  const ref = { tick: null };
+  let asked = false;
+  post.onBeforeRender = () => {
+    if (asked) return;
+    asked = true;
+    import('./forest-deer.js').then((m) => { ref.tick = m.addDeer(g, pts, l.deer || 4); }).catch(() => {});
+  };
+  return (t) => ref.tick?.(t);
+}
+// The still ones are baked into one mesh each (core/merge-static.js): a bench
+// was 11 draw calls, Seoul Forest's ~40 benches, beds and lawns ~600 from
+// the station. Ice cream (its model arrives later) and the ones that move
+// (greenhouse, pond, deer) stay as they are.
+const baked = (f) => (g, l) => { const t = f(g, l); bakeColors(g); return t; };
+export const PARK_BUILD = { icecream, bench: baked(bench), parkplaza: baked(parkplaza), rosegarden: baked(rosegarden), hill: baked(hill), greenhouse, pond, flowergarden: baked(flowergarden), meadow: baked(meadow), deerpen };

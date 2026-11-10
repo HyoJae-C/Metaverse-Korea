@@ -57,8 +57,10 @@ export function createPicnic(game, street = null) {
   function mats() {
     const out = [];
     if (mine) out.push({ id: game.myId, m: mine });
+    // (an open-air park's people are on the street's network: only the mats in this park, st.mp)
+    const here = game.mode === 'store' && game.interior?.store?.open ? game.interior.store.id : null;
     for (const [id, p] of game.others.players) {
-      const m = !p.hidden && parseMat(p.target?.mt, room?.lawns);
+      const m = !p.hidden && (p.target?.mp || null) === here && parseMat(p.target?.mt, room?.lawns);
       if (m) out.push({ id, m });
     }
     return out;

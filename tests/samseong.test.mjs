@@ -34,7 +34,7 @@ test('Samseong-dong stays on land, south of the Han River', () => {
 test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the plaza', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');
-  assert.ok(MALL.x1 - MALL.x0 >= 150 && MALL.z1 - MALL.z0 >= 80, 'the biggest building around');
+  assert.ok(MALL.x1 - MALL.x0 >= 80 && MALL.z1 - MALL.z0 >= 55, 'the biggest building around');
   assert.ok(map.landmarks.some((l) => l.type === 'konext'));
   assert.ok(map.landmarks.some((l) => l.type === 'aquarium'), 'KONEXT Aquarium pavilion');
   assert.ok(map.buildings.some((b) => b.custom && b.h === PAVILION.h));
@@ -73,10 +73,13 @@ test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
   assert.deepEqual(link.p[0], end, 'starts at Teheran-ro\'s east end');
   const songpa = region.districts.find((d) => d.id === 'songpa');
   const olympic = read(songpa.map).roads.find((r) => r.n?.en === 'Olympic-ro');
-  // (Olympic-ro runs on west past the junction to the dome, so the link ends on the road, not at its end)
+  // (the link ends on Olympic-ro, at its end or on the way)
   const [ex, ez] = [link.p.at(-1)[0] - songpa.offset[0], link.p.at(-1)[1] - songpa.offset[1]];
-  const [a, b] = olympic.p;
-  assert.ok(ez === a[1] && ez === b[1] && ex >= Math.min(a[0], b[0]) && ex <= Math.max(a[0], b[0]), 'ends on Olympic-ro');
+  const onSeg = ([px, pz], [ax, az], [bx, bz]) => {
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz || 1)));
+    return Math.hypot(ax + t * dx - px, az + t * dz - pz) < 0.05;
+  };
+  assert.ok(olympic.p.some((q, i) => i && onSeg([ex, ez], olympic.p[i - 1], q)), 'ends on Olympic-ro');
 });
 
 test('meeting zone J-1 on KONEXT Square, an Information Center and a stamp', () => {

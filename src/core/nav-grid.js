@@ -7,7 +7,7 @@
 // The grid is built once from the collision map. A route is planned once per
 // destination and re-planned only when the player wanders off it.
 
-import { pointInPoly, distSqToSeg } from './collision.js';
+import { distSqToSeg } from './collision.js';
 
 const SQ2 = Math.SQRT2;
 const ROAD_COST = 1, OPEN_COST = 1.7;
@@ -24,21 +24,44 @@ export class NavGrid {
     const N = this.w * this.h;
     this.cost = new Float32Array(N).fill(OPEN_COST); // 0 = blocked
     const r2 = r * r;
+    // Each wall: fill the cells whose centre is inside it row by row (the
+    // same even-odd rule as pointInPoly), then the cells within a person's
+    // radius of each edge. Checking every cell of a wall's bounding box
+    // against every edge took over a minute on phones for the long river
+    // outlines (hundreds of corners, a kilometre across).
+    const xs = [];
     for (const p of polys) {
-      let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
-      for (const [x, z] of p) {
-        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-        minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
-      }
-      const i0 = Math.max(0, this._i(minX - r)), i1 = Math.min(this.w - 1, this._i(maxX + r));
-      const j0 = Math.max(0, this._j(minZ - r)), j1 = Math.min(this.h - 1, this._j(maxZ + r));
-      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
-        const id = j * this.w + i;
-        if (!this.cost[id]) continue;
-        const x = this.x0 + (i + 0.5) * cell, z = this.z0 + (j + 0.5) * cell;
-        if (pointInPoly(x, z, p)) { this.cost[id] = 0; continue; }
+      let minZ = Infinity, maxZ = -Infinity;
+      for (const [, z] of p) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
+      const j0 = Math.max(0, this._j(minZ)), j1 = Math.min(this.h - 1, this._j(maxZ));
+      for (let j = j0; j <= j1; j++) {
+        const z = this.z0 + (j + 0.5) * cell;
+        xs.length = 0;
         for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
-          if (distSqToSeg(x, z, p[b], p[a]) < r2) { this.cost[id] = 0; break; }
+          const [xi, zi] = p[a], [xj, zj] = p[b];
+          if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
+        }
+        xs.sort((u, v) => u - v);
+        for (let k = 0; k + 1 < xs.length; k += 2) {
+          // centres x with xs[k] <= x < xs[k + 1]
+          const i0 = Math.max(0, Math.ceil((xs[k] - this.x0) / cell - 0.5));
+          const i1 = Math.min(this.w - 1, Math.ceil((xs[k + 1] - this.x0) / cell - 0.5) - 1);
+          for (let i = i0; i <= i1; i++) this.cost[j * this.w + i] = 0;
+        }
+      }
+      // Walk along each edge and rule out the cells near it.
+      const R = Math.ceil(r / cell) + 1;
+      for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
+        const A = p[b], B = p[a];
+        const n = Math.max(1, Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1]) / cell));
+        for (let s = 0; s <= n; s++) {
+          const ci = this._i(A[0] + ((B[0] - A[0]) * s) / n), cj = this._j(A[1] + ((B[1] - A[1]) * s) / n);
+          for (let j = Math.max(0, cj - R); j <= Math.min(this.h - 1, cj + R); j++) {
+            for (let i = Math.max(0, ci - R); i <= Math.min(this.w - 1, ci + R); i++) {
+              const id = j * this.w + i;
+              if (this.cost[id] && distSqToSeg(this.x0 + (i + 0.5) * cell, this.z0 + (j + 0.5) * cell, A, B) < r2) this.cost[id] = 0;
+            }
+          }
         }
       }
     }
@@ -98,8 +121,14 @@ export class NavGrid {
   route(ax, az, bx, bz, limit = 600000) {
     const s = this.nearestOpen(ax, az), e = this.nearestOpen(bx, bz);
     if (s < 0 || e < 0) return null;
+    // A far place the search gave up on is not searched again for 10 s: the
+    // guide re-plans every half second while you walk off its line, and
+    // a search that runs to the limit (about 0.4 s on a laptop) each time
+    // stalled phones and made them hot.
+    const now = performance.now();
+    if (this.miss && this.miss.e === e && this.miss.until > now) return null;
     const ids = this._search(s, e, limit);
-    if (!ids) return null;
+    if (!ids) { this.miss = { e, until: now + 10000 }; return null; }
     const pts = ids.map((id) => [this._x(id), this._z(id)]);
     pts[0] = [ax, az];
     const out = this._simplify(pts);

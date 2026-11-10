@@ -42,6 +42,36 @@ const VARSITY = { outfit: { hem: 0.56, sleeve: 0.84, arms: 'accent2', cuff: 'acc
 // A crew-neck knit jumper with ribbed cuffs.
 const KNIT = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.012 } };
 
+// Unisex tops, one colour each (2026-11-10): new shapes rather than more
+// colours of the same one. W: the white T-shirt worn under some of them.
+const W = 0xf4f1ea;
+const TOPS = {
+  // A sweatshirt (맨투맨) with a small chest logo.
+  'sweat-pistachio': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', badge: 'accent2', bulk: 0.014 }, colors: { top: 0xb5d68c, accent: 0x9fc376, accent2: 0x3f5a2c } },
+  // A cardigan, open over a white T-shirt.
+  'cardigan-brown': { outfit: { hem: 0.54, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.012 }, colors: { top: 0x7a5640, accent: W } },
+  // A denim vest over a white T-shirt.
+  'vest-denim': { outfit: { hem: 0.58, sleeve: 0.42, vest: true, arms: 'accent2', panel: 'accent', collar: 'top', bulk: 0.014 }, colors: { top: 0x9db8dc, accent: W, accent2: W } },
+  // A rugby shirt: wide stripes, a white collar.
+  'rugby-green': { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'accent2', collar: 'accent2', placket: 'accent2', stripes: { step: 0.12, width: 0.05, role: 'accent' } }, colors: { top: 0x2f5a3e, accent: 0xe9dfc4, accent2: W } },
+  // A short-sleeved polo shirt.
+  'polo-mint': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { top: 0x8fd6c4, accent: 0x74c0ad } },
+  // A baseball jersey with white piping and a chest number.
+  'jersey-red': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'accent', collar: 'accent', placket: 'accent', badge: 'accent' }, colors: { top: 0xe0574f, accent: W } },
+  // A track jacket (트레이닝 집업): white zip, collar and cuffs.
+  'track-blue': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', zip: 'accent', bulk: 0.01 }, colors: { top: 0x4a8be0, accent: W } },
+  // A fluffy fleece with a zip.
+  'fleece-orange': { outfit: { hem: 0.54, sleeve: 0.84, cuff: 'accent', collar: 'accent', zip: 'accent', bulk: 0.035 }, colors: { top: 0xf29a4a, accent: 0x8a5a32 } },
+  // A Breton stripe T-shirt, long-sleeved.
+  'breton-navy': { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', collar: 'top', stripes: { step: 0.07, width: 0.025, role: 'accent' } }, colors: { top: W, accent: 0x2c3a6e } },
+  // A turtleneck.
+  'turtle-camel': { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'top', turtle: 'top', bulk: 0.006 }, colors: { top: 0xd9ab72 } },
+  // A padded vest over a long-sleeved T-shirt.
+  'vest-padded': { outfit: { hem: 0.54, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', quilt: true, zip: 'accent', collar: 'top', bulk: 0.035 }, colors: { top: 0x8cc4ec, accent: 0x6aa6d4, stitch: 0x6c9fc8, accent2: W } },
+};
+// A windbreaker with the hood up (on the hooded model).
+const WINDBREAKER = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'top', zip: 'accent', bulk: 0.02 }, colors: { top: 0xffc93c, accent: 0x2c3a6e }, rules: [['Head', '1,1', 'top']] };
+
 // Swimwear (the changing rooms at Olympic Park Pool, core/pool-hall.js):
 // a sleeveless one-piece, or a short-sleeved rash guard over swim shorts,
 // barefoot, with a swim cap (cap: its colour; hood: the cap hides the hair).
@@ -118,6 +148,8 @@ export default {
     ...variants('rogue', '🧶', KNIT, {
       'knit-grey': { top: 0x9a9ca3, accent: 0x84868d }, 'knit-navy': { top: 0x51639a, accent: 0x44558a }, 'knit-cream': { top: 0xeee6d3, accent: 0xddd3bd },
     }),
+    ...Object.fromEntries(Object.entries(TOPS).map(([id, def]) => [id, { url: 'models/kaykit2/rogue.glb', emoji: '👕', wear: wear(def) }])),
+    'windbreaker-yellow': { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧥', wear: wear(WINDBREAKER), hood: true },
     // Hanbok: all on the basic model, so the face stays the same.
     ...variants('rogue', '🪭', JEOGORI, {
       'hanbok-yellow': { top: 0xffd36e, accent: 0xc8323f },
@@ -156,9 +188,16 @@ export default {
     // flight suit's armoured under-layer with light-bar trims.
     'sky-seoulman': { url: 'models/kaykit2/rogue.glb', emoji: '🦸', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.004 }, colors: { top: 0x1f9e5a, bottom: 0x2f5fd6, accent: 0xe0302f, shoes: 0xe0302f, sole: 0xb8262a } }) },
     'sky-armor': { url: 'models/kaykit2/rogue.glb', emoji: '🤖', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.03 }, colors: { top: 0x3a4658, bottom: 0x2e3746, accent: 0x5ff5d8, shoes: 0x262e3b, sole: 0x1b2029, stitch: 0x5ff5d8 } }) },
+    // The Monkey King (손오공): a red jacket over golden-yellow trousers.
+    'sky-wukong': { url: 'models/kaykit2/rogue.glb', emoji: '🐒', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.004 }, colors: { top: 0xc8352a, bottom: 0xe8b13a, accent: 0xf2c94c, shoes: 0x3a2a1e, sole: 0x24180f } }) },
     // The aquarium's diver keeper (core/aquarium.js): a full black wetsuit
     // with a hood and bright blue trims.
     'wetsuit': { url: 'models/kaykit2/rogue.glb', emoji: '🤿', wear: wear({ outfit: { hem: 0.6, sleeve: 0.84, cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.01 }, colors: { top: 0x1d2329, bottom: 0x1d2329, accent: 0x35c2f0, shoes: 0x1d2329, sole: 0x111418, stitch: 0x35c2f0 } }), hood: true, cap: true },
+    // The cosmetic clinic's operating team (game/beauty.js): the surgeon in a
+    // white doctor's coat open over green scrubs, the nurses in blue scrubs,
+    // (their surgical caps and masks are props, game/beauty.js).
+    'doctor-coat': { url: 'models/kaykit2/rogue.glb', emoji: '🩺', wear: wear({ outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', bulk: 0.014 }, colors: { top: 0xf7f7f4, accent: 0x3f8f7a, bottom: 0x3f8f7a, shoes: 0xf4f1ea } }), hood: true },
+    'scrubs-blue': { url: 'models/kaykit2/rogue.glb', emoji: '🩺', wear: wear({ outfit: { hem: 0.6, sleeve: 0.42, cuff: 'top', collar: 'accent', pocket: 'accent' }, colors: { top: 0x7fb0d8, accent: 0x6a9cc6, bottom: 0x7fb0d8, shoes: 0xf4f1ea } }), hood: true },
     // Swimwear (Olympic Park Pool).
     ...variants('rogue', '🩱', SWIM_ONE, {
       'swim-navy': { top: 0x24407a, bottom: 0x24407a },

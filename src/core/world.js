@@ -1,6 +1,7 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { glowAtNight } from './weather.js';
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -12,11 +13,13 @@ export const COLORS = {
   road: 0x8d8a8f,
   roadMajor: 0x7f7c84,
   walk: 0xd8cfc0,
+  bike: 0xc0503f, // the Han River bike paths' red asphalt (region.json links with bike: true)
   park: 0x9fd486,
   grass: 0xb4dc93,
   water: 0x7cc4e8,
   plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
   sand: 0xe6d6b2, // palace courtyards
+  closed: 0xa8a297, // land not built yet, that you can't walk into (region.json "closed"; grey like "coming soon" on the map)
   stone: 0xdcd6ca, // flagstone paving (박석): Gyeongbokgung's courtyards (drawn with stoneTexture)
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
@@ -41,6 +44,10 @@ export function buildWorld(map, scene, opts = {}) {
   const bounds = computeBounds(map);
   let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
+  // Land not built yet: one flat grey mesh just over the ground, under
+  // everything else (core/districts.js closed).
+  const closed = makeFlatPolys(map.closed || [], COLORS.closed, 0.006);
+  if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
@@ -55,7 +62,8 @@ export function buildWorld(map, scene, opts = {}) {
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk'),
+    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
+    bike: map.roads.filter((r) => r.bike),
     minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
     major: map.roads.filter((r) => majors.has(r.k)),
   };
@@ -68,6 +76,7 @@ export function buildWorld(map, scene, opts = {}) {
     }
   };
   roadMesh(roadSets.walk, COLORS.walk, ROAD_Y.walk);
+  roadMesh(roadSets.bike, COLORS.bike, ROAD_Y.walk + 0.004); // (over the paths that join it)
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
@@ -287,6 +296,29 @@ function makeWindowTexture() {
   return tex;
 }
 
+// Lit windows after dark (weather.js glowAtNight): the same window spots
+// over 4 bays × 4 storeys, about two in three lit in a warm light, so a wall
+// at night doesn't light up in one even grid.
+function makeWindowGlow() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000000';
+  g.fillRect(0, 0, 256, 256);
+  const LIT = [1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0];
+  for (let i = 0; i < 16; i++) {
+    if (!LIT[i]) continue;
+    const x = (i % 4) * 64, y = Math.floor(i / 4) * 64;
+    g.fillStyle = i % 3 ? '#ffd98a' : '#fff1cc'; // warm and a few whiter
+    g.fillRect(x + 20, y + 20, 24, 22);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(0.25, 0.25);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function makeBuildings(buildings) {
   const wPos = [], wUv = [], wCol = [], wIdx = [];
   const rPos = [], rIdx = [], rCol = [];
@@ -344,7 +376,9 @@ function makeBuildings(buildings) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(wCol, 3));
     g.setIndex(wIdx);
     g.computeVertexNormals();
-    walls = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true }));
+    const wallMat = new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true, emissive: 0xffffff, emissiveMap: makeWindowGlow() });
+    glowAtNight(wallMat, 0.85);
+    walls = new THREE.Mesh(g, wallMat);
     walls.name = 'walls';
   }
   if (rPos.length) {
@@ -454,7 +488,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     }
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
-        if (spots.length + pines.length >= max / 2) break;
+        if (spots.length + pines.length >= max * 0.7) break; // (Seoul Forest alone takes ~1,700 on a computer)
         const h = hash(x, z), h2 = hash(z, x);
         if (edgeDist(x, z, a.p) < 12) continue; // (the edge rows are there)
         const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;

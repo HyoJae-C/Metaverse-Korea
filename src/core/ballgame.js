@@ -30,7 +30,6 @@ export const TEAMS = [
   { id: 'squirrels', short: 'BUK', color: '#8a5a34', trim: '#f3e2c4', name: { en: 'Bukhansan Squirrels', ko: '북한산 다람쥐', ja: '北漢山リス', zh: '北汉山松鼠' }, chant: ['북한산! 다람쥐!', 'bukhansan! daramjwi!'] },
   { id: 'deer', short: 'YDP', color: '#f2c230', trim: '#6b4a2f', name: { en: 'Yeongdeungpo Water Deer', ko: '영등포 고라니', ja: '永登浦キバノロ', zh: '永登浦獐子' }, chant: ['영등포! 고라니!', 'yeongdeungpo! gorani!'] },
 ];
-export const teamById = (id) => TEAMS.find((t) => t.id === id) || null;
 
 // The schedule: a round robin (every team meets every other once) in
 // ROUND games, then again with home and away swapped. Built with the circle
@@ -103,7 +102,6 @@ export function rosterOf(teamId) {
 export const RESULTS = [
   ['K', 0.21], ['GO', 0.22], ['FO', 0.22], ['BB', 0.08], ['1B', 0.17], ['2B', 0.05], ['3B', 0.01], ['HR', 0.04],
 ];
-export const HITS = ['1B', '2B', '3B', 'HR'];
 export const isOut = (res) => res === 'K' || res === 'GO' || res === 'FO';
 // How long each kind of play is shown (s, before the game is fitted into
 // its time). A home run is the longest: the slow ball, fireworks and the

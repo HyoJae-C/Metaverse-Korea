@@ -6,7 +6,7 @@
 //                      | escape | retrieve
 //   update(dt, ch): every frame, ch = the local character.
 import * as THREE from 'three';
-import { FISH_SHEET, FISH_SHEET_URL } from './fishing.js';
+import { FISH_SHEET, FISH_SHEET_URL, SHEET_COLS, SHEET_ROWS, feelOf } from './fishing.js';
 
 let sheet = null; // the picture sheet, loaded once
 
@@ -135,8 +135,8 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
       sheet ||= new THREE.TextureLoader().load(FISH_SHEET_URL, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; });
       const map = sheet.clone();
       map.colorSpace = THREE.SRGBColorSpace;
-      map.repeat.set(1 / 7, 1 / 7);
-      map.offset.set((cell % 7) / 7, 1 - (Math.floor(cell / 7) + 1) / 7);
+      map.repeat.set(1 / SHEET_COLS, 1 / SHEET_ROWS);
+      map.offset.set((cell % SHEET_COLS) / SHEET_COLS, 1 - (Math.floor(cell / SHEET_COLS) + 1) / SHEET_ROWS);
       map.needsUpdate = true;
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map, depthTest: false }));
       sp.scale.setScalar(0.45 / s);
@@ -182,7 +182,7 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
       phase = name; t = 0;
       if (name === 'cast') { landed = false; progress = 0; nextNibble = 1.5 + Math.random() * 1.5; }
       if (name === 'bite') {
-        heavy = Math.min(1, ((data?.rarity || 1) - 1) / 4);
+        heavy = data?.mystery ? 0.5 : (feelOf(data) - 1) / 2; // ★1 · ★2-3 · ★4-5 feel alike
         sfx?.bite?.();
         burst(bob, 6, 0.6);
       }

@@ -8,7 +8,7 @@ import { propToWorld } from '../../src/data/folk-yard.js';
 const url = process.argv[2] || 'http://localhost:4173/';
 const S = process.argv[3] || null;
 const assert = (ok, msg) => { if (!ok) { console.error('FAIL', msg); process.exitCode = 1; } };
-const YARD = { x: -1000 - 76, z: -525 + 114 }; // euljiro offset + the yard in the district
+const YARD = { x: -1057 - 311, z: -594 + 183 }; // euljiro offset (region.json) + the yard in the district
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await (await browser.newContext({ viewport: { width: 900, height: 640 }, deviceScaleFactor: S ? 2 : 1 })).newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
@@ -19,6 +19,7 @@ await page.fill('#nickname', 'Tester');
 await page.click('#start-btn', { timeout: 90000 });
 await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
 if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
+await page.evaluate(() => __mk.snow(0)); // no snow: "Make a snowball" would take the button
 // In through the gate.
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [YARD.x, YARD.z - 20]);
 await page.waitForTimeout(1500);

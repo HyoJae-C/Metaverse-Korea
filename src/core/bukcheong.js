@@ -10,6 +10,8 @@
 // Like the other palace performers they only move while you're near, and
 // nothing blocks you: you can walk right up to the lions.
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
+import { bakeColors } from './merge-static.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
@@ -56,11 +58,10 @@ export function phaseAt(u) {
   return 'dance';
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 const furMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 const ball = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => {
-  const o = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), mat(c));
+  const o = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 7), mat(c));
   o.position.set(x, y, z); o.scale.set(sx, sy, sz);
   return o;
 };
@@ -73,21 +74,30 @@ const box = (g, sx, sy, sz, x, y, z, c) => {
 
 // The lion's coat: long threads of browns, rust and olive, like the costume
 // of dyed hemp. Each strand hangs from its top (x, y, z) down `len`, tilted
-// outward; all of a part's strands are merged into one mesh.
+// outward; all of a part's strands are merged into one mesh, with any
+// `extra` solid pieces (a box or capsule of one colour) merged in too.
 const FUR = ['#6e4329', '#8a5532', '#a5703f', '#5a3a26', '#7d6a3c', '#94432d', '#b3834c'];
-function strands(list, rand) {
-  const geos = list.map(([x, y, z, len, tx = 0, tz = 0, w = 0.055]) => {
+const tint = (g, hex) => {
+  const c = new THREE.Color(hex), n = g.attributes.position.count, col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3);
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return g;
+};
+function strands(list, rand, extra = []) {
+  const geos = list.map(([x, y, z, len, tx = 0, tz = 0, w = 0.065]) => {
     const g = new THREE.BoxGeometry(w, len, 0.04);
     g.deleteAttribute('uv');
+    const ix = Array.from(g.index.array);
+    g.setIndex([...ix.slice(0, 12), ...ix.slice(24)]); // no top or bottom: they never show
     g.translate(0, -len / 2, 0);
     g.rotateX(tx); g.rotateZ(tz);
     g.translate(x, y, z);
-    const c = new THREE.Color(FUR[Math.floor(rand() * FUR.length)]);
-    const n = g.attributes.position.count, col = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3);
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    return g;
+    return tint(g, FUR[Math.floor(rand() * FUR.length)]);
   });
+  for (const [g, hex] of extra) {
+    g.deleteAttribute('uv');
+    geos.push(tint(g, hex));
+  }
   return new THREE.Mesh(mergeGeometries(geos), furMat);
 }
 // A small seeded random, so both lions get the same shag every time.
@@ -135,6 +145,9 @@ function lionHead(rand) {
   for (let i = 0; i < 6; i++) box(jaw, 0.06, 0.05, 0.04, -0.22 + i * 0.088, 0.02, 0.4 - Math.abs(i - 2.5) * 0.03, '#fbf8ee');
   const tongue = box(jaw, 0.2, 0.04, 0.3, 0, 0.01, 0.34, '#e8524a');
   tongue.rotation.x = 0.25;
+  // bake the still parts of the mask into one mesh, and the jaw into another
+  bakeColors(jaw);
+  bakeColors(head, [jaw]);
   return { head, jaw };
 }
 
@@ -151,13 +164,12 @@ export function makeShaggyLion(seed = 7) {
   const body = new THREE.Group(); // everything that rears, in the lion's metres
   body.position.set(-HIP[0], -HIP[1], -HIP[2]);
   pivot.add(body);
-  const back = new THREE.Mesh(new THREE.CapsuleGeometry(0.5, 1.3, 6, 12), mat('#6e4329'));
-  back.rotation.x = Math.PI / 2; back.position.set(0, 1.0, -0.3);
-  body.add(back);
+  const back = new THREE.CapsuleGeometry(0.5, 1.3, 4, 10); // under the coat
+  back.rotateX(Math.PI / 2); back.translate(0, 1.0, -0.3);
   // the coat: rows of threads over the back, hanging down the sides to just
   // above the feet
   const coat = [];
-  for (let zz = -1.3; zz <= 0.62; zz += 0.11) {
+  for (let zz = -1.3; zz <= 0.62; zz += 0.14) {
     for (let k = -6; k <= 6; k++) {
       const a = (k / 6) * 1.75, px = Math.sin(a) * 0.6, py = 1.02 + Math.cos(a) * 0.48;
       coat.push([px + (rand() - 0.5) * 0.04, py, zz + (rand() - 0.5) * 0.05, Math.max(0.25, py - 0.2 + (rand() - 0.5) * 0.08), (rand() - 0.5) * 0.12, a * 0.18]);
@@ -168,7 +180,7 @@ export function makeShaggyLion(seed = 7) {
     coat.push([k * 0.11, 1.35 - Math.abs(k) * 0.03, -1.4, 1.05, -0.12, 0]);
     coat.push([k * 0.11, 1.15, 0.7, 0.85, 0.15, 0]);
   }
-  body.add(strands(coat, rand));
+  body.add(strands(coat, rand, [[back, '#6e4329']]));
   const { head, jaw } = lionHead(rand);
   head.position.set(0, 1.32, 0.78);
   body.add(head);
@@ -182,10 +194,9 @@ export function makeShaggyLion(seed = 7) {
       const a = (i / 8) * Math.PI * 2;
       ring.push([Math.sin(a) * 0.11, 0.05, Math.cos(a) * 0.11, 0.56, Math.cos(a) * 0.15, -Math.sin(a) * 0.15, 0.08]);
     }
-    g.add(strands(ring, rand));
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 0.26), mat('#1d1b22'));
-    shoe.position.set(0, -0.58, 0.04);
-    g.add(shoe);
+    const shoe = new THREE.BoxGeometry(0.15, 0.08, 0.26);
+    shoe.translate(0, -0.58, 0.04);
+    g.add(strands(ring, rand, [[shoe, '#1d1b22']]));
     parent.add(g);
     legs.push(g);
   };

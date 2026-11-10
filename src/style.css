@@ -108,6 +108,19 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .name-field input:focus { outline: none; border-color: var(--mint); }
 .name-field input[readonly] { background: var(--cream, #f6f1e7); color: var(--ink-soft); }
 .acc:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Where new players start (game/first-stop.js): one tap picks, the first is on. */
+.start-pick { margin-top: 16px; text-align: left; }
+.start-pick[hidden] { display: none; }
+.start-pick-title { display: block; font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.start-pick-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.start-pick-list button {
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); text-align: start;
+  display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px;
+  border: 3px solid #eadfcd; border-radius: 14px; background: #fff; cursor: pointer;
+}
+.start-pick-list button .ic { font-size: 18px; flex: none; }
+.start-pick-list button[aria-checked='true'] { border-color: var(--mint); background: #eefaf7; }
+.start-pick-list button:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .look-lock { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-soft); text-align: left; }
 #step-login { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 420px; }
 #step-login[hidden] { display: none; }
@@ -386,7 +399,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 }
 .toast {
   position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
-  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 999px; font-weight: 800;
+  background: var(--ink); color: var(--cream); padding: 10px 18px; border-radius: 22px; font-weight: 800;
+  width: max-content; max-width: min(88vw, 520px); text-align: center; /* a longer hint wraps across the screen, not in half of it */
   pointer-events: none; z-index: 60;
 }
 .cart { position: relative; text-align: left; }
@@ -436,8 +450,43 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
      results take the map's place, right under the search box. */
   .map-searching .map-card { height: 100%; }
   .map-searching .map-body { grid-template-rows: minmax(0, 1fr); }
-  .map-searching :is(.map-canvas, .map-seoul, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
+  .map-searching :is(.map-canvas, .map-seoul, .map-locate, .map-soon, .map-disclaimer, .map-taxi-hint) { display: none; }
   .map-searching .map-list { padding-top: 0; }
+  /* Phones: the map fills the screen. Search and one row of categories on
+     top; the list of places is a sheet folded to one bar at the bottom. */
+  #map-panel { padding: 0; }
+  #map-panel .map-card {
+    width: 100%; height: 100%; border-radius: 0;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .map-top { padding: 6px 10px 4px 16px; }
+  .map-card > .map-controls { padding: 0 12px 6px; gap: 6px; }
+  .map-search { min-height: 40px; }
+  .map-cats { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 0; }
+  .map-cats::-webkit-scrollbar { display: none; }
+  .map-body { grid-template-rows: minmax(0, 1fr) auto; }
+  .map-list { max-height: 52px; overflow: hidden; padding-top: 0; border-top: 1px solid #eadfcd; }
+  .map-sheet-open .map-body { grid-template-rows: minmax(0, 1fr) minmax(0, 46%); }
+  .map-sheet-open .map-list { max-height: none; overflow: auto; }
+  .map-searching .map-list { max-height: none; overflow: auto; border-top: 0; }
+  .map-searching .map-handle { display: none; }
+  .map-list > .map-disclaimer { margin: 10px 4px 4px; }
+  /* (the sheet is inside .map-body: keep the button above it and the credit) */
+  #map-panel .map-locate { right: 10px; bottom: 82px; }
+  #map-panel.map-sheet-open .map-locate { bottom: calc(46% + 30px); }
+}
+.map-handle {
+  position: sticky; top: 0; z-index: 1; width: 100%; min-height: 48px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 0 6px; background: var(--panel); color: var(--ink); font: inherit; font-size: 15px; font-weight: 800;
+}
+.map-handle::before { content: ""; position: absolute; top: 5px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #d9ccb6; }
+.map-handle b { font-size: 13px; color: var(--ink-soft); }
+.map-locate {
+  position: absolute; right: calc(280px + 10px); bottom: 30px; z-index: 1; width: 44px; height: 44px; padding: 0; /* (left of the side list) */
+  border-radius: 50%; font-size: 22px; color: #ff6f5b; box-shadow: 0 2px 6px rgba(74, 63, 53, 0.25);
+}
+@media (max-width: 700px) {
   .tools { top: auto; bottom: max(200px, calc(env(safe-area-inset-bottom) + 190px)); right: 14px; flex-direction: column; z-index: 4; } /* above the emote wheel's petals */
 }
 @media (max-width: 700px) {
@@ -805,23 +854,57 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 /* Daily check-in and missions */
 .daily-chip { position: relative; }
 .daily-chip .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
-.daily-panel { max-height: min(78dvh, 560px); overflow-y: auto; }
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 12px; }
-.week span { aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: #f1e9dc; font-size: 12px; font-weight: 800; color: var(--ink-soft); }
-.week span.on { background: var(--mint); color: #fff; }
-.week span.today { box-shadow: 0 0 0 2px var(--coral, #ff9b85); }
-.week span.big { font-size: 15px; }
-#daily-panel .primary { width: 100%; }
-#daily-panel .primary:disabled { opacity: 0.6; }
-.daily-sub { display: block; margin-top: 14px; font-size: 15px; }
-.missions { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.missions li { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 14px; padding: 10px 12px; font-size: 14px; }
-.missions li .tick { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d9cdbb; display: grid; place-items: center; font-size: 13px; }
-.missions li.done .tick { background: var(--mint); border-color: var(--mint); color: #fff; }
-.missions li.done .m-text { color: var(--ink-soft); text-decoration: line-through; }
-.missions li .m-text { flex: 1; min-width: 0; }
-.missions li .m-prog { font-size: 12px; color: var(--ink-soft); }
-.missions li .chip { flex: 0 0 auto; }
+/* Calm and easy to read: it's information, so soft colours, one accent
+   (coral) for what to press, mint for what's done. */
+.daily-panel { max-height: min(80dvh, 600px); overflow-y: auto; }
+.daily-title { display: flex; align-items: center; gap: 10px; font-size: 19px; color: var(--ink); padding-inline-end: 36px; }
+.daily-ico { flex: none; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; background: #ffeee8; font-size: 20px; }
+.week {
+  position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+  margin: 14px 0 14px; padding: 10px; border-radius: 18px; background: #f7efe3;
+}
+/* A thin track behind the days, so the week reads as one row of steps. */
+.week::before { content: ''; position: absolute; left: 24px; right: 24px; top: 50%; height: 3px; margin-top: -1.5px; border-radius: 2px; background: #eadfcd; }
+.week span {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+  background: #fff; font-size: 14px; font-weight: 800; color: #a3958a; box-shadow: 0 2px 0 rgba(74, 63, 53, 0.08);
+}
+.week span.on { background: var(--mint); color: #fff; box-shadow: 0 2px 0 #6fbcae; }
+.week span.today { background: #fff; color: var(--accent-dark); box-shadow: 0 0 0 3px var(--accent); }
+.week span.today.on { background: var(--mint); color: #fff; box-shadow: 0 0 0 3px #6fbcae; }
+.week span.big { font-size: 17px; background: #fff3cf; }
+.week span.big.on { background: var(--mint); }
+#daily-panel .primary { width: 100%; font-size: 17px; padding: 13px; }
+/* Already checked in: a quiet mint "done", not a faded button. */
+#daily-panel #checkin-btn:disabled { opacity: 1; background: #e6f5f1; color: #2f7f71; box-shadow: 0 4px 0 #cbe8e0; }
+#daily-streak { margin-top: 10px; font-size: 12.5px; color: var(--ink-soft); }
+.daily-sub { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 18px; font-size: 16px; color: var(--ink); }
+.daily-count { flex: none; padding: 3px 10px; border-radius: 999px; background: #f1e9dc; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.missions { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.missions li {
+  display: flex; align-items: center; gap: 12px; min-height: 60px;
+  background: #fff; border: 1.5px solid #f1e7d8; border-radius: 16px; padding: 10px 10px 10px 12px;
+  font-size: 15px; line-height: 1.38;
+}
+.missions li .tick {
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 12px; background: #f7efe3;
+  display: grid; place-items: center; font-size: 19px;
+}
+.missions li.done { background: #f6fbf9; border-color: #d9efe9; }
+.missions li.done .tick { background: var(--mint); color: #fff; font-size: 18px; font-weight: 800; }
+.missions li.done .m-text { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: rgba(125, 111, 98, 0.45); }
+.missions li .m-text { flex: 1; min-width: 0; color: var(--ink); }
+.missions li .m-prog { flex: none; font-size: 13px; font-weight: 800; color: var(--ink-soft); }
+.m-go {
+  flex: 0 0 auto; min-height: 40px; padding: 0 12px; border-radius: 999px;
+  background: #e6f5f1; color: #2a7466; font-size: 13.5px; font-weight: 800; white-space: nowrap;
+}
+.m-go:active { transform: translateY(1px); background: #d5eee7; }
+#daily-bonus {
+  margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: #fff6dc;
+  font-size: 13px; line-height: 1.45; color: #6b5a3e; text-align: start;
+}
+#daily-bonus::before { content: '🎁 '; }
 
 /* Chat safety: tap a name in the chat log to block or report */
 .chat-name { all: unset; color: #e0604d; font-weight: 800; cursor: pointer; pointer-events: auto; text-decoration: underline dotted; }
@@ -928,7 +1011,13 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .taxi-say strong { font-size: 18px; }
 .taxi-say small { color: var(--ink-soft); }
 .taxi-dest { grid-column: 1 / -1; margin: 0; font-weight: 800; }
-.taxi-cabin .chip { grid-column: 1 / -1; justify-self: end; background: #fff; }
+.taxi-shop { position: absolute; left: 22px; right: 22px; top: 50%; transform: translateY(-50%); display: grid; gap: 4px; padding: 14px 16px; border-radius: 18px; background: #fffaf0f2; color: var(--ink); box-shadow: 0 6px 18px #0003; }
+.taxi-shop small { color: var(--ink-soft); font-weight: 800; }
+.taxi-shop strong { font-size: 19px; }
+.taxi-shop span { font-size: 14px; line-height: 1.4; }
+/* A room being set up on the way in (game/tips.js): a tip over the screen. */
+.room-loading { position: fixed; inset: 0; z-index: 55; display: grid; place-items: center; padding: 24px; background: #2b2a33; }
+.room-loading p { max-width: 420px; margin: 0; padding: 14px 18px; border-radius: 18px; background: #fffaf0; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.45; text-align: center; }
 @media (max-width: 700px) { .taxi-mode .map-disclaimer { display: none; } }
 
 /* Items and the ride picker */
@@ -1029,9 +1118,9 @@ a.setting-row { text-decoration: none; color: inherit; }
 .fish-meter.auto i { background: linear-gradient(90deg, #8ec5ff, #4b8ec7); transition: width .25s linear; }
 .fish-water.rare { background: linear-gradient(#ff7a59, #b7243a); box-shadow: 0 0 0 3px #ffd166 inset; }
 .fish-callout { font-size: 26px; font-weight: 900; color: #ffe066; text-shadow: 0 2px 0 #7a1020, 0 0 12px rgba(255, 224, 102, .8); letter-spacing: .02em; animation: fish-callout .5s cubic-bezier(.2, 1.6, .4, 1) both, fish-pulse .5s ease-in-out .5s infinite; }
-.fish-callout.tier-1, .fish-callout.tier-2 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
-.fish-callout.tier-4 { font-size: 28px; color: #ffd166; }
-.fish-callout.tier-5 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
+.fish-callout.feel-1 { font-size: 20px; color: #fff; text-shadow: 0 2px 0 rgba(0, 0, 0, .25); animation: fish-callout .4s cubic-bezier(.2, 1.6, .4, 1) both; }
+.fish-callout.feel-2 { font-size: 28px; color: #ffd166; }
+.fish-callout.feel-3 { font-size: 30px; color: #fff3a3; text-shadow: 0 2px 0 #4a0a6b, 0 0 18px rgba(255, 220, 120, 1); }
 @keyframes fish-callout { from { transform: scale(2.4) rotate(-8deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .fish-auto-note { margin: 0; padding: 8px 10px; border-radius: 12px; background: #fff4d6; color: #7a5200; font-size: 13px; font-weight: 700; line-height: 1.4; }
 .fish-card.escaped { background: #eef0f3; opacity: 0.75; }
@@ -1061,8 +1150,22 @@ a.setting-row { text-decoration: none; color: inherit; }
 @keyframes fish-spark { 50% { transform: scale(1.35) rotate(15deg); opacity: .55; } }
 .fish-card-stars { color: #b86e00; font-size: 13px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 1px 0 #fff; }
 @keyframes fish-card-pop { from { scale: .6; opacity: 0; } }
+/* ★4 lands with a thump: the card drops in big and wobbles, the fish bounces up.
+   ★5 whirls in: the card spins round and round as it grows, the fish twirls
+   up out of it, and a ring of light keeps turning behind it. */
+.fish-card.tier-4 { animation: fish-card-slam .8s cubic-bezier(.2, 1.4, .4, 1) both; }
+.fish-card.tier-4 .fish-big { animation: fish-big-jump .7s cubic-bezier(.2, 1.8, .4, 1) .15s both, trophy-bob 1s ease-in-out .9s infinite; }
+.fish-card.tier-5 { isolation: isolate; animation: fish-card-whirl 1.2s cubic-bezier(.2, 1.1, .3, 1) both; }
+.fish-card.tier-5 .fish-big { animation: fish-big-twirl 1.1s cubic-bezier(.2, 1.3, .4, 1) .5s both, trophy-bob 1s ease-in-out 1.6s infinite; }
+.fish-card.tier-5::before { content: ''; position: absolute; z-index: -1; left: 50%; top: 42%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; background: repeating-conic-gradient(rgba(255, 240, 160, .75) 0 10deg, transparent 10deg 30deg); mask: radial-gradient(circle, #000 30%, transparent 70%); animation: fish-rays 6s linear infinite, fish-rays-in .8s ease-out .6s both; pointer-events: none; }
+@keyframes fish-card-slam { 0% { transform: scale(1.7) rotate(-8deg); opacity: 0; } 45% { transform: scale(.9) rotate(3deg); opacity: 1; } 65% { transform: scale(1.06) rotate(-2deg); } 82% { transform: scale(.98) rotate(1deg); } 100% { transform: none; } }
+@keyframes fish-big-jump { 0% { transform: translateY(30px) scale(.3); opacity: 0; } 60% { transform: translateY(-14px) scale(1.25); opacity: 1; } 100% { transform: none; } }
+@keyframes fish-card-whirl { 0% { transform: scale(.1) rotate(-1080deg); opacity: 0; } 70% { transform: scale(1.12) rotate(20deg); opacity: 1; } 85% { transform: scale(.96) rotate(-6deg); } 100% { transform: none; } }
+@keyframes fish-big-twirl { 0% { transform: scale(0) rotate(-720deg); opacity: 0; } 70% { transform: scale(1.45) rotate(15deg); opacity: 1; } 100% { transform: none; } }
+@keyframes fish-rays { to { rotate: 360deg; } }
+@keyframes fish-rays-in { from { opacity: 0; scale: .3; } }
 @keyframes fish-card-shine { 60%, 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .fish-card.rare, .fish-card.rare::after, .fish-card.rare::before, .fish-card.rare .fish-big, .fish-spark { animation: none; } }
 .fish-big { font-size: 56px; line-height: 1; }
 .fish-odds summary { cursor: pointer; font-weight: 700; font-size: 13px; }
 .fish-list { display: grid; gap: 6px; max-height: 40vh; overflow-y: auto; }
@@ -1192,6 +1295,19 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 /* Batting cage, shooting gallery, darts (ui/batting-ui.js and friends) */
 .arcade-canvas { width: 100%; height: auto; border-radius: 14px; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .darts-board { max-width: min(100%, 36vh); margin: 0 auto; }
+/* Darts and bowling in the world (game/darts-view.js, game/bowling-view.js):
+   the board or lane is the real one in the room, so the panel keeps only the
+   score, a meter and the controls. */
+.arcade-live { padding: 12px 14px; }
+.arcade-live h3 { display: none; }
+.arcade-live .karaoke-pad { padding: 12px; font-size: 20px; }
+.arcade-live .karaoke-status { margin: 0 36px 6px 0; }
+.arcade-live .bowl-sheet { display: block; width: calc(100% - 40px); height: auto; border-radius: 10px; margin: 0 0 6px; }
+.arcade-live .bowl-sheet + .karaoke-status { margin-right: 0; }
+.arcade-meter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.arcade-meter span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+.arcade-meter i { display: block; height: 100%; background: #ffd36e; }
+.arcade-meter b { font-size: 15px; min-width: 3.2em; text-align: right; }
 .arcade-speeds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .arcade-speed { display: grid; gap: 2px; padding: 10px; border-radius: 12px; text-align: center; }
 .arcade-speed small { font-size: 11px; opacity: 0.8; }
@@ -1374,6 +1490,13 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .stamp-cell em { font-size: 10px; font-style: normal; font-weight: 800; color: #8a7d6e; }
 .stamp-cell.fresh .stamp-art { animation: stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
 @keyframes stamp-in { from { transform: scale(1.9); opacity: 0; } 60% { opacity: 1; } to { transform: scale(1); } }
+/* Stamp note pages: 4 stamps in a 2×2 grid, turned with the buttons or a swipe. */
+.stamp-grid.stamp-page { grid-template-columns: repeat(2, 1fr); margin-top: 10px; touch-action: pan-y; user-select: none; }
+.stamp-page .stamp-cell { padding: 10px 6px 8px; }
+.stamp-page .stamp-art { width: min(108px, 27vw); height: min(108px, 27vw); }
+.stamp-page .stamp-cell strong { font-size: 13px; }
+.stamp-nav { margin-bottom: 10px; }
+.stamp-blank { visibility: hidden; }
 .dex-card em { font-size: 11px; font-style: normal; font-weight: 800; }
 
 /* 효재어학당 course book */
@@ -1431,13 +1554,24 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bag-tabs { display: flex; gap: 6px; margin: 10px 0 0; }
 .bag-tabs .chip.on { background: #3a2a22; color: #fff; }
 .bag-closet-empty { margin: 14px 0 4px; }
-.bag-panel .bag-closet { margin-top: 12px; }
 .bag-rides { display: grid; gap: 8px; margin-top: 12px; }
 .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 10px; }
 .bag-slot { position: relative; aspect-ratio: 1; border-radius: 12px; background: #fff; font-size: 24px; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px #eadfd2; }
 .bag-slot.empty { background: #f6f0e8; box-shadow: inset 0 0 0 1.5px #efe6da; }
 .bag-slot.on { box-shadow: inset 0 0 0 3px var(--accent-dark, #e0694e); }
+.closet-bar { display: flex; gap: 6px; align-items: flex-start; margin-top: 10px; }
+.closet-kinds { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.closet-kinds .chip, .closet-sort { padding: 4px 10px; font-size: 12px; }
+.closet-kinds .chip.on { background: #3a2a22; color: #fff; }
+.closet-sort { flex: none; white-space: nowrap; }
+.bag-slot.worn { background: #fff4e6; }
+.bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
+.closet-icon { position: relative; color: #4a4550; display: inline-grid; place-items: center; line-height: 1; }
+.closet-icon svg { display: block; }
+.closet-dot { position: absolute; right: -0.28em; bottom: -0.18em; width: 0.42em; height: 0.42em; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.18); }
+.closet-title .closet-icon { font-size: 1.1em; margin-right: 0.1em; }
+.closet-retired { display: inline-block; padding: 1px 6px; border-radius: 8px; background: #efe6da; color: var(--ink-soft); font-size: 11px; font-weight: 700; vertical-align: middle; }
 .bag-info { display: grid; gap: 6px; min-height: 44px; }
 .bag-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .bag-more { margin-top: 8px; }
@@ -1738,6 +1872,8 @@ kbd.wide { padding: 0 7px; }
   box-shadow: 0 2px 0 var(--accent-dark);
 }
 body.beauty-mode #keys-panel { display: none; }
+/* On the operating table (game/beauty.js): the view from your eyes, nothing over it. */
+body.surgery-pov .nametag.me, body.surgery-pov #store-banner, body.surgery-pov #keys-panel, body.surgery-pov #action-btn, body.surgery-pov #action-menu { display: none; }
 /* Keep what used to sit at the bottom left above the key panel. */
 @media (pointer: fine) {
   .chat-log { bottom: max(calc(env(safe-area-inset-bottom, 0px) + 96px), calc(var(--keys-h, 0px) + 24px)); }
@@ -2020,7 +2156,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #fffaf0, inset 0 0 0 4px var(--ink); color: var(--ink); transform: rotate(var(--tilt, -6deg)); background: radial-gradient(circle, rgba(200, 50, 58, 0.06), rgba(200, 50, 58, 0.14)); }
 .fish-stamp-top { font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 1 !important; }
 .fish-stamp-fish { font-size: 32px; line-height: 1; }
-.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=4") no-repeat; background-size: 700% 700%; }
+.fish-stamp-sprite { width: min(48px, 100%); aspect-ratio: 1; background: url("/assets/fishing/fish-icons.webp?v=5") no-repeat; background-size: 800% 700%; }
 .fish-pop-big.fish-stamp-sprite { width: 120px; }
 .fish-big.fish-stamp-sprite { width: 76px; }
 .fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
@@ -2171,16 +2307,14 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 
 /* The bite card by rarity: ★1 blue → ★2 green → ★3 yellow → ★4 orange → ★5 red,
    and the card and its shout grow with the stars. */
-.fish-water.bite.t1 { padding: 14px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
-.fish-water.bite.t2 { padding: 16px 12px; background: linear-gradient(135deg, #9ae9a4, #2a9a52); box-shadow: none; }
-.fish-water.bite.t3 { padding: 19px 12px; color: #4a2c00; background: linear-gradient(135deg, #fff08a, #f0b400); box-shadow: 0 0 0 3px #fff6c8 inset, 0 0 14px rgba(240, 180, 0, .55); }
-.fish-water.bite.t4 { padding: 23px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
-.fish-water.bite.t5 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
-.fish-water.bite .fish-callout.tier-1 { font-size: 18px; }
-.fish-water.bite .fish-callout.tier-2 { font-size: 21px; }
-.fish-water.bite .fish-callout.tier-3 { font-size: 24px; color: #6b2a00; text-shadow: 0 2px 0 #fff6c8, 0 0 10px rgba(255, 255, 255, .8); }
-.fish-water.bite .fish-callout.tier-4 { font-size: 27px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
-.fish-water.bite .fish-callout.tier-5 { font-size: 31px; }
+.fish-water.bite.feel-1 { padding: 15px 12px; background: linear-gradient(135deg, #8fdcff, #2b7fe0); box-shadow: none; }
+.fish-water.bite.feel-2 { padding: 22px 12px; background: linear-gradient(135deg, #ffbd6e, #e8590c); box-shadow: 0 0 0 3px #ffe0a8 inset, 0 0 18px rgba(232, 89, 12, .6); }
+.fish-water.bite.feel-3 { padding: 28px 12px; background: linear-gradient(135deg, #ff7f7f, #b8102b); box-shadow: 0 0 0 4px #ffd166 inset, 0 0 26px rgba(255, 60, 60, .75); }
+.fish-water.bite.feel-mystery { padding: 20px 12px; background: linear-gradient(135deg, #c9b8ff, #5b4bb8); box-shadow: 0 0 0 3px #e6dcff inset, 0 0 16px rgba(120, 90, 220, .6); }
+.fish-water.bite .fish-callout.feel-1 { font-size: 19px; }
+.fish-water.bite .fish-callout.feel-mystery { font-size: 25px; color: #fff; text-shadow: 0 2px 0 #3a2a80, 0 0 12px rgba(200, 180, 255, .9); }
+.fish-water.bite .fish-callout.feel-2 { font-size: 26px; color: #fff; text-shadow: 0 2px 0 #7a2a00, 0 0 12px rgba(255, 210, 120, .9); }
+.fish-water.bite .fish-callout.feel-3 { font-size: 31px; }
 
 /* "New features, refresh" banner (ui/update-banner.js) */
 .update-banner {
@@ -2309,6 +2443,99 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 @keyframes start-scene { 0% { opacity: 0; } 5% { opacity: 1; } 25% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .start-scenes .scene { animation: none; } .start-scenes .scene:first-child { opacity: 1; } }
 #start > .panel { position: relative; z-index: 1; }
+
+/* Start screen, first step: this card has little to read, so it can be
+   playful. People from the game hold up the name on a banner over the
+   card, and the "Next" button shines. */
+/* One column exactly as wide as the screen minus padding: an auto column
+   grew to the banner's width and pushed the card right on 393 px phones. */
+#start { align-content: center; grid-template-columns: minmax(0, 1fr); }
+.start-banner {
+  position: relative; z-index: 2; display: block; justify-self: center;
+  /* A little wider than the card, spilling evenly into both side gutters. */
+  width: min(400px, calc(100% + 16px)); margin-inline: -8px;
+  height: auto; margin-bottom: -26px; pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(74, 63, 53, 0.16));
+  animation: banner-sway 3.6s ease-in-out infinite; transform-origin: 50% 100%;
+}
+@keyframes banner-sway { 0%, 100% { transform: translateY(0) rotate(-0.6deg); } 50% { transform: translateY(-3px) rotate(0.6deg); } }
+#start:has(#step-lang[hidden]) .start-banner { display: none; }
+/* The banner carries the name, so the card's title is for screen readers
+   (and comes back on short screens, where the banner is hidden). */
+#step-lang h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#step-lang {
+  padding-top: 34px;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#fffaf2, #fff6ea) padding-box,
+    linear-gradient(135deg, #ffb3c7, #ffd36e 35%, #8fd3c7 65%, #b9a6f0) border-box;
+}
+#step-lang .tagline { color: #6f6156; font-size: 15px; line-height: 1.45; }
+#step-lang h2 { margin-top: 18px; color: var(--ink); font-size: 17px; }
+#step-lang .region {
+  display: inline-block; margin: 14px 0 12px; padding: 6px 14px; border-radius: 999px;
+  background: #fff; border: 2px dashed #ffc2b4; font-size: 14px; color: var(--ink);
+}
+#next-btn {
+  overflow: hidden; /* position: sticky (above) holds the shine */
+  background: linear-gradient(100deg, #ff8f86, #ff9fb4);
+  box-shadow: 0 5px 0 #e9735c, 0 10px 18px rgba(255, 127, 143, 0.28);
+}
+#next-btn::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg); animation: shine 3.6s ease-in-out infinite;
+}
+#next-btn:disabled::after { display: none; }
+@keyframes shine { 0%, 55% { left: -40%; } 85%, 100% { left: 130%; } }
+.start-scenes .scene span { backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(40, 32, 26, 0.15); }
+
+/* Phones held upright: a drawn pastel sky and Seoul skyline (Namsan tower,
+   a hanok roof) instead of the game scenes the card would cover anyway.
+   The scenes' pictures then aren't downloaded at all. */
+.start-art { display: none; }
+@media (max-width: 700px) and (orientation: portrait) {
+  .start-scenes { display: none; }
+  #start { background: linear-gradient(180deg, #ffd9e6 0%, #ffeedd 38%, #d6ecff 100%); }
+  .start-art { display: block; position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .start-art .skyline { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; min-height: 26vh; }
+  .start-art .cloud { position: absolute; width: 120px; height: 36px; border-radius: 999px; background: rgba(255, 255, 255, 0.85); animation: cloud-drift 14s ease-in-out infinite alternate; }
+  .start-art .cloud::before, .start-art .cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
+  .start-art .cloud::before { width: 54px; height: 54px; left: 18px; top: -26px; }
+  .start-art .cloud::after { width: 40px; height: 40px; left: 60px; top: -16px; }
+  .start-art .c1 { left: 6%; top: 7%; }
+  .start-art .c2 { right: 4%; top: 14%; transform: scale(0.75); animation-duration: 18s; }
+  .start-art .c3 { left: 38%; top: 3%; transform: scale(0.55); animation-duration: 22s; opacity: 0.8; }
+  /* Banner and card sit high, so the skyline shows below them. */
+  #start { align-content: start; padding-top: max(20px, calc(env(safe-area-inset-top) + 8px)); }
+}
+@keyframes cloud-drift { from { translate: -10px 0; } to { translate: 14px 0; } }
+@media (max-height: 600px) {
+  .start-banner { display: none; }
+  #step-lang { padding-top: 16px; }
+  #step-lang h1 { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-banner, .start-art .cloud, #next-btn::after { animation: none; }
+  #next-btn::after { display: none; }
+}
+
+/* Type and buttons, one rule for every panel: titles, buttons and section
+   heads in the rounded display font; body text stays plain for reading.
+   Sizes: title 19, body 15, note 12.5. The main action is the big apricot
+   .primary; a helper action (show the way) is a small mint pill. */
+:root { --font-display: 'Fredoka', 'Jua', 'Nunito', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif; }
+h1, h2, .wallet-title, .primary, .daily-sub strong, .daily-count, .region, .lang-current, .m-go, .street-name {
+  font-family: var(--font-display); font-weight: 600; font-synthesis: none;
+}
+.primary { letter-spacing: 0.2px; }
+html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub strong, .region, .lang-current, .m-go, .street-name) { font-family: inherit; font-weight: 800; }
+
+/* The welcome card after the start: information, so calm and easy to read. */
+.welcome-card h2 { margin: 2px 0 14px; color: var(--ink); font-size: 18px; }
+.welcome-card #welcome-body { font-size: 15px; color: var(--ink); }
+.welcome-tips { list-style: none; padding: 0; display: grid; gap: 6px; }
+.welcome-tips li { background: #fff; border: 1.5px solid #f1e7d8; border-radius: 14px; padding: 9px 12px; font-size: 14px; line-height: 1.45; }
 /* Library shelf tabs: one section per bookshelf */
 .book-tabs { flex-wrap: wrap; justify-content: flex-start; padding-right: 36px; }
 
@@ -2373,5 +2600,53 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
   /* A mini-game or a game panel fills the screen: no buttons over it. */
   #hud:has(.game-panel:not([hidden])) .tools { display: none; }
 }
+/* Android phones held upright: the tool buttons (map, ride, chat, bag,
+   notes) sit in a slim see-through bar along the bottom instead. Chrome on
+   Android keeps its address bar at the top, so the bottom is free; on an
+   iPhone, Safari's address bar can sit at the bottom and would push the
+   joystick up, so iPhones keep the layout above. Everything that sat at the
+   bottom moves up by the bar's height (the game view itself doesn't shrink). */
+@media (max-width: 700px) and (orientation: portrait) {
+  html.android { --tool-bar: 54px; }
+  html.android :is(.tools, .in-store .tools) {
+    position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 4;
+    flex-direction: row; justify-content: space-around; gap: 0;
+    padding: 0 max(6px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(6px, env(safe-area-inset-left));
+    background: rgba(255, 250, 240, 0.72);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: 0 -1px 0 rgba(74, 63, 53, 0.08);
+  }
+  html.android .tools .tool { position: relative; right: auto; bottom: auto; flex: 1 1 0; max-width: 84px; width: auto; height: var(--tool-bar); border-radius: 14px; background: transparent; box-shadow: none; }
+  html.android .tools :is(#bike-btn, #chat-btn) { position: relative; right: auto; bottom: auto; }
+  html.android .tools .tool span { font-size: 21px; }
+  html.android .tools .tool small { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  html.android .tools .tool[aria-pressed='true'] { background: var(--mint); }
+  html.android .tools .badge { top: 2px; right: calc(50% - 24px); }
+  html.android #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 1; pointer-events: auto; }
+  html.android :is(.notice-pin, .install-nudge) { translate: none; }
+  html.android :is(.joystick, .emote-wheel, .emotes, .action, .action-menu, .help, .revert, .honk-btn, .boost-btn,
+    .stamina, .chat-log, .chat-fold, .quest-bar, .quest-chip, .kpop-tv, .decor-bar, .person-menu) {
+    translate: 0 calc(-1 * var(--tool-bar));
+  }
+  html.android .quest-bar .quest-chip { translate: none; } /* (the bar moves; its chips go with it) */
+  @media (max-width: 360px) { html.android :is(.action, .action-menu) { left: 50%; } }
+}
 .online .on-short { display: none; }
 @media (max-width: 700px) and (orientation: portrait) { .online .on-short { display: inline; } }
+
+/* Minimap (game/minimap.js): top-left of the street; tap for the full map. */
+.minimap {
+  position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); z-index: 2;
+  width: 120px; height: 120px; padding: 0; border-radius: 50%; overflow: hidden;
+  background: #f3ecdc; box-shadow: var(--shadow); cursor: pointer;
+}
+.minimap[hidden] { display: none; }
+.minimap canvas { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.minimap-me {
+  position: absolute; left: 50%; top: 50%; width: 20px; height: 22px; pointer-events: none;
+}
+.minimap-me svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 700px), (max-height: 500px) {
+  .minimap { width: 88px; height: 88px; }
+  .minimap-me { width: 17px; height: 19px; }
+}

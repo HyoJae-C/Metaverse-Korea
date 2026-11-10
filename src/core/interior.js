@@ -3,6 +3,7 @@
 import { listeningBar } from './listening-bar-model.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
+import { RING, BOARD_ORDER } from './arcade.js';
 import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
@@ -13,9 +14,11 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
+import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
-import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+import { PALETTES, LIP_FAMILIES, accessory } from '../data/appearance.js';
+import { makeEars, makePaw } from './animal-wear.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
@@ -38,9 +41,15 @@ export const ROOM_SIZES = {
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
-  // Another Land (themepark.js): the old 52 × 28 square plus the roller
-  // coaster's land to the west and north. Not centred: x0..x1, z0..z1.
-  themepark: { w: 96, d: 54, h: 8, x0: -70, x1: 26, z0: -40, z1: 14 },
+  // Another Land (themepark.js): the rides round the central plaza, spread
+  // out along walking paths, the east promenade to the Ferris wheel and the
+  // drop tower, and a longer Main Street from the gate: under the island
+  // since the roller coaster moved out onto it. Not centred: x0..x1, z0..z1.
+  themepark: { w: 88, d: 74, h: 8, x0: -26, x1: 62, z0: -40, z1: 34 },
+  // Another Land's island in Seokchon Lake, open to the street (stores.json
+  // "open"): the Cotton Candy Express and its candy wood, in the coaster's
+  // own metres; the island's shore (open.lawn) is the edge.
+  island: { w: 92, d: 76, h: 8, x0: -72, x1: 20, z0: -60, z1: 16 },
   cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
@@ -49,6 +58,8 @@ export const ROOM_SIZES = {
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
   dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
+  zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
+  zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
 };
 export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
@@ -290,6 +301,17 @@ export function productModel(kind, color, product = null) {
       add(new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), 0, 0.72, 0, mat('#8a8f99'));
       break;
     }
+    case 'ears': { // an animal-ear headband (Nyang Meong To Pan) on a little stand
+      const a = accessory('head', product?.tryOn?.head);
+      add(new THREE.CylinderGeometry(0.02, 0.06, 0.12, 10), 0, 0.06, 0, mat('#fffaf0'));
+      if (a) { const e = makeEars(a); e.scale.setScalar(0.5); e.position.y = 0.12; g.add(e); }
+      break;
+    }
+    case 'paws': { // a pair of paw gloves
+      const a = accessory('hand', product?.tryOn?.hand);
+      if (a) for (const s of [-1, 1]) { const p = makePaw(a); p.scale.multiplyScalar(1.6); p.position.set(0.09 * s, 0.11, 0); g.add(p); }
+      break;
+    }
     case 'ribbon':
       for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.06, 10, 8).scale(1.3, 0.9, 0.6), 0.07 * s, 0.1);
       add(new THREE.SphereGeometry(0.03, 8, 6), 0, 0.1);
@@ -328,12 +350,15 @@ function labelTexture(text, bg) {
 }
 
 // A dartboard face: 20 black/cream wedges, red/green double and triple
-// rings and the bull (the game itself is drawn in ui/darts-ui.js).
+// rings, the bull and the number ring, sized by the scoring rules
+// (core/arcade.js RING). Darts are played on this face (game/darts-view.js),
+// so it is drawn sharp enough to read the trebles up close.
 function dartboardTexture() {
+  const S = 512, C = S / 2, R = (S / 2) * 104 / 128; // scoring edge: 104/128 of the face (stations.dartboards r)
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d'), C = 128, R = 104;
-  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, 256, 256);
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, S, S);
   const ring = (r0, r1, cols) => {
     for (let i = 0; i < 20; i++) {
       const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
@@ -341,14 +366,20 @@ function dartboardTexture() {
       g.beginPath(); g.arc(C, C, r1 * R, a0, a1); g.arc(C, C, r0 * R, a1, a0, true); g.closePath(); g.fill();
     }
   };
-  ring(0.95, 1, ['#d9473c', '#2f8f5b']);
-  ring(0.63, 0.95, ['#1b1b20', '#f3e6c4']);
-  ring(0.58, 0.63, ['#d9473c', '#2f8f5b']);
-  ring(0.09, 0.58, ['#1b1b20', '#f3e6c4']);
-  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, 0.09 * R, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, 0.04 * R, 0, Math.PI * 2); g.fill();
+  ring(RING.doubleIn, 1, ['#d9473c', '#2f8f5b']);
+  ring(RING.tripleOut, RING.doubleIn, ['#1b1b20', '#f3e6c4']);
+  ring(RING.tripleIn, RING.tripleOut, ['#d9473c', '#2f8f5b']);
+  ring(RING.outerBull, RING.tripleIn, ['#1b1b20', '#f3e6c4']);
+  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, RING.outerBull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, RING.bull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; g.font = `bold ${Math.round(S * 0.055)}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  BOARD_ORDER.forEach((n, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 10;
+    g.fillText(String(n), C + Math.cos(a) * R * 1.12, C + Math.sin(a) * R * 1.12);
+  });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   return tex;
 }
 
@@ -361,6 +392,10 @@ export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
 let parkBuilder = null;
 export const setParkBuilder = (fn) => { parkBuilder = fn; };
 export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;
+// The zoo (zoo-park.js: the grounds, and the Sea Animals hall inside) too.
+let zooBuilders = null;
+export const setZooBuilders = (m) => { zooBuilders = m; };
+export const needsZoo = (store) => (store?.workshop === 'zoo' || store?.workshop === 'zoo-sea') && !zooBuilders;
 
 // Builds the room. Returns { scene, products: [{ product, mesh, pos }],
 // colliders, seats: [{ x, z, ry, stand: [x, z] }], room, exit }.
@@ -372,6 +407,8 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
+  if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
+  if (store.workshop === 'zoo') return zooBuilders.buildZooPark(store, ROOM, ZOO_PARK_EXIT);
   if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
@@ -1215,8 +1252,27 @@ export function buildInterior(store) {
         spot.position.set(0, h - 0.5, sz);
         scene.add(spot);
       }
-      let flashT = 0;
+      // Where the walk starts, so nobody misses it: a sign over the arch
+      // (seen from the door), a glowing ring on the floor at the start, and
+      // arrows from the door to the runway's end.
+      const startSign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.69), new THREE.MeshBasicMaterial({ map: labelTexture('▼ 런웨이 시작 · START ▼', '#c2185b') }));
+      startSign.position.set(0, 5, -d / 2 + 0.5);
+      scene.add(startSign);
+      const ringMat = new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.8, depthWrite: false });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.75, 32).rotateX(-Math.PI / 2), ringMat);
+      ring.position.set(0, 0.02, z0);
+      scene.add(ring);
+      const chev = new THREE.Shape([[0, 0.35], [-0.5, -0.15], [-0.5, -0.4], [0, 0.1], [0.5, -0.4], [0.5, -0.15]].map(([x, y]) => new THREE.Vector2(x, y)));
+      const arrowZs = [];
+      for (let az = z1 + 2.6; az < d / 2 - 1.2; az += 1.8) arrowZs.push(az);
+      const arrows = new THREE.InstancedMesh(new THREE.ShapeGeometry(chev).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ff4f9a', transparent: true, opacity: 0.75, depthWrite: false }), arrowZs.length);
+      const am = new THREE.Matrix4();
+      arrowZs.forEach((az, i) => arrows.setMatrixAt(i, am.makeTranslation(0, 0.02, az)));
+      scene.add(arrows);
+      let flashT = 0, pulseT = 0;
       animate = (dt) => {
+        pulseT += dt;
+        ringMat.opacity = 0.45 + 0.4 * Math.sin(pulseT * 4) ** 2;
         flashT = Math.max(0, flashT - dt);
         const on = flashT > 0 && Math.sin(flashT * 60) > 0 ? 40 : 0;
         flashes.forEach((fl, i) => { fl.intensity = (i + Math.floor(flashT * 20)) % 2 ? on : 0; });

@@ -46,6 +46,12 @@ export const RUNWAY_TEXT = {
   board: { en: 'Latest walks', ko: '최근 워킹 순위', ja: '最近のウォーキング順位', zh: '最近走秀排名' },
   enter: { en: 'Go in to the Curve Runway', ko: '커브 런웨이로 들어가기', ja: 'カーブ・ランウェイに入る', zh: '进入曲线T台' },
   toHall: { en: 'Back to DDP Hall', ko: 'DDP 홀로 나가기', ja: 'DDPホールに戻る', zh: '回到DDP大厅' },
+  startHint: {
+    en: '👠 Walk up the runway to the arch at the far end: your show starts there!',
+    ko: '👠 런웨이 끝 무대 뒤 아치까지 걸어가면 런웨이를 할 수 있어요!',
+    ja: '👠 ランウェイの奥のアーチまで歩くと、ショーが始められます！',
+    zh: '👠 沿着T台走到最里面的拱门，就能开始走秀！',
+  },
   back: { en: 'Walking back…', ko: '돌아가는 중…', ja: '戻っています…', zh: '往回走…' },
 };
 const tt = (k, v) => fmt(L(RUNWAY_TEXT[k]), v);

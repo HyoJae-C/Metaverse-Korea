@@ -5,11 +5,11 @@ These are the limits every change should stay inside, and how to stay there.
 
 ## Budgets
 
-| What | Budget | Now (2026-11-09) | Checked by |
+| What | Budget | Now (2026-11-10) | Checked by |
 |---|---|---|---|
-| Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 45 KB | `node scripts/check-size.mjs` in CI |
-| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,099 KB + one language (~15 KB) | same |
-| Any single script, gzipped | 1,000 KB | 788 KB (main.js) | same |
+| Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 50 KB | `node scripts/check-size.mjs` in CI |
+| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,084 KB | same |
+| Any single script, gzipped | 1,000 KB | 518 KB (main.js) | same |
 | Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
 | Triangles per frame on a street | 150k | ~87k | same |
@@ -56,9 +56,14 @@ path.
    so the off-screen ones are skipped.
 4. **Hide what is far.** People past 150 m are skipped (`src/core/far-people.js`).
    Props smaller than a person can usually go at 60–100 m.
-5. **Don't do per-frame work that can wait.** Distance checks, label
+5. **Let rooms go.** Only the last few rooms visited stay built (4 on a
+   phone, 10 on a computer: `src/game/room-cache.js`); an older one is
+   rebuilt when walked into again. Keep a room's people in `built.xxxNpc` /
+   `built.xxxNpcs` fields so their name tags leave with it, and anything else
+   that must be freed in `built.dispose()`.
+6. **Don't do per-frame work that can wait.** Distance checks, label
    positions and UI text can run every 0.1–0.25 s.
-6. **Compress assets.** Prefer WebP/KTX2 textures at the size they are shown,
+7. **Compress assets.** Prefer WebP/KTX2 textures at the size they are shown,
    and Opus/AAC audio. `dist/` is about 34 MB, mostly books and audio, which
    load only when used; keep it that way.
 

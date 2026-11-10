@@ -62,7 +62,7 @@ export const DISTRICT_NAME = {
   songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा', fr: 'Songpa', th: 'ซงพา' },
   bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन', fr: 'Bukchon', th: 'บุกชอน' },
   'olympic-park': { en: 'Olympic Park', ko: '올림픽공원', ja: 'オリンピック公園', zh: '奥林匹克公园', es: 'Parque Olímpico', id: 'Taman Olimpiade', ar: 'الحديقة الأولمبية', vi: 'Công viên Olympic', hi: 'ओलंपिक पार्क', fr: 'Parc olympique', th: 'สวนโอลิมปิก' },
-  'grand-park': { en: "Children's Grand Park", ko: '어린이대공원', ja: '子供大公園', zh: '儿童大公园', es: 'Gran Parque Infantil', id: 'Taman Anak Raya', ar: 'حديقة الأطفال الكبرى', vi: 'Công viên Thiếu nhi', hi: 'चिल्ड्रन्स ग्रैंड पार्क', fr: 'Grand Parc des enfants', th: 'สวนเด็กโซล' },
+  'grand-park': { en: "Grown-ups' Grand Park", ko: '어른도대공원', ja: '大人も大公園', zh: '大人也大公园', es: 'Gran Parque para Adultos También', id: 'Taman Raya Dewasa Juga', ar: 'حديقة الكبار أيضًا', vi: 'Công viên Cả Người lớn', hi: 'बड़ों का भी ग्रैंड पार्क', fr: 'Grand Parc des grands aussi', th: 'สวนผู้ใหญ่ก็เล่นได้' },
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)', fr: 'Seodaemun (Sinchon)', th: 'ซอแดมุน (ชินชน)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด' },
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
@@ -88,6 +88,8 @@ export function districtCentres(map) {
 // Below this zoom (px per metre, before the screen's pixel ratio) the map
 // shows the Seoul overview instead of shops and zones.
 export const SEOUL_ZOOM = 0.12;
+// How many "more over here" district badges the street map shows at once.
+export const BADGES_PHONE = 3, BADGES_WIDE = 6;
 
 // Readability helpers. Markers closer than `r` screen pixels are merged into
 // one cluster (drawn at its first member), so pins never pile up on top of
@@ -143,6 +145,22 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   return null;
 }
 
+// The colour of gu borders. Only on the map, not on the ground (the line
+// crossed landmarks; Yozi 2026-11-10).
+export const GU_BORDER_COLOR = '#8e44d8';
+
+// A shape's box in metres [x0, z0, x1, z1], worked out once.
+const boxes = new WeakMap();
+function bboxOf(o) {
+  let b = boxes.get(o);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, z] of o.p) { if (x < b[0]) b[0] = x; if (z < b[1]) b[1] = z; if (x > b[2]) b[2] = x; if (z > b[3]) b[3] = z; }
+    boxes.set(o, b);
+  }
+  return b;
+}
+
 export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
   // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
@@ -166,6 +184,10 @@ export class MapView {
     this.badges = []; // edge badges for districts off screen: { x, y, r, d }
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
+    // Back to where you are (after dragging the map away).
+    const locate = root.querySelector('.map-locate');
+    if (locate) locate.onclick = () => this.locate();
+    this.sheetOpen = false; // phones: the list of places is a sheet, folded under the map
     root.addEventListener('click', (e) => { if (e.target === root) this.hide(); });
   }
 
@@ -180,8 +202,28 @@ export class MapView {
     this.draw();
   }
 
+  // Centre the map on you again, zooming back in if it was far out.
+  locate() {
+    const { me } = this.getPlayers();
+    if (this.view.scale < SEOUL_ZOOM * this.dpr) this.view.scale = this._homeScale();
+    this.goTo(me.x, me.z);
+  }
+
+  // Phones: unfold (or fold) the list of places under the map.
+  setSheet(open) {
+    this.sheetOpen = !!open;
+    this.root.classList.toggle('map-sheet-open', this.sheetOpen);
+    if (this.handle) {
+      this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+      this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    }
+    if (this.sheetOpen) this.list.scrollTop = 0;
+    if (this.open) { this._resize(); this.draw(); }
+  }
+
   hide() {
     this.open = false;
+    this.canvas.width = this.canvas.height = 1; // let go of the picture (~5 MB on a phone); show() sizes it again
     this._setSearching(false);
     this.root.hidden = true;
     this.setTaxi(false);
@@ -235,6 +277,26 @@ export class MapView {
   draw() {
     this._draw();
     this._drawCredit();
+    this.sig = this._sig();
+  }
+
+  // Each frame while open: the map is drawn again only when it changed.
+  // Dragging, zooming, searching and taps draw at once (draw()); here,
+  // a few times a second, only if you or another player moved. It used to
+  // draw the whole city every frame, which kept phones warm.
+  tick(dt) {
+    if (!this.open) return;
+    this.wait = (this.wait || 0) - dt;
+    if (this.wait > 0) return;
+    this.wait = 0.25;
+    if (this._sig() !== this.sig) this.draw();
+  }
+
+  _sig() {
+    const { me, others = [] } = this.getPlayers();
+    let s = `${Math.round(me.x * 2)},${Math.round(me.z * 2)},${Math.round(me.ry * 20)}`;
+    for (const o of others) s += `|${Math.round(o.x * 2)},${Math.round(o.z * 2)}`;
+    return s;
   }
 
   // The gu outlines come from OpenStreetMap, whose licence asks for this
@@ -272,26 +334,39 @@ export class MapView {
     const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
     if (this.seoul) this._drawSeoul(g, poly, far, lang);
     this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
+    // Only what is on screen (zoomed in, most of the city is not).
+    const [vx0, vz0] = this.toWorld(0, 0), [vx1, vz1] = this.toWorld(this.canvas.width, this.canvas.height);
+    const seen = (o, pad = 0) => { const b = bboxOf(o); return b[2] + pad >= vx0 && b[0] - pad <= vx1 && b[3] + pad >= vz0 && b[1] - pad <= vz1; };
+    // Land not built yet (map.closed): grey like a gu "coming soon". One
+    // path, so there are no seams between its rectangles.
+    g.fillStyle = '#d9d4ca';
+    g.beginPath();
+    for (const p of this.map.closed || []) if (p[2][0] >= vx0 && p[0][0] <= vx1 && p[2][1] >= vz0 && p[0][1] <= vz1) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+    g.fill();
     const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
     const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
-    for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
+    if (this.areasSorted?.length !== this.map.areas.length) this.areasSorted = [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1));
+    for (const a of this.areasSorted) {
+      if (!seen(a)) continue;
       g.fillStyle = AREA[a.k] || '#bfe3a8';
       poly(a.p); g.fill();
     }
     g.lineCap = g.lineJoin = 'round';
     for (const r of this.map.roads) {
+      if (!seen(r, r.w || 0)) continue;
       poly(r.p);
-      g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = r.bike ? '#d9826f' : r.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1, r.w * this.view.scale);
       g.stroke();
     }
     g.fillStyle = '#e2d6c2';
     g.strokeStyle = '#d2c3aa';
     g.lineWidth = 1;
-    for (const b of this.map.buildings) { poly(b.p); g.closePath(); g.fill(); g.stroke(); }
+    for (const b of this.map.buildings) { if (!seen(b)) continue; poly(b.p); g.closePath(); g.fill(); g.stroke(); }
     g.strokeStyle = '#b8bcc4';
     g.lineWidth = Math.max(2, 7 * this.view.scale);
-    for (const r of this.map.rail) { poly(r.p); g.stroke(); }
+    for (const r of this.map.rail) { if (!seen(r, 7)) continue; poly(r.p); g.stroke(); }
+    if (this.seoul?.borders) this._drawBorders(g, poly, far);
     if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 
     // Markers first, then names in the gaps between them (see placeLabel),
@@ -440,7 +515,7 @@ export class MapView {
       labels.push({ text: o.name, sx, sy, gap: 8 * dpr, weight: 700, size: 11, color: '#3d4bc4', pri: 1 });
     }
     this._drawMe(g, me);
-    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 14 * dpr); }
+    { const [mx, my] = this.toScreen(me.x, me.z); mark(mx, my, 20 * dpr); }
     // Edge badges for other districts, before the names so names keep clear of them.
     this._drawBadges(g, me);
     taken.push(...this.badges);
@@ -468,6 +543,15 @@ export class MapView {
     const [mx, my] = this.toScreen(me.x, me.z);
     g.save();
     g.translate(mx, my);
+    // A soft ring around the arrow, so "you" stands out among the pins.
+    g.fillStyle = 'rgba(255,111,91,0.22)';
+    g.strokeStyle = 'rgba(255,111,91,0.55)';
+    g.lineWidth = 1.5 * dpr;
+    g.beginPath();
+    g.arc(0, 0, 24 * dpr, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    if (this.canvas.width / dpr < 520) g.scale(1.2, 1.2); // phones: a bigger arrow
     g.rotate(-me.ry + Math.PI);
     g.fillStyle = '#ff6f5b';
     g.strokeStyle = '#fffaf0';
@@ -492,8 +576,10 @@ export class MapView {
       poly(d.p); g.closePath();
       g.fillStyle = d.open ? (far ? '#ffe9b8' : '#f3ecdc') : '#d9d4ca';
       g.fill();
-      g.strokeStyle = far ? '#ffffff' : 'rgba(255,255,255,0.7)';
-      g.lineWidth = (far ? 2 : 4) * this.dpr;
+      // A thin seam only: the gu borders are the purple lines (_drawBorders),
+      // so a white edge no longer looks like a road.
+      g.strokeStyle = far ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)';
+      g.lineWidth = this.dpr;
       g.stroke();
     }
     g.strokeStyle = '#a9d8f0';
@@ -514,6 +600,23 @@ export class MapView {
     }
   }
 
+  // Where two gu meet, and Seoul's outer edge (seoul.json borders and
+  // outline, from OpenStreetMap, stopping at the Han River): purple, over
+  // the streets, so a border never reads as a road.
+  _drawBorders(g, poly, far) {
+    const dpr = this.dpr;
+    g.save();
+    g.lineCap = g.lineJoin = 'round';
+    g.strokeStyle = far ? GU_BORDER_COLOR : 'rgba(142,68,216,0.85)';
+    g.lineWidth = (far ? 2.5 : 3) * dpr;
+    if (!far) g.setLineDash([10 * dpr, 6 * dpr]);
+    for (const l of this.seoul.borders) { poly(l); g.stroke(); }
+    // Seoul's own outer edge, a little bolder so the city's shape reads.
+    g.lineWidth = (far ? 3 : 3.5) * dpr;
+    for (const l of this.seoul.outline || []) { poly(l); g.stroke(); }
+    g.restore();
+  }
+
   // Gu names: the open ones first and bold, then the "coming soon" ones,
   // lighter, wherever they fit without touching another name. A legend in the
   // corner says what the grey means, instead of "Coming soon" under every gu.
@@ -524,7 +627,7 @@ export class MapView {
     g.lineJoin = 'round';
     const { me } = this.getPlayers();
     const [mx, my] = this.toScreen(me.x, me.z);
-    const taken = [{ x: mx - 14 * dpr, y: my - 14 * dpr, w: 28 * dpr, h: 28 * dpr }]; // keep clear of your arrow
+    const taken = [{ x: mx - 24 * dpr, y: my - 24 * dpr, w: 48 * dpr, h: 48 * dpr }]; // keep clear of your arrow and its ring
     // Open gu first, and the one you're in before the rest, so its name sits next to you.
     const here = this._guAt(me.x, me.z);
     const rank = (d) => (d === here ? 2 : d.open ? 1 : 0);
@@ -555,7 +658,7 @@ export class MapView {
     g.font = `700 ${12 * dpr}px system-ui, sans-serif`;
     const items = [['#ffe9b8', t('map.open')], ['#d9d4ca', t('map.soon')]];
     let x = 10 * dpr;
-    const y = H - 30 * dpr;
+    const y = H - (this.seoul?.credit ? 52 : 30) * dpr; // above the OpenStreetMap credit
     const lw = items.reduce((a, [, s]) => a + g.measureText(s).width + 30 * dpr, 6 * dpr);
     g.fillStyle = 'rgba(255,250,240,0.92)';
     g.beginPath();
@@ -593,9 +696,14 @@ export class MapView {
     const narrow = W / dpr < 520;
     this.badges = [];
     const lang = getLanguage();
-    for (const d of this.districts) {
+    // Only the nearest few districts get a badge: sixteen of them covered a
+    // phone's whole map. The rest are a tap away on "All of Seoul".
+    const off = this.districts.filter((d) => {
       const [sx, sy] = this.toScreen(d.x, d.z);
-      if (sx > pad && sx < W - pad && sy > pad && sy < H - pad) continue;
+      return !(sx > pad && sx < W - pad && sy > pad && sy < H - pad);
+    }).sort((a, b) => Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z)).slice(0, narrow ? BADGES_PHONE : BADGES_WIDE);
+    for (const d of off) {
+      const [sx, sy] = this.toScreen(d.x, d.z);
       // Where the line from the centre to the district leaves the screen.
       const cx = W / 2, cy = H / 2, dx = sx - cx, dy = sy - cy;
       const k = Math.min((W / 2 - pad) / Math.abs(dx || 1e-6), (H / 2 - pad) / Math.abs(dy || 1e-6));
@@ -699,6 +807,27 @@ export class MapView {
     const body = this.list.closest('.map-body');
     if (narrow && body && this.controls.nextElementSibling !== body) body.before(this.controls);
     else if (!narrow && this.controls.parentElement !== this.list) this.list.prepend(this.controls);
+    // Phones: the list is a sheet under the map, folded to one bar until
+    // tapped, so the map gets the screen. The small print goes at its end.
+    if (!this.handle) {
+      this.handle = document.createElement('button');
+      this.handle.type = 'button';
+      this.handle.className = 'map-handle';
+      this.handle.append(document.createElement('span'), document.createElement('b'));
+      this.handle.onclick = () => this.setSheet(!this.sheetOpen);
+    }
+    this.handle.querySelector('span').textContent = t('map.places');
+    this.handle.querySelector('b').textContent = this.sheetOpen ? '▾' : '▴';
+    this.handle.setAttribute('aria-expanded', String(this.sheetOpen));
+    if (narrow && this.list.firstElementChild !== this.handle) this.list.prepend(this.handle);
+    else if (!narrow && this.handle.parentElement) this.handle.remove();
+    const note = this.root.querySelector('.map-disclaimer');
+    if (note) {
+      if (narrow && note.parentElement !== this.list) this.list.append(note);
+      else if (!narrow && note.parentElement === this.list) this.root.querySelector('.map-card')?.append(note);
+    }
+    const locate = this.root.querySelector('.map-locate');
+    if (locate) locate.title = locate.ariaLabel = t('map.locate');
     this.search.placeholder = t('map.search');
     this.search.value = this.query;
     // Categories wrap onto rows (sideways scrolling was hard with a mouse and
@@ -707,7 +836,7 @@ export class MapView {
     const n = new Map();
     for (const s of this.stores) n.set(s.store.category, (n.get(s.store.category) || 0) + 1);
     const cats = [...n.keys()].sort((a, b) => n.get(b) - n.get(a));
-    const FOLDED = narrow ? 3 : 5; // phones: fewer rows of chips, more room for the map
+    const FOLDED = narrow ? 2 : 5; // phones: fewer rows of chips, more room for the map
     const shown = this.catsOpen || cats.length <= FOLDED + 1 ? cats : cats.filter((c, i) => i < FOLDED || c === this.category);
     const chip = (text, on, run, cls = '') => {
       const b = document.createElement('button');

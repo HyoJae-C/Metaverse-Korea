@@ -55,10 +55,10 @@ try {
   for (const pg of [a, b]) await mk(pg, 'enter', 'ttukseom-hangang');
   await wait(3000);
   await mk(a, 'givePet', 'pet-golden'); await mk(a, 'giveFrisbee', 2);
-  await mk(b, 'place', -6, 10);
+  await mk(b, 'place', 297.5, 422.5);
   const phases = new Set();
   for (let round = 0; round < 2; round++) {
-    await mk(a, 'place', -10, 7); await mk(a, 'face', Math.PI / 2);
+    await mk(a, 'place', 301, 426.1); await mk(a, 'face', 1.41);
     let label = '';
     for (let i = 0; i < 60 && !label.includes('🥏'); i++) { label = [await mk(a, 'action'), ...((await mk(a, 'choices')) || [])].join('|'); await wait(150); }
     const ch = await mk(a, 'choices');

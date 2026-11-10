@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { FOLK_YARD, FOLK_SOLID, folkBlockers, propToWorld } from '../src/data/folk-yard.js';
+import { FOLK_YARD, FOLK_GAMES_ON, FOLK_SOLID, folkBlockers, propToWorld } from '../src/data/folk-yard.js';
 import { FOLK_GAMES } from '../src/core/folk-props.js';
 import { FT, FOLK_LINES } from '../src/ui/folk-text.js';
 import { CollisionMap } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/euljiro.json', import.meta.url)));
 const yard = map.landmarks.find((l) => l.type === 'folkyard');
-const plaza = map.areas.find((a) => a.k === 'plaza' && a.p.some(([x, z]) => x === -100 && z === 104)).p;
+const plaza = map.areas.find((a) => a.k === 'plaza' && a.p.length === 4 && a.p[0][0] < yard.x && a.p[2][0] > yard.x && a.p[0][1] < yard.z && a.p[2][1] > yard.z).p;
 const [px0, pz0] = plaza[0], [px1, pz1] = plaza[2];
 const solid = new CollisionMap(map.buildings.concat(map.blockers));
 const gate = map.landmarks.find((l) => l.type === 'hanokgate');
@@ -57,7 +57,8 @@ test('the locals are already there, and not inside anything solid', () => {
 test('the map\'s blockers are the props\' solid parts', () => {
   const want = folkBlockers(yard);
   assert.equal(want.length, Object.values(FOLK_SOLID).flat().length);
-  for (const b of want) assert.ok(map.blockers.some((m) => JSON.stringify(m.p) === JSON.stringify(b.p)), 'run node scripts/build-euljiro.mjs');
+  // While the yard is hidden, none of them are on the map (no invisible walls).
+  for (const b of want) assert.equal(map.blockers.some((m) => JSON.stringify(m.p) === JSON.stringify(b.p)), FOLK_GAMES_ON, 'run node scripts/build-euljiro.mjs');
 });
 
 test('the yard\'s words are there in every language', () => {

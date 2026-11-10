@@ -11,17 +11,18 @@ import { luckySpot } from './fishing.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import * as droneShow from './drone-show.js';
+import { darkness } from './weather.js';
 import { mergeStatic } from './merge-static.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const SEAT_H = 0.38;
-const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
-const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
-const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
-const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
-const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
+export const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢江ラーメン', zh: '汉江拉面' };
+export const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
+export const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
+export const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
+export const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
 const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
 const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
 const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
@@ -103,7 +104,7 @@ export function buildPark(store, ROOM, EXIT) {
   const gy = open ? 0.07 : 0;
   // (pulled towards the camera harder than the street's roads, world.js, so
   // the walk under the lawn never shows through it)
-  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
+  if (open) plane(w, d / 2 - bank, 0, gy, (d / 2 + bank) / 2, store.open.grass ?? '#8fcf7a', { polygonOffset: true, polygonOffsetFactor: -4 });
   else plane(w + 80, d / 2 - bank + 40, 0, 0, (d / 2 + bank) / 2 + 20, '#8fcf7a');
   plane(open ? w : w + 80, 3, 0, gy + 0.01, bank + 1.6, '#d9c7a6', open ? { polygonOffset: true, polygonOffsetFactor: -5 } : undefined); // path along the river
   const river = open ? { position: new THREE.Vector3(0, 0.03, 0), material: { color: new THREE.Color() } } // (the street's water, world.js)
@@ -129,7 +130,10 @@ export function buildPark(store, ROOM, EXIT) {
   for (const y of [FENCE_H, FENCE_H * 0.5]) box(3, 0.07, 0.07, 0, y, bank - pierLen, '#7a5636');
   // Far bank skyline (Cheongdam across the river) and a bridge. Its windows
   // light up during the drone show.
-  if (open) target = new THREE.Group();
+  // (an open park keeps only the skyline, and only where the street has
+  // nothing across the water: store.open.skyline)
+  const discard = new THREE.Group();
+  if (open && !store.open.skyline) target = discard;
   const lit = []; // [x, y] of each lit window
   for (let i = 0; i < 26; i++) {
     const h = 6 + ((i * 37) % 11) * 2.2, bw = 5 + (i % 3), bx = -95 + i * 7.6;
@@ -146,6 +150,7 @@ export function buildPark(store, ROOM, EXIT) {
   // across from the real Ttukseom (road on top, the Line 7 subway inside the
   // lower deck), low enough to leave the sky open for the drones. The other
   // parks keep the arched bridge.
+  if (open) target = discard;
   const bz = bank - 70;
   if (drones) {
     box(260, 0.7, 5, 40, 6.2, bz, '#d6dbe0'); // road deck
@@ -392,19 +397,21 @@ export function buildPark(store, ROOM, EXIT) {
   };
   setSignLang(null);
 
-  // The drone show (drone-show.js): the park's sky turns to night, the
-  // lights come on, and the drones (drone-sky.js, downloaded only now) rise
-  // from the barge. Everything else in the park carries on as usual.
+  // The drone show (drone-show.js): the park's sky turns to night (if it
+  // isn't already), the lights come on, and the drones (drone-sky.js,
+  // downloaded only now) rise from the barge. Everything else in the park carries on as usual.
   const show = { now: null, night: 0 };
   let nightShown = -1, sky = null, watchers = null, skyLoading = false, signT = 0;
   const setNight = (k) => {
     if (Math.abs(k - nightShown) < 0.002) return;
     nightShown = k;
-    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
-    scene.fog.color.copy(scene.background);
-    scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
-    hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
-    river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    if (!open) { // (open to the street: the sky, light and river are the street's, main.js)
+      scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
+      scene.fog.color.copy(scene.background);
+      scene.fog.near = 40 + 30 * k; scene.fog.far = 140 + 200 * k;
+      hemi.intensity = 1.6 - 1.25 * k; sun.intensity = 1.2 - 1.05 * k; ambient.intensity = 0.35 - 0.1 * k;
+      river.material.color.copy(DAY_RIVER).lerp(NIGHT_RIVER, k);
+    }
     lamps.glowMat.emissiveIntensity = 0.5 + 2 * k;
     lamps.poolMat.opacity = 0.32 * k; lamps.pools.visible = k > 0.01;
     kioskWindow.emissive.set('#fff1c8'); kioskWindow.emissiveIntensity = 0.9 * k;
@@ -415,7 +422,6 @@ export function buildPark(store, ROOM, EXIT) {
     const now = Date.now(), s = droneShowAt(now);
     show.now = s;
     show.night = s ? s.night : 0;
-    setNight(show.night);
     if ((signT -= dt) <= 0) { signT = 5; drawDroneSign(now); }
     if (s && s.t > -LIFT_SECONDS - 60 && !sky && !skyLoading) {
       skyLoading = true;
@@ -432,14 +438,19 @@ export function buildPark(store, ROOM, EXIT) {
     watchers?.update(dt, show.night);
   };
 
-  if (drones) tickShowRef = tickShow;
+  // Night falls with Seoul's (weather.js darkness), and in Ttukseom also for
+  // the drone show, whatever the hour: the lamps, windows and bridge light up.
+  tickShowRef = (dt) => {
+    if (drones) tickShow(dt);
+    setNight(Math.max(show.night, darkness()));
+  };
   // Open to the street: its still boxes baked together (core/merge-static.js),
   // so the park costs a few draw calls on top of the city, not hundreds.
   if (open) mergeStatic(scene, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     lights: { hemi, sun, ambient }, // (an open park's follow the street's: main.js)
-    fishing, fishBuy, ramen, river, duck, ducks, park: true, vendors: market.vendors, setSignLang, tick,
+    fishing, fishBuy, ramen, river, duck, ducks, hanRiver: true, vendors: market.vendors, setSignLang, tick,
     show, // the drone show right now: { now: droneShowAt(), night, photo } (main.js: camera, notices, music)
     // Grass where a picnic mat can go (core/picnic-mat.js): the lawn between
     // the benches and the back, right of the market and left of DAILY MART.

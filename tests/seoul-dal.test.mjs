@@ -7,6 +7,9 @@ import { CollisionMap } from '../src/core/collision.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { EN } from '../src/i18n/en.js';
 import { STRINGS } from '../src/i18n/strings.js';
+import { toUV, DAL_T } from '../scripts/build-yeouido.mjs';
+
+const OSM = JSON.parse(readFileSync(new URL('../scripts/data/yeouido-osm.json', import.meta.url)));
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
@@ -52,27 +55,28 @@ test('riders stand round the ring, inside the gondola, facing out', () => {
   assert.equal(clock(-3), '0:00');
 });
 
-test('the balloon stands on an open lawn in Yeouido Park, its gate on a path from the river park', async () => {
+test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and trees, its gate towards the river park', async () => {
   const region = read('region.json');
   const joined = await loadRegionMap(region, async (f) => read(f));
   const solid = new CollisionMap(joined.buildings.concat(joined.blockers));
   const dal = joined.landmarks.filter((l) => l.type === 'seouldal');
   assert.equal(dal.length, 1, 'one Seoul Dal, only in Yeouido');
   const { x, z, ry } = dal[0];
+  // In Yeouido Park (OpenStreetMap's outline at 1/4), the pad and its fence inside it.
+  const park = OSM.park;
+  for (let a = 0; a < Math.PI * 2; a += 0.3) assert.ok(inPolygon(x + Math.sin(a) * 9, z + Math.cos(a) * 9, park), 'the pad is inside Yeouido Park');
+  const [, v] = toUV([x, z]), vs = park.map((q) => toUV(q)[1]);
+  assert.ok(Math.abs((v - Math.min(...vs)) / (Math.max(...vs) - Math.min(...vs)) - DAL_T) < 0.02, 'on the north part of the lawn, north of the flagpole');
   // Nothing solid under the pad, its fence or its sign.
   for (let a = 0; a < Math.PI * 2; a += 0.2) for (const r of [0, 4, 8, 10]) {
     assert.ok(!solid.blocked(x + Math.sin(a) * r, z + Math.cos(a) * r, 0.4), `open at r ${r}`);
   }
-  // Clear of the tallest office towers: the balloon (radius 9) goes up 70 m.
+  // Clear of the office towers (the balloon, radius 9, goes up 70 m), and no trees on the pad.
   for (const b of joined.buildings) for (const [px, pz] of b.p) assert.ok(Math.hypot(px - x, pz - z) > 20, 'no tower in the way');
-  // The gate (local +z) faces the river park, and the Yeouido Park path ends there.
+  assert.ok(dal[0].clear >= 12, 'the woods keep clear of the pad');
+  // The gate (local +z) faces the river park, the way you come in.
   const gx = x + Math.sin(ry) * 8.6, gz = z + Math.cos(ry) * 8.6;
-  const path = joined.roads.find((r) => r.n?.en === 'Yeouido Park path');
-  const end = path.p.at(-1);
-  assert.ok(Math.hypot(end[0] - gx, end[1] - gz) < 1, 'the path ends at the gate');
-  const lawn = joined.roads.find((r) => r.n?.en === 'Han River path');
-  assert.ok(Math.hypot(lawn.p[0][0] - gx, lawn.p[0][1] - gz) > Math.hypot(lawn.p[0][0] - x, lawn.p[0][1] - z) - 20, 'the gate is on the river side');
-  assert.ok(joined.areas.some((a) => a.k === 'grass' && inPolygon(x, z, a.p)), 'on grass');
+  assert.ok(toUV([gx, gz])[1] < v - 8, 'the gate is on the river side');
   assert.ok(joined.landmarks.some((l) => l.type === 'sign' && l.title?.en === 'Seoul Dal' && Math.hypot(l.x - x, l.z - z) < 25), 'a board with the real facts by the pad');
   assert.ok(read('zones.json').zones.some((zn) => zn.id === 'K-2' && Math.hypot(zn.at[0] - x, zn.at[1] - z) < 30), 'people already about');
 });

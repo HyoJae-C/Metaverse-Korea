@@ -7,6 +7,12 @@ const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-s
 const region = read('region.json');
 const stores = read('stores.json').stores;
 
+const segDist = (q, a, b) => {
+  const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz;
+  const t = L ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L)) : 0;
+  return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz);
+};
+
 function placed(id) {
   const d = region.districts.find((x) => x.id === id);
   const map = read(d.map);
@@ -19,16 +25,23 @@ function placed(id) {
   });
   const xs = polys.flat().map((q) => q[0]), zs = polys.flat().map((q) => q[1]);
   const box = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
-  const here = stores.filter((s) => s.at[0] >= box[0] - 3 && s.at[0] <= box[1] + 3 && s.at[1] >= box[2] - 3 && s.at[1] <= box[3] + 3);
+  // (a shop's spot is on the pavement in front of its building: within 6 m of one)
+  const near = (x, z) => polys.some((p) => p.some((q, i) => { const n = p[(i + 1) % p.length]; return segDist([x, z], q, n) < 6; }));
+  const here = stores.filter((s) => s.at[0] >= box[0] - 3 && s.at[0] <= box[1] + 3 && s.at[1] >= box[2] - 3 && s.at[1] <= box[3] + 3 && near(...s.at));
   return { map, inside, here, offset: d.offset };
 }
 
-test('Yeonnam-dong: the forest park runs on from Hongdae Walking Street, shops stand on the street', () => {
+test('Yeonnam-dong: the forest park starts at Hongik Univ. Station\'s exit 3, shops stand on the street', () => {
   const { map, inside, here, offset } = placed('yeonnam');
-  const hongdae = region.districts.find((x) => x.id === 'hongdae');
   const path = map.roads.find((r) => r.n?.en === 'Gyeongui Line Forest Path');
   assert.ok(path && map.areas.some((a) => a.k === 'park' && a.trees), 'a wooded park with a path (picnic mats go there)');
-  assert.equal(path.p[0][0] + offset[0], hongdae.offset[0], 'the path lines up with Hongdae Walking Street');
+  const exit3 = region.subway.stations.find((s) => s.id === 'hongik-univ-station').exits.find((e) => e.n === 3);
+  const start = [path.p[0][0] + offset[0], path.p[0][1] + offset[1]];
+  assert.ok(Math.hypot(start[0] - exit3.at[0], start[1] - exit3.at[1]) < 15, 'the path starts by exit 3, at Yanghwa-ro');
+  // It runs north-north-west on its real line (about 32° west of north at 1/4).
+  const [a, b] = [path.p[0], path.p.at(-1)];
+  const bearing = (Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180) / Math.PI;
+  assert.ok(bearing > -40 && bearing < -25, `path bearing ${bearing.toFixed(1)}°`);
   assert.ok(map.landmarks.some((l) => l.type === 'tracks'), 'old rails in the grass');
   assert.ok(here.length >= 9, `${here.length} shops`);
   for (const s of here) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
@@ -37,7 +50,7 @@ test('Yeonnam-dong: the forest park runs on from Hongdae Walking Street, shops s
 });
 
 test('Mangwon-dong: market under an arcade, the open river park and the fishing pier', () => {
-  const { map, inside, here } = placed('mangwon');
+  const { map, inside, here, offset } = placed('mangwon');
   assert.ok(map.landmarks.some((l) => l.type === 'arcade'), 'Mangwon Market has its roof');
   assert.ok(map.areas.some((a) => a.k === 'water') && map.blockers.length, 'the river, and you cannot walk into it');
   assert.ok(map.landmarks.filter((l) => l.type === 'bench').length >= 5, 'benches by the river');
@@ -46,7 +59,11 @@ test('Mangwon-dong: market under an arcade, the open river park and the fishing 
   for (const s of here) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
   const pier = stores.find((s) => s.id === 'mangwon-hangang');
   assert.equal(pier.category, 'park');
-  assert.ok(here.includes(pier), 'the pier is in Mangwon');
+  // The park is laid on the street on the bank (tests/han-park.test.mjs), past the last houses.
+  assert.ok(pier.hanpark && map.landmarks.some((l) => l.type === 'hanpark' && l.store === pier.id), 'the park is laid on the street');
+  const land = map.areas.filter((x) => x.k !== 'water').flatMap((x) => x.p).map(([x, z]) => [x + offset[0], z + offset[1]]);
+  const [lx0, lx1, lz0, lz1] = [Math.min(...land.map((q) => q[0])), Math.max(...land.map((q) => q[0])), Math.min(...land.map((q) => q[1])), Math.max(...land.map((q) => q[1]))];
+  assert.ok(pier.at[0] > lx0 && pier.at[0] < lx1 && pier.at[1] > lz0 && pier.at[1] < lz1, 'the pier is in Mangwon');
   assert.ok(region.subway.stations.some((s) => s.id === 'mangwon-station' && s.line.name.en === 'Line 6'));
 });
 
@@ -60,23 +77,25 @@ test('all the new shops are fictional sample data with names in four languages',
   assert.equal(new Set(stores.map((s) => s.id)).size, stores.length, 'store ids are unique');
 });
 
-test('every park has the same catch except its ★5 legend, and every park pays the same', async () => {
-  const { chanceAt, rollCatch, PARK_LEGENDS, legendPark, TRASH_CHANCE } = await import('../src/core/fishing.js');
+test('every park shares ★1-2, has its own ★3 and up, and pays the same', async () => {
+  const { chanceAt, rollCatch, PARK_FISH, parkOf, TRASH_CHANCE, TIER_SHARE } = await import('../src/core/fishing.js');
   // The kinds first met at Mangwon are ordinary released fish now.
-  for (const id of ['shrimp', 'wakame', 'rockfish', 'webfoot-octopus', 'cuttlefish', 'seahorse', 'giant-squid']) assert.ok(fishById(id).released, id);
+  for (const id of ['shrimp', 'wakame', 'rockfish', 'octopus', 'cuttlefish', 'seahorse', 'giant-squid']) assert.ok(fishById(id).released, id);
   assert.ok(stores.every((s) => !('fishPlace' in s)));
-  for (const id of Object.keys(PARK_LEGENDS)) assert.ok(stores.some((s) => s.id === id && s.category === 'park'), `${id} is a park`);
+  for (const id of Object.keys(PARK_FISH)) assert.ok(stores.some((s) => s.id === id && s.category === 'park'), `${id} is a park`);
   const legends = FISH.filter((f) => f.rarity === 5);
   assert.equal(new Set(legends.map((f) => f.price)).size, 1, 'every legend sells for the same');
-  assert.equal(legendPark('whale').name.en, 'Ttukseom');
-  assert.equal(legendPark('giant-squid').name.en, 'Mangwon');
-  const parks = [...Object.keys(PARK_LEGENDS), null];
+  assert.equal(parkOf('whale').name.en, 'Ttukseom');
+  assert.equal(parkOf('giant-squid').name.en, 'Mangwon');
+  const parks = [...Object.keys(PARK_FISH), null];
   const income = (park) => AVAILABLE_FISH.reduce((a, f) => a + chanceAt(f, park) * f.price, 0);
   for (const park of parks) {
     const sum = AVAILABLE_FISH.reduce((a, f) => a + chanceAt(f, park), 0);
     assert.ok(Math.abs(sum - 100) < 1e-9, `${park} ${sum}`);
-    const five = legends.reduce((a, f) => a + chanceAt(f, park), 0);
-    assert.ok(Math.abs(five - 0.4) < 1e-9, `${park}: ★5 keeps 0.4%`);
+    for (let r = 1; r <= 5; r++) {
+      const tier = AVAILABLE_FISH.filter((f) => f.rarity === r).reduce((a, f) => a + chanceAt(f, park), 0);
+      assert.ok(Math.abs(tier - TIER_SHARE[r]) < 1e-9, `${park}: ★${r} keeps its share`);
+    }
     assert.ok(Math.abs(income(park) - income(null)) < 1e-9, `${park} pays the same`);
   }
   assert.equal(chanceAt(fishById('whale'), 'mangwon-hangang'), 0);
@@ -90,7 +109,7 @@ test('every park has the same catch except its ★5 legend, and every park pays 
     assert.notEqual(a.id, 'whale'); assert.notEqual(b.id, 'giant-squid');
     if (a.id === 'giant-squid') squid++;
   }
-  assert.ok(squid > 200 && squid < 700, `${squid} giant squid in 100000 (about 0.4%)`);
+  assert.ok(squid > 25 && squid < 100, `${squid} giant squid in 100000 (about 0.05%)`);
   assert.ok(FISH.every((f) => fishById(f.id)));
   assert.ok(TRASH_CHANCE > 0);
 });

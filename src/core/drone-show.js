@@ -2,33 +2,21 @@
 // DOM, so it can be unit-tested; the drones themselves are in drone-sky.js,
 // which is only downloaded when you walk into Ttukseom park near show time.
 //
-// The game's day/night cycle is off (weather.js DAY_NIGHT), so "only at
-// night" means: during a show, Ttukseom park's own sky turns to night
-// (park.js), fading in and out. Outside the park it stays day.
+// The show is in the game's night (show-clock.js, weather.js), and the park
+// makes sure of it too: during a show Ttukseom park's sky is night
+// (park.js), fading in and out.
 //
 // Everyone's clock gives the same show at the same moment (like the lucky
 // fishing spot and the weather), so friends watch the same drones together.
 
-// Show start times on Korean time (KST, UTC+9): twice a day. 18:00 is the
-// early evening in Korea; 06:00 is the evening (22:00 CET) in Europe. To
-// change the schedule, change this list. Kept 3 hours apart from the Yeouido
-// fireworks (09, 21 KST, fireworks-show.js), so the two shows never overlap.
-export const DRONE_SHOW_HOURS_KST = [6, 18];
+import { smooth, showStarts, cycleNumber, DRONES, SHOW_EVERY } from './show-clock.js';
+
+// When: one night in four of the game's two-hour day (show-clock.js),
+// taking turns with the Yeouido fireworks: three times a real day.
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drones rise
 export const LAND_SECONDS = 180; // after the end: they land, the sky brightens
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
-
-const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
-const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
-
-// Show start times (ms) around `now`: yesterday, today and tomorrow, in order.
-function startsAround(now, hours) {
-  const kstMidnight = Math.floor((now + KST) / DAY) * DAY - KST;
-  const out = [];
-  for (const d of [-1, 0, 1]) for (const h of hours) out.push(kstMidnight + d * DAY + h * HOUR);
-  return out.sort((a, b) => a - b);
-}
 
 // How dark the park's sky is t seconds into a show: 0 = day, 1 = night.
 // Darkens over the 3 minutes before the start, stays dark through the show
@@ -43,8 +31,8 @@ export function nightAt(t) {
 // The show around `now`, from 10 minutes before the start to the end of the
 // landing: { start (ms), t (seconds from the start, negative before),
 // night (0–1), on (the drones are up: lift-off to landing) }. null otherwise.
-export function droneShowAt(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
-  for (const start of startsAround(now, hours)) {
+export function droneShowAt(now = Date.now()) {
+  for (const start of showStarts(now, DRONES)) {
     const t = (now - start) / 1000;
     if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + LAND_SECONDS) {
       return { start, t, night: nightAt(t), on: t >= -LIFT_SECONDS && t < SHOW_SECONDS + 60 };
@@ -54,13 +42,13 @@ export function droneShowAt(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
 }
 
 // The next show's start (ms) after the current one (or after now).
-export function nextDroneShow(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
-  return startsAround(now, hours).find((s) => s > now) ?? startsAround(now + DAY, hours)[0];
+export function nextDroneShow(now = Date.now()) {
+  return showStarts(now, DRONES).find((s) => s > now);
 }
 
-// Which show of all time this is (counts up by one per show): picks the
+// Which show of all time this is (counts up show by show): picks the
 // changing part of the program, the same on every screen.
-export const showNumber = (start, hours = DRONE_SHOW_HOURS_KST) => Math.round(start / (DAY / hours.length));
+export const showNumber = (start) => Math.floor(cycleNumber(start) / SHOW_EVERY);
 
 // Where it happens, in the Ttukseom park room's space (park.js: the river is
 // z < -4, the duck boats stay at z > -44, the bridge is at z = -74). The

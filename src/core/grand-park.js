@@ -1,11 +1,13 @@
 // Seoul Children's Grand Park (Gwangjin-gu), stylised and not to scale:
 //   cgpgate: the main gate on the plaza by Neungdong-ro: two round pillars in
 //            bright stripes under a rainbow arch with balloons on top.
-//   hoarding: the fence round the zoo while it isn't open yet: panels in the
-//            park's colours, every other one painted "Opening soon"
-//            (polyline l.p; its collision is the map's blockers).
-// Collision for the pillars comes from the map's blockers
-// (CGP_GATE_PILLARS), so this is only visual.
+//   zooentrance: the zoo's entrance building at the end of the gate plaza:
+//            the zoo is a room you walk into (core/zoo-park.js), and this is
+//            its door (the storefront "cgp-zoo" on its west face).
+//   zoofence: the zoo's green railing round the wood behind the entrance
+//            (polyline l.p).
+// Collision comes from the map's blockers (the pillars: CGP_GATE_PILLARS;
+// the entrance is a custom building), so this is only visual.
 import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
 
@@ -50,60 +52,65 @@ export function cgpGate(g) {
   }
 }
 
-// The zoo's "opening soon" hoarding along a polyline (l.p, map coords).
-let soonTex = null;
-function openingSoon() {
-  return (soonTex ||= canvasTex(512, 256, (c, w, h) => {
-    c.fillStyle = '#fff6df'; c.fillRect(0, 0, w, h);
-    c.fillStyle = '#ef6f6c'; c.fillRect(0, 0, w, 28); c.fillRect(0, h - 28, w, 28);
-    c.textAlign = 'center'; c.fillStyle = '#4a3020';
-    c.font = 'bold 56px sans-serif'; c.fillText('동물원 개장 준비 중', w / 2, 104, w - 40);
-    c.font = '38px sans-serif'; c.fillText('The zoo is opening soon', w / 2, 162, w - 40);
-    c.font = '28px sans-serif'; c.fillText('近日オープン · 即将开放', w / 2, 210, w - 40);
-  }));
+// The zoo's entrance building (l: w × d × h, centred; its door faces -x,
+// the plaza): cream walls under a green roof with a deep overhang, ticket
+// windows either side of the door, and the zoo's name on a board up top.
+let entranceTex = null;
+export function zooEntrance(g, l) {
+  const { w = 6, d = 20, h = 6 } = l;
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat('#fbf3e2'));
+  wall.position.y = h / 2;
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 2.4, 0.5, d + 1.6), mat('#3f9b5a'));
+  roof.position.set(-0.6, h + 0.25, 0);
+  const band = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.5, d + 0.1), mat('#56b4e9'));
+  band.position.y = 0.25;
+  g.add(wall, roof, band);
+  for (const s of [-1, 1]) { // ticket windows and the arch's pillars
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.2), mat('#7fb3d5'));
+    win.position.set(-w / 2 - 0.02, 1.7, s * 6.5);
+    win.rotation.y = -Math.PI / 2;
+    const ledge = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 2.4), mat('#e2d4b8'));
+    ledge.position.set(-w / 2 - 0.2, 1.05, s * 6.5);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, h, 12), mat(STRIPES[s < 0 ? 1 : 2]));
+    pillar.position.set(-w / 2 - 0.9, h / 2, s * 3.4);
+    g.add(win, ledge, pillar);
+  }
+  entranceTex ||= canvasTex(1024, 192, (c, W, H) => {
+    c.fillStyle = '#3f9b5a'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#fffaf0'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = 'bold 84px sans-serif'; c.fillText('동물원', W / 2 - 170, H / 2 + 4);
+    c.font = 'bold 64px sans-serif'; c.fillText('ZOO', W / 2 + 190, H / 2 + 4);
+    c.font = '72px sans-serif'; c.fillText('🦁', W / 2 + 10, H / 2 + 4);
+  });
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshLambertMaterial({ map: entranceTex }));
+  board.position.set(-w / 2 - 1.85, h + 1.4, 0);
+  board.rotation.y = -Math.PI / 2;
+  g.add(board);
 }
-export function hoarding(g, l) {
-  const H = 2.6, PANEL = 4;
-  const painted = new THREE.MeshLambertMaterial({ map: openingSoon() });
+
+// The zoo's railing (l.p, map coords): green posts and two rails, about
+// waist high, with a hedge behind it.
+export function zooFence(g, l) {
+  const H = 1.3, GAP = 2.5;
+  const posts = [], rails = [];
   for (let i = 1; i < l.p.length; i++) {
     const [x0, z0] = l.p[i - 1], [x1, z1] = l.p[i];
     const len = Math.hypot(x1 - x0, z1 - z0), ang = Math.atan2(z1 - z0, x1 - x0);
-    const n = Math.max(1, Math.round(len / PANEL));
-    for (let k = 0; k < n; k++) {
-      const u = (k + 0.5) / n;
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(len / n - 0.05, H, 0.12),
-        k % 2 ? mat(STRIPES[(i + k) % STRIPES.length]) : [mat('#e9e2d3'), mat('#e9e2d3'), mat('#e9e2d3'), mat('#e9e2d3'), painted, painted]);
-      panel.position.set(x0 + (x1 - x0) * u, H / 2, z0 + (z1 - z0) * u);
-      panel.rotation.y = -ang;
-      g.add(panel);
+    for (let k = 0; k <= Math.round(len / GAP); k++) {
+      const u = k / Math.round(len / GAP);
+      posts.push([x0 + (x1 - x0) * u, z0 + (z1 - z0) * u]);
     }
+    rails.push([(x0 + x1) / 2, (z0 + z1) / 2, len, ang]);
   }
-}
-
-// A gap at the foot of the hoarding (l: x, z, ry: its face along local z): a
-// dark hole where a board is broken off, small enough to crawl through.
-// Anyone can (main.js), to look round before the zoo opens.
-export function doghole(g, l) {
-  const d = new THREE.Group();
-  d.position.set(l.x, 0, l.z);
-  d.rotation.y = l.ry || 0;
-  const dark = mat('#1d1a18');
-  for (const s of [-1, 1]) {
-    const hole = new THREE.Mesh(new THREE.CircleGeometry(0.45, 16, 0, Math.PI), dark);
-    hole.scale.y = 1.3;
-    hole.position.set(0, 0.01, 0.075 * s);
-    if (s < 0) hole.rotation.y = Math.PI;
-    d.add(hole);
-  }
-  for (const [x, z, ry] of [[0.6, 0.35, 0.4], [-0.5, 0.45, -0.8]]) { // the broken-off bits of board
-    const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.16), mat('#e9e2d3'));
-    b.position.set(x, 0.02, z); b.rotation.y = ry;
-    d.add(b);
-  }
-  for (const x of [-0.55, 0.5]) { // grass at the foot
-    const t = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.3, 5), mat('#5f9f48'));
-    t.position.set(x, 0.15, 0.2);
-    d.add(t);
-  }
-  g.add(d);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const pm = new THREE.InstancedMesh(new THREE.BoxGeometry(0.12, H, 0.12).translate(0, H / 2, 0), mat('#2f7d46'), posts.length);
+  posts.forEach(([x, z], i) => pm.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(1, 1, 1))));
+  const rm = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.08, 0.06), mat('#2f7d46'), rails.length * 2);
+  const hm = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.9, 0.8).translate(0, 0.45, 0), mat('#4f9a45'), rails.length);
+  rails.forEach(([x, z, len, ang], i) => {
+    q.setFromAxisAngle(up, -ang);
+    for (const [k, y] of [[0, 0.5], [1, 1.15]]) rm.setMatrixAt(i * 2 + k, m4.compose(v.set(x, y, z), q, sc.set(len, 1, 1)));
+    hm.setMatrixAt(i, m4.compose(v.set(x, 0, z), q, sc.set(len, 1, 1)));
+  });
+  for (const m of [pm, rm, hm]) { m.computeBoundingSphere(); g.add(m); }
 }
