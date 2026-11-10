@@ -196,6 +196,7 @@ import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createRoomCache } from './game/room-cache.js';
+import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -264,7 +265,12 @@ function reportProblem(msg) {
     errBox.className = 'err-box';
     document.body.append(errBox);
   }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  // In words a player understands, in their language; the technical line
+  // stays underneath, small, for a screenshot to the operator.
+  const b = document.createElement('b'), small = document.createElement('small');
+  b.textContent = '⚠️ ' + t('error.soft');
+  small.textContent = String(msg).slice(0, 300);
+  errBox.replaceChildren(b, small);
   errBox.hidden = false;
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
@@ -2338,6 +2344,9 @@ const interiorCache = createRoomCache({
 const roomFor = (store) => interiorCache.room(store);
 // Walking into a room not built yet: a game tip covers the build (game/tips.js).
 const roomTips = createRoomTips({ $, enterStore: (it) => enterStore(it), built: (store) => !!interiorCache.get(store.id) });
+// Textures not drawn for a minute leave the GPU (game/gpu-janitor.js): far
+// districts and kept rooms stop holding a phone's memory.
+const gpuJanitor = createGpuJanitor({ roots: () => [scene, ...[...interiorCache.values()].map((b) => b.scene)] });
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -3582,7 +3591,7 @@ function checkLowCoins() {
     ]);
   }, 1500); // after the purchase toast
 }
-// Action button (and E / Enter key).
+// Action button (and E / Space key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
@@ -3729,7 +3738,10 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
+  // Enter opens the chat, like T and / (as in most games); E and Space act.
+  if (e.code === 'Enter' && !e.repeat && !(e.target instanceof HTMLButtonElement) && !spaceBusy()
+    && !document.querySelector('#hud .sheet:not([hidden])') && !$('chat-btn').hidden) { e.preventDefault(); $('chat-btn').click(); return; }
+  if (e.code === 'KeyE' && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
   // B for Bag: closes it if open; opens it only when no game or sheet is
   // taking keys and the bag button is on screen.
@@ -7075,6 +7087,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
+    notice: (n) => chat.debugNotice(n),
     // Panels downloaded on first use (core/lazy-panel.js): __mk.panel('academy').show()
     panel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi, academy: academyUi, book: bookUi, sauna: saunaUi, ramen: ramenUi, order: orderUi, job: jobUi, photo: photoUi, claw: clawUi })[k],
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
@@ -7094,6 +7107,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),
