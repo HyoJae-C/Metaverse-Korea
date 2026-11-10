@@ -94,6 +94,23 @@ test('Bukchon shops stand in Bukchon, with hanok fronts', () => {
   assert.deepEqual(stores.find((x) => x.id === 'gahoe-hanbok').products.map((p) => p.rent), a);
 });
 
+test('each Bukchon shop door stands in the middle of a hanok bay', async () => {
+  // Off the middle, the shop front runs into the bay's corner post (Yozi).
+  const { shopBays } = await import('../src/core/hanok.js');
+  const [ox, oz] = region.districts.find((d) => d.id === 'bukchon').offset;
+  for (const s of stores.filter((x) => x.front === 'hanok')) {
+    const [x, z] = [s.at[0] - ox, s.at[1] - oz];
+    const b = map.buildings.find((h) => {
+      const xs = h.p.map((q) => q[0]), zs = h.p.map((q) => q[1]);
+      return h.hanok && h.fr && x > Math.min(...xs) && x < Math.max(...xs) && zs.some((v) => Math.abs(v - z) < 3);
+    });
+    if (!b) continue; // (Jongmyo's and Ikseon-dong's hanok shops are on other maps)
+    const xs = b.p.map((q) => q[0]), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const off = Math.min(...shopBays(Math.max(...xs) - Math.min(...xs)).map((m) => Math.abs(x - cx - m)));
+    assert.ok(off < 0.5, `${s.id} is ${off.toFixed(1)} m off the middle of its bay`);
+  }
+});
+
 test('the photo spot pays once, and the Open House parts make a Hanok Explorer', () => {
   const st = mem();
   const book = new ViewBook(st);
