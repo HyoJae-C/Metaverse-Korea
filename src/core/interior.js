@@ -578,13 +578,14 @@ export function buildInterior(store) {
   });
 
   // Ride shops: the rides themselves on low stands (a bike, a skateboard, a
-  // kick scooter and inline skates, then more of each), wearing the shop's
+  // kick scooter and inline skates, one of each), wearing the shop's
   // own skins, instead of small goods on tables. Buying is at the counter.
   if (store.workshop === 'bike') {
     const shop = RIDE_SHOPS[store.rideShop] ? store.rideShop : 'pedal';
     const { colors, patterns } = RIDE_SHOPS[shop];
     const order = ['bike', 'skate', 'kick', 'inline'].filter((t) => RIDE_TYPES.includes(t));
-    spots.forEach(([x, z, ry], i) => {
+    // One of each kind only: a ride is many meshes, so more would be heavy.
+    spots.slice(0, order.length).forEach(([x, z, ry], i) => {
       const type = order[i % order.length];
       const tier = 2 - (Math.floor(i / order.length) % 3);
       const color = SKIN_COLORS[colors[i % colors.length]];
