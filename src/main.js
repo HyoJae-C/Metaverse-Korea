@@ -6604,6 +6604,7 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+let mapPause = 0; // (seconds since other players last moved while the map is open)
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
@@ -6917,11 +6918,16 @@ renderer.setAnimationLoop((now) => {
 
   const w = innerWidth, h = innerHeight;
   others.fences = petFences();
-  others.update(dt, streetCam(), w, h);
+  // While the full map is open nothing behind it is seen: other players
+  // only catch up four times a second (their dots on the map still move),
+  // and the street's NPCs wait. Closing the map, everyone is where they are.
+  mapPause += dt;
+  const mapUp = mapView.open;
+  if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
-  if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
+  if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
