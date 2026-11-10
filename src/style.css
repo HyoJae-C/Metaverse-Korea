@@ -2563,6 +2563,37 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   /* A mini-game or a game panel fills the screen: no buttons over it. */
   #hud:has(.game-panel:not([hidden])) .tools { display: none; }
 }
+/* Android phones held upright: the tool buttons (map, ride, chat, bag,
+   notes) sit in a slim see-through bar along the bottom instead. Chrome on
+   Android keeps its address bar at the top, so the bottom is free; on an
+   iPhone, Safari's address bar can sit at the bottom and would push the
+   joystick up, so iPhones keep the layout above. Everything that sat at the
+   bottom moves up by the bar's height (the game view itself doesn't shrink). */
+@media (max-width: 700px) and (orientation: portrait) {
+  html.android { --tool-bar: 54px; }
+  html.android :is(.tools, .in-store .tools) {
+    position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 4;
+    flex-direction: row; justify-content: space-around; gap: 0;
+    padding: 0 max(6px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(6px, env(safe-area-inset-left));
+    background: rgba(255, 250, 240, 0.72);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: 0 -1px 0 rgba(74, 63, 53, 0.08);
+  }
+  html.android .tools .tool { position: relative; right: auto; bottom: auto; flex: 1 1 0; max-width: 84px; width: auto; height: var(--tool-bar); border-radius: 14px; background: transparent; box-shadow: none; }
+  html.android .tools :is(#bike-btn, #chat-btn) { position: relative; right: auto; bottom: auto; }
+  html.android .tools .tool span { font-size: 21px; }
+  html.android .tools .tool small { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  html.android .tools .tool[aria-pressed='true'] { background: var(--mint); }
+  html.android .tools .badge { top: 2px; right: calc(50% - 24px); }
+  html.android #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 1; pointer-events: auto; }
+  html.android :is(.notice-pin, .install-nudge) { translate: none; }
+  html.android :is(.joystick, .emote-wheel, .emotes, .action, .action-menu, .help, .revert, .honk-btn, .boost-btn,
+    .stamina, .chat-log, .chat-fold, .quest-bar, .quest-chip, .kpop-tv, .decor-bar, .person-menu) {
+    translate: 0 calc(-1 * var(--tool-bar));
+  }
+  html.android .quest-bar .quest-chip { translate: none; } /* (the bar moves; its chips go with it) */
+  @media (max-width: 360px) { html.android :is(.action, .action-menu) { left: 50%; } }
+}
 .online .on-short { display: none; }
 @media (max-width: 700px) and (orientation: portrait) { .online .on-short { display: inline; } }
 
