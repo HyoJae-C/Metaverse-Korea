@@ -47,3 +47,13 @@ test('idle values stand in for properties until it has loaded', async () => {
   assert.equal(p.walking, true);
   assert.deepEqual(p.game, { n: 1 });
 });
+
+test('a property set before loading is kept and handed to the panel', async () => {
+  const p = lazyPanel(async () => ({ name: 'old', show() {} }));
+  p.name = 'new';
+  assert.equal(p.name, 'new');
+  await p.ready();
+  assert.equal(p.name, 'new');
+  p.name = 'newer';
+  assert.equal(p.name, 'newer');
+});

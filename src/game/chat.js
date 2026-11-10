@@ -18,7 +18,7 @@ import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
-import { skyCode } from './sky-flight.js';
+import { skyCode } from './sky-codes.js';
 import { nextShow, showNoticeText } from '../core/show-notice.js';
 
 const NOTICE_TEXT = {

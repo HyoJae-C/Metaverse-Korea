@@ -342,11 +342,6 @@ export function createTaxi(game) {
     if (host && host.h.heard(id, { verb: 'bye', trip: host.h.trip })) drawHost();
   }
 
-  $('map-btn').onclick = () => {
-    const pos = game.place ? game.place() : game.mode === 'street' ? game.me.root.position : game.interior.front.door;
-    mapView.show(pos.x, pos.z);
-  };
-
   // A ride someone else pays for (the new player's first taxi): no fare, no sharing.
   function rideFree(dest, onArrive) {
     const [rx, rz] = taxiDropOff(dest.x, dest.z);

@@ -15,8 +15,10 @@ import {
 } from '../core/snowballs.js';
 import { hatModel } from '../core/character.js';
 import { L } from '../ui/pocha-ui.js';
+import { SNOW_LABELS } from './snow-labels.js';
 
 export const SNOW_TEXT = {
+  ...SNOW_LABELS,
   make: { en: 'Make a snowball', ko: '눈덩이 만들기', ja: '雪玉を作る', zh: '做雪球' },
   gather: { en: 'Gather snow', ko: '눈 모으기', ja: '雪を集める', zh: '堆雪' },
   roll: { en: 'Roll the snowball', ko: '눈덩이 굴리기', ja: '雪玉を転がす', zh: '滚雪球' },
@@ -27,10 +29,6 @@ export const SNOW_TEXT = {
   walkIt: { en: 'Walk and it rolls along, growing as it goes. Friends can grab it too!', ko: '걸어 다니면 눈덩이가 굴러가며 커져요. 친구도 같이 붙잡을 수 있어요!', ja: '歩くと雪玉が転がって大きくなります。友だちも一緒につかめます！', zh: '走起来雪球就会滚着变大。朋友也可以一起抓住！' },
   hat: { en: 'Put my hat on the snowman', ko: '눈사람에 내 모자 씌우기', ja: '雪だるまに自分の帽子をかぶせる', zh: '给雪人戴上我的帽子' },
   cold: { en: 'Brr, cold hands! Warming them up… {s}', ko: '손이 시려요! 호호 녹이는 중… {s}', ja: '手が冷たい！はーっと温め中… {s}', zh: '手好冰！哈气暖手中… {s}' },
-  moldName: { en: 'Snow duck maker', ko: '눈오리 집게', ja: '雪あひるメーカー', zh: '雪鸭夹' },
-  moldDesc: { en: 'Hold it on a snowy street and press E to make a snow duck.', ko: '눈 쌓인 거리에서 손에 들고 E를 누르면 눈오리가 생겨요.', ja: '雪の積もった通りで手に持ってEを押すと雪あひるができます。', zh: '在积雪的街上拿在手里按E就能做雪鸭。' },
-  snowNews: { en: '❄️ It\'s snowing! Take the snow duck maker out of your bag and make snow ducks. 🦆', ko: '❄️ 눈이 와요! 가방에서 눈오리 집게를 꺼내 눈오리를 만들어 보세요. 🦆', ja: '❄️ 雪です！バッグから雪あひるメーカーを出して雪あひるを作ろう。🦆', zh: '❄️ 下雪啦！从包里拿出雪鸭夹做雪鸭吧。🦆' },
-  snowNewsGot: { en: '❄️ It\'s snowing! A snow duck maker is in your bag: take it out and make snow ducks. 🦆', ko: '❄️ 눈이 와요! 가방에 눈오리 집게를 넣어 뒀어요. 꺼내서 눈오리를 만들어 보세요. 🦆', ja: '❄️ 雪です！バッグに雪あひるメーカーを入れておきました。出して雪あひるを作ろう。🦆', zh: '❄️ 下雪啦！包里放了一个雪鸭夹，拿出来做雪鸭吧。🦆' },
   duck: { en: 'Make a snow duck', ko: '눈오리 만들기', ja: '雪あひるを作る', zh: '做雪鸭' },
   ducks: { en: 'Your oldest snow duck melted to make room.', ko: '가장 먼저 만든 눈오리가 녹고 새 눈오리가 생겼어요.', ja: '一番古い雪あひるが溶けて、新しいのができました。', zh: '最早的雪鸭融化了，新的做好了。' },
   hatOn: { en: 'Looking sharp! 🎩', ko: '모자 쓴 눈사람 완성! 🎩', ja: '帽子の雪だるまの完成！🎩', zh: '雪人戴上帽子啦！🎩' },
