@@ -552,27 +552,29 @@ change each year.
 
 Drawn by `scripts/build-jongmyo.mjs` from `src/data/jongmyo.js`, in the room
 between Jongno and Yulgok-ro east of Bukchon. Jongno runs on east from
-Gwanghwamun (z -765); Oedaemun, the shrine's gate, stands on its north side
-behind Jongmyo Square (meeting zone B-4, the janggi grandpas, the stamp). The
-shrine is a walled place you walk into (`meta.enclosure`): the stone path
-(samdo; its raised middle strip is the spirits', `onSamdo`), Jeongjeon and
-Yeongnyeongjeon on their terraces in walled yards, the square pond, and the
-woods (one instanced landmark that also lines the square, so the treetops show
-over the wall). `core/jongmyo-show.js` has the guide inside the gate, the
-ritual dance on Jeongjeon's terrace at about a quarter scale (16 dancers: the
-civil dance on the west half, the military dance with wooden swords and spears
-on the east half; 15 musicians behind them), built the first time you come
-near, and the grandpas. A sign below the terrace explains the two dances (at
-the real rite they take turns). Stepping onto the spirits' strip slides you
-back beside it (`offSindo`). `🏛️ Enter Jongmyo` in front of the stamp takes you
-inside the gate and `🚪 Leave Jongmyo` just inside brings you back (walking
-through the gate works too). Landmarks marked `inner` (the halls, terraces,
-stone path, inner woods, rite sign) are built only on the first visit. Outside the west wall: a grove and the
-Information Center's hanok on Jongno. Seosunra-gil (the lane along the west
-wall with six hanok shops) was taken out for now because it felt too much
+Gwanghwamun (z -725; 12 m south of the real Jong-ro, to leave Cheonggyecheon
+room; Jongmyo carries a 6 m nudge so it lines up); Oedaemun, the shrine's
+gate, stands on its north side behind Jongmyo Square (meeting zone B-4, the
+janggi grandpas, the stamp). The shrine is a walled place you walk into
+(`meta.enclosure`): the stone path (samdo; its raised middle strip is the
+spirits', `onSamdo`), Jeongjeon and Yeongnyeongjeon on their terraces in
+walled yards, the square pond, and the woods (one instanced landmark that also
+lines the square, so the treetops show over the wall). `core/jongmyo-show.js`
+has the guide inside the gate, the ritual dance on Jeongjeon's terrace at
+about a quarter scale (16 dancers: the civil dance on the west half, the
+military dance with wooden swords and spears on the east half; 15 musicians
+behind them), built the first time you come near, and the grandpas. A sign
+below the terrace explains the two dances (at the real rite they take turns).
+Stepping onto the spirits' strip slides you back beside it (`offSindo`). `🏛️
+Enter Jongmyo` in front of the stamp takes you inside the gate and `🚪 Leave
+Jongmyo` just inside brings you back (walking through the gate works too).
+Landmarks marked `inner` (the halls, terraces, stone path, inner woods, rite
+sign) are built only on the first visit. Outside the west wall: a grove and
+the Information Center's hanok on Jongno. Seosunra-gil (the lane along the
+west wall with six hanok shops) was taken out for now because it felt too much
 like Bukchon; to bring it back, start from commit e4ebd13. Run the script
-again after moving the district: it also sets the Information Center's `at`
-in stores.json.
+again after moving the district: it also sets the Information Center's `at` in
+stores.json.
 
 ## Stamp courses
 
