@@ -3179,6 +3179,7 @@ const liveStage = createLiveStage({
   get interior() { return interior; }, get others() { return others; }, get net() { return net; }, get me() { return me; },
   get nickname() { return nickname; }, get sfx() { return sfx; },
   myId, safety, cloud, shop, music, applyMusicBtn, openPersonMenu: chat.openPersonMenu, testRoom: !!testRoom,
+  standAt: (x, z, ry) => moveMeTo(activeScene, x, z, ry, cam.yaw), // (the camera stays put: you see your singer from the room)
 });
 // Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
 const bikeShop = createBikeShop({

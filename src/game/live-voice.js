@@ -171,6 +171,9 @@ export function createLiveVoice(game) {
     if (!active || mic || (stage && stage.id !== game.myId)) { s.getTracks().forEach((tr) => tr.stop()); if (stage) game.shop.toast(t('live.taken', { name: nameOf(stage.id) })); return; }
     mic = s;
     spot = at;
+    // Up to the mic, facing the audience (like a busker). The camera stays
+    // where it was, out in the room, so you see your singer's face.
+    game.standAt?.(at.x, at.z, at.ry ?? 0);
     since = Date.now();
     muted = false;
     send({ k: 'on', since, muted });
