@@ -30,3 +30,21 @@ export function fitView(points, w, h, dpr = 1) {
   const scale = Math.min(1.5 * dpr, (w - pad * 2) / spanX, (h - pad * 2) / spanZ);
   return { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, scale: Math.max(0.02, scale) };
 }
+
+// Groups points that sit close together on screen, for the live map's
+// "counts" mode. pts: [{ sx, sy, ... }] in screen pixels; radius in the same
+// pixels. Greedy: each point joins the first group whose centre is within
+// the radius, and the centre moves to the group's average. Returns
+// [{ sx, sy, items }], biggest group first.
+export function clusterPoints(pts, radius) {
+  const groups = [];
+  for (const p of pts) {
+    let g = null;
+    for (const c of groups) if (Math.hypot(c.sx - p.sx, c.sy - p.sy) <= radius) { g = c; break; }
+    if (!g) { groups.push({ sx: p.sx, sy: p.sy, items: [p] }); continue; }
+    g.items.push(p);
+    g.sx += (p.sx - g.sx) / g.items.length;
+    g.sy += (p.sy - g.sy) / g.items.length;
+  }
+  return groups.sort((a, b) => b.items.length - a.items.length);
+}

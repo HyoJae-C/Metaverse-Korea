@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { whereDue, startWhereReports, WHERE_MOVE_MS, WHERE_IDLE_MS, WHERE_PLACE_MS } from '../src/net/where.js';
-import { describePlace, agoText, fitView } from '../src/admin/view.js';
+import { describePlace, agoText, fitView, clusterPoints } from '../src/admin/view.js';
 
 const at = (x, z, place = 'street') => ({ x, z, place });
 
@@ -54,4 +54,16 @@ test('admin view helpers', () => {
   assert.equal(v.cz, 250);
   assert.ok(v.scale > 0 && v.scale <= (1200 - 120) / 1000);
   assert.equal(fitView([[5, 5]], 800, 600).scale, 1.5, 'one player: street level');
+});
+
+test('live map counts mode groups players close on screen', () => {
+  const pts = [{ sx: 0, sy: 0 }, { sx: 10, sy: 5 }, { sx: 300, sy: 300 }, { sx: 5, sy: -8 }];
+  const groups = clusterPoints(pts, 40);
+  assert.equal(groups.length, 2);
+  assert.equal(groups[0].items.length, 3);
+  assert.equal(groups[1].items.length, 1);
+  assert.ok(Math.abs(groups[0].sx - 5) < 1e-9 && Math.abs(groups[0].sy + 1) < 1e-9);
+  assert.equal(clusterPoints([], 40).length, 0);
+  // Zoomed in far enough, nobody is grouped.
+  assert.equal(clusterPoints(pts, 4).length, 4);
 });
