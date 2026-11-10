@@ -5135,7 +5135,7 @@ onLanguageChange(refreshDexBtn);
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
 const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
-const rideFare = (kind) => (ridePass() ? '🎫' : rideTickets.ticketFor(kind) ? '🎟️' : `🪙 ${RIDE_PRICE[kind]}`);
+const rideFare = (kind) => { const id = !ridePass() && rideTickets.ticketFor(kind); return ridePass() ? '🎫 ' + t('ride.onPass') : id ? '🎟️ ' + t('ride.onTicket', { n: rideTickets.left(id) }) : `🪙 ${RIDE_PRICE[kind]}`; }; // (in words: people with a ticket weren't sure it would be used)
 // A ride on the pass or a ticket (true), saying what's left on the ticket.
 function useRideTicket(kind) {
   const id = rideTickets.use(kind);
@@ -5762,6 +5762,7 @@ const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 const seoulDal = createSeoulDalNear({
   landmarks: map.landmarks, scene, weather, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
   others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  move: () => input.move, moveYaw: () => moveRef.yaw, // (walking round the gondola)
   // The stamp tour's Seoul Dal stamp, pressed in the gondola at the top.
   stamp: () => { const s = tourStamps.find((q) => q.id === 'seoul-dal'); return s && { got: stampBook.has(s.id), name: L(s.name), press: () => pressStamp({ stamp: s }) }; },
 });
@@ -6886,7 +6887,7 @@ renderer.setAnimationLoop((now) => {
   } else if (runwayUi.walking && mode === 'store') {
     speed01 = THREE.MathUtils.lerp(speed01, runwayStep(p, dt), Math.min(1, dt * 10));
   } else if (riding !== 3) {
-    speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, seoulDal.pace * 0.45, Math.min(1, dt * 10)); // (0, or walking round Seoul Dal's gondola)
   }
   if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);

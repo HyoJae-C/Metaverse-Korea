@@ -30,6 +30,9 @@ const R = 9; // the balloon's radius
 const HANG = 4; // from the gondola floor to the bottom of the balloon
 const GATE = 8.6; // the gate, from the cable (towards the path)
 const DECK_IN = 1.6, DECK_OUT = 4.6;
+const FLAME_Y = HANG - 0.95; // the burner, under the balloon's mouth
+const WALK = 1.8; // m/s, walking round the deck
+const EDGE_IN = DECK_IN + 0.45, EDGE_OUT = DECK_OUT - 0.45; // where you can stand
 
 function buildPad(g) {
   const pad = new THREE.Mesh(new THREE.CylinderGeometry(7, 7.3, 0.25, 32), mat('#b9c3cc'));
@@ -148,12 +151,26 @@ function buildBalloon() {
   const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, HANG + 1, 6), lineMat);
   mast.position.y = (HANG + 1) / 2;
   g.add(mast);
+  // A burner on the mast, its small flame licking up into the balloon
+  // (Yozi's ask: gentle, and light: two cones, no light source).
+  box(g, 0.5, 0.18, 0.5, 0, FLAME_Y - 0.1, 0, '#6b7079');
+  const fire = new THREE.Group();
+  fire.name = 'flame';
+  fire.position.y = FLAME_Y;
+  for (const [r, h, c, o, k] of [[0.3, 1.35, '#ff6a1a', 0.55, 1], [0.15, 1.0, '#ffe066', 0.95, 2]]) { // (the yellow core drawn over the orange)
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h, 10, 1, true).translate(0, h / 2, 0), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    cone.renderOrder = k;
+    cone.userData.noShadow = true;
+    fire.add(cone);
+  }
+  g.add(fire);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
   return g;
 }
 
 // game: { scene, me, mode, cam, riding, others, myId, wallet, shop, t,
-// missionEvent, resend, clearAction, stamp, landmarks, weather } (getters where they change;
+// missionEvent, resend, clearAction, stamp, landmarks, weather, move,
+// moveYaw } (getters where they change; move() is the stick/WASD, moveYaw() the way it points;
 // stamp() is the tour stamp for up top: { got, name, press }, or null);
 // at: { x, z, ry }, the cable's foot (its local +z is the gate).
 export function createSeoulDal(game, at) {
@@ -181,9 +198,11 @@ export function createSeoulDal(game, at) {
   const OUT = 0.16, DOWN = 0.75; // (pitch: the skyline, the park below)
   let lifted = false; // (the haze pulled back: weather.lift)
   const rig = balloon.children.filter((o) => o.userData.rig !== undefined);
+  const flame = balloon.getObjectByName('flame');
   let rigHidden = false;
 
-  let ride = null; // { slot, n (the flight), paid, flown, topped, down }
+  let ride = null; // { lx, lz, face (where I stand in the gondola), n (the flight), paid, flown, topped, down }
+  let pace = 0; // (walking round the deck: for the walk animation)
   let ticket = 0; // my waiting ticket (when I took it, ms), or 0
   const queue = new TarotQueue(undefined, DAL.turn * 1000);
   let turn = { order: [], callable: [], expired: [] };
@@ -205,9 +224,27 @@ export function createSeoulDal(game, at) {
   let lastGate = null; // (one toast per flight for "lifting off")
   const T = (k, v) => game.t(k, v);
   function spotNow(s) {
-    const sp = riderSpot(ride.slot);
-    const [x, z] = world(sp.x, sp.z);
-    return { x, z, y: s.h + DAL.deck + 0.02, ry: ry + sp.ry };
+    const [x, z] = world(ride.lx, ride.lz);
+    return { x, z, y: s.h + DAL.deck + 0.02, ry: ry + ride.face };
+  }
+  // Walking round the deck (Yozi's ask): the stick or WASD, as on the street,
+  // kept between the core and the rail. Returns how fast (0-1, the walk).
+  function walk(dt) {
+    const m = game.move?.();
+    const mag = m ? Math.min(1, Math.hypot(m.x, m.y)) : 0;
+    if (mag < 0.05) return 0;
+    const yaw = game.moveYaw?.() ?? game.cam.yaw;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
+    const dx = (fx * m.y + rx * m.x) * WALK * mag * dt, dz = (fz * m.y + rz * m.x) * WALK * mag * dt;
+    const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos; // (into the gondola's frame)
+    let nx = ride.lx + lx, nz = ride.lz + lz;
+    const r = Math.hypot(nx, nz) || 1, k = Math.min(EDGE_OUT, Math.max(EDGE_IN, r)) / r;
+    nx *= k; nz *= k;
+    let d = Math.atan2(lx, lz) - ride.face;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    ride.face += d * Math.min(1, dt * 12);
+    ride.lx = nx; ride.lz = nz;
+    return mag;
   }
   function board() {
     const s = dalAt(dalClock());
@@ -226,7 +263,8 @@ export function createSeoulDal(game, at) {
     const free = [...Array(DAL.slots).keys()].filter((k) => !taken.has(k));
     const pick = free.length ? free : [...Array(DAL.slots).keys()];
     ticket = 0;
-    ride = { slot: pick[Math.floor(Math.random() * pick.length)], n: s.n, paid: game.wallet.lastOp, flown: false, topped: false, down: false };
+    const at0 = riderSpot(pick[Math.floor(Math.random() * pick.length)]);
+    ride = { lx: at0.x, lz: at0.z, face: at0.ry, n: s.n, paid: game.wallet.lastOp, flown: false, topped: false, down: false };
     const sp = spotNow(s);
     game.me.root.position.set(sp.x, sp.y, sp.z);
     game.me.root.rotation.y = sp.ry;
@@ -262,7 +300,7 @@ export function createSeoulDal(game, at) {
     game.resend();
     game.clearAction();
   }
-  function update() {
+  function update(dt = 0) {
     const p = game.me.root.position;
     const far = Math.hypot(p.x - ox, p.z - oz) > DAL.load + 100;
     root.visible = game.mode === 'street' && !far;
@@ -277,6 +315,11 @@ export function createSeoulDal(game, at) {
       balloon.position.y = s.h + DAL.deck;
       balloon.rotation.y = s.h * 0.004; // (a slow turn as it climbs)
       cable.scale.y = Math.max(0.01, s.h + DAL.deck - 0.9);
+      // The flame: a soft flicker, and a short gentle burst now and then
+      // (on the shared clock, so everyone sees the same burst).
+      const now = dalClock(), b = now % 9 < 1.4 ? Math.sin(((now % 9) / 1.4) * Math.PI) : 0;
+      const f = 0.85 + Math.sin(now * 17) * 0.08 + Math.sin(now * 29.3) * 0.06;
+      flame.scale.set(1 + b * 0.25, f + b * 0.7, 1 + b * 0.25);
     }
     const lift = ride && game.mode === 'street' ? Math.min(1, s.h / DAL.top) : 0;
     if (game.weather && (lift > 0 || lifted)) { game.weather.lift = lift; lifted = lift > 0; }
@@ -299,8 +342,10 @@ export function createSeoulDal(game, at) {
       game.shop.toast(T('dal.top') + (game.stamp?.() && !game.stamp().got ? ' ' + T('dal.stampHint') : ''));
       game.clearAction();
     }
-    p.set(sp.x, sp.y, sp.z);
-    game.me.root.rotation.y = sp.ry;
+    pace = walk(dt);
+    const at1 = spotNow(s);
+    p.set(at1.x, at1.y, at1.z);
+    game.me.root.rotation.y = at1.ry;
   }
   // The button: at the gate, aboard (get off while it waits, the view in
   // the air).
@@ -317,11 +362,11 @@ export function createSeoulDal(game, at) {
     }
     if (game.riding) return null;
     const near = Math.hypot(p.x - ox, p.z - oz);
-    if (ticket && turn.callable.includes(game.myId) && near < 60) { // called: board from anywhere round the pad
+    if (ticket && turn.callable.includes(game.myId) && near < DAL.call) { // called: board from anywhere round the pad
       const sec = queue.secondsLeft(game.myId) ?? 0;
       return { key: 'dal-turn:' + sec, label: '🔔 ' + T('dal.turn', { s: sec, n: DAL.fare.toLocaleString() }), run: board };
     }
-    if (Math.hypot(p.x - gate[0], p.z - gate[1]) > 2.4) return null;
+    if (near > DAL.near && Math.hypot(p.x - gate[0], p.z - gate[1]) > 2.4) return null; // (round the pad's fence, or at the gate)
     if (ticket) { const n = myPlace(); return { key: 'dal-line:' + n, label: '🎫 ' + T('dal.line', { n }), run: leaveLine }; }
     if (mayBoard(s)) return { key: 'dal-board:' + aboard(s.n), label: '🎈 ' + T('dal.board', { n: DAL.fare.toLocaleString(), k: aboard(s.n), max: DAL.max }), run: board };
     const t = clock(opensIn(now));
@@ -363,5 +408,6 @@ export function createSeoulDal(game, at) {
   return {
     update, act, state, camera,
     get busy() { return !!ride; },
+    get pace() { return ride ? pace : 0; },
   };
 }

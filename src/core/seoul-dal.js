@@ -28,7 +28,9 @@ export const DAL = {
   max: 5, // people a flight (the real one takes 20; a quarter here, like the map,
   //         so the gondola stays roomy and a chat up top isn't crowded); the rest take a waiting ticket
   slots: 10, // places round the ring (twice the riders: two who board at once rarely share one)
-  turn: 15, // seconds a called ticket has to board
+  turn: 25, // seconds a called ticket has to board (15 was too short to notice and walk back)
+  call: 150, // m: a called ticket can board from this far (it puts you in the gondola)
+  near: 13, // m from the cable: the gate's button works anywhere round the pad, not only at the gate
   load: 650, // m: the balloon is loaded and drawn within this of it
 };
 DAL.cycle = DAL.board + DAL.rise + DAL.hover + DAL.sink;
