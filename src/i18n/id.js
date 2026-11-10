@@ -434,6 +434,7 @@ export const ID = {
   'hud.musicOff': 'Musik mati',
   'hud.signsOff': 'Papan nama dalam bahasa Korea',
   'hud.bike': 'Kendaraan',
+  'stairs.noBike': "🚲 Kendaraan tidak bisa lewat tangga. Ketuk Kendaraan untuk turun, lalu jalan kaki ke bawah.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',

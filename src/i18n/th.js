@@ -432,6 +432,7 @@ export const TH = {
   'hud.musicOff': 'ปิดเพลง',
   'hud.signsOff': 'ป้ายภาษาเกาหลี',
   'hud.bike': 'พาหนะ',
+  'stairs.noBike': "🚲 ขี่พาหนะลงบันไดไม่ได้ กดพาหนะเพื่อลง แล้วเดินลงไป",
   'bike.offShort': 'ลง',
   'bike.off': 'ลงจากจักรยาน',
   'car.off': 'ลงจากรถ',

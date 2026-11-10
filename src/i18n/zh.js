@@ -431,6 +431,7 @@ export const ZH = {
   'hud.musicOff': '音乐已关',
   'hud.signsOff': '显示韩语招牌',
   'hud.bike': '交通工具',
+  'stairs.noBike': "🚲 楼梯上不能骑车。点“交通工具”下车，再走下去。",
   'bike.offShort': '下车',
   'bike.off': '下车',
   'car.off': '下车',

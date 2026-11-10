@@ -434,6 +434,7 @@ export const AR = {
   'hud.musicOff': 'الموسيقى متوقفة',
   'hud.signsOff': 'اللافتات بالكورية',
   'hud.bike': 'المركبة',
+  'stairs.noBike': "🚲 لا مركبات على الدرج. اضغط المركبة لتنزل، ثم انزل مشيًا.",
   'bike.offShort': 'انزل',
   'bike.off': 'انزل عن الدراجة',
   'car.off': 'اخرج من السيارة',

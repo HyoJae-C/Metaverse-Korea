@@ -196,6 +196,7 @@ import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
+import { createNoBikeStairs } from './game/no-bike-stairs.js';
 import { createRoomCache } from './game/room-cache.js';
 import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
@@ -3059,10 +3060,11 @@ function leaveStore(walkOut = false) {
 // ---------- Subway station ----------
 // Down by a stream (core/stream.js): which layer you are on and how high.
 let byStream = null; // { i, y, low, stair } while on a stream's stairs or banks
+const noBikeStairs = createNoBikeStairs({ toast: (m) => shop.toast(m), text: () => t('stairs.noBike') }); // (game/no-bike-stairs.js)
 function updateStream(p, px0, pz0) {
   if (!streams.length) return 0;
   let s = streamAt(streams, p.x, p.z, !!byStream?.low);
-  if (s?.stair && riding) { p.x = px0; p.z = pz0; s = streamAt(streams, p.x, p.z, !!byStream?.low); } // no bikes down the steps
+  if (s?.stair && riding) { p.x = px0; p.z = pz0; s = streamAt(streams, p.x, p.z, !!byStream?.low); noBikeStairs(); } // no bikes down the steps (and say so)
   byStream = s && (s.low || s.stair) ? s : null;
   if (mode === 'street') activeCollision = byStream?.low ? streamCollision : collision;
   return s ? s.y : 0;
@@ -3075,6 +3077,7 @@ const subway = createSubway(subwayStations, {
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
+  onNoBikeStairs: noBikeStairs,
   streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;

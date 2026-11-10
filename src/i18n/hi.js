@@ -434,6 +434,7 @@ export const HI = {
   'hud.musicOff': 'संगीत बंद',
   'hud.signsOff': 'साइनबोर्ड कोरियाई में',
   'hud.bike': 'वाहन',
+  'stairs.noBike': "🚲 सीढ़ियों पर वाहन नहीं। उतरने के लिए वाहन दबाएँ, फिर पैदल नीचे जाएँ।",
   'bike.offShort': 'उतरें',
   'bike.off': 'साइकिल से उतरें',
   'car.off': 'कार से उतरें',

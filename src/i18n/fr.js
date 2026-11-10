@@ -432,6 +432,7 @@ export const FR = {
   'hud.musicOff': 'Musique coupée',
   'hud.signsOff': 'Enseignes en coréen',
   'hud.bike': 'Véhicule',
+  'stairs.noBike': "🚲 Pas de véhicule dans l'escalier. Touche Véhicule pour descendre, puis va à pied.",
   'bike.offShort': 'Descendre',
   'bike.off': 'Descendre du vélo',
   'car.off': 'Sortir de la voiture',

@@ -431,6 +431,7 @@ export const JA = {
   'hud.musicOff': '音楽オフ',
   'hud.signsOff': '看板を韓国語で表示',
   'hud.bike': '乗り物',
+  'stairs.noBike': "🚲 階段は乗り物では通れないよ。「乗り物」ボタンで降りて歩いて下りよう。",
   'bike.offShort': '降りる',
   'bike.off': '自転車を降りる',
   'car.off': '車を降りる',
