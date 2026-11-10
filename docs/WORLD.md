@@ -129,14 +129,20 @@ lists **districts** joined into one map (`src/core/districts.js`):
 - `closed` (region.json) is land not built yet in Seocho, Gangnam and Dongjak:
   rectangles you can't walk into, drawn grey on the street, the map and the
   minimap. `node scripts/build-closed.mjs` writes it, leaving 30 m open around
-  anything built; run it again after building there.
+  anything built (6 m each side of a bike path); run it again after building
+  there.
+- The Han River bike paths are links with `bike: true` (drawn red on the
+  street and the maps): the north bank from Mangwon to Seongsu, and the south
+  bank from the Saetgang's mouth to Banpo-Jamwon park and on to Jamsil
+  Bridge, open through the closed land. `node scripts/build-bike-paths.mjs`
+  writes them on OpenStreetMap's real cycleways at 1/4
+  (`scripts/data/han-bike-osm.json`); run `build-closed.mjs` after it.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
   `blockers` split around a bridge to leave a gap. The Han's banks there
   are the real ones at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
   `scripts/han-bank.mjs` writes water[1] (from x -1420, west of Banpo Bridge,
-  to Seongsu, with a gap for Jamsu Bridge) and the Han River Bike Path 14 m
-  inland of the north bank, and `scripts/build-yeouido.mjs` writes water[0]
+  to Seongsu, with a gap for Jamsu Bridge), and `scripts/build-yeouido.mjs` writes water[0]
   (Mangwon to x -1420) from the same banks. Mangwon's map draws its own
   straight stretch of the real bank (west of x -3220).
 - Stores, homes and meeting zones can be placed with

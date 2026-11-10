@@ -355,7 +355,7 @@ export class MapView {
     for (const r of this.map.roads) {
       if (!seen(r, r.w || 0)) continue;
       poly(r.p);
-      g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = r.bike ? '#d9826f' : r.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1, r.w * this.view.scale);
       g.stroke();
     }
