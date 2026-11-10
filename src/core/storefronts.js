@@ -7,6 +7,7 @@ import { localName } from './i18n.js';
 import { SIGN_SHAPES, signShape, signGeometry, signTexture } from './sign-shapes.js';
 import { hanokSignStyle, hanokSignTexture, addHanokSign } from './hanok-signs.js';
 import { storeIcon } from './store-icons.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const SIGN_W = 6.4;
 
@@ -106,6 +107,7 @@ function awningTexture(color) {
 }
 
 export const SIGN_NEAR = 170, SIGN_FAR = 200; // m
+const RING_FAR = 60; // m
 
 export class Storefronts {
   constructor(scene, stores, map, center, collision = null) {
@@ -180,24 +182,28 @@ export class Storefronts {
       // Shop front: glass panes either side of a door.
       // Hanok shops: a dark wooden frame and paper-lattice panes instead of
       // glass, and a lower door (the plaque goes above it).
-      const frame = mat(hanok ? '#6b4630' : '#fffaf0');
-      const glass = hanok ? new THREE.MeshLambertMaterial({ color: 0xf3e6c8 }) : new THREE.MeshLambertMaterial({ color: 0xbfe0ee, transparent: true, opacity: 0.85 });
-      const front = new THREE.Mesh(new THREE.BoxGeometry(5.2, 2.6, 0.12), frame);
-      front.position.set(0, 1.3, 0.06);
-      group.add(front);
-      if (home) front.scale.set(0.5, 1.05, 1);
-      if (!home) for (const sx of [-1.75, 1.75]) {
-        const pane = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.9, 0.05), glass);
-        pane.position.set(sx, 1.35, 0.14);
-        group.add(pane);
-      }
+      // Frame and door are baked into one mesh (a vertex colour each) and the
+      // three panes into another: two draw calls a shop, not five.
+      const solid = [], panes = [];
+      const part = (list, sx, sy, sz, x, y, z, color, scale) => {
+        const g = new THREE.BoxGeometry(sx, sy, sz);
+        if (scale) g.scale(...scale);
+        g.translate(x, y, z);
+        if (color) tint(g, color);
+        list.push(g);
+      };
+      part(solid, 5.2, 2.6, 0.12, 0, 1.3, 0.06, hanok ? '#6b4630' : '#fffaf0', home ? [0.5, 1.05, 1] : null);
+      if (!home) for (const sx of [-1.75, 1.75]) part(panes, 1.5, 1.9, 0.05, sx, 1.35, 0.14);
       const doorH = hanok ? 2.1 : 2.3;
-      const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, doorH, 0.06), mat(store.colors.sign));
-      door.position.set(0, doorH / 2, 0.15);
-      group.add(door);
-      const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.4, 0.04), glass);
-      doorGlass.position.set(0, 1.35, 0.2);
-      group.add(doorGlass);
+      part(solid, 1.4, doorH, 0.06, 0, doorH / 2, 0.15, store.colors.sign);
+      part(panes, 0.9, 1.4, 0.04, 0, 1.35, 0.2);
+      const front = new THREE.Mesh(mergeGeometries(solid), FRONT_MAT);
+      front.name = 'front';
+      group.add(front);
+      const glass = new THREE.Mesh(mergeGeometries(panes), hanok ? PAPER_MAT : GLASS_MAT);
+      glass.name = 'glass';
+      group.add(glass);
+      for (const g of [...solid, ...panes]) g.dispose();
 
       // Entrance marker: a soft glowing ring on the pavement.
       const ring = new THREE.Mesh(
@@ -277,6 +283,7 @@ export class Storefronts {
       it.ring.scale.set(s, 1, s);
       // Badges show through walls, so fade them out with distance.
       const d = Math.hypot(it.door.x - x, it.door.z - z);
+      it.ring.visible = d < RING_FAR; // (a faint ring on the pavement: no one sees it from further, but it was a draw call per shop)
       if (it.signMat.map ? d > SIGN_FAR : d < SIGN_NEAR && drawn++ < 6) this.showSign(it, !it.signMat.map); // (a few new faces a frame, so walking never stutters)
       it.badge.visible = it.badge.userData.home && d < 60;
       it.badge.material.opacity = d < 40 ? 1 : 1 - (d - 40) / 20;
@@ -288,6 +295,18 @@ export class Storefronts {
   get(id) {
     return this.items.find((i) => i.store.id === id);
   }
+}
+
+// Shared by every shop front (see "Shop front" above).
+const FRONT_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+const GLASS_MAT = new THREE.MeshLambertMaterial({ color: 0xbfe0ee, transparent: true, opacity: 0.85 });
+const PAPER_MAT = new THREE.MeshLambertMaterial({ color: 0xf3e6c8 });
+const _c = new THREE.Color();
+function tint(geo, color) {
+  _c.set(color);
+  const n = geo.attributes.position.count, col = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
 }
 
 const mats = {};

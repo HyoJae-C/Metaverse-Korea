@@ -54,3 +54,23 @@ test('never takes your own character off the camera layer', () => {
   assert.equal(mine.layers.isEnabled(0), true);
   assert.equal(mine.userData.farHidden, false);
 });
+
+test('takes a whole far person off the camera layer: shadow, hat and all', () => {
+  const scene = new THREE.Scene();
+  const [g, body] = person(400);
+  g.userData.person = true;
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(), new THREE.MeshBasicMaterial());
+  const hat = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  g.add(blob); body.add(hat); scene.add(g); scene.updateMatrixWorld(true);
+  const fp = new FarPeople({ far: 150 });
+  const camera = new THREE.PerspectiveCamera();
+  fp.update(1, scene, camera);
+  for (const m of [body, blob, hat]) assert.equal(m.layers.isEnabled(0), false);
+  const held = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()); // picked up while far away
+  body.add(held);
+  fp.update(1, scene, camera);
+  assert.equal(held.layers.isEnabled(0), false);
+  g.position.x = 20; scene.updateMatrixWorld(true);
+  fp.update(1, scene, camera);
+  for (const m of [body, blob, hat, held]) assert.equal(m.layers.isEnabled(0), true);
+});

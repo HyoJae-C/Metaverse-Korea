@@ -54,8 +54,10 @@ const TOP = mid(osm.upperStation);
 // ---------- The hill ----------
 // The foot's centre is east of the tower (the ridge runs east), as far as
 // the roads round it allow; see the checks at the end.
-const FOOT = [-1400, -190];
-const HILL = { rx: 190, rz: 170, h: 65, px: r1(TOWER[0] - FOOT[0]), pz: r1(TOWER[1] - FOOT[1]) };
+// (scripts/build-itaewon.mjs pulled the south side 10 m north so the foot
+// clears the real Sowol-ro: it was [-1400, -190] with rz 170.)
+const FOOT = [-1400, -200];
+const HILL = { rx: 190, rz: 160, h: 65, px: r1(TOWER[0] - FOOT[0]), pz: r1(TOWER[1] - FOOT[1]) };
 const ellipse = (k, n = 32) => Array.from({ length: n }, (_, i) => {
   const a = (i / n) * Math.PI * 2;
   return loc([FOOT[0] + Math.cos(a) * HILL.rx * k, FOOT[1] + Math.sin(a) * HILL.rz * k]);

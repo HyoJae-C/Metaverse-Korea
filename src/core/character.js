@@ -33,6 +33,7 @@ export function createCharacter(rawLook) {
   };
   const root = new THREE.Group();
   root.userData.noSnow = true; // (core/snow-cover.js: no snow on people)
+  root.userData.person = true; // (core/far-people.js: not drawn when far away)
   // Everything but the shadow hangs on the rig, so a trick (a spin, a flip,
   // a jump) can turn the rider and the ride together without changing
   // which way the character is heading (root's rotation).
@@ -613,6 +614,7 @@ function addHat(look, head) {
 }
 
 // Gloves (look.hand) onto the model's hand bones, sized in metres.
+const PAW_DROP = 0.075; // metres from the wrist bone to the mitten's middle
 function addGloves(look, m) {
   const glove = accessory('hand', look.hand);
   if (!glove || !m.hands) return;
@@ -620,6 +622,11 @@ function addGloves(look, m) {
     if (!h) continue;
     const p = makePaw(glove);
     p.scale.multiplyScalar(1 / m.scale);
+    // The hand bone runs down the hand (+y to the fingers) with +z out of
+    // the back of the hand: turned round so the pads are on the palm, and
+    // slid down off the wrist to cover the fingers.
+    p.rotation.y = Math.PI;
+    p.position.y = PAW_DROP / m.scale;
     if (i === 0) p.scale.x *= -1; // (the left hand: mirrored)
     p.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     h.add(p);

@@ -30,7 +30,21 @@ export function tileInstances(mesh, tile) {
   return tiles;
 }
 
+// Smaller than a tile across: cutting it only adds draw calls. (A flower
+// bed built round its own (0, 0) used to fall in four tiles, one draw call
+// each, though all four were always on screen together.)
+function narrow(mesh, tile) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < mesh.count; i++) {
+    mesh.getMatrixAt(i, _m);
+    _p.setFromMatrixPosition(_m);
+    x0 = Math.min(x0, _p.x); x1 = Math.max(x1, _p.x); z0 = Math.min(z0, _p.z); z1 = Math.max(z1, _p.z);
+  }
+  return x1 - x0 < tile && z1 - z0 < tile;
+}
+
 function splitOne(mesh, tile) {
+  if (narrow(mesh, tile)) return null;
   const tiles = tileInstances(mesh, tile);
   if (tiles.size < 2) return null;
   const parts = [];

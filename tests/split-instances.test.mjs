@@ -48,3 +48,12 @@ test('leaves dynamic, small, opted-out and single-tile meshes alone', () => {
   assert.deepEqual(splitInstances(g, { tile: 80, min: 24 }), { split: 0, tiles: 0 });
   assert.deepEqual(g.children, [dynamic, optOut, small, compact]);
 });
+
+test('leaves a mesh smaller than a tile in one piece, even across a tile line', () => {
+  const g = new THREE.Group();
+  const bed = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial(), 40);
+  place(bed, Array.from({ length: 40 }, (_, i) => [((i % 8) - 4) * 1.5, (Math.floor(i / 8) - 2) * 1.5])); // round (0, 0), where four tiles meet
+  g.add(bed);
+  assert.deepEqual(splitInstances(g, { tile: 80, min: 24 }), { split: 0, tiles: 0 });
+  assert.deepEqual(g.children, [bed]);
+});

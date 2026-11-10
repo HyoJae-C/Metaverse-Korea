@@ -32,13 +32,24 @@ export class FarPeople {
       if (o.userData.farHidden) { o.layers.enable(0); o.userData.farHidden = false; }
     });
     const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z, far2 = this.far2;
-    root.traverse((o) => {
-      if (!o.isSkinnedMesh || kept.has(o)) return;
-      const e = o.matrixWorld.elements;
-      const dx = e[12] - cx, dy = e[13] - cy, dz = e[14] - cz;
-      const far = dx * dx + dy * dy + dz * dz > far2;
+    const farFrom = (e) => { const dx = e[12] - cx, dy = e[13] - cy, dz = e[14] - cz; return dx * dx + dy * dy + dz * dz > far2; };
+    const set = (o, far) => {
       if (far && !o.userData.farHidden && o.layers.isEnabled(0)) { o.layers.disable(0); o.userData.farHidden = true; }
       else if (!far && o.userData.farHidden) { o.layers.enable(0); o.userData.farHidden = false; }
-    });
+    };
+    // A whole person (core/character.js marks the root userData.person):
+    // the shadow blob, eyes, hats and what they hold go too, not only the
+    // skinned body (from Seongsu those leftovers were ~50 draw calls of
+    // people 1.5 km away).
+    const walk = (o) => {
+      if (o.userData.person && o !== keep) {
+        const far = farFrom(o.matrixWorld.elements);
+        o.traverse((q) => { if ((q.isMesh || q.isSprite) && !kept.has(q)) set(q, far); });
+        return;
+      }
+      if (o.isSkinnedMesh && !kept.has(o)) set(o, farFrom(o.matrixWorld.elements));
+      for (const c of o.children) walk(c);
+    };
+    walk(root);
   }
 }

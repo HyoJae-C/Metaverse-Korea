@@ -72,7 +72,8 @@ test('the memorial is on the Itaewon map, west along Itaewon-ro, with its store 
   assert.ok(map.landmarks.some((l) => l.type === 'warmemorial'));
   assert.ok(map.landmarks.some((l) => l.type === 'outdoorexhibits'));
   const road = map.roads.find((r) => r.n?.en === 'Itaewon-ro');
-  assert.ok(road.p[0][0] <= -600, 'Itaewon-ro reaches the memorial');
+  const wm = map.landmarks.find((l) => l.type === 'warmemorial');
+  assert.ok(road.p[0][0] <= wm.x, 'Itaewon-ro reaches the memorial');
   // The entrance faces the plaza: the store's spot is just south of the
   // building's front, in district coordinates.
   const offset = read('region.json').districts.find((x) => x.id === 'itaewon').offset;

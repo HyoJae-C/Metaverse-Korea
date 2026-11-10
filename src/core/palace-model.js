@@ -79,14 +79,16 @@ function beast(g, x, y, z, ry = 0, s = 1) {
 }
 
 // A name board in gold-framed navy with Chinese characters (勤政殿…).
-function nameBoard(han, w, h) {
+// Joseon boards read from the right, so the name ('光化門') is painted in
+// reverse: 門化光 from the left. ground / ink: the board's colours.
+function nameBoard(han, w, h, ground = '#1d2a3a', ink = '#f2e6c4') {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 96;
   const x = c.getContext('2d');
-  x.fillStyle = '#1d2a3a'; x.fillRect(0, 0, 256, 96);
+  x.fillStyle = ground; x.fillRect(0, 0, 256, 96);
   x.strokeStyle = '#d4a73a'; x.lineWidth = 8; x.strokeRect(4, 4, 248, 88);
-  x.fillStyle = '#f2e6c4'; x.font = `bold ${han.length > 3 ? 46 : 58}px serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(han, 128, 50);
+  x.fillStyle = ink; x.font = `bold ${han.length > 3 ? 46 : 58}px serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText([...han].reverse().join(''), 128, 50);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
@@ -108,7 +110,10 @@ export const PALACE_BUILD = {
     }
     box(g, mid * 2, B - 3.2, D, 0, 3.2 + (B - 3.2) / 2, 0, C.stone); // over the middle arch
     box(g, mid * 2 + 0.3, 0.25, D + 0.1, 0, 3.2, 0, C.stoneDark);
-    for (let y = 0.9; y < B - 0.3; y += 0.75) box(g, W + 0.04, 0.05, D + 0.04, 0, y, 0, C.stoneDark); // courses of stone
+    // Courses of stone: thin lines on the front and back faces only, broken
+    // at the arches (a full-depth slab ran through the passages as grey bars).
+    const solid = (y) => (y < 2.6 ? [[-hw, -side[1]], [-side[0], -mid], [mid, side[0]], [side[1], hw]] : y < 3.2 ? [[-hw, -mid], [mid, hw]] : [[-hw, hw]]);
+    for (let y = 0.9; y < B - 0.3; y += 0.75) for (const [a, b] of solid(y)) for (const sz of [-1, 1]) box(g, b - a + 0.02, 0.05, 0.04, (a + b) / 2, y, sz * (D / 2 + 0.01), C.stoneDark);
     box(g, W + 0.6, 0.35, D + 0.6, 0, B + 0.17, 0, C.stoneDark);
     for (const sx of [-1, 1]) railing(g, sx * (hw - 0.2), -D / 2 + 0.2, sx * (hw - 0.2), D / 2 - 0.2, B + 0.35, 0.6);
     // The tower: a lower storey under a skirt roof and an upper storey under
@@ -128,7 +133,7 @@ export const PALACE_BUILD = {
     band(t, 9.5, 3.4, y2 + 1.9);
     tiles(t, 15, 8.4, 3.0, y2 + 1.9 + 1.75, { hip: true, lift: 1.1, seg: 6, rows: 3 });
     mergeStatic(g);
-    const sign = nameBoard('光化門', 1.9, 0.75);
+    const sign = nameBoard('光化門', 1.9, 0.75, '#141414', '#e3b54a'); // the 2023 board: gold letters on black
     sign.position.set(0, y1 + (y2 + 1.4) * TOWER, 1.75);
     g.add(sign);
   },

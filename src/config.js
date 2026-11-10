@@ -32,6 +32,12 @@ export const config = {
   // Street multiplayer is split into square cells of this size (metres). You
   // see players in your cell and the 8 around it, i.e. at least this far.
   netCellSize: 200,
+  // The live café's voice goes browser to browser (WebRTC). STUN finds a
+  // way through most home routers; set VITE_ICE_SERVERS (JSON, the
+  // RTCPeerConnection iceServers list) to add a TURN relay for the rest.
+  voiceIceServers: (() => {
+    try { return JSON.parse(import.meta.env.VITE_ICE_SERVERS || 'null'); } catch { return null; }
+  })() || [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }],
   // Running uses stamina: a full bar lasts staminaMax seconds of running and
   // refills at staminaRegen per second after staminaDelay seconds of rest.
   // Once empty you walk until it is back to staminaResume (0..1).

@@ -10,25 +10,27 @@
 // The real one (checked 2026-11-09, Seoul city and news reports): opened in
 // 2024, rises to about 130 m for about 15 minutes, up to 20 people a flight,
 // open every day 12:00-22:00 since April 2026, adults 25,000 won. The game's
-// is shorter (a 3-minute cycle), lower (DAL.top) and smaller (DAL.max), so it
-// fits the game map.
+// goes as high (130 m: over the office towers, about the 63 tower's top) but
+// is shorter (a 3-minute cycle) and smaller (DAL.max).
 //
 // Pure: no three.js here (the model and the ride are game/seoul-dal.js).
 
 export const DAL = {
   fare: 25000, // won, the same as the real adult ticket
-  top: 70, // metres up at the top (the 63 tower is about 135 m in the game)
+  top: 130, // metres up at the top, like the real one: over the towers round the park (up to 112 m) and level with the 63 tower's top (132 m)
   board: 40, // seconds on the ground with the gate open
-  rise: 45, // seconds going up
-  hover: 50, // seconds at the top: time for the view and a photo
-  sink: 45, // seconds coming down
+  rise: 50, // seconds going up
+  hover: 40, // seconds at the top: time for the view and a photo
+  sink: 50, // seconds coming down
   close: 5, // the gate shuts this many seconds before lift-off
   deck: 0.25, // the gondola's floor above the pad when it's down
   ring: 3.3, // riders stand this far from the cable, round the ring
   max: 5, // people a flight (the real one takes 20; a quarter here, like the map,
   //         so the gondola stays roomy and a chat up top isn't crowded); the rest take a waiting ticket
   slots: 10, // places round the ring (twice the riders: two who board at once rarely share one)
-  turn: 15, // seconds a called ticket has to board
+  turn: 25, // seconds a called ticket has to board (15 was too short to notice and walk back)
+  call: 150, // m: a called ticket can board from this far (it puts you in the gondola)
+  near: 13, // m from the cable: the gate's button works anywhere round the pad, not only at the gate
   load: 650, // m: the balloon is loaded and drawn within this of it
 };
 DAL.cycle = DAL.board + DAL.rise + DAL.hover + DAL.sink;
