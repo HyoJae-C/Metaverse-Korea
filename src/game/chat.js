@@ -19,6 +19,7 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-flight.js';
+import { nextShow, showNoticeText } from '../core/show-notice.js';
 
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -441,32 +442,63 @@ export function createChat(game) {
   // Operator notices are also pinned at the top of the screen until deleted
   // (030_pinned_notices.sql). The ▴ folds them to a small 📢 chip; a new one
   // opens them again.
+  // Under them, always one more: the next fireworks or drone show
+  // (core/show-notice.js), in the player's own time. Folded or not is
+  // remembered on this device.
   const pinBox = $('notice-pin');
+  const FOLD_KEY = 'noticePinFolded';
   let pinFolded = false;
+  try { pinFolded = localStorage.getItem(FOLD_KEY) === '1'; } catch { /* no storage */ }
+  const setFolded = (v) => { pinFolded = v; try { localStorage.setItem(FOLD_KEY, v ? '1' : '0'); } catch { /* no storage */ } };
+  // A pinned notice opens them again, but only one this device hasn't seen
+  // (the ones still up come again on every start).
+  const SEEN_KEY = 'noticePinSeen';
+  const isNewPin = (id) => {
+    let seen = 0;
+    try { seen = Number(localStorage.getItem(SEEN_KEY)) || 0; } catch { /* no storage */ }
+    if (id <= seen) return false;
+    try { localStorage.setItem(SEEN_KEY, String(id)); } catch { /* no storage */ }
+    return true;
+  };
   const pinned = new PinnedNotices(renderPinned);
+  const clock = (ms) => {
+    const lang = getLanguage(), d = new Date(ms), o = { hour: 'numeric', minute: '2-digit' };
+    try { return d.toLocaleTimeString(lang === 'zht' ? 'zh-TW' : lang, o); } catch { return d.toLocaleTimeString([], o); }
+  };
+  let showLine = '';
   function renderPinned(list = pinned.list()) {
-    pinBox.hidden = !list.length;
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
+    showLine = show.label + show.text;
+    const count = list.length + 1;
+    pinBox.hidden = false;
     pinBox.classList.toggle('folded', pinFolded);
     const fold = document.createElement('button');
     fold.type = 'button';
     fold.className = 'notice-pin-fold';
-    fold.textContent = pinFolded ? '📢 ' + list.length : '▴';
+    fold.textContent = pinFolded ? '📢 ' + count : '▴';
     fold.setAttribute('aria-label', pinFolded ? 'Show notices' : 'Hide notices');
-    fold.onclick = () => { pinFolded = !pinFolded; renderPinned(); };
-    const rows = pinFolded ? [] : list.map((n) => {
-      const row = document.createElement('div');
-      row.className = 'notice-pin-row';
+    fold.onclick = () => { setFolded(!pinFolded); renderPinned(); };
+    const row = (label, body) => {
+      const r = document.createElement('div');
+      r.className = 'notice-pin-row';
       const b = document.createElement('b');
-      b.textContent = '📢 ' + L(NOTICE_LABEL);
-      row.append(b, document.createTextNode(' ' + n.body));
-      return row;
-    });
+      b.textContent = label;
+      r.append(b, document.createTextNode(' ' + body));
+      return r;
+    };
+    const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text)];
     pinBox.replaceChildren(...rows, fold);
   }
+  // The countdown: checked every 15 s, drawn again only when its words change.
+  setInterval(() => {
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
+    if (show.label + show.text !== showLine) renderPinned();
+  }, 15000);
+  renderPinned();
   const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {
     // A pinned one stays at the top until deleted, so it does not go into the
     // chat log as well (it showed twice there while typing).
-    if (pin) { pinFolded = false; pinned.add({ id, body, at, pinned: true }); try { game.sfx.pop?.(); } catch { /* not set up yet */ } return; }
+    if (pin) { if (isNewPin(id)) setFolded(false); pinned.add({ id, body, at, pinned: true }); try { game.sfx.pop?.(); } catch { /* not set up yet */ } return; }
     const line = addChatLine('📢 ' + L(NOTICE_LABEL), body, 'notice');
     line.dataset.stay = '1';
     noticeLines.set(id, line);

@@ -712,4 +712,9 @@ export const ZH = {
   "tix.done": "{name}：已用完。玩得开心吗？",
   "tix.passHeld": "你有畅玩一日券：购买后24小时内所有设施免费 ✓",
   "tix.short": "{name}需要 🪙 {n}。钱不够。",
+  "show.fireworks": "🎆 烟花 · 汝矣岛",
+  "show.drones": "🛸 无人机表演 · 纛岛",
+  "show.inM": "{m}分钟后（你的时间 {at}）",
+  "show.inHM": "{h}小时{m}分钟后（你的时间 {at}）",
+  "show.now": "正在进行！还剩{m}分钟",
 };

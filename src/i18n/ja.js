@@ -712,4 +712,9 @@ export const JA = {
   "tix.done": "{name}：使い切りました。楽しかった？",
   "tix.passHeld": "フリーパスがあります：購入から24時間、全アトラクション無料です ✓",
   "tix.short": "{name}は 🪙 {n} です。お金が足りません。",
+  "show.fireworks": "🎆 花火 · 汝矣島",
+  "show.drones": "🛸 ドローンショー · トゥクソム",
+  "show.inM": "{m}分後（現地時間 {at}）",
+  "show.inHM": "{h}時間{m}分後（現地時間 {at}）",
+  "show.now": "開催中！あと{m}分",
 };

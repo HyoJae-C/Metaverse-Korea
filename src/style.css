@@ -668,6 +668,11 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 }
 .notice-pin.folded { width: auto; min-width: 0; padding: 0; background: none; border: 0; box-shadow: none; }
 .notice-pin.folded .notice-pin-fold { position: static; height: 32px; padding: 0 12px; background: rgba(255, 236, 170, 0.97); border: 1.5px solid #e0a82e; }
+/* Wide screens: right of the street's minimap (game/minimap.js), not over it
+   (the next-show line keeps the box up all the time). */
+@media (min-width: 761px) {
+  body:has(.minimap:not([hidden])) .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 132px); width: min(440px, calc(100vw - 580px)); }
+}
 /* Under the shop's name banner, and under the wide-screen ad (core/side-ad.js). */
 .in-store .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 100px); }
 @media (min-width: 1200px) and (min-height: 640px) and (pointer: fine) {

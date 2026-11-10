@@ -712,4 +712,9 @@ export const KO = {
   "tix.done": "{name}: 다 썼어요. 즐겁게 타셨나요?",
   "tix.passHeld": "자유이용권이 있어요: 산 뒤 24시간 동안 모든 놀이기구가 무료예요 ✓",
   "tix.short": "{name}은 🪙 {n}이에요. 돈이 모자라요.",
+  "show.fireworks": "🎆 불꽃놀이 · 여의도",
+  "show.drones": "🛸 드론쇼 · 뚝섬",
+  "show.inM": "{m}분 뒤 (내 시간 {at})",
+  "show.inHM": "{h}시간 {m}분 뒤 (내 시간 {at})",
+  "show.now": "지금 하는 중! {m}분 남았어요",
 };

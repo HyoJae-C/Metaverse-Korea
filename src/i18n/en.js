@@ -711,4 +711,9 @@ export const EN = {
   "tix.done": "{name}: all used up. Thanks for riding!",
   "tix.passHeld": "You have the ride-all pass: every ride is free until it runs out ✓",
   "tix.short": "{name} costs 🪙 {n}. Not enough money.",
+  "show.fireworks": "🎆 Fireworks · Yeouido",
+  "show.drones": "🛸 Drone show · Ttukseom",
+  "show.inM": "in {m} min ({at} your time)",
+  "show.inHM": "in {h} h {m} min ({at} your time)",
+  "show.now": "On now! {m} min left",
 };

@@ -709,4 +709,9 @@ export const ID = {
   "tix.done": "{name}: sudah habis. Terima kasih sudah bermain!",
   "tix.passHeld": "Kamu punya tiket terusan harian: semua wahana gratis selama 24 jam sejak dibeli ✓",
   "tix.short": "{name} seharga 🪙 {n}. Uangmu kurang.",
+  "show.fireworks": "🎆 Kembang api · Yeouido",
+  "show.drones": "🛸 Pertunjukan drone · Ttukseom",
+  "show.inM": "{m} mnt lagi ({at} waktumu)",
+  "show.inHM": "{h} j {m} mnt lagi ({at} waktumu)",
+  "show.now": "Sedang berlangsung! Sisa {m} mnt",
 };

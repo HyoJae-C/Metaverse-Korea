@@ -708,4 +708,9 @@ export const ES = {
   "tix.done": "{name}: ya no quedan viajes. ¡Gracias!",
   "tix.passHeld": "Tienes el pase de un día: todas las atracciones son gratis durante 24 horas desde la compra ✓",
   "tix.short": "{name} cuesta 🪙 {n}. No te alcanza.",
+  "show.fireworks": "🎆 Fuegos artificiales · Yeouido",
+  "show.drones": "🛸 Espectáculo de drones · Ttukseom",
+  "show.inM": "en {m} min ({at} tu hora)",
+  "show.inHM": "en {h} h {m} min ({at} tu hora)",
+  "show.now": "¡Ahora mismo! Quedan {m} min",
 };

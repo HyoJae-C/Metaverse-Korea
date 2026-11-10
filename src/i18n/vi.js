@@ -709,4 +709,9 @@ export const VI = {
   "tix.done": "{name}: đã dùng hết. Cảm ơn bạn đã chơi!",
   "tix.passHeld": "Bạn có vé chơi cả ngày: mọi trò đều miễn phí trong 24 giờ kể từ khi mua ✓",
   "tix.short": "{name} giá 🪙 {n}. Không đủ tiền.",
+  "show.fireworks": "🎆 Pháo hoa · Yeouido",
+  "show.drones": "🛸 Trình diễn drone · Ttukseom",
+  "show.inM": "sau {m} phút ({at} giờ của bạn)",
+  "show.inHM": "sau {h} giờ {m} phút ({at} giờ của bạn)",
+  "show.now": "Đang diễn! Còn {m} phút",
 };
