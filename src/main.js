@@ -19,6 +19,7 @@ import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
+import { noticeBoardSpots } from './core/notice-board-spots.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -225,6 +226,7 @@ import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { GiftReceipts } from './core/gift-receipts.js';
 import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
@@ -823,7 +825,7 @@ const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
-const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id));
+const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id), (x, z, r) => collision.blocked(x, z, r)); // (a stand by a shop moves off a wall)
 const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
@@ -958,22 +960,20 @@ if (square) {
 }
 // Notice boards at one end of the square, facing it: free board, inquiries,
 // and the update board (with a NEW tag while unread). They stand either side
-// of the middle, clear of the walkway to Café Street.
+// of the middle, clear of the walkway to Café Street and of the buildings
+// (core/notice-board-spots.js).
 const noticeBoards = [];
 let newsTag = null;
 if (square) {
-  const ry = square.zone.pave?.ry || 0;
-  const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
-  const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
-  for (const [board, side, color] of [['news', -8.2, '#e0a020'], ['free', -4.8, '#2f6fd6'], ['ask', 4.8, '#d8452f']]) {
-    const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
+  for (const { board, x, z, ry, ux, uz } of noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))) {
+    const color = { news: '#e0a020', free: '#2f6fd6', ask: '#d8452f' }[board];
     const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
     if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }
     m.position.set(x, 0, z);
-    m.rotation.y = Math.atan2(-ax, -az);
+    m.rotation.y = ry;
     scene.add(m);
     farExtras.push(m);
-    noticeBoards.push({ board, x: x - ax * 1.2, z: z - az * 1.2 }); // stand in front of it
+    noticeBoards.push({ board, x: ux, z: uz }); // stand in front of it
   }
 }
 
@@ -2490,6 +2490,7 @@ const inventory = new Inventory();
 // What I paid for clothes I bought myself: only those can be sold back at a
 // second-hand shop (core/resale.js).
 const receipts = new Receipts();
+const giftReceipts = new GiftReceipts({ wallet: () => wallet }); // (core/gift-receipts.js; wallet is made below)
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2537,7 +2538,7 @@ giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
   get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
   get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
-  refreshItems, refreshWallet, safety, shop, storeData,
+  refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
 // Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
@@ -4012,15 +4013,32 @@ const takeOffItem = (id) => {
   setLook(myLook);
 };
 const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
+  stalls: map.landmarks.filter((l) => l.type === 'fleastall'),
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
   takeOff: takeOffItem });
+// Gift receipts: binds still waiting (I gave clothes), receipts for clothes
+// given to me.
+const giftSync = walletReady.then(() => {
+  giftReceipts.run().catch(() => {});
+  return giftReceipts.sync(inventory, receipts, ITEMS).catch(() => {});
+});
 // Clothes bought before the server kept purchases: twice their price back,
 // once (game/old-clothes.js, loaded only until it's done on this device).
-walletReady.then(() => {
-  try { if (!wallet.server || localStorage.getItem('mk.oldClothes')) return; } catch { return; }
-  import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
-    takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
+// Then, once, clothes with no receipt at all leave the closet (gifts, code
+// items, prizes, the starting outfit: Yozi 2026-11-11), and accounts from
+// before then get travel money once (game/old-clothes.js runUpdateBonus).
+giftSync.then(() => { // (after it: a gift's receipt is in before the sweep below)
+  let old, sweep, bonus;
+  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
+  if (!old && !sweep && !bonus) return;
+  const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
+    refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
+  import('./game/old-clothes.js').then(async (m) => {
+    if (old) await m.runOldClothes(g).catch(() => {});
+    if (sweep) setTimeout(() => m.sweepNoReceipt(g), 4000); // (after the refund's toast)
+    if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), sweep ? 9000 : 4000); // (after the sweep's toast)
+  }).catch(() => {});
 });
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
@@ -4865,9 +4883,11 @@ const bukchonUi = new BukchonUI({
     if (!k || (!entry && !wear)) return false;
     if (wear) { // a piece you wear (Sunra Silver Studio's pendants): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
-      if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+      const note = { name: BK_TEXT[kind], at: interior?.store.name };
+      if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
       refreshWallet();
       inventory.add(wear);
+      receipts.record(wear, k.price, wallet.lastOp, note); // (so it can be resold: every item keeps its record)
       refreshItems();
       sfx.pop?.();
       clerk && say(clerk, $('labels'), ['잘 어울려요!', 'jal eoullyeoyo!', 'It suits you!']);
@@ -5102,7 +5122,7 @@ const bookUi = lazyPanel(() => import('./ui/book-ui.js').then(({ BookUI }) => ne
 const stampBook = new StampBook();
 const trailLog = new TrailLog();
 const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
-function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
+function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; $('map-panel').classList.toggle('stamps-done', stampBook.complete(tourStamps)); } // (every stamp: a gold border round the map)
 $('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
 onLanguageChange(refreshStampBtn);

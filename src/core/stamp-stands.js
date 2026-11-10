@@ -12,8 +12,18 @@ const standUp = (it) => !it.stamp.onlyDuring || !!STAND_TIMES[it.stamp.onlyDurin
 
 const SIDE = 3.8; // metres along the shop front from the door
 
+// Is the stand at (x, z), facing ry, clear: the stand itself and the spot
+// in front where you use it (blocked(x, z, r): a wall there).
+export function standClear(x, z, ry, blocked) {
+  return !blocked(x, z, 0.5) && !blocked(x + Math.sin(ry) * 0.9, z + Math.cos(ry) * 0.9, 0.4);
+}
+
 // Where each stamp's stand goes: [{ stamp, x, z, ry }].
-export function standSpots(stamps, getFront) {
+// A stand by a shop goes on its side of the door (place.side, default the
+// right); if a wall is there (a building moved, or the front has steps and
+// wings like the War History Museum), the other side, then a little out
+// from the front (onto the forecourt), then further along it.
+export function standSpots(stamps, getFront, blocked = null) {
   const out = [];
   for (const s of stamps) {
     if (s.place?.room) continue; // inside a room: see roomSpots
@@ -22,8 +32,11 @@ export function standSpots(stamps, getFront) {
       const f = getFront(s.place.store);
       if (!f) continue;
       const ry = f.group.rotation.y, ax = Math.cos(ry), az = -Math.sin(ry); // along the front
+      const fx = Math.sin(ry), fz = Math.cos(ry); // out from the front
       const side = s.place.side ?? 1;
-      out.push({ stamp: s, x: f.door.x + ax * SIDE * side, z: f.door.z + az * SIDE * side, ry });
+      const tries = [[SIDE * side, 0], [-SIDE * side, 0], [SIDE * side, 1.5], [-SIDE * side, 1.5], [SIDE * side, 3], [-SIDE * side, 3], [(SIDE + 1.5) * side, 0], [-(SIDE + 1.5) * side, 0]];
+      const at = ([a, o]) => ({ stamp: s, x: f.door.x + ax * a + fx * o, z: f.door.z + az * a + fz * o, ry });
+      out.push((blocked && tries.map(at).find((p) => standClear(p.x, p.z, ry, blocked))) || at(tries[0]));
     } else if (Array.isArray(s.place?.at)) out.push({ stamp: s, x: s.place.at[0], z: s.place.at[1], ry: s.place.ry || 0 });
   }
   return out;
@@ -91,9 +104,9 @@ function place(scene, s, y) {
 }
 
 export class StampStands {
-  constructor(scene, stamps, getFront) {
+  constructor(scene, stamps, getFront, blocked = null) {
     this.stamps = stamps;
-    this.items = standSpots(stamps, getFront).map((s) => place(scene, s, 0));
+    this.items = standSpots(stamps, getFront, blocked).map((s) => place(scene, s, 0));
     this.rooms = new Map(); // store id → stands in its room
     this.showTimed();
   }
