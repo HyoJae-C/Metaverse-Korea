@@ -49,13 +49,27 @@ test('things you could only carry around are not sold: those shops are coming so
   assert.ok(!itemSoon(park, park.products.find((p) => p.id === 'picnic-mat')));
   // Workshops stay open for their activity even if their souvenirs aren't sold.
   assert.ok(!comingSoon(byId('sonmat-kimchi')));
+  // So do Bukchon's craft studios (a knot charm, a hanji lantern with the teacher).
+  for (const id of ['maeum-knot', 'saekji-paper']) assert.ok(!comingSoon(byId(id)), id);
   // A café's bag of beans isn't a drink.
   const roast = byId('warehouse-roasters');
   assert.ok(itemSoon(roast, roast.products.find((p) => p.id === 'beans')));
   assert.ok(!itemSoon(roast, roast.products.find((p) => p.id === 'flat-white')));
   // Every open shop that sells to take home still has something to use.
   for (const s of stores) {
-    if (howToGet(s) !== 'buy' || s.workshop || !s.products?.length) continue;
+    if (howToGet(s) !== 'buy' || s.workshop || s.craft || !s.products?.length) continue;
     assert.ok(s.products.some(usable), s.id + ' sells nothing usable but is open');
   }
+});
+
+test('coming-soon shops are hidden from the street while HIDE_COMING_SOON is on', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { HIDE_COMING_SOON, shownStores } = await import('../src/ui/shop-ui.js');
+  const stores = JSON.parse(await readFile(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8')).stores;
+  const shown = shownStores(stores);
+  if (!HIDE_COMING_SOON) return assert.equal(shown.length, stores.length);
+  assert.ok(shown.every((s) => !comingSoon(s)));
+  assert.equal(shown.length + stores.filter(comingSoon).length, stores.length);
+  for (const id of ['popup-station', 'k-goods', 'scent-factory']) assert.ok(!shown.some((s) => s.id === id), id);
+  for (const id of ['maeum-knot', 'sonmat-kimchi']) assert.ok(shown.some((s) => s.id === id), id);
 });
