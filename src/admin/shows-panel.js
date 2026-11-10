@@ -60,7 +60,7 @@ export function createShowsPanel({ client, $, escapeHtml, setStatus, notOperator
       out[key] = r.minutes;
     }
     if (timesOverlap(out.drone, drone.DRONE_SPAN, out.fireworks, fw.FIREWORKS_SPAN)) {
-      return 'The drone show and the fireworks would overlap. Counting their 10-minute notices, a drone show takes 33 minutes and the fireworks 73: keep a drone show starting at least 33 minutes before, or 73 minutes after, a fireworks start.';
+      return 'The drone show and the fireworks would overlap. Counting their 10-minute notices, each takes 33 minutes: keep their starts at least 33 minutes apart.';
     }
     return out;
   }

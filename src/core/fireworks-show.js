@@ -21,7 +21,7 @@ import { smooth, dailyStarts, checkTimes } from './show-clock.js';
 // (admin.html → Shows, supabase/033_show_times.sql), and every game follows
 // them (show-times-watch.js → setFireworksTimes).
 export const FIREWORKS_HOURS_KST = [9, 21];
-export const SHOW_SECONDS = 60 * 60; // an hour of fireworks (t = 0 … 3600)
+export const SHOW_SECONDS = 20 * 60; // 20 minutes of fireworks (t = 0 … 1200)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
 export const DAWN_SECONDS = 180; // after the end: it brightens again
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
@@ -29,11 +29,11 @@ export const RISE = 1.2; // seconds a shell takes to climb before it bursts
 
 const DAY = 24 * 3600e3;
 
-// Operator-set times: 1 to 4 shows a day, at least 90 minutes apart (the
-// hour of fireworks plus its notice and dawn). FIREWORKS_SPAN: the minutes
+// Operator-set times: 1 to 4 shows a day, at least an hour apart (the
+// 20 minutes of fireworks plus its notice and dawn take 33). FIREWORKS_SPAN: the minutes
 // around a start the show takes, notice to dawn (kept clear of the drones).
 export const MAX_SHOWS = 4;
-export const MIN_GAP_MINUTES = 90;
+export const MIN_GAP_MINUTES = 60;
 export const FIREWORKS_SPAN = [-ALERT_SECONDS / 60, (SHOW_SECONDS + DAWN_SECONDS) / 60];
 export const checkFireworksTimes = (list) => checkTimes(list, { max: MAX_SHOWS, gap: MIN_GAP_MINUTES });
 
@@ -98,25 +98,28 @@ export function nearYeouido(x, z) {
 }
 
 // ---- The program ----
-// Acts and rests: no wait longer than about two minutes for anyone who
-// arrives mid-show, a gold "photo time", and a finale that fills the sky.
-export const PHOTO_TIME = [2520, 2700];
+// 20 minutes with no quiet stretch: something bursts every second or so,
+// the shapes change every few minutes, a gold "photo time", and a finale
+// that fills the sky. (Yozi: shorter, busier, more kinds.)
+export const PHOTO_TIME = [780, 900];
+export const FINALE_TIME = 1110;
 export const ACTS = [
-  { from: 0, to: 720, gap: [2.2, 3.2], kinds: ['peony', 'peony', 'ring'], mono: true, name: 'act 1: big single-colour flowers, slowly' },
-  { from: 720, to: 840, gap: [6, 9], kinds: ['small'], name: 'rest' },
-  { from: 840, to: 1620, gap: [1.6, 2.4], kinds: ['heart', 'star', 'ring', 'smile', 'peony'], name: 'act 2: shapes in many colours' },
-  { from: 1620, to: 1740, gap: [6, 9], kinds: ['small'], name: 'rest' },
-  { from: 1740, to: 2520, gap: [0.6, 1.1], kinds: ['peony', 'ring', 'small', 'peony', 'willow'], name: 'act 3: quick, from every barge' },
-  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [2.4, 3.4], kinds: ['willow'], name: 'photo time: slow gold willows' },
-  { from: 2700, to: 3420, gap: [1.4, 0.45], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'small'], ramp: true, name: 'build-up: faster and faster' },
-  { from: 3420, to: SHOW_SECONDS, gap: [0.12, 0.24], kinds: ['peony', 'willow', 'ring', 'peony'], big: true, name: 'finale' },
+  { from: 0, to: 150, gap: [0.9, 1.4], kinds: ['peony', 'ring', 'saturn', 'peony'], mono: true, name: 'opening: big single-colour flowers' },
+  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['heart', 'star', 'smile', 'flower', 'butterfly', 'double'], name: 'act 1: shapes' },
+  { from: 330, to: 360, gap: [0.25, 0.45], kinds: ['small', 'small', 'ring'], name: 'crackle: a rush of small ones' },
+  { from: 360, to: 540, gap: [0.5, 0.9], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn'], name: 'act 2: colours and spirals' },
+  { from: 540, to: 600, gap: [0.25, 0.4], kinds: ['small', 'ring', 'double', 'small'], name: 'salvo: from every barge' },
+  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['heart', 'flower', 'butterfly', 'rainbow', 'palm', 'star', 'spiral', 'smile'], name: 'act 3: everything' },
+  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [0.9, 1.3], kinds: ['willow'], name: 'photo time: gold willows' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, name: 'build-up: faster and faster' },
+  { from: FINALE_TIME, to: SHOW_SECONDS, gap: [0.1, 0.18], kinds: ['peony', 'willow', 'ring', 'rainbow', 'peony', 'palm'], big: true, name: 'finale' },
 ];
-export const KINDS = ['peony', 'ring', 'heart', 'star', 'smile', 'willow', 'small'];
+export const KINDS = ['peony', 'ring', 'heart', 'star', 'smile', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
 export const GOLD = '#ffc861';
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
-export const LIFE = { peony: 2.6, ring: 2.4, heart: 2.8, star: 2.6, smile: 2.8, willow: 4.6, small: 1.5 };
-export const RADIUS = { peony: 28, ring: 26, heart: 24, star: 26, smile: 24, willow: 30, small: 11 };
+export const LIFE = { peony: 2.6, ring: 2.4, heart: 2.8, star: 2.6, smile: 2.8, willow: 4.6, small: 1.5, saturn: 2.8, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
+export const RADIUS = { peony: 28, ring: 26, heart: 24, star: 26, smile: 24, willow: 30, small: 11, saturn: 26, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
 
 function rng(seed) {
   let a = seed >>> 0;
