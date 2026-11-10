@@ -6,6 +6,7 @@
 // really walk down the steps; at the bottom you arrive in the station hall
 // (its own scene, like a shop). Walk up another exit's stairs to come out there.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Street stairwell, in the exit's own frame: +b runs down the stairs (from the
 // mouth to the bottom), a runs across. The hole in the ground is w × l.
@@ -382,15 +383,25 @@ export class SubwayEntrances {
     const g = new THREE.Group();
     g.position.set(ex.at[0], 0, ex.at[1]);
     g.rotation.y = ex.ry;
-    const box = (sx, sy, sz, x, y, z, m) => {
-      const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m);
-      o.position.set(x, y, z);
-      g.add(o);
-      return o;
+    // Every box is gathered by kind and merged at the end: one mesh for the
+    // solid parts (coloured per vertex), one for the glass, plus the lit
+    // doorway and the two signs. It was 58 meshes, one draw call each.
+    const parts = { solid: [], glass: [], door: [] };
+    const box = (sx, sy, sz, x, y, z, color, kind = 'solid', rx = 0) => {
+      const geo = new THREE.BoxGeometry(sx, sy, sz);
+      if (rx) geo.rotateX(rx);
+      geo.translate(x, y, z);
+      geo.deleteAttribute('uv');
+      if (kind === 'solid') {
+        const c = new THREE.Color(color), n = geo.attributes.position.count, a = new Float32Array(n * 3);
+        for (let k = 0; k < n; k++) c.toArray(a, k * 3);
+        geo.setAttribute('color', new THREE.BufferAttribute(a, 3));
+      }
+      parts[kind].push(geo);
     };
     const { w, l, depth, run } = PIT;
     const L = l / 2, hw = w / 2;
-    const tile = mat('#d9dde3'), stone = mat('#b9bec7'), steel = mat('#5d6470'), stepM = mat('#9aa1ab'), nose = mat('#f2c230');
+    const tile = '#d9dde3', stone = '#b9bec7', steel = '#5d6470', stepM = '#9aa1ab', nose = '#f2c230';
     // Steps down, then a landing and a lit doorway at the bottom.
     const n = 16, stepRun = run / n, rise = depth / n;
     for (let k = 0; k < n; k++) {
@@ -402,23 +413,20 @@ export class SubwayEntrances {
     // Stairwell walls (below the street) and the far wall with the doorway.
     for (const s of [-1, 1]) {
       box(0.2, depth + 0.6, l + 0.2, s * (hw + 0.1), -(depth + 0.6) / 2, 0, tile);
-      box(0.05, 0.25, l, s * (hw - 0.02), -1.6, 0, mat(line)); // a stripe in the line colour
-      const rail = box(0.06, 0.06, Math.hypot(run, depth) + 0.2, s * (hw - 0.12), 0, 0, steel); // handrail
-      rail.position.set(s * (hw - 0.12), -depth / 2 + 0.9, -L + run / 2);
-      rail.rotation.x = Math.atan2(depth, run);
+      box(0.05, 0.25, l, s * (hw - 0.02), -1.6, 0, line); // a stripe in the line colour
+      box(0.06, 0.06, Math.hypot(run, depth) + 0.2, s * (hw - 0.12), -depth / 2 + 0.9, -L + run / 2, steel, 'solid', Math.atan2(depth, run)); // handrail
     }
     box(w + 0.4, depth + 0.6, 0.2, 0, -(depth + 0.6) / 2, L + 0.1, tile);
-    const door = box(1.6, 2.2, 0.04, 0, -depth + 1.1, L - 0.01, new THREE.MeshBasicMaterial({ color: '#fff6dc' }));
-    door.name = 'doorway';
+    box(1.6, 2.2, 0.04, 0, -depth + 1.1, L - 0.01, null, 'door');
     // Above the street: low stone walls with glass on top, posts and a glass roof.
     for (const s of [-1, 1]) {
       box(WALL, 1.0, l + WALL, s * (hw + WALL / 2), 0.5, WALL / 2, stone);
-      box(0.04, 1.6, l + WALL, s * (hw + WALL / 2), 1.8, WALL / 2, glass());
+      box(0.04, 1.6, l + WALL, s * (hw + WALL / 2), 1.8, WALL / 2, null, 'glass');
       for (const b of [-L, L + WALL / 2]) box(0.14, 2.75, 0.14, s * (hw + WALL / 2), 1.375, b, steel);
     }
     box(w + WALL * 2, 1.0, WALL, 0, 0.5, L + WALL / 2, stone);
-    box(w + WALL * 2, 1.6, 0.04, 0, 1.8, L + WALL / 2, glass());
-    box(w + 1.0, 0.08, l + 1.0, 0, 2.78, WALL / 2, glass(0.35));
+    box(w + WALL * 2, 1.6, 0.04, 0, 1.8, L + WALL / 2, null, 'glass');
+    box(w + 1.0, 0.08, l + 1.0, 0, 2.78, WALL / 2, null, 'glass'); // the roof (was a little less clear than the walls; one glass now)
     for (const s of [-1, 1]) box(0.1, 0.12, l + 1.0, s * (hw + 0.5), 2.74, WALL / 2, steel);
     box(w + 1.0, 0.12, 0.1, 0, 2.74, -L - 0.35, steel);
     // Signs on the front (above the mouth) and the back.
@@ -431,7 +439,11 @@ export class SubwayEntrances {
     back.rotation.y = 0;
     box(w + 0.9, (w + 0.8) / 4 + 0.1, 0.12, 0, 3.15, -L - 0.33, steel); // sign holders
     box(w + 0.9, (w + 0.8) / 4 + 0.1, 0.12, 0, 3.15, L + WALL + 0.18, steel);
-    g.add(front, back);
+    g.add(new THREE.Mesh(mergeGeometries(parts.solid), SOLID));
+    g.add(new THREE.Mesh(mergeGeometries(parts.glass), glass()));
+    const door = new THREE.Mesh(parts.door[0], DOOR);
+    door.name = 'doorway';
+    g.add(door, front, back);
     scene.add(g);
     const it = { ex, n: ex.n ?? i + 1, group: g, signs: [front, back] };
     this._sign(it, false, 'en');
@@ -450,6 +462,8 @@ export class SubwayEntrances {
   setTranslated(on, lang) { for (const it of this.items) this._sign(it, on, lang); }
 }
 
+const SOLID = new THREE.MeshLambertMaterial({ vertexColors: true });
+const DOOR = new THREE.MeshBasicMaterial({ color: '#fff6dc' });
 function glass(opacity = 0.25) {
   return mat('#bfe4f2', { transparent: true, opacity, depthWrite: false });
 }
