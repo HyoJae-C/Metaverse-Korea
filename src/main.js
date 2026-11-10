@@ -6498,7 +6498,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'bowling', 1.4)) {
       next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
-      next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
+      next = arcadeGame.camOn() ? null : { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {

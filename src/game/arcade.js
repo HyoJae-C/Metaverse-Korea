@@ -27,6 +27,7 @@ export function createArcade(game) {
   let dartsBoard = 0; // which of the bar's wall boards you play at
   let dartsView = null; // the camera on the wall board while you play (game/darts-view.js)
   let bowlView = null, bowlLane = null; // the same on the bowling lane you stand at (game/bowling-view.js)
+  let climbView = null, climbWall = null; // and on the climbing wall panel you stand at (game/climb-view.js)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
   // same on every screen); alone, a colour nobody on the boards throws now.
@@ -86,6 +87,7 @@ export function createArcade(game) {
     const st = (game.interior?.stations?.[kind] || []).filter((q) => near(q) < 2.5).sort((a, b) => near(a) - near(b))[0];
     if (kind === 'darts') dartsBoard = st?.board ?? 0; // the bar has two boards: the one you stand at
     if (kind === 'bowling') bowlLane = st || null;
+    if (kind === 'climbing') climbWall = st || null;
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
     if (!arcade[kind]) {
       // The first time, the panel loads: by then you may have walked off or
@@ -117,7 +119,11 @@ export function createArcade(game) {
           bowlView = createBowlingView(game, () => bowlLane);
         }
         if (kind === 'bowling') ui = new BowlingUI({ root: $('bowling-panel'), store: localStorage, view: bowlView, onHit: () => sfx.tock(1, 260), onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); } });
-        else if (kind === 'climbing') ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
+        else if (kind === 'climbing') {
+          const { createClimbView } = await import('./climb-view.js');
+          climbView = createClimbView(game, () => climbWall);
+          ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, view: climbView, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
+        }
         else ui = new AimUI({ root: $('aim-panel'), store: localStorage, onHit: () => sfx.tock(0.5, 1400) });
       } else if (kind === 'gallery') {
         const { GalleryUI } = await import('../ui/gallery-ui.js');
@@ -209,6 +215,6 @@ export function createArcade(game) {
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); placeFx?.update(dt); }, onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
