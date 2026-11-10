@@ -686,6 +686,7 @@ export const ID = {
   "potato.full": "Tikarmu penuh ({n} barang). Ambil satu dulu untuk memajang yang lain.",
   "potato.price": "Pilih harga antara 🪙 {min} dan 🪙 {max}.",
   "potato.noref": "{name} dibeli sebelum pembelianmu disimpan di server (atau hadiah), jadi tidak bisa dipajang. Pakaian yang kamu beli mulai sekarang bisa.",
+  "potato.noReceipt": "tanpa struk (hadiah, kode, atau pakaian lama): tidak bisa dipajang",
   "oldClothes.paid": "Pakaian yang dibeli sebelum pembelian disimpan di server tidak bisa dijual lagi, jadi kami ambil kembali: {n} item, {won} (dua kali harga).",
   "potato.listed": "Sudah di tikarmu! Orang lain bisa membelinya walau kamu tidak ada.",
   "potato.back": "{name} kembali ke lemarimu.",

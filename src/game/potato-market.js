@@ -270,7 +270,7 @@ export function createPotatoMarket(game) {
     root.append(el('h4', 'resale-rack', '👕 ' + t('potato.canPut')));
     if (open.length >= max) { root.append(el('p', 'fine', t('potato.full', { n: max }))); return; }
     const can = listable(game.inventory.list(), items, game.receipts, new Set(open.map((x) => x.item)));
-    if (!can.length) { root.append(el('p', 'fine', t('potato.nothing'))); return; }
+    if (!can.length) root.append(el('p', 'fine', t('potato.nothing')));
     const list = el('div', 'fish-list');
     for (const r of can) {
       const it = items[r.id], range = priceRange(r.list, rules);
@@ -292,7 +292,19 @@ export function createPotatoMarket(game) {
       line.append(b);
       list.append(line);
     }
-    root.append(list);
+    // The rest of my clothes, greyed: no receipt (gifts, code items, clothes
+    // from before receipts), so they can't go on a mat (Yozi 2026-11-11).
+    const ok = new Set(can.map((r) => r.id)), onMat = new Set(open.map((x) => x.item));
+    for (const id of game.inventory.list()) {
+      const it = items[id];
+      if (!it?.wear || ok.has(id) || onMat.has(id)) continue;
+      const b = el('button', 'chip', t('potato.put'));
+      b.disabled = true;
+      const line = row(it.emoji, L(it.name), t('potato.noReceipt'), b);
+      line.style.opacity = '0.5';
+      list.append(line);
+    }
+    if (list.childElementCount) root.append(list);
   }
 
   return {

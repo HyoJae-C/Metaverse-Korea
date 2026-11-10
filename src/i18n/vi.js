@@ -686,6 +686,7 @@ export const VI = {
   "potato.full": "Chiếu đã đầy ({n} món). Lấy lại một món để bày món khác.",
   "potato.price": "Hãy chọn giá từ 🪙 {min} đến 🪙 {max}.",
   "potato.noref": "{name} được mua trước khi giao dịch của bạn được lưu trên máy chủ (hoặc là quà tặng) nên không bày được. Quần áo bạn mua từ giờ thì bày được.",
+  "potato.noReceipt": "không có hóa đơn (quà, mã hoặc đồ cũ): không bày được",
   "oldClothes.paid": "Quần áo mua trước khi giao dịch được lưu trên máy chủ không bán lại được nên chúng tôi đã thu lại: {n} món, {won} (gấp đôi giá).",
   "potato.listed": "Đã bày lên chiếu! Người khác mua được cả khi bạn vắng mặt.",
   "potato.back": "{name} đã về lại tủ đồ.",

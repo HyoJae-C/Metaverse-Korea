@@ -689,6 +689,7 @@ export const ZH = {
   "potato.full": "地摊已满（{n}件）。收回一件才能摆别的。",
   "potato.price": "请在 🪙 {min} 到 🪙 {max} 之间定价。",
   "potato.noref": "{name}是在购买记录保存到服务器之前买的（或是礼物），所以不能摆上。今后新买的衣服可以摆。",
+  "potato.noReceipt": "没有收据（礼物、兑换码或旧衣服）：不能摆上",
   "oldClothes.paid": "购买记录保存到服务器之前买的衣服不能转卖，所以我们收回了：{n}件，{won}（价格的两倍）。",
   "potato.listed": "摆上了！你不在的时候别人也能买。",
   "potato.back": "{name}已放回衣柜。",

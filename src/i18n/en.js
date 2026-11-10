@@ -688,6 +688,7 @@ export const EN = {
   "potato.full": "Your mat is full ({n} things). Take something back to put out another.",
   "potato.price": "Pick a price from 🪙 {min} to 🪙 {max}.",
   "potato.noref": "{name} was bought before your purchases were saved on the server (or was a gift), so it can't go on a mat. Clothes you buy from now on can.",
+  "potato.noReceipt": "no receipt (gift, code or old clothes): can't go on a mat",
   "oldClothes.paid": "Clothes bought before purchases were saved on the server can't be resold, so we took them back: {n} item(s), {won} (twice the price).",
   "potato.listed": "On your mat! Others can buy it even while you're away.",
   "potato.back": "{name} is back in your closet.",
