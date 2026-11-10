@@ -25,15 +25,15 @@ test('a 20-minute show at half past the hour, Korean time', () => {
 });
 
 test('never while the Yeouido fireworks are on', () => {
-  assert.deepEqual(SKIP_HOURS_KST, FIREWORKS_HOURS_KST);
+  assert.deepEqual(SKIP_HOURS_KST, [], '20 minutes of fireworks end before the hh:30 fountain');
   for (const h of FIREWORKS_HOURS_KST) {
     for (let m = 0; m < FIREWORKS_SECONDS / 60; m += 5) assert.ok(!fountainAt(KST(2026, 11, 9, h, m))?.on, `${h}:${m}`);
-    assert.equal(nextFountain(KST(2026, 11, 9, h, 10)), KST(2026, 11, 9, h + 1, 30), 'the next one is after the fireworks');
+    assert.equal(nextFountain(KST(2026, 11, 9, h, 10)), KST(2026, 11, 9, h, 30), 'the next one is after the fireworks');
   }
-  // Every other hour has one: 22 shows a day.
+  // Every hour has one: 24 shows a day.
   let n = 0;
   for (let h = 0; h < 24; h++) if (fountainAt(KST(2026, 11, 9, h, 40))?.on) n++;
-  assert.equal(n, 22);
+  assert.equal(n, 24);
 });
 
 test('the sky round the bridge darkens before and brightens after, smoothly', () => {

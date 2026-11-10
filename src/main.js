@@ -145,7 +145,7 @@ import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { droneShowAt, setDroneShowTimes, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -5410,7 +5410,7 @@ function updateFireworks() {
     if (t >= -FIREWORKS_DUSK && t < -FIREWORKS_DUSK + 60 && fireworks.dusk !== s.start) { fireworks.dusk = s.start; shop.toast(L(FIREWORKS_TEXT.dusk)); }
     if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
     if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
-    if (t >= 3420 && t < 3440 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
+    if (t >= FIREWORKS_FINALE && t < FIREWORKS_FINALE + 20 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
   }
   // The sparks: loaded when you're within about 900 m.
   const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;

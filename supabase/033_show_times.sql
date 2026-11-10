@@ -73,9 +73,9 @@ end $$;
 revoke all on function public.show_times_clean(int[], int, text) from public, anon, authenticated;
 
 -- Change them (operators only). Each list: minutes after midnight KST, or
--- null / empty for the default. Drone shows at least 60 minutes apart,
--- fireworks at least 90, and a drone show (10 minutes before to 23 after
--- its start) never overlaps the fireworks (10 before to 63 after).
+-- null / empty for the default. Shows at least 60 minutes apart, and a
+-- drone show (10 minutes before to 23 after its start) never overlaps the
+-- fireworks (20 minutes: also 10 before to 23 after).
 create or replace function public.ops_set_show_times(drone_starts int[], fireworks_starts int[])
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -86,13 +86,13 @@ declare
 begin
   perform public.ops_check();
   dr := public.show_times_clean(drone_starts, 60, 'drone');
-  fw := public.show_times_clean(fireworks_starts, 90, 'fireworks');
+  fw := public.show_times_clean(fireworks_starts, 60, 'fireworks');
   if exists (
     select 1
     from unnest(coalesce(dr, array[360, 1080])) a,
          unnest(coalesce(fw, array[540, 1260])) b,
          unnest(array[-1440, 0, 1440]) k
-    where a - 10 < b + k + 63 and b + k - 10 < a + 23
+    where a - 10 < b + k + 23 and b + k - 10 < a + 23
   ) then
     raise exception 'the drone show and the fireworks overlap' using errcode = '22023';
   end if;

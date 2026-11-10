@@ -9,7 +9,7 @@
 // number changes (the show clock) and the whole sky is one draw call.
 // Phones get fewer slots and fewer sparks per burst.
 import * as THREE from 'three';
-import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN } from './fireworks-show.js';
+import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './fireworks-show.js';
 
 const DRAG = 1.7; // how quickly sparks slow down
 const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
@@ -73,7 +73,25 @@ function directions(kind, n, rand) {
     if (k < 0.55) { const a = (k / 0.55) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); } // the face
     else if (k < 0.85) { const a = Math.PI * (1.15 + ((k - 0.55) / 0.3) * 0.7); flat(Math.cos(a) * 0.6, Math.sin(a) * 0.6); } // the smile
     else { const e = k < 0.925 ? -1 : 1; flat(e * 0.35 + (rand() - 0.5) * 0.06, 0.35 + (rand() - 0.5) * 0.06); } // eyes
-  } else for (let i = 0; i < n; i++) { // peony, willow, small: a sphere
+  } else if (kind === 'flower') for (let i = 0; i < n; i++) { // five petals
+    const a = (i / n) * Math.PI * 2, r = 0.3 + 0.7 * Math.abs(Math.cos(a * 2.5));
+    flat(Math.sin(a) * r, Math.cos(a) * r);
+  } else if (kind === 'butterfly') for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, r = (Math.exp(Math.cos(a)) - 2 * Math.cos(4 * a)) / 4.7;
+    flat(Math.sin(a) * r, Math.cos(a) * r);
+  } else if (kind === 'double') for (let i = 0; i < n; i++) { // a ring inside a ring
+    const a = (i / n) * Math.PI * 4, r = i < n / 2 ? 1 : 0.55;
+    flat(Math.cos(a) * r, Math.sin(a) * r);
+  } else if (kind === 'spiral') for (let i = 0; i < n; i++) { // three arms curling out
+    const k = (i % Math.ceil(n / 3)) / Math.ceil(n / 3), a = k * Math.PI * 2.2 + (i % 3) * ((Math.PI * 2) / 3), r = 0.15 + 0.85 * k;
+    flat(Math.cos(a) * r, Math.sin(a) * r);
+  } else if (kind === 'palm') for (let i = 0; i < n; i++) { // eight thick fronds, mostly up and out
+    const arm = i % 8, a = (arm / 8) * Math.PI * 2 + 0.2, len = 0.45 + 0.55 * rand(), up = 0.35;
+    out.push([Math.cos(a) * len + (rand() - 0.5) * 0.08, (Math.sin(a) * 0.75 + up) * len, (rand() - 0.5) * 0.2]);
+  } else if (kind === 'saturn') for (let i = 0; i < n; i++) { // a ball with a tilted ring round it
+    if (i % 3 === 0) { const a = (i / n) * Math.PI * 2, x = Math.cos(a) * 1.15, y = Math.sin(a) * 0.3; out.push([x * 0.95 - y * 0.3, y + x * 0.3, Math.sin(a) * 0.4]); }
+    else { const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996; out.push([Math.cos(a) * r * 0.6, y * 0.6, Math.sin(a) * r * 0.6]); }
+  } else for (let i = 0; i < n; i++) { // peony, willow, small, rainbow: a sphere
     const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996 + rand() * 0.3;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (0.85 + rand() * 0.15)));
   }
@@ -126,7 +144,7 @@ export function createFireworksSky(scene, { phone = false } = {}) {
         // (h, y, n): h along the river, y up, n towards the lawn
         const [h, y, nn] = d;
         dir.array.set([(h * U[0] + nn * -U[1]) * speed, y * speed, (h * U[1] + nn * U[0]) * speed], i * 3);
-        const c = k % 2 && b.color2 !== b.color ? c2 : c1;
+        const c = b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : k % 2 && b.color2 !== b.color ? c2 : c1;
         col.array.set([c.r, c.g, c.b], i * 3);
         info.array.set([b.t, life * (0.85 + rand() * 0.3), b.kind === 'willow' ? 1.6 : 1, k === 0 ? 1 : 0], i * 4);
       } else info.array.set([-1e6, 0, 0, 0], i * 4);
