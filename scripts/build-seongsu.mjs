@@ -62,8 +62,25 @@ const COS = Math.cos(THETA), SIN = Math.sin(THETA);
 // Grid frame -> map (x east, z south), and back.
 export const toMap = ([u, v]) => [u * COS - v * SIN, u * SIN + v * COS];
 export const toGrid = ([x, z]) => [x * COS + z * SIN, -x * SIN + z * COS];
-const WANGSIMNI_X = -250; // Wangsimni-ro (north-south, on the map)
-const wangU = (v) => (WANGSIMNI_X + v * SIN) / COS; // where Wangsimni-ro crosses grid line v
+// Wangsimni-ro (north-south, on the map): its real line (OpenStreetMap,
+// /mnt/project-files/osm/seoul-forest.json, both carriageways averaged, at
+// 1/4), from the forest's north edge down to Gangbyeonbuk-ro by the river.
+// It bends: east to x -238 by Seoul Forest Station, west to -265 at the river.
+const WANGSIMNI = [[-258.3, -200], [-257.4, -188], [-253.8, -150], [-248, -100], [-243.3, -55], [-238.9, -15], [-238, -4], [-239.3, 12], [-243, 30], [-248.5, 55], [-252.7, 76], [-258.8, 100], [-262, 125], [-262.7, 140], [-265, 173], [-265.8, 200]];
+// Wangsimni-ro's middle at z (straight on past its two ends).
+export const wangX = (z) => {
+  const W = WANGSIMNI;
+  let i = 1;
+  while (i < W.length - 1 && z > W[i][1]) i++;
+  const [x0, z0] = W[i - 1], [x1, z1] = W[i];
+  return x0 + ((x1 - x0) * (z - z0)) / (z1 - z0);
+};
+// Where Wangsimni-ro crosses grid line v (u along it).
+const wangU = (v) => {
+  let u = (-250 + v * SIN) / COS;
+  for (let k = 0; k < 20; k++) u = (wangX(u * SIN + v * COS) + v * SIN) / COS;
+  return u;
+};
 const EAST_U = 260 / COS; // Achasan-ro's east end, on the map's east edge
 
 // ── Streets (grid frame) ──────────────────────────────────────────────────
@@ -107,14 +124,20 @@ export const FOREST_SHIFT = [-130, -154];
 const OLD_WEST = -335;
 const shift = ([x, z]) => [r1(x + FOREST_SHIFT[0]), r1(z + FOREST_SHIFT[1])];
 const oldF = ([x, z]) => [r1(x - FOREST_SHIFT[0]), r1(z - FOREST_SHIFT[1])]; // world -> old frame
-const FOREST_EAST = WANGSIMNI_X + 5; // the forest's east edge, Wangsimni-ro's west side
+const forestE = (z) => r1(wangX(z) - 5); // the forest's east edge at z, Wangsimni-ro's west side
+// The forest's east edge from z0 to z1, one point at each bend of the road.
+const forestEdge = (z0, z1) => {
+  const zs = [z0, ...WANGSIMNI.map(([, z]) => z).filter((z) => z > Math.min(z0, z1) && z < Math.max(z0, z1)), z1];
+  if (z0 > z1) zs.sort((a, b) => b - a); else zs.sort((a, b) => a - b);
+  return zs.map((z) => [forestE(z), z]);
+};
 // The forest's south edge (Gangbyeonbuk-ro runs between it and the river), west to east.
-const FOREST_EDGE = [[WEST, 94], [-440, 103], [-400, 121], [-360, 143], [-320, 160], [-280, 178], [FOREST_EAST, 185]];
+const FOREST_EDGE = [[WEST, 94], [-440, 103], [-400, 121], [-360, 143], [-320, 160], [-280, 178], [forestE(185), 185]];
 const SF = JSON.parse(await readFile(path.join(root, 'scripts/data/seoul-forest-osm.json'), 'utf8'));
 // The roads (both carriageways averaged), west to east / north to south.
 const TTUKSEOM_N = name('뚝섬로', 'Ttukseom-ro', 'トゥクソム路', '纛岛路');
 const FOREST_ROADS = [
-  { k: 'tertiary', w: 12, n: TTUKSEOM_N, p: [[-250, 72], [-265, 73], [-299, 62], [-312, 61]] }, // to the Rainbow Tunnel's east end
+  { k: 'tertiary', w: 12, n: TTUKSEOM_N, p: [[r1(wangX(72)), 72], [-265, 73], [-299, 62], [-312, 61]] }, // to the Rainbow Tunnel's east end
   { k: 'tertiary', w: 12, n: TTUKSEOM_N, p: [[-381, 37], [-405, 28], [-430, 17], [-450, 9.5], [-476, -4.5], [-495, -12.5], [PARK_WEST, -35]] }, // from its west end on to Yongbi Bridge
   { k: 'primary', w: 16, n: name('고산자로', 'Gosanja-ro', '高山子路', '高山子路'), p: [[-447, -185], [-440, -159], [-430, -117], [-424, -78], [-421, -60], [-423.5, -36], [-427, -6], [-430, 17]] },
   { k: 'secondary', w: 12, n: name('광나루로', 'Gwangnaru-ro', 'クァンナル路', '广渡路'), p: [[-397, -114], [-407, -103], [-418, -85], [-424, -78], [-436, -61], [-448, -44], [-462, -31], [-480, -17], [-495, -12.5]] },
@@ -126,13 +149,13 @@ const FOREST_ROADS = [
 // Gosanja-ro's end between Itaewon-ro and the riverside grass (FOREST_W, to x
 // -600). The real outline had been cut into thin strips by the real roads, so
 // the park felt small and bare.
-const FOREST_FILL_N = [[-385, -102], [-362, -93], [-348, -88], [-336, -86], [-318, -87], [-289, -88], [-262, -90], [FOREST_EAST, -87], [FOREST_EAST, 64], [-265, 65], [-299, 54]]; // along Seoulsup-gil's south side, down Wangsimni-ro and along Ttukseom-ro's north side
+const FOREST_FILL_N = [[-385, -102], [-362, -93], [-348, -88], [-336, -86], [-318, -87], [-289, -88], [-262, -90], ...forestEdge(-87, 64), [-265, 65], [-299, 54]]; // along Seoulsup-gil's south side, down Wangsimni-ro and along Ttukseom-ro's north side
 export const FOREST_W_X = -600;
-const FOREST_N = [[-390.8, -118.7], [-424, -125], [-432, -159], [-438, -185], [-440, -200], [FOREST_EAST, -200], [FOREST_EAST, -101], [-262, -104], [-289, -102], [-318, -101], [-336, -100], [-349, -102], [-363, -101], [-392, -107], [-389.7, -112.2], [-363.5, -102.9], [-357.9, -109.4], [-352.3, -108.1], [-295, -117.4], [-296.6, -136.2], [-304.2, -181.5], [-306.7, -181.5], [-348.9, -159.1], [-385.2, -126.3]]; // round the north piece (not inside it), down to Seoulsup-gil
+const FOREST_N = [[-390.8, -118.7], [-424, -125], [-432, -159], [-438, -185], [-440, -200], ...forestEdge(-200, -101), [-262, -104], [-289, -102], [-318, -101], [-336, -100], [-349, -102], [-363, -101], [-392, -107], [-389.7, -112.2], [-363.5, -102.9], [-357.9, -109.4], [-352.3, -108.1], [-295, -117.4], [-296.6, -136.2], [-304.2, -181.5], [-306.7, -181.5], [-348.9, -159.1], [-385.2, -126.3]]; // round the north piece (not inside it), down to Seoulsup-gil
 const FOREST_W = [[-504, -6], [PARK_WEST, -27], [-614, -26], [FOREST_W_X, -14], [FOREST_W_X, 48], [-560, 52], [PARK_WEST, 47], [PARK_WEST, 37]];
 // The park: the real outline, its south edge the riverside grass's (FOREST_EDGE),
 // round Ttukseom-ro's open ends and along Gosanja-ro; and the piece north of Seoulsup-gil.
-const FOREST_PARK = [[-323, 60], [-263, 79], [FOREST_EAST, 79], ...FOREST_EDGE.slice().reverse(), [-538, 58], [PARK_WEST, 47], [PARK_WEST, 37], [-504, -10], [-445, 19], [-436, 24], [-429, 24], [-380, 42], [-379, 33], [-418, 18], [-423, 12], [-412, -67], [-404, -102], [-399, -111], [-389, -107], ...FOREST_FILL_N, [-314, 53], [-322, 54]];
+const FOREST_PARK = [[-323, 60], [-263, 79], ...forestEdge(79, 185).slice(0, -1), ...FOREST_EDGE.slice().reverse(), [-538, 58], [PARK_WEST, 47], [PARK_WEST, 37], [-504, -10], [-445, 19], [-436, 24], [-429, 24], [-380, 42], [-379, 33], [-418, 18], [-423, 12], [-412, -67], [-404, -102], [-399, -111], [-389, -107], ...FOREST_FILL_N, [-314, 53], [-322, 54]];
 const FOREST_NORTH = SF.park[1];
 // The towers by Seoul Forest Station (world metres), in the corner that is not park.
 const FOREST_TOWERS = []; // (none now: the corner is park)
@@ -251,7 +274,8 @@ const B = [
 ];
 
 // The land's edge (landZ) from Wangsimni-ro to the map's east edge (x 258).
-const LAND_EDGE = [FOREST_EAST, ...REAL_BANK.map(([x]) => x).filter((x) => x > FOREST_EAST && x < 258), 258].map((x) => [x, r1(landZ(x))]);
+const LAND_W = forestE(185);
+const LAND_EDGE = [LAND_W, ...REAL_BANK.map(([x]) => x).filter((x) => x > LAND_W && x < 258), 258].map((x) => [x, r1(landZ(x))]);
 { // (and where it meets z 352)
   const i = LAND_EDGE.findIndex(([, z]) => z >= 352);
   if (i > 0 && LAND_EDGE[i - 1][1] < 352) {
@@ -498,7 +522,7 @@ const FLOWER_GARDENS = [
   { kind: 'hydrangea', x: -235, z: 282, r: 8, ry: 0.8,
     n: name('수국 정원', 'Hydrangea Garden', 'アジサイガーデン', '绣球花园'),
     t: name('파랑, 보라, 분홍 수국이 동그랗게 피어 있어요. 초여름의 서울숲이에요.', 'Round blue, purple and pink hydrangeas: Seoul Forest in early summer.', '青、紫、ピンクのアジサイがまあるく咲いています。初夏のソウルの森。', '蓝、紫、粉色的绣球圆圆地开着，是初夏的首尔林。') },
-  { kind: 'lavender', x: -130, z: 245, r: 8, ry: -0.2, // east of the rose garden
+  { kind: 'lavender', x: -145, z: 245, r: 8, ry: -0.2, // south-east of the rose garden, off Wangsimni-ro
     n: name('라벤더 정원', 'Lavender Garden', 'ラベンダーガーデン', '薰衣草花园'),
     t: name('보랏빛 라벤더 줄 사이로 은은한 향기가 나요. 벤치에 앉아 쉬어 가세요.', 'A soft scent between the purple lavender rows. Sit on the bench and rest a while.', '紫のラベンダーの列からやさしい香り。ベンチでひと休みしてね。', '紫色薰衣草间飘着淡淡的香气，坐在长椅上歇一会儿吧。') },
 ];
@@ -514,7 +538,7 @@ for (const fg of FLOWER_GARDENS) {
 // Station, off the trail; a path in from the station's exits.
 WALKS.push({ w: 3, p: [oldF([-316.5, -62]), oldF([-300.5, -62])] });
 WALKS.push({ w: 3, p: [oldF([-317.4, -22]), oldF([-298.5, -22])] });
-WALKS.push({ w: 3, p: [oldF([-270, 37]), oldF([-282, 30]), oldF([-308.5, 15])], n: name('서울숲역 길', 'Station Path', 'ソウルの森駅の道', '首尔林站小路') });
+WALKS.push({ w: 3, p: [oldF([-257, 30]), oldF([-270, 33]), oldF([-282, 30]), oldF([-308.5, 15])], n: name('서울숲역 길', 'Station Path', 'ソウルの森駅の道', '首尔林站小路') });
 
 // ── The deer meadow and the wildflower patches ─────────────────────────
 // (Given in world metres here; `oldF` turns them into the old frame above.)
@@ -731,8 +755,14 @@ function limits(p) {
   const xs = p.map((q) => q[0]);
   const xa = Math.min(...xs), xb = Math.max(...xs), za = landZ(xa), zb = landZ(xb);
   const k = xb > xa ? (zb - za) / (xb - xa) : 0;
+  // Wangsimni-ro bends: the line from its middle at the polygon's north end
+  // to its middle at the south end, moved east past any bend in between.
+  const zs = p.map((q) => q[1]), z0 = Math.min(...zs), z1 = Math.max(...zs);
+  const w0 = wangX(z0), kw = z1 > z0 ? (wangX(z1) - w0) / (z1 - z0) : 0;
+  let d = 0;
+  for (const [x, z] of WANGSIMNI) if (z > z0 && z < z1) d = Math.max(d, x - (w0 + kw * (z - z0)));
   return [
-    [1, 0, -(WANGSIMNI_X + 5 + SIDEWALK)], // x >= Wangsimni-ro's east sidewalk
+    [1, -kw, -(w0 - kw * z0 + d + 5 + SIDEWALK)], // east of Wangsimni-ro's east sidewalk
     [-1, 0, 258], [0, 1, 98], // x <= 258, z >= -98
     [k, -1, za - k * xa], // z <= the land's edge (between xa and xb)
   ];
@@ -777,8 +807,8 @@ const roads = STREETS.map((s) => ({
 }));
 const ACHASAN_W = toMap([wangU(0), 0]).map(r1); // where Achasan-ro meets Wangsimni-ro
 roads.push(
-  // Wangsimni-ro: north-south past Seoul Forest Station, from the map's north edge down to the river.
-  { k: 'primary', w: 10, p: [[WANGSIMNI_X, -100], [WANGSIMNI_X, r1(bankZ(WANGSIMNI_X) - 12)]], n: name('왕십리로', 'Wangsimni-ro', '往十里路', '往十里路') },
+  // Wangsimni-ro: north-south past Seoul Forest Station on its real line, from the forest's north edge down to the river.
+  { k: 'primary', w: 10, p: (() => { const zEnd = r1(bankZ(wangX(190)) - 12); return [...WANGSIMNI.filter(([, z]) => z < zEnd), [r1(wangX(zEnd)), zEnd]]; })(), n: name('왕십리로', 'Wangsimni-ro', '往十里路', '往十里路') },
   // Seoulsup-gil: along the forest's north side, from Gwangnaru-ro (its real line).
   { k: 'tertiary', w: 10, p: [[-397, -114], [-389, -110], [-363, -100], [-349, -95], [-336, -93], [-318, -94], [-289, -95], [-262, -97], ACHASAN_W], n: name('서울숲길', 'Seoulsup-gil', 'ソウルの森通り', '首尔林路') },
   // Ttukseom-ro, Gosanja-ro and Gwangnaru-ro round Seoul Forest (the links to Itaewon and Wangsimni start at their west and north ends).
@@ -790,6 +820,13 @@ const areas = [...AREAS];
 for (const b of B) if (b.area && b.areaPoly) areas.push({ k: b.area, ...(b.trees ? { trees: true } : {}), p: b.areaPoly });
 for (const x of EXTRA) buildings.push({ h: x.h, p: x.p });
 
+// Line 2's viaduct west of Seongsu Station on its real line (OpenStreetMap,
+// /mnt/project-files/osm/line2-wangsimni.json, both tracks averaged, at 1/4):
+// over Achasan-ro past Ttukseom Station, then it turns north beside
+// Wangsimni-ro towards Hanyang Univ. (east of Wangsimni-ro's middle by 4-6 m)
+// and leaves the map at its north edge. East of the station it stays on
+// Achasan-ro's grid line, within 3 m of the real one.
+const LINE2_WEST = [[-252.4, -205], [-247.3, -131.5], [-241.6, -115.5], [-230.7, -99], [-217.8, -89], [-155.9, -61.6]];
 const map = {
   meta: {
     region: 'seongsu',
@@ -798,7 +835,7 @@ const map = {
   },
   roads,
   buildings,
-  rail: [{ e: 1, p: [[WEST, -78], ACHASAN_W, toMap([EAST_U, 0]).map(r1)] }], // Line 2 viaduct over Achasan-ro
+  rail: [{ e: 1, p: [...LINE2_WEST, [0, 0], toMap([EAST_U, 0]).map(r1)] }], // Line 2 viaduct over Achasan-ro
   areas,
   blockers: BLOCKERS,
   landmarks: LANDMARKS,
