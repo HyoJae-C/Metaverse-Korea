@@ -85,3 +85,18 @@ test('taking turns: 5 minutes each while someone waits, the first in line goes n
   assert.equal(clock(65_000), '1:05');
   assert.equal(clock(-5), '0:00');
 });
+
+test('the backup relay: only usable entries from the server, port 53 dropped', async () => {
+  const { relayList } = await import('../src/core/live-rules.js');
+  assert.deepEqual(relayList({ iceServers: [] }), []);
+  assert.deepEqual(relayList(null), []);
+  assert.deepEqual(relayList({ iceServers: { urls: 'turn:x' } }), [], 'not a list: ignored');
+  assert.deepEqual(relayList({ iceServers: [
+    { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.cloudflare.com:53'] },
+    { urls: ['turn:turn.cloudflare.com:3478?transport=udp', 'turn:turn.cloudflare.com:53?transport=udp', 'turns:turn.cloudflare.com:443?transport=tcp'], username: 'u', credential: 'c' },
+    { urls: ['http://evil'] }, 'junk',
+  ] }), [
+    { urls: ['stun:stun.cloudflare.com:3478'] },
+    { urls: ['turn:turn.cloudflare.com:3478?transport=udp', 'turns:turn.cloudflare.com:443?transport=tcp'], username: 'u', credential: 'c' },
+  ]);
+});

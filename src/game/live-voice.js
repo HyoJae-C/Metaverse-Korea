@@ -12,13 +12,41 @@
 // person menu). A blocked singer is never heard.
 import { t } from '../core/i18n.js';
 import { config } from '../config.js';
-import { canPerform, clock, lineOrder, liveMsg, nextUp, NEXT_GRACE_MS, offStage, parseLive, SLOT_MS, stageWinner, timeUp } from '../core/live-rules.js';
+import { canPerform, clock, lineOrder, liveMsg, nextUp, NEXT_GRACE_MS, offStage, parseLive, relayList, SLOT_MS, stageWinner, timeUp } from '../core/live-rules.js';
 
 const ICE_WAIT_MS = 2500; // gathering ICE candidates: send what we have by then
 const BITRATE = 48000; // Opus at 48 kbps: clear singing, ~0.6 Mbps up for 12 listeners
 const HI_AFTER_MS = 2500; // walked in and nobody sent us a voice yet: ask once more
 
 const supported = () => typeof RTCPeerConnection === 'function' && !!navigator.mediaDevices?.getUserMedia;
+
+// The backup relay (TURN) for players whose routers block direct
+// connections: short-lived credentials from our server (Supabase function
+// turn-credentials), asked once per visit and kept for 50 minutes. If the
+// server has no relay set up, or can't be reached, we go direct as before.
+const RELAY_KEEP_MS = 50 * 60 * 1000;
+let relay = { list: [], at: 0, asking: null };
+function fetchRelay(cloud) {
+  if (Date.now() - relay.at < RELAY_KEEP_MS) return Promise.resolve(relay.list);
+  if (relay.asking) return relay.asking;
+  const { url, key } = config.net;
+  if (config.netProvider !== 'supabase' || !url) return Promise.resolve([]);
+  relay.asking = (async () => {
+    try {
+      const token = await cloud?.accessToken?.();
+      const res = await fetch(url.replace(/\/$/, '') + '/functions/v1/turn-credentials', {
+        method: 'POST',
+        headers: { apikey: key, Authorization: 'Bearer ' + (token || key) },
+        signal: AbortSignal.timeout?.(4000),
+      });
+      relay.list = res.ok ? relayList(await res.json()) : [];
+    } catch { relay.list = []; }
+    relay.at = Date.now();
+    relay.asking = null;
+    return relay.list;
+  })();
+  return relay.asking;
+}
 
 function iceDone(pc) {
   return new Promise((resolve) => {
@@ -33,7 +61,8 @@ export function createLiveVoice(game) {
   const send = (m) => game.net?.sendEmote(liveMsg(m));
   const nameOf = (id) => game.others?.nameOf(id) || '?';
   const blocked = (id) => game.safety.isBlocked(id, game.others?.nameOf(id));
-  const newPc = () => new RTCPeerConnection({ iceServers: config.voiceIceServers });
+  // Direct first (STUN); the relay is only used when direct doesn't work.
+  const newPc = () => new RTCPeerConnection({ iceServers: [...config.voiceIceServers, ...relay.list] });
 
   let active = false; // inside the café
   // Singing:
@@ -207,6 +236,8 @@ export function createLiveVoice(game) {
   }
   async function offerTo(id) {
     if (!mic || blocked(id)) return;
+    await fetchRelay(game.cloud);
+    if (!mic) return;
     outs.get(id)?.close();
     const pc = newPc();
     outs.set(id, pc);
@@ -251,6 +282,8 @@ export function createLiveVoice(game) {
   }
   async function onOffer(id, m) {
     if (mic || blocked(id)) return;
+    await fetchRelay(game.cloud); // (usually already here: asked on walking in)
+    if (mic || blocked(id) || !active) return;
     if (stage && stage.id !== id && stageWinner(stage, { id, since: m.since }) === stage) return; // (the other singer has the stage)
     closeIn();
     stage = { id, since: m.since, muted: !!m.muted };
@@ -311,6 +344,7 @@ export function createLiveVoice(game) {
     get performing() { return !!mic; },
     enter() {
       active = true;
+      fetchRelay(game.cloud); // (ready by the time anyone sings)
       // Nobody sent us a voice yet: ask (the singer might have missed us arriving).
       clearTimeout(hiTimer);
       hiTimer = setTimeout(() => { if (active && !inPc && !mic) send({ k: 'hi' }); }, HI_AFTER_MS);

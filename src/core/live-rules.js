@@ -69,3 +69,22 @@ export const clock = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
+
+// The backup relay (TURN, supabase/functions/turn-credentials): what the
+// server answered, as an iceServers list the browser can use. Port 53 URLs
+// are dropped (browsers block them and the attempt just hangs); anything
+// malformed is ignored, so a bad answer leaves the direct connection as is.
+export function relayList(body) {
+  const list = Array.isArray(body?.iceServers) ? body.iceServers : [];
+  const out = [];
+  for (const s of list) {
+    if (!s || typeof s !== 'object') continue;
+    const urls = (Array.isArray(s.urls) ? s.urls : [s.urls]).filter((u) => typeof u === 'string' && /^(stun|turns?):/.test(u) && !/:53(\?|$)/.test(u));
+    if (!urls.length) continue;
+    const e = { urls };
+    if (typeof s.username === 'string') e.username = s.username;
+    if (typeof s.credential === 'string') e.credential = s.credential;
+    out.push(e);
+  }
+  return out;
+}
