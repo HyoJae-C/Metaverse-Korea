@@ -6832,7 +6832,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
-  if (mapView.open) mapView.draw();
+  mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
   guBorders?.update(dt);
 
