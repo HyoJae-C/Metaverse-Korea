@@ -3,10 +3,10 @@
 //
 // Only clothes you paid for yourself can be sold, for a small part of what
 // you paid (RESALE_PCT, 25%; with the server wallet the server's
-// wallet_settings.resell_pct). Gifts and items from codes have no receipt,
-// so they can't: otherwise two accounts could pass gifts back and forth and
-// farm coins (see core/gifts.js). Selling always pays less than buying, so
-// buying to sell never makes coins.
+// wallet_settings.resell_pct). A gift of clothes gets the giver's purchase
+// as its receipt (core/gift-receipts.js); items from codes have none. Selling
+// always pays less than buying, so buying (or giving) to sell never makes
+// coins.
 //
 // Receipts are kept on this device: { item id: { paid, op, bn } } where op
 // is the purchase's id on the server's coin ledger (null in a browser-only

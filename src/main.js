@@ -226,6 +226,7 @@ import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { GiftReceipts } from './core/gift-receipts.js';
 import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
@@ -2489,6 +2490,7 @@ const inventory = new Inventory();
 // What I paid for clothes I bought myself: only those can be sold back at a
 // second-hand shop (core/resale.js).
 const receipts = new Receipts();
+const giftReceipts = new GiftReceipts({ wallet: () => wallet }); // (core/gift-receipts.js; wallet is made below)
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2536,7 +2538,7 @@ giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
   get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
   get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
-  refreshItems, refreshWallet, safety, shop, storeData,
+  refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
 // Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
@@ -4011,15 +4013,32 @@ const takeOffItem = (id) => {
   setLook(myLook);
 };
 const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
+  stalls: map.landmarks.filter((l) => l.type === 'fleastall'),
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
   takeOff: takeOffItem });
+// Gift receipts: binds still waiting (I gave clothes), receipts for clothes
+// given to me.
+const giftSync = walletReady.then(() => {
+  giftReceipts.run().catch(() => {});
+  return giftReceipts.sync(inventory, receipts, ITEMS).catch(() => {});
+});
 // Clothes bought before the server kept purchases: twice their price back,
 // once (game/old-clothes.js, loaded only until it's done on this device).
-walletReady.then(() => {
-  try { if (!wallet.server || localStorage.getItem('mk.oldClothes')) return; } catch { return; }
-  import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
-    takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
+// Then, once, clothes with no receipt at all leave the closet (gifts, code
+// items, prizes, the starting outfit: Yozi 2026-11-11), and accounts from
+// before then get travel money once (game/old-clothes.js runUpdateBonus).
+giftSync.then(() => { // (after it: a gift's receipt is in before the sweep below)
+  let old, sweep, bonus;
+  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
+  if (!old && !sweep && !bonus) return;
+  const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
+    refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
+  import('./game/old-clothes.js').then(async (m) => {
+    if (old) await m.runOldClothes(g).catch(() => {});
+    if (sweep) setTimeout(() => m.sweepNoReceipt(g), 4000); // (after the refund's toast)
+    if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), sweep ? 9000 : 4000); // (after the sweep's toast)
+  }).catch(() => {});
 });
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
@@ -4864,9 +4883,11 @@ const bukchonUi = new BukchonUI({
     if (!k || (!entry && !wear)) return false;
     if (wear) { // a piece you wear (Sunra Silver Studio's pendants): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
-      if (!wallet.spend(k.price, { name: BK_TEXT[kind], at: interior?.store.name })) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
+      const note = { name: BK_TEXT[kind], at: interior?.store.name };
+      if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
       refreshWallet();
       inventory.add(wear);
+      receipts.record(wear, k.price, wallet.lastOp, note); // (so it can be resold: every item keeps its record)
       refreshItems();
       sfx.pop?.();
       clerk && say(clerk, $('labels'), ['잘 어울려요!', 'jal eoullyeoyo!', 'It suits you!']);

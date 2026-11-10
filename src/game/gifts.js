@@ -1,7 +1,9 @@
 // Gifts: buy something in a shop for someone else in the same shop (rules in
 // core/gifts.js). The giver pays now; the friend gets a card to accept, and
 // it goes into their bag (or their items, for clothes). No, no answer, or
-// someone leaving the shop gives the coins back.
+// someone leaving the shop gives the coins back. Clothes keep a receipt: the
+// giver's game tells the server who got them, and the friend's game fetches
+// it (core/gift-receipts.js), so the friend can sell them later.
 // What a product becomes as a gift here, or null when it can't be one:
 // { coins, icon, name, item } (clothes: an item id) or { ..., entry } (a bag entry).
 import { COFFEE_SIPS } from '../core/held.js';
@@ -98,6 +100,8 @@ export function createGifts(game) {
     const r = gifts.answer(from, m.gid, m.verb);
     if (!r) return;
     if (m.verb === 'ok') {
+      const g = giftFor(storeData.find((s) => s.id === r.gift.store), productById(r.gift.store, r.gift.product));
+      if (g?.item) game.giftReceipts?.bind(r.gift.paid, from, g.item);
       game.sfx.pop?.();
       shop.toast(fmt(L(GIFT_TEXT.accepted), { name: r.gift.name, item: localName(productById(r.gift.store, r.gift.product)?.name, getLanguage()) || '🎁' }));
     } else refundGift(r.gift, m.reason);
@@ -113,6 +117,8 @@ export function createGifts(game) {
     if (g.item) {
       if (inventory.has(g.item)) { game.net.sendEmote(giftMsg('no', c.from, gid, 'have')); shop.toast(fmt(L(GIFT_TEXT.mineHave), { item, name: c.name })); return; }
       inventory.add(g.item);
+      // The receipt: once the giver's game has told the server (a few tries).
+      for (const ms of [8000, 30000, 90000]) setTimeout(() => game.giftReceipts?.sync(inventory, game.receipts, ITEMS).catch(() => {}), ms);
       if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
       shop.toast(fmt(L(GIFT_TEXT.gotItem), { item, name: c.name }));
     } else {

@@ -65,3 +65,38 @@ test('before 035 is run nothing changes', async () => {
   assert.deepEqual(inventory.list(), [A, B, 'gift-thing']);
   assert.equal(storage.getItem(DONE), null);
 });
+
+test('clothes with no receipt leave the closet once; ones with a receipt and non-clothes stay', async () => {
+  const { sweepNoReceipt } = await import('../src/game/old-clothes.js');
+  const { storage, receipts } = setup();
+  const [C] = Object.keys(WEARABLES).filter((id) => WEARABLES[id].price > 0 && id !== A && id !== B);
+  const inventory = inv([A, B, C, 'not-clothes']);
+  const off = [];
+  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage, takeOff: (id) => off.push(id) }), [C]);
+  assert.deepEqual(off, [C]);
+  assert.deepEqual(inventory.list().sort(), [A, B, 'not-clothes'].sort());
+  inventory.add(C);
+  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage }), [], 'only once');
+  assert.ok(inventory.has(C));
+});
+
+test('the update travel money: asked once, paid by the server, never asked again', async () => {
+  const { runUpdateBonus, BONUS } = await import('../src/game/old-clothes.js');
+  const bsql = readFileSync(new URL('../supabase/037_update_bonus.sql', import.meta.url), 'utf8');
+  assert.match(bsql, /update_bonus bigint not null default 300000/);
+  assert.match(bsql, /v_made >= s\.old_refund_before then return jsonb_build_object\('status', 'late'\)/);
+  const storage = mem();
+  let asked = 0, said = '';
+  const w = { server: true, flush: async () => true, credited(n) { this.got = (this.got || 0) + n; },
+    client: { rpc: async () => { asked++; return { data: { status: 'ok', n: 300000, coins: 1, ver: 1 } }; } } };
+  assert.equal(await runUpdateBonus({ wallet: w, storage, toast: (m) => { said = m; } }), 'ok');
+  assert.equal(w.got, 300000);
+  assert.ok(said);
+  assert.equal(storage.getItem(BONUS), 'ok');
+  assert.equal(await runUpdateBonus({ wallet: w, storage }), null);
+  assert.equal(asked, 1);
+  const off = { server: true, flush: async () => true, client: { rpc: async () => ({ error: { message: 'no function' } }) } };
+  const s2 = mem();
+  assert.equal(await runUpdateBonus({ wallet: off, storage: s2 }), null);
+  assert.equal(s2.getItem(BONUS), null); // asked again next time
+});
