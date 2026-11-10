@@ -3905,7 +3905,10 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
-  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
+  // Show time (the Ttukseom drone show or the Yeouido fireworks, not the
+  // fountain show): your catch shows only on your own screen, so others'
+  // trophies don't show here, wherever you are (Yozi).
+  if (droneShowAt()?.on || fireworksAt()?.on) return;
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
@@ -3945,9 +3948,9 @@ const fishingUi = new FishingUI({
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
-    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
-    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
-    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
+    // ★3–★5: a trophy over my head, for everyone nearby. I always see my
+    // own; during show time others don't (onPeerTrophy, Yozi).
+    if (f.rarity >= TROPHY_RARITY) {
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
