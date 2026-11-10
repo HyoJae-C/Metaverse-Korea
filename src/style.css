@@ -1534,12 +1534,18 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bag-tabs { display: flex; gap: 6px; margin: 10px 0 0; }
 .bag-tabs .chip.on { background: #3a2a22; color: #fff; }
 .bag-closet-empty { margin: 14px 0 4px; }
-.bag-panel .bag-closet { margin-top: 12px; }
 .bag-rides { display: grid; gap: 8px; margin-top: 12px; }
 .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 10px; }
 .bag-slot { position: relative; aspect-ratio: 1; border-radius: 12px; background: #fff; font-size: 24px; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px #eadfd2; }
 .bag-slot.empty { background: #f6f0e8; box-shadow: inset 0 0 0 1.5px #efe6da; }
 .bag-slot.on { box-shadow: inset 0 0 0 3px var(--accent-dark, #e0694e); }
+.closet-bar { display: flex; gap: 6px; align-items: flex-start; margin-top: 10px; }
+.closet-kinds { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.closet-kinds .chip, .closet-sort { padding: 4px 10px; font-size: 12px; }
+.closet-kinds .chip.on { background: #3a2a22; color: #fff; }
+.closet-sort { flex: none; white-space: nowrap; }
+.bag-slot.worn { background: #fff4e6; }
+.bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
 .bag-info { display: grid; gap: 6px; min-height: 44px; }
 .bag-actions { display: flex; gap: 8px; flex-wrap: wrap; }
