@@ -6956,6 +6956,9 @@ renderer.setAnimationLoop((now) => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
+  // The full map covers the screen, so there is nothing to see behind it:
+  // the game keeps going but the 3D view is not drawn (Yozi, to keep phones cool).
+  if (mapView.open) { updateDelivery(); return; }
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
   // Skip people too far away to see (core/far-people.js): after drawing, so
   // everyone's matrixWorld is this frame's; never your own character.
