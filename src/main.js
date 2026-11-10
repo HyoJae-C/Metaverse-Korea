@@ -19,6 +19,7 @@ import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
+import { noticeBoardSpots } from './core/notice-board-spots.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -823,7 +824,7 @@ const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
-const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id));
+const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id), (x, z, r) => collision.blocked(x, z, r)); // (a stand by a shop moves off a wall)
 const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
@@ -958,22 +959,20 @@ if (square) {
 }
 // Notice boards at one end of the square, facing it: free board, inquiries,
 // and the update board (with a NEW tag while unread). They stand either side
-// of the middle, clear of the walkway to Café Street.
+// of the middle, clear of the walkway to Café Street and of the buildings
+// (core/notice-board-spots.js).
 const noticeBoards = [];
 let newsTag = null;
 if (square) {
-  const ry = square.zone.pave?.ry || 0;
-  const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // along / across the square
-  const far = square.zone.pave ? square.zone.pave.l / 4 : 10;
-  for (const [board, side, color] of [['news', -8.2, '#e0a020'], ['free', -4.8, '#2f6fd6'], ['ask', 4.8, '#d8452f']]) {
-    const x = square.x + ax * far + nx * side, z = square.z + az * far + nz * side;
+  for (const { board, x, z, ry, ux, uz } of noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))) {
+    const color = { news: '#e0a020', free: '#2f6fd6', ask: '#d8452f' }[board];
     const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
     if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }
     m.position.set(x, 0, z);
-    m.rotation.y = Math.atan2(-ax, -az);
+    m.rotation.y = ry;
     scene.add(m);
     farExtras.push(m);
-    noticeBoards.push({ board, x: x - ax * 1.2, z: z - az * 1.2 }); // stand in front of it
+    noticeBoards.push({ board, x: ux, z: uz }); // stand in front of it
   }
 }
 
@@ -5102,7 +5101,7 @@ const bookUi = lazyPanel(() => import('./ui/book-ui.js').then(({ BookUI }) => ne
 const stampBook = new StampBook();
 const trailLog = new TrailLog();
 const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
-function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
+function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; $('map-panel').classList.toggle('stamps-done', stampBook.complete(tourStamps)); } // (every stamp: a gold border round the map)
 $('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
 onLanguageChange(refreshStampBtn);

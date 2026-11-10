@@ -68,7 +68,7 @@ export const STAMPS = [
     icon: '<path d="M100 122 l-26 -26 a14 14 0 0 1 26 -18 a14 14 0 0 1 26 18 z" stroke-dasharray="3 7" stroke-linecap="round"/><circle cx="72" cy="70" r="3"/><circle cx="130" cy="66" r="3"/><circle cx="140" cy="92" r="2.5"/><circle cx="62" cy="96" r="2.5"/><path d="M64 136 q9 -6 18 0 q9 6 18 0 q9 -6 18 0 q9 6 18 0"/>',
   },
   {
-    id: 'gyeongbokgung', place: { at: [-1734, -860] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
+    id: 'gyeongbokgung', place: { at: [-1734, -862.5] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
@@ -213,6 +213,15 @@ export const STAMPS = [
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
+  },
+  {
+    // in Dongmyo's flea market, between Potato Market's mats and the way up
+    // from Dongmyo Station exit 3 (data/dongmyo.js market), facing the station
+    id: 'dongmyo-market', place: { at: [-853, -785], ry: 0 }, color: '#a0703a', shape: 'square',
+    name: { ko: '동묘 감자마켓', en: 'Dongmyo Potato Market', ja: '東廟ポテトマーケット', zh: '东庙土豆市场' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // a potato on a mat with a fringe
+    icon: '<path d="M54 122 h92 l10 20 h-112 z"/><path d="M50 142 v8 M64 142 v8 M78 142 v8 M92 142 v8 M108 142 v8 M122 142 v8 M136 142 v8 M150 142 v8"/><path d="M78 112 q-10 -30 16 -42 q28 -10 38 14 q8 22 -16 32 q-22 8 -38 -4 z"/><circle cx="96" cy="86" r="2"/><circle cx="114" cy="94" r="2"/><circle cx="102" cy="104" r="2"/>',
   },
   {
     // on the concourse of Seoul Another Dome, left of the door as you come in
