@@ -13,12 +13,20 @@ globalThis.document ??= { createElement: () => ({ getContext: () => new Proxy({}
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 const cafe = stores.find((s) => s.workshop === 'livecafe');
 
-test('one live café, in Sinchon, on Sinchon-ro with the other shops', () => {
+test('one live café, in Sinchon, on a street with the other shops', () => {
   assert.equal(stores.filter((s) => s.workshop === 'livecafe').length, 1);
   assert.equal(cafe.district, 'seodaemun');
-  // Sinchon-ro runs along z = -388 (the district offset); shops sit 10 m off it.
-  assert.equal(Math.abs(cafe.at[1] + 388), 10);
-  for (const s of stores) if (s !== cafe && s.at) assert.ok(Math.hypot(s.at[0] - cafe.at[0], s.at[1] - cafe.at[1]) > 15, `not on top of ${s.id}`);
+  // On the pavement of one of Sinchon's streets (scripts/build-sinchon.mjs
+  // puts it by Sinchon Square), with a door of its own.
+  const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
+  const d = region.districts.find((x) => x.id === 'seodaemun');
+  const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url)));
+  const q = [cafe.at[0] - d.offset[0], cafe.at[1] - d.offset[1]];
+  const segDist = ([px, pz], [ax, az], [bx, bz]) => { const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz; const t = L ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L)) : 0; return Math.hypot(px - ax - t * dx, pz - az - t * dz); };
+  const near = map.roads.map((r) => ({ r, edge: Math.min(...r.p.slice(1).map((b, i) => segDist(q, r.p[i], b))) - r.w / 2 })).sort((a, b) => a.edge - b.edge)[0];
+  assert.ok(near.edge < 4, `by a street (${near.edge.toFixed(1)} m from ${near.r.n?.en})`);
+  assert.ok(near.r.k === 'walk' || near.edge > 0, `not on the road (${near.r.n?.en})`); // (on a walking street the door may stand at its edge)
+  for (const s of stores) if (s !== cafe && s.at) assert.ok(Math.hypot(s.at[0] - cafe.at[0], s.at[1] - cafe.at[1]) > 6, `not on top of ${s.id}`);
 });
 
 test('inside: a stage with a mic you can reach, seats, people already there, a clear walk from the door', async () => {

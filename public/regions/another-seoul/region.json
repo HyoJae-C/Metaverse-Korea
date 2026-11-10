@@ -91,10 +91,10 @@
       "id": "seodaemun",
       "map": "districts/seodaemun.json",
       "offset": [
-        -2520,
-        -388
+        -2622,
+        -430
       ],
-      "anchor": { "place": "Yonsei University campus (Campus-gil)", "lat": 37.565, "lon": 126.9415, "local": [0, -180] }
+      "anchor": { "place": "North end of Yonsei-ro, where it meets Seongsan-ro (Sinchon; scripts/build-sinchon.mjs)", "lat": 37.560051, "lon": 126.936873, "local": [0, 0], "why": "No nudge: Sinchon-ro, Yonsei-ro and the other streets are OpenStreetMap's at 1/4." }
     },
     {
       "id": "hongdae",
@@ -316,7 +316,7 @@
         ],
         [
           -2300,
-          -388
+          -348.5
         ]
       ],
       "n": {
@@ -324,17 +324,6 @@
         "en": "Sajik-ro",
         "ja": "社稷路",
         "zh": "社稷路"
-      }
-    },
-    {
-      "k": "primary",
-      "w": 14,
-      "p": [[-2843.7, -392.7], [-2790, -390], [-2740, -388]],
-      "n": {
-        "ko": "신촌로",
-        "en": "Sinchon-ro",
-        "ja": "新村路",
-        "zh": "新村路"
       }
     },
     {"k": "primary", "w": 14, "p": [[-3196.4, -296.6], [-3176.7, -269], [-3166.3, -227.7], [-3156.8, -191.2], [-3145.4, -143.5], [-3136.5, -131.8]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
@@ -658,23 +647,23 @@
           "ko": "이대",
           "en": "Ewha Womans Univ."
         },
-        "note": "At its real place (OSM): exits 1 and 4 within 1 m of the real ones. The Seodaemun map is hand-made and not yet on the real map, so its Sinchon-ro runs about 90 m north of the real road; exit 1 stands on West Lane's pavement, exit 4 on the grass east of it.",
+        "note": "At its real place (OSM): exits 1 and 4 moved straight out from the real ones onto Sinchon-ro's south pavement, either side of Yonsei-ro (scripts/build-sinchon.mjs).",
         "exits": [
           {
             "n": 1,
             "at": [
-              -2631,
-              -303
+              -2633.3,
+              -309.9
             ],
-            "ry": 0
+            "ry": -1.9847
           },
           {
             "n": 4,
             "at": [
-              -2613,
-              -302
+              -2610.9,
+              -307.8
             ],
-            "ry": 0
+            "ry": -1.3893
           }
         ]
       },
