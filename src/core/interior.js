@@ -3,6 +3,7 @@
 import { listeningBar } from './listening-bar-model.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
+import { RING, BOARD_ORDER } from './arcade.js';
 import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
@@ -349,12 +350,15 @@ function labelTexture(text, bg) {
 }
 
 // A dartboard face: 20 black/cream wedges, red/green double and triple
-// rings and the bull (the game itself is drawn in ui/darts-ui.js).
+// rings, the bull and the number ring, sized by the scoring rules
+// (core/arcade.js RING). Darts are played on this face (game/darts-view.js),
+// so it is drawn sharp enough to read the trebles up close.
 function dartboardTexture() {
+  const S = 512, C = S / 2, R = (S / 2) * 104 / 128; // scoring edge: 104/128 of the face (stations.dartboards r)
   const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const g = c.getContext('2d'), C = 128, R = 104;
-  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, 256, 256);
+  c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#1b1b20'; g.fillRect(0, 0, S, S);
   const ring = (r0, r1, cols) => {
     for (let i = 0; i < 20; i++) {
       const a0 = -Math.PI / 2 - Math.PI / 20 + (i * Math.PI) / 10, a1 = a0 + Math.PI / 10;
@@ -362,14 +366,20 @@ function dartboardTexture() {
       g.beginPath(); g.arc(C, C, r1 * R, a0, a1); g.arc(C, C, r0 * R, a1, a0, true); g.closePath(); g.fill();
     }
   };
-  ring(0.95, 1, ['#d9473c', '#2f8f5b']);
-  ring(0.63, 0.95, ['#1b1b20', '#f3e6c4']);
-  ring(0.58, 0.63, ['#d9473c', '#2f8f5b']);
-  ring(0.09, 0.58, ['#1b1b20', '#f3e6c4']);
-  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, 0.09 * R, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, 0.04 * R, 0, Math.PI * 2); g.fill();
+  ring(RING.doubleIn, 1, ['#d9473c', '#2f8f5b']);
+  ring(RING.tripleOut, RING.doubleIn, ['#1b1b20', '#f3e6c4']);
+  ring(RING.tripleIn, RING.tripleOut, ['#d9473c', '#2f8f5b']);
+  ring(RING.outerBull, RING.tripleIn, ['#1b1b20', '#f3e6c4']);
+  g.fillStyle = '#2f8f5b'; g.beginPath(); g.arc(C, C, RING.outerBull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#d9473c'; g.beginPath(); g.arc(C, C, RING.bull * R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fff'; g.font = `bold ${Math.round(S * 0.055)}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  BOARD_ORDER.forEach((n, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 10;
+    g.fillText(String(n), C + Math.cos(a) * R * 1.12, C + Math.sin(a) * R * 1.12);
+  });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   return tex;
 }
 

@@ -7,14 +7,15 @@
 // of about 20 minutes (and one at noon), and stops for rain or strong wind.
 // The exact times change from year to year, so the game doesn't copy them:
 // here a 20-minute show starts at half past most hours (Korean time), all
-// year, so whoever walks to Banpo soon gets to see one. Like the fireworks,
+// year (except while the Yeouido fireworks are on), so whoever walks to
+// Banpo soon gets to see one. Like the fireworks,
 // the sky turns to night only around the bridge during a show.
 //
 // Everyone's clock gives the same jets at the same moment (like the drone
 // show and the fireworks), so friends on the lawn watch the same show.
 
-import { smooth } from './show-clock.js';
-import { FIREWORKS_HOURS_KST, SHOW_SECONDS as FIREWORKS_SECONDS, fireworksHours } from './fireworks-show.js';
+import { smooth, showStarts, FIREWORKS } from './show-clock.js';
+import { SHOW_SECONDS as FIREWORKS_SECONDS } from './fireworks-show.js';
 
 export const FOUNTAIN_MINUTE = 30; // shows start at hh:30 KST
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
@@ -25,27 +26,22 @@ export const FINALE = [SHOW_SECONDS - 60, SHOW_SECONDS]; // photo time: every je
 
 const MIN = 60e3, HOUR = 60 * MIN, KST = 9 * HOUR;
 
-// No show while Yeouido's hour of fireworks is on (fireworks-show.js:
-// 09:00 and 21:00 KST unless operators moved them), so nobody has to choose
-// between the two. → the KST hours (0 … 23) whose hh:30 show is skipped.
-export function skipHours(fireworks = fireworksHours()) {
-  const out = [];
-  for (let h = 0; h < 24; h++) {
-    const a0 = h * 60 + FOUNTAIN_MINUTE - DUSK_SECONDS / 60, a1 = h * 60 + FOUNTAIN_MINUTE + (SHOW_SECONDS + DAWN_SECONDS) / 60;
-    if (fireworks.some((f) => [-1440, 0, 1440].some((d) => a0 < f * 60 + d + FIREWORKS_SECONDS / 60 && f * 60 + d < a1))) out.push(h);
-  }
-  return out;
+// No show while Yeouido's fireworks are on (fireworks-show.js: every other
+// night of the game's day), so nobody has to choose between the two.
+export function clashesWithFireworks(start) {
+  const a0 = start - DUSK_SECONDS * 1000, a1 = start + (SHOW_SECONDS + DAWN_SECONDS) * 1000;
+  return showStarts(start, FIREWORKS).some((f) => a0 < f + FIREWORKS_SECONDS * 1000 && f < a1);
 }
-export const SKIP_HOURS_KST = skipHours(FIREWORKS_HOURS_KST);
 const frac = (x) => x - Math.floor(x);
 
-// Show start times (ms) around `now`: from two hours before to two after.
+// Show start times (ms) around `now`: from two hours before to two after
+// (a skipped one can leave a gap of two hours).
 function startsAround(now) {
   const hour = Math.floor((now + KST) / HOUR); // hours since the epoch, Korean time
-  const out = [], skip = skipHours();
+  const out = [];
   for (let h = hour - 2; h <= hour + 2; h++) {
-    if (skip.includes(((h % 24) + 24) % 24)) continue;
-    out.push(h * HOUR - KST + FOUNTAIN_MINUTE * MIN);
+    const start = h * HOUR - KST + FOUNTAIN_MINUTE * MIN;
+    if (!clashesWithFireworks(start)) out.push(start);
   }
   return out;
 }

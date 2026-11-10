@@ -80,6 +80,7 @@ import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
+import { createUsedRack } from './game/used-rack.js';
 import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -93,10 +94,9 @@ import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed, darkness } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
-import { watchShowTimes } from './core/show-times-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -144,8 +144,8 @@ import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
-import { droneShowAt, setDroneShowTimes, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
+import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -1376,17 +1376,14 @@ const weather = new WeatherSystem({
 });
 
 // The operators' season and held weather (admin.html → Weather,
-// supabase/023_weather.sql) and the drone show and fireworks times
-// (admin.html → Shows, supabase/033_show_times.sql), the same for everyone. A little after
+// supabase/023_weather.sql), the same for everyone. A little after
 // start, so it never holds up joining the world.
-let weatherClient = null, stopWeather = null, stopShowTimes = null;
+let weatherClient = null, stopWeather = null;
 function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
-  stopShowTimes?.();
   weatherClient = cloud.client;
   stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
-  stopShowTimes = watchShowTimes(weatherClient, (raw) => { setDroneShowTimes(raw.drone); setFireworksTimes(raw.fireworks); });
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
@@ -3110,19 +3107,6 @@ $('steady-btn').onclick = () => {
   $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
   try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
 };
-// Day and night on my own clock instead of Seoul's (core/weather.js).
-{
-  let on = false;
-  try { on = localStorage.getItem('mk.localSky') === '1'; } catch { /* ignore */ }
-  setLocalSky(on);
-  $('localsky-btn').setAttribute('aria-pressed', String(on));
-  $('localsky-btn').onclick = () => {
-    on = !on;
-    setLocalSky(on);
-    $('localsky-btn').setAttribute('aria-pressed', String(on));
-    try { localStorage.setItem('mk.localSky', on ? '1' : '0'); } catch { /* ignore */ }
-  };
-}
 // Gentle ride effects (the roller coaster): half the zoom and shake, no leaning.
 const RIDE_FX_KEY = 'mk.rideFx'; // 'soft': the gentle ride effects (Settings)
 let rideFxSoft = false;
@@ -3387,15 +3371,6 @@ import('./game/minimap.js').then(({ createMinimap }) => {
     getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
-
-// Purple gu borders on the street, as on the map. (game/gu-borders.js)
-let guBorders = null;
-if (mapView.seoul?.borders) import('./game/gu-borders.js').then(({ createGuBorders }) => {
-  guBorders = createGuBorders({
-    scene, seoul: mapView.seoul, groundY: (x, z) => hillY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z),
-    getMe: () => me.root.position, onStreet: () => mode === 'street' && !subway.metro,
-  });
-}).catch(() => { /* no border line: the map still shows them */ });
 
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
@@ -3932,12 +3907,18 @@ const fishingUi = new FishingUI({
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
 receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+// Below it, the second-hand rack: what players sold to the shops, at 40% (game/used-rack.js).
+const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId,
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); }, get interior() { return interior; } });
 const resaleUi = new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
   list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   onSell: (r) => sellClothes(r),
+  rack: () => usedRack.view(),
+  onOpen: () => usedRack.refresh(),
+  onBuy: (r) => usedRack.buy(r),
 });
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {
@@ -3965,6 +3946,7 @@ async function sellNow(id, it, rc) {
   }
   inventory.remove(id);
   receipts.forget(id);
+  if (res.n > 0) usedRack.sold(op, id); // on the rack for others
   refreshWallet();
   sfx.pop?.();
   const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
@@ -4230,7 +4212,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -6406,7 +6388,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
-      next = { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
       next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
@@ -6414,7 +6396,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'hauntGallery', 2)) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
     } else if (nearStation(p, 'darts', 1.6)) {
-      next = { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
+      next = arcadeGame.camOn() ? null : { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
     } else if (duckBoats.boardAction(p)) {
       next = duckBoats.boardAction(p);
     } else if (martCounter(p)) {
@@ -6617,7 +6599,7 @@ let snowCoverAt = 0;
 // First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
-  canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+  canUse: () => !arcadeGame.camOn() && !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
@@ -6652,7 +6634,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
-  const canSteer = !seated && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
   if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
@@ -6804,6 +6786,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
+  arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
   surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
   else if (ride?.pose) {
@@ -6852,7 +6835,6 @@ renderer.setAnimationLoop((now) => {
   updateAction(p, tSec);
   mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
-  guBorders?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
@@ -7087,6 +7069,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    usedRack, // the second-hand rack (game/used-rack.js), for tests
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpu: () => ({ ...renderer.info.memory }),
@@ -7111,6 +7094,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
+    dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)

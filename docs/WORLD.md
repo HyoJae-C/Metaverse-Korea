@@ -126,6 +126,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
+- `closed` (region.json) is land not built yet in Seocho, Gangnam and Dongjak:
+  rectangles you can't walk into, drawn grey on the street, the map and the
+  minimap. `node scripts/build-closed.mjs` writes it, leaving 30 m open around
+  anything built; run it again after building there.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
   `blockers` split around a bridge to leave a gap. The Han's banks there
@@ -323,6 +327,28 @@ Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
 - **Keep things off the slope.** Anything drawn at y 0 (street trees, link
   roads) would be under the hill: `tests/gyeongnidan.test.mjs` checks the
   Itaewon-ro link stays clear of it.
+
+## Namsan and its cable car (Yongsan-gu / Jung-gu)
+
+`scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap
+(`scripts/data/namsan-osm.json`) and writes it into `districts/itaewon.json`
+(items marked `ns`), the cable car's door in `stores.json` and the Sopa-ro
+link in `region.json`.
+
+- **The hill**: its top, with the look-out tower, on N Seoul Tower's real
+  spot, 65 m high (262 m / 4). Its foot (380 × 340 m) fits between Sopa-ro
+  and Sowol-ro on the west, Namsangol Hanok Village on the north and
+  Itaewon on the south; real Namsan runs on further east to Beotigogae.
+  The summit is near the real hill's west end, so the hill leans west
+  (`src/core/namsan-shape.js`).
+- **The cable car**: the lower station on the real one by Sopa-ro, above
+  Myeongdong (moved 5 m to clear the road), and the cable up to the real
+  upper station by the tower, high enough over the trees.
+- **Getting there**: Sopa-ro on its real line from Toegye-ro (by Myeongdong)
+  round to Sowol-ro. From Itaewon, the Namsan trail runs up from Sowol-ro to
+  the foot of the hill; the cable car is round the west side.
+- `tests/namsan.test.mjs` keeps the tower, both stations and the cable within
+  15 m of the real places.
 
 ## Samseong-dong (Gangnam-gu)
 
@@ -592,7 +618,7 @@ HANEUL (하늘), a fictional brand, has a department store (north of the west
 lake) and a mall (north of the east lake) between Olympic-ro and the lakes,
 where the real shopping complex by Jamsil Station stands. Another Tower
 (어나더타워, fictional) stands at the real 555 m tower's place just south-east
-of Jamsil Station, at 1/4 (139 m to the tip, 18 m across). Their footprints are `custom` buildings in `districts/songpa.json`
+of Jamsil Station, at half height (278 m to the tip, 35 m across: the real shape at that height, a map exception Yozi chose). Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore.

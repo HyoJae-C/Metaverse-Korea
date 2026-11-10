@@ -18,6 +18,7 @@ export const COLORS = {
   water: 0x7cc4e8,
   plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
   sand: 0xe6d6b2, // palace courtyards
+  closed: 0xa8a297, // land not built yet, that you can't walk into (region.json "closed"; grey like "coming soon" on the map)
   stone: 0xdcd6ca, // flagstone paving (박석): Gyeongbokgung's courtyards (drawn with stoneTexture)
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
@@ -42,6 +43,10 @@ export function buildWorld(map, scene, opts = {}) {
   const bounds = computeBounds(map);
   let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
+  // Land not built yet: one flat grey mesh just over the ground, under
+  // everything else (core/districts.js closed).
+  const closed = makeFlatPolys(map.closed || [], COLORS.closed, 0.006);
+  if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {

@@ -70,7 +70,9 @@ export function haneulStore(g, l) {
 // The tower: TIERS octagonal sections narrowing upwards, white rings between
 // them, a lantern and a spire with a red light on top. r: base radius (the
 // map's octagon, corners at sin/cos of k·45°, the same as CylinderGeometry).
-export const TOWER = { r: 9, top: 4, tiers: 6, tier: 20, spire: 13 }; // 139 m to the tip: the real 555 m tower at 1/4
+// 278 m to the tip, half the real 555 m tower, and 35 m across at the base,
+// the real tower's own shape at that height (Yozi: a map exception).
+export const TOWER = { r: 17.5, top: 7.8, tiers: 6, tier: 40, lantern: 12, spire: 26 };
 export function haneulTower(g) {
   const T = TOWER;
   const glass = new THREE.MeshLambertMaterial({ color: '#9cc3e0', flatShading: true });
@@ -79,7 +81,7 @@ export function haneulTower(g) {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(rAt(i + 1), rAt(i), T.tier, 8), glass);
     m.position.y = i * T.tier + T.tier / 2;
     g.add(m);
-    const ring = new THREE.Mesh(new THREE.CylinderGeometry(rAt(i + 1) + 0.3, rAt(i + 1) + 0.3, 0.8, 8), mat('#f4f1ea'));
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(rAt(i + 1) + 0.5, rAt(i + 1) + 0.5, 1.4, 8), mat('#f4f1ea'));
     ring.position.y = (i + 1) * T.tier;
     g.add(ring);
   }
@@ -87,17 +89,17 @@ export function haneulTower(g) {
   // White fins up the eight corners make it read as one tall shape from afar.
   for (let k = 0; k < 8; k++) {
     const a = (k * Math.PI) / 4, r0 = rAt(0), r1 = rAt(T.tiers);
-    const fin = box(g, 0.5, Math.hypot(H, r0 - r1), 0.5, Math.sin(a) * (r0 + r1) / 2, H / 2, Math.cos(a) * (r0 + r1) / 2, '#f4f1ea');
+    const fin = box(g, 0.9, Math.hypot(H, r0 - r1), 0.9, Math.sin(a) * (r0 + r1) / 2, H / 2, Math.cos(a) * (r0 + r1) / 2, '#f4f1ea');
     // lean it in with the taper: a turn round the horizontal axis at right angles to its corner
     fin.rotateOnWorldAxis(new THREE.Vector3(Math.cos(a), 0, -Math.sin(a)), -Math.atan2(r0 - r1, H));
   }
-  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(T.top * 0.7, T.top, 6, 8), new THREE.MeshLambertMaterial({ color: '#dff0ff', emissive: '#3b6fa8', emissiveIntensity: 0.35 }));
-  lantern.position.y = H + 3;
+  const lantern = new THREE.Mesh(new THREE.CylinderGeometry(T.top * 0.7, T.top, T.lantern, 8), new THREE.MeshLambertMaterial({ color: '#dff0ff', emissive: '#3b6fa8', emissiveIntensity: 0.35 }));
+  lantern.position.y = H + T.lantern / 2;
   g.add(lantern);
   const spire = new THREE.Mesh(new THREE.ConeGeometry(T.top * 0.55, T.spire, 8), mat('#e8edf2'));
-  spire.position.y = H + 6 + T.spire / 2;
+  spire.position.y = H + T.lantern + T.spire / 2;
   g.add(spire);
-  const light = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff4a4a' }));
-  light.position.y = H + 6 + T.spire + 0.4;
+  const light = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ color: '#ff4a4a' }));
+  light.position.y = H + T.lantern + T.spire + 0.6;
   g.add(light);
 }

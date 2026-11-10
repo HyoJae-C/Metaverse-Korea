@@ -1,48 +1,44 @@
 // Shared clock helpers for the timed shows (drone-show.js, fireworks-show.js,
-// rainbow-fountain.js). Pure, no DOM.
-
-const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
+// rainbow-fountain.js) and the game's day (weather.js). Pure, no DOM.
+//
+// The game's day is two hours long, the same for everyone (worked out from
+// the clock, like the weather): 15 minutes of morning, 50 of day, 15 of
+// sunset and 40 of night. Every other night has a show, taking turns: the
+// Yeouido fireworks, a quiet night, the Ttukseom drone show, a quiet night.
+// So each show comes three times a real day (every 8 hours), and wherever
+// you live, night comes round within two hours and a show within four. (Yozi)
 
 // 0 → 1 with soft ends (smoothstep), clamped.
 export const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
 
-// Show start times (ms) around `now` for shows at these whole hours on
-// Korean time: yesterday, today and tomorrow, in order.
-export function dailyStarts(now, hours) {
-  const kstMidnight = Math.floor((now + KST) / DAY) * DAY - KST;
-  const out = [];
-  for (const d of [-1, 0, 1]) for (const h of hours) out.push(kstMidnight + d * DAY + h * HOUR);
-  return out.sort((a, b) => a - b);
+const MIN = 60e3;
+export const CYCLE = { morning: 15, day: 50, sunset: 15, night: 40 }; // minutes, in this order
+export const CYCLE_MS = (CYCLE.morning + CYCLE.day + CYCLE.sunset + CYCLE.night) * MIN;
+export const NIGHT_FROM = (CYCLE.morning + CYCLE.day + CYCLE.sunset) * MIN; // into the cycle
+export const SHOW_FROM = NIGHT_FROM + 10 * MIN; // a show starts 10 minutes into the night (its notice comes at nightfall)
+export const FIREWORKS = 0, DRONES = 2; // which show a cycle has: by its number mod 4 (1 and 3: none)
+
+export const cycleNumber = (t) => Math.floor(t / CYCLE_MS);
+export const cycleMs = (t) => ((t % CYCLE_MS) + CYCLE_MS) % CYCLE_MS; // how far into its cycle
+export const SHOW_EVERY = 4; // cycles from one fireworks show to the next
+export const showOf = (n) => ((n % SHOW_EVERY) + SHOW_EVERY) % SHOW_EVERY;
+
+// The game's clock as an hour of a 24-hour day (sunrise 6:00, sunset
+// 18:00, the sky's colours in weather.js): morning runs 5:18–8:00, day
+// 8:00–16:30, sunset 16:30–18:42, night 18:42–5:18.
+export const SKY_SUN = { rise: 6, set: 18 };
+const SKY_HOURS = [5.3, 8, 16.5, 18.7, 29.3];
+export function gameHour(now) {
+  let m = cycleMs(now) / MIN, i = 0;
+  const lens = [CYCLE.morning, CYCLE.day, CYCLE.sunset, CYCLE.night];
+  while (i < 3 && m >= lens[i]) m -= lens[i++];
+  return (SKY_HOURS[i] + ((SKY_HOURS[i + 1] - SKY_HOURS[i]) * m) / lens[i]) % 24;
 }
 
-// ---- Operator-set start times (admin.html → Shows) ----
-// Times are minutes after midnight KST (0 … 1439).
-
-// "18:30" for 1110.
-export const clockText = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-
-// Checks one show's list of start times: 1 to `max` of them, at least `gap`
-// minutes apart (round the clock too). → { minutes } sorted, or { error }:
-// 'empty', 'many', 'bad', 'close'.
-export function checkTimes(list, { max = 4, gap = 60 } = {}) {
-  if (!Array.isArray(list) || !list.length) return { error: 'empty' };
-  if (list.length > max) return { error: 'many' };
-  if (list.some((m) => !Number.isInteger(m) || m < 0 || m >= 1440)) return { error: 'bad' };
-  const minutes = [...list].sort((a, b) => a - b);
-  if (minutes.length > 1) {
-    for (let i = 0; i < minutes.length; i++) {
-      const next = i + 1 < minutes.length ? minutes[i + 1] : minutes[0] + 1440;
-      if (next - minutes[i] < gap) return { error: 'close' };
-    }
-  }
-  return { minutes };
-}
-
-// Whether two shows ever overlap: a starts at minutes `a` and lasts from
-// spanA[0] to spanA[1] minutes around each start, b the same (round the clock).
-export function timesOverlap(a, spanA, b, spanB) {
-  for (const x of a) for (const y of b) for (const d of [-1440, 0, 1440]) {
-    if (x + spanA[0] < y + d + spanB[1] && y + d + spanB[0] < x + spanA[1]) return true;
-  }
-  return false;
+// Start times (ms) of one show (FIREWORKS or DRONES) around `now`: from
+// four cycles back to four ahead, in order.
+export function showStarts(now, which) {
+  const n = cycleNumber(now), out = [];
+  for (let k = n - SHOW_EVERY; k <= n + SHOW_EVERY; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
+  return out;
 }
