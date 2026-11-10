@@ -247,14 +247,14 @@ const folkYardAt = { x: (yx0 + yx1) / 2, z: (yz0 + yz1) / 2 };
 landmarks.push({ type: 'wall', p: [[g + 3, hz0], [hx1, hz0], [hx1, hz1], [hx0, hz1], [hx0, hz0], [g - 3, hz0]], h: 2.6 });
 landmarks.push({ type: 'hanokgate', x: g, z: hz0 });
 
-// The boards by the gates (facts checked 2026-11-07).
+// The boards by the gates (facts checked 2026-11-07; the four boards and King Yeongjo's 1743 poem from Yozi, 2026-11-11).
 const HEUNGINJIMUN = {
   title: N('흥인지문', 'Heunginjimun', '興仁之門', '兴仁之门'),
   text: {
-    ko: '한양도성의 동쪽 정문, 흔히 동대문이라고 불러요. 지금의 문은 1869년에 다시 지은 것이에요. 사대문 가운데 유일하게 문 앞을 반달 모양 성벽(옹성)이 감싸고 있어요.',
-    en: 'The great east gate of Seoul\'s old city wall, often called Dongdaemun. The gate standing today was rebuilt in 1869. It is the only one of the four great gates with an ongseong, the half-moon wall that wraps round its front.',
-    ja: '漢陽都城の東の正門で、よく東大門と呼ばれます。今の門は1869年に建て直されたものです。四大門の中で唯一、門の前を半月形の城壁（甕城）が囲んでいます。',
-    zh: '汉阳都城的东正门，常被称为东大门。现在的城门是1869年重建的。它是四大门中唯一一座门前有半月形瓮城环绕的城门。',
+    ko: '한양도성의 동쪽 정문, 흔히 동대문이라고 불러요. 지금의 문은 1869년에 다시 지은 것이에요. 사대문 가운데 유일하게 문 앞을 반달 모양 성벽(옹성)이 감싸고 있어요. 편액은 네 개예요. "흥인지문" 현판 두 개(글씨는 퇴계 이황이 썼다고 전해져요), 1869년에 다시 지은 기록, 그리고 1743년 영조가 정릉에 다녀오다 이 문에 올라 지은 시예요. "마음은 오직 백성을 위한 정성에 있네."',
+    en: 'The great east gate of Seoul\'s old city wall, often called Dongdaemun. The gate standing today was rebuilt in 1869. It is the only one of the four great gates with an ongseong, the half-moon wall that wraps round its front. Four boards hang on it: two name boards (the writing is said to be by the scholar Yi Hwang, called Toegye), a record of the 1869 rebuilding, and a poem King Yeongjo wrote in 1743 when he climbed the gate on his way back from Jeongneung: "My heart lies only in sincerity for the people."',
+    ja: '漢陽都城の東の正門で、よく東大門と呼ばれます。今の門は1869年に建て直されたものです。四大門の中で唯一、門の前を半月形の城壁（甕城）が囲んでいます。扁額は四つあります。「興仁之門」の額が二つ（字は学者・李滉（退渓）の筆と伝わります）、1869年の再建の記録、そして1743年に英祖が貞陵からの帰りにこの門に登って詠んだ詩です。「心はただ民のための誠にあり」。',
+    zh: '汉阳都城的东正门，常被称为东大门。现在的城门是1869年重建的。它是四大门中唯一一座门前有半月形瓮城环绕的城门。城门上有四块匾额：两块“兴仁之门”匾（字传为学者李滉（退溪）所写）、一块1869年重建的记录，还有一块是1743年英祖从贞陵回来时登上此门所作的诗：“一心惟在为民诚。”',
   },
 };
 // (Cultural Heritage Administration / Korea Heritage Service)
@@ -302,28 +302,32 @@ export const GATE = { x: -1774, z: -429, ring: [-1828, -465, -1720, -393] };
 }
 
 // ---------- Heunginjimun (흥인지문, Dongdaemun) ----------
-// Its real spot (OSM.places.Heunginjimun) is only 37 m north of the stream,
-// and Cheonggyecheon is game width here (scripts/cheonggyecheon-line.mjs), so
-// the gate (game size, with its ongseong) stands HEUNG.why m from it: as
-// far south as it goes with the ongseong 2 m clear of Cheonggyecheon-ro's
-// north road. Jongno splits round it like the real one, in a U: the island's
-// south side is the north road itself (the real island runs down to the
-// stream side too). The arch runs east-west; the half-moon ongseong wraps its
-// east side, open to the north. A walk comes up from the north road (the
-// link from Ogansugyo Bridge), crosses the lawn, goes through the arch and
-// out of the ongseong. Only the wall north of the gate is there (the real
-// one south of it is gone).
+// At half the real size (Yozi, 2026-11-11; the model is heungGate in
+// src/core/euljiro-models.js, these sizes are its HEUNG_GATE): the base
+// 13 m along the wall and 8 m through, stepped wing walls 3.6 m either side,
+// and the ongseong, a half-moon wall 11.5 m out round its east front, open
+// to the north. Its real spot (OSM.places.Heunginjimun) is only 37 m north
+// of the stream and Cheonggyecheon is game width here
+// (scripts/cheonggyecheon-line.mjs), so the gate stands HEUNG.why m north of
+// it: as far south as it goes with the ongseong's hedge clear of
+// Cheonggyecheon-ro's north road and the walk round it. Jongno splits round
+// it like the real one, in a U: the island's south side is the north road
+// itself. A walk comes up from the north road (the link from Ogansugyo
+// Bridge), round the west side, through the arch, across the ongseong's
+// yard and out of its open north side. The wall goes on north of the gate
+// (the real one south of it is gone). Pines, trees and wild flowers round
+// the lawn, like the real Heunginjimun Park beside it.
+export const HEUNG_SIZE = { W: 13, D: 8, A: 1.3, wing: 3.6, R: 11.5, rx: 10.4 };
 export const HEUNG = (() => {
-  // x: straight up from Ogansugyo Bridge, 4 m east of the real gate (whose
-  // ongseong reaches 6 m further east, so the whole gate's middle is on it).
-  const real = OSM.places.Heunginjimun, R = 20, w = 12; // R: the ongseong's reach north and south
-  const x = Math.round(cgAt(BRIDGES.find((b) => b.name.en.startsWith('Ogansugyo')).u)[0]);
-  const lawnS = (q) => zAt(CG_NORTH, q) - 4.5 - 2; // the lawn's south edge: 2 m clear of the north road
+  const real = OSM.places.Heunginjimun, w = 12, { R } = HEUNG_SIZE;
+  const x = real[0];
+  const bx = Math.round(cgAt(BRIDGES.find((b) => b.name.en.startsWith('Ogansugyo')).u)[0]);
+  const lawnS = (q) => zAt(CG_NORTH, q) - 4.5; // the north road's north edge
   let edge = Infinity;
-  for (let q = x - 30; q <= x + 30; q += 2) edge = Math.min(edge, lawnS(q));
-  const z = Math.floor(edge - R);
-  const rx0 = x - 32, rx1 = x + 34, rz1 = z - 32; // the ring road's middle: west, east, north (6 m clear of the wall north of the gate)
-  return { x, z, w, ring: [rx0, z, rx1, rz1], south: [zAt(CG_NORTH, rx0), zAt(CG_NORTH, rx1)], real, why: r1(Math.hypot(x - real[0], z - real[1])) };
+  for (let q = x - 20; q <= x + 20; q += 2) edge = Math.min(edge, lawnS(q));
+  const z = Math.floor(edge - 4 - R - 1.5); // the walk (4 m), the ongseong, its hedge
+  const rx0 = x - 32, rx1 = x + 34, rz1 = z - 24; // the ring road's middle: west, east, north (6 m clear of the wall north of the gate)
+  return { x, z, w, bx, edge, ring: [rx0, z, rx1, rz1], south: [zAt(CG_NORTH, rx0), zAt(CG_NORTH, rx1)], real, why: r1(Math.hypot(x - real[0], z - real[1])) };
 })();
 // Jongno's real line (OSM, euljiro-ddp export) comes in from the west at
 // about z -740 and leaves east-south-east past z -764 towards Dongmyo. The
@@ -344,24 +348,43 @@ const DONGMYO_JONGNO = [-948, -767];
   const e = w / 2 + 2, lx0 = rx0 + e, lx1 = rx1 - e, lz1 = rz1 + e, lzS = Math.min(lawnS, zAt(CG_NORTH, x) - 5.5);
   // The lawn: inside the roads, its north-west and north-east corners cut like the road's.
   areas.push({ k: 'park', p: [[lx0, lzS], [lx0, nw[1]], [rx0 + 19 + 6, lz1], [ne[0], lz1], [lx1, turn[1] + e], [lx1, lzS]] });
-  roads.push({ k: 'walk', w: 4, p: [[x, zAt(CG_NORTH, x) - 4.5], [x, z + 14], [x - 20, z + 14], [x - 20, z], [x + 10, z], [x + 10, rz1 + w / 2 + 1]] });
-  // The base: piers north and south of the arch; the ongseong's ring of wall
-  // (east of the base, open on its north side).
-  blockers.push({ p: rect(x - 6, z - 12, x + 6, z - 2.5) }, { p: rect(x - 6, z + 2.5, x + 6, z + 12) });
-  const Rr = 20, cx = x + 6;
-  const arc = [];
-  for (let a = -Math.PI / 2; a <= Math.PI / 2 - 0.5; a += Math.PI / 14) arc.push([r1(cx + Math.cos(a) * Rr * 0.9), r1(z - Math.sin(a) * Rr)]);
+  // The walk: up from the bridge, west along the lawn's south edge, up the
+  // west side, through the arch, across the ongseong's yard and out north.
+  const { W, D, A, wing, R: OR, rx: ORX } = HEUNG_SIZE, half = W / 2, wz = HEUNG.edge - 2.5;
+  roads.push({ k: 'walk', w: 4, p: [[HEUNG.bx, HEUNG.edge], [HEUNG.bx, wz], [x - 13, wz], [x - 13, z], [x + D / 2 + 3, z], [x + D / 2 + 3, z - OR - 3], [x + D / 2 + 3, rz1 + w / 2 + 1]] });
+  // The base (two piers either side of the arch) and its wing walls.
+  blockers.push({ p: rect(x - D / 2, z - half, x + D / 2, z - A) }, { p: rect(x - D / 2, z + A, x + D / 2, z + half) });
+  blockers.push({ p: rect(x - D * 0.4, z - half - wing, x + D * 0.4, z - half) }, { p: rect(x - D * 0.4, z + half, x + D * 0.4, z + half + wing) });
+  // The ongseong: from the south wing's end round the east front, open on
+  // the north (its west end stops 5 m short of the north wing).
+  const cx = x + D / 2, arc = [];
+  for (let a = -Math.PI / 2; a <= Math.PI / 2 - 0.45; a += Math.PI / 16) arc.push([r1(Math.cos(a) * ORX), r1(-Math.sin(a) * OR)]);
   for (let i = 1; i < arc.length; i++) {
-    const [ax, az] = arc[i - 1], [bx, bz] = arc[i];
-    const nx = (az - bz), nz = (bx - ax), l = Math.hypot(nx, nz) || 1, k = 1.4 / l;
+    const [ax, az] = arc[i - 1].map((v, k) => v + [cx, z][k]), [bx, bz] = arc[i].map((v, k) => v + [cx, z][k]);
+    const nx = (az - bz), nz = (bx - ax), l = Math.hypot(nx, nz) || 1, k = 0.85 / l;
     blockers.push({ p: [[ax + nx * k, az + nz * k], [bx + nx * k, bz + nz * k], [bx - nx * k, bz - nz * k], [ax - nx * k, az - nz * k]] });
   }
   landmarks.push({ type: 'heunginjimun', x, z, ry: Math.PI / 2 }); // the name board faces east, into the ongseong
-  landmarks.push({ type: 'wall', p: arc, h: 6 });
-  landmarks.push({ type: 'citywall', x, z: z - 18, len: 12, gates: 0 });
-  blockers.push({ p: rect(x - 2, z - 24, x + 2, z - 12) });
-  landmarks.push({ type: 'sign', x: x - 12, z: z + 18, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
+  landmarks.push({ type: 'ongseong', x: cx, z, arc, h: 3.4 });
+  // The wall going on north (at 60%, like the gate).
+  landmarks.push({ type: 'citywall', x, z: z - half - wing - 3, len: 10, gates: 0, sc: [0.6, 0.6] });
+  blockers.push({ p: rect(x - 1.2, z - half - wing - 6, x + 1.2, z - half - wing) });
+  landmarks.push({ type: 'sign', x: x - 9, z: wz - 5, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
   pois.push({ kind: 'landmark', x, z: z - 14, name: N('흥인지문 (동대문)', 'Heunginjimun (Dongdaemun)', '興仁之門（東大門）', '兴仁之门（东大门）') });
+  // Green round it: trees along the lawn's edges (pines among them), off
+  // the walks, and patches of wild flowers in the open corners.
+  const spots = [];
+  const tree = (tx, tz) => {
+    const offWalk = Math.abs(tx - (x - 13)) > 4 && Math.abs(tz - wz) > 4 && !(Math.abs(tx - (x + D / 2 + 3)) < 4 && tz < z);
+    const offGate = Math.hypot(tx - cx, tz - z) > OR + 4 && !(tx > x - D / 2 - 4 && tx < x + D / 2 + 4 && tz > z - half - wing - 9 && tz < z + half + wing + 2);
+    if (offWalk && offGate && Math.hypot(tx - (x - 9), tz - (wz - 5)) > 4) spots.push([r1(tx), r1(tz)]);
+  };
+  for (let tz = lzS - 4; tz > nw[1] - 2; tz -= 6.5) tree(lx0 + 3, tz); // the west side
+  for (let tx = lx0 + 9; tx < ne[0]; tx += 7) tree(tx, Math.max(lz1 + 3, nw[1] + ((lz1 - nw[1]) * (tx - lx0)) / (rx0 + 25 - lx0) + 3)); // the north side
+  for (let tz = lzS - 4; tz > turn[1] + e + 2; tz -= 6.5) tree(lx1 - 3, tz); // the east side
+  for (let tx = cx + ORX + 7; tx < lx1 - 6; tx += 7) tree(tx, lz1 + 9); // a second row in the north-east
+  landmarks.push({ type: 'shrinetrees', x, z, spots: spots.map(([tx, tz]) => [r1(tx - x), r1(tz - z)]) });
+  for (const [mx, mz, r] of [[lx0 + 9, z - 8, 4], [lx0 + 10, lzS - 7, 3.5], [lx1 - 8, z + 2, 4.5], [lx1 - 9, lzS - 6, 3.5], [x - 4, lz1 + 6, 3.5]]) landmarks.push({ type: 'meadow', x: r1(mx), z: r1(mz), r, clear: r + 1 });
 }
 
 // ---------- Into the district's own metres ----------
