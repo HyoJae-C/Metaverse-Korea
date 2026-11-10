@@ -145,10 +145,10 @@
       "id": "euljiro",
       "map": "districts/euljiro.json",
       "offset": [
-        -1000,
-        -525
+        -1057,
+        -594
       ],
-      "anchor": { "place": "Dongdaemun Design Plaza (DDP)", "lat": 37.5667, "lon": 127.009, "local": [-10, 0], "nudge": [20, 90], "why": "DDP's real spot is under the south row of towers along Cheonggyecheon, so the district sits just south of that strip: Eulji-ro runs along its north edge and the walk from DDP's corner leads straight north to Ogansugyo Bridge." }
+      "anchor": { "place": "Dongdaemun History & Culture Park Station, where Jangchungdan-ro crosses Eulji-ro", "lat": 37.5659541, "lon": 127.0077934, "local": [0, 0], "why": "No nudge: the streets are on their real lines. DDP keeps its game size (bigger than its real block at 1/4), so its middle stands about 38 m east of the real one, as far west as it fits while the Cheonggyecheon strip is south of its real line." }
     },
     {
       "id": "grand-park",
@@ -208,9 +208,9 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1720, -440], [-1133, -440]],
+      "p": [[-1720, -440], [-1623.7, -437.4], [-1595, -447], [-1530, -454], [-1465, -464], [-1430, -459.5], [-1379, -458], [-1334, -470], [-1263, -490], [-1185, -512], [-1149, -525], [-1133, -529]],
       "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
-      "note": "Toegye-ro starts at Sungnyemun and runs east to Namsangol and DDP."
+      "note": "Toegye-ro starts at Sungnyemun and runs east past Myeongdong and Namsangol to DDP, on its real line (OpenStreetMap, scripts/data/euljiro-osm.json)."
     },
     {
       "k": "primary",
@@ -222,37 +222,23 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1699, -597], [-1133, -597]],
+      "p": [[-1699, -597], [-1595, -597], [-1504, -600], [-1391, -606], [-1271, -613], [-1195, -614], [-1133, -612]],
       "n": { "ko": "을지로", "en": "Eulji-ro", "ja": "乙支路", "zh": "乙支路" },
-      "note": "Eulji-ro from Sejong-daero (by City Hall) east to DDP."
+      "note": "Eulji-ro from Sejong-daero (by City Hall) east to DDP, on its real line (OpenStreetMap) except by Euljiro 4-ga, where it keeps 5 m north of it, clear of the towers along Cheonggyecheon."
     },
     {
       "k": "tertiary",
       "w": 8,
-      "p": [[-1004, -605], [-1004, -659]],
-      "n": { "ko": "오간수교 가는 길", "en": "To Ogansugyo Bridge", "ja": "五間水橋へ", "zh": "往五间水桥" },
-      "note": "From Eulji-ro at DDP's corner north between the towers to Cheonggyecheon-ro, at the foot of Ogansugyo Bridge."
-    },
-    {
-      "k": "tertiary",
-      "w": 8,
-      "p": [[-1133, -605], [-1133, -659]],
+      "p": [[-1133, -620], [-1133, -659]],
       "n": { "ko": "창경궁로", "en": "Changgyeonggung-ro", "ja": "昌慶宮路", "zh": "昌庆宫路" },
       "note": "Changgyeonggung-ro, the west edge of the DDP district, north through the gap in the towers to Cheonggyecheon-ro and Baeogae Bridge."
     },
     {
-      "k": "secondary",
-      "w": 10,
-      "p": [[-935, -605], [-935, -659]],
-      "n": { "ko": "장충단로", "en": "Jangchungdan-ro", "ja": "奨忠壇路", "zh": "奖忠坛路" },
-      "note": "From DDP and the fashion malls north to Cheonggyecheon-ro."
-    },
-    {
       "k": "primary",
       "w": 16,
-      "p": [[-840, -440], [-735, -440]],
+      "p": [[-840, -581], [-735, -585]],
       "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
-      "note": "Toegye-ro east from Euljiro's district to Wangsimni-ro (to Seongsu)."
+      "note": "Toegye-ro east from Euljiro's district past Sindang to Wangsimni-ro (to Seongsu)."
     },
     {
       "k": "primary",
@@ -642,7 +628,7 @@
         "exits": [{"n": 9, "at": [-2926, -314.3], "ry": 2.3261}, {"n": 3, "at": [-2877.3, -387.2], "ry": -0.8155}]
       },
       {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "On Worldcup-ro at its real place (exits on both pavements, within 12 m of the real ones), a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3207.7, -328.6], "ry": -2.5155}, {"n": 2, "at": [-3223.3, -317.4], "ry": 0.6261}]},
-      { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro at the north-west corner of DDP, by the park. Lines 4 and 5 also stop here; the signs show Line 2.", "exits": [{ "n": 1, "at": [-1100, -584], "ry": -1.5708 }, { "n": 2, "at": [-1080, -584], "ry": 1.5708 }] },
+      { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro where Jangchungdan-ro crosses it, by the park and DDP. Lines 4 and 5 also stop here; the signs show Line 2. Exits 1 and 10 at their real places either side of Eulji-ro, moved out of the road onto the pavement (scripts/build-euljiro.mjs stationExits).", "exits": [{ "n": 1, "at": [-1024.2, -594.1], "ry": 1.1903 }, { "n": 10, "at": [-1049.1, -580.9], "ry": 1.281 }] },
       {
         "id": "itaewon-station",
         "name": {
