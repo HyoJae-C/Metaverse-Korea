@@ -3,10 +3,10 @@
 //
 // The game's day is two hours long, the same for everyone (worked out from
 // the clock, like the weather): 15 minutes of morning, 50 of day, 15 of
-// sunset and 40 of night. Every other night has a show, taking turns: the
-// Yeouido fireworks, a quiet night, the Ttukseom drone show, a quiet night.
-// So each show comes three times a real day (every 8 hours), and wherever
-// you live, night comes round within two hours and a show within four. (Yozi)
+// sunset and 40 of night. One night in five has a show (every 10 hours),
+// taking turns: the Yeouido fireworks, then the Ttukseom drone show. Each
+// show comes every 20 hours, so its time moves on by 4 hours a day and
+// wherever you live it comes round at a good hour sooner or later. (Yozi)
 
 // 0 → 1 with soft ends (smoothstep), clamped.
 export const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
@@ -16,12 +16,14 @@ export const CYCLE = { morning: 15, day: 50, sunset: 15, night: 40 }; // minutes
 export const CYCLE_MS = (CYCLE.morning + CYCLE.day + CYCLE.sunset + CYCLE.night) * MIN;
 export const NIGHT_FROM = (CYCLE.morning + CYCLE.day + CYCLE.sunset) * MIN; // into the cycle
 export const SHOW_FROM = NIGHT_FROM + 10 * MIN; // a show starts 10 minutes into the night (its notice comes at nightfall)
-export const FIREWORKS = 0, DRONES = 2; // which show a cycle has: by its number mod 4 (1 and 3: none)
+export const FIREWORKS = 0, DRONES = 1, NO_SHOW = -1;
 
 export const cycleNumber = (t) => Math.floor(t / CYCLE_MS);
 export const cycleMs = (t) => ((t % CYCLE_MS) + CYCLE_MS) % CYCLE_MS; // how far into its cycle
-export const SHOW_EVERY = 4; // cycles from one fireworks show to the next
-export const showOf = (n) => ((n % SHOW_EVERY) + SHOW_EVERY) % SHOW_EVERY;
+export const SHOW_EVERY = 5; // cycles (nights) from one show to the next
+const mod = (a, b) => ((a % b) + b) % b;
+// Which show cycle n has: FIREWORKS, DRONES or NO_SHOW.
+export const showOf = (n) => (mod(n, SHOW_EVERY) ? NO_SHOW : mod(n / SHOW_EVERY, 2));
 
 // The game's clock as an hour of a 24-hour day (sunrise 6:00, sunset
 // 18:00, the sky's colours in weather.js): morning runs 5:18–8:00, day
@@ -36,9 +38,9 @@ export function gameHour(now) {
 }
 
 // Start times (ms) of one show (FIREWORKS or DRONES) around `now`: from
-// four cycles back to four ahead, in order.
+// two shows back to two ahead, in order.
 export function showStarts(now, which) {
   const n = cycleNumber(now), out = [];
-  for (let k = n - SHOW_EVERY; k <= n + SHOW_EVERY; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
+  for (let k = n - 4 * SHOW_EVERY; k <= n + 4 * SHOW_EVERY; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
   return out;
 }

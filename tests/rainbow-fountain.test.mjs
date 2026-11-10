@@ -31,7 +31,7 @@ test('never while the Yeouido fireworks are on', () => {
     for (let m = 0; m < FIREWORKS_SECONDS / 60; m += 2) assert.ok(!fountainAt(fw + m * 60e3)?.on, new Date(fw + m * 60e3).toISOString());
     assert.ok(nextFountain(fw) >= fw + FIREWORKS_SECONDS * 1000, 'the next one is after the fireworks');
   }
-  assert.equal(checked, 3, 'three fireworks shows a day');
+  assert.ok(checked >= 1 && checked <= 2, `${checked} fireworks shows a day`);
   // Nearly every hour has one.
   let n = 0;
   for (let h = 0; h < 24; h++) {
@@ -39,7 +39,7 @@ test('never while the Yeouido fireworks are on', () => {
     if (fountainAt(start + 600e3)?.on) n++;
     else assert.ok(clashesWithFireworks(start) && fireworksAt(start + 600e3), `${h}:30 skipped only for the fireworks`);
   }
-  assert.ok(n >= 20, `${n} shows`);
+  assert.ok(n >= 22, `${n} shows`);
 });
 
 test('the sky round the bridge darkens before and brightens after, smoothly', () => {
