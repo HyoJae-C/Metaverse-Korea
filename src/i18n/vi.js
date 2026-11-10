@@ -572,6 +572,7 @@ export const VI = {
   'loading': 'Đang tải đường phố…',
   'error.noMap': 'Dữ liệu bản đồ khu vực này chưa sẵn sàng. Vui lòng quay lại sau.',
   'error.generic': 'Đã xảy ra lỗi khi tải. Vui lòng tải lại trang.',
+  'error.soft': 'Có một lỗi nhỏ, nhưng bạn vẫn có thể chơi tiếp.',
   'help.desktop': 'Di chuyển: WASD hoặc phím mũi tên · Chạy: Shift · Nhìn: kéo chuột · Thu phóng: cuộn chuột',
   'help.mobile': 'Di chuyển: cần điều khiển bên trái · Nhìn: kéo · Thu phóng: chụm ngón tay',
   'help.dismiss': 'Đã hiểu',

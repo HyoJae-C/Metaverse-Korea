@@ -20,7 +20,7 @@ const nodes = new Set(map.roads.filter((r) => r !== bike).flatMap((r) => r.p.map
 
 test('the Han River bike paths stay out of the water, off buildings and open through the closed land', () => {
   assert.ok(bike?.bike, 'link "Han River Bike Path" in region.json, drawn as a bike path');
-  assert.equal(bikes.length, 3, 'the north bank, and the south bank either side of Banpo');
+  assert.equal(bikes.length, 4, 'the north bank either side of Seongsu, and the south bank either side of Banpo');
   const solid = new CollisionMap(map.buildings.concat(map.blockers || [])); // (the closed land's blockers too)
   const hits = [];
   for (const r of bikes) {
