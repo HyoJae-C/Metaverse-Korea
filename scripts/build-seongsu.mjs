@@ -18,6 +18,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { apgujeongBank } from './bike-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'public/regions/another-seoul');
@@ -202,7 +203,9 @@ const landZ = (x) => Math.min(352, (x < -240 ? bankZ(x) : realBankZ(x)) - 20);
 // (Songpa's, OpenStreetMap) from the map's east edge to x 0, then about the
 // real Han's width from the bank; region.json water carries on east of the
 // map (past Jamsil Bridge) and west of Seoul Forest.
-const RIVER_SOUTH = [[BRIDGE_X, 705], [400, 699], [350, 690], [300, 681], [250, 672], [200, 650], [150, 611], [100, 578], [50, 546], [0, 496], [-30, 480], [-150, 430], [-240, 388], [-360, 346], [WEST, 300]];
+// West of x 0 (Apgujeong) the bank is drawn from the real bike path beside
+// it (scripts/bike-bank.mjs); it meets the region's water at [WEST, 300].
+const RIVER_SOUTH = [[BRIDGE_X, 705], [400, 699], [350, 690], [300, 681], [250, 672], [200, 650], [150, 611], [100, 578], [50, 546], ...apgujeongBank(WEST + 1, 0).reverse(), [WEST, 300]];
 // The Han River path: 7 m up from the bank, then along the park (Z 14) to Jamsil Bridge.
 const RIVER_PATH = [...RIVER_EDGE.slice(0, -2).map(([x, z]) => [x, r1(z - 7)]), parkAt(123, 14), parkAt(parkX(BRIDGE_X, 14), 14)];
 

@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { BARGES } from '../src/core/fireworks-show.js';
 import { inPolygon, toGame } from '../src/core/seoul-grid.js';
-import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH } from './han-bank.mjs';
+import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH, SAETGANG_BIKE } from './han-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -202,6 +202,20 @@ function saetgangEdge(streets) {
   return pieces.map((c) => [...c.map(([q, nx, nz]) => [r1(q[0] + nx * 2), r1(q[1] + nz * 2)]), ...c.slice().reverse().map(([q, nx, nz]) => [r1(q[0] + nx * 10), r1(q[1] + nz * 10)])]);
 }
 
+// The south-bank Han River bike path (scripts/build-bike-paths.mjs) crosses
+// the Saetgang's mouth from the island's east tip to the Dongjak bank, as
+// the real one does on its bridge (OpenStreetMap): the Saetgang's blockers
+// (world) are cut BIKE_GAP m either side of that line (han-bank.mjs SAETGANG_BIKE).
+const BIKE_GAP = 4;
+function bikeGap(p) {
+  const [a, b] = SAETGANG_BIKE, L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+  const side = ([x, z]) => (x - a[0]) * -d[1] + (z - a[1]) * d[0];
+  const along = ([x, z]) => (x - a[0]) * d[0] + (z - a[1]) * d[1];
+  // (only the pieces of water the crossing goes over)
+  if (!p.some((q) => Math.abs(side(q)) < 40 && along(q) > -30 && along(q) < L + 30)) return [p];
+  return [clip(p, (q) => side(q) - BIKE_GAP), clip(p, (q) => -side(q) - BIKE_GAP)].filter((q) => q.length >= 3);
+}
+
 // The part of polygon p where side(point) >= 0 (side is linear).
 function clip(p, side) {
   const out = [];
@@ -287,8 +301,8 @@ function build() {
 
   const edge = saetgangEdge(roadsW.filter((r) => r.k !== 'walk'));
   const blockers = [
-    ...saetgang.map((p) => ({ p: p.map(local) })),
-    ...edge.map((p) => ({ p: p.map(local) })),
+    ...saetgang.flatMap(bikeGap).map((p) => ({ p: p.map(local) })),
+    ...edge.flatMap(bikeGap).map((p) => ({ p: p.map(local) })),
     { p: TOWER63_BOX.map(local) }, // the 63 tower (drawn by its landmark)
   ];
   const parkW = OSM.park;
