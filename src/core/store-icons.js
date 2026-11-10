@@ -13,6 +13,7 @@ export function storeIcon(store) {
   if (store.perfumery) return PERFUME; // perfume shops, workshops and pop-ups alike
   if (store.workshop === 'hat') return CATEGORY_ICON.fashion; // the hat workshop sells hats
   if (store.workshop === 'cablecar') return '🚡';
+  if (store.workshop === 'cathedral') return '⛪'; // Myeongdong Cathedral
   if (store.cinema) return '🎬'; // the cinema
   if (store.workshop === 'bike') return '🚲'; // the ride shops
   if (store.workshop === 'salon') return '💇'; // hair salons stand out from the cosmetics shops

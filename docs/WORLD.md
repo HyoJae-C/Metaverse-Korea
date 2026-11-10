@@ -362,6 +362,19 @@ OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
   front yard, apse south-south-east. The model (`src/core/cathedral-model.js`,
   sizes in `src/data/myeongdong.js`) loads with `import()` when the city is
   built. Stamp and board on the front yard.
+- **Inside the cathedral** (stores.json `myeongdong-cathedral`, `front:
+  "landmark"`: a ring at the bell tower's door, no shop sign): a made-up nave
+  (`src/core/cathedral-hall.js`, room `cathedral`, loaded with the rooms):
+  stone columns, stained glass, a ribbed vault, the sanctuary with the altar,
+  the lectern and the apse windows, the organ loft over the door. 96 places
+  on the pews; some have people, the rest are seats. A simple Mass
+  (`src/core/cathedral-mass.js`) runs on the real clock, so everyone sees the
+  same moment: the procession up the aisle, the greeting, a reading, the host
+  lifted, the sign of peace, the blessing, the procession out, then a pause.
+  Speech bubbles are small pictures only. The organ is the hidden track
+  `organ` in `src/data/tracks.js`: an original chorale played live with Web
+  Audio (no file, no words), quiet, about 70 s. Walking only inside (Yozi
+  2026-11-11): running turns into a walk and gets a "shh".
 
 ## Namsan and its cable car (Yongsan-gu / Jung-gu)
 

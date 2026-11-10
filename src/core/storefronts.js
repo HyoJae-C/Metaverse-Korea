@@ -130,6 +130,24 @@ export class Storefronts {
         this.items.push({ store, group, open: !!store.open, outdoor: true, door: new THREE.Vector3(ax, 0, az) });
         continue;
       }
+      // A landmark's own door (store.front 'landmark', e.g. Myeongdong
+      // Cathedral's: the building is drawn with its door): no sign, awning or
+      // glass, only the glowing ring in front of it. "at" is the ring and
+      // "face" the way you face coming out.
+      if (store.front === 'landmark') {
+        const group = new THREE.Group();
+        group.position.set(ax, 0, az);
+        group.rotation.y = store.face || 0;
+        scene.add(group);
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.55, 0.75, 32).rotateX(-Math.PI / 2),
+          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false }),
+        );
+        ring.position.y = 0.09;
+        group.add(ring);
+        this.items.push({ store, group, ring, bare: true, door: new THREE.Vector3(ax, 0, az) });
+        continue;
+      }
       const f = nearestFacade(map.buildings, ax, az, isBlocked);
       if (!f) {
         console.warn('No facade found for', store.id);
@@ -260,7 +278,7 @@ export class Storefronts {
     this.translated = on;
     this.lang = lang;
     for (const it of this.items) {
-      if (it.outdoor) continue;
+      if (it.outdoor || it.bare) continue;
       if (it.signMat.map) { this.showSign(it, false); this.showSign(it, true); } // (faraway ones are drawn in the new language when you get there)
       if (!it.badge.userData.home) continue;
       it.badge.material.map.dispose();
@@ -275,6 +293,7 @@ export class Storefronts {
       if (it.outdoor) continue;
       const s = 1 + Math.sin(t * 3) * 0.08;
       it.ring.scale.set(s, 1, s);
+      if (it.bare) { if (Math.hypot(it.door.x - x, it.door.z - z) < 2.2) hit = it; continue; } // (no sign to draw)
       // Badges show through walls, so fade them out with distance.
       const d = Math.hypot(it.door.x - x, it.door.z - z);
       if (it.signMat.map ? d > SIGN_FAR : d < SIGN_NEAR && drawn++ < 6) this.showSign(it, !it.signMat.map); // (a few new faces a frame, so walking never stutters)

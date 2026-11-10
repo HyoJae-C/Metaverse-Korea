@@ -176,6 +176,9 @@ const CROSSING = [-1571.7, -533.5];
 // The Information Center by the real Myeongdong Tourist Information Center
 // (OSM), on the shopping street's north part.
 const INFO = { id: 'info-myeongdong', near: [-1561.2, -571.8] };
+// The cathedral's door (its inside: core/cathedral-hall.js): the ring 1.7 m in
+// front of the bell tower's main door; "face" in stores.json is the hall's ry.
+export const DOOR = { id: 'myeongdong-cathedral', at: onHall(L2 + 1.7, 0) };
 
 // ---------- Into the district's own metres ----------
 const anchor = toLatLon(...HALL.at);
@@ -223,6 +226,7 @@ if (isMain) {
   lots.sort((a, b) => Math.hypot(a[0] - CROSSING[0], a[1] - CROSSING[1]) - Math.hypot(b[0] - CROSSING[0], b[1] - CROSSING[1]));
   if (lots.length < SHOPS.length) throw new Error(`only ${lots.length} lots for ${SHOPS.length} shops`);
   SHOPS.forEach((sid, i) => setAt(sid, lots[i]));
+  setAt(DOOR.id, DOOR.at);
   writeFileSync(path.join(R, 'stores.json'), stores);
   const front = onHall(L2, 0);
   console.log(`myeongdong: ${map.roads.length} roads, ${map.buildings.length} buildings (${hallParts.length} of them the cathedral), ${TREES.length} trees`);
@@ -230,4 +234,5 @@ if (isMain) {
   console.log(`  bell tower front [${front}], ${r1(nearestOn(front, MDGIL).d)} m from Myeongdong-gil; east side ${r1(Math.min(...hallParts.flat().map((q) => lineDist(q, SAMIL))) - 7)} m from Samil-daero's kerb`);
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
   SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
+  console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
 }
