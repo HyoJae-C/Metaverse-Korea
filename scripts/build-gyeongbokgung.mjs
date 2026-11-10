@@ -303,7 +303,7 @@ const blocks = [];
 const O = Object.fromEntries(own.map((o) => [o.name, o]));
 const lm = [];
 const g = O['광화문'];
-lm.push({ type: 'gwanghwamun', x: 0, z: 0, ry: r2(-g.a), w: r1((g.w * 2)), sc: GATE_SC, gb: 1 }); // (drawn at 50%: w is the 50% width)
+lm.push({ type: 'gwanghwamun', x: 0, z: 0, ry: r2(-g.a), w: r1((g.w * 2)), sc: GATE_SC, gb: 1, clear: 11 }); // (drawn at 50%: w is the 50% width; clear: no Sajik-ro street tree in front of the arches)
 // Gwanghwamun's solid parts either side of the three arches (the arches: |x| < 1.5 and 3.0..5.2 at 50%)
 {
   const W = g.w * GATE, D = 7 * GATE_SC[0], cs = Math.cos(g.a), sn = Math.sin(g.a);

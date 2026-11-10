@@ -55,3 +55,13 @@ test('up to 4 players: the start message, darts each, turns and teams', async ()
   // 2:2: line-up places 0 and 2 against 1 and 3, so the teams take turns.
   assert.deepEqual([0, 1, 2, 3].map(teamOf), [0, 1, 0, 1]);
 });
+
+test('darts places: by score, ties share, team mode by team, leavers get none', async () => {
+  const { dartsPlaces } = await import('../src/ui/darts-ui.js');
+  const P = (id, total, extra = {}) => ({ id, total, color: 0, ...extra });
+  const places = (ps, t) => Object.fromEntries(dartsPlaces(ps, t).map((p) => [p.id, p.place]));
+  assert.deepEqual(places([P('a', 66, { me: true }), P('b', 34), P('c', 52)]), { a: 1, b: 3, c: 2 });
+  assert.deepEqual(places([P('a', 40), P('b', 40), P('c', 10), P('d', 5)]), { a: 1, b: 1, c: 3, d: 4 });
+  assert.deepEqual(places([P('a', 40), P('b', 90, { left: true }), P('c', 10)]), { a: 1, c: 2 });
+  assert.deepEqual(places([P('a', 10, { team: 0 }), P('b', 50, { team: 1 }), P('c', 30, { team: 0 }), P('d', 0, { team: 1 })], [40, 50]), { a: 2, b: 1, c: 2, d: 1 });
+});

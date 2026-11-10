@@ -656,9 +656,11 @@ function drawBall(c, P, b, near) {
 // ── Climbing ─────────────────────────────────────────────────────────────
 export class ClimbUI extends Panel {
   // onTop(route) when you top a problem; onFall().
-  constructor({ root, store, onTop, onFall }) {
+  // view: the climb on the room's real wall (game/climb-view.js; without it
+  // the panel draws its own wall).
+  constructor({ root, store, onTop, onFall, view = null }) {
     super({ root, store, icon: '🧗', title: 'cTitle' });
-    Object.assign(this, { onTop, onFall });
+    Object.assign(this, { onTop, onFall, view });
     this.route = CLIMB_ROUTES[0];
   }
   renderStart(note) {
@@ -686,8 +688,19 @@ export class ClimbUI extends Panel {
   }
   play() {
     const r = this.route;
-    this._play({ route: r, holds: routeHolds(r), at: 0, grip: 1, t0: now(), start: now(), last: now(), flash: null }, '✋ ' + tt('reach'));
-    this.game.status.textContent = `${r.grade} · ${tt('reach')}!`;
+    const g = this._play({ route: r, holds: routeHolds(r), at: 0, grip: 1, t0: now(), start: now(), last: now(), flash: null }, '✋ ' + tt('reach'));
+    g.status.textContent = `${r.grade} · ${tt('reach')}!`;
+    // On the room's real wall: the panel keeps a strip (your grip and how
+    // far up you are) and the button; tapping the world reaches too.
+    g.live = !!this.view?.start(this.root, r, g.holds);
+    if (g.live) {
+      this.root.classList.add('arcade-live');
+      g.cv.height = 52;
+      g.cv.classList.add('bowl-sheet');
+      const surface = this.view.surface, down = (e) => { if (e.isPrimary !== false) this.tap(); };
+      surface.addEventListener('pointerdown', down);
+      g.unswipe = () => surface.removeEventListener('pointerdown', down);
+    }
   }
   tap() {
     const g = this.game;
@@ -699,6 +712,7 @@ export class ClimbUI extends Panel {
     g.status.textContent = tt(res);
     if (res !== 'slip') g.at++;
     g.t0 = now();
+    if (g.live) this.view.reach(res, g.at);
     if (g.at >= g.holds.length - 1) this.top();
     else if (g.grip <= 0) this.fall();
   }
@@ -707,14 +721,16 @@ export class ClimbUI extends Panel {
     g.over = true;
     const s = Math.round((now() - g.start) * 10) / 10;
     const rec = saveActivity(this.store, 'climb', s, g.route.id);
-    this.onTop?.(g.route);
-    this.timer = setTimeout(() => this.renderStart(tt('topped', { g: g.route.grade, s }) + (rec ? '  ' + tt('record') : '')), 900);
+    if (g.live) this.view.top(() => this.onTop?.(g.route)); // (the cheer once you are down on the mat)
+    else this.onTop?.(g.route);
+    this.timer = setTimeout(() => this.renderStart(tt('topped', { g: g.route.grade, s }) + (rec ? '  ' + tt('record') : '')), g.live ? 2200 : 900);
   }
   fall() {
     const g = this.game;
     g.over = true;
     this.onFall?.();
-    this.timer = setTimeout(() => this.renderStart(tt('fell')), 700);
+    if (g.live) this.view.fall();
+    this.timer = setTimeout(() => this.renderStart(tt('fell')), g.live ? 1300 : 700);
   }
   draw(t) {
     const g = this.game, c = g.c;
@@ -723,6 +739,7 @@ export class ClimbUI extends Panel {
       if (g.grip <= 0) this.fall();
     }
     g.last = t;
+    if (g.live) { this.drawLive(t); return; }
     // The wall, plywood with bolt holes, and the mat at the bottom.
     c.fillStyle = '#e8e2d6'; c.fillRect(0, 0, W, H);
     c.fillStyle = 'rgba(0,0,0,0.12)';
@@ -757,6 +774,26 @@ export class ClimbUI extends Panel {
     c.fillStyle = g.grip < 0.25 ? '#d9473c' : g.grip < 0.5 ? '#ffb84a' : '#4caf7a';
     c.fillRect(W - 46, 30 + (H - 70) * (1 - g.grip), 22, (H - 70) * g.grip);
     c.fillStyle = '#2b2b2e'; c.font = 'bold 12px system-ui'; c.textAlign = 'center'; c.fillText(tt('grip'), W - 35, 22);
+  }
+  // On the real wall: the ring goes to the world; the strip shows your grip
+  // and a dot for each hold, filled up to where you are.
+  drawLive(t) {
+    const g = this.game, c = g.c, h = g.cv.height;
+    this.view.show(g.over ? 0 : ((t - g.t0) / g.route.period) % 1);
+    c.clearRect(0, 0, W, h);
+    c.fillStyle = '#2b2d36'; c.beginPath(); c.roundRect(0, 0, W, h, 10); c.fill();
+    c.fillStyle = '#fff'; c.font = 'bold 24px system-ui'; c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillText(`${g.route.grade} · ${tt('grip')}`, 16, h / 2, 150);
+    const x0 = 175, bw = 190;
+    c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(x0, h / 2 - 12, bw, 24);
+    c.fillStyle = g.grip < 0.25 ? '#d9473c' : g.grip < 0.5 ? '#ffb84a' : '#4caf7a';
+    c.fillRect(x0, h / 2 - 12, bw * g.grip, 24);
+    const n = g.holds.length, gap = Math.min(30, (W - x0 - bw - 40) / (n - 1));
+    for (let i = 0; i < n; i++) {
+      c.fillStyle = i <= g.at ? g.route.color : 'rgba(255,255,255,0.22)';
+      c.beginPath(); c.arc(x0 + bw + 26 + i * gap, h / 2, i === n - 1 ? 10 : 7, 0, Math.PI * 2); c.fill();
+    }
+    c.textBaseline = 'alphabetic';
   }
 }
 

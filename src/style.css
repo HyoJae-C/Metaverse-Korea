@@ -1798,6 +1798,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .skin-dot.on { box-shadow: 0 0 0 3px var(--accent); }
 .skin-dot.locked small { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; border-radius: 6px; background: #fff; font-size: 10px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .skin-pat.on { box-shadow: 0 0 0 2px var(--accent) inset; }
+.skin-pat.with-sample { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; text-align: left; }
+.skin-sample { width: 44px; height: 44px; flex: none; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 
 /* Name rules (start screen and rename) */
 .name-rule { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.4; color: #b4553f; }
@@ -2674,3 +2676,5 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
     translate: none; max-height: min(172px, 26dvh);
   }
 }
+/* Start screen: button to the Google Form (index.html #survey-btn) */
+.survey-btn { display: flex; width: fit-content; max-width: 100%; margin: 12px auto 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; color: var(--ink); text-decoration: none; text-align: center; line-height: 1.3; white-space: normal; }

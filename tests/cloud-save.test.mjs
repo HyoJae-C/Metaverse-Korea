@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { snapshot, applySnapshot, pickNewer } from '../src/core/cloud-save.js';
+import { snapshot, applySnapshot, pickNewer, takenOver, CloudSave } from '../src/core/cloud-save.js';
 
 function fakeStorage(init = {}) {
   const m = new Map(Object.entries(init));
@@ -39,3 +39,83 @@ test('after switching accounts on a device, the account save wins', () => {
   assert.equal(pickNewer(300, 200, a, b, true), 'remote');
   assert.equal(pickNewer(300, 0, a, {}, true), 'local'); // a new account has no save yet
 });
+
+test('a save written by another device since ours counts as taken over', () => {
+  const mine = '2026-11-06T07:00:00.000Z';
+  assert.equal(takenOver({ updated_at: '2026-11-06T07:00:00+00:00', data: {} }, mine, 'a'), false); // same version
+  assert.equal(takenOver({ updated_at: '2026-11-06T07:00:09.000Z', data: { 'mkcloud.device': 'a' } }, mine, 'a'), false); // our own newer write
+  assert.equal(takenOver({ updated_at: '2026-11-06T07:00:09.000Z', data: { 'mkcloud.device': 'b' } }, mine, 'a'), true);
+  assert.equal(takenOver({ updated_at: '2026-11-06T07:00:09.000Z', data: {} }, mine, 'a'), true); // an older app version
+  assert.equal(takenOver(null, mine, 'a'), false);
+});
+
+// A tiny stand-in for the Supabase table: one row per user, and update()
+// only matches when updated_at is equal, like the real filter.
+function fakeTable(row = null) {
+  const db = { row, writes: 0 };
+  const query = (op, payload) => {
+    const filters = {};
+    const q = {
+      eq(k, v) { filters[k] = v; return q; },
+      select() { return q; },
+      maybeSingle() { return Promise.resolve({ data: db.row && { ...db.row }, error: null }); },
+      then(res, rej) {
+        let out = { data: null, error: null };
+        if (op === 'update') {
+          const hit = db.row && Date.parse(db.row.updated_at) === Date.parse(filters.updated_at);
+          if (hit) { db.row = { ...db.row, ...payload }; db.writes++; }
+          out = { data: hit ? [{ updated_at: db.row.updated_at }] : [], error: null };
+        } else if (op === 'insert') {
+          if (db.row) out = { data: null, error: { code: '23505' } };
+          else { db.row = { ...payload }; db.writes++; }
+        }
+        return Promise.resolve(out).then(res, rej);
+      },
+    };
+    return q;
+  };
+  db.client = { from: () => ({ select: () => query('select'), update: (p) => query('update', p), insert: (p) => query('insert', p) }) };
+  return db;
+}
+
+function withLocalStorage(fn) {
+  const prev = globalThis.localStorage;
+  globalThis.localStorage = fakeStorage({ 'mk.wallet': '{"coins":5}' });
+  return Promise.resolve(fn()).finally(() => { globalThis.localStorage = prev; });
+}
+
+test('saving goes through while nobody else has written', () => withLocalStorage(async () => {
+  const db = fakeTable({ user_id: 'u', updated_at: '2026-11-06T07:00:00.000Z', data: {} });
+  const cs = new CloudSave({});
+  Object.assign(cs, { client: db.client, user: { id: 'u' }, version: db.row.updated_at });
+  assert.equal(await cs._upload(), true);
+  assert.equal(await cs._upload({ 'mk.wallet': '{"coins":6}' }), true);
+  assert.equal(db.writes, 2);
+  assert.equal(db.row.data['mk.wallet'], '{"coins":6}');
+  assert.equal(db.row.data['mkcloud.device'], cs.device);
+}));
+
+test('when another device saved first, this one stops instead of overwriting', () => withLocalStorage(async () => {
+  const db = fakeTable({ user_id: 'u', updated_at: '2026-11-06T07:00:00.000Z', data: {} });
+  const cs = new CloudSave({});
+  Object.assign(cs, { client: db.client, user: { id: 'u' }, version: db.row.updated_at });
+  let told = 0;
+  cs.onElsewhere(() => told++);
+  // The phone opens the game and claims the save.
+  db.row = { user_id: 'u', updated_at: '2026-11-06T07:05:00.000Z', data: { 'mk.wallet': '{"coins":50}', 'mkcloud.device': 'phone' } };
+  assert.equal(await cs._upload({ 'mk.wallet': '{"coins":6}' }), false);
+  assert.equal(db.row.data['mk.wallet'], '{"coins":50}'); // the phone's progress is kept
+  assert.equal(told, 1);
+  assert.equal(cs.parked, true);
+  assert.equal(localStorage.getItem('mkcloud.at'), '0'); // reloading here loads the account's save
+  assert.equal(await cs._upload(), false); // and nothing more is sent
+  assert.equal(db.writes, 0);
+}));
+
+test('a first save on a new account is inserted', () => withLocalStorage(async () => {
+  const db = fakeTable(null);
+  const cs = new CloudSave({});
+  Object.assign(cs, { client: db.client, user: { id: 'u' } });
+  assert.equal(await cs._upload(), true);
+  assert.equal(db.row.data['mk.wallet'], '{"coins":5}');
+}));

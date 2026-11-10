@@ -121,6 +121,16 @@ function paintBoard() {
   return cv;
 }
 
+// Places at the end of a game with friends: by score (by team score in
+// teams), ties sharing a place; players who left get none.
+export function dartsPlaces(players, teamTotals = null) {
+  const score = (p) => (teamTotals ? teamTotals[p.team] : p.total);
+  const inGame = players.filter((p) => !p.left);
+  // (teams: the winning side is 1st and the other 2nd, not 3rd)
+  const above = (p) => (teamTotals ? new Set(inGame.filter((q) => score(q) > score(p)).map((q) => q.team)).size : inGame.filter((q) => score(q) > score(p)).length);
+  return inGame.map((p) => ({ id: p.id, me: !!p.me, color: p.color, place: 1 + above(p) }));
+}
+
 export class DartsUI {
   // myId; nameOf(id); store: localStorage (records); friends(): people near
   // you [{ id, name }], closest first; invite(): a pending invite { from,
@@ -128,10 +138,12 @@ export class DartsUI {
   // sendGo(to, mode, ids) (the start message); onThrow(points); onDart(at,
   // color) as a dart of ours lands (it sticks in the wall board for the
   // room); colors(ids) → a flight colour (DART_COLORS index) per player;
+  // onEnd(places): a game with friends ended, [{ id, me, place, color }]
+  // for everyone still in (place 1 = best; ties share it);
   // view: the game in the bar's real wall board (game/darts-view.js; without
   // it the panel draws its own board); rand for tests.
-  constructor({ root, store, myId = 'me', nameOf = () => '?', friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, view = null, rand = Math.random }) {
-    Object.assign(this, { root, store, myId, nameOf, friends, invite, clearInvite, send, sendGo, onThrow, onDart, colors, view, rand });
+  constructor({ root, store, myId = 'me', nameOf = () => '?', friends, invite, clearInvite, send, sendGo, onThrow, onDart, onEnd, colors, view = null, rand = Math.random }) {
+    Object.assign(this, { root, store, myId, nameOf, friends, invite, clearInvite, send, sendGo, onThrow, onDart, onEnd, colors, view, rand });
     this.raf = 0;
     this.lobby = null; // hosting: { list: [{ id, name, ready, at }] }
     this.joined = null; // a guest waiting for the host: { id, name }
@@ -242,7 +254,7 @@ export class DartsUI {
     const inv = this.invite?.();
     if (inv) {
       const b = el('button', 'primary', '🤝 ' + tt('join', { name: inv.name }));
-      b.onclick = () => { this.clearInvite?.(); this.send(inv.from, 'a'); this.renderJoined({ id: inv.from, name: inv.name }); };
+      b.onclick = () => this.accept(inv);
       actions.append(b);
     }
     const near = this._nearby();
@@ -330,6 +342,13 @@ export class DartsUI {
     this.play(ids, mode, ready);
   }
   // A guest who accepted waits here for the host to start.
+  // Take an invite { from, name }: tell the host and wait for the start.
+  accept(inv) {
+    if (this.game || this.lobby || this.joined) return;
+    this.clearInvite?.();
+    this.send(inv.from, 'a');
+    this.renderJoined({ id: inv.from, name: inv.name });
+  }
   renderJoined(host) {
     this._frame();
     this.joined = host;
@@ -539,10 +558,12 @@ export class DartsUI {
       note += '  ' + g.vsLine.textContent;
     }
     const again = rest.filter((p) => !p.left).map((p) => ({ id: p.id, name: p.name }));
+    const places = g.multi && again.length ? dartsPlaces(g.players, g.mode === 't' ? this._teamTotals() : null) : null;
     setTimeout(() => {
       if (this.game !== g) return;
       this.game = null; // the game is over: leaving now is not walking out on anyone
       this.renderStart(note, again);
+      if (places) this.onEnd?.(places); // (the camera is back on the room by now)
     }, 1200);
   }
 
