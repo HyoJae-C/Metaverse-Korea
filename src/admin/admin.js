@@ -9,7 +9,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config.js';
 import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
-import { describePlace, agoText, fitView } from './view.js';
+import { describePlace, agoText, fitView, clusterPoints } from './view.js';
 import { createPanels } from './panels.js';
 import { createChatPanel } from './chat-panel.js';
 import { createExhibitPanel } from './exhibit-panel.js';
@@ -26,6 +26,13 @@ let players = []; // { uid, player, place, px, pz, age_s, guest }
 let selected = null;
 let fetchedAt = 0; // when players came in (age_s counts from then)
 const view = { cx: 0, cz: 0, scale: 0.2, dpr: 1, fitted: false };
+// 'names': a dot and nickname per player. 'counts': no names, players close
+// together on screen become one bubble with how many there are.
+const LABELS_KEY = 'mk.adminLiveLabels';
+let labels = 'names';
+try { if (localStorage.getItem(LABELS_KEY) === 'counts') labels = 'counts'; } catch { /* private window */ }
+const CLUSTER_PX = 36;
+let groups = []; // counts mode: what was drawn last, for taps
 
 function message(title, html) {
   const box = $('msg');
@@ -93,6 +100,7 @@ function draw() {
     g.fillText(text, sx, sy);
   }
 
+  if (labels === 'counts') return drawCounts();
   // Players: green on the street, purple inside a shop, grey when not seen
   // for a while. The newest on top.
   g.textAlign = 'left';
@@ -112,6 +120,37 @@ function draw() {
     g.fillStyle = '#2b2620';
     g.fillText(label, sx + r + 4 * dpr, sy);
   }
+}
+
+// Counts mode: one bubble per group of nearby players, bigger with more
+// people. Green when someone in it is on the street, purple when all are in
+// shops, grey when nobody in it was seen lately.
+function drawCounts() {
+  const dpr = view.dpr;
+  const pts = players.map((p) => { const [sx, sy] = toScreen(p.px, p.pz); return { sx, sy, p }; });
+  groups = clusterPoints(pts, CLUSTER_PX * dpr);
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const c of [...groups].reverse()) {
+    const fresh = c.items.filter((i) => ageOf(i.p) <= 90);
+    const color = !fresh.length ? '#a59c90' : fresh.some((i) => i.p.place === 'street') ? '#18a058' : '#8a4fff';
+    const n = c.items.length;
+    const r = (n === 1 ? 7 : Math.min(26, 10 + Math.sqrt(n) * 3)) * dpr;
+    g.beginPath(); g.arc(c.sx, c.sy, r, 0, Math.PI * 2);
+    g.fillStyle = color; g.globalAlpha = 0.9; g.fill(); g.globalAlpha = 1;
+    g.lineWidth = 2 * dpr; g.strokeStyle = '#fff'; g.stroke();
+    if (n > 1) {
+      g.font = `700 ${(n > 99 ? 11 : 13) * dpr}px system-ui, sans-serif`;
+      g.fillStyle = '#fff';
+      g.fillText(String(n), c.sx, c.sy + 0.5 * dpr);
+    }
+  }
+}
+
+function setLabels(v) {
+  labels = v === 'counts' ? 'counts' : 'names';
+  try { localStorage.setItem(LABELS_KEY, labels); } catch { /* not saved, still works */ }
+  $('labels').value = labels;
+  draw();
 }
 
 const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)', 'olympic-park': 'Olympic Park', 'banpo-jamwon': 'Banpo-Jamwon', yeouido: 'Yeouido', 'grand-park': "Children's Grand Park", samseong: 'Samseong-dong' };
@@ -157,6 +196,16 @@ const up = (e) => {
   if (p && !pointers.size && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 6) {
     const r = cv.getBoundingClientRect();
     const sx = (e.clientX - r.left) * view.dpr, sy = (e.clientY - r.top) * view.dpr;
+    if (labels === 'counts') {
+      // A tap on a bubble of several zooms in on it until it splits.
+      const c = groups.find((c) => Math.hypot(c.sx - sx, c.sy - sy) <= (CLUSTER_PX / 1.5) * view.dpr);
+      if (c && c.items.length > 1) {
+        [view.cx, view.cz] = toWorld(c.sx, c.sy);
+        view.scale = clampScale(view.scale * 2.5);
+        draw();
+        return;
+      }
+    }
     let best = null, bd = 20 * view.dpr;
     for (const pl of players) {
       const [px, py] = toScreen(pl.px, pl.pz);
@@ -299,6 +348,8 @@ async function start() {
   $('within').onchange = () => { view.fitted = false; poll(); };
   codeMemo();
   $('fit').onclick = fitAll;
+  $('labels').value = labels;
+  $('labels').onchange = () => setLabels($('labels').value);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); panels.wake(tab); } });
   for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => showTab(b.dataset.tab);
   addEventListener('hashchange', () => showTab(location.hash.slice(1)));
