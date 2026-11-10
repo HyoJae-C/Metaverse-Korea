@@ -3870,6 +3870,7 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
+  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
@@ -3909,7 +3910,9 @@ const fishingUi = new FishingUI({
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
-    if (f.rarity >= TROPHY_RARITY) { // ★3–★5: a trophy over my head, for everyone nearby
+    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
+    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
+    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
@@ -5403,6 +5406,7 @@ function updateFireworks() {
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
   weather.nightMix = Math.max(night, droneNight(p, street));
+  weather.setShowClear(weather.nightMix > 0.05); // a clear sky in front of either show
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5431,7 +5435,7 @@ function updateFireworks() {
     const now = performance.now();
     if (dist > 900 || now - fireworks.lastBoom < 140) continue;
     fireworks.lastBoom = now;
-    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'peony'), wait * 1000);
+    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'kamuro' || b.kind === 'peony'), wait * 1000);
   }
 }
 

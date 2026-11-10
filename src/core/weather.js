@@ -114,10 +114,19 @@ export class WeatherSystem {
   }
 
   refresh() {
-    const kind = this.forced || weatherAt(Date.now(), this.settings);
+    const kind = this.forced || (this.showClear ? 'clear' : weatherAt(Date.now(), this.settings));
     if (kind !== this.kind || !this.started) this.setKind(kind);
     this.started = true;
     this.onUpdate?.(this.status());
+  }
+
+  // At the Yeouido fireworks or the Ttukseom drone show (their night is on
+  // around you) the sky clears: no rain, snow or fog in front of the show
+  // (Yozi). Everywhere else keeps the shared weather.
+  setShowClear(on) {
+    if (!!on === !!this.showClear) return;
+    this.showClear = !!on;
+    this.refresh();
   }
 
   // The operators' setting changed (supabase/023_weather.sql).
