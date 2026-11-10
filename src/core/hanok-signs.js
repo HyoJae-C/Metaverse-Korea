@@ -8,6 +8,7 @@
 // - banner (천 간판): a cloth hanging from a wooden pole by the door.
 // Korean runs top to bottom on the tall ones; other scripts turn sideways.
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 
 export const HANOK_SIGNS = {
   plaque: { w: 3.0, h: 0.6 },
@@ -85,14 +86,8 @@ export function hanokSignTexture(style, text, bg, sub = '') {
   return t;
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
-function box(g, sx, sy, sz, x, y, z, m) {
-  const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m);
-  o.position.set(x, y, z);
-  g.add(o);
-  return o;
-}
+const mat = matCache();
+const box = (g, sx, sy, sz, x, y, z, m) => addBox(g, null, sx, sy, sz, x, y, z, m); // m: a ready material
 
 // Builds the sign into the storefront's group (+z out to the street, the
 // door at x 0, the front 5.2 m wide and 2.6 m high). Returns the material

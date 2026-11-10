@@ -13,6 +13,7 @@
 // (main.js makes it a blocker) and a note asks them to step back.
 // They only move while you're near (like the busking crowd).
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import { DANCER_CHIMAS } from '../data/skirts.js';
@@ -104,8 +105,7 @@ export function nextStop(route, at, prev, rand = Math.random) {
   const list = ahead.length ? ahead : near;
   return list[Math.floor(rand() * list.length) % list.length];
 }
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 const ball = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => {
   const o = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat(c));
   o.position.set(x, y, z); o.scale.set(sx, sy, sz);

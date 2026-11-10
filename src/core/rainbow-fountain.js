@@ -13,6 +13,8 @@
 // Everyone's clock gives the same jets at the same moment (like the drone
 // show and the fireworks), so friends on the lawn watch the same show.
 
+import { smooth } from './show-clock.js';
+
 export const FOUNTAIN_MINUTE = 30; // shows start at hh:30 KST
 // No show while Yeouido's hour of fireworks is on (09:00, 21:00 KST:
 // fireworks-show.js), so nobody has to choose between the two.
@@ -24,7 +26,6 @@ export const NOTICE_SECONDS = 60; // the "starts in a minute" notice, near the b
 export const FINALE = [SHOW_SECONDS - 60, SHOW_SECONDS]; // photo time: every jet full, in rainbow
 
 const MIN = 60e3, HOUR = 60 * MIN, KST = 9 * HOUR;
-const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
 const frac = (x) => x - Math.floor(x);
 
 // Show start times (ms) around `now`: from two hours before to two after.

@@ -9,6 +9,8 @@
 // Everyone's clock gives the same show at the same moment (like the lucky
 // fishing spot and the weather), so friends watch the same drones together.
 
+import { smooth, dailyStarts } from './show-clock.js';
+
 // Show start times on Korean time (KST, UTC+9): twice a day. 18:00 is the
 // early evening in Korea; 06:00 is the evening (22:00 CET) in Europe. To
 // change the schedule, change this list. Kept 3 hours apart from the Yeouido
@@ -19,16 +21,7 @@ export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drone
 export const LAND_SECONDS = 180; // after the end: they land, the sky brightens
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
 
-const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
-const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
-
-// Show start times (ms) around `now`: yesterday, today and tomorrow, in order.
-function startsAround(now, hours) {
-  const kstMidnight = Math.floor((now + KST) / DAY) * DAY - KST;
-  const out = [];
-  for (const d of [-1, 0, 1]) for (const h of hours) out.push(kstMidnight + d * DAY + h * HOUR);
-  return out.sort((a, b) => a - b);
-}
+const DAY = 24 * 3600e3;
 
 // How dark the park's sky is t seconds into a show: 0 = day, 1 = night.
 // Darkens over the 3 minutes before the start, stays dark through the show
@@ -44,7 +37,7 @@ export function nightAt(t) {
 // landing: { start (ms), t (seconds from the start, negative before),
 // night (0–1), on (the drones are up: lift-off to landing) }. null otherwise.
 export function droneShowAt(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
-  for (const start of startsAround(now, hours)) {
+  for (const start of dailyStarts(now, hours)) {
     const t = (now - start) / 1000;
     if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + LAND_SECONDS) {
       return { start, t, night: nightAt(t), on: t >= -LIFT_SECONDS && t < SHOW_SECONDS + 60 };
@@ -55,7 +48,7 @@ export function droneShowAt(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
 
 // The next show's start (ms) after the current one (or after now).
 export function nextDroneShow(now = Date.now(), hours = DRONE_SHOW_HOURS_KST) {
-  return startsAround(now, hours).find((s) => s > now) ?? startsAround(now + DAY, hours)[0];
+  return dailyStarts(now, hours).find((s) => s > now) ?? dailyStarts(now + DAY, hours)[0];
 }
 
 // Which show of all time this is (counts up by one per show): picks the

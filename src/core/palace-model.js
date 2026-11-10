@@ -12,17 +12,12 @@
 // courtyard costs a handful of draw calls. Visual only: collision comes
 // from the map's blockers. l.s scales a building (default 1).
 import * as THREE from 'three';
+import { matCache, addBox } from './three-kit.js';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
-function box(g, sx, sy, sz, x, y, z, c) {
-  const o = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  o.position.set(x, y, z);
-  g.add(o);
-  return o;
-}
+const mat = matCache({ flatShading: true });
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 const C = {
   stone: '#d6cdb8', stoneDark: '#b1a690', stoneLight: '#e4ddcc', post: '#a8392b', door: '#7a2c22', wall: '#efe6d2',
   beam: '#2f8a68', beamBlue: '#3f6f9a', beamRed: '#b2402f', bracket: '#2a6f5a', water: '#5b9fc4', bronze: '#5f6a55', gold: '#d4a73a',

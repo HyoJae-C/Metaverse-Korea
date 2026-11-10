@@ -12,6 +12,8 @@
 // show and the weather): the program is worked out from the show's start
 // time, so friends on the lawn watch the same fireworks together.
 
+import { smooth, dailyStarts } from './show-clock.js';
+
 // Show start times on Korean time (KST, UTC+9): twice a day. 21:00 is the
 // evening in Korea, Japan and South-East Asia; 09:00 is the evening in the
 // Americas. Kept 3 hours from the Ttukseom drone show (6, 18 KST).
@@ -22,15 +24,7 @@ export const DAWN_SECONDS = 180; // after the end: it brightens again
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
 export const RISE = 1.2; // seconds a shell takes to climb before it bursts
 
-const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
-const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
-
-function startsAround(now, hours) {
-  const kstMidnight = Math.floor((now + KST) / DAY) * DAY - KST;
-  const out = [];
-  for (const d of [-1, 0, 1]) for (const h of hours) out.push(kstMidnight + d * DAY + h * HOUR);
-  return out.sort((a, b) => a - b);
-}
+const DAY = 24 * 3600e3;
 
 // How dark Yeouido's sky is t seconds into a show: 0 = day, 1 = night.
 export function nightAt(t) {
@@ -44,7 +38,7 @@ export function nightAt(t) {
 // day again: { start (ms), t (seconds from the start, negative before),
 // night (0–1), on (bursts can happen: 0 … SHOW_SECONDS) }. null otherwise.
 export function fireworksAt(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
-  for (const start of startsAround(now, hours)) {
+  for (const start of dailyStarts(now, hours)) {
     const t = (now - start) / 1000;
     if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + DAWN_SECONDS) return { start, t, night: nightAt(t), on: t >= 0 && t < SHOW_SECONDS };
   }
@@ -53,7 +47,7 @@ export function fireworksAt(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
 
 // The next show's start (ms) after now.
 export function nextFireworks(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
-  return startsAround(now, hours).find((s) => s > now) ?? startsAround(now + DAY, hours)[0];
+  return dailyStarts(now, hours).find((s) => s > now) ?? dailyStarts(now + DAY, hours)[0];
 }
 
 // ---- Where (world metres; the same frame as scripts/build-yeouido.mjs) ----
