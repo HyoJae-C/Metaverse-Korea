@@ -35,7 +35,8 @@ export const STAMPS = [
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',
   },
   {
-    id: 'seongsu', place: { at: [19.3, 105.4] }, color: '#e0662a', shape: 'square',
+    // on the little plaza in the middle of the Yeonmujang-gil block
+    id: 'seongsu', place: { at: [23, 92] }, color: '#e0662a', shape: 'square',
     name: { ko: '성수 팝업스토어', en: 'Seongsu Pop-up', ja: '聖水ポップアップ', zh: '圣水快闪店' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M64 84 l36 -26 l36 26 z M68 84 v40 h64 v-40"/><path d="M64 84 q9 10 18 0 q9 10 18 0 q9 10 18 0 q9 10 18 0"/><rect x="90" y="100" width="20" height="24"/>',
@@ -138,8 +139,8 @@ export const STAMPS = [
     icon: '<path d="M100 60 l42 16 l-42 16 l-42 -16 z M76 84 v18 q24 14 48 0 v-18 M138 78 v22"/><path d="M70 120 h28 q2 0 2 3 q0 -3 2 -3 h28 v10 h-28 q-2 0 -2 3 q0 -3 -2 -3 h-28 z"/>',
   },
   {
-    // on the forest path's lawn in Yeonnam-dong, beside the old rails
-    id: 'yeonnam', place: { at: [-2971, -425], ry: Math.PI / 2 }, color: '#3f7a4f', shape: 'circle',
+    // on the forest park's lawn in Yeonnam-dong, beside the path (scripts/build-yeonnam.mjs: 85 m down the park line, 4.5 m off it)
+    id: 'yeonnam', place: { at: [-2919.8, -471.1], ry: -1.0044 }, color: '#3f7a4f', shape: 'circle',
     name: { ko: '경의선숲길', en: 'Gyeongui Line Forest Park', ja: '京義線森の道', zh: '京义线林荫路' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // a tree beside a stretch of railway
@@ -147,7 +148,7 @@ export const STAMPS = [
   },
   {
     // beside the south gate of Mangwon Market (scripts/build-mangwon.mjs: market.gate)
-    id: 'mangwon-market', place: { at: [-3285.3, -294.8] }, color: '#c0392b', shape: 'square',
+    id: 'mangwon-market', place: { at: [-3275.5, -262.5] }, color: '#c0392b', shape: 'square',
     name: { ko: '망원시장', en: 'Mangwon Market', ja: '望遠市場', zh: '望远市场' },
     gu: { ko: '마포구', en: 'Mapo-gu', ja: '麻浦区', zh: '麻浦区' },
     // the arcade roof over a stall, a croquette on a skewer

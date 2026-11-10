@@ -181,5 +181,5 @@ Store and product data are fictional sample data, not the real businesses at tho
 Characters: [KayKit Adventurers 2.0 and Character Animations 1.1](https://kaylousberg.com/) by Kay Lousberg, CC0 (licences in `public/models/kaykit2/`).
 Sound effects: shop sounds from [Kenney](https://kenney.nl/) Interface Sounds, CC0 (licences in `public/audio/sfx/`).
 Korean grammar textbooks (TOPIK 1–6) in the library: provided by the project owner.
-Seongsu fashion posters: photos from [Unsplash](https://unsplash.com/license) (Unsplash License); photographers and links in `public/ads/CREDITS.txt`.
+Seongsu poster and Gwanghwamun Square wall: photos from [Unsplash](https://unsplash.com/license) (Unsplash License); photographers and links in `public/ads/CREDITS.txt`.
 Background music is generated live in the browser (Web Audio); no audio files are used.
