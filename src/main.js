@@ -6832,7 +6832,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
-  if (mapView.open) mapView.draw();
+  mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
   guBorders?.update(dt);
 
@@ -6956,6 +6956,9 @@ renderer.setAnimationLoop((now) => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
+  // The full map covers the screen, so there is nothing to see behind it:
+  // the game keeps going but the 3D view is not drawn (Yozi, to keep phones cool).
+  if (mapView.open) { updateDelivery(); return; }
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
   // Skip people too far away to see (core/far-people.js): after drawing, so
   // everyone's matrixWorld is this frame's; never your own character.
