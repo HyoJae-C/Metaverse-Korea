@@ -10,6 +10,7 @@ import { showBubble } from '../core/players.js';
 import { noTaxiAt, noTaxiZones, taxiFare } from '../core/taxi.js';
 import { ASK_MS, GO_WAIT_MS, SHARE_RADIUS, TaxiHost, newTrip, taxiMsg, worstShare } from '../core/taxi-share.js';
 import { L, fmt } from '../ui/pocha-ui.js';
+import { nextTip } from './tips.js';
 
 export const SHARE_TEXT = {
   title: { en: '🚕 Share the taxi?', ko: '🚕 택시 같이 탈까요?', ja: '🚕 タクシーに相乗りする？', zh: '🚕 一起拼车吗？' },
@@ -113,7 +114,7 @@ export function createTaxi(game) {
       $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
     };
     $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label }) + ' · ' + (free ? st('free') : t('taxi.fare', { n: won(fare) })) + (paid !== fare ? ' (' + st('paid', { n: won(paid) }) + ')' : '') + (mates?.length ? ' · ' + st('together', { names: mates.join(', ') }) : '');
-    $('taxi-skip').textContent = t('taxi.skip');
+    $('taxi-tip').textContent = nextTip(); // (no skip: the ride is when the drop-off gets ready)
     $('taxi-ride').hidden = false;
     input.keys.clear();
     sayLine(TAXI_LINES[0]);
@@ -142,7 +143,6 @@ export function createTaxi(game) {
       setTimeout(() => sayLine(TAXI_LINES[2]), 4200),
       setTimeout(arrive, 5600),
     ];
-    $('taxi-skip').onclick = arrive;
   }
 
   // ---- The host: pick a place, maybe ask the people close by.

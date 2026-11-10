@@ -213,6 +213,7 @@ import { createMirrorMaze } from './game/mirror-maze.js';
 import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
 import { createSkate } from './game/skate.js';
 import { createTaxi } from './game/taxi.js';
+import { createRoomTips } from './game/tips.js';
 import { parseTaxi } from './core/taxi-share.js';
 import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
@@ -2296,6 +2297,8 @@ const interiorCache = createRoomCache({
   onDrop: (id) => stampStands.dropRoom(id),
 });
 const roomFor = (store) => interiorCache.room(store);
+// Walking into a room not built yet: a game tip covers the build (game/tips.js).
+const roomTips = createRoomTips({ $, enterStore: (it) => enterStore(it), built: (store) => !!interiorCache.get(store.id) });
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -6082,7 +6085,7 @@ function hi5Action(o) {
 // Street actions that can be next to each other (a shop door with people at
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
-const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => enterStore(it) });
+const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
@@ -6311,7 +6314,7 @@ function updateAction(p, tSec) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
       const under = storefronts.items.find((i) => i.store.below === interior.store.id);
-      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => enterStore(under) };
+      if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => roomTips.enter(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
       const st = interior.rides.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2.2);
       next = parkRideAction(st);
@@ -7054,6 +7057,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
