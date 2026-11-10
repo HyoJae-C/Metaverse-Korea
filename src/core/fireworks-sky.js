@@ -99,7 +99,7 @@ function directions(kind, n, rand) {
 }
 
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 30 : 60, PER = phone ? 64 : 96, N = SLOTS * PER;
+  const SLOTS = phone ? 40 : 64, PER = phone ? 64 : 96, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)

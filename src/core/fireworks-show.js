@@ -100,19 +100,22 @@ export function nearYeouido(x, z) {
 // ---- The program ----
 // 20 minutes with no quiet stretch: something bursts every second or so,
 // the shapes change every few minutes, a gold "photo time", and a finale
-// that fills the sky. (Yozi: shorter, busier, more kinds.)
+// that fills the sky. (Yozi: shorter, busier, more kinds.) volley:
+// [chance, fewest, most]: now and then several shells of one kind burst at
+// the same moment in a line along the river, for a big "bang" (Yozi: too
+// many came one by one).
 export const PHOTO_TIME = [780, 900];
 export const FINALE_TIME = 1110;
 export const ACTS = [
-  { from: 0, to: 150, gap: [0.9, 1.4], kinds: ['peony', 'ring', 'saturn', 'peony'], mono: true, name: 'opening: big single-colour flowers' },
-  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['heart', 'star', 'smile', 'flower', 'butterfly', 'double'], name: 'act 1: shapes' },
-  { from: 330, to: 360, gap: [0.25, 0.45], kinds: ['small', 'small', 'ring'], name: 'crackle: a rush of small ones' },
-  { from: 360, to: 540, gap: [0.5, 0.9], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn'], name: 'act 2: colours and spirals' },
-  { from: 540, to: 600, gap: [0.25, 0.4], kinds: ['small', 'ring', 'double', 'small'], name: 'salvo: from every barge' },
-  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['heart', 'flower', 'butterfly', 'rainbow', 'palm', 'star', 'spiral', 'smile'], name: 'act 3: everything' },
-  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [0.9, 1.3], kinds: ['willow'], name: 'photo time: gold willows' },
-  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, name: 'build-up: faster and faster' },
-  { from: FINALE_TIME, to: SHOW_SECONDS, gap: [0.1, 0.18], kinds: ['peony', 'willow', 'ring', 'rainbow', 'peony', 'palm'], big: true, name: 'finale' },
+  { from: 0, to: 150, gap: [0.9, 1.4], kinds: ['peony', 'ring', 'saturn', 'peony'], mono: true, volley: [0.3, 3, 3], name: 'opening: big single-colour flowers' },
+  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['heart', 'star', 'smile', 'flower', 'butterfly', 'double'], volley: [0.2, 3, 3], name: 'act 1: shapes' },
+  { from: 330, to: 360, gap: [0.25, 0.45], kinds: ['small', 'small', 'ring'], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
+  { from: 360, to: 540, gap: [0.5, 0.9], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn'], volley: [0.3, 3, 5], name: 'act 2: colours and spirals' },
+  { from: 540, to: 600, gap: [0.9, 1.4], kinds: ['small', 'ring', 'double', 'peony', 'rainbow'], volley: [1, 5, 7], name: 'salvo: every barge at once' },
+  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['heart', 'flower', 'butterfly', 'rainbow', 'palm', 'star', 'spiral', 'smile'], volley: [0.3, 3, 5], name: 'act 3: everything' },
+  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [0.9, 1.3], kinds: ['willow'], volley: [0.35, 3, 5], name: 'photo time: gold willows' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, volley: [0.3, 3, 5], name: 'build-up: faster and faster' },
+  { from: FINALE_TIME, to: SHOW_SECONDS, gap: [0.25, 0.4], kinds: ['peony', 'willow', 'ring', 'rainbow', 'peony', 'palm'], big: true, volley: [0.6, 5, 9], name: 'finale' },
 ];
 export const KINDS = ['peony', 'ring', 'heart', 'star', 'smile', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
@@ -149,13 +152,28 @@ export function program(start) {
       if (act.mono && (!mono || r() < 0.08)) mono = COLORS[Math.floor(r() * COLORS.length)];
       const color = kind === 'willow' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
       const color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
-      out.push({
-        t: Math.round(t * 100) / 100, barge: Math.floor(r() * BARGES.length), du: (r() - 0.5) * 50,
-        h: kind === 'small' ? 28 + r() * 12 : 40 + r() * 22, kind, color, color2,
-        scale: (act.big ? 1.15 : 1) * (0.85 + r() * 0.3), seed: Math.floor(r() * 1e9),
-      });
+      const scale = (act.big ? 1.15 : 1) * (0.85 + r() * 0.3);
+      const [vc, v0, v1] = act.volley || [0, 1, 1];
+      const n = r() < vc ? v0 + Math.floor(r() * (v1 - v0 + 1)) : 1;
+      if (n > 1) {
+        // A volley: n shells at once, evenly along all three barges, in a
+        // flat line, a V or an arch, in one colour or two taking turns.
+        const span = BARGES.at(-1)[0] - BARGES[0][0] + 50, shape = Math.floor(r() * 3), base = kind === 'small' ? 30 : 42;
+        const tt = Math.round(t * 100) / 100;
+        for (let i = 0; i < n; i++) {
+          const u = BARGES[0][0] - 25 + (span * i) / (n - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
+          const m = Math.abs(i / (n - 1) - 0.5) * 2; // 0 in the middle, 1 at the ends
+          const h = base + [6, 4 + 16 * m, 20 - 16 * m][shape];
+          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'willow' && color2 !== color ? color2 : color, color2: color, scale, seed: Math.floor(r() * 1e9) });
+        }
+      } else {
+        out.push({
+          t: Math.round(t * 100) / 100, barge: Math.floor(r() * BARGES.length), du: (r() - 0.5) * 50,
+          h: kind === 'small' ? 28 + r() * 12 : 40 + r() * 22, kind, color, color2, scale, seed: Math.floor(r() * 1e9),
+        });
+      }
       const [g0, g1] = act.gap;
-      t += act.ramp ? g0 + (g1 - g0) * k : g0 + (g1 - g0) * r();
+      t += (act.ramp ? g0 + (g1 - g0) * k : g0 + (g1 - g0) * r()) * (n > 1 ? 1.6 : 1); // a breath after a volley
     }
   }
   if (cache.size > 4) cache.clear();

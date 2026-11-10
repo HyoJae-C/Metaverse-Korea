@@ -42,7 +42,7 @@ test('the program: the same for everyone, no long waits, a photo time and a fina
   assert.ok(a.length > 1500 && a.length < 5000, `${a.length} bursts`);
   for (let i = 1; i < a.length; i++) {
     assert.ok(a[i].t >= a[i - 1].t, 'in time order');
-    assert.ok(a[i].t - a[i - 1].t < 1.6, `no gap over 1.6 s (at ${a[i].t})`);
+    assert.ok(a[i].t - a[i - 1].t < 2.5, `no gap over 2.5 s (at ${a[i].t})`);
   }
   assert.equal(SHOW_SECONDS, 1200, '20 minutes');
   for (const k of KINDS) assert.ok(a.some((x) => x.kind === k), `${k} comes up`);
@@ -101,4 +101,19 @@ test('operators can move the fireworks; the drones and the fountain keep clear',
     fw.setFireworksTimes(null);
   }
   assert.deepEqual(fountain.skipHours(), []);
+});
+
+test('volleys: now and then several shells burst at the same moment, across the barges', () => {
+  const a = program(KST(2026, 11, 9, 21));
+  const at = new Map();
+  for (const x of a) at.set(x.t, [...(at.get(x.t) || []), x]);
+  const volleys = [...at.values()].filter((v) => v.length >= 3);
+  assert.ok(volleys.length > 150, `${volleys.length} volleys`);
+  for (const v of volleys) {
+    assert.ok(v.every((x) => x.kind === v[0].kind), 'one kind per volley');
+    assert.ok(new Set(v.map((x) => x.barge)).size >= 2, 'from more than one barge');
+  }
+  const salvo = volleys.filter((v) => v[0].t >= 540 && v[0].t < 600);
+  assert.ok(salvo.length > 30 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
+  assert.ok(volleys.some((v) => v[0].t >= 1110 && v.length >= 7), 'big volleys in the finale');
 });
