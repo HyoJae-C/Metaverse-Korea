@@ -193,9 +193,9 @@
     {
       "k": "secondary",
       "w": 12,
-      "p": [[1117.6, 813.8], [1247, 626]],
+      "p": [[1117.6, 813.8], [1125, 811], [1147, 801], [1168, 792], [1206, 775], [1233, 763]],
       "n": { "ko": "올림픽로", "en": "Olympic-ro", "ja": "オリンピック路", "zh": "奥林匹克路" },
-      "note": "Olympic-ro climbs north-east from Jamsil Station (Songpa) to Olympic Park's Olympic-ro by the World Peace Gate, as it does in Seoul."
+      "note": "Olympic-ro runs east from Jamsil Station (Songpa) to Mongchontoseong Station at Olympic Park's corner, on its real line at 1/4 (OpenStreetMap)."
     },
     {
       "k": "primary",
@@ -207,9 +207,16 @@
     {
       "k": "secondary",
       "w": 16,
-      "p": [[260, 97.2], [300, 112.2], [390, -95], [408, -95]],
+      "p": [[260, 97.2], [327.5, 130]],
       "n": { "ko": "아차산로", "en": "Achasan-ro", "ja": "峨嵯山路", "zh": "峨嵯山路" },
-      "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro and Children's Grand Park's main gate."
+      "note": "Achasan-ro runs on east from Seongsu to Neungdong-ro by Konkuk University Station."
+    },
+    {
+      "k": "secondary",
+      "w": 14,
+      "p": [[327.5, 130], [341.3, 95.6], [350.8, 73.3], [362.6, 41.9], [367.4, 28], [375.3, 7], [381, -9], [392, -37], [402, -66], [405, -73]],
+      "n": { "ko": "능동로", "en": "Neungdong-ro", "ja": "陵洞路", "zh": "陵洞路" },
+      "note": "Neungdong-ro runs north-north-east from Achasan-ro to Children's Grand Park Station and the park's main gate, on its real line at 1/4 (OpenStreetMap)."
     },
     {
       "k": "tertiary",
@@ -778,7 +785,7 @@
           }
         ]
       },
-      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "On Olympic-ro in front of Olympic Park, either side of the walk up to the World Peace Gate. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1302, 635], "ry": -1.5708 }, { "n": 2, "at": [1372, 635], "ry": 1.5708 }] },
+      { "id": "mongchontoseong-station", "name": { "ko": "몽촌토성", "en": "Mongchontoseong", "ja": "夢村土城", "zh": "梦村土城" }, "code": "813", "line": { "color": "#e6186c", "name": { "ko": "8호선", "en": "Line 8", "ja": "8号線", "zh": "8号线" } }, "prev": { "ko": "강동구청", "en": "Gangdong-gu Office" }, "next": { "ko": "잠실", "en": "Jamsil" }, "note": "Where Olympic-ro turns north along Olympic Park and Wiryeseong-daero runs east along it, exits 1 and 2 on their real spots by the Peace Plaza. Line 9 also stops here; the signs show Line 8. Listed after Jamsil, so the train goes Jamsil -> Mongchontoseong as in real life.", "exits": [{ "n": 1, "at": [1276, 745], "ry": 3.14159 }, { "n": 2, "at": [1260, 768], "ry": 1.5708 }] },
       {
         "id": "childrens-grand-park-station",
         "name": { "ko": "어린이대공원", "en": "Children's Grand Park", "ja": "子供大公園", "zh": "儿童大公园" },
@@ -786,10 +793,10 @@
         "line": { "color": "#747f00", "name": { "ko": "7호선", "en": "Line 7", "ja": "7号線", "zh": "7号线" } },
         "prev": { "ko": "군자", "en": "Gunja" },
         "next": { "ko": "건대입구", "en": "Konkuk Univ." },
-        "note": "Under Neungdong-ro at Children's Grand Park's main gate (exit 1 by the gate). The real station is also named Sejong Univ.",
+        "note": "Under Neungdong-ro at Children's Grand Park's main gate (exits 1 and 2 on their real spots, north and south of the gate). The real station is also named Sejong Univ.",
         "exits": [
-          { "n": 1, "at": [420, -113], "ry": 3.14159 },
-          { "n": 2, "at": [396, -113], "ry": 3.14159 }
+          { "n": 1, "at": [443, -119], "ry": 3.14159 },
+          { "n": 2, "at": [422, -75], "ry": 1.5708 }
         ]
       }
     ]
