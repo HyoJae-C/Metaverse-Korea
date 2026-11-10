@@ -6,7 +6,7 @@
 // from Anguk Station. The game makes it a small walled village on a hill,
 // loosely after the real streets (OpenStreetMap, © OpenStreetMap
 // contributors): the gate on Bukchon-ro by Anguk Station, a street of shops
-// and the Open House at the bottom (after Bukchon-ro 5-gil), then the hanok
+// and the Open House at the bottom (from Bukchon-ro 2-gil), then the hanok
 // alleys of Gahoe-dong climbing north, the main one after Bukchon-ro 11-gil,
 // to a lookout at the top: the famous view down the alley to the city. The
 // alleys up the hill are homes (the Quiet Zone).
@@ -31,7 +31,12 @@ const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 const roads = [
   { k: 'primary', w: 16, p: [[60, 0], [310, 0]], n: N('율곡로', 'Yulgok-ro', '栗谷路', '栗谷路') },
   { k: 'secondary', w: 8, p: [[24, -8], [24, -40]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
-  { k: 'tertiary', w: 7, p: [[-6, -40], [126, -40]], n: N('북촌로5길', 'Bukchon-ro 5-gil', '北村路5ギル', '北村路5街') },
+  // The lane of shops: its west end is the real Bukchon-ro 2-gil (OSM: from
+  // Bukchon-ro east to Gyedong-gil, 5 m north of this line); on east it is
+  // the game's own lane. (It used to be called Bukchon-ro 5-gil, but the
+  // real 5-gil goes west from Bukchon-ro, 30-140 m from here.)
+  { k: 'tertiary', w: 7, p: [[-6, -40], [24, -40]], n: N('북촌로2길', 'Bukchon-ro 2-gil', '北村路2ギル', '北村路2街') },
+  { k: 'tertiary', w: 7, p: [[24, -40], [126, -40]] },
   // Up the hill: the main alley to the top, two alleys across, two side alleys.
   // Narrow, like the real alleys: the house walls stand right at the edge, and
   // the houses stand side by side, so an alley is all the room there is
@@ -52,7 +57,7 @@ const areas = [
 // stand in front of them.
 const buildings = [];
 const add = (p, extra) => buildings.push({ h: 6, hanok: 1, p, ...extra });
-for (let x = 31; x + 22 <= 126; x += 24) add(rect(x, -18, x + 22, -34), { fr: [0, -1] }); // south side of 5-gil
+for (let x = 31; x + 22 <= 126; x += 24) add(rect(x, -18, x + 22, -34), { fr: [0, -1] }); // south side of the lane of shops
 add(rect(-6, -18, 18, -34), { fr: [0, -1] });
 for (const [x0, x1] of [[-6, 16], [20, 42], [64, 80]]) add(rect(x0, -46, x1, -62), { fr: [0, 1] }); // north side
 

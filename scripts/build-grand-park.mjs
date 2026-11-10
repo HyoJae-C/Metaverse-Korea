@@ -4,7 +4,7 @@
 // its own (src/data/zoo-grounds.json, drawn by core/zoo-park.js). Hand-made:
 // the park is only as big as the zoo needs; the zoo is the point of the place.
 //
-//   Neungdong-ro (x 0) ── gate plaza ── rainbow main gate ── zoo entrance │ zoo (a room)
+//   Neungdong-ro (real line, by x 0) ── gate plaza ── rainbow main gate ── zoo entrance │ zoo (a room)
 //
 // Pens (core/zoo.js) sit in the four quarters of the zoo's loop and south
 // of it. Their fences are written twice from the same layout: as pens (drawn
@@ -23,6 +23,20 @@ const GROUNDS = path.join(root, 'src', 'data', 'zoo-grounds.json');
 const L = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const r1 = (v) => Math.round(v * 10) / 10;
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+
+// Neungdong-ro on its real line at 1/4 (OpenStreetMap, the middle of its two
+// carriageways): it runs north-north-east past the station (local 0, 0) and
+// the main gate, so the gate plaza's west side and the park's follow it.
+// South of the station it is a link road in region.json (on to Achasan-ro).
+export const NEUNGDONG = [[46.8, -80], [44, -72], [40, -64], [25.5, -31], [7.5, 5], [1, 18], [-3, 22]];
+// x of Neungdong-ro's east kerb plus 2 m, at z (for the park's west side).
+export function roadEdge(z) {
+  for (let i = 1; i < NEUNGDONG.length; i++) {
+    const [x0, z0] = NEUNGDONG[i - 1], [x1, z1] = NEUNGDONG[i];
+    if (z >= z0 && z <= z1) return r1(x0 + (x1 - x0) * (z - z0) / (z1 - z0) + 9);
+  }
+  throw new Error(`roadEdge: z ${z} is off Neungdong-ro`);
+}
 
 // Is the zoo open? While it isn't, a sign by the entrance says it opens soon
 // and the zoo's keeper says so inside (game/zoo-visit.js welcome()). Open
@@ -383,14 +397,14 @@ export function buildMap() {
   const map = {
     meta: {
       district: 'grand-park',
-      source: "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json).",
+      source: "hand-made (game map, not to scale): Seoul Children's Grand Park in Gwangjin-gu (opened 1973, free entry). Simplified to the zoo: the main gate on Neungdong-ro by Children's Grand Park Station (Line 7; Neungdong-ro follows OpenStreetMap at 1/4, © OpenStreetMap contributors, ODbL), a gate plaza and the zoo's entrance; the zoo itself (its loop and pens, wrapped in a strip of woods) is a room you walk into (src/data/zoo-grounds.json). The animals are the game's choice and may differ from the real zoo. Built by scripts/build-grand-park.mjs; placed by its anchor, Children's Grand Park Station (region.json).",
     },
     roads: [
-      { k: 'secondary', w: 14, p: [[0, -80], [0, 95]], n: L('능동로', 'Neungdong-ro', '陵洞路', '陵洞路') },
+      { k: 'secondary', w: 14, p: NEUNGDONG, n: L('능동로', 'Neungdong-ro', '陵洞路', '陵洞路') },
       { k: 'walk', w: 6, p: [[50, 0], [ZOO_ENTRANCE.x0, 0]] }, // to the zoo's door
     ],
     buildings: [
-      { h: 8, p: rect(14, -46, 36, -32), n: L('서울어른도대공원 안내센터', "Grown-ups' Grand Park Information Center", '大人も大公園インフォメーションセンター', '大人也大公园信息中心') },
+      { h: 8, p: rect(42, -50, 55, -36), n: L('서울어른도대공원 안내센터', "Grown-ups' Grand Park Information Center", '大人も大公園インフォメーションセンター', '大人也大公园信息中心') },
       // The zoo's entrance building: drawn by its landmark (core/grand-park.js
       // zooEntrance), a wall here, and the facade its door (the storefront) sits on.
       { h: ZOO_ENTRANCE.h, custom: true, p: rect(ZOO_ENTRANCE.x0, ZOO_ENTRANCE.z0, ZOO_ENTRANCE.x1, ZOO_ENTRANCE.z1) },
@@ -398,11 +412,11 @@ export function buildMap() {
     rail: [],
     areas: [
       // The park ground round the zoo, leaving the gate plaza out.
-      { k: 'park', p: [[7, -80], [200, -80], [200, 95], [7, 95], [7, 22], [50, 22], [50, -22], [7, -22]] },
-      { k: 'plaza', p: rect(7, -22, 50, 22) },
+      // Its west side follows Neungdong-ro (kerb plus 2 m: roadEdge()).
+      { k: 'park', p: [[roadEdge(-80), -80], [200, -80], [200, 95], [7, 95], [7, 22], [50, 22], [50, -22], [roadEdge(-22), -22], [roadEdge(-31), -31], [roadEdge(-64), -64]] },
+      { k: 'plaza', p: [[roadEdge(-22), -22], [50, -22], [50, 22], [7, 22], [roadEdge(5), 5]] },
       // The zoo behind its fence: from the street, a wood (inside is the zoo's own room).
       { k: 'park', trees: true, p: rect(58, -79, 199, 94) },
-      { k: 'park', trees: true, p: rect(7, -80, 50, -52) },
       { k: 'park', trees: true, p: rect(7, 30, 52, 95) },
     ],
     blockers: [{ p: [[29.2, -7.8], [30.8, -7.8], [30.8, -6.2], [29.2, -6.2]] }, { p: [[29.2, 6.2], [30.8, 6.2], [30.8, 7.8], [29.2, 7.8]] }],

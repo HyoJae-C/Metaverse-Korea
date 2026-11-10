@@ -219,6 +219,7 @@ import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
 import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listening-bar.js';
+import { createLiveStage } from './game/live-stage.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
@@ -1521,10 +1522,12 @@ async function joinRoom(room, roomScene, area = null) {
       checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
+      liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { liveStage.onLeave(id); sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (liveStage.onMsg(id, e)) return; // the live café's voice set-up (game/live-stage.js)
       if (sky.onMsg(id, e)) return; // carrying someone in flight (game/sky-flight.js)
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
@@ -1548,6 +1551,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
       if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
@@ -2822,6 +2826,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (store.genre) enterClub(store.genre);
+  if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
@@ -3012,6 +3017,7 @@ function leaveStore(walkOut = false) {
   for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
+  liveStage.leave(); // (tells the room the song is over, while still in it)
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
@@ -3184,6 +3190,14 @@ const listenBar = createListeningBar({
     for (const s of interior?.stations?.listening || []) if (s.rack) s.rack.visible = !s.npc && s !== listenBar.station;
     if (listenBar.station) me.root.rotation.y = listenBar.station.ry; // face the bar
   },
+});
+// Sinchon's live café: sing into your mic on the stage; only people in the
+// café hear it. (game/live-stage.js)
+const liveStage = createLiveStage({
+  get interior() { return interior; }, get others() { return others; }, get net() { return net; }, get me() { return me; },
+  get nickname() { return nickname; }, get sfx() { return sfx; },
+  myId, safety, cloud, shop, music, applyMusicBtn, openPersonMenu: chat.openPersonMenu, testRoom: !!testRoom,
+  standAt: (x, z, ry) => moveMeTo(activeScene, x, z, ry, cam.yaw), // (the camera stays put: you see your singer from the room)
 });
 // Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
 const bikeShop = createBikeShop({
@@ -4298,7 +4312,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, get activeScene() { return activeScene; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -6459,6 +6473,8 @@ function updateAction(p, tSec) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
       next = { key: 'runway', label: '👠 ' + L(roomKit().RUNWAY_TEXT.open), run: () => runwayUi.show() };
+    } else if (liveStage.action(p)) {
+      next = liveStage.action(p);
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -6503,7 +6519,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
-      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling) + (arcadeGame.bowlInvite() ? ' ⚔️' : ''), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
       next = arcadeGame.camOn() ? null : { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
@@ -7041,6 +7057,7 @@ renderer.setAnimationLoop((now) => {
   const mapUp = mapView.open;
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
+  liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
@@ -7217,7 +7234,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
+    live: () => liveStage.voice?.debug() ?? null, liveVoice: () => liveStage.voice, // the live café's voice (game/live-voice.js)
     dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
+    bowlLanes: () => interior?.stations?.bowling?.map((s) => ({ x: s.x, z: s.z, busy: s.busy, ball: s.ball.visible, rows: s.screen.rows })) ?? null, // lanes and their screens (core/activity-rooms.js)
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)

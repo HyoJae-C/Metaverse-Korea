@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { hillGround, hillHeightRel, hillBox } from '../src/core/hill-ground.js';
 
-// Gyeongnidan-gil (scripts/build-gyeongnidan.mjs): Itaewon's hillside street,
+// Gyeongnidan-gil (scripts/build-itaewon.mjs): Itaewon's hillside street,
 // on its real roads from OpenStreetMap at a quarter of the real size, and as
 // simple as the other neighbourhoods.
 const R = new URL('../public/regions/another-seoul/', import.meta.url);
@@ -58,7 +58,8 @@ test('the street climbs, the lanes north climb on and the lanes south go down to
   assert.ok(ground(mx, mz - 15) > ground(mx, mz) + 0.2, 'up the lanes towards Namsan');
   assert.ok(ground(mx, mz + 15) < ground(mx, mz) - 0.5, 'down the lanes towards Itaewon');
   assert.equal(ground(mx, -7), 0, 'Itaewon-ro below is flat');
-  for (const x of [180, 240, 320]) assert.equal(ground(x, -178), 0, 'Sowol-ro above is flat');
+  const sowol = itaewon.roads.find((r) => r.n?.en === 'Sowol-ro');
+  for (const [x, z] of sowol.p) assert.equal(ground(x, z), 0, 'Sowol-ro above is flat');
   // Off the hill the ground is the city's flat ground, and the world function agrees.
   const g = hillGround(hill, [ox, oz]);
   assert.equal(g(0, 0), 0);
@@ -91,7 +92,7 @@ test('every lane joins another street (none starts in a field)', () => {
 
 test('houses stand on the slope with no gap under them, and their floor at the street', () => {
   const hillHouses = itaewon.buildings.filter((b) => b.gy && b.y != null);
-  assert.ok(hillHouses.length > 30, 'a lived-in hillside');
+  assert.ok(hillHouses.length >= 25, 'a lived-in hillside'); // one row along each lane, at the real 1/4
   for (const b of hillHouses) {
     const low = Math.min(...b.p.map(([x, z]) => ground(x, z)));
     assert.ok(b.y0 <= low + 1e-9, 'the walls reach the ground on the low side');

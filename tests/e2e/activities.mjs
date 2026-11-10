@@ -23,7 +23,8 @@ for (const [id, kind, panel] of [['strike-lane-bowling', 'bowling', 'bowling-pan
   await page.waitForTimeout(1500);
   await shot(kind + '-room');
   const st = await page.evaluate((k) => __mk.interior?.()?.stations?.[k] ?? null, kind);
-  const spot = st?.[0] || (kind === 'bowling' ? [0, 2.7] : [-6, -5.2]);
+  const lane = kind === 'bowling' ? (await page.evaluate(() => __mk.bowlLanes()))?.[0] : null;
+  const spot = st?.[0] || lane || [-6, -5.2];
   await page.evaluate(([x, z]) => __mk.place(x, z), Array.isArray(spot) ? spot : [spot.x, spot.z]);
   await page.waitForTimeout(400);
   const act = await page.evaluate(() => __mk.action());
