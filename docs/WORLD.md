@@ -378,12 +378,17 @@ inside, so their grounds shrink (Yozi 2026-11-10). Items are marked `ym`.
 ## Samseong-dong (Gangnam-gu)
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,
-drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`; street lines
-after OpenStreetMap) at 1/4 of the real size: Asem-ro is 161 m west of the
-station, Bongeunsa-ro 153 m north and Tancheon 130 m east, a quarter of their
-real distances. The big buildings (KONEXT 88 x 60 m, the office towers) take
-a quarter of their real footprint too; heights stay real. (It was drawn about
-twice as large, then about 1.2 times, before this.) The block north-west of the corner is KONEXT, a
+drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`). Teheran-ro,
+Olympic-ro, Yeongdong-daero, Bongeunsa-ro, Samseong-ro and Tancheon are the
+real OpenStreetMap lines at 1/4 (`scripts/data/samseong-osm.json`), within
+3 m (Yeongdong-daero 6 m from each carriageway). The streets slant: the whole
+grid is turned 21.5° (Teheran-ro runs east-north-east), so the buildings and
+KONEXT are laid out in that grid and turned with it. Asem-ro, KONEXT's west
+side, is 88 m west of Yeongdong-daero; Teheran-ro turns into Olympic-ro and
+crosses Tancheon on Samseong Bridge where the real road does. KONEXT stands
+on the real exhibition centre (52 x 82 m on its 59 x 87 m), and the other
+buildings are made up, one row along the streets; heights stay real. (It was
+a straight cross, up to 78 m off the real roads, before 2026-11-11.) The block north-west of the corner is KONEXT, a
 fictional shopping mall seen from outside only (`core/konext.js`: a custom
 building, so its walls still block): a long, low glass box with a wave
 skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media

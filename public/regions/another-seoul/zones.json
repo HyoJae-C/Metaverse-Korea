@@ -31,7 +31,7 @@
     { "id": "B-5", "npc": "W", "color": "#c2873f", "at": [-853, -764.5], "snap": false, "radius": 25, "name": { "en": "Dongmyo Potato Market", "ko": "동묘 감자마켓", "ja": "東廟ポテトマーケット", "zh": "东庙土豆市场" } },
     { "id": "H-1", "npc": "S", "color": "#e08a2e", "at": [443, -95], "snap": false, "radius": 30, "name": { "en": "Grand Park Main Gate", "ko": "어른도대공원 정문", "ja": "大人も大公園 正門", "zh": "大人也大公园正门" } },
     { "id": "F-2", "npc": "T", "color": "#4f8fd8", "at": [933, 988], "snap": false, "radius": 35, "name": { "en": "Seokchon Lakeside", "ko": "석촌호숫가", "ja": "石村湖のほとり", "zh": "石村湖畔" } },
-    { "id": "J-1", "npc": "U", "color": "#1d5fa8", "at": [133, 911], "snap": false, "radius": 30, "name": { "en": "KONEXT Square", "ko": "코넥스트 광장", "ja": "コネクスト広場", "zh": "KONEXT广场" } },
+    { "id": "J-1", "npc": "U", "color": "#1d5fa8", "at": [123, 981.7], "snap": false, "radius": 30, "name": { "en": "KONEXT Square", "ko": "코넥스트 광장", "ja": "コネクスト広場", "zh": "KONEXT广场" } },
     { "id": "K-1", "npc": "V", "color": "#1f8fa3", "at": [-2611.9, 551.8], "snap": false, "radius": 40, "name": { "en": "Yeouido Lawn", "ko": "여의도 잔디밭", "ja": "汝矣島の芝生", "zh": "汝矣岛草坪" } },
     { "id": "K-2", "npc": "X", "color": "#d9a43a", "at": [-2892, 475.7], "snap": false, "radius": 30, "name": { "en": "Seoul Dal", "ko": "서울달", "ja": "ソウルダル", "zh": "首尔月亮" } }
   ]
