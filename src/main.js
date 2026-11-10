@@ -1525,9 +1525,12 @@ async function joinRoom(room, roomScene, area = null) {
       }
       if (parseTarot(e)) {
         const m = parseTarot(e);
-        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && tarotUi.heard(id, others.nameOf(id) || '?', m)) {
-          shop.toast(fmt(L(TAROT_TEXT.invited), { name: others.nameOf(id) || '?' }));
-          action = STALE;
+        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) {
+          tarotUi.ready().then((ui) => { // (the panel downloads on the first message)
+            if (!ui.heard(id, others.nameOf(id) || '?', m)) return;
+            shop.toast(fmt(L(TAROT_TEXT.invited), { name: others.nameOf(id) || '?' }));
+            action = STALE;
+          }, () => {});
         }
         return;
       }
@@ -7088,7 +7091,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
     stand: () => standUp(),
-    tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarotUi.offer && { ...tarotUi.offer }, state: tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
+    tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarot.tarotOffer() && { ...tarot.tarotOffer() }, state: tarotUi.loaded && tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
     bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
     bookShelf: (section) => bookUi.showShelf(section),
     bookStations: () => interior?.stations?.books?.map((st) => ({ ...st })) ?? null,

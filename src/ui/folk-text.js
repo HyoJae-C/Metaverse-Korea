@@ -4,16 +4,17 @@
 // (core/i18n.js localName). Lines the locals say are [Korean, romanization,
 // meaning].
 import { getLanguage, localName } from '../core/i18n.js';
+import { FOLK_LABELS } from './folk-labels.js';
+
+export { FOLK_LINES, lineText } from './folk-labels.js';
 
 export const FT = {
+  ...FOLK_LABELS,
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
   again: { en: 'Play again', ko: '한 판 더', ja: 'もう一回', zh: '再来一局', es: 'Jugar otra vez', id: 'Main lagi', vi: 'Chơi lại', hi: 'फिर से खेलें', fr: 'Rejouer', th: 'เล่นอีกครั้ง', ar: 'العب مرة أخرى' },
   start: { en: 'Start', ko: '시작', ja: 'スタート', zh: '开始', es: 'Empezar', id: 'Mulai', vi: 'Bắt đầu', hi: 'शुरू करें', fr: 'Commencer', th: 'เริ่ม', ar: 'ابدأ' },
-  teacher: { en: 'Grandpa Kim', ko: '김 할아버지', ja: 'キムおじいさん', zh: '金爷爷', es: 'Abuelo Kim', id: 'Kakek Kim', vi: 'Ông Kim', hi: 'दादाजी किम', fr: 'Grand-père Kim', th: 'คุณปู่คิม', ar: 'الجد كيم' },
-  courtyard: { en: 'Folk games yard', ko: '전통놀이 마당', ja: '伝統遊びの広場', zh: '传统游戏广场', es: 'Patio de juegos tradicionales', id: 'Halaman permainan tradisional', vi: 'Sân trò chơi dân gian', hi: 'पारंपरिक खेलों का आँगन', fr: 'Cour des jeux traditionnels', th: 'ลานละเล่นพื้นบ้าน', ar: 'ساحة الألعاب الشعبية' },
 
   // 윷놀이
-  'yut.open': { en: 'Play yutnori', ko: '윷놀이 하기', ja: 'ユンノリをする', zh: '玩掷柶', es: 'Jugar al yutnori', id: 'Main yutnori', vi: 'Chơi yutnori', hi: 'युतनोरी खेलें', fr: 'Jouer au yutnori', th: 'เล่นยุทโนรี', ar: 'العب يوتنوري' },
   'yut.title': { en: 'Yutnori', ko: '윷놀이', ja: 'ユンノリ', zh: '掷柶（尤茨游戏）', es: 'Yutnori', id: 'Yutnori', vi: 'Yutnori', hi: 'युतनोरी', fr: 'Yutnori', th: 'ยุทโนรี', ar: 'يوتنوري' },
   'yut.howTo': {
     en: 'Throw four sticks. Count the flat sides up: 1 do, 2 gae, 3 geol, 4 yut, none mo (5 steps). Yut and mo give another throw. Move your pieces round the board; stop on a corner or the centre to take the short cut. Land on your own piece to stack them, land on someone else\'s to send it home (and throw again). Get all your pieces past the start to win.',
@@ -44,7 +45,6 @@ export const FT = {
   'yut.opponents': { en: 'Players', ko: '인원', ja: '人数', zh: '人数', es: 'Jugadores', id: 'Pemain', vi: 'Số người', hi: 'खिलाड़ी', fr: 'Joueurs', th: 'ผู้เล่น', ar: 'اللاعبون' },
   'yut.pieces': { en: 'Pieces each', ko: '말 개수', ja: '駒の数', zh: '每人棋子', es: 'Fichas por jugador', id: 'Bidak per orang', vi: 'Quân mỗi người', hi: 'हर एक की गोटियाँ', fr: 'Pions chacun', th: 'หมากต่อคน', ar: 'القطع لكل لاعب' },
   'yut.you': { en: 'You', ko: '나', ja: 'あなた', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
-  'yut.grandma': { en: 'Grandma', ko: '할머니', ja: 'おばあちゃん', zh: '奶奶', es: 'Abuela', id: 'Nenek', vi: 'Bà', hi: 'दादी', fr: 'Grand-mère', th: 'คุณยาย', ar: 'الجدة' },
   'yut.throw': { en: 'Throw the sticks', ko: '윷 던지기', ja: '棒を投げる', zh: '掷木棍', es: 'Lanzar los palos', id: 'Lempar tongkat', vi: 'Tung que', hi: 'डंडियाँ फेंकें', fr: 'Lancer les bâtonnets', th: 'โยนไม้', ar: 'ارمِ العصي' },
   'yut.yourTurn': { en: 'Your turn: throw!', ko: '내 차례: 던져요!', ja: 'あなたの番：投げて！', zh: '轮到你：掷吧！', es: 'Tu turno: ¡lanza!', id: 'Giliranmu: lempar!', vi: 'Lượt bạn: tung đi!', hi: 'आपकी बारी: फेंकें!', fr: 'À toi : lance !', th: 'ตาคุณ: โยนเลย!', ar: 'دورك: ارمِ!' },
   'yut.theirTurn': { en: '{name}\'s turn', ko: '{name} 차례', ja: '{name}の番', zh: '轮到{name}', es: 'Turno de {name}', id: 'Giliran {name}', vi: 'Lượt của {name}', hi: '{name} की बारी', fr: 'Au tour de {name}', th: 'ตาของ {name}', ar: 'دور {name}' },
@@ -69,7 +69,6 @@ export const FT = {
   'a.horse': { en: 'horse', ko: '말', ja: '馬', zh: '马', es: 'caballo', id: 'kuda', vi: 'ngựa', hi: 'घोड़ा', fr: 'cheval', th: 'ม้า', ar: 'حصان' },
 
   // 투호
-  'tuho.open': { en: 'Play tuho', ko: '투호 하기', ja: '投壺をする', zh: '玩投壶', es: 'Jugar al tuho', id: 'Main tuho', vi: 'Chơi tuho', hi: 'तूहो खेलें', fr: 'Jouer au tuho', th: 'เล่นทูโฮ', ar: 'العب توهو' },
   'tuho.title': { en: 'Tuho (arrow toss)', ko: '투호', ja: '投壺（トゥホ）', zh: '投壶', es: 'Tuho (lanzar flechas)', id: 'Tuho (lempar panah)', vi: 'Tuho (ném tên vào bình)', hi: 'तूहो (तीर उछालना)', fr: 'Tuho (lancer de flèches)', th: 'ทูโฮ (โยนลูกศร)', ar: 'توهو (رمي السهام)' },
   'tuho.howTo': {
     en: 'Toss 10 arrows into the jar. First tap to fix the direction while the marker swings, then tap to fix the power. The mouth scores 2, the small ears on its sides score 3.',
@@ -111,7 +110,6 @@ export const FT = {
   'tuho.score': { en: '{score} points · {n} in the jar', ko: '{score}점 · {n}개 들어감', ja: '{score}点・{n}本入った', zh: '{score}分 · 投进{n}支', es: '{score} puntos · {n} dentro', id: '{score} poin · {n} masuk', vi: '{score} điểm · {n} mũi vào', hi: '{score} अंक · {n} अंदर', fr: '{score} points · {n} dans le pot', th: '{score} คะแนน · ลงไห {n}', ar: '{score} نقاط · {n} في الجرّة' },
 
   // 제기차기
-  'jegi.open': { en: 'Kick the jegi', ko: '제기차기 하기', ja: 'チェギチャギをする', zh: '踢毽子', es: 'Patear el jegi', id: 'Tendang jegi', vi: 'Đá cầu jegi', hi: 'जेगी उछालें', fr: 'Taper dans le jegi', th: 'เตะเจกี', ar: 'اركل الجيغي' },
   'jegi.title': { en: 'Jegichagi (jegi kicking)', ko: '제기차기', ja: 'チェギチャギ（羽根蹴り）', zh: '踢毽子', es: 'Jegichagi (patear el jegi)', id: 'Jegichagi (tendang jegi)', vi: 'Jegichagi (đá cầu)', hi: 'जेगीचागी (जेगी किक)', fr: 'Jegichagi (jeu du jegi)', th: 'เจกีชากี (เตะเจกี)', ar: 'جيغيتشاغي (ركل الجيغي)' },
   'jegi.howTo': {
     en: 'Tap KICK (or Space) when the jegi is just above your foot. A clean kick goes straight up; a sloppy one drifts away. Keep it in the air as long as you can. Count along in Korean!',
@@ -149,7 +147,6 @@ export const FT = {
   'jegi.perfects': { en: '{n} perfect kicks', ko: '완벽한 차기 {n}번', ja: 'パーフェクト {n}回', zh: '完美 {n} 次', es: '{n} patadas perfectas', id: '{n} tendangan sempurna', vi: '{n} cú hoàn hảo', hi: '{n} परफ़ेक्ट किक', fr: '{n} coups parfaits', th: 'เตะเป๊ะ {n} ครั้ง', ar: '{n} ركلات ممتازة' },
 
   // 널뛰기
-  'neol.open': { en: 'Jump on the seesaw', ko: '널뛰기 하기', ja: 'ノルティギをする', zh: '玩跳板', es: 'Saltar en el balancín', id: 'Main jungkat-jungkit', vi: 'Chơi bập bênh', hi: 'नल्त्तुइगी खेलें', fr: 'Sauter sur la balançoire', th: 'กระโดดกระดานหก', ar: 'اقفز على الأرجوحة' },
   'neol.title': { en: 'Neolttwigi (seesaw jumping)', ko: '널뛰기', ja: 'ノルティギ（板跳び）', zh: '跳板（널뛰기）', es: 'Neolttwigi (balancín de salto)', id: 'Neolttwigi (lompat papan)', vi: 'Neolttwigi (nhảy ván)', hi: 'नल्त्तुइगी (तख़्ते पर कूद)', fr: 'Neolttwigi (saut à la balançoire)', th: 'นอลตวีกี (กระโดดกระดานหก)', ar: 'نولتّويغي (القفز على اللوح)' },
   'neol.howTo': {
     en: 'You and Suni stand on the ends of the board and take turns flying up. Tap PUSH (or Space) right as you land: good timing sends Suni higher, and she sends you back up just as high. 10 jumps; how high can you fly in all?',
@@ -178,7 +175,6 @@ export const FT = {
     ar: 'النولتّويغي لعبة رأس السنة. يُقال إن الفتيات قديمًا، وقد كنّ نادرًا ما يخرجن، كنّ يطللن من فوق الأسوار العالية وهنّ يقفزن.',
   },
   'neol.push': { en: 'PUSH', ko: '구르기', ja: 'プッシュ', zh: '踩', es: 'EMPUJAR', id: 'DORONG', vi: 'ĐẠP', hi: 'पुश', fr: 'POUSSER', th: 'ดัน', ar: 'ادفع' },
-  'neol.partner': { en: 'Suni', ko: '순이', ja: 'スニ', zh: '顺伊', es: 'Suni', id: 'Suni', vi: 'Suni', hi: 'सुनी', fr: 'Suni', th: 'ซูนี', ar: 'سوني' },
   'neol.perfect': { en: 'Perfect push!', ko: '완벽한 구르기!', ja: '完璧！', zh: '完美！', es: '¡Empujón perfecto!', id: 'Dorongan sempurna!', vi: 'Đạp hoàn hảo!', hi: 'परफ़ेक्ट पुश!', fr: 'Poussée parfaite !', th: 'ดันเป๊ะมาก!', ar: 'دفعة ممتازة!' },
   'neol.good': { en: 'Good push', ko: '좋아요', ja: 'いい感じ', zh: '不错', es: 'Buen empujón', id: 'Dorongan bagus', vi: 'Đạp tốt', hi: 'बढ़िया पुश', fr: 'Bonne poussée', th: 'ดันดี', ar: 'دفعة جيدة' },
   'neol.ok': { en: 'A bit off', ko: '조금 어긋났어요', ja: 'ちょっとずれた', zh: '差了一点', es: 'Un poco desfasado', id: 'Agak meleset', vi: 'Hơi lệch nhịp', hi: 'थोड़ा चूके', fr: 'Un peu décalé', th: 'พลาดไปนิด', ar: 'خارج التوقيت قليلًا' },
@@ -191,25 +187,6 @@ export const FL = (k, vars) => {
   let s = localName(FT[k], getLanguage()) ?? k;
   if (vars) for (const [a, b] of Object.entries(vars)) s = s.replaceAll('{' + a + '}', b);
   return s;
-};
-
-// Things the locals say: [Korean, romanization, meaning].
-const tr = (en, ja, zh, es, id, vi, hi, ar, fr, th) => ({ en, ja, zh, es, id, vi, hi, ar, fr, th });
-export const FOLK_LINES = {
-  yutHello: ['윷놀이 한 판 할까요?', 'yunnori han pan halkkayo?', tr('Shall we play a round of yutnori?', 'ユンノリ、一局やりましょうか？', '来一局掷柶吧？', '¿Jugamos una partida de yutnori?', 'Main yutnori satu ronde, yuk?', 'Chơi một ván yutnori nhé?', 'युतनोरी की एक बाज़ी हो जाए?', 'هل نلعب جولة يوتنوري؟', 'On fait une partie de yutnori ?', 'มาเล่นยุทโนรีกันสักตาไหม?')],
-  caught: ['잡았다!', 'jabatda!', tr('Got you!', '捕まえた！', '抓到了！', '¡Te pillé!', 'Kena kau!', 'Bắt được rồi!', 'पकड़ लिया!', 'أمسكتك!', 'Je t\'ai eu !', 'จับได้แล้ว!')],
-  stacked: ['업어!', 'eobeo!', tr('Piggyback!', 'おんぶ！', '背上！', '¡A caballito!', 'Gendong!', 'Cõng nào!', 'पीठ पर चढ़ो!', 'على الظهر!', 'À dos !', 'ขี่หลัง!')],
-  won: ['이겼다!', 'igyeotda!', tr('I won!', '勝った！', '赢了！', '¡Gané!', 'Aku menang!', 'Thắng rồi!', 'मैं जीता!', 'فزت!', 'J\'ai gagné !', 'ชนะแล้ว!')],
-  tuhoHello: ['화살을 항아리에 넣어 봐요.', 'hwasareul hang-arie neo-eo bwayo.', tr('Try to get the arrows into the jar.', '矢を壺に入れてみて。', '试着把箭投进壶里吧。', 'Intenta meter las flechas en el jarrón.', 'Coba masukkan panah ke guci.', 'Thử ném tên vào bình xem.', 'तीर जार में डालकर देखो।', 'حاول إدخال السهام في الجرّة.', 'Essaie de mettre les flèches dans le pot.', 'ลองโยนลูกศรลงไหดูสิ')],
-  inJar: ['들어갔다!', 'deureogatda!', tr('It went in!', '入った！', '进了！', '¡Entró!', 'Masuk!', 'Vào rồi!', 'अंदर गया!', 'دخل!', 'C\'est rentré !', 'ลงแล้ว!')],
-  jegiHello: ['제기 몇 번 찰 수 있어요?', 'jegi myeot beon chal su isseoyo?', tr('How many kicks can you do?', '何回蹴れるかな？', '你能踢几下？', '¿Cuántas patadas puedes dar?', 'Bisa tendang berapa kali?', 'Bạn đá được mấy cái?', 'कितनी किक लगा सकते हो?', 'كم ركلة تستطيع؟', 'Combien de coups peux-tu faire ?', 'เตะได้กี่ครั้งเอ่ย?')],
-  neolHello: ['같이 널 뛰어요!', 'gachi neol ttwieoyo!', tr('Let\'s jump together!', '一緒に跳ぼう！', '一起跳吧！', '¡Saltemos juntos!', 'Ayo lompat bersama!', 'Cùng nhảy nào!', 'चलो साथ कूदें!', 'لنقفز معًا!', 'Sautons ensemble !', 'กระโดดด้วยกันเถอะ!')],
-  high: ['높이 올라간다!', 'nopi ollaganda!', tr('Up you go!', '高く上がるよ！', '飞高啦！', '¡Arriba!', 'Naik tinggi!', 'Bay cao nào!', 'ऊपर चले!', 'إلى الأعلى!', 'Et hop, en l\'air !', 'ลอยขึ้นไปเลย!')],
-  cheer: ['잘한다!', 'jalhanda!', tr('Well done!', '上手！', '真棒！', '¡Muy bien!', 'Hebat!', 'Giỏi lắm!', 'शाबाश!', 'أحسنت!', 'Bravo !', 'เก่งมาก!')],
-};
-export const lineText = (key) => {
-  const [ko, rom, t] = FOLK_LINES[key];
-  return [ko, rom, localName(t, getLanguage())];
 };
 
 // Native Korean numbers (하나, 둘, 셋…), the way a jegi count is called out.

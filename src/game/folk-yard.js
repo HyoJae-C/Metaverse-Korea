@@ -8,11 +8,8 @@
 // tuho jar, a boy kicks a jegi by the stool and Suni waits on the seesaw.
 import { FOLK_GAMES, makeJegi, setNeolTilt } from '../core/folk-props.js';
 import { FOLK_YARD, propToWorld } from '../data/folk-yard.js';
-import { FL, lineText } from '../ui/folk-text.js';
-import { YutUI } from '../ui/yut-ui.js';
-import { TuhoUI } from '../ui/tuho-ui.js';
-import { JegiUI } from '../ui/jegi-ui.js';
-import { NeolUI } from '../ui/neol-ui.js';
+import { folkLabel as FL, lineText } from '../ui/folk-labels.js';
+import { lazyPanel } from '../core/lazy-panel.js';
 import { TUHO_GAME } from '../core/tuho-game.js';
 import { JEGI_GAME } from '../core/jegi-game.js';
 import { NEOL_GAME } from '../core/neol-game.js';
@@ -108,10 +105,12 @@ export function createFolkYard(game) {
     return FOLK_YARD.yutWin;
   }
   const onClose = () => { game.action = game.STALE; };
-  uis.yut = new YutUI({ root: $('yut-panel'), onSay: speak('yut'), onWin: yutWin, onClose });
-  uis.tuho = new TuhoUI({ root: $('tuho-panel'), onSay: speak('tuho'), onMedal: payMedal(TUHO_GAME), onClose });
-  uis.jegi = new JegiUI({ root: $('jegi-panel'), onSay: speak('jegi'), onMedal: payMedal(JEGI_GAME), onClose });
-  uis.neol = new NeolUI({ root: $('neol-panel'), onSay: speak('neol'), onMedal: payMedal(NEOL_GAME), onClose });
+  // The game panels (and their text, folk-text.js) are downloaded the first
+  // time one is opened (core/lazy-panel.js).
+  uis.yut = lazyPanel(() => import('../ui/yut-ui.js').then(({ YutUI }) => new YutUI({ root: $('yut-panel'), onSay: speak('yut'), onWin: yutWin, onClose })));
+  uis.tuho = lazyPanel(() => import('../ui/tuho-ui.js').then(({ TuhoUI }) => new TuhoUI({ root: $('tuho-panel'), onSay: speak('tuho'), onMedal: payMedal(TUHO_GAME), onClose })));
+  uis.jegi = lazyPanel(() => import('../ui/jegi-ui.js').then(({ JegiUI }) => new JegiUI({ root: $('jegi-panel'), onSay: speak('jegi'), onMedal: payMedal(JEGI_GAME), onClose })));
+  uis.neol = lazyPanel(() => import('../ui/neol-ui.js').then(({ NeolUI }) => new NeolUI({ root: $('neol-panel'), onSay: speak('neol'), onMedal: payMedal(NEOL_GAME), onClose })));
   const openUi = () => Object.values(uis).find((u) => u.open) || null;
   function closeAll() { for (const u of Object.values(uis)) if (u.open) u.close(); }
 
