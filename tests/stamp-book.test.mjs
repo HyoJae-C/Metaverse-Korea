@@ -50,13 +50,12 @@ test('the Namsan stamp stands on the summit plaza, inside the cable car room', a
   assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
 });
 
-test('the stamp note goes district by district, every district in the list', async () => {
-  const { STAMP_GU_ORDER } = await import('../src/core/stamp-book.js');
-  const list = availableStamps(STAMPS, () => true);
-  const gus = list.map((s) => s.gu.ko);
-  for (const g of new Set(gus)) assert.ok(STAMP_GU_ORDER.includes(g), `add ${g} to STAMP_GU_ORDER`);
-  // each district comes in one run, in the listed order
-  const runs = gus.filter((g, i) => g !== gus[i - 1]);
-  assert.deepEqual(runs, STAMP_GU_ORDER.filter((g) => gus.includes(g)));
-  assert.equal(list[0].id, 'gyeongbokgung'); // Jongno first (Yozi)
+test('the stamp note follows STAMP_ORDER, which names only real stamps once', async () => {
+  const { STAMP_ORDER } = await import('../src/core/stamp-book.js');
+  const ids = new Set(STAMPS.map((s) => s.id));
+  for (const id of STAMP_ORDER) assert.ok(ids.has(id), `${id} in STAMP_ORDER is not a stamp`);
+  assert.equal(new Set(STAMP_ORDER).size, STAMP_ORDER.length);
+  const list = availableStamps(STAMPS, () => true).map((s) => s.id);
+  assert.deepEqual(list.slice(0, STAMP_ORDER.length).filter((id) => STAMP_ORDER.includes(id)), STAMP_ORDER.filter((id) => list.includes(id)));
+  assert.equal(list[0], 'gyeongbokgung'); // Jongno first (Yozi)
 });
