@@ -66,7 +66,7 @@ export const STAMPS = [
     icon: '<path d="M100 122 l-26 -26 a14 14 0 0 1 26 -18 a14 14 0 0 1 26 18 z" stroke-dasharray="3 7" stroke-linecap="round"/><circle cx="72" cy="70" r="3"/><circle cx="130" cy="66" r="3"/><circle cx="140" cy="92" r="2.5"/><circle cx="62" cy="96" r="2.5"/><path d="M64 136 q9 -6 18 0 q9 6 18 0 q9 -6 18 0 q9 6 18 0"/>',
   },
   {
-    id: 'gyeongbokgung', place: { at: [-1734, -900] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
+    id: 'gyeongbokgung', place: { at: [-1734, -860] }, color: '#b0282e', shape: 'circle', // right in front of Gwanghwamun, beside the Enter spot
     name: { ko: '경복궁', en: 'Gyeongbokgung', ja: '景福宮', zh: '景福宫' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
@@ -81,7 +81,7 @@ export const STAMPS = [
   },
   {
     // on Jongmyo Square, beside Oedaemun (the shrine's main gate on Jongno)
-    id: 'jongmyo', place: { at: [-1371, -781] }, color: '#7a2e22', shape: 'circle',
+    id: 'jongmyo', place: { at: [-1371, -741] }, color: '#7a2e22', shape: 'circle',
     name: { ko: '종묘', en: 'Jongmyo Shrine', ja: '宗廟', zh: '宗庙' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // the long hall on its terrace, with the three-strip stone path

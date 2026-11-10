@@ -24,10 +24,10 @@ test('Jongmyo stands on its gate\'s real spot on Jongno, and Jongno runs on from
   assert.ok(d.anchor.place.includes('Oedaemun'));
   assert.ok(d.anchor.why, 'a nudge says why');
   const gb = region.districts.find((x) => x.id === 'gyeongbokgung');
-  const jongnoWest = read(gb.map).roads.find((r) => r.k === 'secondary' && r.p[0][1] === r.p[1][1] && r.p[0][1] + gb.offset[1] === -765);
+  const jongnoWest = read(gb.map).roads.find((r) => r.k === 'secondary' && r.p[0][1] === r.p[1][1] && r.p[0][1] + gb.offset[1] === -725);
   assert.ok(jongnoWest, 'Gyeongbokgung\'s Jongno');
   const jongno = map.roads.find((r) => r.n?.en === 'Jongno');
-  assert.equal(jongno.p[0][1] + oz, -765, 'one straight Jongno');
+  assert.equal(jongno.p[0][1] + oz, -725, 'one straight Jongno');
   assert.ok(Math.abs(jongno.p[0][0] + ox - (Math.max(...jongnoWest.p.map((q) => q[0])) + gb.offset[0])) < 1, 'it starts where the old one ends');
 });
 
