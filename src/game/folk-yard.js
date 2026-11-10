@@ -7,7 +7,7 @@
 // Seoyeon sit round the yut mat waiting for a fourth, Grandpa Kim keeps the
 // tuho jar, a boy kicks a jegi by the stool and Suni waits on the seesaw.
 import { FOLK_GAMES, makeJegi, setNeolTilt } from '../core/folk-props.js';
-import { FOLK_YARD, propToWorld } from '../data/folk-yard.js';
+import { FOLK_YARD, FOLK_GAMES_ON, propToWorld } from '../data/folk-yard.js';
 import { folkLabel as FL, lineText } from '../ui/folk-labels.js';
 import { lazyPanel } from '../core/lazy-panel.js';
 import { TUHO_GAME } from '../core/tuho-game.js';
@@ -36,7 +36,7 @@ const NAMES = {
 
 export function createFolkYard(game) {
   const { $, scene, shop, wallet, randomLook, dayKey } = game;
-  const lm = game.map.landmarks.find((l) => l.type === 'folkyard') || null;
+  const lm = FOLK_GAMES_ON ? game.map.landmarks.find((l) => l.type === 'folkyard') || null : null; // (hidden for now: see data/folk-yard.js)
   const uis = {};
   if (!lm) return { uis, act: () => null, tick() {}, hideLabels() {}, relabel() {}, closeAll() {}, get open() { return false; } };
 
