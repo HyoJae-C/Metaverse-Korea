@@ -155,25 +155,20 @@ const N = {
   seobinggo: name('Seobinggo-ro', '서빙고로', '西氷庫路', '西冰库路'),
   food: name('World Food Street', '세계음식거리', '世界グルメ通り', '世界美食街'),
   market: name('Yongmaru Market Alley', '용마루시장 골목', 'ヨンマル市場通り', '龙脊市场小巷'),
-  lane: name('Itaewon alley', '이태원 골목', '梨泰院の路地', '梨泰院小巷'),
   trail: name('Namsan trail', '남산 산책로', '南山散策路', '南山步道'),
   main: { ko: '경리단길 (회나무로)', en: 'Gyeongnidan-gil (Hoenamu-ro)', ja: '経理団通り（フェナム路）', zh: '经理团路（会那木路）' },
 };
 const gyName = (id) => { const w = ways.get(id); return { ko: w.name, en: w['name:en'] || w.name }; };
 
-// ---------- Made-up lanes south of Itaewon-ro ----------
-// Yongmaru Market's lane straight south from Itaewon-ro, between
-// Noksapyeong-daero and Bogwang-ro, and a lane across its end from one to
-// the other.
+// ---------- Yongmaru Market's made-up lane ----------
+// North from Itaewon-ro, west of exit 1, between the World Food Street and
+// Itaewon Square, up to where Gyeongnidan's hill starts. Itaewon's shops are
+// all north of Itaewon-ro and on Gyeongnidan-gil (Yozi 2026-11-11: the south
+// side isn't needed); south of it only the real roads with plain buildings.
 const MKT_X = -55;
-const MKT_TOP = r1(itaewonZ(MKT_X));
-const CROSS_Z = 100;
-const atZ = (p, z) => { // where a line crosses z (first time)
-  for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[1] - z) * (b[1] - z) <= 0 && a[1] !== b[1]) { const t = (z - a[1]) / (b[1] - a[1]); return [r1(a[0] + (b[0] - a[0]) * t), z]; } }
-  throw new Error(`no crossing at z ${z}`);
-};
-const MARKET = [[MKT_X, MKT_TOP], [MKT_X, CROSS_Z]];
-const CROSS = [atZ(NOKSA, CROSS_Z), atZ(BOGWANG, CROSS_Z)];
+const MKT_TOP = r1(itaewonZ(MKT_X)); // (where it leaves Itaewon-ro)
+const MKT_END = -82;
+const MARKET = [[MKT_X, MKT_TOP], [MKT_X, MKT_END]];
 
 // ---------- The museums' real places ----------
 const WM_SITE = OSM.ways.find((w) => w.id === 229891123).geometry.map(loc); // the War Memorial's grounds
@@ -284,7 +279,6 @@ const ROAD = {
   seobinggo: { k: 'primary', w: 14, p: SEOBINGGO, n: N.seobinggo },
   food: { k: 'walk', w: 10, p: WFS, n: N.food },
   market: { k: 'walk', w: 8, p: MARKET, n: N.market },
-  cross: { k: 'residential', w: 6, p: CROSS, n: N.lane },
   trail: { k: 'walk', w: 5, p: [[0, -46], TRAIL_END], n: N.trail },
 };
 const GYROADS = [
@@ -340,16 +334,14 @@ const ITE = part(ITAEWON, ([x]) => x > 26); // the station to Hangangjin
 row('itW-N', ITW, -1, { off: fr(ROAD.itaewon), ...SHOP });
 row('itC-N', ITC, -1, { off: fr(ROAD.itaewon), ...SHOP });
 row('itC-S', ITC, 1, { off: fr(ROAD.itaewon), ...SHOP });
-row('itE-N', ITE, -1, { off: fr(ROAD.itaewon), ...BIG });
+row('itE-N', ITE, -1, { off: fr(ROAD.itaewon), ...SHOP }); // (the night strip: shop-size fronts)
 row('itE-S', ITE, 1, { off: fr(ROAD.itaewon), ...BIG });
 // The World Food Street (north from Itaewon-ro): small restaurant fronts both sides.
 row('food-W', WFS, -1, { off: fr(ROAD.food, 1.5), ...SMALL, depth: 12 });
 row('food-E', WFS, 1, { off: fr(ROAD.food, 1.5), ...SMALL, depth: 12 });
 // Yongmaru Market: the stalls stand under the arcade; houses behind them.
-row('market-W', MARKET, 1, { off: 9, ...SMALL });
-row('market-E', MARKET, -1, { off: 9, ...SMALL });
-row('cross-N', CROSS, -1, { off: fr(ROAD.cross, 1.5), ...SMALL });
-row('cross-S', CROSS, 1, { off: fr(ROAD.cross, 1.5), ...SMALL });
+row('market-W', MARKET, -1, { off: 9, ...SMALL });
+row('market-E', MARKET, 1, { off: 9, ...SMALL });
 row('noksa-E', NOKSA, -1, { off: fr(ROAD.noksa), ...SHOP });
 row('bogwang-W', BOGWANG, 1, { off: fr(ROAD.bogwang), ...SHOP });
 row('bogwang-E', BOGWANG, -1, { off: fr(ROAD.bogwang), ...SHOP });
@@ -409,7 +401,7 @@ for (const r of [GYROADS[0], ...GYROADS.slice(1), ROAD.sinheung, ROAD.sowol, ROA
 // ---------- Landmarks, places, areas ----------
 const archRy = ([dx, dz]) => Math.round(Math.atan2(-dx, -dz) * 100) / 100; // an arch spans across a road heading (dx, dz)
 const dirOf = (p, i = 0) => [p[i + 1][0] - p[i][0], p[i + 1][1] - p[i][1]];
-const MKT_C = r1(MKT_TOP + 46); // the arcade's middle (66 m long, from the top of the lane)
+const MKT_C = r1(MKT_TOP - 46); // the arcade's middle (66 m long, from Itaewon-ro north)
 const sowolAt = (x) => atXonLine(SOWOL, x);
 function atXonLine(p, x) {
   for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[0] - x) * (b[0] - x) <= 0 && a[0] !== b[0]) return a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]); }
@@ -420,8 +412,8 @@ const landmarks = [
   { type: 'arch', x: 0, z: trailGate, w: 7, title: 'NAMSAN TRAIL', sub: '남산 산책로', color: '#3f8a4f', it: 1 },
   { type: 'arch', x: WFS_X, z: r1(WFS[0][1] - 9), w: 12, title: 'WORLD FOOD STREET', sub: '이태원 세계음식거리', color: '#c0392b', it: 1 },
   { type: 'arch', x: WFS_X, z: r1(WFS[1][1] + 6), w: 12, ry: 3.14159, title: 'WORLD FOOD STREET', sub: '이태원 세계음식거리', color: '#c0392b', it: 1 },
-  { type: 'arch', x: MKT_X, z: r1(MKT_TOP + 10), w: 10, title: 'YONGMARU MARKET', sub: '용마루시장', color: '#2f6f4f', it: 1 },
-  { type: 'arch', x: MKT_X, z: r1(MKT_TOP + 80), w: 10, ry: 3.14159, title: 'YONGMARU MARKET', sub: '용마루시장', color: '#2f6f4f', it: 1 },
+  { type: 'arch', x: MKT_X, z: r1(MKT_TOP - 10), w: 10, ry: 3.14159, title: 'YONGMARU MARKET', sub: '용마루시장', color: '#2f6f4f', it: 1 },
+  { type: 'arch', x: MKT_X, z: r1(MKT_TOP - 80), w: 10, title: 'YONGMARU MARKET', sub: '용마루시장', color: '#2f6f4f', it: 1 },
   { type: 'arcade', x: MKT_X, z: MKT_C, len: 66, w: 12, h: 6.2, gap: 13, it: 1 },
   { type: 'arch', x: r1(FOOT[0] + 14), z: r1(atXonLine(MAIN, FOOT[0] + 14) ?? FOOT[1]), w: 12, ry: archRy(dirOf(MAIN, 1)), title: 'GYEONGNIDAN-GIL', sub: '경리단길', color: '#2f6f8f', gy: 1 },
   { type: 'arch', x: r1(nearestOn([FOOT[0], FOOT[1] - 14], SINHEUNG).at[0]), z: r1(FOOT[1] - 14), w: 9, ry: archRy(dirOf(SINHEUNG, 0)), title: 'HAEBANGCHON', sub: '해방촌', color: '#7a4fa0', gy: 1 },
@@ -477,16 +469,12 @@ const used = new Set();
 const ok = (at) => roads.every((r) => r.k === 'walk' || lineDist(at, r.p) >= r.w / 2 + 0.5);
 // Each group takes the free lots of its rows: nearest a spot first if given, else in row order.
 const GROUPS = [
-  // By the station: the information centre, the barber and the bike workshop.
-  [['itC-N', 'itC-S'], ['info-itaewon', 'itaewon-barbershop', 'ride-with-me'], [0, 0]],
-  // The night strip east of the station, both sides of Itaewon-ro.
-  [['itE-S', 'itE-N'], ['club-heartbeat', 'full-time-pub', 'bar-hush', 'club-orbit', 'spin-cycle', 'club-808'], [26, 0]],
-  // The World Food Street.
-  [['food-W', 'food-E'], ['masala-ghar', 'kebapci-lale', 'warung-kuy', 'khammak-padthai', 'tulip-tea', 'pho-nang', 'globe-coffee', 'tortilla-feliz', 'churro-corner', 'beit-hummus'], WFS[0]],
-  // Clothes, books and antiques down Bogwang-ro.
-  [['bogwang-W', 'bogwang-E'], ['golden-needle', 'big-step', 'page-atlas', 'old-oak-antiques', 'gaeul-vintage'], BOGWANG[0]],
-  // The halal grocer on Usadan-ro, by the mosque.
-  [['usadan-E', 'usadan-W'], ['salam-halal'], [60, 30]],
+  // By the station, north of Itaewon-ro: the information centre, the barber and the bike workshop.
+  [['itC-N'], ['info-itaewon', 'itaewon-barbershop', 'ride-with-me'], [0, 0]],
+  // The night strip east of the station, north of Itaewon-ro.
+  [['itE-N'], ['club-heartbeat', 'full-time-pub', 'bar-hush', 'club-orbit', 'spin-cycle', 'club-808'], [26, 0]],
+  // The World Food Street, with the halal grocer.
+  [['food-W', 'food-E'], ['masala-ghar', 'kebapci-lale', 'warung-kuy', 'khammak-padthai', 'tulip-tea', 'pho-nang', 'globe-coffee', 'tortilla-feliz', 'churro-corner', 'beit-hummus', 'salam-halal'], WFS[0]],
 ];
 if (process.env.LOTS) for (const [k, v] of Object.entries(t.lots)) console.log("  lots", k, v.length);
 for (const [rowIds, ids, near] of GROUPS) {
@@ -498,18 +486,19 @@ for (const [rowIds, ids, near] of GROUPS) {
   if (picked.length < ids.length) throw new Error(`${rowIds}: ${picked.length} lots for ${ids.length} shops`);
   ids.forEach((sid, i) => { used.add(picked[i].key); setAt(sid, toWorld(picked[i].at)); });
 }
-// Yongmaru Market's stalls stay where they were under the arcade (it moved with its lane).
+// Yongmaru Market's stalls keep their places under the arcade, which moved
+// from south of Itaewon-ro to north of it: the one nearest the road stays nearest.
 {
-  const OLD_LANE = [-94, 46]; // the old lane's x and the arcade's middle
+  const OLD_C = r1(MKT_TOP + 46); // the arcade's middle when the lane ran south
   for (const sid of ['jangdok-banchan', 'saebit-fruit', 'dalmaji-tteok', 'badabit-dried', 'gosohan-mill', 'onggi-story']) {
     const [x, z] = toLocal(storeAt(sid));
-    if (Math.abs(x - MKT_X) < 10) continue; // (built already)
-    if (Math.abs(x - OLD_LANE[0]) > 10) throw new Error(`${sid} is not on the market lane`);
-    setAt(sid, toWorld([x - OLD_LANE[0] + MKT_X, z - OLD_LANE[1] + MKT_C]));
+    if (Math.abs(x - MKT_X) > 10) throw new Error(`${sid} is not on the market lane`);
+    if (z > MKT_TOP) setAt(sid, toWorld([x, r1(MKT_C - (z - OLD_C))])); // (else built already)
   }
 }
-// Gyeongnidan-gil: the old-style café on the way up and the taproom at the top.
-for (const [sid, x, side] of [['dalgona-dabang', 82, 1], ['hilltop-taproom', 135, -1]]) {
+// Gyeongnidan-gil: the old-style café on the way up, clothes, books and
+// antiques along it (they were on Bogwang-ro) and the taproom at the top.
+for (const [sid, x, side] of [['dalgona-dabang', 82, 1], ['hilltop-taproom', 135, -1], ['golden-needle', 30, 1], ['big-step', 45, -1], ['gaeul-vintage', 60, 1], ['page-atlas', 100, -1], ['old-oak-antiques', 115, 1]]) {
   const lot = gyLots.filter((l) => !l.taken && l.w >= 7.5).sort((a, b) => (Math.abs(a.x - x) + (a.side === side ? 0 : 20)) - (Math.abs(b.x - x) + (b.side === side ? 0 : 20)))[0];
   lot.taken = true;
   lot.b.shop = sid;
