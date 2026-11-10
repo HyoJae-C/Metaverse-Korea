@@ -16,8 +16,15 @@ export const CATHEDRAL = {
   nave: 7, // the nave between the aisles
   apse: 6, // how far the round east end reaches back from where it starts
   transept: { a0: -11, a1: -4, out: 1.4 }, // along the axis (from the middle), and how far it stands out
-  tower: { w: 4.6, d: 1.5, body: 14, top: 23.15 }, // its square body up to the belfry top, then the spire and cross
-  aisleEave: 4.7, // the aisles' outer walls
+  // The bell tower (from the front elevation): a square body 7.3 m wide up
+  // to 28 m, a stone crown with gablets (to 32.6 m) and corner pinnacles (to
+  // 34.8 m), then a slender octagonal spire (3.5 m across at its foot) and
+  // the cross. Clock at 19.3 m, belfry windows 22.8-26 m.
+  tower: { w: 3.7, d: 1.5, body: 14, crown: 16.3, pinnacle: 17.4, spireR: 0.9, top: 23.15, clock: 9.65, belfry: 11.4 },
+  turret: { x: 2.45, r: 0.5, h: 9.2, cap: 10.8 }, // the stone turrets either side of the tower
+  aisleEave: 5, // the aisles' outer walls (side photo: about 62% of the nave's eave)
+  aisleRoof: 6.3, // where the aisles' lean-to roofs meet the nave wall
+  upperApse: { r: 3, top: 11 }, // the tall many-sided east end over the ambulatory
   eave: 8.6, // the nave's walls
   ridge: 11.25, // the roof's ridge
 };
