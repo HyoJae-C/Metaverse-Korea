@@ -399,10 +399,33 @@ notice, like the drone show's.
 ## Sunken streams (Cheonggyecheon)
 
 A district map can list `streams`: a stone channel below the street that runs
-east from `at` for `len` metres, with walkways on both banks, water in the
+east from `at` for `len` metres, or along a bending `path` (corners as offsets
+from `at`; `len` is its length), with walkways on both banks, water in the
 middle, `bridges` (`arch` or `slab`), `stairs` down from the sidewalk and
 `stones` (stepping stones). Positions along the channel are `u`, metres from
-its west end. See `src/core/stream.js`.
+its west end, and `v` across it. See `src/core/stream.js`: everything is laid
+out straight in (u, v) and `frameOf(stream)` maps it onto the ground, each
+straight stretch as it is and mitred at the corners (collision, the hole in
+the ground, the seats, the heron and the wish lanterns all go through it; the
+3D model is built straight and bent in one pass). Keep a long thing on one
+wall (like the procession mural) on one straight stretch: it is drawn as
+long panels that don't bend.
+
+Cheonggyecheon is built by `scripts/build-cheonggyecheon.mjs` into the
+Gyeongbokgung map (its items carry `"cg": 1`), on the stream's real centre
+line from OpenStreetMap (`scripts/data/cheonggyecheon-osm.json`,
+`scripts/cheonggyecheon-line.mjs`): 1023 m from the source at Cheonggye Plaza
+to just past Hwanghakgyo, within 3 m of the real line, with all 16 bridges at
+their real spots (Mojeongyo 8 m east, off the stairs at the falls). The
+channel itself is game size (24 m, the real one is about 7 m at 1/4), so
+Cheonggyecheon-ro runs 22.5 m either side of the middle rather than on its
+real carriageways. One row of buildings faces the stream from each road:
+towers at the west end, lower buildings east of Sewoon; south of the stream
+east of Changgyeonggung-ro the rows are Euljiro's. The lantern festival sits
+in the gaps between bridges: figures and strings at the west end, the tunnel
+of light between Sewoongyo and Baeogae, the mural between Naraegyo and
+Ogansugyo, the wish corner between Ogansugyo and Dasangyo. Run
+`scripts/build-euljiro.mjs` first, then this one.
 
 Collision is 2D, so a stream has two layers. On the street the channel is a
 wall that only bridge decks cross (these walls are part of the normal
@@ -420,15 +443,15 @@ Eulji-ro, with no nudge. Eulji-ro runs east-north-east to Gwanghuimun, where
 it meets Toegye-ro, which goes on east to Sindang; Jangchungdan-ro comes up
 from the south, crosses Eulji-ro and goes north-east to Cheonggyecheon-ro;
 Dasan-ro leaves Toegye-ro south-east. Eulji-ro and Toegye-ro run west to
-Sejong-daero and Sungnyemun as links on their real lines. Changgyeonggung-ro
-(the west edge) and Baeogae Bridge are still at x -1133, east of their real
-line (x -1270); they move with the Cheonggyecheon strip.
+Sejong-daero and Sungnyemun as links on their real lines. Changgyeonggung-ro,
+the west edge, is on its real line from Toegye-ro up to Baeogae Bridge; the
+north edge is Cheonggyecheon-ro's south road (`scripts/cheonggyecheon-line.mjs`).
 
 DDP is a custom building drawn by its landmark (`core/euljiro-models.js`)
 from the outline in the map. It keeps its game size (Yozi, 2026-11-10),
 bigger than its real block at 1/4, so it fills the block north of Eulji-ro
-between Jangchungdan-ro and the strip's south road; its middle stands about
-38 m east of the real one until the strip moves north onto its real line.
+east of the park and Jangchungdan-ro; its middle stands about 38 m east of
+the real one.
 Its way in faces Eulji-ro, on a small plaza. West of it, in the corner
 between Jangchungdan-ro and Eulji-ro, is Dongdaemun History & Culture Park
 with a stretch of the Seoul City Wall and its water gate; the fashion malls
@@ -460,10 +483,11 @@ A landmark's `p` is moved as world points when districts are joined
 
 Two more parts of the same district stand at their gates' spots: Sungnyemun
 (on a lawn island in a ring of Sejong-daero, where Toegye-ro starts) and
-Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
-Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
-main part in 25 m strips (its north edge follows Jangchungdan-ro and the
-strip) and a box for each of the three parts of their own.
+Heunginjimun (just north of Cheonggyecheon-ro, straight up from Ogansugyo
+Bridge, with its half-moon ongseong: about 42 m north of its real spot,
+which is too close to the stream for the island). The district's
+`meta.parts` lists the main part in 25 m strips (its north edge follows the
+south road) and a box for each of the three parts of their own.
 
 ## Gyeongbokgung's palace
 

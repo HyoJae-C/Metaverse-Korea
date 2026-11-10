@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { heronAt, heronWater, heronPlan, flyTime, HERON } from '../src/core/heron.js';
 import { CollisionMap } from '../src/core/collision.js';
+import { frameOf } from '../src/core/stream.js';
 
 const g = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
 const s = g.streams[0];
@@ -53,7 +54,7 @@ test('in flight it clears the bridges, stays near the stream and misses the buil
     if (h.y < 0.5) assert.ok(Math.abs(h.v) < s.w / 2 - 1 && h.u > 1 && h.u < s.len - 1, `${h.u},${h.y},${h.v}`);
     for (const b of s.bridges) if (Math.abs(h.u - b.u) < b.w / 2 + 1 && Math.abs(h.v) < s.w / 2 + 1) assert.ok(h.y > 1.5, `through ${b.name.en}: ${h.u},${h.y}`);
     assert.ok(Math.abs(h.v) < 34, `wandered off: v ${h.v}`);
-    assert.ok(!walls.blocked(s.at[0] + h.u, s.at[1] + h.v, 0.5), `into a building at ${h.u},${h.v}`);
+    assert.ok(!walls.blocked(...frameOf(s).toWorld(h.u, h.v), 0.5), `into a building at ${h.u},${h.v}`);
     top = Math.max(top, h.y);
     if (prev) speed = Math.max(speed, Math.hypot(h.u - prev.u, h.y - prev.y, h.v - prev.v) / 0.1);
     prev = h;

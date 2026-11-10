@@ -266,12 +266,20 @@ export function poseHeron(m, h, t) {
 }
 
 // Build the heron for stream s inside its group g; returns the per-frame tick.
-export function buildHeron(g, s) {
+// On a bending stream F is its frame (core/stream.js frameOf): the bird is
+// posed in (u, v) and then set on the ground.
+export function buildHeron(g, s, F = null) {
   const seed = typeof s.heron === 'object' ? s.heron.seed || 1 : 1;
   const m = makeHeron();
+  m.userData.mover = true;
   g.add(m);
   return () => {
-    const t = Date.now() / 1000;
-    poseHeron(m, heronAt(s, t, seed), t);
+    const t = Date.now() / 1000, h = heronAt(s, t, seed);
+    poseHeron(m, h, t);
+    if (F) {
+      const [x, z] = F.toWorld(h.u, h.v);
+      m.position.set(x, h.y, z);
+      m.rotation.y = h.yaw - F.angAt(h.u);
+    }
   };
 }
