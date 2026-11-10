@@ -123,7 +123,7 @@
       <button data-tab="players">Players</button>
       <button data-tab="notice">📢 Announce</button>
       <button data-tab="weather">🌦️ Weather</button>
-      <button data-tab="drone">🛸 Drone show</button>
+      <button data-tab="shows">🎆 Shows</button>
       <button data-tab="retention">Retention</button>
       <button data-tab="codes">📋 Codes</button>
       <button data-tab="exhibits">🎨 Exhibits <span class="badge" id="exhibitBadge" hidden></span></button>
@@ -237,19 +237,26 @@
       <div class="card"><div id="wxNow" class="body">Loading…</div></div>
       <div class="card"><div class="head"><b>Next 6 hours</b><span class="muted">What every game will show (your local time)</span></div><div id="wxNext" class="wxnext"></div></div>
     </div></section>
-    <section class="tab" id="tab-drone" hidden><div class="pad">
+    <section class="tab" id="tab-shows" hidden><div class="pad">
       <div class="card">
-        <div class="head"><b>🛸 Drone show times for every player (드론쇼 시간)</b><span class="muted">The Ttukseom drone light show runs 20 minutes from each start, with a notice 10 minutes before. Korean time (KST). 1 to 4 shows a day, at least an hour apart, clear of the Yeouido fireworks (<span id="dsFireworks"></span> KST).</span></div>
+        <div class="head"><b>🎆 Show times for every player (드론쇼 · 불꽃놀이 시간)</b><span class="muted">Korean time (KST). 1 to 4 shows a day each; leave a box empty for fewer. Each show has a notice 10 minutes before. The two shows may not overlap.</span></div>
+        <p style="margin:4px 0"><b>🛸 Drone show</b> <span class="muted">(Ttukseom, 20 minutes, at least an hour apart)</span></p>
         <div class="row" style="flex-wrap:wrap;gap:8px">
-          <label>Show 1 <input type="time" id="dsTime0"></label>
-          <label>Show 2 <input type="time" id="dsTime1"></label>
-          <label>Show 3 <input type="time" id="dsTime2"></label>
-          <label>Show 4 <input type="time" id="dsTime3"></label>
+          <label>1 <input type="time" id="dsTime0"></label>
+          <label>2 <input type="time" id="dsTime1"></label>
+          <label>3 <input type="time" id="dsTime2"></label>
+          <label>4 <input type="time" id="dsTime3"></label>
         </div>
-        <p class="muted" style="margin:6px 0 0">Leave a box empty for fewer shows.</p>
-        <div class="row" style="margin-top:10px"><button id="dsSave" class="primary" type="button">Apply to everyone</button><button id="dsDefault" type="button">Back to default (06:00, 18:00)</button><button id="dsReload" type="button">Refresh</button></div>
+        <p style="margin:12px 0 4px"><b>🎆 Fireworks</b> <span class="muted">(Yeouido, an hour, at least 90 minutes apart)</span></p>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <label>1 <input type="time" id="fwTime0"></label>
+          <label>2 <input type="time" id="fwTime1"></label>
+          <label>3 <input type="time" id="fwTime2"></label>
+          <label>4 <input type="time" id="fwTime3"></label>
+        </div>
+        <div class="row" style="margin-top:12px"><button id="showsSave" class="primary" type="button">Apply to everyone</button><button id="showsDefault" type="button">Back to defaults</button><button id="showsReload" type="button">Refresh</button></div>
       </div>
-      <div class="card"><div id="dsNow" class="body">Loading…</div></div>
+      <div class="card"><div id="showsNow" class="body">Loading…</div></div>
     </div></section>
     <section class="tab" id="tab-exhibits" hidden><div class="pad">
       <div class="tools" id="exhibitFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -283,14 +290,14 @@
         <p class="muted" style="margin:8px 0 0">날씨 종류: <code>clear</code> 맑음 ☀️ · <code>cloudy</code> 흐림 ☁️ · <code>fog</code> 안개 🌫️ · <code>rain</code> 비 🌧️ · <code>snow</code> 눈 ❄️ · <code>storm</code> 폭풍 ⛈️. <a href="#weather">Weather 탭 열기 →</a></p>
       </div>
 
-      <h3>🛸 드론쇼 시간 (Drone show tab)</h3>
+      <h3>🎆 드론쇼 · 불꽃놀이 시간 (Shows tab)</h3>
       <div class="card">
         <ol style="margin:0;padding-left:20px">
-          <li>한국시간으로 하루 1~4번, 시작 시간을 칸에 넣어요. 칸을 비우면 그만큼 횟수가 줄어요.</li>
-          <li>쇼끼리는 1시간 이상 떨어져야 하고, 여의도 불꽃놀이(9시·21시, 1시간)와 겹치면 저장이 안 돼요.</li>
-          <li><b>Apply to everyone</b>을 누르면 모든 게임에 바로 적용돼요. <b>Back to default</b>는 6시·18시로 돌아가요.</li>
+          <li>한국시간으로 각각 하루 1~4번, 시작 시간을 칸에 넣어요. 칸을 비우면 그만큼 횟수가 줄어요.</li>
+          <li>드론쇼끼리는 1시간, 불꽃놀이끼리는 1시간 30분 이상 떨어져야 하고, 드론쇼와 불꽃놀이가 겹치면 저장이 안 돼요. 반포 무지개분수는 불꽃놀이 시간을 알아서 피해요.</li>
+          <li><b>Apply to everyone</b>을 누르면 모든 게임에 바로 적용돼요. <b>Back to defaults</b>는 드론쇼 6시·18시, 불꽃놀이 9시·21시로 돌아가요.</li>
         </ol>
-        <p class="muted" style="margin:8px 0 0"><a href="#drone">Drone show 탭 열기 →</a></p>
+        <p class="muted" style="margin:8px 0 0"><a href="#shows">Shows 탭 열기 →</a></p>
       </div>
 
       <h3>🔗 주소 뒤에 붙이는 코드: 내 화면에서만</h3>

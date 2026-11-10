@@ -3,15 +3,16 @@
 // never the same twice in a row.
 import { t } from '../core/i18n.js';
 import { DRONE_SHOW_HOURS_KST, droneShowHours } from '../core/drone-show.js';
+import { FIREWORKS_HOURS_KST, fireworksHours } from '../core/fireworks-show.js';
 
 export const TIP_COUNT = 8;
 let last = -1;
 export function nextTip(rand = Math.random) {
   let i = Math.floor(rand() * (TIP_COUNT - 1));
   if (i >= last && last >= 0) i++; // (skip the one shown last)
-  // tip.7 names the default drone show times: skip it while operators have
-  // set other ones (admin.html → Drone show).
-  if (i === 6 && droneShowHours() !== DRONE_SHOW_HOURS_KST) i = last === 7 ? 0 : 7;
+  // tip.7 names the default fireworks and drone show times: skip it while
+  // operators have set other ones (admin.html → Shows).
+  if (i === 6 && (droneShowHours() !== DRONE_SHOW_HOURS_KST || fireworksHours() !== FIREWORKS_HOURS_KST)) i = last === 7 ? 0 : 7;
   last = i;
   return t(`tip.${i + 1}`);
 }

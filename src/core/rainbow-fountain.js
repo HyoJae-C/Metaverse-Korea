@@ -14,11 +14,9 @@
 // show and the fireworks), so friends on the lawn watch the same show.
 
 import { smooth } from './show-clock.js';
+import { FIREWORKS_HOURS_KST, SHOW_SECONDS as FIREWORKS_SECONDS, fireworksHours } from './fireworks-show.js';
 
 export const FOUNTAIN_MINUTE = 30; // shows start at hh:30 KST
-// No show while Yeouido's hour of fireworks is on (09:00, 21:00 KST:
-// fireworks-show.js), so nobody has to choose between the two.
-export const SKIP_HOURS_KST = [9, 21];
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const DUSK_SECONDS = 60; // before the start: the sky round the bridge darkens
 export const DAWN_SECONDS = 60; // after the end: it brightens again
@@ -26,14 +24,27 @@ export const NOTICE_SECONDS = 60; // the "starts in a minute" notice, near the b
 export const FINALE = [SHOW_SECONDS - 60, SHOW_SECONDS]; // photo time: every jet full, in rainbow
 
 const MIN = 60e3, HOUR = 60 * MIN, KST = 9 * HOUR;
+
+// No show while Yeouido's hour of fireworks is on (fireworks-show.js:
+// 09:00 and 21:00 KST unless operators moved them), so nobody has to choose
+// between the two. → the KST hours (0 … 23) whose hh:30 show is skipped.
+export function skipHours(fireworks = fireworksHours()) {
+  const out = [];
+  for (let h = 0; h < 24; h++) {
+    const a0 = h * 60 + FOUNTAIN_MINUTE - DUSK_SECONDS / 60, a1 = h * 60 + FOUNTAIN_MINUTE + (SHOW_SECONDS + DAWN_SECONDS) / 60;
+    if (fireworks.some((f) => [-1440, 0, 1440].some((d) => a0 < f * 60 + d + FIREWORKS_SECONDS / 60 && f * 60 + d < a1))) out.push(h);
+  }
+  return out;
+}
+export const SKIP_HOURS_KST = skipHours(FIREWORKS_HOURS_KST);
 const frac = (x) => x - Math.floor(x);
 
 // Show start times (ms) around `now`: from two hours before to two after.
 function startsAround(now) {
   const hour = Math.floor((now + KST) / HOUR); // hours since the epoch, Korean time
-  const out = [];
+  const out = [], skip = skipHours();
   for (let h = hour - 2; h <= hour + 2; h++) {
-    if (SKIP_HOURS_KST.includes(((h % 24) + 24) % 24)) continue;
+    if (skip.includes(((h % 24) + 24) % 24)) continue;
     out.push(h * HOUR - KST + FOUNTAIN_MINUTE * MIN);
   }
   return out;

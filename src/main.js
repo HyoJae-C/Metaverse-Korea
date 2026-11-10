@@ -96,7 +96,7 @@ import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
-import { watchDroneShow } from './core/drone-show-watch.js';
+import { watchShowTimes } from './core/show-times-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -145,7 +145,7 @@ import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
 import { droneShowAt, setDroneShowTimes, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -1374,17 +1374,17 @@ const weather = new WeatherSystem({
 });
 
 // The operators' season and held weather (admin.html → Weather,
-// supabase/023_weather.sql) and drone show times (admin.html → Drone show,
-// supabase/033_drone_show.sql), the same for everyone. A little after
+// supabase/023_weather.sql) and the drone show and fireworks times
+// (admin.html → Shows, supabase/033_show_times.sql), the same for everyone. A little after
 // start, so it never holds up joining the world.
-let weatherClient = null, stopWeather = null, stopDroneShow = null;
+let weatherClient = null, stopWeather = null, stopShowTimes = null;
 function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
-  stopDroneShow?.();
+  stopShowTimes?.();
   weatherClient = cloud.client;
   stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
-  stopDroneShow = watchDroneShow(weatherClient, setDroneShowTimes);
+  stopShowTimes = watchShowTimes(weatherClient, (raw) => { setDroneShowTimes(raw.drone); setFireworksTimes(raw.fireworks); });
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
