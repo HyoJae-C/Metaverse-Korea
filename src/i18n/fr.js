@@ -612,6 +612,7 @@ export const FR = {
   'safety.unblocked': 'Tout le monde est débloqué.',
   'look.tee': 'Couleur du t-shirt',
   'credit.chars': 'Personnages',
+  'credit.icons': 'Icônes',
   "fountain.soon": "🌈 La fontaine arc-en-ciel au clair de lune commence dans une minute. Regardez le pont Banpo depuis la pelouse au bord du fleuve.",
   "fountain.on": "🌈 La fontaine arc-en-ciel est lancée : une eau aux couleurs de l'arc-en-ciel tombe des deux côtés du pont Banpo.",
   "fountain.photo": "📸 C'est l'heure de la photo : tout le pont devient arc-en-ciel pendant la dernière minute.",
@@ -670,4 +671,5 @@ export const FR = {
   "potato.soldToast": "🥔 Ton {name} s'est vendu au Potato Market ! +🪙 {n}",
   "potato.expired": "{name} ne s'est pas vendu en {days} jours et est revenu dans ton placard.",
   "potato.wait": "Un instant…",
+  "closet.retired": "Plus vendu",
 };

@@ -89,7 +89,7 @@ export const STAMPS = [
   },
   {
     // on Heunginjimun's lawn, by the walk up from Ogansugyo Bridge
-    id: 'heunginjimun', place: { at: [-1011, -817] }, color: '#2b5f8a', shape: 'square',
+    id: 'heunginjimun', place: { at: [-1029, -742] }, color: '#2b5f8a', shape: 'square',
     name: { ko: '흥인지문', en: 'Heunginjimun', ja: '興仁之門', zh: '兴仁之门' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // the gate with the half-moon ongseong in front

@@ -615,6 +615,7 @@ export const KO = {
   'safety.unblocked': '차단을 모두 풀었어요.',
   'look.tee': '티셔츠 색',
   'credit.chars': '캐릭터',
+  'credit.icons': '아이콘',
   "fountain.soon": "🌈 1분 뒤 달빛무지개분수가 시작돼요. 강가 잔디밭에서 반포대교를 바라봐요.",
   "fountain.on": "🌈 달빛무지개분수가 켜졌어요. 반포대교 양옆으로 무지개 물줄기가 쏟아져요.",
   "fountain.photo": "📸 사진 찍을 시간! 마지막 1분, 다리 전체가 무지개로 쏟아져요.",
@@ -673,4 +674,5 @@ export const KO = {
   "potato.soldToast": "🥔 감자마켓에서 {name}이(가) 팔렸어요! +🪙 {n}",
   "potato.expired": "{name}이(가) {days}일 동안 안 팔려서 옷장으로 돌아왔어요.",
   "potato.wait": "잠깐만요…",
+  "closet.retired": "단종",
 };

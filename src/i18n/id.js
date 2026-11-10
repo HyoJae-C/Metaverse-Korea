@@ -612,6 +612,7 @@ export const ID = {
   'safety.unblocked': 'Semua blokir sudah dibuka.',
   'look.tee': 'Warna kaos',
   'credit.chars': 'Karakter',
+  'credit.icons': 'Ikon',
   "fountain.soon": "🌈 Air Mancur Pelangi Cahaya Bulan dimulai satu menit lagi. Tonton Jembatan Banpo dari halaman rumput di tepi sungai.",
   "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
   "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",
@@ -670,4 +671,5 @@ export const ID = {
   "potato.soldToast": "🥔 {name} milikmu laku di Potato Market! +🪙 {n}",
   "potato.expired": "{name} tidak laku dalam {days} hari dan kembali ke lemarimu.",
   "potato.wait": "Sebentar…",
+  "closet.retired": "Tidak dijual lagi",
 };

@@ -17,7 +17,8 @@ import { buildAquarium, AQUA_ROOM } from './aquarium.js';
 import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
 import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { buildStation, buildTrainCar, HALL, CAR } from './subway.js';
-import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
+import { PALETTES, LIP_FAMILIES, accessory } from '../data/appearance.js';
+import { makeEars, makePaw } from './animal-wear.js';
 import { skirtDisplay } from './skirt-mesh.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
@@ -298,6 +299,17 @@ export function productModel(kind, color, product = null) {
       if (sk) g.add(sk);
       else add(new THREE.CylinderGeometry(0.16, 0.26, 0.4, 16, 1, true), 0, 0.4);
       add(new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI), 0, 0.72, 0, mat('#8a8f99'));
+      break;
+    }
+    case 'ears': { // an animal-ear headband (Nyang Meong To Pan) on a little stand
+      const a = accessory('head', product?.tryOn?.head);
+      add(new THREE.CylinderGeometry(0.02, 0.06, 0.12, 10), 0, 0.06, 0, mat('#fffaf0'));
+      if (a) { const e = makeEars(a); e.scale.setScalar(0.5); e.position.y = 0.12; g.add(e); }
+      break;
+    }
+    case 'paws': { // a pair of paw gloves
+      const a = accessory('hand', product?.tryOn?.hand);
+      if (a) for (const s of [-1, 1]) { const p = makePaw(a); p.scale.multiplyScalar(1.6); p.position.set(0.09 * s, 0.11, 0); g.add(p); }
       break;
     }
     case 'ribbon':

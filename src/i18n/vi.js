@@ -612,6 +612,7 @@ export const VI = {
   'safety.unblocked': 'Đã bỏ chặn tất cả.',
   'look.tee': 'Màu áo phông',
   'credit.chars': 'Nhân vật',
+  'credit.icons': 'Biểu tượng',
   "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
   "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
   "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
@@ -670,4 +671,5 @@ export const VI = {
   "potato.soldToast": "🥔 {name} của bạn đã bán ở chợ Khoai Tây! +🪙 {n}",
   "potato.expired": "{name} không bán được trong {days} ngày nên đã về lại tủ đồ.",
   "potato.wait": "Chờ một chút…",
+  "closet.retired": "Ngừng bán",
 };

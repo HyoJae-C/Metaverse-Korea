@@ -615,6 +615,7 @@ export const ZH = {
   'safety.unblocked': '已全部取消屏蔽。',
   'look.tee': 'T恤颜色',
   'credit.chars': '角色',
+  'credit.icons': '图标',
   "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
   "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
   "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
@@ -673,4 +674,5 @@ export const ZH = {
   "potato.soldToast": "🥔 你的{name}在土豆市场卖出了！+🪙 {n}",
   "potato.expired": "{name}{days}天没卖出，已回到衣柜。",
   "potato.wait": "请稍等…",
+  "closet.retired": "已停售",
 };

@@ -614,6 +614,7 @@ export const EN = {
   'safety.unblocked': 'Everyone is unblocked.',
   'look.tee': 'T-shirt colour',
   'credit.chars': 'Characters',
+  'credit.icons': 'Icons',
   "fountain.soon": "🌈 The Moonlight Rainbow Fountain starts in a minute. Watch Banpo Bridge from the lawn by the river.",
   "fountain.on": "🌈 The Moonlight Rainbow Fountain is on: rainbow water pours from both sides of Banpo Bridge.",
   "fountain.photo": "📸 Photo time: the whole bridge pours rainbows for the last minute.",
@@ -672,4 +673,5 @@ export const EN = {
   "potato.soldToast": "🥔 Your {name} sold at Potato Market! +🪙 {n}",
   "potato.expired": "{name} didn't sell in {days} days and is back in your closet.",
   "potato.wait": "One moment…",
+  "closet.retired": "Retired",
 };
