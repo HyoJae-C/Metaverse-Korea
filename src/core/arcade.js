@@ -187,7 +187,10 @@ export function parseDartsGo(e) {
 // (core/dart-pins.js). Every thrower has their own flight colour: one picked
 // from their id, moved on to the next free one when somebody on the boards
 // (or the friend you play) already throws that colour.
-export const DART_COLORS = ['#ffd36e', '#6ec8ff', '#ff6fa8', '#7be08a', '#c79bff', '#ff9b4a', '#f4f4f4', '#3fd8c8'];
+// Strong, saturated colours (red, blue, green, orange, purple, …) so each
+// player's name reads clearly on the pale scoreboard and their darts stand
+// out on the board.
+export const DART_COLORS = ['#e8343a', '#2f6fe4', '#1e9e4a', '#f07d0c', '#8b46d6', '#e0308a', '#0e9e94', '#8a5a2b'];
 export function dartColorOf(id) {
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
