@@ -58,5 +58,5 @@ test('the stamp note goes district by district, every district in the list', asy
   // each district comes in one run, in the listed order
   const runs = gus.filter((g, i) => g !== gus[i - 1]);
   assert.deepEqual(runs, STAMP_GU_ORDER.filter((g) => gus.includes(g)));
-  assert.equal(list[0].id, 'seongsu');
+  assert.equal(list[0].id, 'gyeongbokgung'); // Jongno first (Yozi)
 });
