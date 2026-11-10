@@ -2,16 +2,20 @@
 // district's metres (districts/gyeongbokgung.json). Its landmark model is in
 // core/bosingak-model.js; ringing the bell is in main.js (bosingakAct).
 //
-// The spot: on the north side of Jongno, east of Sejong-daero, where the
-// real pavilion stands by Jonggak Station (the game's Jongno is 1/4 scale
-// between districts, so this is about where it falls, not to the metre).
+// The spot: on the south side of Jongno, at the corner of Ujeongguk-ro
+// (the game's Gwanggyo walk), between Jongno and Cheonggyecheon-ro, where
+// the real pavilion stands by Jonggak Station (OSM way 141957163, `real`).
+// The pavilion is 11 m north of its real 1/4 spot: the game's Jongno is
+// 12 m south of its real line and Cheonggyecheon (game width) needs the
+// room south of it, so the strip between them is only 18 m deep.
 
 export const BOSINGAK = {
   district: 'gyeongbokgung',
-  at: [155, 106], // the pavilion's centre (its front faces Jongno, +z)
-  base: [144.5, 100, 163, 112], // the stone base and its steps up the west side: a blocker in the map
-  plaza: [124, 84, 186, 140], // the open paving round it, up to Jongno's edge
-  ring: { at: [155, 116], r: 4 }, // stand here, in front of the steps, to ring the bell
+  real: { lat: 37.56979, lon: 126.98344 }, // the real pavilion's centre (OSM way 141957163)
+  at: [149, 159], // the pavilion's centre (its front faces Cheonggyecheon, +z)
+  base: [138.5, 153, 157, 165], // the stone base and its steps up the west side: a blocker in the map
+  plaza: [124, 152, 166, 168], // the open paving round it, from Jongno's edge to Cheonggyecheon-ro
+  ring: { at: [149, 169], r: 4 }, // stand here, in front of the steps, to ring the bell
   cooldown: 7, // seconds before the bell can be rung again (it hums that long)
   firstRing: 10000, // won for the first ring (once; reward rule 'view')
   // The New Year's ringings on 1 January (KST): at midnight (제야의 종) and
@@ -22,8 +26,8 @@ export const BOSINGAK = {
   // only round the square; the New Year's ringings along all of Jongno.
   hear: { ring: 20, ceremony: 450 },
   // The few people already on the square, facing the pavilion: [x, z, what].
-  people: [[150, 129, 'photo'], [151, 122, 'pose'], [173, 127, 'coffee'], [133, 97, 'look']],
-  keeper: { who: 'official', at: [161, 106.8], ry: -Math.PI / 2 }, // on the upper floor, behind the striker, facing the bell ('official' in Joseon dress or 'monk')
+  people: [[127, 165, 'photo'], [134, 160, 'pose'], [162, 158, 'coffee'], [129, 155, 'look']],
+  keeper: { who: 'official', at: [155, 159.8], ry: -Math.PI / 2 }, // on the upper floor, behind the striker, facing the bell ('official' in Joseon dress or 'monk')
 };
 
 // The pavilion's size, in metres (core/bosingak-model.js draws it; the base is

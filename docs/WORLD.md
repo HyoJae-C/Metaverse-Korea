@@ -562,11 +562,11 @@ stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
 ## Bosingak (Jongno)
 
-The bell pavilion stands on the north side of Jongno in the Gyeongbokgung
-district's map, east of Sejong-daero (`src/data/bosingak.js`, model in
+The bell pavilion stands on the south side of Jongno in the Gyeongbokgung
+district's map, between Jongno and Cheonggyecheon-ro at the Gwanggyo corner,
+11 m north of its real 1/4 spot (`src/data/bosingak.js`, model in
 `core/bosingak-model.js`, people in `core/bosingak-show.js`), on its own
-square where a plain building used to be, with a few visitors already there.
-In front of the steps `🔔 Ring the bell` swings the striker into the bell and
+square with a few visitors already there. In front of the pavilion `🔔 Ring the bell` swings the striker into the bell and
 plays a long synthesised hum (`Sfx.bigBell`), heard only round the square
 (`hear.ring`, about 20 m); other players there hear it too (emote
 `bosingak:ring`). The first ring pays once (reward rule `view`) and shows its
