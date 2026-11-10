@@ -50,3 +50,15 @@ test('the purple line is built in tiles, and only the near ones are drawn', () =
   b.update(1);
   assert.equal(b.group.visible, false);
 });
+
+test('no border or outer edge line on the Han River', () => {
+  const { river, riverW } = seoul;
+  const segD = (x, z, a, b) => segDist(x, z, a, b);
+  for (const l of [...seoul.borders, ...seoul.outline]) for (const [x, z] of l) {
+    for (let i = 1; i < river.length; i++) {
+      const w = Math.max(riverW[i - 1], riverW[i]) / 2;
+      assert.ok(segD(x, z, river[i - 1], river[i]) >= w + 2, `line point ${x},${z} on the river`);
+    }
+  }
+  assert.ok(seoul.outline.length > 0, "Seoul's outer edge is drawn");
+});
