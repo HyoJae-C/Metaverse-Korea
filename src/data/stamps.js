@@ -97,7 +97,7 @@ export const STAMPS = [
   },
   {
     // in Dongdaemun History & Culture Park, by the city wall's water gate
-    id: 'igansumun', place: { at: [-1096, -503] }, color: '#6a5a3a', shape: 'circle',
+    id: 'igansumun', place: { at: [-1037, -609] }, color: '#6a5a3a', shape: 'circle',
     name: { ko: '이간수문', en: 'Igansumun Water Gate', ja: '二間水門', zh: '二间水门' },
     gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
     // the wall with its two arches over water
@@ -113,7 +113,7 @@ export const STAMPS = [
   },
   {
     // on DDP's front plaza
-    id: 'ddp', place: { at: [-1035, -468] }, color: '#5d6470', shape: 'circle',
+    id: 'ddp', place: { at: [-976, -577] }, color: '#5d6470', shape: 'circle',
     name: { ko: '동대문디자인플라자', en: 'Dongdaemun Design Plaza', ja: '東大門デザインプラザ', zh: '东大门设计广场' },
     gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
     // the long, curved building with its roof walk

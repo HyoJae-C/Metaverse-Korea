@@ -413,22 +413,33 @@ what you bump into, and a bridge is a roof overhead.
 
 ## Euljiro & Dongdaemun (Jung-gu)
 
-Drawn by `scripts/build-euljiro.mjs` in the band between the Cheonggyecheon
-strip and Namsan, kept small on purpose (DDP and what is round it; the old
-Euljiro alleys were taken out, since the game has plenty of streets of small
-shops). Eulji-ro runs along its north edge just south of the Cheonggyecheon
-towers, and three link roads (Changgyeonggung-ro along the west edge, the
-walk to Ogansugyo Bridge, Jangchungdan-ro) go north between those towers to
-Cheonggyecheon-ro; Eulji-ro and Toegye-ro run west to Sejong-daero and
-Sungnyemun as links, and Toegye-ro on east to Wangsimni-ro. DDP is a custom
-building drawn by its landmark (`core/euljiro-models.js`) from the outline in
-the map, with Dongdaemun History & Culture Park and a stretch of the Seoul
-City Wall on its west side, and the fashion malls across Jangchungdan-ro.
-South of Toegye-ro, below the park (moved in from Pil-dong, not to scale),
-Namsangol Hanok Village has a walled yard (`hanok.yard` in the script) with
-the folk games yard in its middle (the `folkyard` landmark, docs/FOLK-GAMES.md).
+Drawn by `scripts/build-euljiro.mjs` on the real streets at 1/4
+(OpenStreetMap, `scripts/data/euljiro-osm.json`); the anchor is
+Dongdaemun History & Culture Park Station, where Jangchungdan-ro crosses
+Eulji-ro, with no nudge. Eulji-ro runs east-north-east to Gwanghuimun, where
+it meets Toegye-ro, which goes on east to Sindang; Jangchungdan-ro comes up
+from the south, crosses Eulji-ro and goes north-east to Cheonggyecheon-ro;
+Dasan-ro leaves Toegye-ro south-east. Eulji-ro and Toegye-ro run west to
+Sejong-daero and Sungnyemun as links on their real lines. Changgyeonggung-ro
+(the west edge) and Baeogae Bridge are still at x -1133, east of their real
+line (x -1270); they move with the Cheonggyecheon strip.
 
-DDP's main door on the plaza opens into DDP Hall (store `ddp-hall`, workshop
+DDP is a custom building drawn by its landmark (`core/euljiro-models.js`)
+from the outline in the map. It keeps its game size (Yozi, 2026-11-10),
+bigger than its real block at 1/4, so it fills the block north of Eulji-ro
+between Jangchungdan-ro and the strip's south road; its middle stands about
+38 m east of the real one until the strip moves north onto its real line.
+Its way in faces Eulji-ro, on a small plaza. West of it, in the corner
+between Jangchungdan-ro and Eulji-ro, is Dongdaemun History & Culture Park
+with a stretch of the Seoul City Wall and its water gate; the fashion malls
+stand across Jangchungdan-ro and east of DDP round Fashion Town Lane.
+Elsewhere one row of buildings along each street. Namsangol Hanok Village is
+a part of its own at its real place south of Toegye-ro by Chungmuro, at game
+size, with a walk up to Toegye-ro: a walled yard (`HANOK.yard` in the script)
+with the folk games yard in its middle (the `folkyard` landmark,
+docs/FOLK-GAMES.md).
+
+DDP's main door on Eulji-ro opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
 visitors already there. Its back door leads into the Curve Runway
 (`RUNWAY_STORE` in `core/runway-game.js`, workshop `runway`; entered from the
@@ -451,7 +462,8 @@ Two more parts of the same district stand at their gates' spots: Sungnyemun
 (on a lawn island in a ring of Sejong-daero, where Toegye-ro starts) and
 Heunginjimun (north of the Cheonggyecheon strip, straight up from Ogansugyo
 Bridge, with its half-moon ongseong). The district's `meta.parts` lists the
-three boxes for the overlap check.
+main part in 25 m strips (its north edge follows Jangchungdan-ro and the
+strip) and a box for each of the three parts of their own.
 
 ## Gyeongbokgung's palace
 

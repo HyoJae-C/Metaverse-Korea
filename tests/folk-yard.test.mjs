@@ -8,7 +8,7 @@ import { CollisionMap } from '../src/core/collision.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/euljiro.json', import.meta.url)));
 const yard = map.landmarks.find((l) => l.type === 'folkyard');
-const plaza = map.areas.find((a) => a.k === 'plaza' && a.p.some(([x, z]) => x === -100 && z === 104)).p;
+const plaza = map.areas.find((a) => a.k === 'plaza' && a.p.length === 4 && a.p[0][0] < yard.x && a.p[2][0] > yard.x && a.p[0][1] < yard.z && a.p[2][1] > yard.z).p;
 const [px0, pz0] = plaza[0], [px1, pz1] = plaza[2];
 const solid = new CollisionMap(map.buildings.concat(map.blockers));
 const gate = map.landmarks.find((l) => l.type === 'hanokgate');
