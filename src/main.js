@@ -100,7 +100,8 @@ import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { interiorLoaded, loadInterior, warmInterior, roomKit } from './game/interior-loader.js'; // rooms: core/interior.js, loaded at the first door
+import { interiorLoaded, loadInterior, warmInterior, roomKit } from './game/interior-loader.js';
+import { createStoreDescs } from './game/store-descs.js'; // rooms: core/interior.js, loaded at the first door
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
 import { ShopUI, Cart, coinsFor, goodsKind, itemSoon, shownStores } from './ui/shop-ui.js';
@@ -770,6 +771,8 @@ const zooVisit = createZooVisit({
 });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
+// Product descriptions: at the first shop door (game/store-descs.js).
+const storeDescs = createStoreDescs({ url: `${BASE}regions/${regionId}/store-descs.json`, stores: () => storeData });
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
 const storefronts = new Storefronts(scene, shownStores(storeData), map, region.center, collision);
@@ -2567,13 +2570,14 @@ function enterStore(item, walkIn = null) {
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
   }
-  // Every room's code (core/interior.js) comes with the first one walked
-  // into; the returned promise keeps the tip cover up meanwhile (game/tips.js).
+  // Every room's code (core/interior.js) and the shops' product descriptions
+  // (game/store-descs.js) come with the first one walked into; the returned
+  // promise keeps the tip cover up meanwhile (game/tips.js).
   const rooms = interiorLoaded();
-  if (!rooms) {
+  if (!rooms || !storeDescs.ready()) {
     if (domeLoading) return;
     domeLoading = true;
-    return loadInterior().then(() => { domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('rooms', e); });
+    return Promise.all([loadInterior(), storeDescs.load()]).then(() => { domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('rooms', e); });
   }
   // Seoul Another Dome: the stadium's code comes on the first visit.
   if (rooms.needsDome(item.store)) {
@@ -6181,7 +6185,7 @@ function hi5Action(o) {
 // Street actions that can be next to each other (a shop door with people at
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
-const storeAct = (it) => (warmInterior(), { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
+const storeAct = (it) => (warmInterior(), storeDescs.load(), { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
