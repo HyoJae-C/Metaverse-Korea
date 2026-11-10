@@ -6,15 +6,14 @@ import {
   KINDS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
 } from '../src/core/fireworks-show.js';
 import { droneShowAt } from '../src/core/drone-show.js';
-import { CYCLE_MS, SHOW_FROM, SHOW_EVERY, FIREWORKS, showOf, cycleNumber } from '../src/core/show-clock.js';
+import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
 import { ORIGIN, U, at } from '../scripts/build-yeouido.mjs';
 
-// A fireworks show's start (k: shows later), 10 cycles of the game's day apart.
-let N = cycleNumber(Date.UTC(2026, 10, 9));
-while (showOf(N) !== FIREWORKS) N++;
-const FW = (k = 0) => (N + 2 * SHOW_EVERY * k) * CYCLE_MS + SHOW_FROM;
+// A fireworks show's start: the fireworks are on the cycles numbered 0 mod 4.
+const N = cycleNumber(Date.UTC(2026, 10, 9)) & ~3;
+const FW = (k = 0) => (N + 4 * k) * CYCLE_MS + SHOW_FROM;
 
-test('one night in ten of the game\'s 2-hour day, every 20 hours, never with the drone show', () => {
+test('one night in four of the game\'s 2-hour day, three a real day, never with the drone show', () => {
   const start = FW();
   assert.equal(fireworksAt(start - (ALERT_SECONDS + 5) * 1000), null, 'nothing before the notice');
   assert.equal(fireworksAt(start - ALERT_SECONDS * 1000 + 1000).start, start, 'the 10-minute notice');
@@ -23,11 +22,11 @@ test('one night in ten of the game\'s 2-hour day, every 20 hours, never with the
   assert.equal(droneShowAt(start + 600e3), null, 'no drones the same night');
   assert.equal(fireworksAt(start - 60 * 60e3), null, 'no show in the day');
   assert.equal(nextFireworks(start - 60 * 60e3), start);
-  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 20 hours later');
-  assert.equal(FW(1) - start, 20 * 3600e3);
-  // so it moves round the clock: six shows, six different hours
-  const hours = new Set([0, 1, 2, 3, 4, 5].map((k) => new Date(FW(k)).getUTCHours()));
-  assert.equal(hours.size, 6);
+  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 8 hours later');
+  assert.equal(FW(1) - start, 4 * CYCLE_MS);
+  let n = 0;
+  for (let s = nextFireworks(start - 1); s < start + 24 * 3600e3; s = nextFireworks(s)) n++;
+  assert.equal(n, 3);
 });
 
 test('Yeouido\'s sky darkens before the show and brightens after it, smoothly', () => {

@@ -47,7 +47,7 @@ export const FR = {
   'tip.4': "🔤 Réglages → Traduire les enseignes affiche les enseignes dans ta langue.",
   'tip.5': "🎣 Pêche dans les parcs du fleuve Han, puis vends tes prises au marché aux poissons.",
   'tip.6': "📖 Prends un livre et assieds-toi n'importe où pour le lire.",
-  'tip.7': "🎆 La nuit tombe toutes les 2 heures, et toutes les 10 heures il y a un spectacle : feux d'artifice à Yeouido et drones à Ttukseom, en alternance.",
+  'tip.7': "🎆 La nuit tombe toutes les 2 heures, et une nuit sur deux a son spectacle : feux d'artifice à Yeouido et drones à Ttukseom, en alternance.",
   'tip.8': "📒 Le carnet de dépenses de ton portefeuille montre où est passé ton argent.",
   'taxi.here': 'l\'endroit choisi',
   'taxi.shopWhere': "Lieu : {gu}",

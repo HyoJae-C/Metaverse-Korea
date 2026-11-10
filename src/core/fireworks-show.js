@@ -14,8 +14,8 @@
 
 import { smooth, showStarts, FIREWORKS } from './show-clock.js';
 
-// When: one night in ten of the game's two-hour day (show-clock.js),
-// taking turns with the Ttukseom drone show: every 20 hours.
+// When: one night in four of the game's two-hour day (show-clock.js),
+// taking turns with the Ttukseom drone show: three times a real day.
 export const SHOW_SECONDS = 20 * 60; // 20 minutes of fireworks (t = 0 … 1200)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
 export const DAWN_SECONDS = 180; // after the end: it brightens again

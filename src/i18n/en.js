@@ -46,7 +46,7 @@ export const EN = {
   'tip.4': "🔤 Settings → Translate shop signs shows the signs in your language.",
   'tip.5': "🎣 Fish at the Han River parks, then sell your catch at the fish market.",
   'tip.6': "📖 Pick up a book and sit down anywhere to read it.",
-  'tip.7': "🎆 Night falls every 2 hours, and every 10 hours there's a show: fireworks over Yeouido and a drone show at Ttukseom, in turn.",
+  'tip.7': "🎆 Night falls every 2 hours, and every other night has a show: fireworks over Yeouido and a drone show at Ttukseom, in turn.",
   'tip.8': "📒 The Budget book in your wallet shows where your money went.",
   "taxi.here": "the spot you picked",
   'taxi.shopWhere': "Place: {gu}",
