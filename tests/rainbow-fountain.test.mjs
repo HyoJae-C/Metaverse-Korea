@@ -31,15 +31,15 @@ test('never while the Yeouido fireworks are on', () => {
     for (let m = 0; m < FIREWORKS_SECONDS / 60; m += 2) assert.ok(!fountainAt(fw + m * 60e3)?.on, new Date(fw + m * 60e3).toISOString());
     assert.ok(nextFountain(fw) >= fw + FIREWORKS_SECONDS * 1000, 'the next one is after the fireworks');
   }
-  assert.ok(checked >= 5, `${checked} fireworks shows in a day`);
-  // Every other hour has one: at least 16 shows a day.
+  assert.equal(checked, 3, 'three fireworks shows a day');
+  // Nearly every hour has one.
   let n = 0;
   for (let h = 0; h < 24; h++) {
     const start = KST(2026, 11, 9, h, 30);
     if (fountainAt(start + 600e3)?.on) n++;
     else assert.ok(clashesWithFireworks(start) && fireworksAt(start + 600e3), `${h}:30 skipped only for the fireworks`);
   }
-  assert.ok(n >= 16, `${n} shows`);
+  assert.ok(n >= 20, `${n} shows`);
 });
 
 test('the sky round the bridge darkens before and brightens after, smoothly', () => {

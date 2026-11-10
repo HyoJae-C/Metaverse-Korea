@@ -9,11 +9,11 @@ import { droneShowAt } from '../src/core/drone-show.js';
 import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
 import { ORIGIN, U, at } from '../scripts/build-yeouido.mjs';
 
-// A fireworks show's start: the fireworks are on the even cycles of the game's day.
-const N = cycleNumber(Date.UTC(2026, 10, 9)) & ~1;
-const FW = (k = 0) => (N + 2 * k) * CYCLE_MS + SHOW_FROM;
+// A fireworks show's start: the fireworks are on the cycles numbered 0 mod 4.
+const N = cycleNumber(Date.UTC(2026, 10, 9)) & ~3;
+const FW = (k = 0) => (N + 4 * k) * CYCLE_MS + SHOW_FROM;
 
-test('every other night of the game\'s 2-hour day, never with the drone show', () => {
+test('one night in four of the game\'s 2-hour day, three a real day, never with the drone show', () => {
   const start = FW();
   assert.equal(fireworksAt(start - (ALERT_SECONDS + 5) * 1000), null, 'nothing before the notice');
   assert.equal(fireworksAt(start - ALERT_SECONDS * 1000 + 1000).start, start, 'the 10-minute notice');
@@ -22,8 +22,11 @@ test('every other night of the game\'s 2-hour day, never with the drone show', (
   assert.equal(droneShowAt(start + 600e3), null, 'no drones the same night');
   assert.equal(fireworksAt(start - 60 * 60e3), null, 'no show in the day');
   assert.equal(nextFireworks(start - 60 * 60e3), start);
-  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 4 hours later');
-  assert.equal(FW(1) - start, 2 * CYCLE_MS);
+  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 8 hours later');
+  assert.equal(FW(1) - start, 4 * CYCLE_MS);
+  let n = 0;
+  for (let s = nextFireworks(start - 1); s < start + 24 * 3600e3; s = nextFireworks(s)) n++;
+  assert.equal(n, 3);
 });
 
 test('Yeouido\'s sky darkens before the show and brightens after it, smoothly', () => {

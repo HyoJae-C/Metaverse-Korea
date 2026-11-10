@@ -46,7 +46,7 @@ export const ES = {
   'tip.4': "🔤 Ajustes → Traducir letreros muestra los letreros en tu idioma.",
   'tip.5': "🎣 Pesca en los parques del río Han y vende lo que pesques en el mercado de pescado.",
   'tip.6': "📖 Toma un libro y siéntate donde quieras para leerlo.",
-  'tip.7': "🎆 Cada 2 horas cae la noche: una noche fuegos artificiales en Yeouido, la siguiente un espectáculo de drones en Ttukseom.",
+  'tip.7': "🎆 Cada 2 horas cae la noche, y una noche de cada dos hay espectáculo: fuegos artificiales en Yeouido y drones en Ttukseom, por turnos.",
   'tip.8': "📒 El libro de gastos de tu cartera muestra en qué gastaste tu dinero.",
   'taxi.here': 'el lugar elegido',
   'taxi.shopWhere': "Lugar: {gu}",

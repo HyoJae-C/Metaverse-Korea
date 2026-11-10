@@ -9,10 +9,10 @@
 // Everyone's clock gives the same show at the same moment (like the lucky
 // fishing spot and the weather), so friends watch the same drones together.
 
-import { smooth, showStarts, cycleNumber, DRONES } from './show-clock.js';
+import { smooth, showStarts, cycleNumber, DRONES, SHOW_EVERY } from './show-clock.js';
 
-// When: in the middle of every other night of the game's two-hour day
-// (show-clock.js), taking turns with the Yeouido fireworks.
+// When: one night in four of the game's two-hour day (show-clock.js),
+// taking turns with the Yeouido fireworks: three times a real day.
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drones rise
 export const LAND_SECONDS = 180; // after the end: they land, the sky brightens
@@ -48,7 +48,7 @@ export function nextDroneShow(now = Date.now()) {
 
 // Which show of all time this is (counts up show by show): picks the
 // changing part of the program, the same on every screen.
-export const showNumber = (start) => Math.floor(cycleNumber(start) / 2);
+export const showNumber = (start) => Math.floor(cycleNumber(start) / SHOW_EVERY);
 
 // Where it happens, in the Ttukseom park room's space (park.js: the river is
 // z < -4, the duck boats stay at z > -44, the bridge is at z = -74). The
