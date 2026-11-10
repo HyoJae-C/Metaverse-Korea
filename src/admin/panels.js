@@ -8,6 +8,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 import { createRetention } from './retention.js';
 import { MAX_NOTICE, cleanNotice, deleteNotice, sendNotice } from '../core/announce.js';
 import { createWeatherPanel } from './weather-panel.js';
+import { createDronePanel } from './drone-panel.js';
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
 
@@ -259,7 +260,8 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
   $('playerQ').oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(players, 300); };
   const retention = createRetention({ client, $, escapeHtml, notOperator });
   const weatherPanel = createWeatherPanel({ client, $, escapeHtml, setStatus, notOperator });
-  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players, retention: retention.load, notice: notices, weather: weatherPanel.load };
+  const dronePanel = createDronePanel({ client, $, escapeHtml, setStatus, notOperator });
+  const OPEN = { overview, ask: () => board('ask'), free: () => board('free'), players, retention: retention.load, notice: notices, weather: weatherPanel.load, drone: dronePanel.load };
   // The open-inquiry badge stays current even while another tab is open.
   const badges = async () => {
     if (document.hidden || current === 'overview') return;
