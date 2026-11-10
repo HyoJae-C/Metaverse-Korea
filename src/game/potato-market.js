@@ -5,6 +5,7 @@
 // when you have things on a mat.
 //
 // game: { scene, spot (the potatomarket landmark: x, z, spots [[dx, dz, ry]]),
+// stalls (the "fleastall" landmarks round the plaza: x, z, ry, c),
 // wallet, inventory, receipts, items, shop, sfx, refreshWallet, refreshItems,
 // newOpId, takeOff(id), resync() (fetch the balance again: a sale while away) }.
 import * as THREE from 'three';
@@ -18,6 +19,8 @@ const SHOW = 120; // m: mats drawn this close
 const PLAZA = 17; // m from the plaza's centre: "browse the market"
 const BY_MAT = 2.2; // m from a mat: "look at this mat"
 const EVERY = 45; // s between looks at the server while you're here
+const BY_STALL = 1.8; // m from the spot in front of a stall: "look at the stall"
+const STALL_NAMES = 10; // potato.stall0..9
 
 // Clothes colours from their names (outfit-hoodie-black → black).
 const TINT = { black: '#2b2b30', white: '#f2f0ea', red: '#c8423a', blue: '#3d68b8', navy: '#2c3a5c', green: '#4f8a55', khaki: '#8a8458', beige: '#d8c6a4', brown: '#7a5236', grey: '#8d8f94', gray: '#8d8f94', pink: '#e391aa', yellow: '#e9c54a', purple: '#7f5aa8', denim: '#4a6a96', cream: '#efe5cf', orange: '#e0843a', mint: '#9fd8c0' };
@@ -34,6 +37,12 @@ export function createPotatoMarket(game) {
   // Mats fill the middle of the plaza first.
   const spots = (spot.spots || []).map(([dx, dz, ry = 0]) => ({ x: spot.x + dx, z: spot.z + dz, ry, d: Math.hypot(dx, dz) }))
     .sort((a, b) => a.d - b.d);
+  // The stalls round the edge are scenery with no sign (no textures to
+  // download): standing in front of one shows its name (Yozi 2026-11-11).
+  const stalls = (game.stalls || []).map((l, i) => {
+    const ry = l.ry || 0, n = (Number.isInteger(l.c) ? l.c : i) % STALL_NAMES;
+    return { x: l.x + Math.sin(ry) * 1.7, z: l.z + Math.cos(ry) * 1.7, key: 'potato.stall' + n };
+  });
 
   // ---- the mats on the ground ----
   const group = new THREE.Group();
@@ -317,6 +326,8 @@ export function createPotatoMarket(game) {
       near = here;
     },
     act(p) {
+      const st = stalls.find((o) => Math.hypot(p.x - o.x, p.z - o.z) < BY_STALL);
+      if (st) return { key: st.key, label: '🥔 ' + t('potato.stall'), run: () => game.shop.toast(t('potato.stallSay', { name: t(st.key) })) };
       if (Math.hypot(p.x - centre.x, p.z - centre.z) > PLAZA) return null;
       const by = drawn.map((m) => ({ m, d: Math.hypot(p.x - m.x, p.z - m.z) })).filter((o) => o.d < BY_MAT + MAT.w / 2).sort((a, b) => a.d - b.d)[0];
       if (by) return { key: 'potato:' + by.m.mat, label: '🧺 ' + (by.m.name === t('potato.mine') ? t('potato.mine') : t('potato.look', { name: by.m.name })), run: () => ui.show(by.m.mat) };

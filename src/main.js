@@ -3975,6 +3975,7 @@ const takeOffItem = (id) => {
   setLook(myLook);
 };
 const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
+  stalls: map.landmarks.filter((l) => l.type === 'fleastall'),
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
   takeOff: takeOffItem });
