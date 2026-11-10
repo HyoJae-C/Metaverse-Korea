@@ -282,7 +282,7 @@ test('second-hand shops: closed until the SQL is run; a browser-only wallet pays
   assert.equal(w.resellPct, null);
   assert.equal((await w.resell({ id: 'x', n: 6, ref: 'y' })).why, 'closed');
   const local = fresh();
-  assert.equal(local.resellPct, 10);
+  assert.equal(local.resellPct, 25);
   assert.deepEqual(await local.resell({ id: 'x', n: 6 }), { ok: true, n: 6 });
   assert.equal(local.coins, 6);
 });

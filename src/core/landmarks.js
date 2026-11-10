@@ -8,6 +8,7 @@ import { matCache, addBox } from './three-kit.js';
 import { haneulStore, haneulTower } from './haneul.js';
 import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
+import { namsanPoint } from './namsan-shape.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { farFree } from './far-textures.js';
@@ -254,37 +255,37 @@ const BUILD = {
     g.add(m);
   },
   namsan(g, l) {
-    // Namsan above Itaewon: a round wooded hill (l.rx, l.rz, l.h) with a
-    // look-out tower on top. Scenery: the map's blockers keep you off it.
-    const rx = l.rx || 170, rz = l.rz || 110, h = l.h || 70;
+    // Namsan: a wooded hill on an ellipse (l.rx, l.rz, l.h) that leans so its
+    // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
+    // (core/namsan-shape.js). Scenery: the map's blockers keep you off it.
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0 };
     const geo = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) { // a little unevenness, not a dome
-      const y = pos.getY(i);
-      if (y > 0.02 && y < 0.98) pos.setY(i, y * (1 + 0.08 * Math.sin(i * 12.9898) * Math.sin(i * 4.1414)));
+    for (let i = 0; i < pos.count; i++) {
+      let y = pos.getY(i);
+      if (y > 0.02 && y < 0.98) y *= 1 + 0.08 * Math.sin(i * 12.9898) * Math.sin(i * 4.1414); // a little unevenness, not a dome
+      pos.setXYZ(i, pos.getX(i) * sh.rx + sh.px * y, y * sh.h, pos.getZ(i) * sh.rz + sh.pz * y);
     }
     geo.computeVertexNormals();
-    const hill = new THREE.Mesh(geo, mat('#86b56f'));
-    hill.scale.set(rx, h, rz);
-    g.add(hill);
+    g.add(new THREE.Mesh(geo, mat('#86b56f')));
     // Trees on the slopes (one instanced mesh), none on the summit.
     const tree = new THREE.ConeGeometry(4, 11, 6);
     tree.translate(0, 5, 0);
-    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), 160);
+    const N = l.trees || 160;
+    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), N);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
     let n = 0, seed = 7;
     const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    while (n < 160) {
+    while (n < N) {
       const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
-      const x = Math.cos(a) * r, z = Math.sin(a) * r;
-      const y = h * Math.sqrt(Math.max(0, 1 - r * r)) - 1.5;
+      const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
       const s = 0.7 + rnd() * 0.7;
-      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x * rx, y, z * rz), q, sc.set(s, s, s)));
+      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
     }
     g.add(trees);
     const tower = new THREE.Group();
     namsanTower(tower);
-    tower.position.y = h - 1;
+    tower.position.set(sh.px, sh.h - 1, sh.pz);
     tower.scale.setScalar(l.tower || 0.75);
     g.add(tower);
   },

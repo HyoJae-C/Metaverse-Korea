@@ -80,6 +80,7 @@ import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
+import { createUsedRack } from './game/used-rack.js';
 import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -169,7 +170,8 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
-import { closetKind } from './core/closet.js';
+import { closetKind, closetColor } from './core/closet.js';
+import { RETIRED } from './data/wearables.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -2200,7 +2202,7 @@ const bagUi = new BagUI({
     ids: inventory.list().filter(isClothes),
     describe: (id) => {
       const it = ITEMS[id];
-      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price };
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
     },
     actions: (id, redraw) => {
       const it = ITEMS[id];
@@ -3905,12 +3907,18 @@ const fishingUi = new FishingUI({
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
 receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+// Below it, the second-hand rack: what players sold to the shops, at 40% (game/used-rack.js).
+const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId,
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); }, get interior() { return interior; } });
 const resaleUi = new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
   list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   onSell: (r) => sellClothes(r),
+  rack: () => usedRack.view(),
+  onOpen: () => usedRack.refresh(),
+  onBuy: (r) => usedRack.buy(r),
 });
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {
@@ -3938,6 +3946,7 @@ async function sellNow(id, it, rc) {
   }
   inventory.remove(id);
   receipts.forget(id);
+  if (res.n > 0) usedRack.sold(op, id); // on the rack for others
   refreshWallet();
   sfx.pop?.();
   const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
@@ -7060,6 +7069,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    usedRack, // the second-hand rack (game/used-rack.js), for tests
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpu: () => ({ ...renderer.info.memory }),

@@ -112,7 +112,7 @@ export function createMinimap(game) {
     g.lineCap = g.lineJoin = 'round';
     for (const rd of near('roads', map.roads || [])) {
       poly(rd.p);
-      g.strokeStyle = rd.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = rd.bike ? '#d9826f' : rd.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1.5 * dpr, rd.w * s);
       g.stroke();
     }

@@ -13,6 +13,7 @@ export const COLORS = {
   road: 0x8d8a8f,
   roadMajor: 0x7f7c84,
   walk: 0xd8cfc0,
+  bike: 0xc0503f, // the Han River bike paths' red asphalt (region.json links with bike: true)
   park: 0x9fd486,
   grass: 0xb4dc93,
   water: 0x7cc4e8,
@@ -61,7 +62,8 @@ export function buildWorld(map, scene, opts = {}) {
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk'),
+    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
+    bike: map.roads.filter((r) => r.bike),
     minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
     major: map.roads.filter((r) => majors.has(r.k)),
   };
@@ -74,6 +76,7 @@ export function buildWorld(map, scene, opts = {}) {
     }
   };
   roadMesh(roadSets.walk, COLORS.walk, ROAD_Y.walk);
+  roadMesh(roadSets.bike, COLORS.bike, ROAD_Y.walk + 0.004); // (over the paths that join it)
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 

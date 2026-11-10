@@ -94,6 +94,32 @@ function quilted(rings, axis) {
   return outRings;
 }
 
+// Stripes (a Breton top, a rugby shirt): bands of another colour across the
+// top, every `step` metres, `width` wide, from `from` up to `to` along the
+// axis (y for the body, x for a sleeve). Extra rings go in between the
+// existing ones, at radii blended from their neighbours.
+function striped(rings, st, axis, from, to) {
+  const i = axis === 'x' ? 0 : 1;
+  const at = (r) => Math.abs(r.c[i]);
+  const cuts = []; // [start, end, start, end, ...]
+  for (let t = from + st.step * 0.5; t + st.width < to; t += st.step) cuts.push(t, t + st.width);
+  const inBand = (x) => cuts.some((t, n) => n % 2 === 0 && x >= t - 1e-6 && x < cuts[n + 1] - 1e-6);
+  // A segment takes its first ring's colour.
+  const paint = (r) => (r.role === 'top' && inBand(at(r)) ? { ...r, role: st.role } : r);
+  const out = [];
+  for (let k = 0; k < rings.length; k++) {
+    const a = rings[k], b = rings[k + 1];
+    out.push(paint(a));
+    if (!b || a.role !== 'top' || at(b) <= at(a)) continue;
+    for (const t of cuts) {
+      if (t <= at(a) || t >= at(b)) continue;
+      const f = (t - at(a)) / (at(b) - at(a)), mix = (x, y) => x + (y - x) * f;
+      out.push(paint({ ...a, c: a.c.map((v, j) => mix(v, b.c[j])), ru: mix(a.ru, b.ru), rv: mix(a.rv, b.rv) }));
+    }
+  }
+  return out;
+}
+
 // ---- the garments ---------------------------------------------------------
 // o: the outfit's shape options (see OUTFITS in data/characters/kaykit2.js).
 function torso(out, o) {
@@ -118,9 +144,16 @@ function torso(out, o) {
   add(1.15, 0.25 + bulk * 0.8, 0.195 + bulk * 0.8, 'top');
   add(1.21, 0.17 + bulk * 0.5, 0.14 + bulk * 0.5, 'top');
   add(1.25, 0.12, 0.1, o.neck || 'top');
-  sweep(out, o.quilt ? quilted(rings, 'y') : rings, { power: 2.5 });
+  sweep(out, o.quilt ? quilted(rings, 'y') : o.stripes ? striped(rings, o.stripes, 'y', o.hem, 1.12) : rings, { power: 2.5 });
   // Neckline rim (crew neck) or collar.
-  if (o.collar) {
+  if (o.turtle) { // a turtleneck: a thick folded collar up under the chin
+    sweep(out, [
+      { c: [0, 1.14, 0.0], u: [1, 0, 0], v: [0, 0, 1], ru: 0.235, rv: 0.2, role: o.turtle, w: [['chest', 1]] },
+      { c: [0, 1.2, 0.0], u: [1, 0, 0], v: [0, 0, 1], ru: 0.215, rv: 0.185, role: o.turtle, w: [['chest', 1]] },
+      { c: [0, 1.27, -0.005], u: [1, 0, 0], v: [0, 0, 1], ru: 0.19, rv: 0.165, role: o.turtle, w: [['chest', 0.7], ['head', 0.3]] },
+      { c: [0, 1.31, -0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.15, rv: 0.13, role: o.turtle, w: [['chest', 0.6], ['head', 0.4]] },
+    ], { power: 2.2 });
+  } else if (o.collar) {
     sweep(out, [
       { c: [0, 1.17, 0.0], u: [1, 0, 0], v: [0, 0, 1], ru: 0.2, rv: 0.17, role: o.collar, w: [['chest', 1]] },
       { c: [0, 1.26, -0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.16, rv: 0.14, role: o.collar, w: [['chest', 1]] },
@@ -130,6 +163,7 @@ function torso(out, o) {
   if (o.placket) box(out, [0, 0.86, front(0.0)], [0.05, 0.42, 0.02], o.placket, [['spine', 0.5], ['chest', 0.5]]);
   if (o.panel) box(out, [0, 0.86, front(0.0)], [0.15, 0.48, 0.02], o.panel, [['spine', 0.5], ['chest', 0.5]]);
   if (o.pocket) box(out, [0, 0.72, front(0.0)], [0.26, 0.13, 0.03], o.pocket, [['spine', 1]]);
+  if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
   // Hanbok: the goreum, a ribbon tied on the right of the chest with two
   // long ends hanging down (one longer than the other).
@@ -144,7 +178,7 @@ function torso(out, o) {
 function arm(out, o, side) {
   const s = side > 0 ? 'l' : 'r';
   const rings = [];
-  const bulk = (o.bulk || 0) * 0.7;
+  const bulk = o.vest ? 0 : (o.bulk || 0) * 0.7; // (a vest: the T-shirt's own sleeves)
   const add = (x, r, role) => rings.push({ c: [x * side, 1.107, 0], u: [0, 1, 0], v: [0, 0, 1], ru: r, rv: r, role, w: chain(ARM(s), x) });
   const sleeve = o.sleeve ?? 0.42; // where the sleeve ends (x)
   const arms = o.arms || 'top'; // sleeves in their own colour (a varsity jacket)
@@ -160,7 +194,7 @@ function arm(out, o, side) {
     add(0.7, 0.07, 'skin');
     add(0.82, 0.068, 'skin');
   }
-  sweep(out, o.quilt ? quilted(rings, 'x') : rings, { capStart: true, capEnd: sleeve < 0.8, power: 2 });
+  sweep(out, o.quilt && !o.vest ? quilted(rings, 'x') : o.stripes && arms === 'top' ? striped(rings, o.stripes, 'x', 0.16, sleeve) : rings, { capStart: true, capEnd: sleeve < 0.8, power: 2 });
   // A rounded fist and a thumb.
   const hw = [['hand' + s, 1]];
   const fist = (x, ry, rz) => ({ c: [x * side, 1.1, 0.005], u: [0, 1, 0], v: [0, 0, 1], ru: ry, rv: rz, role: 'skin', w: x < 0.8 ? [['wrist' + s, 1]] : hw });
