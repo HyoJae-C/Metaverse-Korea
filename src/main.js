@@ -62,6 +62,7 @@ import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoar
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createTouchSteer } from './game/touch-steer.js';
+import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
@@ -6711,6 +6712,8 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+// The camera eases round behind you as you walk (game/follow-cam.js).
+const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
@@ -6743,7 +6746,8 @@ renderer.setAnimationLoop((now) => {
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
-  if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
+  const stickTurning = touchSteer.turn(dt, mx, my, canSteer);
+  if (stickTurning) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
@@ -6853,9 +6857,10 @@ renderer.setAnimationLoop((now) => {
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
-  // (No follow swing: the camera turns only when the player drags it. It
-  // used to swing round behind the character while walking, and on phones a
-  // wobbly thumb on the stick kept the view turning; players got lost.)
+  // Ease round behind the character while walking (slowly, and not for a
+  // moment after the player drags the view). An older follow swing turned at
+  // once and fought the drag, and players got lost; see game/follow-cam.js.
+  followCam.update(dt, { dragged: !!(look.dx || look.dy), moving: mag > 0.05 || !!autoWalk, can: canSteer && !stickTurning && !seoulDal.busy && riding !== 3, pace: speed01 });
 
   // Camera follow.
   // Keep the camera out of buildings: walk back from the player and stop
@@ -7245,6 +7250,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: Object.fromEntries(Object.keys(RIDE_CYCLE).map((k) => [k, ridePhase(k, Date.now() / 1000)])), wheelOpen: wheelDoorOpen(wheelBottom(Date.now() / 1000), Date.now() / 1000), locked: !!ride?.locked }),
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
+    camYaw: () => +cam.yaw.toFixed(3),
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
     surgery: () => startSurgery(myLook), // (in a clinic: the operating scene without paying)
     surgeryT: (t) => { if (beauty.surgery) beauty.surgery.t = t; return beauty.surgery?.t ?? null; },
