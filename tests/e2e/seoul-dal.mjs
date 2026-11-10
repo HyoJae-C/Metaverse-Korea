@@ -60,6 +60,13 @@ try {
   if (st.coins !== 85000) throw new Error('the stamp did not pay: ' + JSON.stringify(st));
   await page.keyboard.press('Escape'); await page.evaluate(() => { const p = document.getElementById('stamp-panel'); if (p) p.hidden = true; });
   console.log('stamped:', await mk('action'));
+  // Walk round the deck up there (Yozi's ask): moved, still aboard, still up.
+  const before = (await mk('seoulDal')).at;
+  await page.keyboard.down('KeyD'); await wait(1500); await page.keyboard.up('KeyD'); await wait(300);
+  st = await mk('seoulDal');
+  const moved = Math.hypot(st.at[0] - before[0], st.at[1] - before[1]);
+  if (!st.busy || !(st.y > 129) || !(moved > 0.4) || Math.hypot(st.at[0] + 2902.1, st.at[1] - 485.4) > 4.6) throw new Error('did not walk round the deck: ' + moved.toFixed(2) + ' ' + JSON.stringify(st));
+  console.log('walked:', moved.toFixed(2), 'm');
   if (shotDir) await page.screenshot({ path: `${shotDir}/3-top-down.png` });
   await mk('act'); await wait(2000); // look out
   if (shotDir) await page.screenshot({ path: `${shotDir}/4-top-out.png` });
