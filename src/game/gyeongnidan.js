@@ -1,7 +1,7 @@
 // Gyeongnidan-gil (경리단길), Itaewon's hillside street: the sloped ground
 // under its houses, its streets drawn on the slope, and neighbours out on the
 // lanes so it never looks empty. The roads and houses come from
-// scripts/build-gyeongnidan.mjs (real roads from OpenStreetMap); the height
+// scripts/build-itaewon.mjs (real roads from OpenStreetMap); the height
 // is core/hill-ground.js, which main.js uses from the start, so walking up
 // the hill works before this module arrives. main.js loads this with
 // import() the first time you come near.
