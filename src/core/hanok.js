@@ -301,12 +301,19 @@ function home(k, L, D, o, r) {
   }
 }
 
+// The middles of a hanok shop's front bays, across a front L long (from its
+// centre). A shop door (stores.json "at") goes in the middle of one.
+export function shopBays(L) {
+  const n = L > 16 ? 3 : 2, bw = (L - 0.6) / n;
+  return Array.from({ length: n }, (_, i) => -L / 2 + 0.3 + (i + 0.5) * bw);
+}
+
 // A shop: bays of different heights across the front, a wing behind, a yard.
 function shop(k, L, D, o, r) {
-  const n = L > 16 ? 3 : 2, front = Math.min(7.5, D * 0.42), z = D / 2 - front / 2 - 0.4;
+  const bays = shopBays(L), n = bays.length, front = Math.min(7.5, D * 0.42), z = D / 2 - front / 2 - 0.4;
   const big = Math.floor(r() * n);
   for (let i = 0; i < n; i++) {
-    const bw = (L - 0.6) / n, x = -L / 2 + 0.3 + (i + 0.5) * bw;
+    const bw = (L - 0.6) / n, x = bays[i];
     const look = { ...o, seed: o.seed + i, roofC: i === big ? o.roofC : tint(pick(r, PAL.roof), 1), stone: i !== big && o.stone };
     k.at(x, 0, z, 0, () => wing(k, bw - 1.0, front, look, { tall: i === big ? 0.9 : r() * 0.3 }));
   }
