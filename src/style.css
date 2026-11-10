@@ -2625,3 +2625,16 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   .minimap { width: 88px; height: 88px; }
   .minimap-me { width: 17px; height: 19px; }
 }
+
+/* Phones while typing a chat line (game/chat.js): the chat bar sits at the
+   top, so what sat there (status chips, minimap, map/bag/notes icons, pinned
+   notices) steps aside instead of showing through it, and the chat log moves
+   right under the bar, where the keyboard can't cover it. */
+@media (pointer: coarse) {
+  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help) { visibility: hidden; }
+  html:not(.android) body:has(#hud.chat-open) .tools .tool:not(#chat-btn, #bike-btn) { visibility: hidden; }
+  #hud.chat-open .chat-log {
+    top: calc(env(safe-area-inset-top, 0px) + 12px + var(--chat-bar-h, 52px) + 8px); bottom: auto;
+    translate: none; max-height: min(172px, 26dvh);
+  }
+}
