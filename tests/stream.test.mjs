@@ -118,3 +118,40 @@ test('Cheonggyecheon follows its real line, its bridges on their real spots', as
   for (const b of BRIDGES) assert.ok(b.off < 4.5 || (b.nudge && b.off < 15 && b.why), `${b.name.en} ${b.off} m off`);
   assert.deepEqual(c.bridges.map((b) => b.u), BRIDGES.map((b) => b.u));
 });
+
+// "Can't get down to Cheonggyecheon" (2026-11-10): when districts, roads or
+// landmarks move, a building, a wall or a new blocker can land on a stair's
+// mouth or fence it in, and you can no longer walk down. On the joined Seoul
+// map every stair's lane must be free from the pavement in front of it to the
+// landing, and the pavement in front must lead out into the city.
+test('every Cheonggyecheon stair can be walked down from the city', async () => {
+  const { loadRegionMap } = await import('../src/core/districts.js');
+  const R = new URL('../public/regions/another-seoul/', import.meta.url);
+  const readJson = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
+  const map = await loadRegionMap(readJson('region.json'), async (f) => readJson(f));
+  const c = map.streams.find((q) => q.id === 'cheonggyecheon') || map.streams[0];
+  const F = frameOf(c), hw = c.w / 2, PLAYER = 0.35;
+  // What the game collides with on the street (main.js: buildings, blockers, the channel's walls).
+  const street = new CollisionMap(map.buildings.filter((b) => !b.visit).concat(map.blockers || [], streetBlockers(c)));
+  const low = new CollisionMap(lowBlockers(c));
+  for (const st of c.stairs) {
+    const v = st.side * (hw + STAIR.w / 2), at = (du) => F.toWorld(st.u + st.dir * du, v), name = `stair at u ${st.u} (${st.side < 0 ? 'north' : 'south'})`;
+    for (let du = -2; du <= STAIR.run / 2; du += 0.25) assert.ok(!street.blocked(...at(du), PLAYER), `${name}: blocked ${du} m from the mouth`);
+    for (let du = STAIR.run / 2; du <= STAIR.run + STAIR.landing / 2; du += 0.25) assert.ok(!low.blocked(...at(du), PLAYER), `${name}: blocked ${du} m down`);
+    assert.equal(streamAt([c], ...at(STAIR.run + 1), true).y, -(c.depth || 4), `${name}: the landing is down by the water`);
+    // From the pavement in front, a walk (0.5 m steps) gets 30 m away: not fenced in.
+    const [mx, mz] = at(-1), seen = new Set(['0,0']), q = [[0, 0]];
+    let out = false;
+    while (q.length && !out) {
+      const [i, j] = q.shift();
+      for (const [a, b] of [[i + 1, j], [i - 1, j], [i, j + 1], [i, j - 1]]) {
+        const k = a + ',' + b;
+        if (seen.has(k) || street.blocked(mx + a * 0.5, mz + b * 0.5, PLAYER)) continue;
+        seen.add(k);
+        if (Math.hypot(a, b) * 0.5 > 30) { out = true; break; }
+        q.push([a, b]);
+      }
+    }
+    assert.ok(out, `${name}: the pavement in front is fenced in`);
+  }
+});

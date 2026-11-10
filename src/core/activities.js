@@ -94,6 +94,63 @@ export function frameMarks(frame) {
   return out;
 }
 
+// Bowling with others in the room. Every ball you throw is sent to the
+// room (bowlThrowMsg): what you picked, the seed of its little scatter, the
+// pins it met and the pins it knocked down, and your rolls before it. The
+// others roll the same ball on the same lane (so they see it and the pins
+// fall the same way; the knocked-down pins in the message are what counts)
+// and put your score on that lane's screen. 'o' opens a game on a lane, 'x'
+// leaves it.
+// With friends (up to 4 on one lane, like a real alley): the host invites
+// (i), friends accept (a) or say no / leave (n), and the host sends the
+// line-up (g). Then you take turns a frame at a time in line-up order; the
+// throw messages carry each ball, so every screen keeps the same score.
+export const BOWL_MAX_PLAYERS = 4;
+const rollsCode = (rolls) => rolls.map((n) => (n === 10 ? 'X' : String(n))).join('');
+const rollsOf = (code) => [...code].map((c) => (c === 'X' ? 10 : +c));
+export const pinMask = (ids) => ids.reduce((m, i) => m | (1 << i), 0);
+export const maskPins = (m) => PINS.map((_, i) => i).filter((i) => m & (1 << i));
+export function bowlThrowMsg({ lane, stance, aim, power, spin, seed, rack, down, rolls }) {
+  const q = (v, k) => Math.round((Math.max(-1, Math.min(1, v)) + 1) * k);
+  return `bowl:t:${lane | 0}:${q(stance, 50)}:${q(aim, 500)}:${Math.round(Math.max(0, Math.min(1, power)) * 1000)}:${q(spin, 2)}:${seed >>> 0}:${pinMask(rack)}:${pinMask(down)}:${rollsCode(rolls)}`;
+}
+export const bowlLaneMsg = (kind, lane) => `bowl:${kind}:${lane | 0}`; // 'o' / 'x'
+export const bowlToMsg = (kind, to) => `bowl:${kind}:${to}`; // 'i' / 'a' / 'n'
+export const bowlGoMsg = (to, lane, ids) => `bowl:g:${to}:${lane | 0}:${ids.join(',')}`;
+export function parseBowl(e) {
+  const s = String(e);
+  if (!s.startsWith('bowl:')) return null;
+  let m = /^bowl:t:([0-9]):(\d{1,3}):(\d{1,4}):(\d{1,4}):([0-4]):(\d{1,10}):(\d{1,4}):(\d{1,4}):([0-9X]{0,21})$/.exec(s);
+  if (m) {
+    const rack = +m[7], down = +m[8], rolls = rollsOf(m[9]);
+    if (+m[2] > 100 || +m[3] > 1000 || +m[4] > 1000 || rack > 1023 || down & ~rack || +m[6] > 4294967295) return null;
+    if (bowlingTurn(rolls).over || rolls.some((n, k) => n > 10)) return null;
+    return { kind: 't', lane: +m[1], stance: +m[2] / 50 - 1, aim: +m[3] / 500 - 1, power: +m[4] / 1000, spin: +m[5] / 2 - 1, seed: +m[6], rack: maskPins(rack), down: maskPins(down), rolls };
+  }
+  if ((m = /^bowl:([ox]):([0-9])$/.exec(s))) return { kind: m[1], lane: +m[2] };
+  if ((m = /^bowl:([ian]):([\w-]{1,64})$/.exec(s))) return { kind: m[1], to: m[2] };
+  if ((m = /^bowl:g:([\w-]{1,64}):([0-9]):([\w,-]{1,300})$/.exec(s))) {
+    const ids = m[3].split(',');
+    if (ids.length < 2 || ids.length > BOWL_MAX_PLAYERS || ids.some((id) => !/^[\w-]{1,64}$/.test(id)) || new Set(ids).size !== ids.length) return null;
+    return { kind: 'g', to: m[1], lane: +m[2], ids };
+  }
+  return null;
+}
+// Whose ball it is in a game of several on one lane: each bowls a whole
+// frame, in line-up order. rollsList: each player's rolls. -1 when all are
+// done (and a player who has left: null, is skipped).
+export function bowlTurnOf(rollsList) {
+  let best = -1, bestFrame = Infinity;
+  for (let k = 0; k < rollsList.length; k++) {
+    if (!rollsList[k]) continue;
+    const t = bowlingTurn(rollsList[k]);
+    if (t.over) continue;
+    if (t.ball > 0) return k; // in the middle of a frame: finish it
+    if (t.frame < bestFrame) { best = k; bestFrame = t.frame; }
+  }
+  return best;
+}
+
 // ── Climbing ─────────────────────────────────────────────────────────────
 // A boulder problem is marked by its hold colour, the way real gyms do it.
 // A ring shrinks around the next hold; reach (tap) when it closes on it.

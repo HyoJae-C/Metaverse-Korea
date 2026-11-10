@@ -2,7 +2,19 @@
 // Hush (core/arcade.js). Free skill games: no coins in or out, only your own
 // best record (and a small teddy bear for a gold at the balloon booth). Their panels are loaded the first time you play one.
 import { L, fmt } from '../ui/pocha-ui.js';
-import { dartColorOf, dartPack, dartPinMsg, dartsGoMsg, dartsMsg, pickDartColor } from '../core/arcade.js';
+import { DART_COLORS, dartColorOf, dartPack, dartPinMsg, dartsGoMsg, dartsMsg, pickDartColor } from '../core/arcade.js';
+import { WordFx } from '../core/runway-fx.js';
+
+const INVITE_MS = 28000; // a little under the host's 30 s wait (ui/darts-ui.js)
+const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
+const PLACE_SIZE = [1.1, 0.8, 0.62, 0.5]; // m tall: 1st, 2nd, 3rd, 4th
+const DARTS_PLACE = [
+  { en: '🥇 1st!', ko: '🥇 1등!', ja: '🥇 1位！', zh: '🥇 第1名！', es: '🥇 ¡1.º!', id: '🥇 Juara 1!', vi: '🥇 Hạng 1!', hi: '🥇 पहला!', fr: '🥇 1er !', th: '🥇 ที่ 1!', ar: '🥇 الأول!' },
+  { en: '🥈 2nd', ko: '🥈 2등', ja: '🥈 2位', zh: '🥈 第2名', es: '🥈 2.º', id: '🥈 Juara 2', vi: '🥈 Hạng 2', hi: '🥈 दूसरा', fr: '🥈 2e', th: '🥈 ที่ 2', ar: '🥈 الثاني' },
+  { en: '🥉 3rd', ko: '🥉 3등', ja: '🥉 3位', zh: '🥉 第3名', es: '🥉 3.º', id: '🥉 Juara 3', vi: '🥉 Hạng 3', hi: '🥉 तीसरा', fr: '🥉 3e', th: '🥉 ที่ 3', ar: '🥉 الثالث' },
+  { en: '4th', ko: '4등', ja: '4位', zh: '第4名', es: '4.º', id: 'Juara 4', vi: 'Hạng 4', hi: 'चौथा', fr: '4e', th: 'ที่ 4', ar: 'الرابع' },
+];
+const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
 export function createArcade(game) {
   const { $, myId, safety, sfx, shop } = game;
@@ -15,6 +27,10 @@ export function createArcade(game) {
   let dartsBoard = 0; // which of the bar's wall boards you play at
   let dartsView = null; // the camera on the wall board while you play (game/darts-view.js)
   let bowlView = null, bowlLane = null; // the same on the bowling lane you stand at (game/bowling-view.js)
+  let climbView = null, climbWall = null; // and on the climbing wall panel you stand at (game/climb-view.js)
+  let bowlLanes = null; // the others' games on the lanes and the lane screens (game/bowling-lanes.js)
+  let bowlInvite = null; // { from, name, at }: someone asked you to bowl with them
+  let bowlQueue = Promise.resolve(); // bowling messages, in order (the code loads on the first)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
   // same on every screen); alone, a colour nobody on the boards throws now.
@@ -24,13 +40,58 @@ export function createArcade(game) {
     for (const id of ids) out.push(pickDartColor(dartColorOf(id), out));
     return out;
   }
-  const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < 60000 && game.others.nameOf(dartsInvite.from) ? dartsInvite : null);
+  const freshBowlInvite = () => (bowlInvite && performance.now() - bowlInvite.at < 60000 && game.others.nameOf(bowlInvite.from) ? bowlInvite : null);
+  // The host gives up on an invite after 30 s (ui/darts-ui.js WAIT_ACCEPT),
+  // so accepting later would only wait for a game that never starts.
+  const freshInvite = () => (dartsInvite && performance.now() - dartsInvite.at < INVITE_MS && game.others.nameOf(dartsInvite.from) ? dartsInvite : null);
+  // The invite card: it stays up (with Play / No thanks) until the invite
+  // runs out, so a friend who is just standing in the bar still sees it and
+  // can join from where they are; the game is played on the wall board's own
+  // camera (game/darts-view.js), so they need not walk to the throw line.
+  let ask = null, askTimer = 0;
+  function closeAsk() { clearTimeout(askTimer); ask?.remove(); ask = null; }
+  function showAsk(inv) {
+    closeAsk();
+    ask = document.createElement('div');
+    ask.id = 'darts-ask';
+    ask.style.cssText = ASK_CSS;
+    const h = document.createElement('div');
+    h.textContent = fmt(L(DARTS_INVITE), { name: inv.name });
+    ask.append(h);
+    for (const [label, run, bg] of [[L(DARTS_ASK.yes), acceptInvite, '#ffd36b'], [L(DARTS_ASK.no), () => declineInvite(inv), '#eee']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.style.cssText = ASK_BTN + ';background:' + bg;
+      b.onclick = () => { closeAsk(); run(); };
+      ask.append(b);
+    }
+    document.body.append(ask);
+    askTimer = setTimeout(closeAsk, Math.max(0, INVITE_MS - (performance.now() - inv.at)));
+  }
+  function declineInvite(inv) {
+    if (dartsInvite === inv) dartsInvite = null;
+    game.net.sendEmote(dartsMsg(inv.from, 'n'));
+  }
+  async function acceptInvite() {
+    const inv = freshInvite(), at = game.interior;
+    const boards = at?.stations?.darts || [];
+    if (!inv || !boards.length) return;
+    const p = game.me.root.position;
+    dartsBoard = [...boards].sort((a, b) => Math.hypot(p.x - a.x, p.z - a.z) - Math.hypot(p.x - b.x, p.z - b.z))[0].board ?? 0;
+    const ui = await (arcadeLoading.darts ||= makeArcade('darts'));
+    arcade.darts ||= ui;
+    if (game.interior !== at || freshInvite() !== inv) return; // walked out, or it ran out while loading
+    if (!ui.open) ui.show();
+    ui.accept(inv);
+  }
   async function openArcade(kind) {
     // Turn to face the cage, the targets or the board (the camera stays as the player has it).
     const p = game.me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
     const st = (game.interior?.stations?.[kind] || []).filter((q) => near(q) < 2.5).sort((a, b) => near(a) - near(b))[0];
     if (kind === 'darts') dartsBoard = st?.board ?? 0; // the bar has two boards: the one you stand at
     if (kind === 'bowling') bowlLane = st || null;
+    if (kind === 'climbing') climbWall = st || null;
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
     if (!arcade[kind]) {
       // The first time, the panel loads: by then you may have walked off or
@@ -40,6 +101,7 @@ export function createArcade(game) {
       arcade[kind] ||= ui;
       if (game.interior !== at || !game.interior?.stations?.[kind]?.some((q) => Math.hypot(game.me.root.position.x - q.x, game.me.root.position.z - q.z) < 3)) return;
     }
+    if (kind === 'darts') closeAsk(); // the panel has its own Join button
     if (!arcade[kind].open) arcade[kind].show();
   }
   async function makeArcade(kind) {
@@ -59,9 +121,25 @@ export function createArcade(game) {
         if (kind === 'bowling') {
           const { createBowlingView } = await import('./bowling-view.js');
           bowlView = createBowlingView(game, () => bowlLane);
+          const lanes = await loadBowlLanes();
+          ui = new BowlingUI({
+            root: $('bowling-panel'), store: localStorage, view: bowlView,
+            onHit: () => sfx.tock(1, 260), onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); },
+            // With the others in the room (core/activities.js, bowling messages).
+            net: {
+              myId, myName: () => game.nickname, nameOf: (id) => game.others.nameOf(id),
+              friends: () => game.others.nearbyFree(game.me.root.position.x, game.me.root.position.z, 6).filter((f) => !safety.isBlocked(f.id, f.name)),
+              send: (msg) => game.net?.sendEmote(msg),
+              invite: freshBowlInvite, clearInvite: () => { bowlInvite = null; },
+              lane: (i) => { bowlLane = game.interior?.stations?.bowling?.[i] || bowlLane; },
+              screen: (lane, rows, turn) => lanes.setLocal(lane, rows, turn),
+            },
+          });
+        } else if (kind === 'climbing') {
+          const { createClimbView } = await import('./climb-view.js');
+          climbView = createClimbView(game, () => climbWall);
+          ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, view: climbView, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
         }
-        if (kind === 'bowling') ui = new BowlingUI({ root: $('bowling-panel'), store: localStorage, view: bowlView, onHit: () => sfx.tock(1, 260), onRoll: (n, k) => { sfx.tock(0.8, 500 + n * 60); if (k === 'strike') game.me.play('cheer'); } });
-        else if (kind === 'climbing') ui = new ClimbUI({ root: $('climb-panel'), store: localStorage, onTop: () => game.me.play('cheer'), onFall: () => sfx.tock(0.6, 300) });
         else ui = new AimUI({ root: $('aim-panel'), store: localStorage, onHit: () => sfx.tock(0.5, 1400) });
       } else if (kind === 'gallery') {
         const { GalleryUI } = await import('../ui/gallery-ui.js');
@@ -84,6 +162,7 @@ export function createArcade(game) {
           invite: freshInvite,
           clearInvite: () => { dartsInvite = null; },
           send: (to, k, thrown, total, extra) => game.net.sendEmote(dartsMsg(to, k, thrown, total, extra)),
+          onEnd: showPlaces,
           onThrow: (pts) => { sfx.tock(0.7, 600); if (pts >= 50) game.me.play('cheer'); },
           colors: dartColors,
           // Our dart sticks in the wall board, and everyone in the bar sees it.
@@ -96,28 +175,93 @@ export function createArcade(game) {
       return ui;
     }
   }
+  // The end of a game with friends: over each player's head their place, in
+  // their dart colour, the bigger the better (like the runway's photo words
+  // at DDP); the winner cheers. Every screen works it out the same.
+  let placeFx = null;
+  function showPlaces(places) {
+    const scene = game.activeScene;
+    if (!scene) return;
+    placeFx ||= new WordFx(4);
+    placeFx.attach(scene);
+    for (const p of places) {
+      const ch = p.me ? game.me : game.others.charOf(p.id);
+      if (!ch?.root) continue;
+      const { x, y, z } = ch.root.position, k = Math.min(p.place, 4) - 1;
+      placeFx.pop(x, y + 2.3 + PLACE_SIZE[k] * 0.3, z, L(DARTS_PLACE[k]), DART_COLORS[p.color] || '#ffd166', false, PLACE_SIZE[k], 3.5);
+      if (p.place === 1) ch.play?.('cheer');
+    }
+  }
   // Darts messages for me: a challenge waits up to a minute for you to walk to
   // the board; the rest goes to the darts panel.
   function onDartsMsg(from, m) {
     if (safety.isBlocked(from, game.others.nameOf(from))) return;
     if (m.kind === 'i') {
       dartsInvite = { from, name: game.others.nameOf(from) || '?', at: performance.now() };
-      shop.toast(fmt(L(DARTS_INVITE), { name: dartsInvite.name }));
-    } else if (m.kind === 'n' && dartsInvite?.from === from) dartsInvite = null;
+      if (arcade.darts?.open) shop.toast(fmt(L(DARTS_INVITE), { name: dartsInvite.name }), 4000);
+      else showAsk(dartsInvite);
+      sfx.tock(0.6, 900);
+    } else if (m.kind === 'n' && dartsInvite?.from === from) { dartsInvite = null; closeAsk(); }
     arcade.darts?.heard(from, m);
   }
+  // Bowling messages (core/activities.js parseBowl): true when it was one.
+  // Invites wait a minute for you to walk to a lane; the rest goes to the
+  // lanes (the others' balls, the screens) and to your game.
+  async function loadBowlLanes() {
+    if (!bowlLanes) { const { createBowlingLanes } = await import('./bowling-lanes.js'); bowlLanes ||= createBowlingLanes(game); }
+    return bowlLanes;
+  }
+  function onBowlMsg(from, e) {
+    if (typeof e !== 'string' || !e.startsWith('bowl:')) return false;
+    if (safety.isBlocked(from, game.others.nameOf(from))) return true;
+    bowlQueue = bowlQueue.then(async () => {
+      const { parseBowl } = await import('../core/activities.js');
+      const m = parseBowl(e);
+      if (!m) return;
+      if (m.to != null) {
+        if (m.to !== myId) return;
+        if (m.kind === 'i') {
+          bowlInvite = { from, name: game.others.nameOf(from) || '?', at: performance.now() };
+          shop.toast(fmt(L(BOWL_INVITE), { name: bowlInvite.name }));
+        } else if (m.kind === 'n' && bowlInvite?.from === from) bowlInvite = null;
+        arcade.bowling?.heardTo(from, m);
+        return;
+      }
+      if (!game.interior?.stations?.bowling) return; // (not in the bowling alley)
+      (await loadBowlLanes()).heard(from, m);
+      arcade.bowling?.heard(from, m);
+    }).catch(() => {});
+    return true;
+  }
+  const BOWL_INVITE = {
+    en: '🎳 {name} wants to bowl with you! Walk up to a lane to join.',
+    ko: '🎳 {name}님이 같이 볼링 치자고 해요! 레인으로 가서 참가하세요.',
+    ja: '🎳 {name}さんがボウリングに誘っています！レーンへ行って参加しよう。',
+    zh: '🎳 {name}邀请你一起打保龄球！走到球道前加入吧。',
+    es: '🎳 ¡{name} quiere jugar a los bolos contigo! Ve a una pista para unirte.',
+    id: '🎳 {name} mengajakmu main bowling! Pergi ke lintasan untuk ikut.',
+    vi: '🎳 {name} rủ bạn chơi bowling! Đến một làn để tham gia.',
+    hi: '🎳 {name} आपके साथ बॉलिंग खेलना चाहते हैं! शामिल होने के लिए किसी लेन पर जाएँ।',
+    fr: '🎳 {name} veut jouer au bowling avec toi ! Va à une piste pour le rejoindre.',
+    th: '🎳 {name} ชวนคุณเล่นโบว์ลิ่ง! เดินไปที่เลนเพื่อเข้าร่วม',
+    ar: '🎳 {name} يريد أن يلعب البولينغ معك! اذهب إلى مسار لتنضم.',
+  };
   const DARTS_INVITE = {
-    en: '🎯 {name} challenges you to darts! Go to the dartboard to play.',
-    ko: '🎯 {name}님이 다트 대결을 신청했어요! 다트판으로 가서 받아 보세요.',
-    ja: '🎯 {name}さんがダーツで勝負を挑んできました！ダーツボードへ。',
-    zh: '🎯 {name}向你发起飞镖挑战！去飞镖靶那里接受吧。',
-    es: '🎯 ¡{name} te reta a los dardos! Ve a la diana para jugar.',
-    id: '🎯 {name} menantangmu main dart! Pergi ke papan dart untuk main.',
-    vi: '🎯 {name} thách bạn chơi phi tiêu! Đến bảng phi tiêu để chơi.',
-    hi: '🎯 {name} ने आपको डार्ट्स की चुनौती दी! खेलने के लिए डार्टबोर्ड पर जाएँ।',
-    fr: '🎯 {name} te défie aux fléchettes ! Va à la cible pour jouer.',
-    th: '🎯 {name} ท้าคุณปาเป้า! ไปที่กระดานปาเป้าเพื่อเล่น',
-    ar: '🎯 {name} يتحداك في رمي السهام! اذهب إلى اللوحة لتلعب.',
+    en: '🎯 {name} challenges you to darts!',
+    ko: '🎯 {name}님이 다트 대결을 신청했어요!',
+    ja: '🎯 {name}さんがダーツで勝負を挑んできました！',
+    zh: '🎯 {name}向你发起飞镖挑战！',
+    es: '🎯 ¡{name} te reta a los dardos!',
+    id: '🎯 {name} menantangmu main dart!',
+    vi: '🎯 {name} thách bạn chơi phi tiêu!',
+    hi: '🎯 {name} ने आपको डार्ट्स की चुनौती दी!',
+    fr: '🎯 {name} te défie aux fléchettes !',
+    th: '🎯 {name} ท้าคุณปาเป้า!',
+    ar: '🎯 {name} يتحداك في رمي السهام!',
+  };
+  const DARTS_ASK = {
+    yes: { en: '🤝 Play', ko: '🤝 같이 하기', ja: '🤝 一緒にやる', zh: '🤝 一起玩', es: '🤝 Jugar', id: '🤝 Main', vi: '🤝 Chơi', hi: '🤝 खेलें', fr: '🤝 Jouer', th: '🤝 เล่นด้วย', ar: '🤝 العب' },
+    no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
   };
   const ARCADE_OPEN = {
     batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', hi: 'बैटिंग', fr: 'Cage de batting', th: 'ตู้ตีเบสบอล', ar: 'قفص الضرب' },
@@ -129,6 +273,6 @@ export function createArcade(game) {
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); }, onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }

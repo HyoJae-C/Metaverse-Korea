@@ -43,14 +43,23 @@ try {
   let st = await mk('seoulDal');
   if (!st.busy || st.coins !== 75000) throw new Error('not aboard or not paid: ' + JSON.stringify(st));
   console.log('aboard:', await mk('action'), JSON.stringify(st));
-  await at(62); await wait(2500);
+  await at(60); await wait(2500);
   st = await mk('seoulDal');
   if (!(st.y > 15 && st.y < 60)) throw new Error('not rising: ' + JSON.stringify(st));
   if (shotDir) await page.screenshot({ path: `${shotDir}/2-rising.png` });
   await at(100); await wait(3000);
   st = await mk('seoulDal');
-  if (!(st.y > 69)) throw new Error('not at the top: ' + JSON.stringify(st));
+  if (!(st.y > 129)) throw new Error('not at the top: ' + JSON.stringify(st));
   console.log('top:', await mk('action'), JSON.stringify(st));
+  // The stamp tour's Seoul Dal stamp: only up here, once (🪙10,000).
+  if (!(await mk('action'))?.startsWith('🔖')) throw new Error('no stamp at the top: ' + (await mk('action')));
+  if (shotDir) await page.screenshot({ path: `${shotDir}/stamp-1-button.png` });
+  await mk('act'); await wait(1500);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/stamp-2-note.png` });
+  st = await mk('seoulDal');
+  if (st.coins !== 85000) throw new Error('the stamp did not pay: ' + JSON.stringify(st));
+  await page.keyboard.press('Escape'); await page.evaluate(() => { const p = document.getElementById('stamp-panel'); if (p) p.hidden = true; });
+  console.log('stamped:', await mk('action'));
   if (shotDir) await page.screenshot({ path: `${shotDir}/3-top-down.png` });
   await mk('act'); await wait(2000); // look out
   if (shotDir) await page.screenshot({ path: `${shotDir}/4-top-out.png` });
@@ -72,7 +81,7 @@ try {
   console.log('called:', label);
   await mk('pick', 0); await wait(500);
   st = await mk('seoulDal');
-  if (!st.busy || st.coins !== 50000) throw new Error('the called ticket did not board: ' + JSON.stringify(st));
+  if (!st.busy || st.coins !== 60000) throw new Error('the called ticket did not board: ' + JSON.stringify(st));
   await at(360 + 181); await wait(1500);
   // From the fireworks lawn across Yunjung-ro: the balloon up over the park.
   await at(100);

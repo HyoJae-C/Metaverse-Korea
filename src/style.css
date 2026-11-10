@@ -1315,8 +1315,7 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 .arcade-live h3 { display: none; }
 .arcade-live .karaoke-pad { padding: 12px; font-size: 20px; }
 .arcade-live .karaoke-status { margin: 0 36px 6px 0; }
-.arcade-live .bowl-sheet { display: block; width: calc(100% - 40px); height: auto; border-radius: 10px; margin: 0 0 6px; }
-.arcade-live .bowl-sheet + .karaoke-status { margin-right: 0; }
+body.lane-cam #store-banner, body.lane-cam .nametag.me { display: none; } /* bowling: the lane's own score screen is up there (game/bowling-view.js) */
 .arcade-meter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .arcade-meter span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
 .arcade-meter i { display: block; height: 100%; background: #ffd36e; }
@@ -1804,6 +1803,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .skin-dot.on { box-shadow: 0 0 0 3px var(--accent); }
 .skin-dot.locked small { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; border-radius: 6px; background: #fff; font-size: 10px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .skin-pat.on { box-shadow: 0 0 0 2px var(--accent) inset; }
+.skin-pat.with-sample { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; text-align: left; }
+.skin-sample { width: 44px; height: 44px; flex: none; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 
 /* Name rules (start screen and rename) */
 .name-rule { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.4; color: #b4553f; }
@@ -2680,3 +2681,20 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
     translate: none; max-height: min(172px, 26dvh);
   }
 }
+/* Start screen: button to the Google Form (index.html #survey-btn) */
+.survey-btn { display: flex; width: fit-content; max-width: 100%; margin: 12px auto 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; color: var(--ink); text-decoration: none; text-align: center; line-height: 1.3; white-space: normal; }
+
+/* The live café's voice panel (game/live-voice.js): singer or listener controls. */
+.live-panel {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 180px); left: 50%; transform: translateX(-50%); /* (under the shop card and the top buttons, clear of the action button and joystick) */
+  z-index: 30; width: min(340px, calc(100% - 32px)); background: var(--panel); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.live-panel[hidden] { display: none; }
+@media (max-width: 600px) { .live-panel { top: calc(env(safe-area-inset-top, 0px) + 250px); } }
+.live-panel p { margin: 0; width: 100%; font-weight: 800; font-size: 14px; }
+.live-panel p.fine { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+.live-panel p.fine:empty { display: none; }
+.live-panel button { flex: 1 1 auto; font-size: 13px; font-weight: 800; padding: 7px 10px; border-radius: 12px; background: #fff; color: var(--ink); }
+.live-panel button.primary { width: auto; font-size: 13px; padding: 7px 10px; color: #fff; background: var(--accent); }
+.live-panel input[type='range'] { flex: 1 1 100%; }

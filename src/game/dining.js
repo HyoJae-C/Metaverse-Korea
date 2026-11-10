@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { localName, getLanguage } from '../core/i18n.js';
 import { coinPrice, takeoutKind, Meal, FOOD_BITES, parseMealSync, biteMsg, BITE_REACH, BITE_GAP_MS, foodScale, isDining } from '../core/dining.js';
-import { productModel } from '../core/interior.js';
+import { productModel } from '../core/product-model.js';
 import { say } from '../core/npcs.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 

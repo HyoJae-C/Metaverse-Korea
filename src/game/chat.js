@@ -521,5 +521,5 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  return { cleanChat, addChatLine, openPersonMenu, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

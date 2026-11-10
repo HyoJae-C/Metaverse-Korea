@@ -322,14 +322,28 @@ export const HEUNG = (() => {
   let edge = Infinity;
   for (let q = x - 30; q <= x + 30; q += 2) edge = Math.min(edge, lawnS(q));
   const z = Math.floor(edge - R);
-  const rx0 = x - 32, rx1 = x + 34, rz1 = z - 34; // the ring road's middle: west, east, north
+  const rx0 = x - 32, rx1 = x + 34, rz1 = z - 32; // the ring road's middle: west, east, north (6 m clear of the wall north of the gate)
   return { x, z, w, ring: [rx0, z, rx1, rz1], south: [zAt(CG_NORTH, rx0), zAt(CG_NORTH, rx1)], real, why: r1(Math.hypot(x - real[0], z - real[1])) };
 })();
+// Jongno's real line (OSM, euljiro-ddp export) comes in from the west at
+// about z -740 and leaves east-south-east past z -764 towards Dongmyo. The
+// gate here is game size, so Jongno can't run on its real line right past
+// it: it goes up round the gate's north side, cutting the corners to stay
+// near the real line (median 10 m, at most 33 m at the north side, where
+// the wall north of the gate is), and on east to Dongmyo's Jong-ro
+// (DONGMYO_JONGNO, the start of the link in region.json). The island's east
+// side down to Cheonggyecheon-ro is a road of its own without a name (the
+// real Jongno doesn't go there).
+const DONGMYO_JONGNO = [-948, -767];
 {
   const { x, z, w, ring: [rx0, , rx1, rz1], south: [s0, s1] } = HEUNG;
-  roads.push({ k: 'primary', w, p: [[rx0, s0], [rx0, rz1], [rx1, rz1], [rx1, s1]], n: N('종로', 'Jongno', '鍾路', '钟路') });
+  const nw = [rx0, z + 3], ne = [x + 10, rz1], turn = [rx1, -767]; // where the west side turns up, the end of the north side, where the east side meets it
+  roads.push({ k: 'primary', w, p: [[rx0, s0], nw, [rx0 + 19, rz1], ne, turn, [-960, -764], DONGMYO_JONGNO], n: N('종로', 'Jongno', '鍾路', '钟路') });
+  roads.push({ k: 'primary', w, p: [turn, [rx1, s1]] });
   const lawnS = Math.floor(Math.max(s0, s1) - 4.5 - 1); // (z south: the north road's north edge, less 1 m)
-  areas.push({ k: 'park', p: rect(rx0 + w / 2 + 2, rz1 + w / 2 + 2, rx1 - w / 2 - 2, Math.min(lawnS, zAt(CG_NORTH, x) - 5.5)) });
+  const e = w / 2 + 2, lx0 = rx0 + e, lx1 = rx1 - e, lz1 = rz1 + e, lzS = Math.min(lawnS, zAt(CG_NORTH, x) - 5.5);
+  // The lawn: inside the roads, its north-west and north-east corners cut like the road's.
+  areas.push({ k: 'park', p: [[lx0, lzS], [lx0, nw[1]], [rx0 + 19 + 6, lz1], [ne[0], lz1], [lx1, turn[1] + e], [lx1, lzS]] });
   roads.push({ k: 'walk', w: 4, p: [[x, zAt(CG_NORTH, x) - 4.5], [x, z + 14], [x - 20, z + 14], [x - 20, z], [x + 10, z], [x + 10, rz1 + w / 2 + 1]] });
   // The base: piers north and south of the arch; the ongseong's ring of wall
   // (east of the base, open on its north side).

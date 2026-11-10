@@ -41,10 +41,16 @@ test('a skirt goes on over the trousers and comes off again; trousers take it of
   assert.equal(sanitizeLook({ skirt: 'ballgown' }).skirt, null);
 });
 
-test('skirt shops: five in Seongsu and three in Hongdae, every skirt sold somewhere but the retired ones', () => {
+// Skirt shops spread by gu (Yozi's 2026-11 table: clothes are 74% Jung,
+// Jung's share halved so Hongdae keeps a street): Dongdaemun 5, Hongdae 2,
+// Jongno 1; none left in Seongsu.
+test('skirt shops: five at Dongdaemun, two in Hongdae, one in Jongno, every skirt sold somewhere but the retired ones', () => {
   const shops = stores.filter((s) => s.products?.length && s.products.every((p) => p.model === 'skirt'));
-  assert.equal(shops.filter((s) => inSeongsu(s.at)).length, 5);
-  assert.equal(shops.filter(inHongdae).length, 3);
+  assert.equal(shops.filter((s) => inSeongsu(s.at)).length, 0);
+  assert.equal(shops.filter(inHongdae).length, 2);
+  const by = (d) => shops.filter((s) => s.district === d).map((s) => s.id).sort();
+  assert.deepEqual(by('euljiro'), ['check-room', 'jureum-pleats', 'nalgae-long', 'stripe-alley', 'ttaeng-dots']);
+  assert.deepEqual(by('jongmyo'), ['kkotbat-skirt']);
   const sold = new Set(shops.flatMap((s) => s.products.map((p) => p.skirt)));
   assert.deepEqual([...sold].sort(), Object.keys(SKIRTS).filter((id) => !RETIRED.has('skirt-' + id)).sort());
   for (const s of shops) for (const p of s.products) {

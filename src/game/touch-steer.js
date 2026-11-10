@@ -8,7 +8,7 @@
 // old controls (the stick never turns the view, drags turn it freely).
 //
 // Why the dead zone: the old follow camera swung the view on every small
-// wobble of the thumb and players got lost (see main.js "No follow swing").
+// wobble of the thumb and players got lost (see game/follow-cam.js).
 // Only a clear sideways push turns it.
 const KEY = 'mk.touchSteer';
 const DRAG_KEY = 'mk.dragTurn'; // '0': no sideways drag while the stick is held

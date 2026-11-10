@@ -7,8 +7,10 @@
 //
 //   - The site is the real one at 1/4: every building's middle is on its
 //     real spot (measured from Gwanghwamun, the district's (0, 0)).
-//   - The buildings' footprints are 30% of the real ones (FOOT: 1.2 × the
-//     1/4 map), so the yards between them keep almost their real shape.
+//   - The buildings' footprints are 50% of the real ones (FOOT: 2 × the
+//     1/4 map; Yozi, 2026-11-11, was 30%) where they fit: the roofed
+//     corridors stay at the 1/4 map so the yards keep their real shape, and
+//     a hall too big for its yard is drawn as big as fits (never under 30%).
 //   - Their heights are half the real ones, so a hall stands taller than
 //     Bukchon's houses and the gates are higher than the people (Yozi's
 //     choice, 2026-11-09).
@@ -26,14 +28,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
+import { ROYAL_ROUTE, ROYAL_ORDER } from '../src/core/palace-show.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'gyeongbokgung.json');
 const osm = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-osm.json'), 'utf8'));
 
-export const FOOT = 1.2; // footprints: 30% of the real size = 1.2 × the 1/4 map
+export const FOOT = 2; // footprints: 50% of the real size = 2 × the 1/4 map (Yozi, 2026-11-11; was 30%)
 export const UP = 1; // heights: the palace models are drawn at half the real height (UP 1 = 50%)
-const SC = [FOOT / 2, UP]; // the models with their own builders are drawn at 50%: scale them to 30% across
+const SC = [FOOT / 2, UP]; // the models with their own builders are drawn at 50%: SC[0] 1 keeps them at 50% across
 // Gwanghwamun alone is 50% across, like its height: at 30% its stone base
 // came out narrower than its roofs, cramped at the sides (Yozi, 2026-11-10).
 export const GATE = 2; // its width: 2 × the 1/4 map = 50% of the real gate
@@ -109,6 +112,17 @@ function rectangles(P, o) {
   return out;
 }
 
+export const sat = (A, B) => { // two convex polygons overlap
+  for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+    const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length], nx = z0 - z1, nz = x1 - x0;
+    let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+    for (const [x, z] of A) { const t = x * nx + z * nz; a0 = Math.min(a0, t); a1 = Math.max(a1, t); }
+    for (const [x, z] of B) { const t = x * nx + z * nz; b0 = Math.min(b0, t); b1 = Math.max(b1, t); }
+    if (a1 <= b0 || b1 <= a0) return false;
+  }
+  return true;
+};
+
 // ---------- Which buildings ----------
 // Modern buildings inside the wall (the National Palace Museum, offices,
 // the ticket booth, sheds, toilets) and the outdoor exhibits of the Folk
@@ -159,7 +173,7 @@ const counted = () => [...chosen].filter((u) => !u.corridor).length;
 for (const n of KEEP) for (const u of units) if (u.e.name === n && counted() < COUNT) chosen.add(u);
 for (const u of units.filter((u) => !chosen.has(u)).sort((a, b) => b.size - a.size)) { if (counted() >= COUNT) break; chosen.add(u); }
 
-const own = [], halls = [], runs = [], blockers = [], yards = [];
+const own = [], halls = [], runs = [], blockers = [], yards = [], pending = [], placed = [];
 // A corridor rectangle -> a run along its middle line, and its blocker.
 function addRun(r) {
   const s = Math.min(r.w, r.d), L = Math.max(r.w, r.d);
@@ -211,18 +225,42 @@ for (const u of units) {
       blockers.push({ p: rect(r.x, r.z, L, D, along) });
       continue;
     }
-    // a hall (or a gate): the footprint at 30%, its front to the south
+    // a hall (or a gate): placed below, once every corridor is down
+    pending.push({ r, gate, e, han: r === parts[0] ? BOARDS[e.name] : undefined, rank: KEEP.indexOf(e.name) });
+  }
+  if (doors) for (const r of doors) for (const piece of cutDoors(r, o)) addRun(piece);
+  if (fill < 0.5 && u.corridor) yards.push({ x: o.x, z: o.z, w: o.w, d: o.d, a: o.a }); // a ring of corridors: its yard is paved
+}
+// The halls and gates: their footprints at FOOT (50%), its front to the
+// south. The corridors stay at the 1/4 map (they are the yards' edges), so a
+// hall at 50% can be wider than its yard: then it is drawn as big as fits,
+// with WALK metres free round it to the corridors and the halls already
+// down (the middle line first), and never under the old 30% (FOOT_MIN).
+export const FOOT_MIN = 1.2, WALK = 1.3;
+const sides = []; // (each hall's final size, for the log)
+const corridorP = blockers.map((b) => b.p); // the corridors
+{
+  // (and the royal procession's way round the east lawn: two abreast, a guard on each flank)
+  const wide = Math.max(...ROYAL_ORDER.map((o) => Math.abs(o.side))) + 0.6;
+  const route = ROYAL_ROUTE.links.map(([i, j]) => { const [ax, az] = ROYAL_ROUTE.stops[i], [bx, bz] = ROYAL_ROUTE.stops[j]; return rect((ax + bx) / 2, (az + bz) / 2, Math.hypot(bx - ax, bz - az) + 2 * wide, 2 * wide, Math.atan2(bz - az, bx - ax)); });
+  const fixed = corridorP.concat(route);
+  const order = pending.slice().sort((p, q) => (p.rank < 0) - (q.rank < 0) || p.rank - q.rank || q.r.w * q.r.d - p.r.w * p.r.d);
+  for (const { r, gate, e, han } of order) {
     const a = r.a;
-    const H = { x: r.x, z: r.z, w: r.w * FOOT, d: r.d * FOOT, ry: -a, kind: gate ? 'g' : NO_RIDGE.has(e.name) ? 'n' : 'h', han: r === parts[0] ? BOARDS[e.name] : undefined, name: e.name };
+    let f = FOOT;
+    const hits = (k) => { const P = rect(r.x, r.z, r.w * k + 0.7 + 2 * WALK, r.d * k + 0.7 + 2 * WALK, a); return fixed.concat(placed).some((K) => sat(P, K)) || P.some(([x, z]) => !inside(OUTLINE, x, z)); };
+    while (f > FOOT_MIN + 1e-6 && hits(f)) f = Math.max(FOOT_MIN, f - 0.05);
+    const H = { x: r.x, z: r.z, w: r.w * f, d: r.d * f, ry: -a, kind: gate ? 'g' : NO_RIDGE.has(e.name) ? 'n' : 'h', han, name: e.name };
     halls.push(H);
+    sides.push([e.name || '-', Math.round(f * 25)]);
+    placed.push(rect(H.x, H.z, H.w + 0.7, H.d + 0.7, a));
     if (gate) { // posts at the two ends; the middle is open
       const cs = Math.cos(a), sn = Math.sin(a), q = Math.min(0.5, H.w * 0.15);
       for (const s2 of [-1, 1]) blockers.push({ p: rect(H.x + s2 * cs * (H.w / 2 - q / 2), H.z + s2 * sn * (H.w / 2 - q / 2), q, H.d, a) });
     } else blockers.push({ p: rect(H.x, H.z, H.w + 0.7, H.d + 0.7, a) });
   }
-  if (doors) for (const r of doors) for (const piece of cutDoors(r, o)) addRun(piece);
-  if (fill < 0.5 && u.corridor) yards.push({ x: o.x, z: o.z, w: o.w, d: o.d, a: o.a }); // a ring of corridors: its yard is paved
 }
+const logSizes = () => console.log('hall sizes (% of real):', sides.map(([n, p]) => `${n} ${p}`).join(', '));
 console.log('buildings', counted(), 'of', units.filter((u) => !u.corridor).length, '; corridor rings', units.filter((u) => u.corridor).length);
 
 // ---------- The left-out buildings: a few plain blocks ----------
@@ -235,16 +273,6 @@ console.log('buildings', counted(), 'of', units.filter((u) => !u.corridor).lengt
 export const BLOCK_GAP = 3;
 const blocks = [];
 {
-  const sat = (A, B) => { // two convex polygons overlap
-    for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
-      const [x0, z0] = P[i], [x1, z1] = P[(i + 1) % P.length], nx = z0 - z1, nz = x1 - x0;
-      let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
-      for (const [x, z] of A) { const t = x * nx + z * nz; a0 = Math.min(a0, t); a1 = Math.max(a1, t); }
-      for (const [x, z] of B) { const t = x * nx + z * nz; b0 = Math.min(b0, t); b1 = Math.max(b1, t); }
-      if (a1 <= b0 || b1 <= a0) return false;
-    }
-    return true;
-  };
   const ponds = osm.elements.filter((e) => e.kind === 'water').map((e) => e.pts.map(local));
   const kept = blockers.map((b) => b.p);
   const free = (r) => { // (r: {x, z, w, d, a}, with its walk-round margin)
@@ -284,7 +312,7 @@ const blocks = [];
   for (const ps of [...groups.values()].sort((a, b) => b.reduce((s, p) => s + p.A, 0) - a.reduce((s, p) => s + p.A, 0))) {
     const b = boxOf(ps);
     if (ps.length > 1 && b.fill >= 0.55 && free(b)) { place(b); continue; }
-    for (const p of ps) { // one by one, at 30% or else at the 1/4 map's size
+    for (const p of ps) { // one by one, at FOOT or else at the 1/4 map's size
       const q = { ...p, n: 1 };
       if (free(q)) place(q);
       else { const s = { ...q, w: q.w / FOOT, d: q.d / FOOT }; if (Math.min(s.w, s.d) >= 1.5 && free(s)) place(s); }
@@ -322,11 +350,17 @@ for (const n of ['흥례문', '근정문']) {
 // hs 1 (W1 = 30 hs); the hall's middle sits 2.6 hs behind the landmark's.
 {
   const o = O['근정전'], hs = (o.w * 2) / 30, cs = Math.cos(o.a), sn = Math.sin(o.a);
-  const back = (2 + 0.6) * hs * SC[0]; // the hall's offset from the terraces' middle, scaled
-  const x = o.x - sn * back, z = o.z + cs * back; // the terraces' middle: in front of the hall
-  lm.push({ type: 'throne', x: r1(x), z: r1(z), ry: r2(-o.a), hs: r2(hs), sc: SC, name: { ko: '근정전', en: 'Geunjeongjeon' }, gb: 1 });
-  const T1 = [56 * hs * SC[0], 40 * hs * SC[0]];
-  blockers.push({ p: rect(o.x, o.z, o.w * FOOT + 1, o.d * FOOT + 1, o.a) }); // the hall (the terraces are walked on: their steps)
+  // At 50% its lower terrace (56 hs across) is wider than its court on the
+  // 1/4 map: the whole model is drawn as big as leaves WALK free to the
+  // court's corridors, never under 30%.
+  const at = (ts) => { const back = (2 + 0.6) * hs * ts, x = o.x - sn * back, z = o.z + cs * back; return { x, z, T1: [56 * hs * ts, 40 * hs * ts] }; };
+  let ts = SC[0];
+  const hit = (ts) => { const t = at(ts), P = rect(t.x, t.z, t.T1[0] + 2 * WALK, t.T1[1] + 2 * WALK, o.a); return corridorP.some((K) => sat(P, K)); };
+  while (ts > FOOT_MIN / 2 + 1e-6 && hit(ts)) ts = Math.max(FOOT_MIN / 2, ts - 0.025);
+  const { x, z, T1 } = at(ts), tsc = [r2(ts), UP];
+  sides.push(['근정전', Math.round(ts * 50)]);
+  lm.push({ type: 'throne', x: r1(x), z: r1(z), ry: r2(-o.a), hs: r2(hs), sc: tsc, name: { ko: '근정전', en: 'Geunjeongjeon' }, gb: 1 });
+  blockers.push({ p: rect(o.x, o.z, o.w * 2 * ts + 1, o.d * 2 * ts + 1, o.a) }); // the hall (the terraces are walked on: their steps)
   // The rank stones: rows down the court from the lower terrace's steps to Geunjeongmun.
   const gate = O['근정문'], front = z + T1[1] / 2 + 1.2, rows = 12, gap = Math.max(1, (gate.z - gate.d * FOOT / 2 - 1.5 - front) / (rows - 1));
   lm.push({ type: 'rankstones', x: r1(x + (front - z) * Math.tan(o.a) * -1), z: r1(front), ry: r2(-o.a), rows, gap: r2(gap), off: 3.2, gb: 1 });
@@ -343,14 +377,15 @@ for (const n of ['흥례문', '근정문']) {
 // Gyeonghoeru on its pond, Hyangwonjeong on its island.
 {
   const o = O['경회루'];
-  lm.push({ type: 'pavilion', x: r1(o.x), z: r1(o.z), ry: r2(Math.PI / 2 - o.a), sc: [0.3, 0.5], name: { ko: '경회루', en: 'Gyeonghoeru' }, gb: 1 });
+  lm.push({ type: 'pavilion', x: r1(o.x), z: r1(o.z), ry: r2(Math.PI / 2 - o.a), sc: [r2(FOOT / 4), 0.5], name: { ko: '경회루', en: 'Gyeonghoeru' }, gb: 1 });
   const h = O['향원정'];
   lm.push({ type: 'hexpavilion', x: r1(h.x), z: r1(h.z), sc: SC, bridge: 6, name: { ko: '향원정', en: 'Hyangwonjeong Pavilion' }, gb: 1 });
 }
-// Amisan: the garden terraces behind Gyotaejeon (between its corridors and Heungbokjeon's).
+logSizes();
+// Amisan (kept at 30%: it fills the gap between two rings of corridors): the garden terraces behind Gyotaejeon (between its corridors and Heungbokjeon's).
 {
   const k = halls.find((h) => h.name === '교태전');
-  lm.push({ type: 'amisan', x: r1(k.x), z: r1(k.z - 7.5), ry: r2(k.ry), w: 16, sc: SC, name: { ko: '아미산', en: 'Amisan Garden' }, gb: 1 });
+  lm.push({ type: 'amisan', x: r1(k.x), z: r1(k.z - 7.5), ry: r2(k.ry), w: 16, sc: [FOOT_MIN / 2, UP], name: { ko: '아미산', en: 'Amisan Garden' }, gb: 1 });
 }
 lm.push({ type: 'palacehalls', x: 0, z: 0, v: UP, halls: halls.map((h) => { const e = [r1(h.x), r1(h.z), r1(h.w), r1(h.d), r2(h.ry), h.kind]; if (h.han) e.push(h.han); return e; }), gb: 1 });
 lm.push({ type: 'cloister', x: 0, z: 0, h: 2.6, runs, gb: 1 });

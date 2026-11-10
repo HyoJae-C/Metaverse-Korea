@@ -3,10 +3,10 @@
 // Moved out of main.js. The game's live state (the player, the shop you're
 // in, the wallet…) comes in through `game`, whose getters are read only when
 // needed.
-import { localName, getLanguage } from '../core/i18n.js';
+import { localName, getLanguage, t } from '../core/i18n.js';
 import {
   GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, FARE, lineAhead, stopsBetween,
-  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt,
+  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt, createReentry,
 } from '../core/subway.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 
@@ -15,6 +15,7 @@ const $ = (id) => document.getElementById(id);
 /**
  * stations: the region's subway stations that have exits.
  * game: { interior, scene, cam, me, mode, riding, seated, wallet, shop, sfx }
+ * (optional) game.onNoBikeStairs(): riding into the stairs stopped you (say why)
  * (optional) game.streetY(p, px0, pz0): the ground height on the street
  * as getters, plus enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo and
  * clearAction(). (optional) game.onArrive(k): after riding to station k.
@@ -80,10 +81,20 @@ export function createSubway(stations, game) {
     poor: { en: 'Not enough money for the fare (🪙 {n})', ko: '요금 🪙 {n}이 부족해요', ja: '運賃 🪙 {n} が足りません', zh: '车费 🪙 {n} 不够' },
     paid: { en: 'Fare paid', ko: '요금을 냈어요', ja: '運賃を払いました', zh: '已付车费' },
   };
+  // Out by mistake? Back in at the same station within 5 minutes is free (once per fare).
+  const reentry = createReentry();
+  /** Seconds left to come back in here for free (0: pay the fare). */
+  const gateFree = () => Math.ceil(reentry.left(stationIndex(), Date.now()) / 1000);
   function passGate(g, paying) {
-    if (paying) {
+    const here = stationIndex(), now = Date.now();
+    if (paying && reentry.in(here, now, true)) {
+      game.shop.toast('🎫 ' + t('gate.freeIn'));
+    } else if (paying) {
       if (!game.wallet.spend(FARE, { name: { en: 'Subway fare', ko: '지하철 요금', ja: '地下鉄運賃', zh: '地铁车费' }, at: game.interior.store.name })) { game.shop.toast(fmt(L(GATE_TEXT.poor), { n: FARE })); return; }
+      reentry.in(here, now);
       game.shop.toast(`🎫 ${L(GATE_TEXT.paid)} · -🪙 ${FARE}`);
+    } else if (reentry.out(here, now)) {
+      game.shop.toast('🎫 ' + t('gate.outPass'));
     }
     game.sfx.pop?.();
     game.moveMeTo(game.interior.scene, GATE_X + (paying ? 1.3 : -1.3), g.lane, paying ? Math.PI / 2 : -Math.PI / 2, game.cam.yaw);
@@ -214,7 +225,7 @@ export function createSubway(stations, game) {
     if (game.mode === 'street') {
       let s = null, si = -1;
       for (let k = 0; k < stations.length && !s; k++) { s = streetStairs(stations[k], p.x, p.z); si = k; }
-      if (s && game.riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
+      if (s && game.riding) { p.x = px0; p.z = pz0; p.y = 0; game.onNoBikeStairs?.(); return; } // no bikes or cars down the stairs (and say so)
       p.y = s ? s.y : baseY;
       if (s && s.frac >= ENTER_AT && !subwayCool && !game.seated) enterStation(si, s.i);
     } else if (game.interior?.subway) {
@@ -233,6 +244,6 @@ export function createSubway(stations, game) {
   return {
     stationStores, GATE_TEXT, METRO_TEXT,
     get metro() { return metro; },
-    stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway,
+    stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway,
   };
 }

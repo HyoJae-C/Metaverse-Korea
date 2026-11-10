@@ -158,8 +158,11 @@ export class WeatherSystem {
     if (this.scene.fog) {
       this.scene.fog.color.copy(this.sky);
       const near = this.kind === 'fog' ? 25 : 140 - overcast * 60;
-      this.scene.fog.near = near;
-      this.scene.fog.far = this.kind === 'fog' ? 160 : 420 - overcast * 120;
+      // lift (0-1): high up (Seoul Dal at the top), the haze pulls back so
+      // the river, the bridges and the 63 tower show.
+      const far = this.kind === 'fog' ? 160 : 420 - overcast * 120, lift = this.lift || 0;
+      this.scene.fog.near = near + (far * 1.2 - near) * lift;
+      this.scene.fog.far = far + (far * 2.6 - far) * lift;
     }
     // Bright and cheerful: strong fill light so colours stay vivid.
     this.sun.intensity = (0.4 + 1.6 * d) * (1 - overcast * 0.5);

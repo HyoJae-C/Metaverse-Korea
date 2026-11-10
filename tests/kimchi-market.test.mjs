@@ -5,6 +5,7 @@ import { isKimchi, kimchiScore, kimchiPrice, kimchiJar, KimchiSales, SELL_PER_DA
 import { Bag, cleanEntry } from '../src/core/bag.js';
 import { MT, BOSS_LINES } from '../src/ui/market-text.js';
 import { KT } from '../src/ui/kimchi-text.js';
+import { hillHeightRel } from '../src/core/hill-ground.js';
 
 const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'fr', 'th', 'ar'];
 const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
@@ -80,7 +81,9 @@ test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the
   const stores = JSON.parse(readFileSync(new URL('stores.json', R))).stores;
   const local = (s) => [s.at[0] - ox, s.at[1] - oz];
   // (Gyeongnidan-gil, up the hill past Noksapyeong-daero, has its own few: tests/gyeongnidan.test.mjs)
-  const inItaewon = stores.filter((s) => { const [x, z] = local(s); return x > -330 && x < 340 && z > -190 && z < 250 && !(x > 165 && z < -62); });
+  const hill = JSON.parse(readFileSync(new URL('districts/itaewon.json', R))).meta.hill;
+  const upHill = (x, z) => hillHeightRel(hill, x - hill.at[0], z - hill.at[1]) > 0;
+  const inItaewon = stores.filter((s) => { const [x, z] = local(s); return x > -330 && x < 340 && z > -190 && z < 250 && !upHill(x, z); });
   for (const s of inItaewon.filter((s) => s.category === 'club' || s.category === 'bar')) {
     const [x, z] = local(s);
     assert.ok(x > 0 && z < 20, `${s.id} east, on Itaewon-ro`); // either side of the road

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { STAMPS } from '../src/data/stamps.js';
-import { MALL, PAVILION, TEHERAN, YEONGDONG, TANCHEON } from '../scripts/build-samseong.mjs';
+import { MALL, PAVILION, TEHERAN, YEONGDONG, OLYMPIC, ASEM, BONGEUNSA, TANCHEON, toGrid, lineDist } from '../scripts/build-samseong.mjs';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
@@ -31,10 +31,33 @@ test('Samseong-dong stays on land, south of the Han River', () => {
   }
 });
 
+test('Streets on their real lines at 1/4: Teheran-ro and Yeongdong-daero slant, as in Seoul', () => {
+  // Points on the real roads at 1/4 (OpenStreetMap, half-way between the two
+  // carriageways, map metres from the station): each street passes within 10 m.
+  const near = (name, p, pts) => { for (const q of pts) assert.ok(lineDist(q, p) < 10, `${name} within 10 m of the real line at ${q}`); };
+  near('Teheran-ro', TEHERAN.p, [[-142, 54.5], [0, 2], [74.5, -30]]);
+  near('Yeongdong-daero', YEONGDONG.p, [[-62, -151.5], [0, 2], [38, 81]]);
+  // Teheran-ro runs east-north-east, Yeongdong-daero north-north-west (about 21° off the compass).
+  const angle = ([ax, az], [bx, bz]) => (Math.atan2(az - bz, bx - ax) * 180) / Math.PI;
+  const t = angle(TEHERAN.p[0], TEHERAN.p.at(-1)), y = angle(YEONGDONG.p.at(-1), YEONGDONG.p[0]);
+  assert.ok(t > 15 && t < 28, `Teheran-ro heads ${t.toFixed(0)}° north of east`);
+  assert.ok(y > 100 && y < 120, `Yeongdong-daero heads ${y.toFixed(0)}° from east`);
+  // Asem-ro meets Teheran-ro and Bongeunsa-ro; KONEXT's block is between them and Yeongdong-daero.
+  assert.ok(lineDist(ASEM.p[0], TEHERAN.p) < 1 && lineDist(ASEM.p.at(-1), BONGEUNSA.p) < 1);
+});
+
 test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the plaza', () => {
   const mall = map.buildings.find((b) => b.custom && b.h === MALL.h);
   assert.ok(mall, 'the mall is a wall drawn by its landmark');
-  assert.ok(MALL.x1 - MALL.x0 >= 80 && MALL.z1 - MALL.z0 >= 55, 'the biggest building around');
+  const [w, d] = [MALL.u1 - MALL.u0, MALL.v1 - MALL.v0];
+  assert.ok(Math.max(w, d) >= 80 && Math.min(w, d) >= 50, 'the biggest building around');
+  // On the real exhibition centre (OpenStreetMap: its middle at map (-85, -85)), inside its block.
+  const [gx, gz] = toGrid([-85, -85]);
+  assert.ok(gx > MALL.u0 && gx < MALL.u1 && gz > MALL.v0 && gz < MALL.v1, 'on the real exhibition centre');
+  for (const q of mall.p) {
+    assert.ok(lineDist(q, ASEM.p) > ASEM.w / 2 && lineDist(q, YEONGDONG.p) > YEONGDONG.w / 2, 'between Asem-ro and Yeongdong-daero');
+    assert.ok(lineDist(q, TEHERAN.p) > TEHERAN.w / 2 && lineDist(q, BONGEUNSA.p) > BONGEUNSA.w / 2, 'between Teheran-ro and Bongeunsa-ro');
+  }
   assert.ok(map.landmarks.some((l) => l.type === 'konext'));
   assert.ok(map.landmarks.some((l) => l.type === 'aquarium'), 'KONEXT Aquarium pavilion');
   assert.ok(map.buildings.some((b) => b.custom && b.h === PAVILION.h));
@@ -45,8 +68,8 @@ test('KONEXT: a big mall seen from outside, with the aquarium pavilion on the pl
   const screens = (region.screens || []).filter((s) => s.wave);
   assert.equal(screens.length, 2);
   for (const s of screens) {
-    const [x, z] = local(s.at);
-    assert.ok(x >= MALL.x0 - 2 && x <= MALL.x1 + 2 && z >= MALL.z0 - 2 && z <= MALL.z1 + 2, 'on the mall');
+    const [x, z] = toGrid(local(s.at));
+    assert.ok(x >= MALL.u0 - 2 && x <= MALL.u1 + 2 && z >= MALL.v0 - 2 && z <= MALL.v1 + 2, 'on the mall');
   }
 });
 
@@ -59,18 +82,24 @@ test('Samseong Station (Line 2) on the Teheran-ro / Yeongdong-daero corner, befo
   for (const e of list[i].exits) {
     const [x, z] = local(e.at);
     assert.ok(Math.hypot(x, z) < 30, `exit ${e.n} at the corner`);
-    assert.ok(Math.abs(z - TEHERAN.z) > TEHERAN.w / 2 && Math.abs(x - YEONGDONG.x) > YEONGDONG.w / 2, `exit ${e.n} off the road`);
+    assert.ok(lineDist([x, z], TEHERAN.p) > TEHERAN.w / 2 && lineDist([x, z], YEONGDONG.p) > YEONGDONG.w / 2, `exit ${e.n} off the road`);
     for (const b of map.buildings) assert.ok(!inPolygon(x, z, b.p), `exit ${e.n} is not in a building`);
   }
 });
 
-test('Teheran-ro crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
-  const tx = (TANCHEON.x0 + TANCHEON.x1) / 2;
-  for (let z = -TEHERAN.w / 2 + 1; z <= TEHERAN.w / 2 - 1; z += 1) for (const bl of map.blockers) assert.ok(!inPolygon(tx, z, bl.p), `bridge open at z ${z}`);
-  assert.ok(map.blockers.some((bl) => inPolygon(tx, -100, bl.p)), 'the stream blocks elsewhere');
+test('Teheran-ro turns into Olympic-ro, crosses Tancheon and runs on to Songpa\'s Olympic-ro', () => {
+  assert.deepEqual(OLYMPIC.p[0], TEHERAN.p.at(-1), 'Olympic-ro goes on from Teheran-ro\'s end');
+  // On the bridge, the whole width of the road is open; the stream blocks elsewhere.
+  const bridge = map.landmarks.find((l) => l.type === 'samseongbridge');
+  const ux = Math.cos(bridge.ry), uz = -Math.sin(bridge.ry);
+  for (let a = -bridge.len / 2; a <= bridge.len / 2; a += 1) for (let s = -OLYMPIC.w / 2 + 1; s <= OLYMPIC.w / 2 - 1; s += 1) {
+    const x = bridge.x + ux * a - uz * s, z = bridge.z + uz * a + ux * s;
+    for (const bl of map.blockers) assert.ok(!inPolygon(x, z, bl.p), `bridge open at ${x.toFixed(0)}, ${z.toFixed(0)}`);
+  }
+  const north = TANCHEON.p.find((q) => q[1] < -100);
+  assert.ok(map.blockers.some((bl) => inPolygon(...north, bl.p)), 'the stream blocks elsewhere');
   const link = region.links.find((l) => l.n?.en === 'Olympic-ro');
-  const end = world([TEHERAN.x1, TEHERAN.z]);
-  assert.deepEqual(link.p[0], end, 'starts at Teheran-ro\'s east end');
+  assert.deepEqual(link.p[0], world(OLYMPIC.p.at(-1)).map((v) => Math.round(v * 10) / 10), 'the link starts at Olympic-ro\'s east end');
   const songpa = region.districts.find((d) => d.id === 'songpa');
   const olympic = read(songpa.map).roads.find((r) => r.n?.en === 'Olympic-ro');
   // (the link ends on Olympic-ro, at its end or on the way)
@@ -91,7 +120,7 @@ test('meeting zone J-1 on KONEXT Square, an Information Center and a stamp', () 
   const info = stores.find((s) => s.id === 'info-samseong');
   assert.equal(info.district, 'samseong');
   const [ix, iz] = local(info.at);
-  assert.ok(Math.abs(iz - TEHERAN.z) > TEHERAN.w / 2, 'the door is on the sidewalk, not the road');
+  assert.ok(lineDist([ix, iz], TEHERAN.p) > TEHERAN.w / 2, 'the door is on the sidewalk, not the road');
   for (const b of map.buildings) assert.ok(!inPolygon(ix, iz, b.p), 'the door is outside its building');
   const stamp = STAMPS.find((s) => s.id === 'konext');
   assert.ok(stamp && stamp.gu.en === 'Gangnam-gu');
@@ -104,7 +133,8 @@ test('KONEXT Aquarium: you walk in through the pavilion, and on to the ocean tun
   assert.equal(store.workshop, 'aquarium');
   assert.equal(store.district, 'samseong');
   const [x, z] = local(store.at);
-  assert.ok(x > PAVILION.x1 && x - PAVILION.x1 < 6 && z > PAVILION.z0 && z < PAVILION.z1, 'its door is on the pavilion\'s plaza side');
+  const [u, v] = toGrid([x, z]);
+  assert.ok(u > PAVILION.u1 && u - PAVILION.u1 < 6 && v > PAVILION.v0 && v < PAVILION.v1, 'its door is on the pavilion\'s plaza side');
   for (const b of map.buildings) assert.ok(!inPolygon(x, z, b.p), 'the door is outside the building');
   // Inside: the walk from the front door to the end of the tunnel is clear.
   const tanks = [OCEAN, PENGUINS, REEF, RIVER, SEAFLOOR];

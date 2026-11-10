@@ -17,6 +17,7 @@ export function standSpots(stamps, getFront) {
   const out = [];
   for (const s of stamps) {
     if (s.place?.room) continue; // inside a room: see roomSpots
+    if (s.place?.ride) continue; // pressed aboard a ride (Seoul Dal), no stand
     if (s.place?.store) {
       const f = getFront(s.place.store);
       if (!f) continue;
@@ -131,6 +132,7 @@ export class StampStands {
   }
   // A little press-down bounce on the stand's rubber stamp.
   press(it) {
+    if (!it.mesh) return; // (a ride's stamp: no stand)
     const kids = it.mesh.children.slice(4, 7);
     const t0 = performance.now();
     const step = () => {

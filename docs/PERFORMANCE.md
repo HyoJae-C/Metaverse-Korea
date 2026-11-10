@@ -8,9 +8,9 @@ These are the limits every change should stay inside, and how to stay there.
 | What | Budget | Now (2026-11-10) | Checked by |
 |---|---|---|---|
 | Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 50 KB | `node scripts/check-size.mjs` in CI |
-| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,084 KB | same |
+| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 983 KB | same |
 | Any single script, gzipped | 1,000 KB | 518 KB (main.js) | same |
-| Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
+| Draw calls on a street | 600 | ~640 at Seongsu station looking west (was ~1,370 before 2026-11-11); ~620 in Seoul Forest looking east | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
 | Triangles per frame on a street | 150k | ~87k | same |
 | Page memory | see `tests/e2e/memory.mjs` | | CI e2e |
