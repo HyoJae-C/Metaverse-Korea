@@ -709,4 +709,7 @@ export const VI = {
   "tix.done": "{name}: đã dùng hết. Cảm ơn bạn đã chơi!",
   "tix.passHeld": "Bạn có vé chơi cả ngày: mọi trò đều miễn phí trong 24 giờ kể từ khi mua ✓",
   "tix.short": "{name} giá 🪙 {n}. Không đủ tiền.",
+  "gate.freeAgain": "Vào lại miễn phí (còn {t})",
+  "gate.freeIn": "Vào lại miễn phí: lần này không mất vé",
+  "gate.outPass": "Lỡ ra ngoài? Vào lại ga này trong 5 phút miễn phí",
 };

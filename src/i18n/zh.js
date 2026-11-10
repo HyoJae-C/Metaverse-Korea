@@ -712,4 +712,7 @@ export const ZH = {
   "tix.done": "{name}：已用完。玩得开心吗？",
   "tix.passHeld": "你有畅玩一日券：购买后24小时内所有设施免费 ✓",
   "tix.short": "{name}需要 🪙 {n}。钱不够。",
+  "gate.freeAgain": "免费再次进站（剩 {t}）",
+  "gate.freeIn": "免费再进站：这次不收车费",
+  "gate.outPass": "不小心出站了？5分钟内从本站再进站免费",
 };
