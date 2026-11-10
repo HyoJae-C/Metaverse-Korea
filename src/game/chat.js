@@ -122,6 +122,7 @@ export function createChat(game) {
     // Close any open panel first (daily missions, wallet, cart…) so the chat bar is not hidden behind it.
     for (const x of document.querySelectorAll('#hud .sheet:not([hidden]) .sheet-x')) x.click();
     chatBar.hidden = false;
+    $('hud').style.setProperty('--chat-bar-h', chatBar.offsetHeight + 'px'); // the log sits under it on phones
     $('hud').classList.add('chat-open');
     $('chat-btn').classList.remove('chat-blink');
     chatLog.scrollTop = chatLog.scrollHeight;
@@ -463,12 +464,14 @@ export function createChat(game) {
     pinBox.replaceChildren(...rows, fold);
   }
   const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {
-    if (pin) { pinFolded = false; pinned.add({ id, body, at, pinned: true }); }
+    // A pinned one stays at the top until deleted, so it does not go into the
+    // chat log as well (it showed twice there while typing).
+    if (pin) { pinFolded = false; pinned.add({ id, body, at, pinned: true }); try { game.sfx.pop?.(); } catch { /* not set up yet */ } return; }
     const line = addChatLine('📢 ' + L(NOTICE_LABEL), body, 'notice');
     line.dataset.stay = '1';
     noticeLines.set(id, line);
     if (noticeLines.size > 20) noticeLines.delete(noticeLines.keys().next().value);
-    if (!pin) game.shop.toast('📢 ' + body); // a pinned one is already on screen
+    game.shop.toast('📢 ' + body);
     try { game.sfx.pop?.(); } catch { /* sound not set up yet */ }
   }, (id) => { noticeLines.get(id)?.remove(); noticeLines.delete(id); pinned.remove(id); });
   let noticeClient = null, stopNotices = null;
@@ -486,5 +489,5 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, get friendBackend() { return friendBackend; } };
+  return { cleanChat, addChatLine, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }
