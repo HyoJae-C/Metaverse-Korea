@@ -90,3 +90,64 @@ export function sellable(owned, items, receipts, pct = RESALE_PCT) {
     .map((id) => ({ id, paid: receipts.paid(id), coins: resaleCoins(receipts.paid(id), pct) }))
     .filter((r) => r.coins > 0);
 }
+
+// The second-hand rack (one for both shops, supabase/034_player_market.sql):
+// what players sold to a shop, for anyone to buy at USED_PCT of the new
+// price. The coins go to the shop, so the rack can't pass coins between
+// accounts; retired colours come back round this way.
+export const USED_PCT = 40;
+export const usedPrice = (list, pct = USED_PCT) => (list > 0 ? Math.ceil((list * pct) / 100) : 0);
+// Rack rows this game can show: clothes it knows at their real new price
+// (retired colours too), not ones I already have.
+export const rackRows = (rows, items, owned = () => false) => (rows || [])
+  .filter((r) => items[r?.item]?.wear && r.list === items[r.item].price && r.n > 0 && r.price > 0)
+  .map((r) => ({ item: r.item, list: r.list, price: r.price, n: r.n, have: !!owned(r.item) }));
+
+// Call a server function that takes coins (a rack or a mat purchase), with
+// the wallet's queue sent first. Resolves { ok, n (won paid), item, list,
+// why }: why is offline, gone, own, poor, young, closed.
+export async function serverBuy(wallet, fn, args, note) {
+  if (!wallet?.server) return { ok: false, why: 'closed' };
+  if (!wallet.client || !(await wallet.flush())) return { ok: false, why: 'offline' };
+  let res;
+  try {
+    res = await Promise.race([wallet.client.rpc(fn, args), new Promise((r) => setTimeout(() => r({ error: { message: 'timeout' } }), 8000))]);
+  } catch (e) { res = { error: e }; }
+  const { data, error } = res || {};
+  if (error || !data) return { ok: false, why: 'offline' };
+  if (data.coins != null) wallet._fromServer(data);
+  if (data.status !== 'ok') {
+    wallet._notify();
+    return { ok: false, why: ['bad', 'open', 'signin'].includes(data.status) ? 'offline' : data.status };
+  }
+  const n = -Number(data.n) || 0;
+  wallet._log(-n, note || null);
+  wallet.lastOp = args.p_op;
+  wallet._notify();
+  return { ok: true, n, item: data.item, list: Number(data.list) || 0 };
+}
+
+export class UsedRack {
+  constructor(wallet) { this.wallet = wallet; this.rows = null; }
+  async _rpc(fn, args) {
+    const c = this.wallet?.client;
+    if (!c) return { error: { message: 'offline' } };
+    try { return await Promise.race([c.rpc(fn, args), new Promise((r) => setTimeout(() => r({ error: { message: 'timeout' } }), 8000))]); } catch (e) { return { error: e }; }
+  }
+  // After a shop paid for clothes (op: the sale's op id), they go on the rack.
+  async add(op, item) {
+    if (!this.wallet?.server) return false;
+    const { data, error } = await this._rpc('used_stock_add', { p_op: op, p_item: item });
+    return !error && data?.status === 'ok';
+  }
+  // The rack: [{ item, list, price, n }], or null (closed or offline).
+  async browse() {
+    if (!this.wallet?.server) { this.rows = null; return null; }
+    const { data, error } = await this._rpc('used_browse');
+    this.rows = error || !Array.isArray(data) ? null : data;
+    return this.rows;
+  }
+  buy(row, op, note) {
+    return serverBuy(this.wallet, 'used_buy', { p_item: row.item, p_list: row.list, p_op: op, p_note: noteText(note) }, note);
+  }
+}

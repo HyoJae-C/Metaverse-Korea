@@ -66,3 +66,33 @@ test('two shops buy clothes back: VINTAGE GARAGE in Hongdae and Gaeul Vintage in
   const [x, z] = stores.find((s) => s.id === 'gaeul-vintage').at;
   assert.ok(x > -1400 && x < -1300 && z > 300 && z < 400, 'Gaeul Vintage moved from Seongsu to Itaewon, by Golden Needle Tailor');
 });
+
+test('the second-hand rack: 40% of the new price, only clothes the game knows at their real price', async () => {
+  const { USED_PCT, usedPrice, rackRows, UsedRack } = await import('../src/core/resale.js');
+  assert.equal(USED_PCT, 40);
+  assert.equal(usedPrice(60000), 24000);
+  assert.equal(usedPrice(45500), 18200);
+  const sql = readFileSync(new URL('../supabase/034_player_market.sql', import.meta.url), 'utf8');
+  assert.match(sql, /used_buy_pct int not null default 40/);
+  assert.match(sql, /order by at limit 1 for update skip locked/, 'two buyers never get the same one');
+  const hoodie = WEARABLES['outfit-hoodie-black'];
+  const rows = [
+    { item: 'outfit-hoodie-black', list: hoodie.price, price: usedPrice(hoodie.price), n: 2 },
+    { item: 'outfit-hoodie-black', list: 1, price: 1, n: 1 }, // not its price
+    { item: 'nope', list: 10, price: 4, n: 1 },
+  ];
+  assert.deepEqual(rackRows(rows, WEARABLES, (id) => id === 'outfit-hoodie-black'), [{ item: 'outfit-hoodie-black', list: hoodie.price, price: usedPrice(hoodie.price), n: 2, have: true }]);
+  // Selling to a shop then buying back always loses: 25% in, 40% out.
+  for (const it of Object.values(WEARABLES)) if (it.price > 0) assert.ok(resaleCoins(usedPrice(it.price)) < usedPrice(it.price));
+  // The client: buying the last one twice at once, the second hears 'gone'.
+  let left = 1;
+  const w = { server: true, coins: 100000, log: [], flush: async () => true, _fromServer(d) { this.coins = d.coins; }, _log(n) { this.log.push(n); }, _notify() {},
+    client: { rpc: async (fn, a) => (fn === 'used_buy' ? (left-- > 0 ? { data: { status: 'ok', coins: 100000 - 24, ver: 1, n: -24, item: a.p_item, list: a.p_list } } : { data: { status: 'gone' } }) : { data: [] }) } };
+  const r = new UsedRack(w);
+  const row = { item: 'outfit-hoodie-black', list: 60, price: 24 };
+  const [a, b] = await Promise.all([r.buy(row, 'op-1'), r.buy(row, 'op-2')]);
+  assert.deepEqual(a, { ok: true, n: 24, item: 'outfit-hoodie-black', list: 60 });
+  assert.deepEqual(b, { ok: false, why: 'gone' });
+  assert.deepEqual(w.log, [-24]);
+  assert.equal(await new UsedRack({ server: false }).browse(), null, 'no server wallet: no rack');
+});

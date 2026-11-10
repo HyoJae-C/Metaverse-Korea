@@ -14,6 +14,7 @@
 // first; the second hears 'gone' and pays nothing.
 
 import { noteText } from './wallet.js';
+import { serverBuy } from './resale.js';
 
 export const MARKET = { minPct: 10, maxPct: 100, feePct: 5, days: 3, openMax: 6, minHours: 24 };
 const SEEN = 'mk.marketSeen'; // sold listings already told about
@@ -119,18 +120,7 @@ export class MarketClient {
   // Buy a listing. op: a fixed id for this purchase (asking again never pays
   // twice); note: for the budget book. Resolves { ok, n (won paid), item, list, why }: why is offline,
   // gone, own, poor, young, closed.
-  async buy(id, op, note) {
-    const w = this.wallet;
-    if (!w?.server) return { ok: false, why: 'closed' };
-    if (!(await w.flush())) return { ok: false, why: 'offline' };
-    const { data, error } = await this._rpc('market_buy', { p_id: id, p_op: op, p_note: noteText(note) });
-    if (error || !data) return { ok: false, why: 'offline' };
-    if (data.coins != null) w._fromServer(data);
-    if (data.status !== 'ok') { w._notify(); return { ok: false, why: data.status === 'bad' || data.status === 'open' || data.status === 'signin' ? 'offline' : data.status }; }
-    const n = -Number(data.n) || 0;
-    w._log(-n, note || null);
-    w.lastOp = op;
-    w._notify();
-    return { ok: true, n, item: data.item, list: Number(data.list) || 0 };
+  buy(id, op, note) {
+    return serverBuy(this.wallet, 'market_buy', { p_id: id, p_op: op, p_note: noteText(note) }, note);
   }
 }

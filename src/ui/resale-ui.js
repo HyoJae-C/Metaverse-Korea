@@ -1,8 +1,10 @@
 // Second-hand shop panel: sell clothes you bought for coins (rules in
 // core/resale.js). Tap a row's Sell button, confirm, wait for the shop to
-// check the receipt, get the coins.
+// check the receipt, get the coins. Below, the second-hand rack: what other
+// players sold to the shops, to buy.
 import { L, fmt } from './pocha-ui.js';
 import { ITEMS } from '../core/inventory.js';
+import { t } from '../core/i18n.js';
 
 export const RESALE_TEXT = {
   open: { en: 'Sell clothes', ko: '옷 팔기', ja: '服を売る', zh: '卖衣服', es: 'Vender ropa', ar: 'بيع الملابس', vi: 'Bán quần áo', hi: 'कपड़े बेचें', fr: 'Vendre des vêtements', th: 'ขายเสื้อผ้า', id: 'Jual baju' },
@@ -86,15 +88,21 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 export class ResaleUI {
   // pct() → the share shops pay (null: not buying yet); list() → [{ id,
   // paid, coins }]; wearing(id) → bool; onSell(row) → Promise of a message
-  // to show in the panel (or nothing).
-  constructor({ root, pct, list, wearing, onSell }) {
-    Object.assign(this, { root, pct, list, wearing, onSell });
+  // to show in the panel (or nothing). The rack: rack() → { pct, rows: [{
+  // item, price, n, have }] } or null (closed); onOpen() → Promise (fetch the
+  // rack); onBuy(row) → Promise of a message.
+  constructor({ root, pct, list, wearing, onSell, rack = () => null, onOpen = null, onBuy = null }) {
+    Object.assign(this, { root, pct, list, wearing, onSell, rack, onOpen, onBuy });
     this.busy = false;
   }
 
   get open() { return !this.root.hidden; }
   close() { this.root.hidden = true; }
-  show() { this.root.hidden = false; this.render(); }
+  show() {
+    this.root.hidden = false;
+    this.render();
+    this.onOpen?.()?.then(() => { if (this.open && !this.busy) this.render(); }).catch(() => {});
+  }
 
   render(msg) {
     const x = el('button', 'sheet-x', '✕');
@@ -102,11 +110,11 @@ export class ResaleUI {
     x.onclick = () => this.close();
     const pct = this.pct();
     this.root.replaceChildren(x, el('h3', null, '♻️ ' + L(RESALE_TEXT.title)));
-    if (pct == null || pct <= 0) { this.root.append(el('p', 'fine', L(RESALE_TEXT.closed))); return; }
+    if (pct == null || pct <= 0) { this.root.append(el('p', 'fine', L(RESALE_TEXT.closed))); this.renderRack(); return; }
     this.root.append(el('p', 'fine', fmt(L(RESALE_TEXT.rule), { p: pct })));
     if (msg) this.root.append(el('p', 'fine resale-msg', msg));
     const rows = this.list();
-    if (!rows.length) { this.root.append(el('p', 'fine', L(RESALE_TEXT.empty))); return; }
+    if (!rows.length) { this.root.append(el('p', 'fine', L(RESALE_TEXT.empty))); this.renderRack(); return; }
     const list = el('div', 'fish-list');
     for (const r of rows) {
       const it = ITEMS[r.id];
@@ -126,6 +134,37 @@ export class ResaleUI {
         if (this.open) this.render(out);
       };
       row.append(el('span', 'fish-emoji', it.emoji || '👕'), label, sell);
+      list.append(row);
+    }
+    this.root.append(list);
+    this.renderRack();
+  }
+
+  // The second-hand rack, under the selling list.
+  renderRack() {
+    const rack = this.rack();
+    if (!rack) return;
+    this.root.append(el('h4', 'resale-rack', '👗 ' + t('used.rack')), el('p', 'fine', t('used.rule', { p: rack.pct })));
+    if (!rack.rows.length) { this.root.append(el('p', 'fine', t('used.empty'))); return; }
+    const list = el('div', 'fish-list');
+    for (const r of rack.rows) {
+      const it = ITEMS[r.item];
+      const name = L(it.name);
+      const row = el('div', 'fish-row');
+      const label = el('span', 'fish-name', name);
+      label.append(el('small', 'resale-paid', ` · ${r.have ? t('used.have') : t('used.left', { n: r.n })}`));
+      const buy = el('button', 'chip', t('used.buy', { n: r.price }));
+      buy.disabled = this.busy || r.have;
+      buy.onclick = async () => {
+        if (this.busy || !confirm(t('used.ask', { name, n: r.price }))) return;
+        this.busy = true;
+        this.root.querySelectorAll('button.chip').forEach((b) => { b.disabled = true; });
+        buy.textContent = L(RESALE_TEXT.checking);
+        let out;
+        try { out = await this.onBuy?.(r); } finally { this.busy = false; }
+        if (this.open) this.render(out);
+      };
+      row.append(el('span', 'fish-emoji', it.emoji || '👕'), label, buy);
       list.append(row);
     }
     this.root.append(list);
