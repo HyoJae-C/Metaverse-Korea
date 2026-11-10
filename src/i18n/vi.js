@@ -434,6 +434,7 @@ export const VI = {
   'hud.musicOff': 'Tắt nhạc',
   'hud.signsOff': 'Biển hiệu tiếng Hàn',
   'hud.bike': 'Phương tiện',
+  'stairs.noBike': "🚲 Không đi xe xuống cầu thang được. Bấm Phương tiện để xuống xe rồi đi bộ xuống.",
   'bike.offShort': 'Xuống xe',
   'bike.off': 'Xuống xe đạp',
   'car.off': 'Xuống ô tô',

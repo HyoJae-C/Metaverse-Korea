@@ -15,6 +15,7 @@ const $ = (id) => document.getElementById(id);
 /**
  * stations: the region's subway stations that have exits.
  * game: { interior, scene, cam, me, mode, riding, seated, wallet, shop, sfx }
+ * (optional) game.onNoBikeStairs(): riding into the stairs stopped you (say why)
  * (optional) game.streetY(p, px0, pz0): the ground height on the street
  * as getters, plus enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo and
  * clearAction(). (optional) game.onArrive(k): after riding to station k.
@@ -214,7 +215,7 @@ export function createSubway(stations, game) {
     if (game.mode === 'street') {
       let s = null, si = -1;
       for (let k = 0; k < stations.length && !s; k++) { s = streetStairs(stations[k], p.x, p.z); si = k; }
-      if (s && game.riding) { p.x = px0; p.z = pz0; p.y = 0; return; } // no bikes or cars down the stairs
+      if (s && game.riding) { p.x = px0; p.z = pz0; p.y = 0; game.onNoBikeStairs?.(); return; } // no bikes or cars down the stairs (and say so)
       p.y = s ? s.y : baseY;
       if (s && s.frac >= ENTER_AT && !subwayCool && !game.seated) enterStation(si, s.i);
     } else if (game.interior?.subway) {

@@ -433,6 +433,7 @@ export const ES = {
   'hud.musicOff': 'Música desactivada',
   'hud.signsOff': 'Letreros en coreano',
   'hud.bike': 'Vehículo',
+  'stairs.noBike': "🚲 No se puede bajar las escaleras en vehículo. Toca Vehículo para bajarte y baja a pie.",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',
   'car.off': 'Salir del coche',
