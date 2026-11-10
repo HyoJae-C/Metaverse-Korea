@@ -213,7 +213,7 @@ export function buildStation(store, ROOM) {
     hang(GATE_X - 5,
       directionSignTexture(['타는 곳 · Trains', '개찰구 지나서 · through the gates'],
         upTo ? [`상행 ${upTo.ko} · 하행 ${downTo.ko} ▶`, `Up for ${upTo.en} · Down for ${downTo.en}`] : ['▶', ''], line),
-      directionSignTexture(['◀ 나가는 곳 · Exit 1, 2', '계단 위로 · stairs up to the street'], null, line));
+      directionSignTexture([`◀ 나가는 곳 · Exit ${sub.exits.map((e, i) => e.n ?? i + 1).join(', ')}`, '계단 위로 · stairs up to the street'], null, line));
   }
 
   // Route map on a slim pillar on the platform, between the first two
