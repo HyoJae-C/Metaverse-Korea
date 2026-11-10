@@ -326,8 +326,10 @@ and Usadan-ro west of it).
 - **Where things are**: every shop is north of Itaewon-ro or up
   Gyeongnidan-gil (Yozi 2026-11-11: the south side isn't needed). The
   restaurants and the halal grocer on the World Food Street, the market
-  between it and Itaewon Square, the clubs and bars along Itaewon-ro's north
-  side east of the station, and the clothes, books and antiques up
+  between it and the station, the clubs and bars in the club alley
+  (Itaewon-ro 27ga-gil, behind the first row of Itaewon-ro's shops; on its
+  real line but 9 m further north, because the game's Itaewon-ro is twice
+  its real width), and the clothes, books and antiques up
   Gyeongnidan-gil. South of Itaewon-ro there are only the real roads
   (Bogwang-ro, Usadan-ro) with plain buildings. Itaewon Station's exits 1 and 4
   stand on the pavements 7-10 m from the real ones.
