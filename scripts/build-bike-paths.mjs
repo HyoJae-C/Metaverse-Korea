@@ -133,9 +133,10 @@ function splice(p, q) {
 }
 // Drop the first real points while they lead back past the end that joins
 // another path (the nearest cycleway node can lie a little beyond it).
+const sharp = (a, b, c) => { const u = [a[0] - b[0], a[1] - b[1]], v = [c[0] - b[0], c[1] - b[1]]; return (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v) || 1) > 0.3; }; // (turns back by more than about 105°)
 function trimEnds(p) {
-  while (p.length > 2 && dist(p[0], p[2]) < dist(p[0], p[1])) p.splice(1, 1);
-  while (p.length > 2 && dist(p.at(-1), p.at(-3)) < dist(p.at(-1), p.at(-2))) p.splice(-2, 1);
+  while (p.length > 2 && (dist(p[0], p[2]) < dist(p[0], p[1]) || sharp(p[0], p[1], p[2]))) p.splice(1, 1);
+  while (p.length > 2 && (dist(p.at(-1), p.at(-3)) < dist(p.at(-1), p.at(-2)) || sharp(p.at(-1), p.at(-2), p.at(-3)))) p.splice(-2, 1);
   return p;
 }
 function simplify(p, eps, keep) {
@@ -194,7 +195,7 @@ export function bikePaths(legs, solid = { blocked: () => false }) {
     const keep = new Set();
     for (const q of via) { splice(p, q); keep.add(q); }
     for (const q of ends) keep.add(q);
-    p = keepClear(p, solid, keep, nudged);
+    p = trimEnds(keepClear(p, solid, keep, nudged));
     p = simplify(p, SIMPLIFY, keep).map((q) => (keep.has(q) ? q : q.map(r1)));
     return p;
   };
