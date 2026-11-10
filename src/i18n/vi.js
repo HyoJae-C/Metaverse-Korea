@@ -684,7 +684,7 @@ export const VI = {
   "potato.nothing": "Chỉ đồ bạn tự mua mới được bày. Quà tặng và đồ nhận từ mã thì không.",
   "potato.full": "Chiếu đã đầy ({n} món). Lấy lại một món để bày món khác.",
   "potato.price": "Hãy chọn giá từ 🪙 {min} đến 🪙 {max}.",
-  "potato.noref": "Không tìm thấy hóa đơn của {name} nên không bày được.",
+  "potato.noref": "{name} được mua trước khi giao dịch của bạn được lưu trên máy chủ (hoặc là quà tặng) nên không bày được. Quần áo bạn mua từ giờ thì bày được.",
   "potato.listed": "Đã bày lên chiếu! Người khác mua được cả khi bạn vắng mặt.",
   "potato.back": "{name} đã về lại tủ đồ.",
   "potato.sold": "đã bán · +🪙 {n}",

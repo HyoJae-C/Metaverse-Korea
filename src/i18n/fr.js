@@ -684,7 +684,7 @@ export const FR = {
   "potato.nothing": "Seuls les vêtements achetés toi-même vont sur une natte. Pas les cadeaux ni les objets de code.",
   "potato.full": "Ta natte est pleine ({n} objets). Reprends-en un pour en mettre un autre.",
   "potato.price": "Choisis un prix entre 🪙 {min} et 🪙 {max}.",
-  "potato.noref": "Impossible de trouver le reçu de {name}, il ne peut donc pas aller sur une natte.",
+  "potato.noref": "{name} a été acheté avant que tes achats soient enregistrés sur le serveur (ou c'était un cadeau), il ne peut donc pas aller sur une natte. Les vêtements que tu achètes désormais le pourront.",
   "potato.listed": "Sur ta natte ! Les autres peuvent l'acheter même en ton absence.",
   "potato.back": "{name} est de retour dans ton placard.",
   "potato.sold": "vendu · +🪙 {n}",

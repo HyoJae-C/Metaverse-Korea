@@ -157,8 +157,11 @@ export function createPotatoMarket(game) {
     if (!it || !rc || !game.inventory.has(id)) return null;
     const res = await client.list(id, price, rc);
     if (!res.ok) {
-      if (res.why === 'noref' || res.why === 'sold') game.receipts.forget(id);
-      return why(res, L(it.name));
+      // It drops out of the list below, so say why where it can't be
+      // missed (a small line in the panel read as "it went on the mat").
+      const msg = why(res, L(it.name));
+      if (res.why === 'noref' || res.why === 'sold') { game.receipts.forget(id); game.shop.toast(msg); }
+      return msg;
     }
     // On the mat: it leaves the closet (and comes back if taken back).
     game.takeOff(id);
