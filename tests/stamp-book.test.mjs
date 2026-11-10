@@ -49,3 +49,14 @@ test('the Namsan stamp stands on the summit plaza, inside the cable car room', a
   assert.equal(cableFloor(spot.x, spot.z), CC.top);
   assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
 });
+
+test('the stamp note goes district by district, every district in the list', async () => {
+  const { STAMP_GU_ORDER } = await import('../src/core/stamp-book.js');
+  const list = availableStamps(STAMPS, () => true);
+  const gus = list.map((s) => s.gu.ko);
+  for (const g of new Set(gus)) assert.ok(STAMP_GU_ORDER.includes(g), `add ${g} to STAMP_GU_ORDER`);
+  // each district comes in one run, in the listed order
+  const runs = gus.filter((g, i) => g !== gus[i - 1]);
+  assert.deepEqual(runs, STAMP_GU_ORDER.filter((g) => gus.includes(g)));
+  assert.equal(list[0].id, 'seongsu');
+});
