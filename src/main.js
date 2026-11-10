@@ -59,6 +59,7 @@ import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
+import { createTouchSteer } from './game/touch-steer.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
@@ -3344,6 +3345,15 @@ import('./game/minimap.js').then(({ createMinimap }) => {
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
 
+// Purple gu borders on the street, as on the map. (game/gu-borders.js)
+let guBorders = null;
+if (mapView.seoul?.borders) import('./game/gu-borders.js').then(({ createGuBorders }) => {
+  guBorders = createGuBorders({
+    scene, seoul: mapView.seoul, groundY: (x, z) => hillY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z),
+    getMe: () => me.root.position, onStreet: () => mode === 'street' && !subway.metro,
+  });
+}).catch(() => { /* no border line: the map still shows them */ });
+
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -6585,6 +6595,8 @@ const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
   canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
+// Phones: the stick turns the view as you walk (game/touch-steer.js).
+const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
@@ -6592,7 +6604,7 @@ renderer.setAnimationLoop((now) => {
   const dt = Math.max(0, Math.min(timer.getDelta(), 0.05)); // (never back in time: a clock set back)
   input.update();
 
-  const look = input.consumeLook();
+  const look = touchSteer.look(input.consumeLook()); // (phones, walking: drag tilts only)
   if (look.dx || look.dy) manualCamT = 2;
   manualCamT -= dt;
   if (!firstPerson.look(look)) {
@@ -6615,6 +6627,8 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
+  const canSteer = !seated && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
@@ -6813,6 +6827,7 @@ renderer.setAnimationLoop((now) => {
   updateAction(p, tSec);
   if (mapView.open) mapView.draw();
   minimap?.update(dt);
+  guBorders?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {

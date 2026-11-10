@@ -2410,10 +2410,14 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 /* Start screen, first step: this card has little to read, so it can be
    playful. People from the game hold up the name on a banner over the
    card, and the "Next" button shines. */
-#start { align-content: center; }
+/* One column exactly as wide as the screen minus padding: an auto column
+   grew to the banner's width and pushed the card right on 393 px phones. */
+#start { align-content: center; grid-template-columns: minmax(0, 1fr); }
 .start-banner {
   position: relative; z-index: 2; display: block; justify-self: center;
-  width: min(400px, 96vw); height: auto; margin-bottom: -26px; pointer-events: none;
+  /* A little wider than the card, spilling evenly into both side gutters. */
+  width: min(400px, calc(100% + 16px)); margin-inline: -8px;
+  height: auto; margin-bottom: -26px; pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(74, 63, 53, 0.16));
   animation: banner-sway 3.6s ease-in-out infinite; transform-origin: 50% 100%;
 }

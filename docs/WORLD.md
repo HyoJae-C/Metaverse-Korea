@@ -118,13 +118,13 @@ lists **districts** joined into one map (`src/core/districts.js`):
   a river or a palace wall.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
-  `blockers` split around a bridge to leave a gap. The Han's north bank there
-  is the real one at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
-  `scripts/han-bank.mjs` writes water[1] (Banpo-Jamwon to Seongsu) and the Han
-  River Bike Path 14 m inland of the bank, and `scripts/build-yeouido.mjs`
-  writes water[0] from the same bank. Mangwon's map draws its own straight
-  stretch of the real bank (west of x -3220), and Banpo-Jamwon's map still
-  draws its own river.
+  `blockers` split around a bridge to leave a gap. The Han's banks there
+  are the real ones at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
+  `scripts/han-bank.mjs` writes water[1] (from x -1420, west of Banpo Bridge,
+  to Seongsu, with a gap for Jamsu Bridge) and the Han River Bike Path 14 m
+  inland of the north bank, and `scripts/build-yeouido.mjs` writes water[0]
+  (Mangwon to x -1420) from the same banks. Mangwon's map draws its own
+  straight stretch of the real bank (west of x -3220).
 - Stores, homes and meeting zones can be placed with
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
@@ -221,14 +221,22 @@ on the lawn; the drone show's only while the drones are up.
 ## Banpo-Jamwon Han River Park (Seocho-gu)
 
 Banpo and Jamwon Han River Parks lie side by side on the south bank, so the
-game joins them into one riverside park halfway between the two
-(`scripts/build-banpo.mjs`, `districts/banpo-jamwon.json`). The Han runs
-south-west to north-east here, so the strip is drawn along the bank in its
-own frame (u along the bank, v across it). Jamsu Bridge, the low deck under
-Banpo Bridge, crosses from the north bank: the river's blocker has a gap for
-it, and the `jamsu` landmark draws its kerbs, railings, lamps and Banpo
-Bridge overhead. A link road ("To Banpo Bridge") joins it to Itaewon's
-Seobinggo-ro. Its ★5 legend is the manta ray (`PARK_LEGENDS` in
+game joins them into one riverside park at the south end of Banpo Bridge
+(`scripts/build-banpo.mjs`, `districts/banpo-jamwon.json`). The river, the
+bank and the bridge are on their real lines at 1/4 (OpenStreetMap, water[1]
+from `scripts/han-bank.mjs`): the lawn, the river path and the trees follow
+the real bank from the bay west of the bridge to Jamwon's inlet. Near the
+bridge the bank runs straight at right angles to it, so the park there is
+drawn in the bridge's frame (u along the bank, v inland). West of the bridge
+the real bank turns into the bay where Sebitseom floats; Moonlight Square
+stands out over it on a terrace (up to 16 m off the real bank) so its steps
+and food trucks keep a straight bank facing the fountain. Jamsu Bridge, the
+low deck under Banpo Bridge, crosses on the real bridge's line from the
+north bank's bike path: the river's blocker has a gap for it, and the
+`jamsu` landmark draws its kerbs, railings, lamps and Banpo Bridge overhead
+(its middle is `BRIDGE` in `src/core/rainbow-fountain.js`). A link road
+("To Banpo Bridge") comes down Noksapyeong-daero's real line from Itaewon's
+Seobinggo-ro, through Yongsan Park, onto the bridge. Its ★5 legend is the manta ray (`PARK_LEGENDS` in
 `src/core/fishing.js`).
 
 The park is laid straight on the street, with no room or door: the
