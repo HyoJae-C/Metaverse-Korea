@@ -3988,16 +3988,18 @@ const giftSync = walletReady.then(() => {
 // Clothes bought before the server kept purchases: twice their price back,
 // once (game/old-clothes.js, loaded only until it's done on this device).
 // Then, once, clothes with no receipt at all leave the closet (gifts, code
-// items, prizes, the starting outfit: Yozi 2026-11-11).
+// items, prizes, the starting outfit: Yozi 2026-11-11), and accounts from
+// before then get travel money once (game/old-clothes.js runUpdateBonus).
 giftSync.then(() => { // (after it: a gift's receipt is in before the sweep below)
-  let old, sweep;
-  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); } catch { return; }
-  if (!old && !sweep) return;
+  let old, sweep, bonus;
+  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
+  if (!old && !sweep && !bonus) return;
   const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
     refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
   import('./game/old-clothes.js').then(async (m) => {
     if (old) await m.runOldClothes(g).catch(() => {});
     if (sweep) setTimeout(() => m.sweepNoReceipt(g), 4000); // (after the refund's toast)
+    if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), sweep ? 9000 : 4000); // (after the sweep's toast)
   }).catch(() => {});
 });
 const resaleUi = new ResaleUI({
