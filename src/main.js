@@ -237,6 +237,7 @@ import { createSkyFlight } from './game/sky-flight.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
+import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 
 const BASE = import.meta.env.BASE_URL;
@@ -2410,6 +2411,7 @@ function setRiding(on) {
   const kind = on === true ? 1 : on || 0;
   if (riding === kind) return;
   if (kind && mode !== 'street' && !(interior?.zooPark && (kind === CART || kind === 3))) return; // (in the zoo: its carts, and a seat in a friend's)
+  if (kind && seoulDal.busy) return; // (not in Seoul Dal's gondola)
   // Leaving a shared vehicle tells the others.
   for (const id of passengers.values()) net.sendEmote(tandemMsg('end', id));
   passengers.clear();
@@ -5688,6 +5690,12 @@ const duckBoats = createDuckBoats({
   },
 });
 const { boardDuck, startDuckRide, updateDucks } = duckBoats;
+// Seoul Dal, the balloon in Yeouido Park (game/seoul-dal-near.js loads
+// game/seoul-dal.js when you come near it).
+const seoulDal = createSeoulDalNear({
+  landmarks: map.landmarks, scene, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
+  others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+});
 
 // Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
 const rainbowFountain = createRainbowFountain({
@@ -6197,7 +6205,7 @@ function moreActions(p, door) {
   const out = [];
   const hi5s = () => { for (const o of others.nearbyFree(p.x, p.z, 2)) out.push(hi5Action(o)); };
   if (mode === 'street') {
-    if (riding || busking.performing) return out;
+    if (riding || busking.performing || seoulDal.busy) return out;
     if (door) out.push(storeAct(door));
     hi5s();
     const g = guideAct(p); if (g) out.push(g);
@@ -6266,6 +6274,7 @@ function updateAction(p, tSec) {
     const poop = !riding && nearestPoop(p);
     const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
+    else if (seoulDal.busy || seoulDal.act(p)) next = seoulDal.act(p); // aboard Seoul Dal, or at its gate
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
@@ -6733,6 +6742,7 @@ renderer.setAnimationLoop((now) => {
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
+  seoulDal.update(p, dt); // (carries me up and down in the gondola)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   bumper.tick(dt);
@@ -6757,7 +6767,7 @@ renderer.setAnimationLoop((now) => {
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
-  else if (mag > 0.05 && !seated && !ride && !cable && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
+  else if (mag > 0.05 && !seated && !ride && !cable && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
@@ -6782,7 +6792,7 @@ renderer.setAnimationLoop((now) => {
     me.root.rotation.y += d * Math.min(1, dt * 12);
     const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
     speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
-  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && riding !== 3) {
+  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && !seoulDal.busy && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
@@ -6887,7 +6897,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
   basketTick(dt, p); // a basketball move places you
   skateTick(dt, p);
-  if (riding !== 3 && !seated && !sky.busy) updateSubway(dt, p, px0, pz0);
+  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon)
   sky.update(dt);
   if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
@@ -6952,6 +6962,7 @@ renderer.setAnimationLoop((now) => {
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     bumper.state(st); // in a bumper car, or in line for one
+    seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
     const duckRide = duckBoats.ride;
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
@@ -6969,7 +6980,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
     if (changed || idleTimer <= 0) {
       net.sendState(st);
       lastSent = st;
@@ -7135,6 +7146,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),
     usedRack, // the second-hand rack (game/used-rack.js), for tests
     potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
