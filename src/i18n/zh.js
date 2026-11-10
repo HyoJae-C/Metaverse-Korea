@@ -517,6 +517,7 @@ export const ZH = {
   "map.open": "已开放",
   'map.zones': '集合区域',
   'map.stations': '地铁站',
+  'map.landmarks': '景点',
   'map.shops': '商店',
   'map.places': '地点列表',
   'map.locate': '我的位置',

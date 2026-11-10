@@ -520,6 +520,7 @@ export const HI = {
   'map.open': 'खुला है',
   'map.zones': 'मिलने की जगहें',
   'map.stations': 'मेट्रो स्टेशन',
+  'map.landmarks': 'प्रसिद्ध स्थल',
   'map.shops': 'दुकानें',
   'map.places': 'जगहें',
   'map.locate': 'मेरी जगह',

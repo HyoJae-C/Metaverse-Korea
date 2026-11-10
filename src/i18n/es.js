@@ -519,6 +519,7 @@ export const ES = {
   'map.open': 'Abierto',
   'map.zones': 'Zonas de encuentro',
   'map.stations': 'Estaciones de metro',
+  'map.landmarks': 'Lugares emblemáticos',
   'map.shops': 'Tiendas',
   'map.places': 'Lugares',
   'map.locate': 'Mi ubicación',

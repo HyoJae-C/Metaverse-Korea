@@ -520,6 +520,7 @@ export const ID = {
   'map.open': 'Sudah dibuka',
   'map.zones': 'Zona kumpul',
   'map.stations': 'Stasiun kereta bawah tanah',
+  'map.landmarks': 'Tempat terkenal',
   'map.shops': 'Toko',
   'map.places': 'Daftar tempat',
   'map.locate': 'Lokasiku',

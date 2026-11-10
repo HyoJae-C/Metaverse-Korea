@@ -520,6 +520,7 @@ export const VI = {
   'map.open': 'Đã mở',
   'map.zones': 'Khu gặp gỡ',
   'map.stations': 'Ga tàu điện ngầm',
+  'map.landmarks': 'Địa danh',
   'map.shops': 'Cửa hàng',
   'map.places': 'Địa điểm',
   'map.locate': 'Vị trí của tôi',
