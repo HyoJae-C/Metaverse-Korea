@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { BARGES } from '../src/core/fireworks-show.js';
 import { inPolygon, toGame } from '../src/core/seoul-grid.js';
-import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH } from './han-bank.mjs';
+import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH, SAETGANG_BIKE } from './han-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -141,6 +141,14 @@ export const PARK = {
   },
 };
 const LAWN = [-94.4, 120]; // u
+// Seoul Dal, the tethered balloon (game/seoul-dal.js draws it, loaded when
+// you come near): the real pad is on Yeouido Park's lawn, north of the
+// flagpole in Culture Square (the middle of the park; Seoul city's guide).
+// OpenStreetMap has no point for it, so it sits 35% of the way down the
+// park's long axis from its north end (the end towards the river park), in
+// the middle of the park's width. Its gate faces north, the way you come in
+// from the river park over Yunjung-ro.
+export const DAL_T = 0.35;
 const SQUARE = [-137.6, -94.4]; // Mul-bit Square, u
 
 // The Han River from Mangwon to x -1420, west of Banpo Bridge (world metres;
@@ -192,6 +200,20 @@ function saetgangEdge(streets) {
   });
   if (cur.length > 1) pieces.push(cur);
   return pieces.map((c) => [...c.map(([q, nx, nz]) => [r1(q[0] + nx * 2), r1(q[1] + nz * 2)]), ...c.slice().reverse().map(([q, nx, nz]) => [r1(q[0] + nx * 10), r1(q[1] + nz * 10)])]);
+}
+
+// The south-bank Han River bike path (scripts/build-bike-paths.mjs) crosses
+// the Saetgang's mouth from the island's east tip to the Dongjak bank, as
+// the real one does on its bridge (OpenStreetMap): the Saetgang's blockers
+// (world) are cut BIKE_GAP m either side of that line (han-bank.mjs SAETGANG_BIKE).
+const BIKE_GAP = 4;
+function bikeGap(p) {
+  const [a, b] = SAETGANG_BIKE, L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+  const side = ([x, z]) => (x - a[0]) * -d[1] + (z - a[1]) * d[0];
+  const along = ([x, z]) => (x - a[0]) * d[0] + (z - a[1]) * d[1];
+  // (only the pieces of water the crossing goes over)
+  if (!p.some((q) => Math.abs(side(q)) < 40 && along(q) > -30 && along(q) < L + 30)) return [p];
+  return [clip(p, (q) => side(q) - BIKE_GAP), clip(p, (q) => -side(q) - BIKE_GAP)].filter((q) => q.length >= 3);
 }
 
 // The part of polygon p where side(point) >= 0 (side is linear).
@@ -279,8 +301,8 @@ function build() {
 
   const edge = saetgangEdge(roadsW.filter((r) => r.k !== 'walk'));
   const blockers = [
-    ...saetgang.map((p) => ({ p: p.map(local) })),
-    ...edge.map((p) => ({ p: p.map(local) })),
+    ...saetgang.flatMap(bikeGap).map((p) => ({ p: p.map(local) })),
+    ...edge.flatMap(bikeGap).map((p) => ({ p: p.map(local) })),
     { p: TOWER63_BOX.map(local) }, // the 63 tower (drawn by its landmark)
   ];
   const parkW = OSM.park;
@@ -351,6 +373,17 @@ function build() {
         zh: '汝矣岛是汉江正中的一座岛。江边公园有汉江上最大的草坪：铺开野餐垫，眺望对岸的麻浦。春天，轮中路两旁樱花盛开。游戏里每天韩国时间9点和21点，江上三艘驳船会放一小时烟花。真实的首尔世界烟花节每年秋天在这里举办一次。传说中的水滴鱼只在这里咬钩。',
       } },
   ];
+  // Seoul Dal (see DAL_T) and its board with the real facts.
+  const dal = dalAt(parkW);
+  landmarks.push({ type: 'seouldal', ...xz(local(dal)), ry: +FACE_RIVER.toFixed(4), clear: 15 }); // (clear: no trees on the pad or under the balloon)
+  landmarks.push({ type: 'sign', ...xz(local(dalOff(dal, -9, 12))), ry: +FACE_RIVER.toFixed(4),
+    title: name('Seoul Dal', '서울달', 'ソウルダル', '首尔月亮'),
+    text: {
+      en: 'Seoul Dal ("Seoul Moon") is a real tethered gas balloon on this lawn in Yeouido Park, flying since 2024. A ring-shaped gondola under the balloon carries up to 20 people about 130 m above Yeouido for around 15 minutes, with the Han River, the National Assembly and the 63 tower below. At night it glows like a full moon. It is open every day from 12:00 to 22:00, and stops in strong wind or rain; the adult ticket was 25,000 won in 2026 (check before you go). In the game it goes up every 3 minutes, a little lower, with 5 people a flight (take a waiting ticket when it is full), for 25,000 game won.',
+      ko: '서울달은 여의도공원 이 잔디마당에 실제로 있는 계류식 가스기구로, 2024년부터 날고 있어요. 기구 아래 고리 모양 곤돌라에 최대 20명이 타고 여의도 위 약 130m까지 올라 15분쯤 머물러요. 아래로 한강, 국회의사당, 63빌딩이 보여요. 밤에는 보름달처럼 빛나요. 매일 12시부터 22시까지 운영하고, 강풍이나 비가 오면 쉬어요. 성인 요금은 2026년 기준 25,000원이에요(가기 전에 확인하세요). 게임에서는 3분마다, 조금 낮게 올라가고 한 번에 5명이 타요(다 차면 대기표를 받아요). 요금은 게임 머니 25,000원이에요.',
+      ja: 'ソウルダル（「ソウルの月」）は汝矣島公園のこの芝生に実在する係留式ガス気球で、2024年から飛んでいます。気球の下のリング形ゴンドラに最大20人が乗り、汝矣島の上空約130mまで上がって15分ほど過ごします。眼下には漢江、国会議事堂、63ビル。夜は満月のように光ります。毎日12時から22時まで運行し、強風や雨の日は休みます。大人料金は2026年時点で25,000ウォンです（行く前に確認してください）。ゲームでは3分ごとに、少し低めに上がり、1回5人までです（満員なら整理券を取ります）。料金はゲーム内25,000ウォンです。',
+      zh: '首尔月亮（서울달）是汝矣岛公园这片草坪上真实存在的系留式气球，2024年起开始飞行。气球下方的环形吊舱最多载20人，升到汝矣岛上空约130米，停留约15分钟，下方是汉江、国会议事堂和63大厦。夜晚它像满月一样发光。每天12:00至22:00运营，大风或下雨时停飞；2026年成人票价为25,000韩元（出发前请确认）。游戏里每3分钟升空一次，高度稍低，每次5人（满员时领取排队号），票价为游戏币25,000韩元。',
+    } });
   // Benches on the shore facing the river (the park has its own in the fishing corner and by the dock).
   for (const u of [100, 76, 52, 28, 4, -20, -44, -68, -88, -196]) landmarks.push({ type: 'bench', ...xz(at(u, 4.5)), ry: FACE_RIVER });
   // The park itself (game/han-parks.js): its frame is the park's.
@@ -361,6 +394,7 @@ function build() {
     { kind: 'landmark', ...xz(at(-116, 19.5)), name: name('Mul-bit Square', '물빛광장', '水光広場', '水光广场') },
     { kind: 'landmark', ...xz(local([TOWER63[0], TOWER63[1] + 16])), name: name('63 Tower', '63빌딩', '63ビル', '63大厦') },
     { kind: 'landmark', ...xz(local(centroid(parkW))), name: name('Yeouido Park', '여의도공원', '汝矣島公園', '汝矣岛公园') },
+    { kind: 'landmark', ...xz(local(dalAt(parkW))), name: name('Seoul Dal', '서울달', 'ソウルダル', '首尔月亮') },
     { kind: 'landmark', ...xz(local([ASSEMBLY[0], ASSEMBLY[1] + 20])), name: name('National Assembly', '국회의사당', '国会議事堂', '国会议事堂') },
   ];
   return {
@@ -372,6 +406,25 @@ function build() {
   };
 }
 function xz([x, z]) { return { x, z }; }
+// Seoul Dal's pad (world): DAL_T of the way along Yeouido Park's long axis
+// (along v, across the island) from its north end, in the middle of its width.
+export function dalAt(parkW) {
+  const uv = parkW.map((q) => toUV(q));
+  const vs = uv.map((q) => q[1]), v0 = Math.min(...vs), v1 = Math.max(...vs);
+  const v = v0 + (v1 - v0) * DAL_T;
+  // The park's width at v: where its outline crosses that line.
+  const us = [];
+  for (let i = 0; i < uv.length; i++) {
+    const [ua, va] = uv[i], [ub, vb] = uv[(i + 1) % uv.length];
+    if ((va - v) * (vb - v) <= 0 && va !== vb) us.push(ua + ((v - va) / (vb - va)) * (ub - ua));
+  }
+  return world(at((Math.min(...us) + Math.max(...us)) / 2, v));
+}
+// A point beside the pad, in its frame (x across, z towards its gate).
+function dalOff([x, z], dx, dz) {
+  const ry = FACE_RIVER, c = Math.cos(ry), s = Math.sin(ry);
+  return [r1(x + dx * c + dz * s), r1(z - dx * s + dz * c)];
+}
 function centroid(p) { return [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length]; }
 
 // Where each place's door is, in the district's own metres.

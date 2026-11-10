@@ -4,6 +4,7 @@ import { t, localName, getLanguage } from '../core/i18n.js';
 
 import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
 import { inPoly } from '../core/geom.js';
+import { landmarkPlaces, landmarkMatches } from '../game/landmark-search.js';
 
 export { CATEGORY_ICON };
 
@@ -181,6 +182,7 @@ export class MapView {
     this.query = '';
     this.category = null;
     this.districts = districtCentres(map);
+    this.landmarkPlaces = landmarkPlaces(map?.landmarks); // gates, statues, towers (game/landmark-search.js)
     this.badges = []; // edge badges for districts off screen: { x, y, r, d }
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
@@ -928,6 +930,14 @@ export class MapView {
     for (const d of dists) {
       row('🗺️', '#fffaf0', localName(d.name, lang), dist(d.x, d.z), () => this.goTo(d.x, d.z));
     }
+    // Landmarks by name (Sungnyemun, Bosingak, King Sejong): guide there.
+    const sights = this.category ? [] : this.landmarkPlaces.filter((l) => landmarkMatches(l, this.query))
+      .sort((a, b) => Math.hypot(a.x - me.x, a.z - me.z) - Math.hypot(b.x - me.x, b.z - me.z));
+    if (sights.length) head('map.landmarks');
+    for (const l of sights) {
+      const label = localName(l.name, lang);
+      row(l.icon, '#fffaf0', label, dist(l.x, l.z), () => this._pick({ kind: 'landmark', id: l.key, x: l.x, z: l.z, label }));
+    }
     if (zones.length) head('map.zones');
     for (const z of zones) {
       row(z.zone.id, z.zone.color, localName(z.zone.name, lang), dist(z.x, z.z), () => {
@@ -946,7 +956,7 @@ export class MapView {
     }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length && !dists.length && !stations.length) {
+    if (!shops.length && !zones.length && !dists.length && !stations.length && !sights.length) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
