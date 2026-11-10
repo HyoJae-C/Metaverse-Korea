@@ -5058,7 +5058,7 @@ const bookUi = lazyPanel(() => import('./ui/book-ui.js').then(({ BookUI }) => ne
 const stampBook = new StampBook();
 const trailLog = new TrailLog();
 const stampUi = new StampUI({ root: $('stamp-panel'), book: stampBook, stamps: () => tourStamps, trails: TRAILS, trailLog });
-function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; }
+function refreshStampBtn() { $('stamp-btn').querySelector('span').textContent = `${L(STAMP_TEXT.open)} · ${stampBook.count(tourStamps)}/${tourStamps.length}`; $('map-panel').classList.toggle('stamps-done', stampBook.complete(tourStamps)); } // (every stamp: a gold border round the map)
 $('stamp-btn').onclick = () => { $('notes-panel').hidden = true; stampUi.show(); };
 refreshStampBtn();
 onLanguageChange(refreshStampBtn);

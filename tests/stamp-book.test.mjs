@@ -57,5 +57,18 @@ test('the stamp note follows STAMP_ORDER, which names only real stamps once', as
   assert.equal(new Set(STAMP_ORDER).size, STAMP_ORDER.length);
   const list = availableStamps(STAMPS, () => true).map((s) => s.id);
   assert.deepEqual(list.slice(0, STAMP_ORDER.length).filter((id) => STAMP_ORDER.includes(id)), STAMP_ORDER.filter((id) => list.includes(id)));
-  assert.equal(list[0], 'gyeongbokgung'); // Jongno first (Yozi)
+  assert.equal(list[0], 'bukchon'); // where new players start (Yozi)
+});
+
+test('every stamp collected: complete, and it stays when a new stamp is added', () => {
+  const mem = new Map();
+  const st = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+  const b = new StampBook(st);
+  const two = [{ id: 'a' }, { id: 'b' }];
+  b.stamp('a');
+  assert.equal(b.complete(two), false);
+  b.stamp('b');
+  assert.equal(b.complete(two), true);
+  assert.equal(new StampBook(st).complete([...two, { id: 'new' }]), true);
+  assert.equal(new StampBook(st).count(two), 2); // ("_all" is not a stamp)
 });

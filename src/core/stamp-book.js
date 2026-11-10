@@ -6,11 +6,11 @@ export const STAMP_NEAR = 1.6; // metres from the stand to use it
 // The stamps that exist on this map: a stand beside a shop needs that shop.
 // The order of the stamp note (Yozi 2026-11-11). The subway takes you
 // anywhere, so it doesn't go by district: each page of four mixes sights
-// (관광) and things to do (액티비티), starting in Jongno where new players
+// (관광) and things to do (액티비티), starting in Bukchon where new players
 // start, with Yeongdeungpo, Seocho and Gangnam at the back. A stamp not
 // listed here goes at the end, in data/stamps.js order: place it here.
 export const STAMP_ORDER = [
-  'gyeongbokgung', 'seongsu', 'bukchon', 'suragan', // 경복궁 · 성수 팝업 · 북촌 · 수라간
+  'bukchon', 'seongsu', 'gyeongbokgung', 'suragan', // 북촌 · 성수 팝업 · 경복궁 · 수라간
   'jongmyo', 'hongdae', 'ddp', 'hangang', // 종묘 · 홍대 버스킹 · DDP · 뚝섬 한강공원
   'namsan', 'mangwon-market', 'heunginjimun', 'another-dome', // 남산타워 · 망원시장 · 흥인지문 · 어나더 돔
   'museum', 'hyojae', 'sungnyemun', 'grand-park', // 국립중앙미술관 · 효재대학교 · 숭례문 · 어린이대공원
@@ -43,6 +43,15 @@ export class StampBook {
   date(id) { return this.got[id] || null; }
   // How many of these stamps you have (stamps for removed places don't count).
   count(stamps) { return stamps.filter((s) => this.got[s.id]).length; }
+  // Every stamp collected (the map gets a gold border, Yozi 2026-11-11).
+  // Kept once earned, under "_all": a new stamp added later doesn't take it away.
+  complete(stamps) {
+    if (this.got._all) return true;
+    if (!stamps.length || this.count(stamps) < stamps.length) return false;
+    this.got._all = today(Date.now());
+    try { this.storage?.setItem(KEY, JSON.stringify(this.got)); } catch { /* storage blocked */ }
+    return true;
+  }
   // Stamp it; true the first time (that's when the coins are paid).
   stamp(id, now = Date.now()) {
     if (!id || this.got[id]) return false;
