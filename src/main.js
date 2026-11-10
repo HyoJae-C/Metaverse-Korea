@@ -230,6 +230,7 @@ import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { GiftReceipts } from './core/gift-receipts.js';
 import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
@@ -2477,6 +2478,7 @@ const inventory = new Inventory();
 // What I paid for clothes I bought myself: only those can be sold back at a
 // second-hand shop (core/resale.js).
 const receipts = new Receipts();
+const giftReceipts = new GiftReceipts({ wallet: () => wallet }); // (core/gift-receipts.js; wallet is made below)
 // Outfits are bought now. Players who already picked one at the start keep it.
 try {
   if (!localStorage.getItem('mk.outfitGift')) {
@@ -2524,7 +2526,7 @@ giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
   get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
   get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
-  refreshItems, refreshWallet, safety, shop, storeData,
+  refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
 // Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
@@ -3976,11 +3978,17 @@ const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
   takeOff: takeOffItem });
+// Gift receipts: binds still waiting (I gave clothes), receipts for clothes
+// given to me.
+const giftSync = walletReady.then(() => {
+  giftReceipts.run().catch(() => {});
+  return giftReceipts.sync(inventory, receipts, ITEMS).catch(() => {});
+});
 // Clothes bought before the server kept purchases: twice their price back,
 // once (game/old-clothes.js, loaded only until it's done on this device).
 // Then, once, clothes with no receipt at all leave the closet (gifts, code
 // items, prizes, the starting outfit: Yozi 2026-11-11).
-walletReady.then(() => {
+giftSync.then(() => { // (after it: a gift's receipt is in before the sweep below)
   let old, sweep;
   try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); } catch { return; }
   if (!old && !sweep) return;
