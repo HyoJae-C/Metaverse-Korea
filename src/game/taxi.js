@@ -99,7 +99,8 @@ export function createTaxi(game) {
   }
   // Out of the window: one of the city's shops, picked at random, to visit
   // some day: [name], the gu it is in, its line.
-  const SHOP_KINDS = { restaurant: '🍜', cafe: '☕', beauty: '💄', fashion: '👗', play: '🎮', lifestyle: '🛍️', market: '🛒', workshop: '🎨', popup: '✨', bar: '🍸', culture: '🎭', club: '🎧' };
+  // (No food or drink for now: restaurants, cafés, bars and markets are left out.)
+  const SHOP_KINDS = { beauty: '💄', fashion: '👗', play: '🎮', lifestyle: '🛍️', workshop: '🎨', popup: '✨', culture: '🎭', club: '🎧' };
   let lastShop = null;
   function showShop() {
     const box = $('taxi-shop');
