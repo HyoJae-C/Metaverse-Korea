@@ -52,6 +52,8 @@ export const EN = {
   'tip.8': "📒 The Budget book in your wallet shows where your money went.",
   "taxi.here": "the spot you picked",
   'taxi.shopWhere': "Place: {gu}",
+  'taxi.shopDo': "To do: {what}",
+  'taxi.clinicDo': "a new look ({what})",
   "taxi.to": "To: {label}",
   "taxi.t1": "Hello! Where are you going?",
   "taxi.t2": "Sure, let's go!",

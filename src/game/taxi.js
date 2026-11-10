@@ -97,22 +97,35 @@ export function createTaxi(game) {
     }
     return best;
   }
-  // Out of the window: one of the city's shops, picked at random, to visit
-  // some day: [name], the gu it is in, its line.
-  // (No food or drink for now: restaurants, cafés, bars and markets are left out.)
-  const SHOP_KINDS = { beauty: '💄', fashion: '👗', play: '🎮', lifestyle: '🛍️', workshop: '🎨', popup: '✨', culture: '🎭', club: '🎧' };
-  let lastShop = null;
+  // Out of the window: one of the city's activities or sights, picked at
+  // random, to try some day: [name], the gu it is in, what you can do there.
+  // No food, drink or plain shopping for now (the animal cafés are in: you
+  // play with the animals). The plastic surgery clinics and the cafés where
+  // you can adopt a pet (few players find them) come up more often.
+  const PLACE_KINDS = { play: '🎮', workshop: '🎨', culture: '🖼️', museum: '🏛️', memorial: '🕊️', park: '🌳', club: '🎧', school: '📚' };
+  const CLINIC = '💉';
+  const isClinic = (s) => s.workshop === 'clinic' || s.workshop === 'clinic2';
+  const SKIP_WORKSHOP = new Set(['kimchi', 'japchae', 'bike']); // (cooking classes are food; the bike shops sell skins)
+  const NOT_YET = /coming soon|being prepared/i; // (a gallery or corner still getting ready)
+  const PETS = '🐶';
+  const placeIcon = (s) => (isClinic(s) ? CLINIC : s.pets ? PETS : !s.perfumery && !SKIP_WORKSHOP.has(s.workshop) && PLACE_KINDS[s.category]) || null;
+  let lastPlace = null;
   function showShop() {
     const box = $('taxi-shop');
-    const all = (game.shops?.() || []).filter((it) => SHOP_KINDS[it.store.category] && !it.store.hanpark && it.store.tagline && it !== lastShop);
-    const it = all[Math.floor(Math.random() * all.length)];
+    const pool = [];
+    for (const it of game.shops?.() || []) {
+      const s = it.store;
+      if (it === lastPlace || !s.tagline || NOT_YET.test(s.tagline.en || '') || !placeIcon(s)) continue;
+      for (let n = isClinic(s) || s.adopt ? 4 : 1; n > 0; n--) pool.push(it);
+    }
+    const it = pool[Math.floor(Math.random() * pool.length)];
     box.hidden = !it;
     if (!it) return;
-    lastShop = it;
-    const s = it.store, gu = mapView._guAt?.(it.door.x, it.door.z);
-    $('taxi-shop-name').textContent = `[${SHOP_KINDS[s.category]} ${localName(s.name)}]`;
+    lastPlace = it;
+    const s = it.store, gu = mapView._guAt?.(it.door.x, it.door.z), what = localName(s.tagline);
+    $('taxi-shop-name').textContent = `[${placeIcon(s)} ${localName(s.name)}]`;
     $('taxi-shop-where').textContent = gu ? t('taxi.shopWhere', { gu: localName(gu.name) }) : '';
-    $('taxi-shop-line').textContent = localName(s.tagline);
+    $('taxi-shop-line').textContent = t('taxi.shopDo', { what: isClinic(s) ? t('taxi.clinicDo', { what }) : what });
   }
   const panel = () => $('taxi-share-panel');
   const closePanel = () => { const p = panel(); if (p) { p.hidden = true; p.replaceChildren(); } };
@@ -130,8 +143,13 @@ export function createTaxi(game) {
       $('taxi-rom').textContent = rom;
       $('taxi-tr').textContent = getLanguage() === 'ko' ? '' : t(key);
     };
+    // On the way the driver tells you a game tip, in your language.
+    const sayTip = () => {
+      $('taxi-ko').textContent = nextTip();
+      $('taxi-rom').textContent = '';
+      $('taxi-tr').textContent = '';
+    };
     $('taxi-dest').textContent = '📍 ' + t('taxi.to', { label }) + ' · ' + (free ? st('free') : t('taxi.fare', { n: won(fare) })) + (paid !== fare ? ' (' + st('paid', { n: won(paid) }) + ')' : '') + (mates?.length ? ' · ' + st('together', { names: mates.join(', ') }) : '');
-    $('taxi-tip').textContent = nextTip(); // (no skip: the ride is when the drop-off gets ready)
     $('taxi-ride').hidden = false;
     input.keys.clear();
     sayLine(TAXI_LINES[0]);
@@ -157,8 +175,8 @@ export function createTaxi(game) {
     };
     showShop();
     taxiTimers = [
-      setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
-      setTimeout(() => sayLine(TAXI_LINES[2]), 4200),
+      setTimeout(sayTip, 1300), // (no skip button: the ride is when the drop-off gets ready)
+      setTimeout(() => sayLine(TAXI_LINES[2]), 4900),
       setTimeout(arrive, 5600),
     ];
   }

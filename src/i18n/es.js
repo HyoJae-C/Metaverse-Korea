@@ -52,6 +52,8 @@ export const ES = {
   'tip.8': "📒 El libro de gastos de tu cartera muestra en qué gastaste tu dinero.",
   'taxi.here': 'el lugar elegido',
   'taxi.shopWhere': "Lugar: {gu}",
+  'taxi.shopDo': "Qué hacer: {what}",
+  'taxi.clinicDo': "un nuevo look ({what})",
   'taxi.to': 'Destino: {label}',
   'taxi.t1': '¡Hola! ¿Adónde vamos?',
   'taxi.t2': '¡Claro, vamos!',

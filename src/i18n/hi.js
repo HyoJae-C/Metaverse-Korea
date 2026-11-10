@@ -53,6 +53,8 @@ export const HI = {
   'tip.8': "📒 आपके बटुए की बजट बुक बताती है कि पैसा कहाँ गया।",
   'taxi.here': 'आपकी चुनी हुई जगह',
   'taxi.shopWhere': "जगह: {gu}",
+  'taxi.shopDo': "क्या कर सकते हैं: {what}",
+  'taxi.clinicDo': "नया लुक ({what})",
   'taxi.to': 'कहाँ: {label}',
   'taxi.t1': 'नमस्ते! कहाँ जाना है?',
   'taxi.t2': 'ठीक है, चलिए!',

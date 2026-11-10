@@ -53,6 +53,8 @@ export const ZH = {
   'tip.8': "📒 钱包里的记账本可以看到钱都花在哪里。",
   "taxi.here": "你选的地方",
   'taxi.shopWhere': "地点: {gu}",
+  'taxi.shopDo': "可以做: {what}",
+  'taxi.clinicDo': "换个新样子（{what}）",
   "taxi.to": "目的地：{label}",
   "taxi.t1": "您好！去哪儿？",
   "taxi.t2": "好的，出发！",

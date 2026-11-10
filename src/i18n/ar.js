@@ -53,6 +53,8 @@ export const AR = {
   'tip.8': "📒 دفتر الميزانية في محفظتك يبيّن أين ذهبت أموالك.",
   'taxi.here': 'المكان الذي اخترته',
   'taxi.shopWhere': "المكان: {gu}",
+  'taxi.shopDo': "ما يمكنك فعله: {what}",
+  'taxi.clinicDo': "مظهر جديد ({what})",
   'taxi.to': 'إلى: {label}',
   'taxi.t1': 'مرحبًا! إلى أين؟',
   'taxi.t2': 'حسنًا، لننطلق!',

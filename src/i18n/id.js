@@ -53,6 +53,8 @@ export const ID = {
   'tip.8': "📒 Buku anggaran di dompetmu menunjukkan ke mana uangmu pergi.",
   'taxi.here': 'tempat yang kamu pilih',
   'taxi.shopWhere': "Tempat: {gu}",
+  'taxi.shopDo': "Yang bisa dilakukan: {what}",
+  'taxi.clinicDo': "tampilan baru ({what})",
   'taxi.to': 'Tujuan: {label}',
   'taxi.t1': 'Halo! Mau ke mana?',
   'taxi.t2': 'Baik, ayo berangkat!',

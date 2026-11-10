@@ -53,6 +53,8 @@ export const KO = {
   'tip.8': "📒 지갑의 가계부에서 돈을 어디에 썼는지 볼 수 있어요.",
   "taxi.here": "고른 곳",
   'taxi.shopWhere': "장소: {gu}",
+  'taxi.shopDo': "할 수 있는 것: {what}",
+  'taxi.clinicDo': "외모 바꾸기 ({what})",
   "taxi.to": "목적지: {label}",
   "taxi.t1": "안녕하세요! 어디로 가세요?",
   "taxi.t2": "네, 출발할게요!",

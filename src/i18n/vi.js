@@ -53,6 +53,8 @@ export const VI = {
   'tip.8': "📒 Sổ chi tiêu trong ví cho bạn biết tiền đã đi đâu.",
   'taxi.here': 'chỗ bạn đã chọn',
   'taxi.shopWhere': "Địa điểm: {gu}",
+  'taxi.shopDo': "Có thể làm: {what}",
+  'taxi.clinicDo': "đổi diện mạo ({what})",
   'taxi.to': 'Đến: {label}',
   'taxi.t1': 'Xin chào! Bạn muốn đi đâu?',
   'taxi.t2': 'Được rồi, đi thôi!',

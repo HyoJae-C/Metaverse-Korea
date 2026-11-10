@@ -53,6 +53,8 @@ export const JA = {
   'tip.8': "📒 財布の家計簿で、お金の使い道を確認できます。",
   "taxi.here": "選んだ場所",
   'taxi.shopWhere': "場所: {gu}",
+  'taxi.shopDo': "できること: {what}",
+  'taxi.clinicDo': "見た目チェンジ（{what}）",
   "taxi.to": "行き先: {label}",
   "taxi.t1": "こんにちは！どちらまで？",
   "taxi.t2": "はい、出発します！",
