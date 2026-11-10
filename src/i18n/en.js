@@ -516,6 +516,7 @@ export const EN = {
   "map.open": "Open to explore",
   'map.zones': 'Meeting zones',
   'map.stations': 'Subway stations',
+  'map.landmarks': 'Landmarks',
   'map.shops': 'Shops',
   'map.places': 'Places',
   'map.locate': 'My location',

@@ -520,6 +520,7 @@ export const AR = {
   'map.open': 'مفتوح للاستكشاف',
   'map.zones': 'مناطق اللقاء',
   'map.stations': 'محطات المترو',
+  'map.landmarks': 'معالم',
   'map.shops': 'المتاجر',
   'map.places': 'الأماكن',
   'map.locate': 'موقعي',

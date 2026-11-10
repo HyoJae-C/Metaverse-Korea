@@ -517,6 +517,7 @@ export const KO = {
   "map.open": "둘러보기 가능",
   'map.zones': '만남 구역',
   'map.stations': '지하철역',
+  'map.landmarks': '명소',
   'map.shops': '매장',
   'map.places': '장소 목록',
   'map.locate': '내 위치',

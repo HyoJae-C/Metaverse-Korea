@@ -517,6 +517,7 @@ export const JA = {
   "map.open": "探索できます",
   'map.zones': '待ち合わせゾーン',
   'map.stations': '地下鉄の駅',
+  'map.landmarks': '名所',
   'map.shops': 'ショップ',
   'map.places': '場所の一覧',
   'map.locate': '現在地',

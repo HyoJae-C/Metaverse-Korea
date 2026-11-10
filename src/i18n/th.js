@@ -518,6 +518,7 @@ export const TH = {
   'map.open': 'เปิดให้สำรวจแล้ว',
   'map.zones': 'โซนนัดพบ',
   'map.stations': 'สถานีรถไฟใต้ดิน',
+  'map.landmarks': 'สถานที่สำคัญ',
   'map.shops': 'ร้านค้า',
   'map.places': 'รายชื่อสถานที่',
   'map.locate': 'ตำแหน่งของฉัน',

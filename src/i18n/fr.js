@@ -518,6 +518,7 @@ export const FR = {
   'map.open': 'Ouvert à l\'exploration',
   'map.zones': 'Zones de rencontre',
   'map.stations': 'Stations de métro',
+  'map.landmarks': 'Monuments',
   'map.shops': 'Boutiques',
   'map.places': 'Lieux',
   'map.locate': 'Ma position',
