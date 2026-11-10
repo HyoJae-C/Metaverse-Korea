@@ -600,6 +600,106 @@
         ]
       },
       {
+        "id": "gwanghwamun-station",
+        "name": {
+          "ko": "광화문",
+          "en": "Gwanghwamun",
+          "ja": "光化門",
+          "zh": "光化门"
+        },
+        "code": "533",
+        "line": {
+          "color": "#996cac",
+          "name": {
+            "ko": "5호선",
+            "en": "Line 5",
+            "ja": "5号線",
+            "zh": "5号线"
+          }
+        },
+        "prev": {
+          "ko": "서대문",
+          "en": "Seodaemun"
+        },
+        "next": {
+          "ko": "종로3가",
+          "en": "Jongno 3(sam)-ga"
+        },
+        "note": "Under Gwanghwamun Square by the King Sejong statue (its real place, OSM). Exits at the real 1, 2 and 9: exit 2 on the square north of the statue (0 m), exit 9 on the square south of it (7 m, moved off the centre walk), exit 1 on the Sejong Center pavement (10 m, moved off Sejong-daero onto the pavement).",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -1793.5,
+              -759
+            ],
+            "ry": 0
+          },
+          {
+            "n": 2,
+            "at": [
+              -1728,
+              -776.4
+            ],
+            "ry": 3.1416
+          },
+          {
+            "n": 9,
+            "at": [
+              -1731,
+              -741
+            ],
+            "ry": 0
+          }
+        ]
+      },
+      {
+        "id": "sinchon-station",
+        "name": {
+          "ko": "신촌",
+          "en": "Sinchon",
+          "ja": "新村",
+          "zh": "新村"
+        },
+        "code": "240",
+        "line": {
+          "color": "#00a84d",
+          "name": {
+            "ko": "2호선",
+            "en": "Line 2",
+            "ja": "2号線",
+            "zh": "2号线"
+          }
+        },
+        "prev": {
+          "ko": "홍대입구",
+          "en": "Hongik Univ."
+        },
+        "next": {
+          "ko": "이대",
+          "en": "Ewha Womans Univ."
+        },
+        "note": "At its real place (OSM): exits 1 and 4 within 1 m of the real ones. The Seodaemun map is hand-made and not yet on the real map, so its Sinchon-ro runs about 90 m north of the real road; exit 1 stands on West Lane's pavement, exit 4 on the grass east of it.",
+        "exits": [
+          {
+            "n": 1,
+            "at": [
+              -2631,
+              -303
+            ],
+            "ry": 0
+          },
+          {
+            "n": 4,
+            "at": [
+              -2613,
+              -302
+            ],
+            "ry": 0
+          }
+        ]
+      },
+      {
         "id": "hongik-univ-station",
         "name": {
           "ko": "홍대입구",

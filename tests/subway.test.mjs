@@ -114,3 +114,21 @@ test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the lo
   const gate = [park.anchor.local[0] + park.offset[0], park.anchor.local[1] + park.offset[1]];
   for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 80, `exit ${e.n} near the Peace Gate`);
 });
+
+test('Gwanghwamun (Line 5) and Sinchon (Line 2): exits within 15 m of the real ones (OSM, at 1/4)', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = {
+    'gwanghwamun-station': { 1: [37.5718764, 126.9748938], 2: [37.5724998, 126.9773857], 9: [37.5713027, 126.9769417] },
+    'sinchon-station': { 1: [37.5554764, 126.9364458], 4: [37.5554545, 126.9372855] },
+  };
+  for (const [id, exits] of Object.entries(real)) {
+    const st = stations.find((s) => s.id === id);
+    assert.ok(st, id);
+    for (const e of st.exits) {
+      const [x, z] = toGame(...exits[e.n]);
+      assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `${id} exit ${e.n}`);
+    }
+  }
+  assert.equal(stations.find((s) => s.id === 'gwanghwamun-station').line.name.en, 'Line 5');
+  assert.equal(stations.find((s) => s.id === 'sinchon-station').code, '240');
+});
