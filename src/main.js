@@ -51,6 +51,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { createPalaceView } from './game/palace-view.js';
+import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
 import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './data/jongmyo.js';
@@ -195,6 +196,7 @@ import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createRoomCache } from './game/room-cache.js';
+import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
@@ -263,7 +265,12 @@ function reportProblem(msg) {
     errBox.className = 'err-box';
     document.body.append(errBox);
   }
-  errBox.textContent = '⚠️ ' + String(msg).slice(0, 300);
+  // In words a player understands, in their language; the technical line
+  // stays underneath, small, for a screenshot to the operator.
+  const b = document.createElement('b'), small = document.createElement('small');
+  b.textContent = '⚠️ ' + t('error.soft');
+  small.textContent = String(msg).slice(0, 300);
+  errBox.replaceChildren(b, small);
   errBox.hidden = false;
   clearTimeout(errBox.t);
   errBox.t = setTimeout(() => { errBox.hidden = true; }, 15000);
@@ -2337,6 +2344,9 @@ const interiorCache = createRoomCache({
 const roomFor = (store) => interiorCache.room(store);
 // Walking into a room not built yet: a game tip covers the build (game/tips.js).
 const roomTips = createRoomTips({ $, enterStore: (it) => enterStore(it), built: (store) => !!interiorCache.get(store.id) });
+// Textures not drawn for a minute leave the GPU (game/gpu-janitor.js): far
+// districts and kept rooms stop holding a phone's memory.
+const gpuJanitor = createGpuJanitor({ roots: () => [scene, ...[...interiorCache.values()].map((b) => b.scene)] });
 let signsTranslated = false; // signs in the player's language (the signs button, below)
 let clerk = null; // the clerk NPC in the shop you're in
 let trainer = null; // the gym's trainer NPC
@@ -4728,10 +4738,13 @@ function palaceAct(p) {
   return null;
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
+let anotherTower;
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Another Tower's top)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   palaceView.tick(p, dt);
+  if (mode === 'street') towerLook.tick(cam, p, dt);
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }
   else if (fanNoted && Math.hypot(p.x - fanAt[0], p.z - fanAt[1]) > FAN_NOTE + 4) fanNoted = false;
@@ -6635,7 +6648,7 @@ renderer.setAnimationLoop((now) => {
   manualCamT -= dt;
   if (!firstPerson.look(look)) {
     cam.yaw -= look.dx * 0.006;
-    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : skyLook() ? -0.12 : 0.12, 1.25);
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.004, beauty.beautyCam ? 0.05 : (mode === 'street' && towerLook.min(me.root.position)) || (skyLook() ? -0.12 : 0.12), 1.25);
     cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom, beauty.beautyCam ? 0.8 : 4, interior?.zooHall ? 6.5 : mode === 'store' ? 9 : sky.busy ? 90 : 28); // (the zoo's Sea Animals hall is a room too: the camera stays under its ceiling)
   }
 
@@ -6798,7 +6811,7 @@ renderer.setAnimationLoop((now) => {
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1), p.z); // workshop: character sits above the panel
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Another Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);
@@ -7094,6 +7107,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
+    gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),
     fountain: () => ({ mix: +(weather.nightMix || 0).toFixed(3), jets: !!rainbowFountain.jets, visible: !!rainbowFountain.jets?.group.visible }),
     fireworks: () => ({ mix: +(weather.nightMix || 0).toFixed(3), sky: !!fireworks.sky, visible: !!fireworks.sky?.points.visible, look: fireworks.look }),

@@ -79,7 +79,7 @@ export class FarCull {
     this.at = null; // where the last check was made
   }
   add(o, depth = 0) {
-    if (!o || this.seen.has(o)) return;
+    if (!o || this.seen.has(o) || o.userData.farKeep) return; // (farKeep: a landmark meant to be seen over the fog, e.g. Another Tower)
     this.seen.add(o);
     const bb = new THREE.Box3().setFromObject(o);
     if (bb.isEmpty()) return;

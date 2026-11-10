@@ -48,3 +48,30 @@ test('children added later to a watched container are culled too', () => {
   c.update(0.05, { x: 0, z: 0 }, 0);
   assert.equal(late.visible, false);
 });
+
+test('Another Tower (farKeep) stays up past the fog, as one tower of five meshes', async () => {
+  const { haneulTower } = await import('../src/core/haneul.js');
+  const g = new THREE.Group();
+  haneulTower(g);
+  g.position.set(1000, 0, 0);
+  g.updateMatrixWorld();
+  assert.equal(g.userData.farKeep, true);
+  assert.equal(g.children.length, 5, 'merged by colour: few draw calls even from across the river');
+  const near = thing(0, 0);
+  const c = new FarCull([near, g], () => 300);
+  c.update(0.05, { x: 0, z: 0 }, 0);
+  assert.equal(g.visible, true);
+});
+
+test('looking up at the tower: only near it, and only below the usual lowest tilt', async () => {
+  const { createTowerLook, towerLift, TOWER_LOOK } = await import('../src/game/tower-look.js');
+  const look = createTowerLook(() => ({ x: 0, z: 0 }));
+  assert.equal(look.min({ x: 200, z: 0 }), TOWER_LOOK.minPitch);
+  assert.equal(look.min({ x: 900, z: 0 }), null);
+  assert.equal(towerLift(-0.12, 9), 0); // the drone show's lowest: unchanged
+  assert.equal(towerLift(-0.03, 6.5), 0); // the palace court: unchanged
+  assert.ok(towerLift(-0.35, 9) > 5);
+  const cam = { pitch: -0.35 };
+  for (let i = 0; i < 100; i++) look.tick(cam, { x: 900, z: 0 }, 0.05); // walked away still looking up
+  assert.ok(Math.abs(cam.pitch - TOWER_LOOK.from) < 0.01);
+});
