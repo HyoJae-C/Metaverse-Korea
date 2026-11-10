@@ -13,11 +13,13 @@ export const COLORS = {
   road: 0x8d8a8f,
   roadMajor: 0x7f7c84,
   walk: 0xd8cfc0,
+  bike: 0xc0503f, // the Han River bike paths' red asphalt (region.json links with bike: true)
   park: 0x9fd486,
   grass: 0xb4dc93,
   water: 0x7cc4e8,
   plaza: 0xd9d2c4, // stone paving (Gwanghwamun Square)
   sand: 0xe6d6b2, // palace courtyards
+  closed: 0xa8a297, // land not built yet, that you can't walk into (region.json "closed"; grey like "coming soon" on the map)
   stone: 0xdcd6ca, // flagstone paving (박석): Gyeongbokgung's courtyards (drawn with stoneTexture)
   roof: 0xf4efe6,
   rail: 0xb8bcc4,
@@ -42,6 +44,10 @@ export function buildWorld(map, scene, opts = {}) {
   const bounds = computeBounds(map);
   let obstacles = [], treeSpots = [];
   group.add(makeGround(bounds, opts.holes));
+  // Land not built yet: one flat grey mesh just over the ground, under
+  // everything else (core/districts.js closed).
+  const closed = makeFlatPolys(map.closed || [], COLORS.closed, 0.006);
+  if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
 
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
@@ -56,7 +62,8 @@ export function buildWorld(map, scene, opts = {}) {
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk'),
+    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
+    bike: map.roads.filter((r) => r.bike),
     minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
     major: map.roads.filter((r) => majors.has(r.k)),
   };
@@ -69,6 +76,7 @@ export function buildWorld(map, scene, opts = {}) {
     }
   };
   roadMesh(roadSets.walk, COLORS.walk, ROAD_Y.walk);
+  roadMesh(roadSets.bike, COLORS.bike, ROAD_Y.walk + 0.004); // (over the paths that join it)
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
 

@@ -9,7 +9,8 @@
 // number changes (the show clock) and the whole sky is one draw call.
 // Phones get fewer slots and fewer sparks per burst.
 import * as THREE from 'three';
-import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN } from './fireworks-show.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './fireworks-show.js';
 
 const DRAG = 1.7; // how quickly sparks slow down
 const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
@@ -61,27 +62,73 @@ function directions(kind, n, rand) {
   const out = [];
   const flat = (x, y) => out.push([x, y, (rand() - 0.5) * 0.12]);
   if (kind === 'ring') for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); }
-  else if (kind === 'heart') for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2;
-    flat((16 * Math.sin(a) ** 3) / 17, (13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)) / 17);
-  } else if (kind === 'star') for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, s = (a * 5) / (Math.PI * 2), f = s - Math.floor(s);
-    const r = 0.45 + 0.55 * Math.abs(1 - 2 * f);
+  else if (kind === 'pistil') for (let i = 0; i < n; i++) { // a ball with a small ball of another colour inside
+    const inner = i % 3 === 0, y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+    out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (inner ? 0.4 : 0.9 + rand() * 0.1)));
+  } else if (kind === 'dahlia') for (let i = 0; i < Math.round(n / 3); i++) { // fewer, bigger stars
+    const m = Math.round(n / 3), y = 1 - 2 * ((i + 0.5) / m), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+    out.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+  } else if (kind === 'flower') for (let i = 0; i < n; i++) { // five petals
+    const a = (i / n) * Math.PI * 2, r = 0.3 + 0.7 * Math.abs(Math.cos(a * 2.5));
     flat(Math.sin(a) * r, Math.cos(a) * r);
-  } else if (kind === 'smile') for (let i = 0; i < n; i++) {
-    const k = i / n;
-    if (k < 0.55) { const a = (k / 0.55) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); } // the face
-    else if (k < 0.85) { const a = Math.PI * (1.15 + ((k - 0.55) / 0.3) * 0.7); flat(Math.cos(a) * 0.6, Math.sin(a) * 0.6); } // the smile
-    else { const e = k < 0.925 ? -1 : 1; flat(e * 0.35 + (rand() - 0.5) * 0.06, 0.35 + (rand() - 0.5) * 0.06); } // eyes
-  } else for (let i = 0; i < n; i++) { // peony, willow, small: a sphere
+  } else if (kind === 'butterfly') for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, r = (Math.exp(Math.cos(a)) - 2 * Math.cos(4 * a)) / 4.7;
+    flat(Math.sin(a) * r, Math.cos(a) * r);
+  } else if (kind === 'double') for (let i = 0; i < n; i++) { // a ring inside a ring
+    const a = (i / n) * Math.PI * 4, r = i < n / 2 ? 1 : 0.55;
+    flat(Math.cos(a) * r, Math.sin(a) * r);
+  } else if (kind === 'spiral') for (let i = 0; i < n; i++) { // three arms curling out
+    const k = (i % Math.ceil(n / 3)) / Math.ceil(n / 3), a = k * Math.PI * 2.2 + (i % 3) * ((Math.PI * 2) / 3), r = 0.15 + 0.85 * k;
+    flat(Math.cos(a) * r, Math.sin(a) * r);
+  } else if (kind === 'palm') for (let i = 0; i < n; i++) { // eight thick fronds, mostly up and out
+    const arm = i % 8, a = (arm / 8) * Math.PI * 2 + 0.2, len = 0.45 + 0.55 * rand(), up = 0.35;
+    out.push([Math.cos(a) * len + (rand() - 0.5) * 0.08, (Math.sin(a) * 0.75 + up) * len, (rand() - 0.5) * 0.2]);
+  } else if (kind === 'saturn') for (let i = 0; i < n; i++) { // a ball with a tilted ring round it
+    if (i % 3 === 0) { const a = (i / n) * Math.PI * 2, x = Math.cos(a) * 1.15, y = Math.sin(a) * 0.3; out.push([x * 0.95 - y * 0.3, y + x * 0.3, Math.sin(a) * 0.4]); }
+    else { const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996; out.push([Math.cos(a) * r * 0.6, y * 0.6, Math.sin(a) * r * 0.6]); }
+  } else for (let i = 0; i < n; i++) { // peony, willow, kamuro, small, rainbow: a sphere
     const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996 + rand() * 0.3;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (0.85 + rand() * 0.15)));
   }
   return out;
 }
 
+// A row of high-rises along the far bank, facing the lawn: one merged mesh
+// for the towers and one instanced mesh for their lit windows (2 draw calls).
+function makeSkyline() {
+  const group = new THREE.Group();
+  group.name = 'fireworks-skyline';
+  const [x0, z0] = atUV(0, -285);
+  group.position.set(x0, 0, z0);
+  group.rotation.y = -Math.atan2(U[1], U[0]); // local x along the river, local z towards the lawn
+  const towers = [], lit = [], shade = new THREE.Color();
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let u = -460; u < 620; u += 18 + rand() * 10) {
+    const w = 10 + rand() * 9, d = 10, h = 12 + rand() * 26 + (Math.abs(u) < 150 ? rand() * 12 : 0);
+    const box = new THREE.BoxGeometry(w, h, d).translate(u, h / 2, -rand() * 30).toNonIndexed();
+    shade.set(['#4b5683', '#56618f', '#424c78'][Math.floor(rand() * 3)]);
+    const cols = new Float32Array(box.attributes.position.count * 3);
+    for (let i = 0; i < cols.length; i += 3) cols.set([shade.r, shade.g, shade.b], i);
+    box.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    box.deleteAttribute('normal'); box.deleteAttribute('uv');
+    towers.push(box);
+    const front = box.attributes.position.array.reduce((m, v, i) => (i % 3 === 2 ? Math.max(m, v) : m), -Infinity);
+    for (let y = 3; y < h - 2; y += 3.2) for (let c = 0; c < 3; c++) if (rand() < 0.62) lit.push([u + (c - 1) * w * 0.28, y, front + 0.1]);
+  }
+  const mesh = new THREE.Mesh(mergeGeometries(towers), new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }));
+  const windows = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 2.2),
+    new THREE.MeshBasicMaterial({ color: '#ffe3a0', transparent: true, opacity: 0, fog: false, depthWrite: false }), lit.length);
+  const m4 = new THREE.Matrix4();
+  lit.forEach(([x, y, z], k) => windows.setMatrixAt(k, m4.makeTranslation(x, y, z)));
+  for (const o of [mesh, windows]) { o.frustumCulled = false; o.userData.noShadow = true; group.add(o); }
+  group.userData.windows = windows;
+  group.visible = false;
+  return group;
+}
+
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 30 : 60, PER = phone ? 64 : 96, N = SLOTS * PER;
+  const SLOTS = phone ? 40 : 64, PER = phone ? 64 : 96, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)
@@ -99,6 +146,14 @@ export function createFireworksSky(scene, { phone = false } = {}) {
   points.userData.noShadow = true;
   scene.add(points);
 
+  // The far bank's skyline (Mapo, across the main channel from the lawn),
+  // lit windows and all, behind the bursts: the street has nothing that far
+  // across the water, so without it the fireworks hung over an empty
+  // horizon (Yozi, after the Ttukseom drone show's backdrop). Only there
+  // while Yeouido's show night is on, so nobody sees it from elsewhere.
+  const skyline = makeSkyline();
+  points.add(skyline);
+
   let start = null, list = [], next = 0, slot = 0, lastT = -Infinity;
   const busyUntil = new Float32Array(SLOTS).fill(-1e6);
   const c1 = new THREE.Color(), c2 = new THREE.Color();
@@ -108,7 +163,8 @@ export function createFireworksSky(scene, { phone = false } = {}) {
     for (let k = 0; k < SLOTS; k++) { const i = (slot + k) % SLOTS; if (busyUntil[i] < b.t - RISE) { s = i; break; } }
     if (s < 0) return null;
     slot = (s + 1) % SLOTS;
-    const life = LIFE[b.kind] * (b.kind === 'willow' ? 1 : b.scale);
+    const hangs = b.kind === 'willow' || b.kind === 'kamuro'; // gold that drifts down slowly
+    const life = LIFE[b.kind] * (hangs ? 1 : b.scale);
     busyUntil[s] = b.t + life;
     const [bu, bv] = BARGES[b.barge];
     const [x, z] = atUV(bu + b.du, bv);
@@ -126,9 +182,9 @@ export function createFireworksSky(scene, { phone = false } = {}) {
         // (h, y, n): h along the river, y up, n towards the lawn
         const [h, y, nn] = d;
         dir.array.set([(h * U[0] + nn * -U[1]) * speed, y * speed, (h * U[1] + nn * U[0]) * speed], i * 3);
-        const c = k % 2 && b.color2 !== b.color ? c2 : c1;
+        const c = b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : b.kind === 'pistil' ? (k % 3 === 0 ? c2 : c1) : k % 2 && b.color2 !== b.color ? c2 : c1;
         col.array.set([c.r, c.g, c.b], i * 3);
-        info.array.set([b.t, life * (0.85 + rand() * 0.3), b.kind === 'willow' ? 1.6 : 1, k === 0 ? 1 : 0], i * 4);
+        info.array.set([b.t, life * (0.85 + rand() * 0.3), hangs ? 1.6 : b.kind === 'dahlia' ? 1.3 : 1, k === 0 ? 1 : 0], i * 4);
       } else info.array.set([-1e6, 0, 0, 0], i * 4);
     }
     for (const [a, size] of [[center, 3], [dir, 3], [col, 3], [info, 4]]) { a.addUpdateRange(s * PER * size, PER * size); a.needsUpdate = true; }
@@ -160,8 +216,13 @@ export function createFireworksSky(scene, { phone = false } = {}) {
       const far = Math.hypot(camera.position.x - ORIGIN[0], camera.position.z - ORIGIN[1]);
       mat.uniforms.uBright.value = (0.25 + 0.75 * night) * Math.max(0.35, Math.min(1, 1.25 - far / 800));
       points.visible = !!showStart && far < 900;
+      skyline.visible = night > 0.02;
+      skyline.userData.windows.material.opacity = Math.min(1, night * 1.2);
       return fired;
     },
-    dispose() { scene.remove(points); g.dispose(); mat.dispose(); },
+    dispose() {
+      scene.remove(points); g.dispose(); mat.dispose();
+      skyline.traverse((o) => { o.geometry?.dispose(); o.material?.dispose(); });
+    },
   };
 }

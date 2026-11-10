@@ -48,6 +48,7 @@ export function rimPoint(dx, dz, s, r, pad) {
 }
 
 const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#9fd2ee' }; // the rest: green
+export const CLOSED_FILL = '#d9d4ca'; // land not built yet (map.closed): the map's "coming soon" grey
 const ORDER = { plaza: 0, sand: 0, stone: 0, water: 2 };
 
 // game: { hud, map, getMe() → { x, z, ry } , getYaw(), getGuide() → { x, z } | null,
@@ -68,8 +69,9 @@ export function createMinimap(game) {
 
   const map = game.map;
   const areas = [...(map.areas || [])].sort((a, b) => (ORDER[a.k] ?? 1) - (ORDER[b.k] ?? 1));
+  const closed = (map.closed || []).map((p) => ({ p }));
   const idx = {
-    areas: gridIndex(areas), roads: gridIndex(map.roads || []),
+    areas: gridIndex(areas), closed: gridIndex(closed), roads: gridIndex(map.roads || []),
     buildings: gridIndex(map.buildings || []), rail: gridIndex(map.rail || []),
   };
   let size = 0, dpr = 1, timer = 0, lastYaw = null, lastMe = null, shown = false;
@@ -102,11 +104,15 @@ export function createMinimap(game) {
         if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy);
       }
     };
+    g.fillStyle = CLOSED_FILL;
+    g.beginPath(); // (one path, so no seams between the rectangles)
+    for (const c of near('closed', closed)) c.p.forEach(([x, z], i) => g[i ? 'lineTo' : 'moveTo']((x - p.x) * s, (z - p.z) * s));
+    g.fill();
     for (const a of near('areas', areas)) { g.fillStyle = AREA[a.k] || '#bfe3a8'; poly(a.p); g.fill(); }
     g.lineCap = g.lineJoin = 'round';
     for (const rd of near('roads', map.roads || [])) {
       poly(rd.p);
-      g.strokeStyle = rd.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = rd.bike ? '#d9826f' : rd.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1.5 * dpr, rd.w * s);
       g.stroke();
     }

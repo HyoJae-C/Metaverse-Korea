@@ -145,7 +145,8 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   return null;
 }
 
-// The colour of gu borders, on the map and on the street (game/gu-borders.js).
+// The colour of gu borders. Only on the map, not on the ground (the line
+// crossed landmarks; Yozi 2026-11-10).
 export const GU_BORDER_COLOR = '#8e44d8';
 
 // A shape's box in metres [x0, z0, x1, z1], worked out once.
@@ -336,6 +337,12 @@ export class MapView {
     // Only what is on screen (zoomed in, most of the city is not).
     const [vx0, vz0] = this.toWorld(0, 0), [vx1, vz1] = this.toWorld(this.canvas.width, this.canvas.height);
     const seen = (o, pad = 0) => { const b = bboxOf(o); return b[2] + pad >= vx0 && b[0] - pad <= vx1 && b[3] + pad >= vz0 && b[1] - pad <= vz1; };
+    // Land not built yet (map.closed): grey like a gu "coming soon". One
+    // path, so there are no seams between its rectangles.
+    g.fillStyle = '#d9d4ca';
+    g.beginPath();
+    for (const p of this.map.closed || []) if (p[2][0] >= vx0 && p[0][0] <= vx1 && p[2][1] >= vz0 && p[0][1] <= vz1) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+    g.fill();
     const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
     const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
     if (this.areasSorted?.length !== this.map.areas.length) this.areasSorted = [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1));
@@ -348,7 +355,7 @@ export class MapView {
     for (const r of this.map.roads) {
       if (!seen(r, r.w || 0)) continue;
       poly(r.p);
-      g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
+      g.strokeStyle = r.bike ? '#d9826f' : r.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1, r.w * this.view.scale);
       g.stroke();
     }
@@ -595,8 +602,7 @@ export class MapView {
 
   // Where two gu meet, and Seoul's outer edge (seoul.json borders and
   // outline, from OpenStreetMap, stopping at the Han River): purple, over
-  // the streets, so a border never reads as a road. The same purple as the
-  // line on the street (game/gu-borders.js).
+  // the streets, so a border never reads as a road.
   _drawBorders(g, poly, far) {
     const dpr = this.dpr;
     g.save();

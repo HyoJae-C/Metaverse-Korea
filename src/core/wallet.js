@@ -45,7 +45,7 @@ export const WELCOME_COINS = 1000000; // ₩1,000,000
 // gift saved before won (no `u` in the save) was in coins.
 const giftGiven = (g, old = false) => (g === 1 ? 500 * OLD_COIN_WON : Math.max(0, Math.floor(Number(g) || 0)) * (old ? OLD_COIN_WON : 1));
 const BATCH = 50; // ops per wallet_apply call
-const RESELL_PCT = 10;
+const RESELL_PCT = 25;
 // What the server counts in: 'krw' once supabase/018_won.sql has run. Before
 // that it still counts old coins, and the wallet changes amounts on the way
 // in and out (SERVER_OLD).

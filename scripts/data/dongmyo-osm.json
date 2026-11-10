@@ -1,0 +1,18 @@
+{
+  "note": "Real lines round Dongmyo at 1/4 (world metres, x east, z south, from src/core/seoul-grid.js toGame), from Yozi's OpenStreetMap export of 2026-11-10 (© OpenStreetMap contributors, ODbL), thinned to a point every few metres. Jong-ro is the line between its two carriageways; east of Jibong-ro it is drawn up to 4 m north of that (n says why). Jong-ro 58-gil, along the shrine's west wall, is drawn 3 m west of its line so the lane doesn't run on the wall.",
+  "roads": [
+    { "en": "Jong-ro", "n": { "ko": "종로", "en": "Jong-ro", "ja": "鍾路", "zh": "钟路" },
+      "why": "East of Jibong-ro the real centre line passes 4.5 m from the shrine's north-west corner; at game width (12 m) the road is moved up to 4 m north there (a big street may be off by up to 10 m).",
+      "p": [[-942, -769.2], [-924, -776.5], [-884, -791], [-865, -799.5], [-842, -808.5], [-813, -820.8], [-770, -840.3]] },
+    { "en": "Jibong-ro", "n": { "ko": "지봉로", "en": "Jibong-ro", "ja": "芝峰路", "zh": "芝峰路" },
+      "p": [[-879.8, -724], [-881.1, -743.1], [-881.6, -751.1], [-882.5, -763.1], [-883.5, -780.5], [-884.2, -791], [-884, -802.1], [-883.4, -815.6], [-882.9, -826.8], [-883.4, -846]] },
+    { "en": "Jong-ro 58-gil", "n": { "ko": "종로58길", "en": "Jong-ro 58-gil", "ja": "鍾路58ギル", "zh": "钟路58街" },
+      "p": [[-823.5, -754.6], [-826.1, -764.1], [-829.7, -774.5], [-833.6, -782.3], [-835.3, -786], [-840.8, -797.7], [-843.5, -803.6]] }
+  ],
+  "shrine": {
+    "en": "Dongmyo Shrine (Seoul Donggwanwangmyo): its wall (OSM way 382454040), main gate (382454041) and Jeongjeon (336933496)",
+    "wall": [[-826.7, -774.7], [-838.3, -800.1], [-823.9, -806.6], [-812.4, -781.2], [-817.1, -779.1], [-820.0, -777.8]],
+    "gate": [-818.6, -778.4],
+    "hall": [-826.1, -795.0]
+  }
+}

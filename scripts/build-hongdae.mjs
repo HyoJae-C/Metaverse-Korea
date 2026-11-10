@@ -181,7 +181,7 @@ const GROUPS = [
   // The perfume alley.
   [['alleyN', 'alleyS'], ['kkeung-sanghoe', 'heart-ppyong', 'oops-parfum', 'moai-scent-lab', 'punggyeong-scent']],
   // Animal cafés and desserts, down the walking street and the lane by it.
-  [['walkW', 'walkE', 'hongikW', 'hongikE', 'jandariN'], ['gogo-cat-cafe', 'neoguri-raccoon-cafe', 'big-paws-dog-cafe', 'haemjji-hamster-cafe', 'bingsu-lab', 'moonbeam-dessert', 'starlight-tarot', 'street-kick', 'ear-candy']],
+  [['walkW', 'walkE', 'hongikW', 'hongikE', 'jandariN'], ['gogo-cat-cafe', 'neoguri-raccoon-cafe', 'big-paws-dog-cafe', 'haemjji-hamster-cafe', 'bingsu-lab', 'moonbeam-dessert', 'starlight-tarot', 'street-kick', 'ear-candy', 'nyang-meong-to-pan']],
   // Wausan-ro: the big rooms and the shops by the campus.
   [['wausanW', 'dongmak'], ['onsaem-jjimjil', 'boulder-bloc', 'muscle-gym', 'sum-yoga', 'vintage-garage', 'glow-lab', 'indie-beans', 'sticker-planet', 'byeolbit-mart', 'gil-coffee']],
   // Korean restaurants on Jandari-ro, facing each other.

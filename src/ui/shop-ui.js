@@ -55,8 +55,10 @@ export const usable = (product) => !!product && !!(product.outfit || product.ite
 // Clothes, shoes and accessories are bought with coins and worn on the
 // spot. A fashion shop or pop-up with nothing to wear yet is coming soon,
 // and so is any shop whose goods could only be carried around (candles,
-// stationery, records…). Workshops stay open for their activity.
-const sellsOutfits = (store) => !!store.products?.some((p) => p.outfit || p.item || p.rent);
+// stationery, records…). Workshops stay open for their activity, and so do
+// the vintage shops (store.resale): their clothes are the ones players sold
+// them, on the second-hand rack (Yozi: no clothes sold, no clothes).
+const sellsOutfits = (store) => !!store.resale || !!store.products?.some((p) => p.outfit || p.item || p.rent);
 const baseHow = (store) => (store?.category === 'restaurant' ? 'table' : store?.takeaway || ['cafe', 'bar', 'club'].includes(store?.category) ? 'counter' : 'buy');
 const onlyCarried = (store) => !store.workshop && !store.craft && !store.perfumery && baseHow(store) === 'buy' && store.products?.length > 0 && !store.products.some(usable);
 export const comingSoon = (store) => !!store && ((store.category === 'fashion' || store.category === 'popup') && !sellsOutfits(store) && !store.perfumery || onlyCarried(store));
@@ -84,7 +86,7 @@ const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog'
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
-  backpack: '🎒', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', icecream: '🍦', churro: '🥖', hotdog: '🌭', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
+  backpack: '🎒', ears: '🐱', paws: '🐾', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', icecream: '🍦', churro: '🥖', hotdog: '🌭', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
 };
 const CART_KEY = 'mk.cart';
 

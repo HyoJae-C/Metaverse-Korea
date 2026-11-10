@@ -1295,6 +1295,19 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 /* Batting cage, shooting gallery, darts (ui/batting-ui.js and friends) */
 .arcade-canvas { width: 100%; height: auto; border-radius: 14px; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .darts-board { max-width: min(100%, 36vh); margin: 0 auto; }
+/* Darts and bowling in the world (game/darts-view.js, game/bowling-view.js):
+   the board or lane is the real one in the room, so the panel keeps only the
+   score, a meter and the controls. */
+.arcade-live { padding: 12px 14px; }
+.arcade-live h3 { display: none; }
+.arcade-live .karaoke-pad { padding: 12px; font-size: 20px; }
+.arcade-live .karaoke-status { margin: 0 36px 6px 0; }
+.arcade-live .bowl-sheet { display: block; width: calc(100% - 40px); height: auto; border-radius: 10px; margin: 0 0 6px; }
+.arcade-live .bowl-sheet + .karaoke-status { margin-right: 0; }
+.arcade-meter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.arcade-meter span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+.arcade-meter i { display: block; height: 100%; background: #ffd36e; }
+.arcade-meter b { font-size: 15px; min-width: 3.2em; text-align: right; }
 .arcade-speeds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .arcade-speed { display: grid; gap: 2px; padding: 10px; border-radius: 12px; text-align: center; }
 .arcade-speed small { font-size: 11px; opacity: 0.8; }
@@ -1477,6 +1490,13 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .stamp-cell em { font-size: 10px; font-style: normal; font-weight: 800; color: #8a7d6e; }
 .stamp-cell.fresh .stamp-art { animation: stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
 @keyframes stamp-in { from { transform: scale(1.9); opacity: 0; } 60% { opacity: 1; } to { transform: scale(1); } }
+/* Stamp note pages: 4 stamps in a 2×2 grid, turned with the buttons or a swipe. */
+.stamp-grid.stamp-page { grid-template-columns: repeat(2, 1fr); margin-top: 10px; touch-action: pan-y; user-select: none; }
+.stamp-page .stamp-cell { padding: 10px 6px 8px; }
+.stamp-page .stamp-art { width: min(108px, 27vw); height: min(108px, 27vw); }
+.stamp-page .stamp-cell strong { font-size: 13px; }
+.stamp-nav { margin-bottom: 10px; }
+.stamp-blank { visibility: hidden; }
 .dex-card em { font-size: 11px; font-style: normal; font-weight: 800; }
 
 /* 효재어학당 course book */
@@ -1547,6 +1567,11 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bag-slot.worn { background: #fff4e6; }
 .bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
+.closet-icon { position: relative; color: #4a4550; display: inline-grid; place-items: center; line-height: 1; }
+.closet-icon svg { display: block; }
+.closet-dot { position: absolute; right: -0.28em; bottom: -0.18em; width: 0.42em; height: 0.42em; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.18); }
+.closet-title .closet-icon { font-size: 1.1em; margin-right: 0.1em; }
+.closet-retired { display: inline-block; padding: 1px 6px; border-radius: 8px; background: #efe6da; color: var(--ink-soft); font-size: 11px; font-weight: 700; vertical-align: middle; }
 .bag-info { display: grid; gap: 6px; min-height: 44px; }
 .bag-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .bag-more { margin-top: 8px; }
