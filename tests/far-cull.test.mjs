@@ -29,3 +29,22 @@ test('walking: checked every 0.4 s of real time, however short the frames', () =
   c.update(0.05, { x: 30, z: 0 }, 450);
   assert.equal(a.visible, true);
 });
+
+test('a big thing goes as a whole past the fog, with what is added inside it later', () => {
+  const stream = new THREE.Group();
+  for (let x = 1000; x <= 1600; x += 100) stream.add(thing(x, 0));
+  const c = new FarCull([stream], () => 300);
+  const lantern = thing(1300, 0); stream.add(lantern); // a wish floating down, added later
+  c.update(0.05, { x: 0, z: 0 }, 0);
+  assert.equal(stream.visible, false);
+  c.update(0.05, { x: 900, z: 0 }, 10);
+  assert.equal(stream.visible, true);
+});
+
+test('children added later to a watched container are culled too', () => {
+  const box = new THREE.Group();
+  const c = new FarCull([], () => 300, [box]);
+  const late = thing(1000, 0); box.add(late);
+  c.update(0.05, { x: 0, z: 0 }, 0);
+  assert.equal(late.visible, false);
+});
