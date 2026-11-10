@@ -3603,7 +3603,7 @@ function checkLowCoins() {
     ]);
   }, 1500); // after the purchase toast
 }
-// Action button (and E / Enter key).
+// Action button (and E / Space key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
@@ -3750,7 +3750,10 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
+  // Enter opens the chat, like T and / (as in most games); E and Space act.
+  if (e.code === 'Enter' && !e.repeat && !(e.target instanceof HTMLButtonElement) && !spaceBusy()
+    && !document.querySelector('#hud .sheet:not([hidden])') && !$('chat-btn').hidden) { e.preventDefault(); $('chat-btn').click(); return; }
+  if (e.code === 'KeyE' && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
   // B for Bag: closes it if open; opens it only when no game or sheet is
   // taking keys and the bag button is on screen.
