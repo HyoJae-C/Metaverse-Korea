@@ -72,7 +72,9 @@ test('hanok houses keep off the streets', () => {
 });
 
 test('Bukchon shops stand in Bukchon, with hanok fronts', () => {
-  const ids = ['info-bukchon', 'gahoe-hanbok', 'noeul-teahouse', 'giwa-photo', 'maeum-knot', 'saekji-paper'];
+  // The hands-on rooms all stand in Bukchon, along Bukchon-ro 2-gil, each on a
+  // hanok's long front (on a short gable end the shop front sticks out past the eaves).
+  const ids = ['info-bukchon', 'gahoe-hanbok', 'noeul-teahouse', 'giwa-photo', 'maeum-knot', 'saekji-paper', 'sonmat-kimchi', 'suragan-cooking', 'matcha-garden'];
   const parts = region.districts.map((d) => ({ ...d, map: read(d.map) }));
   const boxes = districtBoxes(mergeDistricts(parts));
   for (const id of ids) {
@@ -81,8 +83,12 @@ test('Bukchon shops stand in Bukchon, with hanok fronts', () => {
     assert.equal(s.front, 'hanok', id);
     assert.equal(districtAt(boxes, ...s.at), 'bukchon', id);
   }
-  // Gyeongbokgung's shops on Samcheong-ro stay in Gyeongbokgung.
-  for (const id of ['sonmat-kimchi', 'suragan-cooking', 'dano-hanbok']) assert.equal(districtAt(boxes, ...stores.find((x) => x.id === id).at), 'gyeongbokgung', id);
+  // Gwanghwamun and the north bank of Cheonggyecheon (Gyeongbokgung's map) take the rest.
+  for (const id of ['dano-hanbok', 'haneul-drip', 'sagye-gelato', 'slow-brunch']) assert.equal(districtAt(boxes, ...stores.find((x) => x.id === id).at), 'gyeongbokgung', id);
+  // No shop is left in the row on Samcheong-ro, up the palace's east side (hard to reach, Yozi).
+  const [gx, gz] = region.districts.find((d) => d.id === 'gyeongbokgung').offset;
+  const row = stores.filter((s) => s.at[0] > gx + 120 && s.at[0] < gx + 180 && s.at[1] > gz - 460 && s.at[1] < gz);
+  assert.deepEqual(row.map((s) => s.id), []);
   // A second hanbok rental: the same sets as by the palace.
   const a = stores.find((x) => x.id === 'dano-hanbok').products.map((p) => p.rent);
   assert.deepEqual(stores.find((x) => x.id === 'gahoe-hanbok').products.map((p) => p.rent), a);
