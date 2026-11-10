@@ -2677,3 +2677,5 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
     translate: none; max-height: min(172px, 26dvh);
   }
 }
+/* Start screen: button to the Google Form (index.html #survey-btn) */
+.survey-btn { display: flex; width: fit-content; max-width: 100%; margin: 12px auto 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; color: var(--ink); text-decoration: none; text-align: center; line-height: 1.3; white-space: normal; }
