@@ -143,10 +143,12 @@ test('the palace stands on its real ground at 1/4, and the king keeps to the way
   assert.ok(FAN[0] - FAN_KEEP > -53 && FAN[0] + FAN_NOTE < -2, 'off the way from gate to gate, inside the wall');
 });
 
-test('palace buildings: footprints at 30% of the real ones, heights at half', () => {
+test('palace buildings: footprints at 30% of the real ones (Gwanghwamun 50%), heights at half', () => {
   const at = (type) => map.landmarks.find((l) => l.type === type);
-  for (const t of ['gwanghwamun', 'palacegate', 'throne', 'yeongjegyo', 'amisan', 'hexpavilion']) assert.deepEqual(at(t).sc, [0.6, 1], t + ': drawn at 50%, 60% of that across');
-  assert.ok(Math.abs(at('gwanghwamun').w * 0.6 - 31.2 * 0.3) < 0.5, 'Gwanghwamun (31 m wide on the map)');
+  for (const t of ['palacegate', 'throne', 'yeongjegyo', 'amisan', 'hexpavilion']) assert.deepEqual(at(t).sc, [0.6, 1], t + ': drawn at 50%, 60% of that across');
+  // Gwanghwamun is 50% across too, like its height, so it isn't a narrow tower (Yozi).
+  assert.deepEqual(at('gwanghwamun').sc, [1, 1], 'Gwanghwamun: drawn at 50% both ways');
+  assert.ok(Math.abs(at('gwanghwamun').w - 31.2 * 0.5) < 0.5, 'Gwanghwamun (31 m wide in Seoul)');
   assert.ok(Math.abs(at('throne').hs * 30 * 0.6 - 32 * 0.3) < 1, 'Geunjeongjeon (32 m wide on the map)');
   assert.deepEqual(at('pavilion').sc, [0.3, 0.5], 'Gyeonghoeru (its model is full size)');
   assert.equal(at('palacehalls').v, 1);

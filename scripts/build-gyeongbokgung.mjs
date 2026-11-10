@@ -34,6 +34,10 @@ const osm = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbo
 export const FOOT = 1.2; // footprints: 30% of the real size = 1.2 × the 1/4 map
 export const UP = 1; // heights: the palace models are drawn at half the real height (UP 1 = 50%)
 const SC = [FOOT / 2, UP]; // the models with their own builders are drawn at 50%: scale them to 30% across
+// Gwanghwamun alone is 50% across, like its height: at 30% its stone base
+// came out narrower than its roofs, cramped at the sides (Yozi, 2026-11-10).
+export const GATE = 2; // its width: 2 × the 1/4 map = 50% of the real gate
+const GATE_SC = [GATE / 2, UP];
 const r1 = (v) => Math.round(v * 10) / 10, r2 = (v) => Math.round(v * 100) / 100;
 
 // ---------- Real coordinates -> the district's metres (Gwanghwamun at (0, 0)) ----------
@@ -118,8 +122,8 @@ export const OUTLINE = (() => {
   let k = 0; // start just east of the gate, so the line runs round and ends just west of it
   for (let i = 0; i < P.length; i++) if (Math.abs(P[i][1]) < 4 && P[i][0] > 0 && (P[k][0] <= 0 || Math.abs(P[k][1]) >= 4 || P[i][0] < P[k][0])) k = i;
   const R = P.slice(k).concat(P.slice(0, k));
-  const W = R.filter(([x, z]) => !(Math.abs(x) < 5 && Math.abs(z) < 4));
-  const hw = 3.9 * FOOT; // the wall meets the gate's sides (Gwanghwamun: 7.8 m wide on the 1/4 map)
+  const hw = 3.9 * GATE; // the wall meets the gate's sides (Gwanghwamun: 7.8 m wide on the 1/4 map)
+  const W = R.filter(([x, z]) => !(Math.abs(x) < hw + 0.5 && Math.abs(z) < 4));
   return [[hw, W[0][1] * (hw / W[0][0])], ...W, [-hw, W.at(-1)[1] * (hw / -W.at(-1)[0])]];
 })(); // the palace wall, in the district's metres
 const inPalace = (x, z) => inside(OUTLINE, x, z) && !(x > 45 && z < -95 && x > 45 + (-95 - z) * 0.1); // (the Folk Museum's grounds)
@@ -299,12 +303,12 @@ const blocks = [];
 const O = Object.fromEntries(own.map((o) => [o.name, o]));
 const lm = [];
 const g = O['광화문'];
-lm.push({ type: 'gwanghwamun', x: 0, z: 0, ry: r2(-g.a), w: r1((g.w * 2)), sc: SC, gb: 1 }); // (drawn at 50%: w is the 50% width)
+lm.push({ type: 'gwanghwamun', x: 0, z: 0, ry: r2(-g.a), w: r1((g.w * 2)), sc: GATE_SC, gb: 1 }); // (drawn at 50%: w is the 50% width)
 // Gwanghwamun's solid parts either side of the three arches (the arches: |x| < 1.5 and 3.0..5.2 at 50%)
 {
-  const W = g.w * FOOT, D = 7 * SC[0], cs = Math.cos(g.a), sn = Math.sin(g.a);
+  const W = g.w * GATE, D = 7 * GATE_SC[0], cs = Math.cos(g.a), sn = Math.sin(g.a);
   for (const [u0, u1] of [[1.5, 3.0], [5.2, g.w]]) for (const s of [-1, 1]) {
-    const a = u0 * SC[0], b = Math.min(W / 2, u1 * SC[0]), u = (s * (a + b)) / 2;
+    const a = u0 * GATE_SC[0], b = Math.min(W / 2, u1 * GATE_SC[0]), u = (s * (a + b)) / 2;
     blockers.push({ p: rect(u * cs, u * sn, b - a, D, g.a) });
   }
 }
