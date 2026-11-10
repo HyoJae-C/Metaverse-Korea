@@ -356,6 +356,21 @@ link in `region.json`.
 - `tests/namsan.test.mjs` keeps the tower, both stations and the cable within
   15 m of the real places.
 
+## Itaewon's museums (Yongsan-gu)
+
+`scripts/build-yongsan-museums.mjs` puts both on their real places
+(OpenStreetMap), at 1/4 like the rest of Seoul; both are mostly seen from
+inside, so their grounds shrink (Yozi 2026-11-10). Items are marked `ym`.
+
+- **War History Museum** (the real War Memorial of Korea): the whole site
+  shrinks to 40% round the main building, which stands on the real main
+  hall; heights at 50%. The plaza in front stretches to reach Itaewon-ro.
+- **National Central Art Museum** (on the real National Museum of Korea's
+  spot): its 100 m building is already the real one at 1/4, so it only
+  moves, with Yongsan Park round it and the Art Museum Way north to the
+  game's Seobinggo-ro (which is drawn north of the real road; Itaewon's own
+  streets are hand-made).
+
 ## Samseong-dong (Gangnam-gu)
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,

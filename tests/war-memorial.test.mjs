@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { toGame } from '../src/core/seoul-grid.js';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { EXHIBITS, HALLS, CREDIT, DISCLAIMER, VISIT, MEMORIAL_FLOORS, GUIDE_LOOK } from '../src/data/war-memorial.js';
 import { photoSlots, fitSize, FLOWER_SPOT, ROOM_MEMORIAL, hallPhotos, MEMORIAL_LIFT } from '../src/core/war-memorial.js';
@@ -78,7 +79,11 @@ test('the memorial is on the Itaewon map, west along Itaewon-ro, with its store 
   const [lx, lz] = [store.at[0] - offset[0], store.at[1] - offset[1]];
   const b = map.buildings.find((x) => x.wall === '#cfcac0');
   const maxZ = Math.max(...b.p.map((q) => q[1]));
-  assert.ok(lz > maxZ && lz - maxZ < 5 && Math.abs(lx + 460) < 1, `entrance at ${lx}, ${lz}`);
+  const lm = map.landmarks.find((l) => l.type === 'warmemorial');
+  assert.ok(lz > maxZ && lz - maxZ < 5 && Math.abs(lx - lm.x) < 1, `entrance at ${lx}, ${lz}`);
+  // On the real War Memorial's main hall (OpenStreetMap), at 1/4 like the rest of Seoul.
+  const [rx, rz] = toGame(37.5370942, 126.9770518);
+  assert.ok(Math.hypot(lm.x + offset[0] - rx, lm.z + offset[1] - rz) < 15, 'on the real main hall');
   assert.ok(STAMPS.some((s) => s.id === 'war-memorial' && s.place.store === 'war-memorial'));
 });
 

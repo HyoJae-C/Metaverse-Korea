@@ -2697,7 +2697,7 @@
       "id": "national-museum",
       "category": "museum",
       "size": "museum",
-      "at": [-1348, 499],
+      "at": [-1662.1, 556.4],
       "name": { "ko": "국립중앙미술관", "en": "National Central Art Museum", "ja": "国立中央美術館", "zh": "国立中央美术馆" },
       "tagline": {
         "en": "Old Korean paintings by Kim Hong-do, Sin Yun-bok, Jeong Seon and more. A made-up museum in the game, not a real institution and not linked to the National Museum of Korea.",
@@ -2712,7 +2712,7 @@
       "id": "war-memorial",
       "category": "memorial",
       "size": "memorial",
-      "at": [-1808, 189],
+      "at": [-1735.4, 220.6],
       "name": { "ko": "전쟁역사박물관", "en": "War History Museum", "ja": "戦争歴史博物館", "zh": "战争历史博物馆" },
       "tagline": {
         "en": "Photos from the Korean War, veterans' donated photos on 2F, and a quiet memorial room where you can lay a flower. A made-up museum in the game, modelled loosely on the War Memorial of Korea in Yongsan; not run by or linked to it.",
