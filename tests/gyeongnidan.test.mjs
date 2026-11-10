@@ -99,10 +99,10 @@ test('houses stand on the slope with no gap under them, and their floor at the s
   }
 });
 
-test('a few of Itaewon\'s own places moved up: a diner, a trattoria, a café and the taproom (no new ones)', () => {
+test('a few of Itaewon\'s own places moved up: a café and the taproom (no new ones)', () => {
   const stores = read('stores.json').stores;
   const up = stores.filter((s) => { const [x, z] = [s.at[0] - ox, s.at[1] - oz]; return x > hill.at[0] && z < hill.at[1] + 30 && ground(x, z) > 0 || main.p.some((q, i) => i && segDist(x, z, main.p[i - 1], q) < 8); });
-  assert.deepEqual(up.map((s) => s.id).sort(), ['dalgona-dabang', 'hilltop-taproom', 'nonna-lucia', 'sunny-side-diner']);
+  assert.deepEqual(up.map((s) => s.id).sort(), ['dalgona-dabang', 'hilltop-taproom']);
   for (const s of up) {
     const [x, z] = [s.at[0] - ox, s.at[1] - oz];
     assert.ok(main.p.some((q, i) => i && segDist(x, z, main.p[i - 1], q) < main.w / 2 + 1), s.id + ' on the main street');
