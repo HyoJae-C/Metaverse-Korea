@@ -845,10 +845,9 @@ if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
   const mascotGuide = (x, z, ry, name = t('quest.guide')) => {
     const npc = makeNpc($('labels'), '❗ ' + name);
-    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot (it stands still: dancing kept phones busy, Yozi 2026-11-10)
     npc.tag.classList.add('square-guide');
     npc.labelY = 1.95; // above the costume head
-    npc.ch.activity('dance'); // dances while waiting: easy to spot
     npc.ch.root.position.set(x, 0, z);
     npc.ch.root.rotation.y = ry;
     scene.add(npc.ch.root);
