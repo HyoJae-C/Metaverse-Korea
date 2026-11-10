@@ -3,51 +3,24 @@
 // themselves are drawn by fireworks-sky.js, which is only downloaded when
 // you come near Yeouido around show time.
 //
-// The game's day and night follow Seoul's (weather.js), and the show makes
-// its own night too: during a morning show the sky turns to night only on
-// and around Yeouido (the island, Seogang Bridge and the Hongdae bank
-// across the river), fading in and out. Everywhere else it stays day.
+// The show is in the game's night (show-clock.js, weather.js), and Yeouido
+// makes sure of it too: during a show the sky on and around the island
+// (Seogang Bridge and the Hongdae bank across the river) is night, fading
+// in and out.
 //
 // Everyone's clock gives the same bursts at the same moment (like the drone
 // show and the weather): the program is worked out from the show's start
 // time, so friends on the lawn watch the same fireworks together.
 
-import { smooth, dailyStarts, checkTimes } from './show-clock.js';
+import { smooth, showStarts, FIREWORKS } from './show-clock.js';
 
-// Show start times on Korean time (KST, UTC+9): twice a day. 21:00 is the
-// evening in Korea, Japan and South-East Asia; 09:00 is the evening in the
-// Americas. Kept 3 hours from the Ttukseom drone show (6, 18 KST). This is
-// only the default: operators set the times from the operator page
-// (admin.html → Shows, supabase/033_show_times.sql), and every game follows
-// them (show-times-watch.js → setFireworksTimes).
-export const FIREWORKS_HOURS_KST = [9, 21];
+// When: in the middle of every other night of the game's two-hour day
+// (show-clock.js), taking turns with the Ttukseom drone show.
 export const SHOW_SECONDS = 20 * 60; // 20 minutes of fireworks (t = 0 … 1200)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
 export const DAWN_SECONDS = 180; // after the end: it brightens again
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
 export const RISE = 1.2; // seconds a shell takes to climb before it bursts
-
-const DAY = 24 * 3600e3;
-
-// Operator-set times: 1 to 4 shows a day, at least an hour apart (the
-// 20 minutes of fireworks plus its notice and dawn take 33). FIREWORKS_SPAN: the minutes
-// around a start the show takes, notice to dawn (kept clear of the drones).
-export const MAX_SHOWS = 4;
-export const MIN_GAP_MINUTES = 60;
-export const FIREWORKS_SPAN = [-ALERT_SECONDS / 60, (SHOW_SECONDS + DAWN_SECONDS) / 60];
-export const checkFireworksTimes = (list) => checkTimes(list, { max: MAX_SHOWS, gap: MIN_GAP_MINUTES });
-
-// The times every game uses now (hours, may be fractional).
-let showHours = FIREWORKS_HOURS_KST;
-export const fireworksHours = () => showHours;
-
-// Takes the operators' list (minutes after midnight KST), or null for the
-// default. A bad list is ignored and the default stays.
-export function setFireworksTimes(list) {
-  const r = Array.isArray(list) ? checkFireworksTimes(list) : null;
-  showHours = r?.minutes ? r.minutes.map((m) => m / 60) : FIREWORKS_HOURS_KST;
-  return showHours;
-}
 
 // How dark Yeouido's sky is t seconds into a show: 0 = day, 1 = night.
 export function nightAt(t) {
@@ -60,8 +33,8 @@ export function nightAt(t) {
 // The show around `now`, from 10 minutes before the start until the sky is
 // day again: { start (ms), t (seconds from the start, negative before),
 // night (0–1), on (bursts can happen: 0 … SHOW_SECONDS) }. null otherwise.
-export function fireworksAt(now = Date.now(), hours = showHours) {
-  for (const start of dailyStarts(now, hours)) {
+export function fireworksAt(now = Date.now()) {
+  for (const start of showStarts(now, FIREWORKS)) {
     const t = (now - start) / 1000;
     if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + DAWN_SECONDS) return { start, t, night: nightAt(t), on: t >= 0 && t < SHOW_SECONDS };
   }
@@ -69,8 +42,8 @@ export function fireworksAt(now = Date.now(), hours = showHours) {
 }
 
 // The next show's start (ms) after now.
-export function nextFireworks(now = Date.now(), hours = showHours) {
-  return dailyStarts(now, hours).find((s) => s > now) ?? dailyStarts(now + DAY, hours)[0];
+export function nextFireworks(now = Date.now()) {
+  return showStarts(now, FIREWORKS).find((s) => s > now);
 }
 
 // ---- Where (world metres; the same frame as scripts/build-yeouido.mjs) ----
