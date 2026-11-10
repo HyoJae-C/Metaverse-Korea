@@ -1553,6 +1553,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
       if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
@@ -4285,7 +4286,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, get nickname() { return nickname; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -6487,7 +6488,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
-      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling) + (arcadeGame.bowlInvite() ? ' ⚔️' : ''), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
       next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
@@ -7202,6 +7203,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
     dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
+    bowlLanes: () => interior?.stations?.bowling?.map((s) => ({ x: s.x, z: s.z, busy: s.busy, ball: s.ball.visible, rows: s.screen.rows })) ?? null, // lanes and their screens (core/activity-rooms.js)
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)

@@ -145,3 +145,46 @@ test('records: higher is better, except climbing times', () => {
   assert.deepEqual(loadActivity(s), { bowling: 90, climb: { v0: 25 } });
   assert.deepEqual(loadActivity({ getItem: () => '{bad' }), {});
 });
+
+test('bowling with others: a thrown ball as a message, and back', async () => {
+  const { bowlThrowMsg, parseBowl, bowlGoMsg, bowlLaneMsg, bowlToMsg } = await import('../src/core/activities.js');
+  const msg = bowlThrowMsg({ lane: 4, stance: -0.3, aim: 0.42, power: 0.77, spin: 0.5, seed: 123456789, rack: ALL, down: [0, 1, 2, 4], rolls: [10, 7, 3] });
+  const m = parseBowl(msg);
+  assert.equal(m.kind, 't'); assert.equal(m.lane, 4); assert.equal(m.seed, 123456789);
+  assert.ok(Math.abs(m.stance + 0.3) < 1e-9 && Math.abs(m.aim - 0.42) < 1e-9 && m.power === 0.77 && m.spin === 0.5);
+  assert.deepEqual(m.rack, ALL); assert.deepEqual(m.down, [0, 1, 2, 4]); assert.deepEqual(m.rolls, [10, 7, 3]);
+  // The same message again gives the same numbers (the thrower rolls what the others will).
+  assert.equal(bowlThrowMsg({ ...m, rack: m.rack, down: m.down, rolls: m.rolls }), msg);
+  assert.equal(parseBowl(msg.replace(':23:', ':1024:')), null); // knocked down a pin that was not there
+  assert.equal(parseBowl('bowl:t:4:35:710:770:3:1:1023:23:XXXXXXXXXXXX'), null); // a finished game
+  assert.deepEqual(parseBowl(bowlGoMsg('abc', 2, ['abc', 'def'])), { kind: 'g', to: 'abc', lane: 2, ids: ['abc', 'def'] });
+  assert.equal(parseBowl(bowlGoMsg('abc', 2, ['abc'])), null);
+  assert.equal(parseBowl(bowlGoMsg('abc', 2, ['abc', 'abc'])), null);
+  assert.deepEqual(parseBowl(bowlLaneMsg('o', 7)), { kind: 'o', lane: 7 });
+  assert.deepEqual(parseBowl(bowlToMsg('i', 'xyz')), { kind: 'i', to: 'xyz' });
+  assert.equal(parseBowl('bowl:q:1'), null);
+});
+
+test('bowling with others: a frame each, in line-up order', async () => {
+  const { bowlTurnOf } = await import('../src/core/activities.js');
+  assert.equal(bowlTurnOf([[], []]), 0);
+  assert.equal(bowlTurnOf([[7], []]), 0); // finishes the frame
+  assert.equal(bowlTurnOf([[7, 2], []]), 1);
+  assert.equal(bowlTurnOf([[10], []]), 1);
+  assert.equal(bowlTurnOf([[10], [3]]), 1);
+  assert.equal(bowlTurnOf([[10], [3, 4]]), 0);
+  assert.equal(bowlTurnOf([[10], null, [5, 5]]), 0); // a player who left is skipped
+  assert.equal(bowlTurnOf([Array(12).fill(10), Array(12).fill(10)]), -1);
+});
+
+test('bowling with others: the watcher rolls the same ball', async () => {
+  const { replay, rackFor, leftAfter } = await import('../src/game/bowling-lanes.js');
+  const m = { stance: 0.2, aim: -0.1, power: 0.6, spin: 0.5, seed: 777, rack: ALL };
+  const a = replay(m, rackFor(ALL)), b = replay(m, rackFor(ALL));
+  assert.deepEqual(a.down, b.down);
+  assert.deepEqual(a.frames.at(-1), b.frames.at(-1));
+  // What stands for the next ball: what the message says stands, where this ball left it.
+  const left = leftAfter(a, { rack: ALL, down: a.down });
+  assert.deepEqual(left.map((p) => p.i), ALL.filter((i) => !a.down.includes(i)));
+  assert.deepEqual(rackFor([3, 6], left).map((p) => p.i), [3, 6]);
+});
