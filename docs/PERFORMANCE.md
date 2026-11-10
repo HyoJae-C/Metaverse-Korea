@@ -5,11 +5,11 @@ These are the limits every change should stay inside, and how to stay there.
 
 ## Budgets
 
-| What | Budget | Now (2026-11-09) | Checked by |
+| What | Budget | Now (2026-11-10) | Checked by |
 |---|---|---|---|
-| Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 45 KB | `node scripts/check-size.mjs` in CI |
-| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,099 KB + one language (~15 KB) | same |
-| Any single script, gzipped | 1,000 KB | 788 KB (main.js) | same |
+| Start screen download, gzipped (`src/boot.js` + CSS) | 80 KB | 50 KB | `node scripts/check-size.mjs` in CI |
+| Game download before "Next" works, gzipped (`src/main.js` + static imports) | 1,150 KB | 1,145 KB (5 KB left) | same |
+| Any single script, gzipped | 1,000 KB | 586 KB (main.js) | same |
 | Draw calls on a street | 600 | ~520 (Seongsu) | `?debug`, then `__mk.renderInfo()` |
 | Draw calls inside a room or park | 300 | ~180 | same |
 | Triangles per frame on a street | 150k | ~87k | same |

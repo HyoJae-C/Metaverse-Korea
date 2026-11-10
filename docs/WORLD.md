@@ -1,8 +1,10 @@
-# World plan: a compressed Seoul
+# World plan: Seoul at 1/4
 
-The city is not a copy of the real map. Each area keeps only its landmarks and
-a few characteristic streets, squeezed close together so walking between them
-is quick. That way all of Seoul can fit, and Tokyo can follow the same way.
+The city is real Seoul shrunk to 1/4 (see "The Seoul grid" below): every area
+sits on its real spot, with its big roads, river banks and landmarks on their
+real lines. Inside the real blocks the side streets and buildings are made up,
+and an area keeps its landmarks and a few characteristic streets rather than
+every building. That way all of Seoul can fit, and Tokyo can follow the same way.
 
 ## Scope (first version)
 
