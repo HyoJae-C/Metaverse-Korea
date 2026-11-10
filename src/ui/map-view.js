@@ -148,6 +148,18 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
 // The colour of gu borders, on the map and on the street (game/gu-borders.js).
 export const GU_BORDER_COLOR = '#8e44d8';
 
+// A shape's box in metres [x0, z0, x1, z1], worked out once.
+const boxes = new WeakMap();
+function bboxOf(o) {
+  let b = boxes.get(o);
+  if (!b) {
+    b = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, z] of o.p) { if (x < b[0]) b[0] = x; if (z < b[1]) b[1] = z; if (x > b[2]) b[2] = x; if (z > b[3]) b[3] = z; }
+    boxes.set(o, b);
+  }
+  return b;
+}
+
 export class MapView {
   // onTaxi({ x, z, label, guide }): ride a taxi there (optional).
   // seoul: the gu overview (seoul.json), drawn under the streets; zoom out
@@ -210,6 +222,7 @@ export class MapView {
 
   hide() {
     this.open = false;
+    this.canvas.width = this.canvas.height = 1; // let go of the picture (~5 MB on a phone); show() sizes it again
     this._setSearching(false);
     this.root.hidden = true;
     this.setTaxi(false);
@@ -263,6 +276,26 @@ export class MapView {
   draw() {
     this._draw();
     this._drawCredit();
+    this.sig = this._sig();
+  }
+
+  // Each frame while open: the map is drawn again only when it changed.
+  // Dragging, zooming, searching and taps draw at once (draw()); here,
+  // a few times a second, only if you or another player moved. It used to
+  // draw the whole city every frame, which kept phones warm.
+  tick(dt) {
+    if (!this.open) return;
+    this.wait = (this.wait || 0) - dt;
+    if (this.wait > 0) return;
+    this.wait = 0.25;
+    if (this._sig() !== this.sig) this.draw();
+  }
+
+  _sig() {
+    const { me, others = [] } = this.getPlayers();
+    let s = `${Math.round(me.x * 2)},${Math.round(me.z * 2)},${Math.round(me.ry * 20)}`;
+    for (const o of others) s += `|${Math.round(o.x * 2)},${Math.round(o.z * 2)}`;
+    return s;
   }
 
   // The gu outlines come from OpenStreetMap, whose licence asks for this
@@ -300,20 +333,26 @@ export class MapView {
     const far = this.view.scale < SEOUL_ZOOM * dpr; // zoomed out: Seoul overview
     if (this.seoul) this._drawSeoul(g, poly, far, lang);
     this.root.querySelector('.map-seoul')?.classList.toggle('on', far);
+    // Only what is on screen (zoomed in, most of the city is not).
+    const [vx0, vz0] = this.toWorld(0, 0), [vx1, vz1] = this.toWorld(this.canvas.width, this.canvas.height);
+    const seen = (o, pad = 0) => { const b = bboxOf(o); return b[2] + pad >= vx0 && b[0] - pad <= vx1 && b[3] + pad >= vz0 && b[1] - pad <= vz1; };
     // Land not built yet (map.closed): grey like a gu "coming soon". One
     // path, so there are no seams between its rectangles.
     g.fillStyle = '#d9d4ca';
     g.beginPath();
-    for (const p of this.map.closed || []) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+    for (const p of this.map.closed || []) if (p[2][0] >= vx0 && p[0][0] <= vx1 && p[2][1] >= vz0 && p[0][1] <= vz1) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
     g.fill();
     const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
     const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
-    for (const a of [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
+    if (this.areasSorted?.length !== this.map.areas.length) this.areasSorted = [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1));
+    for (const a of this.areasSorted) {
+      if (!seen(a)) continue;
       g.fillStyle = AREA[a.k] || '#bfe3a8';
       poly(a.p); g.fill();
     }
     g.lineCap = g.lineJoin = 'round';
     for (const r of this.map.roads) {
+      if (!seen(r, r.w || 0)) continue;
       poly(r.p);
       g.strokeStyle = r.k === 'walk' ? '#e6dcc8' : '#ffffff';
       g.lineWidth = Math.max(1, r.w * this.view.scale);
@@ -322,10 +361,10 @@ export class MapView {
     g.fillStyle = '#e2d6c2';
     g.strokeStyle = '#d2c3aa';
     g.lineWidth = 1;
-    for (const b of this.map.buildings) { poly(b.p); g.closePath(); g.fill(); g.stroke(); }
+    for (const b of this.map.buildings) { if (!seen(b)) continue; poly(b.p); g.closePath(); g.fill(); g.stroke(); }
     g.strokeStyle = '#b8bcc4';
     g.lineWidth = Math.max(2, 7 * this.view.scale);
-    for (const r of this.map.rail) { poly(r.p); g.stroke(); }
+    for (const r of this.map.rail) { if (!seen(r, 7)) continue; poly(r.p); g.stroke(); }
     if (this.seoul?.borders) this._drawBorders(g, poly, far);
     if (far) { this._drawSeoulLabels(g, lang); this._drawMe(g); return; }
 

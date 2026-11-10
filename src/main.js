@@ -96,6 +96,7 @@ import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
+import { watchShowTimes } from './core/show-times-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -143,8 +144,8 @@ import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
-import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { droneShowAt, setDroneShowTimes, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
+import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -169,6 +170,7 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
+import { closetKind } from './core/closet.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -772,8 +774,10 @@ const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, 
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
+// 1.5 m cells: 1 m cells were 13 M cells (about 270 MB) for all of Seoul
+// and far routes ran out of search; 2 m cells closed Bukchon's alleys.
 let navGrid = null;
-const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1 }));
+const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1, cell: 1.5 }));
 function planRoute(ax, az, bx, bz) {
   const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
@@ -843,10 +847,9 @@ if (square) {
   const face = (x, z) => Math.atan2(square.x - x, square.z - z);
   const mascotGuide = (x, z, ry, name = t('quest.guide')) => {
     const npc = makeNpc($('labels'), '❗ ' + name);
-    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot
+    npc.ch.setMascot(makeMascotHead()); // a big plush animal head: easy to spot (it stands still: dancing kept phones busy, Yozi 2026-11-10)
     npc.tag.classList.add('square-guide');
     npc.labelY = 1.95; // above the costume head
-    npc.ch.activity('dance'); // dances while waiting: easy to spot
     npc.ch.root.position.set(x, 0, z);
     npc.ch.root.rotation.y = ry;
     scene.add(npc.ch.root);
@@ -1372,14 +1375,17 @@ const weather = new WeatherSystem({
 });
 
 // The operators' season and held weather (admin.html → Weather,
-// supabase/023_weather.sql), the same for everyone. A little after start,
-// so it never holds up joining the world.
-let weatherClient = null, stopWeather = null;
+// supabase/023_weather.sql) and the drone show and fireworks times
+// (admin.html → Shows, supabase/033_show_times.sql), the same for everyone. A little after
+// start, so it never holds up joining the world.
+let weatherClient = null, stopWeather = null, stopShowTimes = null;
 function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
+  stopShowTimes?.();
   weatherClient = cloud.client;
   stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
+  stopShowTimes = watchShowTimes(weatherClient, (raw) => { setDroneShowTimes(raw.drone); setFireworksTimes(raw.fireworks); });
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
@@ -2174,6 +2180,9 @@ function holdNew(h) {
 }
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+// Hold on to the collection's nodes now: the bag panel re-renders its children,
+// so they can't be looked up by id once another tab has been shown.
+itemEl('wallet-items-title'); itemEl('wallet-items');
 const bagUi = new BagUI({
   root: $('bag-panel'),
   bag,
@@ -2189,10 +2198,37 @@ const bagUi = new BagUI({
     itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
     return [itemEl('wallet-items-title'), itemEl('wallet-items')];
   },
-  closet: () => {
-    refreshItems();
-    return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
-  },
+  // The Wardrobe tab, a grid like the bag's: put clothes on or take them off
+  // (trousers can only be swapped for another pair).
+  closet: () => ({
+    ids: inventory.list().filter(isClothes),
+    describe: (id) => {
+      const it = ITEMS[id];
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price };
+    },
+    actions: (id, redraw) => {
+      const it = ITEMS[id];
+      const w = document.createElement('button');
+      if (it.wear) {
+        const on = isWorn(it, myLook);
+        w.className = 'chip' + (on ? ' on' : '');
+        w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(BAG_TEXT.wearing)) : '✨ ' + t('tee.wear');
+        w.disabled = on && !it.off;
+        w.onclick = () => { outfitAction(id); redraw(); };
+      } else { // a printed shirt
+        const wearing = myLook.tee === it.tee;
+        w.className = 'chip' + (wearing ? ' on' : '');
+        w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
+        w.onclick = () => {
+          myLook = { ...myLook, tee: wearing ? null : it.tee };
+          saveLook(myLook);
+          setLook(myLook);
+          redraw();
+        };
+      }
+      return [w];
+    },
+  }),
   rides: () => (garage.s.own.length > 1 ? { nodes: [bagRideList()], count: garage.s.own.length } : null),
 });
 // The bag's Rides tab: every ride you own (bike, board, skates, scooter), to
@@ -3834,6 +3870,7 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
+  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
@@ -3873,7 +3910,9 @@ const fishingUi = new FishingUI({
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
-    if (f.rarity >= TROPHY_RARITY) { // ★3–★5: a trophy over my head, for everyone nearby
+    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
+    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
+    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
@@ -5367,6 +5406,7 @@ function updateFireworks() {
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
   weather.nightMix = Math.max(night, droneNight(p, street));
+  weather.setShowClear(weather.nightMix > 0.05); // a clear sky in front of either show
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5374,7 +5414,7 @@ function updateFireworks() {
     if (t >= -FIREWORKS_DUSK && t < -FIREWORKS_DUSK + 60 && fireworks.dusk !== s.start) { fireworks.dusk = s.start; shop.toast(L(FIREWORKS_TEXT.dusk)); }
     if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
     if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
-    if (t >= 3420 && t < 3440 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
+    if (t >= FIREWORKS_FINALE && t < FIREWORKS_FINALE + 20 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
   }
   // The sparks: loaded when you're within about 900 m.
   const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;
@@ -5395,7 +5435,7 @@ function updateFireworks() {
     const now = performance.now();
     if (dist > 900 || now - fireworks.lastBoom < 140) continue;
     fireworks.lastBoom = now;
-    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'peony'), wait * 1000);
+    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'kamuro' || b.kind === 'peony'), wait * 1000);
   }
 }
 
@@ -5726,16 +5766,14 @@ refreshCloud();
 initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
-const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', fr: 'Porté', th: 'กำลังใส่', id: 'Dipakai' };
-// Clothes live in the bag's Wardrobe tab; everything else (pets, ...) in the
-// bag's collection.
+// Clothes live in the bag's Wardrobe tab (a grid, see BagUI's closet); everything
+// else (pets, ...) in the bag's collection.
 const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
   const own = list.filter((id) => !isClothes(id));
   itemEl('wallet-items-title').hidden = !own.length;
   itemEl('wallet-items').replaceChildren(...own.map(itemRow));
-  itemEl('wardrobe-items').replaceChildren(...list.filter(isClothes).map(itemRow));
 }
 function itemRow(id) {
   {
@@ -5784,28 +5822,6 @@ function itemRow(id) {
       btns.className = 'item-btns';
       btns.append(w, nb);
       row.append(btns);
-    }
-    if (it.wear) { // put it on, or take it off (trousers can only be swapped)
-      const on = isWorn(it, myLook);
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (on ? ' on' : '');
-      w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear');
-      w.disabled = on && !it.off;
-      w.onclick = () => { outfitAction(id); refreshItems(); };
-      row.append(w);
-    }
-    if (it.tee) { // put the printed shirt on, or take it off
-      const wearing = myLook.tee === it.tee;
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (wearing ? ' on' : '');
-      w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
-      w.onclick = () => {
-        myLook = { ...myLook, tee: wearing ? null : it.tee };
-        saveLook(myLook);
-        setLook(myLook);
-        refreshItems();
-      };
-      row.append(w);
     }
     return row;
   }
@@ -6604,6 +6620,7 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+let mapPause = 0; // (seconds since other players last moved while the map is open)
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
@@ -6832,7 +6849,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
-  if (mapView.open) mapView.draw();
+  mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
   guBorders?.update(dt);
 
@@ -6917,11 +6934,16 @@ renderer.setAnimationLoop((now) => {
 
   const w = innerWidth, h = innerHeight;
   others.fences = petFences();
-  others.update(dt, streetCam(), w, h);
+  // While the full map is open nothing behind it is seen: other players
+  // only catch up four times a second (their dots on the map still move),
+  // and the street's NPCs wait. Closing the map, everyone is where they are.
+  mapPause += dt;
+  const mapUp = mapView.open;
+  if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
-  if (openParkHere()) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
+  if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -6956,6 +6978,9 @@ renderer.setAnimationLoop((now) => {
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
   updateScents(dt);
 
+  // The full map covers the screen, so there is nothing to see behind it:
+  // the game keeps going but the 3D view is not drawn (Yozi, to keep phones cool).
+  if (mapView.open) { updateDelivery(); return; }
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
   // Skip people too far away to see (core/far-people.js): after drawing, so
   // everyone's matrixWorld is this frame's; never your own character.
@@ -7163,6 +7188,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
+    giveItem: (id) => inventory.add(id),
     petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),

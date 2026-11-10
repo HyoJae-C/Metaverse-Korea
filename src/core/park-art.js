@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { matCache } from './three-kit.js';
+import { bakeColors } from './merge-static.js';
 
 const mat = matCache();
 
@@ -682,4 +683,9 @@ function deerpen(g, l) {
   };
   return (t) => ref.tick?.(t);
 }
-export const PARK_BUILD = { icecream, bench, parkplaza, rosegarden, hill, greenhouse, pond, flowergarden, meadow, deerpen };
+// The still ones are baked into one mesh each (core/merge-static.js): a bench
+// was 11 draw calls, Seoul Forest's ~40 benches, beds and lawns ~600 from
+// the station. Ice cream (its model arrives later) and the ones that move
+// (greenhouse, pond, deer) stay as they are.
+const baked = (f) => (g, l) => { const t = f(g, l); bakeColors(g); return t; };
+export const PARK_BUILD = { icecream, bench: baked(bench), parkplaza: baked(parkplaza), rosegarden: baked(rosegarden), hill: baked(hill), greenhouse, pond, flowergarden: baked(flowergarden), meadow: baked(meadow), deerpen };

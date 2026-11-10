@@ -162,7 +162,7 @@ function ruminant(c, sheep) {
 }
 
 // Pig-tailed macaque: chibi, with a big head. Olive-brown fur, a dark flat
-// cap on the crown, a short pale pink muzzle set high, amber eyes under a brow, and the
+// cap on the crown, a short pale pink muzzle set high, white eyes with dark pupils under a brow, and the
 // short tail held up in a curl like a pig's. Arms are their own groups
 // (shoulder pivots) so the zoo can wave, scratch and grab with them.
 function macaque(c) {
@@ -179,7 +179,7 @@ function macaque(c) {
   part(head, sphere(0.1, 10, 8), '#e0ae98', 0, -0.07, 0.24, 1.05, 0.8, 0.8); // the muzzle, short and high
   for (const s of [-1, 1]) {
     part(head, sphere(0.022, 6, 6), '#3a2420', 0.03 * s, -0.04, 0.315); // nostrils
-    part(head, sphere(0.032, 8, 6), '#c98a2a', 0.075 * s, 0.04, 0.26).userData.eye = true; // amber eyes
+    part(head, sphere(0.032, 8, 6), '#f4f2ec', 0.075 * s, 0.04, 0.26).userData.eye = true; // eye whites (not yellow: that read as jaundice)
     part(head, sphere(0.018, 6, 6), '#1e1a1c', 0.075 * s, 0.04, 0.285).userData.eye = true; // pupils
     part(head, sphere(0.06, 8, 6), '#c8907a', 0.26 * s, 0.0, -0.01, 0.5, 1, 0.9); // ears
   }

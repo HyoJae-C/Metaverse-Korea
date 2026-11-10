@@ -298,10 +298,11 @@ for (const r of fronts) {
 
 // ---------- Shops moved up from Itaewon-ro and the food street ----------
 // Gyeongnidan-gil is small restaurants, cafés and bars, so a few of
-// Itaewon's own move up here (no new ones): the American diner near the
-// foot, the Italian kitchen and the old-style café on the way up, and the
-// taproom at the top.
-const SHOPS = [['sunny-side-diner', 18, 1], ['nonna-lucia', 52, -1], ['dalgona-dabang', 82, 1], ['hilltop-taproom', 135, -1]];
+// Itaewon's own move up here (no new ones): the old-style café on the way
+// up and the taproom at the top. (The American diner and the Italian
+// kitchen were here too; they moved to Euljiro and Sinchon so each gu's
+// share of restaurants is closer to the real one, Yozi 2026-11.)
+const SHOPS = [['dalgona-dabang', 82, 1], ['hilltop-taproom', 135, -1]];
 const storesFile = path.join(R, 'stores.json');
 let storesText = readFileSync(storesFile, 'utf8');
 const taken = new Set();

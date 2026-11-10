@@ -320,7 +320,7 @@ function codeMemo() {
 }
 
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes', 'exhibits'];
+const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'shows', 'retention', 'codes', 'exhibits'];
 let tab = null, panels = null, chatPanel = null, exhibitPanel = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';

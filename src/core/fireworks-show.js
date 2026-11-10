@@ -12,19 +12,42 @@
 // show and the weather): the program is worked out from the show's start
 // time, so friends on the lawn watch the same fireworks together.
 
-import { smooth, dailyStarts } from './show-clock.js';
+import { smooth, dailyStarts, checkTimes } from './show-clock.js';
 
 // Show start times on Korean time (KST, UTC+9): twice a day. 21:00 is the
 // evening in Korea, Japan and South-East Asia; 09:00 is the evening in the
-// Americas. Kept 3 hours from the Ttukseom drone show (6, 18 KST).
+// Americas. Kept 3 hours from the Ttukseom drone show (6, 18 KST). This is
+// only the default: operators set the times from the operator page
+// (admin.html → Shows, supabase/033_show_times.sql), and every game follows
+// them (show-times-watch.js → setFireworksTimes).
 export const FIREWORKS_HOURS_KST = [9, 21];
-export const SHOW_SECONDS = 60 * 60; // an hour of fireworks (t = 0 … 3600)
+export const SHOW_SECONDS = 20 * 60; // 20 minutes of fireworks (t = 0 … 1200)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
 export const DAWN_SECONDS = 180; // after the end: it brightens again
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
 export const RISE = 1.2; // seconds a shell takes to climb before it bursts
 
 const DAY = 24 * 3600e3;
+
+// Operator-set times: 1 to 4 shows a day, at least an hour apart (the
+// 20 minutes of fireworks plus its notice and dawn take 33). FIREWORKS_SPAN: the minutes
+// around a start the show takes, notice to dawn (kept clear of the drones).
+export const MAX_SHOWS = 4;
+export const MIN_GAP_MINUTES = 60;
+export const FIREWORKS_SPAN = [-ALERT_SECONDS / 60, (SHOW_SECONDS + DAWN_SECONDS) / 60];
+export const checkFireworksTimes = (list) => checkTimes(list, { max: MAX_SHOWS, gap: MIN_GAP_MINUTES });
+
+// The times every game uses now (hours, may be fractional).
+let showHours = FIREWORKS_HOURS_KST;
+export const fireworksHours = () => showHours;
+
+// Takes the operators' list (minutes after midnight KST), or null for the
+// default. A bad list is ignored and the default stays.
+export function setFireworksTimes(list) {
+  const r = Array.isArray(list) ? checkFireworksTimes(list) : null;
+  showHours = r?.minutes ? r.minutes.map((m) => m / 60) : FIREWORKS_HOURS_KST;
+  return showHours;
+}
 
 // How dark Yeouido's sky is t seconds into a show: 0 = day, 1 = night.
 export function nightAt(t) {
@@ -37,7 +60,7 @@ export function nightAt(t) {
 // The show around `now`, from 10 minutes before the start until the sky is
 // day again: { start (ms), t (seconds from the start, negative before),
 // night (0–1), on (bursts can happen: 0 … SHOW_SECONDS) }. null otherwise.
-export function fireworksAt(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
+export function fireworksAt(now = Date.now(), hours = showHours) {
   for (const start of dailyStarts(now, hours)) {
     const t = (now - start) / 1000;
     if (t >= -ALERT_SECONDS && t < SHOW_SECONDS + DAWN_SECONDS) return { start, t, night: nightAt(t), on: t >= 0 && t < SHOW_SECONDS };
@@ -46,7 +69,7 @@ export function fireworksAt(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
 }
 
 // The next show's start (ms) after now.
-export function nextFireworks(now = Date.now(), hours = FIREWORKS_HOURS_KST) {
+export function nextFireworks(now = Date.now(), hours = showHours) {
   return dailyStarts(now, hours).find((s) => s > now) ?? dailyStarts(now + DAY, hours)[0];
 }
 
@@ -75,25 +98,32 @@ export function nearYeouido(x, z) {
 }
 
 // ---- The program ----
-// Acts and rests: no wait longer than about two minutes for anyone who
-// arrives mid-show, a gold "photo time", and a finale that fills the sky.
-export const PHOTO_TIME = [2520, 2700];
+// 20 minutes with no quiet stretch: something bursts every second or so,
+// the shapes change every few minutes, a gold "photo time", and a finale
+// that fills the sky. (Yozi: shorter, busier, more kinds.) volley:
+// [chance, fewest, most]: now and then several shells of one kind burst at
+// the same moment in a line along the river, for a big "bang" (Yozi: too
+// many came one by one).
+export const PHOTO_TIME = [780, 900];
+export const FINALE_TIME = 1110;
 export const ACTS = [
-  { from: 0, to: 720, gap: [2.2, 3.2], kinds: ['peony', 'peony', 'ring'], mono: true, name: 'act 1: big single-colour flowers, slowly' },
-  { from: 720, to: 840, gap: [6, 9], kinds: ['small'], name: 'rest' },
-  { from: 840, to: 1620, gap: [1.6, 2.4], kinds: ['heart', 'star', 'ring', 'smile', 'peony'], name: 'act 2: shapes in many colours' },
-  { from: 1620, to: 1740, gap: [6, 9], kinds: ['small'], name: 'rest' },
-  { from: 1740, to: 2520, gap: [0.6, 1.1], kinds: ['peony', 'ring', 'small', 'peony', 'willow'], name: 'act 3: quick, from every barge' },
-  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [2.4, 3.4], kinds: ['willow'], name: 'photo time: slow gold willows' },
-  { from: 2700, to: 3420, gap: [1.4, 0.45], kinds: ['peony', 'ring', 'heart', 'willow', 'star', 'small'], ramp: true, name: 'build-up: faster and faster' },
-  { from: 3420, to: SHOW_SECONDS, gap: [0.12, 0.24], kinds: ['peony', 'willow', 'ring', 'peony'], big: true, name: 'finale' },
+  { from: 0, to: 150, gap: [0.9, 1.4], kinds: ['peony', 'ring', 'saturn', 'peony'], mono: true, volley: [0.3, 3, 3], name: 'opening: big single-colour flowers' },
+  { from: 150, to: 330, gap: [0.7, 1.1], kinds: ['pistil', 'dahlia', 'kamuro', 'flower', 'butterfly', 'double'], volley: [0.2, 3, 3], name: 'act 1: shapes' },
+  { from: 330, to: 360, gap: [0.25, 0.45], kinds: ['small', 'small', 'ring'], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
+  { from: 360, to: 540, gap: [0.5, 0.9], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn'], volley: [0.3, 3, 5], name: 'act 2: colours and spirals' },
+  { from: 540, to: 600, gap: [0.9, 1.4], kinds: ['small', 'ring', 'double', 'peony', 'rainbow'], volley: [1, 5, 7], name: 'salvo: every barge at once' },
+  { from: 600, to: PHOTO_TIME[0], gap: [0.5, 0.8], kinds: ['pistil', 'flower', 'butterfly', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro'], volley: [0.3, 3, 5], name: 'act 3: everything' },
+  { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [0.9, 1.3], kinds: ['willow'], volley: [0.35, 3, 5], name: 'photo time: gold willows' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [0.8, 0.2], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, volley: [0.3, 3, 5], name: 'build-up: faster and faster' },
+  { from: FINALE_TIME, to: SHOW_SECONDS, gap: [0.25, 0.4], kinds: ['peony', 'willow', 'ring', 'rainbow', 'peony', 'palm'], big: true, volley: [0.6, 5, 9], name: 'finale' },
 ];
-export const KINDS = ['peony', 'ring', 'heart', 'star', 'smile', 'willow', 'small'];
+// (No hearts, stars or smiles: those are the drone show's. Yozi.)
+export const KINDS = ['peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
 export const GOLD = '#ffc861';
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
-export const LIFE = { peony: 2.6, ring: 2.4, heart: 2.8, star: 2.6, smile: 2.8, willow: 4.6, small: 1.5 };
-export const RADIUS = { peony: 28, ring: 26, heart: 24, star: 26, smile: 24, willow: 30, small: 11 };
+export const LIFE = { peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, saturn: 2.8, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
+export const RADIUS = { peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, saturn: 26, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
 
 function rng(seed) {
   let a = seed >>> 0;
@@ -121,15 +151,31 @@ export function program(start) {
       const k = act.ramp ? (t - act.from) / (act.to - act.from) : r();
       const kind = act.kinds[Math.floor(r() * act.kinds.length)];
       if (act.mono && (!mono || r() < 0.08)) mono = COLORS[Math.floor(r() * COLORS.length)];
-      const color = kind === 'willow' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-      const color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
-      out.push({
-        t: Math.round(t * 100) / 100, barge: Math.floor(r() * BARGES.length), du: (r() - 0.5) * 50,
-        h: kind === 'small' ? 28 + r() * 12 : 40 + r() * 22, kind, color, color2,
-        scale: (act.big ? 1.15 : 1) * (0.85 + r() * 0.3), seed: Math.floor(r() * 1e9),
-      });
+      const color = kind === 'willow' || kind === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
+      let color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
+      if (kind === 'pistil' && color2 === color) color2 = COLORS[(COLORS.indexOf(color) + 3) % COLORS.length] || '#ffffff'; // its heart is another colour
+      const scale = (act.big ? 1.15 : 1) * (0.85 + r() * 0.3);
+      const [vc, v0, v1] = act.volley || [0, 1, 1];
+      const n = r() < vc ? v0 + Math.floor(r() * (v1 - v0 + 1)) : 1;
+      if (n > 1) {
+        // A volley: n shells at once, evenly along all three barges, in a
+        // flat line, a V or an arch, in one colour or two taking turns.
+        const span = BARGES.at(-1)[0] - BARGES[0][0] + 50, shape = Math.floor(r() * 3), base = kind === 'small' ? 30 : 42;
+        const tt = Math.round(t * 100) / 100;
+        for (let i = 0; i < n; i++) {
+          const u = BARGES[0][0] - 25 + (span * i) / (n - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
+          const m = Math.abs(i / (n - 1) - 0.5) * 2; // 0 in the middle, 1 at the ends
+          const h = base + [6, 4 + 16 * m, 20 - 16 * m][shape];
+          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'willow' && kind !== 'kamuro' && kind !== 'pistil' && color2 !== color ? color2 : color, color2: kind === 'pistil' ? color2 : color, scale, seed: Math.floor(r() * 1e9) });
+        }
+      } else {
+        out.push({
+          t: Math.round(t * 100) / 100, barge: Math.floor(r() * BARGES.length), du: (r() - 0.5) * 50,
+          h: kind === 'small' ? 28 + r() * 12 : 40 + r() * 22, kind, color, color2, scale, seed: Math.floor(r() * 1e9),
+        });
+      }
       const [g0, g1] = act.gap;
-      t += act.ramp ? g0 + (g1 - g0) * k : g0 + (g1 - g0) * r();
+      t += (act.ramp ? g0 + (g1 - g0) * k : g0 + (g1 - g0) * r()) * (n > 1 ? 1.6 : 1); // a breath after a volley
     }
   }
   if (cache.size > 4) cache.clear();

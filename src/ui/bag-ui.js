@@ -2,6 +2,7 @@
 // what it is with "Hold" (take it into your hand) and "Throw away".
 
 import { L, fmt } from './pocha-ui.js';
+import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 
 export const BAG_TEXT = {
   title: { en: 'Bag', ko: '가방', ja: 'バッグ', zh: '背包' },
@@ -19,6 +20,24 @@ export const BAG_TEXT = {
   fullSwap: { en: 'Your bag is full ({cap} slots), so {name} in your hand will be thrown away. Take this one anyway?', ko: '가방이 가득 차서 ({cap}칸) 손에 든 {name}은(는) 버려져요. 그래도 바꿀까요?', ja: 'バッグがいっぱい（{cap}枠）なので、手に持っている{name}は捨てられます。それでも交換しますか？', zh: '背包满了（{cap}格），手上的{name}会被丢掉。还要换吗？', es: 'Tu bolsa está llena ({cap} huecos), así que {name} que llevas en la mano se tirará. ¿Lo cambias igualmente?', ar: 'حقيبتك ممتلئة ({cap} خانة)، لذا سيُرمى {name} الذي في يدك. هل تبدّله على أي حال؟', vi: 'Túi đã đầy ({cap} ô) nên {name} trên tay sẽ bị bỏ đi. Vẫn đổi chứ?', hi: 'आपका बैग भरा है ({cap} खाने), इसलिए हाथ में रखा {name} फेंक दिया जाएगा। फिर भी बदलें?', fr: 'Ton sac est plein ({cap} places), donc {name} dans ta main sera jeté. Prendre celui-ci quand même ?', th: 'กระเป๋าเต็มแล้ว ({cap} ช่อง) {name} ที่ถืออยู่จะถูกทิ้ง รับอันนี้อยู่ดีไหม?', id: 'Tasmu penuh ({cap} slot), jadi {name} di tanganmu akan dibuang. Tetap tukar?' },
   autoStow: { en: '🎒 {name} went into your bag ({n}/{cap}).', ko: '🎒 들고 있던 {name}은(는) 가방에 넣었어요 ({n}/{cap}).', ja: '🎒 持っていた{name}はバッグにしまいました（{n}/{cap}）。', zh: '🎒 手上的{name}已放进背包（{n}/{cap}）。', es: '🎒 {name} fue a tu bolsa ({n}/{cap}).', ar: '🎒 وُضع {name} في حقيبتك ({n}/{cap}).', vi: '🎒 Đã cất {name} vào túi ({n}/{cap}).', hi: '🎒 {name} आपके बैग में रख दिया ({n}/{cap})।', fr: '🎒 {name} est dans ton sac ({n}/{cap}).', th: '🎒 ใส่ {name} ในกระเป๋าแล้ว ({n}/{cap})', id: '🎒 {name} dimasukkan ke tasmu ({n}/{cap}).' },
   tabBag: { en: 'Bag', ko: '가방', ja: 'バッグ', zh: '背包', es: 'Bolsa', ar: 'الحقيبة', vi: 'Túi', hi: 'बैग', fr: 'Sac', th: 'กระเป๋า', id: 'Tas' },
+  tabItems: { en: 'Items', ko: '소지품', ja: '持ち物', zh: '随身物品', es: 'Objetos', ar: 'الأغراض', vi: 'Đồ dùng', hi: 'सामान', fr: 'Affaires', th: 'ของใช้', id: 'Barang' },
+  closetPick: { en: 'Tap clothes to put them on or take them off.', ko: '옷을 누르면 입거나 벗을 수 있어요.', ja: '服を押すと着たり脱いだりできます。', zh: '点衣服可以穿上或脱下。', es: 'Toca una prenda para ponértela o quitártela.', ar: 'اضغط على قطعة لترتديها أو تخلعها.', vi: 'Chạm vào quần áo để mặc hoặc cởi.', hi: 'पहनने या उतारने के लिए कपड़े पर टैप करें।', fr: 'Touche un vêtement pour le mettre ou l\'enlever.', th: 'แตะเสื้อผ้าเพื่อใส่หรือถอด', id: 'Ketuk pakaian untuk memakai atau melepasnya.' },
+  wearing: { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', fr: 'Porté', th: 'กำลังใส่', id: 'Dipakai' },
+  kindAll: { en: 'All', ko: '전체', ja: 'すべて', zh: '全部', es: 'Todo', ar: 'الكل', vi: 'Tất cả', hi: 'सभी', fr: 'Tout', th: 'ทั้งหมด', id: 'Semua' },
+  kind: {
+    top: { en: 'Tops', ko: '상의', ja: 'トップス', zh: '上衣', es: 'Partes de arriba', ar: 'قطع علوية', vi: 'Áo', hi: 'ऊपर के कपड़े', fr: 'Hauts', th: 'เสื้อ', id: 'Atasan' },
+    bottom: { en: 'Bottoms', ko: '하의', ja: 'ボトムス', zh: '下装', es: 'Partes de abajo', ar: 'قطع سفلية', vi: 'Quần · váy', hi: 'नीचे के कपड़े', fr: 'Bas', th: 'กางเกง · กระโปรง', id: 'Bawahan' },
+    dress: { en: 'Dresses', ko: '원피스', ja: 'ワンピース', zh: '连衣裙', es: 'Vestidos', ar: 'فساتين', vi: 'Đầm', hi: 'ड्रेस', fr: 'Robes', th: 'เดรส', id: 'Gaun' },
+    shoes: { en: 'Shoes', ko: '신발', ja: '靴', zh: '鞋', es: 'Zapatos', ar: 'أحذية', vi: 'Giày', hi: 'जूते', fr: 'Chaussures', th: 'รองเท้า', id: 'Sepatu' },
+    hat: { en: 'Hats', ko: '모자', ja: '帽子', zh: '帽子', es: 'Gorros', ar: 'قبعات', vi: 'Mũ', hi: 'टोपी', fr: 'Chapeaux', th: 'หมวก', id: 'Topi' },
+    acc: { en: 'Accessories', ko: '액세서리', ja: 'アクセサリー', zh: '配饰', es: 'Accesorios', ar: 'إكسسوارات', vi: 'Phụ kiện', hi: 'एक्सेसरी', fr: 'Accessoires', th: 'เครื่องประดับ', id: 'Aksesori' },
+    bag: { en: 'Bags', ko: '가방', ja: 'バッグ', zh: '包', es: 'Bolsos', ar: 'حقائب', vi: 'Túi', hi: 'बैग', fr: 'Sacs', th: 'กระเป๋า', id: 'Tas' },
+  },
+  sort: {
+    new: { en: 'Newest', ko: '최근 산 순', ja: '新しい順', zh: '最新购买', es: 'Más recientes', ar: 'الأحدث', vi: 'Mới mua', hi: 'नए पहले', fr: 'Plus récents', th: 'ซื้อล่าสุด', id: 'Terbaru' },
+    name: { en: 'Name', ko: '이름 순', ja: '名前順', zh: '按名称', es: 'Nombre', ar: 'الاسم', vi: 'Tên', hi: 'नाम', fr: 'Nom', th: 'ชื่อ', id: 'Nama' },
+    price: { en: 'Price', ko: '비싼 순', ja: '高い順', zh: '价格从高到低', es: 'Precio', ar: 'السعر', vi: 'Giá cao', hi: 'कीमत', fr: 'Prix', th: 'ราคาสูง', id: 'Harga' },
+  },
   tabCloset: { en: 'Wardrobe', ko: '옷장', ja: 'クローゼット', zh: '衣橱', es: 'Armario', ar: 'خزانة الملابس', vi: 'Tủ đồ', hi: 'अलमारी', fr: 'Garde-robe', th: 'ตู้เสื้อผ้า', id: 'Lemari' },
   closetEmpty: { en: 'No clothes yet. Buy some in a fashion shop and they will hang here.', ko: '아직 옷이 없어요. 옷 가게에서 사면 여기에 걸려요.', ja: 'まだ服がありません。服屋で買うとここに掛かります。', zh: '还没有衣服。在服装店买了就会挂在这里。', es: 'Aún no tienes ropa. Cómprala en una tienda de moda y aparecerá aquí.', ar: 'لا ملابس بعد. اشترِ من متجر أزياء وستظهر هنا.', vi: 'Chưa có quần áo. Mua ở cửa hàng thời trang thì sẽ treo ở đây.', hi: 'अभी कोई कपड़े नहीं। फ़ैशन दुकान से खरीदें, वे यहाँ टंगेंगे।', fr: 'Pas encore de vêtements. Achètes-en dans une boutique de mode et ils seront suspendus ici.', th: 'ยังไม่มีเสื้อผ้า ซื้อที่ร้านแฟชั่นแล้วจะแขวนไว้ที่นี่', id: 'Belum ada pakaian. Beli di toko fesyen dan akan tergantung di sini.' },
   closetNote: { en: 'Clothes don\'t use bag slots.', ko: '옷은 가방 칸을 차지하지 않아요.', ja: '服はバッグの枠を使いません。', zh: '衣服不占背包格子。', es: 'La ropa no ocupa huecos de la bolsa.', ar: 'الملابس لا تشغل خانات الحقيبة.', vi: 'Quần áo không chiếm ô trong túi.', hi: 'कपड़े बैग के खाने नहीं लेते।', fr: 'Les vêtements n\'occupent pas de place dans le sac.', th: 'เสื้อผ้าไม่กินช่องกระเป๋า', id: 'Pakaian tidak memakai slot tas.' },
@@ -30,17 +49,23 @@ export const BAG_TEXT = {
 export class BagUI {
   // describe(entry) → { emoji, name, desc, canHold }
   // extra() → nodes shown under the bag slots (the collection);
-  // closet() → { nodes, count } for the Wardrobe tab (clothes you own);
+  // closet() → { ids (in the order bought), describe(id) → { emoji, name,
+  // desc, worn, kind, price },
+  // actions(id, redraw) → buttons } for the Wardrobe tab (clothes you own),
+  // shown as a grid like the bag's slots;
   // rides() → { nodes, count } for the Rides tab (bikes, boards, scooters you
   // own), or null to leave the tab out (only the basic bike).
   constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides }) {
     Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides });
     this.sel = -1;
     this.tab = 'bag';
+    this.closetSel = null;
+    this.closetKind = 'all';
+    this.closetSort = 'new';
     bag.onChange(() => { if (!root.hidden) this.render(); });
   }
 
-  show(tab = 'bag') { this.sel = -1; this.tab = tab; this.root.hidden = false; this.render(); }
+  show(tab = 'bag') { this.sel = -1; this.closetSel = null; this.tab = tab; this.root.hidden = false; this.render(); }
   hide() { this.root.hidden = true; }
   get open() { return !this.root.hidden; }
 
@@ -52,25 +77,24 @@ export class BagUI {
     x.onclick = () => this.hide();
     const head = el('div', 'bag-head');
     head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), { n: bag.size, cap: bag.cap })));
-    // Tabs: the bag's slots, the wardrobe (clothes you own) and the rides
+    // Tabs: your things (the bag's slots), the wardrobe (clothes you own) and the rides
     // you own (to switch without going back to a ride shop).
     const closet = this.closet ? this.closet() : null;
     const rides = this.rides ? this.rides() : null;
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabBag)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + (closet?.count ? ` ${closet.count}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + (closet?.ids.length ? ` ${closet.ids.length}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
       b.setAttribute('role', 'tab');
       b.setAttribute('aria-selected', String(this.tab === key));
-      b.onclick = () => { if (this.tab !== key) { this.tab = key; this.sel = -1; this.render(); } };
+      b.onclick = () => { if (this.tab !== key) { this.tab = key; this.sel = -1; this.closetSel = null; this.render(); } };
       tabs.append(b);
     }
     if (this.tab === 'closet' && closet) {
-      const body = closet.count ? closet.nodes : [el('p', 'fine bag-closet-empty', L(BAG_TEXT.closetEmpty))];
-      root.replaceChildren(x, head, tabs, ...body, el('p', 'fine bag-more', L(BAG_TEXT.closetNote)));
+      root.replaceChildren(x, head, tabs, ...this.closetBody(closet, el), el('p', 'fine bag-more', L(BAG_TEXT.closetNote)));
       return;
     }
     if (this.tab === 'rides' && rides) {
@@ -113,5 +137,59 @@ export class BagUI {
     } else info.append(el('small', 'fine', L(items.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
     const more = this.extra ? this.extra() : []; // before replaceChildren detaches them
     root.replaceChildren(x, head, tabs, grid, info, el('p', 'fine bag-more', L(BAG_TEXT.more)), ...more);
+  }
+
+  // The wardrobe as a grid like the bag: chips to show one kind (tops,
+  // bottoms, hats, ...; only kinds you own), a sort chip, then one cell per
+  // piece (worn ones ticked) padded to a full row; the picked one shows what
+  // it is with Wear / Take off.
+  closetBody(closet, el) {
+    const all = closet.ids;
+    if (!all.length) return [el('p', 'fine bag-closet-empty', L(BAG_TEXT.closetEmpty))];
+    const info = new Map(all.map((id) => [id, closet.describe(id)]));
+    const kinds = CLOSET_KINDS.filter((k) => all.some((id) => info.get(id).kind === k));
+    if (!kinds.includes(this.closetKind)) this.closetKind = 'all';
+    const bar = el('div', 'closet-bar');
+    const chip = (label, on, onclick) => {
+      const b = el('button', 'chip' + (on ? ' on' : ''), label);
+      b.setAttribute('aria-pressed', String(on));
+      b.onclick = onclick;
+      return b;
+    };
+    const filters = el('div', 'closet-kinds');
+    for (const k of ['all', ...kinds]) {
+      const n = k === 'all' ? all.length : all.filter((id) => info.get(id).kind === k).length;
+      filters.append(chip(`${L(k === 'all' ? BAG_TEXT.kindAll : BAG_TEXT.kind[k])} ${n}`, this.closetKind === k, () => { this.closetKind = k; this.render(); }));
+    }
+    const next = CLOSET_SORTS[(CLOSET_SORTS.indexOf(this.closetSort) + 1) % CLOSET_SORTS.length];
+    const sortBtn = chip('↕ ' + L(BAG_TEXT.sort[this.closetSort]), false, () => { this.closetSort = next; this.render(); });
+    sortBtn.className = 'chip closet-sort';
+    bar.append(filters, sortBtn);
+    const shown = sortCloset(all.filter((id) => this.closetKind === 'all' || info.get(id).kind === this.closetKind), this.closetSort,
+      { nameOf: (id) => info.get(id).name, priceOf: (id) => info.get(id).price });
+    if (!shown.includes(this.closetSel)) this.closetSel = null;
+    const grid = el('div', 'bag-grid bag-closet-grid');
+    const cells = Math.max(5, Math.ceil(shown.length / 5) * 5);
+    for (let i = 0; i < cells; i++) {
+      const id = shown[i];
+      const b = el('button', 'bag-slot' + (id ? '' : ' empty') + (id && id === this.closetSel ? ' on' : ''));
+      if (id) {
+        const d = info.get(id);
+        b.textContent = d.emoji;
+        b.title = d.name;
+        b.setAttribute('aria-label', d.name);
+        if (d.worn) { b.classList.add('worn'); b.append(el('small', '', '✓')); }
+        b.onclick = () => { this.closetSel = id === this.closetSel ? null : id; this.render(); };
+      } else b.disabled = true;
+      grid.append(b);
+    }
+    const box = el('div', 'bag-info');
+    if (this.closetSel) {
+      const d = info.get(this.closetSel);
+      const row = el('div', 'bag-actions');
+      row.append(...closet.actions(this.closetSel, () => this.render()));
+      box.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc), row);
+    } else box.append(el('small', 'fine', L(BAG_TEXT.closetPick)));
+    return [bar, grid, box];
   }
 }

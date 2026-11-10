@@ -80,3 +80,30 @@ test('the drone show stamp: on the Ttukseom park lawn, only while the drones are
   assert.equal(STAND_TIMES.droneShow(KST(17, 30)), false);
   assert.equal(STAND_TIMES.droneShow(KST(17, 58)), true); // lift-off counts
 });
+
+test('operators can set the show times; bad lists keep the default', () => {
+  assert.deepEqual(show.checkShowTimes([1080, 360]), { minutes: [360, 1080] });
+  assert.equal(show.checkShowTimes([]).error, 'empty');
+  assert.equal(show.checkShowTimes([1, 100, 200, 300, 400]).error, 'many');
+  assert.equal(show.checkShowTimes([1440]).error, 'bad');
+  assert.equal(show.checkShowTimes([600, 640]).error, 'close');
+  assert.equal(show.checkShowTimes([20, 1420]).error, 'close', 'across midnight too');
+  try {
+    show.setDroneShowTimes([1170]); // 19:30
+    assert.equal(droneShowAt(KST(18, 5)), null, 'no 18:00 show any more');
+    assert.equal(droneShowAt(KST(19, 35)).start, KST(19, 30));
+    assert.equal(nextDroneShow(KST(19, 40)), KST(19, 30, 10));
+    assert.equal(STAND_TIMES.droneShow(KST(19, 35)), true);
+    show.setDroneShowTimes([10, 20]); // too close: ignored
+    assert.deepEqual(show.droneShowHours(), DRONE_SHOW_HOURS_KST);
+  } finally {
+    show.setDroneShowTimes(null);
+  }
+  assert.equal(droneShowAt(KST(18, 5)).start, KST(18));
+});
+
+test('every show of the day gets its own number, even at uneven times', () => {
+  const hours = [6, 6.5 + 1, 18];
+  const n = [KST(6), KST(7, 30), KST(18), KST(6, 0, 10)].map((s) => show.showNumber(s, hours));
+  assert.deepEqual(n.slice(1).map((x, i) => x - n[i]), [1, 1, 1]);
+});
