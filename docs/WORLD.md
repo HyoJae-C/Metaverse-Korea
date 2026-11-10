@@ -328,6 +328,28 @@ Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
   roads) would be under the hill: `tests/gyeongnidan.test.mjs` checks the
   Itaewon-ro link stays clear of it.
 
+## Namsan and its cable car (Yongsan-gu / Jung-gu)
+
+`scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap
+(`scripts/data/namsan-osm.json`) and writes it into `districts/itaewon.json`
+(items marked `ns`), the cable car's door in `stores.json` and the Sopa-ro
+link in `region.json`.
+
+- **The hill**: its top, with the look-out tower, on N Seoul Tower's real
+  spot, 65 m high (262 m / 4). Its foot (380 × 340 m) fits between Sopa-ro
+  and Sowol-ro on the west, Namsangol Hanok Village on the north and
+  Itaewon on the south; real Namsan runs on further east to Beotigogae.
+  The summit is near the real hill's west end, so the hill leans west
+  (`src/core/namsan-shape.js`).
+- **The cable car**: the lower station on the real one by Sopa-ro, above
+  Myeongdong (moved 5 m to clear the road), and the cable up to the real
+  upper station by the tower, high enough over the trees.
+- **Getting there**: Sopa-ro on its real line from Toegye-ro (by Myeongdong)
+  round to Sowol-ro. From Itaewon, the Namsan trail runs up from Sowol-ro to
+  the foot of the hill; the cable car is round the west side.
+- `tests/namsan.test.mjs` keeps the tower, both stations and the cable within
+  15 m of the real places.
+
 ## Samseong-dong (Gangnam-gu)
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,

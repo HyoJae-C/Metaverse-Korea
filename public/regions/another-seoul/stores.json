@@ -971,7 +971,7 @@
       "category": "play",
       "workshop": "cablecar",
       "size": "cablecar",
-      "at": [-1407, 87],
+      "at": [-1581.6, -331.3],
       "name": { "en": "Namsan Sky Cable", "ko": "남산 하늘 케이블카", "ja": "南山スカイケーブル", "zh": "南山天空缆车" },
       "tagline": { "en": "Ride a cable car up Namsan to the look-out tower and see Seoul from above", "ko": "케이블카를 타고 남산 전망타워에 올라 서울을 내려다보기", "ja": "ケーブルカーで南山の展望タワーへ。ソウルを上から眺めよう", "zh": "乘缆车登上南山观景塔，俯瞰首尔" },
       "colors": { "sign": "#c0392b", "awning": "#f5c6c0", "accent": "#fdf1ef" },
