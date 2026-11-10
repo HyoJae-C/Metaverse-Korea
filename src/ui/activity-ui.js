@@ -5,10 +5,11 @@ import {
   PINS, FRAMES, frameRolls, bowlingScores, bowlingTurn, frameMarks, isSplit,
   CLIMB_ROUTES, routeHolds, judgeReach, gripAfter, gripDrain, climbOpen,
   AIM_SECONDS, aimLife, aimRadius, aimPoints, AIM_MISS, aimTier, accuracy,
-  loadActivity, saveActivity,
+  loadActivity, saveActivity, BOWL_MAX_PLAYERS, bowlThrowMsg, bowlLaneMsg, bowlToMsg, bowlGoMsg, parseBowl, bowlTurnOf,
 } from '../core/activities.js';
+import { rackFor, leftAfter } from '../game/bowling-lanes.js';
 import { L, fmt } from './pocha-ui.js';
-import { simulateRoll, throwFrom, rackSpot, LANE_HALF, LANE_LEN, BOARD, BALL_R, PIN_H, PIN_GAP } from '../core/bowling-physics.js';
+import { simulateRoll, throwFrom, rackSpot, seeded, LANE_HALF, LANE_LEN, BOARD, BALL_R, PIN_H, PIN_GAP } from '../core/bowling-physics.js';
 
 const T = {
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', hi: 'बंद करें', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
@@ -43,6 +44,33 @@ const T = {
   gutter: { en: 'Gutter ball…', ko: '거터…', ja: 'ガター…', zh: '洗沟球…', es: 'Al canal…', id: 'Masuk selokan…', vi: 'Bóng rơi rãnh…', hi: 'गटर बॉल…', fr: 'Dans la rigole…', th: 'ลงราง…', ar: 'في القناة…' },
   pins: { en: '{n} pins', ko: '핀 {n}개', ja: '{n}本', zh: '{n}个瓶', es: '{n} bolos', id: '{n} pin', vi: '{n} ki', hi: '{n} पिन', fr: '{n} quilles', th: '{n} พิน', ar: '{n} قوارير' },
   bDone: { en: 'Final score: {n}', ko: '최종 점수: {n}', ja: '最終スコア：{n}', zh: '最终得分：{n}', es: 'Puntuación final: {n}', id: 'Skor akhir: {n}', vi: 'Điểm cuối: {n}', hi: 'फ़ाइनल स्कोर: {n}', fr: 'Score final : {n}', th: 'คะแนนรวม: {n}', ar: 'النتيجة النهائية: {n}' },
+  // Bowling with friends on one lane
+  bVsHow: {
+    en: 'Bowl with friends nearby (up to 4) on one lane: invite them, then take turns a frame each. Everyone sees every ball, and the score is on the lane\'s screen.',
+    ko: '근처 친구와 한 레인에서 최대 4명까지: 초대한 뒤 한 프레임씩 번갈아 쳐요. 모두가 서로의 공을 보고, 점수는 레인 위 화면에 나와요.',
+    ja: '近くの友だちと1レーンで最大4人：招待して、1フレームずつ交代で投げます。全員がすべての投球を見られ、スコアはレーンの画面に出ます。',
+    zh: '和附近的朋友在一条球道上最多4人：邀请后每人轮流打一局。大家都能看到每一球，分数显示在球道的屏幕上。',
+    es: 'Juega con amigos cercanos (hasta 4) en una pista: invítalos y tirad por turnos, un frame cada uno. Todos ven cada bola y la puntuación sale en la pantalla de la pista.',
+    id: 'Main dengan teman di dekatmu (maks. 4) di satu lintasan: undang mereka, lalu bergantian satu frame. Semua melihat setiap bola, dan skornya ada di layar lintasan.',
+    vi: 'Chơi với bạn bè gần bạn (tối đa 4) trên một làn: mời họ rồi lần lượt mỗi người một frame. Ai cũng thấy mọi cú ném, điểm hiện trên màn hình của làn.',
+    hi: 'पास के दोस्तों (4 तक) के साथ एक लेन पर खेलें: उन्हें बुलाएँ, फिर बारी-बारी से एक-एक फ़्रेम। सब हर बॉल देखते हैं, और स्कोर लेन की स्क्रीन पर है।',
+    fr: 'Joue avec des amis proches (jusqu\'à 4) sur une piste : invite-les, puis chacun son tour, une frame chacun. Tout le monde voit chaque boule, et le score s\'affiche sur l\'écran de la piste.',
+    th: 'เล่นกับเพื่อนที่อยู่ใกล้ (สูงสุด 4 คน) ในเลนเดียว: ชวนเพื่อน แล้วผลัดกันโยนคนละเฟรม ทุกคนเห็นทุกลูก และคะแนนขึ้นบนจอของเลน',
+    ar: 'العب مع أصدقاء قريبين (حتى 4) على مسار واحد: ادعهم ثم تناوبوا جولةً لكل واحد. يرى الجميع كل كرة، والنتيجة على شاشة المسار.',
+  },
+  bInvite: { en: 'Invite {name}', ko: '{name}님 초대', ja: '{name}さんを招待', zh: '邀请{name}', es: 'Invitar a {name}', id: 'Undang {name}', vi: 'Mời {name}', hi: '{name} को बुलाएँ', fr: 'Inviter {name}', th: 'ชวน {name}', ar: 'ادعُ {name}' },
+  bInvited: { en: '{name}: invited…', ko: '{name}님: 초대함…', ja: '{name}さん：招待中…', zh: '{name}：已邀请…', es: '{name}: invitado…', id: '{name}: diundang…', vi: '{name}: đã mời…', hi: '{name}: बुलाया…', fr: '{name} : invité…', th: '{name}: ชวนแล้ว…', ar: '{name}: تمت الدعوة…' },
+  bJoined: { en: '✔ {name} is in', ko: '✔ {name}님 참가', ja: '✔ {name}さん参加', zh: '✔ {name}已加入', es: '✔ {name} se une', id: '✔ {name} ikut', vi: '✔ {name} tham gia', hi: '✔ {name} शामिल', fr: '✔ {name} est partant', th: '✔ {name} เข้าร่วม', ar: '✔ انضم {name}' },
+  bJoin: { en: 'Join {name}\'s game', ko: '{name}님 게임에 참가', ja: '{name}さんのゲームに参加', zh: '加入{name}的比赛', es: 'Unirse a la partida de {name}', id: 'Ikut permainan {name}', vi: 'Tham gia ván của {name}', hi: '{name} के खेल में शामिल हों', fr: 'Rejoindre la partie de {name}', th: 'เข้าร่วมเกมของ {name}', ar: 'انضم إلى لعبة {name}' },
+  bWaitHost: { en: 'Waiting for {name} to start…', ko: '{name}님이 시작하길 기다리는 중…', ja: '{name}さんの開始を待っています…', zh: '等待{name}开始…', es: 'Esperando a que {name} empiece…', id: 'Menunggu {name} mulai…', vi: 'Đang chờ {name} bắt đầu…', hi: '{name} के शुरू करने का इंतज़ार…', fr: 'En attente que {name} lance la partie…', th: 'รอ {name} เริ่ม…', ar: 'بانتظار أن يبدأ {name}…' },
+  bStartVs: { en: 'Start · {n} players', ko: '시작 · {n}명', ja: 'スタート・{n}人', zh: '开始 · {n}人', es: 'Empezar · {n} jugadores', id: 'Mulai · {n} pemain', vi: 'Bắt đầu · {n} người', hi: 'शुरू · {n} खिलाड़ी', fr: 'Commencer · {n} joueurs', th: 'เริ่ม · {n} คน', ar: 'ابدأ · {n} لاعبين' },
+  bNobody: { en: 'Stand near someone in the alley to invite them.', ko: '볼링장 안에서 다른 사람 가까이 서면 초대할 수 있어요.', ja: 'ボウリング場で誰かの近くに立つと招待できます。', zh: '站在保龄球馆里其他人附近就能邀请。', es: 'Ponte cerca de alguien en la bolera para invitarle.', id: 'Berdiri dekat orang lain di arena bowling untuk mengundangnya.', vi: 'Đứng gần ai đó trong sân bowling để mời họ.', hi: 'बुलाने के लिए बॉलिंग हॉल में किसी के पास खड़े हों।', fr: 'Approche-toi de quelqu\'un dans le bowling pour l\'inviter.', th: 'ยืนใกล้ใครสักคนในโบว์ลิ่งเพื่อชวนเขา', ar: 'قف قرب شخص في صالة البولينغ لتدعوه.' },
+  bYour: { en: 'Your turn · ', ko: '내 차례 · ', ja: '自分の番・', zh: '轮到你 · ', es: 'Tu turno · ', id: 'Giliranmu · ', vi: 'Lượt của bạn · ', hi: 'आपकी बारी · ', fr: 'À toi · ', th: 'ตาคุณ · ', ar: 'دورك · ' },
+  bTheir: { en: '{name}\'s turn · frame {f}', ko: '{name}님 차례 · {f}프레임', ja: '{name}さんの番・{f}フレーム', zh: '轮到{name} · 第{f}局', es: 'Turno de {name} · frame {f}', id: 'Giliran {name} · frame {f}', vi: 'Lượt của {name} · frame {f}', hi: '{name} की बारी · फ़्रेम {f}', fr: 'Au tour de {name} · frame {f}', th: 'ตาของ {name} · เฟรม {f}', ar: 'دور {name} · الجولة {f}' },
+  bWin: { en: '🏆 You win with {a}!', ko: '🏆 {a}점으로 내가 이겼어요!', ja: '🏆 {a}点で勝ちました！', zh: '🏆 你以{a}分获胜！', es: '🏆 ¡Ganas con {a}!', id: '🏆 Kamu menang dengan {a}!', vi: '🏆 Bạn thắng với {a} điểm!', hi: '🏆 आप {a} से जीते!', fr: '🏆 Tu gagnes avec {a} !', th: '🏆 คุณชนะด้วย {a} คะแนน!', ar: '🏆 فزت بـ {a}!' },
+  bLose: { en: '{name} wins with {b}. Rematch?', ko: '{b}점으로 {name}님 승리. 한 판 더?', ja: '{b}点で{name}さんの勝ち。もう一戦？', zh: '{name}以{b}分获胜。再来一局？', es: 'Gana {name} con {b}. ¿Revancha?', id: '{name} menang dengan {b}. Tanding ulang?', vi: '{name} thắng với {b} điểm. Đấu lại?', hi: '{name} {b} से जीते। फिर से?', fr: '{name} gagne avec {b}. Revanche ?', th: '{name} ชนะด้วย {b} คะแนน แก้มือไหม?', ar: 'فاز {name} بـ {b}. جولة أخرى؟' },
+  bTie: { en: 'A tie at {a}!', ko: '{a}점 동점이에요!', ja: '{a}点で引き分け！', zh: '{a}分平局！', es: '¡Empate a {a}!', id: 'Seri di {a}!', vi: 'Hòa {a} điểm!', hi: '{a} पर बराबरी!', fr: 'Égalité à {a} !', th: 'เสมอที่ {a} คะแนน!', ar: 'تعادل عند {a}!' },
+  bLeft: { en: '{name} left the game.', ko: '{name}님이 게임을 나갔어요.', ja: '{name}さんが抜けました。', zh: '{name}离开了比赛。', es: '{name} dejó la partida.', id: '{name} keluar dari permainan.', vi: '{name} đã rời ván.', hi: '{name} ने खेल छोड़ दिया।', fr: '{name} a quitté la partie.', th: '{name} ออกจากเกมแล้ว', ar: 'غادر {name} اللعبة.' },
   // Climbing
   cTitle: { en: 'Bouldering', ko: '볼더링', ja: 'ボルダリング', zh: '抱石', es: 'Búlder', id: 'Bouldering', vi: 'Leo tường', hi: 'बोल्डरिंग', fr: 'Bloc', th: 'โบลเดอริ่ง', ar: 'تسلق الصخور' },
   cHow: {
@@ -180,13 +208,18 @@ const SPINS = [-1, -0.5, 0, 0.5, 1], SPIN_ICON = ['↰↰', '↰', '│', '↱',
 const BOWL_KEY = 'bowling10'; // 10-frame bests (older 5-frame ones were under 'bowling')
 const HZ = 70, F = 430; // the horizon's height on the canvas and the focal length
 export class BowlingUI extends Panel {
-  // onRoll(pinsDown, kind) after each ball ('strike', 'spare', 'split', 'gutter', 'pins'); onHit() when the ball meets the pins.
+  // onRoll(pinsDown, kind) after each of your balls ('strike', 'spare', 'split', 'gutter', 'pins'); onHit() when a ball meets the pins.
   // view: the game on the room's real lane (game/bowling-view.js; without it
   // the panel draws its own lane).
-  constructor({ root, store, onRoll, onHit, view = null, rand = Math.random }) {
+  // net (with others in the room, game/arcade.js): { myId, myName(),
+  // nameOf(id), friends() (people near you), send(msg) to the room,
+  // invite() (who invited you, or null), clearInvite(), lane(i) to bowl on
+  // lane i, screen(lane, rows, turn) for your lane's screen (null: let go) }.
+  constructor({ root, store, onRoll, onHit, view = null, net = null, rand = Math.random }) {
     super({ root, store, icon: '🎳', title: 'bTitle' });
-    Object.assign(this, { onRoll, onHit, view, rand });
+    Object.assign(this, { onRoll, onHit, view, net, rand });
     this.stance = 0; this.spin = 0;
+    this.lobby = null; // before a game with friends: { invited: Set, joined: [ids], host }
     const tapKey = this.onKey;
     this.onKey = (e) => {
       const g = this.game;
@@ -199,15 +232,113 @@ export class BowlingUI extends Panel {
       } else tapKey(e);
     };
   }
+  show() { this.lobby = null; super.show(); }
+  close() {
+    const g = this.game;
+    if (g?.vs) for (const p of g.players) if (p.id !== this.net.myId) this.net.send(bowlToMsg('n', p.id));
+    if (this.lobby) for (const id of [...this.lobby.invited, this.lobby.host].filter(Boolean)) this.net.send(bowlToMsg('n', id));
+    this.lobby = null;
+    this.leaveLane();
+    super.close();
+  }
+  // Off the lane: the others take your row off its screen.
+  leaveLane() {
+    if (this.lane == null) return;
+    this.net?.send(bowlLaneMsg('x', this.lane));
+    this.net?.screen(this.lane, null);
+    this.lane = null;
+  }
   renderStart() {
     this._frame();
     this.root.append(el('p', 'order-hint', tt('bHow')));
     const best = loadActivity(this.store)[BOWL_KEY];
     if (best != null) this.root.append(el('p', 'order-hint claw-note', tt('bBest', { n: best })));
-    this._actions(this._button('🎳 ' + tt('bStart', { n: FRAMES }), true, () => this.play()));
+    const buttons = [this._button('🎳 ' + tt('bStart', { n: FRAMES }), true, () => this.play())];
+    // With friends: only on a real lane, with someone near.
+    const net = this.net, lb = this.lobby;
+    if (net && this.view) {
+      const inv = net.invite();
+      const near = net.friends().filter((f) => !lb?.joined.includes(f.id) && f.id !== inv?.from && f.id !== lb?.host).slice(0, 4);
+      if (inv || near.length || lb) this.root.append(el('p', 'order-hint', tt('bVsHow')));
+      if (lb?.host) this.root.append(el('p', 'order-hint claw-note', tt('bWaitHost', { name: net.nameOf(lb.host) || '?' })));
+      else if (inv) {
+        buttons.unshift(this._button('⚔️ ' + tt('bJoin', { name: inv.name }), true, () => {
+          this.lobby = { invited: new Set(), joined: [], host: inv.from };
+          net.clearInvite();
+          net.send(bowlToMsg('a', inv.from));
+          this.renderStart();
+        }));
+      }
+      if (!lb?.host) {
+        for (const id of lb?.joined || []) this.root.append(el('p', 'order-hint claw-note', tt('bJoined', { name: net.nameOf(id) || '?' })));
+        if ((lb?.joined.length || 0) < BOWL_MAX_PLAYERS - 1) {
+          for (const f of near) {
+            const asked = lb?.invited.has(f.id);
+            const b = this._button(asked ? tt('bInvited', { name: f.name }) : '🎳 ' + tt('bInvite', { name: f.name }), false, () => {
+              this.lobby ||= { invited: new Set(), joined: [], host: null };
+              this.lobby.invited.add(f.id);
+              net.send(bowlToMsg('i', f.id));
+              this.renderStart();
+            });
+            b.disabled = !!asked;
+            buttons.push(b);
+          }
+        }
+        if (lb?.joined.length) buttons.unshift(this._button('⚔️ ' + tt('bStartVs', { n: lb.joined.length + 1 }), true, () => this.startMatch()));
+        else if (!inv && !near.length && lb) this.root.append(el('p', 'order-hint', tt('bNobody')));
+      }
+    }
+    this._actions(...buttons);
   }
-  play() {
-    const g = this._play({ rolls: [], rack: freshRack(), phase: 'aim', t0: now(), aim: 0, power: 0, sim: null }, '🎳 ' + tt('bThrow'));
+  // A message for you from someone in the room (game/arcade.js).
+  heardTo(from, m) {
+    const lb = this.lobby, g = this.game;
+    if (m.kind === 'a' && lb && !lb.host && lb.invited.has(from) && !lb.joined.includes(from) && lb.joined.length < BOWL_MAX_PLAYERS - 1) {
+      lb.joined.push(from);
+      if (!g) this.renderStart();
+    } else if (m.kind === 'n') {
+      if (lb) {
+        lb.invited.delete(from); lb.joined = lb.joined.filter((id) => id !== from);
+        if (lb.host === from) this.lobby = null;
+        if (!g && this.open) this.renderStart();
+      }
+      this.dropPlayer(from);
+    } else if (m.kind === 'g' && lb?.host === from && m.ids.includes(this.net.myId)) this.play({ ids: m.ids, lane: m.lane });
+    else if (m.kind === 'i' && !g && this.open) this.renderStart();
+  }
+  // A lane message from someone in the room: in a game with friends, their balls.
+  heard(from, m) {
+    const g = this.game;
+    if (!g?.vs || m.lane !== this.lane) return;
+    const k = g.players.findIndex((p) => p.id === from);
+    if (k < 0) return;
+    if (m.kind === 'x') this.dropPlayer(from);
+    else if (m.kind === 't' && k === g.cur && g.phase === 'wait') this.rollFrom(m);
+  }
+  startMatch() {
+    const lb = this.lobby, lane = this.view?.lane()?.lane;
+    if (!lb?.joined.length || lane == null) return;
+    const ids = [this.net.myId, ...lb.joined];
+    for (const id of lb.joined) this.net.send(bowlGoMsg(id, lane, ids));
+    this.play({ ids, lane });
+  }
+  dropPlayer(id) {
+    const g = this.game;
+    const p = g?.vs && g.players.find((q) => q.id === id && !q.gone);
+    if (!p) return;
+    p.gone = true;
+    g.status.textContent = tt('bLeft', { name: p.name });
+    if (g.players.filter((q) => !q.gone).length < 2) { this.finish(); return; }
+    if (g.players[g.cur] === p && g.phase === 'wait') this.timer = setTimeout(() => this.nextBall(), 1200);
+  }
+  // vs: { ids, lane } for a game with friends on that lane.
+  play(vs = null) {
+    this.lobby = null;
+    this.leaveLane();
+    if (vs) this.net.lane(vs.lane);
+    const me = this.net?.myId ?? 'me', name = (id) => (id === me ? this.net?.myName() || '🙂' : this.net.nameOf(id) || '?');
+    const players = (vs ? vs.ids : [me]).map((id) => ({ id, name: name(id), rolls: [], rack: freshRack(), gone: false }));
+    const g = this._play({ vs, players, me: players.findIndex((p) => p.id === me), cur: 0, rack: freshRack(), phase: 'aim', t0: now(), aim: 0, power: 0, sim: null }, '🎳 ' + tt('bThrow'));
     // Where you stand and your spin, under the lane.
     const row = el('div', null);
     row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin:6px 0';
@@ -226,13 +357,13 @@ export class BowlingUI extends Panel {
     g.status.after(row, row2);
     g.controls = [left, right, ...g.spinBtns];
     this.setSpin(this.spin);
-    // On the room's real lane: the panel keeps the score sheet (a strip), a
-    // power meter and the controls; you swipe up on the world to throw.
+    // On the room's real lane: the score is on the lane's own screen (core/
+    // bowling-screen.js), the panel keeps a power meter and the controls,
+    // and you swipe up on the world to throw.
     g.live = !!this.view?.start(this.root);
     if (g.live) {
       this.root.classList.add('arcade-live');
-      g.cv.height = 52;
-      g.cv.classList.add('bowl-sheet');
+      g.cv.hidden = true;
       g.meter = el('div', 'arcade-meter');
       const track = el('span');
       track.append(el('i'));
@@ -240,6 +371,8 @@ export class BowlingUI extends Panel {
       g.meter.style.visibility = 'hidden';
       row2.after(g.meter);
       this.swipe(g, this.view.surface, (e) => ({ x: (e.clientX / innerWidth) * W, y: (e.clientY / innerHeight) * H, t: now() }));
+      this.lane = this.view.lane().lane;
+      this.net?.send(bowlLaneMsg('o', this.lane));
     } else this.swipe(g);
     this.nextBall();
   }
@@ -275,24 +408,36 @@ export class BowlingUI extends Panel {
     surface.addEventListener('pointerup', up);
     g.unswipe = () => { surface.removeEventListener('pointerdown', down); surface.removeEventListener('pointermove', move); surface.removeEventListener('pointerup', up); };
   }
+  // The lane's screen: everyone's row, the one bowling lit.
+  screen() {
+    const g = this.game;
+    if (g?.live && this.lane != null) this.net?.screen(this.lane, g.players.map((p) => ({ name: p.name, rolls: p.rolls })), g.players[g.cur]?.gone ? -1 : g.cur);
+  }
   nextBall() {
     const g = this.game;
     if (!g) return;
-    const turn = bowlingTurn(g.rolls);
-    if (turn.over) { this.finish(); return; }
-    if (turn.fresh) g.rack = freshRack();
-    else if (g.sim) g.rack = g.sim.left;
-    g.turn = turn;
-    g.phase = 'aim'; g.t0 = now(); g.sim = null;
-    g.controls.forEach((b) => { b.disabled = false; });
-    g.status.textContent = tt('bAim', { f: turn.frame + 1, b: turn.ball + 1 });
+    const cur = g.vs ? bowlTurnOf(g.players.map((p) => (p.gone ? null : p.rolls))) : 0;
+    const p = g.players[cur], turn = p && bowlingTurn(p.rolls);
+    if (cur < 0 || turn.over) { this.finish(); return; }
+    if (turn.fresh) p.rack = freshRack();
+    Object.assign(g, { cur, turn, rack: p.rack, t0: now(), sim: null, down: null });
+    this.screen();
+    if (cur === g.me) {
+      g.phase = 'aim';
+      g.controls.forEach((b) => { b.disabled = false; });
+      g.status.textContent = (g.vs ? tt('bYour') : '') + tt('bAim', { f: turn.frame + 1, b: turn.ball + 1 });
+    } else { // a friend's ball: watch it come down the lane
+      g.phase = 'wait';
+      g.controls.forEach((b) => { b.disabled = true; });
+      g.status.textContent = tt('bTheir', { name: p.name, f: turn.frame + 1 });
+    }
   }
   aimAt(t) { return Math.sin(t * 1.35) * 0.9; }
   // In the world: the ball, the pins and your line go to the real lane; the
-  // power meter and the score sheet stay in the panel.
+  // power meter stays in the panel.
   drawLive(t, ball, pins) {
     const g = this.game, aiming = g.phase === 'aim' || g.phase === 'power';
-    this.view.show(ball, pins, aiming ? (g.phase === 'aim' ? this.aimAt(t - g.t0) : g.aim) : null, g.phase === 'power');
+    this.view.show(ball, pins, aiming ? (g.phase === 'aim' ? this.aimAt(t - g.t0) : g.aim) : null, g.phase === 'power', g.cur === g.me);
     g.meter.style.visibility = g.phase === 'power' ? 'visible' : 'hidden';
     if (g.phase === 'power') {
       const pw = this.powerAt(t - g.t0), bar = g.meter.firstChild.firstChild;
@@ -300,8 +445,8 @@ export class BowlingUI extends Panel {
       bar.style.background = pw > 0.85 ? '#d9473c' : pw > 0.45 ? '#4caf7a' : '#ffd36e';
       g.meter.lastChild.textContent = `${Math.round(throwFrom({ power: pw }).speed * 3.6)} km/h`;
     }
-    g.c.clearRect(0, 0, W, 52);
-    drawSheet(g.c, g);
+    // A friend who stopped answering is out after a minute.
+    if (g.phase === 'wait' && t - g.t0 > 60) this.dropPlayer(g.players[g.cur].id);
   }
   powerAt(t) { return (1 - Math.cos(t * 2.6)) / 2; }
   tap() {
@@ -317,9 +462,29 @@ export class BowlingUI extends Panel {
   }
   throw(power) {
     const g = this.game;
+    if (g.phase !== 'aim' && g.phase !== 'power') return;
     g.power = power;
-    g.ball = throwFrom({ stance: this.stance, aim: g.aim, power, spin: this.spin });
-    g.sim = simulateRoll(g.ball, g.rack, this.rand);
+    // The throw as the others will get it (rounded the same way), so their
+    // replay of this ball is this ball.
+    const p = g.players[g.cur], base = { lane: this.lane ?? 0, stance: this.stance, aim: g.aim, power, spin: this.spin, seed: Math.floor(this.rand() * 4294967296), rack: g.rack.map((q) => q.i), rolls: p.rolls };
+    const m = parseBowl(bowlThrowMsg({ ...base, down: [] }));
+    g.ball = throwFrom(m);
+    g.sim = simulateRoll(g.ball, g.rack, seeded(m.seed));
+    g.down = g.sim.down;
+    if (g.live) this.net?.send(bowlThrowMsg({ ...base, down: g.down }));
+    this.roll();
+  }
+  // A friend's ball, from their message.
+  rollFrom(m) {
+    const g = this.game;
+    g.rack = rackFor(m.rack, g.rack);
+    g.ball = throwFrom(m);
+    g.sim = simulateRoll(g.ball, g.rack, seeded(m.seed));
+    g.down = m.down; // (what they saw is what counts)
+    this.roll();
+  }
+  roll() {
+    const g = this.game;
     g.phase = 'roll'; g.at = now(); g.hit = false;
     g.controls.forEach((b) => { b.disabled = true; });
     g.status.textContent = tt('bSpeed', { n: Math.round(g.ball.speed * 3.6) });
@@ -328,21 +493,34 @@ export class BowlingUI extends Panel {
   land() {
     const g = this.game;
     if (!g || g.phase !== 'roll') return;
-    const { down, left } = g.sim;
-    const wasFull = g.rack.length === 10;
-    g.rolls.push(down.length);
-    const ids = left.map((p) => p.i);
-    const kind = !left.length ? (wasFull ? 'strike' : 'spare') : down.length === 0 ? 'gutter' : wasFull && isSplit(ids) ? 'split' : 'pins';
-    g.status.textContent = kind === 'pins' ? tt('pins', { n: down.length }) : kind === 'split' ? `${tt('split')} ${tt('pins', { n: down.length })}` : tt(kind);
-    if (kind === 'gutter' && !g.sim.gutter) g.status.textContent = tt('pins', { n: 0 });
+    const p = g.players[g.cur], mine = g.cur === g.me;
+    const down = g.down, ids = g.rack.map((q) => q.i).filter((i) => !down.includes(i));
+    const wasFull = g.turn.fresh; // (a full rack: not a second ball after a gutter)
+    p.rolls.push(down.length);
+    p.rack = leftAfter(g.sim, { rack: g.rack.map((q) => q.i), down });
+    const kind = !ids.length ? (wasFull ? 'strike' : 'spare') : down.length === 0 ? 'gutter' : wasFull && isSplit(ids) ? 'split' : 'pins';
+    let note = kind === 'pins' ? tt('pins', { n: down.length }) : kind === 'split' ? `${tt('split')} ${tt('pins', { n: down.length })}` : tt(kind);
+    if (kind === 'gutter' && !g.sim.gutter) note = tt('pins', { n: 0 });
+    g.status.textContent = mine ? note : `${p.name}: ${note}`;
     g.phase = 'fallen'; g.kind = kind;
-    this.onRoll?.(down.length, kind);
+    this.screen();
+    if (mine) this.onRoll?.(down.length, kind);
     this.timer = setTimeout(() => this.nextBall(), kind === 'strike' ? 1700 : 1300);
   }
   finish() {
-    const total = bowlingScores(this.game.rolls).at(-1) ?? 0;
-    const rec = saveActivity(this.store, BOWL_KEY, total);
-    this._end(tt('bDone', { n: total }) + (rec && total > 0 ? '  ' + tt('record') : ''), () => this.play());
+    const g = this.game;
+    const total = (p) => bowlingScores(p.rolls).at(-1) ?? 0;
+    const mine = total(g.players[g.me]);
+    const rec = saveActivity(this.store, BOWL_KEY, mine);
+    let note = tt('bDone', { n: mine });
+    if (g.vs) {
+      const ranked = g.players.filter((p) => !p.gone || p === g.players[g.me]).sort((a, b) => total(b) - total(a));
+      const top = ranked[0], tie = ranked.length > 1 && total(ranked[1]) === total(top);
+      note = tie && total(top) === mine ? tt('bTie', { a: mine }) : top === g.players[g.me] ? tt('bWin', { a: mine }) : tt('bLose', { name: top.name, b: total(top) });
+      note += '  ·  ' + g.players.map((p) => `${p.name} ${total(p)}`).join(' · ');
+    }
+    this.screen(); // (the final score stays up on the lane until you leave)
+    this._end(note + (rec && mine > 0 ? '  ' + tt('record') : ''), () => this.play());
   }
   draw(t) {
     const g = this.game, c = g.c;
@@ -438,7 +616,7 @@ export class BowlingUI extends Panel {
 }
 // The score sheet along the top: ten frames, three boxes in the last.
 function drawSheet(c, g) {
-  const frames = frameRolls(g.rolls), totals = bowlingScores(g.rolls);
+  const rolls = g.players[g.cur]?.rolls || [], frames = frameRolls(rolls), totals = bowlingScores(rolls);
   const fw = (W - 12) / (FRAMES + 0.5);
   for (let f = 0; f < FRAMES; f++) {
     const x = 6 + f * fw, w = f === FRAMES - 1 ? fw * 1.5 : fw;

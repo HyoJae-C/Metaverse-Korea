@@ -2866,10 +2866,10 @@
       "id": "strike-lane-bowling",
       "category": "play",
       "workshop": "bowling",
-      "size": "large",
+      "size": "bowling",
       "district": "seodaemun",
       "name": { "ko": "스트라이크 레인 볼링장", "en": "Strike Lane Bowling", "ja": "ストライクレーン ボウリング", "zh": "全中球道保龄球馆" },
-      "tagline": { "en": "Five lanes and a quick 5-frame game with real scoring", "ko": "레인 다섯 개, 진짜 점수로 즐기는 5프레임 게임", "ja": "5レーン、本物のスコアで遊ぶ5フレーム", "zh": "五条球道，真实计分的5局快速赛" },
+      "tagline": { "en": "Eight lanes, a full 10-frame game with real scoring, and friends can bowl with you", "ko": "레인 여덟 개, 진짜 점수로 치는 10프레임, 친구와 대결도 돼요", "ja": "8レーン、本物のスコアで10フレーム、友だちと対戦も", "zh": "八条球道，真实计分的10局，还能和朋友对战" },
       "at": [-2609, -398],
       "colors": { "sign": "#d9473c", "awning": "#2f6fb5", "accent": "#f4efe6" },
       "products": []
