@@ -5,7 +5,9 @@
 //          { store: 'id', room: true, at: [x, z], ry } puts it inside that
 //          shop's room (the Namsan summit, a park), at room position x, z,
 //          its front facing ry, or
-//          { at: [x, z] } puts it at a world position.
+//          { at: [x, z] } puts it at a world position, or
+//          { at: [x, z], ride: 'name' } has no stand: a ride offers it
+//          (Seoul Dal: up at the top).
 //   shape: 'circle' | 'square' — the rubber stamp's frame.
 //   icon:  SVG drawn in a 200×200 box, in the stamp's ink colour.
 export const STAMPS = [
@@ -72,7 +74,7 @@ export const STAMPS = [
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
   },
   {
-    // at the Open House gate, up the lane from Bukchon-ro 5-gil
+    // at the Open House gate, up from the lane of shops
     id: 'bukchon', place: { at: [-1495, -935] }, color: '#5a4a3a', shape: 'square',
     name: { ko: '북촌한옥마을', en: 'Bukchon Hanok Village', ja: '北村韓屋村', zh: '北村韩屋村' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
@@ -187,6 +189,17 @@ export const STAMPS = [
     icon: '<path d="M126 128 v-70 l8 -6 l8 6 v70"/><path d="M134 52 v-10"/><path d="M48 128 q20 -30 40 0 M48 128 h48"/><path d="M40 128 q60 -12 120 0"/><path d="M44 144 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
+    // Seoul Dal, the balloon in Yeouido Park (game/seoul-dal.js): no stand on
+    // the ground; you press it in the gondola once it is up at the top, so
+    // this stamp means you flew. (at: the cable's foot, for anything that
+    // needs a place on the map.)
+    id: 'seoul-dal', place: { at: [-2902.1, 485.4], ride: 'seoulDal' }, color: '#d9a43a', shape: 'circle',
+    name: { ko: '서울달', en: 'Seoul Dal', ja: 'ソウルダル', zh: '首尔月亮' },
+    gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },
+    // the moon-balloon on its cable, the ring gondola under it, over the river
+    icon: '<circle cx="100" cy="66" r="30"/><path d="M76 80 q24 10 48 0"/><path d="M80 88 l-12 30 M120 88 l12 30 M100 96 v18"/><path d="M64 118 h72 v8 h-72 z"/><path d="M48 142 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
+  },
+  {
     // on the gate plaza of Children's Grand Park, beside the rainbow gate
     id: 'grand-park', place: { at: [452, -81], ry: -1.5708 }, color: '#e08a2e', shape: 'circle',
     name: { ko: '서울어른도대공원', en: "Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园' },
@@ -195,7 +208,7 @@ export const STAMPS = [
     icon: '<circle cx="100" cy="100" r="40"/><circle cx="100" cy="102" r="24"/><circle cx="91" cy="96" r="3"/><circle cx="109" cy="96" r="3"/><path d="M95 108 l5 5 l5 -5 M100 113 v6"/><path d="M76 72 l-6 -8 M124 72 l6 -8"/>',
   },  {
     // on KONEXT Square by Samseong Station, in front of the aquarium pavilion
-    id: 'konext', place: { at: [149, 874], ry: Math.PI / 2 }, color: '#1d5fa8', shape: 'square',
+    id: 'konext', place: { at: [109.6, 909.6], ry: 1.946 }, color: '#1d5fa8', shape: 'square',
     name: { ko: '코넥스트', en: 'KONEXT', ja: 'コネクスト', zh: 'KONEXT' },
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave

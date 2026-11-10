@@ -1,7 +1,8 @@
 // Samseong-dong (Gangnam-gu): KONEXT, a fictional shopping mall by Samseong
 // Station, seen from outside only (the map's custom buildings give the walls
 // you bump into; scripts/build-samseong.mjs).
-//   konext:        the mall: a long, low box along Teheran-ro, a light stone
+//   konext:        the mall: a long, low box (its d side runs north from
+//                  KONEXT Square, w faces Yeongdong-daero), a light stone
 //                  ground floor and glass floors above with white bands, a
 //                  glass skylight on the roof that rises and falls like a
 //                  wave, the main entrance with a deep canopy facing the
@@ -81,8 +82,10 @@ export function konext(g, l) {
   ko.rotation.y = Math.PI / 2;
   ko.position.set(w / 2 + 0.5, 9.4, ez);
   g.add(ko);
-  // The Teheran-ro side (+z): the word along the top.
-  const side = textSign(40, 7, (c, W, H) => drawLogo(c, W, H, KONEXT_BLUE));
+  // The square / Teheran-ro side (+z): the word along the top (kept to the
+  // west part of a narrow wall, clear of the media wall by the corner).
+  const sw0 = Math.min(40, w * 0.6);
+  const side = textSign(sw0, sw0 * 7 / 40, (c, W, H) => drawLogo(c, W, H, KONEXT_BLUE));
   side.position.set(-w / 4, h - 4.4, d / 2 + 0.5);
   g.add(side);
   // A tall pylon at the plaza-side corner away from the street, the word running down it.

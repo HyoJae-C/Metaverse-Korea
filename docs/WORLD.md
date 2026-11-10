@@ -305,27 +305,55 @@ real parks are, at 1/4:
 - Jamwon (east): the fishing pier, the fish buyer, the duck boat dock and an
   open lawn by the water for picnic mats.
 
-## Gyeongnidan-gil (Itaewon, Yongsan-gu)
+## Itaewon and Gyeongnidan-gil (Yongsan-gu)
 
-The rest of Itaewon is hand-made, but Gyeongnidan-gil (경리단길) follows its
-real roads: `node scripts/build-gyeongnidan.mjs` reads Hoenamu-ro (the
-street people call Gyeongnidan-gil) and a few lanes off it from
-OpenStreetMap (`scripts/data/gyeongnidan-osm.json`, © OpenStreetMap
-contributors, ODbL) and writes them into `districts/itaewon.json` at a
-quarter of the real size, like the rest of the map: from the foot by
-Noksapyeong-daero up to where Hoenamu-ro 35-gil leaves it, about 160 m
-(650 m in Seoul). It stays inside Itaewon's old east side, between
-Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
+`node scripts/build-itaewon.mjs` draws Itaewon at 1/4 on its real streets
+from OpenStreetMap (`scripts/data/itaewon-osm.json`, from the itaewon-namsan
+export, and `scripts/data/gyeongnidan-osm.json`; © OpenStreetMap
+contributors, ODbL): Itaewon-ro from Samgakji past Noksapyeong and Itaewon
+Station to Hangangjin (about 630 m), Noksapyeong-daero south to the road to
+Banpo Bridge, Bogwang-ro and Usadan-ro south of the station, Sinheung-ro up
+through Haebangchon, Sowol-ro round Namsan's foot and Seobinggo-ro along the
+south. Until 2026-11-11 Itaewon was hand-made: about 1.4 times too wide and
+mirrored east to west (Noksapyeong-daero drawn east of the station, Bogwang-ro
+and Usadan-ro west of it).
+
+- **Made up, inside the real blocks**: the World Food Street lane north from
+  Itaewon-ro (it carries on up as Hoenamu-ro 26-gil to Gyeongnidan-gil),
+  and Yongmaru Market's lane north from Itaewon-ro (west of exit 1, up to the
+  foot of Gyeongnidan's hill) with its arcade. Every building and shop is fictional; buildings are a
+  normal size, one row along each street (`scripts/street-rows.mjs`).
+- **Where things are**: every shop is north of Itaewon-ro or up
+  Gyeongnidan-gil (Yozi 2026-11-11: the south side isn't needed). The
+  restaurants and the halal grocer on the World Food Street, the market
+  between it and Itaewon Square, the clubs and bars along Itaewon-ro's north
+  side east of the station, and the clothes, books and antiques up
+  Gyeongnidan-gil. South of Itaewon-ro there are only the real roads
+  (Bogwang-ro, Usadan-ro) with plain buildings. Itaewon Station's exits 1 and 4
+  stand on the pavements 7-10 m from the real ones.
+- **Open land**: west of Noksapyeong-daero and south of Itaewon-ro is the old
+  army ground (Yongsan Garrison, becoming Yongsan Park): grass, no houses.
+- The script also moves the shops' doors, the station's exits and the ends
+  of the link roads (Itaewon-ro east, Sowol-ro north-west round Namsan to
+  Sungnyemun, where Toegye-ro now starts, Sopa-ro's end on it, and the road
+  to Banpo Bridge). It can be run again; it keeps Namsan (`ns`) and the
+  museums (`ym`).
+
+### Gyeongnidan-gil
+
+Gyeongnidan-gil (경리단길) is Hoenamu-ro, the street people call
+Gyeongnidan-gil, from its real foot on Noksapyeong-daero up to where
+Hoenamu-ro 35-gil leaves it, about 160 m (650 m in Seoul).
 
 - **Simple like the other neighbourhoods.** Only three lanes are kept
-  (13-gil and 35-gil up to Sowol-ro, 26-gil down to Itaewon-ro), and the
+  (13-gil and 35-gil up to Sowol-ro, 26-gil down towards Itaewon-ro), and the
   buildings are one row along each street, at normal size; the blocks
   behind are left open. The real tangle of lanes, drawn 1:1, read as too
-  busy next to the rest of the city. The script also moves four of
-  Itaewon's own places up the street (a diner, a trattoria, a café and the
-  taproom); it makes no new shops.
+  busy next to the rest of the city. Seven of Itaewon's own places are up the
+  street (an old-style café, two clothes shops, a vintage shop, books,
+  antiques and the taproom); there are no new shops.
 - **The hill.** The street climbs gently, about 5 m to the top; the lanes
-  north climb a little and then ease back down to Sowol-ro, which stays
+  north climb a little and then ease back down before Sowol-ro, which stays
   level, and the lanes south go down to the flat land by Itaewon-ro. The
   district's `meta.hill` holds the numbers and `src/core/hill-ground.js`
   turns them into a height (you, NPCs and shop fronts stand on it; a
@@ -384,9 +412,11 @@ OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
 link in `region.json`.
 
 - **The hill**: its top, with the look-out tower, on N Seoul Tower's real
-  spot, 65 m high (262 m / 4). Its foot (380 × 340 m) fits between Sopa-ro
+  spot, 65 m high (262 m / 4). Its foot (380 × 320 m) fits between Sopa-ro
   and Sowol-ro on the west, Namsangol Hanok Village on the north and
-  Itaewon on the south; real Namsan runs on further east to Beotigogae.
+  Itaewon's real Sowol-ro on the south (the south side was pulled 10 m in so
+  the hill doesn't cover the road; `scripts/build-itaewon.mjs`); real Namsan
+  runs on further east to Beotigogae.
   The summit is near the real hill's west end, so the hill leans west
   (`src/core/namsan-shape.js`).
 - **The cable car**: the lower station on the real one by Sopa-ro, above
@@ -400,28 +430,33 @@ link in `region.json`.
 
 ## Itaewon's museums (Yongsan-gu)
 
-`scripts/build-yongsan-museums.mjs` puts both on their real places
-(OpenStreetMap), at 1/4 like the rest of Seoul; both are mostly seen from
-inside, so their grounds shrink (Yozi 2026-11-10). Items are marked `ym`.
+Both stand on their real places (OpenStreetMap) at the real 1/4, site and
+building: both are seen mostly from inside (Yozi 2026-11-11: "부지랑 박물관
+전부 4분의1로"). Items are marked `ym`; `scripts/build-itaewon.mjs` keeps them.
 
-- **War History Museum** (the real War Memorial of Korea): the whole site
-  shrinks to 40% round the main building, which stands on the real main
-  hall; heights at 50%. The plaza in front stretches to reach Itaewon-ro.
-- **National Central Art Museum** (on the real National Museum of Korea's
-  spot): its 100 m building is already the real one at 1/4, so it only
-  moves, with Yongsan Park round it and the Art Museum Way north to the
-  game's Seobinggo-ro (which is drawn north of the real road; Itaewon's own
-  streets are hand-made).
+- **War History Museum** (the real War Memorial of Korea): the site at 25%
+  round the main building, which stands on the real main hall (35 m wide);
+  heights 25%. The plaza in front reaches Itaewon-ro.
+- **National Central Art Museum**: a made-up museum on the real National
+  Museum of Korea's spot (not modelled on its building). The 100 m building
+  is the size of the real one at 1/4; its grounds run from it down to the real
+  Seobinggo-ro, and the Art Museum Way comes up from Seobinggo-ro to the door
+  on its south side.
 
 ## Samseong-dong (Gangnam-gu)
 
 Samseong Station (Line 2) on the corner of Teheran-ro and Yeongdong-daero,
-drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`; street lines
-after OpenStreetMap) at 1/4 of the real size: Asem-ro is 161 m west of the
-station, Bongeunsa-ro 153 m north and Tancheon 130 m east, a quarter of their
-real distances. The big buildings (KONEXT 88 x 60 m, the office towers) take
-a quarter of their real footprint too; heights stay real. (It was drawn about
-twice as large, then about 1.2 times, before this.) The block north-west of the corner is KONEXT, a
+drawn by `scripts/build-samseong.mjs` (`districts/samseong.json`). Teheran-ro,
+Olympic-ro, Yeongdong-daero, Bongeunsa-ro, Samseong-ro and Tancheon are the
+real OpenStreetMap lines at 1/4 (`scripts/data/samseong-osm.json`), within
+3 m (Yeongdong-daero 6 m from each carriageway). The streets slant: the whole
+grid is turned 21.5° (Teheran-ro runs east-north-east), so the buildings and
+KONEXT are laid out in that grid and turned with it. Asem-ro, KONEXT's west
+side, is 88 m west of Yeongdong-daero; Teheran-ro turns into Olympic-ro and
+crosses Tancheon on Samseong Bridge where the real road does. KONEXT stands
+on the real exhibition centre (52 x 82 m on its 59 x 87 m), and the other
+buildings are made up, one row along the streets; heights stay real. (It was
+a straight cross, up to 78 m off the real roads, before 2026-11-11.) The block north-west of the corner is KONEXT, a
 fictional shopping mall seen from outside only (`core/konext.js`: a custom
 building, so its walls still block): a long, low glass box with a wave
 skylight, its main entrance and a KONEXT pylon on KONEXT Square, and a media

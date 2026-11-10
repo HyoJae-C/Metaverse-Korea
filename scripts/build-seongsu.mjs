@@ -811,7 +811,18 @@ const roads = STREETS.map((s) => ({
 const ACHASAN_W = toMap([wangU(0), 0]).map(r1); // where Achasan-ro meets Wangsimni-ro
 roads.push(
   // Wangsimni-ro: north-south past Seoul Forest Station on its real line, from the forest's north edge down to the river.
-  { k: 'primary', w: 10, p: (() => { const zEnd = r1(bankZ(wangX(190)) - 12); return [...WANGSIMNI.filter(([, z]) => z < zEnd), [r1(wangX(zEnd)), zEnd]]; })(), n: name('왕십리로', 'Wangsimni-ro', '往十里路', '往十里路') },
+  // The real Wangsimni-ro ends at z 173 (OSM seoul-forest.json), under
+  // Gangbyeonbuk-ro; the game's road goes on down to the river path without
+  // the name (a way down to the riverside, not Wangsimni-ro).
+  ...(() => {
+    const zEnd = r1(bankZ(wangX(190)) - 12), REAL_END = 173;
+    const p = [...WANGSIMNI.filter(([, z]) => z < zEnd), [r1(wangX(zEnd)), zEnd]];
+    const named = p.filter(([, z]) => z <= REAL_END), rest = p.filter(([, z]) => z > REAL_END);
+    return [
+      { k: 'primary', w: 10, p: named, n: name('왕십리로', 'Wangsimni-ro', '往十里路', '往十里路') },
+      ...(rest.length ? [{ k: 'primary', w: 10, p: [named.at(-1), ...rest] }] : []),
+    ];
+  })(),
   // Seoulsup-gil: along the forest's north side, from Gwangnaru-ro (its real line).
   { k: 'tertiary', w: 10, p: [[-397, -114], [-389, -110], [-363, -100], [-349, -95], [-336, -93], [-318, -94], [-289, -95], [-262, -97], ACHASAN_W], n: name('서울숲길', 'Seoulsup-gil', 'ソウルの森通り', '首尔林路') },
   // Ttukseom-ro, Gosanja-ro and Gwangnaru-ro round Seoul Forest (the links to Itaewon and Wangsimni start at their west and north ends).

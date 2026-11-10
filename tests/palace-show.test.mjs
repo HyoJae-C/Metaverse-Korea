@@ -138,15 +138,24 @@ test('the palace stands on its real ground at 1/4, and the fan dance and the kin
   for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(pointInPoly(x, z, east), `stop ${x},${z} is on the east lawn`);
 });
 
-test('palace buildings: footprints at 30% of the real ones (Gwanghwamun 50%), heights at half', () => {
+test('palace buildings: footprints at 50% of the real ones where they fit (never under 30%), heights at half', () => {
   const at = (type) => map.landmarks.find((l) => l.type === type);
-  for (const t of ['palacegate', 'throne', 'yeongjegyo', 'amisan', 'hexpavilion']) assert.deepEqual(at(t).sc, [0.6, 1], t + ': drawn at 50%, 60% of that across');
+  for (const t of ['palacegate', 'yeongjegyo', 'hexpavilion']) assert.deepEqual(at(t).sc, [1, 1], t + ': drawn at 50% both ways');
+  assert.deepEqual(at('amisan').sc, [0.6, 1], 'Amisan stays at 30%: it fills the gap between two rings of corridors');
+  // Geunjeongjeon's terraces at 50% would be wider than its court: as big as fits, 30-50%.
+  const th = at('throne');
+  assert.ok(th.sc[0] >= 0.6 && th.sc[0] <= 1 && th.sc[1] === 1, `Geunjeongjeon between 30% and 50% across (${th.sc[0] * 50}%)`);
+  assert.ok(Math.abs(th.hs * 30 - 32 * 0.5) < 1, 'Geunjeongjeon (32 m wide in Seoul: hs at 50%)');
   // Gwanghwamun is 50% across too, like its height, so it isn't a narrow tower (Yozi).
   assert.deepEqual(at('gwanghwamun').sc, [1, 1], 'Gwanghwamun: drawn at 50% both ways');
   assert.ok(Math.abs(at('gwanghwamun').w - 31.2 * 0.5) < 0.5, 'Gwanghwamun (31 m wide in Seoul)');
-  assert.ok(Math.abs(at('throne').hs * 30 * 0.6 - 32 * 0.3) < 1, 'Geunjeongjeon (32 m wide on the map)');
-  assert.deepEqual(at('pavilion').sc, [0.3, 0.5], 'Gyeonghoeru (its model is full size)');
+  assert.deepEqual(at('pavilion').sc, [0.5, 0.5], 'Gyeonghoeru (its model is full size)');
   assert.equal(at('palacehalls').v, 1);
+  // Halls (not gates or plain blocks): between 30% and 50% of the real footprint, the free-standing ones at 50%.
+  const halls = at('palacehalls').halls;
+  const sujeong = halls.find((h) => h[6] === '修政殿'), sajeong = halls.find((h) => h[6] === '思政殿');
+  assert.ok(sujeong[2] > 12, `Sujeongjeon (free-standing) at 50% (${sujeong[2]} m)`);
+  assert.ok(sajeong[2] > 4 && sajeong[2] < 8, `Sajeongjeon inside its corridors (${sajeong[2]} m)`);
 });
 
 test('the palace has about a quarter of its buildings, and every hall and yard can be walked to', () => {

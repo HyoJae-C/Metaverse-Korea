@@ -64,7 +64,9 @@ test('two shops buy clothes back: VINTAGE GARAGE in Hongdae and Gaeul Vintage in
   assert.deepEqual(ids, ['gaeul-vintage', 'vintage-garage']);
   for (const id of ids) assert.equal(stores.find((s) => s.id === id).category, 'fashion');
   const [x, z] = stores.find((s) => s.id === 'gaeul-vintage').at;
-  assert.ok(x > -1400 && x < -1300 && z > 300 && z < 400, 'Gaeul Vintage moved from Seongsu to Itaewon, by Golden Needle Tailor');
+  const [tx, tz] = stores.find((s) => s.id === 'golden-needle').at;
+  // (Itaewon's station is at about -1348, 281; the clothes shops are up Gyeongnidan-gil.)
+  assert.ok(Math.hypot(x + 1348, z - 281) < 300 && Math.hypot(x - tx, z - tz) < 30, 'Gaeul Vintage moved from Seongsu to Itaewon, by Golden Needle Tailor');
 });
 
 test('the second-hand rack: 40% of the new price, only clothes the game knows at their real price', async () => {

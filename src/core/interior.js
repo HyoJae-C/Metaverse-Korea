@@ -25,6 +25,7 @@ import { buildCulture } from './culture.js';
 import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
 import { ROOM_DOME } from './dome-outside.js';
 import { ACTIVITY_ROOMS, decorateActivityRoom } from './activity-rooms.js';
+import { decorateLiveCafe } from './live-cafe-room.js';
 import { makeRide, makeSkate1 } from './rides.js';
 import { RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS } from './bike-garage.js';
 
@@ -39,6 +40,7 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  bowling: { w: 30, d: 26, h: 5 }, // Strike Lane Bowling: eight lanes, room to walk about (core/activity-rooms.js)
   runway: { w: 26, d: 40, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
@@ -222,7 +224,7 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang'; // (the runway: a dark show room; the PC방 glows with its screens)
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang' || store.workshop === 'livecafe'; // (the runway: a dark show room; the PC방 glows with its screens; the live café: a spotlit stage)
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
   scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
@@ -1280,6 +1282,9 @@ export function buildInterior(store) {
         star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
+    } else if (store.workshop === 'livecafe') {
+      // Sinchon's live café: a stage with a mic for players (core/live-cafe-room.js).
+      barkeep = decorateLiveCafe(store, { scene, box, block, mat, stations, seats, w, d }).barkeep;
     } else if (ACTIVITY_ROOMS.has(store.workshop)) {
       // Bowling alley, climbing gym, PC방 (core/activity-rooms.js).
       animate = decorateActivityRoom(store, { scene, box, block, mat, stations, seats, w, d, h })?.animate || null;
