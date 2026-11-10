@@ -62,6 +62,11 @@ export function southBetween(x0, x1) {
 // and Jamsu Bridge's, on Banpo Bridge's line (scripts/build-banpo.mjs).
 export const BRIDGE_NORTH = [-2797.7, 25.7];
 export const JAMSU_NORTH = [-1353.5, 709.1];
+// Where the south bank's bike path crosses the Saetgang's mouth, from
+// Yeouido's east tip to the Dongjak bank (the real bike bridge's line,
+// OpenStreetMap): scripts/build-yeouido.mjs cuts the Saetgang's blockers
+// there, scripts/build-bike-paths.mjs runs the path through it.
+export const SAETGANG_BIKE = [[-2517.9, 737.5], [-2501.6, 752]];
 
 // The part of polygon p on one side of a line (Sutherland-Hodgman): keeps
 // the points where side(q) >= 0, side being linear.

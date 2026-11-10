@@ -5,9 +5,10 @@
 //
 //   north: Mangwon's river path → Seogang Bridge's north end → Jamsu Bridge's
 //          north end → Seongsu's Han River Path (the Han River Bike Path)
-//   south: from the Saetgang's mouth (by Yeouido's east tip) east along the
-//          south bank to Banpo-Jamwon park's river path, and from its east
-//          end on past Apgujeong and Cheongdam, over Tancheon's mouth, to
+//   south: from Yeouido Han River Park's path over the Saetgang's mouth
+//          (han-bank.mjs SAETGANG_BIKE) east along the south bank to
+//          Banpo-Jamwon park's river path, and from its east end on past
+//          Apgujeong and Cheongdam, over Tancheon's mouth, to
 //          Jamsil Bridge (Songpa-daero)
 //
 // Most of the south bank is closed land (scripts/build-closed.mjs); the
@@ -30,9 +31,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
-import { BRIDGE_NORTH, JAMSU_NORTH } from './han-bank.mjs';
+import { BRIDGE_NORTH, JAMSU_NORTH, SAETGANG_BIKE } from './han-bank.mjs';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
+import { ttukseomBank } from './bike-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -46,15 +48,21 @@ const LOOP = { gap: 100, ratio: 2.5 }; // cut a detour whose ends are < gap m ap
 // The ends of each leg, kept exactly: other roads end there.
 const MANGWON_JOIN = [-3224.8, -8.4]; // Mangwon's river path (scripts/build-mangwon.mjs)
 const SEONGSU_JOIN = [-465, 119]; // Seongsu's Han River Path
+const YEOUIDO_JOIN = [-2485.9, 711]; // the east end of Yeouido Han River Park's path (scripts/build-yeouido.mjs)
 const BANPO_WEST = [-1372.8, 995]; // Banpo-Jamwon park's river path, its two ends
 const BANPO_EAST = [-1154.6, 828.9];
 const SONGPA_DAERO = [[754.8, 501.4], [907, 749]]; // Jamsil Bridge, over the river
+const SEONGSU_EAST = [160, 389]; // a corner of Seongsu's Han River Path, by Ttukseom (where the OpenStreetMap leg starts)
+const SEONGSU_END = [430, 438.9]; // the east end of Seongsu's Han River Path (Ttukseom Han River Park)
+const TTUKSEOM_X = 520; // east of the park: the bike path on its real line from here
+const JAMSIL_NORTH = [732.4, 465]; // Jamsil Bridge's north end, where "To Jamsil Bridge" meets Songpa-daero
 // Where each leg starts and ends (the OpenStreetMap node nearest to it), and
 // the points it must pass (spliced into the line where it comes nearest).
 export const LEGS = {
   north: { from: MANGWON_JOIN, to: SEONGSU_JOIN, via: [BRIDGE_NORTH, JAMSU_NORTH] },
-  southWest: { from: [-2440, 835], to: BANPO_WEST, via: [] },
+  southWest: { from: SAETGANG_BIKE[0], to: BANPO_WEST, via: SAETGANG_BIKE },
   southEast: { from: BANPO_EAST, to: [870, 650], via: [] },
+  northEast: { from: SEONGSU_EAST, to: JAMSIL_NORTH, via: [] },
 };
 
 // ---- OpenStreetMap → legs (only with --osm) ----
@@ -201,7 +209,7 @@ export function bikePaths(legs, solid = { blocked: () => false }) {
   };
   // north: exactly from Mangwon's path to Seongsu's
   const north = make([MANGWON_JOIN, ...legs.north, SEONGSU_JOIN], { from: MANGWON_JOIN, via: [BRIDGE_NORTH, JAMSU_NORTH], ends: [MANGWON_JOIN, SEONGSU_JOIN] });
-  const southWest = make([...legs.southWest, BANPO_WEST], { from: legs.southWest[0], ends: [BANPO_WEST] });
+  const southWest = make([YEOUIDO_JOIN, ...legs.southWest, BANPO_WEST], { from: YEOUIDO_JOIN, via: SAETGANG_BIKE, ends: [YEOUIDO_JOIN, BANPO_WEST] });
   // south-east: from Banpo's path to where it meets Jamsil Bridge
   let se = [BANPO_EAST, ...legs.southEast];
   for (let i = 1; i < se.length; i++) {
@@ -209,7 +217,9 @@ export function bikePaths(legs, solid = { blocked: () => false }) {
     if (c) { se = [...se.slice(0, i), c.at]; break; }
   }
   const southEast = make(se, { from: BANPO_EAST, ends: [BANPO_EAST, se.at(-1)] });
-  return { paths: { north, southWest, southEast }, nudged };
+  // north-east: from Seongsu's path along Ttukseom to Jamsil Bridge's north end
+  const northEast = make([SEONGSU_END, ...legs.northEast.filter(([x]) => x >= TTUKSEOM_X), JAMSIL_NORTH], { from: SEONGSU_END, ends: [SEONGSU_END, JAMSIL_NORTH] });
+  return { paths: { north, southWest, southEast, northEast }, nudged };
 }
 
 const name = (en, ko, ja, zh) => ({ ko, en, ja, zh });
@@ -217,10 +227,12 @@ export const NAMES = {
   north: name('Han River Bike Path', '한강 자전거길', '漢江自転車道', '汉江自行车道'),
   southWest: name('Han River Bike Path (south bank)', '한강 남쪽 자전거길', '漢江自転車道（南岸）', '汉江自行车道（南岸）'),
   southEast: name('Han River Bike Path (south bank)', '한강 남쪽 자전거길', '漢江自転車道（南岸）', '汉江自行车道（南岸）'),
+  northEast: name('Han River Bike Path', '한강 자전거길', '漢江自転車道', '汉江自行车道'),
 };
 const NOTES = {
+  northEast: 'The north-bank Han River bike path on its real line at 1/4 (OpenStreetMap, scripts/build-bike-paths.mjs) from the east end of Seongsu\'s Han River Path to Jamsil Bridge\'s north end. Why off the real line: Ttukseom Han River Park stands on a straight bank up to 40 m north of the real one, so the path leaves the park\'s path and meets its real line by x 520.',
   north: 'The north-bank Han River bike path on its real line at 1/4 (OpenStreetMap cycleways, scripts/build-bike-paths.mjs): from Mangwon Han River Park\'s path past the north ends of Seogang Bridge and Jamsu Bridge to Seongsu\'s Han River Path.',
-  southWest: 'The south-bank Han River bike path on its real line at 1/4 (OpenStreetMap, scripts/build-bike-paths.mjs): from the Saetgang\'s mouth by Yeouido east through Dongjak and Seocho to Banpo-Jamwon park\'s river path. Open through the closed land.',
+  southWest: 'The south-bank Han River bike path on its real line at 1/4 (OpenStreetMap, scripts/build-bike-paths.mjs): from Yeouido Han River Park\'s path over the Saetgang\'s mouth east through Dongjak and Seocho to Banpo-Jamwon park\'s river path. Open through the closed land.',
   southEast: 'The south-bank Han River bike path on its real line at 1/4 (OpenStreetMap, scripts/build-bike-paths.mjs): from Banpo-Jamwon park east past Apgujeong and Cheongdam, over Tancheon\'s mouth, to Jamsil Bridge. Open through the closed land. Why off the real line: by Apgujeong (x -155..-20) Seongsu\'s river cuts the real bank straight, so the path keeps up to 20 m south of its real line there.',
 };
 
@@ -229,6 +241,19 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const legs = i > 0 ? fromOsm(process.argv[i + 1]) : JSON.parse(readFileSync(DATA, 'utf8')).legs;
   const file = path.join(R, 'region.json');
   let text = readFileSync(file, 'utf8');
+  // water[2]'s north bank from Seongsu's edge (x 430) to Jamsil Bridge
+  // (x 725): from the real bike path beside it (scripts/bike-bank.mjs).
+  {
+    const m = text.match(/^ {4}(\{"p":[^\n]*Han River from Seongsu east past Jamsil Bridge[^\n]*\}),?$/m);
+    if (!m) throw new Error('water[2] not found');
+    // (from Seongsu's straight bank at x 430 straight on to the real one by x 520)
+    const w = JSON.parse(m[1]), bank = [[430, 453.1], ...ttukseomBank(TTUKSEOM_X, 725)];
+    const redo = (p) => [...bank, ...p.slice(p.findIndex(([x, z]) => x > 725 && z < 700))];
+    w.p = redo(w.p);
+    w.blockers = w.blockers.map((b) => (b[0][0] === 430 ? redo(b) : b));
+    w.note = 'Han River from Seongsu east past Jamsil Bridge to Songpa: the real banks at 1/4 (OpenStreetMap); from x 520 to Jamsil Bridge the north bank is drawn 8 m off the real bike path, eased onto it from Seongsu\'s straight bank (scripts/bike-bank.mjs, scripts/build-bike-paths.mjs). Its blockers leave a gap for Jamsil Bridge (Songpa-daero).';
+    text = text.replace(m[1], JSON.stringify(w));
+  }
   // What is solid: everything but the bike paths themselves and the closed land.
   const region = JSON.parse(text);
   region.links = region.links.filter((l) => !l.bike);
