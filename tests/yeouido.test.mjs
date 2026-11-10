@@ -28,8 +28,9 @@ test('Yeouido is an island in the Han River, in Yeongdeungpo-gu', () => {
   for (const a of map.areas.filter((x) => x.k !== 'water')) for (const p of a.p) assert.ok(inPolygon(...world(p), gu.p), `${a.k} ${world(p)} is in Yeongdeungpo-gu`);
   // Walk round the island 6 m off its shore: the Han on the north, the
   // Saetgang on the south, water and a blocker all the way, except Seogang
-  // Bridge and the streets that cross the Saetgang.
-  const streets = map.roads.filter((r) => r.k !== 'walk').map((r) => ({ w: r.w, p: r.p.map(world) }));
+  // Bridge, the streets that cross the Saetgang and the south bank's bike
+  // path over its mouth (scripts/build-bike-paths.mjs).
+  const streets = map.roads.filter((r) => r.k !== 'walk').map((r) => ({ w: r.w, p: r.p.map(world) })).concat(region.links.filter((l) => l.bike));
   const segDist = (q, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz; const t = L ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L)) : 0; return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz); };
   const onStreet = (q) => streets.some((r) => r.p.some((_, i) => i > 0 && segDist(q, r.p[i - 1], r.p[i]) < r.w / 2 + 14));
   const bridge = map.roads.find((r) => r.n?.en === 'Seogang Bridge').p.map(world);

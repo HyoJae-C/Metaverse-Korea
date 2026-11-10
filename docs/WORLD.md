@@ -132,11 +132,15 @@ lists **districts** joined into one map (`src/core/districts.js`):
   anything built (6 m each side of a bike path); run it again after building
   there.
 - The Han River bike paths are links with `bike: true` (drawn red on the
-  street and the maps): the north bank from Mangwon to Seongsu, and the south
-  bank from the Saetgang's mouth to Banpo-Jamwon park and on to Jamsil
-  Bridge, open through the closed land. `node scripts/build-bike-paths.mjs`
+  street and the maps): the north bank from Mangwon to Seongsu and from
+  Ttukseom to Jamsil Bridge, and the south bank from Yeouido (across the
+  Saetgang, whose blockers have a gap for it) to Banpo-Jamwon park and on to
+  Jamsil Bridge, open through the closed land. `node scripts/build-bike-paths.mjs`
   writes them on OpenStreetMap's real cycleways at 1/4
   (`scripts/data/han-bike-osm.json`); run `build-closed.mjs` after it.
+  Where the game had no real bank (Apgujeong, east of Ttukseom),
+  `scripts/bike-bank.mjs` draws the bank a fixed distance from the real bike
+  path; run `build-seongsu.mjs` before `build-bike-paths.mjs`.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
   `blockers` split around a bridge to leave a gap. The Han's banks there
