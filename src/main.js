@@ -3387,15 +3387,6 @@ import('./game/minimap.js').then(({ createMinimap }) => {
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
 
-// Purple gu borders on the street, as on the map. (game/gu-borders.js)
-let guBorders = null;
-if (mapView.seoul?.borders) import('./game/gu-borders.js').then(({ createGuBorders }) => {
-  guBorders = createGuBorders({
-    scene, seoul: mapView.seoul, groundY: (x, z) => hillY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z),
-    getMe: () => me.root.position, onStreet: () => mode === 'street' && !subway.metro,
-  });
-}).catch(() => { /* no border line: the map still shows them */ });
-
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -6851,7 +6842,6 @@ renderer.setAnimationLoop((now) => {
   updateAction(p, tSec);
   mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
-  guBorders?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
