@@ -5,9 +5,10 @@
 // warMemorial: drawn round the main building's centre, which faces south
 // onto the Peace Plaza and the road. The building block itself is a map
 // building (so the entrance can sit on its front); this adds the granite
-// front with its columns, the dome, the steps, the two memorial corridors
-// (회랑) that line the plaza, the Peace Plaza's paving and its words, and the
-// name stone by the road. The spot west of the gate where the Statue of
+// front with its four columns and the name over them, the dome, the Peace
+// Plaza's paving and its words, and the name stone by the road. The two
+// memorial corridors (회랑) along the plaza are left out so you can walk off
+// the plaza to either side (Yozi, 2026-11-10). The spot west of the gate where the Statue of
 // Brothers stands in real life is left empty on purpose.
 //
 // outdoorExhibits: the outdoor exhibition (옥외전시장): retired tanks and
@@ -20,7 +21,7 @@ import { farFree } from './far-textures.js';
 import { matCache, addBox } from './three-kit.js';
 
 const mat = matCache({ flatShading: true });
-const GRANITE = '#cfcac0', GRANITE_DARK = '#a9a49a', NAMES = '#3a3d40', BRONZE = '#6f6a5a';
+const GRANITE = '#cfcac0', GRANITE_DARK = '#a9a49a', BRONZE = '#6f6a5a';
 const FONT = '"Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif';
 
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -40,56 +41,39 @@ function textTex(cw, ch, draw) {
   return farFree(t);
 }
 
-// Rows of tiny carved marks: names on a dark stone wall, seen from afar.
-// No real names are written; the texture only suggests the carving.
-let namesTex = null;
-function namesTexture() {
-  if (namesTex) return namesTex;
-  namesTex = textTex(256, 128, (c, w, h) => {
-    c.fillStyle = NAMES; c.fillRect(0, 0, w, h);
-    c.fillStyle = 'rgba(220,214,200,0.55)';
-    for (let y = 8; y < h - 4; y += 9) for (let x = 6; x < w - 10; x += 22) c.fillRect(x, y, 12 + ((x * 7 + y * 3) % 5), 2);
-  });
-  namesTex.wrapS = namesTex.wrapT = THREE.RepeatWrapping;
-  return namesTex;
-}
-
 // A flat panel of text (a stone sign, an inscription, an information board).
 function panel(w, h, draw, px = 128) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: textTex(Math.round(w * px), Math.round(h * px), draw), transparent: true }));
 }
 
-// One memorial corridor along z: a granite roof on columns, open to the
-// plaza, its back wall carved with names. side: -1 west, +1 east (the back
-// wall is on the outer side).
-function corridor(g, x, z0, z1, side) {
-  const len = z1 - z0, zc = (z0 + z1) / 2, depth = 7, H = 6.4;
-  const back = x + side * depth / 2;
-  box(g, 0.8, H, len, back, H / 2, zc, GRANITE); // back wall
-  const names = new THREE.Mesh(new THREE.PlaneGeometry(len - 2, H - 2.2), new THREE.MeshBasicMaterial({ map: namesTexture().clone() }));
-  names.material.map.repeat.set(len / 12, 2);
-  names.material.map.needsUpdate = true;
-  names.position.set(back - side * 0.42, H / 2 - 0.2, zc);
-  names.rotation.y = -side * Math.PI / 2;
-  g.add(names);
-  box(g, depth + 1.2, 0.8, len + 1.2, x, H + 0.4, zc, GRANITE); // roof slab
-  box(g, depth + 1.6, 0.3, len + 1.6, x, H + 0.95, zc, GRANITE_DARK);
-  for (let z = z0; z <= z1 + 0.01; z += 6) box(g, 0.7, H, 0.7, x - side * depth / 2, H / 2, z, GRANITE); // columns on the plaza side
-  box(g, depth, 0.2, len, x, 0.1, zc, GRANITE_DARK); // floor
-}
-
 export function warMemorial(g) {
   // The main building (a map building) runs x -70..70, z -20..20, 16 m high,
   // with the entrance block stepped forward to z = 26 in the middle
-  // (x -17..17). The game's entrance door sits on that front; this adds the
-  // block's taller top, a tall glass front and six columns, with a wide gap
-  // in the middle for the door.
-  const FRONT = 26;
-  box(g, 34, 6, 6, 0, 19, FRONT - 3, GRANITE); // the entrance block rises above the rest
-  box(g, 36, 1.4, 8.6, 0, 22.7, FRONT - 1.7, GRANITE_DARK); // cornice
-  box(g, 16, 12, 0.04, 0, 7.6, FRONT + 0.02, '#3f4a52'); // tall glass over the door
-  for (const x of [-15.5, -10, -4.5, 4.5, 10, 15.5]) cyl(g, 0.8, 0.9, 20, x, 10, FRONT + 1.6, GRANITE, 14); // columns
-  box(g, 34, 1.2, 2.6, 0, 20.6, FRONT + 1.4, GRANITE); // beam over the columns
+  // (x -17..17). The entrance is drawn here (the store's door is a bare ring,
+  // store.front 'landmark'): four columns carrying a frieze with the
+  // museum's name on it, a tall glass front between the middle two and the
+  // door under it, so nothing hangs in front of the columns.
+  const FRONT = 26, COL_H = 18;
+  box(g, 34, 8, 6, 0, 20, FRONT - 3, GRANITE); // the entrance block rises above the rest
+  box(g, 36, 1.4, 8.6, 0, 24.7, FRONT - 1.7, GRANITE_DARK); // cornice
+  box(g, 8, 14, 0.04, 0, 7.6, FRONT + 0.02, '#3f4a52'); // tall glass between the middle columns
+  box(g, 6.4, 9.6, 0.3, 0, 4.8, FRONT + 0.15, '#2d3436'); // the door's frame
+  box(g, 5.2, 8.8, 0.1, 0, 4.4, FRONT + 0.32, '#56656e'); // the door's glass
+  for (const s of [-1, 1]) box(g, 5, 12, 0.04, s * 10, 7.6, FRONT + 0.02, '#4c5960'); // narrower glass behind the outer pairs
+  for (const x of [-15, -5, 5, 15]) {
+    cyl(g, 0.8, 0.9, COL_H, x, COL_H / 2, FRONT + 1.6, GRANITE, 14); // columns
+    box(g, 2.4, 0.8, 2.4, x, 0.4, FRONT + 1.6, GRANITE_DARK); // their bases
+  }
+  box(g, 34, 4.4, 3, 0, COL_H + 2.2, FRONT + 1.4, GRANITE); // the frieze over the columns
+  const name = panel(26, 3.2, (c, w, h) => {
+    c.fillStyle = BRONZE; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = `800 ${h * 0.5}px ${FONT}`;
+    c.fillText('전쟁역사박물관', w / 2, h * 0.36, w - 16);
+    c.font = `700 ${h * 0.24}px ${FONT}`;
+    c.fillText('WAR HISTORY MUSEUM', w / 2, h * 0.8, w - 16);
+  }, 32);
+  name.position.set(0, COL_H + 2.2, FRONT + 2.92);
+  g.add(name);
   // The dome over the central hall, on a drum, with a slim lantern on top.
   cyl(g, 15, 15, 4, 0, 18, 0, GRANITE, 28);
   const dome = new THREE.Mesh(new THREE.SphereGeometry(14.5, 28, 12, 0, Math.PI * 2, 0, Math.PI / 2), mat('#9aa3a6'));
@@ -99,10 +83,6 @@ export function warMemorial(g) {
   // A band of darker stone along the long front, and windows.
   box(g, 140.4, 1.2, 40.4, 0, 16.2, 0, GRANITE_DARK); // roof edge
   for (const s of [-1, 1]) for (let i = 0; i < 6; i++) box(g, 5, 7, 0.2, s * (24 + i * 7.6), 7, 20.1, '#5d6a72');
-
-  // The memorial corridors either side of the plaza.
-  corridor(g, -74, 24, 98, -1);
-  corridor(g, 74, 24, 98, 1);
 
   // Peace Plaza: rings of paving and the words at its centre (from the
   // memorial: "평화를 원하거든 전쟁을 기억하라").

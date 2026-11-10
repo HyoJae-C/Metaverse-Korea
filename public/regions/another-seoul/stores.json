@@ -2696,6 +2696,8 @@
       "id": "war-memorial",
       "category": "memorial",
       "size": "memorial",
+      "front": "landmark",
+      "face": 0,
       "at": [-1735.4, 217.4],
       "name": { "ko": "전쟁역사박물관", "en": "War History Museum", "ja": "戦争歴史博物館", "zh": "战争历史博物馆" },
       "tagline": {
