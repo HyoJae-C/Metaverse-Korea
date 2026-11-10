@@ -21,7 +21,7 @@
 
 alter table public.wallet_settings add column if not exists old_refund_mult int not null default 2;
 alter table public.wallet_settings add column if not exists old_refund_cap bigint not null default 300000;
-alter table public.wallet_settings add column if not exists old_refund_before timestamptz not null default '2026-11-11 03:00:00+09';
+alter table public.wallet_settings add column if not exists old_refund_before timestamptz not null default '2026-11-11 01:00:00+09';
 alter table public.wallet_settings drop constraint if exists wallet_settings_old_refund;
 alter table public.wallet_settings add constraint wallet_settings_old_refund
   check (old_refund_mult between 0 and 5 and old_refund_cap between 0 and 5000000);
