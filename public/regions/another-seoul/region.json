@@ -148,7 +148,7 @@
         -1057,
         -594
       ],
-      "anchor": { "place": "Dongdaemun History & Culture Park Station, where Jangchungdan-ro crosses Eulji-ro", "lat": 37.5659541, "lon": 127.0077934, "local": [0, 0], "why": "No nudge: the streets are on their real lines. DDP keeps its game size (bigger than its real block at 1/4), so its middle stands about 38 m east of the real one, as far west as it fits while the Cheonggyecheon strip is south of its real line." }
+      "anchor": { "place": "Dongdaemun History & Culture Park Station, where Jangchungdan-ro crosses Eulji-ro", "lat": 37.5659541, "lon": 127.0077934, "local": [0, 0], "why": "No nudge: the streets are on their real lines. DDP keeps its game size (bigger than its real block at 1/4), so its middle stands about 38 m east of the real one, east of the park and Jangchungdan-ro." }
     },
     {
       "id": "grand-park",
@@ -201,37 +201,37 @@
     {
       "k": "tertiary",
       "w": 8,
-      "p": [[-1004, -708.5], [-1004, -800]],
+      "p": [[-1014, -720.9], [-1014, -736]],
       "n": { "ko": "흥인지문 가는 길", "en": "To Heunginjimun", "ja": "興仁之門へ", "zh": "往兴仁之门" },
-      "note": "From the north end of Ogansugyo Bridge (Cheonggyecheon-ro) north between the towers to Heunginjimun's island: DDP, the bridge and the gate in one line."
+      "note": "From the north end of Ogansugyo Bridge (Cheonggyecheon-ro's north road) up to Heunginjimun's island, on Jangchungdan-ro's line."
     },
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1720, -440], [-1623.7, -437.4], [-1595, -447], [-1530, -454], [-1465, -464], [-1430, -459.5], [-1379, -458], [-1334, -470], [-1263, -490], [-1185, -512], [-1149, -525], [-1133, -529]],
+      "p": [[-1720, -440], [-1623.7, -437.4], [-1595, -447], [-1530, -454], [-1465, -464], [-1430, -459.5], [-1379, -458], [-1334, -470], [-1263.5, -490]],
       "n": { "ko": "퇴계로", "en": "Toegye-ro", "ja": "退渓路", "zh": "退溪路" },
-      "note": "Toegye-ro starts at Sungnyemun and runs east past Myeongdong and Namsangol to DDP, on its real line (OpenStreetMap, scripts/data/euljiro-osm.json)."
+      "note": "Toegye-ro starts at Sungnyemun and runs east past Myeongdong and Namsangol to Changgyeonggung-ro, where Euljiro's map takes it on to DDP, on its real line (OpenStreetMap, scripts/data/euljiro-osm.json)."
     },
     {
       "k": "primary",
       "w": 14,
-      "p": [[-1774, -465], [-1774, -520], [-1699, -580], [-1699, -615]],
+      "p": [[-1774, -465], [-1758, -481], [-1744, -515], [-1738, -537], [-1733, -566], [-1733, -615]],
       "n": { "ko": "세종대로", "en": "Sejong-daero", "ja": "世宗大路", "zh": "世宗大路" },
-      "note": "From Sungnyemun north to Cheonggye Plaza (the south end of Gwanghwamun's Sejong-daero)."
+      "note": "From Sungnyemun north past City Hall to Sejong-daero by Cheonggye Plaza (the Gyeongbokgung map's), on its real line (OpenStreetMap)."
     },
     {
       "k": "primary",
       "w": 16,
-      "p": [[-1699, -597], [-1595, -597], [-1504, -600], [-1391, -606], [-1271, -613], [-1195, -614], [-1133, -612]],
+      "p": [[-1733, -597], [-1699, -597], [-1595, -597], [-1504, -600], [-1391, -606], [-1271, -613]],
       "n": { "ko": "을지로", "en": "Eulji-ro", "ja": "乙支路", "zh": "乙支路" },
-      "note": "Eulji-ro from Sejong-daero (by City Hall) east to DDP, on its real line (OpenStreetMap) except by Euljiro 4-ga, where it keeps 5 m north of it, clear of the towers along Cheonggyecheon."
+      "note": "Eulji-ro from Sejong-daero (by City Hall) east to Changgyeonggung-ro, where Euljiro's map takes it on to DDP, on its real line (OpenStreetMap)."
     },
     {
       "k": "tertiary",
       "w": 8,
-      "p": [[-1133, -620], [-1133, -659]],
+      "p": [[-1275.3, -698.7], [-1277.2, -726], [-1277.2, -765]],
       "n": { "ko": "창경궁로", "en": "Changgyeonggung-ro", "ja": "昌慶宮路", "zh": "昌庆宫路" },
-      "note": "Changgyeonggung-ro, the west edge of the DDP district, north through the gap in the towers to Cheonggyecheon-ro and Baeogae Bridge."
+      "note": "Changgyeonggung-ro on north from Baeogae Bridge (Cheonggyecheon-ro's north road) to Jongno, on its real line (OpenStreetMap); south of the stream it is Euljiro's."
     },
     {
       "k": "primary",
@@ -243,7 +243,7 @@
     {
       "k": "primary",
       "w": 16,
-      "p": [[-447, -185], [-735, -185], [-735, -663.5], [-741, -663.5]],
+      "p": [[-447, -185], [-735, -185], [-735, -733.9]],
       "n": { "ko": "왕십리로", "en": "Wangsimni-ro", "ja": "往十里路", "zh": "往十里路" },
       "note": "From Seongsu north-west to the east end of Cheonggyecheon (Hwanghakgyo)."
     },
@@ -349,7 +349,7 @@
     {"k": "primary", "w": 14, "p": [[-3196.4, -296.6], [-3176.7, -269], [-3166.3, -227.7], [-3156.8, -191.2], [-3145.4, -143.5], [-3136.5, -131.8]], "n": {"ko": "월드컵로", "en": "Worldcup-ro", "ja": "ワールドカップ路", "zh": "世界杯路"}},
     {"k": "tertiary", "w": 9, "p": [[-3197.8, -260.5], [-3176.7, -269]], "n": {"ko": "동교로", "en": "Donggyo-ro", "ja": "東橋路", "zh": "东桥路"}},
     {"k": "tertiary", "w": 8, "p": [[-3202.3, -111], [-3138.9, -129.2]], "n": {"ko": "포은로", "en": "Poeun-ro", "ja": "圃隠路", "zh": "圃隐路"}},
-    {"k": "walk", "w": 5, "p": [[-1414, -759], [-1414, -713]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the Cheonggyecheon towers to Cheonggyecheon-ro."},
+    {"k": "walk", "w": 5, "p": [[-1397, -759], [-1397, -683.9]], "n": {"ko": "종묘 앞 골목", "en": "Lane to Cheonggyecheon", "ja": "清渓川への路地", "zh": "通往清溪川的小巷"}, "note": "From Jongno in front of Jongmyo Square south between the buildings to Cheonggyecheon-ro at Gwansugyo Bridge."},
     {"k": "tertiary", "w": 8, "p": [[-1668, 99], [-1684, -60], [-1706, -300], [-1720, -440]], "n": {"ko": "소월로", "en": "Sowol-ro", "ja": "素月路", "zh": "素月路"}, "note": "Sowol-ro round Namsan's west side: from Itaewon's Sowol-ro (Haebangchon) north to Sungnyemun, where Toegye-ro starts. Itaewon and Banpo no longer go round through Seongsu to reach Jung-gu and Jongno."},
     {"k": "walk", "w": 6, "p": [[-3224.8,-8.4],[-3183,10.6],[-3145.6,24.8],[-3096.4,36.7],[-3057.4,41.8],[-3023,40.8],[-2982.5,16.3],[-2972.8,17.2],[-2908.3,2.5],[-2874.2,0.9],[-2831.1,11.1],[-2797.7,25.7],[-2707.7,65],[-2638.1,73.1],[-2600.7,86.8],[-2575.8,105.6],[-2548.2,136.6],[-2490,236.4],[-2473.5,256.4],[-2454.3,270.3],[-2402.5,290.4],[-2376.2,307.5],[-2297.4,395.8],[-2280.3,427.9],[-2265.6,510],[-2253.5,553.4],[-2238.7,584],[-2217.1,608.6],[-2187,624.1],[-2094.5,656.6],[-1833.7,787.4],[-1759.5,810.1],[-1683.3,820],[-1607.1,820.5],[-1542.8,811.6],[-1489.3,793.5],[-1414.1,751.1],[-1393.4,754.3],[-1386.9,751],[-1391.8,753.1],[-1385.2,748.8],[-1372.5,727.7],[-1353.5,709.1],[-1342.1,698],[-1226.9,624.5],[-1202.9,600.3],[-1161,531.9],[-1133.3,499.9],[-1094.1,468.6],[-1004.3,407.5],[-971.6,376.5],[-945.4,336.7],[-858.1,167.4],[-825.2,126.4],[-791.9,99.9],[-773.7,89.6],[-733.4,79.6],[-632.2,75.4],[-534.8,89],[-465,119]], "n": {"ko": "한강 자전거길", "en": "Han River Bike Path", "ja": "漢江自転車道", "zh": "汉江自行车道"}, "note": "The north-bank Han River path: from Mangwon Han River Park's path east past the north end of Seogang Bridge (Yeouido, later), along the river to the north end of Jamsu Bridge (Banpo-Jamwon) and on to Seongsu's Han River Path at Ttukseom. About 12 m inland from the water (region water below)."},
     {"k": "walk", "w": 5, "p": [[-2928.8, -87.9], [-2797.7,25.7]], "n": {"ko": "한강 가는 길", "en": "To the Han River", "ja": "漢江へ", "zh": "往汉江"}, "note": "From the south end of Hongdae's Wausan-ro (Sangsu Station, on Dongmak-ro) down to the Han River Bike Path, where Seogang Bridge starts for Yeouido."}
@@ -400,46 +400,31 @@
       "y": 30
     },
     {
-      "at": [
-        -1512,
-        -714
-      ],
+      "at": [-1620.9, -706.8],
       "w": 22,
       "h": 30,
       "y": 22
     },
     {
-      "at": [
-        -1449,
-        -658
-      ],
+      "at": [-1578.8, -638],
       "w": 30,
       "h": 16,
       "y": 26
     },
     {
-      "at": [
-        -1383,
-        -714
-      ],
+      "at": [-1499.5, -684.5],
       "w": 18,
       "h": 30,
       "y": 28
     },
     {
-      "at": [
-        -1248,
-        -714
-      ],
+      "at": [-1343.7, -696.7],
       "w": 20,
       "h": 28,
       "y": 20
     },
     {
-      "at": [
-        -1165,
-        -658
-      ],
+      "at": [-1427.2, -627.9],
       "w": 28,
       "h": 18,
       "y": 24

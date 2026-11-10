@@ -12,18 +12,22 @@
 //   - DDP keeps its game size (Yozi, 2026-11-10: bigger than its real block
 //     at 1/4), north of Eulji-ro like the real one, between Jangchungdan-ro
 //     and the fashion malls. Its middle stands DDP.why east of the real one:
-//     the Cheonggyecheon strip (gyeongbokgung map) is still south of its
-//     real line, so the block is shallower than it should be.
+//     at game size it only fits east of the park and Jangchungdan-ro.
 //   - Dongdaemun History & Culture Park: the corner between DDP,
 //     Jangchungdan-ro and Eulji-ro, with a stretch of the city wall and its
 //     water gate (Igansumun).
 //   - The fashion malls: across Jangchungdan-ro (like Migliore and its
 //     neighbours) and east of DDP round Fashion Town Lane.
-//   - Elsewhere one row of buildings along each street (Yozi, 2026-11-10).
+//   - Elsewhere one row of buildings along each street (Yozi, 2026-11-10),
+//     west to Changgyeonggung-ro (by Euljiro 4-ga) and north to
+//     Cheonggyecheon-ro's south road (scripts/cheonggyecheon-line.mjs).
 //   - Namsangol Hanok Village at its real place south of Toegye-ro by
 //     Chungmuro (a part of its own), at game size: five hanok round a yard.
 //   - Sungnyemun on its lawn island where Toegye-ro starts, and Heunginjimun
-//     north of the Cheonggyecheon strip: parts of their own.
+//     just north of Cheonggyecheon-ro: parts of their own.
+//
+// Run scripts/build-cheonggyecheon.mjs after this one: it keeps its rows
+// off these streets.
 //
 //   node scripts/build-euljiro.mjs          writes the map and sets the "at"
 //                                           of the shops in SHOPS (stores.json)
@@ -36,6 +40,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { folkBlockers } from '../src/data/folk-yard.js';
 import { r1, name as N4, town, nearestOn, pointAt, lengthOf, strips, lineDist, inPoly } from './street-rows.mjs';
+import { SOUTH as CG_SOUTH, NORTH as CG_NORTH, zAt } from './cheonggyecheon-line.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -67,19 +72,30 @@ function betweenZ(p, za, zb) {
 }
 
 // ---------- The streets (world metres) ----------
-export const EDGE = { west: -1133, east: -842, north: -657, south: -468 }; // the main part; north: the Cheonggyecheon strip's south road
-const STRIP_ROAD = -663; // its middle
-export const EULJI = between(street('Eulji-ro'), EDGE.west, -974.2);
+// The main part: from Changgyeonggung-ro east to Sindang, from Toegye-ro and
+// Dasan-ro north to Cheonggyecheon-ro's south road.
+export const EDGE = { west: -1273, east: -842, south: -468 };
+const southRoadZ = (x) => zAt(CG_SOUTH, x); // its middle
+// A street coming up from the south, up to the south road (cut where it meets it).
+function upToSouthRoad(p) {
+  const out = [p[0]];
+  for (let i = 1; i < p.length; i++) {
+    const [a, b] = [p[i - 1], p[i]], fa = a[1] - southRoadZ(a[0]), fb = b[1] - southRoadZ(b[0]);
+    if (fa > 0 && fb <= 0) { const k = fa / (fa - fb); out.push([r1(a[0] + (b[0] - a[0]) * k), r1(a[1] + (b[1] - a[1]) * k)]); return out; }
+    out.push(b);
+  }
+  return out;
+}
+// Changgyeonggung-ro: from Toegye-ro north across Eulji-ro to the south road
+// at Baeogae Bridge (the export starts 22 m north of Toegye-ro).
+export const CHANGG = upToSouthRoad([[-1263.5, -490], ...street('Changgyeonggung-ro')]);
+const changgX = (z) => { const p = CHANGG; for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[1] - z) * (b[1] - z) <= 0) return a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]); } return EDGE.west; };
+export const EULJI = between(street('Eulji-ro'), -1271, -974.2);
 const toegyeAll = street('Toegye-ro');
-export const TOEGYE = [...between(toegyeAll, EDGE.west, -871), [-840, -581]]; // on east towards Sindang (the export stops at Dasan-ro)
-// Jangchungdan-ro: from the south up to the strip's south road.
-export const JANG = [...betweenZ(street('Jangchungdan-ro'), -475, -656.5), [-1022.7, STRIP_ROAD]];
+export const TOEGYE = [...between(toegyeAll, -1263.5, -871), [-840, -581]]; // on east towards Sindang (the export stops at Dasan-ro)
+// Jangchungdan-ro: from the south up to the south road, at Ogansugyo Bridge.
+export const JANG = upToSouthRoad(betweenZ(street('Jangchungdan-ro'), -475, -720));
 export const DASAN = betweenZ(street('Dasan-ro'), -577, -470);
-// Changgyeonggung-ro is drawn at x -1133, the district's west edge, not on
-// its real line (x -1270, by Euljiro 4-ga): it goes on north to Baeogae
-// Bridge, which is also still east of its real spot. Both move with the
-// Cheonggyecheon strip.
-export const CHANGG = [[EDGE.west, EULJI[0][1]], [EDGE.west, TOEGYE[0][1]]];
 
 const NAME = {
   eulji: N('을지로', 'Eulji-ro', '乙支路', '乙支路'),
@@ -94,7 +110,7 @@ const roads = [
   { k: 'primary', w: 16, p: TOEGYE, n: NAME.toegye },
   { k: 'secondary', w: 12, p: JANG, n: NAME.jang },
   { k: 'tertiary', w: 10, p: DASAN, n: NAME.dasan },
-  { k: 'tertiary', w: 9, p: CHANGG, n: NAME.changg },
+  { k: 'secondary', w: 10, p: CHANGG, n: NAME.changg },
 ];
 
 const buildings = [], areas = [], blockers = [], landmarks = [], pois = [];
@@ -127,7 +143,8 @@ areas.push({ k: 'plaza', p: [[DDP.x - 16, ddpSouth - 4], [DDP.x + 16, ddpSouth -
 // its two-arch water gate (Igansumun) near the south end.
 const jangEast = (z) => { const p = JANG; for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[1] - z) * (b[1] - z) <= 0) return r1(a[0] + ((b[0] - a[0]) * (z - a[1])) / (b[1] - a[1]) + 7.5); } return null; };
 const euljiNorth = (x) => { const p = EULJI; for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[0] - x) * (b[0] - x) <= 0) return r1(a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]) - 9); } return null; };
-const PARK = [[jangEast(-603), -603], [-992, euljiNorth(-992)], [-992, -630], [-1012, EDGE.north + 1], [jangEast(EDGE.north + 1), EDGE.north + 1]];
+const PARK_N = -656; // (level with DDP's north side)
+const PARK = [[jangEast(-603), -603], [-992, euljiNorth(-992)], [-992, -630], [-1012, PARK_N], [jangEast(PARK_N), PARK_N]];
 areas.push({ k: 'park', p: PARK });
 const WALL = { x: -1033, z0: -626, z1: -597 };
 const WALL_LEN = WALL.z1 - WALL.z0;
@@ -140,7 +157,7 @@ const IGANSUMUN = [WALL.x, WALL.z1 - 11];
 const LANE_Z = -619;
 const toegyeNorth = (x) => { const p = TOEGYE; for (let i = 1; i < p.length; i++) { const [a, b] = [p[i - 1], p[i]]; if ((a[0] - x) * (b[0] - x) <= 0) return r1(a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]) - 9.5); } return null; };
 const MX0 = -914, MX1 = EDGE.east - 2;
-const MALL_N = rect(MX0, EDGE.north + 2, MX1, LANE_Z - 4);
+const MALL_N = rect(MX0, -655, MX1, LANE_Z - 4);
 const MALL_S = [[MX0, LANE_Z + 4], [MX1, LANE_Z + 4], [MX1, toegyeNorth(MX1)], [MX0, toegyeNorth(MX0)]];
 buildings.push({ h: 38, p: MALL_N, n: N('패션몰', 'Fashion mall', 'ファッションモール', '时装商场') });
 buildings.push({ h: 30, p: MALL_S, n: N('패션몰', 'Fashion mall', 'ファッションモール', '时装商场') });
@@ -167,24 +184,29 @@ export function stationExits(out = 10.5) {
 const exitSquares = stationExits().map(({ at: [x, z] }) => ({ p: rect(x - 5, z - 5, x + 5, z + 5) }));
 
 // ---------- Rows along the streets ----------
-const inside = ([x, z]) => x > EDGE.west + 0.5 && x < EDGE.east && z > EDGE.north && z < EDGE.south;
+const inside = ([x, z]) => x > changgX(z) + 0.5 && x < EDGE.east && z > southRoadZ(x) && z < EDGE.south;
 const open = [{ p: PARK }, { p: ddpWorld }, { p: MALL_N }, { p: MALL_S }, ...exitSquares];
-const t = town(7, { inside, roads, open });
+// (Cheonggyecheon-ro's south road is in the Gyeongbokgung map; kept clear too)
+const t = town(7, { inside, roads: [...roads, { w: 9, p: CG_SOUTH }], open });
 t.buildings.push(...buildings.filter((b) => b.p !== ddpWorld)); // (DDP and the malls are in `open`)
 const SHOP = { w: [10, 16], h: [6, 14], depth: 15 };
 const MALL = { w: [20, 30], h: [24, 40], depth: 26 };
 // Across Jangchungdan-ro from DDP: big fashion malls up to the strip.
 t.row('jangW', JANG.filter(([, z]) => z <= -594), -1, { off: 7.5, ...MALL, gap: 2 });
-t.row('euljiN', between(EULJI, EDGE.west, -1057), -1, { off: 9.5, ...MALL, gap: 2 });
+t.row('euljiNw', between(EULJI, -1271, -1133), -1, { off: 9.5, ...SHOP });
+t.row('euljiN', between(EULJI, -1133, -1057), -1, { off: 9.5, ...MALL, gap: 2 });
 // South of Eulji-ro, between it and Toegye-ro, and on.
 t.row('euljiS', EULJI, 1, { off: 9.5, ...SHOP });
-t.row('toegyeN', between(TOEGYE, EDGE.west, -1000), -1, { off: 9.5, ...SHOP });
+t.row('toegyeN', between(TOEGYE, -1263.5, -1000), -1, { off: 9.5, ...SHOP });
 t.row('toegyeS', TOEGYE, 1, { off: 9.5, ...SHOP });
 t.row('jangE', JANG.filter(([, z]) => z >= -596), 1, { off: 7.5, ...SHOP });
 t.row('jangWs', JANG.filter(([, z]) => z >= -596), -1, { off: 7.5, ...SHOP });
 t.row('dasanE', DASAN, -1, { off: 6.5, ...SHOP });
 t.row('dasanW', DASAN, 1, { off: 6.5, ...SHOP });
-t.row('changgE', CHANGG, -1, { off: 6, ...SHOP });
+t.row('changgE', CHANGG, 1, { off: 7, ...SHOP });
+// Facing Cheonggyecheon across its south road: Euljiro's lighting shops,
+// and small fashion shops in front of the malls.
+t.row('stripS', between(CG_SOUTH, -1273, EDGE.east), 1, { off: 8, ...SHOP, depth: 12 });
 for (const b of t.buildings) if (!b.n && (b.h > 20)) b.n = N('패션몰', 'Fashion mall', 'ファッションモール', '时装商场');
 // (the malls round the lane are already in t.buildings: keep DDP first)
 const allBuildings = [buildings[0], ...t.buildings];
@@ -193,6 +215,7 @@ const allBuildings = [buildings[0], ...t.buildings];
 const GROUPS = [
   [['euljiS', 'jangE'], ['info-euljiro'], { near: OSM.places['Dongdaemun History & Culture Park Station (Eulji-ro x Jangchungdan-ro)'].at }],
   [['toegyeS'], ['seoul-bank'], { near: [-1000, -560] }],
+  [['stripS'], ['bitdam-hanji', 'dalbit-lighting', 'neon-golmok', 'mojeon-lamp', 'banjjak-bulbs'], { near: [-1240, -655] }],
 ];
 
 // ---------- Namsangol Hanok Village (its real place, by Chungmuro) ----------
@@ -279,14 +302,20 @@ export const GATE = { x: -1774, z: -429, ring: [-1828, -465, -1720, -393] };
 }
 
 // ---------- Heunginjimun (흥인지문, Dongdaemun) ----------
-// On an island in Jongno, which splits round it, north of the Cheonggyecheon
-// strip. Its real spot (world -1019, -737) is under the strip's north row
-// of towers, so it stands just north of them, straight up from Ogansugyo
-// Bridge (world x -1004); it moves with the strip. The arch runs east-west;
+// On an island in Jongno, which splits round it. Its real spot (world
+// -1019, -737) is only 37 m north of the stream: the island (game size) can't
+// fit there, so its south side runs along Cheonggyecheon-ro's north road, 2 m
+// clear of it, straight up from Ogansugyo Bridge. The arch runs east-west;
 // the half-moon ongseong wraps its east side, open to the north. A walk
-// comes from the south road (the link from Ogansugyo Bridge), crosses the
+// comes from the north road (the link from Ogansugyo Bridge), crosses the
 // lawn, goes through the arch and out of the ongseong.
-export const HEUNG = { x: -1004, z: -843, ring: [-1070, -800, -938, -885] };
+export const HEUNG = (() => {
+  const x = -1014, hw = 66, ringH = 85;
+  let edge = Infinity;
+  for (let q = x - hw; q <= x + hw; q += 2) edge = Math.min(edge, zAt(CG_NORTH, q) - 4.5);
+  const rz0 = Math.floor(edge - 2 - 7);
+  return { x, z: rz0 - ringH / 2, ring: [x - hw, rz0, x + hw, rz0 - ringH], real: OSM.places.Heunginjimun };
+})();
 {
   const { x, z, ring: [rx0, rz0, rx1, rz1] } = HEUNG;
   roads.push({ k: 'primary', w: 14, p: [[rx0, rz0], [rx1, rz0], [rx1, rz1], [rx0, rz1], [rx0, rz0]], n: N('종로', 'Jongno', '鍾路', '钟路') });
@@ -334,7 +363,7 @@ const map = {
 map.blockers.push(...folkBlockers(map.landmarks.find((l) => l.type === 'folkyard')));
 // For the overlap check: the main part in strips (its north edge follows
 // the streets), and the three parts of their own.
-const inMain = (p) => p.every(([x, z]) => x + ox >= EDGE.west - 1 && x + ox <= EDGE.east + 3 && z + oz > -700 && z + oz < -400);
+const inMain = (p) => p.every(([x, z]) => x + ox >= EDGE.west - 6 && x + ox <= EDGE.east + 3 && z + oz > -700 && z + oz < -400);
 const main = { buildings: map.buildings.filter((b) => inMain(b.p)), roads: map.roads.filter((r) => inMain(r.p)), areas: map.areas.filter((a) => inMain(a.p)) };
 map.meta.parts = [
   ...strips(main, 25, 'DDP, the park, the fashion malls and the streets round them'),
