@@ -7,6 +7,12 @@ const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-s
 const region = read('region.json');
 const stores = read('stores.json').stores;
 
+const segDist = (q, a, b) => {
+  const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz;
+  const t = L ? Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dz) / L)) : 0;
+  return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dz);
+};
+
 function placed(id) {
   const d = region.districts.find((x) => x.id === id);
   const map = read(d.map);
@@ -19,16 +25,23 @@ function placed(id) {
   });
   const xs = polys.flat().map((q) => q[0]), zs = polys.flat().map((q) => q[1]);
   const box = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
-  const here = stores.filter((s) => s.at[0] >= box[0] - 3 && s.at[0] <= box[1] + 3 && s.at[1] >= box[2] - 3 && s.at[1] <= box[3] + 3);
+  // (a shop's spot is on the pavement in front of its building: within 6 m of one)
+  const near = (x, z) => polys.some((p) => p.some((q, i) => { const n = p[(i + 1) % p.length]; return segDist([x, z], q, n) < 6; }));
+  const here = stores.filter((s) => s.at[0] >= box[0] - 3 && s.at[0] <= box[1] + 3 && s.at[1] >= box[2] - 3 && s.at[1] <= box[3] + 3 && near(...s.at));
   return { map, inside, here, offset: d.offset };
 }
 
-test('Yeonnam-dong: the forest park runs on from Hongdae Walking Street, shops stand on the street', () => {
+test('Yeonnam-dong: the forest park starts at Hongik Univ. Station\'s exit 3, shops stand on the street', () => {
   const { map, inside, here, offset } = placed('yeonnam');
-  const hongdae = region.districts.find((x) => x.id === 'hongdae');
   const path = map.roads.find((r) => r.n?.en === 'Gyeongui Line Forest Path');
   assert.ok(path && map.areas.some((a) => a.k === 'park' && a.trees), 'a wooded park with a path (picnic mats go there)');
-  assert.equal(path.p[0][0] + offset[0], hongdae.offset[0], 'the path lines up with Hongdae Walking Street');
+  const exit3 = region.subway.stations.find((s) => s.id === 'hongik-univ-station').exits.find((e) => e.n === 3);
+  const start = [path.p[0][0] + offset[0], path.p[0][1] + offset[1]];
+  assert.ok(Math.hypot(start[0] - exit3.at[0], start[1] - exit3.at[1]) < 15, 'the path starts by exit 3, at Yanghwa-ro');
+  // It runs north-north-west on its real line (about 32° west of north at 1/4).
+  const [a, b] = [path.p[0], path.p.at(-1)];
+  const bearing = (Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180) / Math.PI;
+  assert.ok(bearing > -40 && bearing < -25, `path bearing ${bearing.toFixed(1)}°`);
   assert.ok(map.landmarks.some((l) => l.type === 'tracks'), 'old rails in the grass');
   assert.ok(here.length >= 9, `${here.length} shops`);
   for (const s of here) assert.ok(!inside(...s.at), `${s.id} stands on the street`);

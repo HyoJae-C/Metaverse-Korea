@@ -183,7 +183,7 @@ export function mangwon() {
   }
   const road = (en) => roads.filter((r) => r.n?.en === en);
   const longest = (en) => road(en).reduce((a, r) => (r.p.length > a.p.length || (r.p.length === a.p.length && Math.hypot(r.p.at(-1)[0] - r.p[0][0], r.p.at(-1)[1] - r.p[0][1]) > Math.hypot(a.p.at(-1)[0] - a.p[0][0], a.p.at(-1)[1] - a.p[0][1])) ? r : a));
-  const H = { w: [8, 13], h: [6, 13] };
+  const H = { w: [10, 15], h: [6, 13], depth: 13 };
   const STALL = { w: [6, 8], h: [4, 5], depth: 10 };
   // (stall fronts 1.5 m off the alley, under the roof's edge)
   // Mangwon Market: stalls both sides of the alley (west: to its right going south).
@@ -202,15 +202,8 @@ export function mangwon() {
   const huiu = road('Huiujeong-ro')[0].p;
   row('huiujeongN', huiu, -1, { off: 7, ...H });
   for (const en of ['Mangwon-ro', 'Donggyo-ro', 'Bangullae-ro']) for (const r of road(en)) { row(en, r.p, 1, { off: 7, ...H }); row(en, r.p, -1, { off: 7, ...H }); }
-  for (const r of road('Mangwon lane')) { row('lane', r.p, 1, { off: 5, depth: 10, w: [8, 12], h: [5, 10] }); row('lane', r.p, -1, { off: 5, depth: 10, w: [8, 12], h: [5, 10] }); }
-  // Houses filling the blocks, on a grid turned with the bank.
-  for (let u = U_WEST + 8; u < U_EAST - 8; u += 13) {
-    for (let v = V_NORTH + 8; v < TOWN; v += 13) {
-      const w = 9 + rand() * 3, d = 9 + rand() * 3;
-      const p = [at(u, v), at(u + w, v), at(u + w, v + d), at(u, v + d)];
-      if (fits(p)) buildings.push({ h: Math.round(5 + rand() * 6), p });
-    }
-  }
+  // Nothing fills the blocks behind the rows: open and light, like Seongsu
+  // (Yozi 2026-11-10: the full blocks were too dense).
 
   // ---- areas
   const rect = (u0, v0, u1, v1) => [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)];
@@ -344,6 +337,6 @@ export const SHOPS = {
   'kkoma-kimbap': ['marketE', 7],
   'dalkom-bangatgan': ['marketW', 8],
   'slow-morning': ['poeunS', 2],
-  'bbang-gulttuk': ['poeunN', 1],
+  'bbang-gulttuk': ['poeunN', 0],
   'dongne-record': ['poeunS', 5],
 };
