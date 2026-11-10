@@ -2,14 +2,13 @@
 // "basketball" landmark; rules and moves in core/basketball-game.js, see
 // docs/BASKETBALL.md). Pick a shot, play its gauge, and the panel steps
 // aside while you do the move: basketTick places you each frame.
-import { BL } from '../ui/basketball-text.js';
-import { BasketballUI } from '../ui/basketball-ui.js';
+// The court stands on the plaza from the start; the panel, the shot rules,
+// the moves and their texts download the first time the panel opens.
 import { COURT_RADIUS, COURT_STAND, makeBall, makeCourt } from '../core/basketball-court.js';
-import { ShotPlayer } from '../core/basketball-play.js';
 import * as THREE from 'three';
 import { buzz } from '../core/haptics.js';
-import { shotMove } from '../core/basketball-game.js';
 import { t } from '../core/i18n.js';
+import { lazyPanel } from '../core/lazy-panel.js';
 
 export function createBasketball(game) {
   const { $, STALE, scene, setAutoWalk, sfx, shop, wallet } = game;
@@ -42,12 +41,20 @@ export function createBasketball(game) {
     net: () => sfx.plip(),
     cheer: () => sfx.landed(),
   };
-  const basketUi = new BasketballUI({
-    root: $('basket-panel'),
-    wallet,
-    onShot: ({ shot, tier }) => startBasketShot(shot, tier),
-    onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); game.me.play(medal ? 'cheer' : 'wave'); },
-    onClose: () => { game.action = STALE; },
+  let BL, ShotPlayer, shotMove; // (with the panel)
+  const basketUi = lazyPanel(async () => {
+    const [ui, text, play, rules] = await Promise.all([
+      import('../ui/basketball-ui.js'), import('../ui/basketball-text.js'),
+      import('../core/basketball-play.js'), import('../core/basketball-game.js'),
+    ]);
+    ({ BL } = text); ({ ShotPlayer } = play); ({ shotMove } = rules);
+    return new ui.BasketballUI({
+      root: $('basket-panel'),
+      wallet,
+      onShot: ({ shot, tier }) => startBasketShot(shot, tier),
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); game.me.play(medal ? 'cheer' : 'wave'); },
+      onClose: () => { game.action = STALE; },
+    });
   });
   function startBasketShot(shot, tier) {
     const p = game.me.root.position;

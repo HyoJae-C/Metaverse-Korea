@@ -6,7 +6,7 @@
 //   court.shake(); court.swish(); court.update(dt)   rim and net reactions
 //   const ball = makeBall();     a basketball (HOOP.ball radius)
 import * as THREE from 'three';
-import { HOOP } from './basketball-game.js';
+import { HOOP } from './basketball-hoop.js';
 
 export const COURT = { hx: 5.5, z0: -1.6, z1: 8.4 }; // half width, back and front edges (hoop frame)
 // Where you stand to start a game, and how close counts (hoop frame).
