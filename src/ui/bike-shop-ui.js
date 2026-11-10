@@ -7,6 +7,7 @@
 // sold only by the palace (core/bike-garage.js).
 import { BIKE_MODELS, KIT_WEAR, RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS, TUNE_STEP, UPGRADE_MAX, RIDE_ICON as VEHICLE_ICON, repairCost, skinPrice } from '../core/bike-garage.js';
 import { L, fmt } from './pocha-ui.js';
+import { skinCanvas } from '../core/rides.js';
 
 export function createBikeShop(game) {
   const { $, garage, refreshWallet, shop } = game;
@@ -144,9 +145,15 @@ export function createBikeShop(game) {
         b.onclick = () => pickSkin('color', id);
         return b;
       };
+      const swatchColor = garage.rideSpec().color;
       const patternChip = (id) => {
         const has = garage.hasSkin('pattern', id);
-        const b = el('button', 'chip skin-pat' + (skin.pattern === id ? ' on' : ''), `${PATTERN_NAME[id].icon} ${L(PATTERN_NAME[id])}` + (has ? '' : ` · 🪙${skinPrice('pattern', id)}`));
+        const b = el('button', 'chip skin-pat with-sample' + (skin.pattern === id ? ' on' : ''));
+        // A sample of the pattern itself, in the colour your ride has now,
+        // so you can see the design before buying (not just its name).
+        const sample = skinCanvas(swatchColor, id);
+        sample.className = 'skin-sample';
+        b.append(sample, el('span', null, L(PATTERN_NAME[id]) + (has ? '' : ` · 🪙${skinPrice('pattern', id)}`)));
         b.onclick = () => pickSkin('pattern', id);
         return b;
       };
