@@ -2915,6 +2915,18 @@
       "products": []
     },
     {
+      "id": "open-mic-live-cafe",
+      "category": "play",
+      "workshop": "livecafe",
+      "size": "medium",
+      "district": "seodaemun",
+      "name": { "ko": "오픈마이크 라이브카페", "en": "Open Mic Live Café", "ja": "オープンマイク ライブカフェ", "zh": "开放麦现场咖啡馆" },
+      "tagline": { "en": "Step on the stage and sing into your own mic: only people inside hear you", "ko": "무대에 올라 내 마이크로 노래해요. 카페 안 사람들만 들어요", "ja": "ステージで自分のマイクで歌おう。聞こえるのは店内の人だけ", "zh": "上台用自己的麦克风唱歌，只有店里的人听得到" },
+      "at": [-2345, -398],
+      "colors": { "sign": "#c2410c", "awning": "#ffcf7a", "accent": "#2a1d1a" },
+      "products": []
+    },
+    {
       "id": "gotcha-claw",
       "category": "play",
       "workshop": "claw",
