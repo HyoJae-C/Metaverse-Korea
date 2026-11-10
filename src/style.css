@@ -2678,3 +2678,18 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 }
 /* Start screen: button to the Google Form (index.html #survey-btn) */
 .survey-btn { display: flex; width: fit-content; max-width: 100%; margin: 12px auto 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; color: var(--ink); text-decoration: none; text-align: center; line-height: 1.3; white-space: normal; }
+
+/* The live café's voice panel (game/live-voice.js): singer or listener controls. */
+.live-panel {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 180px); left: 50%; transform: translateX(-50%); /* (under the shop card and the top buttons, clear of the action button and joystick) */
+  z-index: 30; width: min(340px, calc(100% - 32px)); background: var(--panel); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.live-panel[hidden] { display: none; }
+@media (max-width: 600px) { .live-panel { top: calc(env(safe-area-inset-top, 0px) + 250px); } }
+.live-panel p { margin: 0; width: 100%; font-weight: 800; font-size: 14px; }
+.live-panel p.fine { font-weight: 600; font-size: 12px; color: var(--ink-soft); }
+.live-panel p.fine:empty { display: none; }
+.live-panel button { flex: 1 1 auto; font-size: 13px; font-weight: 800; padding: 7px 10px; border-radius: 12px; background: #fff; color: var(--ink); }
+.live-panel button.primary { width: auto; font-size: 13px; padding: 7px 10px; color: #fff; background: var(--accent); }
+.live-panel input[type='range'] { flex: 1 1 100%; }
