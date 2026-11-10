@@ -85,12 +85,15 @@ function bowling(store, { scene, box, block, mat, stations, seats, w, d, h }) {
     scr.rotation.x = 0.25;
     box(0.06, h - 2.9, 0.06, lx, 2.9 + (h - 2.9) / 2, foul + 0.62, '#3a3f47');
     block(lx, (z0 + foul) / 2, laneW + 0.48, foul - z0); // the lane itself is off limits
-    stations.bowling.push({ x: lx, z: foul + 1.1, ry: Math.PI, lane: i });
+    // (foul, head: where the foul line and the head pin are, and the lane's
+    // pins, for a game played on this lane: game/bowling-view.js)
+    const st = { x: lx, z: foul + 1.1, ry: Math.PI, lane: i, foul, head: z0 + 0.9, pins, busy: false };
+    stations.bowling.push(st);
     if (i === 1 || i === 3) {
       const ball = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), mat(i === 1 ? '#3a64c8' : '#c83a7a'));
       ball.visible = false;
       scene.add(ball);
-      live.push({ lx, pins, ball, t: 2 + i * 1.7 });
+      live.push({ lx, pins, ball, st, t: 2 + i * 1.7 });
     }
   });
   // Ball returns between the lanes.
@@ -125,6 +128,7 @@ function bowling(store, { scene, box, block, mat, stations, seats, w, d, h }) {
   // The regulars' balls: roll for 2.2 s, pins fall, reset 2.5 s later.
   const animate = (dt) => {
     for (const L of live) {
+      if (L.st.busy) { L.ball.visible = false; continue; } // someone is playing on this lane
       L.t -= dt;
       const roll = 2.2;
       if (L.t <= roll && L.t > 0) {
