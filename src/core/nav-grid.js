@@ -121,8 +121,14 @@ export class NavGrid {
   route(ax, az, bx, bz, limit = 600000) {
     const s = this.nearestOpen(ax, az), e = this.nearestOpen(bx, bz);
     if (s < 0 || e < 0) return null;
+    // A far place the search gave up on is not searched again for 10 s: the
+    // guide re-plans every half second while you walk off its line, and
+    // a search that runs to the limit (about 0.4 s on a laptop) each time
+    // stalled phones and made them hot.
+    const now = performance.now();
+    if (this.miss && this.miss.e === e && this.miss.until > now) return null;
     const ids = this._search(s, e, limit);
-    if (!ids) return null;
+    if (!ids) { this.miss = { e, until: now + 10000 }; return null; }
     const pts = ids.map((id) => [this._x(id), this._z(id)]);
     pts[0] = [ax, az];
     const out = this._simplify(pts);
