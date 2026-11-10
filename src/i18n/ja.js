@@ -615,6 +615,7 @@ export const JA = {
   'safety.unblocked': 'ブロックをすべて解除しました。',
   'look.tee': 'Tシャツの色',
   'credit.chars': 'キャラクター',
+  'credit.icons': 'アイコン',
   "fountain.soon": "🌈 1分後に月光レインボー噴水が始まります。川辺の芝生から盤浦大橋を眺めましょう。",
   "fountain.on": "🌈 月光レインボー噴水が始まりました。盤浦大橋の両側から虹色の水が流れ落ちます。",
   "fountain.photo": "📸 撮影タイム！最後の1分間、橋全体が虹色に染まります。",
@@ -641,4 +642,5 @@ export const JA = {
   "used.gone": "たった今、誰かが最後の1着を買いました。",
   "used.offline": "今はお店のレジにつながりません。少ししてからもう一度どうぞ。",
   "used.closed": "古着ラックはもうすぐオープンします。",
+  "closet.retired": "販売終了",
 };

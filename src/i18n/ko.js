@@ -615,6 +615,7 @@ export const KO = {
   'safety.unblocked': '차단을 모두 풀었어요.',
   'look.tee': '티셔츠 색',
   'credit.chars': '캐릭터',
+  'credit.icons': '아이콘',
   "fountain.soon": "🌈 1분 뒤 달빛무지개분수가 시작돼요. 강가 잔디밭에서 반포대교를 바라봐요.",
   "fountain.on": "🌈 달빛무지개분수가 켜졌어요. 반포대교 양옆으로 무지개 물줄기가 쏟아져요.",
   "fountain.photo": "📸 사진 찍을 시간! 마지막 1분, 다리 전체가 무지개로 쏟아져요.",
@@ -641,4 +642,5 @@ export const KO = {
   "used.gone": "방금 다른 사람이 마지막 한 벌을 사 갔어요.",
   "used.offline": "지금은 가게 계산대에 연결할 수 없어요. 잠시 후 다시 해 주세요.",
   "used.closed": "중고 옷걸이는 곧 열려요.",
+  "closet.retired": "단종",
 };
