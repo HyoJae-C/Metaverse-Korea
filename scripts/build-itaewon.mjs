@@ -38,6 +38,7 @@ import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
 import { hillHeightRel } from '../src/core/hill-ground.js';
 import { namsanGround } from '../src/core/namsan-shape.js';
+import { outsideOf } from '../src/core/subway.js';
 import { r1, name, inPoly, sideOf, clip, nearestOn, pointAt, lengthOf, facing, lineDist, simplify, town, rng, overlap, segDist } from './street-rows.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -316,7 +317,12 @@ const EXITS = [
   { n: 1, at: [-21, -10], ry: -1.5708, real: OSM.exits.find((e) => e.station.startsWith('이태원') && e.ref === '1') },
   { n: 4, at: [-24, 11], ry: 1.5708, real: OSM.exits.find((e) => e.station.startsWith('이태원') && e.ref === '4') },
 ];
-const exitClear = EXITS.map(({ at: [x, z] }) => ({ p: [[x - 4, z - 4], [x + 4, z - 4], [x + 4, z + 4], [x - 4, z + 4]] }));
+// Clear round each exit and where you come up out of it (the stairs face along the pavement).
+const exitClear = EXITS.map(({ at: [x, z], ry }) => {
+  const o = outsideOf({ at: [x, z], ry });
+  const x0 = Math.min(x - 4, o.x - 2.5), x1 = Math.max(x + 4, o.x + 2.5), z0 = Math.min(z - 4, o.z - 2.5), z1 = Math.max(z + 4, o.z + 2.5);
+  return { p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] };
+});
 // The old army ground west of Noksapyeong-daero and south of Itaewon-ro
 // (Yongsan Garrison, being turned into Yongsan Park): open land, no houses.
 const BASE = [
