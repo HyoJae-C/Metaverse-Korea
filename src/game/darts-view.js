@@ -8,12 +8,12 @@
 import * as THREE from 'three';
 import { DartPins, dartMesh } from '../core/dart-pins.js';
 import { DART_COLORS } from '../core/arcade.js';
+import { freeSpace, applyView, restoreView } from './arcade-cam.js';
 
 const FROM = 2.25; // m from the board face to the camera (at the throw line, a little in front of you)
 const EYE = 1.5; // camera height (the board's centre is at 1.6 m)
 const FACE = 0.8; // the board with its number ring is this many metres across on screen…
 const FILL = 0.88; // …filling this much of the free space (the smaller side)
-const TOP = 64; // px kept clear at the top (the online count, the bar's name)
 const FLY_FROM = 1.3; // m from the board where a flying dart comes into view
 
 // The aim: a ring and four ticks, white with a dark edge, tinted per player.
@@ -36,7 +36,7 @@ function aimTexture() {
 }
 
 export function createDartsView(game, boardOf) {
-  let on = null; // { interior, b, overlay, aim, fly, fov, hid, panel, reserve, at }
+  let on = null; // { interior, b, overlay, aim, fly, flyColor, fov, hid, panel, space }
   const v = new THREE.Vector3();
 
   // A point on the board face (core/arcade.js coordinates: y down, r = 1 the scoring edge).
@@ -51,8 +51,7 @@ export function createDartsView(game, boardOf) {
     on.aim.removeFromParent(); on.fly.removeFromParent();
     on.aim.geometry.dispose(); on.aim.material.map.dispose(); on.aim.material.dispose();
     on.overlay.clearAll();
-    camera.clearViewOffset();
-    camera.fov = on.fov; camera.updateProjectionMatrix();
+    restoreView(camera, on.fov);
     if (on.hid && game.me) game.me.root.visible = true;
     on = null;
   }
@@ -80,7 +79,7 @@ export function createDartsView(game, boardOf) {
       // Friends' darts in our game also land in our board on our screen,
       // even if they stand at the other one (their own board gets them for
       // the room as usual).
-      on = { interior, b, flyColor: 0, overlay: new DartPins(pins.scene, [b]), aim, fly, fov: game.camera.fov, hid, panel, reserve: 0, at: 0 };
+      on = { interior, b, flyColor: 0, overlay: new DartPins(pins.scene, [b]), aim, fly, fov: game.camera.fov, hid, panel, space: {} };
       return true;
     },
     stop,
@@ -117,22 +116,13 @@ export function createDartsView(game, boardOf) {
       if (!on) return;
       if (game.interior !== on.interior) { stop(); return; }
       const { camera } = game, { b } = on;
-      const w = innerWidth, h = innerHeight;
-      if (performance.now() - on.at > 400) { on.reserve = on.panel?.offsetHeight || 0; on.at = performance.now(); }
-      const top = TOP, bottom = Math.min(h * 0.5, on.reserve + 24);
-      const room = Math.max(120, h - top - bottom);
-      const px = Math.min(room, w) * FILL; // the board's size on screen
+      const sp = freeSpace(on.space, on.panel);
+      const px = Math.min(sp.room, sp.w) * FILL; // the board's size on screen
       const nx = Math.sin(b.ry), nz = Math.cos(b.ry);
       camera.position.set(b.x + nx * FROM, EYE, b.z + nz * FROM);
       camera.lookAt(b.x, b.y, b.z);
       const dist = Math.hypot(FROM, b.y - EYE);
-      const fov = THREE.MathUtils.clamp(2 * THREE.MathUtils.radToDeg(Math.atan((FACE / 2) * h / (dist * px))), 8, 62);
-      // Lift the picture so the board's centre sits in the middle of the free space.
-      const shift = Math.round(h / 2 - (top + (h - bottom)) / 2);
-      if (Math.abs(camera.fov - fov) > 0.01 || camera.view?.offsetY !== shift || camera.view?.fullWidth !== w || camera.view?.fullHeight !== h) {
-        camera.fov = fov;
-        camera.setViewOffset(w, h, 0, shift, w, h); // (also updates the projection)
-      }
+      applyView(camera, THREE.MathUtils.clamp(2 * THREE.MathUtils.radToDeg(Math.atan((FACE / 2) * sp.h / (dist * px))), 8, 62), sp);
     },
   };
 }

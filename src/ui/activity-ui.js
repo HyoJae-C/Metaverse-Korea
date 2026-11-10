@@ -124,6 +124,9 @@ class Panel {
     cancelAnimationFrame(this.raf); this.raf = 0;
     clearTimeout(this.timer);
     window.removeEventListener('keydown', this.onKey, true);
+    this.game?.unswipe?.();
+    this.view?.stop();
+    this.root.classList.remove('arcade-live');
     this.game = null;
   }
   _frame() {
@@ -178,9 +181,11 @@ const BOWL_KEY = 'bowling10'; // 10-frame bests (older 5-frame ones were under '
 const HZ = 70, F = 430; // the horizon's height on the canvas and the focal length
 export class BowlingUI extends Panel {
   // onRoll(pinsDown, kind) after each ball ('strike', 'spare', 'split', 'gutter', 'pins'); onHit() when the ball meets the pins.
-  constructor({ root, store, onRoll, onHit, rand = Math.random }) {
+  // view: the game on the room's real lane (game/bowling-view.js; without it
+  // the panel draws its own lane).
+  constructor({ root, store, onRoll, onHit, view = null, rand = Math.random }) {
     super({ root, store, icon: '🎳', title: 'bTitle' });
-    Object.assign(this, { onRoll, onHit, rand });
+    Object.assign(this, { onRoll, onHit, view, rand });
     this.stance = 0; this.spin = 0;
     const tapKey = this.onKey;
     this.onKey = (e) => {
@@ -221,7 +226,21 @@ export class BowlingUI extends Panel {
     g.status.after(row, row2);
     g.controls = [left, right, ...g.spinBtns];
     this.setSpin(this.spin);
-    this.swipe(g);
+    // On the room's real lane: the panel keeps the score sheet (a strip), a
+    // power meter and the controls; you swipe up on the world to throw.
+    g.live = !!this.view?.start(this.root);
+    if (g.live) {
+      this.root.classList.add('arcade-live');
+      g.cv.height = 52;
+      g.cv.classList.add('bowl-sheet');
+      g.meter = el('div', 'arcade-meter');
+      const track = el('span');
+      track.append(el('i'));
+      g.meter.append(track, el('b'));
+      g.meter.style.visibility = 'hidden';
+      row2.after(g.meter);
+      this.swipe(g, this.view.surface, (e) => ({ x: (e.clientX / innerWidth) * W, y: (e.clientY / innerHeight) * H, t: now() }));
+    } else this.swipe(g);
     this.nextBall();
   }
   move(d) {
@@ -234,12 +253,13 @@ export class BowlingUI extends Panel {
   }
   // Swipe up from the ball to throw: the swipe's slant is your line, its
   // speed is the ball's.
-  swipe(g) {
+  // surface: what you swipe on (the panel's canvas, or the world) and pos(e)
+  // the point in canvas units.
+  swipe(g, surface = g.cv, pos = (e) => { const r = g.cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H, t: now() }; }) {
     let pts = null;
-    const pos = (e) => { const r = g.cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H, t: now() }; };
-    g.cv.onpointerdown = (e) => { if (g.phase === 'aim' || g.phase === 'power') { pts = [pos(e)]; g.cv.setPointerCapture?.(e.pointerId); } };
-    g.cv.onpointermove = (e) => { if (pts) pts.push(pos(e)); };
-    g.cv.onpointerup = (e) => {
+    const down = (e) => { if (g.phase === 'aim' || g.phase === 'power') { pts = [pos(e)]; surface.setPointerCapture?.(e.pointerId); } };
+    const move = (e) => { if (pts) pts.push(pos(e)); };
+    const up = (e) => {
       if (!pts) return;
       pts.push(pos(e));
       const a = pts[0], b = pts.at(-1), recent = pts.filter((p) => b.t - p.t < 0.12)[0] || a;
@@ -250,6 +270,10 @@ export class BowlingUI extends Panel {
       g.aim = Math.max(-1, Math.min(1, ((b.x - a.x) / up) / 0.6));
       this.throw(Math.max(0, Math.min(1, (vy - 150) / 1500)));
     };
+    surface.addEventListener('pointerdown', down);
+    surface.addEventListener('pointermove', move);
+    surface.addEventListener('pointerup', up);
+    g.unswipe = () => { surface.removeEventListener('pointerdown', down); surface.removeEventListener('pointermove', move); surface.removeEventListener('pointerup', up); };
   }
   nextBall() {
     const g = this.game;
@@ -264,6 +288,21 @@ export class BowlingUI extends Panel {
     g.status.textContent = tt('bAim', { f: turn.frame + 1, b: turn.ball + 1 });
   }
   aimAt(t) { return Math.sin(t * 1.35) * 0.9; }
+  // In the world: the ball, the pins and your line go to the real lane; the
+  // power meter and the score sheet stay in the panel.
+  drawLive(t, ball, pins) {
+    const g = this.game, aiming = g.phase === 'aim' || g.phase === 'power';
+    this.view.show(ball, pins, aiming ? (g.phase === 'aim' ? this.aimAt(t - g.t0) : g.aim) : null, g.phase === 'power');
+    g.meter.style.visibility = g.phase === 'power' ? 'visible' : 'hidden';
+    if (g.phase === 'power') {
+      const pw = this.powerAt(t - g.t0), bar = g.meter.firstChild.firstChild;
+      bar.style.width = `${pw * 100}%`;
+      bar.style.background = pw > 0.85 ? '#d9473c' : pw > 0.45 ? '#4caf7a' : '#ffd36e';
+      g.meter.lastChild.textContent = `${Math.round(throwFrom({ power: pw }).speed * 3.6)} km/h`;
+    }
+    g.c.clearRect(0, 0, W, 52);
+    drawSheet(g.c, g);
+  }
   powerAt(t) { return (1 - Math.cos(t * 2.6)) / 2; }
   tap() {
     const g = this.game;
@@ -319,6 +358,7 @@ export class BowlingUI extends Panel {
       ball = { x: throwFrom({ stance: this.stance }).x, z: 0, roll: 0 };
       pins = g.rack.map((p) => ({ x: p.x, z: p.z, tilt: 0, heading: 0, gone: 0 }));
     }
+    if (g.live) { this.drawLive(t, ball, pins); return; }
     // The camera stands behind the foul line and follows the ball down.
     const camZ = Math.max(-2.8, Math.min(LANE_LEN - 3.6, ball.z - 2.8));
     const u = (camZ + 2.8) / (LANE_LEN - 0.8);
@@ -389,22 +429,25 @@ export class BowlingUI extends Panel {
       c.fillStyle = standing.has(i) ? '#fbfaf6' : 'rgba(255,255,255,0.15)';
       c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill();
     });
-    // The score sheet along the top: ten frames, three boxes in the last.
-    const frames = frameRolls(g.rolls), totals = bowlingScores(g.rolls);
-    const fw = (W - 12) / (FRAMES + 0.5);
-    for (let f = 0; f < FRAMES; f++) {
-      const x = 6 + f * fw, w = f === FRAMES - 1 ? fw * 1.5 : fw;
-      c.fillStyle = g.turn?.frame === f && !g.turn?.over ? '#3a3f6a' : '#2b2d36'; c.fillRect(x + 1, 4, w - 2, 44);
-      c.fillStyle = 'rgba(255,255,255,0.45)'; c.font = '9px system-ui'; c.textAlign = 'left'; c.fillText(String(f + 1), x + 4, 13);
-      c.fillStyle = '#fff'; c.font = 'bold 12px system-ui'; c.textAlign = 'right';
-      c.fillText(frames[f] ? frameMarks(frames[f]).join(' ') : '', x + w - 5, 16);
-      c.font = 'bold 14px system-ui'; c.textAlign = 'center';
-      c.fillText(totals[f] != null ? String(totals[f]) : '', x + w / 2, 41);
-    }
+    drawSheet(c, g);
     if (g.phase === 'fallen' && (g.kind === 'strike' || g.kind === 'spare' || g.kind === 'split')) {
       c.fillStyle = g.kind === 'split' ? '#ff9a6e' : '#ffd36e'; c.font = '900 40px system-ui'; c.textAlign = 'center';
       c.fillText(tt(g.kind), W / 2, H / 2 + 20);
     }
+  }
+}
+// The score sheet along the top: ten frames, three boxes in the last.
+function drawSheet(c, g) {
+  const frames = frameRolls(g.rolls), totals = bowlingScores(g.rolls);
+  const fw = (W - 12) / (FRAMES + 0.5);
+  for (let f = 0; f < FRAMES; f++) {
+    const x = 6 + f * fw, w = f === FRAMES - 1 ? fw * 1.5 : fw;
+    c.fillStyle = g.turn?.frame === f && !g.turn?.over ? '#3a3f6a' : '#2b2d36'; c.fillRect(x + 1, 4, w - 2, 44);
+    c.fillStyle = 'rgba(255,255,255,0.45)'; c.font = '9px system-ui'; c.textAlign = 'left'; c.fillText(String(f + 1), x + 4, 13);
+    c.fillStyle = '#fff'; c.font = 'bold 12px system-ui'; c.textAlign = 'right';
+    c.fillText(frames[f] ? frameMarks(frames[f]).join(' ') : '', x + w - 5, 16);
+    c.font = 'bold 14px system-ui'; c.textAlign = 'center';
+    c.fillText(totals[f] != null ? String(totals[f]) : '', x + w / 2, 41);
   }
 }
 const freshRack = () => PINS.map((_, i) => ({ i, ...rackSpot(i) }));

@@ -1295,16 +1295,19 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 /* Batting cage, shooting gallery, darts (ui/batting-ui.js and friends) */
 .arcade-canvas { width: 100%; height: auto; border-radius: 14px; display: block; touch-action: none; user-select: none; -webkit-user-select: none; }
 .darts-board { max-width: min(100%, 36vh); margin: 0 auto; }
-/* Darts in the bar (game/darts-view.js): the board is the real one on the
-   wall, so the panel is only the score, the clock and the button. */
-.darts-live { padding: 12px 14px; }
-.darts-live h3 { display: none; }
-.darts-live .karaoke-pad { padding: 12px; font-size: 20px; }
-.darts-live .karaoke-status { margin: 0 36px 6px 0; }
-.darts-clock { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
-.darts-clock span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
-.darts-clock i { display: block; height: 100%; background: #ffd36e; }
-.darts-clock b { font-size: 15px; min-width: 3.2em; text-align: right; }
+/* Darts and bowling in the world (game/darts-view.js, game/bowling-view.js):
+   the board or lane is the real one in the room, so the panel keeps only the
+   score, a meter and the controls. */
+.arcade-live { padding: 12px 14px; }
+.arcade-live h3 { display: none; }
+.arcade-live .karaoke-pad { padding: 12px; font-size: 20px; }
+.arcade-live .karaoke-status { margin: 0 36px 6px 0; }
+.arcade-live .bowl-sheet { display: block; width: calc(100% - 40px); height: auto; border-radius: 10px; margin: 0 0 6px; }
+.arcade-live .bowl-sheet + .karaoke-status { margin-right: 0; }
+.arcade-meter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.arcade-meter span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+.arcade-meter i { display: block; height: 100%; background: #ffd36e; }
+.arcade-meter b { font-size: 15px; min-width: 3.2em; text-align: right; }
 .arcade-speeds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .arcade-speed { display: grid; gap: 2px; padding: 10px; border-radius: 12px; text-align: center; }
 .arcade-speed small { font-size: 11px; opacity: 0.8; }

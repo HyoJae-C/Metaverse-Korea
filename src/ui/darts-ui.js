@@ -161,7 +161,7 @@ export class DartsUI {
     clearInterval(this.tick); this.tick = 0;
     window.removeEventListener('keydown', this.onKey, true);
     this.view?.stop();
-    this.root.classList.remove('darts-live');
+    this.root.classList.remove('arcade-live');
     this.game = null;
   }
 
@@ -361,8 +361,8 @@ export class DartsUI {
     const live = !!this.view?.start(this.root);
     let clock = null;
     if (live) {
-      this.root.classList.add('darts-live');
-      clock = el('div', 'darts-clock');
+      this.root.classList.add('arcade-live');
+      clock = el('div', 'arcade-meter');
       const track = el('span');
       track.append(el('i'));
       clock.append(track, el('b'));
