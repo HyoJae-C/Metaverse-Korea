@@ -15,6 +15,7 @@ import { makeHeadphones } from './headphones.js';
 import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/appearance.js';
 import { skirtById } from '../data/skirts.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
+import { makeEars, makePaw } from './animal-wear.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
@@ -172,6 +173,7 @@ export function createCharacter(rawLook) {
     }
     model = m; blob.visible = true;
     for (const f of footProps.splice(0)) f(m);
+    addGloves(look, m);
     m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
   });
   tryModel();
@@ -487,7 +489,7 @@ function printMat(id) {
 }
 
 // Where earrings hang on the chibi head (head-local, the face looks down +z).
-const EAR_X = 0.315, EAR_Y = -0.1, EAR_Z = 0.0;
+const EAR_X = 0.26, EAR_Y = -0.14, EAR_Z = -0.02;
 // Glasses sit this far in front of the head's centre.
 const GLASS_Z = 0.27;
 // A small flat charm (star, heart) or a round cherry, about 5 cm across.
@@ -596,6 +598,8 @@ function addHat(look, head) {
         swirl.position.set(sgn * 0.385, 0.24, -0.02);
         head.add(swirl);
       }
+    } else if (hat === 'ears') {
+      head.add(makeEars(head1));
     } else if (hat === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);
@@ -606,6 +610,20 @@ function addHat(look, head) {
     }
   }
 
+}
+
+// Gloves (look.hand) onto the model's hand bones, sized in metres.
+function addGloves(look, m) {
+  const glove = accessory('hand', look.hand);
+  if (!glove || !m.hands) return;
+  for (const [i, h] of m.hands.entries()) {
+    if (!h) continue;
+    const p = makePaw(glove);
+    p.scale.multiplyScalar(1 / m.scale);
+    if (i === 0) p.scale.x *= -1; // (the left hand: mirrored)
+    p.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    h.add(p);
+  }
 }
 
 // Just the hat, on its own, sized for a chibi head (radius about 0.33) and

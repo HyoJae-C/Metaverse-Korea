@@ -1,6 +1,6 @@
 // Weather and time of day for the region.
 // Weather: rolled from the clock (rolledWeather), the same for every player.
-// Time of day: the region's local clock (Seoul = UTC+9).
+// Time of day: the game's own two-hour day (show-clock.js).
 import * as THREE from 'three';
 import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
@@ -19,33 +19,17 @@ export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
 
 export { WEATHER_ICON, WEATHER_SLOT_MS, WEATHER_ODDS, SEASON_ODDS, SEASONS, seasonAt, weatherSettings, weatherAt, rolledWeather } from './weather-roll.js';
 import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
+import { gameHour, SKY_SUN } from './show-clock.js';
 const NIGHT_ICON = { clear: '🌙' };
 
-// Time of day: Seoul's own (KST, UTC+9, no daylight saving), the same for
-// everyone: it's night in the game when it's night in Seoul. Sunrise and
-// sunset move with the seasons (about 05:10 and 19:55 in June, 07:45 and
-// 17:20 around New Year), from the usual textbook sun formula: good to a
-// few minutes, no table to download. ?hour=21 forces a time for testing.
-const HOUR = 3600e3, DAY = 24 * HOUR, KST = 9 * HOUR;
-const LAT = 37.57 * Math.PI / 180, LON = 126.98; // Seoul
-export function seoulHour(nowMs = Date.now()) {
-  return ((((nowMs + KST) / HOUR) % 24) + 24) % 24;
-}
-// Today's sunrise and sunset in Seoul, in hours (KST).
-export function sunTimes(nowMs = Date.now()) {
-  const y = new Date(nowMs + KST).getUTCFullYear();
-  const doy = (nowMs + KST - Date.UTC(y, 0, 1)) / DAY; // days into the year
-  const B = (2 * Math.PI * (doy - 81)) / 365;
-  const decl = (23.44 * Math.PI / 180) * Math.sin(B);
-  const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B); // minutes
-  const noon = 12 + ((135 - LON) * 4 - eot) / 60; // Seoul is west of the KST meridian (135°E)
-  const half = Math.acos((Math.sin(-0.833 * Math.PI / 180) - Math.sin(LAT) * Math.sin(decl)) / (Math.cos(LAT) * Math.cos(decl))) * 12 / Math.PI;
-  return { rise: noon - half, set: noon + half };
-}
+// Time of day: the game's own two-hour day (show-clock.js), the same for
+// everyone wherever they live, with a night and a show every two hours.
+// (It used to follow Seoul's clock, so players abroad rarely saw night.)
+// ?hour=21 forces a time for testing.
 
 // 0 = night, 1 = full day, with a dawn and a dusk of about 1 h 20 min
 // around sunrise and sunset (twilight is still light).
-export function daylight(hour, sun = sunTimes()) {
+export function daylight(hour, sun = SKY_SUN) {
   const ramp = (x, a, b) => Math.min(1, Math.max(0, (x - a) / (b - a)));
   return Math.min(ramp(hour, sun.rise - 0.7, sun.rise + 0.6), 1 - ramp(hour, sun.set - 0.6, sun.set + 0.7));
 }
@@ -61,21 +45,12 @@ const forcedHour = () => {
   }
   return forced;
 };
-// "Day and night on my time" (Settings): the sky follows the player's own
-// clock instead of Seoul's, e.g. for evenings in the Americas. Shows still
-// start on Seoul's time and bring their own night.
-let localSky = false;
-export function setLocalSky(on) { localSky = !!on; }
 export function hourNow(nowMs = Date.now()) {
   if (forcedHour() != null) return forcedHour();
-  if (localSky) { const d = new Date(nowMs); return d.getHours() + d.getMinutes() / 60; }
-  return seoulHour(nowMs);
+  return gameHour(nowMs);
 }
-let sunCache = { day: NaN, sun: null }; // (worked out once a day: it's asked every frame)
 export function darkness(nowMs = Date.now()) {
-  const day = Math.floor((nowMs + KST) / DAY);
-  if (day !== sunCache.day) sunCache = { day, sun: sunTimes(nowMs) };
-  return 1 - daylight(hourNow(nowMs), sunCache.sun);
+  return 1 - daylight(hourNow(nowMs), SKY_SUN);
 }
 
 // Night look: moonlit blue instead of the day's warm light, so colours stay
@@ -114,10 +89,19 @@ export class WeatherSystem {
   }
 
   refresh() {
-    const kind = this.forced || weatherAt(Date.now(), this.settings);
+    const kind = this.forced || (this.showClear ? 'clear' : weatherAt(Date.now(), this.settings));
     if (kind !== this.kind || !this.started) this.setKind(kind);
     this.started = true;
     this.onUpdate?.(this.status());
+  }
+
+  // At the Yeouido fireworks or the Ttukseom drone show (their night is on
+  // around you) the sky clears: no rain, snow or fog in front of the show
+  // (Yozi). Everywhere else keeps the shared weather.
+  setShowClear(on) {
+    if (!!on === !!this.showClear) return;
+    this.showClear = !!on;
+    this.refresh();
   }
 
   // The operators' setting changed (supabase/023_weather.sql).

@@ -126,13 +126,23 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
+- `closed` (region.json) is land not built yet in Seocho, Gangnam and Dongjak:
+  rectangles you can't walk into, drawn grey on the street, the map and the
+  minimap. `node scripts/build-closed.mjs` writes it, leaving 30 m open around
+  anything built (6 m each side of a bike path); run it again after building
+  there.
+- The Han River bike paths are links with `bike: true` (drawn red on the
+  street and the maps): the north bank from Mangwon to Seongsu, and the south
+  bank from the Saetgang's mouth to Banpo-Jamwon park and on to Jamsil
+  Bridge, open through the closed land. `node scripts/build-bike-paths.mjs`
+  writes them on OpenStreetMap's real cycleways at 1/4
+  (`scripts/data/han-bike-osm.json`); run `build-closed.mjs` after it.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
   `blockers` split around a bridge to leave a gap. The Han's banks there
   are the real ones at 1/4 (`scripts/data/han-banks.json`, from OpenStreetMap):
   `scripts/han-bank.mjs` writes water[1] (from x -1420, west of Banpo Bridge,
-  to Seongsu, with a gap for Jamsu Bridge) and the Han River Bike Path 14 m
-  inland of the north bank, and `scripts/build-yeouido.mjs` writes water[0]
+  to Seongsu, with a gap for Jamsu Bridge), and `scripts/build-yeouido.mjs` writes water[0]
   (Mangwon to x -1420) from the same banks. Mangwon's map draws its own
   straight stretch of the real bank (west of x -3220).
 - Stores, homes and meeting zones can be placed with
@@ -323,6 +333,43 @@ Sinheung-ro, Sowol-ro and the shops on Itaewon-ro.
 - **Keep things off the slope.** Anything drawn at y 0 (street trees, link
   roads) would be under the hill: `tests/gyeongnidan.test.mjs` checks the
   Itaewon-ro link stays clear of it.
+
+## Namsan and its cable car (Yongsan-gu / Jung-gu)
+
+`scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap
+(`scripts/data/namsan-osm.json`) and writes it into `districts/itaewon.json`
+(items marked `ns`), the cable car's door in `stores.json` and the Sopa-ro
+link in `region.json`.
+
+- **The hill**: its top, with the look-out tower, on N Seoul Tower's real
+  spot, 65 m high (262 m / 4). Its foot (380 × 340 m) fits between Sopa-ro
+  and Sowol-ro on the west, Namsangol Hanok Village on the north and
+  Itaewon on the south; real Namsan runs on further east to Beotigogae.
+  The summit is near the real hill's west end, so the hill leans west
+  (`src/core/namsan-shape.js`).
+- **The cable car**: the lower station on the real one by Sopa-ro, above
+  Myeongdong (moved 5 m to clear the road), and the cable up to the real
+  upper station by the tower, high enough over the trees.
+- **Getting there**: Sopa-ro on its real line from Toegye-ro (by Myeongdong)
+  round to Sowol-ro. From Itaewon, the Namsan trail runs up from Sowol-ro to
+  the foot of the hill; the cable car is round the west side.
+- `tests/namsan.test.mjs` keeps the tower, both stations and the cable within
+  15 m of the real places.
+
+## Itaewon's museums (Yongsan-gu)
+
+`scripts/build-yongsan-museums.mjs` puts both on their real places
+(OpenStreetMap), at 1/4 like the rest of Seoul; both are mostly seen from
+inside, so their grounds shrink (Yozi 2026-11-10). Items are marked `ym`.
+
+- **War History Museum** (the real War Memorial of Korea): the whole site
+  shrinks to 40% round the main building, which stands on the real main
+  hall; heights at 50%. The plaza in front stretches to reach Itaewon-ro.
+- **National Central Art Museum** (on the real National Museum of Korea's
+  spot): its 100 m building is already the real one at 1/4, so it only
+  moves, with Yongsan Park round it and the Art Museum Way north to the
+  game's Seobinggo-ro (which is drawn north of the real road; Itaewon's own
+  streets are hand-made).
 
 ## Samseong-dong (Gangnam-gu)
 
@@ -536,11 +583,11 @@ stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
 ## Bosingak (Jongno)
 
-The bell pavilion stands on the north side of Jongno in the Gyeongbokgung
-district's map, east of Sejong-daero (`src/data/bosingak.js`, model in
+The bell pavilion stands on the south side of Jongno in the Gyeongbokgung
+district's map, between Jongno and Cheonggyecheon-ro at the Gwanggyo corner,
+11 m north of its real 1/4 spot (`src/data/bosingak.js`, model in
 `core/bosingak-model.js`, people in `core/bosingak-show.js`), on its own
-square where a plain building used to be, with a few visitors already there.
-In front of the steps `🔔 Ring the bell` swings the striker into the bell and
+square with a few visitors already there. In front of the pavilion `🔔 Ring the bell` swings the striker into the bell and
 plays a long synthesised hum (`Sfx.bigBell`), heard only round the square
 (`hear.ring`, about 20 m); other players there hear it too (emote
 `bosingak:ring`). The first ring pays once (reward rule `view`) and shows its
@@ -592,7 +639,7 @@ HANEUL (하늘), a fictional brand, has a department store (north of the west
 lake) and a mall (north of the east lake) between Olympic-ro and the lakes,
 where the real shopping complex by Jamsil Station stands. Another Tower
 (어나더타워, fictional) stands at the real 555 m tower's place just south-east
-of Jamsil Station, at 1/4 (139 m to the tip, 18 m across). Their footprints are `custom` buildings in `districts/songpa.json`
+of Jamsil Station, at half height (278 m to the tip, 35 m across: the real shape at that height, a map exception Yozi chose). Their footprints are `custom` buildings in `districts/songpa.json`
 drawn by `core/haneul.js` (landmarks `haneulstore`, `haneultower`); the shops
 are `haneul-dept` and `haneul-mall` in stores.json, and meeting zone F-2
 (Seokchon Lakeside) keeps two passers-by on the shore.

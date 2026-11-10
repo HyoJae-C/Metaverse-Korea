@@ -2,28 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  FIREWORKS_HOURS_KST, SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME,
+  SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME,
   KINDS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
 } from '../src/core/fireworks-show.js';
-import { DRONE_SHOW_HOURS_KST } from '../src/core/drone-show.js';
+import { droneShowAt } from '../src/core/drone-show.js';
+import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
 import { ORIGIN, U, at } from '../scripts/build-yeouido.mjs';
 
-const KST = (y, m, d, h, min = 0) => Date.UTC(y, m - 1, d, h - 9, min);
+// A fireworks show's start: the fireworks are on the cycles numbered 0 mod 4.
+const N = cycleNumber(Date.UTC(2026, 10, 9)) & ~3;
+const FW = (k = 0) => (N + 4 * k) * CYCLE_MS + SHOW_FROM;
 
-test('twice a day, at 9:00 and 21:00 Korean time, never near the drone show', () => {
-  assert.deepEqual(FIREWORKS_HOURS_KST, [9, 21]);
-  for (const f of FIREWORKS_HOURS_KST) for (const d of DRONE_SHOW_HOURS_KST) {
-    const gap = Math.min(Math.abs(f - d), 24 - Math.abs(f - d));
-    assert.ok(gap >= 3, `fireworks ${f}:00 and drones ${d}:00 are ${gap} h apart`);
-  }
-  const start = KST(2026, 11, 9, 21);
+test('one night in four of the game\'s 2-hour day, three a real day, never with the drone show', () => {
+  const start = FW();
   assert.equal(fireworksAt(start - (ALERT_SECONDS + 5) * 1000), null, 'nothing before the notice');
   assert.equal(fireworksAt(start - ALERT_SECONDS * 1000 + 1000).start, start, 'the 10-minute notice');
-  const mid = fireworksAt(start + 1800e3);
+  const mid = fireworksAt(start + 600e3);
   assert.ok(mid.on && mid.night === 1);
-  assert.equal(fireworksAt(KST(2026, 11, 9, 15)), null, 'no show in the afternoon');
-  assert.equal(nextFireworks(KST(2026, 11, 9, 10)), start);
-  assert.equal(nextFireworks(KST(2026, 11, 9, 22, 30)), KST(2026, 11, 10, 9));
+  assert.equal(droneShowAt(start + 600e3), null, 'no drones the same night');
+  assert.equal(fireworksAt(start - 60 * 60e3), null, 'no show in the day');
+  assert.equal(nextFireworks(start - 60 * 60e3), start);
+  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 8 hours later');
+  assert.equal(FW(1) - start, 4 * CYCLE_MS);
+  let n = 0;
+  for (let s = nextFireworks(start - 1); s < start + 24 * 3600e3; s = nextFireworks(s)) n++;
+  assert.equal(n, 3);
 });
 
 test('Yeouido\'s sky darkens before the show and brightens after it, smoothly', () => {
@@ -35,22 +38,24 @@ test('Yeouido\'s sky darkens before the show and brightens after it, smoothly', 
 });
 
 test('the program: the same for everyone, no long waits, a photo time and a finale', () => {
-  const start = KST(2026, 11, 9, 21);
+  const start = FW();
   const a = program(start), b = JSON.parse(JSON.stringify(program(start)));
   assert.deepEqual(a, b, 'one program per show');
-  assert.notDeepEqual(program(KST(2026, 11, 10, 9)).slice(0, 5), a.slice(0, 5), 'each show is a little different');
-  assert.ok(a.length > 2000 && a.length < 6000, `${a.length} bursts`);
+  assert.notDeepEqual(program(FW(1)).slice(0, 5), a.slice(0, 5), 'each show is a little different');
+  assert.ok(a.length > 1500 && a.length < 5000, `${a.length} bursts`);
   for (let i = 1; i < a.length; i++) {
     assert.ok(a[i].t >= a[i - 1].t, 'in time order');
-    assert.ok(a[i].t - a[i - 1].t < 10, `no gap over 10 s (at ${a[i].t})`);
+    assert.ok(a[i].t - a[i - 1].t < 2.5, `no gap over 2.5 s (at ${a[i].t})`);
   }
+  assert.equal(SHOW_SECONDS, 1200, '20 minutes');
+  for (const k of KINDS) assert.ok(a.some((x) => x.kind === k), `${k} comes up`);
   assert.ok(a[0].t < 1 && a.at(-1).t < SHOW_SECONDS && a.at(-1).t > SHOW_SECONDS - 1);
   for (const x of a) assert.ok(KINDS.includes(x.kind) && LIFE[x.kind] && RADIUS[x.kind] && x.barge >= 0 && x.barge < BARGES.length && x.h > 25, JSON.stringify(x));
   const photo = a.filter((x) => x.t >= PHOTO_TIME[0] && x.t < PHOTO_TIME[1]);
   assert.ok(photo.length > 30 && photo.every((x) => x.kind === 'willow'), 'gold willows at photo time');
   const perMin = (t0) => a.filter((x) => x.t >= t0 && x.t < t0 + 60).length;
-  assert.ok(perMin(3480) > 4 * perMin(60), `finale ${perMin(3480)}/min, act 1 ${perMin(60)}/min`);
-  for (const x of a.filter((y) => ['heart', 'star', 'smile'].includes(y.kind))) assert.ok(x.t >= 840, 'shapes come in act 2 and later');
+  assert.ok(perMin(1130) > 4 * perMin(30), `finale ${perMin(1130)}/min, opening ${perMin(30)}/min`);
+  assert.ok(!a.some((x) => ['heart', 'star', 'smile'].includes(x.kind)), 'no hearts, stars or smiles: those are the drone show\'s');
 });
 
 test('barges in the river between the island and Hongdae; the night only around Yeouido', () => {
@@ -72,31 +77,17 @@ test('barges in the river between the island and Hongdae; the night only around 
   assert.equal(nearYeouido(...atUV(-300, 400)), 1, 'night on the south side of the island too');
 });
 
-test('operators can move the fireworks; the drones and the fountain keep clear', async () => {
-  const fw = await import('../src/core/fireworks-show.js');
-  const { DRONE_SPAN } = await import('../src/core/drone-show.js');
-  const { timesOverlap, clockText } = await import('../src/core/show-clock.js');
-  const fountain = await import('../src/core/rainbow-fountain.js');
-  assert.equal(fw.checkFireworksTimes([540, 600]).error, 'close', 'at least 90 minutes apart');
-  assert.deepEqual(fw.checkFireworksTimes([1230]), { minutes: [1230] });
-  // The defaults never overlap; a drone show 33 minutes before is fine, 32 is not.
-  const defaults = (h) => h.map((x) => x * 60);
-  assert.equal(timesOverlap(defaults(DRONE_SHOW_HOURS_KST), DRONE_SPAN, defaults(FIREWORKS_HOURS_KST), fw.FIREWORKS_SPAN), false);
-  assert.equal(timesOverlap([507], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), false);
-  assert.equal(timesOverlap([508], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), true);
-  assert.equal(timesOverlap([613], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), false);
-  assert.equal(timesOverlap([612], DRONE_SPAN, [540], fw.FIREWORKS_SPAN), true);
-  assert.equal(timesOverlap([1430], DRONE_SPAN, [20], fw.FIREWORKS_SPAN), true, 'round midnight too');
-  assert.equal(clockText(1230), '20:30');
-  try {
-    fw.setFireworksTimes([1230]); // 20:30
-    assert.equal(fireworksAt(KST(2026, 11, 9, 21, 10)).start, KST(2026, 11, 9, 20, 30));
-    assert.equal(fireworksAt(KST(2026, 11, 9, 9, 10)), null, 'no morning show');
-    assert.deepEqual(fountain.skipHours(), [20, 21], 'the fountain sits out 20:30 and 21:30');
-    assert.ok(!fountain.fountainAt(KST(2026, 11, 9, 21, 40))?.on);
-    assert.ok(fountain.fountainAt(KST(2026, 11, 9, 9, 40))?.on, 'and plays at 9:30 again');
-  } finally {
-    fw.setFireworksTimes(null);
+test('volleys: now and then several shells burst at the same moment, across the barges', () => {
+  const a = program(FW());
+  const at = new Map();
+  for (const x of a) at.set(x.t, [...(at.get(x.t) || []), x]);
+  const volleys = [...at.values()].filter((v) => v.length >= 3);
+  assert.ok(volleys.length > 150, `${volleys.length} volleys`);
+  for (const v of volleys) {
+    assert.ok(v.every((x) => x.kind === v[0].kind), 'one kind per volley');
+    assert.ok(new Set(v.map((x) => x.barge)).size >= 2, 'from more than one barge');
   }
-  assert.deepEqual(fountain.skipHours(), [9, 21]);
+  const salvo = volleys.filter((v) => v[0].t >= 540 && v[0].t < 600);
+  assert.ok(salvo.length > 30 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
+  assert.ok(volleys.some((v) => v[0].t >= 1110 && v.length >= 7), 'big volleys in the finale');
 });

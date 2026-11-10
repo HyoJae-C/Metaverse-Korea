@@ -36,12 +36,20 @@ function bodyGeo() {
     [ball(0.06, 6, 5), DARK, [0, 0.9, -0.45], [0.8, 1.4, 0.8]], // the tail
     [new THREE.CylinderGeometry(0.08, 0.12, 0.42, 8), BROWN, [0, 1.0, 0.3], [1, 1, 1], [0.55, 0, 0]], // the neck
   ];
-  // white spots in two rows along each side of the back
+  // white spots, two rows of four along each side of the back. Each sits on
+  // the body's ellipsoid (it narrows toward the chest and rump, so a spot
+  // must come in with it) and lies flat along the surface normal.
+  const [A, B, C] = [0.3 * 0.8, 0.3 * 0.82, 0.3 * 1.45], CY = 0.78;
+  const up = new THREE.Vector3(0, 1, 0), nrm = new THREE.Vector3(), q = new THREE.Quaternion(), e = new THREE.Euler();
   for (const s of [-1, 1]) {
-    for (let k = 0; k < 5; k++) {
-      const z = -0.26 + k * 0.13;
-      for (const [a, off] of [[0.55, 0], [0.95, 0.06]]) {
-        parts.push([ball(0.032, 6, 5), WHITE, [s * Math.sin(a) * 0.235, 0.78 + Math.cos(a) * 0.24, z + off], [1, 0.6, 1]]);
+    for (let k = 0; k < 4; k++) {
+      const z0 = -0.24 + k * 0.15;
+      for (const [a, off] of [[0.55, 0], [0.95, 0.07]]) {
+        const z = z0 + off, r = Math.sqrt(1 - (z / C) ** 2);
+        const x = s * Math.sin(a) * A * r, y = Math.cos(a) * B * r;
+        nrm.set(x / (A * A), y / (B * B), z / (C * C)).normalize();
+        e.setFromQuaternion(q.setFromUnitVectors(up, nrm));
+        parts.push([ball(0.032, 6, 5), WHITE, [x - nrm.x * 0.004, CY + y - nrm.y * 0.004, z - nrm.z * 0.004], [1, 0.35, 1], [e.x, e.y, e.z]]);
       }
     }
   }

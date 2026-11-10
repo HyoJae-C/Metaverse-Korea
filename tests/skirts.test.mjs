@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SKIRTS, SKIRT_LENGTHS, SKIRT_PATTERNS, skirtName } from '../src/data/skirts.js';
 import { ITEMS, isWorn } from '../src/core/inventory.js';
+import { RETIRED } from '../src/data/wearables.js';
 import { sanitizeLook, DEFAULT_LOOK } from '../src/data/appearance.js';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
@@ -40,12 +41,12 @@ test('a skirt goes on over the trousers and comes off again; trousers take it of
   assert.equal(sanitizeLook({ skirt: 'ballgown' }).skirt, null);
 });
 
-test('skirt shops: five in Seongsu and three in Hongdae, every skirt sold somewhere', () => {
+test('skirt shops: five in Seongsu and three in Hongdae, every skirt sold somewhere but the retired ones', () => {
   const shops = stores.filter((s) => s.products?.length && s.products.every((p) => p.model === 'skirt'));
   assert.equal(shops.filter((s) => inSeongsu(s.at)).length, 5);
   assert.equal(shops.filter(inHongdae).length, 3);
   const sold = new Set(shops.flatMap((s) => s.products.map((p) => p.skirt)));
-  assert.deepEqual([...sold].sort(), Object.keys(SKIRTS).sort());
+  assert.deepEqual([...sold].sort(), Object.keys(SKIRTS).filter((id) => !RETIRED.has('skirt-' + id)).sort());
   for (const s of shops) for (const p of s.products) {
     assert.equal(p.item, 'skirt-' + p.skirt);
     assert.deepEqual(p.tryOn, { skirt: p.skirt });

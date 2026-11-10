@@ -40,7 +40,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { folkBlockers, FOLK_GAMES_ON } from '../src/data/folk-yard.js';
 import { r1, name as N4, town, nearestOn, pointAt, lengthOf, strips, lineDist, inPoly } from './street-rows.mjs';
-import { SOUTH as CG_SOUTH, NORTH as CG_NORTH, zAt } from './cheonggyecheon-line.mjs';
+import { SOUTH as CG_SOUTH, NORTH as CG_NORTH, zAt, BRIDGES, at as cgAt } from './cheonggyecheon-line.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -302,25 +302,35 @@ export const GATE = { x: -1774, z: -429, ring: [-1828, -465, -1720, -393] };
 }
 
 // ---------- Heunginjimun (흥인지문, Dongdaemun) ----------
-// On an island in Jongno, which splits round it. Its real spot (world
-// -1019, -737) is only 37 m north of the stream: the island (game size) can't
-// fit there, so its south side runs along Cheonggyecheon-ro's north road, 2 m
-// clear of it, straight up from Ogansugyo Bridge. The arch runs east-west;
-// the half-moon ongseong wraps its east side, open to the north. A walk
-// comes from the north road (the link from Ogansugyo Bridge), crosses the
-// lawn, goes through the arch and out of the ongseong.
+// Its real spot (OSM.places.Heunginjimun) is only 37 m north of the stream,
+// and Cheonggyecheon is game width here (scripts/cheonggyecheon-line.mjs), so
+// the gate (game size, with its ongseong) stands HEUNG.why m from it: as
+// far south as it goes with the ongseong 2 m clear of Cheonggyecheon-ro's
+// north road. Jongno splits round it like the real one, in a U: the island's
+// south side is the north road itself (the real island runs down to the
+// stream side too). The arch runs east-west; the half-moon ongseong wraps its
+// east side, open to the north. A walk comes up from the north road (the
+// link from Ogansugyo Bridge), crosses the lawn, goes through the arch and
+// out of the ongseong. Only the wall north of the gate is there (the real
+// one south of it is gone).
 export const HEUNG = (() => {
-  const x = -1014, hw = 66, ringH = 85;
+  // x: straight up from Ogansugyo Bridge, 4 m east of the real gate (whose
+  // ongseong reaches 6 m further east, so the whole gate's middle is on it).
+  const real = OSM.places.Heunginjimun, R = 20, w = 12; // R: the ongseong's reach north and south
+  const x = Math.round(cgAt(BRIDGES.find((b) => b.name.en.startsWith('Ogansugyo')).u)[0]);
+  const lawnS = (q) => zAt(CG_NORTH, q) - 4.5 - 2; // the lawn's south edge: 2 m clear of the north road
   let edge = Infinity;
-  for (let q = x - hw; q <= x + hw; q += 2) edge = Math.min(edge, zAt(CG_NORTH, q) - 4.5);
-  const rz0 = Math.floor(edge - 2 - 7);
-  return { x, z: rz0 - ringH / 2, ring: [x - hw, rz0, x + hw, rz0 - ringH], real: OSM.places.Heunginjimun };
+  for (let q = x - 30; q <= x + 30; q += 2) edge = Math.min(edge, lawnS(q));
+  const z = Math.floor(edge - R);
+  const rx0 = x - 32, rx1 = x + 34, rz1 = z - 34; // the ring road's middle: west, east, north
+  return { x, z, w, ring: [rx0, z, rx1, rz1], south: [zAt(CG_NORTH, rx0), zAt(CG_NORTH, rx1)], real, why: r1(Math.hypot(x - real[0], z - real[1])) };
 })();
 {
-  const { x, z, ring: [rx0, rz0, rx1, rz1] } = HEUNG;
-  roads.push({ k: 'primary', w: 14, p: [[rx0, rz0], [rx1, rz0], [rx1, rz1], [rx0, rz1], [rx0, rz0]], n: N('종로', 'Jongno', '鍾路', '钟路') });
-  areas.push({ k: 'park', p: rect(rx0 + 9, rz1 + 9, rx1 - 9, rz0 - 9) });
-  roads.push({ k: 'walk', w: 4, p: [[x, rz0 - 7], [x, z + 14], [x - 20, z + 14], [x - 20, z], [x + 10, z], [x + 10, rz1 + 7]] });
+  const { x, z, w, ring: [rx0, , rx1, rz1], south: [s0, s1] } = HEUNG;
+  roads.push({ k: 'primary', w, p: [[rx0, s0], [rx0, rz1], [rx1, rz1], [rx1, s1]], n: N('종로', 'Jongno', '鍾路', '钟路') });
+  const lawnS = Math.floor(Math.max(s0, s1) - 4.5 - 1); // (z south: the north road's north edge, less 1 m)
+  areas.push({ k: 'park', p: rect(rx0 + w / 2 + 2, rz1 + w / 2 + 2, rx1 - w / 2 - 2, Math.min(lawnS, zAt(CG_NORTH, x) - 5.5)) });
+  roads.push({ k: 'walk', w: 4, p: [[x, zAt(CG_NORTH, x) - 4.5], [x, z + 14], [x - 20, z + 14], [x - 20, z], [x + 10, z], [x + 10, rz1 + w / 2 + 1]] });
   // The base: piers north and south of the arch; the ongseong's ring of wall
   // (east of the base, open on its north side).
   blockers.push({ p: rect(x - 6, z - 12, x + 6, z - 2.5) }, { p: rect(x - 6, z + 2.5, x + 6, z + 12) });
@@ -334,10 +344,9 @@ export const HEUNG = (() => {
   }
   landmarks.push({ type: 'heunginjimun', x, z, ry: Math.PI / 2 }); // the name board faces east, into the ongseong
   landmarks.push({ type: 'wall', p: arc, h: 6 });
-  landmarks.push({ type: 'citywall', x, z: z - 22, len: 20, gates: 0 });
-  landmarks.push({ type: 'citywall', x, z: z + 22, len: 20, gates: 0 });
-  blockers.push({ p: rect(x - 2, z - 32, x + 2, z - 12) }, { p: rect(x - 2, z + 12, x + 2, z + 32) });
-  landmarks.push({ type: 'sign', x: x - 12, z: z + 20, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
+  landmarks.push({ type: 'citywall', x, z: z - 18, len: 12, gates: 0 });
+  blockers.push({ p: rect(x - 2, z - 24, x + 2, z - 12) });
+  landmarks.push({ type: 'sign', x: x - 12, z: z + 18, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
   pois.push({ kind: 'landmark', x, z: z - 14, name: N('흥인지문 (동대문)', 'Heunginjimun (Dongdaemun)', '興仁之門（東大門）', '兴仁之门（东大门）') });
 }
 
@@ -369,7 +378,7 @@ map.meta.parts = [
   ...strips(main, 25, 'DDP, the park, the fashion malls and the streets round them'),
   { why: 'Namsangol Hanok Village and its walk up to Toegye-ro', box: L([[hx0 - 1, toegyeAtGate + 8], [hx1 + 1, hz1 + 1]]).flat() },
   { why: 'Sungnyemun on its island', box: L([[GATE.ring[0], GATE.ring[1]], [GATE.ring[2], GATE.ring[3]]]).flat() },
-  { why: 'Heunginjimun on its island, north of the Cheonggyecheon strip', box: L([[HEUNG.ring[0], HEUNG.ring[1]], [HEUNG.ring[2], HEUNG.ring[3]]]).flat() },
+  { why: `Heunginjimun on its island, north of the Cheonggyecheon strip (${HEUNG.why} m north of the real gate: the stream is game width)`, box: L([[HEUNG.ring[0] - HEUNG.w / 2, Math.max(...HEUNG.south) - 4.5], [HEUNG.ring[2] + HEUNG.w / 2, HEUNG.ring[3] - HEUNG.w / 2]]).flat() },
 ];
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

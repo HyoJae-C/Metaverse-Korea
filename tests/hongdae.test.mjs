@@ -62,8 +62,9 @@ test('Hongdae: district, station, busking zone and an even mix of shops and caf�
   const cafes = stores.filter((s) => s.category === 'cafe').length;
   const shops = stores.filter((s) => ['fashion', 'beauty', 'lifestyle'].includes(s.category)).length;
   // Hongdae has more clothes and beauty shops than cafés now (hair salons,
-  // skirt shops, the perfume alley), but cafés stay a big part of the street.
-  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 9, `cafés ${cafes}, shops ${shops}`);
+  // skirt shops, the perfume alley, Nyang Meong To Pan's animal ears), but
+  // cafés stay a big part of the street.
+  assert.ok(cafes >= 4 && shops >= 4 && cafes - shops <= 3 && shops - cafes <= 10, `cafés ${cafes}, shops ${shops}`);
   assert.ok(stores.some((s) => s.workshop === 'tarot'), 'a tarot café');
   for (const s of stores) assert.ok(!inside(...s.at), `${s.id} stands on the street`);
   // The busking zone: the audience bank, the dancers and the singer stay

@@ -80,6 +80,7 @@ import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
+import { createUsedRack } from './game/used-rack.js';
 import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
@@ -93,10 +94,9 @@ import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
-import { WeatherSystem, WET, weatherSpeed, darkness, setLocalSky } from './core/weather.js';
+import { WeatherSystem, WET, weatherSpeed, darkness } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
-import { watchShowTimes } from './core/show-times-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -144,8 +144,8 @@ import { initInstall } from './ui/install-ui.js';
 import { DuckUI } from './ui/duck-ui.js';
 import { makeMascotHead } from './core/mascot.js';
 import { UPDATES, updateText, hasNew as hasNewUpdate, newCount as newUpdates } from './data/updates.js';
-import { droneShowAt, setDroneShowTimes, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
-import { fireworksAt, setFireworksTimes, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
+import { droneShowAt, ALERT_SECONDS, LIFT_SECONDS } from './core/drone-show.js';
+import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as FIREWORKS_FINALE, ALERT_SECONDS as FIREWORKS_ALERT, DUSK_SECONDS as FIREWORKS_DUSK } from './core/fireworks-show.js';
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
@@ -170,6 +170,8 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
+import { closetKind, closetColor } from './core/closet.js';
+import { RETIRED } from './data/wearables.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -233,6 +235,7 @@ import { createSkyFlight } from './game/sky-flight.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
+import { createPotatoMarketNear } from './game/potato-market-near.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1374,17 +1377,14 @@ const weather = new WeatherSystem({
 });
 
 // The operators' season and held weather (admin.html → Weather,
-// supabase/023_weather.sql) and the drone show and fireworks times
-// (admin.html → Shows, supabase/033_show_times.sql), the same for everyone. A little after
+// supabase/023_weather.sql), the same for everyone. A little after
 // start, so it never holds up joining the world.
-let weatherClient = null, stopWeather = null, stopShowTimes = null;
+let weatherClient = null, stopWeather = null;
 function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
-  stopShowTimes?.();
   weatherClient = cloud.client;
   stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
-  stopShowTimes = watchShowTimes(weatherClient, (raw) => { setDroneShowTimes(raw.drone); setFireworksTimes(raw.fireworks); });
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
@@ -2179,6 +2179,9 @@ function holdNew(h) {
 }
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+// Hold on to the collection's nodes now: the bag panel re-renders its children,
+// so they can't be looked up by id once another tab has been shown.
+itemEl('wallet-items-title'); itemEl('wallet-items');
 const bagUi = new BagUI({
   root: $('bag-panel'),
   bag,
@@ -2194,10 +2197,37 @@ const bagUi = new BagUI({
     itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
     return [itemEl('wallet-items-title'), itemEl('wallet-items')];
   },
-  closet: () => {
-    refreshItems();
-    return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
-  },
+  // The Wardrobe tab, a grid like the bag's: put clothes on or take them off
+  // (trousers can only be swapped for another pair).
+  closet: () => ({
+    ids: inventory.list().filter(isClothes),
+    describe: (id) => {
+      const it = ITEMS[id];
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
+    },
+    actions: (id, redraw) => {
+      const it = ITEMS[id];
+      const w = document.createElement('button');
+      if (it.wear) {
+        const on = isWorn(it, myLook);
+        w.className = 'chip' + (on ? ' on' : '');
+        w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(BAG_TEXT.wearing)) : '✨ ' + t('tee.wear');
+        w.disabled = on && !it.off;
+        w.onclick = () => { outfitAction(id); redraw(); };
+      } else { // a printed shirt
+        const wearing = myLook.tee === it.tee;
+        w.className = 'chip' + (wearing ? ' on' : '');
+        w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
+        w.onclick = () => {
+          myLook = { ...myLook, tee: wearing ? null : it.tee };
+          saveLook(myLook);
+          setLook(myLook);
+          redraw();
+        };
+      }
+      return [w];
+    },
+  }),
   rides: () => (garage.s.own.length > 1 ? { nodes: [bagRideList()], count: garage.s.own.length } : null),
 });
 // The bag's Rides tab: every ride you own (bike, board, skates, scooter), to
@@ -2945,6 +2975,7 @@ function leaveStore(walkOut = false) {
   if (fishingUi.open) fishingUi.close();
   if (marketUi.open) marketUi.close();
   if (resaleUi.open) resaleUi.close();
+  potatoMarket.close();
   if (ramenUi.open) ramenUi.close();
   if (kimchiUi.open) kimchiUi.close();
   if (japchaeUi.open) japchaeUi.close();
@@ -3078,19 +3109,6 @@ $('steady-btn').onclick = () => {
   $('steady-btn').setAttribute('aria-pressed', String(steadyWalk));
   try { localStorage.setItem(STEADY_KEY, steadyWalk ? '1' : '0'); } catch { /* ignore */ }
 };
-// Day and night on my own clock instead of Seoul's (core/weather.js).
-{
-  let on = false;
-  try { on = localStorage.getItem('mk.localSky') === '1'; } catch { /* ignore */ }
-  setLocalSky(on);
-  $('localsky-btn').setAttribute('aria-pressed', String(on));
-  $('localsky-btn').onclick = () => {
-    on = !on;
-    setLocalSky(on);
-    $('localsky-btn').setAttribute('aria-pressed', String(on));
-    try { localStorage.setItem('mk.localSky', on ? '1' : '0'); } catch { /* ignore */ }
-  };
-}
 // Gentle ride effects (the roller coaster): half the zoom and shake, no leaning.
 const RIDE_FX_KEY = 'mk.rideFx'; // 'soft': the gentle ride effects (Settings)
 let rideFxSoft = false;
@@ -3355,15 +3373,6 @@ import('./game/minimap.js').then(({ createMinimap }) => {
     getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
-
-// Purple gu borders on the street, as on the map. (game/gu-borders.js)
-let guBorders = null;
-if (mapView.seoul?.borders) import('./game/gu-borders.js').then(({ createGuBorders }) => {
-  guBorders = createGuBorders({
-    scene, seoul: mapView.seoul, groundY: (x, z) => hillY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z),
-    getMe: () => me.root.position, onStreet: () => mode === 'street' && !subway.metro,
-  });
-}).catch(() => { /* no border line: the map still shows them */ });
 
 // Taxi rides to a picked place on the map. (game/taxi.js)
 const taxi = createTaxi({
@@ -3710,7 +3719,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3839,6 +3848,7 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
+  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
@@ -3878,7 +3888,9 @@ const fishingUi = new FishingUI({
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
-    if (f.rarity >= TROPHY_RARITY) { // ★3–★5: a trophy over my head, for everyone nearby
+    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
+    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
+    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
@@ -3897,12 +3909,30 @@ const fishingUi = new FishingUI({
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
 receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
+// Below it, the second-hand rack: what players sold to the shops, at 40% (game/used-rack.js).
+const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId,
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); }, get interior() { return interior; } });
+// Potato Market (감자마켓) by Dongmyo: players' mats of clothes to buy from,
+// or spread your own (game/potato-market.js, loaded when near).
+const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.type === 'potatomarket'), ready: walletReady,
+  scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
+  refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
+  takeOff: (id) => { // (trousers: back to the plain jeans)
+    const it = ITEMS[id];
+    if (!it || !isWorn(it, myLook)) return;
+    myLook = { ...myLook, ...(it.off || (it.wear.pants ? { pants: DEFAULT_LOOK.pants, skirt: null } : {})) };
+    saveLook(myLook);
+    setLook(myLook);
+  } });
 const resaleUi = new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
   list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   onSell: (r) => sellClothes(r),
+  rack: () => usedRack.view(),
+  onOpen: () => usedRack.refresh(),
+  onBuy: (r) => usedRack.buy(r),
 });
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {
@@ -3930,6 +3960,7 @@ async function sellNow(id, it, rc) {
   }
   inventory.remove(id);
   receipts.forget(id);
+  if (res.n > 0) usedRack.sold(op, id); // on the rack for others
   refreshWallet();
   sfx.pop?.();
   const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
@@ -4195,7 +4226,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -5372,6 +5403,7 @@ function updateFireworks() {
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
   weather.nightMix = Math.max(night, droneNight(p, street));
+  weather.setShowClear(weather.nightMix > 0.05); // a clear sky in front of either show
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
@@ -5379,7 +5411,7 @@ function updateFireworks() {
     if (t >= -FIREWORKS_DUSK && t < -FIREWORKS_DUSK + 60 && fireworks.dusk !== s.start) { fireworks.dusk = s.start; shop.toast(L(FIREWORKS_TEXT.dusk)); }
     if (t >= -10 && t < -5 && fireworks.count !== s.start) { fireworks.count = s.start; shop.toast(L(FIREWORKS_TEXT.count)); }
     if (t >= FIREWORKS_PHOTO[0] && t < FIREWORKS_PHOTO[0] + 20 && fireworks.photo !== s.start) { fireworks.photo = s.start; shop.toast(L(FIREWORKS_TEXT.photo)); }
-    if (t >= 3420 && t < 3440 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
+    if (t >= FIREWORKS_FINALE && t < FIREWORKS_FINALE + 20 && fireworks.finale !== s.start) { fireworks.finale = s.start; shop.toast(L(FIREWORKS_TEXT.finale)); }
   }
   // The sparks: loaded when you're within about 900 m.
   const close = street && Math.hypot(p.x + 2730, p.z - 280) < 900;
@@ -5400,7 +5432,7 @@ function updateFireworks() {
     const now = performance.now();
     if (dist > 900 || now - fireworks.lastBoom < 140) continue;
     fireworks.lastBoom = now;
-    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'peony'), wait * 1000);
+    setTimeout(() => sfx.boom?.(loud, b.kind === 'willow' || b.kind === 'kamuro' || b.kind === 'peony'), wait * 1000);
   }
 }
 
@@ -5731,16 +5763,14 @@ refreshCloud();
 initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
-const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', fr: 'Porté', th: 'กำลังใส่', id: 'Dipakai' };
-// Clothes live in the bag's Wardrobe tab; everything else (pets, ...) in the
-// bag's collection.
+// Clothes live in the bag's Wardrobe tab (a grid, see BagUI's closet); everything
+// else (pets, ...) in the bag's collection.
 const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
   const own = list.filter((id) => !isClothes(id));
   itemEl('wallet-items-title').hidden = !own.length;
   itemEl('wallet-items').replaceChildren(...own.map(itemRow));
-  itemEl('wardrobe-items').replaceChildren(...list.filter(isClothes).map(itemRow));
 }
 function itemRow(id) {
   {
@@ -5789,28 +5819,6 @@ function itemRow(id) {
       btns.className = 'item-btns';
       btns.append(w, nb);
       row.append(btns);
-    }
-    if (it.wear) { // put it on, or take it off (trousers can only be swapped)
-      const on = isWorn(it, myLook);
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (on ? ' on' : '');
-      w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear');
-      w.disabled = on && !it.off;
-      w.onclick = () => { outfitAction(id); refreshItems(); };
-      row.append(w);
-    }
-    if (it.tee) { // put the printed shirt on, or take it off
-      const wearing = myLook.tee === it.tee;
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (wearing ? ' on' : '');
-      w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
-      w.onclick = () => {
-        myLook = { ...myLook, tee: wearing ? null : it.tee };
-        saveLook(myLook);
-        setLook(myLook);
-        refreshItems();
-      };
-      row.append(w);
     }
     return row;
   }
@@ -6152,6 +6160,7 @@ function moreActions(p, door) {
     const bkc = bukchonAct(p); if (bkc) out.push(bkc);
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
+    const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
@@ -6241,6 +6250,7 @@ function updateAction(p, tSec) {
     else if (!riding && wishSpot(p)) next = wishAct();
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
+    else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -6394,7 +6404,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
-      next = { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
       next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
@@ -6402,7 +6412,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'hauntGallery', 2)) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
     } else if (nearStation(p, 'darts', 1.6)) {
-      next = { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
+      next = arcadeGame.camOn() ? null : { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
     } else if (duckBoats.boardAction(p)) {
       next = duckBoats.boardAction(p);
     } else if (martCounter(p)) {
@@ -6605,7 +6615,7 @@ let snowCoverAt = 0;
 // First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
-  canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+  canUse: () => !arcadeGame.camOn() && !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
@@ -6640,7 +6650,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
-  const canSteer = !seated && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
   if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
@@ -6792,6 +6802,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
+  arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
   surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
   else if (ride?.pose) {
@@ -6840,7 +6851,6 @@ renderer.setAnimationLoop((now) => {
   updateAction(p, tSec);
   mapView.tick(dt); // (draws again only when something moved: ui/map-view.js)
   minimap?.update(dt);
-  guBorders?.update(dt);
 
   streetTimer -= dt;
   if (streetTimer <= 0 && mode === 'street') {
@@ -6932,7 +6942,7 @@ renderer.setAnimationLoop((now) => {
   updateBuskMusic(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }
@@ -7075,6 +7085,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
     enter: (id) => enterStore(storefronts.get(id)),
+    usedRack, // the second-hand rack (game/used-rack.js), for tests
+    potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
+    wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpu: () => ({ ...renderer.info.memory }),
@@ -7099,6 +7112,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
+    dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
@@ -7177,6 +7191,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
+    giveItem: (id) => inventory.add(id),
     petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),

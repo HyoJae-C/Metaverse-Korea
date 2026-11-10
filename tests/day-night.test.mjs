@@ -1,38 +1,53 @@
-// Day and night follow Seoul's clock (core/weather.js): night in the game
-// when it's night in Seoul, with sunrise and sunset moving with the seasons.
+// Day and night follow the game's own two-hour day (core/show-clock.js,
+// core/weather.js): 15 minutes of morning, 50 of day, 15 of sunset and 40 of
+// night, the same for everyone wherever they live, with a show every night.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seoulHour, sunTimes, daylight, darkness } from '../src/core/weather.js';
+import { daylight, darkness } from '../src/core/weather.js';
+import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, SKY_SUN, gameHour, cycleNumber } from '../src/core/show-clock.js';
+import { fireworksAt } from '../src/core/fireworks-show.js';
+import { droneShowAt } from '../src/core/drone-show.js';
 
-const kst = (y, mo, d, h, mi = 0) => Date.UTC(y, mo - 1, d, h - 9, mi);
+const MIN = 60e3;
+const C0 = cycleNumber(Date.UTC(2026, 10, 9)) * CYCLE_MS; // a cycle's start
+const at = (m, k = 0) => C0 + k * CYCLE_MS + m * MIN; // m minutes into cycle k
 
-test('seoulHour is the hour in Korea (UTC+9)', () => {
-  assert.equal(seoulHour(kst(2026, 11, 9, 18, 30)), 18.5);
-  assert.equal(seoulHour(kst(2026, 11, 10, 0, 0)), 0);
-  assert.equal(seoulHour(Date.UTC(2026, 10, 9, 20, 0)), 5); // 20:00 UTC = 05:00 KST next day
-});
-
-test('sunrise and sunset move with the seasons, close to Seoul\'s', () => {
-  const june = sunTimes(kst(2026, 6, 21, 12)), dec = sunTimes(kst(2026, 12, 21, 12)), nov = sunTimes(kst(2026, 11, 9, 12));
-  // Seoul: about 05:11 / 19:57 in late June, 07:43 / 17:17 in late December.
-  assert.ok(Math.abs(june.rise - 5.18) < 0.3 && Math.abs(june.set - 19.95) < 0.3, JSON.stringify(june));
-  assert.ok(Math.abs(dec.rise - 7.72) < 0.3 && Math.abs(dec.set - 17.28) < 0.3, JSON.stringify(dec));
-  // Early November: about 07:05 / 17:28.
-  assert.ok(Math.abs(nov.rise - 7.08) < 0.5 && Math.abs(nov.set - 17.47) < 0.5, JSON.stringify(nov));
+test('a two-hour day: 15 morning, 50 day, 15 sunset, 40 night', () => {
+  assert.equal(CYCLE_MS, 120 * MIN);
+  assert.equal(NIGHT_FROM, 80 * MIN);
+  assert.ok(Math.abs(gameHour(at(0)) - 5.3) < 1e-9); // the morning begins in the dark before sunrise
+  assert.ok(Math.abs(gameHour(at(15)) - 8) < 1e-9);
+  assert.ok(Math.abs(gameHour(at(65)) - 16.5) < 1e-9);
+  assert.ok(Math.abs(gameHour(at(80)) - 18.7) < 1e-9);
+  assert.ok(Math.abs(gameHour(at(119.99)) - 5.3) < 0.01);
+  for (let m = 1; m < 240; m++) {
+    const dh = ((gameHour(at(m)) - gameHour(at(m - 1)) + 24) % 24);
+    assert.ok(dh > 0 && dh < 0.4, `the clock runs on smoothly at ${m}`);
+  }
 });
 
 test('daylight: full day at noon, night at midnight, a dusk in between', () => {
-  const sun = sunTimes(kst(2026, 11, 9, 12));
-  assert.equal(daylight(12, sun), 1);
-  assert.equal(daylight(0, sun), 0);
-  assert.equal(daylight(22, sun), 0);
-  const dusk = daylight(sun.set, sun);
+  assert.equal(daylight(12, SKY_SUN), 1);
+  assert.equal(daylight(0, SKY_SUN), 0);
+  assert.equal(daylight(22, SKY_SUN), 0);
+  const dusk = daylight(SKY_SUN.set, SKY_SUN);
   assert.ok(dusk > 0.2 && dusk < 0.8, String(dusk));
 });
 
-test('darkness: the shows in Seoul\'s evening are in the real dark', () => {
-  assert.equal(darkness(kst(2026, 11, 9, 13)), 0); // the afternoon
-  assert.equal(darkness(kst(2026, 11, 9, 18, 10)), 1); // the 18:00 drone show in November
-  assert.equal(darkness(kst(2026, 11, 9, 21, 10)), 1); // the 21:00 fireworks
-  assert.equal(darkness(kst(2026, 11, 9, 9, 10)), 0); // the 09:00 fireworks: Yeouido makes its own night
+test('darkness: day in the day, real dark all night, light again in the morning', () => {
+  assert.equal(darkness(at(40)), 0); // the day
+  assert.ok(darkness(at(75)) > 0.1 && darkness(at(75)) < 0.9, 'the sunset darkens');
+  for (let m = 80; m < 120; m += 2) assert.equal(darkness(at(m)), 1, `night at ${m}`);
+  assert.ok(darkness(at(12)) === 0, 'day by the end of the morning');
+});
+
+test('every other night has a show, fireworks and drones taking turns', () => {
+  const shows = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => {
+    const t = C0 + k * CYCLE_MS + SHOW_FROM + 5 * MIN;
+    assert.equal(darkness(t), 1, 'in the dark');
+    return fireworksAt(t) ? 'F' : droneShowAt(t) ? 'D' : '-';
+  }).join('');
+  assert.ok(['F-D-F-D-', '-D-F-D-F', 'D-F-D-F-', '-F-D-F-D'].includes(shows), shows);
+  // both done before the morning
+  assert.ok(SHOW_FROM + 23 * MIN < CYCLE_MS);
 });

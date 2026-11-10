@@ -21,7 +21,7 @@
     ]
    }
   ],
-  "source": "hand-made game map: Songpa-gu across the Han River. Seokchon Lake is at the real 1/4 scale like the rest of Seoul (docs/WORLD.md): both lakes and the west-lake island were traced from the real map, centred on the lake's own centre on Songpa-daero, then shrunk to 1/4 (about 13,500 m2 of water here, the real 217,850 m2 / 16 = 13,616). Songpa-daero, Olympic-ro, Baekjegobun-ro, Hangaram-ro, Jamsil-ro, Samjeon-ro and the Han River's south bank follow OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL); Jamsil Bridge crosses from the north bank. The lakes and the island keep their game size and were moved as one piece so the channel between them lies on the real Songpa-daero. Another Land on the west-lake island is an original theme park, not a real place; Another Land Bridge runs south from Olympic-ro to the island's north tip, where its gate faces north (landmark ry). Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a path runs from the east lake to its park. Seoul Another Dome (a fictional baseball dome, inspired by the one planned for Jamsil) stands west of Jamsil Station by the river, at the west end of Olympic-ro. The HANEUL department store and mall (fictional brand) stand between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; the mall sits clear of the east lake's north tip. Another Tower (fictional, where the real 555 m tower is, at 1/4: 139 m) stands just south-east of Jamsil Station. They are drawn by core/haneul.js. No filler blocks: the open ground by the river and the lakes is left clear."
+  "source": "hand-made game map: Songpa-gu across the Han River. Seokchon Lake is at the real 1/4 scale like the rest of Seoul (docs/WORLD.md): both lakes and the west-lake island were traced from the real map, centred on the lake's own centre on Songpa-daero, then shrunk to 1/4 (about 13,500 m2 of water here, the real 217,850 m2 / 16 = 13,616). Songpa-daero, Olympic-ro, Baekjegobun-ro, Hangaram-ro, Jamsil-ro, Samjeon-ro and the Han River's south bank follow OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL); Jamsil Bridge crosses from the north bank. The lakes and the island keep their game size and were moved as one piece so the channel between them lies on the real Songpa-daero. Another Land on the west-lake island is an original theme park, not a real place; Another Land Bridge runs south from Olympic-ro to the island's north tip, where its gate faces north (landmark ry). Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a path runs from the east lake to its park. Seoul Another Dome (a fictional baseball dome, inspired by the one planned for Jamsil) stands on the real Jamsil Baseball Stadium's centre at 1/4 size (outside about 58 m across), north of the west end of Olympic-ro; its stadium inside is a separate room at game size. The HANEUL department store and mall (fictional brand) stand between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; the mall sits clear of the east lake's north tip. Another Tower (fictional, where the real 555 m tower is, at 1/4: 139 m) stands just south-east of Jamsil Station. They are drawn by core/haneul.js. No filler blocks: the open ground by the river and the lakes is left clear."
  },
  "roads": [
   {
@@ -642,40 +642,40 @@
    }
   },
   {
-   "h": 139,
+   "h": 278,
    "custom": true,
    "p": [
     [
      595,
-     129
+     137.5
     ],
     [
-     601.4,
-     126.4
+     607.4,
+     132.4
     ],
     [
-     604,
+     612.5,
      120
     ],
     [
-     601.4,
-     113.6
+     607.4,
+     107.6
     ],
     [
      595,
-     111
+     102.5
     ],
     [
-     588.6,
-     113.6
+     582.6,
+     107.6
     ],
     [
-     586,
+     577.5,
      120
     ],
     [
-     588.6,
-     126.4
+     582.6,
+     132.4
     ]
    ],
    "n": {
@@ -687,20 +687,68 @@
    "h": 14,
    "p": [
     [
-     -108,
-     44
+     -81.0,
+     161.0
     ],
     [
-     -8,
-     44
+     -69.5,
+     158.7
     ],
     [
-     -8,
-     144
+     -59.8,
+     152.2
     ],
     [
-     -108,
-     144
+     -53.3,
+     142.5
+    ],
+    [
+     -51.0,
+     131.0
+    ],
+    [
+     -53.3,
+     119.5
+    ],
+    [
+     -59.8,
+     109.8
+    ],
+    [
+     -69.5,
+     103.3
+    ],
+    [
+     -81.0,
+     101.0
+    ],
+    [
+     -92.5,
+     103.3
+    ],
+    [
+     -102.2,
+     109.8
+    ],
+    [
+     -108.7,
+     119.5
+    ],
+    [
+     -111.0,
+     131.0
+    ],
+    [
+     -108.7,
+     142.5
+    ],
+    [
+     -102.2,
+     152.2
+    ],
+    [
+     -92.5,
+     158.7
     ]
    ],
    "n": {
@@ -4128,10 +4176,11 @@
   },
   {
    "type": "dome",
-   "x": -58,
-   "z": 94,
-   "r": 50,
-   "h": 14
+   "x": -81,
+   "z": 131,
+   "r": 29,
+   "h": 8,
+   "why": "On the real Jamsil Baseball Stadium centre (37.5122 N, 127.0719 E -> world 357, 902), outside at the real 1/4 size (about 58 m across); the stadium inside keeps its game size (interior room)."
   },
   {
    "type": "lakeshore",
