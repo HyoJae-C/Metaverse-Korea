@@ -480,21 +480,21 @@
         "line": {
           "color": "#00a84d"
         },
-        "note": "On Wangsimni-ro at Seoul Forest's east edge, north of Ttukseom-ro (its real place): both exits on the forest side of the road. No line name or code on purpose: the game has no transfers, so stations are not split by line.",
+        "note": "On Wangsimni-ro at Seoul Forest's east edge, north of Ttukseom-ro (its real place): both exits on the forest side of the road, at the real exits 1 and 2's height on Wangsimni-ro (they are really just across it, 12-13 m east). No line name or code on purpose: the game has no transfers, so stations are not split by line.",
         "exits": [
           {
             "n": 1,
             "at": [
-              -258,
-              30
+              -247.4,
+              12.7
             ],
             "ry": 0
           },
           {
             "n": 2,
             "at": [
-              -258,
-              44
+              -253.9,
+              43.4
             ],
             "ry": 3.1416
           }
