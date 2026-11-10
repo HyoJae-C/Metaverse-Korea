@@ -201,7 +201,9 @@ function climbing(store, { scene, box, block, mat, stations, seats, w, d, h }) {
   tex.colorSpace = THREE.SRGBColorSpace;
   sign(scene, tex, 1.2, 2.4, -w / 2 + 0.03, 2.0, -1, Math.PI / 2);
   // Where you start a problem: in front of each panel, on the mat.
-  stations.climbing = panels.map((px) => ({ x: px, z: wz + 2.6, ry: Math.PI }));
+  // (wall, lean, top: the panel's foot, its lean and its height, for the
+  // climb on the wall itself, game/climb-view.js.)
+  stations.climbing = panels.map((px, i) => ({ x: px, z: wz + 2.6, ry: Math.PI, wall: wz, lean: i === 1 ? 0.28 : 0, top: wallH }));
   // Chalk bucket stands and a bench by the right wall.
   for (const px of [-3, 3]) {
     box(0.3, 0.9, 0.3, px, 0.45, wz + 4.4, '#9ca9af');

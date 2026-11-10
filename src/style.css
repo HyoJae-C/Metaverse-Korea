@@ -1799,6 +1799,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .skin-dot.on { box-shadow: 0 0 0 3px var(--accent); }
 .skin-dot.locked small { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); padding: 0 4px; border-radius: 6px; background: #fff; font-size: 10px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .skin-pat.on { box-shadow: 0 0 0 2px var(--accent) inset; }
+.skin-pat.with-sample { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; text-align: left; }
+.skin-sample { width: 44px; height: 44px; flex: none; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 
 /* Name rules (start screen and rename) */
 .name-rule { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.4; color: #b4553f; }

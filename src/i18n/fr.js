@@ -559,6 +559,8 @@ export const FR = {
   'tab.elsewhere': 'Tu joues dans un autre onglet',
   'tab.elsewhereHint': 'Another Seoul est ouvert dans un autre onglet de ce navigateur, c\'est donc là que tu apparais. Ferme cet onglet, ou joue plutôt ici.',
   'tab.playHere': 'Jouer ici',
+  'device.elsewhere': 'Vous jouez sur un autre appareil',
+  'device.elsewhereHint': 'Ce compte a été ouvert sur un autre téléphone ou ordinateur, votre progression y est donc enregistrée. Jouez ici pour charger la sauvegarde la plus récente.',
   'app.title': 'Another Seoul',
   'app.tagline': 'Parcours les rues de Corée, directement dans ton navigateur.',
   'lang.choose': 'Choisis ta langue',
@@ -710,4 +712,7 @@ export const FR = {
   "tix.done": "{name} : tout est utilisé. Merci d'être venu !",
   "tix.passHeld": "Tu as le pass journée : toutes les attractions sont gratuites pendant 24 h après l'achat ✓",
   "tix.short": "{name} coûte 🪙 {n}. Pas assez d'argent.",
+  "gate.freeAgain": "Rentrer gratuitement (reste {t})",
+  "gate.freeIn": "Retour gratuit : pas de tarif cette fois",
+  "gate.outPass": "Sorti par erreur ? Rentrez ici dans les 5 min gratuitement",
 };

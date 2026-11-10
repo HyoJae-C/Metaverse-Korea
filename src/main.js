@@ -50,7 +50,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { PalaceShow, FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
@@ -748,7 +748,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0] - 36, palaceAt[1] - 15]; // the front court, past Gwanghwamun and west of the way to Heungnyemun (the king keeps to the courts behind it)
+const fanAt = palaceAt && [palaceAt[0] + FAN_AT[0], palaceAt[1] + FAN_AT[1]]; // the west lawn (the king walks round the east one)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -807,12 +807,12 @@ const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, label
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: slopeY });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
-// Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
+// Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
 // (core/palace-show.js, core/bukcheong.js).
 const palaceShow = palaceAt ? new PalaceShow(scene, {
   fan: fanAt,
-  procession: palaceAt, // the king's walk round the palace (ROYAL_ROUTE)
+  procession: palaceAt, // the king's walk round the east lawn (ROYAL_ROUTE)
   visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
   mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
@@ -1692,7 +1692,11 @@ function goSolo(roomScene) {
 net = SOLO;
 // Same browser, second tab: the newest tab plays, older ones step aside so
 // you never appear twice on the street (see core/single-tab.js).
-claimTab(() => {
+// Same idea across devices: if this account's save was opened on another
+// phone or computer, this one stops saving and steps aside the same way, so
+// it never overwrites the newer progress there (see core/cloud-save.js).
+function stepAside(icon, title, hint) {
+  if (tabParked) return;
   tabParked = true;
   joinToken++; // a join still connecting disconnects itself
   net?.disconnect();
@@ -1704,15 +1708,18 @@ claimTab(() => {
   const box = document.createElement('div');
   box.className = 'overlay dim';
   box.id = 'other-tab';
-  box.innerHTML = '<div class="panel small"><div class="logo">🗂️</div><h2></h2><p></p><button class="primary"></button></div>';
-  box.querySelector('h2').textContent = t('tab.elsewhere');
-  box.querySelector('p').textContent = t('tab.elsewhereHint');
+  box.innerHTML = '<div class="panel small"><div class="logo"></div><h2></h2><p></p><button class="primary"></button></div>';
+  box.querySelector('.logo').textContent = icon;
+  box.querySelector('h2').textContent = t(title);
+  box.querySelector('p').textContent = t(hint);
   const btn = box.querySelector('button');
   btn.textContent = t('tab.playHere');
   btn.onclick = () => location.reload(); // reloading claims this tab again
   box.style.zIndex = 10000;
   document.body.appendChild(box);
-});
+}
+claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint'); });
+cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel. (ui/emote-wheel.js)
@@ -3073,7 +3080,7 @@ const subway = createSubway(subwayStations, {
   onNoBikeStairs: noBikeStairs,
   streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
 });
-const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
+const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
 const supportPlaces = []; // [district, 'spot' | 'wall', where] (debug)
@@ -4288,7 +4295,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, get activeScene() { return activeScene; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -4777,8 +4784,8 @@ for (const e of enclosures) {
 const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
-// front court (the fan dance; the king walks the inner court past
-// Heungnyemun), and just inside either gate 'Leave' takes you back out.
+// front court (the fan dance and the king are on the lawns past it),
+// and just inside either gate 'Leave' takes you back out.
 const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -6], [2, -33]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
@@ -6366,7 +6373,9 @@ function updateAction(p, tSec) {
       const g = gateAt(p.x, p.z);
       next = g.inside
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
-        : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
+        : gateFree() // out by mistake: back in free for 5 min (the key ticks so the time does)
+          ? { key: 'gate-in-free:' + gateFree(), label: '🎫 ' + t('gate.freeAgain', { t: `${Math.floor(gateFree() / 60)}:${String(gateFree() % 60).padStart(2, '0')}` }), run: () => passGate(g, true) }
+          : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
@@ -6492,7 +6501,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'bowling', 1.4)) {
       next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
-      next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
+      next = arcadeGame.camOn() ? null : { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
