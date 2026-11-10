@@ -194,6 +194,15 @@ export const STAMPS = [
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
   },
   {
+    // in Dongmyo's flea market, between Potato Market's mats and the way up
+    // from Dongmyo Station exit 3 (data/dongmyo.js market), facing the station
+    id: 'dongmyo-market', place: { at: [-853, -785], ry: 0 }, color: '#a0703a', shape: 'square',
+    name: { ko: '동묘 감자마켓', en: 'Dongmyo Potato Market', ja: '東廟ポテトマーケット', zh: '东庙土豆市场' },
+    gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
+    // a potato on a mat with a fringe
+    icon: '<path d="M54 122 h92 l10 20 h-112 z"/><path d="M50 142 v8 M64 142 v8 M78 142 v8 M92 142 v8 M108 142 v8 M122 142 v8 M136 142 v8 M150 142 v8"/><path d="M78 112 q-10 -30 16 -42 q28 -10 38 14 q8 22 -16 32 q-22 8 -38 -4 z"/><circle cx="96" cy="86" r="2"/><circle cx="114" cy="94" r="2"/><circle cx="102" cy="104" r="2"/>',
+  },
+  {
     // on the concourse of Seoul Another Dome, left of the door as you come in
     id: 'another-dome', place: { store: 'seoul-another-dome', room: true, at: [-14, 54.5], ry: 2.89 }, color: '#1f4f8f', shape: 'circle',
     name: { ko: '서울 어나더 돔', en: 'Seoul Another Dome', ja: 'ソウル・アナザードーム', zh: '首尔另一个巨蛋' },
