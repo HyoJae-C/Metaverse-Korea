@@ -2773,6 +2773,10 @@ function enterStore(item, walkIn = null) {
     }
   }
   interior.patronNpcs = built.patronNpcs || null;
+  // Myeongdong Cathedral: the priest and the altar servers saying Mass
+  // (core/cathedral-mass.js, with the room).
+  if (built.stations?.mass && !built.massNpcs) built.massNpcs = new (roomKit().CathedralMass)(built, $('labels'), L);
+  interior.massNpcs = built.massNpcs || null;
   // Each ride's attendant by its gate, named after the ride (the coaster's too).
   if (built.stations?.rideStaff && !built.rideStaff) {
     built.rideStaff = {};
@@ -2834,6 +2838,7 @@ function enterStore(item, walkIn = null) {
   if (store.kpop) enterKpopCafe();
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
+  if (built.massNpcs) { enterMusicCafe('organ'); shop.toast(L(roomKit().CATHEDRAL_TEXT.welcome)); } // the cathedral: its organ, softly
   if (store.genre) enterClub(store.genre);
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
@@ -3033,7 +3038,7 @@ function leaveStore(walkOut = false) {
   // Every name tag and bubble this room put on screen goes with it (Another
   // Land's ride attendants and guests, the bar regulars, the yoga class),
   // or they'd hang over the street where they last stood.
-  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || []), ...(interior.massNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   balloonClown.hideLabels();
   parkTickets.hideLabels();
   clerk = null;
@@ -6859,7 +6864,10 @@ renderer.setAnimationLoop((now) => {
   if (me.activityName === 'read' && !myLabel.bubble) showBubble(myLabel, $('labels'), t('book.reading'), 3000);
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const steady = steadyWalk && !riding;
-  const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk);
+  // Walking only in the Quiet Zone (Bukchon) and in the cathedral.
+  const inCathedral = mode === 'store' && !!interior?.massNpcs;
+  if (inCathedral && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
+  const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
   else if (mag > 0.05 && !seated && !ride && !cable && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
@@ -7109,6 +7117,7 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.audienceNpcs || []) o.ch.animate(dt, 0); // (sitting: their 'sit' activity)
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
+    interior?.massNpcs?.update(dt, camera, w, h); // (the cathedral's Mass)
     for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
     for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
     for (const o of interior?.coasterStaff || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the coaster's attendant) // (bar regulars; the label shows their speech bubbles)

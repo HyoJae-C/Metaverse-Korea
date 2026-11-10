@@ -920,9 +920,11 @@ export const PLACE_NEW = [
   ['scent-popup', 'perfPopup'],
 ];
 
-// Perfume shops that later moved to Hongdae's perfume alley: --place and
-// --square leave them where they are now.
-export const MOVED_AWAY = new Set(['kkeung-sanghoe', 'oops-parfum', 'heart-ppyong', 'moai-scent-lab', 'punggyeong-scent']);
+// Shops that later moved away, which --place and --square leave where they
+// are now: perfume shops to Hongdae's perfume alley, and skincare and
+// lip-tint shops to Myeongdong (scripts/build-myeongdong.mjs SHOPS).
+export const MOVED_AWAY = new Set(['kkeung-sanghoe', 'oops-parfum', 'heart-ppyong', 'moai-scent-lab', 'punggyeong-scent',
+  'mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink']);
 
 // Writes "at" into a hand-formatted JSON file without reformatting it: the
 // store's "anchor" or "at" line is replaced in place.

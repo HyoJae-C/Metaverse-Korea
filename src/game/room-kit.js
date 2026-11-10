@@ -9,3 +9,4 @@ export { HAUNT_STORE, HAUNT_SPOT } from '../core/haunted.js';
 export { LIFEGUARD_LOOK } from '../core/pool-hall.js';
 export { RUNWAY_TEXT } from '../ui/runway-ui.js';
 export { RESALE_TEXT } from '../ui/resale-ui.js';
+export { CathedralMass, CATHEDRAL_TEXT } from '../core/cathedral-mass.js';

@@ -150,6 +150,34 @@ export const TRACKS = [
     scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.55, lead: 'bell',
   },
   {
+    // Myeongdong Cathedral's organ (not in the record list; core/cathedral-mass.js):
+    // a slow, quiet chorale on a pipe organ with a long echo, 16 bars (about
+    // 70 s) and no words. An original tune, played live like the rest.
+    id: 'organ',
+    hidden: true,
+    icon: '⛪',
+    color: '#7a3b2e',
+    name: { en: 'Cathedral Organ', ko: '성당 오르간', ja: '聖堂のオルガン', zh: '教堂管风琴' },
+    desc: {
+      en: 'A calm pipe organ chorale with a long echo, no drums and no words.',
+      ko: '긴 울림이 있는 잔잔한 파이프 오르간 코랄. 드럼도 가사도 없어요.',
+      ja: '長い残響の穏やかなパイプオルガンのコラール。ドラムも歌詞もありません。',
+      zh: '带有悠长回响的平静管风琴圣咏，没有鼓，也没有歌词。',
+    },
+    bpm: 56, swing: 1, steps: 128, organ: true,
+    // F major: F Bb C F | Dm Gm C C7 | Bb F/A Gm Dm | Bb C F F
+    chords: [[57, 60, 65], [58, 62, 65], [55, 60, 64], [57, 60, 65], [57, 62, 65], [58, 62, 67], [55, 60, 64], [58, 60, 64],
+      [58, 62, 65], [57, 60, 65], [58, 62, 67], [57, 62, 65], [58, 62, 65], [55, 60, 64], [57, 60, 65], [57, 60, 65]],
+    bass: [41, 46, 48, 41, 50, 43, 48, 36, 46, 45, 43, 50, 46, 48, 41, 41],
+    // The tune on top: [note, eighths], one after another.
+    tune: [[69, 4], [72, 4], [74, 4], [70, 4], [72, 4], [67, 4], [69, 8],
+      [69, 4], [74, 4], [74, 2], [72, 2], [70, 4], [67, 4], [72, 4], [70, 4], [67, 4],
+      [77, 4], [74, 4], [72, 4], [69, 4], [70, 4], [74, 4], [69, 8],
+      [77, 4], [74, 4], [72, 2], [70, 2], [67, 4], [69, 4], [72, 2], [70, 2], [69, 8]],
+    kick: [], snare: [], hat: null,
+    scale: [], melodyFrom: 999, melody: 0,
+  },
+  {
     // The Curve Runway's show music (not in the music cafe's record list):
     // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
     // bass, tense like a fashion show's catwalk.

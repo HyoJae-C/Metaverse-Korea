@@ -7,6 +7,14 @@ import { trackById } from '../data/tracks.js';
 
 const hz = (m) => 440 * 2 ** ((m - 69) / 12);
 
+// A track's tune ([note, eighths] one after another) as [step, note, eighths].
+const tunes = new WeakMap();
+function tuneSteps(tr) {
+  if (!tr.tune) return [];
+  if (!tunes.has(tr)) { let at = 0; tunes.set(tr, tr.tune.map(([m, len]) => { const n = [at, m, len]; at += len; return n; })); }
+  return tunes.get(tr);
+}
+
 // iPhones mute Web Audio when the ring/silent switch is on, unless the page
 // says it plays media. Newer Safari has navigator.audioSession; older ones
 // switch over once an <audio> element is playing, so a silent one loops.
@@ -107,15 +115,16 @@ export class Music {
       // swing: long on-beats, short off-beats
       const beat = 60 / this.track.bpm, sw = this.track.swing;
       this.nextTime += (beat / 2) * (this.step % 2 ? 2 - sw : sw);
-      this.step = (this.step + 1) % 64;
+      this.step = (this.step + 1) % (this.track.steps || 64);
     }
   }
 
   _playStep(s, t) {
     const tr = this.track, BEAT = 60 / tr.bpm;
-    const bar = Math.floor(s / 8) % 4;
+    const bar = Math.floor(s / 8) % tr.chords.length;
     const e = s % 8;
     const chord = tr.chords[bar], root = tr.bass[bar];
+    if (tr.organ) { this._organStep(tr, s, e, chord, root, t, BEAT); return; }
     if (e === 0) {
       if (tr.pad) chord.forEach((m) => this._pad(hz(m), t, BEAT * 7.6, 0.035));
       else chord.forEach((m, i) => this._key(hz(m), t + i * 0.025, BEAT * 3.8, 0.07));
@@ -140,6 +149,48 @@ export class Music {
       if (tr.lead === 'pluck') this._pluck(hz(m), t, BEAT * 0.7, 0.05);
       else if (tr.lead === 'gayageum') this._pluck(hz(m), t, BEAT * 1.4, 0.07, this._rand() < 0.35);
       else this._key(hz(m), t, BEAT * 0.9, 0.05, true);
+    }
+  }
+
+  // The cathedral organ (track 'organ'): each bar's chord held on soft
+  // stops, the pedal an octave down, and the tune on top, all into a long
+  // church echo.
+  _organStep(tr, s, e, chord, root, t, BEAT) {
+    if (e === 0) {
+      chord.forEach((m) => this._organ(hz(m), t, BEAT * 4 - 0.04, 0.026));
+      this._organ(hz(root - 12), t, BEAT * 4 - 0.04, 0.05, true);
+    }
+    for (const [at, m, len] of tuneSteps(tr)) if (at === s) this._organ(hz(m), t, BEAT * len / 2 - 0.06, 0.034);
+  }
+
+  _organ(f, t, dur, vol, pedal = false) {
+    const c = this.ctx;
+    if (!this.hall) { // a 3 s echo, made once: decaying noise in both ears
+      const len = c.sampleRate * 3, ir = c.createBuffer(2, len, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3; }
+      this.hall = c.createConvolver();
+      this.hall.buffer = ir;
+      const wet = c.createGain();
+      wet.gain.value = 0.55;
+      this.hall.connect(wet).connect(this.master);
+    }
+    const g = c.createGain();
+    g.connect(this.master);
+    g.connect(this.hall);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.09);
+    g.gain.setValueAtTime(vol, t + dur);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.35);
+    // Stops: 8' (the note), 4', 2 2/3' and 2' (the pedal: 16' and 8' only).
+    for (const [mul, v] of pedal ? [[1, 1], [2, 0.35]] : [[1, 1], [2, 0.5], [3, 0.14], [4, 0.2]]) {
+      const o = c.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f * mul;
+      const og = c.createGain();
+      og.gain.value = v;
+      o.connect(og).connect(g);
+      o.start(t);
+      o.stop(t + dur + 0.4);
     }
   }
 
