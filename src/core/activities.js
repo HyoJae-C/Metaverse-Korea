@@ -107,7 +107,6 @@ export const CLIMB_ROUTES = [
   { id: 'v4', grade: 'V4', color: '#9b6bd6', holds: 11, period: 0.9, window: 0.105, drain: 0.075 },
   { id: 'v5', grade: 'V5', color: '#2b2b2e', holds: 12, period: 0.8, window: 0.09, drain: 0.085 },
 ];
-export const routeById = (id) => CLIMB_ROUTES.find((r) => r.id === id) || null;
 
 // The holds of a route, bottom to top, in wall units (x 0..1, y 0..1). The
 // same every time (seeded by the route), zig-zagging further on harder ones.

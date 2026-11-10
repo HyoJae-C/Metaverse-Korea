@@ -10,6 +10,7 @@
 // Like the other palace performers they only move while you're near, and
 // nothing blocks you: you can walk right up to the lions.
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
@@ -56,8 +57,7 @@ export function phaseAt(u) {
   return 'dance';
 }
 
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 const furMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 const ball = (r, c, x, y, z, sx = 1, sy = 1, sz = 1) => {
   const o = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), mat(c));

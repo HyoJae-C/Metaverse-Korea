@@ -13,7 +13,9 @@ import { prune, dedup, quantize } from '@gltf-transform/functions';
 import { mkdirSync } from 'node:fs';
 
 const [adv, anim, out] = process.argv.slice(2);
-const CHARS = ['Rogue', 'Rogue_Hooded', 'Mage', 'Knight', 'Barbarian', 'Ranger'];
+// Only these three are worn in the game (src/data/characters/kaykit2.js): every
+// outfit is the Rogue body repainted, Barbarian for the gym trainer's tank top.
+const CHARS = ['Rogue', 'Rogue_Hooded', 'Barbarian'];
 const DROP = /Cape|Hat|Helmet|Visor|Quiver/;
 // file (Rig_Medium_<name>.glb) -> clips we keep. Keep in sync with
 // src/data/characters/kaykit2.js.

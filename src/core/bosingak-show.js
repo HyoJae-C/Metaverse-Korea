@@ -8,6 +8,7 @@
 //   show.update(dt, me, camera, w, h, placeLabels, ringing);  // each frame on the street
 //   show.pull();                                              // the keeper's move on a stroke
 import * as THREE from 'three';
+import { matCache } from './three-kit.js';
 import { randomLook } from '../data/appearance.js';
 import { makeNpc } from './npcs.js';
 import { BOSINGAK, BOSINGAK_TEXT, BELL_HOUSE } from '../data/bosingak.js';
@@ -15,8 +16,7 @@ import { L } from '../ui/pocha-ui.js';
 
 const NEAR = 70; // metres: the visitors are drawn closer than this
 const KEEPER_NEAR = 500; // the keeper is seen from along Jongno
-const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const mat = matCache();
 
 // A long robe over the body, a belt and a top: the keeper's official robe
 // (red-brown, black hat) or a monk's grey robe with a brown sash (가사).

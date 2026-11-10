@@ -53,10 +53,6 @@ export function folkBlockers(yard) {
   return out;
 }
 
-// Yard metres (before or after the props' turn) to world metres.
-export function yardToWorld(yard, [x, z]) {
-  return [yard.x + x, yard.z + z];
-}
 // A point in a prop's own frame to world metres.
 export function propToWorld(yard, game, [lx, lz]) {
   const [px, pz] = FOLK_YARD.props[game];

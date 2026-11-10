@@ -71,9 +71,6 @@ export function haneulStore(g, l) {
 // them, a lantern and a spire with a red light on top. r: base radius (the
 // map's octagon, corners at sin/cos of k·45°, the same as CylinderGeometry).
 export const TOWER = { r: 9, top: 4, tiers: 6, tier: 20, spire: 13 }; // 139 m to the tip: the real 555 m tower at 1/4
-export function towerOutline(cx, cz, r = TOWER.r) {
-  return Array.from({ length: 8 }, (_, k) => [Math.round((cx + r * Math.sin((k * Math.PI) / 4)) * 10) / 10, Math.round((cz + r * Math.cos((k * Math.PI) / 4)) * 10) / 10]);
-}
 export function haneulTower(g) {
   const T = TOWER;
   const glass = new THREE.MeshLambertMaterial({ color: '#9cc3e0', flatShading: true });

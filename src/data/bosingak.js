@@ -85,17 +85,6 @@ export const BOSINGAK_CARD = {
   },
 };
 
-// The board in front of the pavilion (a park sign, core/park-signs.js).
-export const BOSINGAK_SIGN = {
-  title: BOSINGAK_TEXT.name,
-  text: {
-    en: 'Joseon\'s bell pavilion on Jongno. Its bell opened and closed the city gates; now it rings in every New Year with 33 strokes.',
-    ko: '종로의 조선 종루. 종을 쳐서 도성의 문을 열고 닫았고, 지금은 해마다 33번 울려 새해를 맞아요.',
-    ja: '鍾路にある朝鮮の鐘楼。鐘で都の門を開け閉めし、今は毎年33回ついて新年を迎えます。',
-    zh: '钟路上的朝鲜钟楼。钟声曾开关都城城门，如今每年敲33下迎接新年。',
-  },
-};
-
 // Korean time (UTC+9, no daylight saving) for a moment in ms.
 const kst = (ms) => new Date(ms + 9 * 3600e3);
 

@@ -5,16 +5,12 @@
 // And Sungnyemun (Namdaemun) on its stone base. Low-poly and stylised. Visual only: collision comes from the map's
 // blockers.
 import * as THREE from 'three';
+import { addBox } from './three-kit.js';
 import { hipRoofGeometry } from './landmarks.js';
 
 const mats = {};
 const mat = (c, smooth = false) => (mats[c + smooth] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: !smooth }));
-function box(g, sx, sy, sz, x, y, z, c) {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-  m.position.set(x, y, z);
-  g.add(m);
-  return m;
-}
+const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 
 // A closed outline ([[x, z], …], metres) as a shape in the x / -z plane,
 // pulled in towards its centre by `inset` metres (an extrusion's bevel grows

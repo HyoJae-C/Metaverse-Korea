@@ -3,7 +3,7 @@
 // the tables are taken, take a number and wait on the sofa (core/tarot-queue.js).
 import { L, fmt } from '../ui/pocha-ui.js';
 import { TarotQueue, tarotMsg } from '../core/tarot-queue.js';
-import { TarotUI } from '../ui/tarot-ui.js';
+import { lazyPanel } from '../core/lazy-panel.js';
 import { say } from '../core/npcs.js';
 import { showBubble } from '../core/players.js';
 import { t } from '../core/i18n.js';
@@ -35,7 +35,9 @@ export function createTarot(game) {
   ];
   // The reader at the table you sit at (a café with two tables has two readers).
   const tarotReader = () => (game.seated?.table ? game.interior?.readerNpcs?.[game.seated.table - 1] : null) || game.clerk;
-  const tarotUi = new TarotUI({
+  // The reading panel and its 78 cards in eleven languages are downloaded the
+  // first time it is opened or a friend invites us (core/lazy-panel.js).
+  const tarotUi = lazyPanel(() => import('../ui/tarot-ui.js').then(({ TarotUI }) => new TarotUI({
     root: $('tarot-panel'),
     wallet,
     onPick: () => sfx.pop?.(),
@@ -56,7 +58,9 @@ export function createTarot(game) {
     },
     send: (verb, to, a, b) => game.net.sendEmote(tarotMsg(verb, to, a, b)),
     myName: () => game.nickname,
-  });
+  })));
+  // A friend's invitation waiting for us (none before the panel has loaded).
+  const tarotOffer = () => (tarotUi.loaded ? tarotUi.offer : null);
   // The waiting line.
   const tarotQueue = new TarotQueue();
   let myTicket = 0; // when we took our number (0: not in line)
@@ -84,7 +88,7 @@ export function createTarot(game) {
   // (unless they asked us to read together), and not ahead of the line.
   function tarotSeatOk(s) {
     const busy = tarotChairs(s.table).map((c) => game.others.sitterAt(c.x, c.z)).filter(Boolean);
-    if (busy.length) return !!tarotUi.offer && busy.includes(tarotUi.offer.from);
+    if (busy.length) return !!tarotOffer() && busy.includes(tarotOffer().from);
     return tarotQueue.maySit(myId, tarotTurn);
   }
   function takeTicket() {
@@ -104,7 +108,7 @@ export function createTarot(game) {
   }
   // What the action button offers in a tarot café (null: the usual).
   function tarotAction(p, seat) {
-    const offer = tarotUi.offer;
+    const offer = tarotOffer();
     if (offer && !offer.accepted && !game.seated) { // a friend asked: sit beside them
       const host = game.others.positionOf(offer.from);
       const chair = host && (game.interior.seats || []).find((s) => s.tarot && !chairBusy(s) && tarotChairs(s.table).some((c) => game.others.sitterAt(c.x, c.z) === offer.from));
@@ -130,6 +134,6 @@ export function createTarot(game) {
     return null;
   }
   const sofa = (seat) => ({ key: 'sit', label: '🪑 ' + t('shop.sit'), run: () => sitDown(seat) });
-  return { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick,
+  return { tarotUi, tarotOffer, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick,
     get myTicket() { return myTicket; }, get tarotTurn() { return tarotTurn; } };
 }
