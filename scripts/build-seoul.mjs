@@ -195,8 +195,8 @@ const gu = GU.map(([id, ko, en, ja, zh]) => {
   };
 });
 
-// The lines where two gu meet, for the purple border on the street and the
-// map (game/gu-borders.js). Each shared stretch is drawn once, from the gu
+// The lines where two gu meet, for the purple border on the map
+// (ui/map-view.js). Each shared stretch is drawn once, from the gu
 // listed first; the outlines were simplified on their own, so a neighbour's
 // edge counts as shared when it runs within 8 m. Edges between a north-bank
 // and a south-bank gu are the Han River, and Seoul's own outer edge has no

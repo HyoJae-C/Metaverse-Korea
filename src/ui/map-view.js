@@ -145,7 +145,8 @@ export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   return null;
 }
 
-// The colour of gu borders, on the map and on the street (game/gu-borders.js).
+// The colour of gu borders. Only on the map, not on the ground (the line
+// crossed landmarks; Yozi 2026-11-10).
 export const GU_BORDER_COLOR = '#8e44d8';
 
 // A shape's box in metres [x0, z0, x1, z1], worked out once.
@@ -601,8 +602,7 @@ export class MapView {
 
   // Where two gu meet, and Seoul's outer edge (seoul.json borders and
   // outline, from OpenStreetMap, stopping at the Han River): purple, over
-  // the streets, so a border never reads as a road. The same purple as the
-  // line on the street (game/gu-borders.js).
+  // the streets, so a border never reads as a road.
   _drawBorders(g, poly, far) {
     const dpr = this.dpr;
     g.save();
