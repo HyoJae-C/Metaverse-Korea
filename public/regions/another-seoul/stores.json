@@ -47,9 +47,9 @@
       "colors": { "sign": "#e05a7a", "awning": "#ffc3d0", "accent": "#fff0f3" },
       "products": []
     },
-    {"id": "lip-red", "category": "beauty", "workshop": "lips", "lipFamily": "red", "size": "small", "name": {"ko": "새빨강 립", "en": "Saeppalgang Lip", "ja": "セッパルガン・リップ", "zh": "鲜红唇"}, "tagline": {"en": "Reds only: six red lip tints, from scarlet to wine", "ko": "빨강만 팔아요: 스칼렛부터 와인까지 6가지 레드", "ja": "赤だけ:スカーレットからワインまで6色", "zh": "只卖红色:从猩红到酒红6种"}, "at": [65.3, 138.6], "colors": {"sign": "#d7192d", "awning": "#ffc2c2", "accent": "#fff2f2"}, "sign": {"shape": "circle"}, "products": []},
+    {"id": "lip-red", "category": "beauty", "workshop": "lips", "lipFamily": "red", "size": "small", "name": {"ko": "새빨강 립", "en": "Saeppalgang Lip", "ja": "セッパルガン・リップ", "zh": "鲜红唇"}, "tagline": {"en": "Reds only: six red lip tints, from scarlet to wine", "ko": "빨강만 팔아요: 스칼렛부터 와인까지 6가지 레드", "ja": "赤だけ:スカーレットからワインまで6色", "zh": "只卖红色:从猩红到酒红6种"}, "at": [-1577.4, -547], "colors": {"sign": "#d7192d", "awning": "#ffc2c2", "accent": "#fff2f2"}, "sign": {"shape": "circle"}, "products": []},
     {"id": "lip-coral", "category": "beauty", "workshop": "lips", "lipFamily": "coral", "size": "small", "name": {"ko": "귤빛 립", "en": "Gyulbit Lip", "ja": "ギュルビッ・リップ", "zh": "橘光唇"}, "tagline": {"en": "Oranges and corals only: tangerine, mango, persimmon", "ko": "오렌지·코랄만: 귤, 망고, 감 색", "ja": "オレンジとコーラルだけ:みかん、マンゴー、柿", "zh": "只卖橙色和珊瑚色:橘子、芒果、柿子"}, "at": [97.7, 91], "colors": {"sign": "#ff7a2f", "awning": "#ffd9bf", "accent": "#fff5ec"}, "sign": {"shape": "triangle"}, "products": []},
-    {"id": "lip-pink", "category": "beauty", "workshop": "lips", "lipFamily": "pink", "size": "small", "name": {"ko": "분홍 립", "en": "Bunhong Lip", "ja": "プノン・リップ", "zh": "粉粉唇"}, "tagline": {"en": "Pinks only: from sakura to hot pink", "ko": "분홍만 팔아요: 벚꽃색부터 핫핑크까지", "ja": "ピンクだけ:桜色からホットピンクまで", "zh": "只卖粉色:从樱花粉到亮粉"}, "at": [76.5, 142.8], "colors": {"sign": "#ff4f9a", "awning": "#ffd0e4", "accent": "#fff3f8"}, "sign": {"shape": "arch"}, "products": []},
+    {"id": "lip-pink", "category": "beauty", "workshop": "lips", "lipFamily": "pink", "size": "small", "name": {"ko": "분홍 립", "en": "Bunhong Lip", "ja": "プノン・リップ", "zh": "粉粉唇"}, "tagline": {"en": "Pinks only: from sakura to hot pink", "ko": "분홍만 팔아요: 벚꽃색부터 핫핑크까지", "ja": "ピンクだけ:桜色からホットピンクまで", "zh": "只卖粉色:从樱花粉到亮粉"}, "at": [-1570.7, -549.5], "colors": {"sign": "#ff4f9a", "awning": "#ffd0e4", "accent": "#fff3f8"}, "sign": {"shape": "arch"}, "products": []},
     {"id": "lip-purple", "category": "beauty", "workshop": "lips", "lipFamily": "purple", "size": "small", "name": {"ko": "보랏빛 립", "en": "Boratbit Lip", "ja": "ボラッビッ・リップ", "zh": "紫光唇"}, "tagline": {"en": "Purples only: lavender, orchid, grape", "ko": "보라만 팔아요: 라벤더, 오키드, 포도", "ja": "紫だけ:ラベンダー、オーキッド、ぶどう", "zh": "只卖紫色:薰衣草、兰花、葡萄"}, "at": [52.4, 178.1], "colors": {"sign": "#8a3fc9", "awning": "#e2cdf5", "accent": "#f7f0fd"}, "sign": {"shape": "pill"}, "products": []},
     {"id": "lip-green", "category": "beauty", "workshop": "lips", "lipFamily": "green", "size": "small", "name": {"ko": "초록 립", "en": "Chorok Lip", "ja": "チョロク・リップ", "zh": "绿唇"}, "tagline": {"en": "Greens only: mint, matcha and forest, just for fun", "ko": "초록만 팔아요: 민트, 말차, 숲 색으로 재미있게", "ja": "緑だけ:ミント、抹茶、森の色で遊んでみよう", "zh": "只卖绿色:薄荷、抹茶、森林绿,图个好玩"}, "at": [-84.4, 82.7], "colors": {"sign": "#2f9e5b", "awning": "#c9eed6", "accent": "#f0fbf4"}, "sign": {"shape": "circle"}, "products": []},
     {"id": "lip-blue", "category": "beauty", "workshop": "lips", "lipFamily": "blue", "size": "small", "name": {"ko": "파랑 립", "en": "Parang Lip", "ja": "パラン・リップ", "zh": "蓝唇"}, "tagline": {"en": "Blues only: ice, sky, teal and navy, just for fun", "ko": "파랑만 팔아요: 얼음, 하늘, 청록, 남색으로 재미있게", "ja": "青だけ:アイス、スカイ、ティール、ネイビー", "zh": "只卖蓝色:冰蓝、天蓝、青绿、藏青"}, "at": [44.9, 131], "colors": {"sign": "#2f6fd6", "awning": "#cfe0fa", "accent": "#f1f6ff"}, "sign": {"shape": "triangle"}, "products": []},
@@ -136,7 +136,7 @@
       "category": "beauty",
       "name": { "ko": "달빛 뷰티", "en": "Moonlight Beauty" },
       "tagline": { "en": "Gentle skincare, step by step", "ko": "순한 스킨케어, 한 단계씩" },
-      "at": [14.7, 119.7],
+      "at": [-1573.9, -523.8],
       "colors": { "sign": "#4b5d9a", "awning": "#d6dcf5", "accent": "#f4f6ff" },
       "products": [
         { "id": "toner", "model": "bottle", "color": "#dfe8f1", "price": 22000, "name": { "en": "Rice Water Toner", "ko": "쌀뜨물 토너" }, "desc": { "en": "Hydrating first step after cleansing." } },
@@ -2032,7 +2032,7 @@
       "id": "mulbangul-skin",
       "category": "beauty",
       "size": "small",
-      "at": [-7.0, 31.9],
+      "at": [-1569.6, -542.3],
       "name": { "ko": "물방울 스킨", "en": "Mulbangul Skin" },
       "tagline": { "en": "Simple skincare for travellers", "ko": "여행자를 위한 간단한 스킨케어" },
       "colors": { "sign": "#4a8fd4", "awning": "#dff1fb", "accent": "#f3f9ff" },
@@ -2861,6 +2861,7 @@
     {"id":"seoul-bank","category":"bank","workshop":"bank","size":"medium","at":[-1005,-550.3],"district":"euljiro","name":{"en":"Seoul Bank","ko":"서울은행","ja":"ソウル銀行","zh":"首尔银行"},"tagline":{"en":"Send money to other players at the teller window (coming soon)","ko":"창구에서 다른 플레이어에게 송금 (준비중)","ja":"窓口で他のプレイヤーに送金（準備中）","zh":"在柜台给其他玩家转账（准备中）"},"colors":{"sign":"#1f5fa8","awning":"#d6e6f7","accent":"#f2f7fc"},"products":[]},
     {"id":"ddp-hall","category":"play","workshop":"ddp-hall","size":"hall","at":[-984,-580],"district":"euljiro","name":{"en":"DDP Hall","ko":"DDP 홀","ja":"DDPホール","zh":"DDP大厅"},"tagline":{"en":"A bright, curving hall. The Curve Runway is through the door at the back","ko":"곡선이 흐르는 밝은 홀. 안쪽 문으로 가면 커브 런웨이","ja":"曲線が流れる明るいホール。奥の扉の先にカーブ・ランウェイ","zh":"曲线流动的明亮大厅，里面的门通往曲线T台"},"colors":{"sign":"#5d6470","awning":"#dfe3e8","accent":"#eef0f3"},"products":[]},
     {"id": "info-dongmyo", "category": "info", "workshop": "info", "size": "small", "district": "dongmyo", "at": [-867, -807.5], "name": {"en": "Dongmyo Information Center", "ko": "동묘 안내센터", "ja": "東廟インフォメーションセンター", "zh": "东庙信息中心"}, "tagline": {"en": "Two guides: how the game works, and Dongmyo", "ko": "게임 안내와 동묘 안내, 두 명의 안내원", "ja": "ゲーム案内と東廟案内の2人がご案内", "zh": "两位向导：游戏玩法，以及东庙"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},
+    {"id": "info-myeongdong", "category": "info", "workshop": "info", "size": "small", "district": "myeongdong", "at": [-1573.5, -571.7], "name": {"en": "Myeongdong Information Center", "ko": "명동 안내센터", "ja": "明洞インフォメーションセンター", "zh": "明洞信息中心"}, "tagline": {"en": "Two guides: how the game works, and Myeongdong and its cathedral", "ko": "게임 안내와 명동·명동대성당 안내, 두 명의 안내원", "ja": "ゲーム案内と明洞・明洞大聖堂の案内の2人がご案内", "zh": "两位向导：游戏玩法，以及明洞和明洞大教堂"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},
     {"id": "info-jongmyo", "category": "info", "workshop": "info", "size": "small", "district": "jongmyo", "front": "hanok", "at": [-1433, -733], "name": {"en": "Jongmyo Information Center", "ko": "종묘 안내센터", "ja": "宗廟インフォメーションセンター", "zh": "宗庙信息中心"}, "tagline": {"en": "Two guides: how the game works, and Jongmyo", "ko": "게임 안내와 종묘 안내, 두 명의 안내원", "ja": "ゲーム案内と宗廟案内の2人がご案内", "zh": "两位向导：游戏玩法，以及宗庙"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},
     {
       "id": "strike-lane-bowling",

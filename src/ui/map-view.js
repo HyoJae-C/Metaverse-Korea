@@ -59,6 +59,7 @@ export const DISTRICT_NAME = {
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', fr: 'Gyeongbokgung', th: 'เคียงบกกุง' },
   jongmyo: { en: 'Jongmyo', ko: '종묘', ja: '宗廟', zh: '宗庙', es: 'Jongmyo', id: 'Jongmyo', ar: 'جونغميو', vi: 'Jongmyo', hi: 'जोंगम्यो', fr: 'Jongmyo', th: 'ชงมโย' },
   euljiro: { en: 'Euljiro', ko: '을지로', ja: '乙支路', zh: '乙支路', es: 'Euljiro', id: 'Euljiro', ar: 'أولجيرو', vi: 'Euljiro', hi: 'उलजीरो', fr: 'Euljiro', th: 'อึลจีโร' },
+  myeongdong: { en: 'Myeongdong', ko: '명동', ja: '明洞', zh: '明洞', es: 'Myeongdong', id: 'Myeongdong', ar: 'ميونغدونغ', vi: 'Myeongdong', hi: 'म्योंगदोंग', fr: 'Myeongdong', th: 'มย็องดง' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन', fr: 'Itaewon', th: 'อิแทวอน' },
   songpa: { en: 'Songpa', ko: '송파', ja: '松坡', zh: '松坡', es: 'Songpa', id: 'Songpa', ar: 'سونغبا', vi: 'Songpa', hi: 'सोंगपा', fr: 'Songpa', th: 'ซงพา' },
   bukchon: { en: 'Bukchon', ko: '북촌', ja: '北村', zh: '北村', es: 'Bukchon', id: 'Bukchon', ar: 'بوكتشون', vi: 'Bukchon', hi: 'बुकचोन', fr: 'Bukchon', th: 'บุกชอน' },
