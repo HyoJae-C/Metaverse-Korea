@@ -22,7 +22,7 @@ const flightMat = (c) => {
 // One dart (drawn a little larger than life so it reads across the bar),
 // built along +x: the tip at the origin (in the board), the
 // flights out toward the thrower.
-function dartMesh(color) {
+export function dartMesh(color) {
   const g = new THREE.Group();
   const tip = new THREE.Mesh(tipGeo, barrelMat);
   tip.rotation.z = Math.PI / 2; // points -x, into the board

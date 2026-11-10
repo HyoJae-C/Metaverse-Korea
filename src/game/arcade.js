@@ -13,6 +13,7 @@ export function createArcade(game) {
   const arcadeLoading = {}; // kind → its panel's import, while it loads
   let dartsInvite = null; // { from, name, at }: someone in the bar challenged you
   let dartsBoard = 0; // which of the bar's wall boards you play at
+  let dartsView = null; // the camera on the wall board while you play (game/darts-view.js)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
   // same on every screen); alone, a colour nobody on the boards throws now.
@@ -66,8 +67,10 @@ export function createArcade(game) {
         const { GalleryUI, HAUNT_THEME } = await import('../ui/gallery-ui.js');
         ui = new GalleryUI({ root: $('haunt-panel'), store: localStorage, theme: HAUNT_THEME, onPop: () => sfx.tock(0.5, 700) });
       } else if (kind === 'darts') {
-        const { DartsUI } = await import('../ui/darts-ui.js');
+        const [{ DartsUI }, { createDartsView }] = await Promise.all([import('../ui/darts-ui.js'), import('./darts-view.js')]);
+        dartsView = createDartsView(game, () => dartsBoard);
         ui = new DartsUI({
+          view: dartsView,
           root: $('darts-panel'), store: localStorage,
           myId, nameOf: (id) => game.others.nameOf(id),
           friends: () => game.others.nearbyFree(game.me.root.position.x, game.me.root.position.z, 6),
@@ -119,6 +122,6 @@ export function createArcade(game) {
     aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
-  return { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { dartsLive: () => !!dartsView?.active, dartsCamera: () => dartsView?.update(), onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
