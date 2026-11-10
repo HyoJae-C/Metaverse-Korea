@@ -5,7 +5,7 @@
 // Sharing (core/taxi-share.js): with people standing close by, you can ask
 // them to come along. Up to four ride together to your pick and split the
 // fare; someone short of money is treated by you, or left behind.
-import { getLanguage, t } from '../core/i18n.js';
+import { getLanguage, localName, t } from '../core/i18n.js';
 import { showBubble } from '../core/players.js';
 import { noTaxiAt, noTaxiZones, taxiFare } from '../core/taxi.js';
 import { ASK_MS, GO_WAIT_MS, SHARE_RADIUS, TaxiHost, newTrip, taxiMsg, worstShare } from '../core/taxi-share.js';
@@ -97,6 +97,22 @@ export function createTaxi(game) {
     }
     return best;
   }
+  // Out of the window: one of the city's shops, picked at random, to visit
+  // some day: [name], the gu it is in, its line.
+  const SHOP_KINDS = { restaurant: '🍜', cafe: '☕', beauty: '💄', fashion: '👗', play: '🎮', lifestyle: '🛍️', market: '🛒', workshop: '🎨', popup: '✨', bar: '🍸', culture: '🎭', club: '🎧' };
+  let lastShop = null;
+  function showShop() {
+    const box = $('taxi-shop');
+    const all = (game.shops?.() || []).filter((it) => SHOP_KINDS[it.store.category] && !it.store.hanpark && it.store.tagline && it !== lastShop);
+    const it = all[Math.floor(Math.random() * all.length)];
+    box.hidden = !it;
+    if (!it) return;
+    lastShop = it;
+    const s = it.store, gu = mapView._guAt?.(it.door.x, it.door.z);
+    $('taxi-shop-name').textContent = `[${SHOP_KINDS[s.category]} ${localName(s.name)}]`;
+    $('taxi-shop-where').textContent = gu ? t('taxi.shopWhere', { gu: localName(gu.name) }) : '';
+    $('taxi-shop-line').textContent = localName(s.tagline);
+  }
   const panel = () => $('taxi-share-panel');
   const closePanel = () => { const p = panel(); if (p) { p.hidden = true; p.replaceChildren(); } };
   const send = (verb, to, trip, ...nums) => game.net?.sendEmote(taxiMsg(verb, to, trip, ...nums));
@@ -138,6 +154,7 @@ export function createTaxi(game) {
       missionEvent('taxi');
       onArrive?.();
     };
+    showShop();
     taxiTimers = [
       setTimeout(() => sayLine(TAXI_LINES[1]), 1800),
       setTimeout(() => sayLine(TAXI_LINES[2]), 4200),

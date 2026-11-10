@@ -52,6 +52,7 @@ export const VI = {
   'tip.7': "🎆 Pháo hoa ở Yeouido lúc 9:00 và 21:00 giờ Hàn Quốc; trình diễn drone ở Ttukseom lúc 6:00 và 18:00.",
   'tip.8': "📒 Sổ chi tiêu trong ví cho bạn biết tiền đã đi đâu.",
   'taxi.here': 'chỗ bạn đã chọn',
+  'taxi.shopWhere': "Địa điểm: {gu}",
   'taxi.to': 'Đến: {label}',
   'taxi.t1': 'Xin chào! Bạn muốn đi đâu?',
   'taxi.t2': 'Được rồi, đi thôi!',

@@ -52,6 +52,7 @@ export const ID = {
   'tip.7': "🎆 Kembang api di Yeouido pukul 9:00 dan 21:00 waktu Korea; pertunjukan drone di Ttukseom pukul 6:00 dan 18:00.",
   'tip.8': "📒 Buku anggaran di dompetmu menunjukkan ke mana uangmu pergi.",
   'taxi.here': 'tempat yang kamu pilih',
+  'taxi.shopWhere': "Tempat: {gu}",
   'taxi.to': 'Tujuan: {label}',
   'taxi.t1': 'Halo! Mau ke mana?',
   'taxi.t2': 'Baik, ayo berangkat!',

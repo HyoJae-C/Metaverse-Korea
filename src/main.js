@@ -3363,7 +3363,7 @@ const taxi = createTaxi({
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
   get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
-  setGuide, setRiding, shop,
+  setGuide, setRiding, shop, shops: () => storefronts.items,
   // The shop or place nearest (x, z), for a shared taxi's "going to …".
   placeName: (x, z) => {
     let best = null, bd = 80;

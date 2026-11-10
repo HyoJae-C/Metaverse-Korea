@@ -51,6 +51,7 @@ export const ES = {
   'tip.7': "🎆 Fuegos artificiales en Yeouido a las 9:00 y 21:00 (hora de Corea); espectáculo de drones en Ttukseom a las 6:00 y 18:00.",
   'tip.8': "📒 El libro de gastos de tu cartera muestra en qué gastaste tu dinero.",
   'taxi.here': 'el lugar elegido',
+  'taxi.shopWhere': "Lugar: {gu}",
   'taxi.to': 'Destino: {label}',
   'taxi.t1': '¡Hola! ¿Adónde vamos?',
   'taxi.t2': '¡Claro, vamos!',

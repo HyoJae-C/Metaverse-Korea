@@ -52,6 +52,7 @@ export const FR = {
   'tip.7': "🎆 Feux d'artifice à Yeouido à 9 h et 21 h (heure coréenne) ; spectacle de drones à Ttukseom à 6 h et 18 h.",
   'tip.8': "📒 Le carnet de dépenses de ton portefeuille montre où est passé ton argent.",
   'taxi.here': 'l\'endroit choisi',
+  'taxi.shopWhere': "Lieu : {gu}",
   'taxi.to': 'Vers : {label}',
   'taxi.t1': 'Bonjour ! Où allez-vous ?',
   'taxi.t2': 'Bien sûr, c\'est parti !',
