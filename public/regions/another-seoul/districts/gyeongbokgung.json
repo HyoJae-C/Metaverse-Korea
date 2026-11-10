@@ -376,8 +376,8 @@
       ],
       "wall": {
         "face": [-1, 0],
-        "image": "ads/gyeongbok-alley.webp",
-        "credit": "Grafi Jeremiah"
+        "image": "ads/gyeongbok-kimchi.webp",
+        "credit": "Daniel"
       }
     },
     {
@@ -387,12 +387,7 @@
         [-56, 86],
         [-56, 122],
         [-110, 122]
-      ],
-      "wall": {
-        "face": [1, 0],
-        "image": "ads/gyeongbok-corridor.webp",
-        "credit": "Jet dela Cruz"
-      }
+      ]
     },
     {
       "h": 14,
