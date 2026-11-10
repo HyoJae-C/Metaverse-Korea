@@ -166,7 +166,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
 Both are drawn by `scripts/build-mapo.mjs` and sit in Mapo-gu next to
 Hongdae: one row of buildings along each street and the blocks behind left
 open, like Seongsu (Yozi, 2026-11-10: filling the blocks with houses was too
-dense; Mangwon went from 279 buildings to 89).
+dense; Mangwon went from 279 buildings to 89). Itaewon and Sinchon
+(`seodaemun`) were thinned the same way: buildings behind the street rows
+removed, neighbours in a row joined in pairs (Itaewon 234 to 163, Sinchon 137
+to 80). Bukchon keeps its packed hanok on purpose (they look best in numbers).
 
 Yeonnam (`scripts/build-yeonnam.mjs`, called by build-mapo) is at 1/4 on its
 real place, north-west of Yanghwa-ro: Donggyo-ro, Yeonnam-ro, Seongmisan-ro,
