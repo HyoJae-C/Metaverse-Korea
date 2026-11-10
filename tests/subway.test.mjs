@@ -105,6 +105,23 @@ test('station exits are clear of roads and buildings', () => {
   }
 });
 
+test('Dongmyo (Line 1, 127): exits within 15 m of the real 3 and 4, by the market and the shrine', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 3: [37.5732778, 127.017254], 4: [37.5729272, 127.015949] }; // OSM 3401297193, 3401296590
+  const st = stations.find((s) => s.id === 'dongmyo-station');
+  assert.ok(st);
+  assert.equal(st.code, '127');
+  assert.equal(st.line.name.en, 'Line 1');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [3, 4]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
+  const d = region.districts.find((x) => x.id === 'dongmyo');
+  const gate = [d.anchor.local[0] + d.offset[0], d.anchor.local[1] + d.offset[1]];
+  for (const e of st.exits) assert.ok(Math.hypot(e.at[0] - gate[0], e.at[1] - gate[1]) < 70, `exit ${e.n} near Dongmyo Shrine`);
+});
+
 test('Mongchontoseong Station sits by Olympic Park, right after Jamsil on the loop', () => {
   const i = stations.findIndex((s) => s.id === 'mongchontoseong-station');
   assert.ok(i > 0 && stations[i - 1].id === 'jamsil-station');
