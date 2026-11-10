@@ -320,13 +320,16 @@ and Usadan-ro west of it).
 
 - **Made up, inside the real blocks**: the World Food Street lane north from
   Itaewon-ro (it carries on up as Hoenamu-ro 26-gil to Gyeongnidan-gil),
-  Yongmaru Market's lane south of Itaewon-ro with its arcade, and the lane
-  across its end. Every building and shop is fictional; buildings are a
+  and Yongmaru Market's lane north from Itaewon-ro (west of exit 1, up to the
+  foot of Gyeongnidan's hill) with its arcade. Every building and shop is fictional; buildings are a
   normal size, one row along each street (`scripts/street-rows.mjs`).
-- **Where things are**: the restaurants on the World Food Street (north-west
-  of the station), the clubs and bars both sides of Itaewon-ro east of the
-  station, the market south-west, clothes and antiques down Bogwang-ro, the
-  halal grocer on Usadan-ro by the mosque. Itaewon Station's exits 1 and 4
+- **Where things are**: every shop is north of Itaewon-ro or up
+  Gyeongnidan-gil (Yozi 2026-11-11: the south side isn't needed). The
+  restaurants and the halal grocer on the World Food Street, the market
+  between it and Itaewon Square, the clubs and bars along Itaewon-ro's north
+  side east of the station, and the clothes, books and antiques up
+  Gyeongnidan-gil. South of Itaewon-ro there are only the real roads
+  (Bogwang-ro, Usadan-ro) with plain buildings. Itaewon Station's exits 1 and 4
   stand on the pavements 7-10 m from the real ones.
 - **Open land**: west of Noksapyeong-daero and south of Itaewon-ro is the old
   army ground (Yongsan Garrison, becoming Yongsan Park): grass, no houses.
@@ -346,8 +349,9 @@ Hoenamu-ro 35-gil leaves it, about 160 m (650 m in Seoul).
   (13-gil and 35-gil up to Sowol-ro, 26-gil down towards Itaewon-ro), and the
   buildings are one row along each street, at normal size; the blocks
   behind are left open. The real tangle of lanes, drawn 1:1, read as too
-  busy next to the rest of the city. Two of Itaewon's own places are up the
-  street (an old-style café and the taproom); there are no new shops.
+  busy next to the rest of the city. Seven of Itaewon's own places are up the
+  street (an old-style café, two clothes shops, a vintage shop, books,
+  antiques and the taproom); there are no new shops.
 - **The hill.** The street climbs gently, about 5 m to the top; the lanes
   north climb a little and then ease back down before Sowol-ro, which stays
   level, and the lanes south go down to the flat land by Itaewon-ro. The

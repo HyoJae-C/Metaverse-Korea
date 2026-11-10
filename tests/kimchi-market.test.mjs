@@ -74,7 +74,7 @@ test('market text in every language; the boss speaks Korean with romanization', 
   for (const line of Object.values(BOSS_LINES)) assert.equal(line.length, 3);
 });
 
-test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the market south-west', () => {
+test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the market north-west too', () => {
   const R = new URL('../public/regions/another-seoul/', import.meta.url);
   const region = JSON.parse(readFileSync(new URL('region.json', R)));
   const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
@@ -86,16 +86,20 @@ test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the
   const inItaewon = stores.filter((s) => { const [x, z] = local(s); return x > -330 && x < 340 && z > -190 && z < 250 && !upHill(x, z); });
   for (const s of inItaewon.filter((s) => s.category === 'club' || s.category === 'bar')) {
     const [x, z] = local(s);
-    assert.ok(x > 0 && z < 20, `${s.id} east, on Itaewon-ro`); // either side of the road
+    assert.ok(x > 0 && z < 0, `${s.id} east, on Itaewon-ro's north side`);
   }
   const food = inItaewon.filter((s) => s.category === 'restaurant' && !s.id.match(/jeon|hotteok|gukbap|kalguksu/));
   // (Its Chinese, Japanese and Western kitchens moved to Seongsu, Euljiro and
   // Sinchon so each gu's share of restaurants is closer to the real one.)
   assert.equal(food.length, 7);
   for (const s of food) { const [x, z] = local(s); assert.ok(x < 0 && z < 0, `${s.id} north-west`); }
+  // Every shop is north of Itaewon-ro (Yozi 2026-11-11: the south side isn't needed).
+  const itRo = JSON.parse(readFileSync(new URL('districts/itaewon.json', R))).roads.find((r) => r.n?.en === 'Itaewon-ro').p;
+  const roadZ = (x) => { const i = itRo.findIndex((q, k) => k && (itRo[k - 1][0] - x) * (q[0] - x) <= 0); const [a, b] = [itRo[i - 1], itRo[i]]; return a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]); };
+  for (const s of inItaewon.filter((s) => !['museum', 'memorial'].includes(s.category))) { const [x, z] = local(s); assert.ok(z < roadZ(x), `${s.id} north of Itaewon-ro`); }
   const buyer = stores.find((s) => s.workshop === 'kimchi-buy');
   const [bx, bz] = local(buyer);
-  assert.ok(bx < 0 && bz > 0, 'the market is south-west');
+  assert.ok(bx < 0 && bz < 0, 'the market is north-west (north of Itaewon-ro, like all its shops)');
 });
 
 test('japchae and kimbap sell too, sharing the daily limit with kimchi', async () => {
