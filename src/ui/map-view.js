@@ -336,6 +336,12 @@ export class MapView {
     // Only what is on screen (zoomed in, most of the city is not).
     const [vx0, vz0] = this.toWorld(0, 0), [vx1, vz1] = this.toWorld(this.canvas.width, this.canvas.height);
     const seen = (o, pad = 0) => { const b = bboxOf(o); return b[2] + pad >= vx0 && b[0] - pad <= vx1 && b[3] + pad >= vz0 && b[1] - pad <= vz1; };
+    // Land not built yet (map.closed): grey like a gu "coming soon". One
+    // path, so there are no seams between its rectangles.
+    g.fillStyle = '#d9d4ca';
+    g.beginPath();
+    for (const p of this.map.closed || []) if (p[2][0] >= vx0 && p[0][0] <= vx1 && p[2][1] >= vz0 && p[0][1] <= vz1) p.forEach(([x, z], i) => { const [sx, sy] = this.toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+    g.fill();
     const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' }; // the rest: green
     const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
     if (this.areasSorted?.length !== this.map.areas.length) this.areasSorted = [...this.map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1));
