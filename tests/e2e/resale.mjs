@@ -1,5 +1,5 @@
-// End-to-end check: buy a jacket at Seongsu's Gaeul Vintage, then sell it
-// back to the clerk for 10% (browser-only wallet, as in ?debug).
+// End-to-end check: buy a jacket at Itaewon's Gaeul Vintage, then sell it
+// back to the clerk for 25% (browser-only wallet, as in ?debug).
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/resale.mjs http://localhost:4173/ [screenshot dir]
 import { chromium } from 'playwright';
@@ -37,7 +37,7 @@ await page.click('#resale-panel .fish-row .chip');
 await page.waitForFunction(() => !__mk.items().includes('outfit-jacket-cocoa'), null, { timeout: 5000 }).catch(() => {});
 console.log('after:', (await page.textContent('#resale-panel')).replace(/\s+/g, ' '), 'coins', await page.evaluate(() => __mk.coins()), 'items', await page.evaluate(() => __mk.items()));
 if (S) await page.screenshot({ path: S + '/sold.png' });
-assert((await page.evaluate(() => __mk.coins())) === 437000 && !(await page.evaluate(() => __mk.items())).includes('outfit-jacket-cocoa'), 'sold for 10% (₩7,000)');
+assert((await page.evaluate(() => __mk.coins())) === 447500 && !(await page.evaluate(() => __mk.items())).includes('outfit-jacket-cocoa'), 'sold for 25% (₩17,500)');
 assert((await page.evaluate(() => __mk.look())).model === 'basic', 'took the jacket off first');
 assert(!errors.length, 'no page errors');
 console.log('errors', errors);

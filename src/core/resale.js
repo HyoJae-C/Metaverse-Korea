@@ -2,7 +2,7 @@
 // sell clothes you bought back for coins. No DOM, so it can be unit-tested.
 //
 // Only clothes you paid for yourself can be sold, for a small part of what
-// you paid (RESALE_PCT, 10%; with the server wallet the server's
+// you paid (RESALE_PCT, 25%; with the server wallet the server's
 // wallet_settings.resell_pct). Gifts and items from codes have no receipt,
 // so they can't: otherwise two accounts could pass gifts back and forth and
 // farm coins (see core/gifts.js). Selling always pays less than buying, so
@@ -16,7 +16,7 @@
 import { noteText } from './wallet.js';
 import { OLD_COIN_WON } from './money.js';
 
-export const RESALE_PCT = 10; // shops pay 10% of what you paid
+export const RESALE_PCT = 25; // shops pay 25% of what you paid
 const KEY = 'mk.paid';
 const SCANNED = 'mk.paidScan';
 
@@ -33,16 +33,18 @@ export class Receipts {
     for (const [id, r] of Object.entries(raw)) {
       // Receipts from before won (no w) were in coins.
       const paid = Math.floor(Number(r?.paid) || 0) * (r?.w ? 1 : OLD_COIN_WON);
-      if (paid > 0) this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null, w: 1 };
+      if (paid > 0) this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null, w: 1, ...(r.list > 0 ? { list: Math.floor(r.list) } : {}) };
     }
   }
   // The receipt for this item, or null (it can't be sold).
   get(id) { return this.map[id] || null; }
   paid(id) { return this.map[id]?.paid || 0; }
-  // paid: coins; op: the purchase's ledger id; note: its budget book note.
-  record(id, paid, op = null, note = null) {
+  // paid: won; op: the purchase's ledger id; note: its budget book note;
+  // list: the new price, for clothes bought second-hand at Potato Market
+  // (core/market.js counts mat prices from it).
+  record(id, paid, op = null, note = null, list = 0) {
     if (!(paid > 0)) return;
-    this.map[id] = { paid: Math.floor(paid), op: op || null, bn: noteText(note), w: 1 };
+    this.map[id] = { paid: Math.floor(paid), op: op || null, bn: noteText(note), w: 1, ...(list > 0 ? { list: Math.floor(list) } : {}) };
     this._save();
   }
   forget(id) {

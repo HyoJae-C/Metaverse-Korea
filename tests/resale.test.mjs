@@ -7,17 +7,18 @@ import { WEARABLES } from '../src/data/wearables.js';
 const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 
-test('a shop pays 10% of what you paid, rounded down like the server', () => {
-  assert.equal(RESALE_PCT, 10);
-  assert.equal(resaleCoins(60), 6);
-  assert.equal(resaleCoins(45), 4);
-  assert.equal(resaleCoins(140), 14);
+test('a shop pays 25% of what you paid, rounded down like the server', () => {
+  assert.equal(RESALE_PCT, 25);
+  assert.equal(resaleCoins(60), 15);
+  assert.equal(resaleCoins(45), 11);
+  assert.equal(resaleCoins(140), 35);
   assert.equal(resaleCoins(0), 0);
   assert.equal(resaleCoins(60, 0), 0, 'the operator can stop it');
   assert.equal(resaleCoins(60, 20), 12);
   for (const it of Object.values(WEARABLES)) assert.ok(resaleCoins(it.price) < it.price);
-  const sql = readFileSync(new URL('../supabase/017_resale.sql', import.meta.url), 'utf8');
-  assert.match(sql, /resell_pct int not null default 10/, 'the server starts at the same 10%');
+  const sql = readFileSync(new URL('../supabase/034_player_market.sql', import.meta.url), 'utf8');
+  assert.match(sql, /resell_pct set default 25/, 'the server pays the same 25%');
+  assert.match(sql, /set resell_pct = 25 where id = 1 and resell_pct = 10/, 'and moves from 10% unless an operator changed it');
 });
 
 test('only clothes with a receipt can be sold: gifts and code items cannot', () => {
@@ -28,7 +29,7 @@ test('only clothes with a receipt can be sold: gifts and code items cannot', () 
   const owned = ['outfit-hoodie-black', 'pants-black', 'not-clothes'];
   const items = { ...WEARABLES, 'not-clothes': { emoji: '🧸', name: { en: 'Bear' } } };
   r.record('not-clothes', 10);
-  assert.deepEqual(sellable(owned, items, r), [{ id: 'outfit-hoodie-black', paid: 60, coins: 6 }]);
+  assert.deepEqual(sellable(owned, items, r), [{ id: 'outfit-hoodie-black', paid: 60, coins: 15 }]);
   assert.deepEqual(new Receipts(s).get('outfit-hoodie-black'), { paid: 60, op: 'op-1', bn: 'Black hoodie · VINTAGE GARAGE', w: 1 }, 'kept on the device, with the purchase id and note');
   r.forget('outfit-hoodie-black');
   assert.equal(new Receipts(s).paid('outfit-hoodie-black'), 0, 'sold: the receipt goes');
@@ -58,8 +59,10 @@ test('receipts saved in coins (before won) are read as won', () => {
   assert.equal(new Receipts(s).paid('outfit-hoodie-black'), 60000);
 });
 
-test('Hongdae VINTAGE GARAGE and Seongsu Gaeul Vintage buy clothes back (no new shop)', () => {
+test('two shops buy clothes back: VINTAGE GARAGE in Hongdae and Gaeul Vintage in Itaewon', () => {
   const ids = stores.filter((s) => s.resale).map((s) => s.id).sort();
   assert.deepEqual(ids, ['gaeul-vintage', 'vintage-garage']);
   for (const id of ids) assert.equal(stores.find((s) => s.id === id).category, 'fashion');
+  const [x, z] = stores.find((s) => s.id === 'gaeul-vintage').at;
+  assert.ok(x > -1400 && x < -1300 && z > 300 && z < 400, 'Gaeul Vintage moved from Seongsu to Itaewon, by Golden Needle Tailor');
 });
