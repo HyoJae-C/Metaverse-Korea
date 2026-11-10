@@ -86,7 +86,9 @@ test('Itaewon: restaurants north-west, bars and clubs east along Itaewon-ro, the
     assert.ok(x > 0 && z < 20, `${s.id} east, on Itaewon-ro`); // either side of the road
   }
   const food = inItaewon.filter((s) => s.category === 'restaurant' && !s.id.match(/jeon|hotteok|gukbap|kalguksu/));
-  assert.equal(food.length, 10);
+  // (Its Chinese, Japanese and Western kitchens moved to Seongsu, Euljiro and
+  // Sinchon so each gu's share of restaurants is closer to the real one.)
+  assert.equal(food.length, 7);
   for (const s of food) { const [x, z] = local(s); assert.ok(x < 0 && z < 0, `${s.id} north-west`); }
   const buyer = stores.find((s) => s.workshop === 'kimchi-buy');
   const [bx, bz] = local(buyer);
