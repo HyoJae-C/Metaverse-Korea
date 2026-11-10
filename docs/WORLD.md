@@ -126,6 +126,10 @@ lists **districts** joined into one map (`src/core/districts.js`):
   between districts.
 - `blockers` are polygons you can't walk into that aren't buildings, such as
   a river or a palace wall.
+- `closed` (region.json) is land not built yet in Seocho, Gangnam and Dongjak:
+  rectangles you can't walk into, drawn grey on the street, the map and the
+  minimap. `node scripts/build-closed.mjs` writes it, leaving 30 m open around
+  anything built; run it again after building there.
 - `water` (region.json) adds river stretches between districts (the Han River
   from Mangwon to Seongsu): each is a water area plus a blocker; give it
   `blockers` split around a bridge to leave a gap. The Han's banks there

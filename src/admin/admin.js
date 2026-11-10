@@ -59,6 +59,10 @@ function draw() {
     g.beginPath();
     p.forEach(([x, z], i) => { const [sx, sy] = toScreen(x, z); if (i) g.lineTo(sx, sy); else g.moveTo(sx, sy); });
   };
+  g.fillStyle = '#d9d4ca'; // land not built yet (map.closed)
+  g.beginPath();
+  for (const p of map.closed || []) p.forEach(([x, z], i) => { const [sx, sy] = toScreen(x, z); g[i ? 'lineTo' : 'moveTo'](sx, sy); });
+  g.fill();
   const AREA = { plaza: '#e3dccd', sand: '#efe2c2', stone: '#e6e1d6', water: '#a9d8f0' };
   const order = { plaza: 0, sand: 0, stone: 0, water: 2 };
   for (const a of [...map.areas].sort((x, y) => (order[x.k] ?? 1) - (order[y.k] ?? 1))) {
