@@ -101,7 +101,7 @@ export const PALACE_BUILD = {
   // Gwanghwamun: a dressed-stone base with three arched passages (the
   // middle one, the king's, the tallest) and a two-storey wooden gate tower
   // with a hipped roof on each storey. About half the real gate's size
-  // (34 m wide), on a palace site at a quarter. l.w: the base's width.
+  // (31 m wide), on a palace site at a quarter. l.w: the base's width.
   gwanghwamun(g, l) {
     const W = l.w || 17.4, D = 7, B = 4.4, hw = W / 2;
     const mid = 1.5, side = [3.0, 5.2]; // the openings: |x| < 1.5, 3.0 < |x| < 5.2
@@ -116,18 +116,25 @@ export const PALACE_BUILD = {
     for (let y = 0.9; y < B - 0.3; y += 0.75) box(g, W + 0.04, 0.05, D + 0.04, 0, y, 0, C.stoneDark); // courses of stone
     box(g, W + 0.6, 0.35, D + 0.6, 0, B + 0.17, 0, C.stoneDark);
     for (const sx of [-1, 1]) railing(g, sx * (hw - 0.2), -D / 2 + 0.2, sx * (hw - 0.2), D / 2 - 0.2, B + 0.35, 0.6);
-    // The tower: a lower storey under a skirt roof and an upper storey under the main roof.
-    const y1 = B + 0.35;
-    body(g, 12, 4.6, 2.6, y1, 5);
-    band(g, 12, 4.6, y1 + 2.6);
-    tiles(g, 16.5, 8.6, 1.6, y1 + 2.6 + 1.75, { hip: true, lift: 0.8, seg: 6, rows: 2, ridgeEnds: false });
-    const y2 = y1 + 2.6 + 1.75 + 0.9;
-    body(g, 9.5, 3.4, 1.9, y2, 5);
-    band(g, 9.5, 3.4, y2 + 1.9);
-    tiles(g, 15, 8.4, 3.0, y2 + 1.9 + 1.75, { hip: true, lift: 1.1, seg: 6, rows: 3 });
+    // The tower: a lower storey under a skirt roof and an upper storey under
+    // the main roof. Drawn at half its height (TOWER), so the gate keeps the
+    // real one's shape: the stone base a quarter as high as it is wide, the
+    // whole gate about two thirds (Yozi, 2026-11-10: it stood like a tower).
+    const y1 = B + 0.35, TOWER = 0.5;
+    const t = new THREE.Group();
+    t.position.y = y1;
+    t.scale.y = TOWER;
+    g.add(t);
+    body(t, 12, 4.6, 2.6, 0, 5);
+    band(t, 12, 4.6, 2.6);
+    tiles(t, 16.5, 8.6, 1.6, 2.6 + 1.75, { hip: true, lift: 0.8, seg: 6, rows: 2, ridgeEnds: false });
+    const y2 = 2.6 + 1.75 + 0.9;
+    body(t, 9.5, 3.4, 1.9, y2, 5);
+    band(t, 9.5, 3.4, y2 + 1.9);
+    tiles(t, 15, 8.4, 3.0, y2 + 1.9 + 1.75, { hip: true, lift: 1.1, seg: 6, rows: 3 });
     mergeStatic(g);
-    const sign = nameBoard('光化門', 2.6, 1.0);
-    sign.position.set(0, y2 + 1.0, 1.75);
+    const sign = nameBoard('光化門', 1.9, 0.75);
+    sign.position.set(0, y1 + (y2 + 1.4) * TOWER, 1.75);
     g.add(sign);
   },
   // A palace gate with three passages under one hipped roof: the middle one

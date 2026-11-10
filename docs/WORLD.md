@@ -430,6 +430,11 @@ from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
   yards stay at the 1/4 map's size, since they are the yards' edges;
 - heights are half the real ones, so a hall stands taller than Bukchon's
   houses and a gate's passage is higher than the people;
+- Gwanghwamun alone is half the real size across as well as up (Yozi,
+  2026-11-10): at 30% across its stone base came out narrower than its
+  roofs, like a tower; the wall either side meets its wider base, and its
+  wooden tower is drawn at half height again so the whole gate keeps the
+  real one's shape (about two thirds as high as it is wide);
 - about a quarter of the buildings: 30 of the 73 old ones inside the wall
   (every hall and gate on the middle line, the big halls either side, the
   gates in the wall; the script's `KEEP` list), and every corridor ring.
