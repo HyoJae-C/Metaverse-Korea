@@ -108,3 +108,22 @@ test('the server locks the listing before the wallets, and both wallets in one o
   assert.ok(buy.indexOf('where id = p_id for update') < buy.indexOf('order by user_id for update'));
   assert.match(sql, /market_old_enough/);
 });
+
+test('Dongmyo: 12 mat spots on the plaza, clear of the meeting-spot sign and the stalls', () => {
+  const R = new URL('../public/regions/another-seoul/', import.meta.url);
+  const dm = JSON.parse(readFileSync(new URL('districts/dongmyo.json', R), 'utf8'));
+  const region = JSON.parse(readFileSync(new URL('region.json', R), 'utf8'));
+  const zones = JSON.parse(readFileSync(new URL('zones.json', R), 'utf8'));
+  const [ox, oz] = region.districts.find((d) => d.id === 'dongmyo').offset;
+  const pm = dm.landmarks.find((l) => l.type === 'potatomarket');
+  const plaza = dm.areas.find((a) => a.k === 'plaza').p;
+  const inside = ([x, z], p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
+  assert.equal(pm.spots.length, 12);
+  const zone = (zones.zones || zones).find((z) => z.id === 'B-5');
+  for (const [dx, dz] of pm.spots) {
+    const x = pm.x + dx, z = pm.z + dz;
+    for (const [cx, cz] of [[-1.3, -1], [1.3, -1], [1.3, 1], [-1.3, 1]]) assert.ok(inside([x + cx, z + cz], plaza), `mat at ${x},${z} on the plaza`);
+    assert.ok(Math.hypot(x + ox - zone.at[0], z + oz - zone.at[1]) > 2.5, 'not on the meeting-spot sign');
+    for (const s of dm.landmarks.filter((l) => l.type === 'fleastall')) assert.ok(Math.hypot(x - s.x, z - s.z) > 4, 'not under a stall');
+  }
+});

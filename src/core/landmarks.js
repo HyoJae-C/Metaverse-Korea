@@ -22,6 +22,7 @@ import { warMemorial, outdoorExhibits } from './war-memorial-site.js';
 import { BUKCHON_BUILD } from './bukchon-models.js';
 import { EULJIRO_BUILD } from './euljiro-models.js';
 import { JONGMYO_BUILD } from './jongmyo-models.js';
+import { DONGMYO_MODELS } from './dongmyo-models.js';
 import { BOSINGAK_BUILD } from './bosingak-model.js';
 import { YEOUIDO_BUILD } from './yeouido-models.js';
 import { PALACE_BUILD } from './palace-model.js';
@@ -249,6 +250,7 @@ const BUILD = {
   outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
   ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
+  ...DONGMYO_MODELS, // Dongmyo flea market's stalls (core/dongmyo-models.js)
   ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
   ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
   ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)

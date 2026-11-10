@@ -151,6 +151,12 @@
       "anchor": { "place": "Dongdaemun History & Culture Park Station, where Jangchungdan-ro crosses Eulji-ro", "lat": 37.5659541, "lon": 127.0077934, "local": [0, 0], "why": "No nudge: the streets are on their real lines. DDP keeps its game size (bigger than its real block at 1/4), so its middle stands about 38 m east of the real one, east of the park and Jangchungdan-ro." }
     },
     {
+      "id": "dongmyo",
+      "map": "districts/dongmyo.json",
+      "offset": [-818, -778],
+      "anchor": { "place": "Dongmyo Shrine's main gate", "lat": 37.572548, "lon": 127.018615, "local": [0, 0], "why": "No nudge: the shrine, Jibong-ro and the market block are on their real places. Jong-ro is drawn up to 4 m north of its line east of Jibong-ro (scripts/data/dongmyo-osm.json says why)." }
+    },
+    {
       "id": "grand-park",
       "map": "districts/grand-park.json",
       "offset": [
@@ -170,6 +176,13 @@
     }
   ],
   "links": [
+    {
+      "k": "primary",
+      "w": 12,
+      "p": [[-948, -767], [-942, -769.2]],
+      "n": { "ko": "종로", "en": "Jong-ro", "ja": "鍾路", "zh": "钟路" },
+      "note": "Jong-ro from Heunginjimun's island east to Dongmyo."
+    },
     {
       "k": "primary",
       "w": 16,
