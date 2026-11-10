@@ -21,7 +21,7 @@ test('Seongsu is a hand-made map on the real street lines (credited to OpenStree
 
 test('every Seongsu shop stands on open ground in front of a building, each at its own spot', () => {
   const here = shops.filter((s) => Array.isArray(s.at) && inSeongsu(s.at));
-  assert.ok(here.length >= 70, `${here.length} shops in Seongsu`);
+  assert.ok(here.length >= 68, `${here.length} shops in Seongsu`); // (4 skincare and lip-tint shops moved to Myeongdong once it was on the map)
   const spots = new Set();
   for (const s of here) {
     const [x, z] = s.at;

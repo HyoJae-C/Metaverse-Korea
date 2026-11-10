@@ -114,6 +114,14 @@ export const STAMPS = [
     icon: '<path d="M46 132 h108 v-28 h-108 z M92 132 v-14 q8 -10 16 0 v14"/><path d="M58 104 v-10 h84 v10"/><path d="M40 94 q60 -26 120 0 q-6 -2 -10 2 h-100 q-4 -4 -10 -2 z"/><path d="M70 86 v-10 h60 v10"/><path d="M56 76 q44 -22 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/>',
   },
   {
+    // on Myeongdong Cathedral's front yard, to the right of the bell tower
+    id: 'myeongdong-cathedral', place: { at: [-1514.8, -539.8], ry: -2.628 }, color: '#7a3b2e', shape: 'circle',
+    name: { ko: '명동대성당', en: 'Myeongdong Cathedral', ja: '明洞大聖堂', zh: '明洞大教堂' },
+    gu: { ko: '중구', en: 'Jung-gu', ja: '中区', zh: '中区' },
+    // the bell tower and spire with its cross, the nave behind
+    icon: '<path d="M100 34 v14 M94 40 h12"/><path d="M90 92 l10 -44 l10 44"/><path d="M86 140 v-48 h28 v48"/><circle cx="100" cy="104" r="6"/><path d="M94 140 v-14 q6 -8 12 0 v14"/><path d="M114 140 v-36 l34 -14 v50 M86 140 v-36 l-34 -14 v50"/><path d="M40 140 h120"/>',
+  },
+  {
     // on DDP's front plaza
     id: 'ddp', place: { at: [-976, -577] }, color: '#5d6470', shape: 'circle',
     name: { ko: '동대문디자인플라자', en: 'Dongdaemun Design Plaza', ja: '東大門デザインプラザ', zh: '东大门设计广场' },

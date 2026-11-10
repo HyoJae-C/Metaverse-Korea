@@ -366,6 +366,44 @@ Hoenamu-ro 35-gil leaves it, about 160 m (650 m in Seoul).
   roads) would be under the hill: `tests/gyeongnidan.test.mjs` checks the
   Itaewon-ro link stays clear of it.
 
+## Myeongdong and its cathedral (Jung-gu)
+
+`scripts/build-myeongdong.mjs` builds `districts/myeongdong.json` from
+OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
+2026-11-11). Its anchor is the middle of the cathedral's main hall.
+
+- **Streets** on their real lines at 1/4: Samil-daero (east) and Namdaemun-ro
+  (west, on to Sungnyemun's ring road by a short link), the shopping street
+  north-south through the middle (Myeongdong 9-gil, 2-gil and 8-gil in OSM),
+  Myeongdong-gil across it to the cathedral's front yard, and Myeongdong
+  10-gil up from Myeongdong Station. Eulji-ro and Toegye-ro are the links
+  north and south.
+- **Buildings**: one row along each street (Yozi 2026-11-10); offices and
+  hotels on the big roads, small shops on the lanes. The skincare and
+  lip-tint shops that stood in for Myeongdong in Seongsu moved here
+  (`SHOPS`); the Information Center is by the real tourist information
+  centre on the shopping street.
+- **Myeongdong Cathedral**: its grounds at 1/4 (the real outline, paved),
+  the church at 50% of the real one (Yozi 2026-11-11, like Gwanghwamun): 34 m
+  long, 14.5 m across the front, 23 m to the top of the cross. Its middle is
+  the real main hall's, turned like it: bell tower north-north-west onto the
+  front yard, apse south-south-east. The model (`src/core/cathedral-model.js`,
+  sizes in `src/data/myeongdong.js`) loads with `import()` when the city is
+  built. Stamp and board on the front yard.
+- **Inside the cathedral** (stores.json `myeongdong-cathedral`, `front:
+  "landmark"`: a ring at the bell tower's door, no shop sign): a made-up nave
+  (`src/core/cathedral-hall.js`, room `cathedral`, loaded with the rooms):
+  stone columns, stained glass, a ribbed vault, the sanctuary with the altar,
+  the lectern and the apse windows, the organ loft over the door. 96 places
+  on the pews; some have people, the rest are seats. A simple Mass
+  (`src/core/cathedral-mass.js`) runs on the real clock, so everyone sees the
+  same moment: the procession up the aisle, the greeting, a reading, the host
+  lifted, the sign of peace, the blessing, the procession out, then a pause.
+  Speech bubbles are small pictures only. The organ is the hidden track
+  `organ` in `src/data/tracks.js`: an original chorale played live with Web
+  Audio (no file, no words), quiet, about 70 s. Walking only inside (Yozi
+  2026-11-11): running turns into a walk and gets a "shh".
+
 ## Namsan and its cable car (Yongsan-gu / Jung-gu)
 
 `scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap
