@@ -772,8 +772,10 @@ const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, 
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls (built the first time a route is needed).
+// 1.5 m cells: 1 m cells were 13 M cells (about 270 MB) for all of Seoul
+// and far routes ran out of search; 2 m cells closed Bukchon's alleys.
 let navGrid = null;
-const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1 }));
+const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1, cell: 1.5 }));
 function planRoute(ax, az, bx, bz) {
   const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
