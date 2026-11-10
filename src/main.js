@@ -3581,7 +3581,7 @@ function checkLowCoins() {
     ]);
   }, 1500); // after the purchase toast
 }
-// Action button (and E / Enter key).
+// Action button (and E / Space key).
 const moveRef = { yaw: 0, stick: null };
 function runAction() {
   if (!action) return;
@@ -3728,7 +3728,10 @@ addEventListener('keydown', (e) => {
     if (e.target instanceof HTMLButtonElement) e.target.blur();
     runAction();
   }
-  if ((e.code === 'KeyE' || e.code === 'Enter') && !e.repeat) runAction(); // holding the key acts once
+  // Enter opens the chat, like T and / (as in most games); E and Space act.
+  if (e.code === 'Enter' && !e.repeat && !(e.target instanceof HTMLButtonElement) && !spaceBusy()
+    && !document.querySelector('#hud .sheet:not([hidden])') && !$('chat-btn').hidden) { e.preventDefault(); $('chat-btn').click(); return; }
+  if (e.code === 'KeyE' && !e.repeat) runAction(); // holding the key acts once
   if (e.code === 'KeyM') $('map-btn').click();
   // B for Bag: closes it if open; opens it only when no game or sheet is
   // taking keys and the bag button is on screen.
@@ -7071,6 +7074,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     weatherSet: (raw) => { weather.setSettings(raw); return weather.kind; },
     snowballs: () => snowman.sync, snowSet: (n, x, z) => snowman.debugSet(n, x, z), snowHold: () => snowman.holding, ducks: () => snowman.duckSync, holdFromBag: (kind) => { const i = bag.items.findIndex((e) => e.kind === kind); if (i < 0) return null; const e = held ? bag.swap(i, held) : bag.take(i); if (e) setHeld(e); return heldKind(); }, bagKinds: () => bag.items.map((e) => e.kind), snowSeenDucks: () => [...others.players.values()].map((q) => q.target?.sd ?? null), heldNow: () => heldKind(), blocked: (x, z, r) => collision.blocked(x, z, r), wear: (patch) => { myLook = { ...myLook, ...patch }; setLook(myLook); return myLook.head; }, snowSeen: () => [...others.players].map(([id, q]) => [id, !!q.hidden, q.target?.sb ?? null, q.target?.x, q.target?.sh ?? null]), pose: () => [me.activityName, +me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2), snowman.busy, mode],
     emblem: () => emblemUi.show(),
+    notice: (n) => chat.debugNotice(n),
     // Panels downloaded on first use (core/lazy-panel.js): __mk.panel('academy').show()
     panel: (k) => ({ kimchi: kimchiUi, japchae: japchaeUi, kimbap: kimbapUi, academy: academyUi, book: bookUi, sauna: saunaUi, ramen: ramenUi, order: orderUi, job: jobUi, photo: photoUi, claw: clawUi })[k],
     motion: () => ({ wind: !!motionSound.wind, engine: !!motionSound.engine, honk: shownHonk }),
