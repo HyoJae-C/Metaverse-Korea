@@ -11,7 +11,7 @@
       "name": { "en": "Yeonmujang Street", "ko": "연무장길", "ja": "ヨンムジャンギル" } },
     { "id": "A-4", "npc": "D", "color": "#d49a8a", "at": [-86, 58.6], "radius": 60,
       "name": { "en": "Red Brick Lane", "ko": "붉은 벽돌 골목", "ja": "赤レンガ路地", "zh": "红砖小巷" } },
-    { "id": "A-5", "npc": "E", "color": "#b9a6f0", "at": [28, 102.3], "snap": false, "radius": 50,
+    { "id": "A-5", "npc": "E", "color": "#b9a6f0", "at": [30, 96], "snap": false, "radius": 50,
       "name": { "en": "Pop-up Square", "ko": "팝업 광장", "ja": "ポップアップ広場", "zh": "快闪广场" } },
     { "id": "A-6", "npc": "F", "color": "#a6d97a", "at": [23.2, 23.6], "radius": 60,
       "name": { "en": "Achasan-ro Crossing", "ko": "아차산로 사거리", "ja": "峨嵯山路交差点", "zh": "峨嵯山路路口" } },
