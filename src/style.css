@@ -1310,8 +1310,7 @@ button, .sheet, .order-panel { touch-action: manipulation; }
 .arcade-live h3 { display: none; }
 .arcade-live .karaoke-pad { padding: 12px; font-size: 20px; }
 .arcade-live .karaoke-status { margin: 0 36px 6px 0; }
-.arcade-live .bowl-sheet { display: block; width: calc(100% - 40px); height: auto; border-radius: 10px; margin: 0 0 6px; }
-.arcade-live .bowl-sheet + .karaoke-status { margin-right: 0; }
+body.lane-cam #store-banner, body.lane-cam .nametag.me { display: none; } /* bowling: the lane's own score screen is up there (game/bowling-view.js) */
 .arcade-meter { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .arcade-meter span { flex: 1; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
 .arcade-meter i { display: block; height: 100%; background: #ffd36e; }

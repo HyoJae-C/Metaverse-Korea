@@ -1,5 +1,5 @@
 // Interiors for the modern activities (rules in core/activities.js):
-//   bowling   볼링장: lanes with pins, ball returns, score screens, benches
+//   bowling   볼링장: eight lanes, ball returns, score screens over the pins, benches
 //   climbing  클라이밍짐: a bouldering wall with colour-coded holds and mats
 //   pcbang    PC방: rows of gaming desks with glowing screens
 // Every room already has people in it (stations.patrons, which main.js
@@ -7,6 +7,10 @@
 // Called from buildInterior (core/interior.js) with its helpers.
 import * as THREE from 'three';
 import { PINS, CLIMB_ROUTES } from './activities.js';
+import { LANE_HALF, LANE_LEN, BALL_R, rackSpot } from './bowling-physics.js';
+import { pinGeometry, pinMaterial } from './bowling-pin.js';
+import { laneScreen } from './bowling-screen.js';
+import { mergeStatic } from './merge-static.js';
 
 export const ACTIVITY_ROOMS = new Set(['bowling', 'climbing', 'pcbang']);
 const SEAT_H = 0.38; // (same chair height as core/interior.js)
@@ -42,113 +46,128 @@ export function decorateActivityRoom(store, ctx) {
 }
 
 // ── Bowling ──────────────────────────────────────────────────────────────
-// Five lanes run from the pin decks at the back wall to the foul line; you
-// bowl from the approach. Two lanes have a group playing, and their balls
-// roll down every few seconds and knock the pins over.
-function bowling(store, { scene, box, block, mat, stations, seats, w, d, h }) {
-  const z0 = -d / 2 + 0.3, foul = 1.6, laneW = 1.05;
-  const xs = [-7.2, -3.6, 0, 3.6, 7.2];
-  const wood = mat('#d9a86a');
+// A big hall (ROOM_SIZES.bowling): eight lanes in pairs run from the pin
+// decks at the back to the foul line, a ball return between each pair. Over
+// the pins, the masking wall carries each lane's score screen (core/
+// bowling-screen.js), and the same screen hangs over the approach for the
+// benches. The approaches are left clear for whoever walks up to bowl; the
+// regulars wait on the benches and stand about the hall. Each lane's pins
+// are one instanced mesh (the real outline: core/bowling-pin.js), and a
+// game on the lane, yours or another player's, moves them (lane.show).
+export const BOWL_LANES = 8, BOWL_PITCH = 2.0;
+function bowling(store, { scene, mat, block, stations, seats, w, d, h }) {
+  const z0 = -d / 2 + 0.2, head = z0 + 1.7, foul = 3.2, laneW = LANE_HALF * 2;
+  const xs = Array.from({ length: BOWL_LANES }, (_, i) => (i - (BOWL_LANES - 1) / 2) * BOWL_PITCH);
+  const still = new THREE.Group(); // everything that never moves, merged below
+  scene.add(still);
+  const part = (geo, color, x, y, z) => { const m = new THREE.Mesh(geo, mat(color)); m.position.set(x, y, z); still.add(m); return m; };
+  const slab = (sx, sy, sz, x, y, z, color) => part(new THREE.BoxGeometry(sx, sy, sz), color, x, y, z);
+  const flat = (sx, sz, x, y, z, color) => part(new THREE.PlaneGeometry(sx, sz).rotateX(-Math.PI / 2), color, x, y, z);
+  const len = foul - z0, mid = (z0 + foul) / 2, span = BOWL_LANES * BOWL_PITCH;
+  // The approach floor in front of the lanes, all the way across.
+  flat(span, 2.6, 0, 0.01, foul + 1.3, '#e3c18e');
+  const pinGeo = pinGeometry(), ballGeo = new THREE.SphereGeometry(BALL_R, 18, 12);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
   stations.bowling = [];
-  const live = []; // lanes where the regulars bowl: { pins, ball, t }
   xs.forEach((lx, i) => {
-    const lane = new THREE.Mesh(new THREE.PlaneGeometry(laneW, foul - z0).rotateX(-Math.PI / 2), wood);
-    lane.position.set(lx, 0.012, (z0 + foul) / 2);
-    scene.add(lane);
+    flat(laneW, foul - head - 0.25, lx, 0.012, (foul + head + 0.25) / 2, '#d9a86a'); // the lane
+    flat(laneW, 1.2, lx, 0.013, head - 0.35, '#e8c48f'); // the pin deck
+    flat(laneW + 0.5, 1.2, lx, 0.006, z0 + 0.4, '#15161b'); // the pit
     for (let k = 1; k < 6; k++) { // the aiming arrows
-      const a = new THREE.Mesh(new THREE.CircleGeometry(0.05, 3).rotateX(-Math.PI / 2), mat('#5a3a22'));
-      a.position.set(lx + (k - 3) * 0.15, 0.014, foul - 4.6 - Math.abs(k - 3) * 0.3);
-      scene.add(a);
+      part(new THREE.CircleGeometry(0.05, 3).rotateX(-Math.PI / 2), '#5a3a22', lx + (k - 3) * 0.15, 0.014, foul - 3.7 - Math.abs(k - 3) * 0.3);
     }
-    for (const s of [-1, 1]) { // gutters and the low walls between lanes
-      const gut = new THREE.Mesh(new THREE.PlaneGeometry(0.24, foul - z0).rotateX(-Math.PI / 2), mat('#3a3f47'));
-      gut.position.set(lx + s * (laneW / 2 + 0.12), 0.008, (z0 + foul) / 2);
-      scene.add(gut);
+    for (const sd of [-1, 1]) { // gutters, and the capping between lanes
+      flat(0.24, len - 1.2, lx + sd * (LANE_HALF + 0.12), 0.008, mid + 0.6, '#3a3f47');
+      slab(0.08, 0.5, 1.4, lx + sd * (LANE_HALF + 0.28), 0.25, head - 0.4, '#30333c'); // kickbacks by the deck
+      slab((BOWL_PITCH - laneW - 0.48) / 2, 0.07, len - 1.2, lx + sd * (BOWL_PITCH / 2 - (BOWL_PITCH - laneW - 0.48) / 4), 0.035, mid + 0.6, '#8a6446');
     }
-    box(laneW + 0.6, 0.02, 0.06, lx, 0.015, foul, '#d9473c'); // the foul line
-    // The pins, on their deck at the back.
-    const pins = PINS.map((p) => {
-      const pin = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.38, 10), mat('#fbfaf6'));
-      body.position.y = 0.19;
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.03, 0.03, 10), mat('#d9473c'));
-      neck.position.y = 0.3;
-      pin.add(body, neck);
-      pin.position.set(lx + p.x * 1.6, 0.012, z0 + 0.9 - p.z * 1.6);
-      scene.add(pin);
-      return pin;
-    });
-    // The pinsetter's hood with the lane number and score screen above.
-    box(laneW + 0.5, 0.9, 1.2, lx, h - 1.1, z0 + 0.5, '#20232a');
-    sign(scene, plate(String(i + 1), 'STRIKE LANE', store.colors.sign, '#ffffff', 256, 128), 0.9, 0.45, lx, h - 1.1, z0 + 1.11);
-    const scr = sign(scene, plate(`LANE ${i + 1}`, i === 1 || i === 3 ? 'X  9/  8-  X' : 'READY', '#14223a', '#9fe7ff', 512, 256), 1.5, 0.75, lx, 2.9, foul + 0.6, Math.PI);
-    scr.rotation.x = 0.25;
-    box(0.06, h - 2.9, 0.06, lx, 2.9 + (h - 2.9) / 2, foul + 0.62, '#3a3f47');
-    block(lx, (z0 + foul) / 2, laneW + 0.48, foul - z0); // the lane itself is off limits
-    // (foul, head: where the foul line and the head pin are, and the lane's
-    // pins, for a game played on this lane: game/bowling-view.js)
-    const st = { x: lx, z: foul + 1.1, ry: Math.PI, lane: i, foul, head: z0 + 0.9, pins, busy: false };
-    stations.bowling.push(st);
-    if (i === 1 || i === 3) {
-      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), mat(i === 1 ? '#3a64c8' : '#c83a7a'));
-      ball.visible = false;
-      scene.add(ball);
-      live.push({ lx, pins, ball, st, t: 2 + i * 1.7 });
-    }
+    slab(laneW + 0.5, 0.02, 0.06, lx, 0.015, foul, '#d9473c'); // the foul line
+    // The score screen on the masking wall over the pins, and its twin over
+    // the approach for the benches (one texture, see core/bowling-screen.js).
+    const screen = laneScreen(i);
+    const face = new THREE.MeshBasicMaterial({ map: screen.tex });
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(BOWL_PITCH - 0.06, (BOWL_PITCH - 0.06) / 2), face);
+    wall.position.set(lx, 1.12, head + 0.27);
+    scene.add(wall);
+    sign(scene, plate(String(i + 1), 'LANE', store.colors.sign, '#ffffff', 256, 128), 0.5, 0.25, lx, 1.88, head + 0.27);
+    const over = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.65), face);
+    over.position.set(lx, 3.7, foul + 2.6); // (high enough to see the lanes under it from the hall)
+    over.rotation.x = 0.35; // tipped down to the benches
+    scene.add(over);
+    slab(0.05, h - 4, 0.05, lx, 4 + (h - 4) / 2, foul + 2.6, '#3a3f47');
+    // The pins (one instanced mesh) and a ball for a game on this lane.
+    const pins = new THREE.InstancedMesh(pinGeo, pinMaterial, PINS.length);
+    pins.frustumCulled = false;
+    scene.add(pins);
+    const ball = new THREE.Mesh(ballGeo, mat('#3a64c8'));
+    ball.visible = false;
+    scene.add(ball);
+    const squeeze = (foul - head) / LANE_LEN;
+    // Down the lane (physics z from the foul line) to the room's z: squeezed
+    // up to the head pin, real past it (the deck, the pit) and behind the line.
+    const roomZ = (z) => (z < 0 ? foul - z : z <= LANE_LEN ? foul - z * squeeze : head - (z - LANE_LEN));
+    const lane = {
+      roomZ, ball,
+      // ball { x, z, roll } or null; pins [{ x, z, tilt, heading, gone }] in
+      // physics metres (core/bowling-physics.js), in rack order.
+      show(b, ps, color) {
+        ball.visible = !!b && b.z < LANE_LEN + 1.05;
+        if (b) { ball.position.set(lx + b.x, BALL_R + 0.012, roomZ(b.z)); ball.rotation.set(-b.roll, 0, 0); }
+        if (color) ball.material = mat(color);
+        let n = 0;
+        for (const p of ps) {
+          if (p.gone || p.z > LANE_LEN + 1.05) continue;
+          const tip = p.tilt * (Math.PI / 2) * 0.97;
+          v.set(Math.sin(tip) * Math.sin(p.heading), Math.cos(tip), -Math.sin(tip) * Math.cos(p.heading));
+          q.setFromUnitVectors(up, v);
+          pins.setMatrixAt(n++, m4.compose(v.set(lx + p.x, 0.012 + (p.tilt > 0.9 ? 0.05 : 0), roomZ(p.z)), q, one));
+        }
+        pins.count = n;
+        pins.instanceMatrix.needsUpdate = true;
+      },
+      rest() { this.show(null, PINS.map((_, k) => ({ ...rackSpot(k), tilt: 0, heading: 0, gone: 0 }))); },
+    };
+    lane.rest();
+    block(lx, mid - 0.3, BOWL_PITCH - 0.05, len - 0.6); // the lane itself is off limits
+    // (foul, head: where the foul line and the head pin are, for a game
+    // played on this lane: game/bowling-view.js)
+    stations.bowling.push(Object.assign(lane, { x: lx, z: foul + 1.1, ry: Math.PI, lane: i, foul, head, screen, busy: false }));
   });
-  // Ball returns between the lanes.
-  for (const lx of [-5.4, -1.8, 1.8, 5.4]) {
-    box(0.6, 0.5, 1.2, lx, 0.25, foul + 1.4, '#2b2f38');
-    ['#3a64c8', '#e0a43a', '#4caf7a'].forEach((c, k) => {
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), mat(c));
-      b.position.set(lx, 0.6, foul + 1.0 + k * 0.28);
-      scene.add(b);
-    });
-    block(lx, foul + 1.4, 0.7, 1.3);
+  // The masking wall over the pin decks, all the way across.
+  slab(span + 0.4, 1.6, 0.3, 0, 0.6 + 1.6 / 2, head + 0.1, '#20232a');
+  slab(span + 0.4, 0.08, 0.32, 0, 0.6, head + 0.11, store.colors.sign);
+  // Ball returns between the two lanes of each pair, behind where you stand.
+  const balls = ['#3a64c8', '#e0a43a', '#4caf7a', '#c83a7a', '#8a5cc9'];
+  for (let k = 0; k < BOWL_LANES; k += 2) {
+    const bx = (xs[k] + xs[k + 1]) / 2;
+    slab(0.6, 0.5, 1.3, bx, 0.25, foul + 2.1, '#2b2f38');
+    for (let j = 0; j < 3; j++) part(ballGeo, balls[(k + j) % balls.length], bx, 0.6, foul + 1.7 + j * 0.3);
+    block(bx, foul + 2.1, 0.7, 1.4);
   }
-  // Benches behind the approach (left half; the shoe counter is on the
-  // right), with the regulars of lanes 2 and 4 waiting for their turn.
-  const bz = foul + 3.4;
-  for (const bx of [-7.2, -3.6]) {
-    box(2.6, SEAT_H, 0.6, bx, SEAT_H / 2, bz, store.colors.awning);
-    box(2.6, 0.6, 0.12, bx, SEAT_H + 0.3, bz + 0.3, store.colors.sign);
-    block(bx, bz, 2.7, 0.7);
-    for (const o of [-0.8, 0, 0.8]) seats.push({ x: bx + o, z: bz - 0.05, ry: Math.PI, stand: [bx + o, bz - 0.9] });
+  // Benches behind the approach, one per pair of lanes; the regulars wait on
+  // three of them. The hall behind is open to walk about.
+  const bz = foul + 3.9;
+  for (let k = 0; k < BOWL_LANES; k += 2) {
+    const bx = (xs[k] + xs[k + 1]) / 2;
+    slab(2.8, SEAT_H, 0.6, bx, SEAT_H / 2, bz, store.colors.awning);
+    slab(2.8, 0.6, 0.12, bx, SEAT_H + 0.3, bz + 0.3, store.colors.sign);
+    block(bx, bz, 2.9, 0.7);
+    for (const o of [-0.9, 0, 0.9]) seats.push({ x: bx + o, z: bz - 0.05, ry: Math.PI, stand: [bx + o, bz - 0.9] });
   }
   const patrons = (stations.patrons ||= []);
-  for (const at of [[-3.6, 0], [-7.2, 0.8], [-3.6, -0.8]]) { // take three bench places
+  const pairX = (k) => (xs[k] + xs[k + 1]) / 2;
+  for (const at of [[pairX(0), 0.9], [pairX(2), -0.9], [pairX(2), 0], [pairX(6), 0.9]]) { // regulars on the benches
     const k = seats.findIndex((s) => Math.abs(s.x - (at[0] + at[1])) < 0.1 && Math.abs(s.z - (bz - 0.05)) < 0.1);
     if (k >= 0) { const [s] = seats.splice(k, 1); patrons.push({ x: s.x, z: s.z, ry: s.ry, sit: true }); }
   }
-  patrons.push({ x: xs[1] - 0.6, z: foul + 1.3, ry: Math.PI }, { x: xs[3] + 0.5, z: foul + 1.2, ry: Math.PI });
+  // Two more chatting by the side wall, well away from the lanes.
+  patrons.push({ x: -w / 2 + 2.2, z: foul + 5.2, ry: Math.PI / 2 }, { x: -w / 2 + 3.0, z: foul + 5.4, ry: -Math.PI / 2 });
   for (const p of patrons) if (!p.sit) block(p.x, p.z, 0.5, 0.5);
   // A shoe wall behind the counter.
-  for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) box(0.34, 0.14, 0.2, w / 2 - 0.3, 0.5 + r * 0.42, d / 2 - 4.6 + k * 0.4, ['#d9473c', '#2f6fb5', '#f2c94c', '#3a3f47'][(r + k) % 4]);
+  for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) slab(0.34, 0.14, 0.2, w / 2 - 0.3, 0.5 + r * 0.42, d / 2 - 4.6 + k * 0.4, ['#d9473c', '#2f6fb5', '#f2c94c', '#3a3f47'][(r + k) % 4]);
   block(w / 2 - 0.3, d / 2 - 3.6, 0.4, 2.6);
-  // The regulars' balls: roll for 2.2 s, pins fall, reset 2.5 s later.
-  const animate = (dt) => {
-    for (const L of live) {
-      if (L.st.busy) { L.ball.visible = false; continue; } // someone is playing on this lane
-      L.t -= dt;
-      const roll = 2.2;
-      if (L.t <= roll && L.t > 0) {
-        const u = 1 - L.t / roll;
-        L.ball.visible = true;
-        L.ball.position.set(L.lx + Math.sin(u * 2.4) * 0.12, 0.12, foul - u * (foul - z0 - 0.9));
-        L.ball.rotation.x -= dt * 12;
-      } else if (L.t <= 0 && !L.hit) {
-        L.hit = true;
-        L.ball.visible = false;
-        L.pins.forEach((p, k) => { if ((k * 7 + Math.round(L.lx)) % 10 !== 0 || L.strike) { p.rotation.z = (k % 2 ? 1 : -1) * 1.45; p.rotation.y = k; } });
-      } else if (L.t < -2.5) {
-        L.hit = false;
-        L.strike = !L.strike;
-        L.pins.forEach((p) => { p.rotation.set(0, 0, 0); });
-        L.t = 4 + Math.random() * 3 + roll;
-      }
-    }
-  };
-  return { animate };
+  mergeStatic(still);
+  return null;
 }
 
 // ── Climbing ─────────────────────────────────────────────────────────────

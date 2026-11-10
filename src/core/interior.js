@@ -38,6 +38,7 @@ export const ROOM_SIZES = {
   small: { w: 9, d: 8, h: 3.6 },
   medium: { w: 14, d: 11, h: 4 },
   large: { w: 22, d: 16, h: 4.6 },
+  bowling: { w: 30, d: 26, h: 5 }, // Strike Lane Bowling: eight lanes, room to walk about (core/activity-rooms.js)
   runway: { w: 26, d: 40, h: 6 }, // Curve Runway (DDP): a long catwalk with seats either side
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
