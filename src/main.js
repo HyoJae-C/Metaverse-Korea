@@ -170,6 +170,7 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
+import { closetKind } from './core/closet.js';
 import { SEATS, seatPosition } from './core/bikes.js';
 import { MapView, DISTRICT_NAME } from './ui/map-view.js';
 import { Music, Sfx } from './core/music.js';
@@ -2179,6 +2180,9 @@ function holdNew(h) {
 }
 $('stow-btn').onclick = stowHeld;
 $('stow-btn').querySelector('small').textContent = L(BAG_TEXT.put);
+// Hold on to the collection's nodes now: the bag panel re-renders its children,
+// so they can't be looked up by id once another tab has been shown.
+itemEl('wallet-items-title'); itemEl('wallet-items');
 const bagUi = new BagUI({
   root: $('bag-panel'),
   bag,
@@ -2194,10 +2198,37 @@ const bagUi = new BagUI({
     itemEl('wallet-items-title').querySelector('.bag-owned').textContent = L(BAG_TEXT.owned);
     return [itemEl('wallet-items-title'), itemEl('wallet-items')];
   },
-  closet: () => {
-    refreshItems();
-    return { nodes: [itemEl('wardrobe-items')], count: itemEl('wardrobe-items').childElementCount };
-  },
+  // The Wardrobe tab, a grid like the bag's: put clothes on or take them off
+  // (trousers can only be swapped for another pair).
+  closet: () => ({
+    ids: inventory.list().filter(isClothes),
+    describe: (id) => {
+      const it = ITEMS[id];
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price };
+    },
+    actions: (id, redraw) => {
+      const it = ITEMS[id];
+      const w = document.createElement('button');
+      if (it.wear) {
+        const on = isWorn(it, myLook);
+        w.className = 'chip' + (on ? ' on' : '');
+        w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(BAG_TEXT.wearing)) : '✨ ' + t('tee.wear');
+        w.disabled = on && !it.off;
+        w.onclick = () => { outfitAction(id); redraw(); };
+      } else { // a printed shirt
+        const wearing = myLook.tee === it.tee;
+        w.className = 'chip' + (wearing ? ' on' : '');
+        w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
+        w.onclick = () => {
+          myLook = { ...myLook, tee: wearing ? null : it.tee };
+          saveLook(myLook);
+          setLook(myLook);
+          redraw();
+        };
+      }
+      return [w];
+    },
+  }),
   rides: () => (garage.s.own.length > 1 ? { nodes: [bagRideList()], count: garage.s.own.length } : null),
 });
 // The bag's Rides tab: every ride you own (bike, board, skates, scooter), to
@@ -5731,16 +5762,14 @@ refreshCloud();
 initInstall({ $, t, onLanguageChange, isTouch: input.isTouch, cloud, toast: (m) => shop.toast(m) });
 onLanguageChange(refreshCloud);
 $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(); refreshItems(); };
-const WEARING = { en: 'Wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'Puesto', ar: 'ترتديه', vi: 'Đang mặc', hi: 'पहना हुआ', fr: 'Porté', th: 'กำลังใส่', id: 'Dipakai' };
-// Clothes live in the bag's Wardrobe tab; everything else (pets, ...) in the
-// bag's collection.
+// Clothes live in the bag's Wardrobe tab (a grid, see BagUI's closet); everything
+// else (pets, ...) in the bag's collection.
 const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
   const own = list.filter((id) => !isClothes(id));
   itemEl('wallet-items-title').hidden = !own.length;
   itemEl('wallet-items').replaceChildren(...own.map(itemRow));
-  itemEl('wardrobe-items').replaceChildren(...list.filter(isClothes).map(itemRow));
 }
 function itemRow(id) {
   {
@@ -5789,28 +5818,6 @@ function itemRow(id) {
       btns.className = 'item-btns';
       btns.append(w, nb);
       row.append(btns);
-    }
-    if (it.wear) { // put it on, or take it off (trousers can only be swapped)
-      const on = isWorn(it, myLook);
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (on ? ' on' : '');
-      w.textContent = on ? (it.off ? '👕 ' + t('tee.off') : '✅ ' + L(WEARING)) : '✨ ' + t('tee.wear');
-      w.disabled = on && !it.off;
-      w.onclick = () => { outfitAction(id); refreshItems(); };
-      row.append(w);
-    }
-    if (it.tee) { // put the printed shirt on, or take it off
-      const wearing = myLook.tee === it.tee;
-      const w = document.createElement('button');
-      w.className = 'chip item-walk' + (wearing ? ' on' : '');
-      w.textContent = '👕 ' + t(wearing ? 'tee.off' : 'tee.wear');
-      w.onclick = () => {
-        myLook = { ...myLook, tee: wearing ? null : it.tee };
-        saveLook(myLook);
-        setLook(myLook);
-        refreshItems();
-      };
-      row.append(w);
     }
     return row;
   }
@@ -7177,6 +7184,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
+    giveItem: (id) => inventory.add(id),
     petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),
