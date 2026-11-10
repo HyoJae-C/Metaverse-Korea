@@ -4,6 +4,26 @@
 // swapped for another, like trousers).
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
+import { ANIMAL_LOOKS } from './appearance.js';
+
+const ANIMAL_NAMES = {
+  'cat-black': { en: 'Black cat', ko: '검은 고양이', ja: '黒猫', zh: '黑猫' },
+  'cat-ginger': { en: 'Ginger cat', ko: '치즈 고양이', ja: '茶トラ猫', zh: '橘猫' },
+  dog: { en: 'Puppy', ko: '강아지', ja: '子犬', zh: '小狗' },
+  'bunny-white': { en: 'White bunny', ko: '흰 토끼', ja: '白うさぎ', zh: '小白兔' },
+  'bunny-pink': { en: 'Pink bunny', ko: '분홍 토끼', ja: 'ピンクうさぎ', zh: '粉兔子' },
+  panda: { en: 'Panda', ko: '판다', ja: 'パンダ', zh: '熊猫' },
+};
+
+// Taken off the shops to keep at most two colours of one design (2026-11-10).
+// Anyone who bought one keeps it: it still works and shows "Retired".
+export const RETIRED = new Set([
+  'outfit-jacket-cocoa', 'outfit-jacket-olive', 'outfit-hoodie-orange', 'outfit-shirt-olive', 'outfit-varsity-green', 'outfit-knit-navy',
+  'skirt-pleats-mini-white', 'skirt-pleats-mini-black', 'skirt-solid-mini-black', 'skirt-solid-mini-camel', 'skirt-solid-long-butter', 'skirt-floral-long-butter',
+  'acc-cap-sky', 'acc-cap-orange', 'acc-beanie-mustard',
+  'acc-glasses-gold', 'acc-glasses-pink', 'acc-sunglasses-brown', 'acc-sunglasses-blue',
+  'acc-scarf-cream', 'acc-tote-brick',
+]);
 
 // price: listed in ₩1,000s (70 = ₩70,000).
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
@@ -96,6 +116,16 @@ export const WEARABLES = {
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
   'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),
   'acc-backpack-graffiti': item('🎒', 45, { back: 'backpack-graffiti' }, { back: null }, WEAR_DESC.accessory, { en: 'Graffiti backpack', ko: '그래피티 백팩', ja: 'グラフィティのリュック', zh: '涂鸦双肩包' }),
+  // Nyang Meong To Pan (Another Land): animal-ear headbands and matching paw gloves.
+  ...Object.fromEntries(ANIMAL_LOOKS.flatMap((a) => {
+    const n = ANIMAL_NAMES[a.id];
+    return [
+      ['acc-ears-' + a.id, item(a.emoji, 20, { head: 'ears-' + a.id, hatPatch: null }, { head: null }, WEAR_DESC.accessory,
+        { en: `${n.en} ears headband`, ko: `${n.ko} 귀 머리띠`, ja: `${n.ja}耳カチューシャ`, zh: `${n.zh}耳朵发箍` })],
+      ['acc-paws-' + a.id, item(a.emoji, 25, { hand: 'paws-' + a.id }, { hand: null }, WEAR_DESC.accessory,
+        { en: `${n.en} paw gloves`, ko: `${n.ko} 발바닥 장갑`, ja: `${n.ja}の肉球手袋`, zh: `${n.zh}爪爪手套` })],
+    ];
+  })),
   // Skirts (look.skirt, data/skirts.js): two lengths, many colours and patterns.
   ...Object.fromEntries(Object.entries(SKIRTS).map(([id, sk]) => ['skirt-' + id,
     item('👗', SKIRT_PRICE[sk.length], { skirt: id }, { skirt: null }, WEAR_DESC.skirt, skirtName(sk))])),

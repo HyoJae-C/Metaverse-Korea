@@ -610,6 +610,7 @@ export const FR = {
   'safety.unblocked': 'Tout le monde est débloqué.',
   'look.tee': 'Couleur du t-shirt',
   'credit.chars': 'Personnages',
+  'credit.icons': 'Icônes',
   "fountain.soon": "🌈 La fontaine arc-en-ciel au clair de lune commence dans une minute. Regardez le pont Banpo depuis la pelouse au bord du fleuve.",
   "fountain.on": "🌈 La fontaine arc-en-ciel est lancée : une eau aux couleurs de l'arc-en-ciel tombe des deux côtés du pont Banpo.",
   "fountain.photo": "📸 C'est l'heure de la photo : tout le pont devient arc-en-ciel pendant la dernière minute.",
@@ -625,4 +626,5 @@ export const FR = {
   "zoocamel.done": "De retour au départ. Merci d'être monté ! 🐪",
   "zoocamel.poor": "La balade coûte 🪙 {n}",
   "zoocamel.taken": "Quelqu'un est déjà sur ce chameau",
+  "closet.retired": "Plus vendu",
 };

@@ -609,6 +609,7 @@ export const ES = {
   'safety.unblocked': 'Todos están desbloqueados.',
   'look.tee': 'Color de la camiseta',
   'credit.chars': 'Personajes',
+  'credit.icons': 'Iconos',
   "fountain.soon": "🌈 La Fuente Arcoíris a la Luz de la Luna empieza en un minuto. Mira el puente Banpo desde el césped junto al río.",
   "fountain.on": "🌈 La Fuente Arcoíris está encendida: agua de colores cae desde ambos lados del puente Banpo.",
   "fountain.photo": "📸 Hora de la foto: todo el puente es un arcoíris durante el último minuto.",
@@ -624,4 +625,5 @@ export const ES = {
   "zoocamel.done": "De vuelta en la parada. ¡Gracias por montar! 🐪",
   "zoocamel.poor": "Montar en camello cuesta 🪙 {n}",
   "zoocamel.taken": "Alguien ya va en este camello",
+  "closet.retired": "Descatalogado",
 };

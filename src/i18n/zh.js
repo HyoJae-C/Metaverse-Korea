@@ -613,6 +613,7 @@ export const ZH = {
   'safety.unblocked': '已全部取消屏蔽。',
   'look.tee': 'T恤颜色',
   'credit.chars': '角色',
+  'credit.icons': '图标',
   "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
   "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
   "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",
@@ -628,4 +629,5 @@ export const ZH = {
   "zoocamel.done": "回到上客处了，玩得开心吗？🐪",
   "zoocamel.poor": "骑骆驼要🪙 {n}",
   "zoocamel.taken": "这头骆驼上已经有人了",
+  "closet.retired": "已停售",
 };

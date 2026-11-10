@@ -610,6 +610,7 @@ export const VI = {
   'safety.unblocked': 'Đã bỏ chặn tất cả.',
   'look.tee': 'Màu áo phông',
   'credit.chars': 'Nhân vật',
+  'credit.icons': 'Biểu tượng',
   "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
   "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
   "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",
@@ -625,4 +626,5 @@ export const VI = {
   "zoocamel.done": "Đã về trạm. Cảm ơn bạn đã cưỡi! 🐪",
   "zoocamel.poor": "Cưỡi lạc đà giá 🪙 {n}",
   "zoocamel.taken": "Đã có người cưỡi con lạc đà này",
+  "closet.retired": "Ngừng bán",
 };

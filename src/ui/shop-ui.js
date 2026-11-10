@@ -84,7 +84,7 @@ const MODEL_ICON = { samgak: '🍙', milk: '🍌', umbrella: '☂️', 'pet:dog'
   tee: '👕', jeans: '👖', sneaker: '👟', bottle: '🧴', jar: '🫙', lipstick: '💄', cap: '🧢',
   hat: '👒', tote: '👜', plush: '🧸', notebook: '📓', pen: '🖊️', candle: '🕯️', bread: '🥐',
   cup: '🥤', scarf: '🧣', bowl: '🍲', roll: '🍙', glasses: '👓', sunglasses: '🕶️', earrings: '💎',
-  backpack: '🎒', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', icecream: '🍦', churro: '🥖', hotdog: '🌭', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
+  backpack: '🎒', ears: '🐱', paws: '🐾', beanie: '🧶', beret: '🎨', ribbon: '🎀', skirt: '👗', skewer: '🍢', icecream: '🍦', churro: '🥖', hotdog: '🌭', ramyeon: '🍜', egg: '🥚', picnicmat: '🧺', frisbee: '🥏',
 };
 const CART_KEY = 'mk.cart';
 

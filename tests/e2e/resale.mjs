@@ -1,4 +1,4 @@
-// End-to-end check: buy a jacket at Seongsu's Gaeul Vintage, then sell it
+// End-to-end check: buy a hoodie at Seongsu's Gaeul Vintage, then sell it
 // back to the clerk for 10% (browser-only wallet, as in ?debug).
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/resale.mjs http://localhost:4173/ [screenshot dir]
@@ -24,7 +24,7 @@ await page.waitForSelector('#product-adopt:not([hidden])');
 await page.click('#product-adopt');
 const items = await page.evaluate(() => __mk.items());
 console.log('bought:', items, 'coins', await page.evaluate(() => __mk.coins()));
-assert(items.includes('outfit-jacket-cocoa') && (await page.evaluate(() => __mk.coins())) === 430000, 'bought the ₩70,000 jacket');
+assert(items.includes('outfit-hoodie-wine') && (await page.evaluate(() => __mk.coins())) === 440000, 'bought the ₩60,000 hoodie');
 await page.click('#product-close');
 await page.evaluate(() => __mk.toClerk());
 await page.waitForTimeout(500);
@@ -34,11 +34,11 @@ await page.waitForSelector('#resale-panel:not([hidden])');
 console.log('panel:', (await page.textContent('#resale-panel')).replace(/\s+/g, ' '));
 if (S) await page.screenshot({ path: S + '/resale.png' });
 await page.click('#resale-panel .fish-row .chip');
-await page.waitForFunction(() => !__mk.items().includes('outfit-jacket-cocoa'), null, { timeout: 5000 }).catch(() => {});
+await page.waitForFunction(() => !__mk.items().includes('outfit-hoodie-wine'), null, { timeout: 5000 }).catch(() => {});
 console.log('after:', (await page.textContent('#resale-panel')).replace(/\s+/g, ' '), 'coins', await page.evaluate(() => __mk.coins()), 'items', await page.evaluate(() => __mk.items()));
 if (S) await page.screenshot({ path: S + '/sold.png' });
-assert((await page.evaluate(() => __mk.coins())) === 437000 && !(await page.evaluate(() => __mk.items())).includes('outfit-jacket-cocoa'), 'sold for 10% (₩7,000)');
-assert((await page.evaluate(() => __mk.look())).model === 'basic', 'took the jacket off first');
+assert((await page.evaluate(() => __mk.coins())) === 446000 && !(await page.evaluate(() => __mk.items())).includes('outfit-hoodie-wine'), 'sold for 10% (₩6,000)');
+assert((await page.evaluate(() => __mk.look())).model === 'basic', 'took the hoodie off first');
 assert(!errors.length, 'no page errors');
 console.log('errors', errors);
 await browser.close();

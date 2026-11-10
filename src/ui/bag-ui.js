@@ -3,6 +3,25 @@
 
 import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
+import { t } from '../core/i18n.js';
+
+// The kind icons (ui/closet-icons.js) load the first time the wardrobe opens;
+// until then a piece shows its own emoji.
+let closetSvg = null, svgLoad = null;
+const loadClosetSvgs = (redraw) => (svgLoad ||= import('./closet-icons.js').then((m) => { closetSvg = m.closetSvg; redraw(); }));
+// A piece's icon in the wardrobe: its kind's icon with a dot of its colour.
+function closetIcon(d, el) {
+  const icon = el('span', 'closet-icon');
+  const svg = closetSvg?.(d.kind);
+  if (svg) icon.innerHTML = svg;
+  else icon.textContent = d.emoji;
+  if (d.color) {
+    const dot = el('i', 'closet-dot');
+    dot.style.background = d.color;
+    icon.append(dot);
+  }
+  return icon;
+}
 
 export const BAG_TEXT = {
   title: { en: 'Bag', ko: '가방', ja: 'バッグ', zh: '背包' },
@@ -145,6 +164,7 @@ export class BagUI {
   // it is with Wear / Take off.
   closetBody(closet, el) {
     const all = closet.ids;
+    if (!closetSvg) loadClosetSvgs(() => { if (this.tab === 'closet') this.render(); });
     if (!all.length) return [el('p', 'fine bag-closet-empty', L(BAG_TEXT.closetEmpty))];
     const info = new Map(all.map((id) => [id, closet.describe(id)]));
     const kinds = CLOSET_KINDS.filter((k) => all.some((id) => info.get(id).kind === k));
@@ -175,7 +195,7 @@ export class BagUI {
       const b = el('button', 'bag-slot' + (id ? '' : ' empty') + (id && id === this.closetSel ? ' on' : ''));
       if (id) {
         const d = info.get(id);
-        b.textContent = d.emoji;
+        b.append(closetIcon(d, el));
         b.title = d.name;
         b.setAttribute('aria-label', d.name);
         if (d.worn) { b.classList.add('worn'); b.append(el('small', '', '✓')); }
@@ -188,7 +208,10 @@ export class BagUI {
       const d = info.get(this.closetSel);
       const row = el('div', 'bag-actions');
       row.append(...closet.actions(this.closetSel, () => this.render()));
-      box.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc), row);
+      const title = el('strong', 'closet-title');
+      title.append(closetIcon(d, el), ' ' + d.name);
+      if (d.retired) title.append(' ', el('span', 'closet-retired', t('closet.retired')));
+      box.append(title, el('small', 'fine', d.desc), row);
     } else box.append(el('small', 'fine', L(BAG_TEXT.closetPick)));
     return [bar, grid, box];
   }
