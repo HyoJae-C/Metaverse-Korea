@@ -24,19 +24,26 @@ test('Itaewon has four bars, each a different style, all alcohol-free', () => {
   assert.ok(hidden.signAs?.en && hidden.signAs?.ko);
 });
 
-test('the bars stand on open ground on Itaewon-ro (either side), a shop front apart', () => {
+const night = stores.filter((s) => (s.category === 'club' || s.category === 'bar') && s.id !== 'hilltop-taproom');
+const segDist = (x, z, [ax, az], [bx, bz]) => { const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz; const t = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L)) : 0; return Math.hypot(x - ax - t * dx, z - az - t * dz); };
+
+test('the bars stand on open ground, a shop front apart', () => {
   const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
-  const here = stores.filter((s) => (s.at[1] === 276 || s.at[1] === 293) && s.at[0] > ox - 300 && s.at[0] < ox + 300);
-  for (const s of here) for (const b of itaewon.buildings) assert.ok(!inPoly(s.at[0] - ox, s.at[1] - oz, b.p), s.id + ' inside a building');
-  for (const a of here) for (const b of here) if (a !== b && a.at[1] === b.at[1]) assert.ok(Math.abs(a.at[0] - b.at[0]) >= 7, `${a.id} and ${b.id} overlap`);
+  for (const s of night) for (const b of itaewon.buildings) assert.ok(!inPoly(s.at[0] - ox, s.at[1] - oz, b.p), s.id + ' inside a building');
+  for (const a of night) for (const b of night) if (a !== b) assert.ok(Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]) >= 7, `${a.id} and ${b.id} overlap`);
 });
 
-test('the clubs and bars stand together, between Itaewon Square and Noksapyeong-daero', () => {
-  // One nightlife strip both sides of Itaewon-ro, not dotted along it. The
-  // taproom is the exception: it is up on Gyeongnidan-gil, at the top of the hill.
-  const night = stores.filter((s) => (s.category === 'club' || s.category === 'bar') && s.id !== 'hilltop-taproom');
+test('the clubs and bars stand together in the club alley (Itaewon-ro 27ga-gil), behind Itaewon-ro', () => {
+  // One nightlife strip, not dotted along Itaewon-ro (Yozi 2026-11-11: the
+  // clubs are in that alley). The taproom is the exception: it is up on
+  // Gyeongnidan-gil, at the top of the hill.
+  const alley = itaewon.roads.find((r) => r.n?.en === 'Itaewon-ro 27ga-gil');
+  assert.ok(alley, 'the alley is a street');
   assert.ok(night.length >= 6);
-  for (const s of night) assert.ok(s.at[0] - ox > 26 && s.at[0] - ox < 170, s.id + ' is on the strip');
+  for (const s of night) {
+    const [x, z] = [s.at[0] - ox, s.at[1] - oz];
+    assert.ok(alley.p.some((q, i) => i && segDist(x, z, alley.p[i - 1], q) < alley.w / 2 + 3), s.id + ' is in the alley');
+  }
 });
 
 test('the sports pub match: same score for everyone, goals counted in order', () => {
