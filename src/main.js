@@ -5406,6 +5406,7 @@ function updateFireworks() {
   const near = street ? nearYeouido(p.x, p.z) : 0;
   const night = s ? s.night * near : 0;
   weather.nightMix = Math.max(night, droneNight(p, street));
+  weather.setShowClear(weather.nightMix > 0.05); // a clear sky in front of either show
   fireworks.look = night > 0.5;
   if (!s) { if (fireworks.sky) fireworks.sky.points.visible = false; return; }
   const t = s.t, onLawn = near > 0.99;
