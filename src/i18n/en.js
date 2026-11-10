@@ -711,4 +711,7 @@ export const EN = {
   "tix.done": "{name}: all used up. Thanks for riding!",
   "tix.passHeld": "You have the ride-all pass: every ride is free until it runs out ✓",
   "tix.short": "{name} costs 🪙 {n}. Not enough money.",
+  "gate.freeAgain": "Go in again free ({t} left)",
+  "gate.freeIn": "Free re-entry: no fare this time",
+  "gate.outPass": "Out by mistake? Come back in here within 5 min for free",
 };

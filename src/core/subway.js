@@ -67,7 +67,38 @@ export function streetStairs(sub, x, z) {
 export const HALL = { w: 52, d: 30, h: 4.4 };
 export const GATE_X = -9; // ticket gates: the concourse is west (x < GATE_X), the platform east
 export const GATE_LANES = [-3, -1.5, 0, 1.5, 3]; // lane centres (z)
-export const FARE = 1550; // won (Seoul's card fare), paid at the gate on the way in (going out is free)
+export const FARE = 1550; // won (Seoul's card fare), paid at the gate on the way in (going out is free; see createReentry)
+// Like Seoul's real rule: go out through the gates by mistake and come back in at
+// the same station within 5 minutes, and the fare isn't charged again.
+export const REENTRY_MS = 5 * 60 * 1000;
+
+/**
+ * The free re-entry pass. Only a paid trip earns one, on the way out; it works
+ * once, at the station you left by, until 5 minutes after. Coming back in free
+ * doesn't earn another, so you can't keep riding on one fare.
+ */
+export function createReentry() {
+  let trip = null; // 'paid' | 'free' while you're through the gates
+  let pass = null; // { station, until }
+  const left = (station, now) => (pass && pass.station === station && now < pass.until ? pass.until - now : 0);
+  return {
+    /** Through the gates, paying or on the pass. */
+    in(station, now, free = false) {
+      if (free) { if (!left(station, now)) return false; pass = null; }
+      trip = free ? 'free' : 'paid';
+      return true;
+    },
+    /** Out through the gates. True when that earned a free way back in. */
+    out(station, now) {
+      const earned = trip === 'paid';
+      trip = null;
+      pass = earned ? { station, until: now + REENTRY_MS } : null;
+      return earned;
+    },
+    /** Milliseconds left to come back in free at this station (0: pay). */
+    left,
+  };
+}
 export const DOOR_Z = 7.5; // screen doors on both sides of the island platform
 const TRACK_Z = 10.6;
 const ROUTE_PILLAR_X = -1.6; // the route map pillar on the platform, between two benches

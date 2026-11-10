@@ -709,4 +709,7 @@ export const ID = {
   "tix.done": "{name}: sudah habis. Terima kasih sudah bermain!",
   "tix.passHeld": "Kamu punya tiket terusan harian: semua wahana gratis selama 24 jam sejak dibeli ✓",
   "tix.short": "{name} seharga 🪙 {n}. Uangmu kurang.",
+  "gate.freeAgain": "Masuk lagi gratis (sisa {t})",
+  "gate.freeIn": "Masuk ulang gratis: kali ini tanpa tarif",
+  "gate.outPass": "Keluar tidak sengaja? Masuk lagi di sini dalam 5 menit, gratis",
 };

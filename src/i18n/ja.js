@@ -712,4 +712,7 @@ export const JA = {
   "tix.done": "{name}：使い切りました。楽しかった？",
   "tix.passHeld": "フリーパスがあります：購入から24時間、全アトラクション無料です ✓",
   "tix.short": "{name}は 🪙 {n} です。お金が足りません。",
+  "gate.freeAgain": "無料で再入場（残り {t}）",
+  "gate.freeIn": "再入場無料：今回は運賃なし",
+  "gate.outPass": "間違えて出ましたか？5分以内にこの駅から入り直せば無料です",
 };

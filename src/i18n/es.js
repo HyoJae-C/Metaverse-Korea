@@ -708,4 +708,7 @@ export const ES = {
   "tix.done": "{name}: ya no quedan viajes. ¡Gracias!",
   "tix.passHeld": "Tienes el pase de un día: todas las atracciones son gratis durante 24 horas desde la compra ✓",
   "tix.short": "{name} cuesta 🪙 {n}. No te alcanza.",
+  "gate.freeAgain": "Volver a entrar gratis (quedan {t})",
+  "gate.freeIn": "Reentrada gratis: esta vez sin tarifa",
+  "gate.outPass": "¿Saliste por error? Vuelve a entrar aquí en 5 min gratis",
 };

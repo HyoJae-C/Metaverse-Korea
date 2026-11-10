@@ -712,4 +712,7 @@ export const KO = {
   "tix.done": "{name}: 다 썼어요. 즐겁게 타셨나요?",
   "tix.passHeld": "자유이용권이 있어요: 산 뒤 24시간 동안 모든 놀이기구가 무료예요 ✓",
   "tix.short": "{name}은 🪙 {n}이에요. 돈이 모자라요.",
+  "gate.freeAgain": "다시 들어가기 무료 ({t} 남음)",
+  "gate.freeIn": "재입장 무료: 이번엔 요금을 안 냈어요",
+  "gate.outPass": "실수로 나왔나요? 5분 안에 이 역으로 다시 들어오면 무료예요",
 };
