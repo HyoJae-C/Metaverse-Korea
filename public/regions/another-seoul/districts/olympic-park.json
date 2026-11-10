@@ -1,7 +1,7 @@
 {
  "meta": {
   "district": "olympic-park",
-  "source": "hand-made (game map, not to scale): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Simplified: the Peace Plaza with the World Peace Gate (stylised) by Olympic-ro, the lone tree on its lawn and a pond; the skate park, the pool hall and the basketball court on the plaza are game additions. Placed by its anchor, the World Peace Gate (region.json)."
+  "source": "hand-made (game map, not to scale inside): Olympic Park in Songpa-gu, built for the 1988 Seoul Olympics. Olympic-ro follows OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL): from Mongchontoseong Station it runs north-north-east along the park's west side, as in Seoul. Simplified: the Peace Plaza with the World Peace Gate (stylised) between the station and the park, the lone tree on its lawn and a pond; the skate park, the pool hall and the basketball court are game additions. The park's south and east edges are not yet on the real outline (Wiryeseong-daero and Seongnaecheon); see docs. Placed by its anchor, the World Peace Gate (region.json)."
  },
  "roads": [
   {
@@ -9,12 +9,52 @@
    "w": 12,
    "p": [
     [
-     960,
-     180
+     946,
+     317
     ],
     [
-     1300,
-     180
+     968,
+     309
+    ],
+    [
+     972,
+     308
+    ],
+    [
+     980,
+     291
+    ],
+    [
+     986,
+     276
+    ],
+    [
+     1000,
+     247
+    ],
+    [
+     1006,
+     235
+    ],
+    [
+     1009,
+     230
+    ],
+    [
+     1013,
+     222
+    ],
+    [
+     1035,
+     179
+    ],
+    [
+     1051,
+     146
+    ],
+    [
+     1058,
+     131
     ]
    ],
    "n": {
@@ -30,11 +70,15 @@
    "p": [
     [
      1210,
-     186
+     255
     ],
     [
      1210,
-     255
+     186
+    ],
+    [
+     1031,
+     186
     ]
    ]
   },
@@ -84,19 +128,19 @@
    "h": 10,
    "p": [
     [
-     966,
+     1040,
      198
     ],
     [
-     990,
+     1064,
      198
     ],
     [
-     990,
+     1064,
      214
     ],
     [
-     966,
+     1040,
      214
     ]
    ],
@@ -109,20 +153,20 @@
    "h": 10,
    "p": [
     [
-     968,
-     292
+     1136,
+     140
     ],
     [
-     1016,
-     292
+     1184,
+     140
     ],
     [
-     1016,
-     328
+     1184,
+     176
     ],
     [
-     968,
-     328
+     1136,
+     176
     ]
    ],
    "n": {
@@ -134,6 +178,27 @@
  ],
  "rail": [],
  "areas": [
+  {
+   "k": "park",
+   "p": [
+    [
+     1060,
+     132
+    ],
+    [
+     1290,
+     132
+    ],
+    [
+     1290,
+     192
+    ],
+    [
+     1037,
+     192
+    ]
+   ]
+  },
   {
    "k": "park",
    "p": [
@@ -159,7 +224,7 @@
    "k": "plaza",
    "p": [
     [
-     960,
+     1037,
      192
     ],
     [
@@ -171,8 +236,28 @@
      340
     ],
     [
-     960,
+     985,
      340
+    ],
+    [
+     984,
+     318
+    ],
+    [
+     989,
+     296
+    ],
+    [
+     995,
+     276
+    ],
+    [
+     1009,
+     247
+    ],
+    [
+     1022,
+     222
     ]
    ]
   },
@@ -587,7 +672,9 @@
     "es": "Parque Olímpico",
     "id": "Taman Olimpiade",
     "vi": "Công viên Olympic",
-    "hi": "ओलंपिक पार्क", "fr": "Parc olympique", "th": "สวนโอลิมปิก",
+    "hi": "ओलंपिक पार्क",
+    "fr": "Parc olympique",
+    "th": "สวนโอลิมปิก",
     "ar": "الحديقة الأولمبية"
    },
    "text": {
@@ -598,7 +685,9 @@
     "es": "Parque construido para los Juegos Olímpicos de Seúl 1988, famoso por la Puerta de la Paz y el árbol solitario. En el skatepark puedes hacer trucos.",
     "id": "Taman yang dibangun untuk Olimpiade Seoul 1988, terkenal dengan Gerbang Perdamaian dan pohon tunggal di bukit rumput. Di skatepark kamu bisa melakukan trik.",
     "vi": "Công viên xây cho Thế vận hội Seoul 1988, nổi tiếng với Cổng Hòa bình và cây cô đơn trên đồi cỏ. Ở công viên trượt bạn có thể biểu diễn.",
-    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।", "fr": "Un parc construit pour les Jeux olympiques de Séoul 1988, connu pour la porte de la Paix sur la place de la Paix et l'arbre solitaire sur sa colline herbeuse. Au skatepark à l'est de la place, tu peux faire des figures en planche, en rollers et à vélo.", "th": "สวนที่สร้างขึ้นเพื่อโอลิมปิกโซลปี 1988 ขึ้นชื่อเรื่องประตูสันติภาพบนลานพีซพลาซ่าและต้นไม้ต้นเดียวบนเนินหญ้า ที่สเกตพาร์กทางตะวันออกของลาน คุณเล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต และจักรยานได้",
+    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।",
+    "fr": "Un parc construit pour les Jeux olympiques de Séoul 1988, connu pour la porte de la Paix sur la place de la Paix et l'arbre solitaire sur sa colline herbeuse. Au skatepark à l'est de la place, tu peux faire des figures en planche, en rollers et à vélo.",
+    "th": "สวนที่สร้างขึ้นเพื่อโอลิมปิกโซลปี 1988 ขึ้นชื่อเรื่องประตูสันติภาพบนลานพีซพลาซ่าและต้นไม้ต้นเดียวบนเนินหญ้า ที่สเกตพาร์กทางตะวันออกของลาน คุณเล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต และจักรยานได้",
     "ar": "حديقة بُنيت لأولمبياد سيول 1988، تشتهر ببوابة السلام والشجرة الوحيدة على التل العشبي. في حديقة التزلج يمكنك أداء الحركات."
    }
   },
@@ -615,7 +704,9 @@
     "es": "Skatepark",
     "id": "Skatepark",
     "vi": "Công viên trượt",
-    "hi": "स्केट पार्क", "fr": "Skatepark", "th": "สเกตพาร์ก",
+    "hi": "स्केट पार्क",
+    "fr": "Skatepark",
+    "th": "สเกตพาร์ก",
     "ar": "حديقة التزلج"
    },
    "text": {
@@ -626,17 +717,20 @@
     "es": "Haz trucos en tabla, patines, bici o patinete. Entra montado y pulsa Truco para saltar. ¡Vuela en las rampas y grindea en los rieles!",
     "id": "Lakukan trik dengan papan, sepatu roda, sepeda atau skuter. Masuk sambil naik dan tekan Trik untuk melompat. Terbang dari ramp, mendarat di rel untuk grind!",
     "vi": "Biểu diễn trên ván, giày patin, xe đạp hoặc xe trượt. Đi vào và bấm Mẹo để nhảy. Bay khỏi dốc, đáp lên thanh để trượt!",
-    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!", "fr": "Fais des figures en planche, en rollers, à vélo ou en trottinette. Entre en roulant et touche Figure pour sauter. Décolle des rampes, atterris sur une rampe de grind pour glisser ! Véhicules : ton sac ou un magasin de vélos.", "th": "เล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต จักรยาน หรือสกู๊ตเตอร์ ขี่เข้าไปแล้วแตะ ทริก เพื่อกระโดด ลอยจากทางลาด ลงบนราวเพื่อไถล! ยานพาหนะ: ในกระเป๋าหรือร้านจักรยาน",
+    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!",
+    "fr": "Fais des figures en planche, en rollers, à vélo ou en trottinette. Entre en roulant et touche Figure pour sauter. Décolle des rampes, atterris sur une rampe de grind pour glisser ! Véhicules : ton sac ou un magasin de vélos.",
+    "th": "เล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต จักรยาน หรือสกู๊ตเตอร์ ขี่เข้าไปแล้วแตะ ทริก เพื่อกระโดด ลอยจากทางลาด ลงบนราวเพื่อไถล! ยานพาหนะ: ในกระเป๋าหรือร้านจักรยาน",
     "ar": "قم بالحركات على اللوح أو الزلاجات أو الدراجة أو السكوتر. ادخل راكبًا واضغط «حركة» للقفز. حلّق من المنحدرات وانزلق على القضبان!"
    }
   },
   {
    "type": "poolhall",
-   "x": 992,
-   "z": 310,
+   "x": 1160,
+   "z": 158,
    "w": 48,
    "d": 36,
-   "h": 10
+   "h": 10,
+   "ry": 3.14159
   },
   {
    "type": "basketball",
