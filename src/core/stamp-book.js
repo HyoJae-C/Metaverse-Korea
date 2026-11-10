@@ -6,10 +6,11 @@ export const STAMP_NEAR = 1.6; // metres from the stand to use it
 // The stamps that exist on this map: a stand beside a shop needs that shop.
 // The stamp note goes district by district (구별, Yozi 2026-11-11), so a page
 // holds one neighbourhood. It starts in Jongno, where new players start
-// (Bukchon), then Jung-gu, round the west (Yongsan, Mapo), along the south
-// bank, and ends in the east (Gwangjin, Seongsu). Within a district, the
-// order in data/stamps.js. A district not listed here goes at the end: add it.
-export const STAMP_GU_ORDER = ['종로구', '중구', '용산구', '마포구', '서대문구', '영등포구', '동작구', '서초구', '강남구', '송파구', '광진구', '성동구'];
+// (Bukchon), then Jung-gu, the west (Yongsan, Mapo, Seodaemun), the east
+// (Seongsu, Gwangjin, Songpa), and Yeongdeungpo, Seocho and Gangnam last
+// (Yozi). Within a district, the order in data/stamps.js. A district not
+// listed here goes at the end: add it.
+export const STAMP_GU_ORDER = ['종로구', '중구', '용산구', '마포구', '서대문구', '성동구', '광진구', '송파구', '영등포구', '동작구', '서초구', '강남구'];
 const guRank = (s) => { const i = STAMP_GU_ORDER.indexOf(s.gu?.ko); return i < 0 ? STAMP_GU_ORDER.length : i; };
 export const byGu = (stamps) => stamps.map((s, i) => [s, i]).sort((a, b) => guRank(a[0]) - guRank(b[0]) || a[1] - b[1]).map(([s]) => s);
 
