@@ -6586,7 +6586,7 @@ const firstPerson = createFirstPerson({
   canUse: () => !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
 renderer.setAnimationLoop((now) => {
-  if (!gfx.frame(now)) return; // (at most 60 frames a second)
+  if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
   timer.update();
   const dt = Math.max(0, Math.min(timer.getDelta(), 0.05)); // (never back in time: a clock set back)

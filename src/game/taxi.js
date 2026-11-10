@@ -57,6 +57,16 @@ export function createTaxi(game) {
   ];
   let taxiTimers = [];
   let inCab = false; // on the back seat (the scene showing): you aren't standing anywhere
+  // While the back-seat scene covers the screen the 3D street behind it is
+  // drawn only 4 times a second (enough to get the drop-off ready), so the
+  // scene's animation stays smooth on a phone.
+  let cabDrawn = 0;
+  const skipFrame = (now) => {
+    if (!inCab) return false;
+    if (now - cabDrawn < 250) return true;
+    cabDrawn = now;
+    return false;
+  };
   const CAR_FREE = new Set(['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'track', 'corridor']);
   // Closed-off places (the zoo before it opens) and a margin round them.
   let zones = null, zonesOf = null;
@@ -109,6 +119,12 @@ export function createTaxi(game) {
     sayLine(TAXI_LINES[0]);
     let done = false;
     inCab = true;
+    // Out at the drop-off already, behind the back-seat scene (it covers the
+    // whole screen): what is far from the old spot goes, the new place's
+    // buildings, signs and shaders get ready while the driver talks, instead
+    // of one long freeze when the doors open.
+    moveMeTo(scene, fx, fz, ry);
+    cabDrawn = 0;
     const arrive = () => {
       if (done) return;
       done = true;
@@ -116,7 +132,6 @@ export function createTaxi(game) {
       taxiTimers.forEach(clearTimeout);
       taxiTimers = [];
       $('taxi-ride').hidden = true;
-      moveMeTo(scene, fx, fz, ry);
       if (guide && Math.hypot(tx - fx, tz - fz) > 4) setGuide(guide);
       showBubble(myLabel, $('labels'), '🚕');
       missionEvent('taxi');
@@ -302,5 +317,5 @@ export function createTaxi(game) {
     const [fx, fz] = findFreeSpot(rx, rz);
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, fare: 0, free: true, onArrive });
   }
-  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab };
+  return { rideTaxi, rideFree, onMsg, onLeave, closedAt, inCab: () => inCab, skipFrame };
 }
