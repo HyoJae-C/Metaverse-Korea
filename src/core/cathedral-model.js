@@ -187,8 +187,8 @@ export function buildCathedral(g) {
     const TT = K.turret;
     cyl(g, TT.r, TT.h, sx * TT.x, 0, L2 - K.tower.d / 2, C.stone, 8);
     cone(g, TT.r + 0.12, TT.cap - TT.h, sx * TT.x, TT.h, L2 - K.tower.d / 2, C.copperDark, 8);
-    box(g, 1.15, 1.6, 0.15, sx * 3.9, 1.3, front + 0.08, C.door); // the side doors
-    const sd = box(g, 0.82, 0.82, 0.15, sx * 3.9, 2.1, front + 0.08, C.door); sd.rotation.z = Math.PI / 4;
+    box(g, 1.15, 1.6, 0.15, sx * 3.8, 1.3, front + 0.08, C.door); // the side doors
+    const sd = box(g, 0.82, 0.82, 0.15, sx * 3.8, 2.1, front + 0.08, C.door); sd.rotation.z = Math.PI / 4;
     const coping = box(g, Math.hypot(HW - NW, AR - A) + 0.3, 0.2, 0.4, sx * (HW + NW) / 2, (A + AR) / 2, front + 0.1, C.stoneLight);
     coping.rotation.z = -sx * Math.atan2(AR - A, HW - NW);
   }
