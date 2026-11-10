@@ -38,13 +38,15 @@ test('5 different: each ride once; Big 3: only the Big 3, once each, used first'
   assert.equal(new RideTickets({ storage: st, now: () => new Date(2026, 10, 10, 20) }).left('big3'), 2, 'kept on this device');
 });
 
-test('tickets are for today only, and the ride-all pass makes them pointless', () => {
-  let day = new Date(2026, 10, 10, 12), pass = false;
+test('tickets last 24 hours from buying, and the ride-all pass makes them pointless', () => {
+  let day = new Date(2026, 10, 10, 23, 50), pass = false;
   const tk = new RideTickets({ storage: memory(), now: () => day, pass: () => pass });
   const w = purse(30000);
   tk.buy('big3', w);
-  day = new Date(2026, 10, 11, 9);
-  assert.equal(tk.left('big3'), 0, 'gone the next day');
+  day = new Date(2026, 10, 11, 23, 40);
+  assert.equal(tk.left('big3'), 3, 'still good past midnight, within 24 hours');
+  day = new Date(2026, 10, 11, 23, 51);
+  assert.equal(tk.left('big3'), 0, 'gone 24 hours after buying');
   assert.equal(tk.buy('any5', purse(100)), 'short');
   pass = true;
   assert.equal(tk.use('gyro'), 'pass');
@@ -63,4 +65,12 @@ test('the ticket guide speaks every language', () => {
   const keys = Object.keys(STRINGS.en).filter((k) => k.startsWith('tix.'));
   assert.equal(keys.length, 15);
   for (const code of ['ko', 'ja', 'zh', 'es']) for (const k of keys) assert.ok(STRINGS[code][k], `${code} ${k}`);
+});
+
+test('a ticket or pass saved as a day before the change still lasts that day', () => {
+  const st = memory();
+  st.setItem('mk.ridetix', JSON.stringify({ any5: { day: '2026-11-10', used: ['wheel'] } }));
+  const tk = new RideTickets({ storage: st, now: () => new Date(2026, 10, 10, 20) });
+  assert.equal(tk.left('any5'), 4);
+  assert.equal(new RideTickets({ storage: st, now: () => new Date(2026, 10, 11, 1) }).left('any5'), 0);
 });

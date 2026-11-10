@@ -31,10 +31,15 @@ export function createRoomTips({ $, enterStore, built }) {
       const shown = performance.now();
       // Two frames: the cover is on screen before the build holds the page.
       requestAnimationFrame(() => requestAnimationFrame(() => {
-        try { enterStore(item); } finally {
-          // (one more frame drawn behind it: the room's shaders get ready too)
-          const wait = Math.max(0, MIN_MS - (performance.now() - shown));
-          setTimeout(() => requestAnimationFrame(() => { box.hidden = true; busy = false; }), wait);
+        // (enterStore returns a promise while the room's code downloads:
+        // the cover stays up until it's built)
+        let pending;
+        try { pending = enterStore(item); } finally {
+          Promise.resolve(pending).catch(() => {}).then(() => {
+            // (one more frame drawn behind it: the room's shaders get ready too)
+            const wait = Math.max(0, MIN_MS - (performance.now() - shown));
+            setTimeout(() => requestAnimationFrame(() => { box.hidden = true; busy = false; }), wait);
+          });
         }
       }));
     },

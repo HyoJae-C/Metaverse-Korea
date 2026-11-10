@@ -38,3 +38,12 @@ test('is not mistaken for a promise, and retries after a failed load', async () 
   await p.show('y');
   assert.deepEqual(p.shown, ['y']);
 });
+
+test('idle values stand in for properties until it has loaded', async () => {
+  const p = lazyPanel(async () => ({ walking: true, game: { n: 1 }, show() {} }), { walking: false, game: null });
+  assert.equal(p.walking, false);
+  assert.equal(p.game, null);
+  await p.ready();
+  assert.equal(p.walking, true);
+  assert.deepEqual(p.game, { n: 1 });
+});

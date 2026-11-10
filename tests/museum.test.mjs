@@ -79,15 +79,18 @@ test('each floor is its own store, and the lift is in the central hall', () => {
   assert.ok(Math.abs(LIFT.x) < 8 && LIFT.z < 0);
 });
 
-test('the museum stands on the real National Museum of Korea, south of Seobinggo-ro, on open ground by its building', () => {
+test('the museum stands on the real National Museum of Korea, north of Seobinggo-ro and facing it, on open ground by its building', () => {
   const store = read('stores.json').stores.find((s) => s.id === 'national-museum');
   assert.equal(store.category, 'museum');
   const region = read('region.json');
   const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
   const map = read('districts/itaewon.json');
-  const seobinggo = map.roads.find((r) => r.n?.en === 'Seobinggo-ro'); // Itaewon's southern edge
+  const seobinggo = map.roads.find((r) => r.n?.en === 'Seobinggo-ro'); // Itaewon's southern edge (OpenStreetMap)
   const [x, z] = [store.at[0] - ox, store.at[1] - oz];
-  assert.ok(z > seobinggo.p[0][1], 'south of Seobinggo-ro');
+  const i = seobinggo.p.findIndex((q, k) => k && (seobinggo.p[k - 1][0] - x) * (q[0] - x) <= 0);
+  const [a, b] = [seobinggo.p[i - 1], seobinggo.p[i]];
+  const roadZ = a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]);
+  assert.ok(i > 0 && z < roadZ && roadZ - z < 100, 'north of Seobinggo-ro, its door towards it');
   const hall = map.buildings.find((b) => b.ym && b.p.some(([, bz]) => Math.abs(bz - z) < 3));
   const [mx, mz] = toGame(37.5239253, 126.9803733); // the real building's middle (OpenStreetMap)
   assert.ok(Math.hypot((hall.p[0][0] + hall.p[2][0]) / 2 + ox - mx, (hall.p[0][1] + hall.p[2][1]) / 2 + oz - mz) < 15, 'on the real building');

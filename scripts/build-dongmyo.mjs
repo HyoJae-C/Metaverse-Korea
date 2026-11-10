@@ -152,8 +152,8 @@ for (const s of M.stalls) {
 // them; spots are relative to the landmark).
 const [mx, mz] = L(M.center);
 landmarks.push({ type: 'potatomarket', x: mx, z: mz, spots: M.mats.map(([x, z, r]) => [Math.round((x - M.center[0]) * 10) / 10, Math.round((z - M.center[1]) * 10) / 10, r]) });
-// The market's sign by Jong-ro.
-landmarks.push({ type: 'sign', x: L(M.sign.at)[0], z: L(M.sign.at)[1], ry: M.sign.ry, title: M.sign.title, text: M.sign.text });
+// The market's sign on the plaza.
+landmarks.push({ type: 'sign', x: L(M.sign.at)[0], z: L(M.sign.at)[1], ry: M.sign.ry, ...(M.sign.sc ? { sc: [M.sign.sc] } : {}), ...(M.sign.fs ? { fs: M.sign.fs } : {}), title: M.sign.title, text: M.sign.text });
 
 // --- Buildings: one row along the big streets ---
 // Keep clear of: the roads, the shrine, the market.

@@ -33,11 +33,10 @@ import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
-import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
+import { showInfoHint, INFO_TEXT, AREA } from './ui/info-labels.js'; // (the guides' panel, ui/info-ui.js, loads when asked)
 import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { RideTickets } from './core/ride-tickets.js';
-import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace, onMap } from './core/respawn.js';
@@ -51,7 +50,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { PalaceShow, FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
@@ -63,6 +62,7 @@ import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoar
 import { createRideCam } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createTouchSteer } from './game/touch-steer.js';
+import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
@@ -82,7 +82,6 @@ import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
 import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
-import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
 import { createUsedRack } from './game/used-rack.js';
 import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
@@ -103,7 +102,8 @@ import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, needsDome, needsPark, needsZoo, roomBox, setDomeBuilder, setParkBuilder, setZooBuilders } from './core/interior.js';
+import { interiorLoaded, loadInterior, warmInterior, roomKit } from './game/interior-loader.js';
+import { createStoreDescs } from './game/store-descs.js'; // rooms: core/interior.js, loaded at the first door
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
 import { ShopUI, Cart, coinsFor, goodsKind, itemSoon, shownStores } from './ui/shop-ui.js';
@@ -113,10 +113,6 @@ import { GiftBox, parseGift } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { ML as MARKET_L } from './ui/kimchi-sell-ui.js';
-import { MUSEUM_TEXT } from './ui/museum-ui.js';
-import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
-import { GUIDE_LOOK, MEMORIAL_TEXT, MEMORIAL_FLOORS, HALLS as MEMORIAL_HALLS, DONATED } from './data/war-memorial.js';
-import { HAUNT_STORE, HAUNT_SPOT } from './core/haunted.js';
 import { BOSS_LINES } from './ui/market-text.js';
 import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first use
 // (The classes' long texts load with the class: game/cooking-classes.js.)
@@ -126,8 +122,6 @@ import { Bag, giftEntry } from './core/bag.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
-import { KaraokeUI } from './ui/karaoke-ui.js';
-import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
 import { RUNWAY_STORE } from './core/runway-game.js';
 import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
 import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
@@ -139,7 +133,6 @@ import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
 import { DOME_TEXT, DOME_SHOUT, chantPhrase } from './data/dome-text.js';
-import { LIFEGUARD_LOOK } from './core/pool-hall.js';
 import { BL } from './ui/basketball-text.js';
 import { Skater, PARK_SPEED } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
@@ -197,6 +190,7 @@ import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
+import { createNoBikeStairs } from './game/no-bike-stairs.js';
 import { createRoomCache } from './game/room-cache.js';
 import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
@@ -227,6 +221,7 @@ import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
 import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listening-bar.js';
+import { createLiveStage } from './game/live-stage.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createChat } from './game/chat.js';
@@ -748,7 +743,7 @@ const streamWalls = streams.flatMap(streamStreetBlockers);
 // dancers that you can't step inside, so the formation isn't broken (no
 // fence in the way of the view; a note asks you to step back instead).
 const palaceAt = (region.districts || []).find((d) => d.id === 'gyeongbokgung')?.offset;
-const fanAt = palaceAt && [palaceAt[0] - 36, palaceAt[1] - 15]; // the front court, past Gwanghwamun and west of the way to Heungnyemun (the king keeps to the courts behind it)
+const fanAt = palaceAt && [palaceAt[0] + FAN_AT[0], palaceAt[1] + FAN_AT[1]]; // the west lawn (the king walks round the east one)
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
@@ -780,6 +775,8 @@ const zooVisit = createZooVisit({
 });
 const streetSeats = benchSeats(map.landmarks).concat(edgeSeats(streams)); // park benches (Seoul Forest) and the edge of the water down by a stream
 const storeData = [...((await storesPromise)?.stores || []), ...((await homesPromise)?.homes || [])];
+// Product descriptions: at the first shop door (game/store-descs.js).
+const storeDescs = createStoreDescs({ url: `${BASE}regions/${regionId}/store-descs.json`, stores: () => storeData });
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
 const storefronts = new Storefronts(scene, shownStores(storeData), map, region.center, collision);
@@ -807,12 +804,12 @@ const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, label
 // Passers-by: two strolling around each meeting zone.
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: slopeY });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
-// Gyeongbokgung performances: the fan dance in front of Geunjeongjeon and
+// Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
 // (core/palace-show.js, core/bukcheong.js).
 const palaceShow = palaceAt ? new PalaceShow(scene, {
   fan: fanAt,
-  procession: palaceAt, // the king's walk round the palace (ROYAL_ROUTE)
+  procession: palaceAt, // the king's walk round the east lawn (ROYAL_ROUTE)
   visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
   mask: [palaceAt[0] + 8, palaceAt[1] + 42], // the lion dance ring, on the square before King Sejong's statue
   rope: [palaceAt[0] - 18, palaceAt[1] + 46], // the tightrope beside it
@@ -843,6 +840,9 @@ let squareNpc = null, billboard = null;
 // square guide instead, as before.
 const firstStop = await startChoice.then((k) => { const sp = k && startSpot(region, k); return sp && !sp.square ? sp : null; });
 let welcomeNpc = null;
+// Street things that FarCull (below) hides past the fog, besides the ones it
+// lists itself: wall screens, the square's billboard and boards, hiring posters.
+const farExtras = [];
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
 for (const sc of region.screens || []) {
@@ -855,6 +855,7 @@ for (const sc of region.screens || []) {
   const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
+  farExtras.push(ws.root);
   wallScreens.push(ws);
 }
 if (square) {
@@ -916,6 +917,7 @@ if (square) {
   billboard.root.position.set(bx, 0, bz);
   billboard.root.rotation.y = face(bx, bz);
   scene.add(billboard.root);
+  farExtras.push(billboard.root);
   // Paving blocks (보도블럭) on the square, under the roads.
   const pc = document.createElement('canvas');
   pc.width = pc.height = 256;
@@ -969,6 +971,7 @@ if (square) {
     m.position.set(x, 0, z);
     m.rotation.y = ry;
     scene.add(m);
+    farExtras.push(m);
     noticeBoards.push({ board, x: ux, z: uz }); // stand in front of it
   }
 }
@@ -1525,10 +1528,12 @@ async function joinRoom(room, roomScene, area = null) {
       checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
+      liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { liveStage.onLeave(id); sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (liveStage.onMsg(id, e)) return; // the live café's voice set-up (game/live-stage.js)
       if (sky.onMsg(id, e)) return; // carrying someone in flight (game/sky-flight.js)
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
@@ -1551,7 +1556,8 @@ async function joinRoom(room, roomScene, area = null) {
       }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
-      if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
       if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
@@ -1690,7 +1696,11 @@ function goSolo(roomScene) {
 net = SOLO;
 // Same browser, second tab: the newest tab plays, older ones step aside so
 // you never appear twice on the street (see core/single-tab.js).
-claimTab(() => {
+// Same idea across devices: if this account's save was opened on another
+// phone or computer, this one stops saving and steps aside the same way, so
+// it never overwrites the newer progress there (see core/cloud-save.js).
+function stepAside(icon, title, hint) {
+  if (tabParked) return;
   tabParked = true;
   joinToken++; // a join still connecting disconnects itself
   net?.disconnect();
@@ -1702,15 +1712,18 @@ claimTab(() => {
   const box = document.createElement('div');
   box.className = 'overlay dim';
   box.id = 'other-tab';
-  box.innerHTML = '<div class="panel small"><div class="logo">🗂️</div><h2></h2><p></p><button class="primary"></button></div>';
-  box.querySelector('h2').textContent = t('tab.elsewhere');
-  box.querySelector('p').textContent = t('tab.elsewhereHint');
+  box.innerHTML = '<div class="panel small"><div class="logo"></div><h2></h2><p></p><button class="primary"></button></div>';
+  box.querySelector('.logo').textContent = icon;
+  box.querySelector('h2').textContent = t(title);
+  box.querySelector('p').textContent = t(hint);
   const btn = box.querySelector('button');
   btn.textContent = t('tab.playHere');
   btn.onclick = () => location.reload(); // reloading claims this tab again
   box.style.zIndex = 10000;
   document.body.appendChild(box);
-});
+}
+claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint'); });
+cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel. (ui/emote-wheel.js)
@@ -2329,7 +2342,7 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotatio
 const interiorCache = createRoomCache({
   max: lowSpec ? 4 : 10,
   build: (store) => {
-    const built = buildInterior(store);
+    const built = interiorLoaded().buildInterior(store); // (enterStore and openParkRoom load it first)
     built.collision = new CollisionMap(built.colliders);
     if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
     if (built.zooPark) zooVisit.adopt(built); // the zoo: its keeper, visitors, carts and feeding times
@@ -2575,26 +2588,32 @@ function enterStore(item, walkIn = null) {
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
   }
-  // Seoul Another Dome: the stadium's code comes on the first visit.
-  if (needsDome(item.store)) {
+  // Every room's code (core/interior.js) and the shops' product descriptions
+  // (game/store-descs.js) come with the first one walked into; the returned
+  // promise keeps the tip cover up meanwhile (game/tips.js).
+  const rooms = interiorLoaded();
+  if (!rooms || !storeDescs.ready()) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/dome.js').then((m) => { setDomeBuilder(m.buildDome); domeLoading = false; enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
-    return;
+    return Promise.all([loadInterior(), storeDescs.load()]).then(() => { domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('rooms', e); });
+  }
+  // Seoul Another Dome: the stadium's code comes on the first visit.
+  if (rooms.needsDome(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    return import('./core/dome.js').then((m) => { rooms.setDomeBuilder(m.buildDome); domeLoading = false; return enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
   }
   // The zoo: its grounds and animals come on the first visit too.
-  if (needsZoo(item.store)) {
+  if (rooms.needsZoo(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/zoo-park.js').then((m) => { setZooBuilders(m); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
-    return;
+    return import('./core/zoo-park.js').then((m) => { rooms.setZooBuilders(m); domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
   }
   // Another Land: the park's models come on the first visit too.
-  if (needsPark(item.store)) {
+  if (rooms.needsPark(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
-    return;
+    return import('./core/themepark.js').then((m) => { rooms.setParkBuilder(m.buildThemePark); domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
   }
   if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
   // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
@@ -2627,7 +2646,7 @@ function enterStore(item, walkIn = null) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2813,6 +2832,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (store.genre) enterClub(store.genre);
+  if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
   const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
@@ -2837,23 +2857,23 @@ function layMemorialFlower() {
   interior?.stations?.layFlower?.();
   me.play('bow');
   net.sendEmote('bow');
-  shop.toast(L(MEMORIAL_TEXT.laid));
+  shop.toast(L(roomKit().MEMORIAL_TEXT.laid));
 }
 
 // The War History Museum's floors, for the lift's floor list.
-const memorialFloors = () => MEMORIAL_FLOORS.map(({ floor, halls }) => ({
-  floor, lines: [...(floor === 2 ? [L(DONATED.title)] : []), ...halls.map((k) => L(MEMORIAL_HALLS[k].name))],
+const memorialFloors = () => roomKit().MEMORIAL_FLOORS.map(({ floor, halls }) => ({
+  floor, lines: [...(floor === 2 ? [L(roomKit().DONATED.title)] : []), ...halls.map((k) => L(roomKit().MEMORIAL_HALLS[k].name))],
 }));
 
 // The museums' lifts (the art museum and the War History Museum): each floor
 // is its own interior; you step out by the lift.
 function goMuseumFloor(floor) {
-  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || floorOf(interior.store) === floor) return;
+  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || roomKit().floorOf(interior.store) === floor) return;
   const front = interior.front;
   standUp();
   if (museumUi.open) museumUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; } // the docent stays downstairs
-  enterStore({ ...front, store: museumFloorStore(front.store, floor) });
+  enterStore({ ...front, store: roomKit().museumFloorStore(front.store, floor) });
   const l = interior.stations.lift;
   moveMeTo(interior.scene, l.x, l.z + 0.6, Math.PI); // facing the lift, so the camera is out in the hall
   const fade = $('fade');
@@ -2866,7 +2886,7 @@ function goMuseumFloor(floor) {
 // back into the park, in front of the house.
 let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
 const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
-function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
+function enterHaunted(inner = roomKit().HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
   const sea = inner === SEA_STORE;
   if (mode !== 'store' || !(sea ? interior?.zooPark : interior?.themepark) || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
@@ -2879,7 +2899,7 @@ function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall
   if (sea) zooVisit.hideLabels();
   enterStore({ ...front, store: inner, parkFront: front });
   if (sea) { hauntFade(); return; }
-  const built = interiorCache.get(HAUNT_STORE.id);
+  const built = interiorCache.get(roomKit().HAUNT_STORE.id);
   built.resetVisit();
   built.onScare = (kind) => (kind === 'ghost' ? sfx.ghostly() : sfx.tock(0.25, 260));
   built.setSignLang(signsTranslated ? getLanguage() : null);
@@ -2905,7 +2925,7 @@ function backToPark() {
     const d = interior.stations.seaDoor[0];
     moveMeTo(interior.scene, d.x, d.z, d.ry);
   } else {
-    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry); // out in front of the door
+    moveMeTo(interior.scene, roomKit().HAUNT_SPOT.x, roomKit().HAUNT_SPOT.z, roomKit().HAUNT_SPOT.ry); // out in front of the door
   }
   hauntFade();
 }
@@ -2922,7 +2942,7 @@ function enterRunwayRoom() {
   runwayLine.clear(); // (whoever is in line will say so)
   enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
-  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
+  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(roomKit().RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
@@ -3003,6 +3023,7 @@ function leaveStore(walkOut = false) {
   for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
+  liveStage.leave(); // (tells the room the song is over, while still in it)
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
@@ -3051,10 +3072,11 @@ function leaveStore(walkOut = false) {
 // ---------- Subway station ----------
 // Down by a stream (core/stream.js): which layer you are on and how high.
 let byStream = null; // { i, y, low, stair } while on a stream's stairs or banks
+const noBikeStairs = createNoBikeStairs({ toast: (m) => shop.toast(m), text: () => t('stairs.noBike') }); // (game/no-bike-stairs.js)
 function updateStream(p, px0, pz0) {
   if (!streams.length) return 0;
   let s = streamAt(streams, p.x, p.z, !!byStream?.low);
-  if (s?.stair && riding) { p.x = px0; p.z = pz0; s = streamAt(streams, p.x, p.z, !!byStream?.low); } // no bikes down the steps
+  if (s?.stair && riding) { p.x = px0; p.z = pz0; s = streamAt(streams, p.x, p.z, !!byStream?.low); noBikeStairs(); } // no bikes down the steps (and say so)
   byStream = s && (s.low || s.stair) ? s : null;
   if (mode === 'street') activeCollision = byStream?.low ? streamCollision : collision;
   return s ? s.y : 0;
@@ -3067,9 +3089,10 @@ const subway = createSubway(subwayStations, {
   get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
+  onNoBikeStairs: noBikeStairs,
   streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
 });
-const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, updateSubway } = subway;
+const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
 // Translate signs (storefronts and zone boards) into the chosen language.
 const supportPlaces = []; // [district, 'spot' | 'wall', where] (debug)
@@ -3173,6 +3196,14 @@ const listenBar = createListeningBar({
     for (const s of interior?.stations?.listening || []) if (s.rack) s.rack.visible = !s.npc && s !== listenBar.station;
     if (listenBar.station) me.root.rotation.y = listenBar.station.ry; // face the bar
   },
+});
+// Sinchon's live café: sing into your mic on the stage; only people in the
+// café hear it. (game/live-stage.js)
+const liveStage = createLiveStage({
+  get interior() { return interior; }, get others() { return others; }, get net() { return net; }, get me() { return me; },
+  get nickname() { return nickname; }, get sfx() { return sfx; },
+  myId, safety, cloud, shop, music, applyMusicBtn, openPersonMenu: chat.openPersonMenu, testRoom: !!testRoom,
+  standAt: (x, z, ry) => moveMeTo(activeScene, x, z, ry, cam.yaw), // (the camera stays put: you see your singer from the room)
 });
 // Ride shops: rides, repairs, tune-ups and skins. (ui/bike-shop-ui.js)
 const bikeShop = createBikeShop({
@@ -3897,7 +3928,10 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
-  if (fireworks.look) return; // no trophies in the sky during the Yeouido fireworks (Yozi)
+  // Show time (the Ttukseom drone show or the Yeouido fireworks, not the
+  // fountain show): your catch shows only on your own screen, so others'
+  // trophies don't show here, wherever you are (Yozi).
+  if (droneShowAt()?.on || fireworksAt()?.on) return;
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
@@ -3937,9 +3971,9 @@ const fishingUi = new FishingUI({
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
-    // ★3–★5: a trophy over my head, for everyone nearby. Not while the
-    // Yeouido fireworks are on around me: nothing covers the show (Yozi).
-    if (f.rarity >= TROPHY_RARITY && !fireworks.look) {
+    // ★3–★5: a trophy over my head, for everyone nearby. I always see my
+    // own; during show time others don't (onPeerTrophy, Yozi).
+    if (f.rarity >= TROPHY_RARITY) {
       showBubbleEl(myLabel, $('labels'), trophy(f, nickname), showMs(f), 'trophy tier-' + f.rarity);
       net.sendEmote('bigfish:' + f.id);
       sfx.reveal(true);
@@ -3982,7 +4016,7 @@ walletReady.then(() => {
   import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
     takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
 });
-const resaleUi = new ResaleUI({
+const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
   list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
@@ -3991,7 +4025,7 @@ const resaleUi = new ResaleUI({
   rack: () => usedRack.view(),
   onOpen: () => usedRack.refresh(),
   onBuy: (r) => usedRack.buy(r),
-});
+})));
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {
   const it = ITEMS[id], rc = receipts.get(id);
@@ -4007,8 +4041,8 @@ async function sellNow(id, it, rc) {
   const op = await opIdFor('resell:' + id + ':' + (rc.op || rc.bn || '') + ':' + rc.paid).catch(() => newOpId());
   const res = await wallet.resell({ id: op, n: coins, ref: rc.op, bn: rc.bn, paid: rc.paid, note });
   if (!res.ok) {
-    if (res.why === 'noref') { receipts.forget(id); return fmt(L(RESALE_TEXT.noref), { name }); }
-    return L(res.why === 'closed' ? RESALE_TEXT.closed : RESALE_TEXT.offline);
+    if (res.why === 'noref') { receipts.forget(id); return fmt(L(roomKit().RESALE_TEXT.noref), { name }); }
+    return L(res.why === 'closed' ? roomKit().RESALE_TEXT.closed : roomKit().RESALE_TEXT.offline);
   }
   // Paid (or sold before): only now does it leave the closet.
   if (isWorn(it, myLook)) { // take it off first (trousers: back to the plain jeans)
@@ -4021,9 +4055,9 @@ async function sellNow(id, it, rc) {
   if (res.n > 0) usedRack.sold(op, id); // on the rack for others
   refreshWallet();
   sfx.pop?.();
-  const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
+  const msg = fmt(L(roomKit().RESALE_TEXT.sold), { n: res.n });
   shop.toast(msg);
-  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(RESALE_TEXT.thanks)]);
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(roomKit().RESALE_TEXT.thanks)]);
   if (!$('bag-panel').hidden) refreshItems();
   return msg;
 }
@@ -4121,20 +4155,20 @@ function openJob(job) {
   if (job === 'delivery') startDelivery();
   else jobUi.show(job, interior.store);
 }
-const karaokeUi = new KaraokeUI({
+const karaokeUi = lazyPanel(() => import('./ui/karaoke-ui.js').then(({ KaraokeUI }) => new KaraokeUI({
   root: $('karaoke-panel'),
   wallet,
   onStart: () => { karaokeMusic = music.on; if (music.on) { music.setOn(false); applyMusicBtn(); } },
   onEnd: () => { if (karaokeMusic && !music.on) { music.setOn(true); applyMusicBtn(); } karaokeMusic = false; },
   onScore: (n) => net.sendEmote(karaokeMsg(n)),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
-});
+})));
 let karaokeMusic = false;
 // Curve Runway (DDP, ui/runway-ui.js): while the show is on, the movement
 // loop walks the character down the runway and back (runwayStep), the
 // camera watching from the photographers' end; the poses play here.
 let runwayMusic = false, runwayCam = null, runwaySpin = 0;
-const runwayUi = new RunwayUI({
+const runwayUi = lazyPanel(() => import('./ui/runway-ui.js').then(({ RunwayUI }) => new RunwayUI({
   root: $('runway-panel'),
   wallet,
   onStart: () => {
@@ -4189,7 +4223,7 @@ const runwayUi = new RunwayUI({
     me.play(medal ? 'cheer' : 'wave');
     if (medal) for (const o of interior?.audienceNpcs || []) o.ch.play(Math.random() < 0.5 ? 'cheer' : 'clap');
   },
-});
+})), { walking: false, game: null, line: null });
 // Walking with friends (core/runway-line.js): a line of up to four in the
 // runway room. While in it I say so every LINE_HI_S seconds; when it is my
 // turn (and stays so a moment, so that two people joining at once settle),
@@ -4221,7 +4255,7 @@ function startRunwayTurn() {
   runwayUi.play().then(() => { if (!runwayUi.game) leaveRunwayLine(); }); // (no sound: can't walk)
   runwayLine.setWalking(true);
   runwayHiAt = 0; // tell everyone right away
-  shop.toast(L(RUNWAY_TEXT.yourTurn));
+  shop.toast(L(roomKit().RUNWAY_TEXT.yourTurn));
 }
 // One frame of the show: where on the runway, facing which way.
 function runwayStep(p, dt) {
@@ -4284,7 +4318,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
@@ -4473,7 +4507,9 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
       }
       if (!wall) continue;
       const w = Math.min(5.6, wall.len - 1);
-      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w));
+      const poster = wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 6.4), w);
+      scene.add(poster);
+      farExtras.push(poster);
       supportPlaces.push([d, 'wall', [Math.round(wall.x), Math.round(wall.z), wall.nx, wall.nz, wall.h]]);
     }
   }
@@ -4504,7 +4540,9 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
       if (storefronts.items.some((o) => Math.hypot(o.group.position.x - wall.x, o.group.position.z - wall.z) < 6)) continue;
       const w = Math.min(5.6, wall.len - 1);
       const tex = hiringTexture({ ...j.ad, meters: Math.hypot(wall.x - j.x, wall.z - j.z) }, signLang());
-      scene.add(wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 7.2), w));
+      const poster = wallPoster(tex, wall, Math.min(wall.h - w * 0.32 - 1, 7.2), w);
+      scene.add(poster);
+      farExtras.push(poster);
       hiringRedraws.push(tex.redraw);
       hiringPlaces.push([j.id, 'wall', [Math.round(wall.x), Math.round(wall.z), +wall.nx.toFixed(2), +wall.nz.toFixed(2)]]);
       break;
@@ -4532,7 +4570,7 @@ function nearestStore(test) {
   }
   return best;
 }
-const infoUi = new InfoUI({
+const infoUi = lazyPanel(() => import('./ui/info-ui.js').then(({ InfoUI }) => new InfoUI({
   root: $('info-panel'),
   guide: guideToPlace,
   places: {
@@ -4544,7 +4582,7 @@ const infoUi = new InfoUI({
     storesIn: (d) => storeData.filter((st) => st.category !== 'home' && st.category !== 'info' && storefronts.get(st.id) && districtOfStore(st) === d),
     nearest: (workshop) => nearestStore((st) => st.workshop === workshop),
   },
-});
+})));
 // The first-time hint waits until the daily check-in card is closed.
 if (onboard === 0) { // first time: just the high five, nothing else in the way
   const box = $('info-hint');
@@ -4597,12 +4635,12 @@ function currentActivity() {
   return null;
 }
 // Gym: each finished set makes walking a tiny bit faster.
-const gymUi = new GymUI({
+const gymUi = lazyPanel(() => import('./ui/gym-ui.js').then(({ GymUI }) => new GymUI({
   root: $('gym-panel'),
   log: gymLog,
   onRep: () => { if (!gymUi.pose) me.play('cheer'); },
   onSet: (boost, kind) => { showBubble(myLabel, $('labels'), kind === 'yoga' ? '🧘' : kind === 'reformer' ? '✨' : '💪'); sfx.pop?.(); },
-});
+})), { pose: null, kind: null });
 // The studio's free mats and reformers (the ones nobody is on).
 const STUDIO_ACT = {
   yoga: { en: 'Join the yoga class', ko: '요가 수업 함께하기', ja: 'ヨガのクラスに参加', zh: '加入瑜伽课' },
@@ -4770,11 +4808,11 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court, palaceShow?.rope?.rig], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
-// front court (the fan dance; the king walks the inner court past
-// Heungnyemun), and just inside either gate 'Leave' takes you back out.
+// front court (the fan dance and the king are on the lawns past it),
+// and just inside either gate 'Leave' takes you back out.
 const PALACE_SPOTS = { gate: [0, 10], inside: [0, -12], leave: [[0, -6], [2, -33]] }; // in the palace district's metres
 function palaceAct(p) {
   if (!palaceAt || mode !== 'street') return null;
@@ -5096,7 +5134,7 @@ onLanguageChange(refreshDexBtn);
 let ride = null; // { kind, seat, t0, until, back: [x, z] }; the coaster adds train, view, cam
 const RIDE_ICON = { carousel: '🎠', wheel: '🎡', viking: '🏴‍☠️', drop: '🗼', swing: '🎪', teacups: '☕', train: '🚂', flume: '🪵', gyro: '🌀', coaster: '🎢' };
 const ridePass = () => dayPasses.has('rides');
-const rideFare = (kind) => (ridePass() ? '🎫' : rideTickets.ticketFor(kind) ? '🎟️' : `🪙 ${RIDE_PRICE[kind]}`);
+const rideFare = (kind) => { const id = !ridePass() && rideTickets.ticketFor(kind); return ridePass() ? '🎫 ' + t('ride.onPass') : id ? '🎟️ ' + t('ride.onTicket', { n: rideTickets.left(id) }) : `🪙 ${RIDE_PRICE[kind]}`; }; // (in words: people with a ticket weren't sure it would be used)
 // A ride on the pass or a ticket (true), saying what's left on the ticket.
 function useRideTicket(kind) {
   const id = rideTickets.use(kind);
@@ -5589,10 +5627,11 @@ function staffOpenPark(built) {
 }
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
-  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+  if (!o.built && !interiorLoaded()) { warmInterior(); return null; } // (the rooms' code first: game/interior-loader.js)
+  if (!o.built && interiorLoaded().needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
     if (!domeLoading) {
       domeLoading = true;
-      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+      import('./core/themepark.js').then((m) => { interiorLoaded().setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
     }
     return null;
   }
@@ -5720,8 +5759,11 @@ const { boardDuck, startDuckRide, updateDucks } = duckBoats;
 // Seoul Dal, the balloon in Yeouido Park (game/seoul-dal-near.js loads
 // game/seoul-dal.js when you come near it).
 const seoulDal = createSeoulDalNear({
-  landmarks: map.landmarks, scene, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
+  landmarks: map.landmarks, scene, weather, get me() { return me; }, get mode() { return mode; }, get cam() { return cam; }, get riding() { return riding; },
   others, myId, wallet, shop, t, missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  move: () => input.move, moveYaw: () => moveRef.yaw, // (walking round the gondola)
+  // The stamp tour's Seoul Dal stamp, pressed in the gondola at the top.
+  stamp: () => { const s = tourStamps.find((q) => q.id === 'seoul-dal'); return s && { got: stampBook.has(s.id), name: L(s.name), press: () => pressStamp({ stamp: s }) }; },
 });
 
 // Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
@@ -6183,7 +6225,7 @@ function hi5Action(o) {
 // Street actions that can be next to each other (a shop door with people at
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
-const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
+const storeAct = (it) => (warmInterior(), storeDescs.load(), { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
@@ -6362,9 +6404,11 @@ function updateAction(p, tSec) {
       const g = gateAt(p.x, p.z);
       next = g.inside
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
-        : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
+        : gateFree() // out by mistake: back in free for 5 min (the key ticks so the time does)
+          ? { key: 'gate-in-free:' + gateFree(), label: '🎫 ' + t('gate.freeAgain', { t: `${Math.floor(gateFree() / 60)}:${String(gateFree() % 60).padStart(2, '0')}` }), run: () => passGate(g, true) }
+          : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -6410,7 +6454,7 @@ function updateAction(p, tSec) {
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
-      next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
+      next = { key: 'runway-in', label: '👠 ' + L(roomKit().RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
@@ -6441,7 +6485,9 @@ function updateAction(p, tSec) {
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
-      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => runwayUi.show() };
+      next = { key: 'runway', label: '👠 ' + L(roomKit().RUNWAY_TEXT.open), run: () => runwayUi.show() };
+    } else if (liveStage.action(p)) {
+      next = liveStage.action(p);
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -6450,15 +6496,15 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
-      next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
+      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
     } else if (nearStation(p, 'flower', 1.3)) {
-      next = { key: 'flower', label: '💐 ' + L(MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
-    } else if (nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
-      const pn = nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
-      next = { key: 'panel:' + pn.kind, label: `📖 ${L(MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
-    } else if (nearestPainting(interior.stations?.paintings, p.x, p.z)) {
-      const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
-      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? MEMORIAL_TEXT.look : MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
+      next = { key: 'flower', label: '💐 ' + L(roomKit().MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
+    } else if (roomKit().nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
+      const pn = roomKit().nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
+      next = { key: 'panel:' + pn.kind, label: `📖 ${L(roomKit().MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
+    } else if (roomKit().nearestPainting(interior.stations?.paintings, p.x, p.z)) {
+      const pt = roomKit().nearestPainting(interior.stations.paintings, p.x, p.z).painting;
+      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? roomKit().MEMORIAL_TEXT.look : roomKit().MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
     } else if (nearStation(p, 'books', 1.5)) {
       const shelf = interior.stations.books.reduce((a, st) => (Math.hypot(p.x - st.x, p.z - st.z) < Math.hypot(p.x - a.x, p.z - a.z) ? st : a));
       next = { key: 'books:' + shelf.section, label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf(shelf.section) };
@@ -6486,9 +6532,9 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'batting', 1.8)) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
-      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling), run: () => openArcade('bowling') };
+      next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling) + (arcadeGame.bowlInvite() ? ' ⚔️' : ''), run: () => openArcade('bowling') };
     } else if (nearStation(p, 'climbing', 1.8)) {
-      next = { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
+      next = arcadeGame.camOn() ? null : { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
@@ -6536,7 +6582,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (interior.store.resale && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'resale', label: '♻️ ' + L(RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
+      next = { key: 'resale', label: '♻️ ' + L(roomKit().RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
     } else if (clubs.clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
@@ -6701,6 +6747,8 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+// The camera eases round behind you as you walk (game/follow-cam.js).
+const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
@@ -6733,7 +6781,8 @@ renderer.setAnimationLoop((now) => {
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
   const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
-  if (touchSteer.turn(dt, mx, my, canSteer)) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
+  const stickTurning = touchSteer.turn(dt, mx, my, canSteer);
+  if (stickTurning) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
   const p = me.root.position;
   const px0 = p.x, pz0 = p.z; // to measure how far my bike went this frame
@@ -6806,7 +6855,7 @@ renderer.setAnimationLoop((now) => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      const bx = roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
+      const bx = interiorLoaded().roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
       p.x = THREE.MathUtils.clamp(nx, bx.x0 + m, bx.x1 - m);
       p.z = THREE.MathUtils.clamp(nz, bx.z0 + m, bx.z1 - m);
     }
@@ -6837,15 +6886,16 @@ renderer.setAnimationLoop((now) => {
   } else if (runwayUi.walking && mode === 'store') {
     speed01 = THREE.MathUtils.lerp(speed01, runwayStep(p, dt), Math.min(1, dt * 10));
   } else if (riding !== 3) {
-    speed01 = THREE.MathUtils.lerp(speed01, 0, Math.min(1, dt * 10));
+    speed01 = THREE.MathUtils.lerp(speed01, seoulDal.pace * 0.45, Math.min(1, dt * 10)); // (0, or walking round Seoul Dal's gondola)
   }
   if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
 
-  // (No follow swing: the camera turns only when the player drags it. It
-  // used to swing round behind the character while walking, and on phones a
-  // wobbly thumb on the stick kept the view turning; players got lost.)
+  // Ease round behind the character while walking (slowly, and not for a
+  // moment after the player drags the view). An older follow swing turned at
+  // once and fought the drag, and players got lost; see game/follow-cam.js.
+  followCam.update(dt, { dragged: !!(look.dx || look.dy), moving: mag > 0.05 || !!autoWalk, can: canSteer && !stickTurning && !seoulDal.busy && riding !== 3, pace: speed01 });
 
   // Camera follow.
   // Keep the camera out of buildings: walk back from the player and stop
@@ -6885,6 +6935,7 @@ renderer.setAnimationLoop((now) => {
   }
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
+  seoulDal.camera(camera); // (in Seoul Dal's gondola, in the air: the view out)
   arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
   surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)
@@ -7024,6 +7075,7 @@ renderer.setAnimationLoop((now) => {
   const mapUp = mapView.open;
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
+  liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
@@ -7200,7 +7252,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     doorsOpen: (t) => interior?.subway?.doorsOpen(t) ?? null,
     pickStop: (k) => pickStop(k),
     leave: () => leaveStore(),
+    live: () => liveStage.voice?.debug() ?? null, liveVoice: () => liveStage.voice, // the live café's voice (game/live-voice.js)
     dartSpots: () => interior?.stations?.darts?.map((s) => [s.x, s.z]) ?? null, // the throw lines (game/darts-view.js)
+    bowlLanes: () => interior?.stations?.bowling?.map((s) => ({ x: s.x, z: s.z, busy: s.busy, ball: s.ball.visible, rows: s.screen.rows })) ?? null, // lanes and their screens (core/activity-rooms.js)
     listenStations: () => interior?.stations?.listening?.map((s) => [+s.x.toFixed(2), +s.z.toFixed(2), !!s.taken]) ?? null,
     listening: () => ({ id: listenBar.listening, pos: listenBar.position, ac: me.activityName, music: music.on }),
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
@@ -7235,6 +7289,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     parkRide: () => ({ ride: ride && ride.kind !== 'coaster' ? { kind: ride.kind, seat: ride.seat, phase: ride.phase, view: ride.view, roll: +(ride.pose?.roll || 0).toFixed(3) } : null, at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], phase: Object.fromEntries(Object.keys(RIDE_CYCLE).map((k) => [k, ridePhase(k, Date.now() / 1000)])), wheelOpen: wheelDoorOpen(wheelBottom(Date.now() / 1000), Date.now() / 1000), locked: !!ride?.locked }),
     coaster: () => ({ ride: ride?.kind === 'coaster' ? { train: ride.train, seat: ride.seat, view: ride.view, phase: ride.phase } : null, fov: +camera.fov.toFixed(1), boarding: boarding(coasterNow()), pass: ridePass(), at: [+me.root.position.x.toFixed(2), +me.root.position.y.toFixed(2), +me.root.position.z.toFixed(2)], staff: interior?.coasterStaff?.length ?? 0 }),
     look: () => currentLook,
+    camYaw: () => +cam.yaw.toFixed(3),
     camPos: () => camera.position.toArray().map((v) => +v.toFixed(2)),
     surgery: () => startSurgery(myLook), // (in a clinic: the operating scene without paying)
     surgeryT: (t) => { if (beauty.surgery) beauty.surgery.t = t; return beauty.surgery?.t ?? null; },

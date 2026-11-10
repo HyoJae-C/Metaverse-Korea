@@ -8,7 +8,6 @@
 // (core/lazy-panel.js): their texts alone are ~200 KB in twelve languages.
 import { BOSS_LINES } from '../ui/market-text.js';
 import { KimchiSellUI, ML as MARKET_L } from '../ui/kimchi-sell-ui.js';
-import { MuseumUI } from '../ui/museum-ui.js';
 import { lazyPanel } from '../core/lazy-panel.js';
 import { kimchiJar } from '../core/kimchi-market.js';
 import { localName, t } from '../core/i18n.js';
@@ -28,7 +27,8 @@ export function createCookingClasses(game) {
   });
   // Yongmaru Market (Itaewon): the side-dish stall buys homemade kimchi, a few
   // jars a day (core/kimchi-market.js).
-  const museumUi = new MuseumUI({ root: $('museum-panel') });
+  // The museums' painting / lift panel: downloaded with the first look (or lift).
+  const museumUi = lazyPanel(() => import('../ui/museum-ui.js').then(({ MuseumUI }) => new MuseumUI({ root: $('museum-panel') })));
   const kimchiSellUi = new KimchiSellUI({
     root: $('kimchi-sell-panel'),
     bag,

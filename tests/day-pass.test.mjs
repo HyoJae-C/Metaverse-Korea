@@ -21,3 +21,16 @@ test('the jjimjilbang and the pool charge once a day at the door', () => {
   day = new Date(2026, 10, 9, 10);
   assert.equal(p.feeFor(sauna), DAY_PASS.sauna, 'a new day needs a new pass');
 });
+
+test('the ride-all pass lasts 24 hours from buying, past midnight', async () => {
+  let now = new Date(2026, 10, 10, 23, 0);
+  const st = memory();
+  const p = new DayPasses(st, () => now);
+  assert.ok(p.buy('rides', 20000, purse(20000)));
+  now = new Date(2026, 10, 11, 22, 59);
+  assert.ok(new DayPasses(st, () => now).has('rides'), 'still good the next evening');
+  now = new Date(2026, 10, 11, 23, 1);
+  assert.equal(p.has('rides'), false, 'gone after 24 hours');
+  st.setItem('mk.daypass', JSON.stringify({ rides: '2026-11-11' }));
+  assert.ok(new DayPasses(st, () => now).has('rides'), 'one saved as a day still lasts that day');
+});

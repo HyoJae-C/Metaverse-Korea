@@ -10,11 +10,14 @@ const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: h
 
 // The headband and ears, in the chibi head's units (head ~0.65 m wide,
 // centre at 0, crown at y ≈ 0.33, face towards +z). a: the accessory.
+const W = 0.93; // the band's width against its height (1: round)
 export function makeEars(a) {
   const g = new THREE.Group();
+  g.position.y = -0.015; // sits a little down the crown, not perched on top
   const m = mat(a.color), inner = mat(a.inner), band = mat(a.band);
-  // The band: a thin arch over the crown from ear to ear.
-  const arch = new THREE.Mesh(geo('earBand', () => new THREE.TorusGeometry(0.37, 0.02, 6, 24, Math.PI)), band);
+  // The band: a thin arch over the crown from ear to ear, a little narrower
+  // than it is tall so its ends tuck in at the sides of the head.
+  const arch = new THREE.Mesh(geo('earBand', () => new THREE.TorusGeometry(0.37, 0.02, 6, 24, Math.PI).scale(W, 1, 1)), band);
   arch.position.set(0, -0.01, 0.04);
   arch.rotation.x = -0.18;
   g.add(arch);
@@ -22,7 +25,7 @@ export function makeEars(a) {
     const e = new THREE.Group();
     if (a.animal === 'cat') {
       // Pointed triangles, tipped out a little.
-      e.position.set(0.2 * sgn, 0.38, 0.02);
+      e.position.set(0.2 * W * sgn, 0.38, 0.02);
       e.rotation.z = -0.35 * sgn;
       const outer = new THREE.Mesh(geo('catEar', () => new THREE.ConeGeometry(0.13, 0.22, 4).rotateY(Math.PI / 4).scale(1, 1, 0.45)), m);
       const pink = new THREE.Mesh(geo('catEarIn', () => new THREE.ConeGeometry(0.08, 0.14, 4).rotateY(Math.PI / 4).scale(1, 1, 0.3)), inner);
@@ -30,7 +33,7 @@ export function makeEars(a) {
       e.add(outer, pink);
     } else if (a.animal === 'bunny') {
       // Long upright ears, leaning apart.
-      e.position.set(0.13 * sgn, 0.5, 0);
+      e.position.set(0.13 * W * sgn, 0.5, 0);
       e.rotation.z = -0.22 * sgn;
       const outer = new THREE.Mesh(geo('bunnyEar', () => new THREE.CapsuleGeometry(0.055, 0.24, 4, 10).scale(1, 1, 0.5)), m);
       const pink = new THREE.Mesh(geo('bunnyEarIn', () => new THREE.CapsuleGeometry(0.03, 0.18, 4, 8).scale(1, 1, 0.3)), inner);
@@ -38,7 +41,7 @@ export function makeEars(a) {
       e.add(outer, pink);
     } else if (a.animal === 'dog') {
       // Floppy ears hanging down beside the head.
-      e.position.set(0.37 * sgn, 0.2, 0.02);
+      e.position.set(0.37 * W * sgn, 0.2, 0.02);
       e.rotation.z = 0.25 * sgn;
       const outer = new THREE.Mesh(geo('dogEar', () => new THREE.SphereGeometry(0.12, 12, 10).scale(0.6, 1.35, 0.45)), m);
       outer.position.y = -0.04;
@@ -48,7 +51,7 @@ export function makeEars(a) {
       patch.position.set(-0.012 * sgn, -0.05, 0);
       e.add(patch);
     } else { // panda: round ears
-      e.position.set(0.24 * sgn, 0.34, 0.01);
+      e.position.set(0.24 * W * sgn, 0.34, 0.01);
       const outer = new THREE.Mesh(geo('pandaEar', () => new THREE.SphereGeometry(0.1, 14, 10).scale(1, 1, 0.55)), m);
       e.add(outer);
     }

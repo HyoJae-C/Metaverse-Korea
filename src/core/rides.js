@@ -53,17 +53,23 @@ function inkFor(hex) {
   const c = new THREE.Color(hex);
   return c.r * 0.3 + c.g * 0.59 + c.b * 0.11 > 0.6 ? 'rgba(40,40,60,0.75)' : 'rgba(255,255,255,0.85)';
 }
-const skins = new Map();
-export function skinMaterial(color, pattern) {
-  if (!pattern || typeof document === 'undefined') return mat(color);
-  const key = color + pattern;
-  if (skins.has(key)) return skins.get(key);
+// The 128 px tile a skin repeats: its colour with the pattern drawn on.
+// Also used as the pattern's sample in the ride shops (ui/bike-shop-ui.js).
+export function skinCanvas(color, pattern) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
   g.fillStyle = color; g.fillRect(0, 0, 128, 128);
   const ink = inkFor(color);
-  if (!drawPatternTile(g, pattern, ink, color)) for (const [x, y, r] of [[32, 34, 20], [96, 30, 15], [64, 80, 17], [20, 104, 13], [104, 104, 19]]) drawMotif(g, pattern, x, y, r, ink);
+  if (pattern && !drawPatternTile(g, pattern, ink, color)) for (const [x, y, r] of [[32, 34, 20], [96, 30, 15], [64, 80, 17], [20, 104, 13], [104, 104, 19]]) drawMotif(g, pattern, x, y, r, ink);
+  return c;
+}
+const skins = new Map();
+export function skinMaterial(color, pattern) {
+  if (!pattern || typeof document === 'undefined') return mat(color);
+  const key = color + pattern;
+  if (skins.has(key)) return skins.get(key);
+  const c = skinCanvas(color, pattern);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
