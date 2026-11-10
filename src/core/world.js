@@ -480,7 +480,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     }
     for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
       for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
-        if (spots.length + pines.length >= max / 2) break;
+        if (spots.length + pines.length >= max * 0.7) break; // (Seoul Forest alone takes ~1,700 on a computer)
         const h = hash(x, z), h2 = hash(z, x);
         if (edgeDist(x, z, a.p) < 12) continue; // (the edge rows are there)
         const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;

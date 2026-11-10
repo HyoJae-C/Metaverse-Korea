@@ -39,8 +39,16 @@ Forest Lake, the Mirror Pond, the wetland and the small ones). The roads round
 and through it are real too: Seoulsup-gil and Gwangnaru-ro on the north,
 Gosanja-ro down the west side to Ttukseom-ro (south of there it is Seongsu
 Bridge's ramp, not drawn), and Ttukseom-ro across the park, drawn only at the
-two open ends of the Rainbow Tunnel. The corner by Seoul Forest Station that
-is not park has towers. What is in the park (Metasequoia Avenue, the hill,
+two open ends of the Rainbow Tunnel. The park is a little bigger than the real one
+on three sides (Yozi, 2026-11-10: the real outline, cut into strips by the
+roads, felt small and bare), never toward the river or across Wangsimni-ro:
+the corner by Seoul Forest Station (really towers) is park, the land round
+its north piece up to z -200, and its west end past Gosanja-ro to x -600
+between Itaewon-ro and the riverside grass. There stand the Family Lawn (an
+open picnic lawn) and, by the Eco Forest's pond, the Deer Meadow (a fenced
+paddock; the deer, `core/forest-deer.js`, load the first time its fence is
+on screen). Wildflower patches (`meadow`) fill the open spots between the
+gardens; the tulip and sunflower gardens stand by the station's exits. What is in the park (Metasequoia Avenue, the hill,
 the gardens, the greenhouse, the galleries) is drawn in its old frame (old =
 world + 130, 154) and moved as one piece by `FOREST_SHIFT`, placed to keep
 clear of the real roads and ponds. The links to Itaewon and Wangsimni start at
