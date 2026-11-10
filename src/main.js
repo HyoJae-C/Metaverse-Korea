@@ -32,11 +32,10 @@ import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
 import { styleNameTag, EmblemCollection } from './core/emblems.js';
 import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
-import { InfoUI, showInfoHint, INFO_TEXT, AREA } from './ui/info-ui.js';
+import { showInfoHint, INFO_TEXT, AREA } from './ui/info-labels.js'; // (the guides' panel, ui/info-ui.js, loads when asked)
 import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
 import { RideTickets } from './core/ride-tickets.js';
-import { GymUI } from './ui/gym-ui.js';
 import { GymLog, TRAINER_NAME, TRAINER_LINES, nextTrainerLine } from './core/gym.js';
 import { INSTRUCTOR_NAME, INSTRUCTOR_LINES, nextInstructorLine, classPose, YOGA_FLOW } from './core/studio.js';
 import { saveLastSpot, loadLastSpot, usableSpot, saveLastPlace, loadLastPlace, onMap } from './core/respawn.js';
@@ -81,7 +80,6 @@ import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
 import { preloadModel } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
-import { ResaleUI, RESALE_TEXT } from './ui/resale-ui.js';
 import { createUsedRack } from './game/used-rack.js';
 import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
@@ -102,7 +100,7 @@ import { watchWeather } from './core/weather-watch.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
-import { buildInterior, needsDome, needsPark, needsZoo, roomBox, setDomeBuilder, setParkBuilder, setZooBuilders } from './core/interior.js';
+import { interiorLoaded, loadInterior, warmInterior, roomKit } from './game/interior-loader.js'; // rooms: core/interior.js, loaded at the first door
 import { isDining, coinPrice, foodIcon, FOOD_BITES, mealSync, parseBite } from './core/dining.js';
 import { furnitureById } from './core/furniture.js';
 import { ShopUI, Cart, coinsFor, goodsKind, itemSoon, shownStores } from './ui/shop-ui.js';
@@ -112,10 +110,6 @@ import { GiftBox, parseGift } from './core/gifts.js';
 import { GiftUI, GIFT_TEXT } from './ui/gift-ui.js';
 import { GrillUI } from './ui/grill-ui.js';
 import { ML as MARKET_L } from './ui/kimchi-sell-ui.js';
-import { MUSEUM_TEXT } from './ui/museum-ui.js';
-import { nearestPainting, museumFloorStore, floorOf } from './core/museum.js';
-import { GUIDE_LOOK, MEMORIAL_TEXT, MEMORIAL_FLOORS, HALLS as MEMORIAL_HALLS, DONATED } from './data/war-memorial.js';
-import { HAUNT_STORE, HAUNT_SPOT } from './core/haunted.js';
 import { BOSS_LINES } from './ui/market-text.js';
 import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first use
 // (The classes' long texts load with the class: game/cooking-classes.js.)
@@ -125,8 +119,6 @@ import { Bag, giftEntry } from './core/bag.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
-import { KaraokeUI } from './ui/karaoke-ui.js';
-import { RunwayUI, RUNWAY_TEXT } from './ui/runway-ui.js';
 import { RUNWAY_STORE } from './core/runway-game.js';
 import { RunwayLine, lineMsg, parseLineMsg, LINE_HI_S } from './core/runway-line.js';
 import { WordFx, pickPerfect, GOOD_FX, WORDS as RUNWAY_WORDS, pickWord, wordColor, tierOf, runwayMsg, parseRunwayMsg, wobbleAt, WOBBLE_S } from './core/runway-fx.js';
@@ -138,7 +130,6 @@ import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
 import { DOME_TEXT, DOME_SHOUT, chantPhrase } from './data/dome-text.js';
-import { LIFEGUARD_LOOK } from './core/pool-hall.js';
 import { BL } from './ui/basketball-text.js';
 import { Skater, PARK_SPEED } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
@@ -1552,7 +1543,7 @@ async function joinRoom(room, roomScene, area = null) {
       }
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
-      if (parseKaraoke(e) != null) { karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
       if (parseDartPin(e)) { const m = parseDartPin(e); if (!safety.isBlocked(id, others.nameOf(id))) interior?.dartPins?.add(id, m.board, m.color, m.x, m.y); return; }
@@ -2330,7 +2321,7 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotatio
 const interiorCache = createRoomCache({
   max: lowSpec ? 4 : 10,
   build: (store) => {
-    const built = buildInterior(store);
+    const built = interiorLoaded().buildInterior(store); // (enterStore and openParkRoom load it first)
     built.collision = new CollisionMap(built.colliders);
     if (built.zooHall) zooSounds.attach(built.zooHall); // (the Sea Animals hall's tanks call too)
     if (built.zooPark) zooVisit.adopt(built); // the zoo: its keeper, visitors, carts and feeding times
@@ -2576,26 +2567,31 @@ function enterStore(item, walkIn = null) {
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
   }
-  // Seoul Another Dome: the stadium's code comes on the first visit.
-  if (needsDome(item.store)) {
+  // Every room's code (core/interior.js) comes with the first one walked
+  // into; the returned promise keeps the tip cover up meanwhile (game/tips.js).
+  const rooms = interiorLoaded();
+  if (!rooms) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/dome.js').then((m) => { setDomeBuilder(m.buildDome); domeLoading = false; enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
-    return;
+    return loadInterior().then(() => { domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('rooms', e); });
+  }
+  // Seoul Another Dome: the stadium's code comes on the first visit.
+  if (rooms.needsDome(item.store)) {
+    if (domeLoading) return;
+    domeLoading = true;
+    return import('./core/dome.js').then((m) => { rooms.setDomeBuilder(m.buildDome); domeLoading = false; return enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
   }
   // The zoo: its grounds and animals come on the first visit too.
-  if (needsZoo(item.store)) {
+  if (rooms.needsZoo(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/zoo-park.js').then((m) => { setZooBuilders(m); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
-    return;
+    return import('./core/zoo-park.js').then((m) => { rooms.setZooBuilders(m); domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
   }
   // Another Land: the park's models come on the first visit too.
-  if (needsPark(item.store)) {
+  if (rooms.needsPark(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
-    import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
-    return;
+    return import('./core/themepark.js').then((m) => { rooms.setParkBuilder(m.buildThemePark); domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('park', e); });
   }
   if (item.store.workshop === 'bank') bankGame.checkNews(); // money sent to me while I was away
   // The jjimjilbang and the pool: a day pass at the door (core/day-pass.js).
@@ -2628,7 +2624,7 @@ function enterStore(item, walkIn = null) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? GUIDE_LOOK : store.workshop === 'pool' ? LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -2838,23 +2834,23 @@ function layMemorialFlower() {
   interior?.stations?.layFlower?.();
   me.play('bow');
   net.sendEmote('bow');
-  shop.toast(L(MEMORIAL_TEXT.laid));
+  shop.toast(L(roomKit().MEMORIAL_TEXT.laid));
 }
 
 // The War History Museum's floors, for the lift's floor list.
-const memorialFloors = () => MEMORIAL_FLOORS.map(({ floor, halls }) => ({
-  floor, lines: [...(floor === 2 ? [L(DONATED.title)] : []), ...halls.map((k) => L(MEMORIAL_HALLS[k].name))],
+const memorialFloors = () => roomKit().MEMORIAL_FLOORS.map(({ floor, halls }) => ({
+  floor, lines: [...(floor === 2 ? [L(roomKit().DONATED.title)] : []), ...halls.map((k) => L(roomKit().MEMORIAL_HALLS[k].name))],
 }));
 
 // The museums' lifts (the art museum and the War History Museum): each floor
 // is its own interior; you step out by the lift.
 function goMuseumFloor(floor) {
-  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || floorOf(interior.store) === floor) return;
+  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || roomKit().floorOf(interior.store) === floor) return;
   const front = interior.front;
   standUp();
   if (museumUi.open) museumUi.close();
   if (clerk) { clerk.tag.style.display = 'none'; clerk.bubble?.remove(); clerk.bubble = null; } // the docent stays downstairs
-  enterStore({ ...front, store: museumFloorStore(front.store, floor) });
+  enterStore({ ...front, store: roomKit().museumFloorStore(front.store, floor) });
   const l = interior.stations.lift;
   moveMeTo(interior.scene, l.x, l.z + 0.6, Math.PI); // facing the lift, so the camera is out in the hall
   const fade = $('fade');
@@ -2867,7 +2863,7 @@ function goMuseumFloor(floor) {
 // back into the park, in front of the house.
 let hauntSwitching = 0; // (one scene change per tap, however fast you tap)
 const hauntFade = () => { const fade = $('fade'); if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); } };
-function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
+function enterHaunted(inner = roomKit().HAUNT_STORE) { // (also the zoo's Sea Animals hall: SEA_STORE, from the zoo)
   const sea = inner === SEA_STORE;
   if (mode !== 'store' || !(sea ? interior?.zooPark : interior?.themepark) || performance.now() < hauntSwitching) return;
   hauntSwitching = performance.now() + 700;
@@ -2880,7 +2876,7 @@ function enterHaunted(inner = HAUNT_STORE) { // (also the zoo's Sea Animals hall
   if (sea) zooVisit.hideLabels();
   enterStore({ ...front, store: inner, parkFront: front });
   if (sea) { hauntFade(); return; }
-  const built = interiorCache.get(HAUNT_STORE.id);
+  const built = interiorCache.get(roomKit().HAUNT_STORE.id);
   built.resetVisit();
   built.onScare = (kind) => (kind === 'ghost' ? sfx.ghostly() : sfx.tock(0.25, 260));
   built.setSignLang(signsTranslated ? getLanguage() : null);
@@ -2906,7 +2902,7 @@ function backToPark() {
     const d = interior.stations.seaDoor[0];
     moveMeTo(interior.scene, d.x, d.z, d.ry);
   } else {
-    moveMeTo(interior.scene, HAUNT_SPOT.x, HAUNT_SPOT.z, HAUNT_SPOT.ry); // out in front of the door
+    moveMeTo(interior.scene, roomKit().HAUNT_SPOT.x, roomKit().HAUNT_SPOT.z, roomKit().HAUNT_SPOT.ry); // out in front of the door
   }
   hauntFade();
 }
@@ -2923,7 +2919,7 @@ function enterRunwayRoom() {
   runwayLine.clear(); // (whoever is in line will say so)
   enterStore({ ...front, store: RUNWAY_STORE, parkFront: front });
   hauntFade();
-  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
+  setTimeout(() => { if (interior?.store.workshop === 'runway' && !runwayUi.open) shop.toast(L(roomKit().RUNWAY_TEXT.startHint), 5000); }, 800); // (after the fade)
 }
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
@@ -3983,7 +3979,7 @@ walletReady.then(() => {
   import('./game/old-clothes.js').then((m) => m.runOldClothes({ wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m),
     takeOff: takeOffItem, refreshWallet, refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } })).catch(() => {});
 });
-const resaleUi = new ResaleUI({
+const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
   list: () => sellable(inventory.list(), ITEMS, receipts, wallet.resellPct),
@@ -3992,7 +3988,7 @@ const resaleUi = new ResaleUI({
   rack: () => usedRack.view(),
   onOpen: () => usedRack.refresh(),
   onBuy: (r) => usedRack.buy(r),
-});
+})));
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {
   const it = ITEMS[id], rc = receipts.get(id);
@@ -4008,8 +4004,8 @@ async function sellNow(id, it, rc) {
   const op = await opIdFor('resell:' + id + ':' + (rc.op || rc.bn || '') + ':' + rc.paid).catch(() => newOpId());
   const res = await wallet.resell({ id: op, n: coins, ref: rc.op, bn: rc.bn, paid: rc.paid, note });
   if (!res.ok) {
-    if (res.why === 'noref') { receipts.forget(id); return fmt(L(RESALE_TEXT.noref), { name }); }
-    return L(res.why === 'closed' ? RESALE_TEXT.closed : RESALE_TEXT.offline);
+    if (res.why === 'noref') { receipts.forget(id); return fmt(L(roomKit().RESALE_TEXT.noref), { name }); }
+    return L(res.why === 'closed' ? roomKit().RESALE_TEXT.closed : roomKit().RESALE_TEXT.offline);
   }
   // Paid (or sold before): only now does it leave the closet.
   if (isWorn(it, myLook)) { // take it off first (trousers: back to the plain jeans)
@@ -4022,9 +4018,9 @@ async function sellNow(id, it, rc) {
   if (res.n > 0) usedRack.sold(op, id); // on the rack for others
   refreshWallet();
   sfx.pop?.();
-  const msg = fmt(L(RESALE_TEXT.sold), { n: res.n });
+  const msg = fmt(L(roomKit().RESALE_TEXT.sold), { n: res.n });
   shop.toast(msg);
-  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(RESALE_TEXT.thanks)]);
+  clerk && say(clerk, $('labels'), ['감사합니다!', 'gamsahamnida!', L(roomKit().RESALE_TEXT.thanks)]);
   if (!$('bag-panel').hidden) refreshItems();
   return msg;
 }
@@ -4122,20 +4118,20 @@ function openJob(job) {
   if (job === 'delivery') startDelivery();
   else jobUi.show(job, interior.store);
 }
-const karaokeUi = new KaraokeUI({
+const karaokeUi = lazyPanel(() => import('./ui/karaoke-ui.js').then(({ KaraokeUI }) => new KaraokeUI({
   root: $('karaoke-panel'),
   wallet,
   onStart: () => { karaokeMusic = music.on; if (music.on) { music.setOn(false); applyMusicBtn(); } },
   onEnd: () => { if (karaokeMusic && !music.on) { music.setOn(true); applyMusicBtn(); } karaokeMusic = false; },
   onScore: (n) => net.sendEmote(karaokeMsg(n)),
   onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); me.play(medal ? 'cheer' : 'wave'); },
-});
+})));
 let karaokeMusic = false;
 // Curve Runway (DDP, ui/runway-ui.js): while the show is on, the movement
 // loop walks the character down the runway and back (runwayStep), the
 // camera watching from the photographers' end; the poses play here.
 let runwayMusic = false, runwayCam = null, runwaySpin = 0;
-const runwayUi = new RunwayUI({
+const runwayUi = lazyPanel(() => import('./ui/runway-ui.js').then(({ RunwayUI }) => new RunwayUI({
   root: $('runway-panel'),
   wallet,
   onStart: () => {
@@ -4190,7 +4186,7 @@ const runwayUi = new RunwayUI({
     me.play(medal ? 'cheer' : 'wave');
     if (medal) for (const o of interior?.audienceNpcs || []) o.ch.play(Math.random() < 0.5 ? 'cheer' : 'clap');
   },
-});
+})), { walking: false, game: null, line: null });
 // Walking with friends (core/runway-line.js): a line of up to four in the
 // runway room. While in it I say so every LINE_HI_S seconds; when it is my
 // turn (and stays so a moment, so that two people joining at once settle),
@@ -4222,7 +4218,7 @@ function startRunwayTurn() {
   runwayUi.play().then(() => { if (!runwayUi.game) leaveRunwayLine(); }); // (no sound: can't walk)
   runwayLine.setWalking(true);
   runwayHiAt = 0; // tell everyone right away
-  shop.toast(L(RUNWAY_TEXT.yourTurn));
+  shop.toast(L(roomKit().RUNWAY_TEXT.yourTurn));
 }
 // One frame of the show: where on the runway, facing which way.
 function runwayStep(p, dt) {
@@ -4533,7 +4529,7 @@ function nearestStore(test) {
   }
   return best;
 }
-const infoUi = new InfoUI({
+const infoUi = lazyPanel(() => import('./ui/info-ui.js').then(({ InfoUI }) => new InfoUI({
   root: $('info-panel'),
   guide: guideToPlace,
   places: {
@@ -4545,7 +4541,7 @@ const infoUi = new InfoUI({
     storesIn: (d) => storeData.filter((st) => st.category !== 'home' && st.category !== 'info' && storefronts.get(st.id) && districtOfStore(st) === d),
     nearest: (workshop) => nearestStore((st) => st.workshop === workshop),
   },
-});
+})));
 // The first-time hint waits until the daily check-in card is closed.
 if (onboard === 0) { // first time: just the high five, nothing else in the way
   const box = $('info-hint');
@@ -4598,12 +4594,12 @@ function currentActivity() {
   return null;
 }
 // Gym: each finished set makes walking a tiny bit faster.
-const gymUi = new GymUI({
+const gymUi = lazyPanel(() => import('./ui/gym-ui.js').then(({ GymUI }) => new GymUI({
   root: $('gym-panel'),
   log: gymLog,
   onRep: () => { if (!gymUi.pose) me.play('cheer'); },
   onSet: (boost, kind) => { showBubble(myLabel, $('labels'), kind === 'yoga' ? '🧘' : kind === 'reformer' ? '✨' : '💪'); sfx.pop?.(); },
-});
+})), { pose: null, kind: null });
 // The studio's free mats and reformers (the ones nobody is on).
 const STUDIO_ACT = {
   yoga: { en: 'Join the yoga class', ko: '요가 수업 함께하기', ja: 'ヨガのクラスに参加', zh: '加入瑜伽课' },
@@ -5590,10 +5586,11 @@ function staffOpenPark(built) {
 }
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
-  if (!o.built && needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+  if (!o.built && !interiorLoaded()) { warmInterior(); return null; } // (the rooms' code first: game/interior-loader.js)
+  if (!o.built && interiorLoaded().needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
     if (!domeLoading) {
       domeLoading = true;
-      import('./core/themepark.js').then((m) => { setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
+      import('./core/themepark.js').then((m) => { interiorLoaded().setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
     }
     return null;
   }
@@ -6184,7 +6181,7 @@ function hi5Action(o) {
 // Street actions that can be next to each other (a shop door with people at
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
-const storeAct = (it) => ({ key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
+const storeAct = (it) => (warmInterior(), { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
@@ -6365,7 +6362,7 @@ function updateAction(p, tSec) {
         ? { key: 'gate-out', label: '🚪 ' + L(GATE_TEXT.out), run: () => passGate(g, false) }
         : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -6411,7 +6408,7 @@ function updateAction(p, tSec) {
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
-      next = { key: 'runway-in', label: '👠 ' + L(RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
+      next = { key: 'runway-in', label: '👠 ' + L(roomKit().RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
     } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
@@ -6442,7 +6439,7 @@ function updateAction(p, tSec) {
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
-      next = { key: 'runway', label: '👠 ' + L(RUNWAY_TEXT.open), run: () => runwayUi.show() };
+      next = { key: 'runway', label: '👠 ' + L(roomKit().RUNWAY_TEXT.open), run: () => runwayUi.show() };
     } else if (nearStation(p, 'karaoke')) {
       next = { key: 'karaoke', label: '🎤 ' + t('game.karaoke'), run: () => karaokeUi.show() };
     } else if (nearStation(p, 'photo', 2.2)) {
@@ -6451,15 +6448,15 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
-      next = { key: 'lift', label: '🛗 ' + L(MUSEUM_TEXT.lift), run: () => museumUi.showLift(floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
+      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
     } else if (nearStation(p, 'flower', 1.3)) {
-      next = { key: 'flower', label: '💐 ' + L(MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
-    } else if (nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
-      const pn = nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
-      next = { key: 'panel:' + pn.kind, label: `📖 ${L(MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
-    } else if (nearestPainting(interior.stations?.paintings, p.x, p.z)) {
-      const pt = nearestPainting(interior.stations.paintings, p.x, p.z).painting;
-      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? MEMORIAL_TEXT.look : MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
+      next = { key: 'flower', label: '💐 ' + L(roomKit().MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
+    } else if (roomKit().nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
+      const pn = roomKit().nearestPainting(interior.stations.panels, p.x, p.z, 2).painting;
+      next = { key: 'panel:' + pn.kind, label: `📖 ${L(roomKit().MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
+    } else if (roomKit().nearestPainting(interior.stations?.paintings, p.x, p.z)) {
+      const pt = roomKit().nearestPainting(interior.stations.paintings, p.x, p.z).painting;
+      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? roomKit().MEMORIAL_TEXT.look : roomKit().MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
     } else if (nearStation(p, 'books', 1.5)) {
       const shelf = interior.stations.books.reduce((a, st) => (Math.hypot(p.x - st.x, p.z - st.z) < Math.hypot(p.x - a.x, p.z - a.z) ? st : a));
       next = { key: 'books:' + shelf.section, label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf(shelf.section) };
@@ -6537,7 +6534,7 @@ function updateAction(p, tSec) {
     } else if (interior.store.workshop === 'fishmarket' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
       next = { key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => openMarket() };
     } else if (interior.store.resale && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {
-      next = { key: 'resale', label: '♻️ ' + L(RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
+      next = { key: 'resale', label: '♻️ ' + L(roomKit().RESALE_TEXT.open), run: () => { clerk.ch.wave(); resaleUi.show(); } };
     } else if (clubs.clubState && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 4.5) {
       next = { key: 'club', label: '🎧 ' + L(CLUB_TEXT.open), run: () => openClubPanel() };
     } else if (clubs.clubState && !seated) { // anywhere on the club floor: dance to the beat
@@ -6807,7 +6804,7 @@ renderer.setAnimationLoop((now) => {
       p.x = THREE.MathUtils.clamp(nx, bounds.minX - 50, bounds.maxX + 50);
       p.z = THREE.MathUtils.clamp(nz, bounds.minZ - 50, bounds.maxZ + 50);
     } else {
-      const bx = roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
+      const bx = interiorLoaded().roomBox(interior.room), m = interior.store.open ? -2 : 0.5; // (an open park: past its edge is the street, updateOpenParks)
       p.x = THREE.MathUtils.clamp(nx, bx.x0 + m, bx.x1 - m);
       p.z = THREE.MathUtils.clamp(nz, bx.z0 + m, bx.z1 - m);
     }

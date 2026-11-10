@@ -4,7 +4,7 @@
 // (getters), as in delivery.js. `game.park()` is the park I'm in (its
 // boats, `ducks`, and its `scene`), or null.
 import * as THREE from 'three';
-import { DUCK_SEATS } from '../core/park.js';
+import { DUCK_SEATS } from '../core/duck-boat.js';
 import { DuckRide, DUCK_BUMP } from '../core/duck-boat.js';
 import { Contacts, touching, wobble } from '../core/bump.js';
 import { L, fmt } from '../ui/pocha-ui.js';

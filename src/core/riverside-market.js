@@ -8,7 +8,7 @@
 // Signs are drawn in Korean; with sign translation on they switch to the
 // player's language (setSignLang).
 import * as THREE from 'three';
-import { productModel } from './interior.js';
+import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
 
 const mats = {};

@@ -5,7 +5,7 @@
 // tables, and a little outdoor market in the left corner (riverside-market.js). Same shape as buildInterior's result.
 import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
-import { productModel } from './interior.js';
+import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
 import { luckySpot } from './fishing.js';
 import { createCharacter } from './character.js';
@@ -32,8 +32,7 @@ const DAY_SKY = new THREE.Color('#bfe0f4'), NIGHT_SKY = new THREE.Color('#141d3f
 const DAY_RIVER = new THREE.Color('#4f9ccf'), NIGHT_RIVER = new THREE.Color('#1a2a52');
 
 export const DUCK_BOATS = 4;
-// Where the two riders sit, in the boat's own space (it faces -z).
-export const DUCK_SEATS = [[-0.3, 0.15], [0.3, 0.15]];
+// (where the two riders sit: DUCK_SEATS in core/duck-boat.js)
 // A pedal boat shaped like a duck: white hull, yellow neck and head with an
 // orange beak at the front, a coloured canopy on four posts, a bench.
 export function makeDuckBoat(roof) {
