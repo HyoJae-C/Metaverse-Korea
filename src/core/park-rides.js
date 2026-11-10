@@ -303,7 +303,6 @@ export const FLUME_TRACK = smoothLoop([
   [42, 1.2, -21.5], [42, 5.6, -29], [42.6, 6, -31], [44.8, 6, -32.4], [55, 6, -32.4], [57.4, 6, -31], // the lift north, along the top
   [58, 5.9, -28.6], [58, 0.35, -20.6], [58, 0.3, -18.6], [58.2, 0.35, -17.4], // the big drop south, the splash pool
 ]);
-export const FLUME_DROP = 12; // the stretch that is the big drop
 const FLUME_START = 3.2; // m along: the boat's middle at the station
 // How fast the boat goes all the way round, like the coaster's: the water
 // carries it at 1.7 m/s; the lift's belt takes it up at a steady 1 m/s
@@ -332,7 +331,6 @@ const FLUME_RUN = (() => {
   }
   return { ds, v, time, lap: time[n] };
 })();
-export const FLUME_LAP_S = FLUME_RUN.lap;
 // Where the boat (its middle) is along the channel at t: at the station
 // while it loads, then one lap, scaled to the run.
 export function flumeDist(t) {
@@ -343,8 +341,6 @@ export function flumeDist(t) {
   while (hi - lo > 1) { const m = (lo + hi) >> 1; if (R.time[m] <= tt) lo = m; else hi = m; }
   return FLUME_START + R.ds * (lo + Math.min(1, (tt - R.time[lo]) / (R.time[hi] - R.time[lo] || 1)));
 }
-// The boat's speed at t (m/s along the channel, before the lap is scaled).
-export const flumeSpeed = (t) => { const R = FLUME_RUN; return R.v[Math.min(R.v.length - 1, Math.round((flumeDist(t) - FLUME_START) / R.ds))]; };
 // Seat i: two rows of two in the log, the front row 0.5 m ahead.
 export function flumeSpot(i, t) {
   const row = i >> 1, side = i & 1 ? 0.28 : -0.28;

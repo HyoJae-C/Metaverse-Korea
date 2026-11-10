@@ -4,31 +4,7 @@ import * as THREE from 'three';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
-const FRAME = '#3fb59a', DARK = '#2b2f36';
-
-// A small bike, wheels on the ground, front towards +z.
-export function makeBike(color = FRAME) {
-  const g = new THREE.Group();
-  const wheelGeo = new THREE.TorusGeometry(0.27, 0.045, 6, 18).rotateY(Math.PI / 2);
-  for (const z of [-0.48, 0.48]) {
-    const w = new THREE.Mesh(wheelGeo, mat(DARK));
-    w.position.set(0, 0.3, z);
-    g.add(w);
-  }
-  const bar = (sx, sy, sz, x, y, z, rx = 0, c = color) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c));
-    m.position.set(x, y, z);
-    m.rotation.x = rx;
-    g.add(m);
-  };
-  bar(0.06, 0.06, 0.8, 0, 0.5, 0); // top tube
-  bar(0.06, 0.45, 0.06, 0, 0.42, -0.2, 0.25); // seat tube
-  bar(0.06, 0.55, 0.06, 0, 0.55, 0.45, -0.25); // fork
-  bar(0.2, 0.06, 0.28, 0, 0.64, -0.24, 0, DARK); // seat
-  bar(0.55, 0.05, 0.05, 0, 0.86, 0.5, 0, DARK); // handlebar
-  bar(0.3, 0.16, 0.22, 0, 0.72, 0.62, 0, '#ffffff'); // basket
-  return g;
-}
+const DARK = '#2b2f36';
 
 // A red sports motorbike (fairing, tank, a low windscreen), front towards
 // +z. The rider sits where a bike's rider sits, leaning on the tank.

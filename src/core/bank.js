@@ -32,5 +32,3 @@ export function parseAmount(text) {
   return /^\d{1,9}$/.test(s) ? Number(s) : NaN;
 }
 
-// The server's answers that mean nothing moved and the player should hear why.
-export const SEND_ERRORS = ['closed', 'amount', 'poor', 'nobody', 'self', 'nowallet', 'open', 'offline', 'bad', 'signin'];

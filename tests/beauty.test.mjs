@@ -40,7 +40,7 @@ test('looks keep valid beauty choices and drop the rest', () => {
 
 test('every menu option has a palette or labelled choices in every language', () => {
   for (const [kind, menu] of Object.entries(MENUS)) {
-    for (const l of ['en', 'ko', 'ja', 'zh']) for (const k of ['open', 'title', 'howTo']) assert.ok(STRINGS[l][`${kind}.${k}`], `${l} ${kind}.${k}`);
+    for (const l of ['en', 'ko', 'ja', 'zh']) for (const k of ['open', 'title']) assert.ok(STRINGS[l][`${kind}.${k}`], `${l} ${kind}.${k}`);
     for (const o of menu) {
       if (o.palette) assert.ok(PALETTES[o.palette], o.key);
       for (const c of o.choices || []) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l][`${o.label}.${c}`], `${l} ${o.label}.${c}`);

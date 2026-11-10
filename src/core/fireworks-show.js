@@ -68,7 +68,6 @@ export const toUV = (x, z) => {
 };
 // Three launch barges in the main channel, facing the lawn (u -94 … 120).
 export const BARGES = [[-46, -115], [13, -125], [72, -115]];
-export const LAWN_UV = [13, 20]; // the middle of the fireworks lawn
 
 // How much the show's night reaches a spot: 1 on the island, Seogang Bridge
 // and the Hongdae bank by the bridge, fading to 0 over the next 90 m (so
