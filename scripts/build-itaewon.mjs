@@ -170,6 +170,21 @@ const MKT_TOP = r1(itaewonZ(MKT_X)); // (where it leaves Itaewon-ro)
 const MKT_END = -82;
 const MARKET = [[MKT_X, MKT_TOP], [MKT_X, MKT_END]];
 
+// ---------- Itaewon-ro 27-gil and 27ga-gil, north of the station ----------
+// Real Itaewon has no square by the station: buildings, with 27-gil winding
+// up north from Itaewon-ro east of exit 1 (it leads on to the Namsan trail)
+// and 27ga-gil, the club alley, behind the first row of Itaewon-ro's shops.
+// Both on their real lines (OpenStreetMap); 27ga-gil moved 9 m north, because
+// the game's Itaewon-ro is twice its real width and the row between them
+// would not fit; it runs from the market lane east until it meets 27-gil.
+const L27 = (() => { const p = simplify(chain([33727132, 350284523]), 0.8); const k = p.findIndex(([x, z]) => z < -44 && x > 5); return p.slice(0, k + 1); })();
+const CLUB_SHIFT = 9;
+const CLUB = (() => {
+  const p = pts(239289181).map(([x, z]) => [x, z - CLUB_SHIFT]).filter(([x]) => x > MKT_X);
+  const w = [MKT_X, p[0][1] + ((p[1][1] - p[0][1]) * (MKT_X - p[0][0])) / (p[1][0] - p[0][0])];
+  return simplify([w, ...p, nearestOn(p.at(-1), L27).at], 0.8);
+})();
+
 // ---------- The museums' real places ----------
 const WM_SITE = OSM.ways.find((w) => w.id === 229891123).geometry.map(loc); // the War Memorial's grounds
 const MUSEUM_HALL = OSM.ways.find((w) => w.id === 168364800).geometry.map(loc); // the National Museum of Korea's building
@@ -279,7 +294,9 @@ const ROAD = {
   seobinggo: { k: 'primary', w: 14, p: SEOBINGGO, n: N.seobinggo },
   food: { k: 'walk', w: 10, p: WFS, n: N.food },
   market: { k: 'walk', w: 8, p: MARKET, n: N.market },
-  trail: { k: 'walk', w: 5, p: [[0, -46], TRAIL_END], n: N.trail },
+  l27: { k: 'residential', w: 5, p: L27, n: name('Itaewon-ro 27-gil', '이태원로27길', '梨泰院路27ギル', '梨泰院路27街') },
+  club: { k: 'residential', w: 5, p: CLUB, n: name('Itaewon-ro 27ga-gil', '이태원로27가길', '梨泰院路27カギル', '梨泰院路27Ga街') },
+  trail: { k: 'walk', w: 5, p: [L27.at(-1), [TRAIL_END[0], -58], TRAIL_END], n: N.trail }, // (on from 27-gil's top, then straight up as before)
 };
 const GYROADS = [
   { k: 'secondary', w: 10, p: MAIN, n: N.main, gy: 1, main: 1 },
@@ -291,7 +308,6 @@ const roads = [...Object.values(ROAD), ...GYROADS].map((r) => ({ ...r, p: r.p.ma
 const links = region.links.map((l) => ({ w: l.w, p: l.p.map(toLocal) }));
 
 // ---------- Open places (kept clear of buildings) ----------
-const SQUARE = [[-28, -46], [28, -46], [28, -12], [-28, -12]]; // Itaewon Square, north of the station
 const keptAreas = itaewon.areas.map((a) => ({ p: a.p }));
 const solidsKept = [...itaewon.buildings, ...itaewon.blockers].map((b) => ({ p: b.p }));
 const pad = (p, m) => { const [x0, z0, x1, z1] = box(p); return [[x0 - m, z0 - m], [x1 + m, z0 - m], [x1 + m, z1 + m], [x0 - m, z1 + m]]; };
@@ -316,7 +332,7 @@ const inside = (q) => q[0] > AREA.x0 && q[0] < AREA.x1 && q[1] > AREA.z0 && q[1]
   && !northOfSowol(q) && !southOfSeobinggo(q) && !inPoly(q[0], q[1], BASE) && !inGy(q)
   && !inPoly(q[0], q[1], WM_GROUNDS) && !inPoly(q[0], q[1], MUSEUM.grounds)
   && !(q[0] < -191 && q[1] < -300); // (Namsan's west foot)
-const open = [{ p: SQUARE }, ...exitClear, ...keptAreas, ...solidsKept, ...links.map((l) => ({ line: l.p, w: l.w }))];
+const open = [...exitClear, ...keptAreas, ...solidsKept, ...links.map((l) => ({ line: l.p, w: l.w }))];
 
 // ---------- Rows of buildings ----------
 const t = town(630, { inside, roads, open }); // (Itaewon is station 630)
@@ -331,10 +347,13 @@ const ITC = part(ITAEWON, ([x]) => x > -150 && x < 20); // Noksapyeong to the st
 const ITE = part(ITAEWON, ([x]) => x > 26); // the station to Hangangjin
 // (Rows: side +1 is the right going along the line, -1 the left. Itaewon-ro
 // runs east: north is the left.)
+// The club alley first: its fronts face it, the backs of the south row to Itaewon-ro.
+row('club-N', CLUB, -1, { off: fr(ROAD.club, 2), ...SMALL, spot: 1 });
+row('club-S', CLUB, 1, { off: fr(ROAD.club, 2), ...SMALL, depth: 8, spot: 1 });
 row('itW-N', ITW, -1, { off: fr(ROAD.itaewon), ...SHOP });
 row('itC-N', ITC, -1, { off: fr(ROAD.itaewon), ...SHOP });
 row('itC-S', ITC, 1, { off: fr(ROAD.itaewon), ...SHOP });
-row('itE-N', ITE, -1, { off: fr(ROAD.itaewon), ...SHOP }); // (the night strip: shop-size fronts)
+row('itE-N', ITE, -1, { off: fr(ROAD.itaewon), ...BIG });
 row('itE-S', ITE, 1, { off: fr(ROAD.itaewon), ...BIG });
 // The World Food Street (north from Itaewon-ro): small restaurant fronts both sides.
 row('food-W', WFS, -1, { off: fr(ROAD.food, 1.5), ...SMALL, depth: 12 });
@@ -360,7 +379,7 @@ const solids = [...buildings, ...itaewon.buildings, ...itaewon.blockers].map((b)
 const hits = (p) => { const [x0, z0, x1, z1] = box(p); return solids.some((s) => !(s.box[0] > x1 + 1 || s.box[2] < x0 - 1 || s.box[1] > z1 + 1 || s.box[3] < z0 - 1) && (s.p.length <= 8 ? overlap(p, s.p) : p.some(([x, z]) => inPoly(x, z, s.p)) || s.p.some(([x, z]) => inPoly(x, z, p)))); };
 const allRoads = [...roads, ...links];
 const clearOfRoads = (probe) => allRoads.every((r) => probe.every((q) => lineDist(q, r.p) >= r.w / 2 + 0.9));
-const lotOk = (p) => p.every((q) => inGy(q) && !northOfSowol(q)) && !itaewon.areas.some((a) => a.k === 'park' && p.some(([x, z]) => inPoly(x, z, a.p))) && !overlap(p, SQUARE);
+const lotOk = (p) => p.every((q) => inGy(q) && !northOfSowol(q)) && !itaewon.areas.some((a) => a.k === 'park' && p.some(([x, z]) => inPoly(x, z, a.p)));
 const gyBuildings = [], gyLots = [];
 for (const r of [GYROADS[0], ...GYROADS.slice(1), ROAD.sinheung, ROAD.sowol, ROAD.food]) {
   const main = !!r.main;
@@ -422,15 +441,13 @@ const mainAt = (x) => MAIN.find((q) => q[0] - FOOT[0] >= x) || MAIN.at(-1);
 const hbc = pointAt(SINHEUNG, lengthOf(SINHEUNG) * 0.55).at;
 const pois = [
   { kind: 'landmark', x: r1(WFS_X), z: r1((WFS[0][1] + WFS[1][1]) / 2), name: name('Itaewon World Food Street', '이태원 세계음식거리', '梨泰院 世界グルメ通り', '梨泰院世界美食街'), it: 1 },
-  { kind: 'landmark', x: 0, z: -28, name: name('Itaewon Square', '이태원 광장', '梨泰院広場', '梨泰院广场'), it: 1 },
+  { kind: 'landmark', ...(([x, z]) => ({ x: r1(x), z: r1(z - 4) }))(pointAt(CLUB, lengthOf(CLUB) / 2).at), name: name('Itaewon club street', '이태원 클럽 거리', '梨泰院クラブ通り', '梨泰院夜店街'), it: 1 },
   { kind: 'landmark', x: 0, z: r1(trailGate + 6), name: name('Namsan trail entrance', '남산 산책로 입구', '南山散策路入口', '南山步道入口'), it: 1 },
   { kind: 'landmark', x: MKT_X, z: MKT_C, name: name('Yongmaru Market', '용마루시장', 'ヨンマル市場', '龙脊市场'), it: 1 },
   { kind: 'landmark', x: mainAt(70)[0], z: mainAt(70)[1], name: name('Gyeongnidan-gil', '경리단길', '経理団通り', '经理团路'), gy: 1 },
   { kind: 'landmark', x: r1(hbc[0] - 22), z: r1(hbc[1]), name: name('Haebangchon', '해방촌', '解放村', '解放村'), gy: 1 },
 ];
 const areas = [
-  { k: 'plaza', p: SQUARE, it: 1 },
-  { k: 'park', p: [[-26, -60], [26, -60], [26, -48], [-26, -48]], it: 1 },
   { k: 'grass', p: BASE.map((q) => q.map(r1)), it: 1 }, // the old army ground
 ];
 // Namsan's woods start across Sowol-ro (they reached over it before).
@@ -471,8 +488,8 @@ const ok = (at) => roads.every((r) => r.k === 'walk' || lineDist(at, r.p) >= r.w
 const GROUPS = [
   // By the station, north of Itaewon-ro: the information centre, the barber and the bike workshop.
   [['itC-N'], ['info-itaewon', 'itaewon-barbershop', 'ride-with-me'], [0, 0]],
-  // The night strip east of the station, north of Itaewon-ro.
-  [['itE-N'], ['club-heartbeat', 'full-time-pub', 'bar-hush', 'club-orbit', 'spin-cycle', 'club-808'], [26, 0]],
+  // The clubs and bars in the club alley (Itaewon-ro 27ga-gil), behind Itaewon-ro's shops.
+  [['club-N', 'club-S'], ['club-heartbeat', 'full-time-pub', 'bar-hush', 'club-orbit', 'spin-cycle', 'club-808'], pointAt(CLUB, lengthOf(CLUB) / 2).at],
   // The World Food Street, with the halal grocer.
   [['food-W', 'food-E'], ['masala-ghar', 'kebapci-lale', 'warung-kuy', 'khammak-padthai', 'tulip-tea', 'pho-nang', 'globe-coffee', 'tortilla-feliz', 'churro-corner', 'beit-hummus', 'salam-halal'], WFS[0]],
 ];
