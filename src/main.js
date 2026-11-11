@@ -12,7 +12,7 @@ import {
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
-import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
+import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
@@ -65,7 +65,7 @@ import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
-import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
+import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock, nearTrailGate } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LOCK_LABELS } from './ui/love-lock-labels.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
@@ -196,6 +196,7 @@ import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
 import { SNOW_LABELS } from './game/snow-labels.js';
+import { lawnFrom } from './core/picnic-mat.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
@@ -233,6 +234,7 @@ import { createDaily } from './game/daily.js';
 import { parseSkyMsg } from './game/sky-codes.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
+import { createNamsanWalk } from './game/namsan-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
@@ -748,7 +750,7 @@ const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to 
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -801,7 +803,9 @@ const hillDistrict = (map.meta?.districts || []).find((d) => d.hill);
 const slopeY = hillDistrict ? hillGround(hillDistrict.hill, hillDistrict.offset) : () => 0;
 const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, groundY: slopeY, randomLook });
 // Passers-by: two strolling around each meeting zone.
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: slopeY });
+// The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision });
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
@@ -1216,6 +1220,19 @@ $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
 $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+// Two pages: the main one, and "Game settings" (controls, camera, screen).
+// The ✕ stays at the top right however far the page scrolls.
+{
+  const view = (game) => {
+    $('settings-game').hidden = !game;
+    $('settings-main').hidden = game;
+    $('settings-panel').querySelector('.panel').scrollTop = 0;
+  };
+  $('settings-btn').addEventListener('click', () => view(false));
+  $('game-settings-btn').onclick = () => view(true);
+  $('settings-back').onclick = () => view(false);
+  $('settings-x').onclick = () => { $('settings-panel').hidden = true; };
+}
 // "Support the creator" (Buy Me a Coffee link). Hidden until a URL is set in config.
 if (/^https:\/\//.test(config.supportUrl)) {
   $('support-link').href = config.supportUrl;
@@ -2359,6 +2376,9 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotatio
     camera.position.applyMatrix4(camVia);
     return;
   }
+  // A key held down keeps walking the same way as seen from the camera, not
+  // the same way on the map: out of a station you'd walk back down the steps.
+  moveRef.yaw += camYaw - cam.yaw;
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
@@ -3123,7 +3143,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill, Gyeongnidan-gil or the Namsan trail
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
@@ -3257,7 +3277,9 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // Picnic mats on the Han River park lawn (src/game/picnic.js).
 // The street's wooded parks (Seoul Forest) take picnic mats too: on the
 // grass, off the paths, clear of trees, benches and sculptures.
-const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => { // (lawn: an open picnic lawn with no trees, Yeouido's)
+// (lawn: an open picnic lawn with no trees, Yeouido's: one laid at an angle keeps its outline, mats lie square with it)
+const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => {
+  if (a.lawn) return lawnFrom(a.p);
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });
@@ -3272,10 +3294,7 @@ const streetPicnic = streetLawns.length ? {
       const cx = Math.max(r.x0, Math.min(x, r.x1)), cz = Math.max(r.z0, Math.min(z, r.z1));
       if ((cx - x) ** 2 + (cz - z) ** 2 < rad * rad) return true;
     }
-    for (const fx of [0, 0.5, 1]) for (const fz of [0, 0.5, 1]) {
-      const x = r.x0 + (r.x1 - r.x0) * fx, z = r.z0 + (r.z1 - r.z0) * fz;
-      if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
-    }
+    for (const [x, z] of r.pts) if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
     return false;
   },
 } : null;
@@ -3481,11 +3500,12 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
 
 // Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
 let minimap = null;
+let minimapAlways = false; // Settings › Game settings (game/screen-layout.js); otherwise only while guided
 import('./game/minimap.js').then(({ createMinimap }) => {
   minimap = createMinimap({
     hud: $('hud'), map, open: () => $('map-btn').click(),
     getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
-    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro && (minimapAlways || !!guide),
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
 
@@ -3552,7 +3572,6 @@ const TRIP_CARD = {
 };
 const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
 const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
-const ROUTE_TIP = { bukchon: 'tripBukchon', toBukchon: 'tripToBukchon' }; // the guide's tip for each first trip (data/starter-quests.js)
 // Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
 const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
 const inOpenHouse = (x, z) => {
@@ -5103,6 +5122,18 @@ function bosingakAct(p) {
   return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
 }
 const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
+// The Namsan trail's top: through the gate onto the summit plaza (the cable
+// car's room, at its back gate), and back out of it down the trail.
+const namsanUpAct = () => ({ key: 'namsan-up', label: '⛰️ ' + t('namsan.up'), run: () => {
+  const it = storefronts.items.find((i) => i.store.workshop === 'cablecar');
+  if (it) enterStore(it, { ...CC.trailGate.inside, yaw: CC.trailGate.inside.ry });
+} });
+const namsanDownAct = () => ({ key: 'namsan-down', label: '🥾 ' + t('namsan.down'), run: () => {
+  const o = namsanWalk.topOut();
+  interior.front = { ...interior.front, door: { x: o.x, z: o.z }, group: { rotation: { y: o.ry } } }; // (out at the trail's top, not the lower station)
+  doorCam = null;
+  leaveStore();
+} });
 // Each frame on the street: the people on the square, and the New Year's ringings.
 function updateBosingak(p, dt, w, h) {
   if (!bosingakAt) return;
@@ -6350,6 +6381,7 @@ function moreActions(p, door) {
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
+    if (namsanWalk.atTop(p)) out.push(namsanUpAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
@@ -6430,6 +6462,7 @@ function updateAction(p, tSec) {
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
+    else if (!riding && namsanWalk.atTop(p)) next = namsanUpAct();
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -6491,6 +6524,8 @@ function updateAction(p, tSec) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
+    } else if (interior.cablecar && !cable && namsanWalk.line && nearTrailGate(p.x, p.z)) {
+      next = namsanDownAct();
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
@@ -6812,6 +6847,10 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+// Settings › Game settings: hide the buttons, and where the joystick sits. (game/screen-layout.js)
+import('./game/screen-layout.js').then(({ createScreenLayout }) => {
+  createScreenLayout({ input, hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch, onMinimap: (on) => { minimapAlways = on; } });
+}).catch(() => { /* the default layout */ });
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)

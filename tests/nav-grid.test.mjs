@@ -44,3 +44,31 @@ test('a building an elevated railway runs through becomes a deck you walk under'
   assert.equal(map.buildings[0].m, 4.5);
   assert.equal(map.buildings[1].m, undefined);
 });
+
+test('a route along a slanted street runs straight, not zigzagging across it', () => {
+  // A 10 m street at about 20 degrees to the grid, shops on both sides.
+  const c = Math.cos(0.35), s = Math.sin(0.35);
+  const rot = ([u, v]) => [u * c - v * s, u * s + v * c];
+  const rbox = (u0, v0, u1, v1) => [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(rot);
+  const walls = [];
+  for (let u = -200; u < 200; u += 14) walls.push(rbox(u, 9, u + 12, 25), rbox(u, -25, u + 12, -9));
+  const big = { minX: -230, minZ: -230, maxX: 230, maxZ: 230 };
+  const g = new NavGrid(walls, [{ p: [rot([-220, 0]), rot([220, 0])], w: 10 }], big, { cell: 1.5, r: 0.55 });
+  const poly = g.route(...rot([-150, 3]), ...rot([150, -2]));
+  for (let i = 1; i < poly.length; i++) assert.ok(g.clear(...poly[i - 1], ...poly[i]), `segment ${i} crosses a wall`);
+  let turns = 0;
+  for (let i = 1; i < poly.length - 1; i++) {
+    const a = Math.atan2(poly[i][1] - poly[i - 1][1], poly[i][0] - poly[i - 1][0]);
+    const b = Math.atan2(poly[i + 1][1] - poly[i][1], poly[i + 1][0] - poly[i][0]);
+    const d = Math.abs(b - a);
+    if (Math.min(d, 2 * Math.PI - d) > 0.15) turns++;
+  }
+  assert.ok(turns <= 4, `${turns} turns on a straight street`);
+});
+
+test('a straightened route still keeps to the street instead of cutting across open ground', () => {
+  // An L-shaped street; the open lot inside the bend costs more to cross.
+  const g = new NavGrid([], [{ p: [[-25, 20], [20, 20], [20, -25]], w: 6 }], bounds);
+  const poly = g.route(-22, 20, 20, -22);
+  assert.ok(poly.some(([x, z]) => x > 14 && z > 14), 'goes round the corner');
+});

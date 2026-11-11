@@ -67,10 +67,39 @@ test('a mat lies the way you faced when spreading it: sitting on it you look tha
   assert.equal(parseMat('2,6,1,4', lawns), null);
 });
 
-test('a mat left alone or far behind is lost (blown away)', () => {
+test('a mat left alone or far behind is folded away', () => {
   const m = { x: 0, z: 0 };
   assert.equal(matLost(m, 3, 0, 0, 1000), false);
   assert.equal(matLost(m, MAT_AWAY + 1, 0, 1000, 1000), true, 'walked off');
   assert.equal(matLost(m, 10, 0, 0, MAT_IDLE_MS - 1), false);
   assert.equal(matLost(m, 10, 0, 0, MAT_IDLE_MS + 1), true, 'nobody by it for too long');
+});
+
+test('on a lawn laid at an angle (Yeouido) the mat lies square with it, not crooked', async () => {
+  const { lawnFrom, lawnAngle, matCorners } = await import('../src/core/picnic-mat.js');
+  // Yeouido's picnic lawn (districts/yeouido.json): along the shore, 46° off the axes.
+  const lawn = lawnFrom([[-67, -66.5], [81.9, 87.7], [56.7, 112], [-92.2, -42.2]]);
+  assert.ok(lawn.a && Math.abs(Math.abs(lawn.a) - (44 * Math.PI) / 180) < 0.02, `angle ${lawn.a}`);
+  const a = lawnAngle(0, 20, [lawn]);
+  assert.equal(a, lawn.a);
+  const m = { x: 0, z: 20, c: 0, a };
+  assert.equal(canSpread(m, { lawns: [lawn] }), 'ok');
+  // Each edge of the mat runs along an edge of the lawn.
+  const [p0, p1] = matCorners(m);
+  const edge = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), shore = Math.atan2(87.7 + 66.5, 81.9 + 67);
+  const off = (((edge - shore) % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2); // 0 or 90° when square
+  assert.ok(Math.min(off, Math.PI / 2 - off) < 0.01, 'square with the shore');
+  // Off the outline (inside its box but past the shore) is not lawn.
+  assert.equal(canSpread({ x: 70, z: 20, c: 0, a }, { lawns: [lawn] }), 'lawn');
+  // Others read it back with the same angle.
+  assert.deepEqual(parseMat(encodeMat({ x: 0, z: 20, c: 1 }), [lawn]), { x: 0, z: 20, c: 1, a });
+  // Facing straight along the shore you sit facing it: d counted from the lawn.
+  assert.equal(matDir(a + Math.PI / 2, a), 1);
+  // A neighbour along the shore fits; one on top doesn't.
+  const s = [Math.cos(a), -Math.sin(a)];
+  assert.equal(canSpread({ x: s[0] * 2.9, z: 20 + s[1] * 2.9, c: 0, a }, { lawns: [lawn], mats: [m] }), 'ok');
+  assert.equal(canSpread({ x: 1, z: 20.5, c: 0, a }, { lawns: [lawn], mats: [m] }), 'taken');
+  for (const sp of matSpots(m)) assert.ok(Math.abs(sp.ry - a) < 1e-9);
+  // A square lawn has no angle: nothing changes there.
+  assert.equal(lawnFrom([[0, 0], [10, 0], [10, 5], [0, 5]]).a, undefined);
 });

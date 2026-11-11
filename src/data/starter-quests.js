@@ -52,6 +52,12 @@ export const STARTER_TEXT = {
 
 // The first errand's steps (core/quests.js TRIP), shown on the mission chip
 // and as a toast when each one starts. By step.
+// The guide's tip for each first trip (a key of STARTER_TEXT). Kept here, not
+// in main.js: the quest chip reads it during startup, when a held item is
+// restored, long before main.js would reach a const of its own (a reload
+// holding something with an errand running stopped the game there).
+export const ROUTE_TIP = { bukchon: 'tripBukchon', toBukchon: 'tripToBukchon' };
+
 export const TRIP_TEXT = {
   station: { en: "🚲 Ride to Seongsu Station", ko: "🚲 자전거로 성수역까지", ja: "🚲 自転車で聖水駅へ", zh: "🚲 骑车到圣水站", es: "🚲 Ve en bici a la estación Seongsu", id: "🚲 Bersepeda ke Stasiun Seongsu", ar: "🚲 انطلق بالدراجة إلى محطة سونغسو", vi: "🚲 Đạp xe tới ga Seongsu", hi: "🚲 साइकिल से सोंगसू स्टेशन जाएँ", fr: "🚲 Roule jusqu'à la station Seongsu", th: "🚲 ขี่จักรยานไปสถานีซองซู" },
   forestStop: { en: "🚇 Take the train one stop to Seoul Forest", ko: "🚇 열차 타고 한 정거장, 서울숲역으로", ja: "🚇 電車で1駅、ソウルの森へ", zh: "🚇 坐一站到首尔林", es: "🚇 Toma el tren una parada hasta Bosque de Seúl", id: "🚇 Naik kereta satu stasiun ke Hutan Seoul", ar: "🚇 اركب القطار محطة واحدة إلى غابة سيول", vi: "🚇 Đi tàu một ga tới Rừng Seoul", hi: "🚇 ट्रेन से एक स्टॉप, सियोल फ़ॉरेस्ट", fr: "🚇 Prends le train pour un arrêt jusqu'à Forêt de Séoul", th: "🚇 นั่งรถไฟหนึ่งสถานีไปป่าโซล" },

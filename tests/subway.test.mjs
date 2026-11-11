@@ -195,3 +195,41 @@ test('Gwanghwamun (Line 5) and Sinchon (Line 2): exits within 15 m of the real o
   assert.equal(stations.find((s) => s.id === 'gwanghwamun-station').line.name.en, 'Line 5');
   assert.equal(stations.find((s) => s.id === 'sinchon-station').code, '240');
 });
+
+test('Myeongdong (Line 4, 424): exits within 15 m of the real 6 and 4, either side of Toegye-ro by the shopping street', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 6: [37.5609256, 126.984915], 4: [37.5606753, 126.9848244] }; // OSM 3403067532, 3403067533
+  const st = stations.find((s) => s.id === 'myeongdong-station');
+  assert.ok(st);
+  assert.equal(st.code, '424');
+  assert.equal(st.line.name.en, 'Line 4');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [4, 6]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
+  // The same spots the build script works out (scripts/build-myeongdong.mjs).
+  const { stationExits } = await import('../scripts/build-myeongdong.mjs');
+  for (const e of stationExits()) assert.deepEqual(st.exits.find((x) => x.n === e.n), { n: e.n, at: e.at, ry: e.ry });
+});
+
+test('Yeouinaru (Line 5, 527): exits within 15 m of the real 2 and 3, on the river side of Yeouidong-ro by the park', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 2: [37.5270678, 126.932426], 3: [37.5267199, 126.9328776] }; // OSM 3403232529, 3403232528
+  const st = stations.find((s) => s.id === 'yeouinaru-station');
+  assert.ok(st);
+  assert.equal(st.code, '527');
+  assert.equal(st.line.name.en, 'Line 5');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [2, 3]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
+  // The same spots the build script works out (scripts/build-yeouido.mjs), between the road and the Han River path.
+  const { stationExits, toUV, PATH } = await import('../scripts/build-yeouido.mjs');
+  for (const e of stationExits()) {
+    assert.deepEqual(st.exits.find((x) => x.n === e.n), { n: e.n, at: e.at, ry: e.ry });
+    const v = toUV(e.at)[1];
+    assert.ok(v > PATH + 4 && v < PATH + 8, `exit ${e.n} on the pavement`);
+  }
+});

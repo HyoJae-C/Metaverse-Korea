@@ -129,7 +129,7 @@ export class NavGrid {
     if (this.miss && this.miss.e === e && this.miss.until > now) return null;
     const ids = this._search(s, e, limit);
     if (!ids) { this.miss = { e, until: now + 10000 }; return null; }
-    const pts = ids.map((id) => [this._x(id), this._z(id)]);
+    const pts = this._pull(ids).map((id) => [this._x(id), this._z(id)]);
     pts[0] = [ax, az];
     const out = this._simplify(pts);
     // End at the real destination when it's a step away (a door in a wall).
@@ -183,6 +183,42 @@ export class NavGrid {
     const n = Math.ceil(Math.hypot(bx - ax, bz - az) / (this.cell * 0.4));
     for (let k = 0; k <= n; k++) {
       if (!this.open(ax + ((bx - ax) * k) / n, az + ((bz - az) * k) / n)) return false;
+    }
+    return true;
+  }
+
+  // Straighten the cell-by-cell path: from each kept cell, jump to the
+  // farthest later cell that a straight line reaches over open ground no
+  // dearer than the path itself took (so a street stretch stays on the
+  // street). A* on a grid has many equally short paths across a wide street,
+  // and on a street that isn't square to the grid it picked one that
+  // stair-stepped from side to side: the guide arrows zigzagged.
+  _pull(ids, reach = 160) {
+    const out = [ids[0]];
+    let a = 0;
+    while (a < ids.length - 1) {
+      let best = a + 1, top = this.cost[ids[a]];
+      for (let b = a + 1; b < ids.length && b - a <= reach; b++) {
+        top = Math.max(top, this.cost[ids[b]]);
+        if (!this._lineUnder(ids[a], ids[b], top)) break;
+        best = b;
+      }
+      out.push(ids[best]);
+      a = best;
+    }
+    return out;
+  }
+
+  // True when the straight line between two cells crosses only open cells
+  // that cost at most `top`.
+  _lineUnder(a, b, top) {
+    const { w, cost } = this;
+    const ai = a % w, aj = Math.floor(a / w), bi = b % w, bj = Math.floor(b / w);
+    const n = Math.ceil(Math.hypot(bi - ai, bj - aj) / 0.4);
+    for (let k = 1; k < n; k++) {
+      const i = Math.floor(ai + 0.5 + ((bi - ai) * k) / n), j = Math.floor(aj + 0.5 + ((bj - aj) * k) / n);
+      const c = cost[j * w + i];
+      if (!c || c > top) return false;
     }
     return true;
   }
