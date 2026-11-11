@@ -10,14 +10,16 @@ export const SALON = [
   { key: 'hairStyle', choices: HAIR_STYLES, price: 40000, label: 'hair' },
   { key: 'dye', palette: 'dye', price: 30000 },
 ];
+// Clinic prices: about 1/20 of the real thing in Seoul (Yozi 2026-11-11;
+// real, roughly: eyes ₩1.5M, skin ₩0.5M, nose ₩4M, jaw contouring ₩8M).
 export const CLINIC = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50000, label: 'eyeShape' },
-  { key: 'tone', palette: 'skin', price: 35000 }, // skin tone
-  { key: 'nose', choices: NOSE_IDS, price: 40000, label: 'nose' },
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 75000, label: 'eyeShape' },
+  { key: 'tone', palette: 'skin', price: 25000 }, // skin tone
+  { key: 'nose', choices: NOSE_IDS, price: 200000, label: 'nose' },
 ];
 export const CLINIC2 = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50000, label: 'eyeShape' },
-  { key: 'jaw', choices: JAW_IDS, price: 50000, label: 'jaw' }, // the jaw line (the head keeps its size)
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 75000, label: 'eyeShape' },
+  { key: 'jaw', choices: JAW_IDS, price: 400000, label: 'jaw' }, // the jaw line (the head keeps its size)
 ];
 export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
 export const LIPS = [{ key: 'lip', palette: 'lip', price: 15000 }]; // lip tint

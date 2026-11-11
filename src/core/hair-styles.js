@@ -393,8 +393,11 @@ export function buildLips(color, at) {
 // head keeps its size and hats still fit.
 export function jawMove(shape, x, y, z, t) {
   if (shape === 'vline') return [x * (1 - 0.45 * t), y - 0.08 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.03 * t];
-  if (shape === 'round') return [x * (1 + 0.16 * Math.sin(t * Math.PI * 0.8)), y + 0.06 * t, z + 0.03 * t];
-  if (shape === 'square') return [x * (1 + 0.3 * t), y + 0.1 * t * Math.max(0, 1 - Math.abs(x) * 1.6), z];
+  if (shape === 'round') return [x * (1 + 0.12 * Math.sin(t * Math.PI * 0.7)), y + 0.02 * t, z + 0.03 * t]; // full cheeks, a soft round chin
+  if (shape === 'square') { // wide corners low down, a flat chin
+    const flat = Math.max(0, 1 - Math.abs(x) * 1.8), corner = Math.min(1, Math.abs(x) * 2.2);
+    return [x * (1 + 0.42 * t * t), y + 0.16 * t * flat - 0.06 * t * corner, z - 0.02 * t];
+  }
   return [x, y, z];
 }
 
