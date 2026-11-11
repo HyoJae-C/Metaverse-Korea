@@ -115,6 +115,8 @@ test('every kind has a picture, and saves with swapped-out kinds keep their coun
   const fs = await import('node:fs');
   const ui = fs.readFileSync(new URL('../src/ui/fishing-ui.js', import.meta.url), 'utf8');
   assert.equal(ui.match(/\bf\.emoji\b/g).length, 1, 'only fishStampIcon\'s fallback uses the emoji');
+  const panels = fs.readFileSync(new URL('../src/ui/fishing-panels.js', import.meta.url), 'utf8');
+  assert.ok(!/\bf\.emoji\b/.test(panels), 'the panels draw fish with fishStampIcon');
   const rig = fs.readFileSync(new URL('../src/core/fishing-rig.js', import.meta.url), 'utf8');
   assert.ok(rig.includes('FISH_SHEET_URL') && !/\.emoji\b/.test(rig), 'the fish on the line uses the sheet too');
   const st = memory();

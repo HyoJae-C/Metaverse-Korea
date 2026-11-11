@@ -1,6 +1,7 @@
 // Nickname shop panel: buy an emblem for your name tag and a colour for your
 // name, then wear them. Tap an item to preview it on your own tag first.
-import { TIERS, EMBLEMS, NAME_COLORS, priceOf, styleNameTag } from '../core/emblems.js';
+import { TIERS, EMBLEMS, NAME_COLORS, priceOf, styleNameTag, RENAME_COST } from '../core/emblems.js';
+export { RENAME_COST };
 import { L, fmt } from './pocha-ui.js';
 import { t } from '../core/i18n.js';
 
@@ -40,7 +41,6 @@ const T = {
   empty: { en: 'Type a name first.', ko: '이름을 먼저 적어 주세요.', ja: '先に名前を入力してください。', zh: '请先输入名字。', es: 'Escribe un nombre primero.', ar: 'اكتب اسمًا أولًا.', vi: 'Hãy nhập tên trước.', hi: 'पहले कोई नाम लिखें।', fr: 'Tape d\'abord un nom.', th: 'พิมพ์ชื่อก่อน', id: 'Ketik nama dulu.' },
 };
 const RESERVED_NAME = { en: 'Names that look official (operator, admin…) can\'t be used.', ko: '운영자·관리자처럼 공식으로 보이는 이름은 쓸 수 없어요.', ja: '運営・管理者のような公式に見える名前は使えません。', zh: '不能使用像运营、管理员这样看起来官方的名字。' };
-export const RENAME_COST = 30000;
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);

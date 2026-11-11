@@ -20,22 +20,10 @@ import { DANCER_CHIMAS } from '../data/skirts.js';
 import { makeNpc, say } from './npcs.js';
 import { BukcheongTroupe } from './bukcheong.js';
 import { hanbokById } from '../data/hanbok.js';
+import { FAN_KEEP, FAN_NOTE, FAN_AT, ringPoly } from './palace-fan.js';
+export { FAN_KEEP, FAN_NOTE, FAN_AT, ringPoly };
 
 const NEAR = 110; // metres: closer than this, they perform
-
-// The fan dance is a group dance (군무): the formation matters, so an
-// unseen ring keeps visitors this far from its centre (main.js makes it a
-// blocker). Closer than FAN_NOTE to the centre, a note asks for a few steps back.
-export const FAN_KEEP = 10;
-export const FAN_NOTE = FAN_KEEP + 2.5;
-// Where they dance, in the palace district's metres (x east, z south;
-// Gwanghwamun at (0, 0)): the middle of the lawn west of the corridors round
-// Heungnyemun and Geunjeongjeon, which stood empty (Yozi, 2026-11-10).
-export const FAN_AT = [-37, -52];
-// A circle as a polygon (for the collision map).
-export function ringPoly(x, z, r, n = 24) {
-  return Array.from({ length: n }, (_, i) => [x + Math.sin((i / n) * Math.PI * 2) * r, z + Math.cos((i / n) * Math.PI * 2) * r]);
-}
 
 // The royal procession (어가 행렬): the king with a eunuch holding his
 // parasol, and court ladies before and behind. Stops and the paths between

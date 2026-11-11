@@ -12,10 +12,13 @@
 // to the panel.
 // `idle`: values for properties read before it has loaded (say { walking:
 // false }), which would otherwise look like methods (a function, truthy).
+// Setting a property (panel.name = 'x') before it has loaded keeps the value
+// for reads and hands it to the panel when it arrives.
 export function lazyPanel(load, idle = {}) {
   let ui = null;
   let pending = null;
-  const ready = () => (pending ??= Promise.resolve().then(load).then((u) => (ui = u)).catch((e) => {
+  const early = {};
+  const ready = () => (pending ??= Promise.resolve().then(load).then((u) => (ui = Object.assign(u, early))).catch((e) => {
     pending = null; // offline for a moment: try again on the next tap
     console.warn('panel failed to load', e);
     throw e;
@@ -33,6 +36,11 @@ export function lazyPanel(load, idle = {}) {
       if (key === 'close') return () => {};
       if (typeof key !== 'string' || key === 'then') return undefined; // not a promise
       return (...args) => ready().then((u) => u[key](...args), () => {});
+    },
+    set(_, key, v) {
+      if (ui) ui[key] = v;
+      else idle[key] = early[key] = v;
+      return true;
     },
   });
 }
