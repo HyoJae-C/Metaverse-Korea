@@ -13,6 +13,8 @@
 //     2-gil and 8-gil in OSM), Myeongdong-gil across it from Namdaemun-ro to
 //     the cathedral's front yard and Samil-daero, and Myeongdong 10-gil from
 //     Myeongdong Station up past the cathedral's west side.
+//   - Toegye-ro 20-gil, south of Toegye-ro, up to Sopa-ro and the Namsan
+//     cable car (the real way there on foot), with plain rows along it.
 //   - Buildings: one row along each street (Yozi 2026-11-10, like Seongsu);
 //     the blocks behind stay open. Every building and shop is fictional.
 //   - The cathedral: its grounds at 1/4, the church itself at 50% (Yozi
@@ -95,6 +97,16 @@ const SAMIL = street('Samil-daero').p, MAIN = [...street('Myeongdong 9-gil').p, 
 const MDGIL = street('Myeongdong-gil').p, GIL10 = street('Myeongdong 10-gil').p;
 // The link roads round it (region.json): Eulji-ro, Toegye-ro and Sopa-ro.
 const LINKS = ['Eulji-ro', 'Toegye-ro', 'Sopa-ro'].map((en) => { const l = linkRoad(en); return { k: l.k, w: l.w, p: l.p, n: l.n }; });
+// The walk up to the Namsan cable car, the way people really go: out of
+// Myeongdong Station's exit 4 (or down 10-gil from the cathedral), across
+// Toegye-ro and up Toegye-ro 20-gil past the hillside hotels to Sopa-ro,
+// where the lower station is (scripts/build-namsan.mjs). Its real line, from
+// Toegye-ro's middle to Sopa-ro's so it joins both.
+export const GIL20 = (() => {
+  const real = street('Toegye-ro 20-gil').p;
+  return simplify([nearestOn(real[0], LINKS[1].p).at, ...real, nearestOn(real.at(-1), LINKS[2].p).at], 0.5).map(([x, z]) => [r1(x), r1(z)]);
+})();
+roads.push({ k: 'walk', w: 6, p: GIL20, n: street('Toegye-ro 20-gil').n });
 
 const buildings = [], areas = [], blockers = [], landmarks = [], pois = [];
 
@@ -140,6 +152,22 @@ landmarks.push({
 pois.push({ kind: 'landmark', x: onHall(L2 + 4, 0)[0], z: onHall(L2 + 4, 0)[1], name: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
 // The shopping street's name on the map, half way along.
 pois.push({ kind: 'landmark', x: -1569, z: -515, name: N('명동거리', 'Myeongdong shopping street', '明洞ショッピングストリート', '明洞购物街') });
+
+// A board at the foot of Toegye-ro 20-gil, on its east pavement just up
+// from Toegye-ro (by exit 4), facing people coming across the road.
+{
+  const d = nearestOn(GIL20[0], GIL20).dir, at = [r1(GIL20[0][0] + d[0] * 14 + d[1] * 4.6), r1(GIL20[0][1] + d[1] * 14 - d[0] * 4.6)];
+  landmarks.push({
+    type: 'sign', x: at[0], z: at[1], ry: facing(-d[0], -d[1]),
+    title: N('남산 하늘 케이블카 →', 'Namsan Sky Cable →', '南山スカイケーブル →', '南山天空缆车 →'),
+    text: {
+      ko: '이 길(퇴계로20길)을 따라 올라가면 소파로에 남산 하늘 케이블카 승강장이 있어요.',
+      en: 'Walk up this lane (Toegye-ro 20-gil) to Sopa-ro: the Namsan Sky Cable lower station is just there.',
+      ja: 'この道(退渓路20キル)を上ると、素坡路に南山スカイケーブルの乗り場があります。',
+      zh: '沿这条小路(退溪路20街)往上走到素坡路，就是南山天空缆车的乘车处。',
+    },
+  });
+}
 
 // ---------- Myeongdong Station (Line 4, 424) ----------
 // Two exits, from the real 6 and 4 (OSM 3403067532, 3403067533), moved out
@@ -191,6 +219,17 @@ t.row('toegyeN', between(TOEGYE, -1662, -1470), -1, { off: 10.5, ...SHOP });
 // (The station exits' squares are cleared afterwards, so the rest of the
 // rows stay as they were before the station.)
 buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p))));
+// Toegye-ro 20-gil: one row of quiet buildings (hotels, offices) each side,
+// south of Toegye-ro, stopping short of Sopa-ro and the cable car's station
+// (its own town, so the rows above stay as they were). Plain: Yozi
+// 2026-11-11 "가는길 건물까지 완전하게 할필요없고".
+const SOPA = LINKS[2].p;
+const insideGil = ([x, z]) => x > -1600 && x < -1480 && z > -460 && z < -340 && lineDist([x, z], SOPA) > LINKS[2].w / 2 + 4;
+const t20 = town(20, { inside: insideGil, roads: [...roads, ...LINKS], open: exitSquares });
+const QUIET = { off: 5, w: [8, 13], h: [10, 22], depth: 11, gap: 2.5 };
+t20.row('gil20E', GIL20, -1, QUIET); // (the lane runs south from Toegye-ro: -1 is its left, east)
+t20.row('gil20W', GIL20, 1, QUIET);
+buildings.push(...t20.buildings);
 
 // Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
 // by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
