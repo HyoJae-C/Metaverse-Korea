@@ -15,20 +15,48 @@ export const MAT_GAP = 0.15; // space kept between two mats
 export const MAT_COLORS = [['#3f7fd0', '#f4f8ff'], ['#e8708f', '#fff3f6'], ['#f2b33a', '#fffaf0'], ['#4fae6a', '#f2fbf3']];
 
 // A mat lies one of four ways (d: quarter turns, 0 = head towards -z), the
-// way its owner was facing when they spread it (matDir).
-export function matRect(x, z, gap = 0, d = 0) {
-  const hw = (d % 2 ? MAT.d : MAT.w) / 2, hd = (d % 2 ? MAT.w : MAT.d) / 2;
-  return { x0: x - hw - gap, x1: x + hw + gap, z0: z - hd - gap, z1: z + hd + gap };
+// way its owner was facing when they spread it (matDir). On a lawn laid at an
+// angle (Yeouido's shore runs 46° off the map's axes) the quarter turns are
+// counted from the lawn's edge (a: the lawn's angle, lawnAngle), so the mat
+// lies square with the lawn and the river instead of crooked across it.
+export const matAngle = (m) => (m.a || 0) + (m.d | 0) * Math.PI / 2;
+// Its corners (and `gap` metres more all round), in the street's metres.
+export function matCorners(m, gap = 0) {
+  const t = matAngle(m), c = Math.cos(t), s = Math.sin(t), hw = MAT.w / 2 + gap, hd = MAT.d / 2 + gap;
+  return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]].map(([lx, lz]) => [m.x + lx * c + lz * s, m.z - lx * s + lz * c]);
 }
-export const matDir = (ry) => ((Math.round(ry / (Math.PI / 2)) % 4) + 4) % 4;
+// The box around it.
+export function matRect(x, z, gap = 0, d = 0, a = 0) {
+  if (!a) {
+    const hw = (d % 2 ? MAT.d : MAT.w) / 2, hd = (d % 2 ? MAT.w : MAT.d) / 2;
+    return { x0: x - hw - gap, x1: x + hw + gap, z0: z - hd - gap, z1: z + hd + gap };
+  }
+  const q = matCorners({ x, z, d, a }, gap), xs = q.map((p) => p[0]), zs = q.map((p) => p[1]);
+  return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+}
+export const matDir = (ry, a = 0) => ((Math.round((ry - a) / (Math.PI / 2)) % 4) + 4) % 4;
 const overlaps = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.z0 < b.z1 && b.z0 < a.z1;
-export const matsOverlap = (a, b) => overlaps(matRect(a.x, a.z, MAT_GAP / 2, a.d | 0), matRect(b.x, b.z, MAT_GAP / 2, b.d | 0));
+// Two convex outlines overlap unless some edge's direction separates them.
+function polysOverlap(p, q) {
+  for (const poly of [p, q]) for (let i = 0; i < poly.length; i++) {
+    const [x0, z0] = poly[i], [x1, z1] = poly[(i + 1) % poly.length], nx = z0 - z1, nz = x1 - x0;
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (const [x, z] of p) { const v = x * nx + z * nz; a0 = Math.min(a0, v); a1 = Math.max(a1, v); }
+    for (const [x, z] of q) { const v = x * nx + z * nz; b0 = Math.min(b0, v); b1 = Math.max(b1, v); }
+    if (a1 <= b0 + 1e-9 || b1 <= a0 + 1e-9) return false;
+  }
+  return true;
+}
+const rectPoly = (r) => [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1]];
+export const matsOverlap = (a, b) => (a.a || b.a)
+  ? polysOverlap(matCorners(a, MAT_GAP / 2), matCorners(b, MAT_GAP / 2))
+  : overlaps(matRect(a.x, a.z, MAT_GAP / 2, a.d | 0), matRect(b.x, b.z, MAT_GAP / 2, b.d | 0));
 
 // The four spots, side by side. Each one can be lain on (head at the mat's
 // head) or sat on, facing its foot: the way the owner faced when spreading it.
 export function matSpots(m) {
-  const step = MAT.w / MAT_SPOTS, a = (m.d | 0) * Math.PI / 2;
-  const c = Math.round(Math.cos(a)), s = Math.round(Math.sin(a));
+  const step = MAT.w / MAT_SPOTS, a = matAngle(m);
+  const c = m.a ? Math.cos(a) : Math.round(Math.cos(a)), s = m.a ? Math.sin(a) : Math.round(Math.sin(a));
   const at = (lx, lz) => [Math.round((m.x + lx * c + lz * s) * 1000) / 1000, Math.round((m.z - lx * s + lz * c) * 1000) / 1000];
   return Array.from({ length: MAT_SPOTS }, (_, i) => {
     const lx = -MAT.w / 2 + step * (i + 0.5);
@@ -46,12 +74,45 @@ export function parseMat(v, lawns) {
   const [x, z, c, d = 0] = v.split(',').map(Number); // (no d: an older game, head to -z)
   if (![x, z, c, d].every(Number.isFinite) || c < 0 || c >= MAT_COLORS.length || c % 1 || d < 0 || d > 3 || d % 1) return null;
   const m = d ? { x, z, c, d } : { x, z, c };
-  return !lawns || onLawn(m, lawns) ? m : null;
+  if (!lawns) return m;
+  const a = lawnAngle(x, z, lawns); // (everyone has the same map: the same angle, nothing more to send)
+  if (a) m.a = a;
+  return onLawn(m, lawns) ? m : null;
+}
+
+// A lawn: its box { x0, x1, z0, z1 }, and for a lawn laid at an angle its
+// outline p and angle a (lawnFrom).
+const inPoly = (x, z, p) => {
+  let inside = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [xi, zi] = p[i], [xj, zj] = p[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+};
+const inLawn = (l, x, z) => x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1 && (!l.p || inPoly(x, z, l.p));
+// A map area (an outline) as a lawn. A four-cornered one keeps its outline
+// and the angle of its first edge (folded into ±45°, so a square lawn has 0).
+export function lawnFrom(p) {
+  const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]);
+  const l = { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  if (p.length !== 4) return l;
+  const q = Math.PI / 2, t = Math.atan2(-(p[1][1] - p[0][1]), p[1][0] - p[0][0]);
+  const a = Math.round((((t + q / 2) % q + q) % q - q / 2) * 1e4) / 1e4;
+  return Math.abs(a) < 0.01 ? l : { ...l, p, a };
+}
+// The angle of the lawn under (x, z): the mat lies square with it.
+export function lawnAngle(x, z, lawns) {
+  return lawns.find((l) => l.a && inLawn(l, x, z))?.a || 0;
 }
 
 export function onLawn(m, lawns) {
-  const r = matRect(m.x, m.z, 0, m.d | 0);
-  return lawns.some((l) => r.x0 >= l.x0 && r.x1 <= l.x1 && r.z0 >= l.z0 && r.z1 <= l.z1);
+  if (!m.a) {
+    const r = matRect(m.x, m.z, 0, m.d | 0);
+    if (lawns.some((l) => !l.p && r.x0 >= l.x0 && r.x1 <= l.x1 && r.z0 >= l.z0 && r.z1 <= l.z1)) return true;
+  }
+  const q = matCorners(m);
+  return lawns.some((l) => q.every(([x, z]) => inLawn(l, x, z)));
 }
 
 // Bounding box of a collider polygon ({ p: [[x, z], …] }).
@@ -63,10 +124,13 @@ function bbox(c) {
 // Can a mat go down at (x, z)? 'ok', or why not: 'lawn' (not on the
 // grass, or on a tree / bench / table) or 'taken' (someone's mat is there).
 // blocked(rect): anything else in the way (a park path, a tree on the street).
+// blocked gets the mat's box, and its points (corners, edge middles, centre) as pts.
 export function canSpread(m, { lawns, colliders = [], mats = [], blocked = null }) {
   if (!onLawn(m, lawns)) return 'lawn';
-  const r = matRect(m.x, m.z, 0, m.d | 0);
-  if (colliders.some((c) => c.p && overlaps(r, bbox(c)))) return 'lawn';
+  const r = matRect(m.x, m.z, 0, m.d | 0, m.a || 0);
+  const q = m.a ? matCorners(m) : rectPoly(r);
+  if (colliders.some((c) => c.p && polysOverlap(q, rectPoly(bbox(c))))) return 'lawn';
+  r.pts = [...q, ...q.map((p, i) => [(p[0] + q[(i + 1) % 4][0]) / 2, (p[1] + q[(i + 1) % 4][1]) / 2]), [m.x, m.z]];
   if (blocked?.(r)) return 'lawn';
   if (mats.some((o) => matsOverlap(m, o))) return 'taken';
   return 'ok';

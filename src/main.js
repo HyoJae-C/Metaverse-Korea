@@ -195,6 +195,7 @@ import { createRoomCache } from './game/room-cache.js';
 import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
+import { lawnFrom } from './core/picnic-mat.js';
 import { createSnowman, SNOW_TEXT } from './game/snowman.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
@@ -3247,7 +3248,9 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // Picnic mats on the Han River park lawn (src/game/picnic.js).
 // The street's wooded parks (Seoul Forest) take picnic mats too: on the
 // grass, off the paths, clear of trees, benches and sculptures.
-const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => { // (lawn: an open picnic lawn with no trees, Yeouido's)
+// (lawn: an open picnic lawn with no trees, Yeouido's: one laid at an angle keeps its outline, mats lie square with it)
+const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => {
+  if (a.lawn) return lawnFrom(a.p);
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });
@@ -3262,10 +3265,7 @@ const streetPicnic = streetLawns.length ? {
       const cx = Math.max(r.x0, Math.min(x, r.x1)), cz = Math.max(r.z0, Math.min(z, r.z1));
       if ((cx - x) ** 2 + (cz - z) ** 2 < rad * rad) return true;
     }
-    for (const fx of [0, 0.5, 1]) for (const fz of [0, 0.5, 1]) {
-      const x = r.x0 + (r.x1 - r.x0) * fx, z = r.z0 + (r.z1 - r.z0) * fz;
-      if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
-    }
+    for (const [x, z] of r.pts) if (collision.blocked(x, z, 0.15) || onAnyRoad(lawnRoads, x, z, 0.3)) return true;
     return false;
   },
 } : null;

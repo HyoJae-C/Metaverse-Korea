@@ -4,7 +4,7 @@
 // owner's "mt" state) and can take a free spot.
 //
 // The game's live state comes in through `game` (getters), as in dining.js.
-import { MAT_COLORS, makeMat, matSpots, encodeMat, parseMat, canSpread, matInFront, matsOverlap, keepsMat, matLost, MAT_NEAR, matDir } from '../core/picnic-mat.js';
+import { MAT_COLORS, makeMat, matSpots, encodeMat, parseMat, canSpread, matInFront, matsOverlap, keepsMat, matLost, MAT_NEAR, matDir, matAngle, lawnAngle } from '../core/picnic-mat.js';
 import { L } from '../ui/pocha-ui.js';
 
 export const MAT_TEXT = {
@@ -91,7 +91,7 @@ export function createPicnic(game, street = null) {
       d?.mesh.removeFromParent();
       const mesh = makeMat(m.c);
       mesh.position.set(m.x, 0, m.z);
-      mesh.rotation.y = (m.d | 0) * Math.PI / 2; // the way its owner faced
+      mesh.rotation.y = matAngle(m); // the way its owner faced (square with a lawn laid at an angle)
       room.scene.add(mesh);
       drawn.set(id, { key, mesh, mat: m });
       changed = true;
@@ -107,11 +107,17 @@ export function createPicnic(game, street = null) {
     }
   }
 
+  // The mat just in front of me, lying the way I face (sit facing where you
+  // looked), square with the lawn under it.
+  function matAhead(p) {
+    const ry = game.me.root.rotation.y, at = matInFront(p.x, p.z, ry);
+    const a = lawnAngle(at.x, at.z, room.lawns), d = matDir(ry, a);
+    return { ...at, ...(d ? { d } : {}), ...(a ? { a } : {}) };
+  }
+
   function spread() {
     const p = game.me.root.position;
-    const at = matInFront(p.x, p.z, game.me.root.rotation.y);
-    const d = matDir(game.me.root.rotation.y); // sit facing where you looked
-    const m = { ...at, c: Math.floor(Math.random() * MAT_COLORS.length), ...(d ? { d } : {}) };
+    const m = { ...matAhead(p), c: Math.floor(Math.random() * MAT_COLORS.length) };
     const why = canSpread(m, { lawns: room.lawns, colliders: room.colliders, mats: mats().map((o) => o.m), blocked: room.blocked });
     if (why !== 'ok') { game.shop.toast(L(MAT_TEXT[why])); return; }
     mine = m;
@@ -154,7 +160,7 @@ export function createPicnic(game, street = null) {
     if (!hasMat(game.bag, game.held)) return null;
     // Only where it fits: open grass, clear of trees, benches and other mats
     // (standing on someone's mat you get "Lie down" instead).
-    const ahead = { ...matInFront(p.x, p.z, game.me.root.rotation.y), c: 0, d: matDir(game.me.root.rotation.y) };
+    const ahead = { ...matAhead(p), c: 0 };
     if (canSpread(ahead, { lawns: room.lawns, colliders: room.colliders, mats: mats().map((o) => o.m), blocked: room.blocked }) !== 'ok') return null;
     return { key: 'mat-spread', label: '🧺 ' + L(MAT_TEXT.spread), run: () => spread() };
   }
