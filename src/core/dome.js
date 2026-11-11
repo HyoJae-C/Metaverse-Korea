@@ -179,7 +179,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   }
   // Ads on the wall: our own fictional sponsors and the teams.
   const adTex = canvasTex(2048, 64, (g, w, h) => {
-    const words = ['ANOTHER SEOUL', '서울 어나더 돔', 'SEOUL ANOTHER DOME', ...TEAMS.map((t) => t.name.en.toUpperCase())];
+    const words = ['MODU SEOUL', '서울 어나더 돔', 'SEOUL ANOTHER DOME', ...TEAMS.map((t) => t.name.en.toUpperCase())];
     let x = 0, i = 0;
     while (x < w) {
       const t = TEAMS[i % TEAMS.length];

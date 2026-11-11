@@ -4,12 +4,12 @@
 @color #2f8a6a
 @title.en How to Sort Trash in Korea (Korean only)
 @title.ko 분리수거 쉽게 하기
-@author.en Another Seoul
-@author.ko Another Seoul 편집부
+@author.en Modu Seoul
+@author.ko 모두서울 편집부
 @about.en Korea sorts trash carefully: volume-rate bags, food waste, and recycling. The basics for a new home in Korea. Rules differ a little by district. Korean text only.
 @about.ko 처음 한국에서 살게 된 사람도 바로 따라 할 수 있는 분리수거 기초. 종량제 봉투, 음식물 쓰레기, 재활용. 동네마다 조금씩 다를 수 있어요.
-@source Written new for Another Seoul
-@license Written for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@source Written new for Modu Seoul
+@license Written for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 세 가지로 나눠요
 한국에서는 쓰레기를 크게 세 가지로 나눠요.

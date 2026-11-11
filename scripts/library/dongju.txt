@@ -9,7 +9,7 @@
 @about.en Yun Dong-ju is one of Korea's most loved poets. This book has two of his famous poems and five gentle poems he wrote for children.
 @about.ko 「서시」와 「별 헤는 밤」, 그리고 어린이를 위해 쓴 동시 다섯 편을 모았어요.
 @source https://ko.wikisource.org/wiki/저자:윤동주
-@license Public domain. Yun Dong-ju died in 1945, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource (1948 and 1955 editions of "Sky, Wind, Stars and Poems"), changed to modern spelling. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Yun Dong-ju died in 1945, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource (1948 and 1955 editions of "Sky, Wind, Stars and Poems"), changed to modern spelling. English translation written for Modu Seoul (free to use, CC0).
 ===
 # 서시 | Prologue
 죽는 날까지 하늘을 우러러

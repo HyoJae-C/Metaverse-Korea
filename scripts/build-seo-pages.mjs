@@ -1,4 +1,4 @@
-// Builds the plain-HTML pages that search engines read, so Another Seoul can
+// Builds the plain-HTML pages that search engines read, so Modu Seoul can
 // show up in Google and other search results:
 //   public/about/<lang>/index.html  one short "what is this" page per language
 //   public/sitemap.xml              every public page, with language alternates
@@ -17,9 +17,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const PAGES = [
   {
     lang: 'en', path: 'about/', label: 'English',
-    title: 'Another Seoul: walk Seoul in 3D, right in your browser',
+    title: 'Modu Seoul: walk Seoul in 3D, right in your browser',
     description: 'A free 3D virtual trip to Seoul, Korea. Walk Seongsu-dong, Hongdae and Itaewon with friends, shop in sample stores, visit cafés and practise Korean. No download, on PC and phone.',
-    h1: 'Another Seoul',
+    h1: 'Modu Seoul',
     lead: 'A 3D virtual trip to Seoul, Korea, that you play right in your web browser. No download, no install.',
     sections: [
       ['Walk the streets of Seoul', 'Start in Seongsu-dong, the neighbourhood of cafés, pop-up stores and old brick factories, then take the subway or a taxi to Hongdae and Itaewon. The streets are a game map inspired by the real neighbourhoods, with street names in Korean and a Translate button.'],
@@ -36,9 +36,9 @@ export const PAGES = [
   },
   {
     lang: 'ko', path: 'about/ko/', label: '한국어',
-    title: '어나더서울: 브라우저에서 바로 걷는 3D 서울 여행',
+    title: '모두서울: 브라우저에서 바로 걷는 3D 서울 여행',
     description: '설치 없이 브라우저에서 바로 즐기는 3D 가상 서울 여행. 친구와 함께 성수동, 홍대, 이태원 거리를 걷고, 가상 매장에서 쇼핑하고, 카페에 들르고, 한국어를 연습해 보세요. PC와 스마트폰 모두 지원.',
-    h1: '어나더서울 (Another Seoul)',
+    h1: '모두서울 (Modu Seoul)',
     lead: '웹 브라우저에서 바로 즐기는 3D 가상 서울 여행이에요. 다운로드도 설치도 필요 없어요.',
     sections: [
       ['서울 거리를 걸어요', '카페와 팝업스토어, 붉은 벽돌 공장 건물이 있는 성수동에서 시작해 지하철이나 택시로 홍대와 이태원까지 가 볼 수 있어요. 거리는 실제 동네를 참고해 새로 그린 게임 지도이고, 거리 이름은 한국어로 보여 주며 번역 버튼으로 내 언어로 바꿀 수 있어요.'],
@@ -55,9 +55,9 @@ export const PAGES = [
   },
   {
     lang: 'ja', path: 'about/ja/', label: '日本語',
-    title: 'アナザー・ソウル：ブラウザでそのまま歩く3Dソウル旅行',
+    title: 'モドゥ・ソウル：ブラウザでそのまま歩く3Dソウル旅行',
     description: 'インストール不要、ブラウザですぐ遊べる3Dバーチャルソウル旅行。友だちと聖水洞・弘大・梨泰院の街を歩き、サンプルのお店でショッピング、カフェめぐり、韓国語の練習も。PCとスマホに対応。',
-    h1: 'アナザー・ソウル (Another Seoul)',
+    h1: 'モドゥ・ソウル (Modu Seoul)',
     lead: 'ウェブブラウザでそのまま遊べる、3Dのバーチャルソウル旅行です。ダウンロードもインストールも必要ありません。',
     sections: [
       ['ソウルの街を歩こう', 'カフェやポップアップストア、赤レンガの工場が並ぶ聖水洞（ソンスドン）からスタートし、地下鉄やタクシーで弘大（ホンデ）や梨泰院（イテウォン）へ。街は実在のエリアを参考に描いたゲーム用の地図で、通りの名前は韓国語で表示され、翻訳ボタンで自分の言語に切り替えられます。'],
@@ -74,9 +74,9 @@ export const PAGES = [
   },
   {
     lang: 'zh-Hans', path: 'about/zh-hans/', label: '简体中文',
-    title: 'Another Seoul：在浏览器里直接漫步3D首尔',
+    title: 'Modu Seoul：在浏览器里直接漫步3D首尔',
     description: '无需安装，在浏览器中直接畅游的3D虚拟首尔之旅。和朋友一起漫步圣水洞、弘大和梨泰院，在示例商店购物，逛咖啡馆，练习韩语。支持电脑和手机。',
-    h1: 'Another Seoul（另一个首尔）',
+    h1: 'Modu Seoul（Modu Seoul）',
     lead: '一款在网页浏览器里直接游玩的3D虚拟首尔之旅。无需下载，无需安装。',
     sections: [
       ['漫步首尔街头', '从遍布咖啡馆、快闪店和红砖老工厂的圣水洞出发，再乘地铁或出租车前往弘大和梨泰院。街道是参考真实街区绘制的游戏地图，街名以韩语显示，点击翻译按钮即可切换成你的语言。'],
@@ -93,9 +93,9 @@ export const PAGES = [
   },
   {
     lang: 'zh-Hant', path: 'about/zh-hant/', label: '繁體中文',
-    title: 'Another Seoul：在瀏覽器裡直接漫步3D首爾',
+    title: 'Modu Seoul：在瀏覽器裡直接漫步3D首爾',
     description: '免安裝，在瀏覽器中直接暢遊的3D虛擬首爾之旅。和朋友一起漫步聖水洞、弘大和梨泰院，在示範商店購物，逛咖啡廳，練習韓語。支援電腦和手機。',
-    h1: 'Another Seoul（另一個首爾）',
+    h1: 'Modu Seoul（另一個首爾）',
     lead: '一款在網頁瀏覽器裡直接遊玩的3D虛擬首爾之旅。無需下載，無需安裝。',
     sections: [
       ['漫步首爾街頭', '從遍布咖啡廳、快閃店和紅磚老工廠的聖水洞出發，再搭地鐵或計程車前往弘大和梨泰院。街道是參考真實街區繪製的遊戲地圖，街名以韓語顯示，點擊翻譯按鈕即可切換成你的語言。'],
@@ -112,9 +112,9 @@ export const PAGES = [
   },
   {
     lang: 'es', path: 'about/es/', label: 'Español',
-    title: 'Another Seoul: recorre Seúl en 3D desde tu navegador',
+    title: 'Modu Seoul: recorre Seúl en 3D desde tu navegador',
     description: 'Un viaje virtual y gratuito en 3D por Seúl, Corea. Pasea por Seongsu-dong, Hongdae e Itaewon con amigos, compra en tiendas de muestra, visita cafés y practica coreano. Sin descargas, en PC y móvil.',
-    h1: 'Another Seoul',
+    h1: 'Modu Seoul',
     lead: 'Un viaje virtual en 3D por Seúl, Corea, que juegas directamente en tu navegador. Sin descargas ni instalación.',
     sections: [
       ['Pasea por las calles de Seúl', 'Empieza en Seongsu-dong, el barrio de cafés, tiendas pop-up y antiguas fábricas de ladrillo, y luego toma el metro o un taxi hasta Hongdae e Itaewon. Las calles son un mapa de juego inspirado en los barrios reales, con los nombres en coreano y un botón para traducirlos.'],
@@ -141,8 +141,8 @@ export function aboutPage(p) {
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'VideoGame',
-    name: 'Another Seoul',
-    alternateName: ['어나더서울', 'アナザー・ソウル'],
+    name: 'Modu Seoul',
+    alternateName: ['모두서울', 'モドゥ・ソウル'],
     url: SITE,
     description: p.description,
     inLanguage: p.lang,
@@ -162,11 +162,11 @@ export function aboutPage(p) {
 <link rel="canonical" href="${SITE}${p.path}" />
 ${alternates}
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Another Seoul" />
+<meta property="og:site_name" content="Modu Seoul" />
 <meta property="og:title" content="${esc(p.title)}" />
 <meta property="og:description" content="${esc(p.description)}" />
 <meta property="og:url" content="${SITE}${p.path}" />
-<meta property="og:image" content="${SITE}og.png?v=3" />
+<meta property="og:image" content="${SITE}og.png?v=4" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -193,7 +193,7 @@ ${alternates}
   <h1>${esc(p.h1)}</h1>
   <p class="lead">${esc(p.lead)}</p>
   <p><a class="play" href="${rel(p.path, '')}">▶ ${esc(p.play)}</a></p>
-  <img class="hero" src="${rel(p.path, 'og.png')}" width="1200" height="630" alt="Another Seoul" />
+  <img class="hero" src="${rel(p.path, 'og.png')}" width="1200" height="630" alt="Modu Seoul" />
 ${p.sections.map(([h, t]) => `  <section>\n    <h2>${esc(h)}</h2>\n    <p>${esc(t)}</p>\n  </section>`).join('\n')}
   <p>${esc(p.langsNote)}</p>
   <p>${esc(p.devices)}</p>

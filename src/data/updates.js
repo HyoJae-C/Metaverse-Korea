@@ -9,6 +9,22 @@ import { s2t } from '../i18n/hant.js';
 
 export const UPDATES = [
   {
+    id: '2026-11-11-new-name',
+    at: '2026.11.11 18:30',
+    title: {
+      ko: '✨ 어나더서울이 모두서울이 됐어요!',
+      en: '✨ Another Seoul is now Modu Seoul!',
+      ja: '✨ アナザー・ソウルはモドゥ・ソウルになりました！',
+      zh: '✨ Another Seoul 改名为 Modu Seoul 啦！',
+    },
+    items: {
+      ko: ['모두(everyone)와 함께 걷는 서울이라는 뜻이에요. 계정, 옷, 돈은 그대로예요.'],
+      en: ['"Modu" means "everyone" in Korean: a Seoul for everyone to walk together. Your account, clothes and money stay the same.'],
+      ja: ['「モドゥ」は韓国語で「みんな」。みんなで歩くソウルです。アカウント、服、お金はそのままです。'],
+      zh: ['"Modu" 在韩语里是"大家"的意思：大家一起漫步的首尔。账号、衣服和钱都不变。'],
+    },
+  },
+  {
     id: '2026-11-06-hangang-park',
     at: '2026.11.06 20:15',
     title: {
@@ -141,15 +157,15 @@ export const UPDATES = [
     id: '2026-11-04-welcome',
     at: '2026.11.04 05:00',
     title: {
-      ko: '어나더서울에 오신 걸 환영해요!',
-      en: 'Welcome to Another Seoul!',
-      ja: 'アナザー・ソウルへようこそ！',
-      zh: '欢迎来到Another Seoul！',
-      es: '¡Bienvenido a Another Seoul!',
-      id: 'Selamat datang di Another Seoul!',
-      ar: 'أهلًا بك في Another Seoul!', vi: 'Chào mừng đến với Another Seoul!', hi: 'Another Seoul में आपका स्वागत है!',
-      fr: 'Bienvenue dans Another Seoul !',
-      th: 'ยินดีต้อนรับสู่ Another Seoul!',
+      ko: '모두서울에 오신 걸 환영해요!',
+      en: 'Welcome to Modu Seoul!',
+      ja: 'モドゥ・ソウルへようこそ！',
+      zh: '欢迎来到Modu Seoul！',
+      es: '¡Bienvenido a Modu Seoul!',
+      id: 'Selamat datang di Modu Seoul!',
+      ar: 'أهلًا بك في Modu Seoul!', vi: 'Chào mừng đến với Modu Seoul!', hi: 'Modu Seoul में आपका स्वागत है!',
+      fr: 'Bienvenue dans Modu Seoul !',
+      th: 'ยินดีต้อนรับสู่ Modu Seoul!',
     },
     items: {
       ko: ['한국 사람도,\n한국을 찾은 친구도,\n누구나 함께 모여서\n\n재미있고 즐거운\n서울 라이프를 즐겨 보세요! 🎉'],

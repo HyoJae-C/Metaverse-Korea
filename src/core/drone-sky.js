@@ -33,7 +33,7 @@ const rgb = (c) => { let v = RGB.get(c); if (!v) { const k = new THREE.Color(c);
 const byU = (a, b) => a[0] - b[0] || a[1] - b[1];
 
 // ---- words ----------------------------------------------------------------
-// lines: ['ANOTHER', 'SEOUL'], or a line as segments (['K', ' O', …]) when
+// lines: ['MODU', 'SEOUL'], or a line as segments (['K', ' O', …]) when
 // they light up one by one (each segment is a part).
 let canvas = null, ctx = null;
 const CW = 512, CH = 256; // the canvas is the sky plane's 28 m × 14 m
@@ -161,8 +161,8 @@ function scenes(act3, nextText) {
   const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape], ...opts });
   return [
     // Opening (Yozi): the name, then hello in Korean first, then the world's
-    [24, W(['ANOTHER', 'SEOUL'], { color: [SKYBLUE, PINK], morph: 2.5 })],
-    [18, W(['어 나 더', '서 울'], { color: [PINK, GOLD] })],
+    [24, W(['MODU', 'SEOUL'], { color: [SKYBLUE, PINK], morph: 2.5 })],
+    [18, W(['모 두', '서 울'], { color: [PINK, GOLD] })],
     [18, W([['K', ' O', ' R', ' E', ' A']], { color: WHITE, parts: [0, 0.8, 1.6, 2.4, 3.2] })],
     [14, W(['WELCOME TO', 'SEOUL'], { color: [GOLD, SKYBLUE] })],
     [12, W(['안녕하세요'], { color: [GOLD, PINK] })],

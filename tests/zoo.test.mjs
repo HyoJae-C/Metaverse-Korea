@@ -605,7 +605,7 @@ test('riding a camel: pay at the stand, sit on the saddle, carried round, off at
   } finally { Date.now = realNow; }
 });
 
-test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL on them', async () => {
+test('the Sea Animals hall has pictures on its outside walls, with MODU SEOUL on them', async () => {
   const { hallMurals, ART } = await import('../src/core/zoo-murals.js');
   const sea = PENS.find((p) => p.id === 'sea');
   assert.ok(sea.murals?.length >= 4, 'murals round the hall');
@@ -627,7 +627,7 @@ test('the Sea Animals hall has pictures on its outside walls, with ANOTHER SEOUL
     const said = [];
     const c = new Proxy({}, { get: (_, k) => (k === 'fillText' || k === 'strokeText' ? (t) => said.push(t) : () => ({})), set: () => true });
     draw(c, w, h);
-    assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('ANOTHER') && said.join(' ').includes('SEOUL'), `${name} says ANOTHER SEOUL`);
+    assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('MODU') && said.join(' ').includes('SEOUL'), `${name} says MODU SEOUL`);
   }
 });
 
