@@ -1771,6 +1771,14 @@ function stepAside(icon, title, hint) {
 }
 claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint'); });
 cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
+// The account's save came in after the game started on this device's older
+// copy: reload once to play the account's save (never save the old one over it).
+cloud.onStale(() => {
+  let again = false;
+  try { again = sessionStorage.getItem('mkcloud.staleReload') === '1'; sessionStorage.setItem('mkcloud.staleReload', '1'); } catch { /* no storage */ }
+  if (again) stepAside('📱', 'device.elsewhere', 'device.elsewhereHint');
+  else location.reload();
+});
 joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 
 // Emote wheel. (ui/emote-wheel.js)
