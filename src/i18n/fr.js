@@ -784,6 +784,7 @@ export const FR = {
   "tix.short": "{name} coûte 🪙 {n}. Pas assez d'argent.",
   "show.fireworks": "🎆 Feux d'artifice · Yeouido",
   "show.drones": "🛸 Spectacle de drones · Ttukseom",
+  "show.sunset": "🌇 Coucher de soleil · Parc du Han de Mangwon",
   "show.inM": "dans {m} min ({at} chez toi)",
   "show.inHM": "dans {h} h {m} min ({at} chez toi)",
   "show.now": "En ce moment ! Encore {m} min",

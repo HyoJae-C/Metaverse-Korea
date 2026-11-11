@@ -784,6 +784,7 @@ export const ID = {
   "tix.short": "{name} seharga 🪙 {n}. Uangmu kurang.",
   "show.fireworks": "🎆 Kembang api · Yeouido",
   "show.drones": "🛸 Pertunjukan drone · Ttukseom",
+  "show.sunset": "🌇 Matahari terbenam · Taman Sungai Han Mangwon",
   "show.inM": "{m} mnt lagi ({at} waktumu)",
   "show.inHM": "{h} j {m} mnt lagi ({at} waktumu)",
   "show.now": "Sedang berlangsung! Sisa {m} mnt",

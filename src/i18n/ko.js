@@ -787,6 +787,7 @@ export const KO = {
   "tix.short": "{name}은 🪙 {n}이에요. 돈이 모자라요.",
   "show.fireworks": "🎆 불꽃놀이 · 여의도",
   "show.drones": "🛸 드론쇼 · 뚝섬",
+  "show.sunset": "🌇 노을 · 망원한강공원",
   "show.inM": "{m}분 뒤 (내 시간 {at})",
   "show.inHM": "{h}시간 {m}분 뒤 (내 시간 {at})",
   "show.now": "지금 하는 중! {m}분 남았어요",

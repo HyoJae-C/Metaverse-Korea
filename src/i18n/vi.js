@@ -784,6 +784,7 @@ export const VI = {
   "tix.short": "{name} giá 🪙 {n}. Không đủ tiền.",
   "show.fireworks": "🎆 Pháo hoa · Yeouido",
   "show.drones": "🛸 Trình diễn drone · Ttukseom",
+  "show.sunset": "🌇 Hoàng hôn · Công viên sông Hàn Mangwon",
   "show.inM": "sau {m} phút ({at} giờ của bạn)",
   "show.inHM": "sau {h} giờ {m} phút ({at} giờ của bạn)",
   "show.now": "Đang diễn! Còn {m} phút",

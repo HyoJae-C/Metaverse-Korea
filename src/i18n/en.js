@@ -786,6 +786,7 @@ export const EN = {
   "tix.short": "{name} costs 🪙 {n}. Not enough money.",
   "show.fireworks": "🎆 Fireworks · Yeouido",
   "show.drones": "🛸 Drone show · Ttukseom",
+  "show.sunset": "🌇 Sunset · Mangwon Han River Park",
   "show.inM": "in {m} min ({at} your time)",
   "show.inHM": "in {h} h {m} min ({at} your time)",
   "show.now": "On now! {m} min left",

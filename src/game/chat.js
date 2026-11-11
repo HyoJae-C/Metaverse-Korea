@@ -19,7 +19,7 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
-import { nextShow, showNoticeText } from '../core/show-notice.js';
+import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -443,7 +443,8 @@ export function createChat(game) {
   // (030_pinned_notices.sql). The ▴ folds them to a small 📢 chip; a new one
   // opens them again.
   // Under them, always one more: the next fireworks or drone show
-  // (core/show-notice.js), in the player's own time. Folded or not is
+  // (core/show-notice.js), in the player's own time, and the next sunset
+  // (Yozi 2026-11-11: like the shows). Folded or not is
   // remembered on this device.
   const pinBox = $('notice-pin');
   const FOLD_KEY = 'noticePinFolded';
@@ -467,9 +468,9 @@ export function createChat(game) {
   };
   let showLine = '';
   function renderPinned(list = pinned.list()) {
-    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
-    showLine = show.label + show.text;
-    const count = list.length + 1;
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock), sun = sunsetNoticeText(nextSunset(now), now, t, clock);
+    showLine = show.label + show.text + sun.label + sun.text;
+    const count = list.length + 2;
     pinBox.hidden = false;
     pinBox.classList.toggle('folded', pinFolded);
     const fold = document.createElement('button');
@@ -486,13 +487,13 @@ export function createChat(game) {
       r.append(b, document.createTextNode(' ' + body));
       return r;
     };
-    const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text)];
+    const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text), row(sun.label, sun.text)];
     pinBox.replaceChildren(...rows, fold);
   }
   // The countdown: checked every 15 s, drawn again only when its words change.
   setInterval(() => {
-    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
-    if (show.label + show.text !== showLine) renderPinned();
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock), sun = sunsetNoticeText(nextSunset(now), now, t, clock);
+    if (show.label + show.text + sun.label + sun.text !== showLine) renderPinned();
   }, 15000);
   renderPinned();
   const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {

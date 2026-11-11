@@ -787,6 +787,7 @@ export const JA = {
   "tix.short": "{name}は 🪙 {n} です。お金が足りません。",
   "show.fireworks": "🎆 花火 · 汝矣島",
   "show.drones": "🛸 ドローンショー · トゥクソム",
+  "show.sunset": "🌇 夕焼け · 望遠漢江公園",
   "show.inM": "{m}分後（現地時間 {at}）",
   "show.inHM": "{h}時間{m}分後（現地時間 {at}）",
   "show.now": "開催中！あと{m}分",
