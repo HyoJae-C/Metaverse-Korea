@@ -391,8 +391,9 @@ export function buildLips(color, at) {
 // Cosmetic clinic jaw lines: how the lower face is pulled in or out (head
 // units; t is 0 at the cheeks .. 1 at the chin). Only the jaw moves, so the
 // head keeps its size and hats still fit.
-export function jawMove(shape, x, y, z, t) {
-  if (shape === 'vline') return [x * (1 - 0.27 * t), y - 0.05 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.02 * t];
+// cheek: 0 .. 1 on the cheekbones (a V-line slims them too).
+export function jawMove(shape, x, y, z, t, cheek = 0) {
+  if (shape === 'vline') return [x * (1 - 0.27 * t) * (1 - 0.16 * cheek), y - 0.05 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.02 * t];
   if (shape === 'square') { // full cheeks kept wide down to the jaw's corners, a flatter chin
     const flat = Math.max(0, 1 - Math.abs(x) * 1.8);
     return [x * (1 + 0.14 * Math.min(1, t * 1.5) + 0.08 * t * t), y + 0.07 * t * flat, z + 0.02 * t];

@@ -418,9 +418,14 @@ function shapedHead(facts, geo, shape, key, jaw, nose) {
     const top = facts.ey - 0.25, span = 0.55;
     for (let i = 0; i < src.count; i++) {
       const y = src.getY(i), z = src.getZ(i);
-      if (eyeSet.has(i) || y > top || z < -0.35) continue;
-      const t = Math.min(1, (top - y) / span) * Math.min(1, (z + 0.35) / 0.5);
-      const [x2, y2, z2] = jawMove(jaw, src.getX(i) - facts.cx, y, z, t);
+      if (eyeSet.has(i) || y > facts.ey + 0.1 || z < -0.35) continue;
+      const front = Math.min(1, (z + 0.35) / 0.5);
+      const t = Math.max(0, Math.min(1, (top - y) / span)) * front;
+      // The cheekbones: just under the eyes, out at the sides.
+      const x = src.getX(i) - facts.cx;
+      const cheek = Math.max(0, 1 - Math.abs(y - (facts.ey - 0.2)) / 0.3) * Math.max(0, Math.min(1, (Math.abs(x) - 0.3) / 0.4)) * front;
+      if (!t && !cheek) continue;
+      const [x2, y2, z2] = jawMove(jaw, x, y, z, t, cheek);
       pos.setXYZ(i, x2 + facts.cx, y2, z2);
     }
   }
