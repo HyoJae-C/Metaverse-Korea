@@ -1203,6 +1203,19 @@ $('joystick').hidden = !input.isTouch;
 // Settings sheet: music, sign translation and language live here.
 $('settings-btn').onclick = () => { $('settings-panel').hidden = false; };
 $('settings-close').onclick = () => { $('settings-panel').hidden = true; };
+// Two pages: the main one, and "Game settings" (controls, camera, screen).
+// The ✕ stays at the top right however far the page scrolls.
+{
+  const view = (game) => {
+    $('settings-game').hidden = !game;
+    $('settings-main').hidden = game;
+    $('settings-panel').querySelector('.panel').scrollTop = 0;
+  };
+  $('settings-btn').addEventListener('click', () => view(false));
+  $('game-settings-btn').onclick = () => view(true);
+  $('settings-back').onclick = () => view(false);
+  $('settings-x').onclick = () => { $('settings-panel').hidden = true; };
+}
 // "Support the creator" (Buy Me a Coffee link). Hidden until a URL is set in config.
 if (/^https:\/\//.test(config.supportUrl)) {
   $('support-link').href = config.supportUrl;
@@ -6775,6 +6788,10 @@ const firstPerson = createFirstPerson({
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
+// Settings › Game settings: hide the buttons, and where the joystick sits. (game/screen-layout.js)
+import('./game/screen-layout.js').then(({ createScreenLayout }) => {
+  createScreenLayout({ input, hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch });
+}).catch(() => { /* the default layout */ });
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
