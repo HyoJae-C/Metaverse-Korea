@@ -104,9 +104,10 @@ function place(scene, s, y) {
 }
 
 export class StampStands {
-  constructor(scene, stamps, getFront, blocked = null) {
+  // groundY(x, z): the street's height (a stand up on a hill, e.g. Myeongdong Cathedral's yard).
+  constructor(scene, stamps, getFront, blocked = null, groundY = null) {
     this.stamps = stamps;
-    this.items = standSpots(stamps, getFront, blocked).map((s) => place(scene, s, 0));
+    this.items = standSpots(stamps, getFront, blocked).map((s) => place(scene, s, groundY ? groundY(s.x, s.z) : 0));
     this.rooms = new Map(); // store id → stands in its room
     this.showTimed();
   }

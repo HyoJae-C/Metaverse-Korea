@@ -128,6 +128,12 @@ const BUILD = {
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
   },
+  cathedralyard(g, l) {
+    // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
+    // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the
+    // city is built; the heights you walk on: core/cathedral-yard-ground.js).
+    import('./cathedral-yard.js').then(({ buildYard }) => buildYard(g, l));
+  },
   guard(g) {
     // A gate guard (수문장) in a red robe with a black hat and a flag.
     const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 1.4, 10), mat('#c8463c'));

@@ -34,6 +34,7 @@ import path from 'node:path';
 import { r1, town, nearestOn, strips, lineDist, facing, simplify, overlap } from './street-rows.mjs';
 import { toLatLon, toGame } from '../src/core/seoul-grid.js';
 import { CATHEDRAL } from '../src/data/myeongdong.js';
+import { yardHeight, yardFrame } from '../src/core/cathedral-yard-ground.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -101,8 +102,75 @@ const buildings = [], areas = [], blockers = [], landmarks = [], pois = [];
 // The yard: the real grounds, paved; the church on it.
 const GROUNDS = OSM.grounds.p;
 areas.push({ k: 'plaza', p: GROUNDS });
-for (const p of hallParts) buildings.push({ h: K.eave, custom: 1, p, n: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
-landmarks.push({ type: 'cathedral', x: HALL.at[0], z: HALL.at[1], ry });
+
+// ---------- The hill: the yard up on its terrace, the stairs ----------
+// The real church stands on a hill (종현) above Myeongdong-gil: its yard is
+// a terrace held up by brick walls, reached by the wide straight stairs on
+// the church's axis in front of the bell tower (OSM 1193247326 and the
+// steps below it; Yozi 2026-11-11: "a key feature") or by the service road
+// west of them (OSM 1537435146), a ramp. Heights at 50% like the church: the
+// yard about 8 m above the street for real -> 4 m; the stairs 25 steps of
+// 16 cm (people-sized), 4.5 m wide (real about 9 m; 1/4 would be narrower
+// than one person's door). Height maths: src/core/cathedral-yard-ground.js.
+// why: the church at 50% reaches 9 m further towards the street than the
+// real one, so the yard in front of it and the stairs move with it: the
+// real flight runs 17-21 m along the axis from the hall's middle, ours 21-29
+// (its top 4 m, its foot 8 m from the real ones); the ramp is on its real
+// line.
+const YH = 4, STEPS = 25, TREAD = 0.32;
+const axisRoad = (() => { // where Myeongdong-gil crosses the church's axis (metres along it)
+  let best = null;
+  for (let a = L2; a < L2 + 30; a += 0.1) { const d = nearestOn(onHall(a, 0), MDGIL).d; if (!best || d < best.d) best = { a, d }; }
+  return best.a;
+})();
+const CUT = r1(axisRoad - ROAD['Myeongdong-gil'].w / 2 - 0.4); // the terrace stops at the street's kerb
+const A1 = r1(CUT - 0.5), A0 = r1(A1 - STEPS * TREAD);
+export const YARD = {
+  type: 'cathedralyard', x: HALL.at[0], z: HALL.at[1], f: F, h: YH, cut: CUT,
+  stairs: { a0: A0, a1: A1, w: 4.5, n: STEPS },
+  ramp: { r0: L2, blend: 3, side: -8.3, w: 3 }, // (side, w: the paved ramp, on the real service road's line)
+  yard: GROUNDS.map(([x, z]) => [r1(x - HALL.at[0]), r1(z - HALL.at[1])]),
+};
+const yardAt = ([x, z]) => yardHeight(YARD, x - HALL.at[0], z - HALL.at[1]);
+landmarks.push({ ...YARD, why: 'Stairs and yard moved 4-8 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m).' });
+// The terrace's walls are walls: you can't walk off the yard or climb it
+// from the street, except up the stairs or the ramp (low: the camera may
+// look over them).
+{
+  const wall = (a, b, t = 0.4) => { // a thin box from a to b, t thick, to the right of a->b
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / L * t, nz = -(b[0] - a[0]) / L * t;
+    blockers.push({ low: 1, p: [a, b, [r1(b[0] + nx), r1(b[1] + nz)], [r1(a[0] + nx), r1(a[1] + nz)]].map(([x, z]) => [r1(x), r1(z)]) });
+  };
+  const n = GROUNDS.length, cx = HALL.at[0], cz = HALL.at[1];
+  const local = ([x, z]) => yardFrame(YARD, x - cx, z - cz);
+  // The grounds' edge, a metre at a time, where the ground inside is above a step.
+  for (let i = 0; i < n; i++) {
+    const a = GROUNDS[i], b = GROUNDS[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const k = Math.max(1, Math.round(L)), at = (j) => [a[0] + ((b[0] - a[0]) * j) / k, a[1] + ((b[1] - a[1]) * j) / k];
+    let run = -1; // the walled pieces in a row make one wall
+    for (let j = 0; j <= k; j++) {
+      let up = false;
+      if (j < k) {
+        const p0 = at(j), p1 = at(j + 1), m = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2], d = Math.hypot(cx - m[0], cz - m[1]);
+        const inner = [m[0] + ((cx - m[0]) * 0.5) / d, m[1] + ((cz - m[1]) * 0.5) / d];
+        up = local(m)[0] <= CUT && yardAt(inner) > 0.4;
+      }
+      if (up && run < 0) run = j;
+      if (!up && run >= 0) { wall(at(run), at(j)); run = -1; }
+    }
+  }
+  // Along the kerb, east of the stairs (the brick wall over Myeongdong-gil),
+  // and up the stairs' east side; the hand rail up their west side.
+  const hw = YARD.stairs.w / 2;
+  let east = hw;
+  while (yardAt(onHall(CUT - 0.3, east + 0.5)) > 0.4) east += 0.5;
+  wall(onHall(CUT + 0.4, east), onHall(CUT + 0.4, hw));
+  wall(onHall(A0, hw), onHall(CUT + 0.4, hw));
+  wall(onHall(A1, -hw), onHall(A0, -hw), 0.15);
+}
+
+for (const p of hallParts) buildings.push({ h: K.eave, y: YH, custom: 1, p, n: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
+landmarks.push({ type: 'cathedral', x: HALL.at[0], z: HALL.at[1], y: YH, ry });
 // Old trees round the yard's edge, off the front yard and the church.
 const TREES = [];
 {
@@ -118,17 +186,17 @@ const TREES = [];
       const clearOfHall = Math.abs(side) > halfW + K.transept.out + 3 || along < -L2 - 3 || along > L2 + 3;
       const offFrontYard = !(along > L2 && Math.abs(side) < halfW + 4); // keep the view of the front open
       const offRoads = roads.every((r) => lineDist(t, r.p) > r.w / 2 + 2.5);
-      if (clearOfHall && offFrontYard && offRoads) TREES.push(t);
+      if (clearOfHall && offFrontYard && offRoads && yardAt(t) === YH) TREES.push(t); // (up on the terrace, where they stand)
     }
   }
 }
-landmarks.push({ type: 'shrinetrees', x: 0, z: 0, spots: TREES }); // (spots in the district's metres: moved below)
+landmarks.push({ type: 'shrinetrees', x: 0, z: 0, y: YH, spots: TREES }); // (spots in the district's metres: moved below)
 
-// The board on the front yard, to the left of the bell tower (facts checked
-// 2026-11-11: Archdiocese of Seoul, Korea Heritage Service).
-const BOARD = onHall(L2 + 7, -halfW + 1);
+// The board on the front yard, beside the bell tower on its east (facts
+// checked 2026-11-11: Archdiocese of Seoul, Korea Heritage Service).
+const BOARD = onHall(A0 - 1.3, halfW - 1);
 landmarks.push({
-  type: 'sign', x: BOARD[0], z: BOARD[1], ry,
+  type: 'sign', x: BOARD[0], z: BOARD[1], y: YH, ry,
   title: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂'),
   text: {
     ko: '1898년에 완공된 한국 최초의 고딕 양식 벽돌 성당이에요. 천주교 서울대교구의 주교좌 성당이고, 사적으로 지정돼 있어요. 지금도 매일 미사를 드리는 곳이니 조용히 둘러봐 주세요.',
@@ -220,7 +288,7 @@ const map = {
   buildings: buildings.map((b) => ({ ...b, p: Lp(b.p) })),
   rail: [],
   areas: areas.map((a) => ({ ...a, p: Lp(a.p) })),
-  blockers: blockers.map((b) => ({ p: Lp(b.p) })),
+  blockers: blockers.map((b) => ({ ...b, p: Lp(b.p) })),
   pois: pois.map(Lx),
   landmarks: landmarks.map(Lx),
 };
@@ -251,6 +319,7 @@ if (isMain) {
   if (lots.length < SHOPS.length) throw new Error(`only ${lots.length} lots for ${SHOPS.length} shops`);
   SHOPS.forEach((sid, i) => setAt(sid, lots[i]));
   setAt(DOOR.id, DOOR.at);
+  if (!new RegExp(`"id": "${DOOR.id}"[^\n]*"y": ${YH}[,}]`).test(stores)) throw new Error(`${DOOR.id}: set "y": ${YH} in stores.json (the door is up on the yard)`);
   writeFileSync(path.join(R, 'stores.json'), stores);
   const front = onHall(L2, 0);
   console.log(`myeongdong: ${map.roads.length} roads, ${map.buildings.length} buildings (${hallParts.length} of them the cathedral), ${TREES.length} trees`);
@@ -259,5 +328,6 @@ if (isMain) {
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
   SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
+  console.log(`  yard ${YH} m up; stairs ${A0}-${A1} m along the axis (kerb ${CUT}), ${blockers.length} wall pieces`);
   for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }
