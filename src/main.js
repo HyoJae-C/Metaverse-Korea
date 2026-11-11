@@ -12,7 +12,7 @@ import {
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
-import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD } from './data/starter-quests.js';
+import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
@@ -3515,7 +3515,6 @@ const TRIP_CARD = {
 };
 const tripStep = () => (quests.active?.kind === 'trip' ? tripOf(quests.active)[quests.active.stage | 0]?.step || 'done' : null);
 const fromBukchon = () => quests.active?.route === 'bukchon'; // the trip from the welcome guide (core/quests.js BUKCHON_TRIP)
-const ROUTE_TIP = { bukchon: 'tripBukchon', toBukchon: 'tripToBukchon' }; // the guide's tip for each first trip (data/starter-quests.js)
 // Through the Open House's gate (data/bukchon.js openHouse.box, district metres).
 const bkOffset = (region.districts || []).find((d) => d.id === BUKCHON.district)?.offset || null;
 const inOpenHouse = (x, z) => {
