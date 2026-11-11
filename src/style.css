@@ -228,13 +228,20 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
    button and anything open stay. The eye brings them back. */
 html.ui-hidden #hud :is(.street-card, .top-right, .tools, .emote-wheel, .minimap, .keys-panel,
   .quest-bar, .quest-chip, .chat-log, .chat-fold, .notice-pin, .install-nudge, .poop-chip, .help, .info-hint) { display: none !important; }
+/* The eye: top left, where the minimap sits only while you are guided
+   (then under it on wide screens, beside it on phones). */
 .ui-eye {
-  display: none; position: absolute; z-index: 5;
-  right: max(12px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top));
+  position: absolute; z-index: 5; display: grid; place-items: center;
+  left: max(12px, env(safe-area-inset-left, 0px)); top: max(12px, env(safe-area-inset-top));
   width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
-  background: rgba(255, 250, 240, 0.6); box-shadow: var(--shadow);
+  background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
 }
-html.ui-hidden .ui-eye { display: grid; place-items: center; }
+.ui-eye[aria-pressed='true'] { background: var(--mint); }
+html:not(.ui-hidden) .in-store .ui-eye, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-eye { display: none; }
+body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 128px); }
+@media (max-width: 700px), (max-height: 500px) {
+  body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
+}
 .help {
   position: absolute;
   left: 50%; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px));
@@ -719,6 +726,7 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 /* Wide screens: right of the street's minimap (game/minimap.js), not over it
    (the next-show line keeps the box up all the time). */
 @media (min-width: 761px) {
+  .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 52px); } /* (right of the eye, game/screen-layout.js) */
   body:has(.minimap:not([hidden])) .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 132px); width: min(440px, calc(100vw - 580px)); }
 }
 /* Under the shop's name banner, and under the wide-screen ad (core/side-ad.js). */
