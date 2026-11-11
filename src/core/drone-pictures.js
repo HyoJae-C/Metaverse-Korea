@@ -247,7 +247,7 @@ export const PICTURES = {
     oval(c, -2.0, -9.5, 1.3, 0.5); fill(c, '#ffd7b8');
   } },
 
-  // Another Tower (the game's tall tower) over the night skyline with lit
+  // Modu Tower (the game's tall tower) over the night skyline with lit
   // windows (part 0, fewer drones)
   anothertower: { layers: 2, dens: [0.5, 1.6], draw(c, l) {
     if (l === 0) {

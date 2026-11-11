@@ -1788,7 +1788,7 @@ const { closeWheel } = emoteWheel;
 const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlight }) => createSkyFlight({
   get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
   get shop() { return shop; }, get busy() { return !!(riding || seated || ride || namsanCable.busy); },
-  // (on an open-air park's lawn, Another Land's island or a Han River park:
+  // (on an open-air park's lawn, Modu Land's island or a Han River park:
   // step back onto the street where you stand, then take off from there)
   leaveOpenPark: () => { if (mode === 'store' && interior?.store?.open && seated == null && !ride) leaveStore(true); },
   cloud, input, scene, cam, bounds, blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
@@ -1972,7 +1972,7 @@ const counterUi = new CounterUI({
 // Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
 // River parks, the theme park, the Namsan slope) and the street have them.
 const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.lawns);
-// Where pets may not go in this room: the bumper car rink in Another Land.
+// Where pets may not go in this room: the bumper car rink in Modu Land.
 const PARK_FENCES = [RINK_FENCE];
 const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
 // My pet: adopt, walk, clean up after it (src/game/pet-care.js).
@@ -2158,7 +2158,7 @@ let held = (() => {
     if (h?.kind === 'book') return bookById(h.book) ? { kind: 'book', book: h.book } : null;
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
-    if (h?.kind === 'balloon') return restoreBalloon(h); // (Another Land's clown; gone once its air is out)
+    if (h?.kind === 'balloon') return restoreBalloon(h); // (Modu Land's clown; gone once its air is out)
     if (h?.kind === 'lipstick') return lipstickEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
@@ -2669,7 +2669,7 @@ onLanguageChange(() => { $('bike-label').textContent = t(riding ? 'bike.offShort
 
 function teacherLabel() { return L({ en: 'Teacher', ko: '선생님', ja: '先生', zh: '老师' }); }
 const dayPasses = new DayPasses();
-const rideTickets = new RideTickets({ pass: () => dayPasses.has('rides') }); // (Another Land's 5-ride and Big 3 tickets)
+const rideTickets = new RideTickets({ pass: () => dayPasses.has('rides') }); // (Modu Land's 5-ride and Big 3 tickets)
 let domeLoading = false;
 // walkIn: stepping onto an open-air park from the street ({ x, z, ry, yaw } in
 // the park's own metres): no door, no bell, the camera stays as it was.
@@ -2691,7 +2691,7 @@ function enterStore(item, walkIn = null) {
     domeLoading = true;
     return Promise.all([loadInterior(), storeDescs.load()]).then(() => { domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('rooms', e); });
   }
-  // Seoul Another Dome: the stadium's code comes on the first visit.
+  // Modu Ballpark: the stadium's code comes on the first visit.
   if (rooms.needsDome(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
@@ -2703,7 +2703,7 @@ function enterStore(item, walkIn = null) {
     domeLoading = true;
     return import('./core/zoo-park.js').then((m) => { rooms.setZooBuilders(m); domeLoading = false; return enterStore(item, walkIn); }).catch((e) => { domeLoading = false; console.warn('zoo', e); });
   }
-  // Another Land: the park's models come on the first visit too.
+  // Modu Land: the park's models come on the first visit too.
   if (rooms.needsPark(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
@@ -2803,7 +2803,7 @@ function enterStore(item, walkIn = null) {
   // The Han River park's market: a seller behind each stall.
   if (built.vendors?.length && !built.vendorNpcs) {
     built.vendorNpcs = built.vendors.map((v) => {
-      const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Another Land's food truck sellers wear the park's uniform)
+      const o = makeNpc($('labels'), '', built.themepark ? { ...randomLook(), ...PARK_UNIFORM } : undefined); // (Modu Land's food truck sellers wear the park's uniform)
       o.tag.style.visibility = 'hidden'; // (the stall's sign says who they are; speech bubbles still show)
       o.ch.root.position.set(v.x, v.y || 0, v.z);
       if (v.sit) { o.ch.activity('sit'); o.labelY = 1.5 + (v.y || 0); } // (the food truck sellers sit up at their hatch)
@@ -2848,14 +2848,14 @@ function enterStore(item, walkIn = null) {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
       const f = s.sit ? seatFit(built.scene, s) : null;
-      o.ch.root.position.set(f?.x ?? s.x, f?.y ?? (s.y || 0), f?.z ?? s.z); // (y: up in the stands at Seoul Another Dome)
+      o.ch.root.position.set(f?.x ?? s.x, f?.y ?? (s.y || 0), f?.z ?? s.z); // (y: up in the stands at Modu Ballpark)
       o.ch.root.rotation.y = s.ry;
       if (s.sit) o.ch.activity('sit');
       else if (s.act) o.ch.activity(s.act); // (the climbing gym's climbers, hanging on the wall)
       built.scene.add(o.ch.root);
       return o;
     });
-    // Seoul Another Dome's cheer squads, on their stages: the cheer leader
+    // Modu Ballpark's cheer squads, on their stages: the cheer leader
     // (with a name tag, for the chants) and the cheer dancers.
     for (const s of built.stations.cheerSquad || []) {
       const o = makeNpc($('labels'), s.role === 'leader' ? '📣 ' + L(DOME_TEXT.leader) : '');
@@ -2983,7 +2983,7 @@ function goMuseumFloor(floor) {
   if (fade) { fade.classList.remove('go'); void fade.offsetWidth; fade.classList.add('go'); }
 }
 
-// Another Land's haunted house (core/haunted.js): its own interior, entered
+// Modu Land's haunted house (core/haunted.js): its own interior, entered
 // from the park. As with the museum's floors, the way out to the street
 // (taxi, map, teleport) is still the park's gate; only its exit door leads
 // back into the park, in front of the house.
@@ -3050,7 +3050,7 @@ function enterRunwayRoom() {
 
 const BARTENDER = { en: 'Bartender', ko: '바텐더', ja: 'バーテンダー', zh: '调酒师' };
 const GOAL_SHOUT = ['골!!!', 'gol', 'GOAL!!!']; // the sports pub's crowd
-// Seoul Another Dome (core/dome.js): the crowd and the cheer squads react to
+// Modu Ballpark (core/dome.js): the crowd and the cheer squads react to
 // the game, the cheer leader leads a chant now and then.
 function wireDome(built, store) {
   const dome = built.dome;
@@ -4461,8 +4461,8 @@ const tarot = createTarot({
   refreshWallet, safety, sfx, shop, sitDown, standUp, wallet,
 });
 const { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick } = tarot;
-// Bumper cars in Another Land: six a round, a waiting line. (game/bumper.js)
-// Downloaded the first time Another Land's rink is near (bumper.ready() in the
+// Bumper cars in Modu Land: six a round, a waiting line. (game/bumper.js)
+// Downloaded the first time Modu Land's rink is near (bumper.ready() in the
 // frame loop); until then it has no button and nothing to draw.
 const bumper = lazyPanel(() => import('./game/bumper.js').then(({ createBumper }) => createBumper({
   get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
@@ -4490,20 +4490,20 @@ const folkYard = createFolkYard({
   $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
 });
 onLanguageChange(() => folkYard.relabel());
-// Another Land's balloon clown on platform shoes. (game/balloon-clown.js)
+// Modu Land's balloon clown on platform shoes. (game/balloon-clown.js)
 const balloonClown = createBalloonClown({
   get me() { return me; }, get held() { return held; }, get action() { return action; }, set action(v) { action = v; },
   $, STALE, shop, wallet, randomLook, refreshWallet: () => refreshWallet(), handReady: () => handReady(), holdNew: (h) => holdNew(h), setHeld: (h) => setHeld(h),
 });
 onLanguageChange(() => balloonClown.relabel());
-// Another Land's ticket guide at the island's gate, and the booth below. (game/park-tickets.js)
+// Modu Land's ticket guide at the island's gate, and the booth below. (game/park-tickets.js)
 const parkTickets = createParkTickets({
   get interior() { return mode === 'store' ? interior : null; }, get action() { return action; }, set action(v) { action = v; },
   $, STALE, shop, sfx, wallet, randomLook, tickets: rideTickets, refreshWallet: () => refreshWallet(),
   passName: () => L(DAY_PASS_TEXT.rides), buyRidePass: () => buyRidePass(),
 });
 onLanguageChange(() => parkTickets.relabel());
-// Another Land's mirror maze: a clock from the door to the far side. (game/mirror-maze.js)
+// Modu Land's mirror maze: a clock from the door to the far side. (game/mirror-maze.js)
 const mirrorMaze = createMirrorMaze({ shop });
 // Olympic Park skate park: tricks, grinds and combos. (game/skate.js)
 const skate = createSkate({
@@ -4962,7 +4962,7 @@ function palaceAct(p) {
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
 let anotherTower;
-const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Another Tower's top)
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position); // (game/tower-look.js: tilt up to Modu Tower's top)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
@@ -5290,7 +5290,7 @@ function buyRidePass() {
   shop.toast(fmt(L(DAY_PASS_TEXT.ridesPaid), { name: L(name), n: RIDE_PASS }));
   action = STALE;
 }
-// Another Land's rides run on the shared clock (like the coaster), so it's
+// Modu Land's rides run on the shared clock (like the coaster), so it's
 // the same ride for everyone on it. The carousel, the ship and the drop
 // tower: get on while it loads, the bar comes down, off at the end. The
 // wheel: step into the gondola at the bottom, ride one turn.
@@ -5513,7 +5513,7 @@ function coasterCamera(dt) {
 // train * 10 + seat + 1); the train runs on the shared clock, so they sit
 // exactly where they are on their own screen, arms up in the drop.
 function placeRemoteRider(ch, cs, q) {
-  // (Another Land's island: they're on the street's side, so the seat is
+  // (Modu Land's island: they're on the street's side, so the seat is
   // turned from the island's metres into the street's)
   const op = outdoors() ? openParks.find((o) => o.built?.coaster && (o.near || openParkHere() === o)) : null;
   if (!op && !interior?.coaster) return;
@@ -5646,7 +5646,7 @@ const nightCarts = createNightCarts({
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
 });
-const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
+const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Modu Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
 // its fishing, boats, stalls and seats work as before), drawn over the
@@ -5665,7 +5665,7 @@ const openParks = storefronts.items.filter((i) => i.open).map((item) => {
   const grass = around.map(([x, z]) => map.areas.find((a) => (a.k === 'park' || a.k === 'grass') && pointInPoly(x, z, a.p))).find(Boolean);
   if (grass) item.store.open.grass = COLORS[grass.k];
   const toWorld = new THREE.Matrix4().makeRotationY(ry).setPosition(ox, 0, oz);
-  // (a park with its own shore, like Another Land's island, says where its
+  // (a park with its own shore, like Modu Land's island, says where its
   // edge is: `lawn` to walk in, the wider `out` to walk off)
   const { lawn = null, out = null } = item.store.open;
   return { item, ox, oz, ry, cos: Math.cos(ry), sin: Math.sin(ry), toWorld, toLocal: toWorld.clone().invert(), built: null, near: false, lawn, out };
@@ -5707,7 +5707,7 @@ function staffOpenPark(built) {
 // Its room, built the first time it's near (or you arrive by taxi or map).
 function openParkRoom(o) {
   if (!o.built && !interiorLoaded()) { warmInterior(); return null; } // (the rooms' code first: game/interior-loader.js)
-  if (!o.built && interiorLoaded().needsPark(o.item.store)) { // (Another Land's island: the park's code comes when it's first near)
+  if (!o.built && interiorLoaded().needsPark(o.item.store)) { // (Modu Land's island: the park's code comes when it's first near)
     if (!domeLoading) {
       domeLoading = true;
       import('./core/themepark.js').then((m) => { interiorLoaded().setParkBuilder(m.buildThemePark); domeLoading = false; }).catch((e) => { domeLoading = false; console.warn('park', e); });
@@ -5718,7 +5718,7 @@ function openParkRoom(o) {
     o.built = roomFor(o.item.store);
     o.built.scene.fog = scene.fog; // (the street's: the far side of the lawn hazes the same)
     staffOpenPark(o.built);
-    parkTickets.spawn(o.built); // (Another Land's ticket guide: there as you cross the bridge)
+    parkTickets.spawn(o.built); // (Modu Land's ticket guide: there as you cross the bridge)
   }
   return o.built;
 }
@@ -5747,7 +5747,7 @@ function updateOpenParks(dt) {
   const here = openParkHere();
   if (here) {
     lightOpenPark(openParkRoom(here));
-    here.built.setNight?.(parkNight()); // (Another Land's castle gate lights up)
+    here.built.setNight?.(parkNight()); // (Modu Land's castle gate lights up)
     for (const n of [here.built.clerkNpc, here.built.ticketGuide, ...(here.built.vendorNpcs || []), ...(here.built.riderNpcs || [])]) if (n) n.ch.root.visible = true;
     for (const b of here.built.ducks || []) b.g.visible = true;
     const [wx, wz] = parkWorld(here, p.x, p.z);
@@ -5775,7 +5775,7 @@ function updateOpenParks(dt) {
     // off the stalls and the kiosk read as busy enough.
     const close = d < PARK_STAFF;
     for (const n of [o.built.clerkNpc, o.built.ticketGuide, ...(o.built.vendorNpcs || [])]) if (n) { n.ch.root.visible = close; if (close) n.ch.animate(dt, 0); }
-    if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Another Land's island: the guests on its rides)
+    if (close && o.built.rides?.length) parkRiders.tick(parkRiders.spawn(o.built)); // (Modu Land's island: the guests on its rides)
     for (const n of o.built.riderNpcs || []) n.ch.root.visible = close;
     for (const b of o.built.ducks || []) b.g.visible = close; // (the duck boats too: 15 pieces each)
     const [lx, lz] = parkLocal(o, p.x, p.z);
@@ -6540,7 +6540,7 @@ function updateAction(p, tSec) {
       next = { key: 'runway-in', label: '👠 ' + L(roomKit().RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
       next = { key: 'haunt-in', label: '👻 ' + L(HAUNT_TEXT.enter), run: () => enterHaunted() };
-    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Another Land's island: the stairs down to the rest of the park
+    } else if (interior.island && nearStation(p, 'underground', 1.8)) { // Modu Land's island: the stairs down to the rest of the park
       const under = storefronts.items.find((i) => i.store.below === interior.store.id);
       if (under) next = { key: 'underground', label: '⬇️ ' + t('shop.enter', { name: localName(under.store.name, getLanguage()) }), run: () => roomTips.enter(under) };
     } else if (interior.rides?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2.2)) {
@@ -6891,7 +6891,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store' && interior?.store.workshop === 'runway') runwayTick(dt); // (walking with friends: the line)
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
   if (mode === 'store') parkRiders.tick(interior?.riderNpcs); // (guests on the carousel and the ship)
-  else landmarks.userData.tick(performance.now() / 1000); // Another Land's wheel, coaster and drop tower
+  else landmarks.userData.tick(performance.now() / 1000); // Modu Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
   updateFireworks();
@@ -7020,7 +7020,7 @@ renderer.setAnimationLoop((now) => {
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Another Tower: tilted up
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Modu Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);

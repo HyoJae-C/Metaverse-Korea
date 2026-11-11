@@ -76,7 +76,7 @@ export const PAGES = [
     lang: 'zh-Hans', path: 'about/zh-hans/', label: '简体中文',
     title: 'Modu Seoul：在浏览器里直接漫步3D首尔',
     description: '无需安装，在浏览器中直接畅游的3D虚拟首尔之旅。和朋友一起漫步圣水洞、弘大和梨泰院，在示例商店购物，逛咖啡馆，练习韩语。支持电脑和手机。',
-    h1: 'Modu Seoul（Modu Seoul）',
+    h1: 'Modu Seoul（모두서울）',
     lead: '一款在网页浏览器里直接游玩的3D虚拟首尔之旅。无需下载，无需安装。',
     sections: [
       ['漫步首尔街头', '从遍布咖啡馆、快闪店和红砖老工厂的圣水洞出发，再乘地铁或出租车前往弘大和梨泰院。街道是参考真实街区绘制的游戏地图，街名以韩语显示，点击翻译按钮即可切换成你的语言。'],
@@ -95,7 +95,7 @@ export const PAGES = [
     lang: 'zh-Hant', path: 'about/zh-hant/', label: '繁體中文',
     title: 'Modu Seoul：在瀏覽器裡直接漫步3D首爾',
     description: '免安裝，在瀏覽器中直接暢遊的3D虛擬首爾之旅。和朋友一起漫步聖水洞、弘大和梨泰院，在示範商店購物，逛咖啡廳，練習韓語。支援電腦和手機。',
-    h1: 'Modu Seoul（另一個首爾）',
+    h1: 'Modu Seoul（모두서울）',
     lead: '一款在網頁瀏覽器裡直接遊玩的3D虛擬首爾之旅。無需下載，無需安裝。',
     sections: [
       ['漫步首爾街頭', '從遍布咖啡廳、快閃店和紅磚老工廠的聖水洞出發，再搭地鐵或計程車前往弘大和梨泰院。街道是參考真實街區繪製的遊戲地圖，街名以韓語顯示，點擊翻譯按鈕即可切換成你的語言。'],
@@ -142,7 +142,7 @@ export function aboutPage(p) {
     '@context': 'https://schema.org',
     '@type': 'VideoGame',
     name: 'Modu Seoul',
-    alternateName: ['모두서울', 'モドゥ・ソウル'],
+    alternateName: ['모두서울', 'モドゥ・ソウル', 'Another Seoul', '어나더서울'],
     url: SITE,
     description: p.description,
     inLanguage: p.lang,

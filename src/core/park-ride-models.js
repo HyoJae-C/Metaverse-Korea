@@ -1,4 +1,4 @@
-// Another Land's Candy Carousel, Choco Viking, Rainbow Wheel and Lollipop
+// Modu Land's Candy Carousel, Choco Viking, Rainbow Wheel and Lollipop
 // Drop (themepark.js places them;
 // the motion is park-rides.js, on everyone's shared clock).
 // The carousel: a scalloped platform, a mirrored centre column, twelve

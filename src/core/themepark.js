@@ -1,4 +1,4 @@
-// Another Land (어나더랜드), the candy-house theme park, in two parts: its
+// Modu Land (모두랜드), the candy-house theme park, in two parts: its
 // island in Seokchon Lake, open to the street (park-island.js: the Cotton
 // Candy Express roller coaster, coaster.js, in its candy wood, with the
 // Ferris wheel, the drop tower, the swing ride and the gyro swing round it),
@@ -159,7 +159,7 @@ export function buildThemePark(store, ROOM, EXIT) {
 
   return {
     scene, products: food.products, vendors: food.vendors, colliders, seats, clerk: { x: -6, z: Z1 - 3.6, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    rides, stations, tick, time: () => time, themepark: true, bumper, coaster, // (only Another Land; the Han River parks are `hanRiver: true`, never a shared name)
+    rides, stations, tick, time: () => time, themepark: true, bumper, coaster, // (only Modu Land; the Han River parks are `hanRiver: true`, never a shared name)
     setSignLang: (lang) => { haunt.setSignLang(lang); coaster?.setSignLang(lang); grounds.setSignLang(lang); food.setSignLang(lang); },
   };
 }

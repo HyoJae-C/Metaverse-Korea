@@ -1,7 +1,7 @@
 // The zoo's camel ride (낙타 타기): two saddled camels take turns walking a
 // loop round the herbivores (scripts/build-grand-park.mjs CAMEL_TREK), each
 // kneeling at the stand by the camels' pen to let a rider on. They run on
-// the shared clock (Date.now), like Another Land's rides, so everyone sees
+// the shared clock (Date.now), like Modu Land's rides, so everyone sees
 // the same camel in the same place and a friend riding one sits on its back
 // on your screen too. Built with the zoo's room (core/zoo-park.js); getting
 // on and off is game/zoo-camels.js.

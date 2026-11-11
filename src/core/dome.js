@@ -1,4 +1,4 @@
-// Seoul Another Dome (서울 어나더 돔): the baseball stadium inside (its dome
+// Modu Ballpark (모두야구장): the baseball stadium inside (its dome
 // on the Songpa map is core/dome-outside.js). Loaded the first time someone
 // walks in (main.js enterStore), so the street doesn't carry it. The
 // league and its games are in core/ballgame.js; this file builds the bowl
@@ -179,7 +179,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   }
   // Ads on the wall: our own fictional sponsors and the teams.
   const adTex = canvasTex(2048, 64, (g, w, h) => {
-    const words = ['MODU SEOUL', '서울 어나더 돔', 'SEOUL ANOTHER DOME', ...TEAMS.map((t) => t.name.en.toUpperCase())];
+    const words = ['MODU SEOUL', '모두야구장', 'MODU BALLPARK', ...TEAMS.map((t) => t.name.en.toUpperCase())];
     let x = 0, i = 0;
     while (x < w) {
       const t = TEAMS[i % TEAMS.length];
@@ -371,7 +371,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   const noteTex = canvasTex(1024, 300, (g, w, h) => {
     g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `900 64px ${FONT}`; g.fillText('서울 어나더 돔 · SEOUL ANOTHER DOME', w / 2, 62);
+    g.font = `900 64px ${FONT}`; g.fillText('모두야구장 · MODU BALLPARK', w / 2, 62);
     g.font = `700 34px ${FONT}`;
     g.fillText('지금 이곳에는 이런 구장이 영업하지 않아요. 방문 전 확인하세요.', w / 2, 150);
     g.fillText('No stadium like this is open here yet. Please check before you visit.', w / 2, 212);
@@ -712,7 +712,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
       g.fillStyle = '#ffffff'; g.fillText(msg.text, BW / 2, 420);
     } else {
       g.textAlign = 'center'; g.font = `700 30px ${FONT}`; g.fillStyle = '#56637a';
-      g.fillText('서울 어나더 돔 · SEOUL ANOTHER DOME', BW / 2, 430);
+      g.fillText('모두야구장 · MODU BALLPARK', BW / 2, 430);
     }
   };
   const FLASH = { K: ['STRIKE OUT!', '#ffffff'], GO: ['OUT', '#b8c4d8'], FO: ['OUT', '#b8c4d8'], BB: ['BALL FOUR', '#9fe0a0'], '1B': ['HIT!', '#ffd23f'], '2B': ['DOUBLE!', '#ffd23f'], '3B': ['TRIPLE!', '#ffd23f'], HR: ['HOME RUN!', '#ff6b9a'] };

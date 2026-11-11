@@ -1,4 +1,4 @@
-// End-to-end check: Another Land's newer rides under the island (the
+// End-to-end check: Modu Land's newer rides under the island (the
 // Teacup Party, the Candy Train and the Jelly Flume) and the Mirror Maze.
 // Each ride: wait at its gate for it to load, get on, the bar comes down,
 // ride the run (up in the air, round the oval, up the lift and down the

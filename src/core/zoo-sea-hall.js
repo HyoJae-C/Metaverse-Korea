@@ -1,7 +1,7 @@
 // The zoo's Sea Animals hall (Children's Grand Park) as a room of its own:
 // you walk in through its door in the zoo (core/zoo-park.js; the store is
 // zoo-rooms.js SEA_STORE, workshop "zoo-sea") and the room takes over the
-// screen, like Another Land's haunted house.
+// screen, like Modu Land's haunted house.
 // Sea-blue walls with fish painted on, a high ceiling with strip lights, and
 // three tanks along the back behind glass: seals, a walrus and a polar bear.
 // The tanks and their animals are zoo pens (core/zoo.js), in room metres:

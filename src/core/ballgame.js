@@ -1,4 +1,4 @@
-// Seoul Another Dome (서울 어나더 돔): the baseball league, no THREE or DOM
+// Modu Ballpark (모두야구장): the baseball league, no THREE or DOM
 // (core/dome.js draws the stadium and plays these games out).
 //
 // Eight fictional teams play one game at a time in the dome. A new game

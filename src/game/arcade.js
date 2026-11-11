@@ -1,4 +1,4 @@
-// The batting cage, the shooting gallery in Another Land and darts at Bar
+// The batting cage, the shooting gallery in Modu Land and darts at Bar
 // Hush (core/arcade.js). Free skill games: no coins in or out, only your own
 // best record (and a small teddy bear for a gold at the balloon booth). Their panels are loaded the first time you play one.
 import { L, fmt } from '../ui/pocha-ui.js';

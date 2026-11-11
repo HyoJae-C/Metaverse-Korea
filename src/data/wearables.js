@@ -130,7 +130,7 @@ export const WEARABLES = {
   'acc-tote-river': item('👜', 25, { back: 'tote-river' }, { back: null }, WEAR_DESC.accessory, { en: 'River blue tote bag', ko: '강물 파랑 에코백', ja: 'リバーブルーのトート', zh: '河水蓝帆布包' }),
   'acc-tote-brick': item('👜', 25, { back: 'tote-brick' }, { back: null }, WEAR_DESC.accessory, { en: 'Brick red tote bag', ko: '벽돌 빨강 에코백', ja: 'レンガ色のトート', zh: '砖红色帆布包' }),
   'acc-backpack-graffiti': item('🎒', 45, { back: 'backpack-graffiti' }, { back: null }, WEAR_DESC.accessory, { en: 'Graffiti backpack', ko: '그래피티 백팩', ja: 'グラフィティのリュック', zh: '涂鸦双肩包' }),
-  // Nyang Meong To Pan (Another Land): animal-ear headbands and matching paw gloves.
+  // Nyang Meong To Pan (Modu Land): animal-ear headbands and matching paw gloves.
   ...Object.fromEntries(ANIMAL_LOOKS.flatMap((a) => {
     const n = ANIMAL_NAMES[a.id];
     return [

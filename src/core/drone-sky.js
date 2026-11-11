@@ -202,7 +202,7 @@ function scenes(act3, nextText) {
     [14, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
     [22, P('wheel')],
     [22, P('coaster')],
-    [12, W(['어나더 랜드'], { color: [PINK, GOLD] })],
+    [12, W(['모두랜드'], { color: [PINK, GOLD] })],
     // Love (Yozi)
     [12, W(['사 랑'], { color: PINK })],
     [12, W(['행 복'], { color: GOLD })],

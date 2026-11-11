@@ -21,7 +21,7 @@ export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japcha
 export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
-// Another Land's food truck snacks (park-food.js): an ice cream cone, a
+// Modu Land's food truck snacks (park-food.js): an ice cream cone, a
 // churro, a hot dog, in metres at hand size (the trucks scale them up).
 export const SNACKS = ['icecream', 'churro', 'hotdog'];
 export function snackModel(id) {
@@ -43,7 +43,7 @@ export function snackModel(id) {
   return g;
 }
 
-// Balloon art from Another Land's clown (game/balloon-clown.js): a sword or
+// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword or
 // a dog in the hand, a crown worn on the head ('balloon:crown'). Twisted
 // glossy sausages of latex, in metres (the crown in the head's own units).
 export const BALLOONS = ['sword', 'dog', 'crown'];
@@ -156,7 +156,7 @@ export function makeHeld(kind) {
     tassel.position.y = 0.76; tassel.scale.set(1, 1.6, 1);
     g.add(shaft, blade, tassel);
   } else if (kind === 'bat') {
-    // A baseball bat (the batters at Seoul Another Dome), held upright.
+    // A baseball bat (the batters at Modu Ballpark), held upright.
     const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.013, 0.62, 10), mat('#c99a5b'));
     bat.position.y = 0.3;
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 10), mat('#3b2418'));

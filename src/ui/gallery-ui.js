@@ -1,4 +1,4 @@
-// Shooting gallery panel in Another Land (rules in core/arcade.js): a toy
+// Shooting gallery panel in Modu Land (rules in core/arcade.js): a toy
 // cork gun and three rows of sliding balloons, ducks and stars. Tap a target
 // to pop it. Free to play: chase your own best score. A gold medal at the
 // balloon booth wins a small teddy bear for your home (theme.prize).

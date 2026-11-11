@@ -52,7 +52,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
     if (sips <= 0) return null;
     const out = { kind: e.kind, sips, name: String(e.name || '').slice(0, 40) };
     if (e.kind === 'food' && e.ramen) out.ramen = true; // a Han River ramen bowl stays one
-    if (e.kind === 'food' && ['icecream', 'churro', 'hotdog'].includes(e.snack)) out.snack = e.snack; // Another Land's snacks (held.js SNACKS)
+    if (e.kind === 'food' && ['icecream', 'churro', 'hotdog'].includes(e.snack)) out.snack = e.snack; // Modu Land's snacks (held.js SNACKS)
     return out;
   }
   return null;

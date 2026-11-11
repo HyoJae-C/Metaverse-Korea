@@ -34,7 +34,7 @@ export const LANDMARK_SEARCH = [
     name: { en: 'Namsan Cable Car (N Seoul Tower)', ko: '남산 케이블카 (N서울타워)', ja: '南山ケーブルカー（Nソウルタワー）', zh: '南山缆车（N首尔塔）' },
     also: ['Namsan', 'N Tower', 'Seoul Tower', '남산', '남산타워', '서울타워'] },
   { type: 'haneultower', icon: '🗼', go: [0, 20],
-    name: { en: 'Another Tower', ko: '어나더타워', ja: 'アナザータワー', zh: '另一塔' } },
+    name: { en: 'Modu Tower', ko: '모두타워', ja: 'モドゥタワー', zh: 'Modu塔' } },
   { type: 'tower63', icon: '🏢', go: [0, 12],
     name: { en: '63 Building', ko: '63빌딩', ja: '63ビル', zh: '63大厦' } },
   { type: 'peacegate', icon: '⛩️', go: [0, 12],
