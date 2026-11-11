@@ -27,24 +27,24 @@ Then in GitHub:
 
 The old `hyojae-c.github.io/Metaverse-Korea/` address redirects to the new one.
 
-In the repo, set `VITE_SITE_URL` in `.env` to `https://another-seoul.com/` (used for
+In the repo, set `VITE_SITE_URL` in `.env` to `https://moduseoul.com/` (used for
 link previews) and keep `public/CNAME` holding the same bare domain.
 
 ## 2. Google Cloud (OAuth client and consent screen)
 
 APIs & Services → Credentials → the Web OAuth client:
 
-- Authorized JavaScript origins: `https://another-seoul.com` (keep `https://hyojae-c.github.io`
+- Authorized JavaScript origins: `https://moduseoul.com` (keep `https://hyojae-c.github.io`
   while the old address is still in use)
 - Authorized redirect URIs: `https://qiefmpxiiercqfazigjv.supabase.co/auth/v1/callback`
   (unchanged by the domain move)
 
 OAuth consent screen (Branding):
 
-- Home page: `https://another-seoul.com/`
-- Privacy policy: `https://another-seoul.com/privacy.html`
-- Terms of service: `https://another-seoul.com/terms.html`
-- Authorized domains: `another-seoul.com` and `qiefmpxiiercqfazigjv.supabase.co`
+- Home page: `https://moduseoul.com/`
+- Privacy policy: `https://moduseoul.com/privacy.html`
+- Terms of service: `https://moduseoul.com/terms.html`
+- Authorized domains: `moduseoul.com` and `qiefmpxiiercqfazigjv.supabase.co`
   (Google rejects the bare `supabase.co`, a shared public suffix)
 
 While the app is in "Testing", only listed test users can sign in. Publish it
@@ -58,8 +58,8 @@ Authentication → Sign In / Providers → Google: paste the OAuth **client ID**
 
 Authentication → URL Configuration:
 
-- Site URL: `https://another-seoul.com/`
-- Redirect URLs: `https://another-seoul.com/**` (and `https://hyojae-c.github.io/**`
+- Site URL: `https://moduseoul.com/`
+- Redirect URLs: `https://moduseoul.com/**` (and `https://hyojae-c.github.io/**`
   during the move, plus `http://localhost:5173/**` for development)
 
 Also keep **Allow anonymous sign-ins** on: guests link Google to their account.
@@ -75,7 +75,7 @@ your account.
 `VITE_GOOGLE_CLIENT_ID` in `.env` (the same public web client ID) turns on
 Google's sign-in button (Google Identity Services). The browser gets an ID
 token from Google and hands it to Supabase (`signInWithIdToken` /
-`linkIdentity`), so Google's screen names `another-seoul.com` instead of the
+`linkIdentity`), so Google's screen names `moduseoul.com` instead of the
 Supabase project address, and the player stays on the page. It needs
-`https://another-seoul.com` in the client's Authorized JavaScript origins. If
+`https://moduseoul.com` in the client's Authorized JavaScript origins. If
 the script can't load, the game falls back to the redirect flow above.
