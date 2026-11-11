@@ -32,6 +32,7 @@ export const BK_TEXT = {
   hanjiHow: { en: 'Hanji is paper made from mulberry bark: strong, soft and see-through when lit. Pick the paper colour and the pattern cut into it.', ko: '한지는 닥나무 껍질로 만든 종이예요. 질기고 부드러우며 불을 켜면 은은하게 비쳐요. 종이 색과 무늬를 골라요.', ja: '韓紙は楮の皮から作る紙。丈夫でやわらかく、灯すとほのかに透けます。紙の色と模様を選んで。', zh: '韩纸用楮树皮制成，结实柔软，点灯后透出柔光。选纸的颜色和花纹。' },
   pickColor: { en: 'Colour', ko: '색', ja: '色', zh: '颜色' },
   pickShape: { en: 'Pattern', ko: '모양', ja: '模様', zh: '样式' },
+  master: { en: 'Craftsman', ko: '장인', ja: '職人', zh: '工匠' },
   make: { en: 'Make it · 🪙 {n}', ko: '만들기 · 🪙 {n}', ja: '作る · 🪙 {n}', zh: '制作 · 🪙 {n}' },
   have: { en: 'You have 🪙 {n}', ko: '보유 🪙 {n}', ja: '所持 🪙 {n}', zh: '持有 🪙 {n}' },
   poor: { en: 'Not enough money: it costs 🪙 {n}.', ko: '돈이 부족해요. 🪙 {n}이 필요해요.', ja: 'お金が足りません。🪙 {n} 必要です。', zh: '钱不够，需要 🪙 {n}。' },
