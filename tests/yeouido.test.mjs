@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fishById, chanceAt, parkOf, rollCatch, PARK_FISH, TIER_SHARE } from '../src/core/fishing.js';
+import { fishById, chanceAt, parkOf, PARK_FISH, PARK_MOVED, TIER_SHARE, FishPity } from '../src/core/fishing.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
@@ -123,18 +123,22 @@ test('the Information Center stands in front of its building', () => {
   assert.ok(STAMPS.some((s) => s.id === 'yeouido' && Array.isArray(s.place.at) && !s.place.room), 'a stamp in the park, on the street');
 });
 
-test('the blobfish is Yeouido\'s legend, and only bites there', () => {
+test('Yeouido Han River Park is a no-fishing area; the blobfish went to Banpo with the rest of its kinds', () => {
+  const park = map.landmarks.find((l) => l.type === 'hanpark');
+  assert.ok(!park.layout.fishing?.length && !park.layout.fishBuy, 'no fishing spots, no fish buyer');
+  assert.ok(!PARK_FISH['yeouido-hangang'], 'no fish of its own');
+  assert.equal(parkOf('blobfish').name.en, 'Banpo');
   const blob = fishById('blobfish');
-  assert.ok(blob.released);
-  for (const id of ['sea-cucumber', 'sunfish', 'anglerfish']) assert.ok(fishById(id).released, `${id} opens with the park`);
-  assert.equal(parkOf('blobfish').name.en, 'Yeouido');
-  assert.ok(Math.abs(chanceAt(blob, 'yeouido-hangang') - TIER_SHARE[5]) < 1e-9);
-  for (const park of Object.keys(PARK_FISH).filter((p) => p !== 'yeouido-hangang')) assert.equal(chanceAt(blob, park), 0, park);
-  for (const id of ['whale', 'giant-squid', 'manta']) assert.equal(chanceAt(fishById(id), 'yeouido-hangang'), 0, id);
-  let seed = 11;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let i = 0; i < 50000; i++) {
-    const id = rollCatch(rand, i % 2 === 0, 'yeouido-hangang').id;
-    assert.ok(!['whale', 'giant-squid', 'manta'].includes(id), id);
-  }
+  assert.ok(Math.abs(chanceAt(blob, 'banpo-hangang') - TIER_SHARE[5]) < 1e-9);
+  for (const p of Object.keys(PARK_FISH).filter((q) => q !== 'banpo-hangang')) assert.equal(chanceAt(blob, p), 0, p);
+  for (const id of ['puffer', 'moray', 'dolphin', 'anglerfish', 'dugong']) assert.equal(parkOf(id).name.en, 'Banpo', id);
+  assert.equal(PARK_MOVED['yeouido-hangang'], 'banpo-hangang');
+  // A player's bites towards the blobfish carry over to Banpo.
+  const store = { s: { 'mk.fishpity': JSON.stringify({ 'yeouido-hangang': 40, 'banpo-jamwon-hangang': 12 }) }, getItem(k) { return this.s[k] ?? null; }, setItem(k, v) { this.s[k] = v; } };
+  const pity = new FishPity(store);
+  assert.equal(pity.count('banpo-hangang'), 40);
+  assert.equal(pity.count('jamwon-hangang'), 12);
+  assert.deepEqual(JSON.parse(store.s['mk.fishpity']), { 'banpo-hangang': 40, 'jamwon-hangang': 12 }, 'saved under the new ids');
+  const yd = stores.find((s) => s.id === 'yeouido-hangang');
+  assert.ok(/no fishing/i.test(yd.tagline.en) && /낚시 금지/.test(yd.tagline.ko), 'its tagline says so');
 });

@@ -31,8 +31,7 @@ import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './cor
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
-import { styleNameTag, EmblemCollection } from './core/emblems.js';
-import { EmblemUI, RENAME_COST } from './ui/emblem-ui.js';
+import { styleNameTag, EmblemCollection, RENAME_COST } from './core/emblems.js';
 import { showInfoHint, INFO_TEXT, AREA } from './ui/info-labels.js'; // (the guides' panel, ui/info-ui.js, loads when asked)
 import { SaunaLog } from './core/sauna.js';
 import { DayPasses, DAY_PASS_TEXT } from './core/day-pass.js';
@@ -50,7 +49,7 @@ import { TRAILS } from './data/trails.js';
 import { TrailLog, trailProgress, trailsWith } from './core/trails.js';
 import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
-import { PalaceShow, FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-show.js';
+import { FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-fan.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
@@ -68,7 +67,7 @@ import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS,
 import { CoasterFx } from './ui/coaster-fx.js';
 import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock, nearTrailGate } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
-import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
+import { LOCK_LABELS } from './ui/love-lock-labels.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { BukchonUI, BK_TEXT, craftEntry, craftWear, CRAFT } from './ui/bukchon-ui.js';
@@ -133,7 +132,7 @@ import { buskingGroundY } from './core/busking-layout.js';
 import { parseRaceMsg } from './core/pool.js';
 import { POOL_TEXT } from './data/pool-text.js';
 import { DOME_TEXT, DOME_SHOUT, chantPhrase } from './data/dome-text.js';
-import { BL } from './ui/basketball-text.js';
+import { BASKET_OPEN } from './ui/basketball-labels.js';
 import { Skater, PARK_SPEED } from './core/skatepark.js';
 import { dayKey } from './core/daily.js';
 import { initInstall } from './ui/install-ui.js';
@@ -160,7 +159,8 @@ import { BEAUTY_SHOPS, BEAUTY_ICON, isClinic } from './core/beauty.js';
 import { KpopRoom } from './ui/kpop-room.js';
 import { parseKpop } from './data/kpop.js';
 import { parseFilm } from './data/films.js';
-import { FishingUI, FishMarketUI, FishBookUI, trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
+import { trophy, TROPHY_RARITY, catchBubble, showMs } from './ui/fishing-ui.js';
+const fishPanels = () => import('./ui/fishing-panels.js'); // (the rod, market and book panels: on first use)
 import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
@@ -169,7 +169,7 @@ import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/invento
 import { closetKind, closetColor } from './core/closet.js';
 import { RETIRED } from './data/wearables.js';
 import { SEATS, seatPosition } from './core/bikes.js';
-import { MapView, DISTRICT_NAME } from './ui/map-view.js';
+import { DISTRICT_NAME } from './ui/district-names.js';
 import { Music, Sfx } from './core/music.js';
 import { MotionSound, honkKind, honkMsg, parseHonk, hearGain } from './core/motion-sound.js';
 import { SoundFiles } from './core/sound-files.js';
@@ -195,8 +195,8 @@ import { createRoomCache } from './game/room-cache.js';
 import { createGpuJanitor } from './game/gpu-janitor.js';
 import { createDining, DINE_TEXT } from './game/dining.js';
 import { createPicnic, hasMat, MAT_TEXT } from './game/picnic.js';
+import { SNOW_LABELS } from './game/snow-labels.js';
 import { lawnFrom } from './core/picnic-mat.js';
-import { createSnowman, SNOW_TEXT } from './game/snowman.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
@@ -205,7 +205,6 @@ import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, 
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
-import { createBumper } from './game/bumper.js';
 import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
 import { createBasketball } from './game/basketball.js';
@@ -215,7 +214,6 @@ import { createParkTickets } from './game/park-tickets.js';
 import { createMirrorMaze } from './game/mirror-maze.js';
 import { createRideThrill, THRILL_RIDES } from './game/ride-thrill.js';
 import { createSkate } from './game/skate.js';
-import { createTaxi } from './game/taxi.js';
 import { createRoomTips } from './game/tips.js';
 import { parseTaxi } from './core/taxi-share.js';
 import { createDecor } from './game/decor.js';
@@ -233,7 +231,7 @@ import { createHanbokRental } from './game/hanbok-rental.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
-import { createSkyFlight } from './game/sky-flight.js';
+import { parseSkyMsg } from './game/sky-codes.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
 import { createNamsanWalk } from './game/namsan-walk.js';
@@ -812,7 +810,11 @@ const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) =
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
 // (core/palace-show.js, core/bukcheong.js).
-const palaceShow = palaceAt ? new PalaceShow(scene, {
+// The performers download when you come within PALACE_LOAD m of the palace
+// (loadPalaceShow, from the frame loop).
+let palaceShow = null, palaceShowAsked = false;
+const PALACE_LOAD = 700;
+const makePalaceShow = (PalaceShow) => new PalaceShow(scene, {
   fan: fanAt,
   procession: palaceAt, // the king's walk round the east lawn (ROYAL_ROUTE)
   visitors: palaceAt, // visitors about the courts (PALACE_VISITORS)
@@ -821,7 +823,18 @@ const palaceShow = palaceAt ? new PalaceShow(scene, {
   guards: [[palaceAt[0] - 6.5, palaceAt[1] + 6, 0], [palaceAt[0] + 6.5, palaceAt[1] + 6, 0]], // either side of Gwanghwamun's arches
   inside: () => !!enclosures.find((e) => e.id === 'gyeongbokgung')?.inside, // (from outside the wall the fan dance and the king are not drawn)
   layer: $('labels'),
-}) : null;
+});
+function loadPalaceShow(p) {
+  if (!palaceAt || palaceShowAsked || Math.hypot(p.x - palaceAt[0], p.z - palaceAt[1]) > PALACE_LOAD) return;
+  palaceShowAsked = true;
+  import('./core/palace-show.js').then(({ PalaceShow }) => {
+    const before = new Set(scene.children);
+    palaceShow = makePalaceShow(PalaceShow);
+    if (palaceShow.rope?.rig) farCull.add(palaceShow.rope.rig);
+    const added = { children: scene.children.filter((o) => !before.has(o)) };
+    for (const e of enclosures) e.collect([added]); // (its visitors inside the wall hide from outside it, as at start)
+  }, () => { palaceShowAsked = false; });
+}
 // A pungmul troupe of 19 on Olympic Park's Peace Plaza, between the Peace
 // Gate and the skate park (core/pungmul.js). No fence: you can walk in among them.
 const olympicAt = (region.districts || []).find((d) => d.id === 'olympic-park')?.offset;
@@ -1558,7 +1571,10 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
       if (parseTaxi(e)) {
         const m = parseTaxi(e);
-        if (m.to === myId && !safety.isBlocked(id, others.nameOf(id)) && taxi.onMsg(id, others.nameOf(id) || '?', m)) action = STALE;
+        const heard = (tx) => { if (tx.onMsg(id, others.nameOf(id) || '?', m)) action = STALE; };
+        if (m.to !== myId || safety.isBlocked(id, others.nameOf(id))) return;
+        if (taxi.loaded) heard(taxi);
+        else if (m.verb === 'ask') taxi.ready().then(heard, () => {}); // (a friend's first offer brings the taxi code)
         return;
       }
       if (parseTarot(e)) {
@@ -1753,7 +1769,9 @@ const { closeWheel } = emoteWheel;
 
 // Text chat, chat codes, friends and friend chat. (game/chat.js)
 // Sky view for operators (game/sky-flight.js): chat codes, flying costumes.
-const sky = createSkyFlight({
+// Downloaded at an operator's first code, or when a flyer comes into view or
+// offers to carry us; until then nobody is flying.
+const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlight }) => createSkyFlight({
   get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
   get shop() { return shop; }, get busy() { return !!(riding || seated || ride || cable); },
   // (on an open-air park's lawn, Another Land's island or a Han River park:
@@ -1766,6 +1784,14 @@ const sky = createSkyFlight({
     ...zones.items.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
     ...storefronts.items.map((i) => ({ name: localName(i.store.name, getLanguage()) || '', x: i.door.x, z: i.door.z, icon: '🏬' })),
   ],
+})), {
+  busy: false, gone: () => {}, state: () => {}, update: () => {},
+  remote: (q) => { if (q.target?.fl || q.target?.cr) sky.ready().catch(() => {}); },
+  onMsg: (id, e) => {
+    if (!parseSkyMsg(e)) return false;
+    sky.ready().then((s) => s.onMsg(id, e), () => {});
+    return true;
+  },
 });
 const chat = createChat({
   sky,
@@ -2183,7 +2209,7 @@ const BOOK_DESC = { en: 'Hold it and sit down to read.', ko: '손에 들고 앉�
 const DRINK_DESC = { en: '{n} sips left.', ko: '{n}모금 남았어요.', ja: '残り{n}口。', zh: '还剩{n}口。' };
 function describeEntry(e) {
   if (e.kind === 'umbrella') return { emoji: '☂️', name: L(UMB_NAME), desc: L(UMB_DESC), canHold: false };
-  if (e.kind === 'duckmold') return { emoji: '🦆', name: L(SNOW_TEXT.moldName), desc: L(SNOW_TEXT.moldDesc), canHold: true };
+  if (e.kind === 'duckmold') return { emoji: '🦆', name: L(SNOW_LABELS.moldName), desc: L(SNOW_LABELS.moldDesc), canHold: true };
   if (e.kind === 'book') {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
@@ -3288,8 +3314,9 @@ const frisbee = createFrisbee({
   get sfx() { return sfx; }, toStreet: (x, z) => peerSpot(x, z), petName, clearAction: () => { action = STALE; },
   handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
 });
-// Snowballs and snowmen once the snow has settled (src/game/snowman.js).
-const snowman = createSnowman({
+// Snowballs and snowmen once the snow has settled (src/game/snowman.js,
+// downloaded when it starts snowing: see the idle tick below).
+const snowman = lazyPanel(() => import('./game/snowman.js').then(({ createSnowman }) => createSnowman({
   get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
   get shop() { return shop; }, get scene() { return scene; },
   get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
@@ -3297,11 +3324,15 @@ const snowman = createSnowman({
   get heldKind() { return heldKind(); },
   snowNews: () => { // the snow has settled: a snow duck maker for the bag (once), and the news
     const got = !bag.has('duckmold') && held?.kind !== 'duckmold' && bag.add({ kind: 'duckmold' });
-    shop.toast(L(got ? SNOW_TEXT.snowNewsGot : SNOW_TEXT.snowNews));
+    shop.toast(L(got ? SNOW_LABELS.snowNewsGot : SNOW_LABELS.snowNews));
   },
   send: (m) => net.sendEmote(m), blocked: (x, z, r) => collision.blocked(x, z, r),
   bubble: (text) => showBubble(myLabel, $('labels'), text), sfx: () => sfx,
   clearAction: () => { action = STALE; }, resendState: () => { lastSent = null; },
+})), {
+  tick: () => { if (snowUniform.value > 0 || weather.kind === 'snow') snowman.ready().catch(() => {}); },
+  action: () => null, more: () => [], onMsg: () => {},
+  sync: null, pose: null, speed: 1, holdSync: null, grabSync: null, duckSync: null, holding: null, busy: null,
 });
 // Station vending machines: cheap drinks that work like a coffee to go.
 function buyVending(dr) {
@@ -3436,7 +3467,8 @@ function clearGuide() {
 }
 $('guide-x').onclick = clearGuide;
 
-const mapView = new MapView({
+// The full map (ui/map-view.js) downloads the first time it is opened.
+const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).MapView({
   root: $('map-panel'),
   map,
   seoul: await seoulPromise,
@@ -3464,7 +3496,7 @@ const mapView = new MapView({
     setGuide(g);
   },
   onTaxi: (dest) => rideTaxi(dest),
-});
+}), { hide: () => {}, tick: () => {}, _guAt: undefined });
 
 // Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
 let minimap = null;
@@ -3477,8 +3509,9 @@ import('./game/minimap.js').then(({ createMinimap }) => {
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
 
-// Taxi rides to a picked place on the map. (game/taxi.js)
-const taxi = createTaxi({
+// Taxi rides to a picked place on the map. (game/taxi.js, downloaded at the
+// first ride, or when a friend asks to share theirs.)
+const taxi = lazyPanel(() => import('./game/taxi.js').then(({ createTaxi }) => createTaxi({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get interior() { return interior; }, get wallet() { return wallet; }, get riding() { return riding; }, $,
   get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
@@ -3493,8 +3526,12 @@ const taxi = createTaxi({
     }
     return best && localName(best.name, getLanguage());
   },
-});
-const { rideTaxi } = taxi;
+})), { inCab: () => false, skipFrame: () => false, onLeave: () => {} });
+const rideTaxi = (dest) => taxi.rideTaxi(dest);
+$('map-btn').onclick = () => {
+  const pos = myPlace();
+  mapView.show(pos.x, pos.z);
+};
 // Bukchon Hanok Village's gate (a step of the new player's trip, below), and
 // the cards that trip shows. "Back to the guide" puts you beside the square guide.
 const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
@@ -3932,7 +3969,7 @@ if (fishRefund?.coins) wallet.add(fishRefund.coins, undefined, { r: 'fish', once
 if (fishRefund?.had) setTimeout(() => shop.toast(t('fish.resetRefund', { coins: fishRefund.coins })), 4000);
 const fishBag = new FishBag();
 const fishDex = new FishDex(globalThis.localStorage, fishBag);
-const fishBookUi = new FishBookUI({ root: $('fishbook-panel'), dex: fishDex });
+const fishBookUi = lazyPanel(() => fishPanels().then(({ FishBookUI }) => new FishBookUI({ root: $('fishbook-panel'), dex: fishDex })));
 function refreshFishBookBtn() { $('fishbook-btn').querySelector('span').textContent = `${t('fish.book')} · ${fishDex.kinds}/${FISH.length} · 🐟 ${fishDex.total}`; }
 $('fishbook-btn').onclick = () => { $('notes-panel').hidden = true; fishBookUi.show(); };
 refreshFishBookBtn();
@@ -3969,7 +4006,7 @@ function updatePeerRigs(dt) {
 }
 let legendOn = false, legendTug = 0;
 const fishRig = createFishingRig({ sfx, waterY: () => hanPark()?.river?.position.y ?? -0.25 });
-const fishingUi = new FishingUI({
+const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new FishingUI({
   root: $('fish-panel'),
   bag: fishBag,
   dex: fishDex,
@@ -4013,7 +4050,7 @@ const fishingUi = new FishingUI({
   onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
-});
+})), { state: 'idle' });
 // Second-hand shops: sell clothes I bought back (core/resale.js), paid by
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
@@ -4104,7 +4141,7 @@ async function sellNow(id, it, rc) {
   if (!$('bag-panel').hidden) refreshItems();
   return msg;
 }
-const marketUi = new FishMarketUI({
+const marketUi = lazyPanel(() => fishPanels().then(({ FishMarketUI }) => new FishMarketUI({
   root: $('market-panel'),
   bag: fishBag,
   wallet,
@@ -4121,7 +4158,7 @@ const marketUi = new FishMarketUI({
     if (hanPark()?.fishBuy) return; // the park's stand has no clerk (DAILY MART's is across the lawn)
     clerk && say(clerk, $('labels'), ['싱싱하네요! 잘 팔았어요!', 'singsinghaneyo! jal parasseoyo!', t('fish.fresh')]);
   },
-});
+})));
 // The ramen machine takes a ramyeon pack (and an egg) from the bag, bought
 // at DAILY MART; the bowl is carried to a parasol table to eat.
 const ramenUi = lazyPanel(() => import('./ui/ramen-ui.js').then(({ RamenUI }) => new RamenUI({
@@ -4374,14 +4411,16 @@ const tarot = createTarot({
 });
 const { tarotUi, TAROT_TEXT, leaveTarotLine, tarotAction, tarotReader, TAROT_LINES, tarotTick } = tarot;
 // Bumper cars in Another Land: six a round, a waiting line. (game/bumper.js)
-const bumper = createBumper({
+// Downloaded the first time Another Land's rink is near (bumper.ready() in the
+// frame loop); until then it has no button and nothing to draw.
+const bumper = lazyPanel(() => import('./game/bumper.js').then(({ createBumper }) => createBumper({
   get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
   get me() { return me; }, get others() { return others; },
   get action() { return action; }, set action(v) { action = v; },
   get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
   $, STALE, myId, shop, sfx, wallet, input, moveRef, cam, sitDown, standUp, missionEvent: (...a) => missionEvent(...a),
   ridePass: () => rideTickets.covers('bumper'), useRideTicket: () => useRideTicket('bumper'),
-});
+})), { tick: () => {}, action: () => null, state: () => {}, onStandUp: () => {}, driving: false, inCar: false });
 // Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
 const basketball = createBasketball({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -4446,7 +4485,7 @@ const buskPlay = createBuskingPlay({
 const { stopBusking, buskTip, updateBuskMusic, buskerAct } = buskPlay;
 // Name tag studio: emblems and name colours (a place to spend coins).
 const emblems = new EmblemCollection();
-const emblemUi = new EmblemUI({
+const emblemUi = lazyPanel(() => import('./ui/emblem-ui.js').then(({ EmblemUI }) => new EmblemUI({
   root: $('emblem-panel'),
   owned: emblems,
   wallet,
@@ -4461,7 +4500,7 @@ const emblemUi = new EmblemUI({
     setLook(myLook);
     me.play('cheer');
   },
-});
+})));
 // Information Center, and route guides to the places it lists.
 function guideToPlace(to) {
   if (to.store) {
@@ -4724,13 +4763,13 @@ function loveLockStore() {
   if (!live && !lockBackend) lockBackend = new LocalLoveLocks(wallet);
   return lockBackend;
 }
-const loveLockUi = new LoveLockUI({
+const loveLockUi = lazyPanel(() => import('./ui/love-lock-ui.js').then(({ LoveLockUI }) => new LoveLockUI({
   root: $('love-lock-panel'), store: loveLockStore, wallet, name: () => nickname, toast: (m) => shop.toast(m),
   onHung: () => { refreshWallet(); me.play('cheer'); },
-});
+})), { busy: false });
 const loveLockActs = () => [
-  { key: 'lovelock-hang', label: '🔒 ' + L(LOCK_TEXT.hang), run: () => loveLockUi.show('write') },
-  { key: 'lovelock-read', label: '💌 ' + L(LOCK_TEXT.read), run: () => loveLockUi.show('list') },
+  { key: 'lovelock-hang', label: '🔒 ' + L(LOCK_LABELS.hang), run: () => loveLockUi.show('write') },
+  { key: 'lovelock-read', label: '💌 ' + L(LOCK_LABELS.read), run: () => loveLockUi.show('list') },
 ];
 // Cheonggyecheon's lantern festival (core/lanterns.js): float a wish lantern
 // from the walkway in the wish corner, read about the procession mural.
@@ -4851,7 +4890,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court, palaceShow?.rope?.rig], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -6440,7 +6479,7 @@ function updateAction(p, tSec) {
     else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
-    else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + BL('open'), run: () => basketUi.show() };
+    else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + L(BASKET_OPEN), run: () => basketUi.show() };
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
     else if (guideAct(p)) next = guideAct(p);
@@ -6891,6 +6930,7 @@ renderer.setAnimationLoop((now) => {
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
+  if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
   updateSurgery(dt);
   updateHaircut(dt);
@@ -7154,7 +7194,7 @@ renderer.setAnimationLoop((now) => {
   liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); namsanWalk.update(p); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); namsanWalk.update(p); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

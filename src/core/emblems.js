@@ -118,3 +118,6 @@ export function styleNameTag(tag, name, look = {}, opts = {}) {
   tag.append(n);
   tag.classList.toggle('dazzling', em?.tier === 'dazzling' || col?.tier === 'dazzling');
 }
+
+// What a name change costs after the free first one (ui/emblem-ui.js).
+export const RENAME_COST = 30000;

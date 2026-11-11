@@ -55,10 +55,11 @@ export function createScreenLayout(game) {
     if (hidden) $('settings-panel').hidden = true; // (see the clean screen at once)
   };
   eye.onclick = () => setHidden(!hidden, true);
-  // The map button moves from the tool row to beside the eye, where it stays
-  // when the rest is hidden (Android: out of the bottom bar too).
+  // Phones and tablets: the map button moves from the tool row to beside the
+  // eye (Android: out of the bottom bar too). PC keeps it in the tool row on
+  // the right (Yozi). Either way it stays when the rest is hidden.
   const corner = $('map-btn');
-  if (corner) { corner.classList.add('corner-map'); game.hud.append(corner); }
+  if (corner && game.isTouch) { corner.classList.add('corner-map'); game.hud.append(corner); }
   const mapBtn = $('minimap-btn');
   const setMinimap = (on) => {
     mapBtn?.setAttribute('aria-pressed', String(on));

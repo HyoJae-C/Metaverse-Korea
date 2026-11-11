@@ -175,13 +175,13 @@ export const STAMPS = [
   {
     // at the west end of Moonlight Square, in the park laid on the street (scripts/build-banpo.mjs prints the spot)
     id: 'banpo-jamwon', place: { at: [-1324.4, 914.6], ry: 1.9369 }, color: '#3a6fc9', shape: 'circle',
-    name: { ko: '반포·잠원 한강공원', en: 'Banpo-Jamwon Han River Park', ja: '盤浦・蚕院漢江公園', zh: '盘浦·蚕院汉江公园' },
+    name: { ko: '반포한강공원', en: 'Banpo Han River Park', ja: '盤浦漢江公園', zh: '盘浦汉江公园' },
     gu: { ko: '서초구', en: 'Seocho-gu', ja: '瑞草区', zh: '瑞草区' },
     // Banpo Bridge on its piers, with arcs of water falling from its side
     icon: '<path d="M50 92 h100 M50 100 h100 M66 100 v32 M100 100 v32 M134 100 v32"/><path d="M62 92 q-6 -18 -12 -6 M86 92 q-6 -22 -14 -8 M110 92 q-6 -22 -14 -8 M134 92 q-6 -18 -12 -6"/><path d="M48 138 q13 -7 26 0 q13 7 26 0 q13 -7 26 0 q13 7 26 0"/>',
   },
   {
-    // in the fishing corner towards the 63 tower, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
+    // in the corner towards the 63 tower, in the park laid on the street (scripts/build-yeouido.mjs prints the spot)
     id: 'yeouido', place: { at: [-2491.3, 655.1], ry: 0.7679 }, color: '#1f8fa3', shape: 'circle',
     name: { ko: '여의도 한강공원', en: 'Yeouido Han River Park', ja: '汝矣島漢江公園', zh: '汝矣岛汉江公园' },
     gu: { ko: '영등포구', en: 'Yeongdeungpo-gu', ja: '永登浦区', zh: '永登浦区' },

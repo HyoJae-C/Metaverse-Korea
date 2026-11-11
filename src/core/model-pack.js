@@ -433,7 +433,7 @@ const SWIM_POSE = { tilt: 1.35, lift: 0.74, back: 0.5, rate: 6.5, head: 0.5 };
 const TUBE_SIT = { y: 0.3, z: 0.05 };
 // Sitting in a bumper car (core/bumper-rink.js): the character's root is the
 // car's middle, so slide back onto the cushion, against the seat back.
-const BUMPER_SIT = { y: PACK.sit.y, z: PACK.sit.z - 0.19 };
+const BUMPER_SIT = { y: -0.02, z: PACK.sit.z - 0.19 }; // (tuned to the car's low seat)
 function faceExtras(id, headMesh, headBone, look) {
   const A = PACK.atlas;
   const facts = headFacts(id, headMesh.geometry); // the model's own head
@@ -706,10 +706,14 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let current = null, currentKey = '';
   const to = (key, fade = 0.2) => {
     if (key === currentKey) return;
-    const next = action(key) || action('idle');
-    currentKey = key;
+    // A clip still loading: play idle for now and try the real one again
+    // next frame (otherwise someone seated before the clips arrive stands
+    // through the seat for good).
+    const want = action(key);
+    const next = want || action('idle');
+    currentKey = want ? key : '';
     if (!next) return;
-    if (next === current) { next.reset(); return; }
+    if (next === current) { if (want) next.reset(); return; }
     next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(fade).play();
     current?.fadeOut(fade);
     current = next;
@@ -781,6 +785,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (seated) key = 'ride';
       else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
       else if (sit && activity === 'matsit' && action('floor')) key = 'floor'; // sitting on a picnic mat
+      else if (sit) key = 'sit'; // on a chair, bench or pew
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
@@ -826,7 +831,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         stroke = S.pose(strideT, strideAmp);
       }
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
-      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
+      // (Sitting on a chair, by the sit flag or the 'sit' activity (NPCs): up
+      // onto the seat and forward so the hips are over the spot.)
+      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : key === 'sit' ? PACK.sit : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (studio) {
