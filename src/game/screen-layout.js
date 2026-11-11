@@ -2,7 +2,8 @@
 // - Hide buttons: the top chips, tool buttons, emotes, minimap, chat and
 //   quest bars go away for a clean view; the joystick, the action button and
 //   whatever is open stay, so you can still walk and go into shops. The eye
-//   button in the top-left corner (or the U key) hides and shows them.
+//   button in the top-left corner (or the U key) hides and shows them; the
+//   map button sits beside it and stays.
 // - Minimap: shown while you are being guided somewhere (its route line is
 //   what the guide arrow lacks), or always with a switch here.
 // - Joystick (phones): "Fixed" (bottom left, as before), "Under your thumb"
@@ -54,6 +55,10 @@ export function createScreenLayout(game) {
     if (hidden) $('settings-panel').hidden = true; // (see the clean screen at once)
   };
   eye.onclick = () => setHidden(!hidden, true);
+  // The map button moves from the tool row to beside the eye, where it stays
+  // when the rest is hidden (Android: out of the bottom bar too).
+  const corner = $('map-btn');
+  if (corner) { corner.classList.add('corner-map'); game.hud.append(corner); }
   const mapBtn = $('minimap-btn');
   const setMinimap = (on) => {
     mapBtn?.setAttribute('aria-pressed', String(on));
