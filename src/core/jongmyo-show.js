@@ -81,7 +81,7 @@ export class JongmyoShow {
       for (const s of [-1, 1]) {
         const o = makeNpc(layer, s < 0 ? '👴 할아버지' : '👴 어르신', { ...randomLook(), hair: 'ash', dye: 'silver', model: 'basic', tee: null, pants: 'charcoal', shirt: 'cream' });
         if (s > 0 && k === 0) o.ch.addProp('head', gatHat());
-        o.ch.root.position.set(x + ox + s * 0.95, 0, z + oz);
+        o.ch.root.position.set(x + ox + s * 0.95, 0.04, z + oz); // (the stools are 0.42 m, chairs 0.38)
         o.ch.root.rotation.y = -s * Math.PI / 2; // facing the board
         o.home = { x: x + ox + s * 0.95, z: z + oz, ry: -s * Math.PI / 2 };
         scene.add(o.ch.root);

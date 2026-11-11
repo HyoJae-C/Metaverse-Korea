@@ -96,7 +96,7 @@ export class BosingakShow {
     for (const o of this.people) {
       o.ch.root.visible = on;
       if (!on) continue;
-      o.ch.animate(dt, 0, true);
+      o.ch.animate(dt, 0); // (standing round the square)
       if (o.what === 'pose' && (o.cheerT = (o.cheerT ?? 3) - dt) <= 0) { o.cheerT = 6; o.ch.play('cheer'); } // a V for the photo
     }
     // The keeper: out during a New Year's ringing.
@@ -105,7 +105,7 @@ export class BosingakShow {
     const k = this.keeper, show = !!ringing && d < KEEPER_NEAR;
     k.ch.root.visible = show;
     if (!show) { k.tag.style.display = 'none'; if (k.bubble) k.bubble.style.display = 'none'; return; }
-    k.ch.animate(dt, 0, true);
+    k.ch.animate(dt, 0);
     placeLabels?.(k, camera, w, h);
   }
   hideLabels() {
