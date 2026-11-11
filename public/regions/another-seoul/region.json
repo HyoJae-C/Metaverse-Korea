@@ -206,7 +206,7 @@
     {
       "k": "primary",
       "w": 14,
-      "p": [[-1417.4, 444.2], [-1408.2, 527.2], [-1378.4, 581.9], [-1371.2, 607.7], [-1359.8, 687.6], [-1353.5, 709.1]],
+      "p": [[-1417.4, 444.2], [-1408.2, 527.2], [-1378.4, 581.9], [-1384.9, 624.8], [-1377.4, 677.3], [-1353.5, 709.1]],
       "n": { "ko": "반포대교 가는 길", "en": "To Banpo Bridge", "ja": "盤浦大橋へ", "zh": "往盘浦大桥" },
       "note": "From the south end of Itaewon's Noksapyeong-daero through Yongsan Park, onto Banpo Bridge's line to the north end of Jamsu Bridge (the low deck under it), which crosses to Banpo-Jamwon Han River Park. On the real roads at 1/4 (OpenStreetMap, scripts/build-banpo.mjs)."
     },

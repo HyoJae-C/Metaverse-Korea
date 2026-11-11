@@ -177,7 +177,21 @@ function build() {
   // (The river is the region's water, scripts/han-bank.mjs: its blocker has
   // a gap for Jamsu Bridge.)
   const blockers = [];
+  // Banpo Bridge overhead, the whole bridge on its real line (core/banpo-bridge.js),
+  // with no piers in the park at its foot.
+  const b0 = loc(BANPO_BRIDGE[0]), rel = ([x, z]) => [r1(x - b0[0]), r1(z - b0[1])];
+  const banpo = { type: 'banpobridge', x: b0[0], z: b0[1], pts: BANPO_BRIDGE.map((q) => rel(loc(q))), w: BRIDGE_W + 8, wRamp: BRIDGE_W, top: 9, ramp: [80, 55],
+    clear: [[...rel(at(BRIDGE, 6)), 18]] };
+  // Dongjak Bridge downstream (west), only to look at for now: the real line
+  // of its middle (Line 4's viaduct, OpenStreetMap), 40 m wide at 1/4, with
+  // its arches over the river and the subway down the middle.
+  const d0 = loc(DONGJAK[0]), drel = ([x, z]) => [r1(x - d0[0]), r1(z - d0[1])];
+  const dLen = Math.hypot(DONGJAK[1][0] - DONGJAK[0][0], DONGJAK[1][1] - DONGJAK[0][1]);
+  const dongjak = { type: 'banpobridge', name: 'dongjak', x: d0[0], z: d0[1], pts: DONGJAK.map((q) => drel(loc(q))), w: 10, top: 6, ramp: [30, 30], pipes: false, mid: true,
+    arches: [[0.3, 0.45], [0.45, 0.6], [0.6, 0.75]].map(([a, b]) => [r1(a * dLen), r1(b * dLen)]) };
   const landmarks = [
+    banpo,
+    dongjak,
     { type: 'jamsu', x: r1((north[0] + south[0]) / 2), z: r1((north[1] + south[1]) / 2), ry: +ALONG_V.toFixed(4), len: r1(Math.hypot(south[0] - north[0], south[1] - north[1])), w: BRIDGE_W },
     { type: 'arch', ...xz(at(BRIDGE, BANK + 2)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'BANPO-JAMWON HAN RIVER PARK', sub: '반포·잠원 한강공원', color: '#2f6fb0' },
     { type: 'sign', ...xz(at(PX(36), 17)), ry: FACE_RIVER, // (across the path from Jamwon's lawn)
@@ -227,12 +241,23 @@ const SPOTS = {
 // The link road from Itaewon: down Noksapyeong-daero's real line (from where
 // it crosses Itaewon's Seobinggo-ro, through Yongsan Park, past the
 // Seobinggo-ro junction) onto Banpo Bridge, to Jamsu Bridge's north end.
-const SEOBINGGO_Z = 445; // Itaewon's Seobinggo-ro (world z)
-const NOKSAPYEONG = [[-1420.6, 408.7], [-1408.2, 527.2], [-1378.4, 581.9], BANPO_BRIDGE[0], BANPO_BRIDGE[1]]; // (OpenStreetMap)
-export function linkRoad() {
-  const [a, b] = NOKSAPYEONG;
-  const x = r1(a[0] + ((b[0] - a[0]) * (SEOBINGGO_Z - a[1])) / (b[1] - a[1]));
-  return [[x, SEOBINGGO_Z], ...NOKSAPYEONG.slice(1), JAMSU_NORTH];
+// Banpo Bridge's north ramp comes down onto Noksapyeong-daero at its first
+// point, so the road to Jamsu Bridge keeps beside it (west, SIDE metres from
+// its middle) and goes in under the deck once it is high. West: Itaewon's
+// houses stand close on the east.
+const SIDE = 16;
+// Dongjak Bridge: Line 4's viaduct over the river, north to south (OpenStreetMap).
+const DONGJAK = [[-1599, 795.5], [-1666, 1115.7]];
+function besideRamp(s) {
+  const [a, b] = BANPO_BRIDGE, L = Math.hypot(b[0] - a[0], b[1] - a[1]), d = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+  return [r1(a[0] + d[0] * s - d[1] * SIDE), r1(a[1] + d[1] * s + d[0] * SIDE)];
+}
+// The link road from Itaewon (its north part is Itaewon's, kept as it is):
+// up to the last point before Banpo Bridge's ramp, then beside the ramp to
+// Jamsu Bridge's north end.
+export function linkRoad(old) {
+  const k = old.findIndex(([x, z]) => z >= BANPO_BRIDGE[0][1] - 1);
+  return [...old.slice(0, k), besideRamp(15), besideRamp(68), JAMSU_NORTH];
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
@@ -244,8 +269,9 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const local = loc(BANPO_FOOT), ll = toLatLon(...BANPO_FOOT);
   const anchor = { place: 'South end of Banpo Bridge on the Han River bank (Jamsu Bridge lands here)', lat: +ll.lat.toFixed(6), lon: +ll.lon.toFixed(6), local };
   sub(/("id": "banpo-jamwon",\s*"map": "districts\/banpo-jamwon.json",\s*"offset": \[\s*)-?[\d.]+,\s*-?[\d.]+(\s*\],\s*"anchor": )\{[^\n]*\}/, `$1${OFFSET[0]},\n        ${OFFSET[1]}$2${JSON.stringify(anchor).replace(/,/g, ', ').replace(/":/g, '": ').replace(/^\{/, '{ ').replace(/\}$/, ' }')}`);
-  sub(/("p": )\[\[[^\n]*\]\](,\s*"n": \{ "ko": "반포대교 가는 길")/, `$1${JSON.stringify(linkRoad()).replace(/,/g, ', ')}$2`);
-  sub(/"From Itaewon's Seobinggo-ro [^"]*north end of Jamsu Bridge[^"]*"/, `"From Itaewon's Seobinggo-ro down Noksapyeong-daero, through Yongsan Park, onto Banpo Bridge's line to the north end of Jamsu Bridge (the low deck under it), which crosses to Banpo-Jamwon Han River Park. On the real roads at 1/4 (OpenStreetMap, scripts/build-banpo.mjs)."`);
+  const linkRe = /("p": )(\[\[[^\n]*\]\])(,\s*"n": \{ "ko": "반포대교 가는 길")/;
+  const old = JSON.parse(text.match(linkRe)[2]);
+  sub(linkRe, `$1${JSON.stringify(linkRoad(old)).replace(/,/g, ', ')}$3`);
   writeFileSync(path.join(R, 'region.json'), text);
   // stores.json is hand-formatted, so only the "at" of each place is rewritten.
   let stores = readFileSync(path.join(R, 'stores.json'), 'utf8');
@@ -264,7 +290,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const stampFile = path.join(root, 'src', 'data', 'stamps.js');
   const stamps = readFileSync(stampFile, 'utf8').replace(/(id: 'banpo-jamwon', place: \{ at: )\[[^\]]*\], ry: -?[\d.]+/, `$1[${r1(sx + ox)}, ${r1(sz + oz)}], ry: ${(ALONG_V + Math.PI / 2).toFixed(4)}`);
   writeFileSync(stampFile, stamps);
-  const [jx, jz] = [map.landmarks[0].x + ox, map.landmarks[0].z + oz];
-  console.log(`offset ${OFFSET}; Jamsu Bridge middle (core/rainbow-fountain.js BRIDGE): { x: ${r1(jx)}, z: ${r1(jz)} }, ${map.landmarks[0].len} m long`);
+  const jamsu = map.landmarks.find((l) => l.type === 'jamsu'), [jx, jz] = [jamsu.x + ox, jamsu.z + oz];
+  console.log(`offset ${OFFSET}; Jamsu Bridge middle (core/rainbow-fountain.js BRIDGE): { x: ${r1(jx)}, z: ${r1(jz)} }, ${jamsu.len} m long`);
   console.log(`banpo-jamwon: ${map.buildings.length} buildings`);
 }
