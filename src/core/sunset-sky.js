@@ -36,15 +36,16 @@ export const SUNSETS = [
     cover: 0.62, stretch: 4.5, ripple: 0, lit: 0xff9a70, dark: 0x3a2c5c, rays: 0, disc: 1, sun: 0xfff2c6, glint: 0.9,
     water: 0xd9867e, light: 0xff8a4a,
   },
-  { // golden, with big clouds lit from behind and beams of light
-    id: 'golden', haze: 0xffc865, mid: 0xffb057, top: 0x6f98d6, glow: 0xffd27a,
-    cover: 0.62, stretch: 1.4, ripple: 0, lit: 0xffe0a0, dark: 0xb0684a, rays: 0.8, disc: 1.2, sun: 0xfffbe6, glint: 1.1,
-    water: 0xe8b07a, light: 0xffb45a,
+  { // golden, with big clouds lit from behind and soft beams (a sun low and
+    // deep orange, so it reads as evening, not morning: Yozi)
+    id: 'golden', haze: 0xffa04a, mid: 0xffa95a, top: 0x5f84c4, glow: 0xff9a3c,
+    cover: 0.62, stretch: 1.4, ripple: 0, lit: 0xffc477, dark: 0x8e4f3c, rays: 1, disc: 1.2, sun: 0xffe2a0, glint: 1.1,
+    water: 0xe8a070, light: 0xffa04e,
   },
-  { // pink: rows of pink and lavender clouds over the whole sky
-    id: 'pink', haze: 0xff5f6e, mid: 0xf06fa0, top: 0x6a5cb0, glow: 0xff7a8e,
-    cover: 0.85, stretch: 2.2, ripple: 1, lit: 0xffa6d2, dark: 0x7a52aa, rays: 0, disc: 1, sun: 0xffe8d0, glint: 0.8,
-    water: 0xd98aa6, light: 0xff8a8a,
+  { // the first one (#633), kept by Yozi: a clear warm haze, purple overhead
+    id: 'warm', haze: 0xf29a72, mid: 0xdb8f76, top: 0x3f4590, glow: 0xff8a3d,
+    cover: 0, stretch: 1, ripple: 0, lit: 0xffffff, dark: 0xffffff, rays: 0, disc: 1, sun: 0xfff2c6, glint: 0.9,
+    water: 0xe08f80, light: 0xff8a4a,
   },
   { // the red sun: a clear orange sky, a big sun and its path on the water
     id: 'red', haze: 0xe8481c, mid: 0xf2701e, top: 0xf2a03a, glow: 0xff5a14,
@@ -134,7 +135,7 @@ void main() {
   if (uRays > 0.0) { // beams fanning out from the sun
     vec3 r = normalize(cross(uSun, vec3(0.0, 1.0, 0.0))), u = cross(r, uSun);
     float ang = atan(dot(d, u), dot(d, r));
-    float beam = pow(0.5 + 0.5 * sin(ang * 23.0 + sin(ang * 7.0) * 2.0), 5.0);
+    float beam = pow(0.5 + 0.5 * sin(ang * 7.0 + sin(ang * 3.0) * 1.5), 2.5) * (0.4 + 0.6 * noise(vec2(ang * 4.0, 1.0))); // a few broad beams
     col += uGlow * beam * pow(max(c, 0.0), 5.0) * (0.35 + cl * 0.4) * uRays * smoothstep(-0.02, 0.05, h);
   }
   float edge = 1.0 - 0.0003 * uDisc * uDisc;
