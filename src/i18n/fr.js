@@ -237,6 +237,7 @@ export const FR = {
   'eyeShape.puppy': 'Yeux de chiot',
   'beauty.nose': 'Nez',
   'beauty.jaw': 'Mâchoire',
+  'nose.big': 'Grand nez',
   'nose.high': 'Nez droit',
   'nose.small': 'Petit nez',
   'jaw.vline': 'Mâchoire en V',

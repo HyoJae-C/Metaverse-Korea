@@ -237,6 +237,7 @@ export const KO = {
   "eyeShape.puppy": "강아지 눈",
   "beauty.nose": "코",
   "beauty.jaw": "턱선",
+  "nose.big": "큰 코",
   "nose.high": "오똑한 코",
   "nose.small": "작은 코",
   "jaw.vline": "V라인 턱",

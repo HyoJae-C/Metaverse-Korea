@@ -237,6 +237,7 @@ export const ID = {
   'eyeShape.puppy': 'Mata anak anjing',
   'beauty.nose': 'Hidung',
   'beauty.jaw': 'Garis rahang',
+  'nose.big': 'Hidung besar',
   'nose.high': 'Hidung mancung',
   'nose.small': 'Hidung kecil',
   'jaw.vline': 'Rahang V',

@@ -236,6 +236,7 @@ export const ES = {
   'eyeShape.puppy': "Ojos de cachorro",
   'beauty.nose': 'Nariz',
   'beauty.jaw': 'Mandíbula',
+  'nose.big': 'Nariz grande',
   'nose.high': 'Nariz alta',
   'nose.small': 'Nariz pequeña',
   'jaw.vline': 'Mandíbula en V',

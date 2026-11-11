@@ -237,6 +237,7 @@ export const HI = {
   'eyeShape.puppy': 'पिल्ले जैसी आँखें',
   'beauty.nose': 'नाक',
   'beauty.jaw': 'जबड़े की रेखा',
+  'nose.big': 'बड़ी नाक',
   'nose.high': 'ऊँची नाक',
   'nose.small': 'छोटी नाक',
   'jaw.vline': 'V-लाइन जबड़ा',

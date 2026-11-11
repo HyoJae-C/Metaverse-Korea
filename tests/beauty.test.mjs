@@ -12,7 +12,7 @@ test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
   assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', nose: 'high' }), 125000);
-  assert.equal(beautyCost(CLINIC, { nose: 'high' }, { nose: 'small' }), 40000);
+  assert.equal(beautyCost(CLINIC, { nose: 'big' }, { nose: 'small' }), 40000);
   assert.equal(beautyCost(CLINIC, { nose: 'small' }, { nose: null }), 0);
   assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50000);
   assert.equal(beautyCost(CLINIC2, {}, { jaw: 'square' }), 50000);

@@ -237,6 +237,7 @@ export const VI = {
   'eyeShape.puppy': 'Mắt cún',
   'beauty.nose': 'Mũi',
   'beauty.jaw': 'Đường hàm',
+  'nose.big': 'Mũi to',
   'nose.high': 'Mũi cao',
   'nose.small': 'Mũi nhỏ',
   'jaw.vline': 'Hàm V-line',

@@ -237,6 +237,7 @@ export const JA = {
   "eyeShape.puppy": "子犬目",
   "beauty.nose": "鼻",
   "beauty.jaw": "フェイスライン",
+  "nose.big": "大きい鼻",
   "nose.high": "高い鼻",
   "nose.small": "小さい鼻",
   "jaw.vline": "Vライン",

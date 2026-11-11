@@ -237,6 +237,7 @@ export const TH = {
   'eyeShape.puppy': 'ตาลูกหมา',
   'beauty.nose': 'จมูก',
   'beauty.jaw': 'กรามหน้า',
+  'nose.big': 'จมูกใหญ่',
   'nose.high': 'จมูกโด่ง',
   'nose.small': 'จมูกเล็ก',
   'jaw.vline': 'หน้าวีไลน์',

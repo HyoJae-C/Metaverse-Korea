@@ -237,6 +237,7 @@ export const AR = {
   'eyeShape.puppy': 'عيون الجرو',
   'beauty.nose': 'الأنف',
   'beauty.jaw': 'خط الفك',
+  'nose.big': 'أنف كبير',
   'nose.high': 'أنف مرتفع',
   'nose.small': 'أنف صغير',
   'jaw.vline': 'فك على شكل V',

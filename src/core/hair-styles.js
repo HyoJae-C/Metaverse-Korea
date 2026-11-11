@@ -403,5 +403,6 @@ export function jawMove(shape, x, y, z, t) {
 // bridge up between the eyes; sz: how far it stands out; lift: the tip up).
 export const NOSE_TRANSFORM = {
   high: { sx: 0.78, sy: 1.05, up: 2.3, top: 0.7, sz: 1.45, lift: 0.15 },
+  big: { sx: 1.3, sy: 1.25, sz: 1.25, lift: 0 },
   small: { sx: 0.62, sy: 0.62, sz: 0.55, lift: 0.1 },
 };

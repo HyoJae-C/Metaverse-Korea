@@ -237,6 +237,7 @@ export const ZH = {
   "eyeShape.puppy": "狗狗眼",
   "beauty.nose": "鼻子",
   "beauty.jaw": "下颌线",
+  "nose.big": "大鼻子",
   "nose.high": "高鼻梁",
   "nose.small": "小鼻子",
   "jaw.vline": "V脸",

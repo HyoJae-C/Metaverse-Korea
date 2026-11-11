@@ -236,6 +236,7 @@ export const EN = {
   "eyeShape.puppy": "Puppy eyes",
   "beauty.nose": "Nose",
   "beauty.jaw": "Jaw line",
+  "nose.big": "Big nose",
   "nose.high": "High nose",
   "nose.small": "Small nose",
   "jaw.vline": "V-line jaw",
