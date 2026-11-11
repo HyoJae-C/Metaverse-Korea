@@ -4,7 +4,8 @@
 // (on the water's own material), and the sun's light swung round to come
 // from there.
 //
-// Each sunset has one of four looks (Yozi 2026-11-11, from photos), the same
+// Each sunset has one of four looks (Yozi 2026-11-11, from photos: purple,
+// yellow, pink and orange), the same
 // for everyone that day: SUNSETS below, chosen by sunsetLook().
 //
 // The sun goes down due west, a little south: from Mangwon Han River Park
@@ -31,25 +32,27 @@ const RISE = 6, SET = 18; // (show-clock.js SKY_SUN)
 // sun its colour;
 // glint: how bright its path on the river; light: the sun's light.
 export const SUNSETS = [
-  { // over the city: deep blue overhead, pink-purple clouds, an orange band low down
-    id: 'city', haze: 0xffa24a, mid: 0xb4628e, top: 0x26357a, glow: 0xff7a2e,
+  { // purple: deep blue overhead, pink-purple clouds, an orange band low down
+    id: 'purple', haze: 0xffa24a, mid: 0xb4628e, top: 0x26357a, glow: 0xff7a2e,
     cover: 0.62, stretch: 4.5, ripple: 0, lit: 0xff9a70, dark: 0x3a2c5c, rays: 0, disc: 1, sun: 0xfff2c6, glint: 0.9,
     water: 0xd9867e, light: 0xff8a4a,
   },
-  { // golden, with big clouds lit from behind and soft beams (a sun low and
-    // deep orange, so it reads as evening, not morning: Yozi)
-    id: 'golden', haze: 0xffa04a, mid: 0xffa95a, top: 0x5f84c4, glow: 0xff9a3c,
-    cover: 0.62, stretch: 1.4, ripple: 0, lit: 0xffc477, dark: 0x8e4f3c, rays: 1, disc: 1.2, sun: 0xffe2a0, glint: 1.1,
+  { // yellow: golden, with big clouds lit from behind (no beams: they looked
+    // like a sunrise, Yozi)
+    id: 'yellow', haze: 0xffa04a, mid: 0xffa95a, top: 0x5f84c4, glow: 0xff9a3c,
+    cover: 0.62, stretch: 1.4, ripple: 0, lit: 0xffc477, dark: 0x8e4f3c, rays: 0, disc: 1.2, sun: 0xffe2a0, glint: 1.1,
     water: 0xe8a070, light: 0xffa04e,
   },
-  { // the first one (#633), kept by Yozi: a clear warm haze, purple overhead
-    id: 'warm', haze: 0xf29a72, mid: 0xdb8f76, top: 0x3f4590, glow: 0xff8a3d,
+  { // pink: the first one (#633), kept by Yozi: a clear warm haze, purple overhead
+    id: 'pink', haze: 0xf29a72, mid: 0xdb8f76, top: 0x3f4590, glow: 0xff8a3d,
     cover: 0, stretch: 1, ripple: 0, lit: 0xffffff, dark: 0xffffff, rays: 0, disc: 1, sun: 0xfff2c6, glint: 0.9,
     water: 0xe08f80, light: 0xff8a4a,
   },
-  { // the red sun: a clear orange sky, a big sun and its path on the water
-    id: 'red', haze: 0xe8481c, mid: 0xf2701e, top: 0xf2a03a, glow: 0xff5a14,
-    cover: 0, stretch: 1, ripple: 0, lit: 0xffffff, dark: 0xffffff, rays: 0, disc: 1.7, sun: 0xffe08a, glint: 1.6,
+  { // orange: the red sun, an orange sky in bands, deep red low down to yellow-orange
+    // high up, with thin flat streaks across it (more bands: Yozi), a big sun
+    // and its path on the water
+    id: 'orange', haze: 0xd63a1e, mid: 0xf06a20, top: 0xf8b850, glow: 0xff5a14,
+    cover: 0.4, stretch: 16, ripple: 0, lit: 0xffa04a, dark: 0xd8482a, rays: 0, disc: 1.7, sun: 0xffe08a, glint: 1.6,
     water: 0xe0703a, light: 0xff7a3a,
   },
 ];

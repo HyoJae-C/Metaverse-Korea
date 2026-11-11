@@ -5,6 +5,10 @@ import * as THREE from 'three';
 import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
 const REFRESH_MS = 15 * 1000; // the clock chip and the next 30-minute weather slot
+const SETTINGS_KEY = 'weatherSettings', SETTINGS_WAIT_MS = 12 * 1000; // (main.js asks the server ~4 s after start)
+const savedSettings = () => {
+  try { const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); return raw ? weatherSettings(raw) : null; } catch { return null; }
+};
 
 // Rain and snow slow you down a little outdoors: on foot and by bike.
 // An umbrella keeps the rain off, so walking is only a touch slower.
@@ -79,7 +83,13 @@ export class WeatherSystem {
     Object.assign(this, { scene, sun, hemi, ambient, region, onUpdate });
     this.dayLight = { hemi: hemi.color.clone(), ground: hemi.groundColor.clone(), ambient: ambient.color.clone(), sun: sun.color.clone() };
     this.kind = 'clear';
-    this.settings = null; // the operators' season / held weather (setSettings)
+    // The operators' season / held weather (setSettings). Until the server's
+    // comes (a few seconds after start) the last one seen here stands, or a
+    // clear sky on a first visit: rolling with the default odds first showed
+    // snow, then rain a second later when the season came (Yozi 2026-11-11).
+    this.settings = savedSettings();
+    this.ready = !!this.settings;
+    setTimeout(() => { if (!this.ready) { this.ready = true; this.depthAt = 0; this.refresh(); } }, SETTINGS_WAIT_MS);
     this.temp = null;
     this.sky = new THREE.Color();
     this.sunset = createSunsetSky(scene); // the low sun, its glow and its light on the river
@@ -92,7 +102,7 @@ export class WeatherSystem {
   }
 
   refresh() {
-    const kind = this.forced || (this.showClear ? 'clear' : weatherAt(Date.now(), this.settings));
+    const kind = this.forced || (this.showClear || !this.ready ? 'clear' : weatherAt(Date.now(), this.settings));
     if (kind !== this.kind || !this.started) this.setKind(kind);
     this.started = true;
     this.onUpdate?.(this.status());
@@ -110,6 +120,8 @@ export class WeatherSystem {
   // The operators' setting changed (supabase/023_weather.sql).
   setSettings(raw) {
     this.settings = raw ? weatherSettings(raw) : null;
+    this.ready = true;
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(raw || null)); } catch { /* private mode */ }
     this.depthAt = 0; // work the snow out again
     this.refresh();
   }
@@ -139,6 +151,7 @@ export class WeatherSystem {
   // How deep the snow is now, from the shared weather of the last few
   // minutes (worked out once a second).
   snowNow() {
+    if (!this.ready) return 0;
     const now = Date.now();
     if (now - (this.depthAt || 0) >= 1000) {
       this.depthAt = now;
