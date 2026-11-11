@@ -50,7 +50,7 @@ test('things you could only carry around are not sold: those shops are coming so
   // Workshops stay open for their activity even if their souvenirs aren't sold.
   assert.ok(!comingSoon(byId('sonmat-kimchi')));
   // So do Bukchon's craft studios (a knot charm, a hanji lantern with the teacher).
-  for (const id of ['maeum-knot', 'saekji-paper']) assert.ok(!comingSoon(byId(id)), id);
+  for (const id of ['maeum-knot', 'saekji-paper', 'gahoe-silver']) assert.ok(!comingSoon(byId(id)), id);
   // A café's bag of beans isn't a drink.
   const roast = byId('warehouse-roasters');
   assert.ok(itemSoon(roast, roast.products.find((p) => p.id === 'beans')));
