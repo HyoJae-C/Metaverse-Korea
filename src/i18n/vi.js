@@ -178,6 +178,7 @@ export const VI = {
   'beauty.smallOff': 'Giữ nguyên',
   'beauty.smallOn': 'Nhỏ hơn',
   'beauty.own': 'Của tôi',
+  'beauty.blush': 'Má hồng',
   'beauty.cancel': 'Hủy',
   'beauty.save': 'Lưu',
   'beauty.pay': 'Lưu · 🪙 {coins}',

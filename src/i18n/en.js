@@ -177,6 +177,7 @@ export const EN = {
   "beauty.smallOff": "As is",
   "beauty.smallOn": "Smaller",
   "beauty.own": "My own",
+  "beauty.blush": "Blush",
   "beauty.cancel": "Cancel",
   "beauty.save": "Save",
   "beauty.pay": "Save · 🪙 {coins}",

@@ -178,6 +178,7 @@ export const KO = {
   "beauty.smallOff": "그대로",
   "beauty.smallOn": "작은 얼굴",
   "beauty.own": "원래대로",
+  "beauty.blush": "블러셔",
   "beauty.cancel": "취소",
   "beauty.save": "저장",
   "beauty.pay": "저장 · 🪙 {coins}",

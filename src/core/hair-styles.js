@@ -350,6 +350,23 @@ export const EYE_TRANSFORM = {
   puppy: { sx: 1.2, sy: 1.3, tilt: -0.22, dz: 0.015 },
 };
 
+// Blush: a soft round patch on each cheek (head-mesh units), turned to
+// follow the face round, a little see-through so the skin shows.
+export function buildBlush(color, cheeks) {
+  const g = new THREE.Group();
+  g.name = 'blush';
+  const m = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false });
+  for (const at of cheeks) {
+    const c = new THREE.Mesh(sphere(1, 16, 8), m);
+    c.scale.set(0.11, 0.075, 0.02);
+    c.position.copy(at);
+    c.position.z += 0.005;
+    c.rotation.y = Math.sign(at.x) * 0.45;
+    g.add(c);
+  }
+  return g;
+}
+
 // Petal Lip tints: a soft upper and lower lip, a little wider than the
 // model's own small mouth so the colour reads from the street.
 export function buildLips(color, at) {

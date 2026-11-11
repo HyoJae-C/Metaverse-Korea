@@ -166,7 +166,7 @@ const fishPanels = () => import('./ui/fishing-panels.js'); // (the rod, market a
 import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
-import { lipstickEntry } from './core/lipstick.js';
+import { isStick, stickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
@@ -2156,7 +2156,7 @@ let held = (() => {
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
     if (h?.kind === 'balloon') return restoreBalloon(h); // (Another Land's clown; gone once its air is out)
-    if (h?.kind === 'lipstick') return lipstickEntry(h);
+    if (isStick(h?.kind)) return stickEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
   } catch { return null; }
@@ -2165,15 +2165,15 @@ let held = (() => {
 let rodOut = false;
 const rodSkins = new RodSkins();
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : balloonKind(held) || held?.kind || null);
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : isStick(held?.kind) ? held.kind + ':' + held.c : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
   $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : h?.kind === 'lipstick' ? '💄' : '☕';
-  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : h?.kind === 'lipstick' ? lipstick.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : isStick(h?.kind) ? lipstick.icon(h.kind) : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : isStick(h?.kind) ? lipstick.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -2185,7 +2185,7 @@ function drink() {
     return;
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
-  if (held.kind === 'lipstick') { setHeld(lipstick.apply(held)); return; }
+  if (isStick(held.kind)) { setHeld(lipstick.apply(held)); return; }
   if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
@@ -2240,7 +2240,7 @@ function describeEntry(e) {
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
-  if (e.kind === 'lipstick') return lipstick.describe(e);
+  if (isStick(e.kind)) return lipstick.describe(e);
   if (e.kind === 'perfume') {
     const pf = perfumes.get(e.p);
     return { emoji: '🧴', name: pf ? localName(pf.product.name, getLanguage()) : e.name, desc: fmt(L(PERFUME_TEXT.desc), { style: L(STYLES[pf?.style] || STYLES.simple), n: e.sips }), canHold: true };
@@ -2287,10 +2287,10 @@ const bagUi = new BagUI({
   onDrop: (i) => bag.take(i),
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
-    useLabel: (e) => (e.kind === 'lipstick' ? '💄 ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
+    useLabel: (e) => (isStick(e.kind) ? lipstick.icon(e.kind) + ' ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
     onUse: (i) => {
       const e = bag.vanityList()[i];
-      if (e?.kind === 'lipstick') bag.setVanity(i, lipstick.apply(e));
+      if (isStick(e?.kind)) bag.setVanity(i, lipstick.apply(e));
       else if (e) { bagUi.hide(); sprayPerfume(i); }
     },
     onHold: (i) => {
@@ -5870,7 +5870,7 @@ const beautyUi = new BeautyUI({
     return true;
   },
   onCancel: () => { setLook(myLook); endBeautyCam(); },
-  onBuyStick: (shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(shade, coins),
+  onBuyStick: (kind, shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(kind, shade, coins),
 });
 // Beauty shops: mirror close-up, haircut, surgery (src/game/beauty.js).
 const beauty = createBeauty({

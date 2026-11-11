@@ -178,6 +178,7 @@ export const ZH = {
   "beauty.smallOff": "保持原样",
   "beauty.smallOn": "小脸",
   "beauty.own": "原样",
+  "beauty.blush": "腮红",
   "beauty.cancel": "取消",
   "beauty.save": "保存",
   "beauty.pay": "保存 · 🪙 {coins}",

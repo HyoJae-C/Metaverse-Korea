@@ -8,17 +8,17 @@
 //   { kind: 'umbrella' }
 //   { kind: 'duckmold' } (the snow duck maker, given when it first snows)
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
-//   { kind: 'lipstick', c: '<lip shade>', sips: 1-5 (uses left) } (core/lipstick.js)
+//   { kind: 'lipstick' | 'blush', c: '<shade>', sips: 1-5 (uses left) } (core/lipstick.js)
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
 
-import { lipstickEntry } from './lipstick.js';
+import { isStick, stickEntry } from './lipstick.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
 export const MAX_CAP = 60;
 // Perfume and lipstick live in the wardrobe, not in the bag's slots: kept
 // apart in `vanity` (up to VANITY_MAX), saved with the bag.
-export const COSMETICS = ['perfume', 'lipstick'];
+export const COSMETICS = ['perfume', 'lipstick', 'blush'];
 export const VANITY_MAX = 60;
 export const isCosmetic = (e) => COSMETICS.includes(e?.kind);
 
@@ -45,7 +45,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
     const sips = Math.min(maxSprays, e.sips | 0);
     return sips > 0 && typeof e.p === 'string' && isPerfume(e.p) ? { kind: 'perfume', p: e.p, sips, name: String(e.name || '').slice(0, 60) } : null;
   }
-  if (e.kind === 'lipstick') return lipstickEntry(e);
+  if (isStick(e.kind)) return stickEntry(e); // lipstick, blush
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);

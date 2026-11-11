@@ -178,6 +178,7 @@ export const HI = {
   'beauty.smallOff': 'जैसा है',
   'beauty.smallOn': 'छोटा',
   'beauty.own': 'मेरा अपना',
+  'beauty.blush': 'ब्लश',
   'beauty.cancel': 'रद्द करें',
   'beauty.save': 'सहेजें',
   'beauty.pay': 'सहेजें · 🪙 {coins}',

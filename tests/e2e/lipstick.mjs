@@ -60,9 +60,27 @@ try {
   const after = await page.evaluate(() => window.__mk.wallet.coins);
   if (before - after !== 11000) throw new Error(`paid ${before - after}`);
   if (await lip() !== 'mint') throw new Error('mirror changed the lips for good: ' + await lip());
+  // Blush, the second tab: ₩8,000 here, five uses, onto the cheeks.
+  await mk('openBeauty', 'lips');
+  await page.click('#beauty-panel .beauty-tab >> nth=1');
+  await page.click('#beauty-panel .beauty-opt.swatch >> nth=0');
+  const buyBlush = await page.textContent('#beauty-panel .order-actions .primary');
+  console.log('blush tab:', buyBlush);
+  if (!buyBlush.replace(/\D/g, '').endsWith('8000')) throw new Error('blush button: ' + buyBlush);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/mirror-blush.png` });
+  await page.click('#beauty-panel .order-actions .primary');
   await mk('bagTab', 'closet');
   console.log('after buying:', (await cells()).join(', '));
-  if ((await cells()).length !== 2) throw new Error('bought lipstick not in the wardrobe');
+  if ((await cells()).length !== 3) throw new Error('bought lipstick/blush not in the wardrobe');
+  await page.click('#bag-panel .bag-vanity-grid .bag-slot >> nth=2');
+  await page.click('#bag-panel .bag-actions .chip.on');
+  const blush = await page.evaluate(() => JSON.parse(localStorage.getItem('mk.look') || '{}').blush || null);
+  if (blush !== 'peach') throw new Error('blush: ' + blush);
+  await page.click('#bag-panel .sheet-x');
+  await mk('openBeauty', 'lips'); // (the mirror close-up, to see the cheeks)
+  await page.waitForTimeout(800);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/blush-on.png` });
+  await page.click('#beauty-panel .sheet-x');
   await page.reload();
   await page.waitForLoadState('load');
   if (await lip() !== 'mint') throw new Error('colour lost after reload');

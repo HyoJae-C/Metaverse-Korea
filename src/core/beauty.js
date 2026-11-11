@@ -4,7 +4,7 @@
 // "the model's own" (free to go back to). You pay once for each field you
 // change. Choices: a fixed list of ids (labels in i18n), or a palette.
 import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
-import { LIPSTICK_PRICE, lipPrice } from './lipstick.js';
+import { BLUSH_PRICE, LIPSTICK_PRICE, blushPrice, lipPrice } from './lipstick.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
@@ -22,7 +22,10 @@ export const CLINIC2 = [
 export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
 // Lip shops: trying colours on is free; you buy a lipstick (core/lipstick.js)
 // to really wear one, so the mirror charges nothing (stick).
-export const LIPS = [{ key: 'lip', palette: 'lip', price: LIPSTICK_PRICE, stick: true }];
+export const LIPS = [
+  { key: 'lip', palette: 'lip', price: LIPSTICK_PRICE, stick: 'lipstick' },
+  { key: 'blush', palette: 'blush', price: BLUSH_PRICE, stick: 'blush' },
+];
 export const MENUS = { salon: SALON, clinic: CLINIC, clinic2: CLINIC2, lens: LENS, lips: LIPS };
 export const BEAUTY_SHOPS = Object.keys(MENUS);
 // Every salon does the basic cuts; each one also has its own concept with a
@@ -36,7 +39,7 @@ export function salonStyles(store) {
 // palette to those shades); a salon its signature styles and the basics.
 export function menuFor(kind, store) {
   const fam = kind === 'lips' && LIP_FAMILIES[store?.lipFamily || 'mixed'];
-  if (fam) return MENUS.lips.map((o) => ({ ...o, only: fam, price: lipPrice(store) }));
+  if (fam) return MENUS.lips.map((o) => (o.key === 'lip' ? { ...o, only: fam, price: lipPrice(store) } : { ...o, price: blushPrice(store) }));
   if (kind === 'salon' && store?.hairStyles?.length) {
     return SALON.map((o) => (o.key === 'hairStyle' ? { ...o, choices: salonStyles(store), signature: store.hairStyles } : o));
   }

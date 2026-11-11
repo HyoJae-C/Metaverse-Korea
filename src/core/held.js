@@ -13,7 +13,7 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'blush'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
@@ -234,6 +234,17 @@ export function makeHeld(kind) {
     bullet.position.y = 0.087;
     bullet.rotation.z = 0.12;
     g.add(tube, collar, bullet);
+  } else if (kind === 'blush') {
+    // A blush compact ('blush:<shade>'): a round case with the lid open,
+    // the colour in the pan.
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.012, 16), mat('#f3e6ee'));
+    base.position.y = 0.006;
+    const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.004, 16), mat(shadeHex(sub, 'blush')));
+    pan.position.y = 0.014;
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.008, 16), mat('#d4a73a'));
+    lid.position.set(0, 0.04, -0.035);
+    lid.rotation.x = -1.3;
+    g.add(base, pan, lid);
   } else if (kind === 'perfume') {
     // A perfume bottle: square glass, pink juice, a gold collar and a cap.
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.035), new THREE.MeshLambertMaterial({ color: '#f4eef8', transparent: true, opacity: 0.6 }));
