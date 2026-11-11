@@ -4,7 +4,7 @@ import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '.
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
@@ -95,6 +95,16 @@ test('the drone show stamp: on the Ttukseom park lawn, only while the drones are
   assert.equal(STAND_TIMES.droneShow(at(5)), true);
   assert.equal(STAND_TIMES.droneShow(at(-30)), false);
   assert.equal(STAND_TIMES.droneShow(at(-2)), true); // lift-off counts
+});
+
+test('hello in Korean, English, Japanese, Chinese, then one more language each show in turn', () => {
+  useShow(show);
+  const seen = [0, 1, 2, 3, 4, 5, 6].map((k) => helloOf(DRONE(k)));
+  assert.equal(new Set(seen).size, 7);
+  assert.equal(helloOf(DRONE(7)), seen[0]);
+  const words = program(DRONE(3)).filter((s) => s.lines).map((s) => s.lines.join('/'));
+  const i = words.indexOf('안녕하세요');
+  assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
 });
 
 test('every show gets its own number', () => {

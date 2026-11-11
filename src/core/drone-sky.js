@@ -100,6 +100,12 @@ const ACT3 = [
   [['우리'], ['같이'], ['걸을까?']],
 ];
 
+// The last hello, one per show in turn (Yozi 2026-11-12): the game's other
+// languages. (Korean, English, Japanese and Chinese come every show; 你好
+// reads the same in Taiwan and Hong Kong.)
+const HELLOS = ['HOLA', 'BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا'];
+export const helloOf = (start) => HELLOS[((showNumber(start) % HELLOS.length) + HELLOS.length) % HELLOS.length];
+
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
   const c = f.centers[1], k = 1 + 0.16 * Math.max(0, Math.sin((t / period) * TAU)) ** 4;
@@ -156,11 +162,13 @@ const MOVES = {
 // to the end (20 minutes). Each picture or line stays about half as long as
 // in the first shows (2026-11-11), with more of them.
 const SHOW_LEN = 1200;
-function scenes(act3, nextText) {
+function scenes(act3, nextText, hello = HELLOS[0]) {
   const W = (lines, opts) => ({ lines, morph: 2, ...opts });
   const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape], ...opts });
   return [
-    // Opening (Yozi): the name, then hello in Korean first, then the world's
+    // Opening (Yozi): the name, then hello in Korean, English, Japanese and
+    // Chinese (most visitors to Korea), then in one more language, a
+    // different one each show
     [24, W(['MODU', 'SEOUL'], { color: [SKYBLUE, PINK], morph: 2.5 })],
     [18, W(['모 두', '서 울'], { color: [PINK, GOLD] })],
     [18, W([['K', ' O', ' R', ' E', ' A']], { color: WHITE, parts: [0, 0.8, 1.6, 2.4, 3.2] })],
@@ -169,7 +177,7 @@ function scenes(act3, nextText) {
     [10, W(['HELLO'], { color: [SKYBLUE, MINT] })],
     [10, W(['こんにちは'], { color: [PINK, VIOLET] })],
     [10, W(['你好'], { color: [RED, GOLD] })],
-    [10, W(['HOLA'], { color: [GOLD, RED] })],
+    [10, W([hello], { color: [GOLD, RED], hello: true })],
     [18, P('waver')],
     // Act 1: Seoul
     [30, P('fan')],
@@ -259,7 +267,7 @@ export function program(start) {
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText)),
+    ...timed(scenes(act3, nextText, helloOf(start))),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }
