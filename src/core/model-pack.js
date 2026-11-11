@@ -84,6 +84,7 @@ const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
 const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
 export const SIT_UNDER = PACK.sitUnder || [[0, 0.33]]; // (game/seat-fit.js)
+export const SIT_KNEE = PACK.sitKnee ?? 0.2;
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 const loader = new GLTFLoader();
 const cache = new Map();

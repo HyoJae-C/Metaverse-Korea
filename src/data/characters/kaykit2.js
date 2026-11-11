@@ -226,6 +226,7 @@ export default {
   // lowest point there above the feet], measured with the offset above
   // (__mk.bodyProfile(0.13), legs only). game/seat-fit.js rests this on the seat's real top.
   sitUnder: [[0, 0.33], [0.16, 0.29], [0.22, 0.31], [0.28, 0.35]],
+  sitKnee: 0.14, // just behind the shins: a seat's front edge goes here, so they hang over it
   // Added to the chair clip, which leaves the legs hanging straight: thighs
   // forward along the seat, knees bent so the shins go down.
   sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },

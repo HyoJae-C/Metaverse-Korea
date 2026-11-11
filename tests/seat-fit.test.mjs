@@ -2,7 +2,7 @@
 // rests on the top found under the hips and along the thighs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seatLift } from '../src/game/seat-fit.js';
+import { seatLift, seatAhead } from '../src/game/seat-fit.js';
 import kaykit from '../src/data/characters/kaykit2.js';
 
 const UNDER = [[0, 0.33], [0.16, 0.29], [0.28, 0.35]];
@@ -27,4 +27,11 @@ test('nothing under the hips: keep the seat as drawn', () => {
 test('the character pack gives the sitting underside from the spot forward', () => {
   const u = kaykit.sitUnder;
   assert.ok(Array.isArray(u) && u[0][0] === 0 && u.every(([d, y]) => d >= 0 && y > 0.2 && y < 0.45));
+});
+
+test('a deep step: sit forward so its front edge is just in front of the knees', () => {
+  near(seatAhead(0.3, 0.22), 0.08);
+  assert.equal(seatAhead(0.18, 0.22), 0); // a chair that already ends there
+  assert.equal(seatAhead(null, 0.22), 0);
+  near(seatAhead(0.6, 0.22), 0.2); // (never far off the seat's spot)
 });

@@ -79,7 +79,7 @@ import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
-import { preloadModel, SIT_UNDER } from './core/model-pack.js';
+import { preloadModel, SIT_UNDER, SIT_KNEE } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { createUsedRack } from './game/used-rack.js';
@@ -1025,7 +1025,7 @@ function findFreeSpot(x, z) {
 
 const myId = crypto.randomUUID?.() || String(Math.random()).slice(2);
 let me = createCharacter(myLook);
-const seatFit = createSeatFit({ under: SIT_UNDER }); // sitting on a seat's real top (game/seat-fit.js)
+const seatFit = createSeatFit({ under: SIT_UNDER, knee: SIT_KNEE }); // sitting on a seat's real top (game/seat-fit.js)
 scene.add(me.root);
 // Spawn on the street closest to the configured spawn point.
 let spawnDir = null;
@@ -2819,7 +2819,8 @@ function enterStore(item, walkIn = null) {
     built.audienceNpcs = built.stations.runway[0].audience.map((s) => {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden';
-      o.ch.root.position.set(s.x, seatFit(built.scene, s) ?? 0, s.z);
+      const f = seatFit(built.scene, s);
+      o.ch.root.position.set(f?.x ?? s.x, f?.y ?? 0, f?.z ?? s.z);
       o.ch.root.rotation.y = s.ry;
       o.ch.activity('sit'); // the sitting clip, legs along the seat
       built.scene.add(o.ch.root);
@@ -2846,7 +2847,8 @@ function enterStore(item, walkIn = null) {
     built.patronNpcs = built.stations.patrons.map((s) => {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
-      o.ch.root.position.set(s.x, (s.sit ? seatFit(built.scene, s) : null) ?? (s.y || 0), s.z); // (y: up in the stands at Seoul Another Dome)
+      const f = s.sit ? seatFit(built.scene, s) : null;
+      o.ch.root.position.set(f?.x ?? s.x, f?.y ?? (s.y || 0), f?.z ?? s.z); // (y: up in the stands at Seoul Another Dome)
       o.ch.root.rotation.y = s.ry;
       if (s.sit) o.ch.activity('sit');
       else if (s.act) o.ch.activity(s.act); // (the climbing gym's climbers, hanging on the wall)
@@ -6270,8 +6272,8 @@ function nearestSeat(p) {
 }
 function sitDown(seat) {
   seated = seat;
-  const fitY = globalThis.__noSeatFit ? null : seatFit(activeScene, seat, [me.root, ...[...others.players.values()].map((q) => q.ch.root)]); // on the seat's real top (game/seat-fit.js; __noSeatFit: the old fixed height, for comparing)
-  me.root.position.set(seat.x, fitY ?? (seat.y || 0), seat.z); // (y: low on the edge of a stream)
+  const fit = globalThis.__noSeatFit ? null : seatFit(activeScene, seat, [me.root, ...[...others.players.values()].map((q) => q.ch.root)]); // on the seat's real top (game/seat-fit.js; __noSeatFit: the old fixed height, for comparing)
+  me.root.position.set(fit?.x ?? seat.x, fit?.y ?? (seat.y || 0), fit?.z ?? seat.z); // (y: low on the edge of a stream)
   me.root.rotation.y = seat.ry;
   if (seat.bumper != null) cam.yaw = seat.ry + Math.PI; // a bumper car (a park ride): behind the wheel
   sendTimer = 0; // tell others right away
