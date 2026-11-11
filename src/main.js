@@ -3465,11 +3465,12 @@ const mapView = new MapView({
 
 // Minimap in the street's top-left corner; tap it for the full map. (game/minimap.js)
 let minimap = null;
+let minimapAlways = false; // Settings › Game settings (game/screen-layout.js); otherwise only while guided
 import('./game/minimap.js').then(({ createMinimap }) => {
   minimap = createMinimap({
     hud: $('hud'), map, open: () => $('map-btn').click(),
     getMe: () => ({ x: me.root.position.x, z: me.root.position.z, ry: me.root.rotation.y }),
-    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro,
+    getYaw: () => cam.yaw, getGuide: () => guide, getRoute: () => routePoly, visible: () => mode === 'street' && !subway.metro && (minimapAlways || !!guide),
   });
 }).catch(() => { /* no minimap: the Map button still works */ });
 
@@ -6790,7 +6791,7 @@ const firstPerson = createFirstPerson({
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
 // Settings › Game settings: hide the buttons, and where the joystick sits. (game/screen-layout.js)
 import('./game/screen-layout.js').then(({ createScreenLayout }) => {
-  createScreenLayout({ input, hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch });
+  createScreenLayout({ input, hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch, onMinimap: (on) => { minimapAlways = on; } });
 }).catch(() => { /* the default layout */ });
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
