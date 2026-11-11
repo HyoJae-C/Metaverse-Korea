@@ -57,9 +57,10 @@ test('the drones fly in front of the bridge, past where the duck boats go', () =
 
 test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
-  const steps = program(DRONE());
+  const R1 = [DRONE(), show.nextDroneShow(DRONE() + 1000)].find((t) => routineOf(t) === 1);
+  const steps = program(R1);
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
-  const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', ...(routineOf(DRONE()) === 1 ? ['먹고갈래?', '뚝섬에서'] : ['모두서울', '넌 소중해']), '사 랑', '행 복', '그리고 . . .', '너 ♡'];
+  const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
   for (const w of order) { const i = words.indexOf(w); assert.ok(i > at, w); at = i; }
   for (let i = 1; i < steps.length; i++) assert.ok(steps[i].at > steps[i - 1].at, 'steps in time order');
@@ -107,29 +108,35 @@ test('hello in Korean, English, Japanese, Chinese, then one more language each s
   assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
 });
 
-test('the turn of the fifth hello starts with French on 2026-11-12 08:10 KST', () => {
+test('the turn of the fifth hello starts with French on 2026-11-12 02:10 KST', () => {
   useShow(show);
-  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 22, 0));
-  assert.equal(new Date(first).toISOString(), '2026-11-11T23:10:00.000Z');
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0));
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
   assert.equal(helloOf(first), 'BONJOUR');
   assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
 });
 
-test('routines 1 and 2 take turns: only the two lines after 라면 differ, same length', () => {
+test('routines 1 and 2 take turns, routine 2 first; photo pause and end at the same time', () => {
   useShow(show);
-  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 22, 0)); // 2026-11-12 08:10 KST
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0)); // 2026-11-12 02:10 KST
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
   const second = show.nextDroneShow(first + 1000);
   const third = show.nextDroneShow(second + 1000);
-  assert.deepEqual([routineOf(first), routineOf(second), routineOf(third)], [1, 2, 1]);
+  assert.deepEqual([routineOf(first), routineOf(second), routineOf(third)], [2, 1, 2]);
   const after = (start) => {
     const words = program(start).filter((s) => s.lines).map((s) => s.lines.join('/'));
     const i = words.indexOf('라면');
     return words.slice(i, i + 3);
   };
-  assert.deepEqual(after(first), ['라면', '먹고갈래?', '뚝섬에서']);
-  assert.deepEqual(after(second), ['라면', '모두서울', '넌 소중해']);
-  const times = (start) => program(start).map((s) => s.at);
-  assert.deepEqual(times(first), times(second));
+  assert.deepEqual(after(second), ['라면', '먹고갈래?', '뚝섬에서']);
+  assert.deepEqual(after(first), ['라면', '모두서울', '넌 소중해']);
+  const photo = (start) => program(start).find((s) => s.photo).at;
+  assert.equal(photo(first), PHOTO_TIME[0]);
+  assert.equal(photo(second), PHOTO_TIME[0]);
+  const lastLine = (start) => program(start).at(-2).at;
+  assert.equal(lastLine(first), lastLine(second));
+  const shapes = program(first).filter((s) => s.shape).map((s) => s.shape);
+  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'kimchi', 'moonrabbit']) assert.ok(shapes.includes(n), n);
 });
 
 test('every show gets its own number', () => {

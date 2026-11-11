@@ -103,20 +103,16 @@ const ACT3 = [
 // The last hello, one per show in turn (Yozi 2026-11-12): the game's other
 // languages. (Korean, English, Japanese and Chinese come every show; 你好
 // reads the same in Taiwan and Hong Kong.) The turn starts with French at
-// the show of 2026-11-12 08:10 KST (number FIRST_HELLO_SHOW): the night
+// the show of 2026-11-12 02:10 KST (number FIRST_HELLO_SHOW): the night
 // before had Spanish.
 const HELLOS = ['BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا', 'HOLA'];
-const FIRST_HELLO_SHOW = 83075;
+const FIRST_HELLO_SHOW = 83074; // 2026-11-12 02:10 KST
 export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_SHOW) % HELLOS.length; return HELLOS[(k + HELLOS.length) % HELLOS.length]; };
 
-// Two routines take turns, one per show (Yozi 2026-11-12): routine 1 at the
-// show of FIRST_HELLO_SHOW, routine 2 at the next. They differ only in the
-// two lines after 라면, and both are the same length.
-const AFTER_RAMEN = [
-  [[6, ['먹고갈래?'], [GOLD, PINK]], [7, ['뚝섬에서'], [PINK, SKYBLUE]]],
-  [[6, ['모두서울'], [GOLD, PINK]], [7, ['넌 소중해'], [PINK, SKYBLUE]]],
-];
-export const routineOf = (start) => (((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 + 1;
+// Two routines take turns, one per show (Yozi 2026-11-12): routine 2 at the
+// show of FIRST_HELLO_SHOW, routine 1 at the next. Both have the photo
+// pause at the same time and the same length.
+export const routineOf = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 === 0 ? 2 : 1);
 
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
@@ -156,6 +152,11 @@ const MOVES = {
   },
   coaster: (p, t) => { if (p[2] !== 1) return; const x = p[0], dx = t * 1.15; p[0] += dx; p[1] += coasterY(x + dx) - coasterY(x); },
   hearts: beat(0.85),
+  taegukgi: (p, t) => { p[1] += Math.sin(p[0] * 0.35 - t * 2.2) * 0.45 * ((p[0] + 12) / 24); },
+  magpie: (p, t) => { if (p[2] === 1) turn(p, -3, -3.4, Math.max(0, Math.sin(t * 2.4)) ** 3 * 0.12); },
+  jindo: (p, t) => { if (p[2] === 1) turn(p, 3.6, -5.4, Math.sin(t * 9) * 0.22); },
+  cat: (p, t) => { if (p[2] === 1) turn(p, 3.4, -7.5, Math.sin(t * 1.6) * 0.16); },
+  moonrabbit: (p, t) => { if (p[2] === 1) turn(p, -0.6, 0.6, -(Math.max(0, Math.sin(t * 3)) ** 2) * 0.35); },
   lightstick: (p, t) => turn(p, [-7.6, 0, 7.6][p[2]], -9.6, Math.sin(t * 2.4 + p[2] * 1.2) * 0.12),
   star: (p, t) => { const a = t * 0.3, x = p[0]; p[0] = x * Math.cos(a); p[3] = x * Math.sin(a); },
   moon: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
@@ -191,6 +192,49 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [10, W(['你好'], { color: [RED, GOLD] })],
     [10, W([hello], { color: [GOLD, RED], hello: true })],
     [18, P('waver')],
+    ...(routine === 2 ? [
+    // Act 1: Korea
+    [30, P('taegukgi')],
+    [12, W(['대한민국'], { color: [RED, SKYBLUE] })],
+    [18, P('mugunghwa')],
+    [30, P('tiger')],
+    [8, W(['어흥!'], { color: [GOLD, RED] })],
+    [26, P('magpie')],
+    [10, W(['반가워!'], { color: [SKYBLUE, WHITE] })],
+    // Act 2: friends
+    [26, P('jindo')],
+    [8, W(['멍멍!'], { color: [GOLD, WHITE] })],
+    [26, P('cat')],
+    [8, W(['야옹~'], { color: [GOLD, PINK] })],
+    // Act 3: the taste of Seoul
+    [22, P('gimbap')],
+    [8, W(['김밥'], { color: [MINT, GOLD] })],
+    [22, P('kimchi')],
+    [8, W(['김치'], { color: [RED, GOLD] })],
+    [16, P('ramen')],
+    [6, W(['라면'], { color: [RED, GOLD] })],
+    // (Yozi)
+    [6, W(['모두서울'], { color: [GOLD, PINK] })],
+    [7, W(['넌 소중해'], { color: [PINK, SKYBLUE] })],
+    [12, W(['맛있다!'], { color: [GOLD, PINK] })],
+    // Act 4: a walk in Seoul
+    [32, P('palace')],
+    [12, W(['경복궁'], { color: [GOLD, RED] })],
+    [32, P('tower')],
+    [12, W(['남산'], { color: [MINT, SKYBLUE] })],
+    [18, P('bridge')],
+    [12, W(['한강'], { color: [SKYBLUE, MINT] })],
+    [22, P('anothertower')],
+    [14, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
+    [22, P('wheel')],
+    [22, P('coaster')],
+    [12, W(['모두랜드'], { color: [PINK, GOLD] })],
+    // Love
+    [20, P('heart')],
+    [14, W(['우리 함께'], { color: [PINK, GOLD] })],
+    [18, W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
+    [18, P('hearts')],
+    ] : [
     // Act 1: Seoul
     [30, P('fan')],
     [22, P('hanbok')],
@@ -218,7 +262,8 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [16, P('ramen')],
     // (Yozi)
     [6, W(['라면'], { color: [RED, GOLD] })],
-    ...AFTER_RAMEN[routine - 1].map(([d, lines, color]) => [d, W(lines, { color })]),
+    [6, W(['먹고갈래?'], { color: [GOLD, PINK] })],
+    [7, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
     [22, P('wheel')],
     [22, P('coaster')],
     [12, W(['모두랜드'], { color: [PINK, GOLD] })],
@@ -228,6 +273,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [15, W([['그리고', ' .', ' .', ' .']], { color: WHITE, parts: [0, 2, 4, 6] })],
     [18, W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
     [18, P('hearts')],
+    ]),
     // Photo time: 하나, 둘, 셋, 김치~ then the heart frame holds still
     [10, W(['사진 찍자!'], { color: [GOLD, PINK] })],
     [3, W(['하나'], { color: WHITE, morph: 1.2 })],
@@ -241,6 +287,25 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [14, W(act3[2], { color: [SKYBLUE, VIOLET] })],
     [18, P('lightstick')],
     [34, { wave: true, morph: 4 }],
+    ...(routine === 2 ? [
+    // The night sky
+    [18, P('moonrabbit')],
+    [8, W(['방아 쿵쿵'], { color: [GOLD, WHITE] })],
+    [14, P('star')],
+    [10, W(['별'], { color: GOLD })],
+    [10, W(['반짝반짝'], { color: [GOLD, WHITE] })],
+    [18, P('dipper')],
+    [10, W(['꿈'], { color: [VIOLET, PINK] })],
+    [15, P('shootingstar')],
+    [12, W(['소원 빌어'], { color: [VIOLET, GOLD] })],
+    [14, P('clover')],
+    [10, W(['행운'], { color: [MINT, GOLD] })],
+    [18, P('blossom')],
+    [17, P('rainbow')],
+    [24, P('firework')],
+    [18, W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
+    [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
+    ] : [
     // The night sky
     [14, P('star')],
     [10, W(['별'], { color: GOLD })],
@@ -258,6 +323,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [24, P('firework')],
     [18, W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
     [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
+    ]),
     // Finale
     [32, { burst: true, morph: 6 }],
     [12, W(['또 만나'], { color: [PINK, GOLD], morph: 3 })],
