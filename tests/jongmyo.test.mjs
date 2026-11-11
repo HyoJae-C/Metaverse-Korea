@@ -155,13 +155,17 @@ test('Sunra Silver Studio\'s pendants are worn: every metal and charm is a real 
   for (const s of stores) for (const p of s.products || []) if (p.item?.startsWith('acc-pendant')) assert.ok(WEARABLES[p.item], p.id);
 });
 
-test('the engraved pendants: 20 hanja words, each with its Hangul reading, no two alike', async () => {
+test('the engraved pendants: 22 hanja words (20 to make), each with its Hangul reading, no two alike', async () => {
   const { PENDANT_CHARMS } = await import('../src/data/appearance.js');
   const words = Object.values(PENDANT_CHARMS).filter((c) => c.hanja);
-  assert.equal(words.length, 20);
+  assert.equal(words.length, 22);
   for (const c of words) assert.equal([...c.hanja].length, [...c.letter].length, c.hanja);
-  assert.equal(new Set(words.map((c) => c.letter)).size, 20, 'no two read the same');
+  assert.equal(new Set(words.map((c) => c.letter)).size, 22, 'no two read the same');
+  // 안 and 건 left the studio's list (Yozi 2026-11-12) but stay wearable.
+  assert.deepEqual(words.filter((c) => c.retired).map((c) => c.letter), ['안', '건']);
   assert.equal(CRAFT.pendant.shapes.length, 25, '5 shapes and 20 words');
+  assert.ok(!CRAFT.pendant.shapes.some(([id]) => id === 'an' || id === 'geon'));
+  assert.ok(WEARABLES['acc-pendant-silver-an'] && WEARABLES['acc-pendant-gold-geon'], 'retired ones still wearable');
   assert.ok(WEARABLES['acc-pendant-silver-bok'] && WEARABLES['acc-pendant-gold-hwa'], 'old ids kept, new ones there');
 });
 

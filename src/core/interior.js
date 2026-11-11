@@ -1,6 +1,7 @@
 // Store interiors: a cosy room built from the store's data, with a display
 // for each product. Each interior is its own scene.
 import { listeningBar } from './listening-bar-model.js';
+import { buildCraftBench } from './craft-room.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
@@ -303,7 +304,7 @@ export function buildInterior(store) {
   const bz = -d / 2 + 1.3, sx = w / 2 - 0.8;
   const nBack = Math.max(2, Math.min(5, Math.floor((w - 2) / 3)));
   const spots = [];
-  for (let i = 0; i < nBack; i++) spots.push([(i - (nBack - 1) / 2) * 3, bz, 0]);
+  if (!store.craft) for (let i = 0; i < nBack; i++) spots.push([(i - (nBack - 1) / 2) * 3, bz, 0]); // (a craft studio: its bench and rack take the back, souvenirs go on the sides)
   for (const sz of [-d * 0.1, d * 0.18]) spots.push([-sx, sz, Math.PI / 2], [sx, sz, -Math.PI / 2]);
   // Club and bar: the drinks stand on the bar counter instead (see below).
   const counterSpots = store.category === 'club'
@@ -1908,6 +1909,8 @@ export function buildInterior(store) {
         { x: w / 2 - 1.45, z: -0.4, ry: Math.PI / 2 },
       ];
       for (const v of stations.visitors) block(v.x, v.z, 0.5, 0.5);
+    } else if (store.craft) {
+      clerk = buildCraftBench(store, ROOM, scene, block); // the craftsman at the work bench in the middle
     } else if (store.workshop === 'tarot') {
       clerk = stations.tarotReader; // no shop counter: the reader sits at her table
     } else if (!store.cinema) { // (the cinema's clerk is at its popcorn stand, below)

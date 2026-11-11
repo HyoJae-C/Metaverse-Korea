@@ -66,8 +66,8 @@ export const CRAFT = {
   pendant: {
     icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
     colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
-    shapes: Object.entries(PENDANT_CHARMS).map(([id, c]) => [id, c.name.ko, c.name, c.hanja ? [c.letter, c.hanja] : [c.emoji, c.name.ko]]),
-    grid: true, // 5 shapes and 20 words: a 5 × 5 grid: a grid of tiles, the Hangul large
+    shapes: Object.entries(PENDANT_CHARMS).filter(([, c]) => !c.retired).map(([id, c]) => [id, c.name.ko, c.name, c.hanja ? [c.letter, c.hanja] : [c.emoji, c.name.ko]]),
+    grid: true, // 5 shapes and 20 words: a 5 × 5 grid of tiles, the Hangul large: a grid of tiles, the Hangul large
     wear: (c, s) => `acc-pendant-${c}-${s}`,
   },
 };

@@ -135,7 +135,7 @@ export const PENDANT_CHARMS = {
   star: { emoji: '⭐', name: { en: 'Star', ko: '별', ja: '星', zh: '星星' } },
   butterfly: { emoji: '🦋', name: { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' } },
   jeong: wish('情', '정', 'warm heart', '情け', '情谊'),
-  an: wish('安', '안', 'peace', '安らぎ', '平安'),
+  an: { ...wish('安', '안', 'peace', '安らぎ', '平安'), retired: true }, // (off the studio's list, Yozi 2026-11-12; kept for those who made one)
   cheong: wish('淸', '청', 'clear', '清らか', '清澈'),
   jin: wish('眞', '진', 'truth', 'まこと', '真诚'),
   bok: wish('福', '복', 'luck', '福', '福气'),
@@ -153,7 +153,9 @@ export const PENDANT_CHARMS = {
   hwa: wish('華', '화', 'splendour', '華やか', '繁华'),
   gwang: wish('光', '광', 'light', '光', '光明'),
   gil: wish('吉', '길', 'good fortune', '吉', '吉祥'),
-  geon: wish('健', '건', 'health', '健やか', '健康'),
+  geon: { ...wish('健', '건', 'health', '健やか', '健康'), retired: true },
+  yeon: wish('緣', '연', 'bond', '縁', '缘分'), // (in their place, Yozi 2026-11-12)
+  yong: wish('勇', '용', 'courage', '勇気', '勇气'),
 };
 
 export const ACCESSORIES = {
