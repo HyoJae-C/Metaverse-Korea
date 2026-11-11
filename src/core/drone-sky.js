@@ -126,7 +126,7 @@ const MOVES = {
     let k = 1;
     if (p[2] === 1) { const s = Math.sin(t * 3) * 0.5 + 0.5; p[1] += s * 1.2; k = 0.35 + 0.65 * s; } // the spout
     p[1] += Math.sin(t * 1.4 + p[0] * 0.2) * 0.4;
-    p[0] = p[0] * 0.85 + 15 - (t / 40) * 30; // swims across, right to left
+    p[0] = p[0] * 0.85 + 15 - (t / 44) * 30; // swims across, right to left
     return k;
   },
   duck: (p, t) => { if (p[2] === 1) p[0] += Math.sin(t * 1.6 + p[1]) * 0.5; else p[1] += Math.sin(t * 1.5) * 0.3; },
@@ -172,23 +172,23 @@ function scenes(act3, nextText) {
     [10, W(['HOLA'], { color: [GOLD, RED] })],
     [18, P('waver')],
     // Act 1: Seoul
-    [24, P('fan')],
+    [30, P('fan')],
     [22, P('hanbok')],
     [18, P('janggu')],
     [18, P('mask')],
     [18, P('taekwondo')],
     [10, W(['태권!'], { color: [WHITE, SKYBLUE] })],
-    [26, P('palace')],
+    [32, P('palace')],
     [12, W(['경복궁'], { color: [GOLD, RED] })],
-    [26, P('tower')],
+    [32, P('tower')],
     [12, W(['남산'], { color: [MINT, SKYBLUE] })],
     [22, P('anothertower')],
     [18, P('mugunghwa')],
     [22, P('subway')],
     [14, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
     // Act 2: a Ttukseom night
-    [40, P('whale', { morph: 3 })],
-    [14, W(['뚝섬의', '전설'], { color: [SKYBLUE, WHITE] })],
+    [44, P('whale', { morph: 3 })],
+    [7, W(['뚝섬의', '전설'], { color: [SKYBLUE, WHITE] })],
     [16, P('duck')],
     [18, P('bike')],
     [18, P('bridge')],
@@ -197,9 +197,9 @@ function scenes(act3, nextText) {
     [10, W(['치맥'], { color: [GOLD, RED] })],
     [16, P('ramen')],
     // (Yozi)
-    [10, W(['라면'], { color: [RED, GOLD] })],
-    [10, W(['먹고갈래?'], { color: [GOLD, PINK] })],
-    [14, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
+    [6, W(['라면'], { color: [RED, GOLD] })],
+    [6, W(['먹고갈래?'], { color: [GOLD, PINK] })],
+    [7, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
     [22, P('wheel')],
     [22, P('coaster')],
     [12, W(['모두랜드'], { color: [PINK, GOLD] })],
