@@ -65,10 +65,11 @@ const NIGHT_LIGHT = {
   ambient: new THREE.Color(0x9fadde), sun: new THREE.Color(0xc4d2ff),
 };
 const SUNSET_LIGHT = { hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
-const glowing = []; // [material, strength]: emissive that comes on after dark
-export function glowAtNight(material, strength = 1) {
-  material.emissiveIntensity = 0;
-  glowing.push([material, strength]);
+const glowing = []; // [material, strength, base]: emissive that comes on after dark
+// base: how much it glows by day (0: not at all), strength: at night.
+export function glowAtNight(material, strength = 1, base = 0) {
+  material.emissiveIntensity = base;
+  glowing.push([material, strength, base]);
 }
 
 const SKY = {
@@ -199,7 +200,7 @@ export class WeatherSystem {
     }
     // Lit windows: on from dusk (a few stay dark: the texture says which).
     const glow = Math.max(0, n - 0.15) / 0.85;
-    for (const [m, k] of glowing) m.emissiveIntensity = glow * k;
+    for (const [m, k, b] of glowing) m.emissiveIntensity = b + glow * (k - b);
 
     // Snow on the ground: from the shared clock, so everyone sees the same
     // depth; with ?weather= forced it settles from the moment you arrive

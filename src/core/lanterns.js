@@ -6,8 +6,9 @@
 // showing the real painting of King Jeongjo's royal procession, and a wish lantern corner at the east end
 // where small lanterns float down and gather.
 //
-// The game has no night for now, so everything is bright and colourful by
-// day; only the lanterns under the bridges, in the shade, look lit.
+// By day everything is bright and colourful and only the lanterns under the
+// bridges, in the shade, look lit; after dark (weather.js glowAtNight) the
+// paper figures light up from inside in their own colours.
 // All designs here are original, except the procession painting (credited below).
 //
 // Map data, on a stream (u along the channel from its west end, v across it):
@@ -31,6 +32,7 @@
 import * as THREE from 'three';
 import { mergeStatic } from './merge-static.js';
 import { canvasTex } from './three-kit.js';
+import { glowAtNight } from './weather.js';
 
 export const WISH = { price: 5000, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
 export const WISH_COLORS = ['#ff6b6b', '#ffb347', '#ffe066', '#7bd389', '#7ab8ff', '#c39bff', '#ff8fc7'];
@@ -333,6 +335,25 @@ function instanced(parent, parts, mats4, colors = null) {
   return out;
 }
 
+// A paper figure lit from inside after dark: every part that already glows a
+// little by day (its emissive) glows in its own colour at night. Materials
+// are shared (lam's cache), so each is set up once.
+const glowSet = new WeakSet();
+const NIGHT_GLOW = 0.85;
+function lightUp(fig) {
+  fig.traverse((o) => {
+    const m = o.material;
+    if (!o.isMesh || !m?.emissive || glowSet.has(m)) return;
+    glowSet.add(m);
+    const e = m.emissive, day = (0.3 * e.r + 0.6 * e.g + 0.1 * e.b) * m.emissiveIntensity;
+    if (day <= 0) return; // frames, eyes: stay dark
+    if (m.map) { m.emissive.set('#ffffff'); m.emissiveMap = m.map; } // glows in its own painted colours
+    else m.emissive.copy(m.color);
+    const own = m.map ? 0.85 : 0.3 * m.color.r + 0.6 * m.color.g + 0.1 * m.color.b;
+    glowAtNight(m, NIGHT_GLOW, Math.min(NIGHT_GLOW, day / Math.max(0.05, own))); // the same look by day as before
+  });
+}
+
 export function buildLanternFestival(g, s) {
   const conf = s.lanterns || {}, len = s.len, hw = s.w / 2, D = s.depth || 4;
   const root = new THREE.Group();
@@ -349,6 +370,7 @@ export function buildLanternFestival(g, s) {
     m.position.set(f.u, -D - 0.3, f.v || 0);
     m.rotation.y = f.ry || 0;
     root.add(m);
+    lightUp(m);
   }
   // Cheongsachorong hanging from brackets on both railings, at street level.
   const step = conf.railing || 0;
