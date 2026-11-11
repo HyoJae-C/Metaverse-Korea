@@ -10,10 +10,10 @@ const DECK_Y = 8.4; // the deck's edge above the water (core/landmarks.js jamsu:
 const SIDE_X = 11.1; // half the deck's width, where the nozzles are
 const REACH = 13; // how far a jet at full strength throws its water from the deck
 // The jets run along the bridge over the whole river: Jamsu Bridge's length
-// (the landmark's len, bank to bank) less a little at the north end and the
+// (the landmark's len, bank to bank) less the north bank's ~30 m and the
 // south bank's 12 m of park up to the path. (The real fountain is 1,140 m,
 // 285 m at 1/4, but the game's river at the bridge is about 200 m wide.)
-const END_N = 6, END_S = 16;
+const END_N = 30, END_S = 16;
 
 // One jet pointing along +x, from (0, 0) at the nozzle to the water at
 // (REACH, -DECK_Y): it shoots out a little upwards, then falls; it widens

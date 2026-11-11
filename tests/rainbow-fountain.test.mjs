@@ -82,7 +82,7 @@ test('it is on Banpo Bridge, and its night reaches the park lawn but not Itaewon
   const map = read(district.map);
   const jamsu = map.landmarks.find((l) => l.type === 'jamsu');
   assert.ok(Math.hypot(jamsu.x + district.offset[0] - BRIDGE.x, jamsu.z + district.offset[1] - BRIDGE.z) < 1, 'BRIDGE is the jamsu landmark');
-  const park = map.landmarks.find((l) => l.type === 'hanpark' && l.store === 'banpo-jamwon-hangang');
+  const park = map.landmarks.find((l) => l.type === 'hanpark' && l.store === 'banpo-hangang');
   assert.ok(nearBridge(park.x + district.offset[0], park.z + district.offset[1]) > 0.99, 'Moonlight Square (the park on the street) sees the show');
   const itaewon = region.districts.find((d) => d.id === 'itaewon');
   assert.equal(nearBridge(...itaewon.offset), 0, 'Itaewon Station keeps its day');

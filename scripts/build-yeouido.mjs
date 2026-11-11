@@ -19,7 +19,7 @@
 //
 //   north bank (Han River Bike Path, Hongdae)
 //   ~~~~~~~~ main channel ~~~~~~~~~~~~~~~~~ fireworks barges ~~~~~~~~~~~~~~
-//   ║ Seogang Bridge   info · Mul-bit Square │ fireworks lawn │ fishing corner
+//   ║ Seogang Bridge   info · Mul-bit Square │ fireworks lawn │ ramen corner 
 //   ╚═ Gukhoe-daero    ─────────── Han River path (v 40) ───────────────────
 //      Yunjung-ro's cherry trees       Yeouidong-ro            63 tower
 //      National Assembly · Yeouido Park · Yeoui-daero · office towers
@@ -114,16 +114,15 @@ const BRIDGE_LAND = (() => {
 //    stand round its pool;
 //  - the wide fireworks lawn, open to the river (picnic mats, frisbees),
 //    across from the barges;
-//  - the fishing corner towards the 63 tower: a pier, the fish buyer and the
-//    kiosk with its ramen machine (Han River ramen is a Yeouido thing).
+//  - the corner towards the 63 tower: a pier to look out from and the kiosk
+//    with its ramen machine (Han River ramen is a Yeouido thing). No fishing:
+//    the real park is a no-fishing area (Yozi); its fish went to Banpo.
 export const PARK = {
   bounds: [-SHORE, -45, SHORE, 43], // the whole shore, from the water to the path
   layout: {
     paving: [[121.6, 0.4, 160, 7, '#d9c7a6'], [94.4, 14, 121.6, 37, '#d6ccb8']],
     rail: [-210, 210],
     pier: { x: 149, len: 10 },
-    fishBuy: [142.4, 4.2, 0],
-    fishing: [[201.6, 0.75], [165.6, 0.75], [148.8, -9.2], [128, 0.75]],
     kiosk: [108.8, 30.5, Math.PI], // YEOUIDO 24, at the corner of the lawn, facing the river
     tables: [[116.8, 23.6], [112, 20.6], [104.8, 20.6], [100, 23.6]],
     market: {
@@ -335,7 +334,7 @@ function build() {
   }
   const lawn = rect(LAWN[0], 2, LAWN[1], PATH - 3); // the fireworks lawn
   const areas = [
-    { k: 'grass', p: rect(LAWN[1], 2, 210, PATH - 3) }, // the fishing corner
+    { k: 'grass', p: rect(LAWN[1], 2, 210, PATH - 3) }, // the ramen corner by the pier
     { k: 'grass', lawn: true, p: lawn }, // picnic mats and frisbees, no trees: the view across the river stays open
     { k: 'plaza', p: rect(SQUARE[0], 2, SQUARE[1], PATH - 3) }, // Mul-bit Square
     { k: 'water', p: rect(-131.2, 9, -100.8, 30) }, // its shallow pool: walk right in (no blocker)
@@ -367,10 +366,10 @@ function build() {
     { type: 'sign', ...xz(at(164, PATH - 3)), ry: FACE_RIVER,
       title: name('Yeouido Han River Park', '여의도 한강공원', '汝矣島漢江公園', '汝矣岛汉江公园'),
       text: {
-        en: 'Yeouido is an island in the middle of the Han River. Its riverside park has the widest lawn on the river: spread a mat and look across the water to Mapo. In spring, cherry trees bloom all along Yunjung-ro. In the game, fireworks light up the sky here every day at 9:00 and 21:00 Korean time, for an hour, from three barges on the river. The real Seoul International Fireworks Festival is held here once a year, in autumn. The blobfish, a legend, only bites here.',
-        ko: '여의도는 한강 한가운데 있는 섬이에요. 강변 공원에는 한강에서 가장 넓은 잔디밭이 있어요. 돗자리를 펴고 강 건너 마포를 바라보세요. 봄이면 윤중로를 따라 벚꽃이 피어요. 게임에서는 매일 한국시간 9시와 21시에 한 시간씩, 강 위 바지선 세 척에서 불꽃놀이가 열려요. 실제 서울세계불꽃축제는 1년에 한 번, 가을에 여기서 열려요. 전설의 블롭피시는 여기서만 잡혀요.',
-        ja: '汝矣島は漢江の真ん中にある島です。川辺の公園には漢江でいちばん広い芝生があります。シートを広げて、川の向こうの麻浦を眺めてみましょう。春には輪中路に沿って桜が咲きます。ゲームでは毎日、韓国時間の9時と21時に1時間、川に浮かぶ3隻の台船から花火が上がります。本物のソウル世界花火祭りは、年に一度、秋にここで開かれます。伝説のブロブフィッシュはここでしか釣れません。',
-        zh: '汝矣岛是汉江正中的一座岛。江边公园有汉江上最大的草坪：铺开野餐垫，眺望对岸的麻浦。春天，轮中路两旁樱花盛开。游戏里每天韩国时间9点和21点，江上三艘驳船会放一小时烟花。真实的首尔世界烟花节每年秋天在这里举办一次。传说中的水滴鱼只在这里咬钩。',
+        en: 'Yeouido is an island in the middle of the Han River. Its riverside park has the widest lawn on the river: spread a mat and look across the water to Mapo. In spring, cherry trees bloom all along Yunjung-ro. In the game, fireworks light up the sky here every day at 9:00 and 21:00 Korean time, for an hour, from three barges on the river. The real Seoul International Fireworks Festival is held here once a year, in autumn. Fishing is not allowed here, as in the real park: fish at Banpo or Jamwon Han River Park.',
+        ko: '여의도는 한강 한가운데 있는 섬이에요. 강변 공원에는 한강에서 가장 넓은 잔디밭이 있어요. 돗자리를 펴고 강 건너 마포를 바라보세요. 봄이면 윤중로를 따라 벚꽃이 피어요. 게임에서는 매일 한국시간 9시와 21시에 한 시간씩, 강 위 바지선 세 척에서 불꽃놀이가 열려요. 실제 서울세계불꽃축제는 1년에 한 번, 가을에 여기서 열려요. 실제 공원처럼 여기는 낚시 금지 구역이에요. 낚시는 반포나 잠원 한강공원에서 하세요.',
+        ja: '汝矣島は漢江の真ん中にある島です。川辺の公園には漢江でいちばん広い芝生があります。シートを広げて、川の向こうの麻浦を眺めてみましょう。春には輪中路に沿って桜が咲きます。ゲームでは毎日、韓国時間の9時と21時に1時間、川に浮かぶ3隻の台船から花火が上がります。本物のソウル世界花火祭りは、年に一度、秋にここで開かれます。実際の公園と同じく、ここは釣り禁止です。釣りは盤浦か蚕院の漢江公園でどうぞ。',
+        zh: '汝矣岛是汉江正中的一座岛。江边公园有汉江上最大的草坪：铺开野餐垫，眺望对岸的麻浦。春天，轮中路两旁樱花盛开。游戏里每天韩国时间9点和21点，江上三艘驳船会放一小时烟花。真实的首尔世界烟花节每年秋天在这里举办一次。和真实的公园一样，这里禁止钓鱼：请去盘浦或蚕院汉江公园钓鱼。',
       } },
   ];
   // Seoul Dal (see DAL_T) and its board with the real facts.
@@ -384,7 +383,7 @@ function build() {
       ja: 'ソウルダル（「ソウルの月」）は汝矣島公園のこの芝生に実在する係留式ガス気球で、2024年から飛んでいます。気球の下のリング形ゴンドラに最大20人が乗り、汝矣島の上空約130mまで上がって15分ほど過ごします。眼下には漢江、国会議事堂、63ビル。夜は満月のように光ります。毎日12時から22時まで運行し、強風や雨の日は休みます。大人料金は2026年時点で25,000ウォンです（行く前に確認してください）。ゲームでは3分ごとに、同じ130mまで上がり、1回5人までです（満員なら整理券を取ります）。料金はゲーム内25,000ウォンです。',
       zh: '首尔月亮（서울달）是汝矣岛公园这片草坪上真实存在的系留式气球，2024年起开始飞行。气球下方的环形吊舱最多载20人，升到汝矣岛上空约130米，停留约15分钟，下方是汉江、国会议事堂和63大厦。夜晚它像满月一样发光。每天12:00至22:00运营，大风或下雨时停飞；2026年成人票价为25,000韩元（出发前请确认）。游戏里每3分钟升空一次，同样升到130米，每次5人（满员时领取排队号），票价为游戏币25,000韩元。',
     } });
-  // Benches on the shore facing the river (the park has its own in the fishing corner and by the dock).
+  // Benches on the shore facing the river (the park has its own by the pier and by the dock).
   for (const u of [100, 76, 52, 28, 4, -20, -44, -68, -88, -196]) landmarks.push({ type: 'bench', ...xz(at(u, 4.5)), ry: FACE_RIVER });
   // The park itself (game/han-parks.js): its frame is the park's.
   landmarks.push({ type: 'hanpark', store: 'yeouido-hangang', ...xz(at(0, 0)), ry: +ALONG_V.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });

@@ -7,7 +7,7 @@
 // l.pts: the bridge's middle line, metres from (l.x, l.z), north to south.
 // l.w: deck width (l.wRamp: narrower up the north ramp, to Jamsu Bridge's
 // width, where houses stand close); l.top: deck height; l.ramp: [north, south] ramp lengths;
-// l.clear: [[dx, dz, r]] spots kept free of piers (the park under it).
+// l.noPiers: [[dx, dz, r]] spots kept free of piers (the park under it).
 // l.pipes: false for no fountain pipes; l.arches: [[s0, s1]] arch spans
 // (Dongjak Bridge's); l.mid: a strip down the middle (its subway track).
 // A mesh per colour (deck, parapets, pipes, arches, track) and one for the
@@ -91,7 +91,7 @@ export function banpoBridge(g, l) {
   for (const [k, list] of Object.entries(parts)) if (list.length) g.add(new THREE.Mesh(mergeGeometries(list), mat(colors[k])));
   // Piers in pairs, where the deck is high enough to need them.
   const piers = [];
-  const clear = l.clear || [];
+  const clear = l.noPiers || [];
   let next = PIER_EVERY / 2;
   for (const [x, z, s, dx, dz] of out) {
     if (s < next) continue;

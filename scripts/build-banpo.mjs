@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-// Builds the Banpo-Jamwon Han River Park district (districts/banpo-jamwon.json)
-// on the south bank of the Han River in Seocho-gu, and puts its places on it.
-//
-// Banpo and Jamwon Han River Parks sit side by side on the south bank, so the
-// game joins them into one riverside park at the south end of Banpo Bridge.
+// Builds the Banpo-Jamwon district (districts/banpo-jamwon.json) on the south
+// bank of the Han River in Seocho-gu: Banpo Han River Park at the south end
+// of Banpo Bridge, and Jamwon Han River Park next to it upstream (east), as
+// the two real parks lie (OpenStreetMap: Banpo's ends ~140 m east of the
+// bridge, where Jamwon's begins and runs on past Hannam Bridge).
 // The river (region.json water[1], scripts/han-bank.mjs), the bank and the
 // bridge are on their real lines at 1/4 (OpenStreetMap): the park runs along
 // the real bank from the bay west of the bridge (where Sebitseom floats) east
-// to Jamwon's inlet. Jamsu Bridge (the low deck under Banpo Bridge) crosses
+// to where Jamwon's park begins. Jamwon's is a plain riverside park on its
+// real bank up to Hannam Bridge (Yozi: lawn, path, trees and people), with a
+// fishing pier. Jamsu Bridge (the low deck under Banpo Bridge) crosses
 // on Banpo Bridge's line from the north bank, where a link road comes down
 // Noksapyeong-daero from Itaewon. Only Moonlight Square at the bridge's foot
 // is laid out in detail; the rest is a lawn, the river path and trees.
@@ -147,6 +149,37 @@ export const PARK = {
 // Where on the street the park's things go.
 const park = (x, z) => at(PX(x), PZ(z));
 
+// Jamwon Han River Park (OpenStreetMap): its real bank is straight from A to
+// B (scripts/data/han-banks.json), so the park's frame is that line: x along
+// the bank going east from its middle, z inland. The bike path runs ~6 m in.
+const JW_A = [-1083.9, 746.3], JW_B = [-974.9, 625.4];
+const JW_L = Math.hypot(JW_B[0] - JW_A[0], JW_B[1] - JW_A[1]);
+const JW_U = [(JW_B[0] - JW_A[0]) / JW_L, (JW_B[1] - JW_A[1]) / JW_L], JW_N = [-JW_U[1], JW_U[0]];
+const JW_O = [(JW_A[0] + JW_B[0]) / 2, (JW_A[1] + JW_B[1]) / 2];
+export const JW_RY = Math.atan2(JW_N[0], JW_U[0]); // (han-parks.js: x → (cos, -sin), z → (sin, cos))
+const jworld = (x, z) => [JW_O[0] + x * JW_U[0] + z * JW_N[0], JW_O[1] + x * JW_U[1] + z * JW_N[1]];
+export const jat = (x, z) => loc(jworld(x, z));
+const jrect = (x0, z0, x1, z1) => [jat(x0, z0), jat(x1, z0), jat(x1, z1), jat(x0, z1)];
+// The real park west of Hannam Bridge (OpenStreetMap, at 1/4): its back edge
+// along Olympic-daero, then the bank back from Hannam Bridge to Banpo's park.
+const JAMWON_OUTLINE = [[-1136.7, 809.8], [-1103.2, 828], [-1063.6, 787.7], [-1034.3, 756.2], [-999.1, 718.2], [-990, 708.3], [-966.3, 679.1], [-948, 655.5], [-933.5, 633], [-917.5, 609.8],
+  [-918.3, 563.2], [-952.8, 601.4], [-974.9, 625.4], [-1012.6, 668.8], [-1042.1, 701], [-1072.5, 734.9], [-1083.9, 746.3], [-1094.5, 751.1], [-1112.5, 754.2], [-1121.2, 760.1], [-1125.7, 786], [-1128.9, 796.9]];
+// Its riverside things (core/han-park.js), in its own metres: the railing,
+// the fishing pier, the fish buyer beside the bike path, fishing spots, lamps.
+export const JAMWON = {
+  bounds: [-80, -40, 80, 30],
+  layout: {
+    rail: [-78, 78], railGaps: [],
+    pier: { x: 12, len: 9 },
+    fishBuy: [20, 11.6, Math.PI],
+    fishing: [[-46, 0.75], [12, -8.2], [34, 0.75], [62, 0.75]],
+    lamps: [[-60, 1.6], [-30, 1.6], [0, 1.6], [30, 1.6], [60, 1.6]],
+    benches: [[-24, 13], [44, 13]],
+    trees: [[-72, 14], [74, 14]],
+    bushes: [[-36, 13.6], [52, 13.6]],
+  },
+};
+
 const PATH_LINE = inland(PATH).map(loc);
 
 function build() {
@@ -171,9 +204,22 @@ function build() {
   const areas = [
     { k: 'grass', p: [...bank, ...inland(PATH - 2.5).reverse().map(loc)] },
     { k: 'park', trees: true, p: [...inland(PATH + 3).map(loc), ...inland(46).reverse().map(loc)] },
-    // Jamwon's open lawn on the bank, for picnic mats (no trees).
+    // The open lawn on the bank east of the bridge, for picnic mats (no trees).
     { k: 'grass', lawn: true, p: [park(40, 4.3), park(84, 4.3), park(84, 9.2), park(40, 9.2)] },
   ];
+  // Jamwon Han River Park: the real park's outline west of Hannam Bridge
+  // (OpenStreetMap), its trees along the back, a picnic lawn.
+  // (Its box, and Banpo's without it: the district is L-shaped round
+  // Itaewon's corner, meta.parts.)
+  const box = (pts) => { const xs = pts.map((q) => q[0]), zs = pts.map((q) => q[1]); return [Math.floor(Math.min(...xs)), Math.floor(Math.min(...zs)), Math.ceil(Math.max(...xs)), Math.ceil(Math.max(...zs))]; };
+  const banpoBox = box([...roads, ...buildings, ...areas].flatMap((o) => o.p));
+  // (The outline is 'park' ground like the wood along its back, so the two
+  // don't flicker; the picnic lawn is grass, drawn a hair above.)
+  const jamwon = [{ k: 'park', p: JAMWON_OUTLINE.map(loc) },
+    { k: 'park', trees: true, p: jrect(-150, 31, 78, 41) },
+    { k: 'grass', lawn: true, p: jrect(-62, 16, -14, 27) }];
+  areas.push(...jamwon);
+  const parts = [{ box: banpoBox }, { box: box(jamwon.flatMap((o) => o.p)) }];
   // (The river is the region's water, scripts/han-bank.mjs: its blocker has
   // a gap for Jamsu Bridge.)
   const blockers = [];
@@ -181,21 +227,21 @@ function build() {
   // with no piers in the park at its foot.
   const b0 = loc(BANPO_BRIDGE[0]), rel = ([x, z]) => [r1(x - b0[0]), r1(z - b0[1])];
   const banpo = { type: 'banpobridge', x: b0[0], z: b0[1], pts: BANPO_BRIDGE.map((q) => rel(loc(q))), w: BRIDGE_W + 8, wRamp: BRIDGE_W, top: 9, ramp: [80, 55],
-    clear: [[...rel(at(BRIDGE, 6)), 18]] };
+    noPiers: [[...rel(at(BRIDGE, 6)), 18]] }; // (not "clear": that keeps the trees off, core/world.js)
   // Dongjak Bridge downstream (west), only to look at for now: the real line
   // of its middle (Line 4's viaduct, OpenStreetMap), 40 m wide at 1/4, with
   // its arches over the river and the subway down the middle.
   const d0 = loc(DONGJAK[0]), drel = ([x, z]) => [r1(x - d0[0]), r1(z - d0[1])];
   const dLen = Math.hypot(DONGJAK[1][0] - DONGJAK[0][0], DONGJAK[1][1] - DONGJAK[0][1]);
-  const dongjak = { type: 'banpobridge', name: 'dongjak', x: d0[0], z: d0[1], pts: DONGJAK.map((q) => drel(loc(q))), w: 10, top: 6, ramp: [30, 30], pipes: false, mid: true,
+  const dongjak = { type: 'banpobridge', which: 'dongjak', x: d0[0], z: d0[1], pts: DONGJAK.map((q) => drel(loc(q))), w: 10, top: 6, ramp: [30, 30], pipes: false, mid: true,
     arches: [[0.3, 0.45], [0.45, 0.6], [0.6, 0.75]].map(([a, b]) => [r1(a * dLen), r1(b * dLen)]) };
   const landmarks = [
     banpo,
     dongjak,
     { type: 'jamsu', x: r1((north[0] + south[0]) / 2), z: r1((north[1] + south[1]) / 2), ry: +ALONG_V.toFixed(4), len: r1(Math.hypot(south[0] - north[0], south[1] - north[1])), w: BRIDGE_W },
-    { type: 'arch', ...xz(at(BRIDGE, BANK + 2)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'BANPO-JAMWON HAN RIVER PARK', sub: '반포·잠원 한강공원', color: '#2f6fb0' },
+    { type: 'arch', ...xz(at(BRIDGE, BANK + 2)), ry: ALONG_V, w: BRIDGE_W + 2, title: 'BANPO HAN RIVER PARK', sub: '반포한강공원', color: '#2f6fb0' },
     { type: 'sign', ...xz(at(PX(36), 17)), ry: FACE_RIVER, // (across the path from Jamwon's lawn)
-      title: name('Banpo-Jamwon Han River Park', '반포·잠원 한강공원', '盤浦・蚕院漢江公園', '盘浦·蚕院汉江公园'),
+      title: name('Banpo Han River Park', '반포한강공원', '盤浦漢江公園', '盘浦汉江公园'),
       text: {
         en: 'Banpo and Jamwon Han River Parks lie side by side on the south bank of the Han River. Walk across Jamsu Bridge under Banpo Bridge, spread a mat on the grass, or fish from the bank: the manta ray, a legend, only bites here.',
         ko: '반포한강공원과 잠원한강공원은 한강 남쪽 강변에 나란히 있어요. 반포대교 아래 잠수교를 걸어서 건너고, 잔디에 돗자리를 펴거나, 강가에서 낚시를 해 보세요. 전설의 만타가오리는 여기서만 잡혀요.',
@@ -215,16 +261,29 @@ function build() {
       zh: '盘浦大桥喷泉从桥的两侧把彩虹色灯光照亮的水洒进汉江。2008年它被吉尼斯世界纪录认定为世界最长的桥梁喷泉。现实中从春天到秋天（大约4月到10月）运行：每晚有几场约20分钟的表演，中午还有一场，下雨或大风时暂停。时间每年都会变，出发前请在汉江公园网站上确认。在游戏里，大多数时段每小时30分（韩国时间）开始一场表演。',
     } });
   for (const u of [-125, -100, -75, 100, 118, 136]) landmarks.push({ type: 'bench', ...xz(along(u, 5)), ry: facing(u) }); // (the park has its own by the water)
+  // Jamwon's park (game/han-parks.js), its benches by the path and its board.
+  landmarks.push({ type: 'hanpark', store: 'jamwon-hangang', ...xz(jat(0, 0)), ry: +JW_RY.toFixed(4), bounds: JAMWON.bounds, layout: JAMWON.layout });
+  for (const x of [-120, -100, -80, 60, 72]) landmarks.push({ type: 'bench', ...xz(jat(x, 13)), ry: +(JW_RY + Math.PI).toFixed(4) });
+  landmarks.push({ type: 'sign', ...xz(jat(-8, 14)), ry: +(JW_RY + Math.PI).toFixed(4),
+    title: name('Jamwon Han River Park', '잠원한강공원', '蚕院漢江公園', '蚕院汉江公园'),
+    text: {
+      en: 'Jamwon Han River Park runs along the south bank from next to Banpo Han River Park past Hannam Bridge. A quiet riverside: the bike path, a lawn for picnic mats, and fishing from the bank and the pier. The manta ray, a legend, only bites here.',
+      ko: '잠원한강공원은 반포한강공원 바로 옆에서 한남대교 너머까지 한강 남쪽 강변을 따라 이어져요. 자전거길과 돗자리를 펼 잔디밭이 있는 조용한 강변이에요. 강가와 부두에서 낚시를 해 보세요. 전설의 만타가오리는 여기서만 잡혀요.',
+      ja: '蚕院漢江公園は、盤浦漢江公園のすぐ隣から漢南大橋の先まで、漢江の南岸に沿って続きます。自転車道とシートを広げられる芝生のある静かな川辺です。岸辺や桟橋で釣りをしてみましょう。伝説のマンタはここでしか釣れません。',
+      zh: '蚕院汉江公园沿着汉江南岸，从盘浦汉江公园旁边一直延伸到汉南大桥另一边。这里是安静的江边，有自行车道和可以铺野餐垫的草坪。在岸边和码头上钓鱼吧：传说中的蝠鲼只在这里咬钩。',
+    } });
   // The park itself (game/han-parks.js): set at the bank's edge under the bridge.
-  landmarks.push({ type: 'hanpark', store: 'banpo-jamwon-hangang', ...xz(at(BRIDGE, BANK)), ry: +ALONG_V.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
+  landmarks.push({ type: 'hanpark', store: 'banpo-hangang', ...xz(at(BRIDGE, BANK)), ry: +ALONG_V.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
   const pois = [
-    { kind: 'landmark', ...xz(along(60, 30)), name: name('Banpo-Jamwon Han River Park', '반포·잠원 한강공원', '盤浦・蚕院漢江公園', '盘浦·蚕院汉江公园') },
+    { kind: 'landmark', ...xz(along(60, 30)), name: name('Banpo Han River Park', '반포한강공원', '盤浦漢江公園', '盘浦汉江公园') },
+    { kind: 'landmark', ...xz(jat(-30, 24)), name: name('Jamwon Han River Park', '잠원한강공원', '蚕院漢江公園', '蚕院汉江公园') },
     { kind: 'landmark', ...xz(at(BRIDGE, -90)), name: name('Jamsu Bridge', '잠수교', '潜水橋', '潜水桥') },
   ];
   return {
     meta: {
       district: 'banpo-jamwon',
-      source: 'scripts/build-banpo.mjs: Banpo and Jamwon Han River Parks, Seocho-gu, joined into one riverside park at the south end of Banpo Bridge. The bank and the bridge are on their real lines at 1/4 (OpenStreetMap, scripts/han-bank.mjs); Moonlight Square stands on a terrace over the bay where Sebitseom floats (up to 16 m off the real bank). The kiosks and market are fictional.',
+      parts,
+      source: 'scripts/build-banpo.mjs: Banpo Han River Park at the south end of Banpo Bridge and Jamwon Han River Park next to it upstream, Seocho-gu. The banks, the parks\' outlines and Banpo and Dongjak Bridges are on their real lines at 1/4 (OpenStreetMap, scripts/han-bank.mjs); Moonlight Square stands on a terrace over the bay where Sebitseom floats (up to 16 m off the real bank). The kiosks and market are fictional.',
       credit: '© OpenStreetMap contributors (ODbL)',
     },
     roads, buildings, rail: [], areas, blockers, pois, landmarks,
@@ -234,7 +293,8 @@ function xz([x, z]) { return { x, z }; }
 
 // Where each place's door is, in the district's own metres.
 const SPOTS = {
-  'banpo-jamwon-hangang': park(-24, 11.5), // on the lawn behind Moonlight Square, off the river path (where a taxi or the map drops you)
+  'banpo-hangang': park(-24, 11.5), // on the lawn behind Moonlight Square, off the river path (where a taxi or the map drops you)
+  'jamwon-hangang': jat(-30, 18), // on Jamwon's lawn, off the bike path
   'info-banpo-jamwon': along(98, 15.5),
 };
 
