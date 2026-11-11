@@ -1,7 +1,8 @@
 // End-to-end check: the Namsan trail and summit. You walk up the hill at its
 // height and can't step off the trail into the woods; it comes out on the
 // summit plaza outdoors, with the love locks by the heart; at the cable
-// car's upper station you can ride down, and step back out onto the plaza.
+// car's upper station you ride down outdoors along the real line, get out by
+// the lower station, and ride back up onto the plaza.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/namsan-walk.mjs http://localhost:4173/ [shot dir]
 import { chromium } from 'playwright';
@@ -74,20 +75,31 @@ try {
   await until(async () => (await label()).includes('🚡'), 15000, 'ride down button');
   console.log('station:', await label());
   if (shotDir) { await mk('face', Math.atan2(tower[0] - door[0], tower[1] - door[1])); await wait(2500); await page.screenshot({ path: `${shotDir}/namsan-summit-plaza.png` }); }
-  await pick('🚡');
-  await until(async () => (await mk('room')).id === 'namsan-sky-cable', 30000, 'on the platform');
-  await wait(800);
-  const [, py] = await me();
-  console.log('on the top platform, height', py.toFixed(1));
-  // Changed my mind: back out onto the plaza.
-  await until(async () => (await label()).includes('🚶'), 15000, 'out button');
-  await pick('🚶');
-  await until(async () => (await mk('room')).mode === 'street', 15000, 'back out');
+  // Ride down outdoors, along the real line, and out by the lower station.
+  const low = JSON.parse(readFileSync(new URL('stores.json', R), 'utf8')).stores.find((q) => q.id === 'namsan-sky-cable').at;
+  const ride = async (word, to, what) => {
+    await until(async () => (await label()).includes(word), 40000, what + ' button');
+    await pick(word);
+    let seen = 0;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 40000) { // aboard until it pulls in at the other end
+      const [x, y, z] = await me();
+      seen = Math.max(seen, Math.min(Math.hypot(x - low[0], z - low[1]), Math.hypot(x - door[0], z - door[1])));
+      if (Math.hypot(x - to[0], z - to[1]) < 4 && seen > 30 && !/Going|Get off/.test(await mk('action'))) { await wait(600); const [x2, y2, z2] = await me(); return { x: x2, y: y2, z: z2, seen }; }
+      await wait(250);
+    }
+    throw new Error('never got to the other end: ' + what);
+  };
+  const down = await ride('Ride down', low, 'ride down');
+  console.log('rode down: out', Math.hypot(down.x - low[0], down.z - low[1]).toFixed(1), 'm from the lower door, height', down.y.toFixed(1), '(farthest from both doors on the way', down.seen.toFixed(0), 'm)');
+  if (down.y > 1) throw new Error('not down on the street');
+  if (shotDir) await page.screenshot({ path: `${shotDir}/namsan-cable-low.png` });
+  // And back up: pay, ride, and out onto the summit plaza.
+  await ride('Get in', door, 'ride up');
   await wait(600);
   const [qx, qy, qz] = await me();
-  const fromDoor = Math.hypot(qx - door[0], qz - door[1]);
-  console.log('back out', fromDoor.toFixed(1), 'm from the station door, height', qy.toFixed(1));
-  if (fromDoor > 4 || qy < hill.h - 2) throw new Error('not back by the upper station');
+  console.log('rode up: out', Math.hypot(qx - door[0], qz - door[1]).toFixed(1), 'm from the upper station door, height', qy.toFixed(1));
+  if (qy < hill.h - 2) throw new Error('not up on the plaza: y ' + qy);
   if (errors.length) throw new Error(errors.join('\n'));
   ok = true;
 } catch (e) {

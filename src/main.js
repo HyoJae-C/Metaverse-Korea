@@ -7,7 +7,7 @@ import {
 import { REGION_NAMES } from './i18n/languages.js';
 import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
 import {
-  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, CABLE_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
+  ID_TEXT, LOGIN_TEXT, OPERATOR_TEXT, RESERVED_TEXT, ONBOARD_TEXT, DRINK_TEXT, HOME_TEXT, GOODS_TEXT, PERFUME_TEXT, UMB_TEXT, CODE_TEXT, OUTFIT_TEXT, HAUNT_TEXT, HONK_TEXT, VENDING_TEXT, FIRST_TAXI_TEXT, LOW_TEXT, CHOOSER_TEXT, INGREDIENT_TEXT, MART_TEXT, DANCE_TEXT, PALACE_TEXT, PUNGMUL_TEXT, JM_TEXT, BOOK_SWAP_TEXT, BOOK_SIT_TEXT, COASTER_TEXT, DRONE_TEXT, FIREWORKS_TEXT, ADOPT_TEXT,
 } from './i18n/game-text.js';
 import { loadRegionMap, districtBoxes, districtAt, placeOf } from './core/districts.js';
 import { createGraphicsQuality } from './core/graphics-quality.js';
@@ -66,7 +66,7 @@ import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
-import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock, nearTrailGate } from './core/cablecar.js';
+import { createNamsanCable } from './game/namsan-cable.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LOCK_LABELS } from './ui/love-lock-labels.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
@@ -807,6 +807,11 @@ const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, label
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
 const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene });
+// The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
+const namsanCable = createNamsanCable({
+  get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
+  t, L, fmt, missionEvent: (k) => missionEvent(k), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+}, { landmarks: map.landmarks, low: storefronts.get('namsan-sky-cable')?.door, top: namsanWalk.station, topOut: namsanWalk.stationOut });
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
@@ -1776,7 +1781,7 @@ const { closeWheel } = emoteWheel;
 // offers to carry us; until then nobody is flying.
 const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlight }) => createSkyFlight({
   get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
-  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || cable); },
+  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || namsanCable.busy); },
   // (on an open-air park's lawn, Another Land's island or a Han River park:
   // step back onto the street where you stand, then take off from there)
   leaveOpenPark: () => { if (mode === 'store' && interior?.store?.open && seated == null && !ride) leaveStore(true); },
@@ -1959,7 +1964,7 @@ const counterUi = new CounterUI({
 
 // Pets wait outside shops and other rooms: only the outdoor "rooms" (the Han
 // River parks, the theme park, the Namsan slope) and the street have them.
-const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.cablecar || interior?.lawns);
+const petIndoors = () => mode === 'store' && !(interior?.hanRiver || interior?.themepark || interior?.lawns);
 // Where pets may not go in this room: the bumper car rink in Another Land.
 const PARK_FENCES = [RINK_FENCE];
 const petFences = () => (mode === 'store' && interior?.bumper ? PARK_FENCES : null);
@@ -3057,7 +3062,7 @@ function leaveStore(walkOut = false) {
   endRide();
   setRiding(false); // (the zoo's carts stay in the zoo)
   zooVisit.hideLabels();
-  cable = null;
+  namsanCable.stop();
   standUp();
   clearMeal();
   closeHome();
@@ -5125,22 +5130,6 @@ function bosingakAct(p) {
   return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
 }
 const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
-// The Namsan summit plaza is outdoors (game/namsan-walk.js). The cable car's
-// room is the ride and its two platforms: at the top you step out of it by
-// the upper station, and from there you ride down.
-function outToSummit() {
-  const o = namsanWalk.stationOut;
-  if (!o || !interior?.cablecar) return;
-  interior.front = { ...interior.front, door: { x: o.x, z: o.z }, group: { rotation: { y: o.ry } } }; // (out by the upper station, not the lower one)
-  doorCam = null;
-  leaveStore();
-}
-const namsanOutAct = () => ({ key: 'namsan-out', label: '🚶 ' + t('namsan.out'), run: outToSummit });
-const namsanRideDownAct = () => ({ key: 'namsan-ride-down', label: '🚡 ' + t('namsan.rideDown'), run: () => {
-  const it = storefronts.items.find((i) => i.store.workshop === 'cablecar');
-  const b = boardSpot(0, 'top');
-  if (it) enterStore(it, { x: b.x, z: b.z - 1.5, ry: 0, yaw: Math.PI });
-} });
 // Each frame on the street: the people on the square, and the New Year's ringings.
 function updateBosingak(p, dt, w, h) {
   if (!bosingakAt) return;
@@ -5498,71 +5487,6 @@ function placeRemoteRider(ch, cs, q) {
 }
 // Seats taken on train k by other players (from their state).
 const takenSeats = (k) => new Set([...others.players.values()].map((q) => q.target?.cs).filter((cs) => cs > 0 && Math.floor((cs - 1) / 10) === k).map((cs) => (cs - 1) % 10));
-// Namsan Sky Cable: stand at a cabin bay, get in while the doors are open,
-// ride up (or down) on the shared clock and step out at the other station.
-// The way up costs CABLE.fare; the way down is on the same ticket, so
-// nobody gets stuck on the summit without coins.
-let cable = null; // { cabin, from: 'low' | 'top', dx }
-const cableStation = (p) => (p.z < CC.edge ? 'top' : 'low');
-function cableBay(p) {
-  const st = cableStation(p);
-  for (const i of [0, 1]) { const s = boardSpot(i, st); if (Math.hypot(p.x - s.x, p.z - s.z) < 1.8) return { i, st }; }
-  return null;
-}
-function boardCable(i, st) {
-  const c = cabinAt(i, cableClock());
-  if (c.at !== st || !doorsOpen(c)) return;
-  if (st === 'low' && !wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { shop.toast(t('ride.noCoins', { n: CABLE.fare })); return; }
-  cable = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? wallet.lastOp : null };
-  sendTimer = 0;
-  if (st === 'low') missionEvent('ride');
-}
-function getOffCable(refund) {
-  if (!cable) return;
-  const s = boardSpot(cable.cabin, cable.from);
-  if (refund && cable.from === 'low') wallet.refund(CABLE.fare, cable.paid, { k: 'ledger.cable' });
-  me.root.position.set(s.x, s.y, s.z);
-  cable = null;
-  sendTimer = 0;
-}
-function updateCable() {
-  if (!cable) return;
-  if (!interior?.cablecar) { cable = null; return; }
-  const c = cabinAt(cable.cabin, cableClock());
-  const to = cable.from === 'low' ? 'top' : 'low';
-  if (c.at === to) { // arrived: step out onto the platform
-    const s = boardSpot(cable.cabin, to);
-    me.root.position.set(s.x, s.y, s.z);
-    me.root.rotation.y = to === 'top' ? Math.PI : 0;
-    cable = null;
-    sendTimer = 0;
-    shop.toast(L(CABLE_TEXT[to]));
-    if (to === 'top' && namsanWalk.stationOut) outToSummit(); // (out onto the real summit plaza)
-    if (to === 'top') me.play('cheer');
-    return;
-  }
-  const s = cabinPos(cable.cabin, c.k);
-  me.root.position.set(s.x + cable.dx, s.y + 0.02, s.z);
-  me.root.rotation.y = cable.from === 'low' ? Math.PI : 0; // face uphill on the way up
-}
-function cableAction(p) {
-  const now = cableClock();
-  if (cable) {
-    const c = cabinAt(cable.cabin, now);
-    // (the countdown is in the key so the button text updates every second)
-    if (c.at === cable.from && doorsOpen(c)) { const n = Math.ceil(c.leaves); return { key: 'cable-off:' + n, label: '🚪 ' + fmt(L(CABLE_TEXT.leaves), { n }), run: () => getOffCable(true) }; }
-    const n = Math.ceil(c.next || c.leaves || 0);
-    return { key: 'cable-ride:' + n, label: '🚡 ' + fmt(L(cable.from === 'low' ? CABLE_TEXT.toTop : CABLE_TEXT.toLow), { n }), run: () => {} };
-  }
-  const near = cableBay(p);
-  if (!near) return null;
-  // Either cabin will do: whichever reaches this station first (one comes
-  // every half cycle), even if it stops at the bay next to you.
-  const bay = [near.i, 1 - near.i].map((i) => ({ i, st: near.st, wait: arrivesIn(i, near.st, now) })).sort((a, b) => a.wait - b.wait)[0];
-  const wait = bay.wait;
-  if (wait > 0) { const n = Math.ceil(wait); return { key: 'cable-wait:' + n, label: '🚡 ' + fmt(L(CABLE_TEXT.wait), { n }), run: () => {} }; }
-  return { key: 'cable-board:' + bay.st + bay.i, label: '🚡 ' + (bay.st === 'low' ? fmt(L(CABLE_TEXT.board), { n: CABLE.fare }) : L(CABLE_TEXT.down)), run: () => boardCable(bay.i, bay.st) };
-}
 const duckUi = new DuckUI({
   root: $('duck-panel'),
   hudRoot: $('duck-hud'),
@@ -6378,7 +6302,7 @@ function moreActions(p, door) {
   const out = [];
   const hi5s = () => { for (const o of others.nearbyFree(p.x, p.z, 2)) out.push(hi5Action(o)); };
   if (mode === 'street') {
-    if (riding || busking.performing || seoulDal.busy) return out;
+    if (riding || busking.performing || seoulDal.busy || namsanCable.busy) return out;
     if (door) out.push(storeAct(door));
     hi5s();
     const g = guideAct(p); if (g) out.push(g);
@@ -6390,7 +6314,6 @@ function moreActions(p, door) {
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
-    if (namsanWalk.atStation(p)) out.push(namsanRideDownAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
@@ -6408,8 +6331,6 @@ function moreActions(p, door) {
   if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
   const im = infoMissionAct(p); if (im) out.push(im);
-  if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
-  if (interior.cablecar && !cable && namsanWalk.stationOut && p.z < CC.edge) out.push(namsanOutAct()); // (beside the ride-down button on the top platform)
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
   if (seat) out.push(sitAct(seat));
@@ -6445,12 +6366,14 @@ function updateAction(p, tSec) {
   let next = null, door = null;
   if (!$('route-panel').hidden && !(mode !== 'street' && nearRouteMap(p))) $('route-panel').hidden = true; // walked away
   if (mode === 'street') {
-    const it = door = storefronts.nearby(p.x, p.z, tSec);
+    let it = door = storefronts.nearby(p.x, p.z, tSec);
+    if (it?.store.workshop === 'cablecar') it = door = null; // (the cable car's lower station: you get in at its door, game/namsan-cable.js)
     updateFarTextures(scene, p.x, p.z); // far boards and posters let go of their canvases (core/far-textures.js)
     const poop = !riding && nearestPoop(p);
     const sb = !riding && !seated ? snowman.action(p) : null; // a snowball to work on, or to start (src/game/snowman.js)
     if (basketball.basketShot) next = null; // mid-shot
     else if (seoulDal.busy || seoulDal.act(p)) next = seoulDal.act(p); // aboard Seoul Dal, or at its gate
+    else if (!riding && namsanCable.act(p)) next = namsanCable.act(p); // in the Namsan cable car, or at a station's door
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
@@ -6473,7 +6396,6 @@ function updateAction(p, tSec) {
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
     else if (!riding && namsanWalk.nearHeart(p)) next = loveLockActs()[0]; // the Namsan summit's love locks
-    else if (!riding && namsanWalk.atStation(p)) next = namsanRideDownAct();
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -6529,14 +6451,8 @@ function updateAction(p, tSec) {
       if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
       else if (it) next = { key: 'piece:' + decorGame.decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
       else if (!decorGame.decor.picked) closePiece();
-    } else if (interior.cablecar && cableAction(p)) {
-      next = cableAction(p);
     } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
-    } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
-      next = loveLockActs()[0]; // and "read the messages" (moreActions)
-    } else if (interior.cablecar && !cable && namsanWalk.stationOut && (nearTrailGate(p.x, p.z) || p.z < CC.edge)) {
-      next = namsanOutAct();
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
@@ -6854,7 +6770,7 @@ let snowCoverAt = 0;
 // First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
-  canUse: () => !arcadeGame.camOn() && !ride && !cable && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+  canUse: () => !arcadeGame.camOn() && !ride && !namsanCable.busy && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
@@ -6895,7 +6811,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
-  const canSteer = !seated && !arcadeGame.camOn() && !ride && !cable && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  const canSteer = !seated && !arcadeGame.camOn() && !ride && !namsanCable.busy && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
   const stickTurning = touchSteer.turn(dt, mx, my, canSteer);
   if (stickTurning) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
@@ -6926,7 +6842,7 @@ renderer.setAnimationLoop((now) => {
   rainbowFountain.update();
   updateRide(dt);
   if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
-  updateCable();
+  namsanCable.update();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
@@ -6959,7 +6875,7 @@ renderer.setAnimationLoop((now) => {
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
-  else if (mag > 0.05 && !seated && !ride && !cable && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
+  else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
@@ -7083,7 +6999,7 @@ renderer.setAnimationLoop((now) => {
   updateCarry();
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
-  if (loveLockUi.open && !loveLockUi.busy && (mode === 'street' ? namsanWalk.awayFromHeart(p) : !interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
+  if (loveLockUi.open && !loveLockUi.busy && (mode !== 'street' || namsanWalk.awayFromHeart(p))) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
   if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellDistance(p) > 25 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
@@ -7091,9 +7007,9 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
   basketTick(dt, p); // a basketball move places you
   skateTick(dt, p);
-  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon)
+  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy && !namsanCable.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon or the cable car)
   sky.update(dt);
-  if (mode === 'store' && interior?.floorAt && !cable && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
+  if (mode === 'store' && interior?.floorAt && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
   picnic.tick(); // picnic mats on the park lawn

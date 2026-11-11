@@ -452,8 +452,6 @@ export const ZH = {
   'hud.signsOff': '显示韩语招牌',
   'hud.bike': '交通工具',
   'stairs.noBike': "🚲 楼梯上不能骑车。点“交通工具”下车，再走下去。",
-  'namsan.out': "走出到山顶广场",
-  'namsan.rideDown': "乘缆车下山",
   'bike.offShort': '下车',
   'bike.off': '下车',
   'car.off': '下车',

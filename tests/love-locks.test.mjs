@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { countLines, cleanNote, preview, LocalLoveLocks, LOVE_LOCK, LOCK_SHAPES } from '../src/core/love-locks.js';
-import { CC, nearLoveLock, cableCamBlocked, cableFloor } from '../src/core/cablecar.js';
+import { NAMSAN_WALK } from '../src/game/namsan-walk.js';
 
 const mem = () => { const d = {}; return { getItem: (k) => d[k] ?? null, setItem: (k, v) => { d[k] = String(v); } }; };
 const wallet = (coins) => ({ coins, spend(n) { if (n > this.coins) return false; this.coins -= n; return true; }, add(n) { this.coins += n; } });
@@ -58,10 +58,8 @@ test('the list is newest first, a page at a time', async () => {
 });
 
 test('the love-lock spot is on the summit plaza, clear of the tower', () => {
-  const { spot } = CC.loveLock;
-  assert.ok(nearLoveLock(spot.x, spot.z));
-  assert.equal(cableFloor(spot.x, spot.z), CC.top);
-  assert.ok(Math.hypot(spot.x - CC.tower.x, spot.z - CC.tower.z) > CC.towerR + 2);
-  assert.ok(cableCamBlocked(CC.tower.x + 3, CC.tower.z), 'the camera stays out of the tower');
-  assert.ok(!cableCamBlocked(spot.x, spot.z));
+  const W = NAMSAN_WALK, [x, z] = W.heartSpot;
+  assert.ok(Math.hypot(x, z) > W.towerR + 2, 'off the tower\'s terrace');
+  assert.ok(Math.hypot(x, z) < W.plazaR - 2, 'inside the railing');
+  assert.ok(Math.hypot(x - W.heart[0], z - W.heart[1]) < 3.5, 'in front of the heart');
 });

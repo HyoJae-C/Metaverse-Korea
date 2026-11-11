@@ -455,8 +455,6 @@ export const AR = {
   'hud.signsOff': 'اللافتات بالكورية',
   'hud.bike': 'المركبة',
   'stairs.noBike': "🚲 لا مركبات على الدرج. اضغط المركبة لتنزل، ثم انزل مشيًا.",
-  'namsan.out': "اخرج إلى ساحة القمة",
-  'namsan.rideDown': "انزل بالتلفريك",
   'bike.offShort': 'انزل',
   'bike.off': 'انزل عن الدراجة',
   'car.off': 'اخرج من السيارة',

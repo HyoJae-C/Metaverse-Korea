@@ -13,7 +13,7 @@
 //   walk.y(x, z)            ground height on the hill (0 off it)
 //   walk.update(p)          every frame on the street: loads the plaza nearby
 //   walk.nearHeart(p)       at the love-lock heart?
-//   walk.atStation(p)       at the cable car's upper station door?
+//   walk.station            the cable car's upper station door [x, z] (game/namsan-cable.js)
 //   walk.stationOut         where you step out of the cable car at the top
 import { namsanGround, onNamsan, namsanReach } from '../core/namsan-shape.js';
 
@@ -23,7 +23,6 @@ export const NAMSAN_WALK = {
   towerR: 9.5, // m: the tower's terrace (12 m × its 0.75 scale), with a little room
   heart: [-20, 0], // m from the tower: the love-lock heart, facing east into the plaza
   heartSpot: [-17.2, 0], // where you stand to hang a lock
-  stationR: 3, // m from the upper station's door: ride down
   near: 480, // m: the plaza's models load this close (past the fog's 420 m)
 };
 
@@ -31,7 +30,7 @@ const ring = (cx, cz, r, n = 24) => Array.from({ length: n }, (_, i) => { const 
 
 export function createNamsanWalk({ landmarks = [], collision, scene = null }) {
   const l = landmarks.find((q) => q.type === 'namsan' && q.rad);
-  const none = { y: () => 0, update() {}, nearHeart: () => false, atStation: () => false, stationOut: null, tower: null };
+  const none = { y: () => 0, update() {}, nearHeart: () => false, station: null, stationOut: null, tower: null };
   if (!l) return none;
   const W = NAMSAN_WALK;
   const tower = [l.x + l.px, l.z + l.pz];
@@ -82,6 +81,5 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null }) {
     },
     nearHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) < 2.2,
     awayFromHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) > 4.5,
-    atStation: (p) => !!station && Math.hypot(p.x - station[0], p.z - station[1]) < W.stationR,
   };
 }

@@ -454,8 +454,6 @@ export const ES = {
   'hud.signsOff': 'Letreros en coreano',
   'hud.bike': 'Vehículo',
   'stairs.noBike': "🚲 No se puede bajar las escaleras en vehículo. Toca Vehículo para bajarte y baja a pie.",
-  'namsan.out': "Salir a la plaza de la cima",
-  'namsan.rideDown': "Bajar en el teleférico",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',
   'car.off': 'Salir del coche',
