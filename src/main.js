@@ -4082,10 +4082,11 @@ const giftSync = walletReady.then(() => {
   giftReceipts.run().catch(() => {});
   return giftReceipts.sync(inventory, receipts, ITEMS).catch(() => {});
 });
-// Clothes I already had get a receipt at their shop price, and ones the old
-// one-time sweep took out come back (game/old-clothes.js runItemGrants, Yozi
-// 2026-11-11). Clothes bought before the server kept purchases: twice their
-// price back, once. Accounts from before then get travel money once.
+// Clothes bought before the server kept purchases: twice their price back,
+// once. Then clothes I had get a receipt at their shop price, and ones the
+// old one-time sweep or that refund took out come back, the money kept
+// (game/old-clothes.js runItemGrants, Yozi 2026-11-11). Accounts from before
+// then get travel money once.
 giftSync.then(() => { // (after it: a gift's receipt is in first)
   let grants, old, bonus;
   try { grants = wallet.server && !localStorage.getItem('mk.itemGrants'); old = wallet.server && !localStorage.getItem('mk.oldClothes'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
@@ -4093,8 +4094,8 @@ giftSync.then(() => { // (after it: a gift's receipt is in first)
   const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
     refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
   import('./game/old-clothes.js').then(async (m) => {
-    if (grants) await m.runItemGrants(g).catch(() => {});
     if (old) await m.runOldClothes(g).catch(() => {});
+    if (grants) await m.runItemGrants(g).catch(() => {}); // (after it: refunded clothes come back too, 039)
     if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), 4000); // (after the toasts above)
   }).catch(() => {});
 });

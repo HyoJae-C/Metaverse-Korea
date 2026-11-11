@@ -75,7 +75,8 @@ export async function runOldClothes(game) {
 // taking clothes with no record out of the closet, give them a receipt at
 // their shop price; supabase/038_item_grants.sql). The server made them from
 // the save backup; clothes the old one-time sweep took out after that come
-// back (restore). Once per account; asked again until the server answers.
+// back (restore), and so do clothes 035 refunded (039: the money is kept).
+// Once per account; asked again until the server answers.
 // Returns how many came back, or null (offline or 038 not run yet).
 export const GRANTS = 'mk.itemGrants';
 export async function runItemGrants(game) {
