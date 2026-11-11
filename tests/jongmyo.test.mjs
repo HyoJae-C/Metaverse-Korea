@@ -155,6 +155,16 @@ test('Sunra Silver Studio\'s pendants are worn: every metal and charm is a real 
   for (const s of stores) for (const p of s.products || []) if (p.item?.startsWith('acc-pendant')) assert.ok(WEARABLES[p.item], p.id);
 });
 
+test('the engraved pendants: 20 hanja words, each with its Hangul reading, no two alike', async () => {
+  const { PENDANT_CHARMS } = await import('../src/data/appearance.js');
+  const words = Object.values(PENDANT_CHARMS).filter((c) => c.hanja);
+  assert.equal(words.length, 20);
+  for (const c of words) assert.equal([...c.hanja].length, [...c.letter].length, c.hanja);
+  assert.equal(new Set(words.map((c) => c.letter)).size, 20, 'no two read the same');
+  assert.equal(CRAFT.pendant.shapes.length, 25, '5 shapes and 20 words');
+  assert.ok(WEARABLES['acc-pendant-silver-bok'] && WEARABLES['acc-pendant-gold-hwa'], 'old ids kept, new ones there');
+});
+
 test('the guide\'s facts, the stamp and the Joseon Royal Walk', () => {
   assert.ok(JONGMYO.guideCards.length >= 4);
   for (const c of JONGMYO.guideCards) for (const lang of ['en', 'ko', 'ja', 'zh']) assert.ok(c.name[lang] && c.text[lang], `${c.name.en} ${lang}`);
