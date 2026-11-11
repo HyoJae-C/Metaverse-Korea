@@ -17,7 +17,7 @@ const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
 
 const VERT = /* glsl */`
   uniform float uTime, uScale;
-  attribute vec3 aCenter, aDir, aCol;
+  attribute vec3 aCenter, aDir, aCol, aCol2; // aCol2: the colour its stars turn into
   attribute vec4 aInfo; // t0, life, gravity, lead (1: this spark draws the climbing shell)
   varying vec3 vCol;
   varying float vA;
@@ -38,7 +38,8 @@ const VERT = /* glsl */`
       p = aCenter + aDir * spread - vec3(0.0, 0.5 * ${GRAVITY.toFixed(1)} * aInfo.z * age * age, 0.0);
       float f = 1.0 - age / aInfo.y;
       vA = f * sqrt(f) * (0.75 + 0.25 * sin(age * 31.0 + aDir.x * 7.0)); // fading, with a little twinkle
-      vCol = mix(vec3(1.0, 0.95, 0.85), aCol, min(1.0, age * 4.0)); // white-hot for a moment, then its colour
+      vec3 c = mix(aCol, aCol2, smoothstep(0.2, 0.65, age / aInfo.y)); // its colour, turning into the second
+      vCol = mix(vec3(1.0, 0.95, 0.85), c, min(1.0, age * 4.0)); // white-hot for a moment, then its colour
       size = 2.6 + (age < 0.15 ? 2.5 : 0.0);
     }
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
@@ -61,7 +62,10 @@ const FRAG = /* glsl */`
 function directions(kind, n, rand) {
   const out = [];
   const flat = (x, y) => out.push([x, y, (rand() - 0.5) * 0.12]);
-  if (kind === 'ring') for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); }
+  if (kind === 'fan') for (let i = 0; i < n; i++) { // low on the barge: nine rays fanning up, like the festival's water fans
+    const ray = i % 9, a = ((ray - 4) / 4) * 1.1 + (rand() - 0.5) * 0.04, len = 0.25 + 0.75 * rand();
+    out.push([Math.sin(a) * len, Math.cos(a) * len * 1.2, (rand() - 0.5) * 0.06]);
+  } else if (kind === 'ring') for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); }
   else if (kind === 'pistil') for (let i = 0; i < n; i++) { // a ball with a small ball of another colour inside
     const inner = i % 3 === 0, y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (inner ? 0.4 : 0.9 + rand() * 0.1)));
@@ -83,9 +87,6 @@ function directions(kind, n, rand) {
   } else if (kind === 'palm') for (let i = 0; i < n; i++) { // eight thick fronds, mostly up and out
     const arm = i % 8, a = (arm / 8) * Math.PI * 2 + 0.2, len = 0.45 + 0.55 * rand(), up = 0.35;
     out.push([Math.cos(a) * len + (rand() - 0.5) * 0.08, (Math.sin(a) * 0.75 + up) * len, (rand() - 0.5) * 0.2]);
-  } else if (kind === 'saturn') for (let i = 0; i < n; i++) { // a ball with a tilted ring round it
-    if (i % 3 === 0) { const a = (i / n) * Math.PI * 2, x = Math.cos(a) * 1.15, y = Math.sin(a) * 0.3; out.push([x * 0.95 - y * 0.3, y + x * 0.3, Math.sin(a) * 0.4]); }
-    else { const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996; out.push([Math.cos(a) * r * 0.6, y * 0.6, Math.sin(a) * r * 0.6]); }
   } else for (let i = 0; i < n; i++) { // peony, willow, kamuro, small, rainbow: a sphere
     const y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996 + rand() * 0.3;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (0.85 + rand() * 0.15)));
@@ -95,6 +96,14 @@ function directions(kind, n, rand) {
 
 // A row of high-rises along the far bank, facing the lawn: one merged mesh
 // for the towers and one instanced mesh for their lit windows (2 draw calls).
+// Its outline follows the drone show's "Another Tower" skyline picture,
+// mirrored left to right, so the heights go up and down a lot instead of a
+// flat row of small blocks (Yozi: "드론쇼빌딩이미지를 참고해서 만들고
+// 좌우반전", "너무작은빌딩만잇거든"): tall towers either side of the
+// middle, mid-rises and low ones between, then a looser row out to the ends.
+// Drone picture: [x, width, height] in its units; here 1 unit = 20 m along
+// the river and 16 m up (the tallest about 110 m), x flipped.
+const DRONE_SKYLINE = [[-13, 3.4, 4.6], [-9.4, 3, 6.4], [-6.3, 2.6, 3.8], [5.6, 2.8, 4.4], [8.6, 3.2, 6.8], [12, 2.8, 3.6]];
 function makeSkyline() {
   const group = new THREE.Group();
   group.name = 'fireworks-skyline';
@@ -104,23 +113,34 @@ function makeSkyline() {
   const towers = [], lit = [], shade = new THREE.Color();
   let seed = 7;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let u = -460; u < 620; u += 18 + rand() * 10) {
-    const w = 10 + rand() * 9, d = 10, h = 12 + rand() * 26 + (Math.abs(u) < 150 ? rand() * 12 : 0);
-    const box = new THREE.BoxGeometry(w, h, d).translate(u, h / 2, -rand() * 30).toNonIndexed();
-    shade.set(['#4b5683', '#56618f', '#424c78'][Math.floor(rand() * 3)]);
+  const tower = (u, w, h, back) => {
+    const box = new THREE.BoxGeometry(w, h, 12).translate(u, h / 2, -back).toNonIndexed();
+    shade.set(['#3c4a78', '#46558a', '#34406a', '#52639a'][Math.floor(rand() * 4)]);
     const cols = new Float32Array(box.attributes.position.count * 3);
     for (let i = 0; i < cols.length; i += 3) cols.set([shade.r, shade.g, shade.b], i);
     box.setAttribute('color', new THREE.BufferAttribute(cols, 3));
     box.deleteAttribute('normal'); box.deleteAttribute('uv');
     towers.push(box);
-    const front = box.attributes.position.array.reduce((m, v, i) => (i % 3 === 2 ? Math.max(m, v) : m), -Infinity);
-    for (let y = 3; y < h - 2; y += 3.2) for (let c = 0; c < 3; c++) if (rand() < 0.62) lit.push([u + (c - 1) * w * 0.28, y, front + 0.1]);
+    const front = 6 - back, across = Math.max(2, Math.round(w / 5));
+    for (let y = 3; y < h - 2; y += 3.2) for (let c = 0; c < across; c++) if (rand() < 0.6) lit.push([u - w / 2 + (c + 0.5) * (w / across), y, front + 0.1, rand() < 0.3]);
+  };
+  // the middle: the drone picture, mirrored, with mid-rises in the gap
+  // where its tower stood
+  const MID = 13;
+  for (const [x, w, h] of DRONE_SKYLINE) tower(MID - x * 20, w * 20 * 0.5, h * 16, 4 + rand() * 6);
+  for (const [x, w, h] of [[-3.6, 16, 30], [-1.2, 20, 52], [1.4, 18, 38], [3.4, 14, 24], [-15.6, 16, 34], [15.4, 18, 40], [-18, 20, 58], [18.2, 16, 28]]) tower(MID + x * 20, w, h, 14 + rand() * 10);
+  // out to the ends: a looser row, now and then a tall one
+  for (const side of [-1, 1]) {
+    for (let d = 400 + rand() * 20; d < 600; d += 22 + rand() * 14) {
+      const tall = rand() < 0.25, h = tall ? 50 + rand() * 30 : 14 + rand() * 26;
+      tower(MID + side * d, 12 + rand() * 12, h, rand() * 30);
+    }
   }
   const mesh = new THREE.Mesh(mergeGeometries(towers), new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }));
   const windows = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 2.2),
-    new THREE.MeshBasicMaterial({ color: '#ffe3a0', transparent: true, opacity: 0, fog: false, depthWrite: false }), lit.length);
-  const m4 = new THREE.Matrix4();
-  lit.forEach(([x, y, z], k) => windows.setMatrixAt(k, m4.makeTranslation(x, y, z)));
+    new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, fog: false, depthWrite: false }), lit.length);
+  const m4 = new THREE.Matrix4(), warm = new THREE.Color('#ffe28a'), cool = new THREE.Color('#9fb8e0');
+  lit.forEach(([x, y, z, blue], k) => { windows.setMatrixAt(k, m4.makeTranslation(x, y, z)); windows.setColorAt(k, blue ? cool : warm); });
   for (const o of [mesh, windows]) { o.frustumCulled = false; o.userData.noShadow = true; group.add(o); }
   group.userData.windows = windows;
   group.visible = false;
@@ -128,11 +148,11 @@ function makeSkyline() {
 }
 
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 40 : 64, PER = phone ? 64 : 96, N = SLOTS * PER;
+  const SLOTS = phone ? 80 : 128, PER = phone ? 64 : 96, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)
-  const center = attr('aCenter', 3), dir = attr('aDir', 3), col = attr('aCol', 3), info = attr('aInfo', 4);
+  const center = attr('aCenter', 3), dir = attr('aDir', 3), col = attr('aCol', 3), col2 = attr('aCol2', 3), info = attr('aInfo', 4);
   for (let i = 0; i < N; i++) info.array[i * 4] = -1e6; // every slot starts free (long over)
   void position;
   const mat = new THREE.ShaderMaterial({
@@ -182,12 +202,17 @@ export function createFireworksSky(scene, { phone = false } = {}) {
         // (h, y, n): h along the river, y up, n towards the lawn
         const [h, y, nn] = d;
         dir.array.set([(h * U[0] + nn * -U[1]) * speed, y * speed, (h * U[1] + nn * U[0]) * speed], i * 3);
-        const c = b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : b.kind === 'pistil' ? (k % 3 === 0 ? c2 : c1) : k % 2 && b.color2 !== b.color ? c2 : c1;
+        // start and end colours: rainbow one each, pistil a heart of the
+        // second, the rest start in the first and turn into the second
+        // (a quarter in the second from the start)
+        const c = b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : b.kind === 'pistil' ? (k % 3 === 0 ? c2 : c1) : k % 4 === 0 ? c2 : c1;
+        const e = b.kind === 'rainbow' || b.kind === 'pistil' ? c : c2;
         col.array.set([c.r, c.g, c.b], i * 3);
+        col2.array.set([e.r, e.g, e.b], i * 3);
         info.array.set([b.t, life * (0.85 + rand() * 0.3), hangs ? 1.6 : b.kind === 'dahlia' ? 1.3 : 1, k === 0 ? 1 : 0], i * 4);
       } else info.array.set([-1e6, 0, 0, 0], i * 4);
     }
-    for (const [a, size] of [[center, 3], [dir, 3], [col, 3], [info, 4]]) { a.addUpdateRange(s * PER * size, PER * size); a.needsUpdate = true; }
+    for (const [a, size] of [[center, 3], [dir, 3], [col, 3], [col2, 3], [info, 4]]) { a.addUpdateRange(s * PER * size, PER * size); a.needsUpdate = true; }
     return { x, y: b.h, z, kind: b.kind };
   };
 
