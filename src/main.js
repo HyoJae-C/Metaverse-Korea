@@ -4409,6 +4409,7 @@ function runwayStep(p, dt) {
   return moved > 0.0005 ? 0.32 : 0; // a steady catwalk pace
 }
 let snapReq = null; // resolved with a copy of the canvas after the next render
+let frameReq = null; // called with the canvas right after the next render (game/screen-shot.js)
 const photoUi = lazyPanel(() => import('./ui/photo-ui.js').then(({ PhotoUI }) => new PhotoUI({
   root: $('photo-panel'),
   wallet,
@@ -6842,6 +6843,10 @@ const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s)
 import('./game/screen-layout.js').then(({ createScreenLayout }) => {
   createScreenLayout({ input, hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch, onMinimap: (on) => { minimapAlways = on; } });
 }).catch(() => { /* the default layout */ });
+// The 📷 under the eye: the game view only, to save or share. (game/screen-shot.js)
+import('./game/screen-shot.js').then(({ createScreenShot }) => {
+  createScreenShot({ hud: $('hud'), t, toast: (s) => shop.toast(s), isTouch: input.isTouch, grabFrame: (cb) => { frameReq = cb; } });
+}).catch(() => { /* no button */ });
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
@@ -7249,6 +7254,7 @@ renderer.setAnimationLoop((now) => {
     snapReq(c);
     snapReq = null;
   }
+  if (frameReq) { const f = frameReq; frameReq = null; f(renderer.domElement); } // (screenshot button)
   updateDelivery();
   // The K-POP café's video, on the wall screen.
   placeKpopVideo(kpop.song && interior?.tv);
