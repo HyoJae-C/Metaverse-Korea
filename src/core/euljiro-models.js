@@ -100,7 +100,14 @@ function heungGate(g) {
   const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 });
   top.translate(0, 0, -D / 2);
   g.add(new THREE.Mesh(top, mat(stone)));
-  for (let y = 0.95; y < H; y += 0.95) box(g, W + 0.04, 0.04, D + 0.04, 0, y, 0, line); // courses
+  // The courses: on the walls either side of the arch, never across its
+  // opening (a full-width line drew a bar through the passage).
+  for (let y = 0.95; y < H; y += 0.95) {
+    const half = y < S ? A : y < S + A ? Math.sqrt(A * A - (y - S) * (y - S)) : 0;
+    if (!half) { box(g, W + 0.04, 0.04, D + 0.04, 0, y, 0, line); continue; }
+    const w = W / 2 + 0.02 - half;
+    for (const sx of [-1, 1]) box(g, w, 0.04, D + 0.04, sx * (half + w / 2), y, 0, line);
+  }
   // The wing walls: four steps down either side, grass on each tread.
   for (const sx of [-1, 1]) for (let i = 0; i < 4; i++) {
     const h = H * (0.82 - i * 0.18), w = wing / 4, x = sx * (W / 2 + w * (i + 0.5));
