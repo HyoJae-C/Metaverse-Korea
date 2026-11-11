@@ -85,7 +85,7 @@ test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and tr
 
 test('every language has the Seoul Dal words', () => {
   const keys = Object.keys(EN).filter((k) => k.startsWith('dal.') || k === 'ledger.seoulDal');
-  assert.equal(keys.length, 20);
+  assert.equal(keys.length, 24);
   for (const [lang, table] of Object.entries(STRINGS)) {
     if (lang === 'hant') continue; // (made from zh)
     for (const k of keys) assert.ok(table[k], `${lang} ${k}`);

@@ -19,6 +19,13 @@
 // it, so every screen sorts the same line, core/tarot-queue.js): when the
 // gate opens the first in line are called, from anywhere near the pad, and
 // have DAL.turn seconds to get in before the next is called.
+//
+// Tickets keep (Yozi's ask): the waiting ticket, and a fare paid but not
+// flown (taken off the gondola before lift-off by the map, a warp, a taxi),
+// stay with you until you ride, through shops, other districts and a reload
+// (localStorage). Away from the pad you're out of the line, so nobody waits
+// on you; back near it you're in again at your ticket's place. A missed turn
+// puts you at the back of the line instead of tearing the ticket up.
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex } from '../core/three-kit.js';
 import { DAL, dalAt, gateOpen, opensIn, dalClock, riderSpot, clock } from '../core/seoul-dal.js';
@@ -204,6 +211,11 @@ export function createSeoulDal(game, at) {
   let ride = null; // { lx, lz, face (where I stand in the gondola), n (the flight), paid, flown, topped, down }
   let pace = 0; // (walking round the deck: for the walk animation)
   let ticket = 0; // my waiting ticket (when I took it, ms), or 0
+  let pass = null; // a fare I paid but didn't fly: { paid } (the wallet op, for a refund), or null
+  const KEY = 'mk.dalTicket';
+  try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); ticket = Number(v?.q) || 0; pass = v?.pass ? { paid: v.pass.paid ?? null } : null; } catch { /* storage blocked */ }
+  const save = () => { try { if (ticket || pass) localStorage.setItem(KEY, JSON.stringify({ q: ticket, pass })); else localStorage.removeItem(KEY); } catch { /* ignore */ } };
+  let here = false; // (near the pad, in the street: in the line)
   const queue = new TarotQueue(undefined, DAL.turn * 1000);
   let turn = { order: [], callable: [], expired: [] };
   // How many are aboard flight n (me too).
@@ -215,7 +227,7 @@ export function createSeoulDal(game, at) {
   function line() {
     const out = [];
     for (const [id, o] of game.others.players) if (!o.hidden && o.target?.dq) out.push({ id, tq: Number(o.target.dq) });
-    if (ticket) out.push({ id: game.myId, tq: ticket });
+    if (ticket && here) out.push({ id: game.myId, tq: ticket });
     return out;
   }
   // Seats free to call the line into: only while the gate is open.
@@ -251,7 +263,10 @@ export function createSeoulDal(game, at) {
     if (!gateOpen(s) || ride) return;
     turn = queue.update(line(), freeNow(s));
     if (!mayBoard(s)) { game.shop.toast(T('dal.full', { n: DAL.max })); game.clearAction(); return; }
-    if (!game.wallet.spend(DAL.fare, { k: 'ledger.seoulDal' })) { game.shop.toast(T('ride.noCoins', { n: DAL.fare.toLocaleString() })); return; }
+    let paid;
+    if (pass) paid = pass.paid; // (already paid: the kept fare)
+    else if (game.wallet.spend(DAL.fare, { k: 'ledger.seoulDal' })) paid = game.wallet.lastOp;
+    else { game.shop.toast(T('ride.noCoins', { n: DAL.fare.toLocaleString() })); return; }
     // A free place at the rail: away from the others already standing there.
     const taken = new Set();
     for (const o of game.others.players.values()) {
@@ -263,8 +278,10 @@ export function createSeoulDal(game, at) {
     const free = [...Array(DAL.slots).keys()].filter((k) => !taken.has(k));
     const pick = free.length ? free : [...Array(DAL.slots).keys()];
     ticket = 0;
+    pass = null;
+    save();
     const at0 = riderSpot(pick[Math.floor(Math.random() * pick.length)]);
-    ride = { lx: at0.x, lz: at0.z, face: at0.ry, n: s.n, paid: game.wallet.lastOp, flown: false, topped: false, down: false };
+    ride = { lx: at0.x, lz: at0.z, face: at0.ry, n: s.n, paid, flown: false, topped: false, down: false };
     const sp = spotNow(s);
     game.me.root.position.set(sp.x, sp.y, sp.z);
     game.me.root.rotation.y = sp.ry;
@@ -289,6 +306,7 @@ export function createSeoulDal(game, at) {
   const mayBoard = (s) => gateOpen(s) && aboard(s.n) < DAL.max && queue.maySit(game.myId, turn);
   function takeTicket() {
     ticket = Date.now();
+    save();
     turn = queue.update(line(), freeNow(dalAt(dalClock())));
     game.shop.toast(T('dal.took', { n: myPlace() }));
     game.resend();
@@ -296,6 +314,7 @@ export function createSeoulDal(game, at) {
   }
   function leaveLine() {
     ticket = 0;
+    save();
     game.shop.toast(T('dal.left'));
     game.resend();
     game.clearAction();
@@ -308,8 +327,19 @@ export function createSeoulDal(game, at) {
     // The line: called when the gate opens; a missed turn drops the ticket.
     const was = turn.callable.includes(game.myId);
     turn = queue.update(line(), freeNow(s));
-    if (ticket && (far || game.mode !== 'street')) { ticket = 0; game.resend(); } // (went away)
-    if (ticket && turn.expired.includes(game.myId)) { ticket = 0; game.shop.toast(T('dal.missed')); game.resend(); game.clearAction(); }
+    const near = !far && game.mode === 'street';
+    if (near !== here) { // (went away: out of the line, the ticket kept; back: in again)
+      here = near;
+      if (ticket) game.resend();
+      if (here && !ride && (ticket || pass)) { turn = queue.update(line(), freeNow(s)); game.shop.toast(ticket ? T('dal.kept', { n: myPlace() }) : T('dal.keptPaid')); }
+    }
+    if (ticket && turn.expired.includes(game.myId)) { // a missed turn: to the back of the line
+      ticket = Date.now();
+      save();
+      turn = queue.update(line(), freeNow(s));
+      game.shop.toast(T('dal.missed', { n: myPlace() }));
+      game.resend(); game.clearAction();
+    }
     if (ticket && !was && turn.callable.includes(game.myId)) { game.shop.toast(T('dal.called', { s: DAL.turn })); game.clearAction(); }
     if (root.visible) {
       balloon.position.y = s.h + DAL.deck;
@@ -324,9 +354,11 @@ export function createSeoulDal(game, at) {
     const lift = ride && game.mode === 'street' ? Math.min(1, s.h / DAL.top) : 0;
     if (game.weather && (lift > 0 || lifted)) { game.weather.lift = lift; lifted = lift > 0; }
     if (!ride) return;
-    if (game.mode !== 'street') { ride = null; return; } // (a warp, the map: gone)
+    // Taken off before lift-off (a warp, the map, a taxi): the fare is kept for next time.
+    const pulled = () => { if (!ride.flown) { pass = { paid: ride.paid }; save(); } ride = null; game.resend(); };
+    if (game.mode !== 'street') { pulled(); return; }
     const sp = spotNow(s);
-    if (Math.hypot(p.x - sp.x, p.z - sp.z) > 4) { ride = null; p.y = 0; return; } // taken somewhere else (a taxi, the map)
+    if (Math.hypot(p.x - sp.x, p.z - sp.z) > 4) { pulled(); p.y = 0; return; }
     if (s.n !== ride.n && s.phase === 'board') { // landed: step out
       game.shop.toast(T('dal.landed'));
       game.me.play?.('cheer');
@@ -364,11 +396,11 @@ export function createSeoulDal(game, at) {
     const near = Math.hypot(p.x - ox, p.z - oz);
     if (ticket && turn.callable.includes(game.myId) && near < DAL.call) { // called: board from anywhere round the pad
       const sec = queue.secondsLeft(game.myId) ?? 0;
-      return { key: 'dal-turn:' + sec, label: '🔔 ' + T('dal.turn', { s: sec, n: DAL.fare.toLocaleString() }), run: board };
+      return { key: 'dal-turn:' + sec, label: '🔔 ' + (pass ? T('dal.turnPaid', { s: sec }) : T('dal.turn', { s: sec, n: DAL.fare.toLocaleString() })), run: board };
     }
     if (near > DAL.near && Math.hypot(p.x - gate[0], p.z - gate[1]) > 2.4) return null; // (round the pad's fence, or at the gate)
     if (ticket) { const n = myPlace(); return { key: 'dal-line:' + n, label: '🎫 ' + T('dal.line', { n }), run: leaveLine }; }
-    if (mayBoard(s)) return { key: 'dal-board:' + aboard(s.n), label: '🎈 ' + T('dal.board', { n: DAL.fare.toLocaleString(), k: aboard(s.n), max: DAL.max }), run: board };
+    if (mayBoard(s)) return { key: 'dal-board:' + aboard(s.n) + (pass ? 'p' : ''), label: '🎈 ' + (pass ? T('dal.boardPaid', { k: aboard(s.n), max: DAL.max }) : T('dal.board', { n: DAL.fare.toLocaleString(), k: aboard(s.n), max: DAL.max })), run: board };
     const t = clock(opensIn(now));
     return { key: 'dal-ticket:' + t, label: '🎫 ' + T('dal.ticket', { t }), run: takeTicket };
   }
@@ -403,7 +435,7 @@ export function createSeoulDal(game, at) {
   // My bits of the shared state: the flight I'm on, my ticket.
   function state(st) {
     if (ride) st.dl = ride.n + 1;
-    if (ticket) st.dq = ticket;
+    if (ticket && here) st.dq = ticket;
   }
   return {
     update, act, state, camera,
