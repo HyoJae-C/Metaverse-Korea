@@ -226,8 +226,9 @@ html[lang='ar'] :is(.panel, .overlay p, .overlay h2, .overlay h3, .toast, [id$='
 .joy-place-bar .primary { margin: 0; }
 /* Hide buttons (game/screen-layout.js): a clean view; walking, the action
    button and anything open stay. The eye brings them back. */
-html.ui-hidden #hud :is(.street-card, .top-right, .tools, .emote-wheel, .minimap, .keys-panel,
+html.ui-hidden #hud :is(.street-card, .top-right, .tools > :not(#map-btn), .emote-wheel, .minimap, .keys-panel,
   .quest-bar, .quest-chip, .chat-log, .chat-fold, .notice-pin, .install-nudge, .poop-chip, .help, .info-hint) { display: none !important; }
+html.android.ui-hidden #hud .tools { display: none !important; } /* (its bar; the map button is beside the eye) */
 /* The eye: top left, where the minimap sits only while you are guided
    (then under it on wide screens, beside it on phones). */
 .ui-eye {
@@ -238,7 +239,8 @@ html.ui-hidden #hud :is(.street-card, .top-right, .tools, .emote-wheel, .minimap
 }
 .ui-eye[aria-pressed='true'] { background: var(--mint); }
 html:not(.ui-hidden) .in-store .ui-eye, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-eye { display: none; }
-body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 128px); }
+/* (Buttons hidden: the minimap hides too, so the eye stays put and the map button shows.) */
+html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 128px); }
 /* The map button beside the eye (moved out of the tool row by
    game/screen-layout.js): stays when the eye hides the rest. While the
    minimap shows, the minimap is the map button. */
@@ -249,10 +251,10 @@ body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-ins
 }
 .tool.corner-map span { font-size: 22px; }
 .corner-map small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-body:has(.minimap:not([hidden])) .corner-map, #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .corner-map { display: none; }
+html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .corner-map { display: none; }
 .in-store .corner-map { left: max(12px, env(safe-area-inset-left, 0px)); }
 @media (max-width: 700px), (max-height: 500px) {
-  body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
 }
 .help {
   position: absolute;
@@ -738,7 +740,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 /* Wide screens: right of the street's minimap (game/minimap.js), not over it
    (the next-show line keeps the box up all the time). */
 @media (min-width: 761px) {
-  .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 106px); } /* (right of the eye and map, game/screen-layout.js) */
+  .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 52px); } /* (right of the eye, game/screen-layout.js) */
+  body:has(.corner-map) .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 106px); } /* (and of the map button, on touch screens) */
   body:has(.minimap:not([hidden])) .notice-pin { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 132px); width: min(440px, calc(100vw - 580px)); }
 }
 /* Under the shop's name banner, and under the wide-screen ad (core/side-ad.js). */

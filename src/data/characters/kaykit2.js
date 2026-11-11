@@ -219,7 +219,9 @@ export default {
     { url: 'models/kaykit2/anims-combatmelee.glb' },
   ],
   scale: 0.57, // model is ~2.2 units tall; our characters are ~1.25 m
-  sit: { y: -0.02, z: 0.24 }, // offset on a café chair (metres, after scale)
+  // Offset on a chair (metres, after scale): every seat's top is 0.38 m above
+  // the character's feet; up so the thighs rest on top of it, not in it.
+  sit: { y: 0.12, z: 0.24 },
   // Added to the chair clip, which leaves the legs hanging straight: thighs
   // forward along the seat, knees bent so the shins go down.
   sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
