@@ -323,15 +323,18 @@ const INFO = { id: 'info-myeongdong', near: [-1561.2, -571.8] };
 export const DOOR = { id: 'myeongdong-cathedral', at: onHall(L2 + 1.7, 0) };
 
 // ---------- Night food carts (game/night-carts.js) ----------
-// Myeongdong's evening street food: carts down the middle of the shopping
+// Myeongdong's evening street food: carts along both sides of the shopping
 // street from the crossing with Myeongdong-gil to Toegye-ro (the real ones
 // fill Myeongdong 8-gil, by the station), out from sunset to morning. Each
-// is set along the street, its counter facing one side and then the other,
-// with a clear 2 m and more past it on both sides. (Yozi 2026-11-11: 8 carts,
-// a small lamp each.)
-export const CART_COUNT = 8;
+// stands a metre off the shop fronts with its counter to the middle of the
+// street, the two sides staggered, so the middle stays open to walk down and
+// the doors stay clear. (Yozi 2026-11-11: 8 carts, a small lamp each; then
+// both sides, 16.)
+export const CART_COUNT = 16;
 export const CART = { len: 2.2, depth: 1.3 }; // its footprint (the seller stands inside it)
-export function cartSpots() {
+export const CART_OFF = 3.5; // its middle from the middle of the street (the shop fronts are at 5.3)
+const DOOR_CLEAR = 5; // along the street from a shop's door (its stamp stand is 3.8 m along)
+export function cartSpots(doors = []) {
   const P = straight(MAIN), cum = [0];
   for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
   const total = cum.at(-1);
@@ -345,13 +348,35 @@ export function cartSpots() {
   // From just past the crossing (along the street) to short of Toegye-ro.
   let cross = 0;
   for (let s = 0, best = Infinity; s <= total; s += 0.5) { const q = pointAt(s).at, dd = Math.hypot(q[0] - CROSSING[0], q[1] - CROSSING[1]); if (dd < best) { best = dd; cross = s; } }
-  const s0 = cross + 9, s1 = total - 12, step = (s1 - s0) / (CART_COUNT - 1);
-  return Array.from({ length: CART_COUNT }, (_, i) => {
-    const { at, d } = pointAt(s0 + i * step), side = i % 2 ? -1 : 1;
-    return [r1(at[0]), r1(at[1]), facing(-d[1] * side, d[0] * side)];
-  });
+  const per = CART_COUNT / 2, s0 = cross + 7, s1 = total - 11, step = (s1 - s0) / (per - 0.5);
+  const placeAt = (s, side) => {
+    const { at, d } = pointAt(s), n = [-d[1] * side, d[0] * side];
+    return { p: [at[0] + n[0] * CART_OFF, at[1] + n[1] * CART_OFF], ry: facing(-n[0], -n[1]) };
+  };
+  const exits = stationExits().map((e) => e.at);
+  const clear = (p) => doors.every((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) > DOOR_CLEAR) && exits.every((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) > 7);
+  const out = [];
+  for (const side of [1, -1]) {
+    for (let i = 0; i < per; i++) {
+      const want = s0 + (i + (side < 0 ? 0.5 : 0)) * step;
+      // nudged along the street off a door or a station exit (the nearest free spot)
+      let got = null;
+      for (let k = 0; k <= 24 && !got; k++) for (const sgn of k ? [1, -1] : [1]) {
+        const s = want + sgn * k * 0.5;
+        if (s < cross + 4 || s > total - 6) continue;
+        const c = placeAt(s, side);
+        if (clear(c.p) && out.every(([x, z]) => Math.hypot(x - c.p[0], z - c.p[1]) > 3)) { got = c; break; }
+      }
+      if (!got) throw new Error(`no room for night cart ${out.length}`);
+      out.push([r1(got.p[0]), r1(got.p[1]), got.ry]);
+    }
+  }
+  return out;
 }
-const CARTS = cartSpots();
+// The doors along the street (the shops' "at" in stores.json, set below).
+export const STREET_DOORS = JSON.parse(readFileSync(path.join(R, 'stores.json'), 'utf8')).stores
+  .filter((st) => st.at && !st.carts && st.at[0] > -1600 && st.at[0] < -1540 && st.at[1] > -600 && st.at[1] < -440).map((st) => st.at);
+const CARTS = cartSpots(STREET_DOORS);
 const CART_MID = CARTS[Math.floor(CARTS.length / 2)];
 landmarks.push({ type: 'nightcarts', store: 'myeongdong-night-carts', x: CART_MID[0], z: CART_MID[1], carts: CARTS.map(([x, z, a]) => [r1(x - CART_MID[0]), r1(z - CART_MID[1]), a]) });
 
