@@ -34,6 +34,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { BARGES } from '../src/core/fireworks-show.js';
 import { inPolygon, toGame } from '../src/core/seoul-grid.js';
+import { nearestOn } from './street-rows.mjs';
 import { northBetween, southBetween, RIVER_CUT, BRIDGE_NORTH, SAETGANG_BIKE } from './han-bank.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -431,6 +432,30 @@ export const SPOTS = {
   'yeouido-hangang': at(120, PATH), // on the river path at the corner of the lawn, by the kiosk (where a taxi or the map drops you)
   'info-yeouido': at(-162.4, PATH - 2.5),
 };
+// Yeouinaru Station (Line 5, 527): two exits, from the real 2 and 3 (OSM
+// 3403232529, 3403232528), the pair on the river side of Yeouidong-ro,
+// moved out of the road onto its north pavement, between the road and the
+// Han River path (at 1/4 all four real exits fall in the road), the stairs
+// going down along the road towards each other:
+//   2: west, behind Mul-bit Square, its mouth west towards the square and
+//      the Information Center;
+//   3: east, at the corner of the fireworks lawn, its mouth east onto it.
+export const STATION_EXITS = {
+  2: { real: toGame(37.5270678, 126.932426), flip: true },
+  3: { real: toGame(37.5267199, 126.9328776) },
+};
+export function stationExits(out = 9) {
+  const road = OSM.roads.find((r) => r.en === 'Yeouidong-ro').p;
+  return Object.entries(STATION_EXITS).map(([n, { real, flip }]) => {
+    const { at: on, dir } = nearestOn(real, road);
+    const north = toUV([on[0] + dir[1], on[1] - dir[0]])[1] < toUV(on)[1] ? 1 : -1; // (the normal towards the river)
+    const ax = on[0] + dir[1] * north * out, az = on[1] - dir[0] * north * out;
+    const east = dir[0] * U[0] + dir[1] * U[1] > 0 ? 1 : -1; // (down along the road, down the river)
+    const ry = Math.atan2(dir[0] * east, dir[1] * east) + (flip ? 0 : Math.PI); // 2 goes down east, 3 west
+    return { n: Number(n), at: [r1(ax), r1(az)], ry: Number(Math.atan2(Math.sin(ry), Math.cos(ry)).toFixed(4)), real: real.map(r1) };
+  });
+}
+
 // The park's stamp stand and meeting zone K-1 (world), for data/stamps.js and zones.json.
 export const STAMP_AT = world(at(171, 5));
 export const LAWN_AT = world(at(13, 20));
@@ -460,6 +485,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   writeFileSync(path.join(R, 'stores.json'), stores);
   console.log(`park stamp stand: [${STAMP_AT}], ry ${(ALONG_V + Math.PI / 2).toFixed(4)}; meeting zone K-1 on the lawn: [${LAWN_AT}]`);
   console.log(`yeouido: ${map.buildings.length} buildings; bridge ${r1(BRIDGE_LAND)} m over the water; park drop-off ${world(SPOTS['yeouido-hangang'])}`);
+  for (const e of stationExits()) console.log(`station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
   const a = local(toGame(37.5271, 126.9329));
   console.log(`anchor: Yeouinaru Station, local [${a}]`);
 }

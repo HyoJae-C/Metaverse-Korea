@@ -29,6 +29,7 @@ import path from 'node:path';
 import { loadRegionMap } from '../src/core/districts.js';
 import { STAIR } from '../src/core/stream.js';
 import { r1, town, nearestOn, strips } from './street-rows.mjs';
+import { HEUNG } from './build-euljiro.mjs';
 import { CG, STREAM, F, LEN, at, ROAD, WEST, U_EAST, NORTH, SOUTH, BRIDGES, zAt, alongside } from './cheonggyecheon-line.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -169,7 +170,15 @@ t.row('north', NORTH, -1, { off: 8, ...LOW });
 t.row('south', SOUTH, 1, { off: 8, ...TOWER, depth: 14, to: sAt(SOUTH, -1440) });
 t.row('south', SOUTH, 1, { off: 8, ...OFFICE, depth: 13, to: sAt(SOUTH, CHANGG_X) });
 t.row('south', SOUTH, 1, { off: 8, ...LOW, depth: 12, to: sAt(SOUTH, CHANGG_X) });
-const buildings = t.buildings.map((b) => ({ ...b, cg: 1 }));
+// Round Heunginjimun the row stays low (at most HEUNG_LOW.h m within
+// HEUNG_LOW.r m of the gate): the tall blocks either side hid it, and the
+// real gate stands among low buildings (Yozi, 2026-11-11).
+const HEUNG_LOW = { r: 90, h: 7 };
+const lowNearGate = (b) => {
+  const cx = b.p.reduce((s, q) => s + q[0], 0) / b.p.length, cz = b.p.reduce((s, q) => s + q[1], 0) / b.p.length;
+  return Math.hypot(cx - HEUNG.x, cz - HEUNG.z) < HEUNG_LOW.r ? { ...b, h: Math.min(b.h, HEUNG_LOW.h) } : b;
+};
+const buildings = t.buildings.map((b) => ({ ...lowNearGate(b), cg: 1 }));
 
 // ---------- Into the Gyeongbokgung map ----------
 const L = (p) => p.map(([x, z]) => [r1(x - ox), r1(z - oz)]);

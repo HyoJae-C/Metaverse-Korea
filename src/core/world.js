@@ -92,7 +92,7 @@ export function buildWorld(map, scene, opts = {}) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
-    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 

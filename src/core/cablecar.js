@@ -69,12 +69,17 @@ export const CC = {
   // Love locks (사랑의 자물쇠): a heart frame hung with locks by the left
   // railing, between the flower beds; stand at `spot` to hang one or read.
   loveLock: { x: -19.9, z: -43, spot: { x: -17.2, z: -43 } },
+  // The back gate, in the railing behind the tower: the Namsan trail comes
+  // up to it (game/namsan-walk.js). You arrive at `inside`, facing the tower.
+  trailGate: { x: 0, z: -59, half: 1.8, inside: { x: 0, z: -56.6, ry: 0 } },
 };
 export const ROOM_CABLECAR = { w: CC.w, d: CC.d, h: 60 };
 // The floor height under a point: the summit plaza or the lower station.
 export const cableFloor = (x, z) => (z < CC.edge ? CC.top : 0);
 // Near the love-lock heart? (where its two buttons show)
 export const nearLoveLock = (x, z) => Math.hypot(x - CC.loveLock.spot.x, z - CC.loveLock.spot.z) < 2.2;
+// At the back gate? (where "walk down the trail" shows)
+export const nearTrailGate = (x, z) => Math.abs(x - CC.trailGate.x) < CC.trailGate.half + 0.6 && z < CC.trailGate.z + 3.2;
 // The camera keeps out of the tower's base (single-sided walls you would
 // otherwise see straight through when the camera swings behind it).
 export const cableCamBlocked = (x, z) => z < CC.edge && Math.hypot(x - CC.tower.x, z - CC.tower.z) < 5.4;
@@ -397,11 +402,25 @@ export function buildCableCar(store, ROOM, EXIT) {
 
   loveLockHeart(scene, block, TOP);
 
+  // The trail's gate at the back: two wooden posts, a beam with its sign,
+  // and the first steps going down (the room ends just past them).
+  {
+    const G = CC.trailGate;
+    for (const sx of [-1, 1]) box(0.3, 2.8, 0.3, G.x + sx * (G.half + 0.15), TOP + 1.4, G.z, '#8a5a36');
+    box(G.half * 2 + 0.9, 0.3, 0.34, G.x, TOP + 2.75, G.z, '#8a5a36');
+    const trailSign = signMesh('남산 산책로', 'NAMSAN TRAIL · TO GYEONGNIDAN-GIL', 3.4, '#5b7d3a');
+    trailSign.position.set(G.x, TOP + 3.35, G.z + 0.2);
+    scene.add(trailSign);
+    for (let k = 0; k < 3; k++) box(G.half * 2, 0.2, 0.5, G.x, TOP - 0.25 - k * 0.3, G.z - 0.45 - k * 0.5, '#b9ad98');
+    block(G.x, G.z - 1.3, G.half * 2 + 1, 1); // (the room ends here: you go on by the button)
+  }
+
   // Railings round the plaza, hung with love locks.
   const rails = [
     [-w / 2 + 1, CC.edge - 1, -w / 2 + 1, -d / 2 + 1],
     [w / 2 - 1, CC.edge - 1, w / 2 - 1, -d / 2 + 1],
-    [-w / 2 + 1, -d / 2 + 1, w / 2 - 1, -d / 2 + 1],
+    [-w / 2 + 1, -d / 2 + 1, CC.trailGate.x - CC.trailGate.half, -d / 2 + 1], // (the back, either side of the trail's gate)
+    [CC.trailGate.x + CC.trailGate.half, -d / 2 + 1, w / 2 - 1, -d / 2 + 1],
     [-w / 2 + 1, CC.edge - 1, -8, CC.edge - 1],
     [8, CC.edge - 1, w / 2 - 1, CC.edge - 1],
   ];

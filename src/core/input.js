@@ -75,17 +75,32 @@ export class Input {
     const knob = el.querySelector('.knob');
     let id = null, cx = 0, cy = 0;
     const R = 46;
+    // "Under your thumb" (game/screen-layout.js): the stick is a wide
+    // invisible area and its ring (the knob's parent) jumps to the touch.
+    const ring = () => (el.classList.contains('float') && knob.parentElement !== el ? knob.parentElement : null);
     const reset = () => {
       id = null;
       this.stick = null;
       knob.style.transform = 'translate(-50%, -50%)';
+      el.classList.remove('held');
+      const g = ring();
+      if (g) g.style.left = g.style.top = '';
     };
     el.addEventListener('pointerdown', (e) => {
+      if (el.classList.contains('placing') || id !== null) return; // (being moved; or a second finger)
       id = e.pointerId;
       el.setPointerCapture(id);
-      const r = el.getBoundingClientRect();
-      cx = r.left + r.width / 2;
-      cy = r.top + r.height / 2;
+      const r = el.getBoundingClientRect(), g = ring();
+      if (g) {
+        cx = e.clientX;
+        cy = e.clientY;
+        g.style.left = cx - r.left + 'px';
+        g.style.top = cy - r.top + 'px';
+        el.classList.add('held');
+      } else {
+        cx = r.left + r.width / 2;
+        cy = r.top + r.height / 2;
+      }
       handle(e);
     });
     const handle = (e) => {
@@ -97,8 +112,10 @@ export class Input {
       this.stick = { x: dx / R, y: -dy / R };
     };
     el.addEventListener('pointermove', handle);
-    el.addEventListener('pointerup', reset);
-    el.addEventListener('pointercancel', reset);
+    const end = (e) => { if (e.pointerId === id) reset(); };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    el.addEventListener('lostpointercapture', end);
     reset();
   }
 

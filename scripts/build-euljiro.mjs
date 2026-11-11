@@ -346,8 +346,12 @@ const DONGMYO_JONGNO = [-948, -767];
   roads.push({ k: 'primary', w, p: [turn, [rx1, s1]] });
   const lawnS = Math.floor(Math.max(s0, s1) - 4.5 - 1); // (z south: the north road's north edge, less 1 m)
   const e = w / 2 + 2, lx0 = rx0 + e, lx1 = rx1 - e, lz1 = rz1 + e, lzS = Math.min(lawnS, zAt(CG_NORTH, x) - 5.5);
-  // The lawn: inside the roads, its north-west and north-east corners cut like the road's.
-  areas.push({ k: 'park', p: [[lx0, lzS], [lx0, nw[1]], [rx0 + 19 + 6, lz1], [ne[0], lz1], [lx1, turn[1] + e], [lx1, lzS]] });
+  // The lawn: only round the gate and its ongseong, the rest of the island
+  // paved, like the real one (mostly road and paving, green in the yard;
+  // Yozi 2026-11-11, the whole island green was too much).
+  const { W: GW, D: GD, wing: GWING, rx: GRX } = HEUNG_SIZE;
+  const gz0 = Math.max(lz1, z - GW / 2 - GWING - 3), gx0 = x - 11, gx1 = Math.min(lx1, x + GD / 2 + GRX + 3);
+  areas.push({ k: 'park', p: rect(gx0, gz0, gx1, lzS) });
   // The walk: up from the bridge, west along the lawn's south edge, up the
   // west side, through the arch, across the ongseong's yard and out north.
   const { W, D, A, wing, R: OR, rx: ORX } = HEUNG_SIZE, half = W / 2, wz = HEUNG.edge - 2.5;
@@ -371,8 +375,8 @@ const DONGMYO_JONGNO = [-948, -767];
   blockers.push({ p: rect(x - 1.2, z - half - wing - 6, x + 1.2, z - half - wing) });
   landmarks.push({ type: 'sign', x: x - 9, z: wz - 5, ry: 0, title: HEUNGINJIMUN.title, text: HEUNGINJIMUN.text });
   pois.push({ kind: 'landmark', x, z: z - 14, name: N('흥인지문 (동대문)', 'Heunginjimun (Dongdaemun)', '興仁之門（東大門）', '兴仁之门（东大门）') });
-  // Green round it: trees along the lawn's west and north edges (pines
-  // among them), off the walks, and patches of wild flowers in the corners.
+  // Green round it: trees along the island's west edge (pines among
+  // them), off the walks.
   const spots = [];
   const tree = (tx, tz) => {
     const offWalk = Math.abs(tx - (x - 13)) > 4 && Math.abs(tz - wz) > 4 && !(Math.abs(tx - (x + D / 2 + 3)) < 4 && tz < z);
@@ -380,10 +384,10 @@ const DONGMYO_JONGNO = [-948, -767];
     if (offWalk && offGate && Math.hypot(tx - (x - 9), tz - (wz - 5)) > 4) spots.push([r1(tx), r1(tz)]);
   };
   for (let tz = lzS - 4; tz > nw[1] - 2; tz -= 6.5) tree(lx0 + 3, tz); // the west side
-  for (let tx = lx0 + 9; tx < ne[0]; tx += 7) tree(tx, Math.max(lz1 + 3, nw[1] + ((lz1 - nw[1]) * (tx - lx0)) / (rx0 + 25 - lx0) + 3)); // the north side
+  // (none on the north side now the lawn stops short of it)
   // (none on the east side: they hid the gate and its ongseong, Yozi 2026-11-11)
   landmarks.push({ type: 'shrinetrees', x, z, spots: spots.map(([tx, tz]) => [r1(tx - x), r1(tz - z)]) });
-  for (const [mx, mz, r] of [[lx0 + 9, z - 8, 4], [lx0 + 10, lzS - 7, 3.5], [lx1 - 8, z + 2, 4.5], [lx1 - 9, lzS - 6, 3.5], [x - 4, lz1 + 6, 3.5]]) landmarks.push({ type: 'meadow', x: r1(mx), z: r1(mz), r, clear: r + 1 });
+  // (no wild-flower patches: they sat on the paving now)
 }
 
 // ---------- Into the district's own metres ----------
