@@ -138,7 +138,7 @@ export class Storefronts {
       // "face" the way you face coming out.
       if (store.front === 'landmark') {
         const group = new THREE.Group();
-        group.position.set(ax, 0, az);
+        group.position.set(ax, store.y || 0, az); // (y: a door up on a hill, e.g. the cathedral's yard)
         group.rotation.y = store.face || 0;
         scene.add(group);
         const ring = new THREE.Mesh(
@@ -147,7 +147,7 @@ export class Storefronts {
         );
         ring.position.y = 0.09;
         group.add(ring);
-        this.items.push({ store, group, ring, bare: true, door: new THREE.Vector3(ax, 0, az) });
+        this.items.push({ store, group, ring, bare: true, door: new THREE.Vector3(ax, store.y || 0, az) });
         continue;
       }
       const f = nearestFacade(map.buildings, ax, az, isBlocked);

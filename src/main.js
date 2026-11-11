@@ -28,6 +28,7 @@ import { buildLandmarks } from './core/landmarks.js';
 import { lakeHoles } from './core/lakeshore.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
+import { yardY } from './core/cathedral-yard-ground.js';
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
@@ -796,6 +797,7 @@ function planRoute(ax, az, bx, bz) {
   return poly;
 }
 const routeLine = new RouteLine(scene);
+routeLine.groundY = (x, z) => yardY(map.landmarks, x, z);
 // Itaewon's Gyeongnidan-gil is on a hill (district meta "hill"): how high the
 // ground is there (core/hill-ground.js). Its slope, streets and neighbours
 // load when you first come near (game/gyeongnidan-near.js).
@@ -842,7 +844,7 @@ const pungmul = olympicAt ? new PungmulTroupe(scene, [olympicAt[0] + PLAZA_SPOT[
 // Stamp tour (data/stamps.js): a stamp stand at each place. A stand beside a
 // shop only appears once that shop is on the map.
 const tourStamps = availableStamps(STAMPS, (id) => !!storefronts.get(id));
-const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id), (x, z, r) => collision.blocked(x, z, r)); // (a stand by a shop moves off a wall)
+const stampStands = new StampStands(scene, tourStamps, (id) => storefronts.get(id), (x, z, r) => collision.blocked(x, z, r), (x, z) => yardY(map.landmarks, x, z)); // (a stand by a shop moves off a wall; up on the cathedral's yard)
 const busking = new BuskingZones(scene, $('labels'), region.busking || [], { findFreeSpot, showBubble });
 
 // The main square (the first meeting zone): a guide who hands out errands
@@ -1764,6 +1766,7 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 const emoteWheel = createEmoteWheel({
   get onSquare() { return onSquare; }, get me() { return me; }, get net() { return net; }, $, missionEvent,
   myLabel,
+  room: () => (mode === 'store' ? interior?.store?.workshop || null : null), // (some rooms swap a few emotes: data/emotes.js)
 });
 const { closeWheel } = emoteWheel;
 
@@ -3143,7 +3146,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill, Gyeongnidan-gil or the Namsan trail
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, the busking bank, Bukchon's hill, Gyeongnidan-gil or the Namsan trail
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 

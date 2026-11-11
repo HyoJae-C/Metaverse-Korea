@@ -1,5 +1,5 @@
 {
- "note": "Real lines round Myeongdong at 1/4 (world metres, x east, z south, src/core/seoul-grid.js toGame), from Yozi's OpenStreetMap export of 2026-11-11 (© OpenStreetMap contributors, ODbL; the raw file is /mnt/project-files/osm/myeongdong.json). Two-carriageway roads (Samil-daero, Namdaemun-ro) are the line between their carriageways. The shopping street north-south through Myeongdong is three named lanes in OSM (Myeongdong 9-gil from Eulji-ro, 2-gil, then 8-gil to Toegye-ro), kept as three roads.",
+ "note": "Real lines round Myeongdong at 1/4 (world metres, x east, z south, src/core/seoul-grid.js toGame), from Yozi's OpenStreetMap export of 2026-11-11 (© OpenStreetMap contributors, ODbL; the raw file is /mnt/project-files/osm/myeongdong.json). Two-carriageway roads (Samil-daero, Namdaemun-ro) are the line between their carriageways. The shopping street north-south through Myeongdong is three named lanes in OSM (Myeongdong 9-gil from Eulji-ro, 2-gil, then 8-gil to Toegye-ro), kept as three roads. Toegye-ro 20-gil (OSM way 273028084) is the lane south of Toegye-ro from Myeongdong Station up to Sopa-ro and the Namsan cable car, from Toegye-ro first.",
  "roads": [
   {
    "en": "Samil-daero",
@@ -143,6 +143,36 @@
     [-1550.7, -506.8],
     [-1553.6, -519.1],
     [-1557.5, -535.7]
+   ]
+  },
+  {
+   "en": "Toegye-ro 20-gil",
+   "n": {
+    "ko": "퇴계로20길",
+    "en": "Toegye-ro 20-gil",
+    "ja": "退渓路20キル",
+    "zh": "退溪路20街"
+   },
+   "p": [
+    [-1549, -434.6],
+    [-1545.4, -426.6],
+    [-1545.2, -425.8],
+    [-1544.9, -424.7],
+    [-1544.9, -421.9],
+    [-1544.6, -420.3],
+    [-1543.2, -414.9],
+    [-1540.8, -407.5],
+    [-1540.4, -406.3],
+    [-1538.3, -399.6],
+    [-1537.4, -397.6],
+    [-1534.8, -392.3],
+    [-1530.8, -385.4],
+    [-1530.5, -384.7],
+    [-1528.2, -379.9],
+    [-1527.9, -379.1],
+    [-1526.7, -376.1],
+    [-1526.2, -374.5],
+    [-1523.8, -364.1]
    ]
   }
  ],
