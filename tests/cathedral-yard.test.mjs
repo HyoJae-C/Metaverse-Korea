@@ -33,18 +33,20 @@ test('the cathedral yard: up on its terrace, the street below at 0', () => {
   if (stamp?.place) assert.equal(yardY(list, ...stamp.place.at), YARD.h, 'the stamp stand stands on the yard');
 });
 
-test('the stairs: n even steps people can walk, down from the yard to the street', () => {
-  const rise = YARD.h / n, tread = (a1 - a0) / n;
-  assert.ok(rise <= 0.18 && tread >= 0.28, `steps ${rise} high, ${tread} deep`);
-  let prev = YARD.h, steps = 0;
+test('the stairs: a smooth slope (no jolt each step), flat yard beside the first hedges', () => {
+  // Yozi 2026-11-11: the yard is flat beside the first three hedges (1.2 m
+  // apart, from the old top at 21.4 m), and going up does not jolt.
+  assert.ok(a0 >= 21.4 + 0.5 + 2 * 1.2, `the stairs start at ${a0}`); // (past the third)
+  const slope = YARD.h / (a1 - a0);
+  assert.ok(slope < 0.8, `not steeper than about 39 degrees (${slope})`);
+  assert.ok((a1 - a0) / n >= 0.28 && n >= 12, 'the painted steps are people-sized');
+  let prev = YARD.h;
   for (let a = a0 - 0.5; a <= YARD.cut; a += 0.02) {
     const y = at(a, 0);
     assert.ok(y <= prev + 1e-9, `going up at ${a}`);
-    assert.ok(prev - y < rise + 1e-6, `a drop of ${prev - y} at ${a}`);
-    if (prev - y > 1e-6) steps++;
+    assert.ok(prev - y <= slope * 0.021, `a step of ${prev - y} at ${a}`);
     prev = y;
   }
-  assert.equal(steps, n);
   assert.equal(at(a1 + 0.1, 0), 0);
   assert.ok(w >= 4, 'wide enough for a few people side by side');
 });

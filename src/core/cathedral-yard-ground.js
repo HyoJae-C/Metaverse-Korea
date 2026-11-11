@@ -13,7 +13,8 @@
 //   yard   the grounds' outline (not "p": districts.js would move it)
 //   cut    how far along f the terrace reaches (Myeongdong-gil's kerb)
 //   stairs { a0, a1, w, n }: from a0 (top) to a1 (foot) along f, w wide,
-//          n steps
+//          n steps (drawn on a smooth slope: you walk up it without the
+//          camera jolting at every step)
 //   ramp   r0: where the slope west of the stairs starts going down
 //          (it reaches the street at cut); blend: the width beside the
 //          stairs where it rises across to them
@@ -28,19 +29,14 @@ export function yardFrame(l, dx, dz) {
   return [dx * fx + dz * fz, -dx * fz + dz * fx];
 }
 
-// Height at (along, side) inside the grounds. smooth: the stairs as a
-// straight slope (for the meshes beside them).
-export function yardHeightAt(l, along, side, smooth = false) {
-  const { h, cut, stairs: { a0, a1, w, n }, ramp: { r0, blend } } = l;
+// Height at (along, side) inside the grounds.
+export function yardHeightAt(l, along, side) {
+  const { h, cut, stairs: { a0, a1, w }, ramp: { r0, blend } } = l;
   if (along > cut) return 0;
   const hw = w / 2;
-  // The stairs' slope, as if it were smooth: h at the top, 0 at the foot.
+  // The stairs' slope: h at the top, 0 at the foot.
   const Y = along <= a0 ? h : h * clamp01((a1 - along) / (a1 - a0));
-  if (side >= -hw && side <= hw && along > a0) {
-    if (smooth || along >= a1) return Y;
-    const t = (a1 - a0) / n; // each tread
-    return Math.max(0, h - Math.ceil((along - a0) / t - 1e-6) * (h / n));
-  }
+  if (side >= -hw && side <= hw && along > a0) return Y;
   if (side > hw || along <= r0) return h; // the terrace (east of the stairs, and the yard)
   // West of the stairs: the slope down to the street (the ramp), rising
   // across to the stairs' height beside them.
@@ -50,10 +46,10 @@ export function yardHeightAt(l, along, side, smooth = false) {
 }
 
 // (x, z) in the landmark's own metres -> height, or 0 off the grounds.
-export function yardHeight(l, dx, dz, smooth = false) {
+export function yardHeight(l, dx, dz) {
   if (!pointInPoly(dx, dz, l.yard)) return 0;
   const [a, s] = yardFrame(l, dx, dz);
-  return yardHeightAt(l, a, s, smooth);
+  return yardHeightAt(l, a, s);
 }
 
 const boxes = new WeakMap(), yards = new WeakMap();
