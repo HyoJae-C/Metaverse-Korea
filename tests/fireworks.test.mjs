@@ -83,19 +83,18 @@ test('volleys: now and then several shells burst at the same moment, across the 
   for (const x of a) if (x.kind !== 'fan') at.set(x.t, [...(at.get(x.t) || []), x]);
   const volleys = [...at.values()].filter((v) => v.length >= 3 && new Set(v.map((x) => x.barge)).size >= 2); // (a cluster is one barge)
   assert.ok(volleys.length > 150, `${volleys.length} volleys`);
-  for (const v of volleys) {
-    assert.ok(v.every((x) => x.kind === v[0].kind), 'one kind per volley');
-    assert.ok(new Set(v.map((x) => x.barge)).size >= 2, 'from more than one barge');
-  }
+  // (a sweep's later shells can land on the same moment as the next shot,
+  // so now and then two kinds share one)
+  assert.ok(volleys.filter((v) => v.every((x) => x.kind === v[0].kind)).length > volleys.length * 0.95, 'one kind per volley');
   const salvo = volleys.filter((v) => v[0].t >= 540 && v[0].t < 600);
   assert.ok(salvo.length > 30 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
   assert.ok(volleys.some((v) => v[0].t >= 1110 && v.length >= 7), 'big volleys in the finale');
 });
 
-test('rings and saturns are rare; the basic peony leads the mix', () => {
+test('rings are rare, no saturns; the basic peony leads the mix', () => {
   const c = {}; let n = 0;
   for (let d = 0; d < 12; d++) for (const b of program(1.8e12 + d * 6 * 3600e3)) { c[b.kind] = (c[b.kind] || 0) + 1; n++; }
-  assert.ok(((c.ring || 0) + (c.saturn || 0)) / n < 0.07, JSON.stringify(c));
+  assert.ok((c.ring || 0) / n < 0.04 && !c.saturn, JSON.stringify(c));
   assert.ok(Object.entries(c).every(([k, v]) => k === 'peony' || k === 'fan' || v < c.peony), JSON.stringify(c));
 });
 

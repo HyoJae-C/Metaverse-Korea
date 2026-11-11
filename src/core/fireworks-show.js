@@ -95,23 +95,24 @@ export const PHOTO_TIME = [780, 900];
 export const FINALE_TIME = 1110;
 export const ACTS = [
   { from: 0, to: 12, gap: [1.3, 1.5], kinds: ['willow'], volley: [1, 3, 3], name: 'curtain up: a gold willow from each barge' },
-  { from: 12, to: 150, gap: [1, 1.4], kinds: ['peony', 'peony', 'pistil', 'ring', 'saturn'], mono: true, cluster: [2, 3], volley: [0.2, 3, 5], fans: 0.06, name: 'opening: big flowers stacked' },
+  { from: 12, to: 150, gap: [1, 1.4], kinds: ['peony', 'peony', 'pistil', 'ring'], mono: true, cluster: [2, 3], volley: [0.2, 3, 5], fans: 0.06, name: 'opening: big flowers stacked' },
   { from: 150, to: 330, gap: [0.8, 1.2], kinds: ['pistil', 'dahlia', 'kamuro', 'flower', 'butterfly', 'double', 'peony'], cluster: [1, 2, 2, 3], volley: [0.2, 3, 3], fans: 0.04, name: 'act 1: shapes' },
   { from: 330, to: 360, gap: [0.3, 0.5], kinds: ['small'], cluster: [3, 4, 5], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
-  { from: 360, to: 540, gap: [0.6, 1], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'saturn', 'peony'], cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.05, name: 'act 2: colours and spirals' },
+  { from: 360, to: 540, gap: [0.6, 1], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'peony'], cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.05, name: 'act 2: colours and spirals' },
   { from: 540, to: 600, gap: [0.8, 1.2], kinds: ['small', 'double', 'peony', 'rainbow'], cluster: [2, 3], volley: [1, 5, 7], together: true, fans: 0.35, name: 'highlight: every barge at once, fans on the water' },
   { from: 600, to: PHOTO_TIME[0], gap: [0.6, 0.9], kinds: ['pistil', 'flower', 'butterfly', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro', 'peony'], cluster: [1, 2, 2, 3], volley: [0.3, 3, 5], fans: 0.04, name: 'act 3: everything' },
   { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [1, 1.4], kinds: ['willow'], cluster: [1, 2], volley: [0.35, 3, 5], beats: false, name: 'photo time: gold willows' },
-  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [1, 0.3], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'saturn', 'flower', 'small'], ramp: true, cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.08, name: 'build-up: faster and faster' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [1, 0.3], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'flower', 'small'], ramp: true, cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.08, name: 'build-up: faster and faster' },
   { from: FINALE_TIME, to: 1170, gap: [0.35, 0.5], kinds: ['peony', 'willow', 'rainbow', 'peony', 'palm', 'pistil', 'ring'], big: true, cluster: [2, 3, 3], volley: [0.5, 5, 9], fans: 0.25, name: 'finale: the sky full' },
   { from: 1170, to: 1190, gap: [0.15, 0.25], kinds: ['small'], cluster: [4, 5, 6], volley: [0.5, 7, 9], fans: 0.15, name: 'finale: a wall of small colours' },
   { from: 1190, to: SHOW_SECONDS, gap: [0.5, 0.6], kinds: ['kamuro'], big: true, volley: [1, 7, 9], fans: 1, name: 'finale: a gold curtain over the whole river' },
 ];
 // (No hearts, stars or smiles: those are the drone show's. Yozi.)
-// Rings and saturns are fun once in a while but got tiring when they kept
-// coming (Yozi: "원형이랑 행성모양이 너무자주나와"), so when one is drawn it
+// Rings are fun once in a while but got tiring when they kept coming
+// (Yozi: "원형이랑 행성모양이 너무자주나와"; the saturn is gone altogether:
+// "행성 없애버려"), so when one is drawn it
 // stays only this often (double, a ring in a ring, counts as one); the rest become the basic festival flower (peony).
-export const KEEP = { ring: 0.25, double: 0.3, saturn: 0.3 };
+export const KEEP = { ring: 0.25, double: 0.3 };
 // How a volley (or a row of fans) goes off along the river, so the same
 // line doesn't always bang at once (Yozi: "패턴이 다양하지않은게 흠"):
 // 0 all together, 1 sweeping left to right, 2 right to left, 3 from the
@@ -127,12 +128,22 @@ export function sweep(order, i, n) {
 // The low fans on the barges: warm colours, like the photos.
 const FAN_COLORS = ['#ffc861', '#ff9ac8', '#ffffff', '#ff9a3c'];
 
-export const KINDS = ['fan', 'peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'saturn', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
+export const KINDS = ['fan', 'peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
 export const GOLD = '#ffc861';
+// Colours that look good together in one burst: its stars start in the
+// first and turn into the second, a few in the second from the start
+// (Yozi, with a sheet of festival bursts: "똑같은패턴도 색깔만 잘섞어도
+// 이쁘게나올것같아"). Purple-sky blue, orange-yellow, red-purple and so on.
+const PARTNERS = {
+  '#ff4d5e': ['#b07bff', '#ffd34d', '#ffffff'], '#ffd34d': ['#ff9a3c', '#ff4d5e', '#7dff6b'], '#4dd2ff': ['#b07bff', '#ffffff', '#7dff6b'],
+  '#7dff6b': ['#ffd34d', '#4dd2ff'], '#ff7ae0': ['#ffd34d', '#b07bff', '#ffffff'], '#ffffff': ['#ff7ae0', '#4dd2ff', '#b07bff'],
+  '#b07bff': ['#4dd2ff', '#ff7ae0', '#ff4d5e'], '#ff9a3c': ['#ffd34d', '#ff4d5e', '#b07bff'],
+};
+const partner = (c, r) => { const p = PARTNERS[c] || COLORS; return p[Math.floor(r() * p.length)]; };
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
-export const LIFE = { fan: 1.8, peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, saturn: 2.8, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
-export const RADIUS = { fan: 26, peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, saturn: 26, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
+export const LIFE = { fan: 1.8, peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
+export const RADIUS = { fan: 26, peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
 
 function rng(seed) {
   let a = seed >>> 0;
@@ -162,7 +173,7 @@ export function program(start) {
       if (KEEP[kind] && r() >= KEEP[kind]) kind = 'peony';
       if (act.mono && (!mono || r() < 0.08)) mono = COLORS[Math.floor(r() * COLORS.length)];
       const color = kind === 'willow' || kind === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-      let color2 = r() < 0.35 ? COLORS[Math.floor(r() * COLORS.length)] : color;
+      let color2 = color === GOLD ? color : r() < 0.75 ? partner(color, r) : color;
       if (kind === 'pistil' && color2 === color) color2 = COLORS[(COLORS.indexOf(color) + 3) % COLORS.length] || '#ffffff'; // its heart is another colour
       const scale = (act.big ? 1.15 : 1) * (0.85 + r() * 0.3);
       const [vc, v0, v1] = act.volley || [0, 1, 1];
@@ -171,7 +182,7 @@ export function program(start) {
       // 지루하면 안좋거든").
       const beat = act.beats !== false && t >= nextBeat;
       if (beat) nextBeat = t + 35 + r() * 15;
-      const n = beat ? Math.max(5, v1) : r() < vc ? v0 + Math.floor(r() * (v1 - v0 + 1)) : 1;
+      const n = KEEP[kind] ? 1 : beat ? Math.max(5, v1) : r() < vc ? v0 + Math.floor(r() * (v1 - v0 + 1)) : 1; // (never a whole line of rings)
       let n2 = 1;
       if (n > 1) {
         // A volley: n shells at once, evenly along all three barges, in a
@@ -183,7 +194,7 @@ export function program(start) {
           const u = BARGES[0][0] - 25 + (span * i) / (n - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
           const m = Math.abs(i / (n - 1) - 0.5) * 2; // 0 in the middle, 1 at the ends
           const h = base + [6, 4 + 16 * m, 20 - 16 * m][shape];
-          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'willow' && kind !== 'kamuro' && kind !== 'pistil' && color2 !== color ? color2 : color, color2: kind === 'pistil' ? color2 : color, scale, seed: Math.floor(r() * 1e9) });
+          out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'pistil' ? color2 : color, color2: i % 2 && kind !== 'pistil' ? color : color2, scale, seed: Math.floor(r() * 1e9) });
         }
       } else {
         // A cluster: one barge fires 1-3 shells together, stacked at
@@ -197,7 +208,7 @@ export function program(start) {
             ki = act.kinds[Math.floor(r() * act.kinds.length)];
             if (KEEP[ki] && r() >= KEEP[ki]) ki = 'peony';
             ci = ki === 'willow' || ki === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-            c2i = ki === 'pistil' ? COLORS[(COLORS.indexOf(ci) + 3) % COLORS.length] || '#ffffff' : ci;
+            c2i = ki === 'pistil' ? COLORS[(COLORS.indexOf(ci) + 3) % COLORS.length] || '#ffffff' : ci === GOLD ? ci : partner(ci, r);
           }
           const low = ki === 'small' ? 28 : 38, high = ki !== 'small' && i === many - 1 && r() < HIGH; // now and then the top one goes much higher, and bigger
           out.push({
