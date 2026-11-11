@@ -22,7 +22,9 @@ jobs:
         run: node scripts/check-size.mjs
       - name: Multiplayer end-to-end test
         run: |
-          npx playwright install --with-deps chromium
+          # The runner image already has Chromium's libraries; when apt can't
+          # reach Ubuntu's mirror (as on 2026-11-11), carry on without them.
+          npx playwright install --with-deps chromium || npx playwright install chromium
           npx vite preview --port 4173 &
           sleep 3
           node tests/e2e/multiplayer.mjs http://localhost:4173/
