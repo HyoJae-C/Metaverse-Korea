@@ -4,14 +4,14 @@
 // its back gate). The hill itself stays a blocker; the trail is a deck
 // through it (core/collision.js addDeck), and on it you stand at the hill's
 // height (core/namsan-shape.js). The trail's line is the namsan landmark's
-// `trail` (scripts/build-namsan-walk.mjs); core/landmarks.js draws it.
+// `trail` (scripts/build-namsan-real.mjs); core/landmarks.js draws it.
 // Small on purpose: this is in the first download (it is how you walk).
 //
 //   const walk = createNamsanWalk({ landmarks, collision });
 //   walk.y(x, z)          ground height on the hill (0 off it)
 //   walk.atTop(p)         at the trail's top end, by the summit plaza's gate?
 //   walk.topOut()         where you step out at the top when you walk down
-import { namsanGround, onNamsan } from '../core/namsan-shape.js';
+import { namsanGround, onNamsan, namsanReach } from '../core/namsan-shape.js';
 
 export const NAMSAN_WALK = {
   w: 3, // m: the trail's width (the landmark's trailW wins)
@@ -33,7 +33,7 @@ export function createNamsanWalk({ landmarks = [], collision }) {
       [bx + dx * e - nx, bz + dz * e - nz], [ax - dx * e - nx, az - dz * e - nz],
     ]);
   }
-  const x0 = l.x - l.rx, x1 = l.x + l.rx, z0 = l.z - l.rz, z1 = l.z + l.rz;
+  const reach = namsanReach(l), x0 = l.x - reach, x1 = l.x + reach, z0 = l.z - reach, z1 = l.z + reach;
   const top = line.at(-1), below = line.at(-2);
   return {
     line,

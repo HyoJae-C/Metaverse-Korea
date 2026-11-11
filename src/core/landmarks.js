@@ -264,11 +264,12 @@ const BUILD = {
     g.add(m);
   },
   namsan(g, l) {
-    // Namsan: a wooded hill on an ellipse (l.rx, l.rz, l.h) that leans so its
+    // Namsan: a wooded hill on an ellipse (l.rx, l.rz, l.h), or on its real
+    // outline round the top (l.rad), that leans so its
     // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
     // (core/namsan-shape.js). Scenery: the map's blockers keep you off it,
     // except on its trail (l.trail, game/namsan-walk.js), drawn on the slope.
-    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e };
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad };
     const trail = l.trail || [];
     // (finer where there is a trail, so the slope under it is close to the
     // true height it is walked at)
