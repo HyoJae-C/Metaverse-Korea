@@ -14,6 +14,18 @@ const SHAPE = {
   // A hanbok chima: tied high under the short jeogori, full, to the floor.
   chima: { top: 0.88, hem: 0.07, rings: 14, waist: [0.312, 0.242], flare: [0.5, 0.44], repeat: [6, 1.5] },
 };
+// The torso's bones by height (as TORSO in core/outfit-mesh.js) and its
+// centre a centimetre forward of the hips.
+const TORSO = [['hips', 0.5], ['spine', 0.7], ['chest', 1.02]];
+const TORSO_Z = 0.01;
+function torsoWeights(y) {
+  if (y <= TORSO[0][1]) return [[TORSO[0][0], 1]];
+  for (let i = 1; i < TORSO.length; i++) {
+    const [b0, y0] = TORSO[i - 1], [b1, y1] = TORSO[i];
+    if (y <= y1) { const k = (y - y0) / (y1 - y0); return [[b0, 1 - k], [b1, k]]; }
+  }
+  return [[TORSO[TORSO.length - 1][0], 1]];
+}
 const SEG = 48;
 const PLEATS = 24;
 
@@ -28,7 +40,7 @@ function skirtRig(length, pleated, o = {}) {
     const t = i / (S.rings - 1);
     const top = S.top ?? WAIST_Y;
     const y = top + (S.hem - top) * t;
-    const k = 1 - (1 - t) ** 1.4; // flares quickly over the hips, then falls straight
+    const k = 1 - (1 - t) ** 3; // flares quickly over the hips (room for the thighs to swing), then falls straight
     let rx = S.waist[0] + (S.flare[0] - S.waist[0]) * k;
     let rz = S.waist[1] + (S.flare[1] - S.waist[1]) * k;
     if (o.coat && y >= o.coat - 0.02) { rx = Math.min(rx, 0.285 + bulk); rz = Math.min(rz, 0.235 + bulk); }
@@ -37,13 +49,17 @@ function skirtRig(length, pleated, o = {}) {
       const cx = Math.sin(a), cz = Math.cos(a); // a = 0 at the front (+z)
       let r = 1;
       if (pleated) { const f = (j / SEG) * PLEATS; r += 0.05 * t * Math.abs(2 * (f - Math.floor(f + 0.5))); }
-      pos.push(cx * rx * r, y, cz * rz * r);
+      pos.push(cx * rx * r, y, cz * rz * r + TORSO_Z * (1 - t)); // (centred on the torso at the top)
       uv.push(j / SEG, 1 - t);
       // The lower skirt follows the legs: the front most (it lies on the lap
       // when sitting), each side its own leg.
       const follow = Math.min(0.92, t ** 1.2 * (0.3 + 0.62 * Math.max(0, cz)));
       const left = 0.5 + 0.5 * cx;
-      wts.push([['hips', 1 - follow], ['upperlegl', follow * left], ['upperlegr', follow * (1 - left)]]);
+      // The rest is the torso's, blended along it exactly like the clothes'
+      // waistband under it (core/outfit-mesh.js), so the top of the skirt
+      // bends with the body when running instead of letting it through.
+      const body = torsoWeights(y).map(([b, w]) => [b, w * (1 - follow)]);
+      wts.push([...body, ['upperlegl', follow * left], ['upperlegr', follow * (1 - left)]]);
     }
   }
   for (let i = 0; i < S.rings - 1; i++) for (let j = 0; j < SEG; j++) {
