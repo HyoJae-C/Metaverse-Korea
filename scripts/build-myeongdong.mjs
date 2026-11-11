@@ -31,8 +31,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { r1, town, nearestOn, strips, lineDist, facing, simplify } from './street-rows.mjs';
-import { toLatLon } from '../src/core/seoul-grid.js';
+import { r1, town, nearestOn, strips, lineDist, facing, simplify, overlap } from './street-rows.mjs';
+import { toLatLon, toGame } from '../src/core/seoul-grid.js';
 import { CATHEDRAL } from '../src/data/myeongdong.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -141,6 +141,28 @@ pois.push({ kind: 'landmark', x: onHall(L2 + 4, 0)[0], z: onHall(L2 + 4, 0)[1], 
 // The shopping street's name on the map, half way along.
 pois.push({ kind: 'landmark', x: -1569, z: -515, name: N('명동거리', 'Myeongdong shopping street', '明洞ショッピングストリート', '明洞购物街') });
 
+// ---------- Myeongdong Station (Line 4, 424) ----------
+// Two exits, from the real 6 and 4 (OSM 3403067532, 3403067533), moved out
+// of Toegye-ro onto its pavements (at 1/4 the real ones fall in the road),
+// the stairs going down along the road:
+//   6: north side, just west of the foot of the shopping street (Myeongdong
+//      8-gil, where the real one is), its mouth east onto the lane;
+//   4: south side, across the road, towards Namsan and its cable car, its
+//      mouth west.
+export const STATION_EXITS = {
+  6: { real: toGame(37.5609256, 126.984915), side: -1, along: -6, flip: true },
+  4: { real: toGame(37.5606753, 126.9848244), side: 1, along: 3 },
+};
+export function stationExits(out = 11) {
+  const TG = linkRoad('Toegye-ro').p;
+  return Object.entries(STATION_EXITS).map(([n, { real, side, along = 0, flip }]) => {
+    const { at: on, dir } = nearestOn(real, TG), at = [on[0] + dir[0] * along, on[1] + dir[1] * along];
+    const nx = -dir[1] * side, nz = dir[0] * side; // side +1: south of the road
+    return { n: Number(n), at: [r1(at[0] + nx * out), r1(at[1] + nz * out)], ry: Number((Math.atan2(dir[0], dir[1]) + (flip ? -Math.PI : 0)).toFixed(4)), real: real.map(r1) };
+  });
+}
+const exitSquares = stationExits().map(({ at: [x, z] }) => ({ p: [[x - 5, z - 5], [x + 5, z - 5], [x + 5, z + 5], [x - 5, z + 5]] }));
+
 // ---------- Rows along the streets ----------
 // The district: from Namdaemun-ro to just past Samil-daero, from Eulji-ro's
 // south side to Toegye-ro's north side (the links are kept clear as roads).
@@ -166,7 +188,9 @@ t.row('samilE', straight(SAMIL), 1, { off: 9.5, ...BIG });
 const EULJI = LINKS[0].p, TOEGYE = LINKS[1].p;
 t.row('euljiS', between(EULJI, -1606, -1500), 1, { off: 10.5, ...BIG }); // (east of Namdaemun-ro: west of it is not Myeongdong)
 t.row('toegyeN', between(TOEGYE, -1662, -1470), -1, { off: 10.5, ...SHOP });
-buildings.push(...t.buildings);
+// (The station exits' squares are cleared afterwards, so the rest of the
+// rows stay as they were before the station.)
+buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p))));
 
 // Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
 // by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
@@ -235,4 +259,5 @@ if (isMain) {
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
   SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
+  for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }
