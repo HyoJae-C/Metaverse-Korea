@@ -72,6 +72,31 @@ export function buildYard(g, l) {
     m.receiveShadow = true;
     g.add(m);
   }
+  if (l.green) { // The little lawn behind the church, on the terrace, with low shrubs round it.
+    const { a0: g0, a1: g1, w: gw } = l.green, lo = Math.min(g0, g1), hi = Math.max(g0, g1);
+    const poly = clip(clip(clip(clip(base, after(lo)), along(hi)), east(-gw / 2)), west(gw / 2));
+    if (poly.length >= 3) {
+      const pos = [];
+      for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(poly.map(([x, z]) => new THREE.Vector2(x, z)), [])) {
+        const [a, b, c] = [poly[i], poly[j], poly[k]], cross = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        for (const q of cross < 0 ? [a, b, c] : [a, c, b]) pos.push(q[0], H + 0.06, q[1]);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.computeVertexNormals();
+      const m = new THREE.Mesh(geo, mat(C.grass, true));
+      m.receiveShadow = true;
+      g.add(m);
+    }
+    for (const [a, s] of [[lo + 0.8, -gw / 2 + 0.8], [lo + 0.8, gw / 2 - 0.8], [hi - 0.8, -gw / 2 + 0.8], [hi - 0.8, gw / 2 - 0.8], [(lo + hi) / 2, -gw / 2 + 0.8], [(lo + hi) / 2, gw / 2 - 0.8]]) {
+      const p = P(a, s);
+      if (pointInPoly(p[0], p[1], base)) {
+        const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.7, 0), mat(C.hedge));
+        bush.position.set(p[0], H + 0.5, p[1]);
+        g.add(bush);
+      }
+    }
+  }
   { // The ramp up the bank: paving on the real service road's line.
     const pos = [], q = (a, s) => { const p = P(a, s); return [p[0], Y(p) + 0.06, p[1]]; };
     for (let a = ramp.r0; a < cut - 0.01; a += 1) {

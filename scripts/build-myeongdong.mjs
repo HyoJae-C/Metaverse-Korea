@@ -129,6 +129,10 @@ export const YARD = {
   type: 'cathedralyard', x: HALL.at[0], z: HALL.at[1], f: F, h: YH, cut: CUT,
   stairs: { a0: A0, a1: A1, w: 4.5, n: STEPS },
   ramp: { r0: L2, blend: 3, side: -8.3, w: 3 }, // (side, w: the paved ramp, on the real service road's line)
+  // A small lawn behind the apse, where trees stood (Yozi 2026-11-11: no
+  // trees behind the church, a little green there instead): along the axis
+  // from a0 to a1, w across.
+  green: { a0: r1(-L2 - 1.5), a1: r1(-L2 - 11), w: 14 },
   yard: GROUNDS.map(([x, z]) => [r1(x - HALL.at[0]), r1(z - HALL.at[1])]),
 };
 const yardAt = ([x, z]) => yardHeight(YARD, x - HALL.at[0], z - HALL.at[1]);
@@ -186,7 +190,8 @@ const TREES = [];
       const clearOfHall = Math.abs(side) > halfW + K.transept.out + 3 || along < -L2 - 3 || along > L2 + 3;
       const offFrontYard = !(along > L2 && Math.abs(side) < halfW + 4); // keep the view of the front open
       const offRoads = roads.every((r) => lineDist(t, r.p) > r.w / 2 + 2.5);
-      if (clearOfHall && offFrontYard && offRoads && yardAt(t) === YH) TREES.push(t); // (up on the terrace, where they stand)
+      const offBack = along > -L2 + K.apse; // (none behind the church: the lawn is there)
+      if (clearOfHall && offFrontYard && offBack && offRoads && yardAt(t) === YH) TREES.push(t); // (up on the terrace, where they stand)
     }
   }
 }
@@ -258,7 +263,11 @@ t.row('euljiS', between(EULJI, -1606, -1500), 1, { off: 10.5, ...BIG }); // (eas
 t.row('toegyeN', between(TOEGYE, -1662, -1470), -1, { off: 10.5, ...SHOP });
 // (The station exits' squares are cleared afterwards, so the rest of the
 // rows stay as they were before the station.)
-buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p))));
+// Behind the church, the tall block right on its axis is left out, so the
+// apse stands clear against the sky from Toegye-ro (Yozi 2026-11-11).
+const BEHIND = onHall(-45, -4.5);
+const inPoly = ([x, z], p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
+buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p)) && !inPoly(BEHIND, b.p)));
 
 // Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
 // by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
