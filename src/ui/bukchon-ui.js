@@ -177,15 +177,22 @@ export class BukchonUI {
       list.append(b);
     });
     parts.push(list);
-    if (k.grid) parts.push(el('p', 'wish-pick', L(k.shapes[this.si][2])));
+    // The pick and the Make button stay pinned to the bottom: on a phone the
+    // 25-tile necklace grid is taller than the screen, and the button below it
+    // was easy to miss.
+    const foot = el('div', 'wish-foot');
+    if (k.grid) foot.append(el('p', 'wish-pick', L(k.shapes[this.si][2])));
     const poor = this.wallet.coins < k.price;
-    parts.push(el('small', 'fine', fmt(L(BK_TEXT.have), { n: this.wallet.coins })));
-    if (poor) parts.push(el('p', 'lock-warn', fmt(L(BK_TEXT.poor), { n: k.price })));
+    foot.append(el('small', 'fine', fmt(L(BK_TEXT.have), { n: this.wallet.coins })));
+    if (poor) foot.append(el('p', 'lock-warn', fmt(L(BK_TEXT.poor), { n: k.price })));
     const go = el('button', 'primary', fmt(L(BK_TEXT.make), { n: k.price }));
     go.type = 'button';
     go.disabled = poor;
     go.onclick = () => { if (this.onMake?.(this.kind, this.ci, this.si)) this.close(); else this.render(); };
-    parts.push(go);
+    foot.append(go);
+    parts.push(foot);
+    const top = this.root.scrollTop;
     this.root.replaceChildren(...parts);
+    this.root.scrollTop = top; // (picking a tile re-renders: stay where you were)
   }
 }
