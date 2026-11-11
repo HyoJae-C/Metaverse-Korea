@@ -123,7 +123,8 @@ export class Storefronts {
       // the same, but never a room.)
       // (store.below: a room under an open park, e.g. Another Land's rides
       // under its island, reached by its stairs: no front either.)
-      if (store.open || store.hanpark || store.below) {
+      // (store.carts: night food carts on the street, game/night-carts.js.)
+      if (store.open || store.hanpark || store.below || store.carts) {
         const group = new THREE.Group();
         group.position.set(ax, 0, az);
         group.rotation.y = store.face ?? (store.open?.ry || 0) + Math.PI; // (facing away from the river, like a door onto the street; store.face: the way you face coming out)

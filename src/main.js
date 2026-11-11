@@ -144,6 +144,7 @@ import { fireworksAt, nearYeouido, PHOTO_TIME as FIREWORKS_PHOTO, FINALE_TIME as
 import { karaokeMsg, parseKaraoke } from './core/karaoke-game.js';
 import { createDuckBoats } from './game/duck-boats.js';
 import { createHanParks } from './game/han-parks.js';
+import { createNightCarts } from './game/night-carts.js';
 import { CART, CART_SPEED } from './game/zoo-carts.js';
 import { createZooVisit } from './game/zoo-visit.js';
 import { createZooSounds } from './game/zoo-sounds.js';
@@ -1923,7 +1924,7 @@ function greetAtStalls(p, list = interior.vendorNpcs) {
 }
 // At the park's market, the stall's own seller thanks you (not the kiosk clerk).
 function sellerOf(product) {
-  const hp = hanPark() || interior, i = hp?.vendors?.findIndex((v) => v.stall === product.stall);
+  const hp = hanPark() || (mode === 'street' && nightCarts.here(me.root.position)) || interior, i = hp?.vendors?.findIndex((v) => v.stall === product.stall);
   return i >= 0 ? hp.vendorNpcs?.[i] : null;
 }
 // What a bought thing becomes in your hand.
@@ -2630,8 +2631,9 @@ let domeLoading = false;
 // the park's own metres): no door, no bell, the camera stays as it was.
 function enterStore(item, walkIn = null) {
   // A Han River park laid on the street (game/han-parks.js) has no room:
-  // asked to go in (a guide, a quest), you're just put on its path.
-  if (item.store.hanpark) {
+  // asked to go in (a guide, a quest), you're just put on its path. (The
+  // same for the night food carts: game/night-carts.js.)
+  if (item.store.hanpark || item.store.carts) {
     if (mode !== 'street') leaveStore();
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
@@ -5663,6 +5665,14 @@ const hanParks = createHanParks({
     look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
   },
 });
+// Night food carts on the street (game/night-carts.js): Myeongdong's, out
+// from sunset until morning.
+const nightCarts = createNightCarts({
+  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  makeNpc: (name) => makeNpc($('labels'), name), signLang: () => (signsTranslated ? getLanguage() : null),
+  night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+});
 const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Another Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
@@ -6383,6 +6393,7 @@ function moreActions(p, door) {
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (namsanWalk.atTop(p)) out.push(namsanUpAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
+    if (!seated) out.push(...nightCarts.actions(p)); // a night food cart's counter
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -6464,6 +6475,7 @@ function updateAction(p, tSec) {
     else if (!riding && palaceAct(p)) next = palaceAct(p);
     else if (!riding && namsanWalk.atTop(p)) next = namsanUpAct();
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
+    else if (!riding && !seated && nightCarts.actions(p).length) next = nightCarts.actions(p)[0]; // a night food cart
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -6922,6 +6934,7 @@ renderer.setAnimationLoop((now) => {
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
+  if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
   updateSurgery(dt);
@@ -7186,6 +7199,7 @@ renderer.setAnimationLoop((now) => {
   liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
+  if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
   if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -7327,6 +7341,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     plateSeat: () => interior.seats.findIndex((s) => s.plate),
     project: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera); return [(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]; },
     myName: () => nickname,
+    nightCarts: () => nightCarts.sites.map((o) => ({ built: !!o.built, shown: o.shown, spots: o.spots })),
     mapView: () => mapView,
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
