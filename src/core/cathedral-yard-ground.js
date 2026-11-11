@@ -56,11 +56,14 @@ export function yardHeight(l, dx, dz, smooth = false) {
   return yardHeightAt(l, a, s, smooth);
 }
 
-const boxes = new WeakMap();
+const boxes = new WeakMap(), yards = new WeakMap();
 // World (x, z) -> the ground's height on a cathedral yard in the list.
+// Called a lot (every frame, and for each guide arrow), so the yards are
+// picked out of the list once and each has a box to test first.
 export function yardY(list = [], x, z) {
-  for (const l of list) {
-    if (l.type !== 'cathedralyard') continue;
+  let ys = yards.get(list);
+  if (!ys) yards.set(list, (ys = list.filter((l) => l.type === 'cathedralyard')));
+  for (const l of ys) {
     let b = boxes.get(l);
     if (!b) {
       const xs = l.yard.map((q) => q[0]), zs = l.yard.map((q) => q[1]);
