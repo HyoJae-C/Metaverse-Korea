@@ -82,6 +82,12 @@ try {
   label = await mk('action');
   if (!label?.includes('1')) throw new Error('not No. 1 in line: ' + label);
   console.log('ticket:', label);
+  // The ticket keeps (Yozi's ask): away from the park and back, still No. 1.
+  await mk('place', GATE[0] + 1200, GATE[1]); await wait(1500);
+  await mk('place', ...GATE); await wait(1500);
+  label = await mk('action');
+  if (!label?.startsWith('🎫') || !label.includes('1')) throw new Error('the ticket was lost going away: ' + label);
+  console.log('ticket kept:', label);
   await at(360 + 2); await wait(1500);
   label = await mk('action');
   if (!label?.startsWith('🔔')) throw new Error('not called: ' + label);
@@ -90,6 +96,20 @@ try {
   st = await mk('seoulDal');
   if (!st.busy || st.coins !== 60000) throw new Error('the called ticket did not board: ' + JSON.stringify(st));
   await at(360 + 181); await wait(1500);
+  // Paid, then taken off before lift-off (a warp): the fare keeps for next time.
+  await mk('place', ...GATE); await wait(1000);
+  await mk('pick', 0); await wait(500);
+  st = await mk('seoulDal');
+  if (!st.busy || st.coins !== 35000) throw new Error('did not board again: ' + JSON.stringify(st));
+  await mk('place', GATE[0] + 1200, GATE[1]); await wait(1500);
+  if ((await mk('seoulDal')).busy) throw new Error('still aboard after the warp');
+  await mk('place', ...GATE); await wait(1500);
+  label = await mk('action');
+  if (!label?.startsWith('🎈') || label.includes('25,000')) throw new Error('the paid ticket was lost: ' + label);
+  await mk('pick', 0); await wait(500);
+  st = await mk('seoulDal');
+  if (!st.busy || st.coins !== 35000) throw new Error('the paid ticket did not board free: ' + JSON.stringify(st));
+  console.log('paid ticket kept:', label);
   // From the fireworks lawn across Yunjung-ro: the balloon up over the park.
   await at(100);
   await mk('place', -2869.7, 454.1); await mk('face', 2.3387); await mk('cam', { yaw: 2.3387 + Math.PI, pitch: 0.05, dist: 7 });
