@@ -453,8 +453,6 @@ export const TH = {
   'hud.signsOff': 'ป้ายภาษาเกาหลี',
   'hud.bike': 'พาหนะ',
   'stairs.noBike': "🚲 ขี่พาหนะลงบันไดไม่ได้ กดพาหนะเพื่อลง แล้วเดินลงไป",
-  'namsan.out': "ออกไปที่ลานบนยอดเขา",
-  'namsan.rideDown': "นั่งกระเช้าลง",
   'bike.offShort': 'ลง',
   'bike.off': 'ลงจากจักรยาน',
   'car.off': 'ลงจากรถ',

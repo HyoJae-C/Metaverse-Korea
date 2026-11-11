@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CABLE, CC, cabinAt, doorsOpen, arrivesIn, cabinPos, boardSpot, cableFloor } from '../src/core/cablecar.js';
+import { CABLE, cabinAt, doorsOpen, arrivesIn, cableLine, CABIN_S, CABIN_ROPE } from '../src/core/cablecar.js';
 
 test('the two cabins are always at opposite ends', () => {
   for (let t = 0; t < CABLE.cycle * 2; t += 0.5) {
@@ -40,12 +40,15 @@ test('arrivesIn counts down to the next open doors', () => {
   }
 });
 
-test('cabins run between the two platforms, on the right floors', () => {
-  const lo = cabinPos(0, 0), hi = cabinPos(1, 1);
-  assert.equal(lo.y, 0);
-  assert.equal(hi.y, CC.top);
-  assert.equal(cableFloor(boardSpot(0, 'low').x, boardSpot(0, 'low').z), 0);
-  assert.equal(cableFloor(boardSpot(1, 'top').x, boardSpot(1, 'top').z), CC.top);
-  // Always climbing on the way up.
-  for (let k = 0.05; k <= 1; k += 0.05) assert.ok(cabinPos(0, k).y > cabinPos(0, k - 0.05).y);
+test('a cabin hangs under its cable, from one end of the line to the other', () => {
+  const l = { x: 100, z: 200, path: [[0, 0, 10, 9], [10, 20, 30, 5], [20, 40, 50, 45]] };
+  const line = cableLine(l), drop = CABIN_ROPE * CABIN_S;
+  for (const i of [0, 1]) {
+    const lo = line.cabin(i, 0), hi = line.cabin(i, 1);
+    assert.ok(Math.abs(lo.y - (10 - drop)) < 1e-9 && Math.abs(hi.y - (50 - drop)) < 1e-9);
+    assert.ok(Math.hypot(lo.x - 100, lo.z - 200) < 2.01 && Math.hypot(hi.x - 120, hi.z - 240) < 2.01, 'at the stations');
+    for (let k = 0.05; k <= 1; k += 0.05) assert.ok(line.cabin(i, k).y > line.cabin(i, k - 0.05).y, 'always climbing');
+  }
+  const a = line.cabin(0, 0.5), b = line.cabin(1, 0.5);
+  assert.ok(Math.abs(Math.hypot(a.x - b.x, a.z - b.z) - 4) < 1e-9, 'two cables 4 m apart');
 });
