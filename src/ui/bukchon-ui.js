@@ -38,7 +38,7 @@ export const BK_TEXT = {
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
   // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
-  pendant: { en: 'Make a pendant', ko: '펜던트 만들기', ja: 'ペンダントを作る', zh: '做一个吊坠' },
+  pendant: { en: 'Make a necklace', ko: '목걸이 만들기', ja: 'ネックレスを作る', zh: '做一条项链' },
   pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm, or a Korean word to engrave (its hanja goes under it); the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양, 또는 새길 글자를 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフ、または刻む言葉（ハングルと漢字）を選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，或要刻的字（韩文和汉字），工匠会陪你一起切割、打磨、抛光。' },
   pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
   pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },

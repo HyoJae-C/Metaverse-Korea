@@ -748,21 +748,29 @@ function addAccessories(look, head, torso, body) {
 
   const neck = accessory('neck', look.neck);
   if (neck && shapeOf(neck) === 'pendant') {
-    // A fine chain round the neck and a charm on the chest.
+    // A necklace: a fine chain round the back of the neck that hangs down
+    // the chest in a V to the charm.
     const m = mat(neck.color);
-    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.155, 0.012, 5, 24)), m);
-    chain.rotation.x = Math.PI / 2 - 0.35;
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.15, 0.008, 5, 24, Math.PI)), m);
+    chain.rotation.x = -Math.PI / 2 + 0.35; // the back half
     chain.position.set(0, 0.6, 0.03);
+    const drop = new THREE.Mesh(geo('pendantDrop', () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      [-0.15, 0.6, 0.03], [-0.125, 0.575, 0.16], [-0.06, 0.52, 0.218], [0, 0.5, 0.226], [0.06, 0.52, 0.218], [0.125, 0.575, 0.16], [0.15, 0.6, 0.03],
+    ].map(([x, y, z]) => new THREE.Vector3(x, y, z))), 32, 0.008, 5, false)), m);
+    // The charm hangs from the bottom of the V on a little ring.
+    const size = neck.hanja ? 1.8 : 1.5, top = (neck.hanja ? TAG_R : neck.charm === 'butterfly' ? 0.026 : 0.036) * size;
+    const bail = new THREE.Mesh(geo('pendantBail', () => new THREE.TorusGeometry(0.01, 0.004, 4, 10)), m);
+    bail.position.set(0, 0.49, 0.226);
     const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
-    charm.position.set(0, 0.5, 0.2);
+    charm.position.set(0, 0.482 - top, 0.226);
     charm.rotation.x = -0.15;
-    charm.scale.setScalar(neck.hanja ? 1.8 : 1.5); // an engraved tag a little bigger, to read the word
+    charm.scale.setScalar(size); // an engraved tag a little bigger, to read the word
     if (neck.hanja) { // the engraved word on the tag's face
       const face = new THREE.Mesh(geo('pendantFace', () => new THREE.CircleGeometry(TAG_R, 24)), engraveMat(neck.hanja, neck.letter, neck.color));
       face.position.z = 0.0065;
       charm.add(face);
     }
-    body.add(chain, charm);
+    body.add(chain, drop, bail, charm);
   } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
