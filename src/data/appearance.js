@@ -119,7 +119,8 @@ export const ANIMAL_LOOKS = [
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
-// The pendant charms (Sunra Silver Studio): a moon, a plum blossom, or a
+// The pendant charms (Sunra Silver Studio): five shapes (moon, plum blossom,
+// heart, star, butterfly) or a
 // round tag engraved with a word Koreans wish on, the Hangul large and its
 // hanja small under it (Yozi: Hangul first). A fixed list
 // (Yozi 2026-11-11), so there is nothing to type and nothing to filter.
@@ -127,6 +128,9 @@ const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${let
 export const PENDANT_CHARMS = {
   moon: { emoji: '🌙', name: { en: 'Moon', ko: '달', ja: '月', zh: '月亮' } },
   plum: { emoji: '🌸', name: { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' } },
+  heart: { emoji: '💗', name: { en: 'Heart', ko: '하트', ja: 'ハート', zh: '爱心' } },
+  star: { emoji: '⭐', name: { en: 'Star', ko: '별', ja: '星', zh: '星星' } },
+  butterfly: { emoji: '🦋', name: { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' } },
   jeong: wish('情', '정', 'warm heart', '情け', '情谊'),
   an: wish('安', '안', 'peace', '安らぎ', '平安'),
   cheong: wish('淸', '청', 'clear', '清らか', '清澈'),

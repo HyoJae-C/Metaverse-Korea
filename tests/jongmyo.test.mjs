@@ -161,7 +161,7 @@ test('the engraved pendants: 20 hanja words, each with its Hangul reading, no tw
   assert.equal(words.length, 20);
   for (const c of words) assert.equal([...c.hanja].length, [...c.letter].length, c.hanja);
   assert.equal(new Set(words.map((c) => c.letter)).size, 20, 'no two read the same');
-  assert.equal(CRAFT.pendant.shapes.length, Object.keys(PENDANT_CHARMS).length);
+  assert.equal(CRAFT.pendant.shapes.length, 25, '5 shapes and 20 words');
   assert.ok(WEARABLES['acc-pendant-silver-bok'] && WEARABLES['acc-pendant-gold-hwa'], 'old ids kept, new ones there');
 });
 

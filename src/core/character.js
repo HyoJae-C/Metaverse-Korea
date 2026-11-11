@@ -534,7 +534,7 @@ function charmGeometry(kind) {
 }
 
 // A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
-// blossom (five petals) or a round tag engraved with a word (Hangul, hanja under it).
+// blossom (five petals), a heart, a star, a butterfly or a round tag engraved with a word (Hangul, hanja under it).
 const TAG_R = 0.034;
 function pendantGeometry(kind) {
   const sh = new THREE.Shape();
@@ -546,6 +546,23 @@ function pendantGeometry(kind) {
       const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
       i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
     }
+  } else if (kind === 'heart') {
+    sh.moveTo(0, -0.034);
+    sh.bezierCurveTo(-0.048, 0, -0.026, 0.036, 0, 0.015);
+    sh.bezierCurveTo(0.026, 0.036, 0.048, 0, 0, -0.034);
+  } else if (kind === 'star') {
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 0.015 : 0.037, a = Math.PI / 2 + (i * Math.PI) / 5;
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else if (kind === 'butterfly') { // four wings round a slim body
+    const wings = [[0.018, 0.012, 0.019, 0.015, 0.5], [0.014, -0.014, 0.013, 0.01, -0.5]].flatMap(([x, y, rx, ry, rot]) => [-1, 1].map((sx) => {
+      const w = new THREE.Shape();
+      w.absellipse(sx * x, y, rx, ry, 0, Math.PI * 2, false, sx * rot);
+      return w;
+    }));
+    sh.absellipse(0, 0, 0.004, 0.022, 0, Math.PI * 2, false, 0);
+    return new THREE.ExtrudeGeometry([sh, ...wings], { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
   } else { // a round tag; the engraving is drawn on it (engraveMat)
     sh.absarc(0, 0, TAG_R, 0, Math.PI * 2, false);
   }
