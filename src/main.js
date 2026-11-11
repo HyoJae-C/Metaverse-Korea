@@ -4082,21 +4082,20 @@ const giftSync = walletReady.then(() => {
   giftReceipts.run().catch(() => {});
   return giftReceipts.sync(inventory, receipts, ITEMS).catch(() => {});
 });
-// Clothes bought before the server kept purchases: twice their price back,
-// once (game/old-clothes.js, loaded only until it's done on this device).
-// Then, once, clothes with no receipt at all leave the closet (gifts, code
-// items, prizes, the starting outfit: Yozi 2026-11-11), and accounts from
-// before then get travel money once (game/old-clothes.js runUpdateBonus).
-giftSync.then(() => { // (after it: a gift's receipt is in before the sweep below)
-  let old, sweep, bonus;
-  try { old = wallet.server && !localStorage.getItem('mk.oldClothes'); sweep = !localStorage.getItem('mk.noReceiptSweep'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
-  if (!old && !sweep && !bonus) return;
+// Clothes I already had get a receipt at their shop price, and ones the old
+// one-time sweep took out come back (game/old-clothes.js runItemGrants, Yozi
+// 2026-11-11). Clothes bought before the server kept purchases: twice their
+// price back, once. Accounts from before then get travel money once.
+giftSync.then(() => { // (after it: a gift's receipt is in first)
+  let grants, old, bonus;
+  try { grants = wallet.server && !localStorage.getItem('mk.itemGrants'); old = wallet.server && !localStorage.getItem('mk.oldClothes'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
+  if (!grants && !old && !bonus) return;
   const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
     refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
   import('./game/old-clothes.js').then(async (m) => {
+    if (grants) await m.runItemGrants(g).catch(() => {});
     if (old) await m.runOldClothes(g).catch(() => {});
-    if (sweep) setTimeout(() => m.sweepNoReceipt(g), 4000); // (after the refund's toast)
-    if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), sweep ? 9000 : 4000); // (after the sweep's toast)
+    if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), 4000); // (after the toasts above)
   }).catch(() => {});
 });
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
