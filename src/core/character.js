@@ -691,13 +691,13 @@ export function hatModel(look) {
 
 // The necklace's chain on the torso (a capsule of radius 0.2 at y 0.42, its
 // round top from y 0.5, squashed to 0.85 front to back). It rings the neck
-// at y 0.6, in the gap between the chin (the head's sphere) and the
+// at y 0.61, close round the base of the neck under the chin, and the
 // shoulders, then runs down the chest to the V at NECK_V. It keeps about
 // 2.5 cm off the shirt so it shows over a jacket or a padded coat too
 // (bodyAcc is fitted to the model's body, not to its clothes).
-const NECK_V = 0.49;
+const NECK_V = 0.53;
 function necklaceCurve() {
-  const LIFT = 0.025, Y = 0.6, R = 0.188;
+  const LIFT = 0.025, Y = 0.61, R = 0.15;
   const surf = (x, y) => Math.sqrt(Math.max(0, 0.04 - x * x - Math.max(0, y - 0.5) ** 2)) * 0.85;
   const pts = [];
   for (let i = 0; i <= 8; i++) { // round the back of the neck, right to left
