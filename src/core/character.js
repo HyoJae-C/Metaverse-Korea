@@ -481,7 +481,8 @@ function patchMat(id) {
 }
 
 // The engraving on a pendant tag: the Hangul large, its hanja small under
-// it, cut darker into the metal (data/appearance.js PENDANT_CHARMS).
+// it, polished bright on a darker brushed face so the word shines (a light
+// rim and a soft glow round the strokes) (data/appearance.js PENDANT_CHARMS).
 const engraveMats = {};
 function engraveMat(hanja, letter, color) {
   const key = hanja + letter + color;
@@ -489,11 +490,18 @@ function engraveMat(hanja, letter, color) {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
-  const ink = '#' + new THREE.Color(color).multiplyScalar(0.35).getHexString();
-  g.strokeStyle = ink; g.lineWidth = 5;
+  const metal = new THREE.Color(color);
+  const hex = (k) => '#' + metal.clone().multiplyScalar(k).getHexString();
+  const shine = '#' + metal.clone().lerp(new THREE.Color(0xffffff), 0.7).getHexString();
+  const face = g.createRadialGradient(46, 40, 6, 64, 64, 64);
+  face.addColorStop(0, hex(0.24)); face.addColorStop(1, hex(0.1)); // (linear values: dark, so the bright word stands out)
+  g.fillStyle = face;
+  g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = shine; g.lineWidth = 5;
   g.beginPath(); g.arc(64, 64, 58, 0, Math.PI * 2); g.stroke();
-  g.fillStyle = ink;
   g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = shine; g.shadowBlur = 8;
+  g.fillStyle = shine;
   g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
   g.fillText(letter, 64, 54);
   g.font = '700 24px "Noto Serif KR", "Noto Sans KR", serif';
