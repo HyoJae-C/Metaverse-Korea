@@ -90,7 +90,7 @@ test('puffs come every few seconds, never in step', () => {
   assert.equal(nextPuff(() => 1), PUFF_EVERY + PUFF_JITTER);
 });
 
-test('the bag holds perfume bottles with their sprays left', () => {
+test('perfume bottles keep their sprays left, in the wardrobe (no bag slots)', () => {
   const s = mem();
   const bag = new Bag(s, { isPerfume: (id) => id === 'pf-mint-ice', maxSprays: SPRAYS });
   assert.ok(bag.add({ kind: 'perfume', p: 'pf-mint-ice', sips: 4, name: 'Mint Ice' }));
@@ -98,5 +98,17 @@ test('the bag holds perfume bottles with their sprays left', () => {
   assert.ok(!bag.add({ kind: 'perfume', p: 'pf-mint-ice', sips: 0 }));
   assert.ok(bag.add({ kind: 'perfume', p: 'pf-mint-ice', sips: 99 }));
   const again = new Bag(s, { isPerfume: (id) => id === 'pf-mint-ice', maxSprays: SPRAYS });
-  assert.deepEqual(again.list().map((e) => e.sips), [4, SPRAYS]);
+  assert.deepEqual(again.vanityList().map((e) => e.sips), [4, SPRAYS]);
+  assert.equal(again.size, 0);
+});
+
+test('an old save\'s perfume in a bag slot moves to the wardrobe', () => {
+  const s = mem({ 'mk.bag': JSON.stringify({ items: [{ kind: 'umbrella' }, { kind: 'perfume', p: 'pf-mint-ice', sips: 3, name: 'Mint Ice' }] }) });
+  const bag = new Bag(s, { isPerfume: (id) => id === 'pf-mint-ice', maxSprays: SPRAYS });
+  assert.deepEqual(bag.list(), [{ kind: 'umbrella' }]);
+  assert.equal(bag.vanityList()[0].sips, 3);
+  assert.equal(bag.setVanity(0, { ...bag.vanityList()[0], sips: 2 }).sips, 3);
+  assert.equal(bag.vanityList()[0].sips, 2);
+  bag.setVanity(0, null);
+  assert.equal(bag.vanityList().length, 0);
 });

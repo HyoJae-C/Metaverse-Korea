@@ -31,7 +31,7 @@ export function mergeDistricts(parts, links = [], water = [], closed = []) {
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
     const [dx, dz] = offset;
-    for (const k of LISTS) for (const item of map[k] || []) out[k].push({ ...item, p: shiftPoly(item.p, dx, dz), d: id });
+    for (const k of LISTS) for (const item of map[k] || []) out[k].push({ ...item, p: shiftPoly(item.p, dx, dz), ...(item.holes ? { holes: item.holes.map((h) => shiftPoly(h, dx, dz)) } : {}), d: id }); // (holes: an island in an area)
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
     for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js

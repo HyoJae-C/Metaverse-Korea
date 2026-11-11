@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { rodSkin } from './rod-skins.js';
 import { frisbeeColor } from './frisbee.js';
+import { shadeHex } from './lipstick.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -12,7 +13,7 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
@@ -222,6 +223,17 @@ export function makeHeld(kind) {
     const sticker = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.003, 0.04), mat('#e8473b'));
     sticker.position.y = 0.083;
     g.add(box, lid, sticker);
+  } else if (kind === 'lipstick') {
+    // A lipstick ('lipstick:<shade>'): a black case, a gold collar and the
+    // bullet in its colour, slanted at the tip.
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.06, 12), mat('#1d1d22'));
+    tube.position.y = 0.03;
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0125, 0.014, 12), mat('#d4a73a'));
+    collar.position.y = 0.067;
+    const bullet = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.0105, 0.026, 12), mat(shadeHex(sub)));
+    bullet.position.y = 0.087;
+    bullet.rotation.z = 0.12;
+    g.add(tube, collar, bullet);
   } else if (kind === 'perfume') {
     // A perfume bottle: square glass, pink juice, a gold collar and a cap.
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.035), new THREE.MeshLambertMaterial({ color: '#f4eef8', transparent: true, opacity: 0.6 }));

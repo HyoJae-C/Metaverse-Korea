@@ -4,20 +4,21 @@ import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '.
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, shapePoints, SHAPE_NAMES, useShow, PHOTO_TIME } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS } from '../src/core/drone-sky.js';
+import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
 import { STAND_TIMES } from '../src/core/stamp-stands.js';
 
 const MIN = 60e3;
-// A drone show's start: drone shows are on the cycles numbered 2 mod 4.
-const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~3) + 2;
-const DRONE = (k = 0) => (N + 4 * k) * CYCLE_MS + SHOW_FROM;
+// A drone show's start: drone shows are on the odd cycles.
+const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~1) + 1;
+const DRONE = (k = 0) => (N + 2 * k) * CYCLE_MS + SHOW_FROM;
 const at = (min, k = 0) => DRONE(k) + min * MIN; // minutes from a show's start
 
-test('a 20-minute show one night in four, taking turns with the Yeouido fireworks', () => {
+test('a 20-minute show every other night, taking turns with the Yeouido fireworks', () => {
   assert.equal(SHOW_SECONDS, 1200);
-  assert.equal(CYCLE_MS, 120 * MIN);
+  assert.equal(CYCLE_MS, 180 * MIN);
   const s = droneShowAt(at(5));
   assert.equal(s.start, DRONE());
   assert.equal(Math.round(s.t), 300);
@@ -25,10 +26,9 @@ test('a 20-minute show one night in four, taking turns with the Yeouido firework
   assert.ok(s.on);
   // in the game's night: 10 minutes after nightfall
   assert.equal(cycleMs(s.start), NIGHT_FROM + 10 * MIN);
-  // the nights in between: quiet, then the fireworks, then quiet
-  for (const k of [1, 3]) assert.ok(!droneShowAt(DRONE() + k * CYCLE_MS + 5 * MIN) && !fireworksAt(DRONE() + k * CYCLE_MS + 5 * MIN));
-  assert.equal(droneShowAt(DRONE() + 2 * CYCLE_MS + 5 * MIN), null);
-  assert.equal(fireworksAt(DRONE() + 2 * CYCLE_MS + 5 * MIN).start, DRONE() + 2 * CYCLE_MS);
+  // the night in between: the fireworks
+  assert.equal(droneShowAt(DRONE() + CYCLE_MS + 5 * MIN), null);
+  assert.equal(fireworksAt(DRONE() + CYCLE_MS + 5 * MIN).start, DRONE() + CYCLE_MS);
 });
 
 test('night only around the show: dark from 1 minute before to the landing', () => {
@@ -43,10 +43,10 @@ test('night only around the show: dark from 1 minute before to the landing', () 
   assert.equal(droneShowAt(at(-1, 1)).start, DRONE(1)); // the next one
 });
 
-test('the next show: eight hours later, three a day', () => {
+test('the next show: six hours later, four a day', () => {
   assert.equal(nextDroneShow(at(5)), DRONE(1));
   assert.equal(nextDroneShow(at(-60)), DRONE());
-  assert.equal(DRONE(1) - DRONE(), 480 * MIN);
+  assert.equal(DRONE(1) - DRONE(), 360 * MIN);
 });
 
 test('the drones fly in front of the bridge, past where the duck boats go', () => {
@@ -59,26 +59,33 @@ test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
   const steps = program(DRONE());
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
-  const order = ['ANOTHER/SEOUL', '어 나 더/서 울', 'K O R E A', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
+  const order = ['ANOTHER/SEOUL', '어 나 더/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
   for (const w of order) { const i = words.indexOf(w); assert.ok(i > at, w); at = i; }
   for (let i = 1; i < steps.length; i++) assert.ok(steps[i].at > steps[i - 1].at, 'steps in time order');
   assert.ok(steps.at(-1).at === SHOW_SECONDS && steps.at(-1).land);
   assert.ok(steps.some((s) => s.photo && s.at === PHOTO_TIME[0]));
+  assert.equal(PHOTO_TIME[1] - PHOTO_TIME[0], 45, 'the photo pause keeps its 45 s');
+  assert.ok(LAST_LINE_SECONDS >= 12 && LAST_LINE_SECONDS <= 40, `the next show's time stays ${LAST_LINE_SECONDS} s`);
   // the third act changes from show to show
-  const acts = new Set([0, 1, 2].map((k) => JSON.stringify(program(DRONE(k)).find((s) => s.at === 750).lines)));
+  const acts = new Set([0, 1, 2].map((k) => JSON.stringify(program(DRONE(k)).find((s) => s.act3).lines)));
   assert.ok(acts.size > 1);
 });
 
-test('every line drawing fits the sky over an upright phone', () => {
-  for (const name of SHAPE_NAMES) {
-    const pts = shapePoints(name, 400);
-    assert.equal(pts.length, 400, name);
-    for (const [u, v] of pts) {
-      assert.ok(Number.isFinite(u) && Number.isFinite(v), name);
-      assert.ok(Math.abs(u) <= SKY.w / 2 + 2 && Math.abs(v) <= SKY.h / 2 + 0.5, `${name} ${u.toFixed(1)},${v.toFixed(1)}`);
-    }
-  }
+test('pictures and lines change about twice as often as the first shows', () => {
+  useShow(show);
+  const shown = program(DRONE()).filter((s) => s.at >= 0 && s.at < SHOW_SECONDS);
+  assert.ok(shown.length >= 75, `${shown.length} pictures and lines`);
+  const gaps = shown.slice(1).map((s, i) => s.at - shown[i].at).filter((g) => g > 6 && g !== 45);
+  const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  assert.ok(mean < 18, `${mean.toFixed(1)} s on average (was about 28)`);
+});
+
+test('every picture in the program is painted, on a canvas the size of the sky', () => {
+  useShow(show);
+  for (const s of program(DRONE())) if (s.shape) assert.ok(SHAPE_NAMES.includes(s.shape), s.shape);
+  assert.equal(PIC_W, SKY.w);
+  assert.ok(PIC_H <= SKY.h);
 });
 
 test('the drone show stamp: on the Ttukseom park lawn, only while the drones are up', () => {

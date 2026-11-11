@@ -83,6 +83,8 @@ const STRIDE = {
 const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
 const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
+export const SIT_UNDER = PACK.sitUnder || [[0, 0.33]]; // (game/seat-fit.js)
+export const SIT_KNEE = PACK.sitKnee ?? 0.2;
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
 const loader = new GLTFLoader();
 const cache = new Map();
@@ -474,6 +476,26 @@ const LIP_FWD = 0.035;
 const SWIM_POSE = { tilt: 1.35, lift: 0.74, back: 0.5, rate: 6.5, head: 0.5 };
 // Sitting in a tube on the water (the chair clip, raised to the tube).
 const TUBE_SIT = { y: 0.3, z: 0.05 };
+// In a skirt the walk and run clips swing the legs out through the cloth
+// (the knee up through the front, the heel kicked up through the back), so
+// their leg bones keep only this much of the clip's turn away from rest:
+// shorter, closer steps, the narrower the skirt's hem the more.
+const SKIRT_STRIDE = { mini: 0.4, long: 0.3, chima: 0.3 };
+const SKIRT_LEGS = ['upperlegl', 'upperlegr', 'lowerlegl', 'lowerlegr'];
+// ...away from standing still: each leg bone's turn in the idle clip's first
+// frame (the rig's bind pose has the legs apart, so not that).
+let idleLegs = null;
+function idleLegPose() {
+  if (idleLegs) return idleLegs;
+  const clip = clips.get(PACK.anims.idle);
+  if (!clip) return null;
+  idleLegs = new Map();
+  for (const tr of clip.tracks) {
+    const [bone, prop] = tr.name.split('.');
+    if (prop === 'quaternion' && SKIRT_LEGS.includes(bone)) idleLegs.set(bone, new THREE.Quaternion().fromArray(tr.values, 0));
+  }
+  return idleLegs;
+}
 // Sitting in a bumper car (core/bumper-rink.js): the character's root is the
 // car's middle, so slide back onto the cushion, against the seat back.
 const BUMPER_SIT = { y: -0.02, z: PACK.sit.z - 0.19 }; // (tuned to the car's low seat)
@@ -702,7 +724,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   });
   // A skirt over the everyday clothes (its own mesh and patterned material).
   const outfit = PACK.models[id].wear?.outfit;
-  if (outfit && look.skirt) addSkirt(m, look.skirt, outfit);
+  const skirtMesh = outfit && look.skirt ? addSkirt(m, look.skirt, outfit) : null;
+  // Under a skirt the walk and run clips take smaller steps (SKIRT_STRIDE).
+  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(look.skirt).length] ?? 1 : 1;
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
@@ -948,6 +972,18 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       // the offsets below don't pile up frame after frame.
       for (const [b, q] of lRest) b.quaternion.copy(q);
       mixer.update(dt);
+      // A skirt on a seat (or a bike) lies on the lap (its 'sit' morph, core/skirt-mesh.js).
+      if (skirtMesh?.morphTargetInfluences) {
+        const inf = skirtMesh.morphTargetInfluences;
+        inf[0] += ((key === 'sit' || key === 'ride' ? 1 : 0) - inf[0]) * Math.min(1, dt * 8);
+      }
+      if (skirtStride < 1 && (key === 'walk' || key === 'run')) {
+        const still = idleLegPose();
+        for (const name of SKIRT_LEGS) {
+          const bone = lBones[name], q = still?.get(name);
+          if (bone && q) bone.quaternion.slerp(q, 1 - skirtStride);
+        }
+      }
       // On a chair: thighs forward along the seat, shins down (the clip
       // leaves the legs hanging straight).
       if (key === 'sit' && !riding) {

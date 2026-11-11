@@ -10,10 +10,13 @@
 import * as THREE from 'three';
 import { addBox } from './three-kit.js';
 import { mergeStatic } from './bukchon-models.js';
+import { addBrickPattern } from './brick-pattern.js';
 import { CATHEDRAL as K } from '../data/myeongdong.js';
 
 const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = (c) => (mats[c] ||= brickish(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
+// The red walls get brick courses (Yozi 2026-11-11).
+const brickish = (c, m) => (c === C.brick || c === C.brickDark ? addBrickPattern(m, { w: 0.84, h: 0.34, mortar: 0.05 }) : m);
 const box = (g, sx, sy, sz, x, y, z, c, ry = 0) => { const m = addBox(g, mat, sx, sy, sz, x, y, z, c); m.rotation.y = ry; return m; };
 const C = {
   brick: '#b45a40', brickDark: '#9a4a35', stone: '#8f8c85', stoneLight: '#aaa69d', copper: '#7aa88f', copperDark: '#5e8c76',
@@ -203,7 +206,7 @@ export function buildCathedral(g) {
   const TK = K.tower, TW2 = TK.w / 2, tz0 = front - TK.w + TK.d, tz = (tz0 + L2) / 2, TB = TK.body;
   box(g, TK.w, TB, L2 - tz0, 0, TB / 2, tz, C.brick);
   for (const sx of [-1, 1]) for (const z of [tz0, L2]) box(g, 0.45, TB + 0.2, 0.45, sx * (TW2 - 0.1), (TB + 0.2) / 2, z - Math.sign(z - tz) * 0.1, C.stone);
-  for (const y of [3.2, 8.6, 10.9]) box(g, TK.w + 0.1, 0.18, L2 - tz0 + 0.1, 0, y, tz, C.stoneLight); // stone bands between its storeys
+  for (const y of [3.2, 8.6 + TK.lift, 10.9 + TK.lift]) box(g, TK.w + 0.1, 0.18, L2 - tz0 + 0.1, 0, y, tz, C.stoneLight); // stone bands between its storeys
   // main door: a stone porch with a steep gablet over a pointed arch
   box(g, 2.4, 2.3, 0.4, 0, 1.15, L2 + 0.12, C.stoneLight);
   box(g, 1.2, 1.5, 0.2, 0, 0.75, L2 + 0.3, C.door);

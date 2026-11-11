@@ -1,5 +1,6 @@
-// Potato Market (감자마켓) on the plaza by Dongmyo: players' mats with the
-// clothes they put out, and the panel to buy from them or spread your own.
+// Potato Market (감자마켓) on the plaza by Dongmyo: the clothes players put
+// out, on the striped stalls round the plaza first and then on mats in the
+// middle, and the panel to buy from them or put out your own.
 // The rules and the server talk: core/market.js (supabase/034_player_market.sql).
 // Loaded by game/potato-market-near.js when you come near, or at the start
 // when you have things on a mat.
@@ -10,7 +11,7 @@
 // newOpId, takeOff(id), resync() (fetch the balance again: a sale while away) }.
 import * as THREE from 'three';
 import { makeMat, MAT, MAT_COLORS } from '../core/picnic-mat.js';
-import { MarketClient, MARKET, priceRange, sellerGets, clampPrice, listable, mats, newlySold } from '../core/market.js';
+import { MarketClient, MARKET, priceRange, sellerGets, clampPrice, listable, mats, layout, newlySold } from '../core/market.js';
 import { MY_MAT } from './potato-market-near.js';
 import { t } from '../core/i18n.js';
 import { L } from '../ui/pocha-ui.js';
@@ -37,11 +38,12 @@ export function createPotatoMarket(game) {
   // Mats fill the middle of the plaza first.
   const spots = (spot.spots || []).map(([dx, dz, ry = 0]) => ({ x: spot.x + dx, z: spot.z + dz, ry, d: Math.hypot(dx, dz) }))
     .sort((a, b) => a.d - b.d);
-  // The stalls round the edge are scenery with no sign (no textures to
-  // download): standing in front of one shows its name (Yozi 2026-11-11).
+  // The stalls round the edge have no sign (no textures to download):
+  // standing in front of one shows its name (Yozi 2026-11-11). Sellers'
+  // clothes go on them first, then on the mats (core/market.js layout).
   const stalls = (game.stalls || []).map((l, i) => {
     const ry = l.ry || 0, n = (Number.isInteger(l.c) ? l.c : i) % STALL_NAMES;
-    return { x: l.x + Math.sin(ry) * 1.7, z: l.z + Math.cos(ry) * 1.7, key: 'potato.stall' + n };
+    return { x: l.x + Math.sin(ry) * 1.7, z: l.z + Math.cos(ry) * 1.7, sx: l.x, sz: l.z, ry, w: l.w || 3.2, key: 'potato.stall' + n, m: null };
   });
 
   // ---- the mats on the ground ----
@@ -50,36 +52,71 @@ export function createPotatoMarket(game) {
   game.scene.add(group);
   const CLOTH = new THREE.BoxGeometry(0.5, 0.07, 0.38);
   const clothMat = new THREE.MeshLambertMaterial({ color: '#ffffff' });
-  const cloth = new THREE.InstancedMesh(CLOTH, clothMat, spots.length * MARKET.openMax);
+  const cloth = new THREE.InstancedMesh(CLOTH, clothMat, (spots.length + stalls.length) * MARKET.openMax);
   cloth.count = 0;
   cloth.frustumCulled = false;
   group.add(cloth);
+  // On a stall: a white cloth along the table's front under the seller's
+  // things and a yellow price tag hanging from the edge for each, so they
+  // read apart from the stall's own piles.
+  const runner = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.012, 0.28), new THREE.MeshLambertMaterial({ color: '#fbf7ee' }), Math.max(1, stalls.length));
+  const tags = new THREE.InstancedMesh(new THREE.BoxGeometry(0.13, 0.15, 0.012), new THREE.MeshLambertMaterial({ color: '#ffcf33' }), Math.max(1, stalls.length * MARKET.openMax));
+  for (const o of [runner, tags]) { o.count = 0; o.frustumCulled = false; group.add(o); }
   const matMeshes = [];
   let drawn = []; // [{ mat, x, z, name }] where each mat lies
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
+  const onStall = new THREE.Vector3(0.8, 1, 0.6), v2 = new THREE.Vector3(); // a smaller fold, to fit six along the table
+  let n = 0;
+  // One folded thing at (lx, y, lz) in the metres of something at (x, z) turned ry.
+  const fold = (th, x, z, ry, lx, y, lz, sc) => {
+    v.set(x + lx * Math.cos(ry) + lz * Math.sin(ry), y, z - lx * Math.sin(ry) + lz * Math.cos(ry));
+    q.setFromAxisAngle(up, ry + ((th.id * 7) % 5 - 2) * 0.06);
+    cloth.setMatrixAt(n, m4.compose(v, q, sc));
+    cloth.setColorAt(n, c.set(tint(th.item)));
+    n++;
+  };
   function draw() {
     const list = rows ? mats(rows, items, rules?.openMax || MARKET.openMax) : [];
+    const placed = layout(list, stalls.length, spots.length);
     drawn = [];
-    let n = 0;
-    list.slice(0, spots.length).forEach((m, i) => {
-      const s = spots[i];
+    n = 0;
+    for (const st of stalls) st.m = null;
+    let used = 0, nr = 0, nt = 0;
+    for (const p of placed) {
+      const m = p.m;
+      if (p.stall != null) {
+        // Along the front of the stall's table, in front of its own piles
+        // (core/dongmyo-models.js: the table top at 0.81 m, its front edge 0.55 m out).
+        const st = stalls[p.stall], step = Math.min(0.45, (st.w - 0.7) / 6);
+        st.m = { mat: m.mat, mine: m.mine, name: m.mine ? t('potato.myStall') : m.name || t('potato.someone') };
+        const at = (lx, lz) => v.set(st.sx + lx * Math.cos(st.ry) + lz * Math.sin(st.ry), 0, st.sz - lx * Math.sin(st.ry) + lz * Math.cos(st.ry));
+        q.setFromAxisAngle(up, st.ry);
+        at(0, 0.41).y = 0.816;
+        runner.setMatrixAt(nr++, m4.compose(v, q, v2.set(st.w - 0.6, 1, 1)));
+        m.things.forEach((th, k) => {
+          const lx = (k - 2.5) * step;
+          fold(th, st.sx, st.sz, st.ry, lx, 0.85, 0.42, onStall);
+          q.setFromAxisAngle(up, st.ry);
+          at(lx, 0.565).y = 0.74;
+          tags.setMatrixAt(nt++, m4.compose(v, q, one));
+        });
+        continue;
+      }
+      const i = p.mat, s = spots[i];
       let mesh = matMeshes[i];
       if (!mesh) { mesh = matMeshes[i] = makeMat(i % MAT_COLORS.length); group.add(mesh); }
       mesh.visible = true;
       mesh.position.set(s.x, 0, s.z);
       mesh.rotation.y = s.ry;
+      used = i + 1;
       drawn.push({ mat: m.mat, x: s.x, z: s.z, name: m.mine ? t('potato.mine') : m.name || t('potato.someone') });
       // Folded clothes in two rows of three.
-      m.things.forEach((th, k) => {
-        const lx = ((k % 3) - 1) * 0.75, lz = (k < 3 ? -0.4 : 0.4);
-        v.set(lx * Math.cos(s.ry) + lz * Math.sin(s.ry), 0.075, -lx * Math.sin(s.ry) + lz * Math.cos(s.ry)).add({ x: s.x, y: 0, z: s.z });
-        q.setFromAxisAngle(up, s.ry + ((th.id * 7) % 5 - 2) * 0.06);
-        cloth.setMatrixAt(n, m4.compose(v, q, one));
-        cloth.setColorAt(n, c.set(tint(th.item)));
-        n++;
-      });
-    });
-    for (let i = list.length; i < matMeshes.length; i++) matMeshes[i].visible = false;
+      m.things.forEach((th, k) => fold(th, s.x, s.z, s.ry, ((k % 3) - 1) * 0.75, 0.075, k < 3 ? -0.4 : 0.4, one));
+    }
+    for (let i = used; i < matMeshes.length; i++) matMeshes[i].visible = false;
+    runner.count = nr;
+    tags.count = nt;
+    runner.instanceMatrix.needsUpdate = tags.instanceMatrix.needsUpdate = true;
     cloth.count = n;
     cloth.instanceMatrix.needsUpdate = true;
     if (cloth.instanceColor) cloth.instanceColor.needsUpdate = true;
@@ -245,8 +282,10 @@ export function createPotatoMarket(game) {
     const list = mats(rows, items, rules.openMax).filter((m) => ui.only == null || m.mat === ui.only);
     if (!list.length) { root.append(el('p', 'fine', t('potato.empty'))); return; }
     for (const m of list) {
-      const seller = m.mine ? t('potato.mine') : m.name || t('potato.someone');
-      root.append(el('h4', 'resale-rack', '🧺 ' + (m.mine ? seller : t('potato.matOf', { name: seller }))));
+      const st = stalls.find((o) => o.m?.mat === m.mat);
+      const seller = m.mine ? t(st ? 'potato.myStall' : 'potato.mine') : m.name || t('potato.someone');
+      const head = st ? '🏪 ' + t(st.key) + ' · ' + (m.mine ? seller : t('potato.stallOf', { name: seller })) : '🧺 ' + (m.mine ? seller : t('potato.matOf', { name: seller }));
+      root.append(el('h4', 'resale-rack', head));
       const box = el('div', 'fish-list');
       for (const th of m.things) {
         const it = items[th.item], name = L(it.name), have = game.inventory.has(th.item);
@@ -327,6 +366,10 @@ export function createPotatoMarket(game) {
     },
     act(p) {
       const st = stalls.find((o) => Math.hypot(p.x - o.x, p.z - o.z) < BY_STALL);
+      if (st?.m) {
+        const { mat, mine, name } = st.m;
+        return { key: 'potato:' + mat, label: '🏪 ' + (mine ? name : t('potato.lookStall', { name })), run: () => ui.show(mat) };
+      }
       if (st) return { key: st.key, label: '🥔 ' + t('potato.stall'), run: () => game.shop.toast(t('potato.stallSay', { name: t(st.key) })) };
       if (Math.hypot(p.x - centre.x, p.z - centre.z) > PLAZA) return null;
       const by = drawn.map((m) => ({ m, d: Math.hypot(p.x - m.x, p.z - m.z) })).filter((o) => o.d < BY_MAT + MAT.w / 2).sort((a, b) => a.d - b.d)[0];

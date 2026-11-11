@@ -5,16 +5,11 @@
 // in the same place.
 //
 //   cabinAt(i, t)          pure schedule, unit-tested
-//   buildCableCar(...)     the outdoor "room": the lower station, the slope
-//                          and the summit plaza round the look-out tower
-//   cableCarLandmark(g, l) the same line seen from the street (Itaewon)
+//   cableLine(l)           where each cabin hangs on the line, at progress k
+//   cableCarLandmark(g, l) the line, its stations and cabins (Itaewon); you
+//                          ride it outdoors (game/namsan-cable.js)
 import * as THREE from 'three';
-import { namsanTower } from './landmarks.js';
 import { LOCK_SHAPES } from './love-locks.js';
-import { darkness } from './weather.js';
-
-const DAY_SKY = new THREE.Color('#bfdff5'), DAY_FOG = new THREE.Color('#cfe6f5'), NIGHT_SKY = new THREE.Color('#1a2550');
-const WHITE = new THREE.Color('#ffffff'), MOON = new THREE.Color('#a9b9ff');
 
 export const CABLE = {
   // With two cabins half a cycle apart, one is at each station every
@@ -53,45 +48,6 @@ export function arrivesIn(i, station, t) {
   return ((at - p) % cycle + cycle) % cycle || cycle;
 }
 export const cableClock = () => Date.now() / 1000;
-
-// Room layout (metres, room space). The lower station is by the door
-// (+z), the summit plaza is TOP metres up at the far end (-z).
-export const CC = {
-  w: 44, d: 120,
-  top: 34, // summit height
-  lowZ: 38, // cabin stop at the lower station
-  topZ: -30, // cabin stop at the summit
-  edge: -24, // the summit plaza starts here (z < edge)
-  lowEdge: 35, // the lower station floor ends here (z > lowEdge)
-  tracks: [-3.5, 3.5], // cabin 0 and cabin 1
-  tower: { x: 0, z: -47 },
-  towerR: 6.75, // the tower's round terrace (12 m × the 0.55 scale), with a little room
-  // Love locks (사랑의 자물쇠): a heart frame hung with locks by the left
-  // railing, between the flower beds; stand at `spot` to hang one or read.
-  loveLock: { x: -19.9, z: -43, spot: { x: -17.2, z: -43 } },
-  // The back gate, in the railing behind the tower: out onto the real
-  // summit plaza outdoors (game/namsan-walk.js).
-  trailGate: { x: 0, z: -59, half: 1.8, inside: { x: 0, z: -56.6, ry: 0 } },
-};
-export const ROOM_CABLECAR = { w: CC.w, d: CC.d, h: 60 };
-// The floor height under a point: the summit plaza or the lower station.
-export const cableFloor = (x, z) => (z < CC.edge ? CC.top : 0);
-// Near the love-lock heart? (where its two buttons show)
-export const nearLoveLock = (x, z) => Math.hypot(x - CC.loveLock.spot.x, z - CC.loveLock.spot.z) < 2.2;
-// At the back gate? (where "out onto the summit plaza" shows)
-export const nearTrailGate = (x, z) => Math.abs(x - CC.trailGate.x) < CC.trailGate.half + 0.6 && z < CC.trailGate.z + 3.2;
-// The camera keeps out of the tower's base (single-sided walls you would
-// otherwise see straight through when the camera swings behind it).
-export const cableCamBlocked = (x, z) => z < CC.edge && Math.hypot(x - CC.tower.x, z - CC.tower.z) < 5.4;
-// A cabin's floor at progress k: climbs steeply at first and levels off
-// into the summit station, staying clear of the slope underneath.
-export function cabinPos(i, k) {
-  return { x: CC.tracks[i], y: CC.top * (1 - (1 - k) ** 1.6), z: CC.lowZ + (CC.topZ - CC.lowZ) * k };
-}
-// Where you stand to get in (the cabin's open side faces you).
-export const boardSpot = (i, station) => (station === 'low'
-  ? { x: CC.tracks[i], y: 0, z: CC.lowZ + 2.6 }
-  : { x: CC.tracks[i], y: CC.top, z: CC.topZ - 2.6 });
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true, ...o }));
@@ -170,13 +126,13 @@ export function makeLock(kind, color, size = 0.4) {
   return g;
 }
 
-// The love-lock heart by the left railing: a big heart frame on a plinth,
-// thick with locks on both faces, a sign over it, and the four kinds of
-// lock players can pick hanging on a bar in front. Fixed decoration: locks
-// players hang are kept on the server and shown in the message list, not
-// added here one by one.
-// (Also on the real summit outdoors, game/namsan-summit.js: at, facing ry.)
-export function loveLockHeart(scene, block, TOP, at = CC.loveLock, ry = Math.PI / 2) {
+// The love-lock heart on the summit plaza (game/namsan-summit.js): a big
+// heart frame on a plinth, thick with locks on both faces, a sign over it,
+// and the four kinds of lock players can pick hanging on a bar in front.
+// Fixed decoration: locks players hang are kept on the server and shown in
+// the message list, not added here one by one. At `at` ({x, z}), its face
+// turned by ry.
+export function loveLockHeart(scene, block, TOP, at, ry = Math.PI / 2) {
   const { x, z } = at;
   const g = new THREE.Group();
   g.position.set(x, TOP, z);
@@ -228,302 +184,47 @@ export function loveLockHeart(scene, block, TOP, at = CC.loveLock, ry = Math.PI 
   block(x + 0.7, z, 0.3, 2.8);
 }
 
-export function buildCableCar(store, ROOM, EXIT) {
-  const { w, d } = ROOM;
-  const TOP = CC.top;
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#bfdff5');
-  scene.fog = new THREE.Fog('#cfe6f5', 140, 620);
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x88b07a, 1.6);
-  scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff2dc, 1.2);
-  sun.position.set(30, 80, 40);
-  scene.add(sun);
-  const ambient = new THREE.AmbientLight(0xffffff, 0.35);
-  scene.add(ambient);
-
-  const colliders = [];
-  const block = (x, z, sx, sz) => colliders.push({ p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]] });
-  const add = (geo, color, x, y, z, parent = scene, o) => { const m = new THREE.Mesh(geo, mat(color, o)); m.position.set(x, y, z); parent.add(m); return m; };
-  const box = (sx, sy, sz, x, y, z, color, parent, o) => add(new THREE.BoxGeometry(sx, sy, sz), color, x, y, z, parent, o);
-
-  // The city far below: a wide ground, low blocks of buildings all round,
-  // a river and a ring of hills on the horizon.
-  const cityMat = new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true, emissive: '#ffc874', emissiveIntensity: 0 }); // (glows a little at night: the lit city)
-  add(new THREE.PlaneGeometry(1400, 1400).rotateX(-Math.PI / 2), '#b9c7a8', 0, -0.02, 0);
-  add(new THREE.PlaneGeometry(1400, 60).rotateX(-Math.PI / 2), '#6fa8d6', 0, 0.02, 250); // the Han
-  {
-    const geo = new THREE.BoxGeometry(1, 1, 1);
-    geo.translate(0, 0.5, 0);
-    const N = 520;
-    const city = new THREE.InstancedMesh(geo, cityMat, N);
-    const tones = ['#e8e2d6', '#d6dce4', '#f1ede4', '#c9ced6', '#e3d5c3', '#bfc8d2'].map((c) => new THREE.Color(c));
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
-    let seed = 11, n = 0;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    while (n < N) {
-      const x = (rnd() - 0.5) * 700, z = (rnd() - 0.5) * 700;
-      if (Math.abs(x) < 70 && z > -90 && z < 70) continue; // the hill itself
-      if (z > 215 && z < 285) continue; // the river
-      const h = 4 + rnd() * rnd() * (Math.hypot(x, z) > 160 ? 46 : 26);
-      m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(6 + rnd() * 12, h, 6 + rnd() * 12));
-      city.setMatrixAt(n, m4);
-      city.setColorAt(n, tones[n % tones.length]);
-      n++;
-    }
-    scene.add(city);
-    for (let i = 0; i < 14; i++) { // far hills
-      const a = (i / 14) * Math.PI * 2;
-      const hill = add(new THREE.ConeGeometry(70 + (i % 3) * 25, 50 + (i % 4) * 18, 7), '#8fae84', Math.sin(a) * 430, 20, Math.cos(a) * 430);
-      hill.scale.y = 0.8;
-    }
-  }
-
-  // Namsan: the slope between the stations (concave, under the cable), the
-  // summit block with a rocky front, trees on the slope.
-  {
-    const span = CC.lowEdge - CC.edge;
-    const W = 150, segX = 20, segZ = 24;
-    const geo = new THREE.PlaneGeometry(W, span, segX, segZ).rotateX(-Math.PI / 2);
-    const pos = geo.attributes.position;
-    const slopeY = (z, x) => {
-      const s = (CC.lowEdge - z) / span; // 0 at the bottom, 1 at the top
-      const base = TOP * 0.9 * s - 8 * Math.sin(Math.PI * s);
-      const side = Math.max(0, Math.abs(x) - 30) / 45; // falls away at the sides
-      return Math.max(0, base * (1 - Math.min(1, side) * 0.85));
-    };
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i), z = pos.getZ(i) + (CC.lowEdge + CC.edge) / 2;
-      pos.setZ(i, z);
-      pos.setY(i, slopeY(z, x));
-    }
-    geo.computeVertexNormals();
-    scene.add(new THREE.Mesh(geo, mat('#7fb06a')));
-    // The summit: a broad block, rock in front.
-    const summit = new THREE.Mesh(new THREE.CylinderGeometry(70, 95, TOP, 18, 1), mat('#86b56f'));
-    summit.scale.z = 0.62;
-    summit.position.set(0, TOP / 2 - 0.02, CC.edge - 1 - 43.4);
-    scene.add(summit);
-    add(new THREE.BoxGeometry(60, 0.2, 44), '#d9d2c3', 0, TOP - 0.1, CC.edge - 22); // plaza paving (its top is the floor, TOP)
-    // Trees: on the slope, kept away from the cable corridor.
-    const tree = new THREE.ConeGeometry(2.4, 7, 6);
-    tree.translate(0, 3.2, 0);
-    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), 140);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
-    let n = 0, seed = 5;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    while (n < 140) {
-      const x = (rnd() - 0.5) * 140, z = CC.edge + 2 + rnd() * (span - 6);
-      if (Math.abs(x) < 8) continue;
-      const s = 0.7 + rnd() * 0.6;
-      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, slopeY(z, x) - 0.4, z), q, sc.set(s, s, s)));
-    }
-    scene.add(trees);
-    // Nobody walks up the slope.
-    block(0, (CC.lowEdge + CC.edge) / 2, w, span);
-  }
-
-  // Cable lines and the pylons halfway.
-  const ROPE = 3.6;
-  for (const x of CC.tracks) {
-    const pts = [];
-    for (let s = 0; s <= 24; s++) { const p = cabinPos(CC.tracks.indexOf(x), s / 24); pts.push(new THREE.Vector3(x, p.y + ROPE, p.z)); }
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#2b2f36' })));
-  }
-  {
-    const p = cabinPos(0, 0.5);
-    const hgt = p.y + ROPE + 0.6;
-    const base = 6;
-    for (const sx of [-1, 1]) {
-      const leg = box(0.5, hgt - base + 2, 0.5, sx * 6.2, (hgt + base) / 2 - 1, p.z, '#c9ced6');
-      leg.rotation.z = sx * 0.06;
-    }
-    box(14, 0.6, 0.8, 0, hgt, p.z, '#c9ced6');
-  }
-
-  // ── Lower station ───────────────────────────────────────────────
-  const LOW = CC.lowZ;
-  add(new THREE.PlaneGeometry(w, d / 2 - CC.lowEdge + 2).rotateX(-Math.PI / 2), '#d8d2c6', 0, 0.01, (d / 2 + CC.lowEdge) / 2);
-  // Building: back wall (uphill), side walls, roof over the platform.
-  for (const sx of [-1, 1]) box(4.5, 6.5, 0.6, sx * 8.75, 3.25, LOW - 3, '#efe9df'); // uphill wall, open over the tracks
-  box(22, 1.1, 0.6, 0, 5.95, LOW - 3, '#efe9df');
-  for (const sx of [-1, 1]) { box(0.6, 6.5, 12, sx * 11, 3.25, LOW + 3, '#efe9df'); block(sx * 11, LOW + 3, 0.8, 12); }
-  box(23, 0.5, 13, 0, 6.6, LOW + 2.5, '#5d6670');
-  // Bull wheels on the roof.
-  for (const x of CC.tracks) { const wh = add(new THREE.CylinderGeometry(1.5, 1.5, 0.3, 18), '#3a3f46', x, 7.3, LOW - 1.5); void wh; }
-  const lowSign = signMesh('남산 하늘 케이블카', 'NAMSAN SKY CABLE · LOWER STATION', 12, '#c0392b');
-  lowSign.position.set(0, 5.2, LOW + 9.05);
-  scene.add(lowSign);
-  // Track bays (the cabins stop here) with yellow edge lines.
-  for (const x of CC.tracks) {
-    block(x, LOW, 2.6, 2.6);
-    add(new THREE.PlaneGeometry(2.6, 0.25).rotateX(-Math.PI / 2), '#ffd23f', x, 0.02, LOW + 1.4);
-  }
-  // Ticket booth and a fare board.
-  box(2.4, 2.4, 1.6, -7.5, 1.2, LOW + 4, '#c0392b');
-  box(2.8, 0.3, 2, -7.5, 2.55, LOW + 4, '#efe9df');
-  block(-7.5, LOW + 4, 2.5, 1.7);
-  const fare = signMesh('하늘 케이블카 · 왕복', `ROUND TRIP · ₩${CABLE.fare.toLocaleString('en-US')} (GAME)`, 3.6, '#2f4f6f');
-  fare.position.set(-7.5, 3.3, LOW + 4.85);
-  scene.add(fare);
-  // Benches to wait on.
-  const seats = [];
-  for (const bx of [7, 9]) {
-    const bz = LOW + 7;
-    box(1.6, 0.08, 0.5, bx, 0.38, bz, '#a8743f');
-    box(1.6, 0.4, 0.08, bx, 0.6, bz + 0.25, '#a8743f');
-    block(bx, bz, 1.7, 0.6);
-    for (const o of [-0.4, 0.4]) seats.push({ x: bx + o, z: bz - 0.05, ry: Math.PI, stand: [bx + o, bz - 0.9] });
-  }
-
-  // ── Summit ──────────────────────────────────────────────────────
-  const TZ = CC.topZ;
-  // Upper station: a roof on posts over the two bays.
-  for (const sx of [-7, 7]) for (const sz of [TZ - 3, TZ + 5]) { box(0.4, 8, 0.4, sx, TOP + 4, sz, '#efe9df'); block(sx, sz, 0.5, 0.5); }
-  box(16, 0.5, 10, 0, TOP + 8.2, TZ + 1, '#5d6670');
-  for (const x of CC.tracks) {
-    block(x, TZ, 2.6, 2.6);
-    add(new THREE.PlaneGeometry(2.6, 0.25).rotateX(-Math.PI / 2), '#ffd23f', x, TOP + 0.03, TZ - 1.4);
-  }
-  block(0, TZ + 4.5, 16, 1); // the open front over the slope
-  const topSign = signMesh('남산 하늘 케이블카', 'NAMSAN SKY CABLE · SUMMIT', 9, '#c0392b');
-  topSign.position.set(0, TOP + 6.9, TZ - 3.3);
-  topSign.rotation.y = Math.PI;
-  scene.add(topSign);
-
-  // The look-out tower on the plaza.
-  const tower = new THREE.Group();
-  namsanTower(tower);
-  tower.scale.setScalar(0.55);
-  tower.position.set(CC.tower.x, TOP, CC.tower.z);
-  scene.add(tower);
-  // Round, like the terrace (a square block let you walk into its edge and
-  // sink into it up to the knees).
-  colliders.push({ p: Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2; return [CC.tower.x + Math.cos(a) * CC.towerR, CC.tower.z + Math.sin(a) * CC.towerR]; }) });
-
-  loveLockHeart(scene, block, TOP);
-
-  // The trail's gate at the back: two wooden posts, a beam with its sign,
-  // and the first steps going down (the room ends just past them).
-  {
-    const G = CC.trailGate;
-    for (const sx of [-1, 1]) box(0.3, 2.8, 0.3, G.x + sx * (G.half + 0.15), TOP + 1.4, G.z, '#8a5a36');
-    box(G.half * 2 + 0.9, 0.3, 0.34, G.x, TOP + 2.75, G.z, '#8a5a36');
-    const trailSign = signMesh('정상 광장', 'OUT TO THE SUMMIT PLAZA', 3.4, '#5b7d3a');
-    trailSign.position.set(G.x, TOP + 3.35, G.z + 0.2);
-    scene.add(trailSign);
-    for (let k = 0; k < 3; k++) box(G.half * 2, 0.2, 0.5, G.x, TOP - 0.25 - k * 0.3, G.z - 0.45 - k * 0.5, '#b9ad98');
-    block(G.x, G.z - 1.3, G.half * 2 + 1, 1); // (the room ends here: you go on by the button)
-  }
-
-  // Railings round the plaza, hung with love locks.
-  const rails = [
-    [-w / 2 + 1, CC.edge - 1, -w / 2 + 1, -d / 2 + 1],
-    [w / 2 - 1, CC.edge - 1, w / 2 - 1, -d / 2 + 1],
-    [-w / 2 + 1, -d / 2 + 1, CC.trailGate.x - CC.trailGate.half, -d / 2 + 1], // (the back, either side of the trail's gate)
-    [CC.trailGate.x + CC.trailGate.half, -d / 2 + 1, w / 2 - 1, -d / 2 + 1],
-    [-w / 2 + 1, CC.edge - 1, -8, CC.edge - 1],
-    [8, CC.edge - 1, w / 2 - 1, CC.edge - 1],
-  ];
-  const lockGeo = new THREE.BoxGeometry(0.14, 0.18, 0.06);
-  const locks = new THREE.InstancedMesh(lockGeo, new THREE.MeshLambertMaterial({ color: '#ffffff' }), 900);
-  const lockCols = ['#ff5d8f', '#ffd23f', '#5dade2', '#58d68d', '#af7ac5', '#f5b041', '#ec7063', '#ffffff'].map((c) => new THREE.Color(c));
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
-  let nl = 0, seed = 3;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (const [x1, z1, x2, z2] of rails) {
-    const len = Math.hypot(x2 - x1, z2 - z1), cx = (x1 + x2) / 2, cz = (z1 + z2) / 2, ry = Math.atan2(x2 - x1, z2 - z1);
-    const bar = box(0.12, 0.1, len, cx, TOP + 1.05, cz, '#8a8f99'); bar.rotation.y = ry;
-    const bar2 = box(0.08, 0.08, len, cx, TOP + 0.55, cz, '#8a8f99'); bar2.rotation.y = ry;
-    for (let s = 0; s <= len; s += 2.5) {
-      const k = s / len;
-      box(0.12, 1.1, 0.12, x1 + (x2 - x1) * k, TOP + 0.55, z1 + (z2 - z1) * k, '#8a8f99');
-    }
-    const [xa, xb, za, zb] = [Math.min(x1, x2) - 0.3, Math.max(x1, x2) + 0.3, Math.min(z1, z2) - 0.3, Math.max(z1, z2) + 0.3];
-    colliders.push({ p: [[xa, za], [xb, za], [xb, zb], [xa, zb]] });
-    for (let s = 0.3; s < len && nl < 900; s += 0.16) {
-      if (rnd() < 0.35) continue;
-      const k = s / len, y = TOP + 0.62 + rnd() * 0.42;
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry + Math.PI / 2);
-      m4.compose(new THREE.Vector3(x1 + (x2 - x1) * k, y, z1 + (z2 - z1) * k), q, one);
-      locks.setMatrixAt(nl, m4);
-      locks.setColorAt(nl, lockCols[nl % lockCols.length]);
-      nl++;
-    }
-  }
-  locks.count = nl;
-  scene.add(locks);
-  // Green beds with pines in the plaza's back corners and by the sides.
-  {
-    const beds = [[-15, -52, 10, 8], [15, -52, 10, 8], [-17, -33, 6, 10], [17, -33, 6, 10]];
-    for (const [x, z, sx, sz] of beds) {
-      box(sx, 0.5, sz, x, TOP + 0.25, z, '#b9ad98');
-      box(sx - 0.4, 0.1, sz - 0.4, x, TOP + 0.52, z, '#7fb06a');
-      block(x, z, sx, sz);
-      for (let k = 0; k < 3; k++) {
-        const tx = x + (k - 1) * (sx / 3.2), tz = z + ((k % 2) - 0.5) * (sz / 3);
-        add(new THREE.CylinderGeometry(0.25, 0.3, 1.6, 6), '#7a5a3a', tx, TOP + 1.3, tz);
-        add(new THREE.ConeGeometry(1.6, 4, 7), '#3f7f49', tx, TOP + 3.8, tz);
-      }
-    }
-  }
-  // Binoculars at the front, looking out over the city.
-  for (const bx of [-14, 14]) {
-    box(0.18, 1, 0.18, bx, TOP + 0.5, CC.edge - 2.2, '#3a3f46');
-    const head = box(0.6, 0.35, 0.5, bx, TOP + 1.15, CC.edge - 2.2, '#2f6f8f');
-    head.rotation.x = -0.2;
-    block(bx, CC.edge - 2.2, 0.6, 0.6);
-  }
-
-  // The two cabins.
-  const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], ROPE); scene.add(c); return c; });
-  // Night with Seoul's (weather.js darkness): a dark blue sky, moonlit
-  // light and the city below lit up.
-  let nightShown = -1;
-  const setNight = (k) => {
-    if (Math.abs(k - nightShown) < 0.002) return;
-    nightShown = k;
-    scene.background.copy(DAY_SKY).lerp(NIGHT_SKY, k);
-    scene.fog.color.copy(DAY_FOG).lerp(NIGHT_SKY, k);
-    hemi.intensity = 1.6 - 0.9 * k; hemi.color.copy(WHITE).lerp(MOON, k);
-    sun.intensity = 1.2 - 0.9 * k;
-    ambient.intensity = 0.35 + 0.1 * k;
-    cityMat.emissiveIntensity = 0.32 * k;
+// The line in world metres (the landmark at l.x, l.z): l.path is points
+// [dx, dz, cableY, groundY] from the lower station's roof to the upper
+// station. Two cables side by side, one per cabin; `cabin(i, k)` is where
+// cabin i's floor is at progress k (0 the bottom, 1 the top), at an even
+// pace along the cable.
+export const CABIN_S = 1.2, CABIN_ROPE = 3.6; // a cabin's scale, and its cable above the floor
+export function cableLine(l) {
+  const path = l.path.map(([x, z, y, gy]) => [l.x + x, l.z + z, y, gy]);
+  const [x0, z0] = path[0], [x1, z1] = path[path.length - 1];
+  const heading = Math.atan2(x1 - x0, z1 - z0);
+  const sx = Math.cos(heading) * 2, sz = -Math.sin(heading) * 2;
+  const lines = [-1, 1].map((s) => path.map(([x, z, y]) => [x + sx * s, y, z + sz * s]));
+  const lens = [0];
+  for (let i = 1; i < path.length; i++) lens.push(lens[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1], path[i][2] - path[i - 1][2]));
+  const total = lens[lens.length - 1];
+  const cabin = (i, k) => {
+    const pts = lines[i], d = k * total;
+    let j = 1;
+    while (j < pts.length - 1 && lens[j] < d) j++;
+    const u = (d - lens[j - 1]) / (lens[j] - lens[j - 1] || 1), a = pts[j - 1], b = pts[j];
+    return { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u - CABIN_ROPE * CABIN_S, z: a[2] + (b[2] - a[2]) * u };
   };
-  const tick = () => {
-    const t = cableClock();
-    cabins.forEach((c, i) => { const s = cabinPos(i, cabinAt(i, t).k); c.position.set(s.x, s.y, s.z); });
-    setNight(darkness());
-  };
-  tick();
-
-  return {
-    scene, products: [], colliders, seats, clerk: { x: -7.5, z: LOW + 2.9, ry: 0 }, turntable: null, room: ROOM, exit: EXIT,
-    tick, floorAt: cableFloor, camBlocked: cableCamBlocked, cablecar: true,
-  };
+  return { path, heading, lines, cabin };
 }
 
-// The same cable seen from the street: a bull-wheel house on the lower
-// station's roof (l.x, l.z), the upper station by the tower, and the cable
-// along l.path: points [dx, dz, cableY, groundY] from the lower station,
-// with a pylon at each point in between (so the line clears the hill).
-// Two cabins run on it on the shared clock, the same as inside.
+// The same line seen from the street: a bull-wheel house on the lower
+// station's roof, the upper station by the tower, the two cables with a
+// pylon at each point in between (so the line clears the hill), and the two
+// cabins on the shared clock. Drawn in the landmark's group (at l.x, l.z).
 export function cableCarLandmark(g, l) {
-  const path = l.path;
   const add = (geo, c, x, y, z) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); g.add(m); return m; };
+  const line = cableLine({ ...l, x: 0, z: 0 }), { path, heading } = line;
   const [x0, z0, y0] = path[0];
   const [x1, z1, y1, g1] = path[path.length - 1];
-  const heading = Math.atan2(x1 - x0, z1 - z0);
   const house = add(new THREE.BoxGeometry(8, 3, 6), '#c0392b', x0, y0 - 1.5, z0);
   house.rotation.y = heading;
   const top = add(new THREE.BoxGeometry(10, y1 - g1 + 1, 8), '#efe9df', x1, (y1 + g1) / 2, z1);
   top.rotation.y = heading;
   const roof = add(new THREE.BoxGeometry(11, 0.5, 9), '#5d6670', x1, y1 + 1, z1);
   roof.rotation.y = heading;
-  // Two cables side by side, one per cabin.
-  const sx = Math.cos(heading) * 2, sz = -Math.sin(heading) * 2;
-  const lines = [-1, 1].map((s) => path.map(([x, z, y]) => new THREE.Vector3(x + sx * s, y, z + sz * s)));
-  for (const pts of lines) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#2b2f36' })));
+  for (const pts of line.lines) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z))), new THREE.LineBasicMaterial({ color: '#2b2f36' })));
   for (let i = 1; i < path.length - 1; i++) { // pylons
     const [x, z, y, gy] = path[i];
     const leg = add(new THREE.BoxGeometry(0.8, y - gy + 4, 0.8), '#c9ced6', x, (y + gy - 4) / 2, z);
@@ -531,24 +232,9 @@ export function cableCarLandmark(g, l) {
     const arm = add(new THREE.BoxGeometry(6, 0.5, 0.6), '#c9ced6', x, y + 0.3, z);
     arm.rotation.y = heading;
   }
-  // Arc length along each line, to move the cabins at an even pace.
-  const lens = [0];
-  for (let i = 1; i < path.length; i++) lens.push(lens[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1], path[i][2] - path[i - 1][2]));
-  const total = lens[lens.length - 1];
-  const along = (pts, k) => {
-    const d = k * total;
-    let i = 1;
-    while (i < pts.length - 1 && lens[i] < d) i++;
-    const u = (d - lens[i - 1]) / (lens[i] - lens[i - 1] || 1);
-    return pts[i - 1].clone().lerp(pts[i], u);
-  };
-  const S = 1.2;
-  const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], 3.6); c.scale.setScalar(S); c.rotation.y = heading + Math.PI; g.add(c); return c; });
+  const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], CABIN_ROPE); c.scale.setScalar(CABIN_S); c.rotation.y = heading + Math.PI; g.add(c); return c; });
   return () => {
     const t = cableClock();
-    cabins.forEach((c, i) => {
-      const p = along(lines[i], cabinAt(i, t).k);
-      c.position.set(p.x, p.y - 3.6 * S, p.z);
-    });
+    cabins.forEach((c, i) => { const p = line.cabin(i, cabinAt(i, t).k); c.position.set(p.x, p.y, p.z); });
   };
 }

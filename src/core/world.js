@@ -52,7 +52,8 @@ export function buildWorld(map, scene, opts = {}) {
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
-    const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes, opts.stairHoles); // (a stairwell in a park cuts the lawn too)
+    const own = map.areas.filter((a) => a.k === kind && !a.sunk && a.holes).flatMap((a) => a.holes); // (an island in a river: holes inside an area)
+    const mesh = makeFlatPolys(polys, COLORS[kind], y, own.length ? (opts.holes || []).concat(own) : opts.holes, opts.stairHoles); // (a stairwell in a park cuts the lawn too)
     if (mesh && kind === 'stone') {
       const map = stoneTexture();
       if (map) { mesh.material.map = map; mesh.material.color.set(0xffffff); }

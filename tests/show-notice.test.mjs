@@ -19,7 +19,7 @@ test('the pinned show notice names the show on now, or the soonest one', () => {
   // Right after it ends, the next one is the drone show, a whole game day later.
   const after = nextShow(fw + 21 * 60e3);
   assert.equal(after.kind, 'drones');
-  assert.equal(after.start, fw + 2 * CYCLE_MS);
+  assert.equal(after.start, fw + CYCLE_MS);
 });
 
 test('the countdown reads minutes, or hours and minutes, with the local time', () => {
@@ -27,4 +27,19 @@ test('the countdown reads minutes, or hours and minutes, with the local time', (
   const s = { kind: 'drones', start, on: false };
   assert.deepEqual(showNoticeText(s, start - 9.5 * 60e3, t, clock), { label: 'show.drones{}', text: 'show.inM{"m":10,"at":"21:30"}' });
   assert.equal(showNoticeText(s, start - 125 * 60e3, t, clock).text, 'show.inHM{"h":2,"m":5,"at":"21:30"}');
+});
+
+test('the sunset has its own line: every game day, on or next', async () => {
+  const { nextSunset, sunsetNoticeText } = await import('../src/core/show-notice.js');
+  const { CYCLE, cycleMs } = await import('../src/core/show-clock.js');
+  const now = Date.UTC(2026, 10, 10, 18), from = (CYCLE.morning + CYCLE.day) * 60e3;
+  const s = nextSunset(now);
+  assert.equal(cycleMs(s.start), from, 'starts where the sunset starts');
+  assert.ok(s.on || s.start > now);
+  const next = nextSunset(s.end + 1000);
+  assert.equal(next.start, s.start + CYCLE_MS, 'the next game day');
+  const on = nextSunset(s.start + 5 * 60e3);
+  assert.ok(on.on);
+  assert.equal(sunsetNoticeText(on, s.start + 5 * 60e3, t, clock).text, 'show.now{"m":18}');
+  assert.equal(sunsetNoticeText({ ...s, on: false }, s.start - 40 * 60e3, t, clock).text, 'show.inM{"m":40,"at":"21:30"}');
 });

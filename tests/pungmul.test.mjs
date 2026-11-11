@@ -95,11 +95,21 @@ test('the column winds into a tight spiral (멍석말이) and the pan has rings'
 test('the whole show fits the open middle of the Peace Plaza, clear of the gate, the pool and the skate park', () => {
   const solid = new CollisionMap(map.buildings.concat(map.blockers));
   const plaza = map.areas.find((a) => a.k === 'plaza').p;
-  const [x0, z0] = plaza[0], [x1, z1] = plaza[2];
+  // inside the paving, at least 2 m from its edge
+  const onPlaza = (x, z) => {
+    let inside = false, edge = Infinity;
+    for (let i = 0, j = plaza.length - 1; i < plaza.length; j = i++) {
+      const [xi, zi] = plaza[i], [xj, zj] = plaza[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+      const dx = xj - xi, dz = zj - zi, k = Math.max(0, Math.min(1, ((x - xi) * dx + (z - zi) * dz) / (dx * dx + dz * dz)));
+      edge = Math.min(edge, Math.hypot(xi + k * dx - x, zi + k * dz - z));
+    }
+    return inside && edge > 2;
+  };
   for (let t = 0; t < CYCLE; t += 0.5) {
     for (let i = 0; i < TROUPE_N; i++) {
       const [x, z] = troupeSpot(i, t), wx = PLAZA_SPOT[0] + x, wz = PLAZA_SPOT[1] + z;
-      assert.ok(wx > x0 + 2 && wx < x1 - 2 && wz > z0 + 2 && wz < z1 - 2, 'on the plaza');
+      assert.ok(onPlaza(wx, wz), 'on the plaza');
       assert.ok(!solid.blocked(wx, wz, 2), `person ${i} at ${t}s walks into something`);
     }
   }

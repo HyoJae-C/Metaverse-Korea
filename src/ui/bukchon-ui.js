@@ -7,6 +7,7 @@
 //                       pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
+import { PENDANT_CHARMS } from '../data/appearance.js';
 
 export const BK_TEXT = {
   photo: { en: 'Take a photo · {name}', ko: '사진 찍기 · {name}', ja: '写真を撮る · {name}', zh: '拍照 · {name}' },
@@ -37,8 +38,8 @@ export const BK_TEXT = {
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
   // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
-  pendant: { en: 'Make a pendant', ko: '펜던트 만들기', ja: 'ペンダントを作る', zh: '做一个吊坠' },
-  pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm; the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양을 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフを選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，工匠会陪你一起切割、打磨、抛光。' },
+  pendant: { en: 'Make a necklace', ko: '목걸이 만들기', ja: 'ネックレスを作る', zh: '做一条项链' },
+  pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm, or a Korean word to engrave (its hanja goes under it); the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양, 또는 새길 글자를 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフ、または刻む言葉（ハングルと漢字）を選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，或要刻的字（韩文和汉字），工匠会陪你一起切割、打磨、抛光。' },
   pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
   pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },
   madeWear: { en: '{icon} You made a {name}! Wear it from your items.', ko: '{icon} {name} 완성! 내 아이템에서 착용할 수 있어요.', ja: '{icon} {name}が完成！アイテムから身につけられます。', zh: '{icon} 做好了{name}！可以在物品里戴上。' },
@@ -64,7 +65,8 @@ export const CRAFT = {
   pendant: {
     icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
     colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
-    shapes: [['moon', '달', { en: 'Moon', ko: '달', ja: '月', zh: '月亮' }], ['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['bok', '복', { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' }]],
+    shapes: Object.entries(PENDANT_CHARMS).map(([id, c]) => [id, c.name.ko, c.name, c.hanja ? [c.letter, c.hanja] : [c.emoji, c.name.ko]]),
+    grid: true, // 5 shapes and 20 words: a 5 × 5 grid: a grid of tiles, the Hangul large
     wear: (c, s) => `acc-pendant-${c}-${s}`,
   },
 };
@@ -159,10 +161,15 @@ export class BukchonUI {
     });
     parts.push(colors);
     parts.push(el('b', 'lock-sub', L(BK_TEXT[k.labels?.[1] || 'pickShape'])));
-    const list = el('div', 'wish-list');
+    const list = el('div', 'wish-list' + (k.grid ? ' wish-grid' : ''));
     list.setAttribute('role', 'radiogroup');
-    k.shapes.forEach(([, , name], i) => {
-      const b = el('button', 'wish-item' + (i === this.si ? ' on' : ''), L(name));
+    k.shapes.forEach(([, , name, tile], i) => {
+      const b = el('button', 'wish-item' + (i === this.si ? ' on' : ''), k.grid ? '' : L(name));
+      if (k.grid) {
+        b.append(el('span', 'wish-big', tile[0]), el('small', '', tile[1]));
+        b.setAttribute('aria-label', L(name));
+        b.title = L(name);
+      }
       b.type = 'button';
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', String(i === this.si));
@@ -170,6 +177,7 @@ export class BukchonUI {
       list.append(b);
     });
     parts.push(list);
+    if (k.grid) parts.push(el('p', 'wish-pick', L(k.shapes[this.si][2])));
     const poor = this.wallet.coins < k.price;
     parts.push(el('small', 'fine', fmt(L(BK_TEXT.have), { n: this.wallet.coins })));
     if (poor) parts.push(el('p', 'lock-warn', fmt(L(BK_TEXT.poor), { n: k.price })));

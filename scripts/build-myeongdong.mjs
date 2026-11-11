@@ -310,10 +310,32 @@ t20.row('gil20E', GIL20, -1, QUIET); // (the lane runs south from Toegye-ro: -1 
 t20.row('gil20W', GIL20, 1, QUIET);
 buildings.push(...t20.buildings);
 
-// Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
-// by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
-// Myeongdong until it was on the map: memory shop-distribution-ratios).
-export const SHOPS = ['mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink'];
+// Shops: each next to a real shop of its kind (OpenStreetMap, the same
+// export), on the nearest free lot of the rows it may use. The shops are fictional; only where they
+// stand follows the real street (Yozi 2026-11-11: cosmetics where the real
+// ones crowd, restaurants among them; moved from other districts, none new).
+//   Cosmetics crowd Myeongdong 8-gil, from the station up to the crossing,
+//   and Myeongdong-gil west of it; the restaurants stand north of the
+//   crossing and up Myeongdong 10-gil. The evening
+//   carts (game/night-carts.js) are the street food.
+// (Seongsu stood in for Myeongdong's cosmetics until Myeongdong was on the
+// map: memory shop-distribution-ratios.)
+export const SHOPS = [
+  // cosmetics
+  { id: 'moonlight-beauty', real: 'Laneige', near: [-1573, -523], rows: ['mainW', 'mainE'] },
+  { id: 'mulbangul-skin', real: 'Espoir', near: [-1566, -514], rows: ['mainW', 'mainE'] },
+  { id: 'lip-red', real: 'Etude House', near: [-1580, -487], rows: ['mainW', 'mainE'] },
+  // (east side: on the west one its door leaves no room for the last night
+  // cart between it and station exit 6)
+  { id: 'lip-pink', real: 'Nature Republic', near: [-1563, -468], rows: ['mainE'] },
+  { id: 'lip-coral', real: 'Missha and Innisfree', near: [-1606, -534], rows: ['gilN', 'gilS'] },
+  { id: 'lip-purple', real: 'Cosmetics Land 21', near: [-1552, -521], rows: ['gilN', 'gilS', 'mainE'] },
+  // restaurants
+  { id: 'my-mala', real: 'Wonjo Hanchi and McDonald\'s', near: [-1570, -551], rows: ['mainW', 'mainE'] },
+  // why: 21 m from it, up the same lane: its side of 10-gil has no room for a
+  // row (the shopping street's backs reach the lane).
+  { id: 'son-kalguksu', real: 'Myeongdong Kyoja (10-gil 29)', near: [-1547, -500], rows: ['gil10W', 'gil10E'], within: 22 },
+];
 const CROSSING = [-1571.7, -533.5];
 // The Information Center by the real Myeongdong Tourist Information Center
 // (OSM), on the shopping street's north part.
@@ -321,6 +343,64 @@ const INFO = { id: 'info-myeongdong', near: [-1561.2, -571.8] };
 // The cathedral's door (its inside: core/cathedral-hall.js): the ring 1.7 m in
 // front of the bell tower's main door; "face" in stores.json is the hall's ry.
 export const DOOR = { id: 'myeongdong-cathedral', at: onHall(L2 + 1.7, 0) };
+
+// ---------- Night food carts (game/night-carts.js) ----------
+// Myeongdong's evening street food: carts along both sides of the shopping
+// street from the crossing with Myeongdong-gil to Toegye-ro (the real ones
+// fill Myeongdong 8-gil, by the station), out from sunset to morning. Each
+// stands a metre off the shop fronts with its counter to the middle of the
+// street, the two sides staggered, so the middle stays open to walk down and
+// the doors stay clear. (Yozi 2026-11-11: 8 carts, a small lamp each; then
+// both sides, 16.)
+export const CART_COUNT = 16;
+export const CART = { len: 2.2, depth: 1.3 }; // its footprint (the seller stands inside it)
+export const CART_OFF = 3.5; // its middle from the middle of the street (the shop fronts are at 5.3)
+const DOOR_CLEAR = 5; // along the street from a shop's door (its stamp stand is 3.8 m along)
+export function cartSpots(doors = []) {
+  const P = straight(MAIN), cum = [0];
+  for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const total = cum.at(-1);
+  const pointAt = (s) => {
+    let i = 1;
+    while (i < P.length - 1 && cum[i] < s) i++;
+    const a = P[i - 1], b = P[i], k = (s - cum[i - 1]) / (cum[i] - cum[i - 1]);
+    const d = [(b[0] - a[0]) / (cum[i] - cum[i - 1]), (b[1] - a[1]) / (cum[i] - cum[i - 1])];
+    return { at: [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k], d };
+  };
+  // From just past the crossing (along the street) to short of Toegye-ro.
+  let cross = 0;
+  for (let s = 0, best = Infinity; s <= total; s += 0.5) { const q = pointAt(s).at, dd = Math.hypot(q[0] - CROSSING[0], q[1] - CROSSING[1]); if (dd < best) { best = dd; cross = s; } }
+  const per = CART_COUNT / 2, s0 = cross + 7, s1 = total - 11, step = (s1 - s0) / (per - 0.5);
+  const placeAt = (s, side) => {
+    const { at, d } = pointAt(s), n = [-d[1] * side, d[0] * side];
+    return { p: [at[0] + n[0] * CART_OFF, at[1] + n[1] * CART_OFF], ry: facing(-n[0], -n[1]) };
+  };
+  const exits = stationExits().map((e) => e.at);
+  const clear = (p) => doors.every((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) > DOOR_CLEAR) && exits.every((q) => Math.hypot(p[0] - q[0], p[1] - q[1]) > 7);
+  const out = [];
+  for (const side of [1, -1]) {
+    for (let i = 0; i < per; i++) {
+      const want = s0 + (i + (side < 0 ? 0.5 : 0)) * step;
+      // nudged along the street off a door or a station exit (the nearest free spot)
+      let got = null;
+      for (let k = 0; k <= 24 && !got; k++) for (const sgn of k ? [1, -1] : [1]) {
+        const s = want + sgn * k * 0.5;
+        if (s < cross + 4 || s > total - 6) continue;
+        const c = placeAt(s, side);
+        if (clear(c.p) && out.every(([x, z]) => Math.hypot(x - c.p[0], z - c.p[1]) > 3)) { got = c; break; }
+      }
+      if (!got) throw new Error(`no room for night cart ${out.length}`);
+      out.push([r1(got.p[0]), r1(got.p[1]), got.ry]);
+    }
+  }
+  return out;
+}
+// The doors along the street (the shops' "at" in stores.json, set below).
+export const STREET_DOORS = JSON.parse(readFileSync(path.join(R, 'stores.json'), 'utf8')).stores
+  .filter((st) => st.at && !st.carts && st.at[0] > -1600 && st.at[0] < -1540 && st.at[1] > -600 && st.at[1] < -440).map((st) => st.at);
+const CARTS = cartSpots(STREET_DOORS);
+const CART_MID = CARTS[Math.floor(CARTS.length / 2)];
+landmarks.push({ type: 'nightcarts', store: 'myeongdong-night-carts', x: CART_MID[0], z: CART_MID[1], carts: CARTS.map(([x, z, a]) => [r1(x - CART_MID[0]), r1(z - CART_MID[1]), a]) });
 
 // ---------- Into the district's own metres ----------
 const anchor = toLatLon(...HALL.at);
@@ -365,9 +445,15 @@ if (isMain) {
   const info = lots.splice(lots.indexOf(lots.reduce((m, q) => (dist(q, INFO.near) < dist(m, INFO.near) ? q : m))), 1)[0];
   setAt(INFO.id, info);
   console.log(`  ${INFO.id}: [${info}], ${r1(dist(info, INFO.near))} m from the real one`);
-  lots.sort((a, b) => Math.hypot(a[0] - CROSSING[0], a[1] - CROSSING[1]) - Math.hypot(b[0] - CROSSING[0], b[1] - CROSSING[1]));
-  if (lots.length < SHOPS.length) throw new Error(`only ${lots.length} lots for ${SHOPS.length} shops`);
-  SHOPS.forEach((sid, i) => setAt(sid, lots[i]));
+  const used = new Set([info.join()]), placed = {};
+  for (const sh of SHOPS) {
+    const free = sh.rows.flatMap((id) => t.lots[id] || []).filter((q) => !used.has(q.join()));
+    if (!free.length) throw new Error(`${sh.id}: no free lot in ${sh.rows}`);
+    const at = free.reduce((m, q) => (dist(q, sh.near) < dist(m, sh.near) ? q : m));
+    used.add(at.join());
+    placed[sh.id] = at;
+    setAt(sh.id, at);
+  }
   setAt(DOOR.id, DOOR.at);
   if (!new RegExp(`"id": "${DOOR.id}"[^\n]*"y": ${YH}[,}]`).test(stores)) throw new Error(`${DOOR.id}: set "y": ${YH} in stores.json (the door is up on the yard)`);
   writeFileSync(path.join(R, 'stores.json'), stores);
@@ -376,8 +462,9 @@ if (isMain) {
   console.log(`  cathedral middle [${HALL.at}] (lat ${anchor.lat.toFixed(6)}, lon ${anchor.lon.toFixed(6)}), front towards [${F}], ry ${ry}; real hall ${HALL.realLen} m long in OSM`);
   console.log(`  bell tower front [${front}], ${r1(nearestOn(front, MDGIL).d)} m from Myeongdong-gil; east side ${r1(Math.min(...hallParts.flat().map((q) => lineDist(q, SAMIL))) - 7)} m from Samil-daero's kerb`);
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
-  SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
+  for (const sh of SHOPS) console.log(`  ${sh.id}: [${placed[sh.id]}], ${r1(dist(placed[sh.id], sh.near))} m from ${sh.real}`);
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
+  console.log(`  night carts: ${CARTS.map(([x, z]) => `[${x},${z}]`).join(' ')}`);
   console.log(`  yard ${YH} m up; stairs ${A0}-${A1} m along the axis (kerb ${CUT}), ${blockers.length} wall pieces`);
   for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }

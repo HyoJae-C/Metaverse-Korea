@@ -59,7 +59,10 @@ export const BAG_TEXT = {
   },
   tabCloset: { en: 'Wardrobe', ko: '옷장', ja: 'クローゼット', zh: '衣橱', es: 'Armario', ar: 'خزانة الملابس', vi: 'Tủ đồ', hi: 'अलमारी', fr: 'Garde-robe', th: 'ตู้เสื้อผ้า', id: 'Lemari' },
   closetEmpty: { en: 'No clothes yet. Buy some in a fashion shop and they will hang here.', ko: '아직 옷이 없어요. 옷 가게에서 사면 여기에 걸려요.', ja: 'まだ服がありません。服屋で買うとここに掛かります。', zh: '还没有衣服。在服装店买了就会挂在这里。', es: 'Aún no tienes ropa. Cómprala en una tienda de moda y aparecerá aquí.', ar: 'لا ملابس بعد. اشترِ من متجر أزياء وستظهر هنا.', vi: 'Chưa có quần áo. Mua ở cửa hàng thời trang thì sẽ treo ở đây.', hi: 'अभी कोई कपड़े नहीं। फ़ैशन दुकान से खरीदें, वे यहाँ टंगेंगे।', fr: 'Pas encore de vêtements. Achètes-en dans une boutique de mode et ils seront suspendus ici.', th: 'ยังไม่มีเสื้อผ้า ซื้อที่ร้านแฟชั่นแล้วจะแขวนไว้ที่นี่', id: 'Belum ada pakaian. Beli di toko fesyen dan akan tergantung di sini.' },
-  closetNote: { en: 'Clothes don\'t use bag slots.', ko: '옷은 가방 칸을 차지하지 않아요.', ja: '服はバッグの枠を使いません。', zh: '衣服不占背包格子。', es: 'La ropa no ocupa huecos de la bolsa.', ar: 'الملابس لا تشغل خانات الحقيبة.', vi: 'Quần áo không chiếm ô trong túi.', hi: 'कपड़े बैग के खाने नहीं लेते।', fr: 'Les vêtements n\'occupent pas de place dans le sac.', th: 'เสื้อผ้าไม่กินช่องกระเป๋า', id: 'Pakaian tidak memakai slot tas.' },
+  closetNote: { en: 'Clothes, perfume and lipstick don\'t use bag slots.', ko: '옷·향수·립스틱은 가방 칸을 차지하지 않아요.', ja: '服・香水・リップはバッグの枠を使いません。', zh: '衣服、香水和口红不占背包格子。', es: 'La ropa, el perfume y el labial no ocupan huecos de la bolsa.', ar: 'الملابس والعطور وأحمر الشفاه لا تشغل خانات الحقيبة.', vi: 'Quần áo, nước hoa và son không chiếm ô trong túi.', hi: 'कपड़े, परफ़्यूम और लिपस्टिक बैग के खाने नहीं लेते।', fr: 'Vêtements, parfums et rouges à lèvres n\'occupent pas de place dans le sac.', th: 'เสื้อผ้า น้ำหอม และลิปสติกไม่กินช่องกระเป๋า', id: 'Pakaian, parfum, dan lipstik tidak memakai slot tas.' },
+  beauty: { en: 'Perfume & lipstick', ko: '향수·립스틱', ja: '香水・リップ', zh: '香水·口红', es: 'Perfume y labial', ar: 'العطور وأحمر الشفاه', vi: 'Nước hoa & son', hi: 'परफ़्यूम और लिपस्टिक', fr: 'Parfums et rouges', th: 'น้ำหอม·ลิปสติก', id: 'Parfum & lipstik' },
+  beautyPick: { en: 'Tap one to use it straight from here.', ko: '누르면 여기서 바로 쓸 수 있어요.', ja: '押すとここからすぐ使えます。', zh: '点一下就能直接在这里用。', es: 'Toca uno para usarlo desde aquí.', ar: 'اضغط على واحد لتستخدمه من هنا مباشرة.', vi: 'Chạm để dùng ngay tại đây.', hi: 'यहीं से इस्तेमाल करने के लिए टैप करें।', fr: 'Touche-en un pour l\'utiliser d\'ici.', th: 'แตะเพื่อใช้ได้เลยจากตรงนี้', id: 'Ketuk untuk langsung memakainya dari sini.' },
+  toCloset: { en: '👗 {name} went into your wardrobe.', ko: '👗 {name}은(는) 옷장에 넣었어요.', ja: '👗 {name}はクローゼットにしまいました。', zh: '👗 {name}已放进衣橱。', es: '👗 {name} fue a tu armario.', ar: '👗 وُضع {name} في خزانة ملابسك.', vi: '👗 Đã cất {name} vào tủ đồ.', hi: '👗 {name} आपकी अलमारी में रख दिया।', fr: '👗 {name} est dans ta garde-robe.', th: '👗 ใส่ {name} ในตู้เสื้อผ้าแล้ว', id: '👗 {name} dimasukkan ke lemari.' },
   tabRides: { en: 'Rides', ko: '탈것', ja: '乗り物', zh: '车', es: 'Vehículos', ar: 'المركبات', vi: 'Xe', hi: 'सवारी', fr: 'Véhicules', th: 'ยานพาหนะ', id: 'Kendaraan' },
   ridesNote: { en: 'Switch between rides you own here. Buy, repair and upgrade them at a ride shop.', ko: '산 탈것은 여기서 바로 바꿔 탈 수 있어요. 구매·수리·업그레이드는 탈것 가게에서 해요.', ja: '持っている乗り物はここで切り替えられます。購入・修理・アップグレードは乗り物店で。', zh: '已拥有的车可以在这里切换。购买、修理和升级请去车店。', es: 'Cambia aquí entre los vehículos que tienes. Cómpralos, repáralos y mejóralos en una tienda de vehículos.', ar: 'بدّل هنا بين المركبات التي تملكها. الشراء والإصلاح والترقية في متجر المركبات.', vi: 'Đổi qua lại các xe bạn có ở đây. Mua, sửa và nâng cấp ở cửa hàng xe.', hi: 'अपनी सवारियाँ यहाँ बदलें। खरीदना, मरम्मत और अपग्रेड सवारी की दुकान पर।', fr: 'Change de véhicule parmi ceux que tu possèdes. Achète-les, répare-les et améliore-les dans un magasin.', th: 'สลับยานพาหนะที่คุณมีได้ที่นี่ ซื้อ ซ่อม และอัปเกรดได้ที่ร้าน', id: 'Ganti kendaraan milikmu di sini. Beli, perbaiki, dan tingkatkan di toko kendaraan.' },
   owned: { en: 'Collection (no slots used)', ko: '소장품 (칸 차지 안 함)', ja: 'コレクション（枠を使いません）', zh: '收藏（不占格子）' },
@@ -74,8 +77,11 @@ export class BagUI {
   // shown as a grid like the bag's slots;
   // rides() → { nodes, count } for the Rides tab (bikes, boards, scooters you
   // own), or null to leave the tab out (only the basic bike).
-  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides }) {
-    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides });
+  // vanity: the wardrobe's perfume and lipsticks (bag.vanityList()):
+  // { useLabel(entry), onUse(i), onHold(i), onDrop(i) }.
+  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity }) {
+    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity });
+    this.vanSel = -1;
     this.sel = -1;
     this.tab = 'bag';
     this.closetSel = null;
@@ -84,7 +90,7 @@ export class BagUI {
     bag.onChange(() => { if (!root.hidden) this.render(); });
   }
 
-  show(tab = 'bag') { this.sel = -1; this.closetSel = null; this.tab = tab; this.root.hidden = false; this.render(); }
+  show(tab = 'bag') { this.sel = -1; this.vanSel = -1; this.closetSel = null; this.tab = tab; this.root.hidden = false; this.render(); }
   hide() { this.root.hidden = true; }
   get open() { return !this.root.hidden; }
 
@@ -103,7 +109,7 @@ export class BagUI {
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + (closet?.ids.length ? ` ${closet.ids.length}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
@@ -113,7 +119,7 @@ export class BagUI {
       tabs.append(b);
     }
     if (this.tab === 'closet' && closet) {
-      root.replaceChildren(x, head, tabs, ...this.closetBody(closet, el), el('p', 'fine bag-more', L(BAG_TEXT.closetNote)));
+      root.replaceChildren(x, head, tabs, ...this.vanityBody(el), ...this.closetBody(closet, el), el('p', 'fine bag-more', L(BAG_TEXT.closetNote)));
       return;
     }
     if (this.tab === 'rides' && rides) {
@@ -156,6 +162,51 @@ export class BagUI {
     } else info.append(el('small', 'fine', L(items.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
     const more = this.extra ? this.extra() : []; // before replaceChildren detaches them
     root.replaceChildren(x, head, tabs, grid, info, el('p', 'fine bag-more', L(BAG_TEXT.more)), ...more);
+  }
+
+  vanityCount() { return this.vanity && this.bag.vanityList ? this.bag.vanityList().length : 0; }
+
+  // The wardrobe's perfume and lipsticks, above the clothes: a cell each
+  // (uses left in the corner); the picked one can be used right here, held,
+  // or thrown away.
+  vanityBody(el) {
+    const list = this.vanityCount() ? this.bag.vanityList() : [];
+    if (!list.length) return [];
+    if (this.vanSel >= list.length) this.vanSel = -1;
+    const grid = el('div', 'bag-grid bag-vanity-grid');
+    const cells = Math.max(5, Math.ceil(list.length / 5) * 5);
+    for (let i = 0; i < cells; i++) {
+      const e = list[i];
+      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && i === this.vanSel ? ' on' : ''));
+      if (e) {
+        const d = this.describe(e);
+        b.textContent = d.emoji;
+        if (d.dot) { const dot = el('i', 'closet-dot'); dot.style.background = d.dot; b.append(dot); }
+        b.append(el('small', '', String(e.sips)));
+        b.title = d.name;
+        b.setAttribute('aria-label', d.name);
+        b.onclick = () => { this.vanSel = i === this.vanSel ? -1 : i; this.render(); };
+      } else b.disabled = true;
+      grid.append(b);
+    }
+    const box = el('div', 'bag-info');
+    if (this.vanSel >= 0) {
+      const i = this.vanSel, e = list[i], d = this.describe(e);
+      box.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc));
+      const row = el('div', 'bag-actions');
+      const use = el('button', 'chip on', this.vanity.useLabel(e));
+      use.onclick = () => { this.vanity.onUse(i); this.render(); };
+      const hold = el('button', 'chip', '✋ ' + L(this.holding() ? BAG_TEXT.swap : BAG_TEXT.hold));
+      hold.onclick = () => { this.vanSel = -1; this.vanity.onHold(i); this.render(); };
+      const drop = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop));
+      drop.onclick = () => {
+        if (!confirm(fmt(L(BAG_TEXT.dropAsk), { name: d.name }))) return;
+        this.vanSel = -1; this.vanity.onDrop(i); this.render();
+      };
+      row.append(use, hold, drop);
+      box.append(row);
+    } else box.append(el('small', 'fine', L(BAG_TEXT.beautyPick)));
+    return [el('strong', 'bag-vanity-title', '💄 ' + L(BAG_TEXT.beauty)), grid, box];
   }
 
   // The wardrobe as a grid like the bag: chips to show one kind (tops,

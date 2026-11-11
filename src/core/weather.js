@@ -1,6 +1,6 @@
 // Weather and time of day for the region.
 // Weather: rolled from the clock (rolledWeather), the same for every player.
-// Time of day: the game's own two-hour day (show-clock.js).
+// Time of day: the game's own three-hour day (show-clock.js).
 import * as THREE from 'three';
 import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
@@ -20,10 +20,11 @@ export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
 export { WEATHER_ICON, WEATHER_SLOT_MS, WEATHER_ODDS, SEASON_ODDS, SEASONS, seasonAt, weatherSettings, weatherAt, rolledWeather } from './weather-roll.js';
 import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
 import { gameHour, SKY_SUN } from './show-clock.js';
+import { createSunsetSky } from './sunset-sky.js';
 const NIGHT_ICON = { clear: '🌙' };
 
-// Time of day: the game's own two-hour day (show-clock.js), the same for
-// everyone wherever they live, with a night and a show every two hours.
+// Time of day: the game's own three-hour day (show-clock.js), the same for
+// everyone wherever they live, with a night and a show every three hours.
 // (It used to follow Seoul's clock, so players abroad rarely saw night.)
 // ?hour=21 forces a time for testing.
 
@@ -59,6 +60,7 @@ const NIGHT_LIGHT = {
   hemi: new THREE.Color(0xa9b9ff), ground: new THREE.Color(0x46507a),
   ambient: new THREE.Color(0x9fadde), sun: new THREE.Color(0xc4d2ff),
 };
+const SUNSET_LIGHT = { sun: new THREE.Color(0xff8a4a), hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
 const glowing = []; // [material, strength]: emissive that comes on after dark
 export function glowAtNight(material, strength = 1) {
   material.emissiveIntensity = 0;
@@ -80,6 +82,7 @@ export class WeatherSystem {
     this.settings = null; // the operators' season / held weather (setSettings)
     this.temp = null;
     this.sky = new THREE.Color();
+    this.sunset = createSunsetSky(scene); // the low sun, its glow and its light on the river
     this.particles = null;
     const forced = new URLSearchParams(location.search).get('weather');
     this.forced = forced && WEATHER_ICON[forced] ? forced : null;
@@ -154,6 +157,7 @@ export class WeatherSystem {
     const twilight = 1 - Math.abs(d - 0.5) * 2; // peaks mid-ramp
     this.sky.copy(SKY.night).lerp(SKY.day, d).lerp(SKY.dusk, twilight * 0.55 * (1 - overcast));
     this.sky.lerp(SKY.grey, overcast * 0.6 * Math.max(d, 0.25));
+    this.sunset.update(hourNow(), Math.max(overcast, this.nightMix || 0), this.sky, dt); // (warms the haze at sunset)
     this.scene.background.copy(this.sky);
     if (this.scene.fog) {
       this.scene.fog.color.copy(this.sky);
@@ -173,6 +177,13 @@ export class WeatherSystem {
     this.hemi.groundColor.copy(D.ground).lerp(NIGHT_LIGHT.ground, n);
     this.ambient.color.copy(D.ambient).lerp(NIGHT_LIGHT.ambient, n);
     this.sun.color.copy(D.sun).lerp(NIGHT_LIGHT.sun, n);
+    // Sunset: the low sun's warm light (core/sunset-sky.js).
+    const sm = this.sunset.mix;
+    if (sm > 0) {
+      this.sun.color.lerp(SUNSET_LIGHT.sun, sm * 0.85);
+      this.hemi.color.lerp(SUNSET_LIGHT.hemi, sm * 0.6);
+      this.ambient.color.lerp(SUNSET_LIGHT.ambient, sm * 0.45);
+    }
     // Lit windows: on from dusk (a few stay dark: the texture says which).
     const glow = Math.max(0, n - 0.15) / 0.85;
     for (const [m, k] of glowing) m.emissiveIntensity = glow * k;

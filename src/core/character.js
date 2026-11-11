@@ -480,6 +480,38 @@ function patchMat(id) {
   return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
+// The engraving on a pendant tag: the Hangul large, its hanja small under
+// it, polished bright, cut round in dark, on a slightly darker silver or gold
+// face (a light rim and a soft glow) (data/appearance.js PENDANT_CHARMS).
+const engraveMats = {};
+function engraveMat(hanja, letter, color) {
+  const key = hanja + letter + color;
+  if (engraveMats[key]) return engraveMats[key];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const metal = new THREE.Color(color);
+  const hex = (k) => '#' + metal.clone().multiplyScalar(k).getHexString();
+  const shine = '#' + metal.clone().lerp(new THREE.Color(0xffffff), 0.7).getHexString();
+  const face = g.createRadialGradient(46, 40, 6, 64, 64, 64);
+  face.addColorStop(0, hex(0.5)); face.addColorStop(1, hex(0.26)); // (linear values: still silver or gold, a shade below the word)
+  g.fillStyle = face;
+  g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = shine; g.lineWidth = 5;
+  g.beginPath(); g.arc(64, 64, 58, 0, Math.PI * 2); g.stroke();
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = shine; g.shadowBlur = 8;
+  g.fillStyle = shine;
+  g.strokeStyle = hex(0.06); g.lineJoin = 'round'; // a dark cut round each stroke, so the word reads on the metal
+  g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
+  g.lineWidth = 6; g.strokeText(letter, 64, 54); g.fillText(letter, 64, 54);
+  g.font = '700 24px "Noto Serif KR", "Noto Sans KR", serif';
+  g.lineWidth = 4; g.strokeText(hanja, 64, 102); g.fillText(hanja, 64, 102);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (engraveMats[key] = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+}
+
 const TEE_Y = 0.47, TEE_Z = 0.2;
 const printMats = {};
 function printMat(id) {
@@ -511,7 +543,8 @@ function charmGeometry(kind) {
 }
 
 // A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
-// blossom (five petals) or a round tag (the 복 "luck" charm).
+// blossom (five petals), a heart, a star, a butterfly or a round tag engraved with a word (Hangul, hanja under it).
+const TAG_R = 0.034;
 function pendantGeometry(kind) {
   const sh = new THREE.Shape();
   if (kind === 'moon') {
@@ -522,11 +555,25 @@ function pendantGeometry(kind) {
       const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
       i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
     }
-  } else {
-    sh.absarc(0, 0, 0.032, 0, Math.PI * 2, false);
-    const hole = new THREE.Path();
-    hole.moveTo(-0.014, -0.004); hole.lineTo(0.014, -0.004); hole.lineTo(0.014, 0.004); hole.lineTo(-0.014, 0.004); hole.lineTo(-0.014, -0.004);
-    sh.holes.push(hole); // a little bar across, like the stroke of a carved 복
+  } else if (kind === 'heart') {
+    sh.moveTo(0, -0.034);
+    sh.bezierCurveTo(-0.048, 0, -0.026, 0.036, 0, 0.015);
+    sh.bezierCurveTo(0.026, 0.036, 0.048, 0, 0, -0.034);
+  } else if (kind === 'star') {
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 0.015 : 0.037, a = Math.PI / 2 + (i * Math.PI) / 5;
+      i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+  } else if (kind === 'butterfly') { // four wings round a slim body
+    const wings = [[0.018, 0.012, 0.019, 0.015, 0.5], [0.014, -0.014, 0.013, 0.01, -0.5]].flatMap(([x, y, rx, ry, rot]) => [-1, 1].map((sx) => {
+      const w = new THREE.Shape();
+      w.absellipse(sx * x, y, rx, ry, 0, Math.PI * 2, false, sx * rot);
+      return w;
+    }));
+    sh.absellipse(0, 0, 0.004, 0.022, 0, Math.PI * 2, false, 0);
+    return new THREE.ExtrudeGeometry([sh, ...wings], { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
+  } else { // a round tag; the engraving is drawn on it (engraveMat)
+    sh.absarc(0, 0, TAG_R, 0, Math.PI * 2, false);
   }
   return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
 }
@@ -642,6 +689,29 @@ export function hatModel(look) {
   return g;
 }
 
+// The necklace's chain on the torso (a capsule of radius 0.2 at y 0.42, its
+// round top from y 0.5, squashed to 0.85 front to back). It rings the neck
+// itself at y 0.66 (on the model, just above the collar, not out on the
+// shoulders), then runs down the chest to the V at NECK_V. It keeps about
+// 2.5 cm off the shirt so it shows over a jacket or a padded coat too
+// (bodyAcc is fitted to the model's body, not to its clothes).
+const NECK_V = 0.53;
+function necklaceCurve() {
+  const LIFT = 0.025, Y = 0.66, R = 0.11;
+  const surf = (x, y) => Math.sqrt(Math.max(0, 0.04 - x * x - Math.max(0, y - 0.5) ** 2)) * 0.85;
+  const pts = [];
+  for (let i = 0; i <= 8; i++) { // round the back of the neck, right to left
+    const a = (i / 8) * Math.PI, x = R * Math.cos(a);
+    pts.push(new THREE.Vector3(x, Y, -(Math.max(surf(x, Y), 0.1) + LIFT) * Math.sin(a)));
+  }
+  for (let i = 1; i < 14; i++) { // the front: left side down to the V, up to the right
+    const t = i / 14, u = Math.abs(2 * t - 1); // 1 at the sides, 0 at the V
+    const x = -R * Math.sign(1 - 2 * t) * Math.pow(u, 0.8), y = NECK_V + (Y - NECK_V) * Math.pow(u, 1.5);
+    pts.push(new THREE.Vector3(x, y, surf(x, y) + LIFT + 0.012 * (1 - u) ** 2));
+  }
+  return new THREE.CatmullRomCurve3(pts, true);
+}
+
 function addAccessories(look, head, torso, body) {
   // T-shirt print on the chest.
   if (TEE_PRINTS[look.tee]) {
@@ -701,16 +771,23 @@ function addAccessories(look, head, torso, body) {
 
   const neck = accessory('neck', look.neck);
   if (neck && shapeOf(neck) === 'pendant') {
-    // A fine chain round the neck and a charm on the chest.
+    // A necklace: a fine chain lying round the base of the neck on the
+    // torso's rounded top and down the chest in a V to the charm.
     const m = mat(neck.color);
-    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TorusGeometry(0.155, 0.012, 5, 24)), m);
-    chain.rotation.x = Math.PI / 2 - 0.35;
-    chain.position.set(0, 0.6, 0.03);
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TubeGeometry(necklaceCurve(), 72, 0.009, 5, true)), m);
+    // The charm hangs from the bottom of the V on a little ring.
+    const size = neck.hanja ? 1.8 : 1.5, top = (neck.hanja ? TAG_R : neck.charm === 'butterfly' ? 0.026 : 0.036) * size;
+    const bail = new THREE.Mesh(geo('pendantBail', () => new THREE.TorusGeometry(0.01, 0.004, 4, 10)), m);
+    bail.position.set(0, NECK_V - 0.009, 0.214);
     const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
-    charm.position.set(0, 0.5, 0.2);
-    charm.rotation.x = -0.15;
-    charm.scale.setScalar(1.5);
-    body.add(chain, charm);
+    charm.position.set(0, NECK_V - 0.018 - top, 0.216); // in front of the shirt and its print (TEE_Z)
+    charm.scale.setScalar(size); // an engraved tag a little bigger, to read the word
+    if (neck.hanja) { // the engraved word on the tag's face
+      const face = new THREE.Mesh(geo('pendantFace', () => new THREE.CircleGeometry(TAG_R, 24)), engraveMat(neck.hanja, neck.letter, neck.color));
+      face.position.z = 0.0065;
+      charm.add(face);
+    }
+    body.add(chain, bail, charm);
   } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);

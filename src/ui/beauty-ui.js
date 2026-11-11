@@ -4,6 +4,8 @@
 import { t, localName } from '../core/i18n.js';
 import { menuFor, BEAUTY_ICON, beautyCost } from '../core/beauty.js';
 import { PALETTES } from '../data/appearance.js';
+import { LIPSTICK_TEXT, LIPSTICK_USES } from '../core/lipstick.js';
+import { L, fmt } from './pocha-ui.js';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -15,9 +17,10 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class BeautyUI {
   // onPreview(look): show it; onSave(look, cost): pay, keep, true if paid;
-  // onCancel(): put the old look back.
-  constructor({ root, onPreview, onSave, onCancel }) {
-    Object.assign(this, { root, onPreview, onSave, onCancel });
+  // onCancel(): put the old look back; onBuyStick(shade, coins): a lip shop
+  // sells the shade tried on as a lipstick, true if bought.
+  constructor({ root, onPreview, onSave, onCancel, onBuyStick }) {
+    Object.assign(this, { root, onPreview, onSave, onCancel, onBuyStick });
   }
 
   get open() { return !this.root.hidden; }
@@ -82,7 +85,8 @@ export class BeautyUI {
         tabs.append(b);
       });
       this.root.append(tabs);
-    } else head.append(el('span', 'beauty-price', `${t('beauty.' + this.menu[0].key)} · 🪙 ${this.menu[0].price}`));
+    } else if (this.menu[0].stick) head.append(el('span', 'beauty-price', fmt(L(LIPSTICK_TEXT.tryFree), { n: LIPSTICK_USES })));
+    else head.append(el('span', 'beauty-price', `${t('beauty.' + this.menu[0].key)} · 🪙 ${this.menu[0].price}`));
     const o = this.menu[this.tab];
     const opts = this.options(o);
     const cur = this.draft[o.key] || null;
@@ -131,8 +135,12 @@ export class BeautyUI {
     const cost = beautyCost(this.menu, this.from, this.draft);
     const cancel = el('button', 'chip', t('beauty.cancel'));
     cancel.onclick = () => this.close();
-    const save = el('button', 'primary', cost ? t('beauty.pay', { coins: cost }) : t('beauty.save'));
+    // Lip shops: the colour you're trying is bought as a lipstick (your look
+    // goes back until you put it on); "my own" lips are free to go back to.
+    const shade = o.stick && this.draft[o.key];
+    const save = el('button', 'primary', shade ? fmt(L(LIPSTICK_TEXT.buy), { n: LIPSTICK_USES, coins: o.price }) : cost ? t('beauty.pay', { coins: cost }) : t('beauty.save'));
     save.onclick = () => {
+      if (shade) { if (this.onBuyStick?.(shade, o.price)) this.close(); return; }
       if (this.onSave?.(this.draft, cost)) this.root.hidden = true;
     };
     const actions = el('div', 'order-actions');
