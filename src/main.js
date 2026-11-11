@@ -806,7 +806,7 @@ const slopeY = hillDistrict ? hillGround(hillDistrict.hill, hillDistrict.offset)
 const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, groundY: slopeY, randomLook });
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
-const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision });
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene });
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
@@ -5125,17 +5125,21 @@ function bosingakAct(p) {
   return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
 }
 const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
-// The Namsan trail's top: through the gate onto the summit plaza (the cable
-// car's room, at its back gate), and back out of it down the trail.
-const namsanUpAct = () => ({ key: 'namsan-up', label: '⛰️ ' + t('namsan.up'), run: () => {
-  const it = storefronts.items.find((i) => i.store.workshop === 'cablecar');
-  if (it) enterStore(it, { ...CC.trailGate.inside, yaw: CC.trailGate.inside.ry });
-} });
-const namsanDownAct = () => ({ key: 'namsan-down', label: '🥾 ' + t('namsan.down'), run: () => {
-  const o = namsanWalk.topOut();
-  interior.front = { ...interior.front, door: { x: o.x, z: o.z }, group: { rotation: { y: o.ry } } }; // (out at the trail's top, not the lower station)
+// The Namsan summit plaza is outdoors (game/namsan-walk.js). The cable car's
+// room is the ride and its two platforms: at the top you step out of it by
+// the upper station, and from there you ride down.
+function outToSummit() {
+  const o = namsanWalk.stationOut;
+  if (!o || !interior?.cablecar) return;
+  interior.front = { ...interior.front, door: { x: o.x, z: o.z }, group: { rotation: { y: o.ry } } }; // (out by the upper station, not the lower one)
   doorCam = null;
   leaveStore();
+}
+const namsanOutAct = () => ({ key: 'namsan-out', label: '🚶 ' + t('namsan.out'), run: outToSummit });
+const namsanRideDownAct = () => ({ key: 'namsan-ride-down', label: '🚡 ' + t('namsan.rideDown'), run: () => {
+  const it = storefronts.items.find((i) => i.store.workshop === 'cablecar');
+  const b = boardSpot(0, 'top');
+  if (it) enterStore(it, { x: b.x, z: b.z - 1.5, ry: 0, yaw: Math.PI });
 } });
 // Each frame on the street: the people on the square, and the New Year's ringings.
 function updateBosingak(p, dt, w, h) {
@@ -5533,6 +5537,7 @@ function updateCable() {
     cable = null;
     sendTimer = 0;
     shop.toast(L(CABLE_TEXT[to]));
+    if (to === 'top' && namsanWalk.stationOut) outToSummit(); // (out onto the real summit plaza)
     if (to === 'top') me.play('cheer');
     return;
   }
@@ -6384,7 +6389,8 @@ function moreActions(p, door) {
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
-    if (namsanWalk.atTop(p)) out.push(namsanUpAct());
+    if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
+    if (namsanWalk.atStation(p)) out.push(namsanRideDownAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
@@ -6403,6 +6409,7 @@ function moreActions(p, door) {
   hi5s();
   const im = infoMissionAct(p); if (im) out.push(im);
   if (interior.cablecar && !cable && nearLoveLock(p.x, p.z)) out.push(...loveLockActs());
+  if (interior.cablecar && !cable && namsanWalk.stationOut && p.z < CC.edge) out.push(namsanOutAct()); // (beside the ride-down button on the top platform)
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
   if (seat) out.push(sitAct(seat));
@@ -6465,7 +6472,8 @@ function updateAction(p, tSec) {
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
-    else if (!riding && namsanWalk.atTop(p)) next = namsanUpAct();
+    else if (!riding && namsanWalk.nearHeart(p)) next = loveLockActs()[0]; // the Namsan summit's love locks
+    else if (!riding && namsanWalk.atStation(p)) next = namsanRideDownAct();
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -6527,8 +6535,8 @@ function updateAction(p, tSec) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
-    } else if (interior.cablecar && !cable && namsanWalk.line && nearTrailGate(p.x, p.z)) {
-      next = namsanDownAct();
+    } else if (interior.cablecar && !cable && namsanWalk.stationOut && (nearTrailGate(p.x, p.z) || p.z < CC.edge)) {
+      next = namsanOutAct();
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
@@ -7075,7 +7083,7 @@ renderer.setAnimationLoop((now) => {
   updateCarry();
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
-  if (loveLockUi.open && !loveLockUi.busy && (!interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
+  if (loveLockUi.open && !loveLockUi.busy && (mode === 'street' ? namsanWalk.awayFromHeart(p) : !interior?.cablecar || Math.hypot(p.x - CC.loveLock.spot.x, p.z - CC.loveLock.spot.z) > 4.5)) loveLockUi.close();
   if (wishUi.open && (mode !== 'street' || !(wishUi.view === 'wish' ? wishSpot(p) : muralSpot(p)))) wishUi.close(); // walked away
   if (bukchonUi.open && (bukchonUi.view === 'jm' ? mode !== 'street' : bukchonUi.view === 'bosingak' ? mode !== 'street' || bellDistance(p) > 25 : bukchonUi.view === 'welcome' ? mode !== 'street' || !bukchonIn(p.x, p.z) : bukchonUi.view?.startsWith('craft:') ? mode !== 'store' : mode !== 'street' || !bukchonAct(p))) bukchonUi.close();
   if (interior?.turntable && music.on) interior.turntable.platter.rotation.y -= dt * 3.5; // 33⅓ rpm
@@ -7189,7 +7197,7 @@ renderer.setAnimationLoop((now) => {
   liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); namsanWalk.update(p); potatoMarket.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
     if (clerk) { clerk.ch.animate(dt, interior?.store.clerkRoams ? roamClerk(dt, p) : 0); placeLabels(clerk, camera, w, h); }

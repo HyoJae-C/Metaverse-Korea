@@ -270,7 +270,7 @@ const BUILD = {
     // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
     // (core/namsan-shape.js). Scenery: the map's blockers keep you off it,
     // except on its trail (l.trail, game/namsan-walk.js), drawn on the slope.
-    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad };
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat };
     const trail = l.trail || [];
     // (finer where there is a trail, so the slope under it is close to the
     // true height it is walked at)
@@ -309,6 +309,7 @@ const BUILD = {
       const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
       const s = 0.7 + rnd() * 0.7;
       if (trail.length && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
+      if (sh.flat && Math.hypot(x - sh.px, z - sh.pz) < sh.flat + 16) continue; // the summit plaza and the way to the cable car's upper station
       trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
     }
     trees.count = n;
