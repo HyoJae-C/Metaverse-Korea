@@ -4,7 +4,7 @@ import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '.
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
@@ -59,7 +59,7 @@ test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
   const steps = program(DRONE());
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
-  const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
+  const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', ...(routineOf(DRONE()) === 1 ? ['먹고갈래?', '뚝섬에서'] : ['모두서울', '넌 소중해']), '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
   for (const w of order) { const i = words.indexOf(w); assert.ok(i > at, w); at = i; }
   for (let i = 1; i < steps.length; i++) assert.ok(steps[i].at > steps[i - 1].at, 'steps in time order');
@@ -113,6 +113,23 @@ test('the turn of the fifth hello starts with French on 2026-11-12 08:10 KST', (
   assert.equal(new Date(first).toISOString(), '2026-11-11T23:10:00.000Z');
   assert.equal(helloOf(first), 'BONJOUR');
   assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
+});
+
+test('routines 1 and 2 take turns: only the two lines after 라면 differ, same length', () => {
+  useShow(show);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 22, 0)); // 2026-11-12 08:10 KST
+  const second = show.nextDroneShow(first + 1000);
+  const third = show.nextDroneShow(second + 1000);
+  assert.deepEqual([routineOf(first), routineOf(second), routineOf(third)], [1, 2, 1]);
+  const after = (start) => {
+    const words = program(start).filter((s) => s.lines).map((s) => s.lines.join('/'));
+    const i = words.indexOf('라면');
+    return words.slice(i, i + 3);
+  };
+  assert.deepEqual(after(first), ['라면', '먹고갈래?', '뚝섬에서']);
+  assert.deepEqual(after(second), ['라면', '모두서울', '넌 소중해']);
+  const times = (start) => program(start).map((s) => s.at);
+  assert.deepEqual(times(first), times(second));
 });
 
 test('every show gets its own number', () => {

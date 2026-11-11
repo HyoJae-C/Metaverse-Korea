@@ -109,6 +109,15 @@ const HELLOS = ['BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस
 const FIRST_HELLO_SHOW = 83075;
 export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_SHOW) % HELLOS.length; return HELLOS[(k + HELLOS.length) % HELLOS.length]; };
 
+// Two routines take turns, one per show (Yozi 2026-11-12): routine 1 at the
+// show of FIRST_HELLO_SHOW, routine 2 at the next. They differ only in the
+// two lines after 라면, and both are the same length.
+const AFTER_RAMEN = [
+  [[6, ['먹고갈래?'], [GOLD, PINK]], [7, ['뚝섬에서'], [PINK, SKYBLUE]]],
+  [[6, ['모두서울'], [GOLD, PINK]], [7, ['넌 소중해'], [PINK, SKYBLUE]]],
+];
+export const routineOf = (start) => (((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 + 1;
+
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
   const c = f.centers[1], k = 1 + 0.16 * Math.max(0, Math.sin((t / period) * TAU)) ** 4;
@@ -165,7 +174,7 @@ const MOVES = {
 // to the end (20 minutes). Each picture or line stays about half as long as
 // in the first shows (2026-11-11), with more of them.
 const SHOW_LEN = 1200;
-function scenes(act3, nextText, hello = HELLOS[0]) {
+function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
   const W = (lines, opts) => ({ lines, morph: 2, ...opts });
   const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape], ...opts });
   return [
@@ -209,8 +218,7 @@ function scenes(act3, nextText, hello = HELLOS[0]) {
     [16, P('ramen')],
     // (Yozi)
     [6, W(['라면'], { color: [RED, GOLD] })],
-    [6, W(['먹고갈래?'], { color: [GOLD, PINK] })],
-    [7, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
+    ...AFTER_RAMEN[routine - 1].map(([d, lines, color]) => [d, W(lines, { color })]),
     [22, P('wheel')],
     [22, P('coaster')],
     [12, W(['모두랜드'], { color: [PINK, GOLD] })],
@@ -270,7 +278,7 @@ export function program(start) {
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText, helloOf(start))),
+    ...timed(scenes(act3, nextText, helloOf(start), routineOf(start))),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }
