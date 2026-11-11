@@ -7148,7 +7148,9 @@ renderer.setAnimationLoop((now) => {
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
     const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
-    if (changed || idleTimer <= 0) {
+    // Flying (operators): nothing is sent, so others keep seeing us where we
+    // took off and our spot isn't given away; carrying someone still sends.
+    if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {
       net.sendState(st);
       lastSent = st;
       idleTimer = config.netIdleInterval;
