@@ -121,7 +121,7 @@ export const ANIMAL_LOOKS = [
 // Glasses: `lens` is the lens colour and `tint` its opacity.
 // The pendant charms (Sunra Silver Studio): a moon, a plum blossom, or a
 // round tag engraved with a word Koreans wish on, the Hangul large and its
-// hanja small under it (부귀영화 is cut two by two) (Yozi: Hangul first). A fixed list
+// hanja small under it (Yozi: Hangul first). A fixed list
 // (Yozi 2026-11-11), so there is nothing to type and nothing to filter.
 const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${letter} ${hanja} · ${en}`, ko: `${letter} ${hanja}`, ja: `${letter} ${hanja}（${ja}）`, zh: `${letter} ${hanja}（${zh}）` } });
 export const PENDANT_CHARMS = {
@@ -135,18 +135,18 @@ export const PENDANT_CHARMS = {
   ae: wish('愛', '애', 'love', '愛', '爱'),
   hui: wish('喜', '희', 'joy', '喜び', '喜悦'),
   rak: wish('樂', '락', 'delight', '楽しみ', '快乐'),
-  hwa: wish('和', '화', 'harmony', '和', '和睦'),
   mong: wish('夢', '몽', 'dream', '夢', '梦想'),
   sin: wish('信', '신', 'trust', '信頼', '信任'),
   sim: wish('心', '심', 'heart', '心', '心'),
   seon: wish('善', '선', 'kindness', '善', '善良'),
   mi: wish('美', '미', 'beauty', '美', '美丽'),
+  bu: wish('富', '부', 'wealth', '富', '富裕'),
+  gwi: wish('貴', '귀', 'honour', '貴さ', '尊贵'),
+  yeong: wish('榮', '영', 'glory', '栄え', '荣耀'),
+  hwa: wish('華', '화', 'splendour', '華やか', '繁华'),
   gwang: wish('光', '광', 'light', '光', '光明'),
   gil: wish('吉', '길', 'good fortune', '吉', '吉祥'),
   geon: wish('健', '건', 'health', '健やか', '健康'),
-  gyeong: wish('慶', '경', 'celebration', '慶び', '喜庆'),
-  so: wish('笑', '소', 'laughter', '笑い', '欢笑'),
-  bugwi: wish('富貴榮華', '부귀영화', 'wealth and glory', '富貴栄華', '荣华富贵'),
 };
 
 export const ACCESSORIES = {

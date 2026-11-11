@@ -162,7 +162,7 @@ test('the engraved pendants: 20 hanja words, each with its Hangul reading, no tw
   for (const c of words) assert.equal([...c.hanja].length, [...c.letter].length, c.hanja);
   assert.equal(new Set(words.map((c) => c.letter)).size, 20, 'no two read the same');
   assert.equal(CRAFT.pendant.shapes.length, Object.keys(PENDANT_CHARMS).length);
-  assert.ok(WEARABLES['acc-pendant-silver-bok'] && WEARABLES['acc-pendant-gold-bugwi'], 'old ids kept, new ones there');
+  assert.ok(WEARABLES['acc-pendant-silver-bok'] && WEARABLES['acc-pendant-gold-hwa'], 'old ids kept, new ones there');
 });
 
 test('the guide\'s facts, the stamp and the Joseon Royal Walk', () => {

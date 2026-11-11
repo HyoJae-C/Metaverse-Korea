@@ -166,7 +166,7 @@ export class BukchonUI {
     k.shapes.forEach(([, , name, tile], i) => {
       const b = el('button', 'wish-item' + (i === this.si ? ' on' : ''), k.grid ? '' : L(name));
       if (k.grid) {
-        b.append(el('span', 'wish-big' + (tile[0].length > 2 ? ' long' : ''), tile[0]), el('small', '', tile[1]));
+        b.append(el('span', 'wish-big', tile[0]), el('small', '', tile[1]));
         b.setAttribute('aria-label', L(name));
         b.title = L(name);
       }

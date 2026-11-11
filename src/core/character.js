@@ -494,14 +494,9 @@ function engraveMat(hanja, letter, color) {
   g.beginPath(); g.arc(64, 64, 58, 0, Math.PI * 2); g.stroke();
   g.fillStyle = ink;
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  if (letter.length === 4) { // 부귀영화: two by two
-    g.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
-    [...letter].forEach((ch, i) => g.fillText(ch, 46 + (i % 2) * 36, 34 + Math.floor(i / 2) * 36));
-  } else {
-    g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
-    g.fillText(letter, 64, 54);
-  }
-  g.font = `700 ${hanja.length > 2 ? 16 : 24}px "Noto Serif KR", "Noto Sans KR", serif`;
+  g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
+  g.fillText(letter, 64, 54);
+  g.font = '700 24px "Noto Serif KR", "Noto Sans KR", serif';
   g.fillText(hanja, 64, 102);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
