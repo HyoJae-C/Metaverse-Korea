@@ -50,7 +50,7 @@ test('the program: the same for everyone, no long waits, a photo time and a fina
   assert.equal(SHOW_SECONDS, 1200, '20 minutes');
   for (const k of KINDS) assert.ok(a.some((x) => x.kind === k), `${k} comes up`);
   assert.ok(a[0].t < 1 && a.at(-1).t < SHOW_SECONDS && a.at(-1).t > SHOW_SECONDS - 1);
-  for (const x of a) assert.ok(KINDS.includes(x.kind) && LIFE[x.kind] && RADIUS[x.kind] && x.barge >= 0 && x.barge < BARGES.length && x.h > 25, JSON.stringify(x));
+  for (const x of a) assert.ok(KINDS.includes(x.kind) && LIFE[x.kind] && RADIUS[x.kind] && x.barge >= 0 && x.barge < BARGES.length && (x.kind === 'fan' ? x.h < 10 : x.h > 25), JSON.stringify(x));
   const photo = a.filter((x) => x.t >= PHOTO_TIME[0] && x.t < PHOTO_TIME[1]);
   assert.ok(photo.length > 30 && photo.every((x) => x.kind === 'willow'), 'gold willows at photo time');
   const perMin = (t0) => a.filter((x) => x.t >= t0 && x.t < t0 + 60).length;
@@ -80,8 +80,8 @@ test('barges in the river between the island and Hongdae; the night only around 
 test('volleys: now and then several shells burst at the same moment, across the barges', () => {
   const a = program(FW());
   const at = new Map();
-  for (const x of a) at.set(x.t, [...(at.get(x.t) || []), x]);
-  const volleys = [...at.values()].filter((v) => v.length >= 3);
+  for (const x of a) if (x.kind !== 'fan') at.set(x.t, [...(at.get(x.t) || []), x]);
+  const volleys = [...at.values()].filter((v) => v.length >= 3 && new Set(v.map((x) => x.barge)).size >= 2); // (a cluster is one barge)
   assert.ok(volleys.length > 150, `${volleys.length} volleys`);
   for (const v of volleys) {
     assert.ok(v.every((x) => x.kind === v[0].kind), 'one kind per volley');
@@ -90,4 +90,26 @@ test('volleys: now and then several shells burst at the same moment, across the 
   const salvo = volleys.filter((v) => v[0].t >= 540 && v[0].t < 600);
   assert.ok(salvo.length > 30 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
   assert.ok(volleys.some((v) => v[0].t >= 1110 && v.length >= 7), 'big volleys in the finale');
+});
+
+test('rings and saturns are rare; the basic peony leads the mix', () => {
+  const c = {}; let n = 0;
+  for (let d = 0; d < 12; d++) for (const b of program(1.8e12 + d * 6 * 3600e3)) { c[b.kind] = (c[b.kind] || 0) + 1; n++; }
+  assert.ok(((c.ring || 0) + (c.saturn || 0)) / n < 0.07, JSON.stringify(c));
+  assert.ok(Object.entries(c).every(([k, v]) => k === 'peony' || k === 'fan' || v < c.peony), JSON.stringify(c));
+});
+
+test('built like a festival: stacked clusters, fans on the water, a beat every minute, a gold curtain to end', () => {
+  const a = program(FW());
+  const together = (x) => a.filter((y) => y.barge === x.barge && Math.abs(y.t - x.t) < 0.3 && y.kind !== 'fan').length;
+  assert.ok(a.filter((x) => x.kind !== 'fan' && together(x) >= 2).length > a.length / 3, 'most shots come several at once from one barge');
+  assert.ok(a.some((x) => x.kind === 'fan') && a.filter((x) => x.kind === 'fan').every((x) => x.h < 10), 'low fans on the barges');
+  for (let t0 = 12; t0 < PHOTO_TIME[0] - 60; t0 += 60) assert.ok(a.some((x) => x.t >= t0 && x.t < t0 + 60 && x.kind === 'fan'), `a highlight with fans in the minute from ${t0} s`);
+  const last = a.filter((x) => x.t >= 1191 && x.kind !== 'fan');
+  assert.ok(last.length >= 14 && last.every((x) => x.kind === 'kamuro'), 'the gold curtain at the end');
+  const high = a.filter((x) => x.h > 80).length;
+  assert.ok(high > 100 && high < a.length / 5, `${high} high shells: now and then, not always`);
+  const swept = a.filter((x, i) => x.kind !== 'fan' && i > 0 && a[i - 1].kind === x.kind && Math.abs(x.t - a[i - 1].t - 0.14) < 0.011).length;
+  assert.ok(swept > 100, `${swept} shells in sweeps along the river`);
+  assert.ok(a.slice(0, 3).every((x) => x.kind === 'willow') && new Set(a.slice(0, 3).map((x) => x.barge)).size === 3, 'curtain up: a willow from each barge');
 });

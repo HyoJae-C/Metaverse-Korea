@@ -5603,7 +5603,7 @@ function updateFireworks() {
   // Booms: louder close by, later far away; at most a few a second.
   for (const b of fired) {
     const dist = Math.hypot(b.x - p.x, b.y, b.z - p.z);
-    const loud = Math.min(1, 90 / Math.max(60, dist)) * (b.kind === 'small' ? 0.5 : 1);
+    const loud = Math.min(1, 90 / Math.max(60, dist)) * (b.kind === 'small' || b.kind === 'fan' ? 0.5 : 1);
     const wait = Math.max(0, b.t - t) + dist / 343;
     const now = performance.now();
     if (dist > 900 || now - fireworks.lastBoom < 140) continue;

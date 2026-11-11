@@ -61,7 +61,10 @@ const FRAG = /* glsl */`
 function directions(kind, n, rand) {
   const out = [];
   const flat = (x, y) => out.push([x, y, (rand() - 0.5) * 0.12]);
-  if (kind === 'ring') for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); }
+  if (kind === 'fan') for (let i = 0; i < n; i++) { // low on the barge: nine rays fanning up, like the festival's water fans
+    const ray = i % 9, a = ((ray - 4) / 4) * 1.1 + (rand() - 0.5) * 0.04, len = 0.25 + 0.75 * rand();
+    out.push([Math.sin(a) * len, Math.cos(a) * len * 1.2, (rand() - 0.5) * 0.06]);
+  } else if (kind === 'ring') for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2; flat(Math.cos(a), Math.sin(a)); }
   else if (kind === 'pistil') for (let i = 0; i < n; i++) { // a ball with a small ball of another colour inside
     const inner = i % 3 === 0, y = 1 - 2 * ((i + rand() * 0.5) / n), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r].map((c) => c * (inner ? 0.4 : 0.9 + rand() * 0.1)));
@@ -128,7 +131,7 @@ function makeSkyline() {
 }
 
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 40 : 64, PER = phone ? 64 : 96, N = SLOTS * PER;
+  const SLOTS = phone ? 80 : 128, PER = phone ? 64 : 96, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)
