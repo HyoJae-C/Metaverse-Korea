@@ -13,6 +13,8 @@
 //     2-gil and 8-gil in OSM), Myeongdong-gil across it from Namdaemun-ro to
 //     the cathedral's front yard and Samil-daero, and Myeongdong 10-gil from
 //     Myeongdong Station up past the cathedral's west side.
+//   - Toegye-ro 20-gil, south of Toegye-ro, up to Sopa-ro and the Namsan
+//     cable car (the real way there on foot), with plain rows along it.
 //   - Buildings: one row along each street (Yozi 2026-11-10, like Seongsu);
 //     the blocks behind stay open. Every building and shop is fictional.
 //   - The cathedral: its grounds at 1/4, the church itself at 50% (Yozi
@@ -34,6 +36,7 @@ import path from 'node:path';
 import { r1, town, nearestOn, strips, lineDist, facing, simplify, overlap } from './street-rows.mjs';
 import { toLatLon, toGame } from '../src/core/seoul-grid.js';
 import { CATHEDRAL } from '../src/data/myeongdong.js';
+import { yardHeight, yardFrame } from '../src/core/cathedral-yard-ground.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -95,14 +98,97 @@ const SAMIL = street('Samil-daero').p, MAIN = [...street('Myeongdong 9-gil').p, 
 const MDGIL = street('Myeongdong-gil').p, GIL10 = street('Myeongdong 10-gil').p;
 // The link roads round it (region.json): Eulji-ro, Toegye-ro and Sopa-ro.
 const LINKS = ['Eulji-ro', 'Toegye-ro', 'Sopa-ro'].map((en) => { const l = linkRoad(en); return { k: l.k, w: l.w, p: l.p, n: l.n }; });
+// The walk up to the Namsan cable car, the way people really go: out of
+// Myeongdong Station's exit 4 (or down 10-gil from the cathedral), across
+// Toegye-ro and up Toegye-ro 20-gil past the hillside hotels to Sopa-ro,
+// where the lower station is (scripts/build-namsan.mjs). Its real line, from
+// Toegye-ro's middle to Sopa-ro's so it joins both.
+export const GIL20 = (() => {
+  const real = street('Toegye-ro 20-gil').p;
+  return simplify([nearestOn(real[0], LINKS[1].p).at, ...real, nearestOn(real.at(-1), LINKS[2].p).at], 0.5).map(([x, z]) => [r1(x), r1(z)]);
+})();
+roads.push({ k: 'walk', w: 6, p: GIL20, n: street('Toegye-ro 20-gil').n });
 
 const buildings = [], areas = [], blockers = [], landmarks = [], pois = [];
 
 // The yard: the real grounds, paved; the church on it.
 const GROUNDS = OSM.grounds.p;
 areas.push({ k: 'plaza', p: GROUNDS });
-for (const p of hallParts) buildings.push({ h: K.eave, custom: 1, p, n: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
-landmarks.push({ type: 'cathedral', x: HALL.at[0], z: HALL.at[1], ry });
+
+// ---------- The hill: the yard up on its terrace, the stairs ----------
+// The real church stands on a hill (종현) above Myeongdong-gil: its yard is
+// a terrace held up by brick walls, reached by the wide straight stairs on
+// the church's axis in front of the bell tower (OSM 1193247326 and the
+// steps below it; Yozi 2026-11-11: "a key feature") or by the service road
+// west of them (OSM 1537435146), a ramp. Heights at 50% like the church: the
+// yard about 8 m above the street for real -> 4 m; the stairs 4.5 m wide
+// (real about 9 m; 1/4 would be narrower than one person's door), 16 steps
+// painted on a smooth slope, and the yard flat beside the first three
+// hedges (Yozi 2026-11-11: shorter stairs, no jolting going up, a diagonal
+// from the side). Height maths: src/core/cathedral-yard-ground.js.
+// why: the church at 50% reaches 9 m further towards the street than the
+// real one, so the yard in front of it and the stairs move with it: the
+// real flight runs 17-21 m along the axis from the hall's middle, ours
+// 24.4-29.6 (its top 7 m, its foot 9 m from the real ones); the ramp is on
+// its real line.
+const YH = 4, STEPS = 16, TREAD = 0.325;
+const axisRoad = (() => { // where Myeongdong-gil crosses the church's axis (metres along it)
+  let best = null;
+  for (let a = L2; a < L2 + 30; a += 0.1) { const d = nearestOn(onHall(a, 0), MDGIL).d; if (!best || d < best.d) best = { a, d }; }
+  return best.a;
+})();
+const CUT = r1(axisRoad - ROAD['Myeongdong-gil'].w / 2 - 0.4); // the terrace stops at the street's kerb
+const A1 = r1(CUT - 0.3), A0 = r1(A1 - STEPS * TREAD);
+export const YARD = {
+  type: 'cathedralyard', x: HALL.at[0], z: HALL.at[1], f: F, h: YH, cut: CUT,
+  stairs: { a0: A0, a1: A1, w: 4.5, n: STEPS },
+  ramp: { r0: L2, blend: 3, side: -8.3, w: 3 }, // (side, w: the paved ramp, on the real service road's line)
+  // A small lawn behind the apse, where trees stood (Yozi 2026-11-11: no
+  // trees behind the church, a little green there instead): along the axis
+  // from a0 to a1, w across.
+  green: { a0: r1(-L2 - 1.5), a1: r1(-L2 - 11), w: 14 },
+  yard: GROUNDS.map(([x, z]) => [r1(x - HALL.at[0]), r1(z - HALL.at[1])]),
+};
+const yardAt = ([x, z]) => yardHeight(YARD, x - HALL.at[0], z - HALL.at[1]);
+landmarks.push({ ...YARD, why: 'Stairs and yard moved 7-9 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m).' });
+// The terrace's walls are walls: you can't walk off the yard or climb it
+// from the street, except up the stairs or the ramp (low: the camera may
+// look over them).
+{
+  const wall = (a, b, t = 0.4) => { // a thin box from a to b, t thick, to the right of a->b
+    const L = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = (b[1] - a[1]) / L * t, nz = -(b[0] - a[0]) / L * t;
+    blockers.push({ low: 1, p: [a, b, [r1(b[0] + nx), r1(b[1] + nz)], [r1(a[0] + nx), r1(a[1] + nz)]].map(([x, z]) => [r1(x), r1(z)]) });
+  };
+  const n = GROUNDS.length, cx = HALL.at[0], cz = HALL.at[1];
+  const local = ([x, z]) => yardFrame(YARD, x - cx, z - cz);
+  // The grounds' edge, a metre at a time, where the ground inside is above a step.
+  for (let i = 0; i < n; i++) {
+    const a = GROUNDS[i], b = GROUNDS[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const k = Math.max(1, Math.round(L)), at = (j) => [a[0] + ((b[0] - a[0]) * j) / k, a[1] + ((b[1] - a[1]) * j) / k];
+    let run = -1; // the walled pieces in a row make one wall
+    for (let j = 0; j <= k; j++) {
+      let up = false;
+      if (j < k) {
+        const p0 = at(j), p1 = at(j + 1), m = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2], d = Math.hypot(cx - m[0], cz - m[1]);
+        const inner = [m[0] + ((cx - m[0]) * 0.5) / d, m[1] + ((cz - m[1]) * 0.5) / d];
+        up = local(m)[0] <= CUT && yardAt(inner) > 0.4;
+      }
+      if (up && run < 0) run = j;
+      if (!up && run >= 0) { wall(at(run), at(j)); run = -1; }
+    }
+  }
+  // Along the kerb, east of the stairs (the brick wall over Myeongdong-gil),
+  // and up the stairs' east side; the hand rail up their west side.
+  const hw = YARD.stairs.w / 2;
+  let east = hw;
+  while (yardAt(onHall(CUT - 0.3, east + 0.5)) > 0.4) east += 0.5;
+  wall(onHall(CUT + 0.4, east), onHall(CUT + 0.4, hw));
+  wall(onHall(A0, hw), onHall(CUT + 0.4, hw));
+  wall(onHall(A1, -hw), onHall(A0, -hw), 0.15);
+}
+
+for (const p of hallParts) buildings.push({ h: K.eave, y: YH, custom: 1, p, n: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
+landmarks.push({ type: 'cathedral', x: HALL.at[0], z: HALL.at[1], y: YH, ry });
 // Old trees round the yard's edge, off the front yard and the church.
 const TREES = [];
 {
@@ -118,17 +204,18 @@ const TREES = [];
       const clearOfHall = Math.abs(side) > halfW + K.transept.out + 3 || along < -L2 - 3 || along > L2 + 3;
       const offFrontYard = !(along > L2 && Math.abs(side) < halfW + 4); // keep the view of the front open
       const offRoads = roads.every((r) => lineDist(t, r.p) > r.w / 2 + 2.5);
-      if (clearOfHall && offFrontYard && offRoads) TREES.push(t);
+      const offBack = along > -L2 + K.apse; // (none behind the church: the lawn is there)
+      if (clearOfHall && offFrontYard && offBack && offRoads && yardAt(t) === YH) TREES.push(t); // (up on the terrace, where they stand)
     }
   }
 }
-landmarks.push({ type: 'shrinetrees', x: 0, z: 0, spots: TREES }); // (spots in the district's metres: moved below)
+landmarks.push({ type: 'shrinetrees', x: 0, z: 0, y: YH, spots: TREES }); // (spots in the district's metres: moved below)
 
-// The board on the front yard, to the left of the bell tower (facts checked
-// 2026-11-11: Archdiocese of Seoul, Korea Heritage Service).
-const BOARD = onHall(L2 + 7, -halfW + 1);
+// The board on the front yard, beside the bell tower on its east (facts
+// checked 2026-11-11: Archdiocese of Seoul, Korea Heritage Service).
+const BOARD = onHall(A0 - 1.3, halfW - 1);
 landmarks.push({
-  type: 'sign', x: BOARD[0], z: BOARD[1], ry,
+  type: 'sign', x: BOARD[0], z: BOARD[1], y: YH, ry,
   title: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂'),
   text: {
     ko: '1898년에 완공된 한국 최초의 고딕 양식 벽돌 성당이에요. 천주교 서울대교구의 주교좌 성당이고, 사적으로 지정돼 있어요. 지금도 매일 미사를 드리는 곳이니 조용히 둘러봐 주세요.',
@@ -140,6 +227,22 @@ landmarks.push({
 pois.push({ kind: 'landmark', x: onHall(L2 + 4, 0)[0], z: onHall(L2 + 4, 0)[1], name: N('명동대성당', 'Myeongdong Cathedral', '明洞大聖堂', '明洞大教堂') });
 // The shopping street's name on the map, half way along.
 pois.push({ kind: 'landmark', x: -1569, z: -515, name: N('명동거리', 'Myeongdong shopping street', '明洞ショッピングストリート', '明洞购物街') });
+
+// A board at the foot of Toegye-ro 20-gil, on its east pavement just up
+// from Toegye-ro (by exit 4), facing people coming across the road.
+{
+  const d = nearestOn(GIL20[0], GIL20).dir, at = [r1(GIL20[0][0] + d[0] * 14 + d[1] * 4.6), r1(GIL20[0][1] + d[1] * 14 - d[0] * 4.6)];
+  landmarks.push({
+    type: 'sign', x: at[0], z: at[1], ry: facing(-d[0], -d[1]),
+    title: N('남산 하늘 케이블카 →', 'Namsan Sky Cable →', '南山スカイケーブル →', '南山天空缆车 →'),
+    text: {
+      ko: '이 길(퇴계로20길)을 따라 올라가면 소파로에 남산 하늘 케이블카 승강장이 있어요.',
+      en: 'Walk up this lane (Toegye-ro 20-gil) to Sopa-ro: the Namsan Sky Cable lower station is just there.',
+      ja: 'この道(退渓路20キル)を上ると、素坡路に南山スカイケーブルの乗り場があります。',
+      zh: '沿这条小路(退溪路20街)往上走到素坡路，就是南山天空缆车的乘车处。',
+    },
+  });
+}
 
 // ---------- Myeongdong Station (Line 4, 424) ----------
 // Two exits, from the real 6 and 4 (OSM 3403067532, 3403067533), moved out
@@ -190,7 +293,22 @@ t.row('euljiS', between(EULJI, -1606, -1500), 1, { off: 10.5, ...BIG }); // (eas
 t.row('toegyeN', between(TOEGYE, -1662, -1470), -1, { off: 10.5, ...SHOP });
 // (The station exits' squares are cleared afterwards, so the rest of the
 // rows stay as they were before the station.)
-buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p))));
+// Behind the church, the tall block right on its axis is left out, so the
+// apse stands clear against the sky from Toegye-ro (Yozi 2026-11-11).
+const BEHIND = onHall(-45, -4.5);
+const inPoly = ([x, z], p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
+buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p)) && !inPoly(BEHIND, b.p)));
+// Toegye-ro 20-gil: one row of quiet buildings (hotels, offices) each side,
+// south of Toegye-ro, stopping short of Sopa-ro and the cable car's station
+// (its own town, so the rows above stay as they were). Plain: Yozi
+// 2026-11-11 "가는길 건물까지 완전하게 할필요없고".
+const SOPA = LINKS[2].p;
+const insideGil = ([x, z]) => x > -1600 && x < -1480 && z > -460 && z < -340 && lineDist([x, z], SOPA) > LINKS[2].w / 2 + 4;
+const t20 = town(20, { inside: insideGil, roads: [...roads, ...LINKS], open: exitSquares });
+const QUIET = { off: 5, w: [8, 13], h: [10, 22], depth: 11, gap: 2.5 };
+t20.row('gil20E', GIL20, -1, QUIET); // (the lane runs south from Toegye-ro: -1 is its left, east)
+t20.row('gil20W', GIL20, 1, QUIET);
+buildings.push(...t20.buildings);
 
 // Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
 // by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
@@ -253,7 +371,7 @@ const map = {
   buildings: buildings.map((b) => ({ ...b, p: Lp(b.p) })),
   rail: [],
   areas: areas.map((a) => ({ ...a, p: Lp(a.p) })),
-  blockers: blockers.map((b) => ({ p: Lp(b.p) })),
+  blockers: blockers.map((b) => ({ ...b, p: Lp(b.p) })),
   pois: pois.map(Lx),
   landmarks: landmarks.map(Lx),
 };
@@ -284,6 +402,7 @@ if (isMain) {
   if (lots.length < SHOPS.length) throw new Error(`only ${lots.length} lots for ${SHOPS.length} shops`);
   SHOPS.forEach((sid, i) => setAt(sid, lots[i]));
   setAt(DOOR.id, DOOR.at);
+  if (!new RegExp(`"id": "${DOOR.id}"[^\n]*"y": ${YH}[,}]`).test(stores)) throw new Error(`${DOOR.id}: set "y": ${YH} in stores.json (the door is up on the yard)`);
   writeFileSync(path.join(R, 'stores.json'), stores);
   const front = onHall(L2, 0);
   console.log(`myeongdong: ${map.roads.length} roads, ${map.buildings.length} buildings (${hallParts.length} of them the cathedral), ${TREES.length} trees`);
@@ -293,5 +412,6 @@ if (isMain) {
   SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
   console.log(`  night carts: ${CARTS.map(([x, z]) => `[${x},${z}]`).join(' ')}`);
+  console.log(`  yard ${YH} m up; stairs ${A0}-${A1} m along the axis (kerb ${CUT}), ${blockers.length} wall pieces`);
   for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }

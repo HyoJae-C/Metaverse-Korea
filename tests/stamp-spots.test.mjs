@@ -18,6 +18,7 @@ const { blockersOf, outsideOf } = await import('../src/core/subway.js');
 const { streetBlockers } = await import('../src/core/stream.js');
 const { standSpots, standClear } = await import('../src/core/stamp-stands.js');
 const { STAMPS } = await import('../src/data/stamps.js');
+const { createNamsanWalk } = await import('../src/game/namsan-walk.js');
 
 const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const rj = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
@@ -26,6 +27,7 @@ const map = await loadRegionMap(region, async (f) => rj(f));
 const exits = (region.subway?.stations || []).flatMap((s) => s.exits || []);
 // what you bump into on the street (as main.js builds it, less the fan dance ring)
 const collision = new CollisionMap(map.buildings.filter((b) => !b.visit).concat(map.blockers || [], exits.flatMap(blockersOf), (map.streams || []).flatMap(streetBlockers)));
+createNamsanWalk({ landmarks: map.landmarks, collision }); // (the Namsan trail and summit plaza: decks over the hill)
 const blocked = (x, z, r) => collision.blocked(x, z, r);
 const zones = rj('zones.json').zones;
 const r1 = (v) => Math.round(v * 10) / 10;

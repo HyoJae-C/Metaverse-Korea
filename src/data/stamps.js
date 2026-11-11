@@ -5,15 +5,15 @@
 //          { store: 'id', room: true, at: [x, z], ry } puts it inside that
 //          shop's room (the Namsan summit, a park), at room position x, z,
 //          its front facing ry, or
-//          { at: [x, z] } puts it at a world position, or
+//          { at: [x, z] } puts it at a world position (y: up a hill), or
 //          { at: [x, z], ride: 'name' } has no stand: a ride offers it
 //          (Seoul Dal: up at the top).
 //   shape: 'circle' | 'square' — the rubber stamp's frame.
 //   icon:  SVG drawn in a 200×200 box, in the stamp's ink colour.
 export const STAMPS = [
   {
-    // on the Namsan summit plaza (up the cable car), across from the love locks
-    id: 'namsan', place: { store: 'namsan-sky-cable', room: true, at: [18.6, -43], ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
+    // on the Namsan summit plaza (outdoors on the hilltop, game/namsan-summit.js), across from the love locks
+    id: 'namsan', place: { at: [-1469.8, -188.8], y: 65.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
     name: { ko: '남산타워', en: 'N Seoul Tower', ja: 'Nソウルタワー', zh: 'N首尔塔' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M100 40 v12 M92 58 h16 l-3 10 h-10 z M97 68 l-5 62 h16 l-5 -62 M86 130 h28" /><circle cx="100" cy="62" r="2"/><path d="M60 138 q20 -18 40 -6 q22 -14 42 6" />',

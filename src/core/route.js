@@ -160,6 +160,7 @@ export class RouteLine {
     this.points = [];
     this.heads = [];
     this.t = 0;
+    this.groundY = null; // (x, z) -> the ground's height where it isn't 0 (e.g. up Myeongdong Cathedral's stairs)
     this._y = new THREE.Vector3(0, 1, 0);
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
@@ -201,7 +202,7 @@ export class RouteLine {
       const wave = 0.5 + 0.5 * Math.sin(i * 0.55 - this.t * 6);
       const fade = Math.min(1, (i + 1) / 4);
       const s = (0.7 + 0.45 * wave) * fade;
-      this._p.set(this.points[i * 2], 0.12, this.points[i * 2 + 1]); // above roads (max 0.06)
+      this._p.set(this.points[i * 2], 0.12 + (this.groundY?.(this.points[i * 2], this.points[i * 2 + 1]) || 0), this.points[i * 2 + 1]); // above roads (max 0.06)
       this._s.set(s, 1, s);
       this._q.setFromAxisAngle(this._y, this.heads[i]);
       this._m.compose(this._p, this._q, this._s);

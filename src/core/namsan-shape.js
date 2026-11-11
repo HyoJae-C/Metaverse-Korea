@@ -20,15 +20,17 @@ export function namsanRadius(l, a) {
   return l.rad[i] * (1 - f) + l.rad[(i + 1) % N] * f;
 }
 // (x, z) from the foot's centre -> how far out from the top, 0..1 (1 at the foot)
+// (l.flat: metres round the top kept level, for the summit plaza.)
 const radial = (l, x, z) => {
-  const dx = x - (l.px || 0), dz = z - (l.pz || 0);
-  return Math.hypot(dx, dz) / namsanRadius(l, Math.atan2(dz, dx));
+  const dx = x - (l.px || 0), dz = z - (l.pz || 0), f = l.flat || 0;
+  return Math.max(0, Math.hypot(dx, dz) - f) / (namsanRadius(l, Math.atan2(dz, dx)) - f);
 };
 
 export function namsanPoint(l, u, v) {
   if (l.rad) {
-    const r = Math.hypot(u, v), R = r ? namsanRadius(l, Math.atan2(v, u)) : 0;
-    return [(l.px || 0) + u * R, l.h * lift(l, 1 - r * r), (l.pz || 0) + v * R];
+    const r = Math.hypot(u, v), R = r ? namsanRadius(l, Math.atan2(v, u)) : 0, f = l.flat || 0;
+    const d = f + r * (R - f), k = r ? d / r : 0; // (the level top stretches the inner rings out)
+    return [(l.px || 0) + u * k, l.h * lift(l, 1 - r * r), (l.pz || 0) + v * k];
   }
   const k = lift(l, 1 - u * u - v * v);
   return [l.rx * u + (l.px || 0) * k, l.h * k, l.rz * v + (l.pz || 0) * k];

@@ -10,10 +10,13 @@
 import * as THREE from 'three';
 import { addBox } from './three-kit.js';
 import { mergeStatic } from './bukchon-models.js';
+import { addBrickPattern } from './brick-pattern.js';
 import { CATHEDRAL as K } from '../data/myeongdong.js';
 
 const mats = {};
-const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = (c) => (mats[c] ||= brickish(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
+// The red walls get brick courses (Yozi 2026-11-11).
+const brickish = (c, m) => (c === C.brick || c === C.brickDark ? addBrickPattern(m, { w: 0.48, h: 0.2, mortar: 0.035 }) : m);
 const box = (g, sx, sy, sz, x, y, z, c, ry = 0) => { const m = addBox(g, mat, sx, sy, sz, x, y, z, c); m.rotation.y = ry; return m; };
 const C = {
   brick: '#b45a40', brickDark: '#9a4a35', stone: '#8f8c85', stoneLight: '#aaa69d', copper: '#7aa88f', copperDark: '#5e8c76',

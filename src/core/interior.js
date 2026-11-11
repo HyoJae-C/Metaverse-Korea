@@ -16,7 +16,6 @@ import { buildHauntedHouse } from './haunted.js';
 import { buildCathedralHall, ROOM_CATHEDRAL } from './cathedral-hall.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
 import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
-import { buildCableCar, ROOM_CABLECAR } from './cablecar.js';
 import { HALL } from './subway.js';
 import { buildStation, buildTrainCar, CAR } from './subway-rooms.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
@@ -54,7 +53,6 @@ export const ROOM_SIZES = {
   // "open"): the Cotton Candy Express and its candy wood, in the coaster's
   // own metres; the island's shore (open.lawn) is the edge.
   island: { w: 92, d: 76, h: 8, x0: -72, x1: 20, z0: -60, z1: 16 },
-  cablecar: ROOM_CABLECAR, // Namsan Sky Cable: lower station, slope and summit (see cablecar.js)
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
@@ -217,7 +215,6 @@ export function buildInterior(store) {
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
   if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
   if (store.workshop === 'zoo') return zooBuilders.buildZooPark(store, ROOM, ZOO_PARK_EXIT);
-  if (store.workshop === 'cablecar') return buildCableCar(store, ROOM, EXIT);
   if (store.category === 'park') return buildPark(store, ROOM, EXIT);
   if (store.category === 'station') return buildStation(store, ROOM);
   if (store.category === 'train') return buildTrainCar(store, ROOM);
