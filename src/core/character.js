@@ -691,18 +691,18 @@ export function hatModel(look) {
 
 // The necklace's chain on the torso (a capsule of radius 0.2 at y 0.42, its
 // round top from y 0.5, squashed to 0.85 front to back). It rings the neck
-// at y 0.61, close round the base of the neck under the chin, and the
-// shoulders, then runs down the chest to the V at NECK_V. It keeps about
+// itself at y 0.66 (on the model, just above the collar, not out on the
+// shoulders), then runs down the chest to the V at NECK_V. It keeps about
 // 2.5 cm off the shirt so it shows over a jacket or a padded coat too
 // (bodyAcc is fitted to the model's body, not to its clothes).
 const NECK_V = 0.53;
 function necklaceCurve() {
-  const LIFT = 0.025, Y = 0.61, R = 0.15;
+  const LIFT = 0.025, Y = 0.66, R = 0.11;
   const surf = (x, y) => Math.sqrt(Math.max(0, 0.04 - x * x - Math.max(0, y - 0.5) ** 2)) * 0.85;
   const pts = [];
   for (let i = 0; i <= 8; i++) { // round the back of the neck, right to left
     const a = (i / 8) * Math.PI, x = R * Math.cos(a);
-    pts.push(new THREE.Vector3(x, Y, -(Math.max(surf(x, Y), 0.12) + LIFT) * Math.sin(a)));
+    pts.push(new THREE.Vector3(x, Y, -(Math.max(surf(x, Y), 0.1) + LIFT) * Math.sin(a)));
   }
   for (let i = 1; i < 14; i++) { // the front: left side down to the V, up to the right
     const t = i / 14, u = Math.abs(2 * t - 1); // 1 at the sides, 0 at the V
