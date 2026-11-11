@@ -1,7 +1,8 @@
 // End-to-end check of Potato Market (감자마켓) by Dongmyo, with a stand-in for
 // the server (supabase/034_player_market.sql) inside the page: buy a jacket
-// at Monoroom, walk to the market, buy Mina's cap from her mat, put the
-// jacket on my own mat, then take it back.
+// at Monoroom, walk to the market, buy Mina's cap from her stall (sellers go
+// on the striped stalls first, then on mats), put the jacket out, then take
+// it back.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/potato-market.mjs http://localhost:4173/ [screenshot dir]
 import { chromium } from 'playwright';
@@ -67,11 +68,12 @@ await page.evaluate(() => __mk.goto(-853, -775, Math.PI));
 await page.waitForFunction(() => __mk.action()?.includes('🥔') || __mk.action()?.includes('🧺'), null, { timeout: 15000 }).catch(() => {});
 await page.waitForTimeout(1500);
 console.log('action:', await page.evaluate(() => __mk.action()));
-await page.evaluate(() => __mk.goto(-857, -770, Math.PI));
+// The first stall on the west edge (src/data/dongmyo.js, its front 1.7 m east).
+await page.evaluate(() => __mk.goto(-871.3, -757, Math.PI));
 await page.waitForTimeout(800);
-console.log('by the mat:', await page.evaluate(() => __mk.action()));
-assert((await page.evaluate(() => __mk.action())).includes('Mina'), 'beside Mina\'s mat');
-if (S) await page.screenshot({ path: S + '/potato-mat.png' });
+console.log('by the stall:', await page.evaluate(() => __mk.action()));
+assert((await page.evaluate(() => __mk.action())).includes('Mina\'s stall'), 'beside Mina\'s stall');
+if (S) await page.screenshot({ path: S + '/potato-stall.png' });
 await page.evaluate(() => __mk.act());
 await page.waitForSelector('.potato-panel:not([hidden]) .fish-row button.chip', { timeout: 8000 });
 console.log('panel:', (await page.textContent('.potato-panel')).replace(/\s+/g, ' '));

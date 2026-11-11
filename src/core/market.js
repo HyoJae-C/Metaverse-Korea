@@ -58,6 +58,15 @@ export function mats(rows, items, max = MARKET.openMax) {
   return [...out.values()];
 }
 
+// Where each seller's things lie (Yozi 2026-11-11): the striped stalls round
+// the plaza first, then the mats in the middle. The server sends sellers
+// freshest first, so the stalls go to whoever was in the game last. Same
+// rules either way: a stall is only a nicer place to show the same listing.
+// [{ m, stall: index into stalls, or mat: index into the mat spots }].
+export function layout(list, stalls, spots) {
+  return (list || []).slice(0, stalls + spots).map((m, i) => (i < stalls ? { m, stall: i } : { m, mat: i - stalls }));
+}
+
 // Things from my mat that sold since I last looked: [{ id, item, got }].
 export function newlySold(rows, storage = globalThis.localStorage) {
   let seen = [];
