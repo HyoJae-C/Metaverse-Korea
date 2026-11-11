@@ -119,7 +119,7 @@ export const ANIMAL_LOOKS = [
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
-// The pendant charms (Sunra Silver Studio): five shapes (moon, plum blossom,
+// The pendant charms (Gahoe Silver Studio, Bukchon): five shapes (moon, plum blossom,
 // heart, star, butterfly) or a
 // round tag engraved with a word Koreans wish on, the Hangul large and its
 // hanja small under it (Yozi: Hangul first). A fixed list
@@ -201,7 +201,7 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
-    // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
+    // Necklaces from Gahoe Silver Studio (Bukchon):
     // a fine chain with a charm: a moon, a plum blossom, or a round tag
     // engraved with a hanja word (PENDANT_CHARMS).
     ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.letter, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),

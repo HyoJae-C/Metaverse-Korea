@@ -3,7 +3,7 @@
 //                       the Open House, the magpie's persimmons, the welcome)
 //   views(book):        the photo spots: which ones you have
 //   craft(kind):        the workshops (Maeum Knot Studio, Saekji Paper
-//                       Studio, and Sunra Silver Studio on Seosunra-gil):
+//                       Studio, and Gahoe Silver Studio):
 //                       pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
@@ -37,9 +37,9 @@ export const BK_TEXT = {
   poor: { en: 'Not enough money: it costs 🪙 {n}.', ko: '돈이 부족해요. 🪙 {n}이 필요해요.', ja: 'お金が足りません。🪙 {n} 必要です。', zh: '钱不够，需要 🪙 {n}。' },
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
-  // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
+  // Gahoe Silver Studio (Bukchon): the necklace is a wearable accessory.
   pendant: { en: 'Make a necklace', ko: '목걸이 만들기', ja: 'ネックレスを作る', zh: '做一条项链' },
-  pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm, or a Korean word to engrave (its hanja goes under it); the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양, 또는 새길 글자를 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフ、または刻む言葉（ハングルと漢字）を選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，或要刻的字（韩文和汉字），工匠会陪你一起切割、打磨、抛光。' },
+  pendantHow: { en: 'Seoul\'s jewellery quarter is just south, round Jongno 3-ga, and here in Bukchon you can make your own piece. Pick the metal, then a charm or a Korean word to engrave (its hanja goes under it); the craftsman saws, files and polishes it with you.', ko: '서울의 귀금속 골목은 바로 남쪽 종로3가 일대예요. 여기 북촌 공방에서는 직접 장신구를 만들 수 있어요. 금속을 고르고, 모양이나 새길 글자를 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: 'ソウルの貴金属街はすぐ南の鍾路3街一帯。ここ北村の工房では自分でアクセサリーを作れます。金属を選んで、モチーフか刻む言葉（ハングルと漢字）を選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '首尔的首饰街就在南边的钟路3街一带，在北村这家工坊可以亲手做饰品。选好金属，再选造型或要刻的字（韩文和汉字），工匠会陪你一起切割、打磨、抛光。' },
   pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
   pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },
   madeWear: { en: '{icon} You made a {name}! Wear it from your items.', ko: '{icon} {name} 완성! 내 아이템에서 착용할 수 있어요.', ja: '{icon} {name}が完成！アイテムから身につけられます。', zh: '{icon} 做好了{name}！可以在物品里戴上。' },
@@ -60,7 +60,7 @@ export const CRAFT = {
     shapes: [['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['butterfly', '나비', { en: 'Butterflies', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['cloud', '구름', { en: 'Clouds', ko: '구름', ja: '雲', zh: '云纹' }]],
     item: (c, s) => `${c} hanji lantern (${s})`,
   },
-  // Sunra Silver Studio: what you make is worn (an accessory item,
+  // Gahoe Silver Studio: what you make is worn (an accessory item,
   // data/wearables.js acc-pendant-<metal>-<charm>), not put in the bag.
   pendant: {
     icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
