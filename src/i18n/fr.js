@@ -178,6 +178,7 @@ export const FR = {
   'beauty.smallOff': 'Tel quel',
   'beauty.smallOn': 'Plus petit',
   'beauty.own': 'Le mien',
+  'beauty.blush': 'Blush',
   'beauty.cancel': 'Annuler',
   'beauty.save': 'Enregistrer',
   'beauty.pay': 'Enregistrer · 🪙 {coins}',

@@ -4,7 +4,7 @@
 import { t, localName } from '../core/i18n.js';
 import { menuFor, BEAUTY_ICON, beautyCost } from '../core/beauty.js';
 import { PALETTES } from '../data/appearance.js';
-import { LIPSTICK_TEXT, LIPSTICK_USES } from '../core/lipstick.js';
+import { LIPSTICK_TEXT, LIPSTICK_USES, STICKS } from '../core/lipstick.js';
 import { L, fmt } from './pocha-ui.js';
 
 const el = (tag, cls, text) => {
@@ -17,8 +17,8 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 
 export class BeautyUI {
   // onPreview(look): show it; onSave(look, cost): pay, keep, true if paid;
-  // onCancel(): put the old look back; onBuyStick(shade, coins): a lip shop
-  // sells the shade tried on as a lipstick, true if bought.
+  // onCancel(): put the old look back; onBuyStick(kind, shade, coins): a lip
+  // shop sells the shade tried on as a lipstick or blush, true if bought.
   constructor({ root, onPreview, onSave, onCancel, onBuyStick }) {
     Object.assign(this, { root, onPreview, onSave, onCancel, onBuyStick });
   }
@@ -87,6 +87,7 @@ export class BeautyUI {
         tabs.append(b);
       });
       this.root.append(tabs);
+      if (this.menu[0].stick) head.append(el('span', 'beauty-price', fmt(L(LIPSTICK_TEXT.tryFree), { n: LIPSTICK_USES })));
     } else if (this.menu[0].stick) head.append(el('span', 'beauty-price', fmt(L(LIPSTICK_TEXT.tryFree), { n: LIPSTICK_USES })));
     else head.append(el('span', 'beauty-price', `${t('beauty.' + this.menu[0].key)} · 🪙 ${this.menu[0].price}`));
     const o = this.menu[this.tab];
@@ -140,10 +141,13 @@ export class BeautyUI {
     // Lip shops: the colour you're trying is bought as a lipstick (your look
     // goes back until you put it on); "my own" lips are free to go back to.
     const shade = o.stick && this.draft[o.key];
-    const save = el('button', 'primary', shade ? fmt(L(LIPSTICK_TEXT.buy), { n: LIPSTICK_USES, coins: o.price }) : cost ? t('beauty.pay', { coins: cost }) : t('beauty.save'));
+    const save = el('button', 'primary', shade ? fmt(L(LIPSTICK_TEXT.buy), { icon: STICKS[o.stick].icon, n: LIPSTICK_USES, coins: o.price }) : cost ? t('beauty.pay', { coins: cost }) : t('beauty.save'));
     save.onclick = () => {
-      if (shade) { if (this.onBuyStick?.(shade, o.price)) this.close(); return; }
-      if (this.onSave?.(this.draft, cost)) this.root.hidden = true;
+      if (shade) { if (this.onBuyStick?.(o.stick, shade, o.price)) this.close(); return; }
+      // (lip shops: Save only takes colours off; a colour tried in the other
+      // tab is never kept for free)
+      const keep = this.menu.some((m) => m.stick) ? { ...this.from, ...Object.fromEntries(this.menu.filter((m) => m.stick && !this.draft[m.key]).map((m) => [m.key, null])) } : this.draft;
+      if (this.onSave?.(keep, cost)) this.root.hidden = true;
     };
     const actions = el('div', 'order-actions');
     actions.append(cancel, save);

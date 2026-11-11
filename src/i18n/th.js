@@ -178,6 +178,7 @@ export const TH = {
   'beauty.smallOff': 'แบบเดิม',
   'beauty.smallOn': 'เล็กลง',
   'beauty.own': 'ของฉันเอง',
+  'beauty.blush': 'บลัชออน',
   'beauty.cancel': 'ยกเลิก',
   'beauty.save': 'บันทึก',
   'beauty.pay': 'บันทึก · 🪙 {coins}',

@@ -178,6 +178,7 @@ export const ID = {
   'beauty.smallOff': 'Apa adanya',
   'beauty.smallOn': 'Lebih kecil',
   'beauty.own': 'Punyaku',
+  'beauty.blush': 'Perona pipi',
   'beauty.cancel': 'Batal',
   'beauty.save': 'Simpan',
   'beauty.pay': 'Simpan · 🪙 {coins}',

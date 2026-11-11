@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
-import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
+import { buildBlush, buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
 import { skirtById } from '../data/skirts.js';
@@ -392,7 +392,18 @@ function headFacts(id, geo) {
   bald.boundingSphere = geo.boundingSphere;
   const eyes = [];
   for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) eyes.push(i);
-  const info = { ey, mouth, bald, eyes, shaped: new Map() };
+  // The cheeks (blush): out from under each eye, halfway down to the mouth,
+  // on the face's surface there.
+  let ex = 0;
+  for (const i of eyes) ex += Math.abs(pos.getX(i));
+  ex = eyes.length ? ex / eyes.length : 0.3;
+  const cheeks = [-1, 1].map((sd) => {
+    const cx = sd * ex * 1.25, cy = (ey + mouth.y) / 2 - 0.04;
+    let cz = -Infinity;
+    for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getX(i) - cx) < 0.1 && Math.abs(pos.getY(i) - cy) < 0.1) cz = Math.max(cz, pos.getZ(i));
+    return new THREE.Vector3(cx, cy, Number.isFinite(cz) ? cz : mouth.z - 0.1);
+  });
+  const info = { ey, mouth, bald, eyes, cheeks, shaped: new Map() };
   headInfo.set(id, info);
   return info;
 }
@@ -474,6 +485,7 @@ function faceExtras(id, headMesh, headBone, look) {
   if (look.lip && PALETTES.lip[look.lip] != null) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
+  if (look.blush && PALETTES.blush[look.blush] != null) extras.add(buildBlush(PALETTES.blush[look.blush], facts.cheeks));
   headBone.add(extras);
   return hair;
 }
@@ -693,7 +705,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   }
 
   let styledHair = null; // (setWind blows its locks back)
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.blush || look.eyeShape)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)

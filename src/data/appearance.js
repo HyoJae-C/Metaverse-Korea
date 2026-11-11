@@ -76,6 +76,8 @@ export const PALETTES = {
     mint: 0x7fdcb0, matcha: 0x8db255, emerald: 0x1f9e6e, olive: 0x6b7a2f, forest: 0x2f6b3f,
     ice: 0xb8d9f0, sky: 0x7fb8f0, teal: 0x2a9a9a, cobalt: 0x2f5fd6, navy: 0x2b3f7a,
   },
+  // Blush (볼 터치) from the lip shops' second tab (core/lipstick.js).
+  blush: { peach: 0xffa98a, coral: 0xff7f73, rose: 0xf07f9a, pink: 0xff94c2, berry: 0xd2607f, lilac: 0xc79be6 },
   // Hat colours from the hat workshop.
   hat: {
     butter: 0xffd36e, sky: 0x86b8f0, coral: 0xff9b85, mint: 0x8fd3c7, lilac: 0xb9a6f0,
@@ -193,6 +195,7 @@ export const DEFAULT_LOOK = {
   hatColor: null, hatPatch: null, // set in the hat workshop
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip
+  blush: null, // blush from the lip shops
   eyeShape: null, // cosmetic clinics
   eyes: null, tone: null, small: false, // clinic
   tee: null, // printed T-shirt (an item from the bag)
@@ -237,6 +240,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.hairStyle === 'string' && HAIR_STYLES.includes(raw.hairStyle)) look.hairStyle = raw.hairStyle;
   if (typeof raw.eyeShape === 'string' && EYE_SHAPE_IDS.includes(raw.eyeShape)) look.eyeShape = raw.eyeShape;
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
+  if (typeof raw.blush === 'string' && Object.hasOwn(PALETTES.blush, raw.blush)) look.blush = raw.blush;
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
   // Head size: 'small' or 'big' (true: an older save's small head).

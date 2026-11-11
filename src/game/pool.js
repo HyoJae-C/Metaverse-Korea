@@ -32,7 +32,7 @@ export function createPool(game) {
   };
   const wearingSwim = () => typeof game.currentLook?.model === 'string' && game.currentLook.model.startsWith('swim-');
   function wearSwim(id) {
-    const keep = { hair: game.myLook.hair, skin: game.myLook.skin, shirt: game.myLook.shirt, pants: game.myLook.pants, dye: game.myLook.dye, hairStyle: game.myLook.hairStyle, eyeShape: game.myLook.eyeShape, lip: game.myLook.lip, eyes: game.myLook.eyes, tone: game.myLook.tone, small: game.myLook.small, emblem: game.myLook.emblem, nameColor: game.myLook.nameColor, op: game.myLook.op };
+    const keep = { hair: game.myLook.hair, skin: game.myLook.skin, shirt: game.myLook.shirt, pants: game.myLook.pants, dye: game.myLook.dye, hairStyle: game.myLook.hairStyle, eyeShape: game.myLook.eyeShape, lip: game.myLook.lip, blush: game.myLook.blush, eyes: game.myLook.eyes, tone: game.myLook.tone, small: game.myLook.small, emblem: game.myLook.emblem, nameColor: game.myLook.nameColor, op: game.myLook.op };
     setLook({ ...keep, model: id }); // no hat, glasses or bag in the water; the cap covers the hair
     $('revert-look').hidden = true;
     game.action = STALE;

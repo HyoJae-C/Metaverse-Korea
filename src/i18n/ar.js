@@ -178,6 +178,7 @@ export const AR = {
   'beauty.smallOff': 'كما هو',
   'beauty.smallOn': 'أصغر',
   'beauty.own': 'الأصلي',
+  'beauty.blush': 'أحمر الخدود',
   'beauty.cancel': 'إلغاء',
   'beauty.save': 'حفظ',
   'beauty.pay': 'حفظ · 🪙 {coins}',
