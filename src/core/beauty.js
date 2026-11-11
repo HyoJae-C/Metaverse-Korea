@@ -4,6 +4,7 @@
 // "the model's own" (free to go back to). You pay once for each field you
 // change. Choices: a fixed list of ids (labels in i18n), or a palette.
 import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
+import { LIPSTICK_PRICE, lipPrice } from './lipstick.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
@@ -19,7 +20,9 @@ export const CLINIC2 = [
   { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50000, label: 'eyeShape' },
 ];
 export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
-export const LIPS = [{ key: 'lip', palette: 'lip', price: 15000 }]; // lip tint
+// Lip shops: trying colours on is free; you buy a lipstick (core/lipstick.js)
+// to really wear one, so the mirror charges nothing (stick).
+export const LIPS = [{ key: 'lip', palette: 'lip', price: LIPSTICK_PRICE, stick: true }];
 export const MENUS = { salon: SALON, clinic: CLINIC, clinic2: CLINIC2, lens: LENS, lips: LIPS };
 export const BEAUTY_SHOPS = Object.keys(MENUS);
 // Every salon does the basic cuts; each one also has its own concept with a
@@ -33,7 +36,7 @@ export function salonStyles(store) {
 // palette to those shades); a salon its signature styles and the basics.
 export function menuFor(kind, store) {
   const fam = kind === 'lips' && LIP_FAMILIES[store?.lipFamily || 'mixed'];
-  if (fam) return MENUS.lips.map((o) => ({ ...o, only: fam }));
+  if (fam) return MENUS.lips.map((o) => ({ ...o, only: fam, price: lipPrice(store) }));
   if (kind === 'salon' && store?.hairStyles?.length) {
     return SALON.map((o) => (o.key === 'hairStyle' ? { ...o, choices: salonStyles(store), signature: store.hairStyles } : o));
   }
@@ -48,6 +51,7 @@ const val = (look, key) => look?.[key] || null; // false (no head size change) =
 export function beautyCost(menu, from, to) {
   let n = 0;
   for (const o of menu) {
+    if (o.stick) continue; // (paid for with a lipstick, not at the mirror)
     const a = o.toggle ? !!val(from, o.key) : val(from, o.key);
     const b = o.toggle ? !!val(to, o.key) : val(to, o.key);
     if (a !== b && (o.toggle ? b : b !== null)) n += o.price; // going back to your own is free

@@ -8,11 +8,19 @@
 //   { kind: 'umbrella' }
 //   { kind: 'duckmold' } (the snow duck maker, given when it first snows)
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
+//   { kind: 'lipstick', c: '<lip shade>', sips: 1-5 (uses left) } (core/lipstick.js)
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
+
+import { lipstickEntry } from './lipstick.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
 export const MAX_CAP = 60;
+// Perfume and lipstick live in the wardrobe, not in the bag's slots: kept
+// apart in `vanity` (up to VANITY_MAX), saved with the bag.
+export const COSMETICS = ['perfume', 'lipstick'];
+export const VANITY_MAX = 60;
+export const isCosmetic = (e) => COSMETICS.includes(e?.kind);
 
 // A carried thing (kind 'gift'). Homemade goods also keep what they are
 // (g, e.g. 'kimchi') and how well they were made (q, 0-100), so they can be
@@ -37,6 +45,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
     const sips = Math.min(maxSprays, e.sips | 0);
     return sips > 0 && typeof e.p === 'string' && isPerfume(e.p) ? { kind: 'perfume', p: e.p, sips, name: String(e.name || '').slice(0, 60) } : null;
   }
+  if (e.kind === 'lipstick') return lipstickEntry(e);
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);
@@ -57,9 +66,12 @@ export class Bag {
     try { raw = JSON.parse(storage?.getItem(BAG_KEY) || 'null'); } catch { /* broken save */ }
     const cap = Number.isFinite(raw?.cap) ? raw.cap | 0 : BASE_CAP;
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
-    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(Boolean)
+    this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter((e) => e && !isCosmetic(e))
       .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
       .slice(0, this.cap);
+    // (old saves kept perfume in a slot: it moves to the wardrobe)
+    const old = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic);
+    this.vanity = [...old, ...(Array.isArray(raw?.vanity) ? raw.vanity : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic)].slice(0, VANITY_MAX);
     this.listeners = [];
   }
 
@@ -73,6 +85,7 @@ export class Bag {
   // item the bag can hold.
   add(entry) {
     const e = cleanEntry(entry, this.opts);
+    if (e && isCosmetic(e)) return this.addVanity(e);
     if (!e || this.full) return false;
     if (e.kind === 'umbrella' && this.has('umbrella')) return false; // one is enough
     if (e.kind === 'book' && this.has('book')) return false; // one library book out at a time
@@ -103,8 +116,34 @@ export class Bag {
   swap(i, entry) {
     const e = cleanEntry(entry, this.opts);
     if (!e || !(i >= 0 && i < this.items.length)) return null;
+    if (isCosmetic(e)) { // (it goes to the wardrobe; the slot's thing comes out)
+      if (this.vanity.length >= VANITY_MAX) return null;
+      this.vanity.push(e);
+      return this.take(i);
+    }
     const old = this.items[i];
     this.items[i] = e;
+    this._save();
+    return old;
+  }
+
+  // The wardrobe's perfume and lipsticks.
+  vanityList() { return this.vanity.slice(); }
+  addVanity(entry) {
+    const e = cleanEntry(entry, this.opts);
+    if (!isCosmetic(e) || this.vanity.length >= VANITY_MAX) return false;
+    this.vanity.push(e);
+    this._save();
+    return true;
+  }
+  // Replace wardrobe entry i (after a use), or take it out with null.
+  // Returns what was there.
+  setVanity(i, entry) {
+    if (!(i >= 0 && i < this.vanity.length)) return null;
+    const old = this.vanity[i];
+    const e = entry && cleanEntry(entry, this.opts);
+    if (isCosmetic(e)) this.vanity[i] = e;
+    else this.vanity.splice(i, 1);
     this._save();
     return old;
   }
@@ -117,7 +156,7 @@ export class Bag {
   }
 
   _save() {
-    try { this.storage?.setItem(BAG_KEY, JSON.stringify({ cap: this.cap, items: this.items })); } catch { /* storage blocked */ }
+    try { this.storage?.setItem(BAG_KEY, JSON.stringify({ cap: this.cap, items: this.items, vanity: this.vanity })); } catch { /* storage blocked */ }
     for (const fn of this.listeners) fn(this);
   }
 }

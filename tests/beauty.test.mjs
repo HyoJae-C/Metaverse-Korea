@@ -17,7 +17,7 @@ test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(CLINIC, { small: false }, { small: false }), 0);
   assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50000);
   assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25000);
-  assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 15000);
+  assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 0); // the mirror is a free tester: you buy a lipstick (core/lipstick.js)
 });
 
 test('thirty-three hairstyles, ten lip tints, fourteen lens colours, two eye shapes per clinic', () => {
