@@ -1,6 +1,8 @@
 // Emote wheel: one 😊 button. Press and drag onto a petal, then let go to
 // send it; or tap to open the wheel and tap a petal. Keys 1–9 also work.
-import { ownedPacks } from '../data/emotes.js';
+// In some rooms a few petals change to suit the place (data/emotes.js
+// ROOM_EMOTES; game.room(): the room's store.workshop, or null outside).
+import { ownedPacks, emoteIn } from '../data/emotes.js';
 import { showBubble } from '../core/players.js';
 
 export function createEmoteWheel(game) {
@@ -9,7 +11,9 @@ export function createEmoteWheel(game) {
   const emoteList = ownedPacks().flatMap((pack) => pack.emotes);
   $('keys-emote-range').textContent = `1–${Math.min(9, emoteList.length)}`;
   $('keys-emote-range').closest('li').hidden = !emoteList.length;
-  function sendEmote(em) {
+  const here = (em) => emoteIn(game.room?.(), em);
+  function sendEmote(slot) {
+    const em = here(slot);
     missionEvent('emote');
     if (game.onSquare()) missionEvent('squareEmote');
     if (em.anim) game.me.play(em.anim);
@@ -34,7 +38,10 @@ export function createEmoteWheel(game) {
     return b;
   });
   let wheelOpen = false, dragHot = null, dragStart = null;
-  function openWheel() { wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open'); }
+  function openWheel() {
+    petals.forEach((b, i) => { const em = here(emoteList[i]); b.textContent = em.emoji; b.setAttribute('aria-label', em.id); });
+    wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open');
+  }
   function closeWheel() {
     wheelOpen = false; emoteBar.hidden = true; $('emote-wheel').classList.remove('open');
     petals.forEach((p) => p.classList.remove('hot'));
