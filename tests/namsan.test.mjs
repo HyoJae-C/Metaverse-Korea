@@ -62,3 +62,30 @@ test('the cable runs up to the real upper station, over the trees', () => {
     assert.ok(y - namsanGround(hill, cable.x + x - hill.x, cable.z + z - hill.z) >= 8, `pylon ${i} high enough`);
   }
 });
+
+test('the hill\'s foot follows the real Namsan outline at 1/4 and keeps off the roads', () => {
+  const real = JSON.parse(readFileSync(new URL('../scripts/data/namsan-outline-osm.json', import.meta.url), 'utf8'));
+  assert.match(real.license, /OpenStreetMap contributors/);
+  assert.ok(Array.isArray(hill.rad) && hill.rad.length >= 60, 'the foot is the real outline (radii round the top)');
+  // The foot's ring, in world metres, is near the real wood's edge on most of its way round.
+  const park = real.park.map((p) => toGame(...p));
+  const top = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const ring = hill.rad.map((r, i) => { const a = (i / hill.rad.length) * Math.PI * 2; return [top[0] + Math.cos(a) * r, top[1] + Math.sin(a) * r]; });
+  const off = ring.map((p) => segDist(p, park)).sort((a, b) => a - b);
+  assert.ok(off[off.length >> 1] < 25, `median ${Math.round(off[off.length >> 1])} m off the real edge`);
+  // No road of the district runs over the hill (the trails up it aside).
+  for (const r of itaewon.roads) {
+    if (r.nw || r.n?.en === 'Namsan trail') continue;
+    for (const [x, z] of r.p) assert.ok(!onNamsan(hill, x - hill.x, z - hill.z), `${r.n?.en} on the hill`);
+  }
+});
+
+test('the Namsan trail runs from Sowol-ro up to beside the tower', () => {
+  if (!hill.trail) return;
+  const road = itaewon.roads.find((r) => r.nw);
+  assert.ok(road && road.k === 'walk', 'on the map as a walk');
+  const top = hill.trail.at(-1);
+  assert.ok(Math.hypot(top[0] - hill.px, top[1] - hill.pz) < 30, 'its top is by the tower');
+  const sowol = itaewon.roads.find((r) => r.n?.en === 'Sowol-ro');
+  assert.ok(segDist(road.p[0], sowol.p) <= sowol.w / 2 + 1, 'it starts on Sowol-ro');
+});

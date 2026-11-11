@@ -455,6 +455,8 @@ export const VI = {
   'hud.signsOff': 'Biển hiệu tiếng Hàn',
   'hud.bike': 'Phương tiện',
   'stairs.noBike': "🚲 Không đi xe xuống cầu thang được. Bấm Phương tiện để xuống xe rồi đi bộ xuống.",
+  'namsan.up': "Đi tiếp lên quảng trường đỉnh núi",
+  'namsan.down': "Đi xuống theo đường mòn Namsan",
   'bike.offShort': 'Xuống xe',
   'bike.off': 'Xuống xe đạp',
   'car.off': 'Xuống ô tô',

@@ -452,6 +452,8 @@ export const KO = {
   'hud.signsOff': '간판 한국어로 보기',
   'hud.bike': '탈것',
   'stairs.noBike': "🚲 계단은 탈것으로 못 내려가요. 탈것 버튼을 눌러 내린 뒤 걸어 내려가요.",
+  'namsan.up': "정상 광장으로 올라가기",
+  'namsan.down': "남산 산책로로 내려가기",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',
   'car.off': '차에서 내리기',

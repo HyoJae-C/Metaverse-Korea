@@ -451,6 +451,8 @@ export const EN = {
   'hud.signsOff': 'Signs in Korean',
   'hud.bike': 'Vehicle',
   'stairs.noBike': "🚲 No bikes on the stairs. Tap Vehicle to get off, then walk down.",
+  'namsan.up': "Walk on to the summit plaza",
+  'namsan.down': "Walk down the Namsan trail",
   'bike.offShort': 'Get off',
   'bike.off': 'Get off the bike',
   'car.off': 'Get out of the car',
