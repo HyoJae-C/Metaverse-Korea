@@ -49,12 +49,24 @@ export function createSubway(stations, game) {
     return { store: stationStores[s], door: { x: out.x, z: out.z }, group: { rotation: { y: out.ry } }, subwayExit: [s, i] };
   }
   let subwayCool = 0; // a moment after arriving, so you don't bounce straight back
+  let stationLoading = false; // the rooms' code is still coming (the first room of the visit)
   function enterStation(s, i) {
-    game.enterStore(exitFront(s, i));
-    const st = game.interior.subway.stairs[i];
-    game.moveMeTo(game.interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
-    flashFade();
-    subwayCool = 0.6;
+    if (stationLoading) return;
+    // When the station is the first room walked into, enterStore downloads
+    // the rooms first and returns a promise: wait for it, or the hall isn't
+    // there yet (you'd land by its far wall, past the gates, and walk
+    // straight onto a train).
+    const r = game.enterStore(exitFront(s, i));
+    const arrive = () => {
+      if (!game.interior?.subway) return;
+      const st = game.interior.subway.stairs[i];
+      game.moveMeTo(game.interior.scene, st.arrive.x, st.arrive.z, st.arrive.ry);
+      flashFade();
+      subwayCool = 0.6;
+    };
+    if (!r?.then) { arrive(); return; }
+    stationLoading = true;
+    r.then(arrive).finally(() => { stationLoading = false; });
   }
   function leaveStation(i) {
     const s = stationStores.indexOf(game.interior.store);
