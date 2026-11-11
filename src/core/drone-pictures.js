@@ -609,6 +609,167 @@ export const PICTURES = {
     }
     circle(c, x, y, R * 0.12); fill(c, '#ffffff');
   } },
+
+  // ---- routine 2 (Yozi 2026-11-12) ----
+  // The Taegeukgi: white field, the red-and-blue taegeuk, the four
+  // trigrams (건 ☰ top left, 감 ☵ top right, 리 ☲ bottom left, 곤 ☷ bottom
+  // right) cut out of the white so they read dark. It waves.
+  taegukgi: { layers: 1, dens: [0.9], draw(c) {
+    c.beginPath(); c.rect(-12, -8, 24, 16); fill(c, '#ffffff');
+    const th = Math.atan2(16, 24);
+    c.save(); c.rotate(-th); // the divide runs along the 건-곤 diagonal
+    circle(c, 0, 0, 4); fill(c, '#2f5bd8');
+    c.beginPath(); c.arc(0, 0, 4, 0, Math.PI); c.closePath(); fill(c, '#ff3048');
+    circle(c, -2, 0, 2); fill(c, '#ff3048');
+    circle(c, 2, 0, 2); fill(c, '#2f5bd8');
+    c.restore();
+    c.save(); c.globalCompositeOperation = 'destination-out';
+    const tri = (sx, sy, bars) => { // bars from the inside out: 1 solid, 0 broken
+      const ux = sx * Math.cos(th), uy = sy * Math.sin(th), d0 = 6.0;
+      bars.forEach((b, i) => {
+        const d = d0 + i * 1.0, cx = ux * d, cy = uy * d, a = Math.atan2(uy, ux) + Math.PI / 2;
+        c.save(); c.translate(cx, cy); c.rotate(a);
+        if (b) { c.beginPath(); c.rect(-2, -0.33, 4, 0.66); fill(c, '#000'); }
+        else { c.beginPath(); c.rect(-2, -0.33, 1.75, 0.66); c.rect(0.25, -0.33, 1.75, 0.66); fill(c, '#000'); }
+        c.restore();
+      });
+    };
+    tri(-1, 1, [1, 1, 1]); tri(1, -1, [0, 0, 0]); tri(1, 1, [0, 1, 0]); tri(-1, -1, [1, 0, 1]);
+    c.restore();
+  } },
+
+  // A Korean tiger's face: orange fur, white cheeks and brows, stripes cut
+  // out, round ears, gold eyes, a pink nose.
+  tiger: { layers: 1, draw(c) {
+    for (const sx of [-1, 1]) { circle(c, sx * 6.2, 6.6, 2.6); fill(c, '#ff9a2e'); circle(c, sx * 6.2, 6.6, 1.4); fill(c, '#fff0dc'); }
+    c.beginPath(); c.moveTo(0, 8.4); c.bezierCurveTo(7.6, 8.4, 9.6, 3, 9.0, -1.6); c.bezierCurveTo(8.4, -6.6, 4, -8.4, 0, -8.4);
+    c.bezierCurveTo(-4, -8.4, -8.4, -6.6, -9.0, -1.6); c.bezierCurveTo(-9.6, 3, -7.6, 8.4, 0, 8.4); c.closePath();
+    fill(c, radial(c, 0, 2, 1, 10, ['#ffc04a', '#ff9a2e', '#f07a18']));
+    for (const sx of [-1, 1]) { oval(c, sx * 2.6, -3.6, 3.4, 2.8); fill(c, '#fff6ea'); } // the cheeks
+    oval(c, 0, -6.2, 2.2, 1.4); fill(c, '#fff6ea'); // the chin
+    for (const sx of [-1, 1]) { oval(c, sx * 3.2, 2.4, 1.9, 1.0, sx * 0.2); fill(c, '#fff6ea'); } // white brows
+    c.save(); c.globalCompositeOperation = 'destination-out';
+    const stripe = (pts, w) => { c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const q of pts.slice(1)) c.lineTo(q[0], q[1]); c.lineWidth = w; c.strokeStyle = '#000'; c.stroke(); };
+    stripe([[0, 8.2], [0, 6.0]], 0.7); stripe([[-1.6, 8.0], [-1.0, 6.2]], 0.55); stripe([[1.6, 8.0], [1.0, 6.2]], 0.55); // the 王 stripes on the brow
+    stripe([[-1.2, 5.2], [1.2, 5.2]], 0.5);
+    for (const sx of [-1, 1]) {
+      for (let k = 0; k < 3; k++) stripe([[sx * 9.2, 2.6 - k * 2.2], [sx * (6.6 - k * 0.3), 1.8 - k * 2.2]], 0.6);
+    }
+    c.restore();
+    for (const sx of [-1, 1]) { oval(c, sx * 3.2, 0.6, 1.25, 1.0); fill(c, '#ffe14a'); circle(c, sx * 3.2, 0.5, 0.55); fill(c, '#3a2410'); circle(c, sx * 3.0, 0.8, 0.22); fill(c, '#ffffff'); }
+    path(c, [[-1.4, -1.6], [1.4, -1.6], [0, -3.0]]); fill(c, '#ff7a9a'); // the nose
+    c.beginPath(); c.moveTo(0, -3.0); c.lineTo(0, -4.0); c.moveTo(-1.8, -4.6); c.quadraticCurveTo(-0.8, -3.6, 0, -4.0); c.quadraticCurveTo(0.8, -3.6, 1.8, -4.6); line(c, '#e86a3a', 0.3);
+    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) seg(c, [sx * 4.6, -3.2 - k * 0.6], [sx * 8.2, -2.6 - k * 1.0], '#ffffff', 0.14); // whiskers
+  } },
+
+  // A magpie (까치), the bird of good news, on a pine branch: blue-black
+  // head and back, white belly and wing patch, a long tail (part 1: it bobs).
+  magpie: { layers: 2, dens: [1, 1.1], draw(c, l) {
+    if (l === 0) {
+      c.beginPath(); c.moveTo(-13, -4.6); c.quadraticCurveTo(0, -3.0, 13, -6.4); line(c, '#b07a4a', 0.9);
+      for (const [x, y] of [[-9, -4.0], [-2, -3.5], [8, -5.0]]) {
+        for (let k = 0; k < 9; k++) { const a = -0.3 + (k / 8) * (Math.PI + 0.6); seg(c, [x, y], [x + Math.cos(a) * 2.2, y + Math.sin(a) * 2.0], '#3fcf6a', 0.2); }
+      }
+      return;
+    }
+    // the tail
+    path(c, [[1.6, -1.4], [11.6, -7.0], [12.4, -5.8], [2.6, 0.2]]); fill(c, grad(c, 2, 0, 12, -6, ['#3a5ad8', '#2fb8a8']));
+    // body and belly
+    c.beginPath(); c.moveTo(-6.4, 3.2); c.bezierCurveTo(-4.4, 4.8, 0.6, 3.6, 2.8, 0.2); c.bezierCurveTo(1.6, -2.2, -2.6, -3.4, -5.0, -2.2); c.bezierCurveTo(-6.6, -1.2, -7.2, 1.4, -6.4, 3.2); c.closePath();
+    fill(c, '#2c3c8c');
+    oval(c, -3.6, -0.6, 2.6, 1.9, 0.3); fill(c, '#ffffff');
+    oval(c, 0.2, 1.4, 2.6, 0.9, -0.35); fill(c, '#ffffff'); // the wing patch
+    oval(c, 0.8, 0.8, 2.4, 0.5, -0.4); fill(c, '#4a7cff');
+    circle(c, -6.0, 4.4, 2.0); fill(c, '#2c3c8c'); // the head
+    path(c, [[-7.8, 4.9], [-10.0, 4.3], [-7.8, 3.7]]); fill(c, '#5a6aa8');
+    circle(c, -6.5, 4.9, 0.45); fill(c, '#ffffff'); circle(c, -6.55, 4.9, 0.22); fill(c, '#10183a');
+    seg(c, [-3.6, -2.6], [-3.8, -3.8], '#ffd166', 0.3); seg(c, [-2.4, -2.6], [-2.2, -3.6], '#ffd166', 0.3);
+  } },
+
+  // A Jindo dog sitting, cream-white, pointed ears up (part 1: the curled
+  // tail wags).
+  jindo: { layers: 2, draw(c, l) {
+    if (l === 1) {
+      c.beginPath(); c.moveTo(3.6, -6.6); c.bezierCurveTo(8.6, -6.0, 9.4, -0.6, 6.6, 0.4); c.bezierCurveTo(5.0, 0.9, 4.6, -1.4, 6.0, -2.0); c.bezierCurveTo(6.8, -3.0, 5.6, -4.6, 3.4, -4.4); c.closePath();
+      fill(c, grad(c, 4, -6, 8, 0, ['#f5d9a8', '#fff4e0'])); return;
+    }
+    c.beginPath(); c.moveTo(-2.6, 1.6); c.bezierCurveTo(-5.4, -1, -6.0, -6, -5.0, -9.0); c.lineTo(5.0, -9.0); c.bezierCurveTo(6.0, -6, 5.4, -1, 2.6, 1.6); c.closePath();
+    fill(c, grad(c, 0, 1, 0, -9, ['#fff4e0', '#f5d9a8']));
+    oval(c, 0, -2.6, 2.2, 3.6); fill(c, '#ffffff'); // the chest
+    for (const sx of [-1, 1]) { path(c, [[sx * 1.0, -4.0], [sx * 2.6, -4.0], [sx * 2.6, -9.0], [sx * 0.8, -9.0]]); fill(c, '#fffaf0'); oval(c, sx * 1.8, -9.1, 1.3, 0.6); fill(c, '#ffffff'); }
+    for (const sx of [-1, 1]) { path(c, [[sx * 1.4, 6.8], [sx * 4.4, 9.4], [sx * 4.6, 4.6]]); fill(c, '#f2cf94'); path(c, [[sx * 2.2, 6.4], [sx * 4.0, 8.4], [sx * 4.1, 5.2]]); fill(c, '#ffb3a0'); }
+    oval(c, 0, 4.4, 4.6, 3.8); fill(c, radial(c, -1, 5, 0.5, 5, ['#fffaf0', '#f8e2bc']));
+    oval(c, 0, 2.6, 2.2, 1.6); fill(c, '#ffffff'); // the muzzle
+    oval(c, 0, 3.4, 0.8, 0.55); fill(c, '#5a4a8a'); // the nose
+    c.beginPath(); c.moveTo(0, 2.8); c.lineTo(0, 2.2); c.moveTo(-1.0, 1.9); c.quadraticCurveTo(0, 1.6, 1.0, 1.9); line(c, '#c09070', 0.18);
+    oval(c, 0.4, 1.4, 0.5, 0.7); fill(c, '#ff7a9a'); // the tongue
+    for (const sx of [-1, 1]) { circle(c, sx * 1.9, 5.2, 0.5); fill(c, '#3a2a5a'); circle(c, sx * 1.75, 5.4, 0.18); fill(c, '#ffffff'); }
+  } },
+
+  // A cheese tabby cat sitting (part 1: the tail sways).
+  cat: { layers: 2, draw(c, l) {
+    if (l === 1) {
+      c.beginPath(); c.moveTo(3.4, -8.4); c.bezierCurveTo(9.0, -8.6, 10.4, -3.0, 8.4, 1.0); c.lineTo(7.0, 0.6); c.bezierCurveTo(8.6, -2.6, 7.6, -6.8, 3.4, -6.6); c.closePath();
+      fill(c, '#ffb04a'); return;
+    }
+    c.beginPath(); c.moveTo(-2.4, 1.6); c.bezierCurveTo(-5.6, -1, -6.0, -6.4, -4.6, -9.0); c.lineTo(4.6, -9.0); c.bezierCurveTo(6.0, -6.4, 5.6, -1, 2.4, 1.6); c.closePath();
+    fill(c, grad(c, 0, 1, 0, -9, ['#ffc46a', '#ffa83a']));
+    oval(c, 0, -3.2, 2.0, 3.6); fill(c, '#fff6e6');
+    for (const sx of [-1, 1]) { path(c, [[sx * 0.9, -5.0], [sx * 2.4, -5.0], [sx * 2.4, -9.0], [sx * 0.7, -9.0]]); fill(c, '#ffd08a'); oval(c, sx * 1.6, -9.1, 1.2, 0.55); fill(c, '#fff6e6'); }
+    for (const sx of [-1, 1]) { path(c, [[sx * 1.2, 6.6], [sx * 4.6, 9.6], [sx * 4.4, 4.6]]); fill(c, '#ffa83a'); path(c, [[sx * 2.0, 6.4], [sx * 4.1, 8.5], [sx * 4.0, 5.3]]); fill(c, '#ffb3c0'); }
+    oval(c, 0, 4.2, 4.8, 3.7); fill(c, radial(c, -1, 5, 0.5, 5, ['#ffd08a', '#ffa83a']));
+    c.save(); c.globalCompositeOperation = 'destination-out';
+    for (const x of [-1.2, 0, 1.2]) { c.beginPath(); c.moveTo(x, 7.8); c.lineTo(x * 0.8, 6.4); c.lineWidth = 0.45; c.strokeStyle = '#000'; c.stroke(); }
+    for (const sx of [-1, 1]) for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(sx * 4.8, 4.6 - k * 1.2); c.lineTo(sx * 3.6, 4.4 - k * 1.2); c.lineWidth = 0.4; c.strokeStyle = '#000'; c.stroke(); }
+    for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(-5.4 + k * 0.2, -1.6 - k * 2); c.lineTo(-3.8, -1.2 - k * 2); c.lineWidth = 0.5; c.strokeStyle = '#000'; c.stroke(); }
+    c.restore();
+    oval(c, 0, 2.6, 2.0, 1.3); fill(c, '#fff6e6');
+    path(c, [[-0.5, 3.4], [0.5, 3.4], [0, 2.9]]); fill(c, '#ff7a9a');
+    c.beginPath(); c.moveTo(0, 2.9); c.lineTo(0, 2.4); c.moveTo(-0.9, 2.0); c.quadraticCurveTo(-0.4, 1.9, 0, 2.4); c.quadraticCurveTo(0.4, 1.9, 0.9, 2.0); line(c, '#d08040', 0.16);
+    for (const sx of [-1, 1]) { oval(c, sx * 2.0, 4.8, 0.85, 1.0); fill(c, '#7cf27a'); oval(c, sx * 2.0, 4.8, 0.25, 0.8); fill(c, '#1a3a1a'); circle(c, sx * 1.8, 5.2, 0.2); fill(c, '#ffffff'); }
+    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) seg(c, [sx * 2.0, 2.6 - k * 0.4], [sx * 6.4, 3.0 - k * 0.9], '#ffffff', 0.12);
+  } },
+
+  // Gimbap: a whole roll and three slices showing the fillings.
+  gimbap: { layers: 1, draw(c) {
+    c.save(); c.translate(-1, 5.2); c.rotate(-0.12);
+    c.beginPath(); c.rect(-11, -2.2, 18, 4.4); fill(c, grad(c, 0, 2.2, 0, -2.2, ['#3a8a4a', '#1f5a2a', '#2f7a3a']));
+    for (let x = -10; x < 7; x += 2.4) seg(c, [x, -2.2], [x, 2.2], '#4aa85a', 0.1);
+    oval(c, 7, 0, 1.2, 2.2); fill(c, '#ffffff'); oval(c, 7, 0, 0.6, 1.2); fill(c, '#ffd23a');
+    c.restore();
+    const slice = (x, y) => {
+      circle(c, x, y, 3.6); fill(c, '#2f7a3a');
+      circle(c, x, y, 3.1); fill(c, '#ffffff');
+      for (const [dx, dy, col] of [[-0.9, 0.6, '#ffd23a'], [0.9, 0.6, '#ff8a2a'], [0, -0.9, '#4ad86a'], [-1.0, -0.8, '#ff7aa0'], [1.0, -0.8, '#ffe9a0']]) { circle(c, x + dx, y + dy, 0.75); fill(c, col); }
+      for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU; circle(c, x + Math.cos(a) * 2.3, y + Math.sin(a) * 2.3, 0.18); fill(c, '#f0f0f0'); }
+    };
+    slice(-7.6, -4.4); slice(0, -4.8); slice(7.6, -4.4);
+  } },
+
+  // The moon rabbit sitting on a crescent moon, pounding rice cakes in a
+  // mortar, little stars around (part 1: the arm and mallet go up and down).
+  moonrabbit: { layers: 2, dens: [1, 1.2], draw(c, l) {
+    if (l === 1) {
+      seg(c, [-0.8, 0.4], [2.0, 1.6], '#ffffff', 0.9);
+      seg(c, [2.0, 1.6], [3.2, -0.4], '#e8b878', 0.45);
+      c.save(); c.translate(3.4, -0.8); c.rotate(0.5); c.beginPath(); c.rect(-1.6, -0.6, 3.2, 1.2); fill(c, '#d89a5a'); c.restore();
+      return;
+    }
+    // the crescent, horns up
+    circle(c, 0, 0.6, 8.6); fill(c, radial(c, 0, -5, 1, 10, ['#fff8d8', '#ffe68a', '#ffc94a']));
+    c.save(); c.globalCompositeOperation = 'destination-out'; circle(c, 0, 3.4, 8.0); fill(c, '#000'); c.restore();
+    for (const [x, y, r] of [[-4.4, -5.4, 0.6], [3.6, -5.6, 0.5], [7.2, -2.6, 0.45]]) { circle(c, x, y, r); fill(c, '#f0cf70'); }
+    for (const [x, y, r] of [[-10.6, 7.6, 0.8], [9.4, 8.2, 0.7], [11.6, 2.6, 0.55], [-12.0, 1.0, 0.55], [6.0, 9.0, 0.5]]) sparkle(c, x, y, r, '#fff3c4');
+    // the mortar on the moon
+    path(c, [[1.6, -1.6], [6.0, -1.6], [5.2, -4.6], [2.4, -4.6]]); fill(c, '#b87a3a');
+    oval(c, 3.8, -1.6, 2.2, 0.5); fill(c, '#ffffff');
+    // the rabbit
+    oval(c, -2.6, -2.0, 2.7, 2.9, 0.1); fill(c, '#ffffff');
+    circle(c, -2.4, 2.4, 2.2); fill(c, '#ffffff');
+    for (const [x, a] of [[-3.5, 0.25], [-1.6, -0.12]]) { oval(c, x, 6.0, 0.75, 2.5, a); fill(c, '#ffffff'); oval(c, x, 6.0, 0.36, 1.8, a); fill(c, '#ffb3c8'); }
+    circle(c, -1.5, 2.8, 0.36); fill(c, '#ff6a8a'); circle(c, -0.5, 2.0, 0.28); fill(c, '#ff9ab0');
+    oval(c, -4.0, -4.6, 1.5, 0.7); fill(c, '#ffffff'); circle(c, -5.3, -2.6, 0.9); fill(c, '#ffffff');
+  } },
 };
 
 // The roller coaster's track height at u (the train follows it).

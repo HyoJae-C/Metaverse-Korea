@@ -4,7 +4,7 @@ import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '.
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
@@ -57,7 +57,8 @@ test('the drones fly in front of the bridge, past where the duck boats go', () =
 
 test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
-  const steps = program(DRONE());
+  const R1 = [DRONE(), show.nextDroneShow(DRONE() + 1000)].find((t) => routineOf(t) === 1);
+  const steps = program(R1);
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
   const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
@@ -95,6 +96,47 @@ test('the drone show stamp: on the Ttukseom park lawn, only while the drones are
   assert.equal(STAND_TIMES.droneShow(at(5)), true);
   assert.equal(STAND_TIMES.droneShow(at(-30)), false);
   assert.equal(STAND_TIMES.droneShow(at(-2)), true); // lift-off counts
+});
+
+test('hello in Korean, English, Japanese, Chinese, then one more language each show in turn', () => {
+  useShow(show);
+  const seen = [0, 1, 2, 3, 4, 5, 6].map((k) => helloOf(DRONE(k)));
+  assert.equal(new Set(seen).size, 7);
+  assert.equal(helloOf(DRONE(7)), seen[0]);
+  const words = program(DRONE(3)).filter((s) => s.lines).map((s) => s.lines.join('/'));
+  const i = words.indexOf('안녕하세요');
+  assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
+});
+
+test('the turn of the fifth hello starts with French on 2026-11-12 02:10 KST', () => {
+  useShow(show);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0));
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
+  assert.equal(helloOf(first), 'BONJOUR');
+  assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
+});
+
+test('routines 1 and 2 take turns, routine 2 first; photo pause and end at the same time', () => {
+  useShow(show);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0)); // 2026-11-12 02:10 KST
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
+  const second = show.nextDroneShow(first + 1000);
+  const third = show.nextDroneShow(second + 1000);
+  assert.deepEqual([routineOf(first), routineOf(second), routineOf(third)], [2, 1, 2]);
+  const after = (start) => {
+    const words = program(start).filter((s) => s.lines).map((s) => s.lines.join('/'));
+    const i = words.indexOf('라면');
+    return words.slice(i, i + 3);
+  };
+  assert.deepEqual(after(second), ['라면', '먹고갈래?', '뚝섬에서']);
+  assert.deepEqual(after(first), ['라면', '모두서울', '넌 소중해']);
+  const photo = (start) => program(start).find((s) => s.photo).at;
+  assert.equal(photo(first), PHOTO_TIME[0]);
+  assert.equal(photo(second), PHOTO_TIME[0]);
+  const lastLine = (start) => program(start).at(-2).at;
+  assert.equal(lastLine(first), lastLine(second));
+  const shapes = program(first).filter((s) => s.shape).map((s) => s.shape);
+  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'moonrabbit']) assert.ok(shapes.includes(n), n);
 });
 
 test('every show gets its own number', () => {
