@@ -730,7 +730,7 @@ export const EN = {
   "potato.noref": "{name} was bought before your purchases were saved on the server (or was a gift), so it can't go on a mat. Clothes you buy from now on can.",
   "potato.noReceipt": "no receipt (gift, code or old clothes): can't go on a mat",
   "oldClothes.paid": "Clothes bought before purchases were saved on the server can't be resold, so we took them back: {n} item(s), {won} (twice the price).",
-  "oldClothes.swept": "Clothes with no purchase record (gifts, codes, prizes, the starting outfit) were removed from your closet: {n} item(s). From now on every item keeps its record.",
+  "oldClothes.restored": "Your clothes are back in your closet: {n} item(s). Every piece now has a receipt at its shop price.",
   "oldClothes.bonus": "🎁 The update tidied up items and reset the collections, so here is travel money for the trouble: {won}.",
   "potato.listed": "On your mat! Others can buy it even while you're away.",
   "potato.back": "{name} is back in your closet.",

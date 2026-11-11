@@ -66,18 +66,40 @@ test('before 035 is run nothing changes', async () => {
   assert.equal(storage.getItem(DONE), null);
 });
 
-test('clothes with no receipt leave the closet once; ones with a receipt and non-clothes stay', async () => {
-  const { sweepNoReceipt } = await import('../src/game/old-clothes.js');
-  const { storage, receipts } = setup();
-  const [C] = Object.keys(WEARABLES).filter((id) => WEARABLES[id].price > 0 && id !== A && id !== B);
-  const inventory = inv([A, B, C, 'not-clothes']);
-  const off = [];
-  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage, takeOff: (id) => off.push(id) }), [C]);
-  assert.deepEqual(off, [C]);
-  assert.deepEqual(inventory.list().sort(), [A, B, 'not-clothes'].sort());
-  inventory.add(C);
-  assert.deepEqual(sweepNoReceipt({ inventory, receipts, items: WEARABLES, storage }), [], 'only once');
-  assert.ok(inventory.has(C));
+test('clothes I had get a receipt at the shop price; swept ones come back; asked once', async () => {
+  const { runItemGrants, GRANTS } = await import('../src/game/old-clothes.js');
+  const gsql = readFileSync(new URL('../supabase/038_item_grants.sql', import.meta.url), 'utf8');
+  assert.match(gsql, /\(select -i\.price from public\.item_grants i where i\.op = p_ref and i\.user_id = p_uid\)/);
+  assert.match(gsql, /from public\.saves_backup_20261111 b/);
+  const [C, D] = Object.keys(WEARABLES).filter((id) => WEARABLES[id].price > 0 && id !== A && id !== B);
+  const storage = mem(), receipts = new Receipts(storage);
+  receipts.record(A, 1000, 'aaaaaaaa-0000-4000-8000-000000000000');
+  const s = new Set([A, C]);
+  const inventory = { list: () => [...s], has: (id) => s.has(id), add: (...ids) => ids.filter((id) => !s.has(id) && s.add(id)), remove: (id) => s.delete(id) };
+  const rows = [
+    { item: A, op: '11111111-0000-4000-8000-000000000000', price: 5, restore: false }, // has a real receipt: kept
+    { item: C, op: '22222222-0000-4000-8000-000000000000', price: WEARABLES[C].price, restore: false },
+    { item: D, op: '33333333-0000-4000-8000-000000000000', price: WEARABLES[D].price, restore: true },
+    { item: B, op: '44444444-0000-4000-8000-000000000000', price: WEARABLES[B].price, restore: false }, // not mine any more
+    { item: 'pet-maltese', op: '55555555-0000-4000-8000-000000000000', price: 400000, restore: true }, // not clothes
+  ];
+  let asked = 0, said = '';
+  const w = { server: true, flush: async () => true, client: { rpc: async (fn) => { asked++; assert.equal(fn, 'my_item_grants'); return { data: rows }; } } };
+  assert.equal(await runItemGrants({ wallet: w, inventory, receipts, items: WEARABLES, storage, toast: (m) => { said = m; } }), 1);
+  assert.deepEqual(inventory.list().sort(), [A, C, D].sort());
+  assert.equal(receipts.get(A).op, 'aaaaaaaa-0000-4000-8000-000000000000');
+  assert.deepEqual([receipts.paid(C), receipts.get(C).op], [WEARABLES[C].price, rows[1].op]);
+  assert.deepEqual([receipts.paid(D), receipts.get(D).op], [WEARABLES[D].price, rows[2].op]);
+  assert.equal(receipts.paid(B), 0);
+  assert.ok(said);
+  assert.equal(storage.getItem(GRANTS), '5');
+  assert.equal(await runItemGrants({ wallet: w, inventory, receipts, items: WEARABLES, storage }), null, 'only once');
+  assert.equal(asked, 1);
+  // Before 038 is run: nothing changes, asked again next time.
+  const st2 = mem();
+  const none = { server: true, flush: async () => true, client: { rpc: async () => ({ error: { message: 'no function' } }) } };
+  assert.equal(await runItemGrants({ wallet: none, inventory, receipts, items: WEARABLES, storage: st2 }), null);
+  assert.equal(st2.getItem(GRANTS), null);
 });
 
 test('the update travel money: asked once, paid by the server, never asked again', async () => {

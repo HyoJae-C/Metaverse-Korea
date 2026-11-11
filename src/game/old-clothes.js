@@ -71,20 +71,34 @@ export async function runOldClothes(game) {
   return res.status;
 }
 
-// Clothes with no receipt at all (gifts, code items, prizes, the outfit
-// picked at the start, clothes from before receipts): taken out once, on
-// every device (Yozi, 2026-11-11: "no record, delete it"). What comes later
-// keeps its record (receipts), so this never runs again. Returns the ids
-// taken out.
-export const SWEPT = 'mk.noReceiptSweep';
-export function sweepNoReceipt(game) {
-  const { inventory, receipts, items, storage = globalThis.localStorage } = game;
-  try { if (storage?.getItem(SWEPT)) return []; } catch { return []; }
-  const gone = inventory.list().filter((id) => items[id]?.wear && !(receipts.paid(id) > 0));
-  for (const id of gone) { game.takeOff?.(id); inventory.remove(id); }
-  try { storage?.setItem(SWEPT, String(gone.length)); } catch { /* storage blocked */ }
-  if (gone.length) { game.refreshItems?.(); game.toast?.(t('oldClothes.swept', { n: gone.length })); }
-  return gone;
+// Receipts for the clothes players already had (Yozi, 2026-11-11: instead of
+// taking clothes with no record out of the closet, give them a receipt at
+// their shop price; supabase/038_item_grants.sql). The server made them from
+// the save backup; clothes the old one-time sweep took out after that come
+// back (restore), and so do clothes 035 refunded (039: the money is kept).
+// Once per account; asked again until the server answers.
+// Returns how many came back, or null (offline or 038 not run yet).
+export const GRANTS = 'mk.itemGrants';
+export async function runItemGrants(game) {
+  const { wallet, inventory, receipts, items, storage = globalThis.localStorage } = game;
+  try { if (storage?.getItem(GRANTS)) return null; } catch { return null; }
+  if (!wallet?.server || !wallet.client || !(await wallet.flush())) return null;
+  let rows = null;
+  try {
+    const res = await Promise.race([wallet.client.rpc('my_item_grants'), new Promise((r) => setTimeout(() => r({ error: { message: 'timeout' } }), 8000))]);
+    rows = res?.error ? null : res?.data;
+  } catch { rows = null; }
+  if (!Array.isArray(rows)) return null;
+  let back = 0;
+  for (const r of rows) {
+    const id = r?.item, price = Number(r?.price);
+    if (!items[id]?.wear || !(price > 0) || typeof r.op !== 'string') continue;
+    if (r.restore && !inventory.has(id) && inventory.add(id).length) back++;
+    if (inventory.has(id) && !(receipts.paid(id) > 0)) receipts.record(id, price, r.op, null);
+  }
+  try { storage?.setItem(GRANTS, String(rows.length)); } catch { /* storage blocked */ }
+  if (back) { game.refreshItems?.(); game.toast?.(t('oldClothes.restored', { n: back })); }
+  return back;
 }
 
 // Travel money for accounts made before the server kept purchases (Yozi,
