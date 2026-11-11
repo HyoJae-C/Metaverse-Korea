@@ -112,7 +112,11 @@ export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_S
 // Two routines take turns, one per show (Yozi 2026-11-12): routine 2 at the
 // show of FIRST_HELLO_SHOW, routine 1 at the next. Both have the photo
 // pause at the same time and the same length.
-export const routineOf = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 === 0 ? 2 : 1);
+export const routineTurn = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 === 0 ? 2 : 1);
+// Routine 2 is paused (Yozi 2026-11-12): every show is routine 1 until it
+// is reworked. Set to true to let the two take turns again.
+const ROUTINE_2 = false;
+export const routineOf = (start) => (ROUTINE_2 ? routineTurn(start) : 1);
 
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
@@ -340,7 +344,7 @@ function timed(list) {
   return list.map(([d, s]) => { const step = { at, ...s }; at += d; return step; });
 }
 
-export function program(start) {
+export function program(start, routine = routineOf(start)) {
   const act3 = ACT3[((showNumber(start) % ACT3.length) + ACT3.length) % ACT3.length];
   const next = new Date(nextDroneShow(start + 1000));
   let nextText = '';
@@ -348,7 +352,7 @@ export function program(start) {
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText, helloOf(start), routineOf(start))),
+    ...timed(scenes(act3, nextText, helloOf(start), routine)),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }
