@@ -4088,15 +4088,16 @@ const giftSync = walletReady.then(() => {
 // (game/old-clothes.js runItemGrants, Yozi 2026-11-11). Accounts from before
 // then get travel money once.
 giftSync.then(() => { // (after it: a gift's receipt is in first)
-  let grants, old, bonus;
-  try { grants = wallet.server && !localStorage.getItem('mk.itemGrants'); old = wallet.server && !localStorage.getItem('mk.oldClothes'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); } catch { return; }
-  if (!grants && !old && !bonus) return;
+  let grants, old, bonus, head;
+  try { grants = wallet.server && !localStorage.getItem('mk.itemGrants'); old = wallet.server && !localStorage.getItem('mk.oldClothes'); bonus = wallet.server && !localStorage.getItem('mk.updateBonus'); head = wallet.server && !localStorage.getItem('mk.headRefund'); } catch { return; }
+  if (!grants && !old && !bonus && !head) return;
   const g = { wallet, inventory, receipts, items: ITEMS, toast: (m) => shop.toast(m), takeOff: takeOffItem, refreshWallet,
     refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); } };
   import('./game/old-clothes.js').then(async (m) => {
     if (old) await m.runOldClothes(g).catch(() => {});
     if (grants) await m.runItemGrants(g).catch(() => {}); // (after it: refunded clothes come back too, 039)
     if (bonus) setTimeout(() => m.runUpdateBonus(g).catch(() => {}), 4000); // (after the toasts above)
+    if (head) setTimeout(() => m.runHeadRefund(g).catch(() => {}), 8000); // the clinics' face size, paid back (040)
   }).catch(() => {});
 });
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({

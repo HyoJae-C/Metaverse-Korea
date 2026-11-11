@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
-import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
+import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
 import { skirtById } from '../data/skirts.js';
@@ -219,8 +219,9 @@ function recolor(gltf, rule) {
 // Hair dye, eye colour and skin tone (hair salon, clinic): a copy of the
 // model's material whose atlas has those cells repainted, keeping each cell's
 // light-to-dark shading. One copy per model and combination, shared.
-const SMALL_HEAD = 0.88;
-const BIG_HEAD = 1.12;
+// Every head is this size (the clinics' smaller head, Yozi 2026-11-11): one
+// size for all, so hats, glasses and earrings always sit right.
+const HEAD_SCALE = 0.88;
 // Hanging from the gym's pull-up bar: the body is moved so both hands sit on
 // the bar (2.05 m, minus its radius) whatever the arms are doing.
 const PULLUP = { hang: 0.5, bar: 2.03 };
@@ -392,19 +393,47 @@ function headFacts(id, geo) {
   bald.boundingSphere = geo.boundingSphere;
   const eyes = [];
   for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) eyes.push(i);
-  const info = { ey, mouth, bald, eyes, shaped: new Map() };
+  // The nose: the bump in the middle of the face, between the eyes and mouth.
+  const nose = [];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    if (Math.abs(x) < 0.2 && y > mouth.y + 0.05 && y < ey - 0.02 && z > mouth.z + 0.02 && !is(i, A.eyes)) nose.push(i);
+  }
+  const cx = nose.length ? nose.reduce((a, i) => a + pos.getX(i), 0) / nose.length : 0; // the face's middle
+  const info = { ey, mouth, bald, eyes, nose, cx, shaped: new Map() };
   headInfo.set(id, info);
   return info;
 }
 // The head with its eyes reshaped (clinics): each eye scaled and tilted
 // round its own centre, in the face plane.
-function shapedHead(facts, geo, shape, key) {
+function shapedHead(facts, geo, shape, key, jaw, nose) {
   const tf = EYE_TRANSFORM[shape];
-  if (!tf) return geo;
+  const nf = NOSE_TRANSFORM[nose];
+  if (!tf && !jaw && !nf) return geo;
   if (facts.shaped.has(key)) return facts.shaped.get(key);
   const src = geo.attributes.position;
   const pos = src.clone();
-  for (const side of [-1, 1]) {
+  if (jaw) {
+    const eyeSet = new Set(facts.eyes);
+    const top = facts.ey - 0.25, span = 0.55;
+    for (let i = 0; i < src.count; i++) {
+      const y = src.getY(i), z = src.getZ(i);
+      if (eyeSet.has(i) || y > top || z < -0.35) continue;
+      const t = Math.min(1, (top - y) / span) * Math.min(1, (z + 0.35) / 0.5);
+      const [x2, y2, z2] = jawMove(jaw, src.getX(i) - facts.cx, y, z, t);
+      pos.setXYZ(i, x2 + facts.cx, y2, z2);
+    }
+  }
+  if (nf && facts.nose.length) {
+    let cx = 0, cy = 0, cz = Infinity;
+    for (const i of facts.nose) { cx += src.getX(i); cy += src.getY(i); cz = Math.min(cz, src.getZ(i)); }
+    cx /= facts.nose.length; cy /= facts.nose.length;
+    for (const i of facts.nose) {
+      const dz = src.getZ(i) - cz, up = src.getY(i) - cy;
+      pos.setXYZ(i, cx + (src.getX(i) - cx) * nf.sx, cy + up * nf.sy + dz * nf.lift, cz + dz * nf.sz);
+    }
+  }
+  if (tf) for (const side of [-1, 1]) {
     const ids = facts.eyes.filter((i) => Math.sign(src.getX(i)) === side);
     if (!ids.length) continue;
     let cx = 0, cy = 0;
@@ -418,6 +447,15 @@ function shapedHead(facts, geo, shape, key) {
   }
   const out = new THREE.BufferGeometry();
   for (const [k, attr] of Object.entries(geo.attributes)) out.setAttribute(k, k === 'position' ? pos : attr);
+  if (nf && geo.attributes.normal) { // the nose's normals follow its new proportions
+    const nrm = geo.attributes.normal.clone();
+    const n = new THREE.Vector3();
+    for (const i of facts.nose) {
+      n.fromBufferAttribute(nrm, i).set(n.x / nf.sx, n.y / nf.sy, n.z / nf.sz).normalize();
+      nrm.setXYZ(i, n.x, n.y, n.z);
+    }
+    out.setAttribute('normal', nrm);
+  }
   out.setIndex(geo.index);
   out.boundingBox = geo.boundingBox;
   out.boundingSphere = geo.boundingSphere;
@@ -448,7 +486,7 @@ function faceExtras(id, headMesh, headBone, look) {
   let geo = headMesh.geometry;
   const hair = look.hairStyle && !PACK.models[id]?.hood ? buildHair(look.hairStyle, material, A, facts.ey) : null;
   if (hair) geo = facts.bald;
-  if (look.eyeShape) geo = shapedHead(facts, geo, look.eyeShape, (hair ? 'bald|' : '') + look.eyeShape);
+  if (look.eyeShape || look.jaw || look.nose) geo = shapedHead(facts, geo, look.eyeShape, [hair ? 'bald' : '', look.eyeShape, look.jaw, look.nose].join('|'), look.jaw, look.nose);
   headMesh.geometry = geo;
   if (hair) extras.add(hair); // (the head is whole under its hair: no gap to fill)
   if (look.lip && PALETTES.lip[look.lip] != null) {
@@ -671,7 +709,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   }
 
   let styledHair = null; // (setWind blows its locks back)
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape || look.nose || look.jaw)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
@@ -691,7 +729,6 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   body.visible = false;
   root.add(m);
-  const headScale = look.small === 'big' ? BIG_HEAD : look.small ? SMALL_HEAD : 1;
 
   const bonePose = (pose) => Object.entries(pose || {}).map(([name, r]) => [m.getObjectByName(name), r]).filter(([b]) => b);
   const ridePose = bonePose(PACK.ridePose);
@@ -960,7 +997,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         barbell.quaternion.setFromUnitVectors(_up, _hv3.subVectors(b, a).normalize());
       }
       if (windK > 0.01) blow(dt);
-      if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
+      if (headBone) headBone.scale.setScalar(HEAD_SCALE); // after the clip's pose
     },
   };
 }

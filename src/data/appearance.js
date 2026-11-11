@@ -5,8 +5,9 @@
 //   { shirt, pants, hair, skin, head, face, ear, neck, back }
 // plus shoes and skirt (the shoe and skirt shops),
 // plus hatColor/hatPatch (hat workshop), dye and hairStyle (hair salon), lip
-// (Petal Lip), and eyes, tone and
-// small (clinic: eye colour, skin tone, a smaller head).
+// (Petal Lip), and eyes, tone, eyeShape, nose and jaw (clinics: eye colour,
+// skin tone and the face's shape; the head's size is the same for everyone,
+// so hats and glasses fit).
 // colours are palette ids, accessories are ids or null. One accessory per
 // slot, so at most five at once.
 
@@ -23,6 +24,8 @@ export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'tw
 export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
+export const NOSE_IDS = ['high', 'small'];
+export const JAW_IDS = ['vline', 'round', 'square'];
 
 // Printed T-shirts (drawn in core/tee-prints.js).
 export const TEE_IDS = ['simurugi', 'mongle', 'mandu', 'ddeok'];
@@ -193,8 +196,8 @@ export const DEFAULT_LOOK = {
   hatColor: null, hatPatch: null, // set in the hat workshop
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip
-  eyeShape: null, // cosmetic clinics
-  eyes: null, tone: null, small: false, // clinic
+  eyeShape: null, nose: null, jaw: null, // cosmetic clinics
+  eyes: null, tone: null, // clinic
   tee: null, // printed T-shirt (an item from the bag)
   shoes: null, // shoe colour from the shoe shops
   skirt: null, // a skirt from the skirt shops (data/skirts.js), worn over the trousers
@@ -236,12 +239,11 @@ export function sanitizeLook(raw) {
   if (typeof raw.dye === 'string' && Object.hasOwn(PALETTES.dye, raw.dye)) look.dye = raw.dye;
   if (typeof raw.hairStyle === 'string' && HAIR_STYLES.includes(raw.hairStyle)) look.hairStyle = raw.hairStyle;
   if (typeof raw.eyeShape === 'string' && EYE_SHAPE_IDS.includes(raw.eyeShape)) look.eyeShape = raw.eyeShape;
+  if (typeof raw.nose === 'string' && NOSE_IDS.includes(raw.nose)) look.nose = raw.nose;
+  if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
-  // Head size: 'small' or 'big' (true: an older save's small head).
-  if (raw.small === true || raw.small === 'small') look.small = 'small';
-  else if (raw.small === 'big') look.small = 'big';
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
   if (typeof raw.shoes === 'string' && Object.hasOwn(PALETTES.shoes, raw.shoes)) look.shoes = raw.shoes;
   if (skirtById(raw.skirt)) look.skirt = raw.skirt;

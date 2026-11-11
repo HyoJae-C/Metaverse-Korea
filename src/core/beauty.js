@@ -3,7 +3,7 @@
 // and the lip tint shop (꽃잎 립). Each option is a look field; null means
 // "the model's own" (free to go back to). You pay once for each field you
 // change. Choices: a fixed list of ids (labels in i18n), or a palette.
-import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
+import { HAIR_STYLES, LIP_FAMILIES, NOSE_IDS, JAW_IDS } from '../data/appearance.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
 export const SALON = [
@@ -13,10 +13,11 @@ export const SALON = [
 export const CLINIC = [
   { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50000, label: 'eyeShape' },
   { key: 'tone', palette: 'skin', price: 35000 }, // skin tone
-  { key: 'small', choices: ['small', 'big'], price: 45000, label: 'face' }, // a smaller or bigger head
+  { key: 'nose', choices: NOSE_IDS, price: 40000, label: 'nose' },
 ];
 export const CLINIC2 = [
   { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50000, label: 'eyeShape' },
+  { key: 'jaw', choices: JAW_IDS, price: 50000, label: 'jaw' }, // the jaw line (the head keeps its size)
 ];
 export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
 export const LIPS = [{ key: 'lip', palette: 'lip', price: 15000 }]; // lip tint
@@ -44,13 +45,12 @@ export function menuFor(kind, store) {
 export const isClinic = (kind) => kind === 'clinic' || kind === 'clinic2';
 export const BEAUTY_ICON = { salon: '💇', clinic: '✨', clinic2: '✨', lens: '👁️', lips: '💄' };
 
-const val = (look, key) => look?.[key] || null; // false (no head size change) = own
+const val = (look, key) => look?.[key] || null;
 export function beautyCost(menu, from, to) {
   let n = 0;
   for (const o of menu) {
-    const a = o.toggle ? !!val(from, o.key) : val(from, o.key);
-    const b = o.toggle ? !!val(to, o.key) : val(to, o.key);
-    if (a !== b && (o.toggle ? b : b !== null)) n += o.price; // going back to your own is free
+    const a = val(from, o.key), b = val(to, o.key);
+    if (a !== b && b !== null) n += o.price; // going back to your own is free
   }
   return n;
 }

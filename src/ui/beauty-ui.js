@@ -40,11 +40,9 @@ export class BeautyUI {
     this.onCancel?.();
   }
 
-  // Options of one menu row: null (= my own), the palette keys or choices, or
-  // off/on for a toggle.
+  // Options of one menu row: null (= my own), then the palette keys or choices.
   // A style you already wear from another salon stays on the list (free to keep).
   options(o) {
-    if (o.toggle) return [false, true];
     const list = o.only || o.choices || Object.keys(PALETTES[o.palette]);
     const mine = this.from?.[o.key];
     return mine && o.choices && !list.includes(mine) ? [null, mine, ...list] : [null, ...list];
@@ -54,7 +52,7 @@ export class BeautyUI {
   step(dir) {
     const o = this.menu[this.tab || 0];
     const opts = this.options(o);
-    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] || null;
+    const cur = this.draft[o.key] || null;
     const i = Math.max(0, opts.indexOf(cur));
     this.pick(o, opts[(i + dir + opts.length) % opts.length]);
   }
@@ -87,7 +85,7 @@ export class BeautyUI {
     } else head.append(el('span', 'beauty-price', `${t('beauty.' + this.menu[0].key)} · 🪙 ${this.menu[0].price}`));
     const o = this.menu[this.tab];
     const opts = this.options(o);
-    const cur = o.toggle ? !!this.draft[o.key] : this.draft[o.key] || null;
+    const cur = this.draft[o.key] || null;
     const idx = Math.max(0, opts.indexOf(cur));
     const stepper = el('div', 'beauty-stepper');
     const prev = el('button', 'beauty-arrow', '◀');
@@ -97,12 +95,12 @@ export class BeautyUI {
     prev.onclick = () => this.step(-1);
     next.onclick = () => this.step(1);
     const now = el('div', 'beauty-now');
-    if (!o.toggle && cur !== null && o.palette) {
+    if (cur !== null && o.palette) {
       const dot = el('span', 'beauty-dot');
       dot.style.background = hex(PALETTES[o.palette][cur]);
       now.append(dot);
     }
-    const name = o.toggle ? t(cur ? 'beauty.smallOn' : 'beauty.smallOff') : cur === null ? t('beauty.own') : o.choices ? t(o.label + '.' + cur) : '';
+    const name = cur === null ? t('beauty.own') : o.choices ? t(o.label + '.' + cur) : '';
     if (name) now.append(el('span', null, name));
     const sig = o.signature?.includes(cur); // this salon's own style
     now.append(el('small', null, (sig ? `★ ${t('salon.signature')} · ` : '') + `${idx + 1} / ${opts.length}`));
