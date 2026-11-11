@@ -256,6 +256,33 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.she
 @media (max-width: 700px), (max-height: 500px) {
   html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
 }
+/* The screenshot button (game/screen-shot.js): under the eye, in the empty
+   top-left corner; it stays when the eye hides the rest. */
+.ui-shot {
+  position: absolute; z-index: 5; display: grid; place-items: center;
+  left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+  width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
+  background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
+}
+/* Touch screens (Yozi): 📷 beside the eye, the map button under it. */
+body:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); top: max(12px, env(safe-area-inset-top)); }
+body:not(.in-store) .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) - 2px); top: calc(max(12px, env(safe-area-inset-top)) + 50px); }
+html:not(.ui-hidden) .in-store .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
+html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
+@media (max-height: 500px) {
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
+}
+@media (max-width: 700px) { /* (phones: the pinned notice sits under the minimap; the eye's spot is back when it goes) */
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { display: none; }
+}
+.shot-flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
+.shot-flash.on { animation: shot-flash 0.45s ease-out; }
+@keyframes shot-flash { from { opacity: 0.85; } to { opacity: 0; } }
+.shot-panel { display: grid; gap: 12px; z-index: 12; }
+#hud .shot-panel > .sheet-x:first-child { position: absolute; float: none; margin: 0; top: 8px; right: 8px; }
+.shot-img { display: block; justify-self: center; max-width: 100%; max-height: 56vh; border-radius: 14px; box-shadow: var(--shadow); }
+.shot-actions { display: flex; gap: 10px; }
+.shot-actions > * { flex: 1; margin: 0; display: grid; place-items: center; text-decoration: none; }
 .help {
   position: absolute;
   left: 50%; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px));
@@ -2750,7 +2777,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
    notices) steps aside instead of showing through it, and the chat log moves
    right under the bar, where the keyboard can't cover it. */
 @media (pointer: coarse) {
-  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .corner-map) { visibility: hidden; }
+  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
   html:not(.android) body:has(#hud.chat-open) .tools .tool:not(#chat-btn, #bike-btn) { visibility: hidden; }
   #hud.chat-open .chat-log {
     top: calc(env(safe-area-inset-top, 0px) + 12px + var(--chat-bar-h, 52px) + 8px); bottom: auto;
