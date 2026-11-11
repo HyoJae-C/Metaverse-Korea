@@ -416,6 +416,8 @@ export const ZH = {
   "settings.hideUi": "隐藏按钮 (U)",
   "hideUi.on": "按钮已隐藏。按 U 键或点左上角的 👁️ 即可恢复。",
   "hideUi.onTouch": "按钮已隐藏。点左上角的 👁️ 即可恢复。",
+  "sunset.in": "🌇 还有{n}分钟日落。从这些台阶上能看到太阳落在城山大桥后面。",
+  "sunset.now": "🌇 现在是日落时分：太阳正落到城山大桥后面。",
   "hideUi.hide": "隐藏按钮",
   "settings.minimap": "始终显示小地图（关闭时仅在导航中显示）",
   "hideUi.show": "显示按钮",

@@ -419,6 +419,8 @@ export const ID = {
   "settings.hideUi": "Sembunyikan tombol (U)",
   "hideUi.on": "Tombol disembunyikan. Tekan U atau ketuk 👁️ (kiri atas) untuk menampilkannya lagi.",
   "hideUi.onTouch": "Tombol disembunyikan. Ketuk 👁️ (kiri atas) untuk menampilkannya lagi.",
+  "sunset.in": "🌇 Matahari terbenam dalam {n} menit. Dari tangga ini, matahari terbenam di balik Jembatan Seongsan.",
+  "sunset.now": "🌇 Sekarang matahari terbenam: matahari turun di balik Jembatan Seongsan.",
   "hideUi.hide": "Sembunyikan tombol",
   "settings.minimap": "Peta mini selalu tampil (jika mati, hanya saat dipandu)",
   "hideUi.show": "Tampilkan tombol",

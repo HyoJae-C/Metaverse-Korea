@@ -173,18 +173,19 @@ export function buildHanPark(store, L) {
     for (const sx of [-0.45, 0.45]) { const [qx, qz] = b.at(sx, -0.02), [tx, tz] = b.at(sx, -0.8); seats.push({ x: qx, z: qz, ry: ry + Math.PI, stand: [tx, tz] }); }
   }
 
-  // Stone steps facing the river (Banpo's, for the fountain): long low rows
-  // one behind the other, a seat every metre.
+  // Stone steps facing the river (Banpo's, for the fountain; Mangwon's, turned
+  // to the sunset: `sunset`, game/sunset-spot.js): long low rows one behind
+  // the other, a seat every metre.
   for (const st of L.steps || []) {
     const b = sub(st.x, st.z, st.ry || 0);
     for (let k = 0; k < (st.rows || 3); k++) {
-      const rz = k * 1.4;
+      const rz = k * (st.gap || 1.4); // (a little wider on turned steps: room to stand between rows)
       box(st.w, SEAT_H, 0.55, 0, SEAT_H / 2, rz, '#cfc8bb', b.g);
       box(st.w, 0.04, 0.6, 0, SEAT_H + 0.02, rz, '#e2dccf', b.g);
       blockIn(b, -st.w / 2, rz - 0.3, st.w / 2, rz + 0.3);
       for (let sx = -st.w / 2 + 0.6; sx <= st.w / 2 - 0.6; sx += 1) {
         const [qx, qz] = b.at(sx, rz), [tx, tz] = b.at(sx, rz - 0.75);
-        seats.push({ x: qx, z: qz, ry: (st.ry || 0) + Math.PI, stand: [tx, tz] });
+        seats.push({ x: qx, z: qz, ry: (st.ry || 0) + Math.PI, stand: [tx, tz], sunset: st.sunset || undefined });
       }
     }
   }

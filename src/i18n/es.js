@@ -418,6 +418,8 @@ export const ES = {
   "settings.hideUi": "Ocultar botones (U)",
   "hideUi.on": "Botones ocultos. Pulsa U o toca 👁️ (arriba a la izquierda) para volver a verlos.",
   "hideUi.onTouch": "Botones ocultos. Toca 👁️ (arriba a la izquierda) para volver a verlos.",
+  "sunset.in": "🌇 Atardecer en {n} min. Desde estos escalones, el sol se pone detrás del puente Seongsan.",
+  "sunset.now": "🌇 Ya es el atardecer: el sol se pone detrás del puente Seongsan.",
   "hideUi.hide": "Ocultar botones",
   "settings.minimap": "Minimapa siempre visible (si no, solo al seguir una ruta)",
   "hideUi.show": "Mostrar botones",
