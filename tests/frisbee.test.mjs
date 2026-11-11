@@ -14,6 +14,9 @@ test('only open grass counts: not the path, not under a tree', () => {
   assert.ok(!clearGrass(tree, 4, 6));
   const street = { ...park, blocked: (r) => r.x0 < 0 }; // a street path on the left
   assert.ok(!clearGrass(street, 0.1, 6) && clearGrass(street, 5, 6));
+  // The street parks' blocked (main.js) walks the box's points, as for a mat.
+  const pts = { ...park, blocked: (r) => r.pts.some(([x]) => x < 0) };
+  assert.ok(!clearGrass(pts, 0.1, 6) && clearGrass(pts, 5, 6));
 });
 
 test('a throw lands on the grass, shortened when the lawn ends', () => {
