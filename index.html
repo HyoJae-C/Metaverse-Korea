@@ -498,18 +498,18 @@
     <!-- Settings -->
     <div class="overlay dim" id="settings-panel" hidden>
       <div class="panel small settings-card">
+        <button class="sheet-x settings-x" id="settings-x" aria-label="Close">✕</button>
         <h2 data-i18n="settings.title"></h2>
-        <button class="setting-row" id="news-btn">
-          <span>📢</span><span class="setting-label" data-i18n="news.title"></span><b class="news-new pulse" id="news-dot" hidden>NEW</b><span class="setting-go">›</span>
+        <div class="settings-sub" id="settings-game" hidden>
+          <button class="setting-row settings-back" id="settings-back"><span>‹</span><span class="setting-label" data-i18n="settings.back"></span></button>
+        <button class="setting-row" id="hideui-btn" aria-pressed="false">
+          <span>👁️</span><span class="setting-label" data-i18n="settings.hideUi"></span><span class="switch"></span>
         </button>
-        <button class="setting-row" id="install-btn" hidden>
-          <span>📲</span><span class="setting-label"></span><span class="setting-go">›</span>
+        <button class="setting-row" id="joy-btn" hidden>
+          <span>👆</span><span class="setting-label" data-i18n="settings.joystick"></span><b class="setting-val" id="joy-val"></b>
         </button>
-        <button class="setting-row" id="music-btn" aria-pressed="false">
-          <span>🎵</span><span class="setting-label" data-i18n="hud.music"></span><span class="switch"></span>
-        </button>
-        <button class="setting-row" id="sfx-btn" aria-pressed="true">
-          <span>🔔</span><span class="setting-label" data-i18n="settings.sfx"></span><span class="switch"></span>
+        <button class="setting-row" id="joy-place-btn" hidden>
+          <span>✋</span><span class="setting-label" data-i18n="joy.place"></span><span class="setting-go">›</span>
         </button>
         <button class="setting-row" id="haptics-btn" aria-pressed="true">
           <span>📳</span><span class="setting-label" data-i18n="settings.haptics"></span><span class="switch"></span>
@@ -534,6 +534,23 @@
         </button>
         <button class="setting-row" id="fp-btn" aria-pressed="false">
           <span>🎯</span><span class="setting-label" data-i18n="settings.firstPerson"></span><span class="switch"></span>
+        </button>
+        </div>
+        <div class="settings-sub" id="settings-main">
+        <button class="setting-row" id="news-btn">
+          <span>📢</span><span class="setting-label" data-i18n="news.title"></span><b class="news-new pulse" id="news-dot" hidden>NEW</b><span class="setting-go">›</span>
+        </button>
+        <button class="setting-row" id="game-settings-btn">
+          <span>🎮</span><span class="setting-label" data-i18n="settings.game"></span><span class="setting-go">›</span>
+        </button>
+        <button class="setting-row" id="install-btn" hidden>
+          <span>📲</span><span class="setting-label"></span><span class="setting-go">›</span>
+        </button>
+        <button class="setting-row" id="music-btn" aria-pressed="false">
+          <span>🎵</span><span class="setting-label" data-i18n="hud.music"></span><span class="switch"></span>
+        </button>
+        <button class="setting-row" id="sfx-btn" aria-pressed="true">
+          <span>🔔</span><span class="setting-label" data-i18n="settings.sfx"></span><span class="switch"></span>
         </button>
         <button class="setting-row" id="signs-btn" aria-pressed="false">
           <span>🔤</span><span class="setting-label" data-i18n="settings.signs"></span><span class="switch"></span>
@@ -562,6 +579,7 @@
         <button class="setting-row" id="lang-btn">
           <span>🌐</span><span class="setting-label" data-i18n="lang.change"></span><span class="setting-go">›</span>
         </button>
+        </div>
         <button class="primary" id="settings-close" data-i18n="settings.done"></button>
       </div>
     </div>
