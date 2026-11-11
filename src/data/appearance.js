@@ -119,6 +119,36 @@ export const ANIMAL_LOOKS = [
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
+// The pendant charms (Sunra Silver Studio): a moon, a plum blossom, or a
+// round tag engraved with a hanja word Koreans wish on, the hanja large and
+// its Hangul reading small under it (富貴榮華 is cut two by two). A fixed list
+// (Yozi 2026-11-11), so there is nothing to type and nothing to filter.
+const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${hanja} ${letter} · ${en}`, ko: `${hanja} ${letter}`, ja: `${hanja} ${letter}（${ja}）`, zh: `${hanja} ${letter}（${zh}）` } });
+export const PENDANT_CHARMS = {
+  moon: { emoji: '🌙', name: { en: 'Moon', ko: '달', ja: '月', zh: '月亮' } },
+  plum: { emoji: '🌸', name: { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' } },
+  jeong: wish('情', '정', 'warm heart', '情け', '情谊'),
+  an: wish('安', '안', 'peace', '安らぎ', '平安'),
+  cheong: wish('淸', '청', 'clear', '清らか', '清澈'),
+  jin: wish('眞', '진', 'truth', 'まこと', '真诚'),
+  bok: wish('福', '복', 'luck', '福', '福气'),
+  ae: wish('愛', '애', 'love', '愛', '爱'),
+  hui: wish('喜', '희', 'joy', '喜び', '喜悦'),
+  rak: wish('樂', '락', 'delight', '楽しみ', '快乐'),
+  hwa: wish('和', '화', 'harmony', '和', '和睦'),
+  mong: wish('夢', '몽', 'dream', '夢', '梦想'),
+  sin: wish('信', '신', 'trust', '信頼', '信任'),
+  sim: wish('心', '심', 'heart', '心', '心'),
+  seon: wish('善', '선', 'kindness', '善', '善良'),
+  mi: wish('美', '미', 'beauty', '美', '美丽'),
+  gwang: wish('光', '광', 'light', '光', '光明'),
+  gil: wish('吉', '길', 'good fortune', '吉', '吉祥'),
+  geon: wish('健', '건', 'health', '健やか', '健康'),
+  gyeong: wish('慶', '경', 'celebration', '慶び', '喜庆'),
+  so: wish('笑', '소', 'laughter', '笑い', '欢笑'),
+  bugwi: wish('富貴榮華', '부귀영화', 'wealth and glory', '富貴栄華', '荣华富贵'),
+};
+
 export const ACCESSORIES = {
   head: [
     { id: 'bucket', emoji: '👒', color: 0xffd36e },
@@ -168,8 +198,9 @@ export const ACCESSORIES = {
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
     // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
-    // a fine chain with a charm (charm: moon, plum blossom, or 복 "luck").
-    ...['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, emoji: charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
+    // a fine chain with a charm: a moon, a plum blossom, or a round tag
+    // engraved with a hanja word (PENDANT_CHARMS).
+    ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.hanja, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
   ],
   back: [
     { id: 'backpack', emoji: '🎒', color: 0x8fd3c7 },

@@ -480,6 +480,34 @@ function patchMat(id) {
   return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
+// The engraving on a pendant tag: the hanja large, its Hangul reading small
+// under it, cut darker into the metal (data/appearance.js PENDANT_CHARMS).
+const engraveMats = {};
+function engraveMat(hanja, letter, color) {
+  const key = hanja + letter + color;
+  if (engraveMats[key]) return engraveMats[key];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const ink = '#' + new THREE.Color(color).multiplyScalar(0.35).getHexString();
+  g.strokeStyle = ink; g.lineWidth = 5;
+  g.beginPath(); g.arc(64, 64, 58, 0, Math.PI * 2); g.stroke();
+  g.fillStyle = ink;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (hanja.length === 4) { // 富貴榮華: two by two
+    g.font = '700 34px "Noto Serif KR", "Noto Sans KR", serif';
+    [...hanja].forEach((ch, i) => g.fillText(ch, 46 + (i % 2) * 36, 36 + Math.floor(i / 2) * 36));
+  } else {
+    g.font = '700 62px "Noto Serif KR", "Noto Sans KR", serif';
+    g.fillText(hanja, 64, 54);
+  }
+  g.font = `800 ${letter.length > 2 ? 18 : 26}px "Noto Sans KR", system-ui, sans-serif`;
+  g.fillText(letter, 64, 101);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (engraveMats[key] = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+}
+
 const TEE_Y = 0.47, TEE_Z = 0.2;
 const printMats = {};
 function printMat(id) {
@@ -511,7 +539,8 @@ function charmGeometry(kind) {
 }
 
 // A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
-// blossom (five petals) or a round tag (the 복 "luck" charm).
+// blossom (five petals) or a round tag engraved with a hanja word.
+const TAG_R = 0.034;
 function pendantGeometry(kind) {
   const sh = new THREE.Shape();
   if (kind === 'moon') {
@@ -522,11 +551,8 @@ function pendantGeometry(kind) {
       const a = (i / 60) * Math.PI * 2 + Math.PI / 2, r = 0.02 + 0.016 * Math.abs(Math.cos((5 * (a - Math.PI / 2)) / 2));
       i ? sh.lineTo(Math.cos(a) * r, Math.sin(a) * r) : sh.moveTo(Math.cos(a) * r, Math.sin(a) * r);
     }
-  } else {
-    sh.absarc(0, 0, 0.032, 0, Math.PI * 2, false);
-    const hole = new THREE.Path();
-    hole.moveTo(-0.014, -0.004); hole.lineTo(0.014, -0.004); hole.lineTo(0.014, 0.004); hole.lineTo(-0.014, 0.004); hole.lineTo(-0.014, -0.004);
-    sh.holes.push(hole); // a little bar across, like the stroke of a carved 복
+  } else { // a round tag; the engraving is drawn on it (engraveMat)
+    sh.absarc(0, 0, TAG_R, 0, Math.PI * 2, false);
   }
   return new THREE.ExtrudeGeometry(sh, { depth: 0.012, bevelEnabled: false }).translate(0, 0, -0.006);
 }
@@ -709,7 +735,12 @@ function addAccessories(look, head, torso, body) {
     const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
     charm.position.set(0, 0.5, 0.2);
     charm.rotation.x = -0.15;
-    charm.scale.setScalar(1.5);
+    charm.scale.setScalar(neck.hanja ? 1.8 : 1.5); // an engraved tag a little bigger, to read the word
+    if (neck.hanja) { // the engraved word on the tag's face
+      const face = new THREE.Mesh(geo('pendantFace', () => new THREE.CircleGeometry(TAG_R, 24)), engraveMat(neck.hanja, neck.letter, neck.color));
+      face.position.z = 0.0065;
+      charm.add(face);
+    }
     body.add(chain, charm);
   } else if (neck) {
     const m = mat(neck.color);
