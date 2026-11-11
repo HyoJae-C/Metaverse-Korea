@@ -8,11 +8,13 @@
 import * as THREE from 'three';
 import { mergeStatic } from './bukchon-models.js';
 import { addSnowCover } from './snow-cover.js';
+import { addBrickPattern } from './brick-pattern.js';
 import { yardFrame, yardHeightAt } from './cathedral-yard-ground.js';
 import { pointInPoly } from './collision.js';
 
 const mats = {};
-const mat = (c, snow) => (mats[c + (snow ? 's' : '')] ||= snow ? addSnowCover(new THREE.MeshLambertMaterial({ color: c })) : new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+const mat = (c, snow) => (mats[c + (snow ? 's' : '')] ||= snow ? addSnowCover(new THREE.MeshLambertMaterial({ color: c })) : bricks(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
+const bricks = (c, m) => (c === C.brick ? addBrickPattern(m, { w: 0.48, h: 0.2, mortar: 0.035 }) : m); // the retaining walls
 const C = { paving: '#d6cfc0', grass: '#8fbf6c', ramp: '#cfc6b4', brick: '#a9573f', coping: '#bdb6a8', step: '#c4beb2', metal: '#4d5156', lamp: '#2e3135', glow: '#ffe2a0', hedge: '#4f7f3f', trunk: '#6b4a32', leaf: '#5d8f4a' };
 
 // One step on the stairs' slope (repeated n times up it): the stone tread
@@ -49,7 +51,9 @@ export function buildYard(g, l) {
   const [fx, fz] = l.f, sx = -fz, sz = fx; // along the axis (towards the street), and east across it
   const P = (a, s) => [a * fx + s * sx, a * fz + s * sz];
   const A = (q) => yardFrame(l, q[0], q[1]);
-  const Y = (q) => { const [a, s] = A(q); return yardHeightAt(l, a, s); };
+  // (points cut at the kerb sit on it: a hair past it, rounding would
+  // drop them to the street, tilting the terrace's corner down)
+  const Y = (q) => { const [a, s] = A(q); return yardHeightAt(l, Math.min(a, cut - 1e-4), s); };
   const ry = Math.atan2(fx, fz); // turns a box's +z along the axis
   const along = (v) => (q) => v - A(q)[0], after = (v) => (q) => A(q)[0] - v; // (keep: before / after `v` along)
   const west = (v) => (q) => v - A(q)[1], east = (v) => (q) => A(q)[1] - v;
