@@ -7175,6 +7175,7 @@ renderer.setAnimationLoop((now) => {
   // and the street's NPCs wait. Closing the map, everyone is where they are.
   mapPause += dt;
   const mapUp = mapView.open;
+  camera.updateMatrixWorld(); // (this frame's camera for the name tags: set above, but three.js only rebuilds its matrix when drawing)
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   updateBuskMusic(p);
   liveStage.tick(p);
