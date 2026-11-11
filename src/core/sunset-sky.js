@@ -17,8 +17,8 @@ import * as THREE from 'three';
 // sunset steps to Seongsan Bridge.
 const WEST = new THREE.Vector3(-Math.cos(0.18), 0, Math.sin(0.18));
 const DAY_OFFSET = new THREE.Vector3(60, 120, 40); // the light the rest of the day
-const RISE = 6, SET = 18;
-const HAZE = new THREE.Color(0xf4b49a); // the horizon at sunset // (show-clock.js SKY_SUN)
+const RISE = 6, SET = 18; // (show-clock.js SKY_SUN)
+const HAZE = new THREE.Color(0xf29a72); // the horizon at sunset (deeper, Yozi 2026-11-11)
 
 // How much of the sunset look is on (0-1) at a game hour, and the sun's
 // height (degrees) and side (-1 rising in the east, 1 setting in the west).
@@ -27,7 +27,7 @@ export function sunsetAt(hour) {
   const h = set ? SET - hour : hour - RISE; // hours before sunset (after sunrise)
   const elev = h * 9; // 9° an hour: 13° at 16:30, the sun on the horizon at 18:00
   // on from an hour and a half before sunset, gone 40 minutes after
-  const k = h > 1.5 ? 0 : h < -0.7 ? 0 : h > 1 ? (1.5 - h) / 0.5 : h < -0.3 ? (h + 0.7) / 0.4 : 1;
+  const k = h > 1.5 ? 0 : h < -0.7 ? 0 : h > 1.3 ? (1.5 - h) / 0.2 : h < -0.3 ? (h + 0.7) / 0.4 : 1; // (full about 2 real minutes into the sunset)
   return { k, elev, side: set ? 1 : -1 };
 }
 
@@ -43,8 +43,8 @@ void main() {
   float h = d.y, c = dot(d, uSun);
   vec3 col = mix(uHaze, uTop, smoothstep(0.02, 0.55, h));
   float band = max(dot(normalize(d.xz), normalize(uSun.xz)), 0.0) * (1.0 - smoothstep(0.0, 0.35, h));
-  col = mix(col, uGlow, band * band * 0.75); // the band along the horizon under the sun
-  col += uGlow * pow(max(c, 0.0), 24.0) * 0.7; // the glow round it
+  col = mix(col, uGlow, band * band * 0.95); // the band along the horizon under the sun
+  col += uGlow * pow(max(c, 0.0), 16.0) * 1.0; // the glow round it
   float disc = smoothstep(0.99955, 0.9997, c) * smoothstep(-0.004, 0.004, h);
   col = mix(col, vec3(1.0, 0.95, 0.78), disc);
   gl_FragColor = vec4(col, uMix);
@@ -69,7 +69,7 @@ const GLINT = `
 export function createSunsetSky(scene) {
   const uni = {
     uSun: { value: new THREE.Vector3(0, 1, 0) }, uHaze: { value: new THREE.Color() },
-    uTop: { value: new THREE.Color(0x4b5b9e) }, uGlow: { value: new THREE.Color(0xffb35c) },
+    uTop: { value: new THREE.Color(0x3f4590) }, uGlow: { value: new THREE.Color(0xff8a3d) },
     uMix: { value: 0 }, uTime: { value: 0 },
   };
   const dome = new THREE.Mesh(new THREE.SphereGeometry(1500, 32, 16), new THREE.ShaderMaterial({
@@ -85,7 +85,7 @@ export function createSunsetSky(scene) {
 
   // The river's mesh marks where it is drawn, for the light on it.
   let water = null, waterColor = null;
-  const warmWater = new THREE.Color(0xd9a3a6);
+  const warmWater = new THREE.Color(0xe08f80);
   const findWater = () => {
     water = scene.getObjectByName('world')?.getObjectByName('water') || false;
     if (!water) return;
@@ -113,12 +113,12 @@ export function createSunsetSky(scene) {
       const e = THREE.MathUtils.degToRad(Math.max(elev, -4));
       dir.set(WEST.x * side * Math.cos(e), Math.sin(e), WEST.z * Math.cos(e)).normalize();
       uni.uSun.value.copy(dir);
-      sky.lerp(HAZE, mix * 0.6); // (the haze warms too: far-off things fade into it)
+      sky.lerp(HAZE, mix * 0.8); // (the haze warms too: far-off things fade into it)
       uni.uHaze.value.copy(sky);
       uni.uMix.value = mix;
       uni.uTime.value = (uni.uTime.value + dt) % 1000;
       dome.visible = mix > 0.01;
-      if (water) water.material.color.copy(waterColor).lerp(warmWater, mix * 0.45);
+      if (water) water.material.color.copy(waterColor).lerp(warmWater, mix * 0.6);
       // The light: from the low sun (not lower than 14°, so shadows stay on
       // the screen), blended in with the sunset.
       const ly = Math.max(Math.sin(e), 0.25);

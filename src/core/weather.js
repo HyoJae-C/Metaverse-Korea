@@ -60,7 +60,7 @@ const NIGHT_LIGHT = {
   hemi: new THREE.Color(0xa9b9ff), ground: new THREE.Color(0x46507a),
   ambient: new THREE.Color(0x9fadde), sun: new THREE.Color(0xc4d2ff),
 };
-const SUNSET_LIGHT = { sun: new THREE.Color(0xff9a5c), hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
+const SUNSET_LIGHT = { sun: new THREE.Color(0xff8a4a), hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
 const glowing = []; // [material, strength]: emissive that comes on after dark
 export function glowAtNight(material, strength = 1) {
   material.emissiveIntensity = 0;
@@ -180,9 +180,9 @@ export class WeatherSystem {
     // Sunset: the low sun's warm light (core/sunset-sky.js).
     const sm = this.sunset.mix;
     if (sm > 0) {
-      this.sun.color.lerp(SUNSET_LIGHT.sun, sm * 0.7);
-      this.hemi.color.lerp(SUNSET_LIGHT.hemi, sm * 0.45);
-      this.ambient.color.lerp(SUNSET_LIGHT.ambient, sm * 0.35);
+      this.sun.color.lerp(SUNSET_LIGHT.sun, sm * 0.85);
+      this.hemi.color.lerp(SUNSET_LIGHT.hemi, sm * 0.6);
+      this.ambient.color.lerp(SUNSET_LIGHT.ambient, sm * 0.45);
     }
     // Lit windows: on from dusk (a few stay dark: the texture says which).
     const glow = Math.max(0, n - 0.15) / 0.85;
