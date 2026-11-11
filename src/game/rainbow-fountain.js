@@ -12,7 +12,7 @@ import { t as tr } from '../core/i18n.js';
 
 const LOAD_NEAR = 700; // metres from the bridge: the water is built from here
 export function createRainbowFountain(game) {
-  const st = { soon: 0, on: 0, photo: 0, nextFor: 0, wasNear: false, jets: null, loading: false, music: null };
+  const st = { here: false, soon: 0, on: 0, photo: 0, nextFor: 0, wasNear: false, jets: null, loading: false, music: null };
   const landmark = () => game.landmarks.find((l) => l.type === 'jamsu');
   function update() {
     const s = fountainAt();
@@ -21,6 +21,7 @@ export function createRainbowFountain(game) {
     // The show's night, on top of anything the fireworks set this frame.
     if (s && near > 0) game.weather.nightMix = Math.max(game.weather.nightMix || 0, s.night * near);
     const close = near > 0.95; // on the bridge, the lawn or the riverside
+    st.here = !!(s?.on && close); // watching the show (others' fishing trophies hide)
     if (close) {
       if (s && s.t < 0 && st.soon !== s.start) { st.soon = s.start; game.toast(tr('fountain.soon')); }
       else if (s?.on && s.t < FINALE[0] && st.on !== s.start && st.soon !== s.start) { st.on = s.start; game.toast(tr('fountain.on')); }
@@ -52,5 +53,5 @@ export function createRainbowFountain(game) {
     if (want && !st.music && music.on && music.track.id !== 'rainbowfountain') { st.music = music.track.id; music.setTrack('rainbowfountain'); }
     else if (!want && st.music) { if (music.track.id === 'rainbowfountain') music.setTrack(st.music); st.music = null; }
   }
-  return { update, get jets() { return st.jets; } };
+  return { update, get jets() { return st.jets; }, get showHere() { return st.here; } };
 }

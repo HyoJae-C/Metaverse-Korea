@@ -4049,10 +4049,11 @@ function onPeerFishing(id, msg) {
 function onPeerTrophy(id, fid) {
   const f = fishById(fid), p = others.players.get(id);
   if (!f || f.rarity < TROPHY_RARITY || !p || p.hidden || safety.isBlocked(id, others.nameOf(id))) return;
-  // Show time (the Ttukseom drone show or the Yeouido fireworks, not the
-  // fountain show): your catch shows only on your own screen, so others'
-  // trophies don't show here, wherever you are (Yozi).
-  if (droneShowAt()?.on || fireworksAt()?.on) return;
+  // Show time (the Ttukseom drone show or the Yeouido fireworks): your catch
+  // shows only on your own screen, so others' trophies don't show here,
+  // wherever you are (Yozi). The fountain show runs most hours, so it hides
+  // them only while you watch it from the bridge, the lawn or the riverside.
+  if (droneShowAt()?.on || fireworksAt()?.on || rainbowFountain.showHere) return;
   showBubbleEl(p, $('labels'), trophy(f, others.nameOf(id) || '?'), showMs(f), 'trophy tier-' + f.rarity);
 }
 function updatePeerRigs(dt) {
