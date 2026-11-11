@@ -40,7 +40,11 @@ const roads = [
 // The Information Center: one hanok at the west corner, facing Jongno (its
 // door on the pavement, so stores.json stands it there).
 const INFO = { id: 'info-jongmyo', box: [-78, 14, -66, 3] }; // x0, z0 (south, the front), x1, z1
-const buildings = [{ h: 6, hanok: 1, fr: [0, 1], p: rect(...INFO.box) }];
+// Jongno Geumeunbang, a gold and silver workshop in a plain three-storey
+// block west of it: the real jewellery quarter (Jongno 3-ga, Bongik-dong)
+// starts right here. Not a hanok, so it doesn't feel like Bukchon.
+const JEWEL = { id: 'jongno-geumeun', box: [-97, 14, -85, 3] };
+const buildings = [{ h: 6, hanok: 1, fr: [0, 1], p: rect(...INFO.box) }, { h: 9, fr: [0, 1], p: rect(...JEWEL.box) }];
 // Outside the west wall: a grove from the Information Center to the north
 // end, so the shrine's woods spill over the wall (no lane here for now).
 const GROVE = [-84, 1, WX0 - 2, WZ1];
@@ -140,7 +144,7 @@ const map = {
   meta: {
     district: 'jongmyo',
     // For the overlap check.
-    parts: [{ why: 'the Information Center and the grove, Jongmyo Square and the shrine', box: [GROVE[0] - 2, WZ1 - 2, 86, J + 6] }],
+    parts: [{ why: 'the Information Center, the gold and silver workshop and the grove, Jongmyo Square and the shrine', box: [JEWEL.box[0] - 2, WZ1 - 2, 86, J + 6] }],
     enclosure: { why: 'inside the shrine wall: the halls, the stone path, the woods are drawn once you walk in through Oedaemun (core/enclosure.js)', box: [WX0, WZ0, WX1, WZ1] },
     source: 'hand-made (game map, not to scale; loosely after Jongmyo, Jongno-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-jongmyo.mjs',
   },
@@ -156,15 +160,15 @@ if (off) {
   // stores.json is hand-formatted, so only the "at" of each shop is
   // rewritten in the text (as scripts/build-mapo.mjs does).
   let stores = await readFile(storesFile, 'utf8');
-  const at = stores.indexOf(`"id": "${INFO.id}"`);
-  if (at < 0) console.log(`${INFO.id}: not in stores.json`);
-  else {
+  for (const B of [INFO, JEWEL]) {
+    const at = stores.indexOf(`"id": "${B.id}"`);
+    if (at < 0) { console.log(`${B.id}: not in stores.json`); continue; }
     let end = stores.indexOf('\n    {', at);
     if (end < 0) end = stores.length;
-    const x = (INFO.box[0] + INFO.box[2]) / 2 + off[0], z = INFO.box[1] + 2 + off[1];
+    const x = (B.box[0] + B.box[2]) / 2 + off[0], z = B.box[1] + 2 + off[1];
     stores = stores.slice(0, at) + stores.slice(at, end).replace(/"at": \[[^\]]*\]/, `"at": [${x}, ${z}]`) + stores.slice(end);
-    await writeFile(storesFile, stores);
-    console.log(`stores.json: ${INFO.id} placed`);
+    console.log(`stores.json: ${B.id} placed`);
   }
+  await writeFile(storesFile, stores);
 }
 console.log(`jongmyo.json: ${roads.length} roads, ${buildings.length} buildings, ${trees.length + outTrees.length} trees`);

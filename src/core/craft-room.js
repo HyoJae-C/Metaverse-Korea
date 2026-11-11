@@ -1,4 +1,5 @@
-// Bukchon's craft studios (Maeum Knot, Saekji Paper, Gahoe Silver) are
+// The craft studios (Bukchon's Maeum Knot and Saekji Paper, Jongno
+// Geumeunbang, Gyeol Ring Studio in Seongsu) are
 // workshops, not shops: a big wooden work bench in the middle of the room
 // with the craftsman standing behind it, the materials of the craft on it
 // and on the wall behind. Souvenirs, if any, sit on the side walls only.
@@ -13,7 +14,7 @@ const CORDS = ['#c8323c', '#2f5fa8', '#2f8a57', '#e0a82e', '#8a3f9a'];
 const PAPERS = ['#f2c1c8', '#f5e3a1', '#bfe0c8', '#c9d8f2', '#f0a35a'];
 
 function benchProps(kind, add, cyl, y) {
-  if (kind === 'pendant') {
+  if (kind.startsWith('pendant')) {
     add(0.34, 0.16, 0.2, -0.75, y + 0.08, 0.05, '#4a4d55'); // bench block (anvil)
     add(0.12, 0.06, 0.14, -0.53, y + 0.13, 0.05, '#4a4d55'); // its horn
     add(0.5, 0.012, 0.32, 0.05, y + 0.006, 0.12, '#d9dde2'); // silver sheet
@@ -45,8 +46,8 @@ function benchProps(kind, add, cyl, y) {
 // tools.
 function wallRack(kind, add, z, h) {
   const y0 = Math.min(1.9, h - 1.6);
-  add(3.2, 1.3, 0.06, 0, y0, z, kind === 'pendant' ? '#c9a77a' : '#8a6a4a'); // board
-  if (kind === 'pendant') {
+  add(3.2, 1.3, 0.06, 0, y0, z, kind.startsWith('pendant') ? '#c9a77a' : '#8a6a4a'); // board
+  if (kind.startsWith('pendant')) {
     for (let k = 0; k < 7; k++) add(0.06, 0.34 + (k % 3) * 0.1, 0.04, -1.2 + k * 0.4, y0 + 0.15, z + 0.05, '#5a5e66'); // saws, files, pliers
     for (let k = 0; k < 5; k++) add(0.16, 0.16, 0.04, -1.0 + k * 0.5, y0 - 0.38, z + 0.05, k % 2 ? '#e8b84a' : '#d9dde2'); // finished pieces
   } else if (kind === 'knot') {

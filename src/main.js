@@ -4998,7 +4998,7 @@ const bukchonUi = new BukchonUI({
   onMake: (kind, ci, si) => {
     const k = CRAFT[kind], entry = craftEntry(kind, ci, si), wear = craftWear(kind, ci, si);
     if (!k || (!entry && !wear)) return false;
-    if (wear) { // a piece you wear (Gahoe Silver Studio's necklaces): it goes to your items
+    if (wear) { // a piece you wear (the necklace studios' necklaces): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
       const note = { name: BK_TEXT[kind], at: interior?.store.name };
       if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }

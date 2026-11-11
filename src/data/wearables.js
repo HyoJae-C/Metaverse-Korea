@@ -119,7 +119,7 @@ export const WEARABLES = {
   'acc-scarf': item('🧣', 25, { neck: 'scarf' }, { neck: null }, WEAR_DESC.accessory, { en: 'Coral knit scarf', ko: '코랄 니트 목도리', ja: 'コーラルのニットマフラー', zh: '珊瑚色针织围巾' }),
   'acc-scarf-mint': item('🧣', 25, { neck: 'scarf-mint' }, { neck: null }, WEAR_DESC.accessory, { en: 'Mint knit scarf', ko: '민트 니트 목도리', ja: 'ミントのニットマフラー', zh: '薄荷色针织围巾' }),
   'acc-scarf-cream': item('🧣', 25, { neck: 'scarf-cream' }, { neck: null }, WEAR_DESC.accessory, { en: 'Cream knit scarf', ko: '크림 니트 목도리', ja: 'クリームのニットマフラー', zh: '奶油色针织围巾' }),
-  // Necklaces (Gahoe Silver Studio, Bukchon): silver or gold, a moon, a plum blossom or an
+  // Necklaces (Jongno Geumeunbang, Gyeol Ring Studio): silver or gold, a moon, a plum blossom or an
   // engraved syllable (PENDANT_CHARMS).
   ...Object.fromEntries(['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => {
     const M = metal === 'gold' ? { en: 'Gold', ko: '골드', ja: 'ゴールドの', zh: '金色' } : { en: 'Silver', ko: '실버', ja: 'シルバーの', zh: '银色' };
