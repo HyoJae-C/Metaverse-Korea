@@ -1,6 +1,7 @@
 // Screenshots of the sunset from Mangwon Han River Park (for the before/after).
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/sunset-shot.mjs http://localhost:4173/ <dir> [name] [hour]
+// SUNSET=0..3 picks the look (core/sunset-sky.js SUNSETS), YAW turns the camera.
 import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4173/';
 const S = process.argv[3] || '.';
@@ -12,7 +13,7 @@ for (const h of HOURS) {
   const page = await (await browser.newContext({ viewport: { width: 1000, height: 600 } })).newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('dialog', (d) => d.accept());
-  await page.goto(url + '?debug&weather=clear&hour=' + h + '&room=e2esun' + Math.random().toString(36).slice(2, 8));
+  await page.goto(url + '?debug&weather=clear&hour=' + h + (process.env.SUNSET ? '&sunset=' + process.env.SUNSET : '') + '&room=e2esun' + Math.random().toString(36).slice(2, 8));
   await page.click('#next-btn');
   await page.fill('#nickname', 'Tester');
   await page.click('#start-btn', { timeout: 90000 });
@@ -22,7 +23,7 @@ for (const h of HOURS) {
   await page.evaluate(() => __mk.goto(-3443, -192, 0));
   await page.waitForTimeout(2500);
   await page.evaluate(() => __mk.place(-3443, -192));
-  for (const [tag, yaw, pitch, dist] of [['west', Number(process.env.YAW ?? 1.75), 0.12, 9]]) {
+  for (const [tag, yaw, pitch, dist] of [['west', Number(process.env.YAW ?? 1.75), Number(process.env.PITCH ?? 0.12), 9]]) {
     await page.evaluate((o) => __mk.cam(o), { yaw, pitch, dist });
     await page.waitForTimeout(2500);
     await page.screenshot({ path: `${S}/${NAME}-${tag}-${h}.png` });

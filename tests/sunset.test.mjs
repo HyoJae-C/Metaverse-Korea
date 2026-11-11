@@ -69,3 +69,19 @@ test('Seonyudo and the south bank are drawn across the river', () => {
   const water = mangwon.areas.find((a) => a.k === 'water');
   assert.ok(water.p.length > 12 && water.holes?.length === 1, 'the real banks, not a rectangle, with Seonyudo cut out');
 });
+
+test('each sunset has one of the four looks, the same for everyone, never the same two days running', async () => {
+  const { sunsetLook, SUNSETS } = await import('../src/core/sunset-sky.js');
+  assert.equal(SUNSETS.length, 4);
+  const seen = new Set();
+  let last = null;
+  for (let n = 0; n < 400; n++) {
+    const t = n * CYCLE_MS + (CYCLE.morning + CYCLE.day + 5) * MIN; // in that day's sunset
+    const look = sunsetLook(t);
+    assert.equal(look, sunsetLook(t + 10 * MIN), 'one look for the whole sunset');
+    assert.notEqual(look, last, `day ${n} repeats the day before`);
+    seen.add(look);
+    last = look;
+  }
+  assert.equal(seen.size, 4, 'all four come round');
+});
