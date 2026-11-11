@@ -19,7 +19,7 @@ test('the pinned show notice names the show on now, or the soonest one', () => {
   // Right after it ends, the next one is the drone show, a whole game day later.
   const after = nextShow(fw + 21 * 60e3);
   assert.equal(after.kind, 'drones');
-  assert.equal(after.start, fw + 2 * CYCLE_MS);
+  assert.equal(after.start, fw + CYCLE_MS);
 });
 
 test('the countdown reads minutes, or hours and minutes, with the local time', () => {
