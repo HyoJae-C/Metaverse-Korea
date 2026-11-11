@@ -746,42 +746,29 @@ export const PICTURES = {
     slice(-7.6, -4.4); slice(0, -4.8); slice(7.6, -4.4);
   } },
 
-  // Baechu kimchi: a half napa cabbage, red with seasoning between the pale
-  // stems and the green tips, on a white plate.
-  kimchi: { layers: 1, draw(c) {
-    oval(c, 0, -6.4, 12.4, 2.6); fill(c, '#ffffff'); oval(c, 0, -6.2, 10.6, 1.8); fill(c, '#e6eef8');
-    for (let k = 0; k < 7; k++) {
-      const a = -0.75 + (k / 6) * 1.5, len = 12.6 - Math.abs(k - 3) * 1.2;
-      const tx = Math.sin(a) * len, ty = -6 + Math.cos(a) * len;
-      c.beginPath(); c.moveTo(Math.sin(a - 0.12) * 1.5, -6.0); c.quadraticCurveTo(tx * 0.5 - 1.2, (ty - 6) * 0.5 - 6 + 2, tx - 0.4, ty);
-      c.quadraticCurveTo(tx + 1.8, ty + 0.4, tx + 1.2, ty - 1.4); c.quadraticCurveTo(tx * 0.5 + 1.6, (ty - 6) * 0.5 - 6, Math.sin(a + 0.12) * 1.5, -6.0); c.closePath();
-      fill(c, grad(c, 0, -6, tx, ty, ['#fff4d0', k % 2 ? '#ff5a3a' : '#ff3a2a', '#e83020']));
-      oval(c, tx + 0.4, ty - 0.2, 1.8, 1.0, -a); fill(c, '#7cd04a');
-      seg(c, [Math.sin(a) * 1.6, -5.6], [tx * 0.7, (ty + 6) * 0.7 - 6], '#fff0c0', 0.3);
-    }
-    for (const [x, y] of [[-3, -1], [2.6, 0.6], [-5.6, 3], [4.6, 3.6], [0, 4.4], [-1.6, 1.8]]) { circle(c, x, y, 0.22); fill(c, '#ffffff'); }
-  } },
-
-  // The moon rabbit pounding rice cakes in a mortar on the full moon
-  // (part 1: the mallet and arms go up and down).
+  // The moon rabbit sitting on a crescent moon, pounding rice cakes in a
+  // mortar, little stars around (part 1: the arm and mallet go up and down).
   moonrabbit: { layers: 2, dens: [1, 1.2], draw(c, l) {
     if (l === 1) {
-      seg(c, [-0.6, 0.6], [2.2, 1.8], '#ffffff', 0.9);
-      seg(c, [2.2, 1.8], [3.0, -2.6], '#e8b878', 0.5);
-      c.beginPath(); c.rect(1.6, -4.0, 3.0, 1.6); fill(c, '#d89a5a');
+      seg(c, [-0.8, 0.4], [2.0, 1.6], '#ffffff', 0.9);
+      seg(c, [2.0, 1.6], [3.2, -0.4], '#e8b878', 0.45);
+      c.save(); c.translate(3.4, -0.8); c.rotate(0.5); c.beginPath(); c.rect(-1.6, -0.6, 3.2, 1.2); fill(c, '#d89a5a'); c.restore();
       return;
     }
-    circle(c, 0, 0, 9.6); fill(c, radial(c, -3, 3, 1, 10, ['#fff8d8', '#ffe68a', '#ffc94a']));
-    for (const [x, y, r] of [[-6, 4, 1.0], [5.6, 5.4, 0.8], [6.6, -2.6, 1.1], [-6.4, -4.4, 0.7]]) { circle(c, x, y, r); fill(c, '#f0cf70'); }
-    // the mortar
-    path(c, [[1.0, -4.6], [6.2, -4.6], [5.4, -8.2], [1.8, -8.2]]); fill(c, '#b87a3a');
-    oval(c, 3.6, -4.6, 2.6, 0.6); fill(c, '#ffffff');
+    // the crescent, horns up
+    circle(c, 0, 0.6, 8.6); fill(c, radial(c, 0, -5, 1, 10, ['#fff8d8', '#ffe68a', '#ffc94a']));
+    c.save(); c.globalCompositeOperation = 'destination-out'; circle(c, 0, 3.4, 8.0); fill(c, '#000'); c.restore();
+    for (const [x, y, r] of [[-4.4, -5.4, 0.6], [3.6, -5.6, 0.5], [7.2, -2.6, 0.45]]) { circle(c, x, y, r); fill(c, '#f0cf70'); }
+    for (const [x, y, r] of [[-10.6, 7.6, 0.8], [9.4, 8.2, 0.7], [11.6, 2.6, 0.55], [-12.0, 1.0, 0.55], [6.0, 9.0, 0.5]]) sparkle(c, x, y, r, '#fff3c4');
+    // the mortar on the moon
+    path(c, [[1.6, -1.6], [6.0, -1.6], [5.2, -4.6], [2.4, -4.6]]); fill(c, '#b87a3a');
+    oval(c, 3.8, -1.6, 2.2, 0.5); fill(c, '#ffffff');
     // the rabbit
-    oval(c, -2.6, -3.4, 3.0, 3.8, 0.1); fill(c, '#ffffff');
-    circle(c, -2.4, 2.0, 2.4); fill(c, '#ffffff');
-    for (const [x, a] of [[-3.6, 0.25], [-1.6, -0.1]]) { oval(c, x, 5.8, 0.8, 2.6, a); fill(c, '#ffffff'); oval(c, x, 5.8, 0.38, 1.9, a); fill(c, '#ffb3c8'); }
-    circle(c, -1.4, 2.4, 0.38); fill(c, '#ff6a8a'); circle(c, -0.4, 1.6, 0.3); fill(c, '#ff9ab0');
-    oval(c, -4.4, -6.8, 1.6, 0.8); fill(c, '#ffffff'); circle(c, -5.5, -2.6, 1.0); fill(c, '#ffffff');
+    oval(c, -2.6, -2.0, 2.7, 2.9, 0.1); fill(c, '#ffffff');
+    circle(c, -2.4, 2.4, 2.2); fill(c, '#ffffff');
+    for (const [x, a] of [[-3.5, 0.25], [-1.6, -0.12]]) { oval(c, x, 6.0, 0.75, 2.5, a); fill(c, '#ffffff'); oval(c, x, 6.0, 0.36, 1.8, a); fill(c, '#ffb3c8'); }
+    circle(c, -1.5, 2.8, 0.36); fill(c, '#ff6a8a'); circle(c, -0.5, 2.0, 0.28); fill(c, '#ff9ab0');
+    oval(c, -4.0, -4.6, 1.5, 0.7); fill(c, '#ffffff'); circle(c, -5.3, -2.6, 0.9); fill(c, '#ffffff');
   } },
 };
 
