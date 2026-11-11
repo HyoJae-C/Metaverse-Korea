@@ -3,7 +3,7 @@
 // and the lip tint shop (꽃잎 립). Each option is a look field; null means
 // "the model's own" (free to go back to). You pay once for each field you
 // change. Choices: a fixed list of ids (labels in i18n), or a palette.
-import { HAIR_STYLES, LIP_FAMILIES } from '../data/appearance.js';
+import { HAIR_STYLES, LIP_FAMILIES, NOSE_IDS, JAW_IDS } from '../data/appearance.js';
 import { LIPSTICK_PRICE, lipPrice } from './lipstick.js';
 
 export const EYE_SHAPES = { clinic: ['big', 'round'], clinic2: ['cat', 'puppy'] };
@@ -11,13 +11,16 @@ export const SALON = [
   { key: 'hairStyle', choices: HAIR_STYLES, price: 40000, label: 'hair' },
   { key: 'dye', palette: 'dye', price: 30000 },
 ];
+// Clinic prices: about 1/20 of the real thing in Seoul, eyes a little more (Yozi 2026-11-11;
+// real, roughly: eyes ₩1.5M, skin ₩0.5M, nose ₩4M, jaw contouring ₩8M).
 export const CLINIC = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 50000, label: 'eyeShape' },
-  { key: 'tone', palette: 'skin', price: 35000 }, // skin tone
-  { key: 'small', choices: ['small', 'big'], price: 45000, label: 'face' }, // a smaller or bigger head
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic, price: 100000, label: 'eyeShape' },
+  { key: 'tone', palette: 'skin', price: 250000 }, // skin tone (a big change: priced like the nose and jaw)
+  { key: 'nose', choices: NOSE_IDS, price: 200000, label: 'nose' },
 ];
 export const CLINIC2 = [
-  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 50000, label: 'eyeShape' },
+  { key: 'eyeShape', choices: EYE_SHAPES.clinic2, price: 100000, label: 'eyeShape' },
+  { key: 'jaw', choices: JAW_IDS, price: 400000, label: 'jaw' }, // the jaw line (the head keeps its size)
 ];
 export const LENS = [{ key: 'eyes', palette: 'eyes', price: 25000 }]; // colour lenses
 // Lip shops: trying colours on is free; you buy a lipstick (core/lipstick.js)
@@ -47,14 +50,13 @@ export function menuFor(kind, store) {
 export const isClinic = (kind) => kind === 'clinic' || kind === 'clinic2';
 export const BEAUTY_ICON = { salon: '💇', clinic: '✨', clinic2: '✨', lens: '👁️', lips: '💄' };
 
-const val = (look, key) => look?.[key] || null; // false (no head size change) = own
+const val = (look, key) => look?.[key] || null;
 export function beautyCost(menu, from, to) {
   let n = 0;
   for (const o of menu) {
     if (o.stick) continue; // (paid for with a lipstick, not at the mirror)
-    const a = o.toggle ? !!val(from, o.key) : val(from, o.key);
-    const b = o.toggle ? !!val(to, o.key) : val(to, o.key);
-    if (a !== b && (o.toggle ? b : b !== null)) n += o.price; // going back to your own is free
+    const a = val(from, o.key), b = val(to, o.key);
+    if (a !== b && b !== null) n += o.price; // going back to your own is free
   }
   return n;
 }

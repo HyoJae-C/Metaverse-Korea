@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
-import { buildHair, buildLips, isScalpHair, EYE_TRANSFORM } from './hair-styles.js';
+import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
 import { skirtById } from '../data/skirts.js';
@@ -221,8 +221,9 @@ function recolor(gltf, rule) {
 // Hair dye, eye colour and skin tone (hair salon, clinic): a copy of the
 // model's material whose atlas has those cells repainted, keeping each cell's
 // light-to-dark shading. One copy per model and combination, shared.
-const SMALL_HEAD = 0.88;
-const BIG_HEAD = 1.12;
+// Every head is this size (the clinics' smaller head, Yozi 2026-11-11): one
+// size for all, so hats, glasses and earrings always sit right.
+const HEAD_SCALE = 0.88;
 // Hanging from the gym's pull-up bar: the body is moved so both hands sit on
 // the bar (2.05 m, minus its radius) whatever the arms are doing.
 const PULLUP = { hang: 0.5, bar: 2.03 };
@@ -394,19 +395,52 @@ function headFacts(id, geo) {
   bald.boundingSphere = geo.boundingSphere;
   const eyes = [];
   for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) eyes.push(i);
-  const info = { ey, mouth, bald, eyes, shaped: new Map() };
+  // The nose: the bump in the middle of the face, between the eyes and mouth.
+  const nose = [];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    if (Math.abs(x) < 0.2 && y > mouth.y + 0.05 && y < ey - 0.02 && z > mouth.z + 0.02 && !is(i, A.eyes)) nose.push(i);
+  }
+  const cx = nose.length ? nose.reduce((a, i) => a + pos.getX(i), 0) / nose.length : 0; // the face's middle
+  const info = { ey, mouth, bald, eyes, nose, cx, shaped: new Map() };
   headInfo.set(id, info);
   return info;
 }
 // The head with its eyes reshaped (clinics): each eye scaled and tilted
 // round its own centre, in the face plane.
-function shapedHead(facts, geo, shape, key) {
+function shapedHead(facts, geo, shape, key, jaw, nose) {
   const tf = EYE_TRANSFORM[shape];
-  if (!tf) return geo;
+  const nf = NOSE_TRANSFORM[nose];
+  if (!tf && !jaw && !nf) return geo;
   if (facts.shaped.has(key)) return facts.shaped.get(key);
   const src = geo.attributes.position;
   const pos = src.clone();
-  for (const side of [-1, 1]) {
+  if (jaw) {
+    const eyeSet = new Set(facts.eyes);
+    const top = facts.ey - 0.25, span = 0.55;
+    for (let i = 0; i < src.count; i++) {
+      const y = src.getY(i), z = src.getZ(i);
+      if (eyeSet.has(i) || y > facts.ey + 0.1 || z < -0.35) continue;
+      const front = Math.min(1, (z + 0.35) / 0.5);
+      const t = Math.max(0, Math.min(1, (top - y) / span)) * front;
+      // The cheekbones: just under the eyes, out at the sides.
+      const x = src.getX(i) - facts.cx;
+      const cheek = Math.max(0, 1 - Math.abs(y - (facts.ey - 0.2)) / 0.3) * Math.max(0, Math.min(1, (Math.abs(x) - 0.3) / 0.4)) * front;
+      if (!t && !cheek) continue;
+      const [x2, y2, z2] = jawMove(jaw, x, y, z, t, cheek);
+      pos.setXYZ(i, x2 + facts.cx, y2, z2);
+    }
+  }
+  if (nf && facts.nose.length) {
+    let cx = 0, cy = 0, cz = Infinity;
+    for (const i of facts.nose) { cx += src.getX(i); cy += src.getY(i); cz = Math.min(cz, src.getZ(i)); }
+    cx /= facts.nose.length; cy /= facts.nose.length;
+    for (const i of facts.nose) {
+      const dz = src.getZ(i) - cz, up = src.getY(i) - cy;
+      pos.setXYZ(i, cx + (src.getX(i) - cx) * nf.sx * (up > 0 ? nf.top ?? 1 : 1), cy + up * (up > 0 ? nf.up ?? nf.sy : nf.sy) + dz * nf.lift, cz + dz * nf.sz);
+    }
+  }
+  if (tf) for (const side of [-1, 1]) {
     const ids = facts.eyes.filter((i) => Math.sign(src.getX(i)) === side);
     if (!ids.length) continue;
     let cx = 0, cy = 0;
@@ -420,6 +454,15 @@ function shapedHead(facts, geo, shape, key) {
   }
   const out = new THREE.BufferGeometry();
   for (const [k, attr] of Object.entries(geo.attributes)) out.setAttribute(k, k === 'position' ? pos : attr);
+  if (nf && geo.attributes.normal) { // the nose's normals follow its new proportions
+    const nrm = geo.attributes.normal.clone();
+    const n = new THREE.Vector3();
+    for (const i of facts.nose) {
+      n.fromBufferAttribute(nrm, i).set(n.x / nf.sx, n.y / nf.sy, n.z / nf.sz).normalize();
+      nrm.setXYZ(i, n.x, n.y, n.z);
+    }
+    out.setAttribute('normal', nrm);
+  }
   out.setIndex(geo.index);
   out.boundingBox = geo.boundingBox;
   out.boundingSphere = geo.boundingSphere;
@@ -470,7 +513,7 @@ function faceExtras(id, headMesh, headBone, look) {
   let geo = headMesh.geometry;
   const hair = look.hairStyle && !PACK.models[id]?.hood ? buildHair(look.hairStyle, material, A, facts.ey) : null;
   if (hair) geo = facts.bald;
-  if (look.eyeShape) geo = shapedHead(facts, geo, look.eyeShape, (hair ? 'bald|' : '') + look.eyeShape);
+  if (look.eyeShape || look.jaw || look.nose) geo = shapedHead(facts, geo, look.eyeShape, [hair ? 'bald' : '', look.eyeShape, look.jaw, look.nose].join('|'), look.jaw, look.nose);
   headMesh.geometry = geo;
   if (hair) extras.add(hair); // (the head is whole under its hair: no gap to fill)
   if (look.lip && PALETTES.lip[look.lip] != null) {
@@ -497,10 +540,37 @@ const HAT_CROWNS = {
 const TUCK = 0.94; // how far inside the crown the hair goes
 const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out
 const _tm = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tp = new THREE.Vector3();
+// Pull the points of one geometry inside the crown; tm takes its points to
+// the hat's space, keep(i) picks which. A clone if any moved, else null.
+function squeezeIn(geo, tm, crown, keep) {
+  const { c, r, y0 } = crown;
+  _ti.copy(tm).invert();
+  const out = geo.clone();
+  const pos = out.attributes.position;
+  let moved = false;
+  for (let i = 0; i < pos.count; i++) {
+    if (keep && !keep(i)) continue;
+    _tp.fromBufferAttribute(pos, i).applyMatrix4(tm);
+    // Fully inside above the edge; just under it the hair may bulge out
+    // more and more (pressed flat by the hat), with no step at the edge.
+    const below = (y0 - _tp.y) / TUCK_BAND;
+    if (below >= 1) continue;
+    const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
+    const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
+    const d = Math.hypot(dx, dy, dz);
+    if (d <= limit) continue;
+    const k = limit / d;
+    _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
+    pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
+    moved = true;
+  }
+  if (!moved) return null;
+  out.computeBoundingSphere();
+  return out;
+}
 function tuckHair(hair, headAcc, look) {
   const crown = HAT_CROWNS[shapeOf(accessory('head', look.head))];
   if (!hair || !crown) return;
-  const { c, r, y0 } = crown;
   headAcc.updateMatrix();
   const toAcc = new THREE.Matrix4().copy(headAcc.matrix).invert(); // head bone -> hat space
   hair.parent.updateMatrix();
@@ -509,30 +579,34 @@ function tuckHair(hair, headAcc, look) {
     if (!mesh.isMesh) continue;
     mesh.updateMatrix();
     _tm.copy(toAcc).multiply(hair.parent.matrix).multiply(hair.matrix).multiply(mesh.matrix);
-    _ti.copy(_tm).invert();
-    const geo = mesh.geometry.clone();
-    const pos = geo.attributes.position;
-    let moved = false;
-    for (let i = 0; i < pos.count; i++) {
-      _tp.fromBufferAttribute(pos, i).applyMatrix4(_tm);
-      // Fully inside above the edge; just under it the hair may bulge out
-      // more and more (pressed flat by the hat), with no step at the edge.
-      const below = (y0 - _tp.y) / TUCK_BAND;
-      if (below >= 1) continue;
-      const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
-      const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
-      const d = Math.hypot(dx, dy, dz);
-      if (d <= limit) continue;
-      const k = limit / d;
-      _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
-      pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
-      moved = true;
-    }
-    if (!moved) continue;
+    const geo = squeezeIn(mesh.geometry, _tm, crown);
+    if (!geo) continue;
     geo.computeVertexNormals();
-    geo.computeBoundingSphere();
     mesh.geometry = geo;
   }
+}
+// The model's own hair (no salon style) under a hat: its hair-coloured
+// points are tucked in the same way, so no tuft pokes through the hat. One
+// head per model and hat shape, shared.
+const ownTucked = new Map();
+function tuckOwnHair(id, headMesh, headBone, headAcc, look) {
+  const shape = shapeOf(accessory('head', look.head));
+  const crown = HAT_CROWNS[shape];
+  if (!crown) return;
+  const key = id + '|' + shape;
+  if (!ownTucked.has(key)) {
+    const A = PACK.atlas;
+    const uv = headMesh.geometry.attributes.uv;
+    const isHair = (i) => Math.floor(uv.getX(i) * A.cols) === A.hair[0] && Math.floor(uv.getY(i) * A.rows) === A.hair[1];
+    const bi = headMesh.skeleton?.bones.indexOf(headBone) ?? -1;
+    const meshToBone = new THREE.Matrix4();
+    if (bi >= 0) meshToBone.multiplyMatrices(headMesh.skeleton.boneInverses[bi], headMesh.bindMatrix);
+    else meshToBone.copy(headBone.matrixWorld).invert().multiply(headMesh.matrixWorld);
+    headAcc.updateMatrix();
+    const tm = new THREE.Matrix4().copy(headAcc.matrix).invert().multiply(meshToBone);
+    ownTucked.set(key, squeezeIn(headMesh.geometry, tm, crown, isHair) || headMesh.geometry);
+  }
+  headMesh.geometry = ownTucked.get(key);
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
@@ -695,11 +769,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   }
 
   let styledHair = null; // (setWind blows its locks back)
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape)) {
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape || look.nose || look.jaw)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
   }
+  if (headMesh && headBone && look.head && (!look.hairStyle || PACK.models[id]?.hood)) tuckOwnHair(id, headMesh, headBone, headAcc, look);
   // Wind: every piece but the cap over the skull streams back and up a
   // little and flutters, the long ones (low and behind) the most.
   let windK = 0, windT = 0;
@@ -715,7 +790,6 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
 
   body.visible = false;
   root.add(m);
-  const headScale = look.small === 'big' ? BIG_HEAD : look.small ? SMALL_HEAD : 1;
 
   const bonePose = (pose) => Object.entries(pose || {}).map(([name, r]) => [m.getObjectByName(name), r]).filter(([b]) => b);
   const ridePose = bonePose(PACK.ridePose);
@@ -996,7 +1070,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         barbell.quaternion.setFromUnitVectors(_up, _hv3.subVectors(b, a).normalize());
       }
       if (windK > 0.01) blow(dt);
-      if (headScale !== 1 && headBone) headBone.scale.setScalar(headScale); // after the clip's pose
+      if (headBone) headBone.scale.setScalar(HEAD_SCALE); // after the clip's pose
     },
   };
 }

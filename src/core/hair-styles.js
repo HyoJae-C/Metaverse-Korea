@@ -31,6 +31,19 @@ export function paintCell(geo, [cx, cy], atlas, light = 0.15, dark = 0.8) {
   return geo;
 }
 
+// Two indexed geometries (position, normal, uv) as one.
+function joinGeos(a, b) {
+  const out = new THREE.BufferGeometry();
+  for (const k of ['position', 'normal', 'uv']) {
+    const x = a.attributes[k], y = b.attributes[k];
+    const arr = new Float32Array(x.array.length + y.array.length);
+    arr.set(x.array); arr.set(y.array, x.array.length);
+    out.setAttribute(k, new THREE.BufferAttribute(arr, x.itemSize));
+  }
+  const n = a.attributes.position.count;
+  out.setIndex([...a.index.array, ...Array.from(b.index.array, (i) => i + n)]);
+  return out;
+}
 const sphere = (r, ws = 22, hs = 16, t0 = 0, tl = Math.PI) => new THREE.SphereGeometry(r, ws, hs, 0, Math.PI * 2, t0, tl);
 
 // The hair for one style, as a group in head units. ey: eye height.
@@ -49,7 +62,15 @@ export function buildHair(style, material, atlas, ey) {
     return m;
   };
   // Every style starts from a cap over the skull, leaving the face clear.
-  const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04) => add(sphere(r, 24, 14, 0, Math.PI * cover), 0, y, -0.04, 1.02, 1, 1, tilt);
+  // The cap is tilted back, so it would leave the lower back of the head
+  // bare (seen when the head bends forward, on a bike); a band of hair goes
+  // round the back down to the nape.
+  // (One mesh: the band is merged into the cap.)
+  const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04) => {
+    const top = sphere(r, 24, 14, 0, Math.PI * cover).scale(1.02, 1, 1).rotateX(tilt).translate(0, y, -0.04);
+    const band = new THREE.SphereGeometry(r, 20, 8, Math.PI * 1.02, Math.PI * 0.96, Math.PI * 0.3, Math.PI * 0.45).scale(1.05, 1, 1.06).translate(0, y, -0.06);
+    return add(joinGeos(top, band), 0, 0, 0);
+  };
   // A piece standing on the head at (x, y, z), its own +y pointing along dir
   // (spikes, strands, locks).
   const Y = new THREE.Vector3(0, 1, 0);
@@ -366,3 +387,25 @@ export function buildLips(color, at) {
   g.position.copy(at);
   return g;
 }
+
+// Cosmetic clinic jaw lines: how the lower face is pulled in or out (head
+// units; t is 0 at the cheeks .. 1 at the chin). Only the jaw moves, so the
+// head keeps its size and hats still fit.
+// cheek: 0 .. 1 on the cheekbones (a V-line slims them too).
+export function jawMove(shape, x, y, z, t, cheek = 0) {
+  if (shape === 'vline') return [x * (1 - 0.27 * t) * (1 - 0.08 * cheek), y - 0.05 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.02 * t];
+  if (shape === 'square') { // full cheeks kept wide down to the jaw's corners, a flatter chin
+    const flat = Math.max(0, 1 - Math.abs(x) * 1.8);
+    return [x * (1 + 0.14 * Math.min(1, t * 1.5) + 0.08 * t * t), y + 0.07 * t * flat, z + 0.02 * t];
+  }
+  return [x, y, z];
+}
+
+// Cosmetic clinic noses: the model's own nose reshaped about its middle
+// (sx/sy: narrower, longer; up/top: the upper half's length and width, a
+// bridge up between the eyes; sz: how far it stands out; lift: the tip up).
+export const NOSE_TRANSFORM = {
+  high: { sx: 0.78, sy: 1.05, up: 2.3, top: 0.7, sz: 1.45, lift: 0.15 },
+  big: { sx: 1.3, sy: 1.25, sz: 1.25, lift: 0 },
+  small: { sx: 0.62, sy: 0.62, sz: 0.55, lift: 0.1 },
+};

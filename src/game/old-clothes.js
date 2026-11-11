@@ -126,3 +126,28 @@ export async function runUpdateBonus(game) {
   try { storage?.setItem(BONUS, data.status); } catch { /* storage blocked */ }
   return data.status;
 }
+
+// The clinics' face size is gone (every head is one size, Yozi 2026-11-11):
+// whoever had paid for it gets the price back once, with a notice. The
+// server knows who (supabase/040_head_size_refund.sql). Returns the server's
+// status, or null (offline or 040 not run yet: next time).
+export const HEAD_REFUND = 'mk.headRefund';
+export async function runHeadRefund(game) {
+  const { wallet, storage = globalThis.localStorage } = game;
+  try { if (storage?.getItem(HEAD_REFUND)) return null; } catch { return null; }
+  if (!wallet?.server || !wallet.client || !(await wallet.flush())) return null;
+  let data = null;
+  try {
+    const res = await Promise.race([wallet.client.rpc('head_size_refund'), new Promise((r) => setTimeout(() => r({ error: { message: 'timeout' } }), 8000))]);
+    data = res?.error ? null : res?.data;
+  } catch { data = null; }
+  if (!data?.status || data.status === 'signin') return null;
+  if (data.status === 'ok') {
+    const n = Number(data.n) || 0;
+    wallet.credited(n, data, { k: 'ledger.headRefund' });
+    game.refreshWallet?.();
+    game.toast?.(t('beauty.headRefund', { won: won(n) }));
+  }
+  try { storage?.setItem(HEAD_REFUND, data.status); } catch { /* storage blocked */ }
+  return data.status;
+}

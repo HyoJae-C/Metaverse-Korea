@@ -11,11 +11,11 @@ test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(SALON, {}, { dye: 'pink', hairStyle: 'bob' }), 70000);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: 'pink' }), 0);
   assert.equal(beautyCost(SALON, { dye: 'pink' }, { dye: null }), 0);
-  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', small: 'small' }), 130000);
-  assert.equal(beautyCost(CLINIC, { small: 'small' }, { small: 'big' }), 45000); // small to big
-  assert.equal(beautyCost(CLINIC, { small: 'big' }, { small: null }), 0);
-  assert.equal(beautyCost(CLINIC, { small: false }, { small: false }), 0);
-  assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 50000);
+  assert.equal(beautyCost(CLINIC, {}, { eyeShape: 'big', tone: 'tan', nose: 'high' }), 550000);
+  assert.equal(beautyCost(CLINIC, { nose: 'big' }, { nose: 'small' }), 200000);
+  assert.equal(beautyCost(CLINIC, { nose: 'small' }, { nose: null }), 0);
+  assert.equal(beautyCost(CLINIC2, {}, { eyeShape: 'cat' }), 100000);
+  assert.equal(beautyCost(CLINIC2, {}, { jaw: 'square' }), 400000);
   assert.equal(beautyCost(LENS, {}, { eyes: 'aqua' }), 25000);
   assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 0); // the mirror is a free tester: you buy a lipstick (core/lipstick.js)
 });
@@ -31,11 +31,12 @@ test('thirty-three hairstyles, ten lip tints, fourteen lens colours, two eye sha
 });
 
 test('looks keep valid beauty choices and drop the rest', () => {
-  const ok = sanitizeLook({ dye: 'mint', eyes: 'aqua', tone: 'deep', small: true, hairStyle: 'twin', lip: 'coral', eyeShape: 'puppy' });
-  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.small, ok.hairStyle, ok.lip, ok.eyeShape], ['mint', 'aqua', 'deep', 'small', 'twin', 'coral', 'puppy']); // an old save's small head
-  assert.equal(sanitizeLook({ small: 'big' }).small, 'big');
-  const bad = sanitizeLook({ dye: 'toString', eyes: '#fff', tone: 1, small: 'yes', hairStyle: 'rainbow', lip: 'constructor', eyeShape: 'huge' });
-  assert.deepEqual([bad.dye, bad.eyes, bad.tone, bad.small, bad.hairStyle, bad.lip, bad.eyeShape], [null, null, null, false, null, null, null]);
+  const ok = sanitizeLook({ dye: 'mint', eyes: 'aqua', tone: 'deep', hairStyle: 'twin', lip: 'coral', eyeShape: 'puppy', nose: 'high', jaw: 'vline' });
+  assert.deepEqual([ok.dye, ok.eyes, ok.tone, ok.hairStyle, ok.lip, ok.eyeShape, ok.nose, ok.jaw], ['mint', 'aqua', 'deep', 'twin', 'coral', 'puppy', 'high', 'vline']);
+  const bad = sanitizeLook({ dye: 'toString', eyes: '#fff', tone: 1, hairStyle: 'rainbow', lip: 'constructor', eyeShape: 'huge', nose: 'long', jaw: 'toString' });
+  assert.deepEqual([bad.dye, bad.eyes, bad.tone, bad.hairStyle, bad.lip, bad.eyeShape, bad.nose, bad.jaw], [null, null, null, null, null, null, null, null]);
+  // The face size is gone: every head is one size (hats and glasses fit).
+  assert.equal('small' in sanitizeLook({ small: 'big' }), false);
 });
 
 test('every menu option has a palette or labelled choices in every language', () => {
@@ -44,7 +45,7 @@ test('every menu option has a palette or labelled choices in every language', ()
     for (const o of menu) {
       if (o.palette) assert.ok(PALETTES[o.palette], o.key);
       for (const c of o.choices || []) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l][`${o.label}.${c}`], `${l} ${o.label}.${c}`);
-      if (!o.toggle) for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l]['beauty.' + o.key], `${l} beauty.${o.key}`);
+      for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(STRINGS[l]['beauty.' + o.key], `${l} beauty.${o.key}`);
     }
   }
 });
