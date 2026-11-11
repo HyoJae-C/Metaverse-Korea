@@ -47,6 +47,7 @@ test('the connection is ready once our own cell is in, not when the slowest neig
   made[0].answer();
   await tick();
   assert.ok(ready, 'ready without waiting for the eight cells around us');
+  made[0].handlers.onJoin({ id: 'friend' }); // someone to send to (alone, nothing is sent)
   ready.sendState({ x: 1, z: 2 });
   assert.deepEqual(made[0].sent, [{ x: 1, z: 2 }]);
   ready.disconnect();
