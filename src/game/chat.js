@@ -219,7 +219,7 @@ export function createChat(game) {
         const added = game.inventory.add(...unlocked);
         game.shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
         refreshItems();
-      } else game.shop.toast(t('chat.unknownCommand'));
+      } else if (!await (await import('./random-outfit.js')).runOutfitCode(game, code)) game.shop.toast(t('chat.unknownCommand')); // /랜덤복장…, loaded on first use
       return;
     }
     // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
