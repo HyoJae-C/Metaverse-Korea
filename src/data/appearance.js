@@ -122,7 +122,7 @@ export const ANIMAL_LOOKS = [
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
-// The pendant charms (Gahoe Silver Studio, Bukchon): five shapes (moon, plum blossom,
+// The pendant charms: five shapes (Gyeol Ring Studio, Seongsu) (moon, plum blossom,
 // heart, star, butterfly) or a
 // round tag engraved with a word Koreans wish on, the Hangul large and its
 // hanja small under it (Yozi: Hangul first). A fixed list
@@ -135,7 +135,7 @@ export const PENDANT_CHARMS = {
   star: { emoji: '⭐', name: { en: 'Star', ko: '별', ja: '星', zh: '星星' } },
   butterfly: { emoji: '🦋', name: { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' } },
   jeong: wish('情', '정', 'warm heart', '情け', '情谊'),
-  an: wish('安', '안', 'peace', '安らぎ', '平安'),
+  an: { ...wish('安', '안', 'peace', '安らぎ', '平安'), retired: true }, // (off the studio's list, Yozi 2026-11-12; kept for those who made one)
   cheong: wish('淸', '청', 'clear', '清らか', '清澈'),
   jin: wish('眞', '진', 'truth', 'まこと', '真诚'),
   bok: wish('福', '복', 'luck', '福', '福气'),
@@ -153,7 +153,11 @@ export const PENDANT_CHARMS = {
   hwa: wish('華', '화', 'splendour', '華やか', '繁华'),
   gwang: wish('光', '광', 'light', '光', '光明'),
   gil: wish('吉', '길', 'good fortune', '吉', '吉祥'),
-  geon: wish('健', '건', 'health', '健やか', '健康'),
+  geon: { ...wish('健', '건', 'health', '健やか', '健康'), retired: true },
+  yeon: wish('緣', '연', 'bond', '縁', '缘分'), // (these four added, Yozi 2026-11-12: 22 words, 11 in each studio)
+  yong: wish('勇', '용', 'courage', '勇気', '勇气'),
+  eun: wish('恩', '은', 'gratitude', '恩', '恩情'),
+  hye: wish('慧', '혜', 'wisdom', '知恵', '智慧'),
 };
 
 export const ACCESSORIES = {
@@ -204,7 +208,7 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
-    // Necklaces from Gahoe Silver Studio (Bukchon):
+    // Necklaces from Jongno Geumeunbang and Gyeol Ring Studio:
     // a fine chain with a charm: a moon, a plum blossom, or a round tag
     // engraved with a hanja word (PENDANT_CHARMS).
     ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.letter, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),

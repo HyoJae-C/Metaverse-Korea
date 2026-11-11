@@ -776,7 +776,8 @@ function addAccessories(look, head, torso, body) {
     const m = mat(neck.color);
     const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TubeGeometry(necklaceCurve(), 72, 0.009, 5, true)), m);
     // The charm hangs from the bottom of the V on a little ring.
-    const size = neck.hanja ? 1.8 : 1.5, top = (neck.hanja ? TAG_R : neck.charm === 'butterfly' ? 0.026 : 0.036) * size;
+    const size = neck.hanja ? 1.8 : 0.75, // (the shapes, from Gyeol Ring Studio: half size, Yozi 2026-11-12)
+      top = (neck.hanja ? TAG_R : neck.charm === 'butterfly' ? 0.026 : 0.036) * size;
     const bail = new THREE.Mesh(geo('pendantBail', () => new THREE.TorusGeometry(0.01, 0.004, 4, 10)), m);
     bail.position.set(0, NECK_V - 0.009, 0.214);
     const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);

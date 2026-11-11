@@ -2748,7 +2748,7 @@ function enterStore(item, walkIn = null) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : CRAFT[store.craft] ? '🛠️ ' + L(BK_TEXT.master) : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -4999,7 +4999,7 @@ const bukchonUi = new BukchonUI({
   onMake: (kind, ci, si) => {
     const k = CRAFT[kind], entry = craftEntry(kind, ci, si), wear = craftWear(kind, ci, si);
     if (!k || (!entry && !wear)) return false;
-    if (wear) { // a piece you wear (Gahoe Silver Studio's necklaces): it goes to your items
+    if (wear) { // a piece you wear (the necklace studios' necklaces): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
       const note = { name: BK_TEXT[kind], at: interior?.store.name };
       if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }
