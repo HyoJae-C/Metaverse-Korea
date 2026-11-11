@@ -264,10 +264,13 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.she
   width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
   background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
 }
+/* Touch screens (Yozi): 📷 beside the eye, the map button under it. */
+body:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); top: max(12px, env(safe-area-inset-top)); }
+body:not(.in-store) .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) - 2px); top: calc(max(12px, env(safe-area-inset-top)) + 50px); }
 html:not(.ui-hidden) .in-store .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
-html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
+html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
 @media (max-height: 500px) {
-  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
 }
 @media (max-width: 700px) { /* (phones: the pinned notice sits under the minimap; the eye's spot is back when it goes) */
   html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { display: none; }
