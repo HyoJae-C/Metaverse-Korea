@@ -21,16 +21,12 @@
 // The hoop frame: the origin is on the floor under the rim's centre, +y up,
 // +z out into the court (the backboard is at -z). A yaw of 0 faces +z, so
 // facing the hoop from the court is a yaw of about PI.
+import { HOOP } from './basketball-hoop.js';
+export { HOOP };
 
 export const BASKET_GAME = 'basket'; // id for the grill's Medals
 export const SHOTS_PER_ROUND = 5;
 export const MEDAL_PTS = { gold: 13, silver: 9, bronze: 5 }; // of 15
-export const HOOP = {
-  h: 1.9, // rim height: a mini hoop for chibi players (about 1.1 m tall)
-  r: 0.21, // rim radius
-  ball: 0.09, // ball radius
-  board: { z: -0.33, w: 1.1, h: 0.68, y0: 1.78, t: 0.04 }, // backboard: plane z, width, height, bottom edge, thickness
-};
 
 export function basketMedal(pts) {
   for (const m of ['gold', 'silver', 'bronze']) if (pts >= MEDAL_PTS[m]) return m;

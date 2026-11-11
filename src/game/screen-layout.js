@@ -1,13 +1,17 @@
 // Screen layout (Settings › Game settings):
 // - Hide buttons: the top chips, tool buttons, emotes, minimap, chat and
 //   quest bars go away for a clean view; the joystick, the action button and
-//   whatever is open stay, so you can still walk and go into shops. A small
-//   eye in the top-right corner (or the U key) brings them back.
+//   whatever is open stay, so you can still walk and go into shops. The eye
+//   button in the top-left corner (or the U key) hides and shows them; the
+//   map button sits beside it and stays.
+// - Minimap: shown while you are being guided somewhere (its route line is
+//   what the guide arrow lacks), or always with a switch here.
 // - Joystick (phones): "Fixed" (bottom left, as before), "Under your thumb"
 //   (invisible until a thumb touches the lower left; it appears there), or
 //   "My spot" (drag it where you like, e.g. the right side for left-handers).
 // Loaded after the street is up, so none of it is in the first download.
 const HIDE_KEY = 'mk.hideUi';
+const MINIMAP_KEY = 'mk.minimap'; // '1': always on
 const JOY_KEY = 'mk.joyMode'; // 'fixed' | 'float' | 'custom'
 const POS_KEY = 'mk.joyPos'; // { x, y }: the stick's centre, as a share of the screen
 const MODES = ['fixed', 'float', 'custom'];
@@ -22,7 +26,7 @@ export function placeOnScreen(pos, w, h) {
   return { x: clamp(pos.x * w, HALF, w - HALF), y: clamp(pos.y * h, HALF, h - HALF) };
 }
 
-// game: { input, hud, t, toast(text), isTouch }
+// game: { input, hud, t, toast(text), isTouch, onMinimap(always) }
 export function createScreenLayout(game) {
   const { t } = game;
   const $ = (id) => document.getElementById(id);
@@ -40,7 +44,8 @@ export function createScreenLayout(game) {
     hidden = on;
     root.classList.toggle('ui-hidden', on);
     hideBtn?.setAttribute('aria-pressed', String(on));
-    eye.ariaLabel = eye.title = t('hideUi.show');
+    eye.ariaLabel = eye.title = t(on ? 'hideUi.show' : 'hideUi.hide');
+    eye.setAttribute('aria-pressed', String(on));
     save(HIDE_KEY, on ? '1' : '0');
     if (on && say) game.toast(t(game.isTouch ? 'hideUi.onTouch' : 'hideUi.on'));
   };
@@ -49,7 +54,23 @@ export function createScreenLayout(game) {
     setHidden(!hidden, true);
     if (hidden) $('settings-panel').hidden = true; // (see the clean screen at once)
   };
-  eye.onclick = () => setHidden(false);
+  eye.onclick = () => setHidden(!hidden, true);
+  // Phones and tablets: the map button moves from the tool row to beside the
+  // eye (Android: out of the bottom bar too). PC keeps it in the tool row on
+  // the right (Yozi). Either way it stays when the rest is hidden.
+  const corner = $('map-btn');
+  if (corner && game.isTouch) { corner.classList.add('corner-map'); game.hud.append(corner); }
+  const mapBtn = $('minimap-btn');
+  const setMinimap = (on) => {
+    mapBtn?.setAttribute('aria-pressed', String(on));
+    game.onMinimap?.(on);
+  };
+  setMinimap(load(MINIMAP_KEY) === '1');
+  if (mapBtn) mapBtn.onclick = () => {
+    const on = mapBtn.getAttribute('aria-pressed') !== 'true';
+    save(MINIMAP_KEY, on ? '1' : '0');
+    setMinimap(on);
+  };
   addEventListener('keydown', (e) => {
     if (e.code !== 'KeyU' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     const el = e.target;

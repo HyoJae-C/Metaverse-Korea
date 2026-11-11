@@ -2,12 +2,13 @@
 // language. English is the source; a missing language falls back to
 // English and Traditional Chinese is made from zh (core/i18n.js localName).
 import { getLanguage, localName } from '../core/i18n.js';
+import { BASKET_OPEN } from './basketball-labels.js';
 
 const L = (en, ko, ja, zh, es, id, vi, hi, ar, fr, th) => ({ en, ko, ja, zh, es, id, vi, hi, ar, fr, th });
 
 export const BT = {
   title: L('Mini basketball', '미니 농구', 'ミニバスケット', '迷你篮球', 'Minibaloncesto', 'Basket mini', 'Bóng rổ mini', 'मिनी बास्केटबॉल', 'كرة سلة مصغّرة', 'Mini basket', 'บาสเกตบอลมินิ'),
-  open: L('Play basketball', '농구하기', 'バスケをする', '打篮球', 'Jugar al baloncesto', 'Main basket', 'Chơi bóng rổ', 'बास्केटबॉल खेलें', 'العب كرة السلة', 'Jouer au basket', 'เล่นบาสเกตบอล'),
+  open: BASKET_OPEN,
   court: L('Peace Plaza Court', '평화의광장 농구장', '平和の広場コート', '和平广场球场', 'Cancha de la Plaza de la Paz', 'Lapangan Alun-alun Perdamaian', 'Sân Quảng trường Hòa bình', 'पीस प्लाज़ा कोर्ट', 'ملعب ساحة السلام', 'Terrain de la Place de la Paix', 'สนามพีซพลาซ่า'),
   howTo: L(
     'Five shots a round. Pick a shot, then play its little gauge: the better you do, the better the move (3 levels). A made shot scores its points; a level 3 move gets +1 style point.',

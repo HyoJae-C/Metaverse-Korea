@@ -820,11 +820,16 @@ export const PARK_FISH = {
     fish: ['sunfish', 'electric-eel', 'tuna', 'shark', 'marlin', 'whale'] },
   'mangwon-hangang': { name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' },
     fish: ['cuttlefish', 'lobster', 'seahorse', 'axolotl', 'orca', 'giant-squid'] },
-  'banpo-jamwon-hangang': { name: { ko: '반포·잠원', en: 'Banpo-Jamwon', ja: '盤浦・蚕院', zh: '盘浦·蚕院' },
-    fish: ['clownfish', 'blue-tang', 'butterflyfish', 'sea-turtle', 'beluga', 'manta'] },
-  'yeouido-hangang': { name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' },
+  // (Yeouido Han River Park is a no-fishing area, as the real one: its kinds
+  // went to Banpo, and Banpo-Jamwon's to Jamwon, when the two parks split.
+  // PARK_MOVED carries each player's legend count across.)
+  'banpo-hangang': { name: { ko: '반포', en: 'Banpo', ja: '盤浦', zh: '盘浦' },
     fish: ['puffer', 'moray', 'dolphin', 'anglerfish', 'dugong', 'blobfish'] },
+  'jamwon-hangang': { name: { ko: '잠원', en: 'Jamwon', ja: '蚕院', zh: '蚕院' },
+    fish: ['clownfish', 'blue-tang', 'butterflyfish', 'sea-turtle', 'beluga', 'manta'] },
 };
+// Old park ids → the park that now has their kinds (saves, FishPity).
+export const PARK_MOVED = { 'yeouido-hangang': 'banpo-hangang', 'banpo-jamwon-hangang': 'jamwon-hangang' };
 // A park's own kinds of one rarity (released), or null when the park keeps
 // every kind of it (★1-2, or a park not in PARK_FISH).
 const parkKinds = (park, rarity) => {
@@ -1071,7 +1076,11 @@ export class FishPity {
     let raw = {};
     try { raw = JSON.parse(storage?.getItem(PITY_KEY) || '{}') || {}; } catch { /* broken save */ }
     this.c = {};
-    for (const [k, v] of Object.entries(raw)) if (PARK_FISH[k] && Number.isInteger(v) && v > 0) this.c[k] = v;
+    for (const [k0, v] of Object.entries(raw)) {
+      const k = PARK_MOVED[k0] || k0;
+      if (PARK_FISH[k] && Number.isInteger(v) && v > 0) this.c[k] = Math.max(this.c[k] || 0, v);
+    }
+    if (Object.keys(raw).some((k) => PARK_MOVED[k])) this._save(); // (saved under the new ids)
   }
   count(park) { return this.c[park] || 0; }
   bump(park) { if (!PARK_FISH[park]) return; this.c[park] = this.count(park) + 1; this._save(); }

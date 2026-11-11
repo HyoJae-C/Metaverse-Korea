@@ -9,11 +9,11 @@
 import { L, fmt } from './pocha-ui.js';
 import { getLanguage } from '../core/i18n.js';
 import { LOCK_SHAPES, LOVE_LOCK, countLines, cleanNote, preview, newRequestId } from '../core/love-locks.js';
+import { LOCK_LABELS } from './love-lock-labels.js';
 
 export const LOCK_TEXT = {
+  ...LOCK_LABELS,
   spot: { en: 'Love locks', ko: '사랑의 자물쇠', ja: '愛の南京錠', zh: '爱情锁' },
-  hang: { en: 'Hang a love lock', ko: '자물쇠 걸기', ja: '南京錠をかける', zh: '挂爱情锁' },
-  read: { en: 'Read the messages', ko: '메시지 목록 보기', ja: 'メッセージを見る', zh: '查看留言' },
   pick: { en: 'Pick a lock', ko: '자물쇠 고르기', ja: '南京錠を選ぶ', zh: '选一把锁' },
   heart: { en: 'Heart', ko: '하트', ja: 'ハート', zh: '心形' },
   circle: { en: 'Circle', ko: '원', ja: '丸', zh: '圆形' },
