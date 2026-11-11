@@ -2373,20 +2373,20 @@
    "low": 1,
    "p": [
     [
-     -8.2,
-     -19.4
+     -9.6,
+     -22.1
     ],
     [
      -12.5,
      -27.2
     ],
     [
-     -12.9,
+     -12.8,
      -27
     ],
     [
-     -8.6,
-     -19.2
+     -9.9,
+     -21.9
     ]
    ]
   },
@@ -2394,20 +2394,20 @@
    "low": 1,
    "p": [
     [
+     -16.1,
+     -24.4
+    ],
+    [
+     -13.5,
+     -19.8
+    ],
+    [
+     -13.4,
+     -19.9
+    ],
+    [
      -16,
-     -24.2
-    ],
-    [
-     -12.1,
-     -17.2
-    ],
-    [
-     -12,
-     -17.3
-    ],
-    [
-     -15.9,
-     -24.3
+     -24.5
     ]
    ]
   }
@@ -2448,10 +2448,10 @@
    "h": 4,
    "cut": 29.9,
    "stairs": {
-    "a0": 21.4,
-    "a1": 29.4,
+    "a0": 24.4,
+    "a1": 29.6,
     "w": 4.5,
-    "n": 25
+    "n": 16
    },
    "ramp": {
     "r0": 17,
@@ -2590,7 +2590,7 @@
      -22.3
     ]
    ],
-   "why": "Stairs and yard moved 4-8 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m)."
+   "why": "Stairs and yard moved 7-9 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m)."
   },
   {
    "type": "cathedral",
@@ -2633,8 +2633,8 @@
   },
   {
    "type": "sign",
-   "x": -6,
-   "z": -19.2,
+   "x": -7.5,
+   "z": -21.8,
    "y": 4,
    "ry": -2.6282,
    "title": {

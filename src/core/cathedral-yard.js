@@ -15,6 +15,24 @@ const mats = {};
 const mat = (c, snow) => (mats[c + (snow ? 's' : '')] ||= snow ? addSnowCover(new THREE.MeshLambertMaterial({ color: c })) : new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
 const C = { paving: '#d6cfc0', grass: '#8fbf6c', ramp: '#cfc6b4', brick: '#a9573f', coping: '#bdb6a8', step: '#c4beb2', metal: '#4d5156', lamp: '#2e3135', glow: '#ffe2a0', hedge: '#4f7f3f', trunk: '#6b4a32', leaf: '#5d8f4a' };
 
+// One step on the stairs' slope (repeated n times up it): the stone tread
+// lit, its front edge in shadow.
+let stepTex;
+function stepTexture() {
+  if (stepTex) return stepTex;
+  const c = document.createElement('canvas');
+  c.width = 4; c.height = 32;
+  const x = c.getContext('2d');
+  x.fillStyle = C.step; x.fillRect(0, 0, 4, 32);
+  x.fillStyle = '#ddd8cd'; x.fillRect(0, 21, 4, 3);
+  x.fillStyle = '#8f897d'; x.fillRect(0, 24, 4, 8);
+  stepTex = new THREE.CanvasTexture(c);
+  stepTex.wrapS = stepTex.wrapT = THREE.RepeatWrapping;
+  stepTex.magFilter = THREE.NearestFilter;
+  stepTex.colorSpace = THREE.SRGBColorSpace;
+  return stepTex;
+}
+
 // Keep the part of a polygon where keep(pt) >= 0 (keep is linear in x, z).
 function clip(poly, keep) {
   const out = [];
@@ -31,7 +49,7 @@ export function buildYard(g, l) {
   const [fx, fz] = l.f, sx = -fz, sz = fx; // along the axis (towards the street), and east across it
   const P = (a, s) => [a * fx + s * sx, a * fz + s * sz];
   const A = (q) => yardFrame(l, q[0], q[1]);
-  const Y = (q) => { const [a, s] = A(q); return yardHeightAt(l, a, s, true); };
+  const Y = (q) => { const [a, s] = A(q); return yardHeightAt(l, a, s); };
   const ry = Math.atan2(fx, fz); // turns a box's +z along the axis
   const along = (v) => (q) => v - A(q)[0], after = (v) => (q) => A(q)[0] - v; // (keep: before / after `v` along)
   const west = (v) => (q) => v - A(q)[1], east = (v) => (q) => A(q)[1] - v;
@@ -146,16 +164,34 @@ export function buildYard(g, l) {
   wallPiece(P(a0, hw + 0.22), P(cut, hw + 0.22), H + 0.15);
   for (let a = a0 + 0.5; a < cut - 0.4; a += 1.2) box([1, 1.15], 0.8, ...xyz(P(a + 0.1, hw + 1.1), H + 0.4), C.hedge);
   function xyz([x, z], y) { return [x, y, z]; }
-  // The steps: n treads of stone, each a solid block down to the street.
-  const t = (a1 - a0) / n, rise = H / n;
-  for (let k = 1; k < n; k++) {
-    const top = H - k * rise, mid = P(a0 + (k - 0.5) * t, 0);
-    box([w, t + 0.01], top, mid[0], top / 2, mid[1], C.step);
+  // The stairs: one smooth stone slope (you walk up it without jolting),
+  // the n steps painted on it; from the side, a plain diagonal.
+  {
+    const q = (a, s, y) => { const [x, z] = P(a, s); return [x, y, z]; };
+    const tl = q(a0, -hw, H), tr = q(a0, hw, H), bl = q(a1, -hw, 0), br = q(a1, hw, 0);
+    // (counter-clockwise from above, so the face looks up)
+    const up = (bl[0] - tl[0]) * (br[2] - tl[2]) - (bl[2] - tl[2]) * (br[0] - tl[0]) < 0;
+    const [B, Bu, R, Ru] = up ? [bl, [0, 0], br, [1, 0]] : [br, [1, 0], bl, [0, 0]];
+    const T2 = up ? tr : tl, T2u = up ? [1, n] : [0, n], T1 = up ? tl : tr, T1u = up ? [0, n] : [1, n];
+    const top = new THREE.BufferGeometry();
+    top.setAttribute('position', new THREE.Float32BufferAttribute([...T1, ...B, ...R, ...T1, ...R, ...T2], 3));
+    top.setAttribute('uv', new THREE.Float32BufferAttribute([...T1u, ...Bu, ...Ru, ...T1u, ...Ru, ...T2u], 2));
+    top.computeVertexNormals();
+    const m = new THREE.Mesh(top, new THREE.MeshLambertMaterial({ map: stepTexture() }));
+    m.position.y = 0.02;
+    g.add(m);
+    // The two sides under the slope, down to the street.
+    const fl = q(a0, -hw, 0), fr = q(a0, hw, 0), side = new THREE.BufferGeometry();
+    side.setAttribute('position', new THREE.Float32BufferAttribute([...tl, ...fl, ...bl, ...tr, ...br, ...fr], 3));
+    side.computeVertexNormals();
+    const sm = new THREE.Mesh(side, mat(C.step));
+    sm.material.side = THREE.DoubleSide;
+    g.add(sm);
   }
   // The hand rail up their west side: posts and a sloping rail.
   const slope = Math.atan2(H, a1 - a0), railS = -hw + 0.08;
   for (let a = a0 + 0.2; a <= a1 - 0.1; a += 1.6) {
-    const y = yardHeightAt(l, a, 0, false);
+    const y = yardHeightAt(l, a, 0);
     box([0.06, 0.06], 0.95, ...xyz(P(a, railS), y + 0.47), C.metal);
   }
   {
@@ -165,13 +201,13 @@ export function buildYard(g, l) {
     box([0.04, len], 0.04, m2[0], H / 2 + 0.5, m2[1], C.metal, ry, slope);
   }
   // Lamp posts on the bank beside the rail, and old trees on it.
-  for (const a of [a0 + 0.8, a0 + 4, a0 + 7.2]) {
+  for (const a of [a0 + 0.8, (a0 + a1) / 2, a1 - 0.6]) {
     const p = P(a, -hw - 0.9), y = Y(p);
     box([0.14, 0.14], 3.4, p[0], y + 1.7, p[1], C.lamp);
     box([0.5, 0.5], 0.12, p[0], y + 3.45, p[1], C.lamp);
     box([0.34, 0.34], 0.42, p[0], y + 3.2, p[1], C.glow).userData.noShadow = true;
   }
-  for (const [a, s, sc] of [[l.ramp.r0 + 2.5, -12.5, 1], [a0 + 2, -4.2, 0.8], [a0 + 5.5, -13, 1.1], [a1 - 1, -4.3, 0.75], [a1 - 2, -12, 0.9]]) {
+  for (const [a, s, sc] of [[l.ramp.r0 + 2.5, -12.5, 1], [a0 + 2, -4.2, 0.8], [(a0 + a1) / 2 + 1, -13, 1.1], [a1 - 1, -4.3, 0.75], [a1 - 2, -12, 0.9]]) {
     const p = P(a, s);
     if (!pointInPoly(p[0], p[1], base)) continue;
     const y = Y(p);

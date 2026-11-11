@@ -121,22 +121,24 @@ areas.push({ k: 'plaza', p: GROUNDS });
 // the church's axis in front of the bell tower (OSM 1193247326 and the
 // steps below it; Yozi 2026-11-11: "a key feature") or by the service road
 // west of them (OSM 1537435146), a ramp. Heights at 50% like the church: the
-// yard about 8 m above the street for real -> 4 m; the stairs 25 steps of
-// 16 cm (people-sized), 4.5 m wide (real about 9 m; 1/4 would be narrower
-// than one person's door). Height maths: src/core/cathedral-yard-ground.js.
+// yard about 8 m above the street for real -> 4 m; the stairs 4.5 m wide
+// (real about 9 m; 1/4 would be narrower than one person's door), 16 steps
+// painted on a smooth slope, and the yard flat beside the first three
+// hedges (Yozi 2026-11-11: shorter stairs, no jolting going up, a diagonal
+// from the side). Height maths: src/core/cathedral-yard-ground.js.
 // why: the church at 50% reaches 9 m further towards the street than the
 // real one, so the yard in front of it and the stairs move with it: the
-// real flight runs 17-21 m along the axis from the hall's middle, ours 21-29
-// (its top 4 m, its foot 8 m from the real ones); the ramp is on its real
-// line.
-const YH = 4, STEPS = 25, TREAD = 0.32;
+// real flight runs 17-21 m along the axis from the hall's middle, ours
+// 24.4-29.6 (its top 7 m, its foot 9 m from the real ones); the ramp is on
+// its real line.
+const YH = 4, STEPS = 16, TREAD = 0.325;
 const axisRoad = (() => { // where Myeongdong-gil crosses the church's axis (metres along it)
   let best = null;
   for (let a = L2; a < L2 + 30; a += 0.1) { const d = nearestOn(onHall(a, 0), MDGIL).d; if (!best || d < best.d) best = { a, d }; }
   return best.a;
 })();
 const CUT = r1(axisRoad - ROAD['Myeongdong-gil'].w / 2 - 0.4); // the terrace stops at the street's kerb
-const A1 = r1(CUT - 0.5), A0 = r1(A1 - STEPS * TREAD);
+const A1 = r1(CUT - 0.3), A0 = r1(A1 - STEPS * TREAD);
 export const YARD = {
   type: 'cathedralyard', x: HALL.at[0], z: HALL.at[1], f: F, h: YH, cut: CUT,
   stairs: { a0: A0, a1: A1, w: 4.5, n: STEPS },
@@ -148,7 +150,7 @@ export const YARD = {
   yard: GROUNDS.map(([x, z]) => [r1(x - HALL.at[0]), r1(z - HALL.at[1])]),
 };
 const yardAt = ([x, z]) => yardHeight(YARD, x - HALL.at[0], z - HALL.at[1]);
-landmarks.push({ ...YARD, why: 'Stairs and yard moved 4-8 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m).' });
+landmarks.push({ ...YARD, why: 'Stairs and yard moved 7-9 m towards the street with the 50% church (its front is 9 m past the real one); heights at 50% (yard 4 m).' });
 // The terrace's walls are walls: you can't walk off the yard or climb it
 // from the street, except up the stairs or the ramp (low: the camera may
 // look over them).
