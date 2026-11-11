@@ -66,7 +66,7 @@ import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
-import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock } from './core/cablecar.js';
+import { CABLE, CC, cabinAt, cabinPos, boardSpot, doorsOpen, arrivesIn, cableClock, nearLoveLock, nearTrailGate } from './core/cablecar.js';
 import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
 import { LoveLockUI, LOCK_TEXT } from './ui/love-lock-ui.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
@@ -235,6 +235,7 @@ import { createDaily } from './game/daily.js';
 import { createSkyFlight } from './game/sky-flight.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
+import { createNamsanWalk } from './game/namsan-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
@@ -803,7 +804,9 @@ const hillDistrict = (map.meta?.districts || []).find((d) => d.hill);
 const slopeY = hillDistrict ? hillGround(hillDistrict.hill, hillDistrict.offset) : () => 0;
 const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, groundY: slopeY, randomLook });
 // Passers-by: two strolling around each meeting zone.
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: slopeY });
+// The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision });
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
@@ -3097,7 +3100,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill or Gyeongnidan-gil
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, the busking bank, Bukchon's hill, Gyeongnidan-gil or the Namsan trail
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
@@ -5063,6 +5066,18 @@ function bosingakAct(p) {
   return { key: 'bosingak-ring', label: '🔔 ' + L(BOSINGAK_TEXT.ring), run: ringBosingak };
 }
 const bosingakAboutAct = () => ({ key: 'bosingak-about', label: 'ℹ️ ' + L(BOSINGAK_TEXT.about), run: bosingakCard });
+// The Namsan trail's top: through the gate onto the summit plaza (the cable
+// car's room, at its back gate), and back out of it down the trail.
+const namsanUpAct = () => ({ key: 'namsan-up', label: '⛰️ ' + t('namsan.up'), run: () => {
+  const it = storefronts.items.find((i) => i.store.workshop === 'cablecar');
+  if (it) enterStore(it, { ...CC.trailGate.inside, yaw: CC.trailGate.inside.ry });
+} });
+const namsanDownAct = () => ({ key: 'namsan-down', label: '🥾 ' + t('namsan.down'), run: () => {
+  const o = namsanWalk.topOut();
+  interior.front = { ...interior.front, door: { x: o.x, z: o.z }, group: { rotation: { y: o.ry } } }; // (out at the trail's top, not the lower station)
+  doorCam = null;
+  leaveStore();
+} });
 // Each frame on the street: the people on the square, and the New Year's ringings.
 function updateBosingak(p, dt, w, h) {
   if (!bosingakAt) return;
@@ -6310,6 +6325,7 @@ function moreActions(p, door) {
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
+    if (namsanWalk.atTop(p)) out.push(namsanUpAct());
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat) out.push(matSitAct(bs));
@@ -6390,6 +6406,7 @@ function updateAction(p, tSec) {
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
     else if (!riding && bosingakAct(p)) next = bosingakAct(p);
     else if (!riding && palaceAct(p)) next = palaceAct(p);
+    else if (!riding && namsanWalk.atTop(p)) next = namsanUpAct();
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
@@ -6451,6 +6468,8 @@ function updateAction(p, tSec) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (interior.cablecar && nearLoveLock(p.x, p.z)) {
       next = loveLockActs()[0]; // and "read the messages" (moreActions)
+    } else if (interior.cablecar && !cable && namsanWalk.line && nearTrailGate(p.x, p.z)) {
+      next = namsanDownAct();
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
       const first = ride.view === 'first';
       next = { key: 'coaster-view:' + ride.view, label: (first ? '🎥 ' : '👀 ') + L(first ? COASTER_TEXT.third : COASTER_TEXT.first), run: () => { ride.view = first ? 'third' : 'first'; ride.cam = null; action = STALE; } };
