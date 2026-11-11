@@ -393,7 +393,7 @@ export function buildLips(color, at) {
 // head keeps its size and hats still fit.
 // cheek: 0 .. 1 on the cheekbones (a V-line slims them too).
 export function jawMove(shape, x, y, z, t, cheek = 0) {
-  if (shape === 'vline') return [x * (1 - 0.27 * t) * (1 - 0.16 * cheek), y - 0.05 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.02 * t];
+  if (shape === 'vline') return [x * (1 - 0.27 * t) * (1 - 0.08 * cheek), y - 0.05 * t * Math.max(0, 1 - Math.abs(x) * 2), z + 0.02 * t];
   if (shape === 'square') { // full cheeks kept wide down to the jaw's corners, a flatter chin
     const flat = Math.max(0, 1 - Math.abs(x) * 1.8);
     return [x * (1 + 0.14 * Math.min(1, t * 1.5) + 0.08 * t * t), y + 0.07 * t * flat, z + 0.02 * t];
