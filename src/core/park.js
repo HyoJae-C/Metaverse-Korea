@@ -424,10 +424,9 @@ export function buildPark(store, ROOM, EXIT) {
     if ((signT -= dt) <= 0) { signT = 5; drawDroneSign(now); }
     if (s && s.t > -LIFT_SECONDS - 60 && !sky && !skyLoading) {
       skyLoading = true;
-      const phone = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
       import('./drone-sky.js').then((m) => {
         m.useShow(droneShow);
-        sky = m.createDroneSky(scene, { count: phone ? 400 : 600 });
+        sky = m.createDroneSky(scene, { count: 900 } /* 900 drones on every device (one draw call) */);
         show.photo = m.PHOTO_TIME;
         show.sky = sky;
         watchers = m.createWatchers(scene, { createCharacter, randomLook });
