@@ -415,6 +415,8 @@ export const EN = {
   "settings.hideUi": "Hide buttons (U)",
   "hideUi.on": "Buttons hidden. Press U or tap 👁️ (top left) to bring them back.",
   "hideUi.onTouch": "Buttons hidden. Tap 👁️ (top left) to bring them back.",
+  "sunset.in": "🌇 Sunset in {n} min. From these steps the sun goes down behind Seongsan Bridge.",
+  "sunset.now": "🌇 Sunset now: the sun is going down behind Seongsan Bridge.",
   "hideUi.hide": "Hide buttons",
   "settings.minimap": "Minimap always on (otherwise only while guided)",
   "hideUi.show": "Show buttons",

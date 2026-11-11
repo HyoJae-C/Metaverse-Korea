@@ -242,6 +242,7 @@ import { createNamsanWalk } from './game/namsan-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
+import { sunsetNote } from './game/sunset-spot.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -5745,7 +5746,7 @@ function updateOpenParks(dt) {
     const [wx, wz] = parkWorld(here, p.x, p.z);
     weather.update(dt, wx, wz); // (rain, snow and dusk carry on over the park)
     net.update?.(wx, wz); // (the street's area cells, as on the street)
-    sun.position.set(wx + 60, 120, wz + 40);
+    sun.position.set(wx, 0, wz).add(weather.sunset.offset); // (low in the west at sunset)
     sun.target.position.set(wx, 0, wz);
     const off = here.out ? !pointInPoly(p.x, p.z, here.out) : Math.abs(p.x) > PARK_OUT.x || p.z > PARK_OUT.z1;
     if (seated == null && !ride && off) leaveStore(true);
@@ -6271,6 +6272,7 @@ function sitDown(seat) {
   sendTimer = 0; // tell others right away
   missionEvent('sit');
   if (seat.academy) academyUi.show();
+  if (seat.sunset) { cam.yaw = seat.ry + Math.PI; cam.pitch = 0.2; shop.toast(sunsetNote(t)); } // Mangwon's sunset steps: face the sunset (game/sunset-spot.js)
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
   else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
 }
@@ -7032,7 +7034,7 @@ renderer.setAnimationLoop((now) => {
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
-    sun.position.set(p.x + 60, 120, p.z + 40);
+    sun.position.copy(p).setY(0).add(weather.sunset.offset); // (low in the west at sunset: core/sunset-sky.js)
     sun.target.position.set(p.x, 0, p.z);
     const z = zones.update(camera, p.x, p.z, tSec);
     if (z !== currentZone) {

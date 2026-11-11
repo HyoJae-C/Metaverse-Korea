@@ -419,6 +419,8 @@ export const VI = {
   "settings.hideUi": "Ẩn các nút (U)",
   "hideUi.on": "Đã ẩn các nút. Nhấn U hoặc chạm 👁️ (góc trên bên trái) để hiện lại.",
   "hideUi.onTouch": "Đã ẩn các nút. Chạm 👁️ (góc trên bên trái) để hiện lại.",
+  "sunset.in": "🌇 Còn {n} phút nữa là hoàng hôn. Từ bậc thềm này, mặt trời lặn sau cầu Seongsan.",
+  "sunset.now": "🌇 Đang hoàng hôn: mặt trời đang lặn sau cầu Seongsan.",
   "hideUi.hide": "Ẩn các nút",
   "settings.minimap": "Luôn hiện bản đồ nhỏ (nếu tắt, chỉ hiện khi đang chỉ đường)",
   "hideUi.show": "Hiện các nút",
