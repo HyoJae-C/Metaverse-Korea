@@ -112,7 +112,11 @@ export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_S
 // Two routines take turns, one per show (Yozi 2026-11-12): routine 2 at the
 // show of FIRST_HELLO_SHOW, routine 1 at the next. Both have the photo
 // pause at the same time and the same length.
-export const routineOf = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 === 0 ? 2 : 1);
+export const routineTurn = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) % 2) + 2) % 2 === 0 ? 2 : 1);
+// Routine 2 is paused (Yozi 2026-11-12): every show is routine 1 until it
+// is reworked. Set to true to let the two take turns again.
+const ROUTINE_2 = false;
+export const routineOf = (start) => (ROUTINE_2 ? routineTurn(start) : 1);
 
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
@@ -156,6 +160,7 @@ const MOVES = {
   magpie: (p, t) => { if (p[2] === 1) turn(p, -3, -3.4, Math.max(0, Math.sin(t * 2.4)) ** 3 * 0.12); },
   jindo: (p, t) => { if (p[2] === 1) turn(p, 3.6, -5.4, Math.sin(t * 9) * 0.22); },
   cat: (p, t) => { if (p[2] === 1) turn(p, 3.4, -7.5, Math.sin(t * 1.6) * 0.16); },
+  kite: (p, t) => { turn(p, 1.6, -5.2, Math.sin(t * 1.3) * 0.08); p[1] += Math.sin(t * 0.9) * 0.4; },
   moonrabbit: (p, t) => { if (p[2] === 1) turn(p, -0.8, 0.4, -(Math.max(0, Math.sin(t * 3)) ** 2) * 0.35); },
   lightstick: (p, t) => turn(p, [-7.6, 0, 7.6][p[2]], -9.6, Math.sin(t * 2.4 + p[2] * 1.2) * 0.12),
   star: (p, t) => { const a = t * 0.3, x = p[0]; p[0] = x * Math.cos(a); p[3] = x * Math.sin(a); },
@@ -194,44 +199,48 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [18, P('waver')],
     ...(routine === 2 ? [
     // Act 1: Korea
-    [30, P('taegukgi')],
+    [26, P('taegukgi')],
     [12, W(['대한민국'], { color: [RED, SKYBLUE] })],
     [18, P('mugunghwa')],
-    [30, P('tiger')],
+    [18, P('kite')],
+    [8, W(['하늘 높이'], { color: [SKYBLUE, WHITE] })],
+    [26, P('tiger')],
     [8, W(['어흥!'], { color: [GOLD, RED] })],
-    [26, P('magpie')],
+    [22, P('magpie')],
     [10, W(['반가워!'], { color: [SKYBLUE, WHITE] })],
+    [18, P('pouch')],
+    [12, W(['복 많이', '받으세요'], { color: [GOLD, RED] })],
     // Act 2: friends
-    [30, P('jindo')],
+    [26, P('jindo')],
     [8, W(['멍멍!'], { color: [GOLD, WHITE] })],
-    [28, P('cat')],
+    [24, P('cat')],
     [8, W(['야옹~'], { color: [GOLD, PINK] })],
     [8, W(['귀여워!'], { color: [PINK, GOLD] })],
     // Act 3: the taste of Seoul
-    [28, P('gimbap')],
-    [10, W(['김밥'], { color: [MINT, GOLD] })],
-    [20, P('ramen')],
+    [22, P('gimbap')],
+    [8, W(['김밥'], { color: [MINT, GOLD] })],
+    [16, P('ramen')],
     [6, W(['라면'], { color: [RED, GOLD] })],
     // (Yozi)
     [6, W(['모두서울'], { color: [GOLD, PINK] })],
     [7, W(['넌 소중해'], { color: [PINK, SKYBLUE] })],
-    [16, W(['맛있다!'], { color: [GOLD, PINK] })],
-    // Act 4: a walk in Seoul
-    [32, P('palace')],
-    [12, W(['경복궁'], { color: [GOLD, RED] })],
-    [32, P('tower')],
-    [12, W(['남산'], { color: [MINT, SKYBLUE] })],
-    [18, P('bridge')],
-    [12, W(['한강'], { color: [SKYBLUE, MINT] })],
+    [12, W(['맛있다!'], { color: [GOLD, PINK] })],
+    // Act 4: a walk in Seoul (the pictures in routine 1's order, new lines)
+    [28, P('palace')],
+    [12, W(['왕의 궁궐'], { color: [GOLD, RED] })],
+    [28, P('tower')],
+    [12, W(['서울이', '한눈에'], { color: [MINT, SKYBLUE] })],
     [22, P('anothertower')],
-    [14, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
-    [22, P('wheel')],
-    [22, P('coaster')],
-    [12, W(['모두랜드'], { color: [PINK, GOLD] })],
+    [14, W(['반짝이는', '서울'], { color: [VIOLET, SKYBLUE] })],
+    [18, P('bridge')],
+    [12, W(['한강 바람'], { color: [SKYBLUE, MINT] })],
+    [18, P('wheel')],
+    [18, P('coaster')],
+    [12, W(['꺄아~!'], { color: [PINK, GOLD] })],
     // Love
-    [20, P('heart')],
+    [16, P('heart')],
     [14, W(['우리 함께'], { color: [PINK, GOLD] })],
-    [18, W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
+    [18, W([['모두 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
     [18, P('hearts')],
     ] : [
     // Act 1: Seoul
@@ -291,18 +300,18 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [18, P('moonrabbit')],
     [8, W(['방아 쿵쿵'], { color: [GOLD, WHITE] })],
     [14, P('star')],
-    [10, W(['별'], { color: GOLD })],
-    [10, W(['반짝반짝'], { color: [GOLD, WHITE] })],
+    [10, W(['별 하나'], { color: GOLD })],
+    [10, W(['나 하나'], { color: [GOLD, WHITE] })],
     [18, P('dipper')],
-    [10, W(['꿈'], { color: [VIOLET, PINK] })],
+    [10, W(['북두칠성'], { color: [VIOLET, PINK] })],
     [15, P('shootingstar')],
-    [12, W(['소원 빌어'], { color: [VIOLET, GOLD] })],
+    [12, W(['소원 말해 봐'], { color: [VIOLET, GOLD] })],
     [14, P('clover')],
-    [10, W(['행운'], { color: [MINT, GOLD] })],
+    [10, W(['행운을 빌어'], { color: [MINT, GOLD] })],
     [18, P('blossom')],
     [17, P('rainbow')],
     [24, P('firework')],
-    [18, W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
+    [18, W(['오늘도', '반가웠어'], { color: [GOLD, PINK] })],
     [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
     ] : [
     // The night sky
@@ -335,7 +344,7 @@ function timed(list) {
   return list.map(([d, s]) => { const step = { at, ...s }; at += d; return step; });
 }
 
-export function program(start) {
+export function program(start, routine = routineOf(start)) {
   const act3 = ACT3[((showNumber(start) % ACT3.length) + ACT3.length) % ACT3.length];
   const next = new Date(nextDroneShow(start + 1000));
   let nextText = '';
@@ -343,7 +352,7 @@ export function program(start) {
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText, helloOf(start), routineOf(start))),
+    ...timed(scenes(act3, nextText, helloOf(start), routine)),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }

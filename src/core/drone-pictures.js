@@ -770,6 +770,40 @@ export const PICTURES = {
     circle(c, -1.5, 2.8, 0.36); fill(c, '#ff6a8a'); circle(c, -0.5, 2.0, 0.28); fill(c, '#ff9ab0');
     oval(c, -4.0, -4.6, 1.5, 0.7); fill(c, '#ffffff'); circle(c, -5.3, -2.6, 0.9); fill(c, '#ffffff');
   } },
+  // A bangpae-yeon (shield kite) on its string: white paper, the round hole
+  // in the middle, a red sun at the top, coloured corners, bamboo sticks
+  // (part 1: the string). It sways in the wind.
+  kite: { layers: 2, dens: [1, 0.8], draw(c, l) {
+    if (l === 1) { c.beginPath(); c.moveTo(1.6, -4.2); c.bezierCurveTo(3, -7, -4, -7.4, -11, -9.8); line(c, '#fff3c4', 0.22); return; }
+    c.save(); c.translate(1.6, 1.4); c.rotate(-0.12);
+    c.beginPath(); c.rect(-5.2, -6.6, 10.4, 13.2); fill(c, '#ffffff');
+    path(c, [[-5.2, -6.6], [-1.8, -6.6], [-5.2, -3.0]]); fill(c, '#2f5bd8');
+    path(c, [[5.2, -6.6], [1.8, -6.6], [5.2, -3.0]]); fill(c, '#ffd23a');
+    c.beginPath(); c.arc(0, 6.6, 2.4, Math.PI, 0); c.closePath(); fill(c, '#ff3048');
+    c.beginPath(); c.rect(-5.2, 4.8, 1.4, 1.8); fill(c, '#5fe08f'); c.beginPath(); c.rect(3.8, 4.8, 1.4, 1.8); fill(c, '#5fe08f');
+    for (const [a, b] of [[[-5.2, 6.6], [5.2, -6.6]], [[5.2, 6.6], [-5.2, -6.6]], [[0, 6.6], [0, -6.6]], [[-5.2, 3.2], [5.2, 3.2]]]) seg(c, a, b, '#e8c27a', 0.18);
+    c.save(); c.globalCompositeOperation = 'destination-out'; circle(c, 0, 0, 2.0); fill(c, '#000'); c.restore();
+    circle(c, 0, 0, 2.0); line(c, '#e8c27a', 0.2);
+    c.restore();
+  } },
+
+  // A bokjumeoni (lucky pouch): red silk with a gold 福 and cloud pattern,
+  // the gathered neck, the cord and two tassels.
+  pouch: { layers: 1, draw(c) {
+    c.beginPath(); c.moveTo(-3.2, 3.0); c.bezierCurveTo(-8.4, 1.6, -9.0, -8.2, 0, -8.6); c.bezierCurveTo(9.0, -8.2, 8.4, 1.6, 3.2, 3.0); c.closePath();
+    fill(c, radial(c, -2, -2, 0.5, 9, ['#ff6a7a', '#ff2a4a', '#d0103a']));
+    c.beginPath(); c.moveTo(-3.2, 3.0); c.quadraticCurveTo(-5.6, 5.4, -4.8, 7.2); c.quadraticCurveTo(0, 5.6, 4.8, 7.2); c.quadraticCurveTo(5.6, 5.4, 3.2, 3.0); c.closePath();
+    fill(c, '#ff5a8a');
+    c.beginPath(); c.rect(-3.6, 2.4, 7.2, 1.0); fill(c, '#ffd166'); // the cord
+    for (const sx of [-1, 1]) {
+      c.beginPath(); c.moveTo(sx * 3.4, 2.9); c.quadraticCurveTo(sx * 6.6, 1.6, sx * 7.0, -2.2); line(c, '#ffd166', 0.35);
+      path(c, [[sx * 6.4, -2.2], [sx * 7.6, -2.2], [sx * 8.0, -6.4], [sx * 6.0, -6.4]]); fill(c, '#ffd166');
+      for (let k = 0; k < 4; k++) seg(c, [sx * (6.3 + k * 0.45), -3], [sx * (6.2 + k * 0.5), -6.3], '#fff3c4', 0.08);
+    }
+    circle(c, 0, -3.2, 3.2); fill(c, '#ffd166'); circle(c, 0, -3.2, 2.7); fill(c, '#e0183e');
+    c.save(); c.scale(1, -1); c.fillStyle = '#ffd166'; c.font = 'bold 4px serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('福', 0, 3.3); c.restore();
+    for (const [x, y] of [[-5.2, -6], [5.2, -6], [-5.6, 0], [5.6, 0]]) { c.beginPath(); c.arc(x, y, 0.8, Math.PI, 0); c.arc(x + 1.2, y, 0.6, Math.PI, 0); line(c, '#ffb0c0', 0.18); }
+  } },
 };
 
 // The roller coaster's track height at u (the train follows it).

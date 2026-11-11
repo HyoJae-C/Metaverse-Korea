@@ -4,7 +4,7 @@ import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '.
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf, routineTurn } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
@@ -84,7 +84,7 @@ test('pictures and lines change about twice as often as the first shows', () => 
 
 test('every picture in the program is painted, on a canvas the size of the sky', () => {
   useShow(show);
-  for (const s of program(DRONE())) if (s.shape) assert.ok(SHAPE_NAMES.includes(s.shape), s.shape);
+  for (const r of [1, 2]) for (const s of program(DRONE(), r)) if (s.shape) assert.ok(SHAPE_NAMES.includes(s.shape), s.shape);
   assert.equal(PIC_W, SKY.w);
   assert.ok(PIC_H <= SKY.h);
 });
@@ -116,27 +116,34 @@ test('the turn of the fifth hello starts with French on 2026-11-12 02:10 KST', (
   assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
 });
 
-test('routines 1 and 2 take turns, routine 2 first; photo pause and end at the same time', () => {
+test('routines 1 and 2 can take turns, routine 2 first; photo pause and end at the same time', () => {
   useShow(show);
   const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0)); // 2026-11-12 02:10 KST
   assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
   const second = show.nextDroneShow(first + 1000);
   const third = show.nextDroneShow(second + 1000);
-  assert.deepEqual([routineOf(first), routineOf(second), routineOf(third)], [2, 1, 2]);
+  assert.deepEqual([routineTurn(first), routineTurn(second), routineTurn(third)], [2, 1, 2]);
   const after = (start) => {
-    const words = program(start).filter((s) => s.lines).map((s) => s.lines.join('/'));
+    const words = program(start, routineTurn(start)).filter((s) => s.lines).map((s) => s.lines.join('/'));
     const i = words.indexOf('라면');
     return words.slice(i, i + 3);
   };
   assert.deepEqual(after(second), ['라면', '먹고갈래?', '뚝섬에서']);
   assert.deepEqual(after(first), ['라면', '모두서울', '넌 소중해']);
-  const photo = (start) => program(start).find((s) => s.photo).at;
+  const photo = (start) => program(start, routineTurn(start)).find((s) => s.photo).at;
   assert.equal(photo(first), PHOTO_TIME[0]);
   assert.equal(photo(second), PHOTO_TIME[0]);
-  const lastLine = (start) => program(start).at(-2).at;
+  const lastLine = (start) => program(start, routineTurn(start)).at(-2).at;
   assert.equal(lastLine(first), lastLine(second));
-  const shapes = program(first).filter((s) => s.shape).map((s) => s.shape);
-  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'moonrabbit']) assert.ok(shapes.includes(n), n);
+  const shapes = program(first, 2).filter((s) => s.shape).map((s) => s.shape);
+  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'moonrabbit', 'kite', 'pouch']) assert.ok(shapes.includes(n), n);
+});
+
+test('routine 2 is paused for now: every show is routine 1 (Yozi 2026-11-12)', () => {
+  useShow(show);
+  for (let k = 0; k < 4; k++) assert.equal(routineOf(DRONE(k)), 1);
+  const words = program(DRONE()).filter((s) => s.lines).map((s) => s.lines.join('/'));
+  assert.ok(words.includes('먹고갈래?') && words.includes('뚝섬에서'));
 });
 
 test('every show gets its own number', () => {
