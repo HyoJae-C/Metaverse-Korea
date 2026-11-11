@@ -136,7 +136,7 @@ test('routines 1 and 2 take turns, routine 2 first; photo pause and end at the s
   const lastLine = (start) => program(start).at(-2).at;
   assert.equal(lastLine(first), lastLine(second));
   const shapes = program(first).filter((s) => s.shape).map((s) => s.shape);
-  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'moonrabbit']) assert.ok(shapes.includes(n), n);
+  for (const n of ['taegukgi', 'tiger', 'magpie', 'jindo', 'cat', 'gimbap', 'moonrabbit', 'kite', 'pouch']) assert.ok(shapes.includes(n), n);
 });
 
 test('every show gets its own number', () => {
