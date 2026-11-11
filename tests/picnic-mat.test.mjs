@@ -67,7 +67,7 @@ test('a mat lies the way you faced when spreading it: sitting on it you look tha
   assert.equal(parseMat('2,6,1,4', lawns), null);
 });
 
-test('a mat left alone or far behind is lost (blown away)', () => {
+test('a mat left alone or far behind is folded away', () => {
   const m = { x: 0, z: 0 };
   assert.equal(matLost(m, 3, 0, 0, 1000), false);
   assert.equal(matLost(m, MAT_AWAY + 1, 0, 1000, 1000), true, 'walked off');

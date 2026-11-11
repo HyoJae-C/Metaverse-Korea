@@ -145,9 +145,8 @@ export function matInFront(x, z, ry, ahead = 1.4) {
 export const keepsMat = (myId, otherId) => String(myId) < String(otherId);
 
 // A mat left alone doesn't stay forever: if its owner walks more than
-// MAT_AWAY metres off, or nobody has been on or by it for MAT_IDLE_MS, the
-// wind takes it (or the park keeper tidies it away) and it is gone from the
-// bag. `lastUsed`: when the owner was last within MAT_NEAR metres of it.
+// MAT_AWAY metres off, or nobody has been on or by it for MAT_IDLE_MS, it is
+// folded up and back in the owner's bag. `lastUsed`: when the owner was last within MAT_NEAR metres of it.
 export const MAT_AWAY = 50;
 export const MAT_NEAR = 6;
 export const MAT_IDLE_MS = 10 * 60 * 1000;

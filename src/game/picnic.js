@@ -17,11 +17,10 @@ export const MAT_TEXT = {
   taken: { en: 'Someone\'s mat is already there. Try a free spot.', ko: '이미 다른 사람의 돗자리가 있어요. 빈 곳을 찾아 보세요.', ja: 'そこには誰かのシートがあります。空いている所を探してね。', zh: '那里已经有别人的野餐垫了，换个空地吧。' },
   folded: { en: 'Mat folded back into your bag.', ko: '돗자리를 접어서 가방에 넣었어요.', ja: 'シートをたたんでバッグに入れました。', zh: '野餐垫已收回包里。' },
   bumped: { en: 'Someone spread a mat there just before you, so yours went back in the bag.', ko: '방금 다른 사람이 먼저 그 자리에 돗자리를 폈어요. 내 돗자리는 가방에 다시 넣었어요.', ja: '直前に誰かがそこに広げたので、シートはバッグに戻しました。', zh: '有人刚刚先在那里铺了垫子，你的已放回包里。' },
-  // A mat left alone too long, or far behind (matLost): it is gone.
+  // A mat left alone too long, or far behind (matLost): folded back into the bag.
   lost: [
-    { en: 'A gust of wind blew your picnic mat away! 🌬️', ko: '바람이 휙 불어서 돗자리가 날아갔어요! 🌬️', ja: '風がびゅっと吹いて、レジャーシートが飛んでいっちゃった！🌬️', zh: '一阵风吹来，你的野餐垫被吹走了！🌬️' },
-    { en: 'The park keeper tidied away your picnic mat, left alone for too long. 🧹', ko: '오래 비워 둔 돗자리를 공원 관리인이 치웠어요. 🧹', ja: '長い間放っておいたシートを公園の管理人さんが片付けました。🧹', zh: '你放了太久没人管的野餐垫被公园管理员收走了。🧹' },
-    { en: 'A puppy ran off with your picnic mat! 🐶', ko: '강아지가 돗자리를 물고 도망갔어요! 🐶', ja: '子犬がレジャーシートをくわえて逃げていった！🐶', zh: '一只小狗叼着你的野餐垫跑掉了！🐶' },
+    { en: 'You left your picnic mat alone too long, so it was folded back into your bag. 🧺', ko: '돗자리를 너무 오래 비워 둬서 접어서 가방에 넣었어요. 🧺', ja: 'シートを長く放っておいたので、たたんでバッグに戻しました。🧺', zh: '野餐垫放太久没人管，已经叠好放回包里了。🧺' },
+    { en: 'The park keeper folded up your empty picnic mat and put it back in your bag. 🧹', ko: '공원 관리인이 빈 돗자리를 접어서 가방에 돌려줬어요. 🧹', ja: '公園の管理人さんが空いたシートをたたんで、バッグに戻してくれました。🧹', zh: '公园管理员把你空着的野餐垫叠好，放回你的包里了。🧹' },
   ],
   have: { en: 'You already have a picnic mat in your bag.', ko: '가방에 이미 돗자리가 있어요.', ja: 'もうバッグにレジャーシートがあります。', zh: '包里已经有野餐垫了。' },
 };
@@ -137,12 +136,9 @@ export function createPicnic(game, street = null) {
     game.clearAction();
   }
 
-  // Left alone too long or far behind: the mat is gone, from the bag too.
+  // Left alone too long or far behind: folded up, back in the bag (it never left it).
   function lose() {
     mine = null;
-    const i = game.bag.list().findIndex(isMat);
-    if (i >= 0) game.bag.take(i);
-    else if (isMat(game.held)) game.dropHeld?.();
     const lines = MAT_TEXT.lost;
     game.shop.toast(L(lines[Math.floor(Math.random() * lines.length)]));
     game.resendState();
