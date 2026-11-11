@@ -60,6 +60,16 @@ export function opensIn(t) {
 }
 export const dalClock = () => Date.now() / 1000;
 
+// Where someone aboard flight dl - 1 (their shared "dl") stands, in height,
+// at time t: from the clock, the same as the balloon, so a rider up there
+// never bobs behind it while their sent heights catch up. null once that
+// flight has landed (or before it): then their sent height again.
+export function dalRiderY(dl, t) {
+  const n = Number(dl) - 1;
+  if (!(n >= 0)) return null;
+  const s = dalAt(t);
+  return s.n === n ? s.h + DAL.deck + 0.02 : null;
+}
 // A rider's place in the gondola, in the balloon's own frame (x, z from the
 // cable): slot k of DAL.slots round the ring, facing out.
 export function riderSpot(k) {
