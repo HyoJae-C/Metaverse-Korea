@@ -41,6 +41,7 @@ const r1 = (v) => Math.round(v * 10) / 10;
 const WITH_TRAIL = process.argv.includes('--trail');
 
 export const E = 1.5; // the hill's profile (0.5 was the dome)
+export const FLAT = 28; // m round the top kept level: the summit plaza (26 m) and its edge
 export const N = 120; // radii round the top (every 3°)
 const CLEAR = 4; // m: the foot keeps this far off road edges, buildings and doors
 const TRAIL_W = 3;
@@ -108,6 +109,7 @@ const rad = want.map((r, i) => r1(Math.max(30, Math.min(r, free[i]))));
 // ---------- Write the hill ----------
 hill.rad = rad;
 hill.e = E;
+hill.flat = FLAT; // the summit plaza's level top (game/namsan-walk.js, namsan-summit.js)
 hill.trees = 360; // (the bigger foot: about as dense as the old 260)
 delete hill.rx; delete hill.rz;
 const ring = (k) => rad.map((r, i) => [r1(hill.px + hill.x + Math.cos(ang(i)) * r * k), r1(hill.pz + hill.z + Math.sin(ang(i)) * r * k)]);

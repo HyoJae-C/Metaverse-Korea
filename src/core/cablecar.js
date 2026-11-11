@@ -69,8 +69,8 @@ export const CC = {
   // Love locks (사랑의 자물쇠): a heart frame hung with locks by the left
   // railing, between the flower beds; stand at `spot` to hang one or read.
   loveLock: { x: -19.9, z: -43, spot: { x: -17.2, z: -43 } },
-  // The back gate, in the railing behind the tower: the Namsan trail comes
-  // up to it (game/namsan-walk.js). You arrive at `inside`, facing the tower.
+  // The back gate, in the railing behind the tower: out onto the real
+  // summit plaza outdoors (game/namsan-walk.js).
   trailGate: { x: 0, z: -59, half: 1.8, inside: { x: 0, z: -56.6, ry: 0 } },
 };
 export const ROOM_CABLECAR = { w: CC.w, d: CC.d, h: 60 };
@@ -78,7 +78,7 @@ export const ROOM_CABLECAR = { w: CC.w, d: CC.d, h: 60 };
 export const cableFloor = (x, z) => (z < CC.edge ? CC.top : 0);
 // Near the love-lock heart? (where its two buttons show)
 export const nearLoveLock = (x, z) => Math.hypot(x - CC.loveLock.spot.x, z - CC.loveLock.spot.z) < 2.2;
-// At the back gate? (where "walk down the trail" shows)
+// At the back gate? (where "out onto the summit plaza" shows)
 export const nearTrailGate = (x, z) => Math.abs(x - CC.trailGate.x) < CC.trailGate.half + 0.6 && z < CC.trailGate.z + 3.2;
 // The camera keeps out of the tower's base (single-sided walls you would
 // otherwise see straight through when the camera swings behind it).
@@ -175,11 +175,12 @@ export function makeLock(kind, color, size = 0.4) {
 // lock players can pick hanging on a bar in front. Fixed decoration: locks
 // players hang are kept on the server and shown in the message list, not
 // added here one by one.
-function loveLockHeart(scene, block, TOP) {
-  const { x, z } = CC.loveLock;
+// (Also on the real summit outdoors, game/namsan-summit.js: at, facing ry.)
+export function loveLockHeart(scene, block, TOP, at = CC.loveLock, ry = Math.PI / 2) {
+  const { x, z } = at;
   const g = new THREE.Group();
   g.position.set(x, TOP, z);
-  g.rotation.y = Math.PI / 2; // its face looks into the plaza (+x)
+  g.rotation.y = ry; // its face looks into the plaza (+x in the room)
   scene.add(g);
   const S = 0.11, LIFT = 0.45 + 17 * S; // the heart's tip sits on the plinth
   const outer = heartPts(S, 72);
@@ -408,7 +409,7 @@ export function buildCableCar(store, ROOM, EXIT) {
     const G = CC.trailGate;
     for (const sx of [-1, 1]) box(0.3, 2.8, 0.3, G.x + sx * (G.half + 0.15), TOP + 1.4, G.z, '#8a5a36');
     box(G.half * 2 + 0.9, 0.3, 0.34, G.x, TOP + 2.75, G.z, '#8a5a36');
-    const trailSign = signMesh('남산 산책로', 'NAMSAN TRAIL · TO GYEONGNIDAN-GIL', 3.4, '#5b7d3a');
+    const trailSign = signMesh('정상 광장', 'OUT TO THE SUMMIT PLAZA', 3.4, '#5b7d3a');
     trailSign.position.set(G.x, TOP + 3.35, G.z + 0.2);
     scene.add(trailSign);
     for (let k = 0; k < 3; k++) box(G.half * 2, 0.2, 0.5, G.x, TOP - 0.25 - k * 0.3, G.z - 0.45 - k * 0.5, '#b9ad98');

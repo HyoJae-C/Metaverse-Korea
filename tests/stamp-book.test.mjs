@@ -41,13 +41,20 @@ test('stamp entries are complete and unique', () => {
   }
 });
 
-test('the Namsan stamp stands on the summit plaza, inside the cable car room', async () => {
-  const { roomSpots } = await import('../src/core/stamp-stands.js');
-  const { cableFloor, CC } = await import('../src/core/cablecar.js');
-  const [spot] = roomSpots(STAMPS, 'namsan-sky-cable');
-  assert.equal(spot.stamp.id, 'namsan');
-  assert.equal(cableFloor(spot.x, spot.z), CC.top);
-  assert.ok(Math.abs(spot.x) < CC.w / 2 - 1.5, 'inside the railings');
+test('the Namsan stamp stands on the summit plaza, outdoors on the hilltop', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { NAMSAN_WALK } = await import('../src/game/namsan-walk.js');
+  const { namsanGround } = await import('../src/core/namsan-shape.js');
+  const R = new URL('../public/regions/another-seoul/', import.meta.url);
+  const region = JSON.parse(readFileSync(new URL('region.json', R), 'utf8'));
+  const itaewon = JSON.parse(readFileSync(new URL('districts/itaewon.json', R), 'utf8'));
+  const [ox, oz] = region.districts.find((d) => d.id === 'itaewon').offset;
+  const hill = itaewon.landmarks.find((l) => l.type === 'namsan');
+  const s = STAMPS.find((q) => q.id === 'namsan');
+  const [x, z] = s.place.at, tower = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const d = Math.hypot(x - tower[0], z - tower[1]);
+  assert.ok(d > NAMSAN_WALK.towerR + 1 && d < NAMSAN_WALK.plazaR - 2, `on the plaza (${d.toFixed(1)} m from the tower)`);
+  assert.ok(Math.abs(s.place.y - namsanGround(hill, x - ox - hill.x, z - oz - hill.z)) < 0.2, 'at the plaza\'s height');
 });
 
 test('the stamp note follows STAMP_ORDER, which names only real stamps once', async () => {

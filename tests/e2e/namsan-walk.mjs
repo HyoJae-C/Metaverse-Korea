@@ -1,7 +1,7 @@
-// End-to-end check: the Namsan trail. From the foot you walk up the hill at
-// its height and can't step off the trail into the woods; at the top the
-// button takes you onto the summit plaza by its back gate, and its gate
-// button brings you back out at the top of the trail.
+// End-to-end check: the Namsan trail and summit. You walk up the hill at its
+// height and can't step off the trail into the woods; it comes out on the
+// summit plaza outdoors, with the love locks by the heart; at the cable
+// car's upper station you can ride down, and step back out onto the plaza.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/namsan-walk.mjs http://localhost:4173/ [shot dir]
 import { chromium } from 'playwright';
@@ -53,27 +53,41 @@ try {
   }));
   console.log('tried to step off: now', off.toFixed(1), 'm from the trail\'s middle, moved', Math.hypot(sx - mid[0], sz - mid[1]).toFixed(1), 'm');
   if (off > (hill.trailW || 3) / 2 + 0.2) throw new Error('walked off the trail: ' + off.toFixed(1) + ' m from its middle');
-  // The top: on to the summit plaza.
+  // The top: the trail comes out on the summit plaza, outdoors.
   const top = line.at(-1);
+  const tower = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
   await mk('place', top[0], top[1]);
-  await until(async () => (await label()).includes('⛰️'), 15000, 'summit button');
-  console.log('top button:', await label());
-  if (shotDir) { await wait(1500); await page.screenshot({ path: `${shotDir}/namsan-trail-top.png` }); }
-  await pick('⛰️');
-  await until(async () => (await mk('room')).id === 'namsan-sky-cable', 30000, 'on the plaza');
+  await wait(600);
+  const ty = (await me())[1];
+  console.log('top of the trail, height', ty.toFixed(1));
+  if (ty < hill.h - 1) throw new Error('not up on the summit: y ' + ty);
+  // The love locks, by the heart on the plaza's west side.
+  await mk('place', tower[0] - 17.2, tower[1]);
+  await until(async () => (await label()).includes('🔒'), 15000, 'love lock button');
+  console.log('heart:', await label());
+  if (shotDir) { await mk('face', Math.PI / 2 + Math.PI); await wait(3000); await page.screenshot({ path: `${shotDir}/namsan-summit-heart.png` }); }
+  // The cable car's upper station: ride down from here.
+  const cable = itaewon.landmarks.find((l) => l.type === 'cablecar');
+  const e = cable.path.at(-1), st = [cable.x + ox + e[0], cable.z + oz + e[1]];
+  const d = Math.hypot(st[0] - tower[0], st[1] - tower[1]), door = [st[0] - ((st[0] - tower[0]) / d) * 7.5, st[1] - ((st[1] - tower[1]) / d) * 7.5];
+  await mk('place', ...door);
+  await until(async () => (await label()).includes('🚡'), 15000, 'ride down button');
+  console.log('station:', await label());
+  if (shotDir) { await mk('face', Math.atan2(tower[0] - door[0], tower[1] - door[1])); await wait(2500); await page.screenshot({ path: `${shotDir}/namsan-summit-plaza.png` }); }
+  await pick('🚡');
+  await until(async () => (await mk('room')).id === 'namsan-sky-cable', 30000, 'on the platform');
   await wait(800);
-  const [px, py, pz] = await me();
-  console.log('on the plaza at', [px, py, pz].map((v) => v.toFixed(1)).join(', '));
-  if (py < 30) throw new Error('not up on the plaza: y ' + py);
-  await until(async () => (await label()).includes('🥾'), 15000, 'down button');
-  if (shotDir) { await mk('face', Math.PI); await wait(1500); await page.screenshot({ path: `${shotDir}/namsan-plaza-gate.png` }); }
-  await pick('🥾');
+  const [, py] = await me();
+  console.log('on the top platform, height', py.toFixed(1));
+  // Changed my mind: back out onto the plaza.
+  await until(async () => (await label()).includes('🚶'), 15000, 'out button');
+  await pick('🚶');
   await until(async () => (await mk('room')).mode === 'street', 15000, 'back out');
   await wait(600);
   const [qx, qy, qz] = await me();
-  const fromTop = Math.hypot(qx - top[0], qz - top[1]);
-  console.log('back out', fromTop.toFixed(1), 'm from the top, height', qy.toFixed(1));
-  if (fromTop > 6 || qy < 50) throw new Error('not back at the top of the trail');
+  const fromDoor = Math.hypot(qx - door[0], qz - door[1]);
+  console.log('back out', fromDoor.toFixed(1), 'm from the station door, height', qy.toFixed(1));
+  if (fromDoor > 4 || qy < hill.h - 2) throw new Error('not back by the upper station');
   if (errors.length) throw new Error(errors.join('\n'));
   ok = true;
 } catch (e) {

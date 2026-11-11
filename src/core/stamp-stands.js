@@ -37,7 +37,7 @@ export function standSpots(stamps, getFront, blocked = null) {
       const tries = [[SIDE * side, 0], [-SIDE * side, 0], [SIDE * side, 1.5], [-SIDE * side, 1.5], [SIDE * side, 3], [-SIDE * side, 3], [(SIDE + 1.5) * side, 0], [-(SIDE + 1.5) * side, 0]];
       const at = ([a, o]) => ({ stamp: s, x: f.door.x + ax * a + fx * o, z: f.door.z + az * a + fz * o, ry });
       out.push((blocked && tries.map(at).find((p) => standClear(p.x, p.z, ry, blocked))) || at(tries[0]));
-    } else if (Array.isArray(s.place?.at)) out.push({ stamp: s, x: s.place.at[0], z: s.place.at[1], ry: s.place.ry || 0 });
+    } else if (Array.isArray(s.place?.at)) out.push({ stamp: s, x: s.place.at[0], z: s.place.at[1], ry: s.place.ry || 0, y: s.place.y || 0 });
   }
   return out;
 }
@@ -106,7 +106,7 @@ function place(scene, s, y) {
 export class StampStands {
   constructor(scene, stamps, getFront, blocked = null) {
     this.stamps = stamps;
-    this.items = standSpots(stamps, getFront, blocked).map((s) => place(scene, s, 0));
+    this.items = standSpots(stamps, getFront, blocked).map((s) => place(scene, s, s.y || 0));
     this.rooms = new Map(); // store id → stands in its room
     this.showTimed();
   }
