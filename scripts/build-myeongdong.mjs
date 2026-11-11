@@ -325,7 +325,9 @@ export const SHOPS = [
   { id: 'moonlight-beauty', real: 'Laneige', near: [-1573, -523], rows: ['mainW', 'mainE'] },
   { id: 'mulbangul-skin', real: 'Espoir', near: [-1566, -514], rows: ['mainW', 'mainE'] },
   { id: 'lip-red', real: 'Etude House', near: [-1580, -487], rows: ['mainW', 'mainE'] },
-  { id: 'lip-pink', real: 'Nature Republic', near: [-1563, -468], rows: ['mainW', 'mainE'] },
+  // (east side: on the west one its door leaves no room for the last night
+  // cart between it and station exit 6)
+  { id: 'lip-pink', real: 'Nature Republic', near: [-1563, -468], rows: ['mainE'] },
   { id: 'lip-coral', real: 'Missha and Innisfree', near: [-1606, -534], rows: ['gilN', 'gilS'] },
   { id: 'lip-purple', real: 'Cosmetics Land 21', near: [-1552, -521], rows: ['gilN', 'gilS', 'mainE'] },
   // restaurants
