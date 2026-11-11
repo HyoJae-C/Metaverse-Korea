@@ -2333,6 +2333,9 @@ function moveMeTo(targetScene, x, z, ry, camYaw = ry + cam.yaw - me.root.rotatio
     camera.position.applyMatrix4(camVia);
     return;
   }
+  // A key held down keeps walking the same way as seen from the camera, not
+  // the same way on the map: out of a station you'd walk back down the steps.
+  moveRef.yaw += camYaw - cam.yaw;
   cam.yaw = camYaw;
   camera.position.set(x + Math.sin(cam.yaw) * cam.dist, 1 + cam.dist * 0.5, z + Math.cos(cam.yaw) * cam.dist);
 }
