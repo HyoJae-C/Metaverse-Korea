@@ -241,7 +241,6 @@ export const ZH = {
   "nose.high": "高鼻梁",
   "nose.small": "小鼻子",
   "jaw.vline": "V脸",
-  "jaw.round": "圆下巴",
   "jaw.square": "方下巴",
   "beauty.headRefund": "整形系统更新：现在大家的头部大小统一了。已退还脸型大小费用 {won}。",
   "ledger.headRefund": "整形外科 脸型大小退款",

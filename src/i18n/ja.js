@@ -241,7 +241,6 @@ export const JA = {
   "nose.high": "高い鼻",
   "nose.small": "小さい鼻",
   "jaw.vline": "Vライン",
-  "jaw.round": "丸いあご",
   "jaw.square": "えら張り",
   "beauty.headRefund": "美容整形のリニューアルで頭の大きさが一つに統一されました。顔の大きさの料金{won}を返金しました。",
   "ledger.headRefund": "美容外科 顔の大きさ返金",

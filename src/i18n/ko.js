@@ -241,7 +241,6 @@ export const KO = {
   "nose.high": "오똑한 코",
   "nose.small": "작은 코",
   "jaw.vline": "V라인 턱",
-  "jaw.round": "둥근 턱",
   "jaw.square": "사각턱",
   "beauty.headRefund": "성형 시스템 개편으로 머리 크기가 하나로 통일되었어요. 얼굴 크기 비용 {won}을 환불해 드렸어요.",
   "ledger.headRefund": "성형외과 얼굴 크기 환불",

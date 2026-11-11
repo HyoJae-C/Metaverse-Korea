@@ -241,7 +241,6 @@ export const ID = {
   'nose.high': 'Hidung mancung',
   'nose.small': 'Hidung kecil',
   'jaw.vline': 'Rahang V',
-  'jaw.round': 'Rahang bulat',
   'jaw.square': 'Rahang kotak',
   'beauty.headRefund': 'Klinik diperbarui: sekarang semua orang punya ukuran kepala yang sama. Biaya ukuran wajahmu dikembalikan: {won}.',
   'ledger.headRefund': 'Pengembalian biaya ukuran wajah',

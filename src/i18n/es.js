@@ -240,7 +240,6 @@ export const ES = {
   'nose.high': 'Nariz alta',
   'nose.small': 'Nariz pequeña',
   'jaw.vline': 'Mandíbula en V',
-  'jaw.round': 'Mandíbula redonda',
   'jaw.square': 'Mandíbula cuadrada',
   'beauty.headRefund': 'Las clínicas se renovaron: ahora todos tienen la misma talla de cabeza. Te devolvimos el pago del tamaño de cara: {won}.',
   'ledger.headRefund': 'Reembolso del tamaño de cara',

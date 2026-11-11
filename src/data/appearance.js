@@ -25,7 +25,7 @@ export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curl
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 export const NOSE_IDS = ['big', 'small', 'high'];
-export const JAW_IDS = ['vline', 'round', 'square'];
+export const JAW_IDS = ['vline', 'square'];
 
 // Printed T-shirts (drawn in core/tee-prints.js).
 export const TEE_IDS = ['simurugi', 'mongle', 'mandu', 'ddeok'];

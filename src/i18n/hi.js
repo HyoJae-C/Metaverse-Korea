@@ -241,7 +241,6 @@ export const HI = {
   'nose.high': 'ऊँची नाक',
   'nose.small': 'छोटी नाक',
   'jaw.vline': 'V-लाइन जबड़ा',
-  'jaw.round': 'गोल जबड़ा',
   'jaw.square': 'चौकोर जबड़ा',
   'beauty.headRefund': 'क्लिनिक बदल गए हैं: अब सबके सिर का आकार एक जैसा है। चेहरे के आकार का शुल्क {won} वापस कर दिया गया।',
   'ledger.headRefund': 'चेहरे के आकार का रिफ़ंड',

@@ -241,7 +241,6 @@ export const FR = {
   'nose.high': 'Nez droit',
   'nose.small': 'Petit nez',
   'jaw.vline': 'Mâchoire en V',
-  'jaw.round': 'Mâchoire ronde',
   'jaw.square': 'Mâchoire carrée',
   'beauty.headRefund': 'Les cliniques ont changé : tout le monde a maintenant la même taille de tête. Ton paiement pour la taille du visage t\'a été rendu : {won}.',
   'ledger.headRefund': 'Remboursement taille du visage',

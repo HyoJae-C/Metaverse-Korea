@@ -241,7 +241,6 @@ export const AR = {
   'nose.high': 'أنف مرتفع',
   'nose.small': 'أنف صغير',
   'jaw.vline': 'فك على شكل V',
-  'jaw.round': 'فك دائري',
   'jaw.square': 'فك مربع',
   'beauty.headRefund': 'تم تحديث العيادات: أصبح حجم الرأس واحدًا للجميع. أعدنا لك رسوم حجم الوجه: {won}.',
   'ledger.headRefund': 'استرداد رسوم حجم الوجه',

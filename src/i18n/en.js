@@ -240,7 +240,6 @@ export const EN = {
   "nose.high": "High nose",
   "nose.small": "Small nose",
   "jaw.vline": "V-line jaw",
-  "jaw.round": "Round jaw",
   "jaw.square": "Square jaw",
   "beauty.headRefund": "The clinics were updated: everyone now has the same head size. Your face size fee came back: {won}.",
   "ledger.headRefund": "Clinic face size refund",

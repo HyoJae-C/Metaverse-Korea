@@ -241,7 +241,6 @@ export const VI = {
   'nose.high': 'Mũi cao',
   'nose.small': 'Mũi nhỏ',
   'jaw.vline': 'Hàm V-line',
-  'jaw.round': 'Hàm tròn',
   'jaw.square': 'Hàm vuông',
   'beauty.headRefund': 'Phòng khám đã được đổi mới: giờ mọi người có cùng kích thước đầu. Đã hoàn lại phí kích thước mặt: {won}.',
   'ledger.headRefund': 'Hoàn phí kích thước mặt',
