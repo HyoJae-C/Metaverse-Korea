@@ -79,7 +79,7 @@ import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
 import { createLookEditor, saveLook, loadLook } from './core/look-editor.js';
-import { preloadModel } from './core/model-pack.js';
+import { preloadModel, SIT_UNDER } from './core/model-pack.js';
 import { OUTFIT_ITEM, randomLook, DEFAULT_LOOK } from './data/appearance.js';
 import { Receipts, sellable, resaleCoins } from './core/resale.js';
 import { createUsedRack } from './game/used-rack.js';
@@ -243,6 +243,7 @@ import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { sunsetNote } from './game/sunset-spot.js';
+import { createSeatFit } from './game/seat-fit.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1024,6 +1025,7 @@ function findFreeSpot(x, z) {
 
 const myId = crypto.randomUUID?.() || String(Math.random()).slice(2);
 let me = createCharacter(myLook);
+const seatFit = createSeatFit({ under: SIT_UNDER }); // sitting on a seat's real top (game/seat-fit.js)
 scene.add(me.root);
 // Spawn on the street closest to the configured spawn point.
 let spawnDir = null;
@@ -2813,10 +2815,11 @@ function enterStore(item, walkIn = null) {
   interior.vendorNpcs = built.vendorNpcs || null;
   // The Curve Runway's audience: people already sitting in some of the seats.
   if (built.stations?.runway?.[0]?.audience && !built.audienceNpcs) {
+    built.scene.updateMatrixWorld();
     built.audienceNpcs = built.stations.runway[0].audience.map((s) => {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden';
-      o.ch.root.position.set(s.x, 0, s.z);
+      o.ch.root.position.set(s.x, seatFit(built.scene, s) ?? 0, s.z);
       o.ch.root.rotation.y = s.ry;
       o.ch.activity('sit'); // the sitting clip, legs along the seat
       built.scene.add(o.ch.root);
@@ -2839,10 +2842,11 @@ function enterStore(item, walkIn = null) {
   // Bars: regulars already sitting at the counter or a table, or standing
   // round the sports pub's high tables (core/bar-styles.js).
   if (built.stations?.patrons && !built.patronNpcs) {
+    built.scene.updateMatrixWorld();
     built.patronNpcs = built.stations.patrons.map((s) => {
       const o = makeNpc($('labels'), '');
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
-      o.ch.root.position.set(s.x, s.y || 0, s.z); // (y: up in the stands at Seoul Another Dome)
+      o.ch.root.position.set(s.x, (s.sit ? seatFit(built.scene, s) : null) ?? (s.y || 0), s.z); // (y: up in the stands at Seoul Another Dome)
       o.ch.root.rotation.y = s.ry;
       if (s.sit) o.ch.activity('sit');
       else if (s.act) o.ch.activity(s.act); // (the climbing gym's climbers, hanging on the wall)
@@ -6266,7 +6270,8 @@ function nearestSeat(p) {
 }
 function sitDown(seat) {
   seated = seat;
-  me.root.position.set(seat.x, seat.y || 0, seat.z); // (y: low on the edge of a stream)
+  const fitY = globalThis.__noSeatFit ? null : seatFit(activeScene, seat, [me.root, ...[...others.players.values()].map((q) => q.ch.root)]); // on the seat's real top (game/seat-fit.js; __noSeatFit: the old fixed height, for comparing)
+  me.root.position.set(seat.x, fitY ?? (seat.y || 0), seat.z); // (y: low on the edge of a stream)
   me.root.rotation.y = seat.ry;
   if (seat.bumper != null) cam.yaw = seat.ry + Math.PI; // a bumper car (a park ride): behind the wheel
   sendTimer = 0; // tell others right away
@@ -7114,7 +7119,7 @@ renderer.setAnimationLoop((now) => {
     if (ride?.kind === 'coaster') { st.cs = ride.train * 10 + ride.seat + 1; [st.x, st.z] = peerSpot(COASTER_OFF.x, COASTER_OFF.z); st.ry = 0; } // (others place us from the clock: nothing to send while we ride)
     if (teleports) st.tp = teleports;
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
-    if (Math.abs(p.y) > 0.05 && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
+    if ((Math.abs(p.y) > 0.05 || seated) && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
     sky.state(st); // flying, carried, on a roof
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
@@ -7348,6 +7353,9 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
     sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
+    bodyProfile: (px = 0.25) => { const v = new THREE.Vector3(), bins = {}; me.root.updateMatrixWorld(true); me.root.traverse((m) => { if (!m.isSkinnedMesh || !m.visible) return; const n = m.geometry.attributes.position.count; for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); m.localToWorld(v); me.root.worldToLocal(v); const k = Math.round(v.z * 50) / 50; const b = bins[k] || (bins[k] = [9, -9]); if (Math.abs(v.x) < px && v.y < 0.7) { b[0] = Math.min(b[0], +v.y.toFixed(3)); b[1] = Math.max(b[1], +v.y.toFixed(3)); } } }); return bins; },
+    sitNear: (x, z, key) => { const all = (mode === 'street' ? [...streetSeats, ...hanParks.seats] : interior?.seats || []).filter((q) => !key || q[key]); let b = null, bd = Infinity; for (const q of all) { const d = Math.hypot(q.x - x, q.z - z); if (d < bd) { bd = d; b = q; } } if (b) { moveMeTo(activeScene, b.stand[0], b.stand[1], b.ry); sitDown(b); } return b && [b.x, b.z]; },
+    seatInfo: () => seated && { x: +me.root.position.x.toFixed(2), y: +me.root.position.y.toFixed(3), z: +me.root.position.z.toFixed(2), ry: me.root.rotation.y, seat: [seated.x, seated.z, seated.y ?? null] },
     stand: () => standUp(),
     tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarot.tarotOffer() && { ...tarot.tarotOffer() }, state: tarotUi.loaded && tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
     bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },

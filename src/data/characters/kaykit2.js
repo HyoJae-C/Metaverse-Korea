@@ -222,6 +222,10 @@ export default {
   // Offset on a chair (metres, after scale): every seat's top is 0.38 m above
   // the character's feet; up so the thighs rest on top of it, not in it.
   sit: { y: 0.12, z: 0.24 },
+  // The sitting pose's underside: [metres in front of the feet's spot, its
+  // lowest point there above the feet], measured with the offset above
+  // (__mk.bodyProfile(0.13), legs only). game/seat-fit.js rests this on the seat's real top.
+  sitUnder: [[0, 0.33], [0.16, 0.29], [0.22, 0.31], [0.28, 0.35]],
   // Added to the chair clip, which leaves the legs hanging straight: thighs
   // forward along the seat, knees bent so the shins go down.
   sitPose: { upperlegl: [-1.45, 0, 0], upperlegr: [-1.45, 0, 0], lowerlegl: [1.3, 0, 0], lowerlegr: [1.3, 0, 0] },
