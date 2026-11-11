@@ -1094,7 +1094,7 @@
       "id": "dim-gai",
       "category": "restaurant",
       "size": "medium",
-      "at": [-1604.9, -527], "district": "myeongdong",
+      "at": [-2897.7, -503.4],
       "signLocal": "畀我!茶餐廳",
       "name": { "en": "Bei Ngo! Cha Chaan Teng", "ko": "베이응오!차찬텡", "ja": "ベインゴー！茶餐廳", "zh": "畀我！茶餐厅" },
       "tagline": { "en": "A Hong Kong diner", "ko": "홍콩식 분식 식당", "ja": "香港式の食堂", "zh": "港式茶餐厅" },
@@ -2587,7 +2587,7 @@
       "size": "medium",
       "name": { "en": "Deumppuk Yukhoe", "ko": "듬뿍육회", "ja": "たっぷりユッケ", "zh": "满满生拌牛肉" },
       "tagline": { "en": "Korean beef tartare, piled high", "ko": "듬뿍 담아 주는 육회", "ja": "山盛りの韓国風ユッケ", "zh": "堆得满满的韩式生拌牛肉" },
-      "at": [-2975.8, -157.9],
+      "at": [24.7, 63.7],
       "colors": { "sign": "#c0392b", "awning": "#f8c9a8", "accent": "#fff3ec" },
       "products": [
         { "id": "yukhoe", "model": "bowl", "color": "#b8324a", "price": 19000, "name": { "en": "Yukhoe (beef tartare)", "ko": "육회", "ja": "ユッケ", "zh": "生拌牛肉" }, "desc": { "en": "Raw beef strips seasoned with sesame oil and pear, topped with an egg yolk. Served raw.", "ko": "배와 참기름으로 무친 생소고기에 노른자를 올렸어요. 날것으로 먹는 음식이에요." } },

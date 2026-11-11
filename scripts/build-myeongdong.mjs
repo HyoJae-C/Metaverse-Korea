@@ -316,7 +316,7 @@ buildings.push(...t20.buildings);
 // ones crowd, restaurants among them; moved from other districts, none new).
 //   Cosmetics crowd Myeongdong 8-gil, from the station up to the crossing,
 //   and Myeongdong-gil west of it; the restaurants stand north of the
-//   crossing, by the Chinese embassy and up Myeongdong 10-gil. The evening
+//   crossing and up Myeongdong 10-gil. The evening
 //   carts (game/night-carts.js) are the street food.
 // (Seongsu stood in for Myeongdong's cosmetics until Myeongdong was on the
 // map: memory shop-distribution-ratios.)
@@ -330,7 +330,6 @@ export const SHOPS = [
   { id: 'lip-purple', real: 'Cosmetics Land 21', near: [-1552, -521], rows: ['gilN', 'gilS', 'mainE'] },
   // restaurants
   { id: 'my-mala', real: 'Wonjo Hanchi and McDonald\'s', near: [-1570, -551], rows: ['mainW', 'mainE'] },
-  { id: 'dim-gai', real: 'the Chinese embassy (Chinese restaurants round it)', near: [-1605, -512], rows: ['gilN', 'gilS'] },
   // why: 21 m from it, up the same lane: its side of 10-gil has no room for a
   // row (the shopping street's backs reach the lane).
   { id: 'son-kalguksu', real: 'Myeongdong Kyoja (10-gil 29)', near: [-1547, -500], rows: ['gil10W', 'gil10E'], within: 22 },
