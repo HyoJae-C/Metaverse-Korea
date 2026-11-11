@@ -18,10 +18,10 @@ export const UPDATES = [
       zh: '✨ Another Seoul 改名为 Modu Seoul 啦！',
     },
     items: {
-      ko: ['모두(everyone)와 함께 걷는 서울이라는 뜻이에요. 계정, 옷, 돈은 그대로예요.'],
-      en: ['"Modu" means "everyone" in Korean: a Seoul for everyone to walk together. Your account, clothes and money stay the same.'],
-      ja: ['「モドゥ」は韓国語で「みんな」。みんなで歩くソウルです。アカウント、服、お金はそのままです。'],
-      zh: ['"Modu" 在韩语里是"大家"的意思：大家一起漫步的首尔。账号、衣服和钱都不变。'],
+      ko: ['모두(everyone)와 함께 걷는 서울이라는 뜻이에요. 계정, 옷, 돈은 그대로예요.\n새 주소: moduseoul.com'],
+      en: ['"Modu" means "everyone" in Korean: a Seoul for everyone to walk together. Your account, clothes and money stay the same.\nNew address: moduseoul.com'],
+      ja: ['「モドゥ」は韓国語で「みんな」。みんなで歩くソウルです。アカウント、服、お金はそのままです。\n新しいアドレス：moduseoul.com'],
+      zh: ['"Modu" 在韩语里是"大家"的意思：大家一起漫步的首尔。账号、衣服和钱都不变。\n新网址：moduseoul.com'],
     },
   },
   {

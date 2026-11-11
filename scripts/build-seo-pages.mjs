@@ -10,7 +10,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const SITE = 'https://another-seoul.com/';
+export const SITE = 'https://moduseoul.com/';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // path: where the page lives under the site root ('' = /about/).

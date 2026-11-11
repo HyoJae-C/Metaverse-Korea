@@ -132,7 +132,7 @@ automatically. While a model loads, or if it fails, the simple built-in chibi is
 
 ### Domain and Google sign-in
 
-The site lives at https://another-seoul.com/ (GitHub Pages with a custom domain). DNS, Google Cloud and
+The site lives at https://moduseoul.com/ (GitHub Pages with a custom domain). DNS, Google Cloud and
 Supabase settings for the domain and Google sign-in are in `docs/DOMAIN-AND-GOOGLE.md`.
 
 ### Cloud saves (guest accounts)
