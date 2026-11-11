@@ -480,8 +480,8 @@ function patchMat(id) {
   return (patchMats[id] = new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
 }
 
-// The engraving on a pendant tag: the hanja large, its Hangul reading small
-// under it, cut darker into the metal (data/appearance.js PENDANT_CHARMS).
+// The engraving on a pendant tag: the Hangul large, its hanja small under
+// it, cut darker into the metal (data/appearance.js PENDANT_CHARMS).
 const engraveMats = {};
 function engraveMat(hanja, letter, color) {
   const key = hanja + letter + color;
@@ -494,15 +494,15 @@ function engraveMat(hanja, letter, color) {
   g.beginPath(); g.arc(64, 64, 58, 0, Math.PI * 2); g.stroke();
   g.fillStyle = ink;
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  if (hanja.length === 4) { // 富貴榮華: two by two
-    g.font = '700 34px "Noto Serif KR", "Noto Sans KR", serif';
-    [...hanja].forEach((ch, i) => g.fillText(ch, 46 + (i % 2) * 36, 36 + Math.floor(i / 2) * 36));
+  if (letter.length === 4) { // 부귀영화: two by two
+    g.font = '800 34px "Noto Sans KR", system-ui, sans-serif';
+    [...letter].forEach((ch, i) => g.fillText(ch, 46 + (i % 2) * 36, 34 + Math.floor(i / 2) * 36));
   } else {
-    g.font = '700 62px "Noto Serif KR", "Noto Sans KR", serif';
-    g.fillText(hanja, 64, 54);
+    g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
+    g.fillText(letter, 64, 54);
   }
-  g.font = `800 ${letter.length > 2 ? 18 : 26}px "Noto Sans KR", system-ui, sans-serif`;
-  g.fillText(letter, 64, 101);
+  g.font = `700 ${hanja.length > 2 ? 16 : 24}px "Noto Serif KR", "Noto Sans KR", serif`;
+  g.fillText(hanja, 64, 102);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return (engraveMats[key] = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
@@ -539,7 +539,7 @@ function charmGeometry(kind) {
 }
 
 // A pendant's charm, about 7 cm across, facing +z: a crescent moon, a plum
-// blossom (five petals) or a round tag engraved with a hanja word.
+// blossom (five petals) or a round tag engraved with a word (Hangul, hanja under it).
 const TAG_R = 0.034;
 function pendantGeometry(kind) {
   const sh = new THREE.Shape();

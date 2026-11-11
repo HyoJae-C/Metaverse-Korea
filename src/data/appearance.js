@@ -120,10 +120,10 @@ export const ANIMAL_LOOKS = [
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
 // The pendant charms (Sunra Silver Studio): a moon, a plum blossom, or a
-// round tag engraved with a hanja word Koreans wish on, the hanja large and
-// its Hangul reading small under it (富貴榮華 is cut two by two). A fixed list
+// round tag engraved with a word Koreans wish on, the Hangul large and its
+// hanja small under it (부귀영화 is cut two by two) (Yozi: Hangul first). A fixed list
 // (Yozi 2026-11-11), so there is nothing to type and nothing to filter.
-const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${hanja} ${letter} · ${en}`, ko: `${hanja} ${letter}`, ja: `${hanja} ${letter}（${ja}）`, zh: `${hanja} ${letter}（${zh}）` } });
+const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${letter} ${hanja} · ${en}`, ko: `${letter} ${hanja}`, ja: `${letter} ${hanja}（${ja}）`, zh: `${letter} ${hanja}（${zh}）` } });
 export const PENDANT_CHARMS = {
   moon: { emoji: '🌙', name: { en: 'Moon', ko: '달', ja: '月', zh: '月亮' } },
   plum: { emoji: '🌸', name: { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' } },
@@ -200,7 +200,7 @@ export const ACCESSORIES = {
     // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
     // a fine chain with a charm: a moon, a plum blossom, or a round tag
     // engraved with a hanja word (PENDANT_CHARMS).
-    ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.hanja, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
+    ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.letter, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
   ],
   back: [
     { id: 'backpack', emoji: '🎒', color: 0x8fd3c7 },
