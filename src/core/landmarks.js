@@ -8,6 +8,7 @@ import { matCache, addBox } from './three-kit.js';
 import { haneulStore, haneulTower } from './haneul.js';
 import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
+import { banpoBridge } from './banpo-bridge.js';
 import { namsanPoint, namsanGround } from './namsan-shape.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
@@ -219,8 +220,8 @@ const BUILD = {
   },
   jamsu(g, l) {
     // Jamsu Bridge under Banpo Bridge (Banpo-Jamwon): the low deck you walk
-    // across at water level, with kerbs, railings and lamps along both sides,
-    // and the big Banpo Bridge deck high overhead on its piers. Along z;
+    // across at water level, with kerbs, railings and lamps along both sides.
+    // Along z;
     // l.len: length, l.w: width of the walking deck (the road under it).
     const len = l.len || 120, w = l.w || 14, half = w / 2;
     for (const sx of [-1, 1]) {
@@ -233,15 +234,9 @@ const BUILD = {
         box(g, 0.9, 0.18, 0.36, sx * (half - 0.1), 4.5, z, '#f4f1e6');
       }
     }
-    // Banpo Bridge above: a wide deck on pairs of piers standing in the river.
-    const top = 9;
-    box(g, w + 8, 1.4, len, 0, top, 0, '#d9dde2');
-    for (const sx of [-1, 1]) box(g, 0.3, 0.9, len, sx * (half + 3.85), top + 1.15, 0, '#b8bec6'); // its parapets
-    for (let z = -len / 2 + 12; z < len / 2; z += 30) for (const sx of [-1, 1]) box(g, 1.6, top - 0.7, 2.2, sx * (half + 2.2), (top - 0.7) / 2, z, '#c3c8ce');
-    // The Moonlight Rainbow Fountain's pipe of nozzles along each side of the
-    // deck (the water itself, at show time only: game/rainbow-fountain.js).
-    for (const sx of [-1, 1]) box(g, 0.35, 0.35, 112, sx * (half + 4.1), top - 0.5, 0, '#6f7a86');
+    // Banpo Bridge high overhead is its own landmark (core/banpo-bridge.js).
   },
+  banpobridge: (g, l) => banpoBridge(g, l),
   busking: (g) => buskingStage(g),
   cablecar: (g, l) => cableCarLandmark(g, l), // Namsan Sky Cable, seen from Itaewon
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)

@@ -27,8 +27,8 @@ try {
   await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   await page.clock.setFixedTime(START - 20 * 60e3); // between shows: day, no jets
-  await mk('enter', 'banpo-jamwon-hangang');
-  await until(async () => (await mk('room')).id === 'banpo-jamwon-hangang');
+  await mk('enter', 'banpo-hangang');
+  await until(async () => (await mk('room')).id === 'banpo-hangang');
   const st = () => page.evaluate(() => window.__mk.fountain());
   await mk('place', -18, 4); await mk('face', -Math.PI / 2); await mk('cam', { yaw: -Math.PI / 2, pitch: 0.05, dist: 7 });
   await wait(8000);

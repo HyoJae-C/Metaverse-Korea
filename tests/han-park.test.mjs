@@ -22,8 +22,8 @@ const streetParks = region.districts.flatMap((d) => {
   return (map.landmarks || []).filter((l) => l.type === 'hanpark').map((l) => ({ l: { ...l, x: l.x + d.offset[0], z: l.z + d.offset[1] }, map, d, store: stores.find((s) => s.id === l.store) }));
 });
 
-test('Banpo-Jamwon is laid on the street: no room, no door, no open-air overlay', () => {
-  const banpo = streetParks.find((p) => p.store?.id === 'banpo-jamwon-hangang');
+test('Banpo is laid on the street: no room, no door, no open-air overlay', () => {
+  const banpo = streetParks.find((p) => p.store?.id === 'banpo-hangang');
   assert.ok(banpo, 'its hanpark landmark');
   assert.equal(banpo.store.open, undefined, 'not the old room drawn over the street');
   assert.equal(banpo.store.hanpark, true);
@@ -37,7 +37,8 @@ for (const { l, store, map, d } of streetParks) {
     const inside = (x, z) => x > x0 && x < x1 && z > z0 && z < z1;
     const onPier = (x, z) => b.decks.some((p) => pointInPoly(x, z, p));
     // Where you stand to do things: on land (z > 0) or the pier, not in a wall.
-    const spots = [...b.fishing.map((f) => ['fish', f]), ['ramen', b.ramen], ['fish buyer', b.fishBuy], ...b.products.map((p) => [p.product.id, p.pos]), ...b.seats.map((s, i) => ['stand ' + i, { x: s.stand[0], z: s.stand[1] }])];
+    // (A park without a kiosk has no ramen machine; one without fishing, no fish buyer.)
+    const spots = [...b.fishing.map((f) => ['fish', f]), ...(l.layout.kiosk ? [['ramen', b.ramen]] : []), ...(l.layout.fishBuy ? [['fish buyer', b.fishBuy]] : []), ...b.products.map((p) => [p.product.id, p.pos]), ...b.seats.map((s, i) => ['stand ' + i, { x: s.stand[0], z: s.stand[1] }])];
     for (const [what, q] of spots) {
       assert.ok(q && inside(q.x, q.z), `${what} in the park`);
       assert.ok(q.z > 0.3 || onPier(q.x, q.z), `${what} on land (${q.x.toFixed(1)}, ${q.z.toFixed(1)})`);
@@ -45,8 +46,8 @@ for (const { l, store, map, d } of streetParks) {
     }
     // The goods on the counters can each be looked at: none blocked, kiosk and stalls all there.
     assert.equal(b.products.filter((p) => p.product.kiosk).length, Math.min(3, store.products.filter((p) => p.kiosk).length));
-    assert.equal(b.vendors.length, store.market.stalls.length, 'a seller at each stall');
-    assert.ok(b.fishing.filter((f) => f.lucky).length === 1, 'one lucky spot');
+    assert.equal(b.vendors.length, store.market?.stalls.length || 0, 'a seller at each stall');
+    assert.ok(b.fishing.filter((f) => f.lucky).length === (b.fishing.length ? 1 : 0), 'one lucky spot (where there is fishing)');
     // The boats stay on their water, off the pier, and come home.
     if (b.ducks.length) {
       for (const dk of b.ducks) assert.ok(dk.home.z < -1, 'moored on the water');

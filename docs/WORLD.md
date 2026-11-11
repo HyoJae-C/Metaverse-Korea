@@ -271,39 +271,48 @@ the layout), loads the drones only near show time, and turns the street's
 sky dark in and around the park while it's on. Both Ttukseom stamps stand
 on the lawn; the drone show's only while the drones are up.
 
-## Banpo-Jamwon Han River Park (Seocho-gu)
+## Banpo and Jamwon Han River Parks (Seocho-gu)
 
-Banpo and Jamwon Han River Parks lie side by side on the south bank, so the
-game joins them into one riverside park at the south end of Banpo Bridge
-(`scripts/build-banpo.mjs`, `districts/banpo-jamwon.json`). The river, the
-bank and the bridge are on their real lines at 1/4 (OpenStreetMap, water[1]
-from `scripts/han-bank.mjs`): the lawn, the river path and the trees follow
-the real bank from the bay west of the bridge to Jamwon's inlet. Near the
-bridge the bank runs straight at right angles to it, so the park there is
-drawn in the bridge's frame (u along the bank, v inland). West of the bridge
-the real bank turns into the bay where Sebitseom floats; Moonlight Square
-stands out over it on a terrace (up to 16 m off the real bank) so its steps
-and food trucks keep a straight bank facing the fountain. Jamsu Bridge, the
-low deck under Banpo Bridge, crosses on the real bridge's line from the
-north bank's bike path: the river's blocker has a gap for it, and the
-`jamsu` landmark draws its kerbs, railings, lamps and Banpo Bridge overhead
-(its middle is `BRIDGE` in `src/core/rainbow-fountain.js`). A link road
-("To Banpo Bridge") comes down Noksapyeong-daero's real line from Itaewon's
-Seobinggo-ro, through Yongsan Park, onto the bridge. Its ★5 legend is the manta ray (`PARK_LEGENDS` in
-`src/core/fishing.js`).
+`scripts/build-banpo.mjs` draws `districts/banpo-jamwon.json`: Banpo Han
+River Park (`banpo-hangang`) at the south end of Banpo Bridge, and Jamwon Han
+River Park (`jamwon-hangang`) next to it upstream, as the real parks lie
+(OpenStreetMap: Banpo's ends ~140 m east of the bridge, where Jamwon's begins
+and runs on past Hannam Bridge). The district is L-shaped round Itaewon's
+corner (`meta.parts`). The river, the banks and the bridges are on their real
+lines at 1/4 (OpenStreetMap, water[1] from `scripts/han-bank.mjs`). Near
+Banpo Bridge the bank runs straight at right angles to it, so Banpo's park
+is drawn in the bridge's frame (u along the bank, v inland). West of the
+bridge the real bank turns into the bay where Sebitseom floats; Moonlight
+Square stands out over it on a terrace (up to 16 m off the real bank) so its
+steps and food trucks keep a straight bank facing the fountain.
 
-The park is laid straight on the street, with no room or door: the
-`hanpark` landmark (`PARK` in the script) says where everything goes, in
-the park's own frame (x along the bank from the bridge, z inland from the
-bank's edge). `src/core/han-park.js` builds what the map can't draw, and
+Jamsu Bridge, the low deck you walk on, crosses on Banpo Bridge's line from
+the north bank's bike path: the river's blocker has a gap for it, and the
+`jamsu` landmark draws its kerbs, railings and lamps (its middle is `BRIDGE`
+in `src/core/rainbow-fountain.js`). Banpo Bridge overhead is its own
+`banpobridge` landmark (`src/core/banpo-bridge.js`), the whole real bridge
+at 1/4 (371 m) with a ramp down at each end; its north ramp keeps Jamsu
+Bridge's width where Itaewon's houses stand close, and the link road ("To
+Banpo Bridge", down Noksapyeong-daero's real line from Itaewon) runs beside
+the ramp and goes in under the deck once it is high. The Moonlight Rainbow
+Fountain's jets (`src/core/rainbow-jets.js`) cover the river under it
+(164 m; the real fountain at 1/4 would be 285 m, longer than the game's river
+is wide there). Dongjak Bridge downstream is a `banpobridge` too, only to look
+at for now (Line 4's viaduct line, its arches and the track).
+
+Both parks are laid straight on the street, with no room or door: each
+`hanpark` landmark (`PARK` and `JAMWON` in the script) says where everything
+goes, in the park's own frame (x along the bank, z inland from the bank's
+edge). `src/core/han-park.js` builds what the map can't draw, and
 `src/game/han-parks.js` sets it on the street the first time you come near.
-You stay on the street: the same room, the same network, the map. As the
-real parks are, at 1/4:
-- Banpo (west of the bridge): Moonlight Square at the foot of Banpo Bridge,
-  with stone steps facing the rainbow fountain, the night market's food
-  trucks and the convenience store under the bridge.
-- Jamwon (east): the fishing pier, the fish buyer, the duck boat dock and an
-  open lawn by the water for picnic mats.
+- Banpo: Moonlight Square at the foot of Banpo Bridge, with stone steps
+  facing the rainbow fountain, the night market's food trucks and the
+  convenience store under the bridge; east of the bridge the fishing pier,
+  the fish buyer, the duck boat dock and an open lawn. Its ★5 legend is the
+  blobfish (Yeouido's kinds came here: `PARK_FISH` in `src/core/fishing.js`).
+- Jamwon: a plain riverside park on the real park's outline (Yozi: lawn,
+  path, trees and people), the bike path along the bank, a picnic lawn, a
+  fishing pier and the fish buyer. Its ★5 legend is the manta ray.
 
 ## Itaewon and Gyeongnidan-gil (Yongsan-gu)
 
@@ -498,11 +507,13 @@ off the shore, open only where a street crosses to Yeongdeungpo. Seogang
 Bridge starts on the Han River Bike Path where "To the Han River" comes down
 from Hongdae and lands on Gukhoe-daero, as the real one does. On the island:
 Yeouido Han River Park along the north shore, laid straight on the street
-like Banpo-Jamwon's (`PARK` in the script, `game/han-parks.js`), west to east
+like Banpo's (`PARK` in the script, `game/han-parks.js`), west to east
 the boat dock by the Information Center, the night market's stalls round
 Mul-bit Square's shallow pool by Yeouinaru Station, the open fireworks lawn
-with no trees (`lawn: true`) and the fishing corner towards the 63 tower (a
-pier, the fish buyer, the kiosk with its ramen machine); the Han River path,
+with no trees (`lawn: true`) and the corner towards the 63 tower (a pier to
+look out from, the kiosk with its ramen machine). No fishing: the real park is
+a no-fishing area, so its fish went to Banpo (`PARK_MOVED` in
+`src/core/fishing.js` carries each player's legend count across); the Han River path,
 Yunjung-ro (Yeouiseo-ro) with cherry trees that are only pink in spring
 (`blossoms` with `seasonal`), the real street grid with plain office towers
 in its blocks, Yeouido Park, the National Assembly at the west end, and the 63

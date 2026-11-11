@@ -9,7 +9,11 @@ import { jetAt } from './rainbow-fountain.js';
 const DECK_Y = 8.4; // the deck's edge above the water (core/landmarks.js jamsu: top 9, 1.4 thick)
 const SIDE_X = 11.1; // half the deck's width, where the nozzles are
 const REACH = 13; // how far a jet at full strength throws its water from the deck
-const SPAN = 112; // the length of bridge over the water that has jets
+// The jets run along the bridge over the whole river: Jamsu Bridge's length
+// (the landmark's len, bank to bank) less the north bank's ~30 m and the
+// south bank's 12 m of park up to the path. (The real fountain is 1,140 m,
+// 285 m at 1/4, but the game's river at the bridge is about 200 m wide.)
+const END_N = 30, END_S = 16;
 
 // One jet pointing along +x, from (0, 0) at the nozzle to the water at
 // (REACH, -DECK_Y): it shoots out a little upwards, then falls; it widens
@@ -43,7 +47,8 @@ function jetGeometry(phone) {
 
 // landmark: the bridge's "jamsu" landmark (world x, z, ry).
 export function createRainbowJets(scene, landmark, { phone = false } = {}) {
-  const n = phone ? 30 : 46; // jets on each side
+  const len = landmark.len || 200, z0 = -len / 2 + END_N, span = len - END_N - END_S;
+  const n = Math.round(span / (phone ? 3.6 : 2.4)) + 1; // jets on each side
   const group = new THREE.Group();
   group.name = 'rainbow-fountain';
   group.position.set(landmark.x, 0, landmark.z);
@@ -77,7 +82,7 @@ export function createRainbowJets(scene, landmark, { phone = false } = {}) {
       for (let k = 0; k < n; k++) {
         // The two sides mirror each other, so a wave runs the same way along both.
         jetAt(t, k, n, jet);
-        const i = side * n + k, z = -SPAN / 2 + (k * SPAN) / (n - 1);
+        const i = side * n + k, z = z0 + (k * span) / (n - 1);
         if (jet.reach < 0.04) { jets.setMatrixAt(i, none); spray.setMatrixAt(i, none); continue; }
         const r = 0.15 + 0.85 * jet.reach;
         jets.setMatrixAt(i, m4.compose(p.set(sx * SIDE_X, DECK_Y, z), side ? flip : q.identity(), s.set(r, 1, 1)));
