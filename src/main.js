@@ -1766,6 +1766,7 @@ joinRoom(roomId, scene, { x: me.root.position.x, z: me.root.position.z });
 const emoteWheel = createEmoteWheel({
   get onSquare() { return onSquare; }, get me() { return me; }, get net() { return net; }, $, missionEvent,
   myLabel,
+  room: () => (mode === 'store' ? interior?.store?.workshop || null : null), // (some rooms swap a few emotes: data/emotes.js)
 });
 const { closeWheel } = emoteWheel;
 
