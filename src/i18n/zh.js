@@ -787,6 +787,7 @@ export const ZH = {
   "tix.short": "{name}需要 🪙 {n}。钱不够。",
   "show.fireworks": "🎆 烟花 · 汝矣岛",
   "show.drones": "🛸 无人机表演 · 纛岛",
+  "show.sunset": "🌇 日落 · 望远汉江公园",
   "show.inM": "{m}分钟后（你的时间 {at}）",
   "show.inHM": "{h}小时{m}分钟后（你的时间 {at}）",
   "show.now": "正在进行！还剩{m}分钟",

@@ -1,9 +1,11 @@
 // The next show, for the pinned notice at the top of the screen (game/chat.js):
 // the Yeouido fireworks or the Ttukseom drone show, whichever is on now or
-// comes first (show-clock.js has the schedule). Pure, no DOM.
+// comes first (show-clock.js has the schedule). Under it, the next sunset
+// (every game day, best from Mangwon Han River Park). Pure, no DOM.
 
 import { fireworksAt, nextFireworks, SHOW_SECONDS } from './fireworks-show.js';
 import { droneShowAt, nextDroneShow } from './drone-show.js';
+import { cycleMs, CYCLE, CYCLE_MS } from './show-clock.js';
 
 // → { kind: 'fireworks' | 'drones', start (ms), on (true while it's on) }
 export function nextShow(now = Date.now()) {
@@ -25,6 +27,23 @@ export function showNoticeText(show, now, t, clock) {
   }
   const mins = Math.max(1, Math.ceil((show.start - now) / 60e3));
   const at = clock(show.start);
+  if (mins < 60) return { label, text: t('show.inM', { m: mins, at }) };
+  return { label, text: t('show.inHM', { h: Math.floor(mins / 60), m: mins % 60, at }) };
+}
+
+// The sunset (core/sunset-sky.js): the 22.5 minutes before every night.
+// → { start (ms), end (ms), on }
+const SUN_FROM = (CYCLE.morning + CYCLE.day) * 60e3, SUN_LEN = CYCLE.sunset * 60e3;
+export function nextSunset(now = Date.now()) {
+  const into = cycleMs(now), cycleStart = now - into;
+  if (into >= SUN_FROM && into < SUN_FROM + SUN_LEN) return { start: cycleStart + SUN_FROM, end: cycleStart + SUN_FROM + SUN_LEN, on: true };
+  const start = cycleStart + SUN_FROM + (into >= SUN_FROM ? CYCLE_MS : 0);
+  return { start, end: start + SUN_LEN, on: false };
+}
+export function sunsetNoticeText(sun, now, t, clock) {
+  const label = t('show.sunset');
+  if (sun.on) return { label, text: t('show.now', { m: Math.max(1, Math.ceil((sun.end - now) / 60e3)) }) };
+  const mins = Math.max(1, Math.ceil((sun.start - now) / 60e3)), at = clock(sun.start);
   if (mins < 60) return { label, text: t('show.inM', { m: mins, at }) };
   return { label, text: t('show.inHM', { h: Math.floor(mins / 60), m: mins % 60, at }) };
 }
