@@ -297,7 +297,13 @@ t.row('toegyeN', between(TOEGYE, -1662, -1470), -1, { off: 10.5, ...SHOP });
 // apse stands clear against the sky from Toegye-ro (Yozi 2026-11-11).
 const BEHIND = onHall(-45, -4.5);
 const inPoly = ([x, z], p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
-buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p)) && !inPoly(BEHIND, b.p)));
+// Beside the yard's south-west, between it and Myeongdong 10-gil, the shop
+// right by the yard hid the cathedral walking up from the station (Yozi
+// 2026-11-11 "낮게하거나 없애버려 시야가려"). The real ones there are small
+// shops of 2-4 floors (OSM), so it stays, two floors high.
+const LOW_BY_YARD = 5;
+const nearYard = (b) => { const c = [b.p.reduce((t, q) => t + q[0], 0) / b.p.length, b.p.reduce((t, q) => t + q[1], 0) / b.p.length]; return lineDist(c, [...GROUNDS, GROUNDS[0]]) < 9 && c[1] > HALL.at[1] + 10; };
+buildings.push(...t.buildings.filter((b) => !exitSquares.some((q) => overlap(q.p, b.p)) && !inPoly(BEHIND, b.p)).map((b) => (nearYard(b) ? { ...b, h: Math.min(b.h, LOW_BY_YARD) } : b)));
 // Toegye-ro 20-gil: one row of quiet buildings (hotels, offices) each side,
 // south of Toegye-ro, stopping short of Sopa-ro and the cable car's station
 // (its own town, so the rows above stay as they were). Plain: Yozi
