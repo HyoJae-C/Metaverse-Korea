@@ -102,9 +102,12 @@ const ACT3 = [
 
 // The last hello, one per show in turn (Yozi 2026-11-12): the game's other
 // languages. (Korean, English, Japanese and Chinese come every show; 你好
-// reads the same in Taiwan and Hong Kong.)
-const HELLOS = ['HOLA', 'BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا'];
-export const helloOf = (start) => HELLOS[((showNumber(start) % HELLOS.length) + HELLOS.length) % HELLOS.length];
+// reads the same in Taiwan and Hong Kong.) The turn starts with French at
+// the show of 2026-11-12 08:10 KST (number FIRST_HELLO_SHOW): the night
+// before had Spanish.
+const HELLOS = ['BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا', 'HOLA'];
+const FIRST_HELLO_SHOW = 83075;
+export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_SHOW) % HELLOS.length; return HELLOS[(k + HELLOS.length) % HELLOS.length]; };
 
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;

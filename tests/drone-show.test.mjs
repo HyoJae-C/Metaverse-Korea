@@ -107,6 +107,14 @@ test('hello in Korean, English, Japanese, Chinese, then one more language each s
   assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
 });
 
+test('the turn of the fifth hello starts with French on 2026-11-12 08:10 KST', () => {
+  useShow(show);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 22, 0));
+  assert.equal(new Date(first).toISOString(), '2026-11-11T23:10:00.000Z');
+  assert.equal(helloOf(first), 'BONJOUR');
+  assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
+});
+
 test('every show gets its own number', () => {
   const n = [0, 1, 2].map((k) => show.showNumber(DRONE(k)));
   assert.deepEqual([n[1] - n[0], n[2] - n[1]], [1, 1]);
