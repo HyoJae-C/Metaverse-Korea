@@ -481,8 +481,8 @@ function patchMat(id) {
 }
 
 // The engraving on a pendant tag: the Hangul large, its hanja small under
-// it, polished bright on a darker brushed face so the word shines (a light
-// rim and a soft glow round the strokes) (data/appearance.js PENDANT_CHARMS).
+// it, polished bright, cut round in dark, on a slightly darker silver or gold
+// face (a light rim and a soft glow) (data/appearance.js PENDANT_CHARMS).
 const engraveMats = {};
 function engraveMat(hanja, letter, color) {
   const key = hanja + letter + color;
@@ -494,7 +494,7 @@ function engraveMat(hanja, letter, color) {
   const hex = (k) => '#' + metal.clone().multiplyScalar(k).getHexString();
   const shine = '#' + metal.clone().lerp(new THREE.Color(0xffffff), 0.7).getHexString();
   const face = g.createRadialGradient(46, 40, 6, 64, 64, 64);
-  face.addColorStop(0, hex(0.24)); face.addColorStop(1, hex(0.1)); // (linear values: dark, so the bright word stands out)
+  face.addColorStop(0, hex(0.5)); face.addColorStop(1, hex(0.26)); // (linear values: still silver or gold, a shade below the word)
   g.fillStyle = face;
   g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
   g.strokeStyle = shine; g.lineWidth = 5;
@@ -502,10 +502,11 @@ function engraveMat(hanja, letter, color) {
   g.textAlign = 'center'; g.textBaseline = 'middle';
   g.shadowColor = shine; g.shadowBlur = 8;
   g.fillStyle = shine;
+  g.strokeStyle = hex(0.06); g.lineJoin = 'round'; // a dark cut round each stroke, so the word reads on the metal
   g.font = '800 60px "Noto Sans KR", system-ui, sans-serif';
-  g.fillText(letter, 64, 54);
+  g.lineWidth = 6; g.strokeText(letter, 64, 54); g.fillText(letter, 64, 54);
   g.font = '700 24px "Noto Serif KR", "Noto Sans KR", serif';
-  g.fillText(hanja, 64, 102);
+  g.lineWidth = 4; g.strokeText(hanja, 64, 102); g.fillText(hanja, 64, 102);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return (engraveMats[key] = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
