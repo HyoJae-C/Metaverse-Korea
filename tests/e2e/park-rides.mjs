@@ -1,4 +1,4 @@
-// End-to-end check: Another Land's Choco Viking and Candy Carousel (in the
+// End-to-end check: Modu Land's Choco Viking and Candy Carousel (in the
 // room under the island), and up on the island the Lollipop Drop, the Sugar
 // Swing, the Macaron Gyro Swing and the Rainbow Wheel. Each has its
 // attendant at the gate; wait for it to load, get on, the bar comes down

@@ -9,7 +9,7 @@
 @about.en Kim Sowol wrote in the rhythm of Korean folk songs, and many of his poems are still sung today. "Azaleas" is one of the best-loved poems in Korea.
 @about.ko 민요의 가락으로 시를 쓴 김소월의 대표작 네 편. 지금도 노래로 불리는 시가 많아요.
 @source https://ko.wikisource.org/wiki/진달래꽃_(시집)
-@license Public domain. Kim Sowol died in 1934, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource in modern spelling. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Kim Sowol died in 1934, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource in modern spelling. English translation written for Modu Seoul (free to use, CC0).
 ===
 # 진달래꽃 | Azaleas
 나 보기가 역겨워

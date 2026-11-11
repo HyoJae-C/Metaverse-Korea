@@ -104,7 +104,7 @@ const BUILD = {
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
-  dome: (g, l) => domeOutside(g, l), // Seoul Another Dome's outside (the stadium inside: core/dome.js)
+  dome: (g, l) => domeOutside(g, l), // Modu Ballpark's outside (the stadium inside: core/dome.js)
   pavilion(g, l) {
     // Stone pillars standing in the pond, a raised floor, a big roof (Gyeonghoeru). l.s: scale.
     if (l.s) { const h = new THREE.Group(); h.scale.setScalar(l.s); g.add(h); g = h; }

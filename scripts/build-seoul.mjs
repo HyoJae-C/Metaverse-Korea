@@ -162,7 +162,7 @@ for (const q of projectRaw(riverLL)) if (!riverRaw.length || Math.hypot(q[0] - r
 // From Banpo-Jamwon east to Jamsil the game's own river (region.json water,
 // Seongsu's river and Songpa's Han River bank) is not where the 1/4 map puts
 // the real one, so the map showed strips of land in the middle of the river
-// and Seoul Another Dome in the water. Bend the map's river (and the gu edges
+// and Modu Ballpark in the water. Bend the map's river (and the gu edges
 // along it) onto the game's water there.
 const bend = bankWarp(projectRaw(riverLL), GAME_RIVER); // (every shared edge point, so the gu edges land on the line)
 const project = (ring) => projectRaw(ring).map(bend);

@@ -121,7 +121,7 @@ export class Storefronts {
       // item stays for the map, a taxi or a guide: "at" is where they drop you.
       // (store.hanpark: one laid straight on the street, game/han-parks.js:
       // the same, but never a room.)
-      // (store.below: a room under an open park, e.g. Another Land's rides
+      // (store.below: a room under an open park, e.g. Modu Land's rides
       // under its island, reached by its stairs: no front either.)
       // (store.carts: night food carts on the street, game/night-carts.js.)
       if (store.open || store.hanpark || store.below || store.carts) {

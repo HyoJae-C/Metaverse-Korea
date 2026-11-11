@@ -49,7 +49,7 @@ test('children added later to a watched container are culled too', () => {
   assert.equal(late.visible, false);
 });
 
-test('Another Tower (farKeep) stays up past the fog, as one tower of five meshes', async () => {
+test('Modu Tower (farKeep) stays up past the fog, as one tower of five meshes', async () => {
   const { haneulTower } = await import('../src/core/haneul.js');
   const g = new THREE.Group();
   haneulTower(g);

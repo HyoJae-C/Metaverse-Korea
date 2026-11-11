@@ -106,8 +106,8 @@ function buildBalloon() {
       x.clearRect(0, 0, w, h);
       x.fillStyle = '#1f3f66'; x.textAlign = 'center'; x.textBaseline = 'middle';
       x.font = '800 40px "Noto Sans KR", system-ui, sans-serif';
-      x.fillText('어나더서울  ANOTHER SEOUL', w / 4, h / 2);
-      x.fillText('어나더서울  ANOTHER SEOUL', (w * 3) / 4, h / 2);
+      x.fillText('모두서울  MODU SEOUL', w / 4, h / 2);
+      x.fillText('모두서울  MODU SEOUL', (w * 3) / 4, h / 2);
     }),
   }));
   band.position.y = HANG + R + 2.6;

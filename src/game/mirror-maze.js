@@ -1,4 +1,4 @@
-// Another Land's Mirror Maze (거울 미로; the walls are park-new-rides.js,
+// Modu Land's Mirror Maze (거울 미로; the walls are park-new-rides.js,
 // the layout park-rides.js MAZE): free, just walk in at the south door. A
 // clock starts as you step in, and when you come out of the far (east)
 // side you hear how long it took. Walking back out of the door you came in
@@ -11,7 +11,7 @@ export const inMaze = (x, z) => x > MAZE.x0 && x < MAZE.x1 && z > MAZE.z0 && z <
 export function createMirrorMaze(game) {
   let t0 = 0, hello = -1e9;
   return {
-    // Every frame in Another Land (pos: the player's feet; off: on a ride or elsewhere).
+    // Every frame in Modu Land (pos: the player's feet; off: on a ride or elsewhere).
     tick(pos, on) {
       if (!on) { t0 = 0; return; }
       const inside = inMaze(pos.x, pos.z), now = performance.now();

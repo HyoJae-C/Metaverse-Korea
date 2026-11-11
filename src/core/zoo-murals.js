@@ -1,6 +1,6 @@
 // Pictures painted on the outside of the zoo's Sea Animals hall (pen.murals,
 // scripts/build-grand-park.mjs): simple, cheerful scenes of its animals and
-// "ANOTHER SEOUL" in big letters. Each is one canvas on a plane just off a
+// "MODU SEOUL" in big letters. Each is one canvas on a plane just off a
 // wall: 'ice' (a polar bear and her cub on one floe, penguins on another, a
 // seal in the sea, the name in the sky), 'deep' (under the water: a walrus,
 // seals, diving penguins, fish), 'arctic' (the northern lights, a polar bear
@@ -122,7 +122,7 @@ export const ART = {
     seal(c, 590, 196, 0.8, 1, true);
     fish(c, 420, 222, 1, '#ffb347'); fish(c, 470, 204, 0.8, '#ffe066'); fish(c, 960, 224, 0.9, '#ff8fa3', -1);
     bubbles(c, [[640, 172, 5], [652, 158, 3], [500, 190, 4]]);
-    title(c, 'ANOTHER SEOUL', 515, 84, 64);
+    title(c, 'MODU SEOUL', 515, 84, 64);
     c.font = '700 30px sans-serif'; c.fillStyle = '#ffffff'; c.textAlign = 'center'; c.fillText('바다동물관 · SEA ANIMALS', 512, 168);
   }],
   deep: [1024, 208, (c, w, h) => {
@@ -135,12 +135,12 @@ export const ART = {
     penguin(c, 760, 70, 0.7, 1.9); penguin(c, 830, 120, 0.6, 1.6); penguin(c, 700, 150, 0.55, 2.2); // diving
     for (const [x, y, s, col, f] of [[330, 40, 0.9, '#ffb347', 1], [360, 60, 0.7, '#ffb347', 1], [640, 40, 0.8, '#ffe066', -1], [920, 70, 1, '#ff8fa3', -1], [960, 160, 0.8, '#7fe0c4', -1], [300, 180, 0.7, '#ffe066', 1]]) fish(c, x, y, s, col, f);
     bubbles(c, [[480, 60, 5], [490, 44, 3], [790, 40, 4], [800, 24, 3], [250, 90, 4]]);
-    title(c, 'ANOTHER SEOUL', 600, 186, 34, '#ffffff', '#163f5e');
+    title(c, 'MODU SEOUL', 600, 186, 34, '#ffffff', '#163f5e');
   }],
   penguins: [512, 360, (c, w, h) => {
     skyAndSea(c, w, h, 210);
     floe(c, 30, 482, 236, 90);
-    title(c, 'ANOTHER', w / 2, 62, 76);
+    title(c, 'MODU', w / 2, 62, 76);
     title(c, 'SEOUL', w / 2, 138, 76);
     penguin(c, 150, 238, 1.6); penguin(c, 250, 256, 1.0, 0.08); penguin(c, 350, 232, 1.75);
     dot(c, 420, 70, 20, '#ffe58a');
@@ -163,7 +163,7 @@ export const ART = {
     c.fillStyle = SEA; c.fillRect(200, 140, 240, 30);
     waves(c, w, 140, 150, 1);
     fish(c, 120, 180, 0.9, '#ffb347'); fish(c, 520, 186, 0.8, '#7fe0c4', -1);
-    title(c, 'ANOTHER SEOUL', 470, 46, 40, '#ffffff', '#0f2238');
+    title(c, 'MODU SEOUL', 470, 46, 40, '#ffffff', '#0f2238');
   }],
   friends: [512, 360, (c, w, h) => { // the hall's animals in a row, waving hello
     c.fillStyle = SKY; c.fillRect(0, 0, w, h);

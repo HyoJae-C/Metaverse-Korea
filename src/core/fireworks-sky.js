@@ -96,7 +96,7 @@ function directions(kind, n, rand) {
 
 // A row of high-rises along the far bank, facing the lawn: one merged mesh
 // for the towers and one instanced mesh for their lit windows (2 draw calls).
-// Its outline follows the drone show's "Another Tower" skyline picture,
+// Its outline follows the drone show's "Modu Tower" skyline picture,
 // mirrored left to right, so the heights go up and down a lot instead of a
 // flat row of small blocks (Yozi: "드론쇼빌딩이미지를 참고해서 만들고
 // 좌우반전", "너무작은빌딩만잇거든"): tall towers either side of the

@@ -11,8 +11,8 @@ export const LIBRARY = [
    "ko": "중국어 첫걸음"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 7
  },
@@ -26,8 +26,8 @@ export const LIBRARY = [
    "ko": "처음 배우는 여행 영어"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 9
  },
@@ -41,8 +41,8 @@ export const LIBRARY = [
    "ko": "일본어 첫걸음"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 8
  },
@@ -101,8 +101,8 @@ export const LIBRARY = [
    "ko": "짧게 읽는 고전소설"
   },
   "author": {
-   "en": "Classic Joseon novels, retold for Another Seoul",
-   "ko": "조선 고전소설 (Another Seoul이 새로 씀)"
+   "en": "Classic Joseon novels, retold for Modu Seoul",
+   "ko": "조선 고전소설 (모두서울이 새로 씀)"
   },
   "pages": 8
  },
@@ -251,8 +251,8 @@ export const LIBRARY = [
    "ko": "방귀쟁이 며느리 · 웃음 전래동화"
   },
   "author": {
-   "en": "Korean folk tales, retold for Another Seoul",
-   "ko": "한국 전래동화 (Another Seoul이 새로 씀)"
+   "en": "Korean folk tales, retold for Modu Seoul",
+   "ko": "한국 전래동화 (모두서울이 새로 씀)"
   },
   "pages": 10
  },
@@ -266,8 +266,8 @@ export const LIBRARY = [
    "ko": "해님 달님 · 전래동화 2"
   },
   "author": {
-   "en": "Korean folk tales, retold for Another Seoul",
-   "ko": "한국 전래동화 (Another Seoul이 새로 씀)"
+   "en": "Korean folk tales, retold for Modu Seoul",
+   "ko": "한국 전래동화 (모두서울이 새로 씀)"
   },
   "pages": 11
  },
@@ -281,8 +281,8 @@ export const LIBRARY = [
    "ko": "옛날 옛적 전래동화"
   },
   "author": {
-   "en": "Korean folk tales, retold for Another Seoul",
-   "ko": "한국 전래동화 (Another Seoul이 새로 씀)"
+   "en": "Korean folk tales, retold for Modu Seoul",
+   "ko": "한국 전래동화 (모두서울이 새로 씀)"
   },
   "pages": 15
  },
@@ -326,8 +326,8 @@ export const LIBRARY = [
    "ko": "청소와 빨래 꿀팁"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 8
  },
@@ -341,8 +341,8 @@ export const LIBRARY = [
    "ko": "홈카페 음료 8가지"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 9
  },
@@ -356,8 +356,8 @@ export const LIBRARY = [
    "ko": "쓸데없이 진지한 생활 백과"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 11
  },
@@ -371,8 +371,8 @@ export const LIBRARY = [
    "ko": "간단 자취 요리 레시피 10"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 12
  },
@@ -386,8 +386,8 @@ export const LIBRARY = [
    "ko": "쓸데없지만 진짜인 잡학 사전"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 9
  },
@@ -401,8 +401,8 @@ export const LIBRARY = [
    "ko": "첫 월급 돈 관리"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 9
  },
@@ -416,8 +416,8 @@ export const LIBRARY = [
    "ko": "반려식물 키우기"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 7
  },
@@ -431,8 +431,8 @@ export const LIBRARY = [
    "ko": "편의점 꿀조합 레시피"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 10
  },
@@ -446,8 +446,8 @@ export const LIBRARY = [
    "ko": "집에서 하는 10분 스트레칭"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 10
  },
@@ -461,8 +461,8 @@ export const LIBRARY = [
    "ko": "분리수거 쉽게 하기"
   },
   "author": {
-   "en": "Another Seoul",
-   "ko": "Another Seoul 편집부"
+   "en": "Modu Seoul",
+   "ko": "모두서울 편집부"
   },
   "pages": 8
  }

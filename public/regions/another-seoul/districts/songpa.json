@@ -21,7 +21,7 @@
     ]
    }
   ],
-  "source": "hand-made game map: Songpa-gu across the Han River. Seokchon Lake is at the real 1/4 scale like the rest of Seoul (docs/WORLD.md): both lakes and the west-lake island were traced from the real map, centred on the lake's own centre on Songpa-daero, then shrunk to 1/4 (about 13,500 m2 of water here, the real 217,850 m2 / 16 = 13,616). Songpa-daero, Olympic-ro, Baekjegobun-ro, Hangaram-ro, Jamsil-ro, Samjeon-ro and the Han River's south bank follow OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL); Jamsil Bridge crosses from the north bank. The lakes and the island keep their game size and were moved as one piece so the channel between them lies on the real Songpa-daero. Another Land on the west-lake island is an original theme park, not a real place; Another Land Bridge runs south from Olympic-ro to the island's north tip, where its gate faces north (landmark ry). Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a path runs from the east lake to its park. Seoul Another Dome (a fictional baseball dome, inspired by the one planned for Jamsil) stands on the real Jamsil Baseball Stadium's centre at 1/4 size (outside about 58 m across), north of the west end of Olympic-ro; its stadium inside is a separate room at game size. The HANEUL department store and mall (fictional brand) stand between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; the mall sits clear of the east lake's north tip. Another Tower (fictional, where the real 555 m tower is, at 1/4: 139 m) stands just south-east of Jamsil Station. They are drawn by core/haneul.js. No filler blocks: the open ground by the river and the lakes is left clear."
+  "source": "hand-made game map: Songpa-gu across the Han River. Seokchon Lake is at the real 1/4 scale like the rest of Seoul (docs/WORLD.md): both lakes and the west-lake island were traced from the real map, centred on the lake's own centre on Songpa-daero, then shrunk to 1/4 (about 13,500 m2 of water here, the real 217,850 m2 / 16 = 13,616). Songpa-daero, Olympic-ro, Baekjegobun-ro, Hangaram-ro, Jamsil-ro, Samjeon-ro and the Han River's south bank follow OpenStreetMap at 1/4 (© OpenStreetMap contributors, ODbL); Jamsil Bridge crosses from the north bank. The lakes and the island keep their game size and were moved as one piece so the channel between them lies on the real Songpa-daero. Modu Land on the west-lake island is an original theme park, not a real place; Modu Land Bridge runs south from Olympic-ro to the island's north tip, where its gate faces north (landmark ry). Olympic Park, further east along Olympic-ro, is its own district (olympic-park.json); a path runs from the east lake to its park. Modu Ballpark (a fictional baseball dome, inspired by the one planned for Jamsil) stands on the real Jamsil Baseball Stadium's centre at 1/4 size (outside about 58 m across), north of the west end of Olympic-ro; its stadium inside is a separate room at game size. The HANEUL department store and mall (fictional brand) stand between Olympic-ro and the lakes, where the real shopping complex by Jamsil Station is; the mall sits clear of the east lake's north tip. Modu Tower (fictional, where the real 555 m tower is, at 1/4: 139 m) stands just south-east of Jamsil Station. They are drawn by core/haneul.js. No filler blocks: the open ground by the river and the lakes is left clear."
  },
  "roads": [
   {
@@ -284,10 +284,10 @@
    "k": "secondary",
    "w": 10,
    "n": {
-    "ko": "어나더랜드 다리",
-    "en": "Another Land Bridge",
-    "ja": "アナザーランド橋",
-    "zh": "另一乐园桥"
+    "ko": "모두랜드 다리",
+    "en": "Modu Land Bridge",
+    "ja": "モドゥランド橋",
+    "zh": "Modu乐园桥"
    },
    "p": [
     [
@@ -679,8 +679,8 @@
     ]
    ],
    "n": {
-    "ko": "어나더타워",
-    "en": "Another Tower"
+    "ko": "모두타워",
+    "en": "Modu Tower"
    }
   },
   {
@@ -752,8 +752,8 @@
     ]
    ],
    "n": {
-    "ko": "서울 어나더 돔",
-    "en": "Seoul Another Dome"
+    "ko": "모두야구장",
+    "en": "Modu Ballpark"
    },
    "custom": true
   }
@@ -3867,10 +3867,10 @@
    "x": 539,
    "z": 250,
    "name": {
-    "ko": "어나더랜드",
-    "en": "Another Land",
-    "ja": "アナザーランド",
-    "zh": "另一乐园"
+    "ko": "모두랜드",
+    "en": "Modu Land",
+    "ja": "モドゥランド",
+    "zh": "Modu乐园"
    }
   },
   {

@@ -1,4 +1,4 @@
-# Another Seoul
+# Modu Seoul (모두서울)
 
 Browser 3D trip to Seoul (Vite + three.js). `npm test`, `npm run lint` and
 `npm run build` must pass; CI also runs the multiplayer and memory e2e and the

@@ -31,7 +31,7 @@ function drawSlide(g, s) {
   g.fillText(s.tag || 'AD', W - 28, 36);
 }
 
-// The animated title card: "어나더서울" bouncing over a night skyline
+// The animated title card: "모두서울" bouncing over a night skyline
 // with Namsan Tower, twinkling stars and a slowly shifting sky (like a GIF).
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const SKYLINE = [ // [x, width, height] in screen units (0..W), repeats
@@ -67,7 +67,7 @@ export function drawTitleCard(g, t) {
     }
   }
   // Bouncing rainbow letters.
-  const text = '어나더서울';
+  const text = '모두서울';
   g.font = `900 112px ${FONT}`;
   g.textAlign = 'left'; g.textBaseline = 'middle';
   const widths = [...text].map((c) => g.measureText(c).width);

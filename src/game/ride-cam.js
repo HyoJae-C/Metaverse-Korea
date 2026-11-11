@@ -1,4 +1,4 @@
-// The camera on Another Land's carousel and pirate ship (the coaster has its
+// The camera on Modu Land's carousel and pirate ship (the coaster has its
 // own, in main.js): just behind and above you, riding with the seat, so the
 // ship's swing tips the whole view; or from your seat (the action button
 // switches, as on the coaster). The seat comes from park-rides.js seatAt():

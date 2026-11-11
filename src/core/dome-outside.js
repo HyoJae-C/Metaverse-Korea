@@ -1,4 +1,4 @@
-// Seoul Another Dome from outside (the Songpa map, west of Jamsil Station),
+// Modu Ballpark from outside (the Songpa map, west of Jamsil Station),
 // and the size of its room. Small on purpose: it ships with the map, while
 // the stadium inside (core/dome.js) is loaded on the first visit.
 import * as THREE from 'three';
@@ -46,8 +46,8 @@ export function domeOutside(g, l) {
   const sign = canvasTex(1024, 256, (x, w) => {
     x.fillStyle = '#1f4f8f'; x.fillRect(0, 0, w, 256);
     x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.font = `900 100px ${FONT}`; x.fillText('서울 어나더 돔', 512, 92);
-    x.font = '800 60px system-ui, sans-serif'; x.fillText('SEOUL ANOTHER DOME', 512, 196);
+    x.font = `900 100px ${FONT}`; x.fillText('모두야구장', 512, 92);
+    x.font = '800 60px system-ui, sans-serif'; x.fillText('MODU BALLPARK', 512, 196);
   });
   const signW = Math.max(12, 18 * k), signH = signW / 4;
   const s = new THREE.Mesh(new THREE.PlaneGeometry(signW, signH), new THREE.MeshBasicMaterial({ map: sign }));

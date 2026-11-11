@@ -9,7 +9,7 @@
 @about.en Sijo are three-line Korean poems, sung for over 600 years. Twelve of the most famous, each with a short note in easy Korean. Korean text only.
 @about.ko 세 줄로 된 우리 옛 노래, 시조. 가장 널리 알려진 열두 수를 골라 쉬운 풀이를 붙였어요.
 @source Traditional sijo of the Goryeo and Joseon eras, as printed in old songbooks such as 청구영언 (1728)
-@license Public domain. These poems are 300 to 600 years old and belong to everyone. Modern spacing and the short notes are written for Another Seoul (free to use, CC0). Korean only, no translation.
+@license Public domain. These poems are 300 to 600 years old and belong to everyone. Modern spacing and the short notes are written for Modu Seoul (free to use, CC0). Korean only, no translation.
 ===
 # 태산이 높다 하되 · 양사언
 태산이 높다 하되 하늘 아래 뫼이로다

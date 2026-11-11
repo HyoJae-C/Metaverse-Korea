@@ -10,7 +10,7 @@
 @about.en Chang-nam is the funniest boy in class. One freezing day he comes to school without a shirt. A story by Bang Jeong-hwan, who started Children's Day in Korea.
 @about.ko 반에서 제일 유쾌한 창남이가 몹시 추운 날 셔츠 없이 학교에 왔어요. 어린이날을 만든 방정환의 동화예요.
 @source https://ko.wikisource.org/wiki/만년_셔츠
-@license Public domain. Bang Jeong-hwan died in 1931, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource (first printed in the magazine "Eorini", March 1927); a few spacing typos fixed. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Bang Jeong-hwan died in 1931, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource (first printed in the magazine "Eorini", March 1927); a few spacing typos fixed. English translation written for Modu Seoul (free to use, CC0).
 ===
 # 1
 

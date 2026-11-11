@@ -1,4 +1,4 @@
-// Another Land's newer rides (themepark.js places them; the motion is
+// Modu Land's newer rides (themepark.js places them; the motion is
 // park-rides.js, on everyone's shared clock):
 // the Sugar Swing (a chair swing ride: chairs on chains from a spinning
 // crown, flying out as it speeds up), the Teacup Party (five cups spinning

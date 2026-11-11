@@ -1,4 +1,4 @@
-// The Macaron Gyro Swing on Another Land's island (park-island.js places
+// The Macaron Gyro Swing on Modu Land's island (park-island.js places
 // it; the motion is park-rides.js gyroAngle / gyroSpin, on everyone's
 // shared clock): two candy-striped A-frames hold an axle up high; a long
 // lilac arm hangs from it with a giant macaron at its end, sixteen seats

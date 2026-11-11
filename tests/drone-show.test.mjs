@@ -59,7 +59,7 @@ test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
   const steps = program(DRONE());
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
-  const order = ['ANOTHER/SEOUL', '어 나 더/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
+  const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
   for (const w of order) { const i = words.indexOf(w); assert.ok(i > at, w); at = i; }
   for (let i = 1; i < steps.length; i++) assert.ok(steps[i].at > steps[i - 1].at, 'steps in time order');

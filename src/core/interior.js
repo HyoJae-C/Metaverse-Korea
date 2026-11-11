@@ -44,12 +44,12 @@ export const ROOM_SIZES = {
   hall: { w: 24, d: 20, h: 7 }, // DDP Hall: the bright lobby, the Curve Runway through its back door
   cinema: { w: 18, d: 18, h: 7 }, // a tall hall for the big screen
   park: { w: 52, d: 28, h: 8 }, // outdoor (see park.js)
-  // Another Land (themepark.js): the rides round the central plaza, spread
+  // Modu Land (themepark.js): the rides round the central plaza, spread
   // out along walking paths, the east promenade to the Ferris wheel and the
   // drop tower, and a longer Main Street from the gate: under the island
   // since the roller coaster moved out onto it. Not centred: x0..x1, z0..z1.
   themepark: { w: 88, d: 74, h: 8, x0: -26, x1: 62, z0: -40, z1: 34 },
-  // Another Land's island in Seokchon Lake, open to the street (stores.json
+  // Modu Land's island in Seokchon Lake, open to the street (stores.json
   // "open"): the Cotton Candy Express and its candy wood, in the coaster's
   // own metres; the island's shore (open.lawn) is the edge.
   island: { w: 92, d: 76, h: 8, x0: -72, x1: 20, z0: -60, z1: 16 },
@@ -58,7 +58,7 @@ export const ROOM_SIZES = {
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
   pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
-  dome: ROOM_DOME, // Seoul Another Dome, the baseball stadium (see dome.js)
+  dome: ROOM_DOME, // Modu Ballpark, the baseball stadium (see dome.js)
   aquarium: AQUA_ROOM, // KONEXT Aquarium (see aquarium.js)
   zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
   zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
@@ -188,12 +188,12 @@ function dartboardTexture() {
   return tex;
 }
 
-// Seoul Another Dome's stadium (core/dome.js) is loaded on the first visit:
+// Modu Ballpark's stadium (core/dome.js) is loaded on the first visit:
 // main.js imports it, hands its builder over here, then builds the room.
 let domeBuilder = null;
 export const setDomeBuilder = (fn) => { domeBuilder = fn; };
 export const needsDome = (store) => store?.workshop === 'dome' && !domeBuilder;
-// Another Land (themepark.js, with its coaster and bumper rink) the same way.
+// Modu Land (themepark.js, with its coaster and bumper rink) the same way.
 let parkBuilder = null;
 export const setParkBuilder = (fn) => { parkBuilder = fn; };
 export const needsPark = (store) => store?.workshop === 'themepark' && !parkBuilder;

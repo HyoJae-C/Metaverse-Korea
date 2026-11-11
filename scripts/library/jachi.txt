@@ -4,12 +4,12 @@
 @color #e2683c
 @title.en 10 Easy Recipes for Living Alone (Korean only)
 @title.ko 간단 자취 요리 레시피 10
-@author.en Another Seoul
-@author.ko Another Seoul 편집부
+@author.en Modu Seoul
+@author.ko 모두서울 편집부
 @about.en Ten Korean home dishes you can make with one pan, a rice cooker and a convenience-store budget. Korean text only.
 @about.ko 프라이팬 하나, 밥솥 하나로 만드는 자취 요리 열 가지. 재료는 동네 마트와 편의점에서 구할 수 있어요.
-@source Written new for Another Seoul
-@license Written for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@source Written new for Modu Seoul
+@license Written for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 들어가며
 자취 요리는 어렵지 않아요. 이 책의 요리는 모두 15분 안에 끝나고, 재료는 다섯 가지를 넘지 않아요.

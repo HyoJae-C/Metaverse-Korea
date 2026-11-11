@@ -7,25 +7,25 @@
     <!-- AdSense site verification (publisher ID; also in src/config.js and public/ads.txt). -->
     <meta name="google-adsense-account" content="ca-pub-4337373973481597" />
     <meta name="metamoa-site-verification" content="RpT-9fF4zWhXGVmRbmeUkb" />
-    <title>Another Seoul · Walk Seoul in 3D in your browser (어나더서울)</title>
+    <title>Modu Seoul · Walk Seoul in 3D in your browser (모두서울)</title>
     <meta name="description" content="Walk Seoul in 3D, free in your browser. Explore Seongsu-dong, Hongdae and Itaewon with friends, shop, visit cafés and practise Korean. No download." />
     <!-- Search engines: one canonical address. Plain-text "about" pages in
          several languages live in public/about/ (scripts/build-seo-pages.mjs). -->
     <link rel="canonical" href="https://another-seoul.com/" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Another Seoul","alternateName":["어나더서울","アナザー・ソウル"],"url":"https://another-seoul.com/"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Modu Seoul","alternateName":["모두서울","モドゥ・ソウル","Another Seoul","어나더서울"],"url":"https://another-seoul.com/"}</script>
     <!-- Link previews (KakaoTalk, LINE, WeChat, iMessage, Discord…): a picture
          with a character, a title and a line about the game. -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Another Seoul" />
-    <meta property="og:title" content="Another Seoul · 서울 구석구석을 3D로 걸어요" />
+    <meta property="og:site_name" content="Modu Seoul" />
+    <meta property="og:title" content="Modu Seoul · 서울 구석구석을 3D로 걸어요" />
     <meta property="og:description" content="브라우저에서 바로, 친구랑 같이 서울 구석구석을 걷고 맛집·쇼핑·전시를 즐겨요. Walk every corner of Seoul in 3D with friends." />
     <meta property="og:url" content="%VITE_SITE_URL%" />
-    <meta property="og:image" content="%VITE_SITE_URL%og.png?v=3" />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png?v=4" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Another Seoul: friends waving on a Seongsu street, at the Han River and on Namsan" />
+    <meta property="og:image:alt" content="Modu Seoul: friends waving on a Seongsu street, at the Han River and on Namsan" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="%VITE_SITE_URL%og.png?v=3" />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png?v=4" />
     <link rel="icon" type="image/png" href="./favicon.png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <!-- Add to Home Screen (PWA): public/manifest.webmanifest, public/sw.js -->
@@ -33,8 +33,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="application-name" content="Another Seoul" />
-    <meta name="apple-mobile-web-app-title" content="Another Seoul" />
+    <meta name="application-name" content="Modu Seoul" />
+    <meta name="apple-mobile-web-app-title" content="Modu Seoul" />
     <!-- Fonts: Fredoka (Latin) and Jua (Hangul) for titles and buttons,
          Nunito for Latin body text. Shown as they arrive, never blocking. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -44,7 +44,7 @@
   </head>
   <body>
     <noscript>
-      <h1>Another Seoul</h1>
+      <h1>Modu Seoul</h1>
       <p>A free 3D virtual trip to Seoul, Korea, in your web browser. Walk Seongsu-dong, Hongdae and Itaewon, shop in sample stores, visit cafés and practise Korean. Please turn on JavaScript to play.</p>
       <p><a href="about/">About</a> · <a href="about/ko/">한국어</a> · <a href="about/ja/">日本語</a> · <a href="about/zh-hans/">简体中文</a> · <a href="about/zh-hant/">繁體中文</a> · <a href="about/es/">Español</a></p>
     </noscript>
@@ -127,7 +127,7 @@
         <button class="sheet-x" id="wallet-close" aria-label="Close">✕</button>
         <strong class="wallet-title">💳 <span data-i18n="wallet.title"></span></strong>
         <div class="pay-card" aria-live="polite">
-          <span class="pay-card-name">ANOTHER SEOUL PASS</span>
+          <span class="pay-card-name">MODU SEOUL PASS</span>
           <i class="pay-card-chip" aria-hidden="true"></i>
           <span class="pay-card-label" data-i18n="ledger.balance"></span>
           <p class="wallet-balance"><b id="wallet-coins">₩0</b></p>
@@ -190,7 +190,7 @@
           <img class="ad-scene" id="ad-scene" alt="" hidden />
           <b class="ad-place" id="ad-place"></b>
           <small data-i18n="wallet.adDemo"></small>
-          <strong>🇰🇷 Another Seoul</strong>
+          <strong>🇰🇷 Modu Seoul</strong>
           <p class="ad-line" data-i18n="wallet.adLine"></p>
           <span class="ad-count" id="ad-count">1</span>
           <button class="chip" id="ad-close" data-i18n="wallet.skip"></button>
@@ -307,7 +307,7 @@
       <div class="skate-pop" id="skate-pop" aria-live="polite"></div>
       <!-- Olympic Park Pool: best times, and the race clock while racing. -->
       <div class="skate-hud pool-hud" id="pool-hud" hidden><b id="pool-score"></b><small id="pool-sub"></small></div>
-      <!-- Bumper cars (Another Land): the round clock, my bumps, boost; or my place in line. -->
+      <!-- Bumper cars (Modu Land): the round clock, my bumps, boost; or my place in line. -->
       <div class="skate-hud bumper-hud" id="bumper-hud" role="status" hidden><b></b><small></small></div>
       <button class="honk-btn boost-btn" id="boost-btn" aria-label="Boost" hidden>🚀</button>
       <div class="emote-wheel" id="emote-wheel">
@@ -404,7 +404,7 @@
         </svg>
       </div>
       <!-- People from the game holding the name banner (made from the game's own characters) -->
-      <img class="start-banner" src="assets/promo/banner.webp?v=1" alt="Another Seoul" width="900" height="504" decoding="async" />
+      <img class="start-banner" src="assets/promo/banner.webp?v=2" alt="Modu Seoul" width="900" height="504" decoding="async" />
       <div class="panel" id="step-lang">
         <div class="boot-note" id="boot-note" role="status"><p id="boot-msg">Loading…</p><button class="primary" id="boot-reload" hidden>Reload</button></div>
         <h1 data-i18n="app.title"></h1>
@@ -414,7 +414,7 @@
         <p class="region" id="start-region"></p>
         <button class="primary" id="next-btn" data-i18n="start.next"></button>
         <!-- Google Form for players who want to help build the game (opens in a new tab) -->
-        <a class="chip survey-btn" id="survey-btn" lang="ko" href="https://docs.google.com/forms/d/1PWrwnWO_8VkjHTsiwL76lr0dPjHVEDozwGJA2pIZ-qo/viewform" target="_blank" rel="noopener">🎨 어나더 서울 같이 꾸미기 신청</a>
+        <a class="chip survey-btn" id="survey-btn" lang="ko" href="https://docs.google.com/forms/d/1PWrwnWO_8VkjHTsiwL76lr0dPjHVEDozwGJA2pIZ-qo/viewform" target="_blank" rel="noopener">🎨 모두서울 같이 꾸미기 신청</a>
         <p class="disclaimer" data-i18n="app.disclaimer"></p>
       </div>
       <div class="panel" id="step-login" hidden>
@@ -592,7 +592,7 @@
       <div class="panel small welcome-card">
         <h2>🎒 <span data-i18n="welcome.title"></span></h2>
         <div class="pay-card big">
-          <span class="pay-card-name">ANOTHER SEOUL PASS</span>
+          <span class="pay-card-name">MODU SEOUL PASS</span>
           <i class="pay-card-chip" aria-hidden="true"></i>
           <p class="wallet-balance"><b id="welcome-coins">₩0</b></p>
         </div>
@@ -634,11 +634,11 @@
     <script>
       (function () {
         var T = {
-          en: ['Loading Another Seoul…', 'Still loading. The game is about 1 MB, so on a slow connection or a VPN it can take a minute or two.', "Couldn't download the game. Check your connection and try again.", 'Reload'],
-          ko: ['어나더서울 불러오는 중…', '아직 불러오는 중이에요. 게임이 약 1MB라 느린 인터넷이나 VPN에서는 1~2분 걸릴 수 있어요.', '게임을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', '새로고침'],
-          ja: ['Another Seoul を読み込み中…', 'まだ読み込み中です。ゲームは約1MBなので、遅い回線やVPNでは1〜2分かかることがあります。', 'ゲームをダウンロードできませんでした。接続を確認して、もう一度お試しください。', '再読み込み'],
-          zh: ['正在加载 Another Seoul…', '仍在加载。游戏约 1 MB，网络较慢或使用 VPN 时可能需要一两分钟。', '游戏下载失败。请检查网络后重试。', '重新加载'],
-          zht: ['正在載入 Another Seoul…', '仍在載入。遊戲約 1 MB，網路較慢或使用 VPN 時可能需要一兩分鐘。', '遊戲下載失敗。請檢查網路後重試。', '重新載入']
+          en: ['Loading Modu Seoul…', 'Still loading. The game is about 1 MB, so on a slow connection or a VPN it can take a minute or two.', "Couldn't download the game. Check your connection and try again.", 'Reload'],
+          ko: ['모두서울 불러오는 중…', '아직 불러오는 중이에요. 게임이 약 1MB라 느린 인터넷이나 VPN에서는 1~2분 걸릴 수 있어요.', '게임을 받지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.', '새로고침'],
+          ja: ['Modu Seoul を読み込み中…', 'まだ読み込み中です。ゲームは約1MBなので、遅い回線やVPNでは1〜2分かかることがあります。', 'ゲームをダウンロードできませんでした。接続を確認して、もう一度お試しください。', '再読み込み'],
+          zh: ['正在加载 Modu Seoul…', '仍在加载。游戏约 1 MB，网络较慢或使用 VPN 时可能需要一两分钟。', '游戏下载失败。请检查网络后重试。', '重新加载'],
+          zht: ['正在載入 Modu Seoul…', '仍在載入。遊戲約 1 MB，網路較慢或使用 VPN 時可能需要一兩分鐘。', '遊戲下載失敗。請檢查網路後重試。', '重新載入']
         };
         var code = '';
         try { code = localStorage.getItem('mk.lang') || ''; } catch (e) { /* storage blocked */ }

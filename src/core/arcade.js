@@ -1,5 +1,5 @@
 // Three skill games, no DOM so they can be unit-tested: the batting cage
-// (야구 연습장), the toy shooting gallery in Another Land (풍선 사격) and darts
+// (야구 연습장), the toy shooting gallery in Modu Land (풍선 사격) and darts
 // at Bar Hush. They are free to play and pay out no coins: you chase your
 // own best record (kept in this browser under "mk.arcade"). The one prize is
 // the balloon booth's small teddy bear for a gold medal.
