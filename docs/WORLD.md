@@ -231,7 +231,12 @@ sitting there turns the camera to the sunset and says how long until it
 dome fades from the haze at the horizon to deep blue, with a glow and the
 sun's disc going down due west a little south (behind Seongsan Bridge from
 the steps; it comes up in the east), a path of light on the river (added to
-the water's material) and the light swung low and warm. Every park's fishing spots share one catch table
+the water's material) and the light swung low and warm. Each game day has
+one of four sunsets (`SUNSETS`: city purple and orange, golden with clouds
+and beams, pink clouds, a clear sky with a big red sun), shuffled every four
+days and the same for everyone (`sunsetLook`; `?sunset=0..3` picks one). The
+weather is always clear from 10 minutes before the sunset until its glow has
+gone (`sunsetClear` in `src/core/weather-roll.js`, for now). Every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
