@@ -26,6 +26,11 @@ function torsoWeights(y) {
   }
   return [[TORSO[TORSO.length - 1][0], 1]];
 }
+// The hip joints are 0.52 m up: following the legs fades in from just
+// above them to just below. On a seat the front is drawn back to LAP in
+// front of them (a thigh is 0.125 m round), so it ends up just above the lap.
+const LEG_TOP = [0.56, 0.46];
+const LAP = 0.15;
 const SEG = 48;
 const PLEATS = 24;
 
@@ -35,7 +40,7 @@ const PLEATS = 24;
 function skirtRig(length, pleated, o = {}) {
   const S = SHAPE[length] || SHAPE.mini;
   const bulk = o.bulk || 0;
-  const pos = [], uv = [], wts = [], index = [];
+  const pos = [], sit = [], uv = [], wts = [], index = [];
   for (let i = 0; i < S.rings; i++) {
     const t = i / (S.rings - 1);
     const top = S.top ?? WAIST_Y;
@@ -49,12 +54,21 @@ function skirtRig(length, pleated, o = {}) {
       const cx = Math.sin(a), cz = Math.cos(a); // a = 0 at the front (+z)
       let r = 1;
       if (pleated) { const f = (j / SEG) * PLEATS; r += 0.05 * t * Math.abs(2 * (f - Math.floor(f + 0.5))); }
-      pos.push(cx * rx * r, y, cz * rz * r + TORSO_Z * (1 - t)); // (centred on the torso at the top)
+      const px = cx * rx * r, pz = cz * rz * r + TORSO_Z * (1 - t); // (centred on the torso at the top)
+      pos.push(px, y, pz);
       uv.push(j / SEG, 1 - t);
-      // The lower skirt follows the legs: the front most (it lies on the lap
-      // when sitting), each side its own leg.
-      const follow = Math.min(0.92, t ** 1.2 * (0.3 + 0.62 * Math.max(0, cz)));
+      // Below the hip joints (LEG_TOP) the skirt follows the legs: the
+      // front fully (it lies on the lap when sitting), the sides and back a
+      // little; each side its own leg.
+      const below = Math.min(1, Math.max(0, (LEG_TOP[0] - y) / (LEG_TOP[0] - LEG_TOP[1])));
+      const follow = below * (0.15 + 0.85 * Math.max(0, cz));
       const left = 0.5 + 0.5 * cx;
+      // Sitting (the 'sit' morph): the thighs turn forward about the hip
+      // joints, which lifts whatever follows them by its distance in front
+      // of the joint. Pulled back onto the thighs first, the front then
+      // lies on the lap instead of standing up off it.
+      const lap = pz > LAP ? LAP + (pz - LAP) * 0.1 : pz;
+      sit.push(px, y, pz + (lap - pz) * below);
       // The rest is the torso's, blended along it exactly like the clothes'
       // waistband under it (core/outfit-mesh.js), so the top of the skirt
       // bends with the body when running instead of letting it through.
@@ -66,7 +80,7 @@ function skirtRig(length, pleated, o = {}) {
     const a = i * (SEG + 1) + j, b = a + SEG + 1;
     index.push(a, b, a + 1, a + 1, b, b + 1);
   }
-  return { pos, uv, wts, index };
+  return { pos, sit, uv, wts, index };
 }
 
 function rigGeometry(rig) {
@@ -220,7 +234,10 @@ export function addSkirt(model, id, o) {
   geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4));
   geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
   // Rig space -> the model's world (its scale) -> the parent's space.
-  geo.applyMatrix4(parent.matrixWorld.clone().invert().multiply(model.matrixWorld));
+  const toParent = parent.matrixWorld.clone().invert().multiply(model.matrixWorld);
+  geo.applyMatrix4(toParent);
+  // The sitting shape, a morph the character turns on on a seat.
+  geo.morphAttributes.position = [new THREE.Float32BufferAttribute(rig.sit, 3).applyMatrix4(toParent)];
   geo.computeBoundingBox();
   geo.computeBoundingSphere();
   const mesh = new THREE.SkinnedMesh(geo, material);

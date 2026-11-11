@@ -416,6 +416,8 @@ export const JA = {
   "settings.hideUi": "ボタンを隠す (U)",
   "hideUi.on": "ボタンを隠しました。U キーか左上の 👁️ で戻せます。",
   "hideUi.onTouch": "ボタンを隠しました。左上の 👁️ で戻せます。",
+  "sunset.in": "🌇 夕焼けまであと{n}分。この階段からは、太陽が城山大橋の向こうに沈みます。",
+  "sunset.now": "🌇 今が夕焼けです。太陽が城山大橋の向こうに沈んでいきます。",
   "hideUi.hide": "ボタンを隠す",
   "settings.minimap": "ミニマップを常に表示（オフなら案内中だけ）",
   "hideUi.show": "ボタンを表示",

@@ -5,10 +5,10 @@
 //
 // Every cart is the same shape, so each part is one InstancedMesh for all of
 // them (a body, a counter in the cart's colour, wheels, posts, a roof, a
-// small lamp and its glow on the ground): about a dozen draw calls for eight
-// carts, plus their goods baked together and one sign texture. The lamp is a
+// small lamp and its glow on the ground): about a dozen draw calls for all
+// sixteen carts, plus their goods baked together and one sign texture. The lamp is a
 // bulb that glows by itself and a soft pool of light under it, not a real
-// light: eight real lights would be heavy on a phone. (Yozi 2026-11-11: a
+// light: sixteen real lights would be heavy on a phone. (Yozi 2026-11-11: a
 // small lamp on each cart.)
 //
 // A cart's own metres: its long side along x, its counter facing +z (the
@@ -21,7 +21,9 @@ import { mergeStatic } from './merge-static.js';
 export const CART = { len: 2.2, depth: 1.3, counter: 0.7 }; // (the counter low enough to see the seller's face over it) // (scripts/build-myeongdong.mjs CART)
 export const SELLER_Z = -0.3; // where the seller stands
 export const BUY_Z = 1.3; // where you stand to look at its food
-const LAMP_Y = 1.82, LAMP_Z = 1.02; // hanging out in front of the roof's edge, where you can see it
+// The lamp hangs off the front corner post on a short arm, out past the end
+// of the name board (in the middle it hid the board: Yozi 2026-11-11).
+const LAMP = { x: 1.42, y: 1.84, z: 1.0 }, ARM_FROM = { x: 1.05, y: 2.0, z: 0.62 };
 const SIGN = { w: 1.9, h: 0.34, px: 72 }; // its name board, and its row in the shared texture (px high)
 
 const lambert = (color) => new THREE.MeshLambertMaterial({ color });
@@ -57,10 +59,13 @@ export function buildNightCarts(store, spots) {
   inst(new THREE.BoxGeometry(0.05, 2.1, 0.05), lambert('#5c5f66'), 4, (m, k) => place((k & 1 ? 1 : -1) * (len / 2 - 0.05), 1.05, k & 2 ? 0.62 : -0.6)(m));
   inst(new THREE.BoxGeometry(len + 0.5, 0.05, 1.75), lambert('#ffffff'), 1, place(0, 2.15, 0.05, 0.12), (i) => stalls[i].awning || '#fff1e0'); // (lower at the front)
   inst(new THREE.BoxGeometry(len + 0.52, 0.12, 0.04), lambert('#ffffff'), 1, place(0, 2.02, 0.93, 0.12), (i) => stalls[i].color || '#c8402a'); // its front edge in the cart's colour
-  // The small lamp: a cord from the roof, a bulb, and its light on the ground.
-  inst(new THREE.BoxGeometry(0.015, 0.2, 0.015), lambert('#222222'), 1, place(0, LAMP_Y + 0.12, LAMP_Z));
+  // The small lamp: an arm from the corner post, a bulb, and its light on the ground.
+  const armDir = new THREE.Vector3(LAMP.x - ARM_FROM.x, LAMP.y + 0.1 - ARM_FROM.y, LAMP.z - ARM_FROM.z);
+  const armLen = armDir.length(), armQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), armDir.normalize());
+  const armMid = new THREE.Vector3(ARM_FROM.x, ARM_FROM.y, ARM_FROM.z).addScaledVector(armDir, armLen / 2);
+  inst(new THREE.BoxGeometry(0.025, armLen, 0.025), lambert('#2b2b2e'), 1, (m) => m.compose(armMid, armQ, new THREE.Vector3(1, 1, 1)));
   const bulbMat = new THREE.MeshBasicMaterial({ color: '#ffe2a8' });
-  const bulbs = inst(new THREE.SphereGeometry(0.1, 12, 8).scale(1, 1.2, 1), bulbMat, 1, place(0, LAMP_Y, LAMP_Z));
+  const bulbs = inst(new THREE.SphereGeometry(0.1, 12, 8).scale(1, 1.2, 1), bulbMat, 1, place(LAMP.x, LAMP.y, LAMP.z));
   const glowTex = (() => {
     const c = document.createElement('canvas');
     c.width = c.height = 64;
@@ -70,7 +75,7 @@ export function buildNightCarts(store, spots) {
     return new THREE.CanvasTexture(c);
   })();
   const glowMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
-  const glows = inst(new THREE.PlaneGeometry(4.2, 4.2).rotateX(-Math.PI / 2), glowMat, 1, place(0, 0.12, 0.9));
+  const glows = inst(new THREE.PlaneGeometry(4.2, 4.2).rotateX(-Math.PI / 2), glowMat, 1, place(0.7, 0.12, 1.0));
   glows.renderOrder = 1;
 
   // The name boards: one texture, a row for each cart, on one mesh.

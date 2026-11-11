@@ -416,6 +416,8 @@ export const KO = {
   "settings.hideUi": "버튼 숨기기 (U)",
   "hideUi.on": "버튼을 숨겼어요. U 키나 왼쪽 위 👁️를 누르면 다시 보여요.",
   "hideUi.onTouch": "버튼을 숨겼어요. 왼쪽 위 👁️를 누르면 다시 보여요.",
+  "sunset.in": "🌇 노을까지 {n}분. 이 계단에서 보면 해가 성산대교 뒤로 져요.",
+  "sunset.now": "🌇 지금 노을 시간이에요. 해가 성산대교 뒤로 지고 있어요.",
   "hideUi.hide": "버튼 숨기기",
   "settings.minimap": "미니맵 항상 보기 (끄면 길 안내 중에만)",
   "hideUi.show": "버튼 보이기",

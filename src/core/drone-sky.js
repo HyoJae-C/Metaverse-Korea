@@ -8,6 +8,7 @@
 // Everything follows the show's clock, so someone who walks in late sees
 // the same picture as everyone else.
 import * as THREE from 'three';
+import { paintPicture, coasterY, PICTURE_NAMES } from './drone-pictures.js';
 // The schedule and places (drone-show.js) are handed in by the park instead
 // of imported, so this file pulls in nothing the game hasn't loaded already
 // (an import here would split drone-show.js out of the main download).
@@ -21,127 +22,15 @@ const RGB = new Map(); // (colours are looked up per drone per frame: no garbage
 const rgb = (c) => { let v = RGB.get(c); if (!v) { const k = new THREE.Color(c); RGB.set(c, (v = [k.r, k.g, k.b])); } return v; };
 
 // ---- pictures -------------------------------------------------------------
-// A picture: pts = [[u, v, part, w]] in metres on the sky plane (u right,
-// v up, w towards you), sorted left to right so drone i always takes the
-// i-th spot from the left (the moves between pictures stay tidy).
-// Options: color (hex, [left, right] gradient, or fn(u, v, t, part)),
-// parts (the time each part lights up), move(p, t) for moving pictures.
+// A picture: pts = [[u, v, part, w, rgb?]] in metres on the sky plane (u
+// right, v up, w towards you), sorted left to right so drone i always takes
+// the i-th spot from the left (the moves between pictures stay tidy).
+// Options: color (hex, [left, right] gradient, or fn(u, v, t, part); painted
+// pictures carry their own colours), parts (the time each part lights up),
+// move(p, t, f) for moving pictures (it may return a brightness, 0–1).
+// The painted pictures (fans, towers, the whale …) are in drone-pictures.js.
 
 const byU = (a, b) => a[0] - b[0] || a[1] - b[1];
-
-// Even points along line drawings: polys = [[[u, v], …], …] (closed: true
-// on a poly joins its ends). parts: the part number of each poly.
-function along(polys, n) {
-  const segs = [];
-  let total = 0;
-  polys.forEach((poly) => {
-    const p = poly.pts || poly;
-    const loop = poly.closed ? [...p, p[0]] : p;
-    for (let i = 1; i < loop.length; i++) {
-      const [a, b] = [loop[i - 1], loop[i]];
-      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      if (len > 0) { segs.push({ a, b, len, part: poly.part || 0, at: total }); total += len; }
-    }
-  });
-  const out = [];
-  let s = 0;
-  for (let k = 0; k < n; k++) {
-    const d = ((k + 0.5) / n) * total;
-    while (s < segs.length - 1 && segs[s].at + segs[s].len < d) s++;
-    const g = segs[s], f = (d - g.at) / g.len;
-    out.push([g.a[0] + (g.b[0] - g.a[0]) * f, g.a[1] + (g.b[1] - g.a[1]) * f, g.part, 0]);
-  }
-  return out;
-}
-const arc = (cx, cy, rx, ry, a0, a1, steps = 32) => Array.from({ length: steps + 1 }, (_, i) => {
-  const a = a0 + ((a1 - a0) * i) / steps;
-  return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry];
-});
-const ring = (cx, cy, r, steps = 24) => ({ pts: arc(cx, cy, r, r, 0, TAU, steps).slice(0, -1), closed: true });
-const heartPts = (s, cx = 0, cy = 0, steps = 64) => Array.from({ length: steps }, (_, i) => {
-  const t = (i / steps) * TAU;
-  return [cx + 16 * Math.sin(t) ** 3 * s, cy + (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * s];
-});
-const wavy = (x0, x1, y, amp, waves, steps = 40) => Array.from({ length: steps + 1 }, (_, i) => {
-  const x = x0 + ((x1 - x0) * i) / steps;
-  return [x, y + Math.sin((i / steps) * waves * TAU) * amp];
-});
-
-const SHAPES = {
-  heart: () => [{ pts: heartPts(0.55, 0, 1), closed: true }],
-  frame: () => [{ pts: heartPts(0.68, 0, 1.7, 96), closed: true }, { pts: heartPts(0.6, 0, 1.7, 96), closed: true }],
-  // a hapjukseon folding fan, as in the fan dance
-  fan: () => {
-    const c = [0, -8], a0 = 0.32, a1 = Math.PI - 0.32;
-    const polys = [{ pts: arc(c[0], c[1], 14, 14, a0, a1, 40) }, { pts: arc(c[0], c[1], 10, 10, a0, a1, 30) }, { pts: arc(c[0], c[1], 2.5, 2.5, a0, a1, 8) }];
-    for (let k = 0; k <= 8; k++) {
-      const a = a0 + ((a1 - a0) * k) / 8;
-      polys.push([[c[0] + Math.cos(a) * 2.5, c[1] + Math.sin(a) * 2.5], [c[0] + Math.cos(a) * 14, c[1] + Math.sin(a) * 14]]);
-    }
-    return polys;
-  },
-  // N Seoul Tower on Namsan
-  tower: () => [
-    [[-13, -9], [-8, -7], [-3, -6.2], [0, -6], [3, -6.2], [8, -7], [13, -9]],
-    [[-1, -6], [-0.6, 3]], [[1, -6], [0.6, 3]],
-    { pts: [[-2.2, 3], [-3, 4.2], [-2.6, 5.6], [2.6, 5.6], [3, 4.2], [2.2, 3]], closed: true },
-    [[0, 5.6], [0, 10]], [[-1, 7.5], [1, 7.5]],
-  ],
-  // a palace hall: the curved tiled roof with upturned eaves, pillars, steps
-  palace: () => [
-    [[-13.5, 4.6], [-11, 3.2], [-6, 2.6], [6, 2.6], [11, 3.2], [13.5, 4.6]],
-    [[-13.5, 4.6], [-7.5, 8]], [[13.5, 4.6], [7.5, 8]],
-    [[-8.6, 8.8], [-7.5, 8], [7.5, 8], [8.6, 8.8]],
-    [[-8, 2.6], [-8, -5.5]], [[-3, 2.6], [-3, -5.5]], [[3, 2.6], [3, -5.5]], [[8, 2.6], [8, -5.5]],
-    [[-11, -5.5], [11, -5.5]], [[-12.5, -7.5], [12.5, -7.5]],
-  ],
-  // someone waving hello (part 1: the waving forearm)
-  waver: () => [
-    ring(0, 5.5, 2, 20),
-    [[0, 3.5], [0, -3]], [[0, -3], [-2.6, -9.5]], [[0, -3], [2.6, -9.5]],
-    [[0, 2], [-3.5, -2.5]], [[0, 2], [3.5, 3]],
-    { pts: [[3.5, 3], [5, 7.5]], part: 1 },
-  ],
-  // the blue whale, Ttukseom's legendary fish (swims across: see move)
-  whale: () => [
-    { pts: [[10, 0], [8.5, 2], [4, 3], [-4, 2.4], [-9, 1], [-12, 0.5], [-15, 3.2], [-13.6, 0], [-15, -2.8], [-12, -0.5], [-6, -2.2], [2, -3], [8, -2.2]], closed: true },
-    ring(7, 0.5, 0.45, 6),
-    [[3, -2.6], [0.6, -5.4], [-0.4, -2.9]],
-    { pts: [[6, 3.2], [6, 6]], part: 1 }, { pts: [[6, 5], [4.5, 7]], part: 1 }, { pts: [[6, 5], [7.5, 7]], part: 1 },
-  ],
-  // a duck boat (오리배) on little waves (part 1: the waves)
-  duck: () => [
-    [[-9, -1], [-8, -4], [6, -4], [9, -1], [-9, -1]],
-    [[4, -1], [5, 4]], ring(6.3, 5.6, 2, 18), { pts: [[8.2, 6.2], [10.8, 5.6], [8.2, 5]], closed: true },
-    [[-8.5, 5.2], [2, 5.2]], [[-7.5, -1], [-7.5, 5.2]], [[1, -1], [1, 5.2]],
-    { pts: wavy(-13, 13, -6.5, 0.6, 4), part: 1 },
-  ],
-  // a bowl of Han River ramyeon with chopsticks and steam (part 1: steam)
-  ramen: () => [
-    arc(0, -1, 9, 7, Math.PI, TAU, 36), { pts: arc(0, -1, 9, 1.6, 0, TAU, 40).slice(0, -1), closed: true },
-    [[-3, -8], [3, -8]], [[2, -0.5], [10, 8.5]], [[4, -0.5], [11.6, 7.4]],
-    ...[-4, -0.5, 3].map((x) => ({ pts: Array.from({ length: 12 }, (_, i) => [x + Math.sin(i * 0.9) * 0.7, 1.2 + i * 0.7]), part: 1 })),
-  ],
-  star: () => [{ pts: Array.from({ length: 10 }, (_, i) => {
-    const a = Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 4 : 10;
-    return [Math.cos(a) * r, Math.sin(a) * r - 0.5];
-  }), closed: true }],
-  moon: () => { // a crescent, opening to the right
-    const R = 9, d = 4, r = 7.4;
-    const x = (d * d + R * R - r * r) / (2 * d), y = Math.sqrt(R * R - x * x);
-    const a1 = Math.atan2(y, x), a2 = Math.atan2(y, x - d);
-    return [{ pts: [...arc(0, 0, R, R, a1, TAU - a1, 40), ...arc(d, 0, r, r, -a2, -TAU + a2, 32)], closed: true }];
-  },
-  clover: () => {
-    const polys = [];
-    for (let k = 0; k < 4; k++) {
-      const rot = Math.PI / 4 + (k * Math.PI) / 2 - Math.PI / 2;
-      polys.push({ pts: heartPts(0.24, 0, 17 * 0.24, 40).map(([x, y]) => [x * Math.cos(rot) - y * Math.sin(rot), x * Math.sin(rot) + y * Math.cos(rot) + 1.5]), closed: true });
-    }
-    polys.push([[0, 1.5], [0.8, -3], [2.6, -8]]);
-    return polys;
-  },
-};
 
 // ---- words ----------------------------------------------------------------
 // lines: ['ANOTHER', 'SEOUL'], or a line as segments (['K', ' O', …]) when
@@ -217,81 +106,176 @@ const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   p[0] = c[0] + (p[0] - c[0]) * k; p[1] = c[1] + (p[1] - c[1]) * k;
 };
 
+// Turn point p around (cx, cy) by angle a.
+const turn = (p, cx, cy, a) => {
+  const dx = p[0] - cx, dy = p[1] - cy, c = Math.cos(a), s = Math.sin(a);
+  p[0] = cx + dx * c - dy * s; p[1] = cy + dx * s + dy * c;
+};
+const twinkle = (p, t) => 0.6 + 0.4 * Math.sin(t * 3 + p[0] * 1.7 + p[1]);
+// The moving parts of the painted pictures (drone-pictures.js has the parts).
+const MOVES = {
+  fan: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
+  waver: (p, t) => { if (p[2] === 1) turn(p, 1.6, 2.4, Math.sin(t * 4) * 0.35); },
+  janggu: (p, t) => { if (p[2] === 1) turn(p, 10.6, 7.4, -(Math.max(0, Math.sin(t * 6)) ** 2) * 0.28); },
+  taekwondo: (p, t) => { if (p[2] === 1) turn(p, 0.6, -1.4, -0.7 * (0.5 - 0.5 * Math.sin(t * 2.2))); },
+  subway: (p, t) => { if (p[2] === 1) p[0] += 4 - t * 0.45; },
+  bike: (p, t) => { if (p[2] === 1) turn(p, -7.6, -4, -t * 2); else if (p[2] === 2) turn(p, 7.6, -4, -t * 2); },
+  bridge: (p, t) => { if (p[2] !== 1) return 1; p[0] += Math.sin(t * 2 + p[1] * 3) * 0.25; return twinkle(p, t); },
+  whale: (p, t) => {
+    if (p[2] === 2) turn(p, 5.2, 1.6, Math.sin(t * 2.6) * 0.2); // the tail
+    let k = 1;
+    if (p[2] === 1) { const s = Math.sin(t * 3) * 0.5 + 0.5; p[1] += s * 1.2; k = 0.35 + 0.65 * s; } // the spout
+    p[1] += Math.sin(t * 1.4 + p[0] * 0.2) * 0.4;
+    p[0] = p[0] * 0.85 + 15 - (t / 40) * 30; // swims across, right to left
+    return k;
+  },
+  duck: (p, t) => { if (p[2] === 1) p[0] += Math.sin(t * 1.6 + p[1]) * 0.5; else p[1] += Math.sin(t * 1.5) * 0.3; },
+  ramen: (p, t) => { if (p[2] === 1) p[0] += Math.sin(p[1] * 1.1 - t * 2.5) * 0.5; },
+  wheel: (p, t) => {
+    const a = t * 0.25;
+    if (p[2] === 1) turn(p, 0, 1.2, a);
+    else if (p[2] >= 2) { const a0 = Math.PI / 2 + ((p[2] - 2) / 8) * TAU; p[0] += 7.6 * (Math.cos(a0 + a) - Math.cos(a0)); p[1] += 7.6 * (Math.sin(a0 + a) - Math.sin(a0)); }
+  },
+  coaster: (p, t) => { if (p[2] !== 1) return; const x = p[0], dx = t * 1.15; p[0] += dx; p[1] += coasterY(x + dx) - coasterY(x); },
+  hearts: beat(0.85),
+  lightstick: (p, t) => turn(p, [-7.6, 0, 7.6][p[2]], -9.6, Math.sin(t * 2.4 + p[2] * 1.2) * 0.12),
+  star: (p, t) => { const a = t * 0.3, x = p[0]; p[0] = x * Math.cos(a); p[3] = x * Math.sin(a); },
+  moon: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
+  dipper: (p, t) => (p[2] < 7 ? 0.55 + 0.45 * Math.sin(t * 2 + p[2] * 1.3) : 1),
+  shootingstar: (p, t) => { if (p[2] === 1) return twinkle(p, t); p[0] += t * 0.35; p[1] -= t * 0.17; return 1; },
+  clover: (p, t) => turn(p, 0, 0, Math.sin(t * 0.8) * 0.06),
+  blossom: (p, t) => { if (p[2] === 0) return; p[1] -= t * 0.28 * (0.8 + p[2] * 0.08); p[0] += Math.sin(t * 0.9 + p[2]) * 0.6; },
+  firework: (p, t, f) => {
+    const k = ((t + p[2] * 1.05) % 3.2) / 3.2, s = 0.2 + 0.8 * (1 - (1 - k) ** 3), c = f.centers[p[2]];
+    p[0] = c[0] + (p[0] - c[0]) * s; p[1] = c[1] + (p[1] - c[1]) * s;
+    return k < 0.8 ? 1 : (1 - k) / 0.2;
+  },
+};
+
+// The show, as [seconds it stays, step] in order; the last line fills up
+// to the end (20 minutes). Each picture or line stays about half as long as
+// in the first shows (2026-11-11), with more of them.
+const SHOW_LEN = 1200;
+function scenes(act3, nextText) {
+  const W = (lines, opts) => ({ lines, morph: 2, ...opts });
+  const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape], ...opts });
+  return [
+    // Opening (Yozi): the name, then hello in Korean first, then the world's
+    [24, W(['ANOTHER', 'SEOUL'], { color: [SKYBLUE, PINK], morph: 2.5 })],
+    [18, W(['어 나 더', '서 울'], { color: [PINK, GOLD] })],
+    [18, W([['K', ' O', ' R', ' E', ' A']], { color: WHITE, parts: [0, 0.8, 1.6, 2.4, 3.2] })],
+    [14, W(['WELCOME TO', 'SEOUL'], { color: [GOLD, SKYBLUE] })],
+    [12, W(['안녕하세요'], { color: [GOLD, PINK] })],
+    [10, W(['HELLO'], { color: [SKYBLUE, MINT] })],
+    [10, W(['こんにちは'], { color: [PINK, VIOLET] })],
+    [10, W(['你好'], { color: [RED, GOLD] })],
+    [10, W(['HOLA'], { color: [GOLD, RED] })],
+    [18, P('waver')],
+    // Act 1: Seoul
+    [24, P('fan')],
+    [22, P('hanbok')],
+    [18, P('janggu')],
+    [18, P('mask')],
+    [18, P('taekwondo')],
+    [10, W(['태권!'], { color: [WHITE, SKYBLUE] })],
+    [26, P('palace')],
+    [12, W(['경복궁'], { color: [GOLD, RED] })],
+    [26, P('tower')],
+    [12, W(['남산'], { color: [MINT, SKYBLUE] })],
+    [22, P('anothertower')],
+    [18, P('mugunghwa')],
+    [22, P('subway')],
+    [14, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
+    // Act 2: a Ttukseom night
+    [40, P('whale', { morph: 3 })],
+    [14, W(['뚝섬의', '전설'], { color: [SKYBLUE, WHITE] })],
+    [16, P('duck')],
+    [18, P('bike')],
+    [18, P('bridge')],
+    [12, W(['한강'], { color: [SKYBLUE, MINT] })],
+    [18, P('chimaek')],
+    [10, W(['치맥'], { color: [GOLD, RED] })],
+    [16, P('ramen')],
+    // (Yozi)
+    [10, W(['라면'], { color: [RED, GOLD] })],
+    [10, W(['먹고갈래?'], { color: [GOLD, PINK] })],
+    [14, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
+    [22, P('wheel')],
+    [22, P('coaster')],
+    [12, W(['어나더 랜드'], { color: [PINK, GOLD] })],
+    // Love (Yozi)
+    [12, W(['사 랑'], { color: PINK })],
+    [12, W(['행 복'], { color: GOLD })],
+    [15, W([['그리고', ' .', ' .', ' .']], { color: WHITE, parts: [0, 2, 4, 6] })],
+    [18, W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
+    [18, P('hearts')],
+    // Photo time: 하나, 둘, 셋, 김치~ then the heart frame holds still
+    [10, W(['사진 찍자!'], { color: [GOLD, PINK] })],
+    [3, W(['하나'], { color: WHITE, morph: 1.2 })],
+    [3, W(['둘'], { color: WHITE, morph: 1 })],
+    [3, W(['셋'], { color: WHITE, morph: 1 })],
+    [6, W(['김치~'], { color: GOLD, morph: 1.2 })],
+    [45, P('frame', { photo: true, morph: 3 })],
+    // Act 3: changes from show to show
+    [12, W(act3[0], { color: MINT, act3: true })],
+    [12, W(act3[1], { color: [MINT, SKYBLUE] })],
+    [14, W(act3[2], { color: [SKYBLUE, VIOLET] })],
+    [18, P('lightstick')],
+    [34, { wave: true, morph: 4 }],
+    // The night sky
+    [14, P('star')],
+    [10, W(['별'], { color: GOLD })],
+    [10, W(['반짝반짝'], { color: [GOLD, WHITE] })],
+    [14, P('moon')],
+    [10, W(['달'], { color: '#fff3c4' })],
+    [20, P('dipper')],
+    [10, W(['꿈'], { color: [VIOLET, PINK] })],
+    [15, P('shootingstar')],
+    [12, W(['소원 빌어'], { color: [VIOLET, GOLD] })],
+    [14, P('clover')],
+    [10, W(['행운'], { color: [MINT, GOLD] })],
+    [18, P('blossom')],
+    [17, P('rainbow')],
+    [24, P('firework')],
+    [18, W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
+    [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
+    // Finale
+    [32, { burst: true, morph: 6 }],
+    [12, W(['또 만나'], { color: [PINK, GOLD], morph: 3 })],
+    [12, W(['SEE YOU', 'AGAIN'], { color: [SKYBLUE, PINK] })],
+    [0, W(['NEXT SHOW', nextText], { color: [GOLD, WHITE] })],
+  ];
+}
+function timed(list) {
+  let at = 0;
+  return list.map(([d, s]) => { const step = { at, ...s }; at += d; return step; });
+}
+
 export function program(start) {
   const act3 = ACT3[((showNumber(start) % ACT3.length) + ACT3.length) % ACT3.length];
   const next = new Date(nextDroneShow(start + 1000));
   let nextText = '';
   try { nextText = next.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch { nextText = `${next.getHours()}:${String(next.getMinutes()).padStart(2, '0')}`; }
-  const W = (lines, opts) => ({ lines, ...opts });
-  const S = (shape, opts) => ({ shape, ...opts });
-  const steps = [
+  return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
-    ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, ...W([String(k)], { color: k <= 3 ? GOLD : WHITE }), morph: 0.5 })),
-    // Opening (Yozi)
-    { at: 0, ...W(['ANOTHER', 'SEOUL'], { color: [SKYBLUE, PINK] }), morph: 2.5 },
-    { at: 40, ...W(['어 나 더', '서 울'], { color: [PINK, GOLD] }), morph: 3 },
-    { at: 80, ...W([['K', ' O', ' R', ' E', ' A']], { color: WHITE, parts: [0, 1.2, 2.4, 3.6, 4.8] }), morph: 3 },
-    // Act 1: Seoul
-    { at: 120, ...S('fan', { color: [RED, PINK] }), morph: 4 },
-    { at: 160, ...S('tower', { color: [SKYBLUE, WHITE] }), morph: 4 },
-    { at: 205, ...S('palace', { color: [GOLD, RED] }), morph: 4 },
-    { at: 250, ...W(['안녕'], { color: GOLD }), morph: 3 },
-    { at: 275, ...W(['안녕하세요'], { color: [GOLD, PINK] }), morph: 3 },
-    { at: 300, ...S('waver', { color: MINT, move: (p, t) => { if (p[2] !== 1) return; const a = Math.sin(t * 4) * 0.55, dx = p[0] - 3.5, dy = p[1] - 3; p[0] = 3.5 + dx * Math.cos(a) - dy * Math.sin(a); p[1] = 3 + dx * Math.sin(a) + dy * Math.cos(a); } }), morph: 4 },
-    // Act 2: a Ttukseom night
-    { at: 340, ...S('whale', { color: [SKYBLUE, '#3d7bff'], move: (p, t) => {
-      const k = t / 70;
-      p[1] += Math.sin(t * 1.4 + p[0] * 0.25) * 0.5 + (p[0] < -11 ? Math.sin(t * 2.6) * (-11 - p[0]) * 0.35 : 0);
-      if (p[2] === 1) p[1] += (Math.sin(t * 3) * 0.5 + 0.5) * 1.5; // the spout
-      p[0] = p[0] * 0.9 - 18 + k * 36;
-    } }), morph: 5 },
-    { at: 410, ...W(['뚝섬의', '전설'], { color: [SKYBLUE, WHITE] }), morph: 4 },
-    { at: 440, ...S('duck', { color: (u, v, t, part) => (part === 1 ? rgb(SKYBLUE) : v > 3 && u > 3 ? rgb(GOLD) : rgb(WHITE)), move: (p, t) => { if (p[2] === 1) p[1] += Math.sin(t * 2 + p[0] * 0.5) * 0.4; else p[1] += Math.sin(t * 1.5) * 0.3; } }), morph: 4 },
-    { at: 470, ...S('ramen', { color: (u, v, t, part) => rgb(part === 1 ? WHITE : v > -0.5 && u > 1.5 ? GOLD : RED), move: (p, t) => { if (p[2] === 1) p[0] += Math.sin(p[1] * 1.1 - t * 2.5) * 0.5; } }), morph: 4 },
-    // (Yozi)
-    { at: 500, ...W(['라면'], { color: [RED, GOLD] }), morph: 3 },
-    { at: 520, ...W(['먹고갈래?'], { color: [GOLD, PINK] }), morph: 3 },
-    { at: 540, ...W(['뚝섬에서'], { color: [PINK, SKYBLUE] }), morph: 3 },
-    // Love (Yozi)
-    { at: 570, ...W(['사 랑'], { color: PINK }), morph: 3 },
-    { at: 595, ...W(['행 복'], { color: GOLD }), morph: 3 },
-    { at: 620, ...W([['그리고', ' .', ' .', ' .']], { color: WHITE, parts: [0, 4, 8, 12] }), morph: 3 },
-    { at: 650, ...W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) }), morph: 3 },
-    // Photo time: 하나, 둘, 셋, 김치~ then the heart frame holds still
-    { at: 690, ...W(['하나'], { color: WHITE }), morph: 1.2 },
-    { at: 693, ...W(['둘'], { color: WHITE }), morph: 1 },
-    { at: 696, ...W(['셋'], { color: WHITE }), morph: 1 },
-    { at: 699, ...W(['김치~'], { color: GOLD }), morph: 1.2 },
-    { at: 705, ...S('frame', { color: [PINK, RED] }), morph: 3, photo: true },
-    // Act 3: changes from show to show
-    { at: 750, ...W(act3[0], { color: MINT }), morph: 3 },
-    { at: 775, ...W(act3[1], { color: [MINT, SKYBLUE] }), morph: 3 },
-    { at: 800, ...W(act3[2], { color: [SKYBLUE, VIOLET] }), morph: 3 },
-    { at: 830, wave: true, morph: 5 },
-    { at: 890, ...S('star', { color: GOLD, move: (p, t) => { const a = t * 0.3; const x = p[0]; p[0] = x * Math.cos(a); p[3] = x * Math.sin(a); } }), morph: 4 },
-    { at: 910, ...W(['별'], { color: GOLD }), morph: 3 },
-    { at: 925, ...S('moon', { color: ['#fff3c4', GOLD] }), morph: 4 },
-    { at: 945, ...W(['달'], { color: '#fff3c4' }), morph: 3 },
-    { at: 960, ...W(['꿈'], { color: [VIOLET, PINK] }), morph: 3 },
-    { at: 980, ...S('clover', { color: MINT }), morph: 4 },
-    { at: 1005, ...W(['행운'], { color: [MINT, GOLD] }), morph: 3 },
-    { at: 1025, ...W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] }), morph: 4 },
-    // Finale
-    { at: 1065, burst: true, morph: 8 },
-    { at: 1110, ...W(['또 만나'], { color: [PINK, GOLD] }), morph: 5 },
-    { at: 1135, ...W(['SEE YOU', 'AGAIN'], { color: [SKYBLUE, PINK] }), morph: 3 },
-    { at: 1160, ...W(['NEXT SHOW', nextText], { color: [GOLD, WHITE] }), morph: 3 },
+    ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
+    ...timed(scenes(act3, nextText)),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
-  return steps;
 }
 
 // When the photo pause is (for the "Photo time" notice): [from, to] seconds.
-export const PHOTO_TIME = [705, 750];
+export const PHOTO_TIME = (() => {
+  const list = timed(scenes(ACT3[0], ''));
+  const k = list.findIndex((s) => s.photo);
+  return [list[k].at, list[k + 1].at];
+})();
+// How long the last line (the next show's time) stays: tests keep it sensible.
+export const LAST_LINE_SECONDS = SHOW_LEN - timed(scenes(ACT3[0], '')).at(-1).at;
 
 // ---- the drones -------------------------------------------------------------
-// count: how many drones (fewer on phones). scene: the park room's scene.
-export function createDroneSky(scene, { count = 600 } = {}) {
+// count: how many drones (900 everywhere). scene: the park room's scene.
+export function createDroneSky(scene, { count = 900 } = {}) {
   const n = count;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
@@ -301,9 +285,9 @@ export function createDroneSky(scene, { count = 600 } = {}) {
   const dot = document.createElement('canvas');
   dot.width = dot.height = 32;
   const g = dot.getContext('2d'), grad = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-  grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.35, 'rgba(255,255,255,0.85)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+  grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.3, 'rgba(255,255,255,0.9)'); grad.addColorStop(0.6, 'rgba(255,255,255,0.35)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = grad; g.fillRect(0, 0, 32, 32);
-  const mat = new THREE.PointsMaterial({ size: 0.8, map: new THREE.CanvasTexture(dot), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+  const mat = new THREE.PointsMaterial({ size: 1.4, map: new THREE.CanvasTexture(dot), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
   const points = new THREE.Points(geo, mat);
   points.frustumCulled = false;
   points.visible = false;
@@ -339,7 +323,7 @@ export function createDroneSky(scene, { count = 600 } = {}) {
     else if (s.land) f = { pts: parked, color: WHITE, dim: true };
     else if (s.wave) f = { pts: grid(30, 6, 0), wave: true };
     else if (s.burst) f = { pts: sphere.map(() => [0, 1, 0, 0]), burst: true };
-    else if (s.shape) f = picture(along(SHAPES[s.shape](), n), s);
+    else if (s.shape) f = picture(paintPicture(s.shape, n), s);
     else f = picture(wordPts(s.lines, n), s);
     if (!f.centers) f.centers = [];
     cache.set(k, f);
@@ -368,14 +352,14 @@ export function createDroneSky(scene, { count = 600 } = {}) {
       tmp[1] += Math.sin(tmp[0] * 0.32 - t * 2.2) * 3 * Math.min(1, t / 6);
       hsl.setHSL((tmp[0] / 30 + t * 0.05) % 1, 0.9, 0.62); hc[0] = hsl.r; hc[1] = hsl.g; hc[2] = hsl.b; c = hc;
     } else if (f.burst) {
-      const d = sphere[i], r = t < 10 ? 0 : 15 * (1 - (1 - clamp01((t - 10) / 4)) ** 3);
-      tmp[0] = d[0] * r; tmp[1] = 1 + d[1] * r - Math.max(0, t - 18) * 0.25; tmp[3] = d[2] * r * 0.5;
-      hsl.setHSL((i / n + t * 0.03) % 1, 0.85, t < 10 ? 0.9 : 0.6); hc[0] = hsl.r; hc[1] = hsl.g; hc[2] = hsl.b; c = hc;
-      if (t < 10) a *= 0.6 + 0.4 * Math.sin(t * 6);
+      const d = sphere[i], r = t < 6 ? 0 : 15 * (1 - (1 - clamp01((t - 6) / 4)) ** 3);
+      tmp[0] = d[0] * r; tmp[1] = 1 + d[1] * r - Math.max(0, t - 13) * 0.25; tmp[3] = d[2] * r * 0.5;
+      hsl.setHSL((i / n + t * 0.03) % 1, 0.85, t < 6 ? 0.9 : 0.6); hc[0] = hsl.r; hc[1] = hsl.g; hc[2] = hsl.b; c = hc;
+      if (t < 6) a *= 0.6 + 0.4 * Math.sin(t * 6);
     } else {
       if (f.parts) a *= clamp01((t - (f.parts[tmp[2]] ?? 0)) / 0.5);
-      if (f.move) f.move(tmp, t, f);
-      c = colorOf(f, p[0], p[1], t, tmp[2]);
+      if (f.move) { const k = f.move(tmp, t, f); if (typeof k === 'number') a *= k; }
+      c = p[4] && !f.color ? p[4] : colorOf(f, p[0], p[1], t, tmp[2]);
     }
     if (f.dim) a *= 0.35;
     out.set(tmp, c, a);
@@ -435,9 +419,8 @@ export function createDroneSky(scene, { count = 600 } = {}) {
   };
 }
 
-// For tests: the line drawings, sampled.
-export const shapePoints = (name, n) => along(SHAPES[name](), n);
-export const SHAPE_NAMES = Object.keys(SHAPES);
+// For tests: the names of the painted pictures.
+export const SHAPE_NAMES = PICTURE_NAMES;
 
 // ---- people already watching ------------------------------------------------
 // During a show a few people sit on picnic mats at the back of the lawn and

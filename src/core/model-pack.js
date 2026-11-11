@@ -896,6 +896,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       // the offsets below don't pile up frame after frame.
       for (const [b, q] of lRest) b.quaternion.copy(q);
       mixer.update(dt);
+      // A skirt on a seat (or a bike) lies on the lap (its 'sit' morph, core/skirt-mesh.js).
+      if (skirtMesh?.morphTargetInfluences) {
+        const inf = skirtMesh.morphTargetInfluences;
+        inf[0] += ((key === 'sit' || key === 'ride' ? 1 : 0) - inf[0]) * Math.min(1, dt * 8);
+      }
       if (skirtStride < 1 && (key === 'walk' || key === 'run')) {
         const still = idleLegPose();
         for (const name of SKIRT_LEGS) {

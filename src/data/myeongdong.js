@@ -21,7 +21,10 @@ export const CATHEDRAL = {
   // to 28 m, a stone crown with gablets (to 32.6 m) and corner pinnacles (to
   // 34.8 m), then a slender octagonal spire (3.5 m across at its foot) and
   // the cross. Clock at 19.3 m, belfry windows 22.8-26 m.
-  tower: { w: 3.7, d: 1.5, body: 14, crown: 16.3, pinnacle: 17.4, spireR: 0.9, top: 23.15, clock: 9.65, belfry: 11.4 },
+  // Yozi 2026-11-11: the clock storey and all above it 0.6 m higher than
+  // the elevation's half, so the side clocks clear the turrets' caps and
+  // the nave roof (the tower about 3% taller than the real ratio).
+  tower: { w: 3.7, d: 1.5, body: 14.6, crown: 16.9, pinnacle: 18, spireR: 0.9, top: 23.75, clock: 10.25, belfry: 12, lift: 0.6 },
   turret: { x: 2.45, r: 0.5, h: 9.2, cap: 10.8 }, // the stone turrets either side of the tower
   aisleEave: 5, // the aisles' outer walls (side photo: about 62% of the nave's eave)
   aisleRoof: 6.3, // where the aisles' lean-to roofs meet the nave wall

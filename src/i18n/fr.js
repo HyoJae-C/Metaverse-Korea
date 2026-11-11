@@ -417,6 +417,8 @@ export const FR = {
   "settings.hideUi": "Masquer les boutons (U)",
   "hideUi.on": "Boutons masqués. Appuie sur U ou touche 👁️ (en haut à gauche) pour les revoir.",
   "hideUi.onTouch": "Boutons masqués. Touche 👁️ (en haut à gauche) pour les revoir.",
+  "sunset.in": "🌇 Coucher de soleil dans {n} min. Depuis ces marches, le soleil se couche derrière le pont Seongsan.",
+  "sunset.now": "🌇 C'est le coucher de soleil : le soleil descend derrière le pont Seongsan.",
   "hideUi.hide": "Masquer les boutons",
   "settings.minimap": "Mini-carte toujours visible (sinon seulement pendant le guidage)",
   "hideUi.show": "Afficher les boutons",

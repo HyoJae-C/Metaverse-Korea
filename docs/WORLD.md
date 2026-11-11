@@ -218,7 +218,20 @@ along its south edge, laid straight on the bank
 (the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
 buyer west, the kiosk and food stalls where the path comes down, the duck
 boat dock east of them, and Seoul Battleship Park's warship moored at the
-east end. Every park's fishing spots share one catch table
+east end. Across the river (`scripts/data/mangwon-river-osm.json`,
+OpenStreetMap, only to look at): the real south bank with Yanghwa Han River
+Park, Seonyudo (a hole in the water area: an area's `holes`), and Seongsan
+Bridge (west, red arches) and Yanghwa Bridge (east, over Seonyudo's end, one
+arch) on their real lines at 1/4 (`banpobridge` landmarks, within 5 m),
+starting high over the park from Gangbyeon-buk-ro with no piers on it.
+The park's sunset steps (`steps` with `sunset: true`) face Seongsan Bridge:
+sitting there turns the camera to the sunset and says how long until it
+(`src/game/sunset-spot.js`). The sunset itself is the whole city's
+(`src/core/sunset-sky.js`, run by weather.js): from 16:30 game time a sky
+dome fades from the haze at the horizon to deep blue, with a glow and the
+sun's disc going down due west a little south (behind Seongsan Bridge from
+the steps; it comes up in the east), a path of light on the river (added to
+the water's material) and the light swung low and warm. Every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
