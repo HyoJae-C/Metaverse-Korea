@@ -690,22 +690,24 @@ export function hatModel(look) {
 }
 
 // The necklace's chain on the torso (a capsule of radius 0.2 at y 0.42, its
-// round top from y 0.5, squashed to 0.85 front to back): round the neck at
-// y 0.585, just under the chin (the head's sphere fills the neck above it),
-// then down the chest to the V at NECK_V, a hair off the shirt all the way.
+// round top from y 0.5, squashed to 0.85 front to back). It rings the neck
+// at y 0.6, in the gap between the chin (the head's sphere) and the
+// shoulders, then runs down the chest to the V at NECK_V. It keeps about
+// 2.5 cm off the shirt so it shows over a jacket or a padded coat too
+// (bodyAcc is fitted to the model's body, not to its clothes).
 const NECK_V = 0.49;
 function necklaceCurve() {
-  const r = 0.208, Y = 0.585, R = Math.sqrt(r * r - (Y - 0.5) ** 2);
-  const off = (x, y) => Math.sqrt(Math.max(0, r * r - x * x - Math.max(0, y - 0.5) ** 2)) * 0.85;
+  const LIFT = 0.025, Y = 0.6, R = 0.188;
+  const surf = (x, y) => Math.sqrt(Math.max(0, 0.04 - x * x - Math.max(0, y - 0.5) ** 2)) * 0.85;
   const pts = [];
-  for (let i = 0; i <= 8; i++) { // the back, right to left
-    const x = R * Math.cos((i / 8) * Math.PI);
-    pts.push(new THREE.Vector3(x, Y, -off(x, Y)));
+  for (let i = 0; i <= 8; i++) { // round the back of the neck, right to left
+    const a = (i / 8) * Math.PI, x = R * Math.cos(a);
+    pts.push(new THREE.Vector3(x, Y, -(Math.max(surf(x, Y), 0.12) + LIFT) * Math.sin(a)));
   }
-  for (let i = 1; i < 12; i++) { // the front: left side down to the V, up to the right
-    const t = i / 12, u = Math.abs(2 * t - 1); // 1 at the sides, 0 at the V
-    const x = -R * Math.sign(1 - 2 * t) * Math.pow(u, 0.7), y = NECK_V + (Y - NECK_V) * Math.pow(u, 1.6);
-    pts.push(new THREE.Vector3(x, y, off(x, y) + 0.034 * (1 - u) ** 2)); // lifting off the shirt (and its print) towards the charm
+  for (let i = 1; i < 14; i++) { // the front: left side down to the V, up to the right
+    const t = i / 14, u = Math.abs(2 * t - 1); // 1 at the sides, 0 at the V
+    const x = -R * Math.sign(1 - 2 * t) * Math.pow(u, 0.8), y = NECK_V + (Y - NECK_V) * Math.pow(u, 1.5);
+    pts.push(new THREE.Vector3(x, y, surf(x, y) + LIFT + 0.012 * (1 - u) ** 2));
   }
   return new THREE.CatmullRomCurve3(pts, true);
 }
@@ -772,13 +774,13 @@ function addAccessories(look, head, torso, body) {
     // A necklace: a fine chain lying round the base of the neck on the
     // torso's rounded top and down the chest in a V to the charm.
     const m = mat(neck.color);
-    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TubeGeometry(necklaceCurve(), 64, 0.007, 5, true)), m);
+    const chain = new THREE.Mesh(geo('pendantChain', () => new THREE.TubeGeometry(necklaceCurve(), 72, 0.009, 5, true)), m);
     // The charm hangs from the bottom of the V on a little ring.
     const size = neck.hanja ? 1.8 : 1.5, top = (neck.hanja ? TAG_R : neck.charm === 'butterfly' ? 0.026 : 0.036) * size;
     const bail = new THREE.Mesh(geo('pendantBail', () => new THREE.TorusGeometry(0.01, 0.004, 4, 10)), m);
-    bail.position.set(0, NECK_V - 0.008, 0.211);
+    bail.position.set(0, NECK_V - 0.009, 0.214);
     const charm = new THREE.Mesh(geo('pendant:' + neck.charm, () => pendantGeometry(neck.charm)), m);
-    charm.position.set(0, NECK_V - 0.016 - top, 0.213); // just in front of the shirt and its print (TEE_Z)
+    charm.position.set(0, NECK_V - 0.018 - top, 0.216); // in front of the shirt and its print (TEE_Z)
     charm.scale.setScalar(size); // an engraved tag a little bigger, to read the word
     if (neck.hanja) { // the engraved word on the tag's face
       const face = new THREE.Mesh(geo('pendantFace', () => new THREE.CircleGeometry(TAG_R, 24)), engraveMat(neck.hanja, neck.letter, neck.color));
