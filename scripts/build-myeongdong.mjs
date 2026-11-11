@@ -310,10 +310,32 @@ t20.row('gil20E', GIL20, -1, QUIET); // (the lane runs south from Toegye-ro: -1 
 t20.row('gil20W', GIL20, 1, QUIET);
 buildings.push(...t20.buildings);
 
-// Shops: Myeongdong's skincare and lip-tint shops along the shopping street,
-// by the crossing with Myeongdong-gil (moved from Seongsu, which stood in for
-// Myeongdong until it was on the map: memory shop-distribution-ratios).
-export const SHOPS = ['mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink'];
+// Shops: each next to a real shop of its kind (OpenStreetMap, the same
+// export), on the nearest free lot of the rows it may use. The shops are fictional; only where they
+// stand follows the real street (Yozi 2026-11-11: cosmetics where the real
+// ones crowd, restaurants among them; moved from other districts, none new).
+//   Cosmetics crowd Myeongdong 8-gil, from the station up to the crossing,
+//   and Myeongdong-gil west of it; the restaurants stand north of the
+//   crossing and up Myeongdong 10-gil. The evening
+//   carts (game/night-carts.js) are the street food.
+// (Seongsu stood in for Myeongdong's cosmetics until Myeongdong was on the
+// map: memory shop-distribution-ratios.)
+export const SHOPS = [
+  // cosmetics
+  { id: 'moonlight-beauty', real: 'Laneige', near: [-1573, -523], rows: ['mainW', 'mainE'] },
+  { id: 'mulbangul-skin', real: 'Espoir', near: [-1566, -514], rows: ['mainW', 'mainE'] },
+  { id: 'lip-red', real: 'Etude House', near: [-1580, -487], rows: ['mainW', 'mainE'] },
+  // (east side: on the west one its door leaves no room for the last night
+  // cart between it and station exit 6)
+  { id: 'lip-pink', real: 'Nature Republic', near: [-1563, -468], rows: ['mainE'] },
+  { id: 'lip-coral', real: 'Missha and Innisfree', near: [-1606, -534], rows: ['gilN', 'gilS'] },
+  { id: 'lip-purple', real: 'Cosmetics Land 21', near: [-1552, -521], rows: ['gilN', 'gilS', 'mainE'] },
+  // restaurants
+  { id: 'my-mala', real: 'Wonjo Hanchi and McDonald\'s', near: [-1570, -551], rows: ['mainW', 'mainE'] },
+  // why: 21 m from it, up the same lane: its side of 10-gil has no room for a
+  // row (the shopping street's backs reach the lane).
+  { id: 'son-kalguksu', real: 'Myeongdong Kyoja (10-gil 29)', near: [-1547, -500], rows: ['gil10W', 'gil10E'], within: 22 },
+];
 const CROSSING = [-1571.7, -533.5];
 // The Information Center by the real Myeongdong Tourist Information Center
 // (OSM), on the shopping street's north part.
@@ -423,9 +445,15 @@ if (isMain) {
   const info = lots.splice(lots.indexOf(lots.reduce((m, q) => (dist(q, INFO.near) < dist(m, INFO.near) ? q : m))), 1)[0];
   setAt(INFO.id, info);
   console.log(`  ${INFO.id}: [${info}], ${r1(dist(info, INFO.near))} m from the real one`);
-  lots.sort((a, b) => Math.hypot(a[0] - CROSSING[0], a[1] - CROSSING[1]) - Math.hypot(b[0] - CROSSING[0], b[1] - CROSSING[1]));
-  if (lots.length < SHOPS.length) throw new Error(`only ${lots.length} lots for ${SHOPS.length} shops`);
-  SHOPS.forEach((sid, i) => setAt(sid, lots[i]));
+  const used = new Set([info.join()]), placed = {};
+  for (const sh of SHOPS) {
+    const free = sh.rows.flatMap((id) => t.lots[id] || []).filter((q) => !used.has(q.join()));
+    if (!free.length) throw new Error(`${sh.id}: no free lot in ${sh.rows}`);
+    const at = free.reduce((m, q) => (dist(q, sh.near) < dist(m, sh.near) ? q : m));
+    used.add(at.join());
+    placed[sh.id] = at;
+    setAt(sh.id, at);
+  }
   setAt(DOOR.id, DOOR.at);
   if (!new RegExp(`"id": "${DOOR.id}"[^\n]*"y": ${YH}[,}]`).test(stores)) throw new Error(`${DOOR.id}: set "y": ${YH} in stores.json (the door is up on the yard)`);
   writeFileSync(path.join(R, 'stores.json'), stores);
@@ -434,7 +462,7 @@ if (isMain) {
   console.log(`  cathedral middle [${HALL.at}] (lat ${anchor.lat.toFixed(6)}, lon ${anchor.lon.toFixed(6)}), front towards [${F}], ry ${ry}; real hall ${HALL.realLen} m long in OSM`);
   console.log(`  bell tower front [${front}], ${r1(nearestOn(front, MDGIL).d)} m from Myeongdong-gil; east side ${r1(Math.min(...hallParts.flat().map((q) => lineDist(q, SAMIL))) - 7)} m from Samil-daero's kerb`);
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
-  SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
+  for (const sh of SHOPS) console.log(`  ${sh.id}: [${placed[sh.id]}], ${r1(dist(placed[sh.id], sh.near))} m from ${sh.real}`);
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
   console.log(`  night carts: ${CARTS.map(([x, z]) => `[${x},${z}]`).join(' ')}`);
   console.log(`  yard ${YH} m up; stairs ${A0}-${A1} m along the axis (kerb ${CUT}), ${blockers.length} wall pieces`);

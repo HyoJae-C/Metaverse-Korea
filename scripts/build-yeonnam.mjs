@@ -147,6 +147,8 @@ export const GROUPS = [
   // Facing the forest park: the info centre and picnic shop near the south
   // end, cafés, a bakery, books, a photo studio.
   [['parkW', 'parkE'], ['info-yeonnam', 'sopung-picnic', 'cheolgil-coffee', 'film-day-photo', 'gureum-bakery', 'small-things-room', 'chaekgalpi-books']],
-  // Donggyo-ro: the vintage shop and the Chinese restaurant.
-  [['donggyoR', 'donggyoL'], ['munbang-vintage', 'wolhwa-banjeom']],
+  // Donggyo-ro: the vintage shop, the Chinese restaurant and the Hong Kong
+  // diner (Yeonnam is known for Chinese food; Dim Gai from Myeongdong, Yozi
+  // 2026-11-11).
+  [['donggyoR', 'donggyoL'], ['munbang-vintage', 'wolhwa-banjeom', 'dim-gai']],
 ];
