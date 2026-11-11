@@ -2,7 +2,7 @@
 --
 -- When a new player makes their character they can type the name of the
 -- friend who told them about the game (optional). That friend gets
--- ₩15,000. Everything is decided here on the server; the game only sends
+-- ₩50,000. Everything is decided here on the server; the game only sends
 -- the name.
 --
 -- Rules (numbers are in wallet_settings, see below):
@@ -19,7 +19,7 @@
 --     for (it is not in reward_rules).
 --
 -- The friend hears about it the next time the game asks referral_news():
--- "🎁 <name> joined! +₩15,000".
+-- "🎁 <name> joined! +₩50,000".
 --
 -- To change the numbers later:
 --   update public.wallet_settings set referral_reward = 20000, referral_day = 3 where id = 1;
@@ -30,7 +30,7 @@
 -- Invites today:
 --   select count(*), sum(paid) from public.referrals where at >= public.kst_day_start();
 
-alter table public.wallet_settings add column if not exists referral_reward bigint not null default 15000;
+alter table public.wallet_settings add column if not exists referral_reward bigint not null default 50000;
 alter table public.wallet_settings add column if not exists referral_day int not null default 5;
 alter table public.wallet_settings add column if not exists referral_max int not null default 50;
 alter table public.wallet_settings add column if not exists referral_hours int not null default 24;
