@@ -322,6 +322,39 @@ const INFO = { id: 'info-myeongdong', near: [-1561.2, -571.8] };
 // front of the bell tower's main door; "face" in stores.json is the hall's ry.
 export const DOOR = { id: 'myeongdong-cathedral', at: onHall(L2 + 1.7, 0) };
 
+// ---------- Night food carts (game/night-carts.js) ----------
+// Myeongdong's evening street food: carts down the middle of the shopping
+// street from the crossing with Myeongdong-gil to Toegye-ro (the real ones
+// fill Myeongdong 8-gil, by the station), out from sunset to morning. Each
+// is set along the street, its counter facing one side and then the other,
+// with a clear 2 m and more past it on both sides. (Yozi 2026-11-11: 8 carts,
+// a small lamp each.)
+export const CART_COUNT = 8;
+export const CART = { len: 2.2, depth: 1.3 }; // its footprint (the seller stands inside it)
+export function cartSpots() {
+  const P = straight(MAIN), cum = [0];
+  for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const total = cum.at(-1);
+  const pointAt = (s) => {
+    let i = 1;
+    while (i < P.length - 1 && cum[i] < s) i++;
+    const a = P[i - 1], b = P[i], k = (s - cum[i - 1]) / (cum[i] - cum[i - 1]);
+    const d = [(b[0] - a[0]) / (cum[i] - cum[i - 1]), (b[1] - a[1]) / (cum[i] - cum[i - 1])];
+    return { at: [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k], d };
+  };
+  // From just past the crossing (along the street) to short of Toegye-ro.
+  let cross = 0;
+  for (let s = 0, best = Infinity; s <= total; s += 0.5) { const q = pointAt(s).at, dd = Math.hypot(q[0] - CROSSING[0], q[1] - CROSSING[1]); if (dd < best) { best = dd; cross = s; } }
+  const s0 = cross + 9, s1 = total - 12, step = (s1 - s0) / (CART_COUNT - 1);
+  return Array.from({ length: CART_COUNT }, (_, i) => {
+    const { at, d } = pointAt(s0 + i * step), side = i % 2 ? -1 : 1;
+    return [r1(at[0]), r1(at[1]), facing(-d[1] * side, d[0] * side)];
+  });
+}
+const CARTS = cartSpots();
+const CART_MID = CARTS[Math.floor(CARTS.length / 2)];
+landmarks.push({ type: 'nightcarts', store: 'myeongdong-night-carts', x: CART_MID[0], z: CART_MID[1], carts: CARTS.map(([x, z, a]) => [r1(x - CART_MID[0]), r1(z - CART_MID[1]), a]) });
+
 // ---------- Into the district's own metres ----------
 const anchor = toLatLon(...HALL.at);
 const OFFSET = region.districts.find((d) => d.id === 'myeongdong')?.offset || HALL.at.map(Math.round);
@@ -378,6 +411,7 @@ if (isMain) {
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
   SHOPS.forEach((sid, i) => console.log(`  ${sid}: [${lots[i]}]`));
   console.log(`  ${DOOR.id}: door [${DOOR.at}], face ${ry.toFixed(3)}`);
+  console.log(`  night carts: ${CARTS.map(([x, z]) => `[${x},${z}]`).join(' ')}`);
   console.log(`  yard ${YH} m up; stairs ${A0}-${A1} m along the axis (kerb ${CUT}), ${blockers.length} wall pieces`);
   for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }

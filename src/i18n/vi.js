@@ -47,7 +47,7 @@ export const VI = {
   'tip.4': "🔤 Cài đặt → Dịch biển hiệu cửa hàng hiển thị biển hiệu bằng ngôn ngữ của bạn.",
   'tip.5': "🎣 Câu cá ở các công viên sông Hàn, rồi bán cá ở chợ hải sản.",
   'tip.6': "📖 Cầm một cuốn sách và ngồi xuống bất cứ đâu để đọc.",
-  'tip.7': "🎆 Cứ 2 giờ lại có một đêm, và cách một đêm có một buổi diễn: pháo hoa ở Yeouido và drone ở Ttukseom, luân phiên.",
+  'tip.7': "🎆 Cứ 3 giờ lại có một đêm, và đêm nào cũng có một buổi diễn: pháo hoa ở Yeouido và drone ở Ttukseom, luân phiên.",
   'tip.8': "📒 Sổ chi tiêu trong sổ tay hoặc ví cho bạn biết tiền đã đi đâu.",
   'taxi.here': 'chỗ bạn đã chọn',
   'taxi.shopWhere': "Địa điểm: {gu}",

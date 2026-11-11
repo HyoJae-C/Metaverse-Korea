@@ -23,7 +23,7 @@ export function createRoomTips({ $, enterStore, built }) {
     enter(item) {
       const s = item.store;
       if (busy) return;
-      if (s.hanpark || built(s)) { enterStore(item); return; }
+      if (s.hanpark || s.carts || built(s)) { enterStore(item); return; }
       busy = true;
       const box = $('room-loading');
       $('room-loading-tip').textContent = nextTip();

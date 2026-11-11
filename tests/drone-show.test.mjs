@@ -10,14 +10,14 @@ import { STAMPS } from '../src/data/stamps.js';
 import { STAND_TIMES } from '../src/core/stamp-stands.js';
 
 const MIN = 60e3;
-// A drone show's start: drone shows are on the cycles numbered 2 mod 4.
-const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~3) + 2;
-const DRONE = (k = 0) => (N + 4 * k) * CYCLE_MS + SHOW_FROM;
+// A drone show's start: drone shows are on the odd cycles.
+const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~1) + 1;
+const DRONE = (k = 0) => (N + 2 * k) * CYCLE_MS + SHOW_FROM;
 const at = (min, k = 0) => DRONE(k) + min * MIN; // minutes from a show's start
 
-test('a 20-minute show one night in four, taking turns with the Yeouido fireworks', () => {
+test('a 20-minute show every other night, taking turns with the Yeouido fireworks', () => {
   assert.equal(SHOW_SECONDS, 1200);
-  assert.equal(CYCLE_MS, 120 * MIN);
+  assert.equal(CYCLE_MS, 180 * MIN);
   const s = droneShowAt(at(5));
   assert.equal(s.start, DRONE());
   assert.equal(Math.round(s.t), 300);
@@ -25,10 +25,9 @@ test('a 20-minute show one night in four, taking turns with the Yeouido firework
   assert.ok(s.on);
   // in the game's night: 10 minutes after nightfall
   assert.equal(cycleMs(s.start), NIGHT_FROM + 10 * MIN);
-  // the nights in between: quiet, then the fireworks, then quiet
-  for (const k of [1, 3]) assert.ok(!droneShowAt(DRONE() + k * CYCLE_MS + 5 * MIN) && !fireworksAt(DRONE() + k * CYCLE_MS + 5 * MIN));
-  assert.equal(droneShowAt(DRONE() + 2 * CYCLE_MS + 5 * MIN), null);
-  assert.equal(fireworksAt(DRONE() + 2 * CYCLE_MS + 5 * MIN).start, DRONE() + 2 * CYCLE_MS);
+  // the night in between: the fireworks
+  assert.equal(droneShowAt(DRONE() + CYCLE_MS + 5 * MIN), null);
+  assert.equal(fireworksAt(DRONE() + CYCLE_MS + 5 * MIN).start, DRONE() + CYCLE_MS);
 });
 
 test('night only around the show: dark from 1 minute before to the landing', () => {
@@ -43,10 +42,10 @@ test('night only around the show: dark from 1 minute before to the landing', () 
   assert.equal(droneShowAt(at(-1, 1)).start, DRONE(1)); // the next one
 });
 
-test('the next show: eight hours later, three a day', () => {
+test('the next show: six hours later, four a day', () => {
   assert.equal(nextDroneShow(at(5)), DRONE(1));
   assert.equal(nextDroneShow(at(-60)), DRONE());
-  assert.equal(DRONE(1) - DRONE(), 480 * MIN);
+  assert.equal(DRONE(1) - DRONE(), 360 * MIN);
 });
 
 test('the drones fly in front of the bridge, past where the duck boats go', () => {

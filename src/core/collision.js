@@ -12,6 +12,8 @@ export class CollisionMap {
 
   // More footprints after the map is built (a Han River park's kiosk, stalls
   // and railings, built when you first come near: game/han-parks.js).
+  // `off()`: true while it isn't there (the night food carts in the day:
+  // game/night-carts.js).
   add(buildings) {
     for (const b of buildings) {
       if (b.m && b.m > 2) continue; // overhangs you can walk under
@@ -21,7 +23,7 @@ export class CollisionMap {
         minX = Math.min(minX, x); maxX = Math.max(maxX, x);
         minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
       }
-      const id = this.polys.push({ p, minX, minZ, maxX, maxZ, low: !!b.low }) - 1;
+      const id = this.polys.push({ p, minX, minZ, maxX, maxZ, low: !!b.low, off: b.off || null }) - 1;
       for (let cx = Math.floor(minX / CELL); cx <= Math.floor(maxX / CELL); cx++) {
         for (let cz = Math.floor(minZ / CELL); cz <= Math.floor(maxZ / CELL); cz++) {
           const k = cx + ',' + cz;
@@ -58,6 +60,7 @@ export class CollisionMap {
           seen.add(id);
           const q = this.polys[id];
           if (tall && q.low) continue;
+          if (q.off?.()) continue;
           if (x + r < q.minX || x - r > q.maxX || z + r < q.minZ || z - r > q.maxZ) continue;
           if (circleHitsPoly(x, z, r, q.p)) return true;
         }

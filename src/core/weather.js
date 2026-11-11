@@ -1,6 +1,6 @@
 // Weather and time of day for the region.
 // Weather: rolled from the clock (rolledWeather), the same for every player.
-// Time of day: the game's own two-hour day (show-clock.js).
+// Time of day: the game's own three-hour day (show-clock.js).
 import * as THREE from 'three';
 import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
@@ -22,8 +22,8 @@ import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
 import { gameHour, SKY_SUN } from './show-clock.js';
 const NIGHT_ICON = { clear: '🌙' };
 
-// Time of day: the game's own two-hour day (show-clock.js), the same for
-// everyone wherever they live, with a night and a show every two hours.
+// Time of day: the game's own three-hour day (show-clock.js), the same for
+// everyone wherever they live, with a night and a show every three hours.
 // (It used to follow Seoul's clock, so players abroad rarely saw night.)
 // ?hour=21 forces a time for testing.
 
