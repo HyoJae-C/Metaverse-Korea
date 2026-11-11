@@ -430,7 +430,7 @@ function shapedHead(facts, geo, shape, key, jaw, nose) {
     cx /= facts.nose.length; cy /= facts.nose.length;
     for (const i of facts.nose) {
       const dz = src.getZ(i) - cz, up = src.getY(i) - cy;
-      pos.setXYZ(i, cx + (src.getX(i) - cx) * nf.sx, cy + up * nf.sy + dz * nf.lift, cz + dz * nf.sz);
+      pos.setXYZ(i, cx + (src.getX(i) - cx) * nf.sx * (up > 0 ? nf.top ?? 1 : 1), cy + up * (up > 0 ? nf.up ?? nf.sy : nf.sy) + dz * nf.lift, cz + dz * nf.sz);
     }
   }
   if (tf) for (const side of [-1, 1]) {
@@ -513,10 +513,37 @@ const HAT_CROWNS = {
 const TUCK = 0.94; // how far inside the crown the hair goes
 const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out
 const _tm = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tp = new THREE.Vector3();
+// Pull the points of one geometry inside the crown; tm takes its points to
+// the hat's space, keep(i) picks which. A clone if any moved, else null.
+function squeezeIn(geo, tm, crown, keep) {
+  const { c, r, y0 } = crown;
+  _ti.copy(tm).invert();
+  const out = geo.clone();
+  const pos = out.attributes.position;
+  let moved = false;
+  for (let i = 0; i < pos.count; i++) {
+    if (keep && !keep(i)) continue;
+    _tp.fromBufferAttribute(pos, i).applyMatrix4(tm);
+    // Fully inside above the edge; just under it the hair may bulge out
+    // more and more (pressed flat by the hat), with no step at the edge.
+    const below = (y0 - _tp.y) / TUCK_BAND;
+    if (below >= 1) continue;
+    const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
+    const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
+    const d = Math.hypot(dx, dy, dz);
+    if (d <= limit) continue;
+    const k = limit / d;
+    _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
+    pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
+    moved = true;
+  }
+  if (!moved) return null;
+  out.computeBoundingSphere();
+  return out;
+}
 function tuckHair(hair, headAcc, look) {
   const crown = HAT_CROWNS[shapeOf(accessory('head', look.head))];
   if (!hair || !crown) return;
-  const { c, r, y0 } = crown;
   headAcc.updateMatrix();
   const toAcc = new THREE.Matrix4().copy(headAcc.matrix).invert(); // head bone -> hat space
   hair.parent.updateMatrix();
@@ -525,30 +552,34 @@ function tuckHair(hair, headAcc, look) {
     if (!mesh.isMesh) continue;
     mesh.updateMatrix();
     _tm.copy(toAcc).multiply(hair.parent.matrix).multiply(hair.matrix).multiply(mesh.matrix);
-    _ti.copy(_tm).invert();
-    const geo = mesh.geometry.clone();
-    const pos = geo.attributes.position;
-    let moved = false;
-    for (let i = 0; i < pos.count; i++) {
-      _tp.fromBufferAttribute(pos, i).applyMatrix4(_tm);
-      // Fully inside above the edge; just under it the hair may bulge out
-      // more and more (pressed flat by the hat), with no step at the edge.
-      const below = (y0 - _tp.y) / TUCK_BAND;
-      if (below >= 1) continue;
-      const limit = TUCK + Math.max(0, below) * TUCK_BULGE;
-      const dx = (_tp.x - c[0]) / r[0], dy = (_tp.y - c[1]) / r[1], dz = (_tp.z - c[2]) / r[2];
-      const d = Math.hypot(dx, dy, dz);
-      if (d <= limit) continue;
-      const k = limit / d;
-      _tp.set(c[0] + (_tp.x - c[0]) * k, c[1] + (_tp.y - c[1]) * k, c[2] + (_tp.z - c[2]) * k).applyMatrix4(_ti);
-      pos.setXYZ(i, _tp.x, _tp.y, _tp.z);
-      moved = true;
-    }
-    if (!moved) continue;
+    const geo = squeezeIn(mesh.geometry, _tm, crown);
+    if (!geo) continue;
     geo.computeVertexNormals();
-    geo.computeBoundingSphere();
     mesh.geometry = geo;
   }
+}
+// The model's own hair (no salon style) under a hat: its hair-coloured
+// points are tucked in the same way, so no tuft pokes through the hat. One
+// head per model and hat shape, shared.
+const ownTucked = new Map();
+function tuckOwnHair(id, headMesh, headBone, headAcc, look) {
+  const shape = shapeOf(accessory('head', look.head));
+  const crown = HAT_CROWNS[shape];
+  if (!crown) return;
+  const key = id + '|' + shape;
+  if (!ownTucked.has(key)) {
+    const A = PACK.atlas;
+    const uv = headMesh.geometry.attributes.uv;
+    const isHair = (i) => Math.floor(uv.getX(i) * A.cols) === A.hair[0] && Math.floor(uv.getY(i) * A.rows) === A.hair[1];
+    const bi = headMesh.skeleton?.bones.indexOf(headBone) ?? -1;
+    const meshToBone = new THREE.Matrix4();
+    if (bi >= 0) meshToBone.multiplyMatrices(headMesh.skeleton.boneInverses[bi], headMesh.bindMatrix);
+    else meshToBone.copy(headBone.matrixWorld).invert().multiply(headMesh.matrixWorld);
+    headAcc.updateMatrix();
+    const tm = new THREE.Matrix4().copy(headAcc.matrix).invert().multiply(meshToBone);
+    ownTucked.set(key, squeezeIn(headMesh.geometry, tm, crown, isHair) || headMesh.geometry);
+  }
+  headMesh.geometry = ownTucked.get(key);
 }
 
 // The primitive chibi's head is ~0.65 m wide with its centre at the head
@@ -714,6 +745,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
   }
+  if (headMesh && headBone && look.head && (!look.hairStyle || PACK.models[id]?.hood)) tuckOwnHair(id, headMesh, headBone, headAcc, look);
   // Wind: every piece but the cap over the skull streams back and up a
   // little and flutters, the long ones (low and behind) the most.
   let windK = 0, windT = 0;

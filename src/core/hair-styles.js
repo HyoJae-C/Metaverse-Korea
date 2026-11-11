@@ -399,8 +399,9 @@ export function jawMove(shape, x, y, z, t) {
 }
 
 // Cosmetic clinic noses: the model's own nose reshaped about its middle
-// (sx/sy: narrower, longer; sz: how far it stands out; lift: the tip up).
+// (sx/sy: narrower, longer; up/top: the upper half's length and width, a
+// bridge up between the eyes; sz: how far it stands out; lift: the tip up).
 export const NOSE_TRANSFORM = {
-  high: { sx: 0.8, sy: 1.35, sz: 1.6, lift: 0.35 },
-  small: { sx: 0.72, sy: 0.72, sz: 0.6, lift: 0.15 },
+  high: { sx: 0.78, sy: 1.05, up: 2.3, top: 0.7, sz: 1.45, lift: 0.15 },
+  small: { sx: 0.62, sy: 0.62, sz: 0.55, lift: 0.1 },
 };
