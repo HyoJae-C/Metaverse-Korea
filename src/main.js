@@ -750,7 +750,7 @@ const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to 
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
+const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall

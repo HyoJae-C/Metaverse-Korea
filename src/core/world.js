@@ -52,7 +52,7 @@ export function buildWorld(map, scene, opts = {}) {
   // Paving first, then lawns and water a hair above so they don't flicker.
   for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
     const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
-    const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes); // (a stairwell in a park cuts the lawn too)
+    const mesh = makeFlatPolys(polys, COLORS[kind], y, opts.holes, opts.stairHoles); // (a stairwell in a park cuts the lawn too)
     if (mesh && kind === 'stone') {
       const map = stoneTexture();
       if (map) { mesh.material.map = map; mesh.material.color.set(0xffffff); }
@@ -149,17 +149,32 @@ function toShape(p) {
   return new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
 }
 
-function makeFlatPolys(polys, color, y, holes = []) {
+function makeFlatPolys(polys, color, y, holes = [], across = []) {
   if (!polys.length) return null;
   const geos = [];
-  for (const p of polys) {
-    if (p.length < 3) continue;
-    const shape = toShape(p);
-    for (const h of holes || []) if (h.every(([x, z]) => pointInPolygon(x, z, p))) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
-    const g = new THREE.ShapeGeometry(shape);
-    g.rotateX(-Math.PI / 2);
-    g.translate(0, y, 0);
-    geos.push(g);
+  for (const p0 of polys) {
+    if (p0.length < 3) continue;
+    // A hole wholly inside is cut as a hole. A stairwell across the edge
+    // (half on a plaza) would be skipped and the paving would cover its
+    // steps, so the polygon is cut round it instead (`across`: convex holes).
+    let pieces = [p0];
+    for (const h of across || []) {
+      if (!isConvex(h) || !boxesMeet(h, p0)) continue;
+      pieces = pieces.flatMap((p) => {
+        const n = h.filter(([x, z]) => pointInPolygon(x, z, p)).length;
+        if (n === h.length) return [p];
+        if (!n && !p.some(([x, z]) => pointInPolygon(x, z, h))) return [p];
+        return minusConvex(p, h);
+      });
+    }
+    for (const p of pieces) {
+      const shape = toShape(p);
+      for (const h of holes || []) if (h.every(([x, z]) => pointInPolygon(x, z, p))) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
+      const g = new THREE.ShapeGeometry(shape);
+      g.rotateX(-Math.PI / 2);
+      g.translate(0, y, 0);
+      geos.push(g);
+    }
   }
   if (!geos.length) return null;
   const geo = mergeGeometries(geos);
@@ -585,6 +600,52 @@ function edgeDist(x, z, p) {
     best = Math.min(best, Math.hypot(x1 + t * dx - x, z1 + t * dz - z));
   }
   return best;
+}
+
+function boxesMeet(a, b) {
+  const box = (p) => p.reduce((m, [x, z]) => [Math.min(m[0], x), Math.min(m[1], z), Math.max(m[2], x), Math.max(m[3], z)], [Infinity, Infinity, -Infinity, -Infinity]);
+  const [a0, a1, a2, a3] = box(a), [b0, b1, b2, b3] = box(b);
+  return a0 <= b2 && b0 <= a2 && a1 <= b3 && b1 <= a3;
+}
+// Is a polygon convex (a stairwell's rectangle)?
+function isConvex(p) {
+  let sign = 0;
+  for (let i = 0; i < p.length; i++) {
+    const [a, b, c] = [p[i], p[(i + 1) % p.length], p[(i + 2) % p.length]];
+    const cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    if (Math.abs(cr) < 1e-9) continue;
+    if (sign && Math.sign(cr) !== sign) return false;
+    sign = Math.sign(cr);
+  }
+  return sign !== 0;
+}
+// Keep the part of polygon p on one side of the line a→b (keep > 0: left).
+function clipHalf(p, a, b, keep) {
+  const side = ([x, z]) => keep * ((b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0]));
+  const out = [];
+  for (let i = 0; i < p.length; i++) {
+    const P = p[i], Q = p[(i + 1) % p.length], sp = side(P), sq = side(Q);
+    if (sp >= 0) out.push(P);
+    if ((sp >= 0) !== (sq >= 0)) { const t = sp / (sp - sq); out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]); }
+  }
+  return out;
+}
+const polyArea = (p) => Math.abs(p.reduce((s, q, i) => { const r = p[(i + 1) % p.length]; return s + q[0] * r[1] - r[0] * q[1]; }, 0)) / 2;
+// Polygon p minus convex polygon h, as pieces that don't overlap: the part
+// outside h's first edge, then (inside it) outside the second, and so on.
+export function minusConvex(p, h) {
+  let o = 0;
+  for (let i = 0; i < h.length; i++) { const q = h[i], r = h[(i + 1) % h.length]; o += q[0] * r[1] - r[0] * q[1]; }
+  const inSide = o > 0 ? 1 : -1; // h's inside is left of its edges when counter-clockwise (x, z)
+  const pieces = [];
+  let rest = p;
+  for (let i = 0; i < h.length && rest.length >= 3; i++) {
+    const a = h[i], b = h[(i + 1) % h.length];
+    const out = clipHalf(rest, a, b, -inSide);
+    if (out.length >= 3 && polyArea(out) > 1e-4) pieces.push(out);
+    rest = clipHalf(rest, a, b, inSide);
+  }
+  return pieces;
 }
 
 function pointInPolygon(x, z, p) {
