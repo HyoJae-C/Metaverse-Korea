@@ -377,15 +377,16 @@ function buddha(g) {
   }
 }
 // The curved wall of niches behind the statue (r: its radius), with a carved
-// guardian panel at each end; about 1.1 m high (1/4).
+// guardian panel at each end; 2 m high (Yozi 2026-11-12: higher than 1/4's
+// 1.1 m, so it reads as the wall in the photos behind a 50% Buddha).
 function nicheWall(g, r) {
-  const H = 1.1, a0 = Math.PI - 1.55, a1 = Math.PI + 1.55, n = 16; // (round the back, −z)
+  const H = 2.0, a0 = Math.PI - 1.55, a1 = Math.PI + 1.55, n = 16; // (round the back, −z)
   for (let i = 0; i < n; i++) {
     const a = a0 + ((a1 - a0) * (i + 0.5)) / n, len = (r * (a1 - a0)) / n + 0.04;
     const seg = new THREE.Group();
     box(seg, len, H, 0.5, 0, H / 2, 0, C.g1);
     box(seg, len, 0.08, 0.6, 0, H + 0.04, 0, C.g0);
-    for (const yy of [0.42, 0.78]) for (const k of [-0.3, 0.3]) {
+    for (const yy of [0.5, 0.95, 1.4]) for (const k of [-0.3, 0.3]) {
       box(seg, 0.22, 0.24, 0.04, k * len, yy, 0.26, C.g4); // a niche
       ball(seg, 0.05, k * len, yy - 0.02, 0.27, C.g0, 1, 1.4, 0.6, 6, 4); // its little Buddha
     }
@@ -395,10 +396,10 @@ function nicheWall(g, r) {
   }
   for (const a of [a0, a1]) {
     const p = new THREE.Group();
-    box(p, 0.9, 1.6, 0.55, 0, 0.8, 0, C.g1);
-    box(p, 0.5, 1.15, 0.05, 0, 0.78, 0.28, C.g3); // the guardian carved on it
-    ball(p, 0.12, 0, 1.28, 0.3, C.g3, 1, 1.1, 0.5, 6, 5);
-    box(p, 1.0, 0.1, 0.65, 0, 1.65, 0, C.g0);
+    box(p, 1.0, 2.6, 0.55, 0, 1.3, 0, C.g1);
+    box(p, 0.55, 1.8, 0.05, 0, 1.2, 0.28, C.g3); // the guardian carved on it
+    ball(p, 0.15, 0, 2.2, 0.3, C.g3, 1, 1.1, 0.5, 6, 5);
+    box(p, 1.1, 0.1, 0.65, 0, 2.65, 0, C.g0);
     p.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
     p.rotation.y = a + Math.PI;
     g.add(p);
