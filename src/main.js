@@ -2634,12 +2634,12 @@ const hanbokRental = createHanbokRental({
   $, refreshWallet, setLook, shop,
 });
 const { rentHanbok } = hanbokRental;
-// Gifts for friends in the same shop. (game/gifts.js)
+// Gifts for friends in the same shop, friends only. (game/gifts.js)
 giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
   get others() { return others; }, get wallet() { return wallet; }, get net() { return net; },
   get sfx() { return sfx; }, $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes,
-  refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts,
+  refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts, chat,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
 // Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
@@ -7516,6 +7516,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
+    giftFriends: (names) => chat.testFriends(names), // e2e: friends for gifts without making real friends on the server
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),
     stream: () => ({ y: +me.root.position.y.toFixed(2), low: !!byStream?.low, stair: !!byStream?.stair, street: currentStreet?.en || null }),
