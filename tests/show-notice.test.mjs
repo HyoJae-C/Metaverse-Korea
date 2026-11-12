@@ -13,10 +13,10 @@ test('the pinned show notice names the show on now, or the soonest one', () => {
   const ln = showStarts(now, LANTERNS).find((s) => s > now);
   const first = Math.min(fw, dr, ln);
   assert.deepEqual(nextShow(now), { kind: first === fw ? 'fireworks' : first === ln ? 'lanterns' : 'drones', start: first, on: false });
-  // Five minutes into the fireworks: on now, 15 minutes left.
+  // Five minutes into the fireworks: on now, 4 minutes left (8¾ in all).
   const on = nextShow(fw + 5 * 60e3);
   assert.deepEqual(on, { kind: 'fireworks', start: fw, on: true });
-  assert.equal(showNoticeText(on, fw + 5 * 60e3, t, clock).text, 'show.now{"m":15}');
+  assert.equal(showNoticeText(on, fw + 5 * 60e3, t, clock).text, 'show.now{"m":4}');
   // Right after it ends, the next one is a whole game day later: the drone
   // show, or once a day the lantern parade.
   const after = nextShow(fw + 21 * 60e3);
