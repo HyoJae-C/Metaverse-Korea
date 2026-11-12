@@ -1,6 +1,7 @@
 // End-to-end check: two players in the same shop; A buys a gift for B, B
 // accepts it (it lands in B's bag), then B says no to a second one (A gets
-// the coins back). Clothes go to the friend's items.
+// the coins back). Clothes go to the friend's items. Gifts are for friends
+// only: before they're friends, A's picker offers to add B instead.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/gifts.mjs http://localhost:4173/
 // With a build made with VITE_NET_PROVIDER=local, add --bridge: the two
@@ -73,6 +74,20 @@ async function bothIn(shop) {
 }
 let ok = false;
 try {
+  // Not friends yet: no one to pick, only B to add.
+  await bothIn('salam-halal');
+  step = 'not friends: picker offers Add friend';
+  await a.evaluate(() => __mk.product(1));
+  await a.waitForSelector('#product-gift:not([hidden])', { timeout: 5000 });
+  await a.click('#product-gift');
+  await a.waitForSelector('.gift-add', { timeout: 5000 });
+  if (await a.isVisible('.gift-person')) throw new Error('a stranger could be picked for a gift');
+  if (shotDir) await a.screenshot({ path: shotDir + '/gift-not-friend.png' });
+  await a.click('#gift-panel .sheet-x');
+  for (const page of [a, b]) await page.evaluate(() => __mk.leave());
+  await a.waitForTimeout(1500);
+  await a.evaluate(() => __mk.giftFriends(['Gift B']));
+  await b.evaluate(() => __mk.giftFriends(['Gift A']));
   for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item']]) {
     await bothIn(shop);
     step = `${shop}: A sends a gift`;

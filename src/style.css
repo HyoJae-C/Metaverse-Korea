@@ -2190,7 +2190,8 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-thing b { color: var(--accent-dark); }
 .gift-icon { font-size: 24px; }
 .gift-people { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; max-height: 30vh; overflow-y: auto; }
-.gift-person.chip { background: #fff; padding: 8px 14px; }
+.gift-person.chip, .gift-add.chip { background: #fff; padding: 8px 14px; }
+.gift-others { margin-top: 6px; max-height: 20vh; }
 .gift-cards {
   position: absolute; left: 50%; transform: translateX(-50%); z-index: 8;
   top: calc(max(12px, env(safe-area-inset-top)) + 112px);
