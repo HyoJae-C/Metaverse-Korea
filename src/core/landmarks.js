@@ -146,6 +146,13 @@ const BUILD = {
   yardfence(g, l) {
     import('./seoul-station-models.js').then(({ buildYardFence }) => buildYardFence(g, l));
   },
+  jogyesa(g) {
+    // Jogyesa's halls, gate, trees and lantern canopy (core/jogyesa-model.js,
+    // loaded when the city is built). A slab under Daeungjeon goes in now, so the
+    // far culling knows where it stands.
+    box(g, 18, 0.04, 11.6, 0, 0.02, 0, C.stoneDark);
+    import('./jogyesa-model.js').then(({ buildJogyesa }) => buildJogyesa(g));
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the
