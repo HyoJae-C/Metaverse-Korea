@@ -4619,10 +4619,22 @@ const districtOfStore = (st) => st.district || districtAt(dBoxes, ...storeAt(st)
         used.add(picked[d].id); supportPlaces.push([d, 'spot', picked[d].id]);
         continue;
       }
+      // A district can name the wall itself (region.json districts[].supportWall,
+      // a point on it in world metres), e.g. Seoul Square's back.
+      const named = (region.districts || []).find((r) => r.id === d)?.supportWall;
+      if (named) {
+        const nw = wallNear(map.buildings, named[0], named[1], 4);
+        if (!nw) continue;
+        const poster = wallPoster(tex, nw, Math.min(nw.h - 3, 6.4), Math.min(5.6, nw.len - 0.6));
+        scene.add(poster);
+        farExtras.push(poster);
+        supportPlaces.push([d, 'wall', [Math.round(nw.x), Math.round(nw.z), nw.nx, nw.nz, nw.h]]);
+        continue;
+      }
       // No free lot nearby: the nearest tall wall to the hub.
       const edges = [];
       for (const bd of map.buildings) {
-        if ((bd.d || 'map') !== d || (bd.h || 10) < 7) continue;
+        if ((bd.d || 'map') !== d || (bd.h || 10) < 7 || bd.custom) continue; // (custom: a landmark draws it, e.g. a glass station hall)
         bd.p.forEach(([x1, z1], i) => {
           const [x2, z2] = bd.p[(i + 1) % bd.p.length];
           if (Math.hypot(x2 - x1, z2 - z1) < 7) return;

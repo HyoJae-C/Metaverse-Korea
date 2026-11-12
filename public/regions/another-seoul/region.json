@@ -166,7 +166,7 @@
     {
       "id": "seoul-station",
       "map": "districts/seoul-station.json",
-      "offset": [-1856, -317],
+      "supportWall": [-1798.25, -296.3], "supportWhy": "The coffee poster goes on Seoul Square's back (east) wall, not on the station front (Yozi 2026-11-12).", "offset": [-1856, -317],
       "anchor": { "place": "The middle of the old Seoul Station building (Culture Station Seoul 284)", "lat": 37.555991, "lon": 126.97161, "local": [0, 0], "why": "No nudge: the plaza, the hall, Seoul Square and the roads are on their real places (scripts/build-seoul-station.mjs). The old station is drawn at 37.5% (Yozi 2026-11-12) round its real middle, so it reaches 6 m past its real ends." }
     },
     {
