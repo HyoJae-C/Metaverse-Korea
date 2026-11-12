@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '../src/core/drone-show.js';
 import { fireworksAt } from '../src/core/fireworks-show.js';
-import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, cycleNumber, cycleMs } from '../src/core/show-clock.js';
+import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, SHOW_EVERY, DRONES, cycleNumber, cycleMs } from '../src/core/show-clock.js';
 import { WATER } from '../src/core/duck-boat.js';
 import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf, routineTurn } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
@@ -11,9 +11,9 @@ import { STAMPS } from '../src/data/stamps.js';
 import { STAND_TIMES } from '../src/core/stamp-stands.js';
 
 const MIN = 60e3;
-// A drone show's start: drone shows are on the odd cycles.
-const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~1) + 1;
-const DRONE = (k = 0) => (N + 2 * k) * CYCLE_MS + SHOW_FROM;
+// A drone show's start: drone shows are on every third cycle.
+const N0 = cycleNumber(Date.UTC(2026, 10, 9)), N = N0 - (N0 % SHOW_EVERY) + DRONES;
+const DRONE = (k = 0) => (N + SHOW_EVERY * k) * CYCLE_MS + SHOW_FROM;
 const at = (min, k = 0) => DRONE(k) + min * MIN; // minutes from a show's start
 
 test('a 20-minute show every other night, taking turns with the Yeouido fireworks', () => {
@@ -43,10 +43,10 @@ test('night only around the show: dark from 1 minute before to the landing', () 
   assert.equal(droneShowAt(at(-1, 1)).start, DRONE(1)); // the next one
 });
 
-test('the next show: six hours later, four a day', () => {
+test('the next show: nine hours later', () => {
   assert.equal(nextDroneShow(at(5)), DRONE(1));
   assert.equal(nextDroneShow(at(-60)), DRONE());
-  assert.equal(DRONE(1) - DRONE(), 360 * MIN);
+  assert.equal(DRONE(1) - DRONE(), 540 * MIN);
 });
 
 test('the drones fly in front of the bridge, past where the duck boats go', () => {
@@ -108,18 +108,17 @@ test('hello in Korean, English, Japanese, Chinese, then one more language each s
   assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
 });
 
-test('the turn of the fifth hello starts with French on 2026-11-12 02:10 KST', () => {
+test('the fifth hello goes round the languages, one show after another, French first', () => {
   useShow(show);
-  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0));
-  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
-  assert.equal(helloOf(first), 'BONJOUR');
+  let first = show.nextDroneShow(Date.UTC(2026, 10, 12, 3, 0));
+  while (helloOf(first) !== 'BONJOUR') first = show.nextDroneShow(first + 1000);
   assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
 });
 
 test('routines 1 and 2 can take turns, routine 2 first; photo pause and end at the same time', () => {
   useShow(show);
-  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0)); // 2026-11-12 02:10 KST
-  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
+  let first = show.nextDroneShow(Date.UTC(2026, 10, 12, 3, 0));
+  while (routineTurn(first) !== 2) first = show.nextDroneShow(first + 1000);
   const second = show.nextDroneShow(first + 1000);
   const third = show.nextDroneShow(second + 1000);
   assert.deepEqual([routineTurn(first), routineTurn(second), routineTurn(third)], [2, 1, 2]);

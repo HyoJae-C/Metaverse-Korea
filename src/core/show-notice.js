@@ -1,26 +1,29 @@
 // The next show, for the pinned notice at the top of the screen (game/chat.js):
-// the Yeouido fireworks or the Ttukseom drone show, whichever is on now or
+// the Yeouido fireworks, the lantern parade or the Ttukseom drone show, whichever is on now or
 // comes first (show-clock.js has the schedule). Under it, the next sunset
 // (every game day, best from Mangwon Han River Park). Pure, no DOM.
 
 import { fireworksAt, nextFireworks, SHOW_SECONDS } from './fireworks-show.js';
 import { droneShowAt, nextDroneShow } from './drone-show.js';
+import { paradeAt, nextParade } from './lantern-parade.js';
 import { cycleMs, CYCLE, CYCLE_MS } from './show-clock.js';
 
-// → { kind: 'fireworks' | 'drones', start (ms), on (true while it's on) }
+// → { kind: 'fireworks' | 'lanterns' | 'drones', start (ms), on (true while it's on) }
+// (All three shows last SHOW_SECONDS, 20 minutes.)
 export function nextShow(now = Date.now()) {
-  for (const [kind, at] of [['fireworks', fireworksAt], ['drones', droneShowAt]]) {
+  for (const [kind, at] of [['fireworks', fireworksAt], ['lanterns', paradeAt], ['drones', droneShowAt]]) {
     const s = at(now);
     if (s && s.t >= 0 && s.t < SHOW_SECONDS) return { kind, start: s.start, on: true };
   }
-  const f = nextFireworks(now), d = nextDroneShow(now);
-  return f <= d ? { kind: 'fireworks', start: f, on: false } : { kind: 'drones', start: d, on: false };
+  const [kind, start] = [['fireworks', nextFireworks(now)], ['lanterns', nextParade(now)], ['drones', nextDroneShow(now)]]
+    .reduce((a, b) => (b[1] < a[1] ? b : a));
+  return { kind, start, on: false };
 }
 
 // The notice's two parts: { label, text }. `t` is the i18n t(key, vars);
 // `clock(ms)` gives the start in the player's own time ("21:30").
 export function showNoticeText(show, now, t, clock) {
-  const label = t(show.kind === 'fireworks' ? 'show.fireworks' : 'show.drones');
+  const label = t('show.' + show.kind);
   if (show.on) {
     const m = Math.max(1, Math.ceil((show.start + SHOW_SECONDS * 1000 - now) / 60e3));
     return { label, text: t('show.now', { m }) };

@@ -202,7 +202,8 @@ function canopy(g, ox, oz) {
   for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, c.x1 - c.x0 + 1, 0.05, 0.05, (c.x0 + c.x1) / 2 - ox, c.y + 0.05, z - oz, C.rope);
   for (let x = c.x0; x <= c.x1 + 0.1; x += (c.x1 - c.x0) / 4) for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
   mergeStatic(g); // the lines and poles (before the lanterns go in: it would bake instanced meshes too)
-  for (const m of [lant, tag]) { m.userData.noShadow = true; m.name = 'jogyesa-canopy'; g.add(m); }
+  for (const m of [lant, tag]) { m.userData.noShadow = true; g.add(m); }
+  lant.name = 'jogyesa-canopy'; // (game/lantern-parade.js lights it up row by row)
   return lant;
 }
 

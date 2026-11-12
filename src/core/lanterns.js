@@ -307,7 +307,7 @@ function moon() {
   return g;
 }
 
-const FIGURES = { carp, tiger, lotus, moon };
+export const FIGURES = { carp, tiger, lotus, moon };
 export const FIGURE_KINDS = Object.keys(FIGURES);
 
 // Cheongsachorong: a red silk body with blue bands top and bottom and a gold cap.
@@ -340,7 +340,7 @@ function instanced(parent, parts, mats4, colors = null) {
 // are shared (lam's cache), so each is set up once.
 const glowSet = new WeakSet();
 const NIGHT_GLOW = 0.85;
-function lightUp(fig) {
+export function lightUp(fig) {
   fig.traverse((o) => {
     const m = o.material;
     if (!o.isMesh || !m?.emissive || glowSet.has(m)) return;
