@@ -55,6 +55,12 @@ export const SPOTS = {
 // 4 m in from its back edge facing down it (50° east of south, towards the
 // courtyard), the red mat in front, a U-shaped wall of niches round it.
 export const PLAZA = { at: [11.3, 809.5], ry: 49.5 * D2R, w: 8.6, l: 10.3, statue: 4.0 };
+// The hill behind (world metres: centre, radius, height), round the north
+// and west edges of the grounds; each shrinks to keep clear (below).
+export const HILLS = [
+  [-9, 818, 8, 4], [-6, 808, 8, 5], [1, 800, 8, 5.5], [11, 795, 8, 6], [22, 792, 8, 5.5],
+  [33, 790, 8, 5], [44, 787, 8, 5.5], [55, 785, 8, 5], [64, 793, 7, 4], [-10, 829, 6, 3.5],
+];
 // The niche wall round the statue, in its own metres (x across, z forward):
 // half a ring 3.9 m out behind it, then straight on either side to 1.5 m in front.
 export const NICHE_WALL = [[-3.9, 1.5], ...Array.from({ length: 9 }, (_, i) => {
@@ -192,9 +198,27 @@ export function bongeunsa(local, street = () => Infinity) {
   const canopy = [...rel([(f1[0] + b2[0]) / 2, (f1[1] + b2[1]) / 2]), r1(H.법왕루.w + 2), r1(Math.hypot(b2[0] - f1[0], b2[1] - f1[1]) - 1), r3(H.대웅전.ry)];
   const gateIn = backOf(H.진여문), nuOut = front(H.법왕루);
   const lane = [rel(gateIn), rel(nuOut)];
+  // The wooded hill behind the temple (Sudosan's foot, Yozi's aerial photo):
+  // low mounds round the north and west edges, each shrunk until it is
+  // 1 m clear of every hall, the Buddha's plaza and its wall. You can't walk
+  // up them (blockers); their trees are the model's.
+  const keep = [
+    ...Object.values(H).map((h) => { const [x, z] = L([h.x, h.z]); return corners({ ...h, x, z }, BASE + 1); }),
+    [[-PLAZA.w / 2 - 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, PLAZA.l - PLAZA.statue + 1], [-PLAZA.w / 2 - 1, PLAZA.l - PLAZA.statue + 1]].map(toMap),
+  ];
+  const hills = [];
+  for (const [wx, wz, r0, h0] of HILLS) {
+    const [x, z] = L([wx, wz]);
+    let r = r0;
+    while (r > 3 && keep.some((poly) => overlap(poly, ring(x, z, r, r, 10)))) r -= 0.25;
+    if (r <= 3) continue;
+    const h = r1(h0 * Math.min(1, r / r0 + 0.2));
+    hills.push([...rel([x, z]), r1(r), h]);
+    blockers.push({ p: ring(x, z, r * 0.8, r * 0.8, 10) });
+  }
   const landmark = {
     type: 'bongeunsa', x: O[0], z: O[1], ry: 0,
-    halls: list, nu,
+    halls: list, nu, hills,
     gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)],
     iljumun: [...rel([ix, iz]), r3(H.진여문.ry)],
     canopy, lane,
@@ -202,6 +226,8 @@ export function bongeunsa(local, street = () => Infinity) {
   // The ground: the temple's stone-paved yards; woods on the hill in the north and
   // the west (trees keep off the halls and the Buddha's plaza by themselves).
   const grounds = local(BES.grounds);
+  // (and a band of trees along the east edge, beyond Jijangjeon and Seonbuldang)
+  const eastWoods = local([[59, 806], [63, 806], [62, 830], [59, 837], [56, 841], [57, 812]]);
   const woods = local([[-14, 813], [-7, 805], [2, 798], [12, 793], [21, 790], [30, 788], [59, 778], [66, 792], [48, 796], [32, 798], [19, 802], [18, 816], [8, 818], [7, 830], [5, 834], [0, 835], [-3, 827], [-14, 827]]);
   // The Maitreya Buddha is its own landmark, so the woods keep off its plaza
   // (clear: core/world.js) and the far culling knows where it stands.
@@ -223,7 +249,7 @@ export function bongeunsa(local, street = () => Infinity) {
   ];
   return {
     buildings, blockers, landmarks: [landmark, buddha, sign], pois,
-    areas: [{ k: 'stone', p: grounds }, { k: 'park', trees: true, p: woods }, ...areas],
+    areas: [{ k: 'stone', p: grounds }, { k: 'park', trees: true, p: woods }, { k: 'park', trees: true, p: eastWoods }, ...areas],
     grounds,
   };
 }

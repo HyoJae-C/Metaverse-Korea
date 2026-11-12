@@ -259,6 +259,22 @@ function gwaneum(g, [x, z]) {
   g.add(p);
 }
 
+// A low wooded mound behind the temple: a squashed half ball with a few
+// chunky blob trees on it (they're only backdrop, so low-poly and baked in).
+const TREE = ['#4f8a45', '#5e9a4c', '#447a3e'];
+function hill(g, x, z, r, h) {
+  const m = add(g, new THREE.SphereGeometry(1, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), '#86b066', x, 0, z);
+  m.scale.set(r, h, r);
+  const n = Math.max(3, Math.round(r * r / 12));
+  for (let i = 0; i < n; i++) {
+    const a = i * 2.4 + x, d = r * 0.7 * Math.sqrt((i + 0.5) / n);
+    const tx = x + Math.cos(a) * d, tz = z + Math.sin(a) * d, ty = h * Math.sqrt(1 - (d / r) ** 2);
+    const s = 1.6 + ((i * 7) % 5) * 0.25;
+    const crown = add(g, new THREE.IcosahedronGeometry(s, 0), TREE[i % 3], tx, ty + s * 1.1, tz);
+    crown.scale.set(1, 1.15, 1);
+  }
+}
+
 export function buildTemple(g, l) {
   const halls = new THREE.Group();
   g.add(halls);
@@ -279,6 +295,7 @@ export function buildTemple(g, l) {
     lamps.push(lanternCanopy(c, w, d));
   }
   if (l.lane) lamps.push(lanternLane(own, l.lane[0], l.lane[1]));
+  for (const h of l.hills || []) hill(own, ...h);
   bakeColors(own, lamps);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
 }

@@ -81,3 +81,15 @@ test('the Buddha\'s plaza is clear of every hall', () => {
   const plaza = [[-pw / 2, pc - pl / 2], [pw / 2, pc - pl / 2], [pw / 2, pc + pl / 2], [-pw / 2, pc + pl / 2]].map(([u, v]) => world([buddha.x + u * c + v * s, buddha.z - u * s + v * c]));
   for (const [n, h] of Object.entries(H)) assert.ok(!overlap(plaza, corners(h, 0.35)), `${n} off the plaza`);
 });
+
+test('the wooded hill behind the temple keeps off the halls and the Buddha\'s plaza', () => {
+  assert.ok(temple.hills.length >= 6, `${temple.hills.length} mounds`);
+  for (const [hx, hz, r, h] of temple.hills) {
+    assert.ok(h >= 3 && h <= 6, `mound ${h} m high`);
+    const [wx, wz] = world([temple.x + hx, temple.z + hz]);
+    for (const [n, hl] of Object.entries(H)) {
+      assert.ok(Math.min(...corners(hl, 0).map(([x, z]) => Math.hypot(x - wx, z - wz))) > r, `a mound off ${n}`);
+    }
+    assert.ok(Math.hypot(wx - (buddha.x + ox), wz - (buddha.z + oz)) > r + 4, 'a mound off the Buddha');
+  }
+});
