@@ -20,7 +20,7 @@ export const SHOW_SECONDS = 20 * 60; // 20 minutes of fireworks (t = 0 … 1200)
 export const DUSK_SECONDS = 180; // before the start: Yeouido's sky darkens
 export const DAWN_SECONDS = 180; // after the end: it brightens again
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
-export const RISE = 1.2; // seconds a shell takes to climb before it bursts
+export const RISE = 1.7; // seconds a shell takes to climb before it bursts (long enough to follow its tail up: Yozi, the climb is half the fun)
 
 // How dark Yeouido's sky is t seconds into a show: 0 = day, 1 = night.
 export function nightAt(t) {
@@ -96,18 +96,19 @@ export const FINALE_TIME = 1110;
 export const ACTS = [
   { from: 0, to: 12, gap: [1.3, 1.5], kinds: ['willow'], volley: [1, 3, 3], name: 'curtain up: a gold willow from each barge' },
   { from: 12, to: 150, gap: [1, 1.4], kinds: ['peony', 'peony', 'pistil', 'ring'], mono: true, cluster: [2, 3], volley: [0.2, 3, 5], fans: 0.06, name: 'opening: big flowers stacked' },
-  { from: 150, to: 330, gap: [0.8, 1.2], kinds: ['pistil', 'dahlia', 'kamuro', 'flower', 'butterfly', 'double', 'peony'], cluster: [1, 2, 2, 3], volley: [0.2, 3, 3], fans: 0.04, name: 'act 1: shapes' },
+  { from: 150, to: 330, gap: [0.8, 1.2], kinds: ['pistil', 'dahlia', 'kamuro', 'willow', 'double', 'peony', 'peony'], cluster: [1, 2, 2, 3], volley: [0.2, 3, 3], fans: 0.04, name: 'act 1: shapes' },
   { from: 330, to: 360, gap: [0.3, 0.5], kinds: ['small'], cluster: [3, 4, 5], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
   { from: 360, to: 540, gap: [0.6, 1], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'peony'], cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.05, name: 'act 2: colours and spirals' },
   { from: 540, to: 600, gap: [0.8, 1.2], kinds: ['small', 'double', 'peony', 'rainbow'], cluster: [2, 3], volley: [1, 5, 7], together: true, fans: 0.35, name: 'highlight: every barge at once, fans on the water' },
-  { from: 600, to: PHOTO_TIME[0], gap: [0.6, 0.9], kinds: ['pistil', 'flower', 'butterfly', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro', 'peony'], cluster: [1, 2, 2, 3], volley: [0.3, 3, 5], fans: 0.04, name: 'act 3: everything' },
+  { from: 600, to: PHOTO_TIME[0], gap: [0.6, 0.9], kinds: ['pistil', 'peony', 'kamuro', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro', 'peony'], cluster: [1, 2, 2, 3], volley: [0.3, 3, 5], fans: 0.04, name: 'act 3: everything' },
   { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [1, 1.4], kinds: ['willow'], cluster: [1, 2], volley: [0.35, 3, 5], beats: false, name: 'photo time: gold willows' },
-  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [1, 0.3], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'flower', 'small'], ramp: true, cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.08, name: 'build-up: faster and faster' },
+  { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [1, 0.3], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'dahlia', 'small'], ramp: true, cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.08, name: 'build-up: faster and faster' },
   { from: FINALE_TIME, to: 1170, gap: [0.35, 0.5], kinds: ['peony', 'willow', 'rainbow', 'peony', 'palm', 'pistil', 'ring'], big: true, cluster: [2, 3, 3], volley: [0.5, 5, 9], fans: 0.25, name: 'finale: the sky full' },
   { from: 1170, to: 1190, gap: [0.15, 0.25], kinds: ['small'], cluster: [4, 5, 6], volley: [0.5, 7, 9], fans: 0.15, name: 'finale: a wall of small colours' },
   { from: 1190, to: SHOW_SECONDS, gap: [0.5, 0.6], kinds: ['kamuro'], big: true, volley: [1, 7, 9], fans: 1, name: 'finale: a gold curtain over the whole river' },
 ];
-// (No hearts, stars or smiles: those are the drone show's. Yozi.)
+// (No hearts, stars, smiles, butterflies or flowers: pictures are the drone
+// show's, and in fireworks they looked childish. Yozi.)
 // Rings are fun once in a while but got tiring when they kept coming
 // (Yozi: "원형이랑 행성모양이 너무자주나와"; the saturn is gone altogether:
 // "행성 없애버려"), so when one is drawn it
@@ -128,7 +129,7 @@ export function sweep(order, i, n) {
 // The low fans on the barges: warm colours, like the photos.
 const FAN_COLORS = ['#ffc861', '#ff9ac8', '#ffffff', '#ff9a3c'];
 
-export const KINDS = ['fan', 'peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'flower', 'butterfly', 'double', 'spiral', 'palm', 'rainbow'];
+export const KINDS = ['fan', 'peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'double', 'spiral', 'palm', 'rainbow'];
 export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
 export const GOLD = '#ffc861';
 // Colours that look good together in one burst: its stars start in the
@@ -142,8 +143,8 @@ const PARTNERS = {
 };
 const partner = (c, r) => { const p = PARTNERS[c] || COLORS; return p[Math.floor(r() * p.length)]; };
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
-export const LIFE = { fan: 1.8, peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, flower: 2.8, butterfly: 2.8, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
-export const RADIUS = { fan: 26, peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, flower: 26, butterfly: 26, double: 26, spiral: 26, palm: 30, rainbow: 28 };
+export const LIFE = { fan: 1.8, peony: 2.6, ring: 2.4, pistil: 2.6, dahlia: 3, kamuro: 5.2, willow: 4.6, small: 1.5, double: 2.6, spiral: 2.8, palm: 3.2, rainbow: 2.6 };
+export const RADIUS = { fan: 26, peony: 28, ring: 26, pistil: 28, dahlia: 30, kamuro: 34, willow: 30, small: 11, double: 26, spiral: 26, palm: 30, rainbow: 28 };
 
 function rng(seed) {
   let a = seed >>> 0;
