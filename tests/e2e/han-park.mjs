@@ -1,7 +1,7 @@
 // End-to-end check: a Han River park laid straight on the street
 // (game/han-parks.js), each in turn. You never leave the street: no
 // room, no door. Walking round each park you can sit on its steps or a bench, buy at the kiosk, cook ramen, look at the food
-// trucks' goods, fish (on the pier too), sell your catch, and take a duck
+// trucks' goods, fish (on the pier too), sell your catch, buy bait, and take a duck
 // boat out while your dog waits on the bank.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/han-park.mjs http://localhost:4173/ [screenshot dir]
@@ -102,6 +102,13 @@ try {
     const fb = await page.evaluate(() => __mk.fishBuySpot());
     await page.evaluate(([x, z]) => __mk.place(x, z), fb);
     await page.waitForFunction(() => (__mk.choices()?.join(' ') || __mk.action() || '').includes('🐟'), null, { timeout: 5000 }).catch(() => fail('no fish buyer'));
+    // The bait stall beside it (core/bait.js), with its old fisherman.
+    if (L.bait) {
+      const bs = await page.evaluate(() => __mk.baitSpot());
+      if (!bs) fail('no bait stall');
+      await page.evaluate(([x, z]) => __mk.place(x, z), bs);
+      await page.waitForFunction(() => (__mk.choices()?.join(' ') || __mk.action() || '').includes('🪱'), null, { timeout: 5000 }).catch(() => fail('no bait stall to buy at'));
+    }
 
     // A duck boat out on the river; the dog waits on the bank.
     const hp = await page.evaluate(() => __mk.hanPark());

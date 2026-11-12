@@ -10,8 +10,10 @@
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
 //   { kind: 'lipstick', c: '<lip shade>', sips: 1-5 (uses left) } (core/lipstick.js)
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
+//   { kind: 'bait', b: '<bait id>', sips: 1-5 (left) } (fishing bait, core/bait.js)
 
 import { lipstickEntry } from './lipstick.js';
+import { baitEntry } from './bait.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
@@ -46,6 +48,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
     return sips > 0 && typeof e.p === 'string' && isPerfume(e.p) ? { kind: 'perfume', p: e.p, sips, name: String(e.name || '').slice(0, 60) } : null;
   }
   if (e.kind === 'lipstick') return lipstickEntry(e);
+  if (e.kind === 'bait') return baitEntry(e);
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);

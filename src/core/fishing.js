@@ -897,11 +897,24 @@ export function luckySpot(n, now = Date.now()) {
   x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
   return ((x ^ (x >>> 16)) >>> 0) % n;
 }
-export function rollFish(rand = Math.random, lucky = false, park = null) {
+// With a bait on the hook (core/bait.js): ★3 and up bite `bait.rare` % of
+// the time in all, `bait.legend` % of it the park's ★5, the rest shared by
+// ★3 and ★4 as usual; ★2 keeps its share (the lucky spot's, there) and ★1
+// gives up the difference. Each kind keeps its place within its tier.
+const tierChance = (r, park, lucky) => AVAILABLE_FISH.reduce((a, q) => a + (q.rarity === r ? (lucky ? luckyChance(q, park) : chanceAt(q, park)) : 0), 0);
+export function baitedChance(f, park = null, lucky = false, bait = null) {
+  const c = lucky ? luckyChance(f, park) : chanceAt(f, park);
+  if (!bait || !c) return c;
+  const t = tierChance(f.rarity, park, lucky), rest = bait.rare - bait.legend, r34 = TIER_SHARE[3] + TIER_SHARE[4];
+  const want = f.rarity >= 5 ? bait.legend : f.rarity === 4 ? rest * TIER_SHARE[4] / r34 : f.rarity === 3 ? rest * TIER_SHARE[3] / r34
+    : f.rarity === 2 ? t : 100 - bait.rare - tierChance(2, park, lucky);
+  return c * Math.max(0, want) / t;
+}
+export function rollFish(rand = Math.random, lucky = false, park = null, bait = null) {
   let r = rand() * 100;
   let last = null;
   for (const f of AVAILABLE_FISH) {
-    const c = lucky ? luckyChance(f, park) : chanceAt(f, park);
+    const c = bait ? baitedChance(f, park, lucky, bait) : lucky ? luckyChance(f, park) : chanceAt(f, park);
     if (!c) continue;
     last = f; r -= c; if (r < 0) return f;
   }
@@ -923,18 +936,19 @@ export const pityChance = (base, n) => (n < PITY_START ? base : n >= PITY_CAP - 
   : base + (100 - base) * ((n - PITY_START) / (PITY_CAP - 1 - PITY_START)) ** 4);
 // A park's ★5 legend (null: a park with none of its own).
 export const parkLegend = park => (PARK_FISH[park]?.fish || []).map(fishById).find(f => f?.released && f.rarity === 5) || null;
-export function rollCatch(rand = Math.random, lucky = false, park = null, pityBites = 0) {
+// bait: the bait used on this bite (core/bait.js), or null for the plain one.
+export function rollCatch(rand = Math.random, lucky = false, park = null, pityBites = 0, bait = null) {
   const forced = fishById(takeForcedCatch());
   if (forced) return { ...forced, sure: true };
   const step = takeTourStep(); // the developer fish-book tour: boot, then every kind in book order
   if (step >= 0) { const i = step % (FISH.length + 1); return i === 0 ? TRASH : { ...FISH[i - 1], sure: true }; }
   const legend = pityBites >= PITY_START && parkLegend(park);
   if (legend) {
-    const base = (lucky ? luckyChance(legend, park) : chanceAt(legend, park)) * (1 - (lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE));
+    const base = baitedChance(legend, park, lucky, bait) * (1 - (lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE));
     if (rand() * 100 < pityChance(base, pityBites) - base) return legend; // the extra on top of the usual roll
   }
   const value = rand(), trash = lucky ? LUCKY_TRASH_CHANCE : TRASH_CHANCE;
-  return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park);
+  return value < trash ? TRASH : rollFish(() => (value - trash) / (1 - trash), lucky, park, bait);
 }
 export const REEL_SECONDS = 5;
 // How a bite feels before it's landed: 1 light (★1, and the old boot),
