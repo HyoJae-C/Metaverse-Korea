@@ -47,7 +47,7 @@ export const ID = {
   'tip.4': "🔤 Pengaturan → Terjemahkan papan nama toko menampilkan papan nama dalam bahasamu.",
   'tip.5': "🎣 Memancing di taman Sungai Han, lalu jual tangkapanmu di pasar ikan.",
   'tip.6': "📖 Ambil buku dan duduk di mana saja untuk membacanya.",
-  'tip.7': "🎆 Malam tiba setiap 3 jam, dan setiap malam ada pertunjukan: kembang api di Yeouido dan drone di Ttukseom bergantian, dan sekali sehari parade lentera dari Cheonggyecheon ke Jogyesa.",
+  'tip.7': "🎆 Malam tiba setiap 3 jam, tapi pertunjukan jarang: sekali sehari parade lentera dari Cheonggyecheon ke Jogyesa, lalu larut malam itu kembang api di Yeouido atau drone di Ttukseom, bergantian tiap hari. Pemberitahuan di atas memberi tahu waktunya.",
   'tip.8': "📒 Buku anggaran di buku catatan atau dompetmu menunjukkan ke mana uangmu pergi.",
   'taxi.here': 'tempat yang kamu pilih',
   'taxi.shopWhere': "Tempat: {gu}",

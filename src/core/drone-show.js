@@ -11,9 +11,8 @@
 
 import { smooth, showStarts, cycleNumber, droneNumber, DRONES } from './show-clock.js';
 
-// When: every other night of the game's three-hour day (show-clock.js),
-// taking turns with the Yeouido fireworks: three times a real day (the
-// fourth, 20:10 KST, is the lantern parade's).
+// When: 23:10 KST every other day, taking turns with the Yeouido
+// fireworks (show-clock.js PLAN): rare, so it feels special.
 export const SHOW_SECONDS = 20 * 60; // the show itself (t = 0 … 1200)
 export const LIFT_SECONDS = 180; // before the start: the sky darkens, the drones rise
 export const LAND_SECONDS = 180; // after the end: they land, the sky brightens

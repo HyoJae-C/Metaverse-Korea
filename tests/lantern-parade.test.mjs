@@ -16,7 +16,7 @@ const R = paradeRoutes(stream, off);
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
 const local = (w) => [w.x - off[0], w.z - off[1]];
 
-test('once a day, 20:10 KST, in the drone show\'s place', () => {
+test('once a day, 20:10 KST, every day', () => {
   const start = nextParade(Date.UTC(2026, 10, 12));
   assert.ok(paradeAt(start - ALERT_SECONDS * 1000 + 1000), 'the notice window');
   assert.equal(paradeAt(start - (ALERT_SECONDS + 5) * 1000), null);

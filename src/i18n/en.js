@@ -46,7 +46,7 @@ export const EN = {
   'tip.4': "🔤 Settings → Translate shop signs shows the signs in your language.",
   'tip.5': "🎣 Fish at the Han River parks, then sell your catch at the fish market.",
   'tip.6': "📖 Pick up a book and sit down anywhere to read it.",
-  'tip.7': "🎆 Night falls every 3 hours, and every night has a show: fireworks over Yeouido and a drone show at Ttukseom take turns, and once a day there's the lantern parade from Cheonggyecheon to Jogyesa.",
+  'tip.7': "🎆 Night falls every 3 hours, but shows are rare: once a day there's the lantern parade from Cheonggyecheon to Jogyesa, and later that night fireworks over Yeouido or a drone show at Ttukseom, taking turns day by day. The notice at the top tells you when.",
   'tip.8': "📒 The Budget book in your notebook or wallet shows where your money went.",
   "taxi.here": "the spot you picked",
   'taxi.shopWhere': "Place: {gu}",

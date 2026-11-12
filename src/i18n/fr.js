@@ -47,7 +47,7 @@ export const FR = {
   'tip.4': "🔤 Réglages → Traduire les enseignes affiche les enseignes dans ta langue.",
   'tip.5': "🎣 Pêche dans les parcs du fleuve Han, puis vends tes prises au marché aux poissons.",
   'tip.6': "📖 Prends un livre et assieds-toi n'importe où pour le lire.",
-  'tip.7': "🎆 La nuit tombe toutes les 3 heures, et chaque nuit a son spectacle : feux d'artifice à Yeouido et drones à Ttukseom à tour de rôle, et une fois par jour le défilé des lanternes de Cheonggyecheon à Jogyesa.",
+  'tip.7': "🎆 La nuit tombe toutes les 3 heures, mais les spectacles sont rares : une fois par jour le défilé des lanternes de Cheonggyecheon à Jogyesa, puis plus tard dans la nuit les feux d'artifice à Yeouido ou les drones à Ttukseom, un jour sur deux chacun. L'avis en haut indique l'heure.",
   'tip.8': "📒 Le livre de comptes, dans ton carnet ou ton portefeuille, montre où est passé ton argent.",
   'taxi.here': 'l\'endroit choisi',
   'taxi.shopWhere': "Lieu : {gu}",
