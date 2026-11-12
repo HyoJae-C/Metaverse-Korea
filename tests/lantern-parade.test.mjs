@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { paradeAt, nextParade, paradeRoutes, paradeState, along, yardSpot, SHOW_SECONDS, ALERT_SECONDS, ROWS, PER_ROW, FLOATS } from '../src/core/lantern-parade.js';
+import { paradeAt, nextParade, paradeRoutes, paradeState, along, yardSpot, figureLitAt, SHOW_SECONDS, ALERT_SECONDS, ROWS, PER_ROW, FLOATS } from '../src/core/lantern-parade.js';
 import { fireworksAt } from '../src/core/fireworks-show.js';
 import { droneShowAt } from '../src/core/drone-show.js';
-import { streamAt } from '../src/core/stream.js';
+import { streamAt, frameOf } from '../src/core/stream.js';
 import { JOGYESA as J } from '../src/data/jogyesa.js';
 
 const map = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url), 'utf8'));
@@ -16,14 +16,15 @@ const R = paradeRoutes(stream, off);
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
 const local = (w) => [w.x - off[0], w.z - off[1]];
 
-test('a night show of its own, between the fireworks and the drones', () => {
+test('once a day, 20:10 KST, in the drone show\'s place', () => {
   const start = nextParade(Date.UTC(2026, 10, 12));
   assert.ok(paradeAt(start - ALERT_SECONDS * 1000 + 1000), 'the notice window');
   assert.equal(paradeAt(start - (ALERT_SECONDS + 5) * 1000), null);
   assert.ok(paradeAt(start + 60e3).on);
   assert.equal(fireworksAt(start + 60e3), null);
   assert.equal(droneShowAt(start + 60e3), null);
-  assert.equal(nextParade(start + 1000) - start, 9 * 3600e3, 'every 9 hours');
+  assert.equal(nextParade(start + 1000) - start, 24 * 3600e3, 'once a day');
+  assert.equal(new Date(start).toISOString().slice(11, 16), '11:10', '20:10 KST');
 });
 
 test('the column waits down on the Cheonggyecheon walkway, then climbs out', () => {
@@ -73,5 +74,17 @@ test('the floats queue on Ujeongguk-ro beside the walkers, not on them', () => {
   for (let t = 300; t < SHOW_SECONDS; t += 20) {
     const T = paradeState(R, off, t);
     for (const f of T.floats) for (const w of T.walkers) assert.ok(Math.hypot(f.x - w.x, f.z - w.z) > 1.6, `float on a walker at t ${t}`);
+  }
+});
+
+test('twelve marchers; each Cheonggyecheon figure lights up as the first row passes it', () => {
+  assert.equal(ROWS * PER_ROW, 12);
+  const F = frameOf(stream);
+  for (const f of s0.lanterns.figures) {
+    const t = figureLitAt(f.u);
+    assert.ok(t > 0 && t < SHOW_SECONDS * 0.5, `figure at u ${f.u} lit at ${t.toFixed(0)} s`);
+    if (f.u < 113.5) continue; // (west of the stairs: the light runs on along the water)
+    const lead = paradeState(R, off, t).walkers[0], [u] = F.toStream(lead.x, lead.z);
+    assert.ok(Math.abs(u - f.u) < 3, `the first row at u ${u.toFixed(1)} when the figure at u ${f.u} lights`);
   }
 });

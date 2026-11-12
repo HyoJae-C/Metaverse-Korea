@@ -17,14 +17,14 @@ test('the pinned show notice names the show on now, or the soonest one', () => {
   const on = nextShow(fw + 5 * 60e3);
   assert.deepEqual(on, { kind: 'fireworks', start: fw, on: true });
   assert.equal(showNoticeText(on, fw + 5 * 60e3, t, clock).text, 'show.now{"m":15}');
-  // Right after it ends, the next one is the lantern parade, a whole game day
-  // later, then the drone show.
+  // Right after it ends, the next one is a whole game day later: the drone
+  // show, or once a day the lantern parade.
   const after = nextShow(fw + 21 * 60e3);
-  assert.equal(after.kind, 'lanterns');
   assert.equal(after.start, fw + CYCLE_MS);
-  assert.deepEqual(nextShow(after.start + 21 * 60e3), { kind: 'drones', start: fw + 2 * CYCLE_MS, on: false });
-  const parade = nextShow(after.start + 60e3);
-  assert.equal(showNoticeText(parade, after.start + 60e3, t, clock).label, 'show.lanterns{}');
+  assert.equal(after.kind, after.start === ln ? 'lanterns' : 'drones');
+  const parade = nextShow(ln + 60e3);
+  assert.deepEqual(parade, { kind: 'lanterns', start: ln, on: true });
+  assert.equal(showNoticeText(parade, ln + 60e3, t, clock).label, 'show.lanterns{}');
 });
 
 test('the countdown reads minutes, or hours and minutes, with the local time', () => {

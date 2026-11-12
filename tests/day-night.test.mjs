@@ -42,13 +42,13 @@ test('darkness: day in the day, real dark all night, light again in the morning'
   assert.ok(darkness(at(20)) === 0, 'day by the end of the morning');
 });
 
-test('every night has a show, fireworks, lanterns and drones taking turns', () => {
+test('every night has a show: fireworks and drones taking turns, the lantern parade at 20:10 KST', () => {
   const shows = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => {
     const t = C0 + k * CYCLE_MS + SHOW_FROM + 5 * MIN;
     assert.equal(darkness(t), 1, 'in the dark');
     return fireworksAt(t) ? 'F' : droneShowAt(t) ? 'D' : paradeAt(t) ? 'L' : '-';
   }).join('');
-  assert.ok(['FLDFLDFL', 'LDFLDFLD', 'DFLDFLDF'].includes(shows), shows);
+  assert.equal(shows, 'FDFLFDFD', '(from 0:00 UTC, 9:00 KST)');
   // both done before the morning
   assert.ok(SHOW_FROM + 23 * MIN < CYCLE_MS);
 });

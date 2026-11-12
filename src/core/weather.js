@@ -67,9 +67,13 @@ const NIGHT_LIGHT = {
 const SUNSET_LIGHT = { hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
 const glowing = []; // [material, strength, base]: emissive that comes on after dark
 // base: how much it glows by day (0: not at all), strength: at night.
+// → the entry: its strength (e[1]) can change later (the lantern parade
+// lights Cheonggyecheon's figures one by one).
 export function glowAtNight(material, strength = 1, base = 0) {
+  const e = [material, strength, base];
   material.emissiveIntensity = base;
-  glowing.push([material, strength, base]);
+  glowing.push(e);
+  return e;
 }
 
 const SKY = {

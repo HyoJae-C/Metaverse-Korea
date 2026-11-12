@@ -15,7 +15,7 @@ export function createLanternParadeNear(game) {
   return {
     // Every frame on the street.
     update(p, dt) {
-      if (parade) { parade.update(); return; }
+      if (parade) { parade.update(Date.now(), dt); return; }
       if (!ok || loading || (check -= dt) > 0) return;
       check = 1;
       if (!paradeAt() || Math.hypot(p.x - MID[0], p.z - MID[1]) > NEAR) return;

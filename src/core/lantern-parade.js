@@ -11,7 +11,7 @@
 // the stairs: they wait on Cheonggyecheon-ro and roll in behind their part
 // of the column, then stop on Ujeongguk-ro in front of the gate.
 //
-// It is one of the three night shows (show-clock.js), every 9 hours. Before
+// It is the night show once a day, at 20:10 KST (show-clock.js). Before
 // the start (the notice window) the column stands ready on the walkway.
 
 import { showStarts, LANTERNS } from './show-clock.js';
@@ -22,8 +22,10 @@ export const SHOW_SECONDS = 20 * 60; // from setting off to the end (t = 0 … 1
 export const ALERT_SECONDS = 600; // the game-wide "in 10 minutes" notice
 export const AFTER_SECONDS = 120; // they stay in the yard a little after
 export const SPEED = 0.55; // m/s, a slow festival walk
-export const ROWS = 24, PER_ROW = 2, ROW_GAP = 1.6, SIDE = 0.55; // the column: rows of two
-export const FLOATS = ['lotus', 'carp', 'tiger', 'moon']; // core/lanterns.js figures, one behind every sixth row
+export const ROWS = 6, PER_ROW = 2, ROW_GAP = 1.7, SIDE = 0.6; // the column: twelve people in rows of two (Yozi: 12 is enough)
+export const FLOATS = ['lotus', 'carp', 'tiger', 'moon']; // core/lanterns.js figures
+export const FLOAT_ROWS = [1, 3, 5, 5]; // the row each float rolls behind (the last two at the back, one after the other)
+const GAP = 7; // the walkers leave this much room behind a row with a float
 export const LIGHT_SECONDS = 40; // the canopy lights up over this long, from the gate side
 
 // The parade around `now`, from the notice until it's over: { start (ms),
@@ -85,11 +87,24 @@ export function paradeRoutes(stream, off) {
   return { walkers, floats, meet: { w: meet(walkers), f: meet(floats) } };
 }
 
+// When (seconds from the start) the first row passes the festival figure at
+// `u` on the walkway, and it lights up; the ones further west, past the
+// stairs, light up after, one by one, as if the light ran on along the water.
+export const SWEEP = 3; // m/s, that light past the stairs
+export function figureLitAt(u) {
+  const startU = 300; // (the first row starts at u 300)
+  if (u >= WALK.to) return (startU - u) / SPEED;
+  return (startU - WALK.to) / SPEED + (WALK.to - u) / SWEEP;
+}
+
 // Where each marcher stands in the yard once in: rows facing Daeungjeon.
 export function yardSpot(i) {
-  const cols = 8, r = Math.floor(i / cols), c = i % cols;
-  return [J.canopy.x0 + 10 + c * 2.1, J.canopy.z0 + 6 + r * 1.8]; // (clear of the pagoda tree, the baby Buddha and the stele)
+  const cols = 6, r = Math.floor(i / cols), c = i % cols;
+  return [J.canopy.x0 + 11 + c * 2.1, J.canopy.z0 + 6 + r * 1.9]; // (clear of the pagoda tree, the baby Buddha and the stele)
 }
+
+// How far back a row walks: its place, plus the room left for floats ahead.
+const rowBack = (row) => row * ROW_GAP + new Set(FLOAT_ROWS.filter((r) => r < row)).size * GAP;
 
 // Everyone's place at t seconds (negative: the column waits at the start).
 // → { walkers: [{ x, y, z, ry, walking }], floats: [{ x, y, z, ry, kind }], lead }
@@ -100,7 +115,7 @@ export function paradeState(R, off, t) {
   const walkers = [];
   const gate = R.walkers.len;
   for (let row = 0; row < ROWS; row++) {
-    const s = startS + v - row * ROW_GAP - Math.floor(row / 6) * 7; // a gap where a float rolls along up above
+    const s = startS + v - rowBack(row); // (gaps where the floats roll along up above)
     for (let k = 0; k < PER_ROW; k++) {
       const i = row * PER_ROW + k, side = (k - (PER_ROW - 1) / 2) * 2 * SIDE;
       if (s < gate) {
@@ -117,8 +132,8 @@ export function paradeState(R, off, t) {
   // before their turn they wait at the start of the road; they stop in a
   // queue before the gate.
   const floats = FLOATS.map((kind, f) => {
-    const row = (f + 1) * 6 - 1;
-    const past = startS + v - row * ROW_GAP - Math.floor(row / 6) * 7 - R.meet.w - 3.5; // 3.5 m behind its row
+    const row = FLOAT_ROWS[f], behind = FLOAT_ROWS.slice(0, f).filter((r) => r === row).length;
+    const past = startS + v - rowBack(row) - R.meet.w - 3.5 - behind * 8; // 3.5 m behind its row (8 more behind another float)
     const s = Math.min(R.floats.len - GATE_BACK - f * 8, R.meet.f + past);
     const [x, y, z, ry] = along(R.floats, Math.max(-f * 8, s)); // (waiting in a queue back along the road)
     return { x, y, z, ry, kind };

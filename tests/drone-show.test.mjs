@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { droneShowAt, nextDroneShow, nightAt, SHOW_SECONDS, SKY, BARGE } from '../src/core/drone-show.js';
 import { fireworksAt } from '../src/core/fireworks-show.js';
-import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, SHOW_EVERY, DRONES, cycleNumber, cycleMs } from '../src/core/show-clock.js';
+import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, DRONES, cycleNumber, cycleMs, showOf } from '../src/core/show-clock.js';
+import { paradeAt } from '../src/core/lantern-parade.js';
 import { WATER } from '../src/core/duck-boat.js';
 import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf, routineTurn } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
@@ -11,9 +12,12 @@ import { STAMPS } from '../src/data/stamps.js';
 import { STAND_TIMES } from '../src/core/stamp-stands.js';
 
 const MIN = 60e3;
-// A drone show's start: drone shows are on every third cycle.
-const N0 = cycleNumber(Date.UTC(2026, 10, 9)), N = N0 - (N0 % SHOW_EVERY) + DRONES;
-const DRONE = (k = 0) => (N + SHOW_EVERY * k) * CYCLE_MS + SHOW_FROM;
+// A drone show's start: drone shows are on the odd cycles, but for the one
+// at 20:10 KST (the lantern parade's): the k-th from 2026-11-09 03:10 KST on.
+const N = (cycleNumber(Date.UTC(2026, 10, 9)) & ~1) + 1;
+const DRONES_ = [];
+for (let n = N; DRONES_.length < 12; n += 2) if (showOf(n) === DRONES) DRONES_.push(n * CYCLE_MS + SHOW_FROM);
+const DRONE = (k = 0) => DRONES_[k];
 const at = (min, k = 0) => DRONE(k) + min * MIN; // minutes from a show's start
 
 test('a 20-minute show every other night, taking turns with the Yeouido fireworks', () => {
@@ -43,10 +47,15 @@ test('night only around the show: dark from 1 minute before to the landing', () 
   assert.equal(droneShowAt(at(-1, 1)).start, DRONE(1)); // the next one
 });
 
-test('the next show: nine hours later', () => {
+test('the next show: three a day, 20:10 KST left to the lantern parade', () => {
   assert.equal(nextDroneShow(at(5)), DRONE(1));
   assert.equal(nextDroneShow(at(-60)), DRONE());
-  assert.equal(DRONE(1) - DRONE(), 540 * MIN);
+  assert.equal(DRONE(1) - DRONE(), 720 * MIN, 'over the parade\'s night');
+  assert.equal(DRONE(2) - DRONE(1), 360 * MIN);
+  assert.equal(DRONE(3) - DRONE(), 24 * 60 * MIN);
+  const kst = (t) => new Date(t + 9 * 3600e3).toISOString().slice(11, 16);
+  assert.deepEqual([0, 1, 2].map((k) => kst(DRONE(k))).sort(), ['02:10', '08:10', '14:10']);
+  assert.ok(paradeAt(DRONE() + 2 * CYCLE_MS + 60e3)?.on, 'the parade at 20:10 KST');
 });
 
 test('the drones fly in front of the bridge, past where the duck boats go', () => {
@@ -108,17 +117,18 @@ test('hello in Korean, English, Japanese, Chinese, then one more language each s
   assert.deepEqual(words.slice(i, i + 5), ['안녕하세요', 'HELLO', 'こんにちは', '你好', seen[3]]);
 });
 
-test('the fifth hello goes round the languages, one show after another, French first', () => {
+test('the turn of the fifth hello starts with French on 2026-11-12 02:10 KST', () => {
   useShow(show);
-  let first = show.nextDroneShow(Date.UTC(2026, 10, 12, 3, 0));
-  while (helloOf(first) !== 'BONJOUR') first = show.nextDroneShow(first + 1000);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0));
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
+  assert.equal(helloOf(first), 'BONJOUR');
   assert.equal(helloOf(show.nextDroneShow(first + 1000)), 'สวัสดี');
 });
 
 test('routines 1 and 2 can take turns, routine 2 first; photo pause and end at the same time', () => {
   useShow(show);
-  let first = show.nextDroneShow(Date.UTC(2026, 10, 12, 3, 0));
-  while (routineTurn(first) !== 2) first = show.nextDroneShow(first + 1000);
+  const first = show.nextDroneShow(Date.UTC(2026, 10, 11, 16, 0)); // 2026-11-12 02:10 KST
+  assert.equal(new Date(first).toISOString(), '2026-11-11T17:10:00.000Z');
   const second = show.nextDroneShow(first + 1000);
   const third = show.nextDroneShow(second + 1000);
   assert.deepEqual([routineTurn(first), routineTurn(second), routineTurn(third)], [2, 1, 2]);

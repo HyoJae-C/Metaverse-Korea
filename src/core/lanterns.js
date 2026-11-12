@@ -337,22 +337,46 @@ function instanced(parent, parts, mats4, colors = null) {
 
 // A paper figure lit from inside after dark: every part that already glows a
 // little by day (its emissive) glows in its own colour at night. Materials
-// are shared (lam's cache), so each is set up once.
+// are shared (lam's cache), so each is set up once, unless `own`: then the
+// figure gets its own copies, to be lit on its own (setFigureGlow).
+// → the glow entries (weather.js glowAtNight).
 const glowSet = new WeakSet();
-const NIGHT_GLOW = 0.85;
-export function lightUp(fig) {
+export const NIGHT_GLOW = 0.85;
+export function lightUp(fig, own = false) {
+  const copies = new Map(), out = [];
   fig.traverse((o) => {
+    if (!o.isMesh) return;
+    if (own && o.material) {
+      if (!copies.has(o.material)) copies.set(o.material, o.material.clone());
+      o.material = copies.get(o.material);
+    }
     const m = o.material;
-    if (!o.isMesh || !m?.emissive || glowSet.has(m)) return;
+    if (!m?.emissive || glowSet.has(m)) return;
     glowSet.add(m);
     const e = m.emissive, day = (0.3 * e.r + 0.6 * e.g + 0.1 * e.b) * m.emissiveIntensity;
     if (day <= 0) return; // frames, eyes: stay dark
     if (m.map) { m.emissive.set('#ffffff'); m.emissiveMap = m.map; } // glows in its own painted colours
     else m.emissive.copy(m.color);
-    const own = m.map ? 0.85 : 0.3 * m.color.r + 0.6 * m.color.g + 0.1 * m.color.b;
-    glowAtNight(m, NIGHT_GLOW, Math.min(NIGHT_GLOW, day / Math.max(0.05, own))); // the same look by day as before
+    const lum = m.map ? 0.85 : 0.3 * m.color.r + 0.6 * m.color.g + 0.1 * m.color.b;
+    out.push(glowAtNight(m, NIGHT_GLOW, Math.min(NIGHT_GLOW, day / Math.max(0.05, lum)))); // the same look by day as before
   });
+  return out;
 }
+// How bright a festival figure is at night: k × its usual glow (1: as usual;
+// below 1 its paper darkens too, as if the light inside were out). `dark`:
+// how dark it is (weather.js darkness()), so it never shows by day.
+export function setFigureGlow(fig, k, dark = 1) {
+  const shade = dark > 0.2 ? 1 - 0.85 * (1 - Math.min(1, k)) : 1;
+  for (const e of fig.glow) e[1] = NIGHT_GLOW * k;
+  for (const m of fig.mats) {
+    m.userData.paper ||= m.color.clone();
+    m.color.copy(m.userData.paper).multiplyScalar(shade);
+  }
+}
+// The festival's figures in the water, for the lantern parade to light up
+// one by one: [{ u (along the stream), glow, mats (all its own materials) }].
+let festival = [];
+export const festivalFigures = () => festival;
 
 export function buildLanternFestival(g, s) {
   const conf = s.lanterns || {}, len = s.len, hw = s.w / 2, D = s.depth || 4;
@@ -362,7 +386,8 @@ export function buildLanternFestival(g, s) {
   const M = (x, y, z, ry = 0, sc = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(sc, sc, sc));
   const decks = (s.bridges || []).map((b) => [b.u - b.w / 2 - 1, b.u + b.w / 2 + 1]);
   const onDeck = (u) => decks.some(([a, b]) => u > a && u < b);
-  // Figures in the water.
+  // Figures in the water, each with its own materials (lit one by one on parade nights).
+  if (conf.figures?.length) festival = []; // (a stream without figures leaves them be)
   for (const f of conf.figures || []) {
     const make = FIGURES[f.kind];
     if (!make) continue;
@@ -370,7 +395,9 @@ export function buildLanternFestival(g, s) {
     m.position.set(f.u, -D - 0.3, f.v || 0);
     m.rotation.y = f.ry || 0;
     root.add(m);
-    lightUp(m);
+    const glow = lightUp(m, true), mats = new Set();
+    m.traverse((o) => { if (o.isMesh && o.material?.color) mats.add(o.material); });
+    festival.push({ u: f.u, glow, mats: [...mats] });
   }
   // Cheongsachorong hanging from brackets on both railings, at street level.
   const step = conf.railing || 0;

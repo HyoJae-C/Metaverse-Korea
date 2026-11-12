@@ -106,7 +106,7 @@ const ACT3 = [
 // the show of 2026-11-12 02:10 KST (number FIRST_HELLO_SHOW): the night
 // before had Spanish.
 const HELLOS = ['BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا', 'HOLA'];
-const FIRST_HELLO_SHOW = 83074; // 2026-11-12 02:10 KST
+const FIRST_HELLO_SHOW = 62305; // 2026-11-12 02:10 KST (drone shows counted by show-clock.js droneNumber)
 export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_SHOW) % HELLOS.length; return HELLOS[(k + HELLOS.length) % HELLOS.length]; };
 
 // Two routines take turns, one per show (Yozi 2026-11-12): routine 2 at the
