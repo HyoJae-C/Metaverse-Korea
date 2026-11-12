@@ -602,6 +602,7 @@ export const AR = {
   'start.shop': 'تسوق وأناقة · سونغسو',
   'start.activity': 'نشاطات · نهر هان',
   'start.heal': 'استرخاء · غابة سيول',
+  'start.arrive': 'الوصول · محطة سيول',
   'start.any': 'أي مكان · حيث يوجد الناس',
   'start.last': 'آخر موقع: {place}',
   'start.button': 'ابدأ التجوّل',

@@ -602,6 +602,7 @@ export const FR = {
   'start.shop': 'Shopping et style · Seongsu',
   'start.activity': 'Plein air · fleuve Han',
   'start.heal': 'Détente · forêt de Séoul',
+  'start.arrive': 'Arrivée · gare de Séoul',
   'start.any': 'N\'importe où · là où il y a du monde',
   'start.last': 'Dernier lieu : {place}',
   'start.button': 'C\'est parti !',

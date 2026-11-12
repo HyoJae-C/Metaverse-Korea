@@ -605,6 +605,7 @@ export const JA = {
   'start.shop': 'ショッピング・おしゃれ · 聖水',
   'start.activity': 'アクティビティ · 漢江',
   'start.heal': 'いやし · ソウルの森',
+  'start.arrive': '到着 · ソウル駅',
   'start.any': 'どこでも · 人が多いところ',
   'start.last': '前回の場所：{place}',
   'start.button': '歩き始める',
