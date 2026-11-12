@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME,
+  SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME, FINALE_TIME,
   KINDS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
 } from '../src/core/fireworks-show.js';
 import { droneShowAt } from '../src/core/drone-show.js';
@@ -17,9 +17,9 @@ test('every other night of the game\'s 3-hour day, four a real day, never with t
   const start = FW();
   assert.equal(fireworksAt(start - (ALERT_SECONDS + 5) * 1000), null, 'nothing before the notice');
   assert.equal(fireworksAt(start - ALERT_SECONDS * 1000 + 1000).start, start, 'the 10-minute notice');
-  const mid = fireworksAt(start + 600e3);
+  const mid = fireworksAt(start + SHOW_SECONDS * 500); // (halfway)
   assert.ok(mid.on && mid.night === 1);
-  assert.equal(droneShowAt(start + 600e3), null, 'no drones the same night');
+  assert.equal(droneShowAt(start + SHOW_SECONDS * 500), null, 'no drones the same night');
   assert.equal(fireworksAt(start - 60 * 60e3), null, 'no show in the day');
   assert.equal(nextFireworks(start - 60 * 60e3), start);
   assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 6 hours later');
@@ -42,19 +42,19 @@ test('the program: the same for everyone, no long waits, a photo time and a fina
   const a = program(start), b = JSON.parse(JSON.stringify(program(start)));
   assert.deepEqual(a, b, 'one program per show');
   assert.notDeepEqual(program(FW(1)).slice(0, 5), a.slice(0, 5), 'each show is a little different');
-  assert.ok(a.length > 1500 && a.length < 5000, `${a.length} bursts`);
+  assert.ok(a.length > 1000 && a.length < 5000, `${a.length} bursts`);
   for (let i = 1; i < a.length; i++) {
     assert.ok(a[i].t >= a[i - 1].t, 'in time order');
     assert.ok(a[i].t - a[i - 1].t < 2.5, `no gap over 2.5 s (at ${a[i].t})`);
   }
-  assert.equal(SHOW_SECONDS, 1200, '20 minutes');
+  assert.equal(SHOW_SECONDS, 525, '70 minutes on the game clock: short enough to stay special');
   for (const k of KINDS) assert.ok(a.some((x) => x.kind === k), `${k} comes up`);
   assert.ok(a[0].t < 1 && a.at(-1).t < SHOW_SECONDS && a.at(-1).t > SHOW_SECONDS - 1);
   for (const x of a) assert.ok(KINDS.includes(x.kind) && LIFE[x.kind] && RADIUS[x.kind] && x.barge >= 0 && x.barge < BARGES.length && (x.kind === 'fan' ? x.h < 10 : x.h > 25), JSON.stringify(x));
   const photo = a.filter((x) => x.t >= PHOTO_TIME[0] && x.t < PHOTO_TIME[1]);
   assert.ok(photo.length > 30 && photo.every((x) => x.kind === 'willow'), 'gold willows at photo time');
   const perMin = (t0) => a.filter((x) => x.t >= t0 && x.t < t0 + 60).length;
-  assert.ok(perMin(1130) > 4 * perMin(30), `finale ${perMin(1130)}/min, opening ${perMin(30)}/min`);
+  assert.ok(perMin(450) > 4 * perMin(30), `finale ${perMin(450)}/min, opening ${perMin(30)}/min`);
   assert.ok(!a.some((x) => ['heart', 'star', 'smile'].includes(x.kind)), 'no hearts, stars or smiles: those are the drone show\'s');
 });
 
@@ -82,13 +82,13 @@ test('volleys: now and then several shells burst at the same moment, across the 
   const at = new Map();
   for (const x of a) if (x.kind !== 'fan') at.set(x.t, [...(at.get(x.t) || []), x]);
   const volleys = [...at.values()].filter((v) => v.length >= 3 && new Set(v.map((x) => x.barge)).size >= 2); // (a cluster is one barge)
-  assert.ok(volleys.length > 150, `${volleys.length} volleys`);
+  assert.ok(volleys.length > 100, `${volleys.length} volleys`);
   // (a sweep's later shells can land on the same moment as the next shot,
   // so now and then two kinds share one)
   assert.ok(volleys.filter((v) => v.every((x) => x.kind === v[0].kind)).length > volleys.length * 0.95, 'one kind per volley');
-  const salvo = volleys.filter((v) => v[0].t >= 540 && v[0].t < 600);
-  assert.ok(salvo.length > 30 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
-  assert.ok(volleys.some((v) => v[0].t >= 1110 && v.length >= 7), 'big volleys in the finale');
+  const salvo = volleys.filter((v) => v[0].t >= 235 && v[0].t < 270);
+  assert.ok(salvo.length > 20 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
+  assert.ok(volleys.some((v) => v[0].t >= FINALE_TIME && v.length >= 7), 'big volleys in the finale');
 });
 
 test('rings are rare, no saturns; the basic peony leads the mix', () => {
@@ -104,10 +104,10 @@ test('built like a festival: stacked clusters, fans on the water, a beat every m
   assert.ok(a.filter((x) => x.kind !== 'fan' && together(x) >= 2).length > a.length / 3, 'most shots come several at once from one barge');
   assert.ok(a.some((x) => x.kind === 'fan') && a.filter((x) => x.kind === 'fan').every((x) => x.h < 10), 'low fans on the barges');
   for (let t0 = 12; t0 < PHOTO_TIME[0] - 60; t0 += 60) assert.ok(a.some((x) => x.t >= t0 && x.t < t0 + 60 && x.kind === 'fan'), `a highlight with fans in the minute from ${t0} s`);
-  const last = a.filter((x) => x.t >= 1191 && x.kind !== 'fan');
+  const last = a.filter((x) => x.t >= 513 && x.kind !== 'fan');
   assert.ok(last.length >= 14 && last.every((x) => x.kind === 'kamuro'), 'the gold curtain at the end');
   const high = a.filter((x) => x.h > 80).length;
-  assert.ok(high > 100 && high < a.length / 5, `${high} high shells: now and then, not always`);
+  assert.ok(high > 40 && high < a.length / 5, `${high} high shells: now and then, not always`);
   const swept = a.filter((x, i) => x.kind !== 'fan' && i > 0 && a[i - 1].kind === x.kind && Math.abs(x.t - a[i - 1].t - 0.14) < 0.011).length;
   assert.ok(swept > 100, `${swept} shells in sweeps along the river`);
   assert.ok(a.slice(0, 3).every((x) => x.kind === 'willow') && new Set(a.slice(0, 3).map((x) => x.barge)).size === 3, 'curtain up: a willow from each barge');
