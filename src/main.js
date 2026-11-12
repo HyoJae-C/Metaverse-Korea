@@ -247,6 +247,7 @@ import { createLanternParadeNear } from './game/lantern-parade-near.js';
 import { createTempleLanterns } from './game/temple-lanterns-near.js';
 import { sunsetNote } from './game/sunset-spot.js';
 import { createSeatFit } from './game/seat-fit.js';
+import { askMyServerName } from './game/my-server-name.js';
 
 const BASE = import.meta.env.BASE_URL;
 const DEBUG_TOP = Number(new URLSearchParams(location.search).get('top')) || 0;
@@ -1707,27 +1708,33 @@ async function renameInfo() {
   const st = (await cloud.nameStatus()) || renameState(identity);
   return { ...st, cost: st.free ? 0 : RENAME_COST };
 }
-async function renameMe(raw) {
+// fromServer: the server already has this name for my account (changed on
+// another device or by an operator): just use it here, no checks or cost.
+async function renameMe(raw, { fromServer = false } = {}) {
   const clean = cleanName(raw).trim();
   if (!clean) return 'empty';
   const next = filterText(clean.slice(0, 16));
   if (next === nickname) return 'same';
-  if (isReservedName(clean)) return 'reserved';
-  const info = await renameInfo();
-  if (info.waitDays > 0) return 'wait';
-  if (wallet.coins < info.cost) return 'poor';
-  const claimed = await cloud.claimName(clean);
-  if (claimed === 'taken' || claimed === 'wait') return claimed;
-  if (info.cost && !wallet.spend(info.cost, { k: 'ledger.rename' })) return 'poor';
+  if (!fromServer) {
+    if (isReservedName(clean)) return 'reserved';
+    const info = await renameInfo();
+    if (info.waitDays > 0) return 'wait';
+    if (wallet.coins < info.cost) return 'poor';
+    const claimed = await cloud.claimName(clean);
+    if (claimed === 'taken' || claimed === 'wait') return claimed;
+    if (info.cost && !wallet.spend(info.cost, { k: 'ledger.rename' })) return 'poor';
+  }
   nickname = next;
   if (chat.friendBackend instanceof LocalFriends) chat.friendBackend.setName(nickname);
-  identity = { ...identity, name: clean, nameAt: Date.now(), renames: (identity.renames || 0) + 1, renamedAt: Date.now() };
+  identity = fromServer
+    ? { ...identity, name: clean }
+    : { ...identity, name: clean, nameAt: Date.now(), renames: (identity.renames || 0) + 1, renamedAt: Date.now() };
   saveIdentity(identity);
   try { localStorage.setItem('mk.name', clean); } catch { /* ignore */ }
   $('nickname').value = clean;
   styleMyTag(myLook);
   emblemUi.name = nickname;
-  me.play('cheer');
+  if (!fromServer) me.play('cheer');
   if (lastJoin && net !== SOLO) {
     const [room, roomScene, hasArea] = lastJoin;
     joinRoom(room, roomScene, hasArea ? { x: me.root.position.x, z: me.root.position.z } : null);
@@ -4571,6 +4578,10 @@ const emblemUi = lazyPanel(() => import('./ui/emblem-ui.js').then(({ EmblemUI })
     me.play('cheer');
   },
 })));
+// A name changed elsewhere (another device, an operator) shows here too.
+if (config.netProvider === 'supabase' && !testRoom) {
+  askMyServerName({ cloud, myId, name: nickname, claimChatId }).then((real) => { if (real) renameMe(real, { fromServer: true }); });
+}
 // Information Center, and route guides to the places it lists.
 function guideToPlace(to) {
   if (to.store) {
