@@ -99,3 +99,26 @@ test('the procession panels fill the wall in order, with gaps, keeping each segm
   for (const [ry, rh] of BANCHADO.rows) { assert.equal(ry, y); y += rh; }
   assert.equal(y, BANCHADO.h);
 });
+
+test('the procession mural keeps its picture: one wall mesh with UVs, not merged away', async () => {
+  const { buildLanternFestival } = await import('../src/core/lanterns.js');
+  const { Group } = await import('three');
+  // A canvas stand-in for the signs, and no picture loading (setTimeout held back).
+  const fake = () => new Proxy(() => fake(), { get: (o, k) => (k in o ? o[k] : fake()), set: (o, k, v) => ((o[k] = v), true) });
+  const ctx = fake();
+  const st = globalThis.setTimeout;
+  globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
+  globalThis.setTimeout = () => 0;
+  let root;
+  try { ({ root } = buildLanternFestival(new Group(), s)); } finally { globalThis.setTimeout = st; delete globalThis.document; }
+  const walls = [];
+  root.traverse((o) => { if (o.name === 'banchado') walls.push(o); });
+  assert.equal(walls.length, 1, 'the mural wall is there');
+  const uv = walls[0].geometry.attributes.uv;
+  assert.ok(uv, 'the mural has UVs, so the painting shows when it loads');
+  assert.equal(uv.count, walls[0].geometry.attributes.position.count);
+  // Each panel shows a different strip of the painting.
+  const vs = new Set();
+  for (let i = 0; i < uv.count; i++) vs.add(uv.getY(i).toFixed(4));
+  assert.ok(vs.size > BANCHADO.rows.length, 'panels map to their own segments');
+});

@@ -91,7 +91,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
   roof(g, w * 1.35, d * 1.6, h * 0.9, y + h);
 }
 
-const BUILD = {
+const OWN_BUILD = {
   haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
   haneultower: (g) => haneulTower(g),
   lakeshore: (g, l) => buildLakeshore(g, l), // Seokchon Lake's sunken water, banks and lakeside walk
@@ -285,14 +285,6 @@ const BUILD = {
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
   outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
-  ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
-  ...DONGMYO_MODELS, // Dongmyo flea market's stalls (core/dongmyo-models.js)
-  ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
-  ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
-  ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
-  ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
-  ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
-  ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
   mountain(g, l) {
     // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
     const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
@@ -515,7 +507,29 @@ function blossoms(g, l) {
   g.add(trunks, crowns);
 }
 
+// Every builder by landmark type. Put together on first use, not when this
+// file loads: bukchon-models.js and palace-model.js import this file back,
+// so when the bundle runs one of them first, their *_BUILD tables are not
+// filled in yet at load time. Spread then, they added nothing and every
+// palace and Bukchon landmark (Gwanghwamun, the gates, Geunjeongjeon, the
+// Open House...) silently went missing (2026-11-12, after Jogyesa and
+// Bongeunsa started importing palace-model.js).
+let BUILD = null;
+export function landmarkBuilders() {
+  return (BUILD ||= {
+    ...OWN_BUILD,
+    ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
+    ...DONGMYO_MODELS, // Dongmyo flea market's stalls (core/dongmyo-models.js)
+    ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
+    ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
+    ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
+    ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
+    ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
+    ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
+  });
+}
 export function buildLandmarks(list = [], scene) {
+  const BUILD = landmarkBuilders();
   const root = new THREE.Group();
   root.name = 'landmarks';
   const ticks = [];
