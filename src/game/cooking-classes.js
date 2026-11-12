@@ -41,7 +41,7 @@ export function createCookingClasses(game) {
     },
     onLimit: () => game.clerk && say(game.clerk, $('labels'), BOSS_LINES.enough),
   });
-  // Japchae class at Suragan Cooking Class, next to the kimchi school.
+  // Royal Japchae Class (궁중잡채체험), next to the kimchi school.
   const japchaeUi = lazyPanel(async () => {
     const [{ JapchaeUI }, { JT: JAPCHAE_TEXT }] = await Promise.all([import('../ui/japchae-ui.js'), import('../ui/japchae-text.js')]);
     return new JapchaeUI({
@@ -52,7 +52,7 @@ export function createCookingClasses(game) {
       onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
     });
   });
-  // Free-style kimbap at the same class, at the bamboo mats on the near side.
+  // Free-style kimbap at the Kimbap Making Class (김밥만들기체험), next door.
   const kimbapUi = lazyPanel(async () => {
     const [{ KimbapUI }, { BT: KIMBAP_TEXT }] = await Promise.all([import('../ui/kimbap-ui.js'), import('../ui/kimbap-text.js')]);
     return new KimbapUI({

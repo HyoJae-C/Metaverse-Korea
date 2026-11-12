@@ -1,4 +1,4 @@
-// Japchae (잡채) at Suragan Cooking Class, the rules without any DOM so they
+// Japchae (잡채) at the Royal Japchae Class (궁중잡채체험), the rules without any DOM so they
 // can be unit-tested. Eight steps, the way it is made at home for holidays
 // and birthdays:
 //
