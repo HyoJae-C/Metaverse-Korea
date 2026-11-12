@@ -54,14 +54,16 @@ test('Bongeunsa: no hall on another or on a street, Jinyeomun open in the middle
   assert.ok(lineDist(il, BONGEUNSA.p) - BONGEUNSA.w / 2 >= 1, 'Iljumun off the street');
 });
 
-test('the Maitreya Buddha: 50% of the real 23 m, facing the courtyard, the woods off its plaza', () => {
+test('the Maitreya Buddha: 50% of the real 23 m, facing south-east down its plaza, the woods off it', () => {
   assert.equal(BUDDHA_H, 11.5);
   assert.equal(buddha.h, 11.5);
   assert.ok(Number.isFinite(buddha.clear) && buddha.clear >= 6, 'the trees keep off the plaza');
-  // North-west of Daeungjeon, as on the Naver map; faces south-ish (towards the courtyard and KONEXT).
+  // West of Daeungjeon, up the hill; faces south-east down its plaza (Yozi's aerial photo), towards the courtyard.
   const dx = buddha.x - (temple.x + temple.halls[0][0]), dz = buddha.z - (temple.z + temple.halls[0][1]);
-  assert.ok(dx < -15 && dz < 3, 'west of Daeungjeon');
-  assert.ok(Math.abs(buddha.ry) < 0.6, 'faces south');
+  assert.ok(dx < -15 && Math.abs(dz) < 8, 'west of Daeungjeon, about level with it');
+  assert.ok(buddha.ry > 0.65 && buddha.ry < 1.1, `faces south-east (${buddha.ry})`);
+  // The niche wall wraps round behind it (a U open to the front).
+  assert.ok(Math.min(...buddha.wall.map((q) => q[1])) < -3 && buddha.wall[0][1] > 0 && buddha.wall.at(-1)[1] > 0);
   // You can't walk into its base.
   assert.ok(map.blockers.some((b) => inPolygon(buddha.x, buddha.z, b.p)));
 });
@@ -72,4 +74,10 @@ test('Bongeunsa is loaded when the city is built, not in the first download', ()
   assert.doesNotMatch(src, /^import .*bongeunsa-model/m);
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.doesNotMatch(main, /bongeunsa-model/);
+});
+
+test('the Buddha\'s plaza is clear of every hall', () => {
+  const c = Math.cos(buddha.ry), s = Math.sin(buddha.ry), [pw, pl, pc] = buddha.plaza;
+  const plaza = [[-pw / 2, pc - pl / 2], [pw / 2, pc - pl / 2], [pw / 2, pc + pl / 2], [-pw / 2, pc + pl / 2]].map(([u, v]) => world([buddha.x + u * c + v * s, buddha.z - u * s + v * c]));
+  for (const [n, h] of Object.entries(H)) assert.ok(!overlap(plaza, corners(h, 0.35)), `${n} off the plaza`);
 });

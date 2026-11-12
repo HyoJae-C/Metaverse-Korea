@@ -139,7 +139,7 @@ const BUILD = {
   },
   maitreya(g, l) {
     // Bongeunsa's Maitreya Buddha on its plaza (core/bongeunsa-model.js).
-    box(g, 5.2, 0.15, 5.2, 0, 0.075, 0, C.stone);
+    box(g, 4.2, 0.15, 4.2, 0, 0.075, 0, C.stone);
     import('./bongeunsa-model.js').then(({ buildMaitreya }) => buildMaitreya(g, l));
   },
   cathedralyard(g, l) {

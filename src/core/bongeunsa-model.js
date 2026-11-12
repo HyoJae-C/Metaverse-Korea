@@ -288,23 +288,25 @@ export function buildTemple(g, l) {
 // The standing Buddha, built 12 m tall and scaled to l.h, facing +z: the
 // statue's right hand raised at the chest (palm out), the left hanging down.
 function buddha(g) {
-  // The hexagonal base: three steps, a slab, the panels between six columns, two slabs.
-  [[3.0, 0.09], [2.75, 0.27], [2.5, 0.45]].forEach(([r, y]) => cyl(g, r, r, 0.18, 0, y, 0, C.g2, 6));
-  cyl(g, 2.35, 2.35, 0.25, 0, 0.665, 0, C.g1, 6);
-  cyl(g, 1.95, 1.95, 1.5, 0, 1.54, 0, C.g3, 6);
+  // The hexagonal base: three steps, a slab, the panels between six columns,
+  // two slabs (about 4 m across at 11.5 m tall, as in the photos).
+  const K = 0.72;
+  [[3.0, 0.09], [2.75, 0.27], [2.5, 0.45]].forEach(([r, y]) => cyl(g, r * K, r * K, 0.18, 0, y, 0, C.g2, 6));
+  cyl(g, 2.35 * K, 2.35 * K, 0.25, 0, 0.665, 0, C.g1, 6);
+  cyl(g, 1.95 * K, 1.95 * K, 1.5, 0, 1.54, 0, C.g3, 6);
   for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2, b = a + Math.PI / 6;
-    cyl(g, 0.16, 0.16, 1.5, Math.sin(a) * 2.12, 1.54, Math.cos(a) * 2.12, C.g1, 8); // a column at each corner
-    cyl(g, 0.22, 0.22, 0.12, Math.sin(a) * 2.12, 0.85, Math.cos(a) * 2.12, C.g2, 8);
-    cyl(g, 0.22, 0.22, 0.12, Math.sin(a) * 2.12, 2.23, Math.cos(a) * 2.12, C.g2, 8);
-    const panel = box(g, 1.55, 1.2, 0.08, Math.sin(b) * 1.72, 1.54, Math.cos(b) * 1.72, C.g2); // a carved panel on each face
+    const a = (i / 6) * Math.PI * 2, b = a + Math.PI / 6, rc = 2.12 * K, rp = 1.72 * K;
+    cyl(g, 0.14, 0.14, 1.5, Math.sin(a) * rc, 1.54, Math.cos(a) * rc, C.g1, 8); // a column at each corner
+    cyl(g, 0.19, 0.19, 0.12, Math.sin(a) * rc, 0.85, Math.cos(a) * rc, C.g2, 8);
+    cyl(g, 0.19, 0.19, 0.12, Math.sin(a) * rc, 2.23, Math.cos(a) * rc, C.g2, 8);
+    const panel = box(g, 1.55 * K, 1.2, 0.08, Math.sin(b) * rp, 1.54, Math.cos(b) * rp, C.g2); // a carved panel on each face
     panel.rotation.y = b;
-    const fig = box(g, 0.32, 0.9, 0.06, Math.sin(b) * 1.78, 1.5, Math.cos(b) * 1.78, C.g4); // the figure carved on it
+    const fig = box(g, 0.26, 0.9, 0.06, Math.sin(b) * (rp + 0.06), 1.5, Math.cos(b) * (rp + 0.06), C.g4); // the figure carved on it
     fig.rotation.y = b;
-    ball(g, 0.14, Math.sin(b) * 1.79, 2.0, Math.cos(b) * 1.79, C.g4, 1, 1, 0.4, 8, 6);
+    ball(g, 0.12, Math.sin(b) * (rp + 0.07), 2.0, Math.cos(b) * (rp + 0.07), C.g4, 1, 1, 0.4, 8, 6);
   }
-  cyl(g, 2.45, 2.45, 0.3, 0, 2.44, 0, C.g1, 6);
-  cyl(g, 2.2, 2.2, 0.2, 0, 2.69, 0, C.g0, 6);
+  cyl(g, 2.45 * K, 2.45 * K, 0.3, 0, 2.44, 0, C.g1, 6);
+  cyl(g, 2.2 * K, 2.2 * K, 0.2, 0, 2.69, 0, C.g0, 6);
   // The double lotus: a drum, petals turned down, petals turned up, a seat.
   cyl(g, 1.25, 1.35, 0.35, 0, 2.965, 0, C.g1, 14);
   for (let i = 0; i < 14; i++) {
@@ -376,56 +378,69 @@ function buddha(g) {
     cyl(g, 0.05, 0.08, 0.16, sx * 1.12, yc - 0.5, sz * 1.12, '#6f7a66', 8);
   }
 }
-// The curved wall of niches behind the statue (r: its radius), with a carved
-// guardian panel at each end; 2 m high (Yozi 2026-11-12: higher than 1/4's
-// 1.1 m, so it reads as the wall in the photos behind a 50% Buddha).
-function nicheWall(g, r) {
-  const H = 2.0, a0 = Math.PI - 1.55, a1 = Math.PI + 1.55, n = 16; // (round the back, −z)
-  for (let i = 0; i < n; i++) {
-    const a = a0 + ((a1 - a0) * (i + 0.5)) / n, len = (r * (a1 - a0)) / n + 0.04;
+// The U-shaped wall of niches round the statue: pts is its line ([x, z],
+// the statue at the origin facing +z), a carved guardian panel at each end;
+// 2 m high (Yozi 2026-11-12: higher than 1/4's 1.1 m, so it reads as the
+// wall in the photos behind a 50% Buddha).
+function nicheWall(g, pts) {
+  const H = 2.0;
+  const piece = (a, b) => {
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) + 0.04, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
     const seg = new THREE.Group();
     box(seg, len, H, 0.5, 0, H / 2, 0, C.g1);
     box(seg, len, 0.08, 0.6, 0, H + 0.04, 0, C.g0);
-    for (const yy of [0.5, 0.95, 1.4]) for (const k of [-0.3, 0.3]) {
-      box(seg, 0.22, 0.24, 0.04, k * len, yy, 0.26, C.g4); // a niche
-      ball(seg, 0.05, k * len, yy - 0.02, 0.27, C.g0, 1, 1.4, 0.6, 6, 4); // its little Buddha
+    const n = Math.max(1, Math.round(len / 0.55));
+    for (const yy of [0.5, 0.95, 1.4]) for (let k = 0; k < n; k++) {
+      const x = -len / 2 + ((k + 0.5) * len) / n;
+      box(seg, 0.22, 0.24, 0.04, x, yy, 0.26, C.g4); // a niche
+      ball(seg, 0.05, x, yy - 0.02, 0.27, C.g0, 1, 1.4, 0.6, 6, 4); // its little Buddha
     }
-    seg.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
-    seg.rotation.y = a + Math.PI; // the niches face the statue
+    // Face the inside: the statue for the round part, across for the straight sides.
+    const tx = 0 - mx, tz = Math.min(mz, 0) - mz;
+    let ry = Math.atan2(b[0] - a[0], b[1] - a[1]) - Math.PI / 2; // +z of the piece across the line
+    if (Math.sin(ry) * tx + Math.cos(ry) * tz < 0) ry += Math.PI;
+    seg.position.set(mx, 0, mz);
+    seg.rotation.y = ry;
     g.add(seg);
-  }
-  for (const a of [a0, a1]) {
+    return ry;
+  };
+  const turns = [];
+  for (let i = 1; i < pts.length; i++) turns.push(piece(pts[i - 1], pts[i]));
+  for (const [p0, ry] of [[pts[0], turns[0]], [pts.at(-1), turns.at(-1)]]) {
     const p = new THREE.Group();
     box(p, 1.0, 2.6, 0.55, 0, 1.3, 0, C.g1);
     box(p, 0.55, 1.8, 0.05, 0, 1.2, 0.28, C.g3); // the guardian carved on it
     ball(p, 0.15, 0, 2.2, 0.3, C.g3, 1, 1.1, 0.5, 6, 5);
     box(p, 1.1, 0.1, 0.65, 0, 2.65, 0, C.g0);
-    p.position.set(Math.sin(a) * r, 0, Math.cos(a) * r);
-    p.rotation.y = a + Math.PI;
+    p.position.set(p0[0], 0, p0[1]);
+    p.rotation.y = ry;
     g.add(p);
   }
 }
 export function buildMaitreya(g, l) {
   const all = new THREE.Group();
   g.add(all);
-  // The plaza: pale paving in an oval reaching forward, the red mat for bows.
-  const pave = add(all, new THREE.CircleGeometry(1, 28), C.g1, 0, 0.03, 2.2);
-  pave.rotation.x = -Math.PI / 2;
-  pave.scale.set(5.6, 6.6, 1);
-  box(all, 2.6, 0.03, 2.1, 0, 0.05, 4.7, '#8e2a26');
+  // The plaza: a pale paved rectangle [w, l, its middle ahead of the statue],
+  // a kerb round it, and the red mat for bows in front of the statue.
+  const [pw, pl, pc] = l.plaza || [8.6, 10.3, 1.15];
+  box(all, pw, 0.04, pl, 0, 0.02, pc, C.g1);
+  for (const sx of [-1, 1]) box(all, 0.2, 0.12, pl, sx * (pw / 2 - 0.1), 0.06, pc, C.g2);
+  box(all, pw, 0.12, 0.2, 0, 0.06, pc - pl / 2 + 0.1, C.g2);
+  for (const sx of [-1, 1]) box(all, (pw - 2.4) / 2, 0.12, 0.2, sx * (pw + 2.4) / 4, 0.06, pc + pl / 2 - 0.1, C.g2); // (the front: open in the middle, where the stairs go down)
+  box(all, 2.8, 0.03, 2.4, 0, 0.055, 3.6, '#8e2a26');
   const statue = new THREE.Group();
   statue.scale.setScalar((l.h || 11.5) / 12);
   all.add(statue);
   buddha(statue);
-  nicheWall(all, l.wallR || 4.6);
+  nicheWall(all, l.wall);
   for (const sx of [-1, 1]) {
-    stoneLantern(all, sx * 2.9, 3.1, 1.0);
+    stoneLantern(all, sx * 3.0, 2.0, 1.0);
     // a small roofed offering table (공양대) either side of the mat
     const t = new THREE.Group();
     box(t, 0.8, 0.42, 0.5, 0, 0.21, 0, '#6b4a33');
     for (const px of [-0.36, 0.36]) box(t, 0.06, 0.75, 0.06, px, 0.62, -0.18, C.post);
     tiles(t, 1.15, 0.8, 0.25, 0.98, { hip: true, lift: 0.18, seg: 3, rows: 1 }, 0, -0.05);
-    t.position.set(sx * 1.75, 0, 3.5);
+    t.position.set(sx * 2.0, 0, 2.4);
     all.add(t);
   }
   bakeColors(all);

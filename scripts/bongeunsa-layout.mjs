@@ -43,12 +43,24 @@ export const NUDGE = {};
 
 // Spots from the Naver capture (world metres; the fit in the file's header).
 export const SPOTS = {
-  buddha: [11.3, 809.5], // the Maitreya Buddha, on its oval plaza in the north-west
   gwaneum: [38.8, 833.5], // Haesu Gwaneum on a round pond south of the courtyard
   iljumun: [51.7, 850.5], // the one-pillar gate by Bongeunsa-ro
   pagoda: [38.9, 814.6], // the three-storey pagoda in the courtyard
   bell: [26.6, 826], // the bell pavilion (종루)
 };
+// The Maitreya Buddha's plaza: the statue on Naver's pin; its shape and turn
+// from Yozi's aerial photo from the south and the Google satellite capture
+// (turned 55°; fitted on 6 halls, 0.5 m apart): a paved rectangle
+// 8.6 × 10.3 m (34 × 41 m real) running south-east from the hill, the statue
+// 4 m in from its back edge facing down it (50° east of south, towards the
+// courtyard), the red mat in front, a U-shaped wall of niches round it.
+export const PLAZA = { at: [11.3, 809.5], ry: 49.5 * D2R, w: 8.6, l: 10.3, statue: 4.0 };
+// The niche wall round the statue, in its own metres (x across, z forward):
+// half a ring 3.9 m out behind it, then straight on either side to 1.5 m in front.
+export const NICHE_WALL = [[-3.9, 1.5], ...Array.from({ length: 9 }, (_, i) => {
+  const t = (i * Math.PI) / 8;
+  return [Math.round(-3.9 * Math.cos(t) * 100) / 100, Math.round(-3.9 * Math.sin(t) * 100) / 100];
+}), [3.9, 1.5]];
 
 // A hall's footprint from its OSM outline: the smallest rectangle round it
 // turned near the temple's own axis (about 28° off the compass, like the
@@ -136,24 +148,24 @@ export function bongeunsa(local, street = () => Infinity) {
       }
     } else buildings.push({ h: top, custom: true, p: foot });
   }
-  // The Maitreya Buddha's plaza: an oval of paving, the statue at its north
-  // end facing south-south-east (over the courtyard towards KONEXT), a
-  // curved wall of niches behind it.
-  const [bx, bz] = L(SPOTS.buddha);
-  const bry = 15 * D2R; // facing: +z turned 15° east
-  const ring = (cx, cz, rx, rz, n = 16, a0 = 0, a1 = Math.PI * 2) => Array.from({ length: n }, (_, i) => {
-    const a = a0 + ((a1 - a0) * i) / (a1 - a0 === Math.PI * 2 ? n : n - 1);
+  // The Maitreya Buddha (PLAZA above).
+  const ring = (cx, cz, rx, rz, n = 16) => Array.from({ length: n }, (_, i) => {
+    const a = (Math.PI * 2 * i) / n;
     return [r1(cx + Math.cos(a) * rx), r1(cz + Math.sin(a) * rz)];
   });
-  blockers.push({ p: ring(bx, bz, 2.7, 2.7, 6) }); // the hexagonal base
-  // The niche wall: a half ring 4.6 m out behind the statue (a thin wall of short pieces).
-  const back = [-Math.sin(bry), -Math.cos(bry)]; // behind the statue
-  const wallR = 4.6, wa = Math.atan2(back[1], back[0]);
-  for (let i = 0; i < 8; i++) {
-    const a0 = wa - 1.55 + (3.1 * i) / 8, a1 = wa - 1.55 + (3.1 * (i + 1)) / 8;
-    const p0 = [bx + Math.cos(a0) * wallR, bz + Math.sin(a0) * wallR], p1 = [bx + Math.cos(a1) * wallR, bz + Math.sin(a1) * wallR];
-    const o0 = [bx + Math.cos(a0) * (wallR + 0.5), bz + Math.sin(a0) * (wallR + 0.5)], o1 = [bx + Math.cos(a1) * (wallR + 0.5), bz + Math.sin(a1) * (wallR + 0.5)];
-    blockers.push({ p: [p0, p1, o1, o0].map(([a, b]) => [r1(a), r1(b)]) });
+  const bry = PLAZA.ry;
+  const [bx, bz] = L(PLAZA.at);
+  const toMap = ([u, v]) => [bx + u * Math.cos(bry) + v * Math.sin(bry), bz - u * Math.sin(bry) + v * Math.cos(bry)];
+  blockers.push({ p: ring(bx, bz, 2.1, 2.1, 6) }); // the hexagonal base
+  // The niche wall: each piece 0.5 m thick, outwards from the statue.
+  for (let i = 1; i < NICHE_WALL.length; i++) {
+    const [a, b] = [NICHE_WALL[i - 1], NICHE_WALL[i]], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    let n = [b[1] - a[1], a[0] - b[0]];
+    const nl = Math.hypot(...n);
+    n = [n[0] / nl * 0.5, n[1] / nl * 0.5];
+    const inside = [0, Math.min(m[1], 0)];
+    if ((m[0] + n[0] - inside[0]) ** 2 + (m[1] + n[1] - inside[1]) ** 2 < (m[0] - inside[0]) ** 2 + (m[1] - inside[1]) ** 2) n = [-n[0], -n[1]];
+    blockers.push({ p: [a, b, [b[0] + n[0], b[1] + n[1]], [a[0] + n[0], a[1] + n[1]]].map(toMap).map(([x, z]) => [r1(x), r1(z)]) });
   }
   // Haesu Gwaneum's pond: water you can't walk into.
   const [gx, gz] = L(SPOTS.gwaneum);
@@ -193,7 +205,7 @@ export function bongeunsa(local, street = () => Infinity) {
   const woods = local([[-14, 813], [-7, 805], [2, 798], [12, 793], [21, 790], [30, 788], [59, 778], [66, 792], [48, 796], [32, 798], [19, 802], [18, 816], [8, 818], [7, 830], [5, 834], [0, 835], [-3, 827], [-14, 827]]);
   // The Maitreya Buddha is its own landmark, so the woods keep off its plaza
   // (clear: core/world.js) and the far culling knows where it stands.
-  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wallR, clear: 7.5 };
+  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], clear: 8 };
   const signAt = L([SPOTS.iljumun[0] - 3.2, SPOTS.iljumun[1] - 3.5]);
   const sign = {
     type: 'sign', x: r1(signAt[0]), z: r1(signAt[1]), ry: r3(H.진여문.ry - Math.PI / 2),
