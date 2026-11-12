@@ -7,7 +7,8 @@
 // burst point, direction, colour and start time once; after that the
 // graphics card moves them (drag, gravity, fading), so each frame only one
 // number changes (the show clock) and the whole sky is one draw call.
-// Phones get fewer slots and fewer sparks per burst.
+// Phones get fewer slots and fewer stars per burst. Each star is a short
+// trail of points (TRAIL), and the lead one draws the climbing shell.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './fireworks-show.js';
@@ -15,10 +16,17 @@ import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './
 const DRAG = 1.7; // how quickly sparks slow down
 const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
 
+// Each star is drawn as a few points on the same path, each a moment
+// behind the one before and fainter: a short streak that trails it, so a
+// burst leaves lines of light instead of dots, and the climbing shell a
+// tail (Yozi: "터지기전 방향, 터진후의 잔상효과 같은게 불꽃놀이의 재미도
+// 핵심"). TRAIL: [seconds behind, brightness] for each point of a star.
+const TRAIL = [[0, 1], [0.07, 0.6], [0.15, 0.36], [0.25, 0.2]];
 const VERT = /* glsl */`
   uniform float uTime, uScale;
   attribute vec3 aCenter, aDir, aCol, aCol2; // aCol2: the colour its stars turn into
-  attribute vec4 aInfo; // t0, life, gravity, lead (1: this spark draws the climbing shell)
+  attribute vec4 aInfo; // t0 (already a little later for a trailing point), life, gravity, lead (1: this star draws the climbing shell)
+  attribute float aW; // its brightness in the star's trail (1 at the head)
   varying vec3 vCol;
   varying float vA;
   void main() {
@@ -27,20 +35,25 @@ const VERT = /* glsl */`
     vA = 0.0;
     float size = 2.2;
     if (age > -${RISE.toFixed(2)} && age < 0.0) {
-      // the shell climbing from its barge: only the lead spark, warm white
+      // the shell climbing from its barge, wobbling a little, with a
+      // sparkling gold tail: only the lead star
       float k = (age + ${RISE.toFixed(2)}) / ${RISE.toFixed(2)};
-      p = vec3(aCenter.x, mix(1.5, aCenter.y, 1.0 - (1.0 - k) * (1.0 - k)), aCenter.z);
-      vA = aInfo.w * 0.9;
-      vCol = vec3(1.0, 0.85, 0.6);
-      size = 1.6;
+      float w = sin(k * 9.0 + aCenter.x) * 0.6 * (1.0 - k);
+      float tail = (1.0 - aW) * 9.0 * (1.0 - k * 0.6); // the tail hangs a few metres below the shell
+      p = vec3(aCenter.x + w, max(1.5, mix(1.5, aCenter.y, 1.0 - (1.0 - k) * (1.0 - k)) - tail), aCenter.z + w * 0.5);
+      vA = aInfo.w * aW * (0.8 + 0.2 * sin(age * 50.0 + aW * 9.0));
+      vCol = mix(vec3(1.0, 0.55, 0.2), vec3(1.0, 0.95, 0.8), aW);
+      size = 2.0 + aW * 1.6;
     } else if (age >= 0.0 && age < aInfo.y) {
       float spread = (1.0 - exp(-age * ${DRAG.toFixed(1)})) / ${DRAG.toFixed(1)};
       p = aCenter + aDir * spread - vec3(0.0, 0.5 * ${GRAVITY.toFixed(1)} * aInfo.z * age * age, 0.0);
       float f = 1.0 - age / aInfo.y;
-      vA = f * sqrt(f) * (0.75 + 0.25 * sin(age * 31.0 + aDir.x * 7.0)); // fading, with a little twinkle
+      // fading slowly, and at the end glittering out rather than just going
+      float glitter = f < 0.4 ? 0.35 + 0.65 * step(0.0, sin(age * 37.0 + aDir.x * 13.0 + aDir.y * 7.0)) : 0.8 + 0.2 * sin(age * 31.0 + aDir.x * 7.0);
+      vA = pow(f, 0.9) * glitter * aW;
       vec3 c = mix(aCol, aCol2, smoothstep(0.2, 0.65, age / aInfo.y)); // its colour, turning into the second
       vCol = mix(vec3(1.0, 0.95, 0.85), c, min(1.0, age * 4.0)); // white-hot for a moment, then its colour
-      size = 2.6 + (age < 0.15 ? 2.5 : 0.0);
+      size = (2.4 + (age < 0.15 ? 2.5 : 0.0)) * (0.55 + 0.45 * aW);
     }
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
@@ -72,12 +85,6 @@ function directions(kind, n, rand) {
   } else if (kind === 'dahlia') for (let i = 0; i < Math.round(n / 3); i++) { // fewer, bigger stars
     const m = Math.round(n / 3), y = 1 - 2 * ((i + 0.5) / m), r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
     out.push([Math.cos(a) * r, y, Math.sin(a) * r]);
-  } else if (kind === 'flower') for (let i = 0; i < n; i++) { // five petals
-    const a = (i / n) * Math.PI * 2, r = 0.3 + 0.7 * Math.abs(Math.cos(a * 2.5));
-    flat(Math.sin(a) * r, Math.cos(a) * r);
-  } else if (kind === 'butterfly') for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2, r = (Math.exp(Math.cos(a)) - 2 * Math.cos(4 * a)) / 4.7;
-    flat(Math.sin(a) * r, Math.cos(a) * r);
   } else if (kind === 'double') for (let i = 0; i < n; i++) { // a ring inside a ring
     const a = (i / n) * Math.PI * 4, r = i < n / 2 ? 1 : 0.55;
     flat(Math.cos(a) * r, Math.sin(a) * r);
@@ -148,11 +155,11 @@ function makeSkyline() {
 }
 
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 80 : 128, PER = phone ? 64 : 96, N = SLOTS * PER;
+  const SLOTS = phone ? 80 : 128, STARS = phone ? 26 : 44, PER = STARS * TRAIL.length, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)
-  const center = attr('aCenter', 3), dir = attr('aDir', 3), col = attr('aCol', 3), col2 = attr('aCol2', 3), info = attr('aInfo', 4);
+  const center = attr('aCenter', 3), dir = attr('aDir', 3), col = attr('aCol', 3), col2 = attr('aCol2', 3), info = attr('aInfo', 4), weight = attr('aW', 1);
   for (let i = 0; i < N; i++) info.array[i * 4] = -1e6; // every slot starts free (long over)
   void position;
   const mat = new THREE.ShaderMaterial({
@@ -184,35 +191,38 @@ export function createFireworksSky(scene, { phone = false } = {}) {
     if (s < 0) return null;
     slot = (s + 1) % SLOTS;
     const hangs = b.kind === 'willow' || b.kind === 'kamuro'; // gold that drifts down slowly
-    const life = LIFE[b.kind] * (hangs ? 1 : b.scale);
-    busyUntil[s] = b.t + life;
+    const life = LIFE[b.kind] * (hangs ? 1 : b.scale) * (b.kind === 'small' || b.kind === 'fan' ? 1 : 1.2); // (a little longer, to glitter out)
+    busyUntil[s] = b.t + life * 1.15 + TRAIL.at(-1)[0];
     const [bu, bv] = BARGES[b.barge];
     const [x, z] = atUV(bu + b.du, bv);
-    const n = b.kind === 'small' ? Math.round(PER * 0.6) : PER;
+    const n = b.kind === 'small' ? Math.round(STARS * 0.6) : STARS;
     let seed = b.seed;
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const dirs = directions(b.kind, n, rand);
     const speed = RADIUS[b.kind] * b.scale * DRAG;
     c1.set(b.color); c2.set(b.color2);
-    for (let k = 0; k < PER; k++) {
-      const i = s * PER + k;
+    for (let k = 0; k < STARS; k++) {
       const d = dirs[k];
-      center.array.set([x, b.h, z], i * 3);
-      if (d) {
+      // start and end colours: rainbow one each, pistil a heart of the
+      // second, the rest start in the first and turn into the second
+      // (a quarter in the second from the start)
+      const c = !d ? c1 : b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : b.kind === 'pistil' ? (k % 3 === 0 ? c2 : c1) : k % 4 === 0 ? c2 : c1;
+      const e = b.kind === 'rainbow' || b.kind === 'pistil' ? c : c2;
+      const starLife = life * (0.85 + rand() * 0.3);
+      TRAIL.forEach(([lag, w], j) => {
+        const i = s * PER + k * TRAIL.length + j;
+        center.array.set([x, b.h, z], i * 3);
+        weight.array[i] = w;
+        if (!d) { info.array.set([-1e6, 0, 0, 0], i * 4); return; }
         // (h, y, n): h along the river, y up, n towards the lawn
         const [h, y, nn] = d;
         dir.array.set([(h * U[0] + nn * -U[1]) * speed, y * speed, (h * U[1] + nn * U[0]) * speed], i * 3);
-        // start and end colours: rainbow one each, pistil a heart of the
-        // second, the rest start in the first and turn into the second
-        // (a quarter in the second from the start)
-        const c = b.kind === 'rainbow' ? c2.set(COLORS[k % COLORS.length]) : b.kind === 'pistil' ? (k % 3 === 0 ? c2 : c1) : k % 4 === 0 ? c2 : c1;
-        const e = b.kind === 'rainbow' || b.kind === 'pistil' ? c : c2;
         col.array.set([c.r, c.g, c.b], i * 3);
         col2.array.set([e.r, e.g, e.b], i * 3);
-        info.array.set([b.t, life * (0.85 + rand() * 0.3), hangs ? 1.6 : b.kind === 'dahlia' ? 1.3 : 1, k === 0 ? 1 : 0], i * 4);
-      } else info.array.set([-1e6, 0, 0, 0], i * 4);
+        info.array.set([b.t + lag, starLife, hangs ? 1.6 : b.kind === 'dahlia' ? 1.3 : 1, k === 0 ? 1 : 0], i * 4);
+      });
     }
-    for (const [a, size] of [[center, 3], [dir, 3], [col, 3], [col2, 3], [info, 4]]) { a.addUpdateRange(s * PER * size, PER * size); a.needsUpdate = true; }
+    for (const [a, size] of [[center, 3], [dir, 3], [col, 3], [col2, 3], [info, 4], [weight, 1]]) { a.addUpdateRange(s * PER * size, PER * size); a.needsUpdate = true; }
     return { x, y: b.h, z, kind: b.kind };
   };
 

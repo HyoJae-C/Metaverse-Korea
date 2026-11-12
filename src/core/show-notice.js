@@ -3,17 +3,18 @@
 // comes first (show-clock.js has the schedule). Under it, the next sunset
 // (every game day, best from Mangwon Han River Park). Pure, no DOM.
 
-import { fireworksAt, nextFireworks, SHOW_SECONDS } from './fireworks-show.js';
-import { droneShowAt, nextDroneShow } from './drone-show.js';
-import { paradeAt, nextParade } from './lantern-parade.js';
+import { fireworksAt, nextFireworks, SHOW_SECONDS as FIREWORKS_SECONDS } from './fireworks-show.js';
+import { droneShowAt, nextDroneShow, SHOW_SECONDS as DRONE_SECONDS } from './drone-show.js';
+import { paradeAt, nextParade, SHOW_SECONDS as PARADE_SECONDS } from './lantern-parade.js';
 import { cycleMs, CYCLE, CYCLE_MS } from './show-clock.js';
 
 // → { kind: 'fireworks' | 'lanterns' | 'drones', start (ms), on (true while it's on) }
-// (All three shows last SHOW_SECONDS, 20 minutes.)
+// How long each runs (s): fireworks 10 minutes, the others 20.
+const LENGTH = { fireworks: FIREWORKS_SECONDS, lanterns: PARADE_SECONDS, drones: DRONE_SECONDS };
 export function nextShow(now = Date.now()) {
   for (const [kind, at] of [['fireworks', fireworksAt], ['lanterns', paradeAt], ['drones', droneShowAt]]) {
     const s = at(now);
-    if (s && s.t >= 0 && s.t < SHOW_SECONDS) return { kind, start: s.start, on: true };
+    if (s && s.t >= 0 && s.t < LENGTH[kind]) return { kind, start: s.start, on: true };
   }
   const [kind, start] = [['fireworks', nextFireworks(now)], ['lanterns', nextParade(now)], ['drones', nextDroneShow(now)]]
     .reduce((a, b) => (b[1] < a[1] ? b : a));
@@ -25,7 +26,7 @@ export function nextShow(now = Date.now()) {
 export function showNoticeText(show, now, t, clock) {
   const label = t('show.' + show.kind);
   if (show.on) {
-    const m = Math.max(1, Math.ceil((show.start + SHOW_SECONDS * 1000 - now) / 60e3));
+    const m = Math.max(1, Math.ceil((show.start + LENGTH[show.kind] * 1000 - now) / 60e3));
     return { label, text: t('show.now', { m }) };
   }
   const mins = Math.max(1, Math.ceil((show.start - now) / 60e3));
