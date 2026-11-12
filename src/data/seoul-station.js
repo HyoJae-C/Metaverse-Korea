@@ -28,7 +28,8 @@ export const OLD_STATION = {
 
 // The station hall (relation 7307085, its main part 331947843): glass over
 // the tracks, 6 storeys (about 38 m) for real, so 9.5 m.
-export const HALL = { h: 9.5, rotunda: 11, sign: { w: 13, h: 2.4 } };
+// The sign: a stone box on the roof (Yozi's photo), about two storeys high.
+export const HALL = { h: 9.5, rotunda: 11, sign: { w: 6.5, h: 3.4, d: 2.4 } };
 
 // Seoul Square (서울스퀘어, way 216477743): 23 storeys, 91 m for real. Its
 // west front, facing the station, is a media wall (region.json "screens").

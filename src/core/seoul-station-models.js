@@ -25,7 +25,7 @@ import { OLD_STATION as K, HALL } from '../data/seoul-station.js';
 const C = {
   brick: '#b8604a', stone: '#e6dfd0', stoneDark: '#cfc6b4', slate: '#5d646e', copper: '#6fae8f', copperDark: '#5a9479',
   glass: '#2f3a4a', door: '#3a2c26', clock: '#f4f1ea', gold: '#c9a640',
-  hall: '#8fc0d8', hallDark: '#5f8fa8', hallRoof: '#d9dee3', steps: '#c9c4bb', pillar: '#f2f2f2', blue: '#1f5fae', red: '#c8352b', fence: '#5a6470',
+  hall: '#8fc0d8', hallDark: '#5f8fa8', hallRoof: '#d9dee3', steps: '#c9c4bb', pillar: '#f2f2f2', pillarHead: '#2c3440', signBox: '#ddd2bd', hallBlock: '#b9bec4', blue: '#1f5fae', red: '#c8352b', fence: '#5a6470',
 };
 const mats = {};
 const mat = (c) => (mats[c] ||= c === C.brick ? addBrickPattern(new THREE.MeshLambertMaterial({ color: c, flatShading: true }), { w: 0.5, h: 0.2, mortar: 0.035 }) : new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -47,6 +47,17 @@ const grow = (pts, d) => {
   const cx = pts.reduce((t, q) => t + q[0], 0) / pts.length, cz = pts.reduce((t, q) => t + q[1], 0) / pts.length;
   return pts.map(([x, z]) => { const L = Math.hypot(x - cx, z - cz) || 1; return [x + ((x - cx) / L) * d, z + ((z - cz) / L) * d]; });
 };
+// The part of a closed outline on one side of the line x = xc (side -1:
+// x <= xc, side 1: x >= xc), cut straight along it.
+function clipX(pts, xc, side) {
+  const out = [], inside = (q) => (q[0] - xc) * side >= 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    if (inside(a)) out.push(a);
+    if (inside(a) !== inside(b)) { const t = (xc - a[0]) / (b[0] - a[0]); out.push([xc, a[1] + (b[1] - a[1]) * t]); }
+  }
+  return out;
+}
 // A flat shape with a round top (an arch, a curved gable), w wide, its
 // straight sides h high, facing +z, t thick, its foot at (x, y, z).
 function archShape(g, w, h, t, x, y, z, c, ry = 0) {
@@ -82,14 +93,50 @@ export function buildOldStation(g, l) {
     }
     return best;
   };
-  // Walls: the stone ground floor, brick above, a white band between and a cornice on top.
-  prism(g, P, 0, K.ground, C.stone);
-  prism(g, P, K.ground, K.wingEave - K.ground, C.brick);
-  prism(g, grow(P, 0.12), K.ground - 0.1, 0.28, C.stone);
-  prism(g, grow(P, 0.18), K.wingEave - 0.35, 0.4, C.stone);
-  // The slate roofs: a low hipped roof over the main body (back wall to the
-  // main front wall) and smaller ones over the parts that stand forward.
-  const hipped = (x0, x1, z0, z1, h) => {
+  // The main block is symmetric about the arched middle (Yozi's photo): its
+  // south half sets its length. What the outline has past that at the north
+  // end is a lower wing (one storey over the stone ground floor).
+  const xa = Math.min(X1, mc + (mc - X0));
+  const PM = xa < X1 - 0.5 ? clipX(P, xa, -1) : P, PA = xa < X1 - 0.5 ? clipX(P, xa, 1) : null;
+  const annexEave = K.ground + 2.6;
+  // Walls: the stone ground floor, brick above, a white band between and a
+  // cornice on top; windows on every long wall, two rows, white stone piers
+  // between the bays (none where the arched front is).
+  const walls = (Q, eave, attic) => {
+    prism(g, Q, 0, K.ground, C.stone);
+    prism(g, Q, K.ground, eave - K.ground, C.brick);
+    prism(g, grow(Q, 0.12), K.ground - 0.1, 0.28, C.stone);
+    prism(g, grow(Q, 0.18), eave - 0.35, 0.4, C.stone);
+    for (let i = 0; i < Q.length; i++) {
+      const [ax, az] = Q[i], [bx, bz] = Q[(i + 1) % Q.length];
+      const L = Math.hypot(bx - ax, bz - az);
+      if (L < 1.4 || (Math.abs(ax - xa) < 0.01 && Math.abs(bx - xa) < 0.01)) continue; // (the cut between the main block and the wing)
+      const dx = (bx - ax) / L, dz = (bz - az) / L;
+      let nx = dz, nz = -dx; // outward: away from the middle of the outline
+      const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+      if (nx * (mx - (X0 + X1) / 2) + nz * (mz - (Z0 + Z1) / 2) < 0) { nx = -nx; nz = -nz; }
+      const ry = Math.atan2(nx, nz);
+      const n = Math.max(1, Math.floor(L / 1.55));
+      for (let k = 0; k < n; k++) {
+        const s = (k + 0.5) * (L / n), x = ax + dx * s, z = az + dz * s;
+        if (nz > 0.7 && x > m0 - K.tower.w - 0.2 && x < m1 + K.tower.w + 0.2) continue; // (the arched front)
+        box(g, 0.62, 1.15, 0.1, x + nx * 0.05, 1.25, z + nz * 0.05, C.glass, ry); // ground floor
+        box(g, 0.66, 1.75, 0.1, x + nx * 0.05, 3.8, z + nz * 0.05, C.glass, ry); // upper floor
+        box(g, 0.8, 0.12, 0.16, x + nx * 0.08, 4.75, z + nz * 0.08, C.stone, ry); // its lintel
+        if (attic && nz > 0.7 && k % 2 === 0) box(g, 0.66, 0.9, 0.1, x + nx * 0.05, 5.4, z + nz * 0.05, C.glass, ry); // the attic's small windows (front)
+      }
+      for (let k = 0; k <= n; k += 2) { // stone piers
+        const s = k * (L / n), x = ax + dx * s, z = az + dz * s;
+        box(g, 0.32, eave - K.ground, 0.14, x + nx * 0.07, K.ground + (eave - K.ground) / 2, z + nz * 0.07, C.stone, ry);
+      }
+    }
+  };
+  walls(PM, K.wingEave, true);
+  if (PA) walls(PA, annexEave, false);
+  // The slate roofs: a low hipped roof over the main block (back wall to the
+  // main front wall), smaller ones over the parts that stand forward and
+  // over the north wing.
+  const hipped = (x0, x1, z0, z1, h, y = K.wingEave) => {
     const w = x1 - x0, d = z1 - z0;
     if (w < 0.8 || d < 0.8) return;
     const roof = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(C.slate));
@@ -97,43 +144,21 @@ export function buildOldStation(g, l) {
     const pos = roof.geometry.attributes.position; // pull the top in: a hipped look
     for (let i = 0; i < pos.count; i++) if (pos.getY(i) > h / 2) { pos.setX(i, pos.getX(i) * Math.max(0.3, 1 - 1.6 / w)); pos.setZ(i, pos.getZ(i) * 0.45); }
     roof.geometry.computeVertexNormals();
-    roof.position.set((x0 + x1) / 2, K.wingEave, (z0 + z1) / 2);
+    roof.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
     g.add(roof);
   };
   const samples = [];
-  for (let x = X0 + 0.25; x < X1; x += 0.5) samples.push([x, frontAt(x)]);
+  for (let x = X0 + 0.25; x < xa; x += 0.5) samples.push([x, frontAt(x)]);
   const fronts = samples.map((q) => q[1]).sort((a, b) => a - b), zMain = fronts[Math.floor(fronts.length / 2)];
-  hipped(X0 + 0.2, X1 - 0.2, Z0 + 0.1, zMain + 0.2, K.roof);
+  hipped(X0 + 0.2, xa - 0.2, Z0 + 0.1, zMain + 0.2, K.roof);
   let run = null; const runs = []; // the parts standing forward of the main front
-  for (const [x, z] of [...samples, [X1 + 1, zMain]]) {
+  for (const [x, z] of [...samples, [xa + 1, zMain]]) {
     if (z > zMain + 0.8 && !(x > m0 - 0.5 && x < m1 + 0.5)) { if (!run) run = { x0: x, x1: x, z }; run.x1 = x; run.z = Math.min(run.z, z); }
-    else if (run) { hipped(run.x0 - 0.15, run.x1 + 0.15, zMain - 0.4, run.z + 0.15, K.roof * 0.8); runs.push(run); run = null; }
+    else if (run) { hipped(run.x0 - 0.15, Math.min(run.x1 + 0.15, xa - 0.1), zMain - 0.4, run.z + 0.15, K.roof * 0.8); runs.push(run); run = null; }
   }
-  // Windows on every long wall, two rows, white stone piers between the bays;
-  // none where the arched front is.
-  for (let i = 0; i < P.length; i++) {
-    const [ax, az] = P[i], [bx, bz] = P[(i + 1) % P.length];
-    const L = Math.hypot(bx - ax, bz - az);
-    if (L < 1.4) continue;
-    const dx = (bx - ax) / L, dz = (bz - az) / L;
-    let nx = dz, nz = -dx; // outward: away from the middle of the outline
-    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
-    if (nx * (mx - (X0 + X1) / 2) + nz * (mz - (Z0 + Z1) / 2) < 0) { nx = -nx; nz = -nz; }
-    const ry = Math.atan2(nx, nz);
-    const n = Math.max(1, Math.floor(L / 1.55));
-    for (let k = 0; k < n; k++) {
-      const s = (k + 0.5) * (L / n), x = ax + dx * s, z = az + dz * s;
-      if (nz > 0.7 && x > m0 - K.tower.w - 0.2 && x < m1 + K.tower.w + 0.2) continue; // (the arched front)
-      const front = nz > 0.7;
-      box(g, 0.62, 1.15, 0.1, x + nx * 0.05, 1.25, z + nz * 0.05, C.glass, ry); // ground floor
-      box(g, 0.66, 1.75, 0.1, x + nx * 0.05, 3.8, z + nz * 0.05, C.glass, ry); // upper floor
-      box(g, 0.8, 0.12, 0.16, x + nx * 0.08, 4.75, z + nz * 0.08, C.stone, ry); // its lintel
-      if (front && k % 2 === 0) box(g, 0.66, 0.9, 0.1, x + nx * 0.05, 5.4, z + nz * 0.05, C.glass, ry); // the attic's small windows (front)
-    }
-    for (let k = 0; k <= n; k += 2) { // stone piers
-      const s = k * (L / n), x = ax + dx * s, z = az + dz * s;
-      box(g, 0.32, K.wingEave - K.ground, 0.14, x + nx * 0.07, K.ground + (K.wingEave - K.ground) / 2, z + nz * 0.07, C.stone, ry);
-    }
+  if (PA) {
+    const az = PA.map((q) => q[1]), ax = PA.map((q) => q[0]);
+    hipped(xa, Math.max(...ax) - 0.2, Math.min(...az) + 0.1, Math.max(...az) - 0.1, K.roof * 0.7, annexEave);
   }
   // The end pavilions: curved gables over the eaves of the parts that stand
   // forward of the front.
@@ -191,13 +216,13 @@ export function buildOldStation(g, l) {
 
 // ---------- The station hall ----------
 function signTexture() {
-  return canvasTex(1024, 256, (ctx, w, h) => {
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#1d3f8f';
+  return canvasTex(1024, 448, (ctx, w, h) => {
+    ctx.fillStyle = '#ddd2bd'; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#2b4a8a';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '900 128px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-    ctx.fillText('서울역', w / 2, h * 0.38);
-    ctx.font = '700 64px system-ui, sans-serif';
+    ctx.font = '900 200px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+    ctx.fillText('서울역', w / 2, h * 0.36);
+    ctx.font = '700 100px system-ui, sans-serif';
     ctx.fillText('Seoul Station', w / 2, h * 0.8);
   });
 }
@@ -224,20 +249,31 @@ export function buildStationHall(g, l) {
   const S = l.steps, n = S.n, run = (S.x1 - S.x0) / n, rise = 1.2 / n;
   for (let k = 0; k < n; k++) box(g, run * (n - k), rise, S.z1 - S.z0, S.x0 + (run * (n - k)) / 2, rise * k + rise / 2, (S.z0 + S.z1) / 2, C.steps);
   for (const z of [S.z0 + 0.15, S.z1 - 0.15]) box(g, S.x1 - S.x0, 0.9, 0.3, (S.x0 + S.x1) / 2, 0.75, z, C.hallRoof); // the side walls
-  // The round pillar on the plaza (white, blue stripes, a red ring, a clock on top).
+  // The round pillar on the plaza (Yozi's photo): a white shaft with a red
+  // ring low down and a blue band up top, a dark drum head with round
+  // lamps, a white rim and a blue cap.
   const [px, pz] = l.pillar;
-  cyl(g, 0.45, 5, px, 0, pz, C.pillar, 12);
-  for (const a of [0, Math.PI]) box(g, 0.16, 4.6, 0.1, px + Math.sin(a) * 0.45, 2.5, pz + Math.cos(a) * 0.45, C.blue, a);
-  cyl(g, 0.55, 0.35, px, 3.6, pz, C.red, 12);
-  cyl(g, 0.6, 0.6, px, 5, pz, C.blue, 12);
+  cyl(g, 0.42, 6.4, px, 0, pz, C.pillar, 14);
+  cyl(g, 0.5, 0.4, px, 0.9, pz, C.red, 14);
+  cyl(g, 0.56, 1.1, px, 4.0, pz, C.blue, 14);
+  cyl(g, 0.5, 0.18, px, 5.15, pz, C.red, 14);
+  cyl(g, 0.78, 1.0, px, 6.2, pz, C.pillarHead, 16);
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; cyl(g, 0.2, 0.05, px + Math.sin(a) * 0.79, 6.5, pz + Math.cos(a) * 0.79, C.pillar, 10).rotation.set(Math.PI / 2, a, 0, 'YXZ'); }
+  cyl(g, 0.84, 0.14, px, 7.2, pz, C.pillar, 16);
+  cyl(g, 0.7, 0.3, px, 7.34, pz, C.blue, 16, 0.5);
+  // A blue strip up the glass front under the sign (the photo).
+  const [sx, sz, sry] = l.sign;
+  const along = [Math.cos(sry), -Math.sin(sry)], out = [-Math.sin(sry), -Math.cos(sry)]; // the box's long side, and outward from the front
+  box(g, 1.1, HALL.h - 0.4, 0.2, sx + along[0] * 2.4 + out[0] * 1.62, (HALL.h - 0.4) / 2, sz + along[1] * 2.4 + out[1] * 1.62, C.blue, sry);
+  // The sign: a stone box standing on the roof at the front's north end,
+  // a taller grey block behind it.
+  const { w, h, d } = HALL.sign;
+  box(g, w * 0.8, h + 1.6, d + 2.5, sx - along[0] * 0.6 - out[0] * 2.4, HALL.h + (h + 1.6) / 2, sz - along[1] * 0.6 - out[1] * 2.4, C.hallBlock, sry);
+  box(g, w, h, d, sx, HALL.h + h / 2, sz, C.signBox, sry);
   mergeStatic(g);
-  // The sign on the roof, facing east over the plaza.
-  const [sx, sz] = l.sign;
-  const frame = box(g, 0.4, HALL.sign.h + 0.3, HALL.sign.w + 0.3, sx, HALL.h + 0.5 + HALL.sign.h / 2, sz, C.hallRoof);
-  frame.material = mat(C.hallRoof);
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(HALL.sign.w, HALL.sign.h), new THREE.MeshBasicMaterial({ map: signTexture() }));
-  face.rotation.y = Math.PI / 2;
-  face.position.set(sx + 0.22, HALL.h + 0.5 + HALL.sign.h / 2, sz);
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.94, h * 0.8), new THREE.MeshBasicMaterial({ map: signTexture() }));
+  face.rotation.y = sry + Math.PI;
+  face.position.set(sx + out[0] * (d / 2 + 0.03), HALL.h + h / 2, sz + out[1] * (d / 2 + 0.03));
   g.add(face);
 }
 

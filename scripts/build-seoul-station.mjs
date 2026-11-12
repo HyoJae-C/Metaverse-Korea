@@ -93,21 +93,25 @@ const SQUARE = OSM.seoulSquare.slice(0, -1);
 // The plaza: from the old station and the hall out to Hangang-daero's kerb.
 const kerbAt = (z) => { const { at } = nearestOn([-1830, z], HANGANG); return at[0] - 8; };
 export const PLAZA = [
-  [-1852, -347], [r1(kerbAt(-347) - 1), -347], [r1(kerbAt(-300) - 1), -300], [r1(kerbAt(-262) - 1), -262], [-1846, -262], [-1846, -269], [-1850.5, -270.5], [-1857, -279], [-1857, -284], [-1852, -291],
+  [-1852, -347], [r1(kerbAt(-347) - 1), -347], [r1(kerbAt(-300) - 1), -300], [r1(kerbAt(-256) - 1), -256], [-1850, -256], [-1846, -269], [-1850.5, -270.5], [-1857, -279], [-1857, -284], [-1852, -291],
 ];
 // The steps up to the hall's east doors (the photo's wide stairs): a
 // flight between the round entrance and the hall's east wing.
 export const STEPS = { x0: -1856.6, x1: -1851.6, z0: -283.4, z1: -272.6, n: 8 };
 export const PILLAR = [-1848.8, -272.4]; // the round pillar in front of the steps
 const ROTUNDA = [-1860, -287.4]; // the round entrance: the middle of the hall outline's half circle (r 3.6)
-const SIGN = [-1857, -270]; // the "서울역 Seoul Station" sign on the roof, facing east
+// The "서울역 Seoul Station" sign: a stone box on the roof at the north end
+// of the glass front (the diagonal wall facing north-east over the plaza),
+// like Yozi's photo; ry turns the box's long side along that wall.
+const SIGN = { at: [-1856.2, -274.7], ry: -0.927 };
 // Where a new player who picks "Seoul Station" starts: at the foot of the
 // steps, as if just out of the hall, facing Seoul Square across the road.
 export const START = [-1842, -276];
-// The Information Center: a small kiosk at the plaza's south end, beside the
-// hall's east wing (out of the way of the old station's front), its door
-// (stores.json info-seoul-station "at") on its east side, towards the road.
-export const KIOSK = { p: [[-1847, -266.5], [-1843, -266.5], [-1843, -263], [-1847, -263]], h: 3.4, door: [-1843, -264.8] };
+// The Information Center: a small kiosk tucked in south of the hall's east
+// wing, out of the way of the old station's front and of the glass front
+// and its steps, its door (stores.json info-seoul-station "at") on its east
+// side, towards the road.
+export const KIOSK = { p: [[-1848, -262], [-1844, -262], [-1844, -258.5], [-1848, -258.5]], h: 3.4, door: [-1844, -260.2] };
 
 // ---------- The tracks, fenced off ----------
 const rails = OSM.rails.map((r) => ({ p: r.p }));
@@ -178,7 +182,7 @@ async function build() {
   buildings.push({ h: 9.5, custom: 1, p: HALL_OUTLINE.map(local), n: nHall });
   const steps = rect(STEPS.x0, STEPS.z0, STEPS.x1, STEPS.z1);
   buildings.push({ h: 1.2, custom: 1, low: 1, p: steps.map(local), n: nHall });
-  landmarks.push({ type: 'stationhall', x: 0, z: 0, outline: HALL_OUTLINE.map(local), steps: { ...STEPS, x0: local([STEPS.x0, 0])[0], x1: local([STEPS.x1, 0])[0], z0: local([0, STEPS.z0])[1], z1: local([0, STEPS.z1])[1] }, pillar: local(PILLAR), rotunda: [...local(ROTUNDA), 3.6], sign: local(SIGN) });
+  landmarks.push({ type: 'stationhall', x: 0, z: 0, outline: HALL_OUTLINE.map(local), steps: { ...STEPS, x0: local([STEPS.x0, 0])[0], x1: local([STEPS.x1, 0])[0], z0: local([0, STEPS.z0])[1], z1: local([0, STEPS.z1])[1] }, pillar: local(PILLAR), rotunda: [...local(ROTUNDA), 3.6], sign: [...local(SIGN.at), SIGN.ry] });
   // Seoul Square: an ordinary building in its own stone; its media wall is a
   // region.json screen.
   buildings.push({ h: SEOUL_SQUARE.h, wall: SEOUL_SQUARE.wall, roof: SEOUL_SQUARE.roof, p: SQUARE.map(local), n: nSquare });

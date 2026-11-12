@@ -448,11 +448,16 @@ load with `import()` when the city is built.
   Red brick over a stone ground floor, white bands, slate roofs, curved
   gables on the end pavilions, the arched front with the clock and three
   doors, two small domed towers and the green dome. Heights from Yozi's
-  photos. The back has the same walls, windows and roof; the arch, clock and
+  photos. The main block is symmetric about the arch (the photo); what OSM's
+  outline has past it at the north end (about 9.5 m) is drawn as a lower
+  wing. The back has the same walls, windows and roof; the arch, clock and
   doors are on the front only.
 - **The glass station hall** at 1/4 on its real outline: glass walls, the
-  "서울역 Seoul Station" sign on the roof edge, the rotunda, the wide steps
-  down to the plaza and the round pillar in front of them (Yozi's photo).
+  "서울역 Seoul Station" sign in a stone box on the roof at the north end of
+  the glass front with a blue strip under it, the rotunda, the wide steps
+  down to the plaza and the round pillar in front of them (white, red ring,
+  blue band, dark drum head; Yozi's photo). The Information Center kiosk is
+  tucked in south of the hall's east wing.
 - **Seoul Square** at 1/4 (23 storeys, 22.8 m); its whole west front is a
   media wall (region.json `screens`, "WELCOME TO 서울 SEOUL"; ads can go there
   later).
