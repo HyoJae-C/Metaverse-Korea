@@ -56,3 +56,11 @@ test('from the start, Seoul Square is in sight: no building or exit in between',
   for (const b of district.buildings) if (!/Seoul Square/.test(b.n?.en || '')) assert.equal(hits(world(b.p)), null, b.n?.en || 'a building');
   for (const e of EXITS) assert.ok(hits([[e.at[0] - 2.5, e.at[1] - 2.5], [e.at[0] + 2.5, e.at[1] - 2.5], [e.at[0] + 2.5, e.at[1] + 2.5], [e.at[0] - 2.5, e.at[1] + 2.5]], 1) === null, `exit ${e.n}`);
 });
+
+test('station names get "Station" / "역" once: Seoul Station is not "Seoul Station Station"', async () => {
+  const { stationName } = await import('../src/core/subway.js');
+  const seoul = stationName(region.subway.stations.find((s) => s.id === 'seoul-station').name);
+  assert.deepEqual([seoul.en, seoul.ko, seoul.ja, seoul.zh], ['Seoul Station', '서울역', 'ソウル駅', '首尔站']);
+  assert.deepEqual(stationName({ ko: '성수', en: 'Seongsu' }), { ko: '성수역', en: 'Seongsu Station' });
+  for (const st of region.subway.stations) assert.ok(!/역역|Station Station|駅駅|站站/.test(Object.values(stationName(st.name)).join('|')), st.id);
+});

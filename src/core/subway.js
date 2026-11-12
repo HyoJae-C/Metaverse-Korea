@@ -11,6 +11,15 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // Street stairwell, in the exit's own frame: +b runs down the stairs (from the
 // mouth to the bottom), a runs across. The hole in the ground is w × l.
 export const PIT = { w: 2.4, l: 6, depth: 3.2, run: 5 }; // steps over the first 5 m, then a landing
+// A station's name with "역" / " Station" / "駅" / "站" on the end, but not
+// twice: a name like 서울역 / Seoul Station already has it.
+const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
+export function stationName(name = {}) {
+  return Object.fromEntries(Object.entries(name).map(([k, v]) => {
+    const suf = STATION_SUFFIX[k] ?? '';
+    return [k, suf && v.endsWith(suf.trim()) ? v : v + suf];
+  }));
+}
 export const ENTER_AT = 0.8; // how far down the steps (0–1) you go below
 const WALL = 0.3;
 
@@ -461,8 +470,8 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
 
   // Stations: a white circle on the line; the name where it fits best
   // (clear of the line, the other stations and names, preferably outside).
-  const placed = [];
   const hit = (r, x, y) => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1;
+  const meet = (r, o) => !(r.x1 < o.x0 || r.x0 > o.x1 || r.y1 < o.y0 || r.y0 > o.y1);
   const order = pts.map((_, i) => i).sort((a, b) => (a === index ? -1 : b === index ? 1 : 0));
   const labels = [];
   for (const i of order) {
@@ -474,25 +483,42 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
     const w2 = g.measureText(second(nm)).width;
     const lw = Math.min(330, Math.max(w1, w2)), lh = big + small + 10;
     const ox = px - cx, oy = py - cy, ol = Math.hypot(ox, oy) || 1;
-    const cands = [
+    const near = [
       [rr, -lh / 2, 'left'], [-rr, -lh / 2, 'right'], [0, -rr - lh, 'center'], [0, rr, 'center'],
       [rr * 0.8, -rr * 0.8 - lh, 'left'], [-rr * 0.8, -rr * 0.8 - lh, 'right'], [rr * 0.8, rr * 0.8, 'left'], [-rr * 0.8, rr * 0.8, 'right'],
-    ].map(([dx, dy, align]) => {
+    ];
+    // Also a little further out (a small cost), for crowded corners where
+    // stations sit close together (Seoul Station, Myeongdong, Gwanghwamun).
+    const far = near.map(([dx, dy, align]) => [dx * 1.6, dy === -lh / 2 ? dy : dy < 0 ? dy - rr * 0.6 : dy + rr * 0.6, align, 10]);
+    const cands = [...near, ...far].map(([dx, dy, align, extra = 0]) => {
       const x0 = align === 'left' ? px + dx : align === 'right' ? px + dx - lw : px - lw / 2;
       const r = { x0: x0 - 4, x1: x0 + lw + 4, y0: py + dy - 2, y1: py + dy + lh + 2 };
-      let bad = 0;
+      let bad = extra;
       for (const [qx, qy] of linePts) if (hit(r, qx, qy)) bad += 8;
-      for (const [k, q] of pts.entries()) if (k !== i && q[0] > r.x0 - 26 && q[0] < r.x1 + 26 && q[1] > r.y0 - 26 && q[1] < r.y1 + 26) bad += 40;
-      for (const o of placed) if (!(r.x1 < o.x0 || r.x0 > o.x1 || r.y1 < o.y0 || r.y0 > o.y1)) bad += 60;
+      for (const [k, q] of pts.entries()) if (k !== i && q[0] > r.x0 - 26 && q[0] < r.x1 + 26 && q[1] > r.y0 - 26 && q[1] < r.y1 + 26) bad += 150;
       for (const a of arrowLabels) if (hit({ x0: r.x0 - 50, x1: r.x1 + 50, y0: r.y0 - 32, y1: r.y1 + 32 }, a.x, a.y)) bad += 150;
       if (r.x0 < 8 || r.x1 > w - 8 || r.y0 < 128 || r.y1 > 860) bad += 200;
       const mx = (r.x0 + r.x1) / 2 - px, my = (r.y0 + r.y1) / 2 - py;
       const outward = (mx * ox + my * oy) / ol / (Math.hypot(mx, my) || 1);
       return { r, x0, y: py + dy, align, score: bad - outward * 3 };
     });
-    const best = cands.reduce((a, b) => (b.score < a.score ? b : a));
-    placed.push(best.r);
-    labels.push({ i, best, big, small, lw, cur, nm });
+    labels.push({ i, cands, best: null, big, small, lw, cur, nm });
+  }
+  // Names don't sit on each other: place them one by one, then go round a
+  // few times letting each move to its best spot given where the others are.
+  const LABEL_HIT = 160;
+  const pick = (L, others) => L.cands.reduce((a, b) => {
+    const sa = a.score + others.filter((o) => meet(a.r, o)).length * LABEL_HIT, sb = b.score + others.filter((o) => meet(b.r, o)).length * LABEL_HIT;
+    return sb < sa ? b : a;
+  });
+  for (const [k, L] of labels.entries()) L.best = pick(L, labels.slice(0, k).map((o) => o.best.r));
+  for (let pass = 0; pass < 4; pass++) {
+    let moved = false;
+    for (const L of labels) {
+      const b = pick(L, labels.filter((o) => o !== L).map((o) => o.best.r));
+      if (b !== L.best) { L.best = b; moved = true; }
+    }
+    if (!moved) break;
   }
   // Circles on top of the line, then the names.
   pts.forEach(([px, py], i) => {
@@ -644,7 +670,7 @@ export class SubwayEntrances {
   _sign(it, translated, lang) {
     const name = this.sub.name || {};
     const second = translated ? (name[lang] || name.en) : name.en;
-    const ko = (name.ko || '') + '역';
+    const ko = stationName(name).ko || '역';
     const tex = signTexture(ko, `${second} · Exit ${it.n}`, { num: it.n, line: this.sub.line?.color });
     for (const s of it.signs) { s.material.map?.dispose(); s.material.map = tex; s.material.needsUpdate = true; }
   }
