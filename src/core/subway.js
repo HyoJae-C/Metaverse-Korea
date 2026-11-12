@@ -520,6 +520,16 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
     }
     if (!moved) break;
   }
+  // A thin grey tie from a station to its name when the name had to sit a
+  // little away from it, so it's clear which circle it belongs to (e.g.
+  // Dongdaemun History & Culture Park, its name up beside Dongmyo's leg).
+  g.strokeStyle = '#6b717c'; g.lineWidth = 4; g.lineCap = 'round';
+  for (const { i, best, cur } of labels) {
+    const [px, py] = pts[i], r = best.r, rr = cur ? 46 : 26;
+    const nx = Math.min(r.x1, Math.max(r.x0, px)), ny = Math.min(r.y1, Math.max(r.y0, py)), d = Math.hypot(nx - px, ny - py);
+    if (d < rr + 6) continue;
+    g.beginPath(); g.moveTo(px + ((nx - px) / d) * rr, py + ((ny - py) / d) * rr); g.lineTo(nx, ny); g.stroke();
+  }
   // Circles on top of the line, then the names.
   pts.forEach(([px, py], i) => {
     const cur = i === index;
