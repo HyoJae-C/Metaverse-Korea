@@ -22,8 +22,8 @@ test('new players start just inside Bukchon\'s gate, facing up into the village,
   assert.ok(Math.abs(Math.sin(f.ry)) < 0.01 && Math.cos(f.ry) < 0, 'facing north (up the village)');
 });
 
-test('the start screen offers sights, shopping, an outing and a quiet walk, each with a spot, a trip and words', () => {
-  assert.deepEqual(startList(region).map((s) => s.k), ['tour', 'shop', 'activity', 'heal']);
+test('the start screen offers sights, shopping, an outing, a quiet walk and arriving at Seoul Station, each with a spot, a trip and words', () => {
+  assert.deepEqual(startList(region).map((s) => s.k), ['tour', 'shop', 'activity', 'heal', 'arrive']);
   for (const s of startList(region)) {
     const sp = startSpot(region, s.k);
     assert.ok(sp, s.k);

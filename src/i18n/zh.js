@@ -605,6 +605,7 @@ export const ZH = {
   'start.shop': '购物·打扮 · 圣水',
   'start.activity': '户外活动 · 汉江',
   'start.heal': '放松 · 首尔林',
+  'start.arrive': '抵达 · 首尔站',
   'start.any': '随便 · 人多的地方',
   'start.last': '上次位置：{place}',
   'start.button': '开始漫步',

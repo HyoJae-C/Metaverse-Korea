@@ -602,6 +602,7 @@ export const TH = {
   'start.shop': 'ช้อปปิ้งและแต่งตัว · ซองซู',
   'start.activity': 'กิจกรรม · แม่น้ำฮัน',
   'start.heal': 'พักผ่อน · ป่าโซล',
+  'start.arrive': 'มาถึง · สถานีโซล',
   'start.any': 'ที่ไหนก็ได้ · ที่ที่คนเยอะ',
   'start.last': 'ตำแหน่งล่าสุด: {place}',
   'start.button': 'เริ่มเดินเลย',

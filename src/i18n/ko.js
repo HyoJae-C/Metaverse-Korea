@@ -605,6 +605,7 @@ export const KO = {
   'start.shop': '쇼핑·꾸미기 · 성수',
   'start.activity': '액티비티 · 한강',
   'start.heal': '힐링 · 서울숲',
+  'start.arrive': '도착 · 서울역',
   'start.any': '아무데나 · 사람 많은 곳',
   'start.last': '마지막 위치: {place}',
   'start.button': '걷기 시작',

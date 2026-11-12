@@ -602,6 +602,7 @@ export const ID = {
   'start.shop': 'Belanja & gaya · Seongsu',
   'start.activity': 'Aktivitas · Sungai Han',
   'start.heal': 'Santai · Hutan Seoul',
+  'start.arrive': 'Tiba · Stasiun Seoul',
   'start.any': 'Di mana saja · tempat ramai',
   'start.last': 'Lokasi terakhir: {place}',
   'start.button': 'Mulai jalan-jalan',
