@@ -129,6 +129,19 @@ const BUILD = {
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
   },
+  bongeunsa(g, l) {
+    // Bongeunsa's halls, Beopwangru, its lanterns, pagoda, Haesu Gwaneum,
+    // bell pavilion and Iljumun (core/bongeunsa-model.js, loaded when the
+    // city is built). The pagoda's step goes in now, so the far culling
+    // knows where it stands.
+    if (l.pagoda) box(g, 1.0, 0.22, 1.0, l.pagoda[0], 0.11, l.pagoda[1], C.stone);
+    import('./bongeunsa-model.js').then(({ buildTemple }) => buildTemple(g, l));
+  },
+  maitreya(g, l) {
+    // Bongeunsa's Maitreya Buddha on its plaza (core/bongeunsa-model.js).
+    box(g, 5.2, 0.15, 5.2, 0, 0.075, 0, C.stone);
+    import('./bongeunsa-model.js').then(({ buildMaitreya }) => buildMaitreya(g, l));
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the
