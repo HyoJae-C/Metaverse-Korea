@@ -13,6 +13,9 @@ export const LANDMARK_SEARCH = [
   { type: 'sungnyemun', icon: '🏯', go: [0, 20], // the lawn south of the gate, by its stamp
     name: { en: 'Sungnyemun (Namdaemun)', ko: '숭례문 (남대문)', ja: '崇礼門（南大門）', zh: '崇礼门（南大门）' },
     also: ['Namdaemun Gate', 'Great South Gate', '남대문', '南大門', '南大门'] },
+  { type: 'oldstation', icon: '🚉', go: [11, 0], // the plaza in front of it
+    name: { en: 'Old Seoul Station (Culture Station Seoul 284)', ko: '구 서울역사 (문화역서울284)', ja: '旧ソウル駅舎（文化駅ソウル284）', zh: '旧首尔站（文化站首尔284）' },
+    also: ['Seoul Station', 'Culture Station Seoul 284', '서울역', '문화역서울284', 'ソウル駅', '首尔站'] },
   { type: 'heunginjimun', icon: '🏯', go: [8, 0],
     name: { en: 'Heunginjimun (Dongdaemun Gate)', ko: '흥인지문 (동대문)', ja: '興仁之門（東大門）', zh: '兴仁之门（东大门）' },
     also: ['Dongdaemun Gate', 'Great East Gate', '동대문', '東大門', '东大门'] },

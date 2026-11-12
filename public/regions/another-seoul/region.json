@@ -21,7 +21,8 @@
       { "k": "tour", "icon": "🏯", "district": "bukchon", "at": [24, -26], "heading": 0, "trip": "bukchon", "why": "Sights: just inside Bukchon's gate, on the open yard by the shops, facing up into the village: hanok roofs and villagers on the first screen, room for the camera, and Anguk Station outside the gate for the first trip to Seongsu." },
       { "k": "shop", "icon": "🛍️", "square": true, "district": "seongsu", "why": "Shopping and dressing up: beside the square guide on Seongsu Square, the old start, with the shops, hair salons and clothes around it." },
       { "k": "activity", "icon": "🛶", "district": "seongsu", "at": [86, 349], "heading": 180, "trip": "toBukchon", "why": "An outing: on Ttukseom Han River Park's bank (moved up when the Han got its real width), facing the river (duck boats, fishing, the drone show)." },
-      { "k": "heal", "icon": "🌳", "district": "seongsu", "at": [-330, 52], "heading": 0, "trip": "toBukchon", "why": "A quiet walk: in Seoul Forest at the south end of Metasequoia Avenue, looking up the tree-lined walk, near the butterfly greenhouse and the flower gardens." }
+      { "k": "heal", "icon": "🌳", "district": "seongsu", "at": [-330, 52], "heading": 0, "trip": "toBukchon", "why": "A quiet walk: in Seoul Forest at the south end of Metasequoia Avenue, looking up the tree-lined walk, near the butterfly greenhouse and the flower gardens." },
+      { "k": "arrive", "icon": "🚉", "district": "seoul-station", "at": [14, 41], "heading": 40, "trip": "bukchon", "why": "Arriving: on Seoul Station's plaza at the foot of the steps from the glass hall, as if just off the airport train, facing Seoul Square's media wall across Hangang-daero, the old station on the left (Yozi 2026-11-12: most visitors really arrive here)." }
     ]
   },
   "districts": [
@@ -161,6 +162,12 @@
       "map": "districts/myeongdong.json",
       "offset": [-1509, -520],
       "anchor": { "place": "The middle of Myeongdong Cathedral's main hall", "lat": 37.563274, "lon": 126.987332, "local": [0.4, 0.3], "why": "No nudge: the cathedral's middle, its grounds and the streets are on their real places. The church itself is drawn at 50% (Yozi 2026-11-11), its grounds at 1/4." }
+    },
+    {
+      "id": "seoul-station",
+      "map": "districts/seoul-station.json",
+      "offset": [-1856, -317],
+      "anchor": { "place": "The middle of the old Seoul Station building (Culture Station Seoul 284)", "lat": 37.555991, "lon": 126.97161, "local": [0, 0], "why": "No nudge: the plaza, the hall, Seoul Square and the roads are on their real places (scripts/build-seoul-station.mjs). The old station is drawn at 37.5% (Yozi 2026-11-12) round its real middle, so it reaches 6 m past its real ends." }
     },
     {
       "id": "grand-park",
@@ -353,6 +360,7 @@
   "screens": [
     { "at": [110.2, 933], "w": 22, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall (Samseong), on the plaza side by the corner" },
     { "at": [104.4, 948.2], "w": 20, "h": 12, "y": 7, "wave": true, "note": "KONEXT's media wall round the corner, on the mall's south side over KONEXT Square (towards Teheran-ro)" },
+    { "at": [-1819, -304], "w": 24, "h": 17, "y": 3.5, "city": { "top": "WELCOME TO", "local": "서울", "name": "SEOUL", "hue": 205 }, "note": "Seoul Square's media wall, its whole west front facing Seoul Station across Hangang-daero (real one about 99 x 78 m, here 24 x 17 m on the 1/4 building). The first thing seen from the 'Seoul Station' start. Ads can go here later (Yozi 2026-11-12)." },
     {
       "at": [
         4.6,
@@ -704,6 +712,7 @@
         "exits": [{"n": 9, "at": [-2926, -314.3], "ry": 2.3261}, {"n": 3, "at": [-2877.3, -387.2], "ry": -0.8155}]
       },
       {"id": "mangwon-station", "name": {"ko": "망원", "en": "Mangwon", "ja": "望遠", "zh": "望远"}, "code": "621", "line": {"color": "#cd7c2f", "name": {"ko": "6호선", "en": "Line 6", "ja": "6号線", "zh": "6号线"}}, "prev": {"ko": "마포구청", "en": "Mapo-gu Office"}, "next": {"ko": "합정", "en": "Hapjeong"}, "note": "On Worldcup-ro at its real place (exits on both pavements, within 12 m of the real ones), a short walk from Mangwon Market.", "exits": [{"n": 1, "at": [-3207.7, -328.6], "ry": -2.5155}, {"n": 2, "at": [-3223.3, -317.4], "ry": 0.6261}]},
+      {"id": "seoul-station", "name": {"ko": "서울역", "en": "Seoul Station", "ja": "ソウル駅", "zh": "首尔站"}, "code": "133", "line": {"color": "#0052a4", "name": {"ko": "1호선", "en": "Line 1", "ja": "1号線", "zh": "1号线"}}, "prev": {"ko": "시청", "en": "City Hall"}, "next": {"ko": "남영", "en": "Namyeong"}, "note": "Under the station plaza, at its real place (OSM station 8829280690; Line 4 and the airport railroad stop here too). Exits at the real 1 and 2 (OSM 3390512293, 3403067559): exit 2 on the plaza in front of the old station as it is; exit 1 moved 7 m east onto the plaza, off the old station's south end, which reaches past its real line at 37.5% (scripts/build-seoul-station.mjs EXITS).", "exits": [{"n": 1, "at": [-1846.6, -287.6], "ry": 1.5708}, {"n": 2, "at": [-1844.9, -324.3], "ry": 1.5708}]},
       { "id": "myeongdong-station", "name": { "ko": "명동", "en": "Myeongdong", "ja": "明洞", "zh": "明洞" }, "code": "424", "line": { "color": "#00a5de", "name": { "ko": "4호선", "en": "Line 4", "ja": "4号線", "zh": "4号线" } }, "prev": { "ko": "회현", "en": "Hoehyeon" }, "next": { "ko": "충무로", "en": "Chungmuro" }, "note": "Under Toegye-ro at the foot of the Myeongdong shopping street, at its real place (OSM station 6036160341). Exits at the real 6 and 4 (OSM 3403067532, 3403067533), moved out of Toegye-ro onto its pavements (scripts/build-myeongdong.mjs stationExits): exit 6 on the north side by Myeongdong 8-gil, the shopping street (10 m from the real one), exit 4 across the road towards Namsan and its cable car (9 m).", "exits": [{ "n": 6, "at": [-1568.7, -460.9], "ry": -1.4635 }, { "n": 4, "at": [-1560.1, -439.7], "ry": 1.6781 }] },
       { "id": "yeouinaru-station", "name": { "ko": "여의나루", "en": "Yeouinaru", "ja": "汝矣ナル", "zh": "汝矣渡口" }, "code": "527", "line": { "color": "#996cac", "name": { "ko": "5호선", "en": "Line 5", "ja": "5号線", "zh": "5号线" } }, "prev": { "ko": "마포", "en": "Mapo" }, "next": { "ko": "여의도", "en": "Yeouido" }, "note": "Under Yeouidong-ro at the edge of Yeouido Han River Park, at its real place (OSM station 6039313663). Exits at the real 2 and 3 (OSM 3403232529, 3403232528), the river-side pair, moved out of Yeouidong-ro onto its north pavement by the Han River path (scripts/build-yeouido.mjs stationExits): exit 2 behind Mul-bit Square, its mouth towards the square (8 m from the real one), exit 3 at the corner of the fireworks lawn, its mouth onto the lawn (8 m).", "exits": [{ "n": 2, "at": [-2714.9, 482.5], "ry": 0.7988 }, { "n": 3, "at": [-2704.9, 492.2], "ry": -2.3428 }] },
       { "id": "ddp-station", "name": { "ko": "동대문역사문화공원", "en": "Dongdaemun History & Culture Park", "ja": "東大門歴史文化公園", "zh": "东大门历史文化公园" }, "code": "205", "line": { "color": "#00a84d", "name": { "ko": "2호선", "en": "Line 2", "ja": "2号線", "zh": "2号线" } }, "prev": { "ko": "을지로4가", "en": "Euljiro 4(sa)-ga" }, "next": { "ko": "신당", "en": "Sindang" }, "note": "On Eulji-ro where Jangchungdan-ro crosses it, by the park and DDP. Lines 4 and 5 also stop here; the signs show Line 2. Exits 1 and 10 at their real places either side of Eulji-ro, moved out of the road onto the pavement (scripts/build-euljiro.mjs stationExits).", "exits": [{ "n": 1, "at": [-1024.2, -594.1], "ry": 1.1903 }, { "n": 10, "at": [-1049.1, -580.9], "ry": 1.281 }] },

@@ -434,6 +434,38 @@ OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
   Audio (no file, no words), quiet, about 70 s. Walking only inside (Yozi
   2026-11-11): running turns into a walk and gets a "shh".
 
+## Seoul Station (Jung-gu)
+
+`scripts/build-seoul-station.mjs` builds `districts/seoul-station.json` from
+OpenStreetMap (`scripts/data/seoul-station-osm.json`, Yozi's export of
+2026-11-12). Its anchor is the middle of the old station building. Sizes in
+`src/data/seoul-station.js`; the models (`src/core/seoul-station-models.js`)
+load with `import()` when the city is built.
+
+- **The old station** (Culture Station Seoul 284) at 37.5% of the real one
+  (Yozi 2026-11-12): a symbol to take photos of, between the 1/4 map and the
+  50% landmarks. Its OSM outline grown 1.5x about its middle, so 52 x 10.5 m.
+  Red brick over a stone ground floor, white bands, slate roofs, curved
+  gables on the end pavilions, the arched front with the clock and three
+  doors, two small domed towers and the green dome. Heights from Yozi's
+  photos. The back has the same walls, windows and roof; the arch, clock and
+  doors are on the front only.
+- **The glass station hall** at 1/4 on its real outline: glass walls, the
+  "서울역 Seoul Station" sign on the roof edge, the rotunda, the wide steps
+  down to the plaza and the round pillar in front of them (Yozi's photo).
+- **Seoul Square** at 1/4 (23 storeys, 22.8 m); its whole west front is a
+  media wall (region.json `screens`, "WELCOME TO 서울 SEOUL"; ads can go there
+  later).
+- **Streets**: Hangang-daero, Sejong-daero (north to Sungnyemun's ring) and
+  Toegye-ro on their real lines; they meet at the station crossing where OSM's
+  lines stop short. The plaza between the old station and Hangang-daero; the
+  tracks behind are closed off with a fence.
+- **Arrival start** (`spawn.starts` `arrive`, the fifth start): on the plaza
+  at the foot of the hall's steps, as if just off the airport train, facing
+  Seoul Square with the old station on the left. Subway exits 1 and 2
+  (Line 1); exit 1 is 7.6 m east of the real one to keep the steps clear.
+- Next (separate change): Seoullo 7017 as a walkway, length 1/4, width 2x.
+
 ## Namsan and its cable car (Yongsan-gu / Jung-gu)
 
 `scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap

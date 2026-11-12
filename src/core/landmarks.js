@@ -129,6 +129,23 @@ const BUILD = {
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
   },
+  // Seoul Station (core/seoul-station-models.js, loaded when the city is
+  // built): the old station at 37.5%, the glass hall, the fence round the
+  // tracks. A low base goes in now, so the far culling knows where they stand.
+  oldstation(g, l) {
+    const fp = (p) => { const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]); return [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]; };
+    const [x0, x1, z0, z1] = fp(l.outline);
+    box(g, x1 - x0, 0.05, z1 - z0, (x0 + x1) / 2, 0.025, (z0 + z1) / 2, C.plinth);
+    import('./seoul-station-models.js').then(({ buildOldStation }) => buildOldStation(g, l));
+  },
+  stationhall(g, l) {
+    const xs = l.outline.map((q) => q[0]), zs = l.outline.map((q) => q[1]);
+    box(g, Math.max(...xs) - Math.min(...xs), 0.05, Math.max(...zs) - Math.min(...zs), (Math.max(...xs) + Math.min(...xs)) / 2, 0.025, (Math.max(...zs) + Math.min(...zs)) / 2, C.plinth);
+    import('./seoul-station-models.js').then(({ buildStationHall }) => buildStationHall(g, l));
+  },
+  yardfence(g, l) {
+    import('./seoul-station-models.js').then(({ buildYardFence }) => buildYardFence(g, l));
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the
