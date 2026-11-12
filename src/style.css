@@ -1724,6 +1724,14 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .wish-list { display: grid; gap: 6px; }
 .wish-item { text-align: left; padding: 9px 12px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; font-size: 14px; }
 .wish-item.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.temple-see { text-align: center; }
+.temple-list { display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; }
+.temple-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; }
+.temple-row.mine { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.temple-dot { flex: none; width: 18px; height: 22px; border-radius: 50% 50% 45% 45%; box-shadow: 0 0 8px rgba(255, 180, 80, .7); }
+.temple-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.temple-wish { font-size: 13px; color: #6b5d50; }
+.temple-mine { color: #e2557f; font-weight: 700; }
 .wish-grid { grid-template-columns: repeat(5, 1fr); }
 .wish-grid .wish-item { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; text-align: center; }
 .wish-big { font-size: 22px; line-height: 1.2; }

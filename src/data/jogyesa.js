@@ -47,3 +47,20 @@ export const JOGYESA = {
   // front of Daeungjeon to the gate. gap: metres between lanterns.
   canopy: { x0: 100.5, x1: 127, z0: 60, z1: 73.5, y: 4.4, gap: 0.95 },
 };
+
+// Where the canopy's lanterns hang: a grid over the yard, minus the spots
+// where the pagoda tree's trunk and the sarira pagoda come up through it.
+// Each slot: [x, z, row]. Players' own lanterns (core/temple-lanterns.js)
+// hang in these slots too, by number.
+export function canopySlots(c = JOGYESA.canopy) {
+  const J = JOGYESA, out = [];
+  const holes = [[J.pagodaTree.x, J.pagodaTree.z, 1.4], [J.sarira.x, J.sarira.z, 2]];
+  let row = 0;
+  for (let z = c.z0; z <= c.z1 + 1e-6; z += c.gap, row++) {
+    for (let x = c.x0; x <= c.x1 + 1e-6; x += c.gap) {
+      if (holes.some(([hx, hz, r]) => Math.hypot(x - hx, z - hz) < r)) continue;
+      out.push([x, z, row]);
+    }
+  }
+  return out;
+}

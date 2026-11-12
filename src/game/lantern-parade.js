@@ -94,11 +94,13 @@ export function createLanternParade(game) {
   });
 
   // Jogyesa's canopy (core/jogyesa-model.js), found once the city has built it.
-  let canopy = null, base = null, litTo = -1;
+  // Its own colours (with players' lanterns, game/temple-lanterns.js) are in
+  // canopy.userData.base; while dimmed, userData.dimmed.
+  let canopy = null, litTo = -1;
   const findCanopy = () => {
     canopy = scene.getObjectByName('jogyesa-canopy');
     if (!canopy?.instanceColor) { canopy = null; return; }
-    base = canopy.instanceColor.array.slice(); // the lanterns' own colours
+    canopy.userData.base ||= canopy.instanceColor.array.slice();
   };
   const m4 = new THREE.Matrix4();
   // Cheonggyecheon's figures (core/lanterns.js): dark as the column sets off,
@@ -124,7 +126,8 @@ export function createLanternParade(game) {
   const setCanopy = (fn) => {
     if (!canopy) findCanopy();
     if (!canopy) return;
-    const a = canopy.instanceColor.array, p = new THREE.Vector3();
+    const a = canopy.instanceColor.array, p = new THREE.Vector3(), base = canopy.userData.base;
+    canopy.userData.dimmed = true;
     for (let i = 0; i < canopy.count; i++) {
       canopy.getMatrixAt(i, m4);
       p.setFromMatrixPosition(m4).applyMatrix4(canopy.matrixWorld);
@@ -133,7 +136,7 @@ export function createLanternParade(game) {
     }
     canopy.instanceColor.needsUpdate = true;
   };
-  const restore = () => { if (canopy && base) { canopy.instanceColor.array.set(base); canopy.instanceColor.needsUpdate = true; } litTo = -1; };
+  const restore = () => { if (canopy) { canopy.userData.dimmed = false; canopy.instanceColor.array.set(canopy.userData.base); canopy.instanceColor.needsUpdate = true; } litTo = -1; };
 
   let wasOn = false, arrive = null;
   return {
