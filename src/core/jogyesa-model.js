@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
-import { JOGYESA as J } from '../data/jogyesa.js';
+import { JOGYESA as J, canopySlots } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -167,21 +167,7 @@ function stele(T) {
   return g;
 }
 
-// Where the canopy's lanterns hang: a grid over the yard, minus the spots
-// where the pagoda tree's trunk and the sarira pagoda come up through it.
-// Each slot: [x, z, row]. (Also where players' own lanterns will go.)
-export function canopySlots(c = J.canopy) {
-  const out = [];
-  const holes = [[J.pagodaTree.x, J.pagodaTree.z, 1.4], [J.sarira.x, J.sarira.z, 2]];
-  let row = 0;
-  for (let z = c.z0; z <= c.z1 + 1e-6; z += c.gap, row++) {
-    for (let x = c.x0; x <= c.x1 + 1e-6; x += c.gap) {
-      if (holes.some(([hx, hz, r]) => Math.hypot(x - hx, z - hz) < r)) continue;
-      out.push([x, z, row]);
-    }
-  }
-  return out;
-}
+export { canopySlots }; // (data/jogyesa.js)
 
 function canopy(g, ox, oz) {
   const c = J.canopy, slots = canopySlots(c);
