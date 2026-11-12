@@ -1432,6 +1432,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 /* Hanbok rental: the time left, beside the coins. */
 .rent-chip { background: #fde4ea; color: #7a1f33; font-weight: 800; }
 .rent-chip[hidden] { display: none; }
+/* Seoul Forest's tandem rental: the meter (game/tandem-rental.js). */
+.tandem-chip { background: #dff3e5; color: #1f5c38; }
 /* Narrow phones: below the chip row, not in it (the row is full). In a shop
    the banner is there, and the product card shows the time instead. */
 @media (max-width: 480px) {

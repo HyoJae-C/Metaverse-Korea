@@ -242,6 +242,7 @@ import { createNamsanWalk } from './game/namsan-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
+import { createTandemRentalNear } from './game/tandem-rental-near.js';
 import { createLanternParadeNear } from './game/lantern-parade-near.js';
 import { createTempleLanterns } from './game/temple-lanterns-near.js';
 import { sunsetNote } from './game/sunset-spot.js';
@@ -4143,6 +4144,10 @@ const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.
   scene, wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId, resync: () => wallet.connect(cloud),
   refreshItems: () => { if (!$('bag-panel').hidden) refreshItems(); },
   takeOff: takeOffItem });
+// Seoul Forest's tandem bike rental (game/tandem-rental-near.js).
+const tandemRent = createTandemRentalNear({ spot: map.landmarks.find((l) => l.type === 'tandemrental'), ready: walletReady,
+  scene, collision, areas: map.areas, wallet, refreshWallet, sfx, chip: $('tandem-chip'), toast: (m) => shop.toast(m),
+  riding: () => riding, setRiding, mode: () => mode, passengers: () => passengers.size, driverKind: () => (riding === 3 ? others.kindOf(tandemDriver) : 0) });
 // Gift receipts: binds still waiting (I gave clothes), receipts for clothes
 // given to me.
 const giftSync = walletReady.then(() => {
@@ -6408,6 +6413,7 @@ function moreActions(p, door) {
     const jmc = jongmyoAct(p); if (jmc) out.push(jmc);
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
+    const tdr = !seated && tandemRent.act(p); if (tdr) out.push(tdr);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
     out.push(...templeLanterns.acts(p));
@@ -6507,6 +6513,7 @@ function updateAction(p, tSec) {
     else if (!riding && !seated && nearCourt(p) && !basketUi.open) next = { key: 'basket', label: '🏀 ' + L(BASKET_OPEN), run: () => basketUi.show() };
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
+    else if (!riding && !seated && tandemRent.act(p)) next = tandemRent.act(p); // Seoul Forest's tandem rental
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -6951,6 +6958,7 @@ renderer.setAnimationLoop((now) => {
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
+  tandemRent.update(p, dt); // (the rented tandem's meter; given back on getting off)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
@@ -7028,6 +7036,7 @@ renderer.setAnimationLoop((now) => {
   } else if (riding !== 3) {
     speed01 = THREE.MathUtils.lerp(speed01, seoulDal.pace * 0.45, Math.min(1, dt * 10)); // (0, or walking round Seoul Dal's gondola)
   }
+  if (riding === 2 && mode === 'street') tandemRent.fence(p, px0, pz0); // (a rented tandem stays in Seoul Forest)
   if (!seated) firstPerson.face(me.root); // (strafing, not turning)
   me.animate(dt, speed01 < 0.05 ? 0 : speed01, !!seated || !!ride);
   if (riding === 1 && mode === 'street' && garage.ride(Math.min(5, Math.hypot(p.x - px0, p.z - pz0)))) shop.toast(L(BIKE_TEXT.worn));
@@ -7375,6 +7384,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),
     usedRack, // the second-hand rack (game/used-rack.js), for tests
     potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
+    tandemRent, // Seoul Forest's tandem rental (game/tandem-rental-near.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
