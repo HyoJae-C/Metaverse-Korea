@@ -34,6 +34,8 @@ jobs:
           node tests/e2e/gifts.mjs http://localhost:4173/
           # Memory budget: iPhone Safari closes the page past its canvas limit.
           node tests/e2e/memory.mjs http://localhost:4173/
+          # Returning players' saves (a drink in hand, an errand done…) still load.
+          node tests/e2e/saved-start.mjs http://localhost:4173/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
