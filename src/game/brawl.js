@@ -531,6 +531,11 @@ export function createBrawl(game) {
   };
   const onKey = (e) => {
     if (!on) return;
+    if (on.hud?.commands?.open) {
+      e.stopPropagation();
+      if (e.code === 'Escape') { e.preventDefault(); on.hud.commands.close(); }
+      return;
+    }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     const down = e.type === 'keydown';
     if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); if (down) close(); return; }
@@ -591,6 +596,33 @@ export function createBrawl(game) {
     x.setAttribute('aria-label', tt('close'));
     x.onclick = () => close();
     root.append(top, msg, sub, ...combo, x);
+    const commandButton = el('button', 'bw-command-button', L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
+    commandButton.style.cssText = 'position:absolute;right:12px;top:110px;pointer-events:auto;padding:12px 18px;border:2px solid #c39bff;border-radius:14px;background:#211932;color:white;font:bold 17px system-ui;cursor:pointer';
+    const commands = document.createElement('dialog');
+    commands.style.cssText = 'pointer-events:auto;box-sizing:border-box;width:min(94vw,720px);max-height:88dvh;overflow:auto;padding:24px;border:2px solid #c39bff;border-radius:20px;background:#171329;color:white;font:18px system-ui';
+    commands.setAttribute('aria-label', L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
+    const heading = el('h2', null, L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
+    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. �� means toward your rival. Specials cost 50 gauge.', ko: '�̱��� �Ͻ������˴ϴ�. �¶��� ������ ��� ����˴ϴ�. ��� ��� �����̸�, �ʻ��� ������ 50�� �ʿ��մϴ�.' }));
+    const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
+    for (const [label, input] of [
+      [L({ en: 'Punch / kick', ko: '��ġ / ű' }), '?? J / ?? K'],
+      [L({ en: 'Combo', ko: '���� ����' }), '?? �� ?? �� ?? / ?? �� ?? �� ??'],
+      [L({ en: 'Launcher', ko: '����' }), '�� + ?? J'],
+      [L({ en: 'Special 1', ko: '�ʻ�� 1' }), '�� �� + ?? J  /  ?1 U'],
+      [L({ en: 'Special 2', ko: '�ʻ�� 2' }), '�� �� + ?? K  /  ?2 I'],
+      [L({ en: 'Guard', ko: '���' }), '��'],
+      [L({ en: 'Dash', ko: '���' }), '�� �� / �� �� / Shift'],
+    ]) {
+      const row = document.createElement('tr');
+      for (const text of [label, input]) { const cell = document.createElement('td'); cell.textContent = text; cell.style.cssText = 'padding:15px 8px;border-bottom:1px solid #49365f'; row.append(cell); }
+      table.append(row);
+    }
+    const dismiss = el('button', null, L({ en: 'Close', ko: '�ݱ�' }));
+    dismiss.style.cssText = 'margin-top:20px;width:100%;padding:14px;border:0;border-radius:12px;background:#c39bff;font:bold 20px system-ui;cursor:pointer';
+    dismiss.onclick = () => commands.close();
+    commands.append(heading, note, table, dismiss);
+    commandButton.onclick = () => { held.clear(); pressed.clear(); stick.mx = stick.mz = 0; dashAsk = 0; commands.showModal(); };
+    root.append(commandButton, commands);
     let pad = null;
     if (touch) {
       pad = el('div', 'bw-pad');
@@ -632,7 +664,7 @@ export function createBrawl(game) {
     if (touch) root.append(el('div', 'bw-keys', '�� �� + ?? / ?? = ?1 / ?2'));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
-    return { root, a, b, time, msg, sub, combo, pad, comboT: [0, 0], msgT: 0 };
+    return { root, a, b, time, msg, sub, combo, pad, commands, comboT: [0, 0], msgT: 0 };
   }
   function say(text, sub = '', secs = 1.4) {
     const h = on.hud;
@@ -1119,6 +1151,7 @@ export function createBrawl(game) {
     update(dt) {
       if (!on) return;
       if (game.interior !== on.interior) { close(); return; }
+      if (on.hud.commands.open && !on.vs) { on.cast?.step(); return; }
       frame(dt);
       if (on) camera(dt);
     },

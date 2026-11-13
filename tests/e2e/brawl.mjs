@@ -34,6 +34,11 @@ await page.waitForTimeout(2500);
 await shot('brawl-menu');
 await page.click('#brawl .bw-card .go');
 await page.waitForFunction(() => __mk.brawl()?.match?.phase === 'fight', null, { timeout: 15000 });
+await page.click('#brawl .bw-command-button');
+assert(await page.locator('#brawl dialog').isVisible(), 'command table opens as a large dialog');
+assert(await page.locator('#brawl dialog tr').count() === 7, 'command table lists basic attacks, strings and specials');
+await page.keyboard.press('Escape');
+assert(await page.locator('#brawl').isVisible() && !await page.locator('#brawl dialog').isVisible(), 'Escape closes help without leaving the game');
 await shot('brawl-fight');
 // Walk in and hit: the rival's bar goes down.
 if (phone) {
