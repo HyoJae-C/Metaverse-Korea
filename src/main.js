@@ -168,6 +168,8 @@ import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { lipstickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
+import { createFishBait } from './game/fish-bait.js';
+import { baitEntry } from './core/bait.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
 import { closetKind, closetColor } from './core/closet.js';
@@ -2178,6 +2180,7 @@ let held = (() => {
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
     if (h?.kind === 'balloon') return restoreBalloon(h); // (Modu Land's clown; gone once its air is out)
     if (h?.kind === 'lipstick') return lipstickEntry(h);
+    if (h?.kind === 'bait') return baitEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
   } catch { return null; }
@@ -2185,16 +2188,21 @@ let held = (() => {
 // A fishing rod while the fishing panel is open shows instead of the cup.
 let rodOut = false;
 const rodSkins = new RodSkins();
+// Fishing bait (game/fish-bait.js): bought at the bait stall, put on the hook from the hand.
+const fishBait = createFishBait({
+  root: $('bait-panel'), cloud, get wallet() { return wallet; }, bag, toast: (m) => shop.toast(m), refreshWallet: () => refreshWallet(),
+  get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
+});
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : balloonKind(held) || held?.kind || null);
+const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
   $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : h?.kind === 'lipstick' ? '💄' : '☕';
-  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : h?.kind === 'lipstick' ? lipstick.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : h?.kind === 'lipstick' ? '💄' : h?.kind === 'bait' ? '🪱' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : h?.kind === 'lipstick' ? lipstick.label() : h?.kind === 'bait' ? fishBait.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -2207,6 +2215,7 @@ function drink() {
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
   if (held.kind === 'lipstick') { setHeld(lipstick.apply(held)); return; }
+  if (held.kind === 'bait') { setHeld(fishBait.apply(held)); return; }
   if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
   sfx.pop?.();
@@ -2262,6 +2271,7 @@ function describeEntry(e) {
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
   if (e.kind === 'lipstick') return lipstick.describe(e);
+  if (e.kind === 'bait') return fishBait.describe(e);
   if (e.kind === 'perfume') {
     const pf = perfumes.get(e.p);
     return { emoji: '🧴', name: pf ? localName(pf.product.name, getLanguage()) : e.name, desc: fmt(L(PERFUME_TEXT.desc), { style: L(STYLES[pf?.style] || STYLES.simple), n: e.sips }), canHold: true };
@@ -3143,7 +3153,7 @@ function leaveStore(walkOut = false) {
   tarotUi.close();
   leaveTarotLine(true);
   gymSpot = null; // (you leave by the door, not off the bench)
-  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
@@ -3928,7 +3938,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -3956,6 +3966,7 @@ addEventListener('keydown', (e) => {
     else if (loveLockUi.open) loveLockUi.close();
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
+    else if (fishBait.ui.open) fishBait.ui.close();
     else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
@@ -4083,6 +4094,7 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
   dex: fishDex,
   stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
   pity: new FishPity(), // mk.fishpity: bites toward each park's first legend
+  bait: fishBait.fishing, // the bait on the hook: one a bite (game/fish-bait.js)
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);
@@ -5674,7 +5686,7 @@ function updateFireworks() {
 // Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
 const hanParks = createHanParks({
   scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
-  makeNpc: (name) => makeNpc($('labels'), name), clerkName: () => t('npc.clerk'),
+  makeNpc: (name, look) => makeNpc($('labels'), name, look), clerkName: () => t('npc.clerk'), baitSeller: () => fishBait.seller(),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
@@ -5683,6 +5695,7 @@ const hanParks = createHanParks({
     duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),
     fish: () => ({ key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() }),
     sell: () => ({ key: 'market', label: '🐟 ' + t('fish.sellOpen'), run: () => marketUi.show() }), // the park's fish buyer
+    bait: () => ({ key: 'bait', label: '🪱 ' + t('bait.shop'), run: () => { const n = hanPark()?.baitNpc; if (n) { n.ch.wave(); say(n, $('labels'), fishBait.hello()); } fishBait.shop(); } }), // the bait stall
     ramen: () => ({ key: 'ramen', label: '🍜 ' + t('ramen.open'), run: () => ramenUi.show() }),
     look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
   },
@@ -7533,6 +7546,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
     ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
     fishBuySpot: () => hanPark()?.fishBuy && [hanPark().fishBuy.x, hanPark().fishBuy.z],
+    baitSpot: () => hanPark()?.bait && [hanPark().bait.x, hanPark().bait.z],
+    baitOn: () => ({ bait: fishBait.fishing.bait?.id || null, left: fishBait.fishing.left }),
     music: () => ({ on: music.on, track: music.track.id }),
     pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
     petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },

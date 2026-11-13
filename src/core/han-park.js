@@ -26,6 +26,8 @@ const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ド
 const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
 const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
 const DRONE_COLOR = '#2b3a7a';
+const BAIT_SIGN = { ko: '미끼 팝니다', en: 'Bait for sale', ja: 'エサあります', zh: '出售鱼饵' };
+const BAIT_TINS = ['#c98b4f', '#5fb0de', '#e2b53c']; // (core/bait.js colours)
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
@@ -291,6 +293,33 @@ export function buildHanPark(store, L) {
     fishBuy = { x, z };
   }
 
+  // The bait stall (core/bait.js) beside the fish buyer: a small wooden
+  // counter under a green awning with bait tins on it, and an old fisherman
+  // in a bucket hat behind it (game/han-parks.js makes him). Its front (+z)
+  // faces the customer.
+  let bSign = null, bait = null, baitSeller = null;
+  if (L.bait) {
+    const f = sub(...L.bait);
+    box(1.4, 0.85, 0.6, 0, 0.425, 0, '#9a6b43', f.g);
+    box(1.48, 0.06, 0.66, 0, 0.88, 0, '#c9a072', f.g);
+    for (const sx of [-0.68, 0.68]) for (const sz of [-0.85, 0.28]) box(0.06, 2, 0.06, sx, 1, sz, '#6b4a2e', f.g);
+    box(1.6, 0.06, 1.4, 0, 2.02, -0.28, '#4f9a5c', f.g); // the awning
+    box(1.6, 0.18, 0.04, 0, 1.93, 0.42, '#f6f1e7', f.g); // its striped front
+    BAIT_TINS.forEach((c, i) => {
+      const tin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.1, 12), mat(c));
+      tin.position.set(-0.4 + i * 0.4, 0.96, 0.08);
+      f.g.add(tin);
+    });
+    bSign = signBoard(1.2, 0.36, '#4f9a5c');
+    bSign.mesh.position.set(0, 1.62, 0.31);
+    f.g.add(bSign.mesh);
+    blockIn(f, -0.75, -1.1, 0.75, 0.35);
+    const [x, z] = f.at(0, 1.0);
+    bait = { x, z };
+    const [sx, sz] = f.at(0, -0.55);
+    baitSeller = { x: sx, z: sz, ry: f.ry };
+  }
+
   // The duck boats wait at the dock until someone gets in; they face the
   // river (-z), so riders look out over the water.
   const ducks = [];
@@ -422,6 +451,7 @@ export function buildHanPark(store, L) {
     martSign?.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign?.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
     fSign?.draw(lang ? localName(FISH_SIGN, lang) : FISH_SIGN.ko, lang ? '' : FISH_SIGN.en);
+    bSign?.draw('🪱 ' + (lang ? localName(BAIT_SIGN, lang) : BAIT_SIGN.ko), lang ? '' : BAIT_SIGN.en);
     drawDroneSign();
   };
   setSignLang(null);
@@ -453,7 +483,7 @@ export function buildHanPark(store, L) {
   if (D) group.add(showG); // (the drones and their watchers come later: never baked)
   return {
     group, colliders, decks, seats, products: [...products, ...market.products], vendors: market.vendors, clerk,
-    fishing, fishBuy, ramen, ducks, duckArea, setSignLang, tick, setNight,
+    fishing, fishBuy, bait, baitSeller, ramen, ducks, duckArea, setSignLang, tick, setNight,
     show, // the drone show right now, or null: { now: droneShowAt(), night, photo, sky } (main.js: camera, notices, music)
   };
 }
