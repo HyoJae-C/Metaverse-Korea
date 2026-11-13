@@ -1,4 +1,4 @@
-// Kimjang (김장): making napa cabbage kimchi at Sonmat Kimchi School, the
+// Kimjang (김장): making napa cabbage kimchi at the Kimchi Making Class (김치만들기체험), the
 // rules without any DOM so they can be unit-tested. Ten steps, in the order
 // a Korean family really does it:
 //

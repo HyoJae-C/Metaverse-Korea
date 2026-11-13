@@ -1,4 +1,4 @@
-// Kimjang class panel at Sonmat Kimchi School (rules in core/kimchi-game.js,
+// Kimjang class panel at the Kimchi Making Class (김치만들기체험) (rules in core/kimchi-game.js,
 // text in kimchi-text.js). Ten steps from picking the cabbage to letting the
 // jar ripen; each step ends with the teacher's feedback and its score, and
 // the end shows a medal, the steps, the Korean words met on the way and a
