@@ -296,3 +296,20 @@ test("every style's strings land in full, from close and from the edge of a jab'
     }
   }
 });
+
+test('pressing only the first button of a string again and again plays the whole string', () => {
+  for (const style of STYLE_IDS) {
+    for (const first of new Set(STYLES[style].combos.map((c) => c[0]))) for (const every of [4, 8, 12]) {
+      const m = newMatch(style, 'brawler', true);
+      for (let t = 0; m.phase !== 'fight' && t < 600; t++) stepMatch(m, {}, {});
+      m.a.x = -0.45; m.b.x = 0.45; m.a.z = m.b.z = 0;
+      let fin = false, started = false;
+      for (let t = 0; t < 300; t++) {
+        for (const e of stepMatch(m, t % every === 0 ? { [first]: true } : {}, {})) if (e.k === 'hit' && e.by === 0 && e.fin) fin = true;
+        if (m.a.st === 'atk') started = true;
+        else if (started) break;
+      }
+      assert.ok(fin, `${style}, mashing ${first}`);
+    }
+  }
+});

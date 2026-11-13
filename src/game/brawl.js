@@ -26,6 +26,19 @@ const T = {
     th: 'สู้ด้วยตัวละครของคุณเอง หมัดสอง เตะสอง ปุ่มละมือละเท้า กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ท่าเบาต่อเป็นท่าหนักได้ ชนะ 2 ใน 3 ยก',
     ar: 'تقاتل بشخصيتك كما هي. لكمتان وركلتان، زر لكل يد وقدم. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضربات الخفيفة تتصل بالأقوى. الأفضل من ثلاث جولات.',
   },
+  mash: {
+    en: 'Keep pressing the first button and the string goes on by itself.',
+    ko: '첫 버튼만 계속 눌러도 연속기가 끝까지 나가요.',
+    ja: '最初のボタンを押し続けるだけで連続技が最後まで出ます。',
+    zh: '只要连按第一个键，连招就会自动打完。',
+    es: 'Sigue pulsando el primer botón y el combo sale solo.',
+    id: 'Tekan terus tombol pertama dan kombonya keluar sendiri.',
+    vi: 'Cứ bấm liên tục nút đầu tiên là chuỗi đòn tự ra hết.',
+    hi: 'पहला बटन बार-बार दबाते रहें, कॉम्बो अपने आप पूरा हो जाएगा।',
+    fr: 'Continue d\'appuyer sur le premier bouton et l\'enchaînement sort tout seul.',
+    th: 'กดปุ่มแรกรัว ๆ คอมโบก็ออกจนจบเอง',
+    ar: 'واصل الضغط على الزر الأول وستكتمل السلسلة تلقائيًا.',
+  },
   moves: {
     en: '→ + right punch: launcher · both punches: guard breaker · both kicks: flying kick',
     ko: '→ + 오른 주먹: 띄우기 · 주먹 둘 같이: 가드 깨기 · 발 둘 같이: 날아차기',
@@ -658,6 +671,7 @@ export function createBrawl(game) {
     }
     box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? `${BTN.lp} + ${BTN.rp}` : `${BTN.lk} + ${BTN.rk}`) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
     box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
+    box.append(el('p', 'dim', tt('mash')));
   }
   // The eight styles to pick from, and what the picked one does.
   function styleGrid(c) {

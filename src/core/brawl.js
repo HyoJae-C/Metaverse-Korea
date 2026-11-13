@@ -146,6 +146,11 @@ function wanted(f, inp, level = 0, sameAgain = false) {
       if (b[k] && STYLES[f.style].combos.some((c) => c.length > f.seq.length && c[f.seq.length] === k && f.seq.every((q, i) => c[i] === q))) return k;
     }
   }
+  // The button the string began with, pressed again and again: the string goes on by itself.
+  if (level > 0 && b[f.seq[0]]) {
+    const c = STYLES[f.style].combos.find((q) => q.length > f.seq.length && f.seq.every((k, i) => q[i] === k));
+    if (c) return c[f.seq.length];
+  }
   if (b.rp && inp.mx > 0.5 && MOVES.upper.level > level) return 'upper';
   for (const k of ['lp', 'rp', 'lk', 'rk']) if (b[k] && (MOVES[k].level > level || (sameAgain && k === 'lp' && level === 1))) return k;
   return null;
@@ -269,6 +274,7 @@ function act(f, o, inp, ev) {
         const again = next === 'lp';
         f.seq.push(next);
         const fin = STYLES[f.style].combos.some((c) => c.length === f.seq.length && c.every((q, i) => q === f.seq[i]));
+        f.buf[f.seq[0]] = 0;
         startMove(f, next); f.again = again; f.chain = true; f.fin = fin; f.face = toward;
         return;
       }
