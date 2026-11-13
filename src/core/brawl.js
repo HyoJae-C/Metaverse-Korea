@@ -30,6 +30,7 @@ const WALK = 2.3 * TICK, BACK = 1.1 * TICK;
 const STEP_TICKS = 13, STEP_DIST = 0.95, STEP_REST = 5;
 const DASH_TICKS = 9, DASH_FWD = 1.3, DASH_BACK = 1.0, DASH_REST = 7, DASH_CUT = 4;
 const FINISH_MULT = 1.5; // the last hit of a style's string
+const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far inside its reach, moving at most this far a tick
 const BUFFER = 9; // a press waits this many ticks for the fighter to be free
 const GRAVITY = 20 * TICK * TICK;
 const MAX_JUGGLE = 3;
@@ -97,7 +98,7 @@ export const STYLES = {
   dancer: {
     hp: 92, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], slot: 'fly',
     sig: { startup: 14, active: 20, recover: 30, dmg: 5, hits: 3, gap: 7, range: 1.1, arc: 3.2, stun: 12, block: 7, push: 0.2, lunge: 0.2, glide: 0.9, level: 9, knockLast: true, spin: 3, pose: 'mill' },
-    combos: [['lk', 'lp', 'rk'], ['rk', 'lk', 'rk']],
+    combos: [['lk', 'lp', 'rk'], ['rp', 'lk', 'rk']],
   },
 };
 export const STYLE_IDS = Object.keys(STYLES);
@@ -233,7 +234,11 @@ function act(f, o, inp, ev) {
     if (f.t <= m.startup) {
       if (f.move === 'rk') f.face += clamp(wrap(toward - f.face), -0.03, 0.03); // the roundhouse follows a little
       const room = dist - BODY_R * 2;
-      const stepF = Math.min(m.lunge / m.startup, Math.max(0, room - 0.05));
+      // The next hit of a string steps in as far as it must: the last hit
+      // pushed them back, and a punch after a kick would fall short.
+      let want = m.lunge / m.startup;
+      if (f.chain && m.range) want = clamp((dist - m.range + CHAIN_IN) / Math.max(1, m.startup - f.t + 1) + Math.hypot(o.vx, o.vz), want, CHAIN_STEP);
+      const stepF = Math.min(want, Math.max(0, room - 0.05));
       f.x += Math.cos(f.face) * stepF; f.z += Math.sin(f.face) * stepF;
     }
     // Signature moves: behind them in a blink, a ball of light, a glide, several hits.

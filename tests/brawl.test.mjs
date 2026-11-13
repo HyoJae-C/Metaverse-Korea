@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MOVES, moveTicks, newFighter, stepFight, createMatch, createAi, seeded, RING_R, MAX_HP, ROUNDS_TO_WIN, RIVALS, AI_LEVELS, loadBrawl, afterMatch, BRAWL_KEY, STYLES, STYLE_IDS, movesFor, saveStyle } from '../src/core/brawl.js';
+import { MOVES, moveTicks, newFighter, stepFight, createMatch, createAi, seeded, RING_R, MAX_HP, ROUNDS_TO_WIN, RIVALS, AI_LEVELS, loadBrawl, afterMatch, BRAWL_KEY, STYLES, STYLE_IDS, movesFor, saveStyle, newMatch, stepMatch } from '../src/core/brawl.js';
 
 const memStore = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)) }; };
 const pair = (gap = 0.8) => { const a = newFighter(0), b = newFighter(1); a.x = -gap / 2; b.x = gap / 2; return [a, b]; };
@@ -274,4 +274,25 @@ test('brawl: the picked style is remembered with the ladder', () => {
   assert.equal(saveStyle(st, 'ninja').style, 'ninja');
   assert.equal(afterMatch(st, 0, true).style, 'ninja');
   assert.equal(saveStyle(st, 'wizard').style, null);
+});
+
+test("every style's strings land in full, from close and from the edge of a jab's reach", () => {
+  for (const style of STYLE_IDS) {
+    for (const combo of STYLES[style].combos) {
+      for (const dist of [0.7, 1.05]) {
+        const m = newMatch(style, 'brawler', true);
+        for (let t = 0; m.phase !== 'fight' && t < 600; t++) stepMatch(m, {}, {});
+        m.a.x = -dist / 2; m.b.x = dist / 2; m.a.z = m.b.z = 0;
+        let i = 0, hits = 0, fin = false, started = false;
+        for (let t = 0; t < 300; t++) {
+          const inp = i < combo.length && (i === 0 || m.a.landed) ? { [combo[i]]: true } : {};
+          for (const e of stepMatch(m, inp, {})) if (e.k === 'hit' && e.by === 0) { hits++; fin = fin || !!e.fin; }
+          if (m.a.st === 'atk') { started = true; i = Math.max(i, m.a.seq.length); }
+          else if (started) break;
+        }
+        assert.equal(hits, combo.length, `${style} ${combo.join(' ')} from ${dist} m`);
+        assert.ok(fin, `${style} ${combo.join(' ')} ends in its finisher`);
+      }
+    }
+  }
 });
