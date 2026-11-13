@@ -15,13 +15,20 @@ const url = process.argv[2] || 'http://localhost:4173/';
 const bridge = process.argv.includes('--bridge');
 const shotDir = process.argv.slice(3).find((a) => !a.startsWith('--')) || null;
 const pages = [];
-const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+// Each player gets a browser of their own (as in multiplayer.mjs): two
+// contexts in one browser share its GPU process, and with software GL the
+// second player's start-up queued behind the first one's frames until the
+// HUD wait timed out on CI (from 2026-11-13, as the city grew).
+const launch = () => chromium.launch({ executablePath: process.env.CHROME || process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browsers = [];
 const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
 const errors = [];
 const logs = [];
 let step = 'joining';
 
 async function join(name) {
+  const browser = await launch();
+  browsers.push(browser);
   const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
   if (!bridge) await useFakeRealtime(ctx, name);
   const page = await ctx.newPage();
@@ -59,8 +66,12 @@ async function join(name) {
   await page.click('#next-btn');
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
-  await page.click('#start-btn', { timeout: 90000 });
-  await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
+  // Building the world blocks the page, so a plain click can time out
+  // waiting for it to come back: press the button from inside the page on
+  // the next tick and wait for the HUD, with room for a slow runner.
+  await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible', timeout: 90000 });
+  await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
+  await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
   return page;
@@ -149,7 +160,7 @@ try {
   if (!bridge) errors.push(...rtLog.slice(-30));
   if (shotDir) { await a.screenshot({ path: shotDir + '/fail-a.png' }); await b.screenshot({ path: shotDir + '/fail-b.png' }); }
 }
-await browser.close();
+for (const br of browsers) await br.close();
 for (const e of errors) console.log(e);
 console.log(ok ? 'PASS' : 'FAIL');
 if (!bridge) console.log(summary());
