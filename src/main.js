@@ -14,6 +14,7 @@ import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
+import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -558,6 +559,7 @@ await new Promise((resolve) => {
       return false;
     }
     if (r === 'ok') referralSent = true;
+    if (r === 'offline') keepPending(localStorage, who); // sent again once in town
     el.value = '';
     return true;
   };
@@ -6159,7 +6161,8 @@ createLedger({ $, wallet });
 // Friend invites (supabase/025_referrals.sql): thank a new player whose
 // friend was paid, and tell me when friends joined with my name (now and
 // every 10 minutes while playing).
-walletReady.then(() => {
+walletReady.then(async () => {
+  if (!referralSent && wallet.server && (await retryPending({ cloud, storage: localStorage })) === 'ok') referralSent = true;
   if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
   const news = async () => {
     if (!wallet.server || document.hidden) return;
