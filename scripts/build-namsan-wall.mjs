@@ -29,7 +29,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
-import { onNamsan } from '../src/core/namsan-shape.js';
+import { onNamsan, namsanGround } from '../src/core/namsan-shape.js';
 import { mergeDistricts } from '../src/core/districts.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,6 +58,8 @@ export const NAMSAN_WALL = {
   gateReal: [11.7, 7.5], // m: its real base along the wall and through, taken as Hyehwamun's (OSM way 348885649)
   start: [-1736, -315], // world: the trail starts at Baekbeom Square, by Sowol-ro
   end: [-1007, -548], // world: and ends at Gwanghuimun
+  hillH: 56, // m: Namsan's top above the plain (262 m above the sea, about 225 m above the city round it: 1/4; Yozi 2026-11-13, it was 65)
+  spurW: 30, // m: the ground eases to the trail's even climb this far either side of it
 };
 const C = NAMSAN_WALL;
 
@@ -289,6 +291,41 @@ const hillRuns = (p) => {
   return out.filter((r) => r.length > 1);
 };
 hill.wtrail = [...hillRuns(westP), ...hillRuns(eastP)].map((r) => r.map(local));
+// ---------- The ways up: an even climb ----------
+// From where a trail comes onto the hill up to the summit plaza, the ground
+// along it rises evenly (eased at the bottom and the top) instead of
+// following the hill's side, which in the game is short and lumpy in the
+// west (its foot is pulled in for the streets round it): the city wall
+// trail from Baekbeom Square (it was up to 45°) and the trail from Sowol-ro.
+hill.h = C.hillH;
+{
+  const climb = (P) => {
+    const on = P.findIndex((q, i) => P.slice(i).every(([x, z]) => onHill(x, z)));
+    const p = P.slice(Math.max(0, on - 1));
+    // to the summit plaza's edge (the hill's level top, `flat` m round the tower)
+    const R = hill.flat, k0 = p.findIndex((q) => Math.hypot(q[0] - tower[0], q[1] - tower[1]) <= R);
+    if (k0 > 0) {
+      const [a, b] = [p[k0 - 1], p[k0]], da = Math.hypot(a[0] - tower[0], a[1] - tower[1]), db = Math.hypot(b[0] - tower[0], b[1] - tower[1]), t = (da - R) / (da - db);
+      p.splice(k0, p.length, [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+    }
+    const s = [0];
+    for (let i = 1; i < p.length; i++) s.push(s[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+    let lo = 0, hi = 1; // where it crosses the foot, between its first two points
+    for (let it = 0; it < 20; it++) { const m = (lo + hi) / 2; if (onHill(p[0][0] + (p[1][0] - p[0][0]) * m, p[0][1] + (p[1][1] - p[0][1]) * m)) hi = m; else lo = m; }
+    const s0 = s[1] * hi + 3, L = s.at(-1) - s0, a = 0.12, b = 0.08, k = 1 / (1 - a / 2 - b / 2); // (level for the first 3 m on the hill: no step at its foot)
+    const ease = (t) => (t <= 0 ? 0 : t <= a ? (k * t * t) / (2 * a) : t <= 1 - b ? k * (a / 2 + t - a) : 1 - (k * (1 - t) ** 2) / (2 * b));
+    return p.map((q, i) => [...local(q), r1(C.hillH * ease((s[i] - s0) / L))]);
+  };
+  hill.spur = { lines: [climb(westP), climb(summitP)], w: C.spurW };
+}
+// The cable car's pylons on the ground, the top station over it (as build-namsan-real.mjs does).
+{
+  const cable = itaewon.landmarks.find((l) => l.type === 'cablecar');
+  cable.path.forEach((q, i) => {
+    const g = r1(namsanGround(hill, cable.x + q[0] - hill.x, cable.z + q[1] - hill.z));
+    if (i === cable.path.length - 1) { q[2] = r1(g + 7.5); q[3] = g; } else q[3] = g;
+  });
+}
 hill.wtrailW = C.pathW;
 hill.trail = summitP.map(local);
 const summitRoad = itaewon.roads.find((r) => r.nw);

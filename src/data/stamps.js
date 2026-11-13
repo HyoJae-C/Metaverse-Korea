@@ -13,7 +13,7 @@
 export const STAMPS = [
   {
     // on the Namsan summit plaza (outdoors on the hilltop, game/namsan-summit.js), across from the love locks
-    id: 'namsan', place: { at: [-1469.8, -188.8], y: 65.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
+    id: 'namsan', place: { at: [-1469.8, -188.8], y: 56.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
     name: { ko: '남산타워', en: 'N Seoul Tower', ja: 'Nソウルタワー', zh: 'N首尔塔' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M100 40 v12 M92 58 h16 l-3 10 h-10 z M97 68 l-5 62 h16 l-5 -62 M86 130 h28" /><circle cx="100" cy="62" r="2"/><path d="M60 138 q20 -18 40 -6 q22 -14 42 6" />',

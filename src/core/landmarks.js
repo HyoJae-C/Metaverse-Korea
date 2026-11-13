@@ -299,11 +299,11 @@ const OWN_BUILD = {
     // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
     // (core/namsan-shape.js). Scenery: the map's blockers keep you off it,
     // except on its trail (l.trail, game/namsan-walk.js), drawn on the slope.
-    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat };
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat, spur: l.spur };
     const trail = l.trail || [];
     // (finer where there is a trail, so the slope under it is close to the
     // true height it is walked at)
-    const geo = trail.length ? new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    const geo = trail.length ? new THREE.SphereGeometry(1, l.spur ? 128 : 48, l.spur ? 40 : 24, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
