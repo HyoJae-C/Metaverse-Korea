@@ -6,7 +6,7 @@ import { createSession } from '../src/core/brawl-net.js';
 
 const randomInput = (rand) => {
   const inp = { mx: rand() < 0.5 ? 1 : rand() < 0.3 ? -1 : 0, mz: rand() < 0.05 ? (rand() < 0.5 ? 1 : -1) : 0 };
-  for (const b of ['lp', 'rp', 'lk', 'rk']) if (rand() < 0.06) inp[b] = true;
+  for (const b of ['p', 'k', 's1', 's2']) if (rand() < 0.06) inp[b] = true;
   return inp;
 };
 const same = (a, b) => assert.equal(JSON.stringify(packMatch(a)), JSON.stringify(packMatch(b)));

@@ -24,7 +24,7 @@ const KEEP = 600; // ticks of inputs kept (for a host's match that arrives late)
 const SOFT = new Set(['round', 'fight', 'ko', 'time', 'over']); // said once, only when certain
 
 // An input as one small number, and back.
-const BTN = ['lp', 'rp', 'lk', 'rk'];
+const BTN = ['p', 'k', 's1', 's2'];
 export function packInput(inp) {
   if (!inp) return 0;
   let n = (Math.sign(inp.mx || 0) + 1) | ((Math.sign(inp.mz || 0) + 1) << 2) | ((Math.sign(inp.dash || 0) + 1) << 4);

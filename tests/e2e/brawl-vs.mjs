@@ -71,7 +71,7 @@ try {
   await a.keyboard.down('KeyD'); await b.keyboard.down('KeyD');
   await a.waitForTimeout(1500);
   await a.keyboard.up('KeyD'); await b.keyboard.up('KeyD');
-  for (let k = 0; k < 30; k++) { await a.keyboard.press(['KeyU', 'KeyI', 'KeyJ'][k % 3]); await a.waitForTimeout(140); }
+  for (let k = 0; k < 30; k++) { await a.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await a.waitForTimeout(140); }
   await a.waitForTimeout(1200);
   const sa = await state(a), sb = await state(b);
   await shot(a, 'vs-fight-host'); await shot(b, 'vs-fight-guest');
@@ -98,7 +98,11 @@ try {
   await shot(c, 'vs-wall-screen');
   // The guest's own buttons work too.
   const before = (await state(b)).a;
-  for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyU', 'KeyI'][k % 2]); await b.waitForTimeout(140); }
+  // (A finished string knocked them apart: walk back in. Three software-drawn browsers are slow, so wait for the distance, not a time.)
+  await b.keyboard.down('KeyD');
+  await until(b, () => { const m = __mk.brawl().match; return Math.abs(m.b.x - m.a.x) < 0.9; }, null, 30000);
+  await b.keyboard.up('KeyD');
+  for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await b.waitForTimeout(140); }
   await b.waitForTimeout(1200);
   const sb2 = await state(b), sa2 = await state(a);
   assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} → ${sb2.a})`);

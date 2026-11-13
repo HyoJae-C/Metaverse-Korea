@@ -7,63 +7,50 @@
 import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
-import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor } from '../core/brawl.js';
+import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor, SP_COST } from '../core/brawl.js';
 import { createSession } from '../core/brawl-net.js';
 import { createCaster } from '../core/brawl-tv.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
   how: {
-    en: 'You fight as your own character. Two punches and two kicks, one button per hand and foot. Hold away from your rival to guard, and step up or down to slip round a punch. Light hits chain into heavier ones. Best of three rounds.',
-    ko: '내 캐릭터 그대로 싸워요. 주먹 둘, 발 둘, 손발마다 버튼 하나. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 가벼운 공격에서 센 공격으로 이어져요. 3판 2선승.',
-    ja: '自分のキャラクターのまま戦います。パンチ2つとキック2つ、手足ごとにボタン1つ。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。軽い技から重い技へつながります。3本勝負。',
-    zh: '用你自己的角色上场。两拳两脚，每只手脚一个按键。按住远离对手的方向防御，上下横移躲开直拳。轻攻击可以接重攻击。三局两胜。',
-    es: 'Peleas con tu propio personaje. Dos puñetazos y dos patadas, un botón por mano y pie. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Los golpes ligeros enlazan con los fuertes. Al mejor de tres.',
-    id: 'Kamu bertarung dengan karaktermu sendiri. Dua pukulan dan dua tendangan, satu tombol tiap tangan dan kaki. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Serangan ringan bisa disambung ke yang berat. Dua dari tiga ronde.',
-    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Hai đấm, hai đá, mỗi tay chân một nút. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đòn nhẹ nối được sang đòn nặng. Thắng 2 trên 3 hiệp.',
-    hi: 'आप अपने ही किरदार से लड़ते हैं। दो मुक्के, दो किक, हर हाथ-पैर का एक बटन। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। हल्के वार भारी वार से जुड़ते हैं। तीन में से दो राउंड।',
-    fr: 'Tu te bats avec ton propre personnage. Deux poings, deux pieds, un bouton par main et par pied. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Les coups légers s\'enchaînent vers les plus lourds. Deux manches gagnantes.',
-    th: 'สู้ด้วยตัวละครของคุณเอง หมัดสอง เตะสอง ปุ่มละมือละเท้า กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ท่าเบาต่อเป็นท่าหนักได้ ชนะ 2 ใน 3 ยก',
-    ar: 'تقاتل بشخصيتك كما هي. لكمتان وركلتان، زر لكل يد وقدم. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضربات الخفيفة تتصل بالأقوى. الأفضل من ثلاث جولات.',
-  },
-  mash: {
-    en: 'Keep pressing the first button and the string goes on by itself.',
-    ko: '첫 버튼만 계속 눌러도 연속기가 끝까지 나가요.',
-    ja: '最初のボタンを押し続けるだけで連続技が最後まで出ます。',
-    zh: '只要连按第一个键，连招就会自动打完。',
-    es: 'Sigue pulsando el primer botón y el combo sale solo.',
-    id: 'Tekan terus tombol pertama dan kombonya keluar sendiri.',
-    vi: 'Cứ bấm liên tục nút đầu tiên là chuỗi đòn tự ra hết.',
-    hi: 'पहला बटन बार-बार दबाते रहें, कॉम्बो अपने आप पूरा हो जाएगा।',
-    fr: 'Continue d\'appuyer sur le premier bouton et l\'enchaînement sort tout seul.',
-    th: 'กดปุ่มแรกรัว ๆ คอมโบก็ออกจนจบเอง',
-    ar: 'واصل الضغط على الزر الأول وستكتمل السلسلة تلقائيًا.',
+    en: 'You fight as your own character. Keep pressing punch, or kick, and a string of hits comes out. Hold away from your rival to guard, and step up or down to slip round a punch. Hitting, guarding and being hit fill the special bar; each half of it is one special. Best of three rounds.',
+    ko: '내 캐릭터 그대로 싸워요. 주먹이나 발 버튼만 계속 누르면 연속기가 나가요. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 때리고, 막고, 맞으면 필살기 게이지가 차고, 한 칸에 필살기 한 번이에요. 3판 2선승.',
+    ja: '自分のキャラクターのまま戦います。パンチかキックを押し続けるだけで連続技が出ます。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。当てる・ガードする・くらうと必殺ゲージがたまり、半分で必殺技1回。3本勝負。',
+    zh: '用你自己的角色上场。连按拳或脚就能打出连招。按住远离对手的方向防御，上下横移躲开直拳。击中、防御、挨打都会积攒必杀槽，每半格可放一次必杀技。三局两胜。',
+    es: 'Peleas con tu propio personaje. Sigue pulsando puño o patada y sale un combo. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Golpear, cubrirte y recibir golpes llenan la barra especial; cada mitad es un especial. Al mejor de tres.',
+    id: 'Kamu bertarung dengan karaktermu sendiri. Tekan terus pukulan atau tendangan dan kombonya keluar. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Memukul, bertahan, dan terkena pukulan mengisi bar spesial; tiap setengahnya satu jurus spesial. Dua dari tiga ronde.',
+    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Cứ bấm liên tục đấm hoặc đá là ra chuỗi đòn. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đánh trúng, đỡ đòn và bị đánh đều nạp thanh tuyệt chiêu; mỗi nửa thanh là một tuyệt chiêu. Thắng 2 trên 3 hiệp.',
+    hi: 'आप अपने ही किरदार से लड़ते हैं। मुक्का या किक बार-बार दबाते रहें और कॉम्बो निकलता है। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। मारने, रोकने और मार खाने से स्पेशल बार भरता है; हर आधे हिस्से से एक स्पेशल। तीन में से दो राउंड।',
+    fr: "Tu te bats avec ton propre personnage. Continue d'appuyer sur poing ou sur pied et un enchaînement sort. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Frapper, parer et encaisser remplissent la jauge spéciale ; chaque moitié vaut un coup spécial. Deux manches gagnantes.",
+    th: 'สู้ด้วยตัวละครของคุณเอง กดหมัดหรือเตะรัว ๆ คอมโบก็ออกเอง กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ตีโดน ป้องกัน และโดนตีจะเติมเกจท่าไม้ตาย ครึ่งเกจใช้ได้หนึ่งครั้ง ชนะ 2 ใน 3 ยก',
+    ar: 'تقاتل بشخصيتك كما هي. واصل الضغط على اللكمة أو الركلة فتخرج سلسلة ضربات. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضرب والصد وتلقّي الضربات تملأ شريط الضربة الخاصة، وكل نصف منه ضربة خاصة واحدة. الأفضل من ثلاث جولات.',
   },
   moves: {
-    en: '→ + right punch: launcher · both punches: guard breaker · both kicks: flying kick',
-    ko: '→ + 오른 주먹: 띄우기 · 주먹 둘 같이: 가드 깨기 · 발 둘 같이: 날아차기',
-    ja: '→＋右パンチ：浮かせ技 · パンチ同時：ガード崩し · キック同時：飛び蹴り',
-    zh: '→ + 右拳：浮空 · 双拳同按：破防 · 双脚同按：飞踢',
-    es: '→ + puño derecho: lanzador · dos puños: rompeguardias · dos patadas: patada voladora',
-    id: '→ + pukulan kanan: pelontar · dua pukulan: pemecah pertahanan · dua tendangan: tendangan terbang',
-    vi: '→ + đấm phải: hất tung · hai đấm: phá thủ · hai đá: đá bay',
-    hi: '→ + दायाँ मुक्का: लॉन्चर · दोनों मुक्के: गार्ड तोड़ · दोनों किक: उड़ती किक',
-    fr: '→ + poing droit : lanceur · deux poings : brise-garde · deux pieds : coup de pied sauté',
-    th: '→ + หมัดขวา: งัดลอย · สองหมัดพร้อมกัน: ทำลายการ์ด · สองเท้าพร้อมกัน: กระโดดเตะ',
-    ar: '→ + اللكمة اليمنى: رافعة · اللكمتان معًا: كاسرة الصد · الركلتان معًا: ركلة طائرة',
+    en: '→ + punch: launcher · ⭐1: guard breaker · ⭐2: flying kick',
+    ko: '→ + 주먹: 띄우기 · ⭐1: 가드 깨기 · ⭐2: 날아차기',
+    ja: '→＋パンチ：浮かせ技 · ⭐1：ガード崩し · ⭐2：飛び蹴り',
+    zh: '→ + 拳：浮空 · ⭐1：破防 · ⭐2：飞踢',
+    es: '→ + puño: lanzador · ⭐1: rompeguardias · ⭐2: patada voladora',
+    id: '→ + pukulan: pelontar · ⭐1: pemecah pertahanan · ⭐2: tendangan terbang',
+    vi: '→ + đấm: hất tung · ⭐1: phá thủ · ⭐2: đá bay',
+    hi: '→ + मुक्का: लॉन्चर · ⭐1: गार्ड तोड़ · ⭐2: उड़ती किक',
+    fr: '→ + poing : lanceur · ⭐1 : brise-garde · ⭐2 : coup de pied sauté',
+    th: '→ + หมัด: ท่าเสย · ⭐1: ทำลายการ์ด · ⭐2: เตะลอย',
+    ar: '→ + لكمة: ضربة رافعة · ⭐1: كاسرة الصد · ⭐2: ركلة طائرة',
   },
   keys: {
-    en: 'A D move · W S side-step · U I punches · J K kicks',
-    ko: 'A D 이동 · W S 옆걸음 · U I 주먹 · J K 발',
-    ja: 'A D 移動 · W S 横移動 · U I パンチ · J K キック',
-    zh: 'A D 移动 · W S 横移 · U I 拳 · J K 脚',
-    es: 'A D mover · W S paso lateral · U I puños · J K patadas',
-    id: 'A D gerak · W S langkah samping · U I pukulan · J K tendangan',
-    vi: 'A D di chuyển · W S bước ngang · U I đấm · J K đá',
-    hi: 'A D चलें · W S बगल कदम · U I मुक्के · J K किक',
-    fr: 'A D bouger · W S pas de côté · U I poings · J K pieds',
-    th: 'A D เดิน · W S ก้าวข้าง · U I หมัด · J K เตะ',
-    ar: 'A D تحرّك · W S خطوة جانبية · U I لكمات · J K ركلات',
+    en: 'A D move · W S side-step · J punch · K kick · U I specials',
+    ko: 'A D 이동 · W S 옆걸음 · J 주먹 · K 발 · U I 필살기',
+    ja: 'A D 移動 · W S 横移動 · J パンチ · K キック · U I 必殺技',
+    zh: 'A D 移动 · W S 横移 · J 拳 · K 脚 · U I 必杀技',
+    es: 'A D mover · W S paso lateral · J puño · K patada · U I especiales',
+    id: 'A D gerak · W S langkah samping · J pukulan · K tendangan · U I spesial',
+    vi: 'A D di chuyển · W S bước ngang · J đấm · K đá · U I tuyệt chiêu',
+    hi: 'A D चलें · W S बगल कदम · J मुक्का · K किक · U I स्पेशल',
+    fr: 'A D bouger · W S pas de côté · J poing · K pied · U I spéciaux',
+    th: 'A D เดิน · W S ก้าวข้าง · J หมัด · K เตะ · U I ท่าไม้ตาย',
+    ar: 'A D تحرّك · W S خطوة جانبية · J لكمة · K ركلة · U I ضربات خاصة',
   },
   start: { en: 'Fight {name}', ko: '{name}와 대결', ja: '{name}と対戦', zh: '挑战{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: 'Đấu với {name}', hi: '{name} से लड़ें', fr: 'Affronter {name}', th: 'สู้กับ {name}', ar: 'قاتل {name}' },
   rival: { en: 'Rival {n} of {max}', ko: '상대 {n} / {max}', ja: 'ライバル {n} / {max}', zh: '对手 {n} / {max}', es: 'Rival {n} de {max}', id: 'Lawan {n} dari {max}', vi: 'Đối thủ {n} / {max}', hi: 'प्रतिद्वंद्वी {n} / {max}', fr: 'Rival {n} sur {max}', th: 'คู่ต่อสู้ {n} / {max}', ar: 'الخصم {n} من {max}' },
@@ -172,7 +159,7 @@ export const STYLE = {
     stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
   },
 };
-const BTN = { lp: '👊ʟ', rp: '👊ʀ', lk: '🦶ʟ', rk: '🦶ʀ' };
+const BTN = { p: '👊', k: '🦶', s1: '⭐1', s2: '⭐2' };
 
 export const RIVAL = [
   { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
@@ -201,6 +188,14 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-bar .hp { background: linear-gradient(#ffe46b, #ff9a2e); }
 .bw-side.rage .hp { background: linear-gradient(#ff8a7a, #e0242e); animation: bw-pulse .5s infinite alternate; }
 @keyframes bw-pulse { to { filter: brightness(1.5); } }
+.bw-sp { display: flex; gap: 4px; margin-top: 3px; width: 46%; }
+.bw-side.r .bw-sp { margin-left: auto; flex-direction: row-reverse; }
+.bw-sp b { flex: 1; height: 7px; border-radius: 4px; background: rgba(10,10,20,.72); border: 1.5px solid #fff; overflow: hidden; position: relative; }
+.bw-sp i { position: absolute; inset: 0; background: #7df0ff; transform: scaleX(0); transform-origin: left; }
+.bw-side.r .bw-sp i { transform-origin: right; }
+.bw-sp b.full { box-shadow: 0 0 8px #7df0ff; }
+.bw-sp b.full i { background: #fff36b; }
+.bw-pad.no-sp .bw-btns .sp { opacity: .4; }
 .bw-name { display: flex; gap: 6px; align-items: center; margin-top: 3px; font-size: 13px; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; }
 .bw-side.r .bw-name { flex-direction: row-reverse; }
 .bw-name span { overflow: hidden; text-overflow: ellipsis; }
@@ -532,7 +527,7 @@ export function createBrawl(game) {
   const stick = { mx: 0, mz: 0 };
   const KEYS = {
     KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down',
-    KeyU: 'lp', KeyI: 'rp', KeyJ: 'lk', KeyK: 'rk', Numpad4: 'lp', Numpad5: 'rp', Numpad1: 'lk', Numpad2: 'rk',
+    KeyJ: 'p', KeyK: 'k', KeyU: 's1', KeyI: 's2', Numpad1: 'p', Numpad2: 'k', Numpad4: 's1', Numpad5: 's2',
   };
   const onKey = (e) => {
     if (!on) return;
@@ -564,7 +559,7 @@ export function createBrawl(game) {
   };
   function readInput() {
     const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) || stick.mz };
-    for (const b of ['lp', 'rp', 'lk', 'rk']) if (pressed.has(b)) inp[b] = true;
+    for (const b of ['p', 'k', 's1', 's2']) if (pressed.has(b)) inp[b] = true;
     if (dashAsk) { inp.dash = dashAsk; dashAsk = 0; }
     pressed.clear();
     return inp;
@@ -582,8 +577,10 @@ export function createBrawl(game) {
       const pips = Array.from({ length: ROUNDS_TO_WIN }, () => el('i', 'bw-pip'));
       name.append(label, ...pips);
       const style = el('div', 'bw-style');
-      s.append(bar, name, style);
-      return { s, ghost, hp, label, pips, style, shown: -1 };
+      const sp = el('div', 'bw-sp'), cells = [el('i'), el('i')];
+      sp.append(...cells.map((c) => { const w = el('b'); w.append(c); return w; }));
+      s.append(bar, sp, name, style);
+      return { s, ghost, hp, label, pips, style, cells, shown: -1, sp: -1 };
     };
     const a = side(0), b = side(1), time = el('div', 'bw-time', '45');
     const top = el('div', 'bw-top');
@@ -618,9 +615,9 @@ export function createBrawl(game) {
       zone.onpointermove = (e) => { if (e.pointerId === id) move(e); };
       zone.onpointerup = zone.onpointercancel = (e) => { if (e.pointerId !== id) return; id = null; stick.mx = stick.mz = 0; knob.style.transform = ''; };
       const btns = el('div', 'bw-btns');
-      for (const [k, icon, tag, col] of [['lp', '👊', 'L', '#3f7fe0'], ['rp', '👊', 'R', '#e0483f'], ['lk', '🦶', 'L', '#2fa56a'], ['rk', '🦶', 'R', '#d9982a']]) {
-        const b = el('button', null, icon);
-        b.append(el('small', null, tag));
+      for (const [k, icon, tag, col] of [['s1', '⭐', '1', '#8a5ad6'], ['s2', '⭐', '2', '#d9982a'], ['p', '👊', '', '#3f7fe0'], ['k', '🦶', '', '#e0483f']]) {
+        const b = el('button', k[0] === 's' ? 'sp' : null, icon);
+        if (tag) b.append(el('small', null, tag));
         b.style.background = col;
         b.onpointerdown = (e) => { e.preventDefault(); pressed.add(k); b.classList.add('on'); };
         b.onpointerup = b.onpointercancel = b.onpointerleave = () => b.classList.remove('on');
@@ -657,7 +654,7 @@ export function createBrawl(game) {
     c.append(row);
   }
   const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
-  const seqText = (seq) => seq.map((k) => BTN[k]).join(' ');
+  const seqText = (seq, i) => (i ? BTN.k : BTN.p).repeat(seq.length); // (the same button, once a hit)
   function styleInfo(box, id) {
     const st = STYLES[id], mv = movesFor(id);
     box.replaceChildren();
@@ -669,9 +666,8 @@ export function createBrawl(game) {
       bar.append(fill); row.append(el('span', null, icon), bar);
       box.append(row);
     }
-    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? `${BTN.lp} + ${BTN.rp}` : `${BTN.lk} + ${BTN.rk}`) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
+    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
     box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
-    box.append(el('p', 'dim', tt('mash')));
   }
   // The eight styles to pick from, and what the picked one does.
   function styleGrid(c) {
@@ -902,7 +898,7 @@ export function createBrawl(game) {
     on.hud.root.querySelector('.bw-keys')?.style.removeProperty('display');
     held.clear(); pressed.clear();
     on.acc = 0; on.freeze = 0; on.shake = 0; on.overT = 0; on.cheer = null;
-    for (const s of [on.hud.a, on.hud.b]) { s.shown = -1; s.s.classList.remove('rage'); }
+    for (const s of [on.hud.a, on.hud.b]) { s.shown = s.sp = -1; s.s.classList.remove('rage'); }
   }
   function begin(stage) {
     if (on.vs) return;
@@ -1016,6 +1012,11 @@ export function createBrawl(game) {
       for (const [s, f] of [[h.a, mine], [h.b, theirs]]) {
         if (s.shown !== f.hp) { s.shown = f.hp; const k = `scaleX(${f.hp / f.maxHp})`; s.hp.style.transform = k; s.ghost.style.transform = k; }
         if (!f.rage) s.s.classList.remove('rage');
+        if (s.sp !== f.sp) {
+          s.sp = f.sp;
+          s.cells.forEach((c, i) => { const k = Math.max(0, Math.min(1, (f.sp - SP_COST * i) / SP_COST)); c.style.transform = `scaleX(${k})`; c.parentNode.classList.toggle('full', k >= 1); });
+          if (f === mine) h.pad?.classList.toggle('no-sp', f.sp < SP_COST);
+        }
         s.pips.forEach((p, i) => p.classList.toggle('on', i < m.wins[f.side]));
       }
       const left = String(Math.ceil(m.left / 60));
