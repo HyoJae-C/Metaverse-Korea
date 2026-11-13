@@ -135,6 +135,38 @@ export function createArcade(game) {
     th: '🥊 {name} ท้าคุณสู้ศึกดาดฟ้า!',
     ar: '🥊 {name} يتحداك في نزال السطح!',
   };
+  // NEON STRIKE with someone in the PC방 (game/strike.js): messages
+  // strike:<to>:<kind>:<nonce>:<data>. An invite shows the card anywhere in
+  // the room; the rest goes to the game. True when it was one of these.
+  function onStrikeMsg(from, e) {
+    if (typeof e !== 'string' || !e.startsWith('strike:')) return false;
+    const [, to, kind, nonce, data] = e.split(':');
+    const name = game.others.nameOf(from);
+    if (to !== myId || !nonce || name == null || safety.isBlocked(from, name)) return true;
+    if (kind !== 'i') { strike?.heard(from, kind, nonce, data); return true; }
+    const inv = { from, name, nonce, data, at: performance.now() };
+    const no = (k) => game.net.sendEmote(`strike:${from}:${k}:${nonce}:0`);
+    if (!game.interior?.stations?.aim) return true; // (not in the PC방)
+    if (strike?.busy || brawl?.busy) { no('b'); return true; }
+    const at = game.interior;
+    const join = async () => {
+      if (performance.now() - inv.at > INVITE_MS || game.others.nameOf(from) == null) return;
+      await loadStrike();
+      if (game.interior !== at) return;
+      if (!strike.open) strike.show();
+      strike.invited(inv);
+    };
+    if (strike?.open) join(); // (at the game's menu: asked there)
+    else showAsk(inv, fmt(L(STRIKE_INVITE), { name }), join, () => no('n'));
+    sfx.tock(0.6, 900);
+    return true;
+  }
+  const STRIKE_INVITE = {
+    en: '🔫 {name} invites you to NEON STRIKE!',
+    ko: '🔫 {name}님이 네온 스트라이크에 초대했어요!',
+    ja: '🔫 {name}さんが NEON STRIKE に招待しました！',
+    zh: '🔫 {name}邀请你玩 NEON STRIKE！',
+  };
   async function openArcade(kind) {
     // Turn to face the cage, the targets or the board (the camera stays as the player has it).
     const p = game.me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
@@ -146,6 +178,7 @@ export function createArcade(game) {
     if (kind === 'strike') {
       const at = game.interior;
       await loadStrike();
+      closeAsk();
       if (game.interior === at) strike.show();
       return;
     }
@@ -337,6 +370,6 @@ export function createArcade(game) {
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active), fightUi, brawl: () => brawl, strike: () => strike, camera: (dt) => { brawl?.update(dt); strike?.update(dt); dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active), fightUi, brawl: () => brawl, strike: () => strike, camera: (dt) => { brawl?.update(dt); strike?.update(dt); dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, onStrikeMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }

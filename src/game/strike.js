@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
+import { createHost, createGuest } from '../core/strike-net.js';
 import { TICK, HP, HB, GUNS, GUN_IDS, MAPS, MAP_IDS, BOT_NAMES, MATCH_SECS, createMatch, loadStrike, saveStrike, afterStrike, aimFrom, dirOf, rayWalls, damageOf, shotsToKill, solids } from '../core/strike.js';
 
 const T = {
@@ -57,6 +58,22 @@ const T = {
   target: { en: 'First to {n}', ko: '{n}킬 먼저', ja: '{n}キル先取', zh: '先到{n}杀' },
   record: { en: 'Played {p} · won {w} · best {b} kills', ko: '{p}판 · {w}승 · 최고 {b}킬', ja: '{p}試合 · {w}勝 · 最高{b}キル', zh: '{p}局 · {w}胜 · 最高{b}杀' },
   reload: { en: 'RELOADING', ko: '장전 중', ja: 'リロード中', zh: '换弹中' },
+  vsTitle: { en: 'Play with someone in this room', ko: '이 방에 있는 사람과 같이 하기', ja: 'この部屋の人と一緒に', zh: '和这个房间里的人一起玩' },
+  vsFoe: { en: 'Against each other', ko: '서로 상대 팀', ja: '敵同士で', zh: '互为对手' },
+  vsMate: { en: 'Same team', ko: '같은 팀', ja: '同じチーム', zh: '同一队' },
+  vsNone: { en: 'Nobody else is here right now.', ko: '지금은 다른 사람이 없어요.', ja: '今はほかに誰もいません。', zh: '现在没有其他人。' },
+  vsWait: { en: 'Waiting for {name}…', ko: '{name}님의 답을 기다리는 중…', ja: '{name}さんの返事を待っています…', zh: '正在等{name}回应…' },
+  vsAsk: { en: '{name} invites you', ko: '{name}님이 초대했어요', ja: '{name}さんからの招待', zh: '{name}邀请你' },
+  vsNo: { en: '{name} said no thanks.', ko: '{name}님이 사양했어요.', ja: '{name}さんは遠慮しました。', zh: '{name}婉拒了。' },
+  vsBusy: { en: '{name} is in another match.', ko: '{name}님은 다른 경기 중이에요.', ja: '{name}さんは別の試合中です。', zh: '{name}正在别的比赛中。' },
+  vsGone: { en: 'The invite ran out.', ko: '초대가 끝났어요.', ja: '招待の時間が切れました。', zh: '邀请已过期。' },
+  vsLink: { en: 'Connecting…', ko: '연결 중…', ja: '接続中…', zh: '连接中…' },
+  vsLost: { en: 'The connection was lost.', ko: '연결이 끊겼어요.', ja: '接続が切れました。', zh: '连接断开了。' },
+  vsLeft: { en: '{name} left the match.', ko: '{name}님이 경기를 떠났어요.', ja: '{name}さんが試合を離れました。', zh: '{name}离开了比赛。' },
+  vsBot: { en: '{name} left: a bot plays on.', ko: '{name}님이 나가서 봇이 이어서 해요.', ja: '{name}さんが抜けたのでボットが続けます。', zh: '{name}离开了，由机器人接替。' },
+  ready: { en: 'Ready', ko: '준비 완료', ja: '準備OK', zh: '准备好了' },
+  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不用了' },
+  cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消' },
   shots: { en: '{n} to the body', ko: '몸통 {n}발', ja: '胴体{n}発', zh: '身体{n}发' },
   oneHead: { en: 'head middle: 1', ko: '머리 정중앙 1발', ja: '頭の真ん中 1発', zh: '头部正中 1发' },
 };
@@ -140,6 +157,10 @@ html.strike-on #hud > *, html.strike-on #labels, html.strike-on .credit { visibi
 .sk-card button.sel { border-color: #5ad1ff; background: #2f4a7a; }
 .sk-card button.go { background: linear-gradient(#7de4ff, #3a8cff); color: #08122a; }
 .sk-card .sk-pick button b { display: block; font-size: 22px; }
+.sk-vs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0 2px; }
+.sk-vs p { margin: 0; }
+.sk-vs button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 10px; }
+.sk-note { background: rgba(90,209,255,.16); border-radius: 10px; padding: 6px 10px; }
 .sk-card .row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
 .sk-stat { display: grid; grid-template-columns: 88px 1fr 34px; gap: 6px; align-items: center; margin: 3px 0; font-size: 13px; text-align: left; }
 .sk-stat i { height: 8px; border-radius: 4px; background: #262a48; overflow: hidden; display: block; } .sk-stat i u { display: block; height: 100%; background: #5ad1ff; }
@@ -166,7 +187,8 @@ html.strike-on #hud > *, html.strike-on #labels, html.strike-on .credit { visibi
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const lerp = (a, b, k) => a + (b - a) * k;
 const lerpAngle = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
-const nameOf = (p, myName) => (p.nameKey != null ? L(BOT_NAMES[p.nameKey]) : p.id === 'me' ? myName : p.name || '?');
+let ME = 'me'; // my player's id in the match (my own id when playing with someone)
+const nameOf = (p, myName) => (p.nameKey != null ? L(BOT_NAMES[p.nameKey]) : p.id === ME ? myName : p.name || '?');
 
 // ── The arena ────────────────────────────────────────────────────────────
 function gridTexture(base) {
@@ -362,7 +384,7 @@ export function createStrike(game, { practice } = {}) {
   function chooseGun(id) {
     if (!on?.match || !GUNS[id]) return;
     on.gun = id;
-    on.match.chooseGun('me', id);
+    on.match.chooseGun(ME, id);
     const rec = loadStrike(store); rec.gun = id; saveStrike(store, rec);
     deadPicks();
     if (on.match.phase !== 'warmup' && !on.me.dead) small(L(GUN[id].name) + ' ⟳', 1.2);
@@ -494,7 +516,7 @@ export function createStrike(game, { practice } = {}) {
     }
     box.append(el('p', 'dim', tt('shots', { n: shotsToKill(id, 'body') }) + (damageOf(id, 'core') >= HP ? ' · ' + tt('oneHead') : '')));
   }
-  function menu() {
+  function menu(note) {
     const rec = loadStrike(store);
     on.match = null;
     on.hud.root.classList.add('idle');
@@ -504,9 +526,16 @@ export function createStrike(game, { practice } = {}) {
     lineUpPreview();
     card((c) => {
       c.append(el('h3', null, '🔫 ' + tt('title')), el('p', 'dim', tt('tag')));
+      if (note) c.append(el('p', 'sk-note', note));
       picker(c, tt('map'), MAP_IDS.map((id) => ({ id, icon: MAP[id].icon, text: L(MAP[id].name) })), on.cfg.map, (id) => { on.cfg.map = id; setArena(id); lineUpPreview(); });
       picker(c, tt('size'), [1, 2, 3, 4].map((n) => ({ id: n, text: n + ' vs ' + n })), on.cfg.size, (n) => { on.cfg.size = n; lineUpPreview(); });
       c.append(el('p', 'dim', tt('bots') + ' ' + tt('target', { n: [10, 20, 25, 30][on.cfg.size - 1] })));
+      // Anyone else in the PC방: play with them (no need to be friends).
+      on.mode = on.mode || 0;
+      picker(c, tt('vsTitle'), [{ id: 0, icon: '⚔️', text: tt('vsFoe') }, { id: 1, icon: '🤝', text: tt('vsMate') }], on.mode, (id) => { on.mode = id; });
+      const list = el('div', 'sk-vs');
+      c.append(list);
+      on.vsList = { list, at: -9, key: null };
       const info = el('div');
       picker(c, tt('gun'), GUN_IDS.map((id) => ({ id, icon: GUN[id].icon, text: L(GUN[id].name) })), on.gun, (id) => { on.gun = id; gunInfo(info, id); lineUpPreview(); }, 4);
       gunInfo(info, on.gun);
@@ -521,6 +550,7 @@ export function createStrike(game, { practice } = {}) {
       row.append(button(tt('close'), null, () => close()));
       c.append(row);
     });
+    fillPeople();
   }
   function pause() {
     card((c) => {
@@ -540,11 +570,174 @@ export function createStrike(game, { practice } = {}) {
     head.append(el('td', null, ''), el('td', null, tt('kills')), el('td', null, tt('deaths')));
     tb.append(head);
     for (const team of m.board()) for (const p of team) {
-      const tr = el('tr', 't' + p.team + (p.id === 'me' ? ' me' : ''));
+      const tr = el('tr', 't' + p.team + (p.id === ME ? ' me' : ''));
       tr.append(el('td', null, (p.bot ? '🤖 ' : '') + nameOf(p, on.myName)), el('td', null, String(p.kills)), el('td', null, String(p.deaths)));
       tb.append(tr);
     }
     box.append(tb);
+  }
+
+  // ── With someone else in the room (core/strike-net.js) ──
+  // Asking and answering go over the room's messages (game/arcade.js hands
+  // us ours): strike:<to>:<kind>:<nonce>:<data>, kind i (play with me? data:
+  // map, team size, same team or not), a (choosing a gun), y (ready; data: the
+  // gun), n (no), b (busy), c (never mind). The match has a channel of its own.
+  const people = () => {
+    const p = game.me?.root?.position;
+    if (!p || !game.others?.nearbyFree) return [];
+    return game.others.nearbyFree(p.x, p.z, 40).filter((f) => !game.safety?.isBlocked(f.id, f.name)).slice(0, 8);
+  };
+  function fillPeople() {
+    const v = on.vsList;
+    if (!v?.list.isConnected) { on.vsList = null; return; }
+    v.at = on.time;
+    const now = people(), key = now.map((f) => f.id + f.name).join('|');
+    if (key === v.key) return;
+    v.key = key;
+    v.list.replaceChildren();
+    if (!now.length) v.list.append(el('p', 'dim', tt('vsNone')));
+    for (const f of now) { const b = button('🎮 ' + f.name, null, () => invite(f)); b.dataset.peer = f.id; v.list.append(b); }
+  }
+  const tell = (to, kind, nonce, data = '0') => game.net?.sendEmote?.(`strike:${to}:${kind}:${nonce}:${data}`);
+  function invite(peer) {
+    if (on.vs || on.match) return;
+    const nonce = Math.random().toString(36).slice(2, 10);
+    on.vs = { host: true, peer: { id: peer.id, name: peer.name }, nonce, st: 'wait', until: on.time + 32, cfg: { map: on.cfg.map, size: on.cfg.size, mode: on.mode ? 1 : 0 } };
+    tell(peer.id, 'i', nonce, `${MAP_IDS.indexOf(on.cfg.map)}${on.cfg.size}${on.mode ? 1 : 0}`);
+    waitCard(tt('vsWait', { name: peer.name }));
+  }
+  function waitCard(text) {
+    card((c) => {
+      c.append(el('h3', null, '🔫 ' + tt('title')), el('p', 'big', text));
+      const row = el('div', 'row');
+      row.append(button(tt('cancel'), null, () => { leaveVs(true); menu(); }));
+      c.append(row);
+    });
+  }
+  // Out of a match with someone, at any point. say: let them know.
+  function leaveVs(say) {
+    const vs = on?.vs;
+    if (!vs) return;
+    if (say) {
+      if (vs.link) { try { vs.link.send({ bye: 1 }); } catch { /* closed */ } }
+      else tell(vs.peer.id, vs.host ? 'c' : 'n', vs.nonce);
+    }
+    vs.dead = true;
+    const link = vs.link;
+    if (link) setTimeout(() => link.close(), 300); // (after the goodbye has gone)
+    on.vs = null;
+  }
+  // Someone asked us (we said yes on the room's card, or the game was open).
+  function invited(inv) {
+    if (on.vs || on.match) { tell(inv.from, 'b', inv.nonce); return; }
+    const d = String(inv.data || '');
+    const cfg = { map: MAP_IDS[+d[0]] || 'warehouse', size: Math.max(1, Math.min(4, +d[1] || 1)), mode: d[2] === '1' ? 1 : 0 };
+    on.vs = { host: false, peer: { id: inv.from, name: inv.name }, nonce: inv.nonce, st: 'pick', until: on.time + 28, cfg };
+    on.gun = loadStrike(store).gun;
+    tell(inv.from, 'a', inv.nonce);
+    card((c) => {
+      c.append(el('h3', null, '🔫 ' + tt('title')), el('p', 'big', tt('vsAsk', { name: inv.name })));
+      c.append(el('p', null, `${MAP[cfg.map].icon} ${L(MAP[cfg.map].name)} · ${cfg.size} vs ${cfg.size} · ${cfg.mode ? '🤝 ' + tt('vsMate') : '⚔️ ' + tt('vsFoe')}`));
+      const info = el('div');
+      picker(c, tt('gun'), GUN_IDS.map((id) => ({ id, icon: GUN[id].icon, text: L(GUN[id].name) })), on.gun, (id) => { on.gun = id; gunInfo(info, id); }, 4);
+      gunInfo(info, on.gun);
+      c.append(info);
+      const row = el('div', 'row');
+      row.append(button('🔫 ' + tt('ready'), 'go', () => { const vs = on.vs; if (!vs) return; tell(vs.peer.id, 'y', vs.nonce, String(GUN_IDS.indexOf(on.gun))); connect(); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
+      c.append(row);
+    });
+  }
+  // A message about a match, from the other player (game/arcade.js).
+  function heard(from, kind, nonce, data) {
+    const vs = on?.vs;
+    if (!vs || vs.peer.id !== from || vs.nonce !== nonce) return;
+    if (vs.host && vs.st === 'wait') {
+      if (kind === 'a') vs.until = on.time + 40;
+      else if (kind === 'y') { vs.peerGun = GUN_IDS[+data] || 'magpie'; connect(); }
+      else if (kind === 'n' || kind === 'b') { leaveVs(false); menu(tt(kind === 'n' ? 'vsNo' : 'vsBusy', { name: vs.peer.name })); }
+    } else if (!vs.host && vs.st === 'pick' && kind === 'c') { leaveVs(false); menu(tt('vsGone')); }
+  }
+  // Both said yes: open the match's own channel. The host says hello until
+  // the guest answers, then starts; every message of the host carries how the
+  // match was set up until the guest's first one arrives.
+  function connect() {
+    const vs = on.vs;
+    vs.st = 'link'; vs.until = on.time + 15; vs.hiAt = 0;
+    waitCard(tt('vsLink'));
+    const onMsg = (m) => {
+      if (vs.dead || !on || on.vs !== vs || !m || typeof m !== 'object') return;
+      vs.heardAt = on.time;
+      if (m.bye) { peerLeft(); return; }
+      if (vs.host) {
+        if (m.hi === 1) return;
+        if (!vs.session) startHost();
+        if (m.g) vs.started = true;
+        onEvents(vs.session.receive(m));
+      } else {
+        if (m.hi === 1) { vs.link?.send({ hi: 2 }); return; }
+        if (!vs.session && m.st) startGuest(m.st);
+        if (vs.session) onEvents(vs.session.receive(m));
+      }
+    };
+    Promise.resolve().then(() => game.link('strike-' + vs.nonce, onMsg)).then((link) => {
+      if (vs.dead) { link.close(); return; }
+      vs.link = link;
+    }).catch((err) => {
+      console.warn('[strike] no channel for the match:', err);
+      if (on?.vs === vs) { leaveVs(false); menu(tt('vsLost')); }
+    });
+  }
+  const roster = (vs, st) => [
+    { id: st.host, name: st.hostName, team: 0, gun: st.hostGun },
+    { id: st.guest, name: st.guestName, team: st.mode ? 0 : 1, gun: st.guestGun },
+  ];
+  function startHost() {
+    const vs = on.vs;
+    const st = vs.setup = { map: vs.cfg.map, size: vs.cfg.size, mode: vs.cfg.mode, seed: (Math.random() * 1e9) | 0, host: game.myId, hostName: on.myName, hostGun: on.gun, guest: vs.peer.id, guestName: vs.peer.name, guestGun: vs.peerGun || 'magpie' };
+    ME = game.myId;
+    const match = createMatch({ map: st.map, size: st.size, seed: st.seed, players: roster(vs, st).map((p) => (p.id === ME ? p : { ...p, remote: true, look: game.others.lookOf?.(p.id) || null })) });
+    vs.session = createHost({ match, peer: vs.peer.id, send: (m) => { if (vs.dead) return; if (!vs.started) m.st = vs.setup; vs.link?.send(m); } });
+    vs.st = 'play';
+    play(match);
+  }
+  function startGuest(st) {
+    const vs = on.vs;
+    if (!st || st.guest !== game.myId || st.host !== vs.peer.id || !MAPS[st.map]) return;
+    ME = game.myId;
+    const match = createMatch({ map: st.map, size: Math.max(1, Math.min(4, st.size | 0)), seed: st.seed | 0, guest: ME, players: roster(vs, st).map((p) => (p.id === ME ? { ...p, gun: on.gun } : { ...p, look: game.others.lookOf?.(p.id) || null })) });
+    vs.session = createGuest({ match, me: ME, send: (m) => { if (!vs.dead) vs.link?.send(m); } });
+    vs.st = 'play';
+    play(match);
+  }
+  // The other one is gone (they said so, or nothing came for a while). The
+  // host plays on with a bot in their place; the guest's match is over.
+  function peerLeft() {
+    const vs = on.vs, name = vs.peer.name;
+    if (vs.host && vs.session && on.match) {
+      on.match.toBot(vs.peer.id);
+      const p = on.match.byId(vs.peer.id), v = on.people.get(vs.peer.id);
+      if (p) { p.nameKey = null; p.name = '🤖 ' + name; }
+      if (v?.tag) v.tag.visible = false;
+      leaveVs(false);
+      small(tt('vsBot', { name }), 3);
+      return;
+    }
+    const over = on.match?.phase === 'over';
+    leaveVs(false);
+    if (over) return; // (the result card stays)
+    endMatch();
+    menu(tt('vsLeft', { name }));
+  }
+  function versus() {
+    const vs = on.vs;
+    if (vs.st !== 'play') {
+      if (on.time > vs.until) { const st = vs.st; leaveVs(true); menu(tt(st === 'link' ? 'vsLost' : 'vsGone')); return; }
+      if (vs.st === 'link' && vs.host && vs.link && on.time - vs.hiAt > 0.4) { vs.hiAt = on.time; vs.link.send({ hi: 1 }); }
+      return;
+    }
+    if (on.match?.phase !== 'over' && on.time - (vs.heardAt ?? on.time) > 8) {
+      if (vs.host) peerLeft(); else { leaveVs(true); endMatch(); menu(tt('vsLost')); }
+    }
   }
 
   // ── The players on screen ──
@@ -556,7 +749,7 @@ export function createStrike(game, { practice } = {}) {
     on.scene.add(on.arena.g);
   }
   function person(p) {
-    const ch = createCharacter(p.id === 'me' ? game.look : p.look || BOT_LOOKS[(p.nameKey ?? p.slot) % BOT_LOOKS.length]);
+    const ch = createCharacter(p.id === ME ? game.look : p.look || BOT_LOOKS[(p.nameKey ?? p.slot) % BOT_LOOKS.length]);
     const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
     const v = { ch, rig, pose: {}, gun: null, gunId: null, tag: null, mark: null, px: p.x, pz: p.z, yaw: p.yaw, seen: false, seenT: 0, bones: null, fall: 0 };
     ch.setMoves(() => v.pose);
@@ -565,7 +758,7 @@ export function createStrike(game, { practice } = {}) {
     ring.position.y = 0.02;
     ch.root.add(ring);
     v.mark = ring;
-    if (p.id !== 'me') { v.tag = nameTag(nameOf(p, on.myName), TEAM[p.team]); v.tag.position.y = 1.42; ch.root.add(v.tag); }
+    if (p.id !== ME) { v.tag = nameTag(nameOf(p, on.myName), TEAM[p.team]); v.tag.position.y = 1.42; ch.root.add(v.tag); }
     on.arena.g.add(ch.root);
     return v;
   }
@@ -618,23 +811,30 @@ export function createStrike(game, { practice } = {}) {
     const rec = loadStrike(store);
     rec.map = on.cfg.map; rec.size = on.cfg.size; rec.gun = on.gun;
     saveStrike(store, rec);
+    ME = 'me';
+    play(createMatch({ map: on.cfg.map, size: on.cfg.size, players: [{ id: 'me', name: on.myName, team: 0, gun: on.gun }], seed: (Math.random() * 1e9) | 0 }));
+  }
+  // Onto the map: everyone in `match` gets a body, the camera goes behind mine.
+  function play(match) {
     uncard();
     clearPeople();
     on.preview = null;
     on.hud.root.classList.remove('idle');
-    on.match = createMatch({ map: on.cfg.map, size: on.cfg.size, players: [{ id: 'me', name: on.myName, team: 0, gun: on.gun }], seed: (Math.random() * 1e9) | 0 });
-    on.me = on.match.byId('me');
-    for (const p of on.match.players) { const v = person(p); on.people.set(p.id, v); setGun(v, p.gun); }
+    if (on.arenaMap !== match.map) setArena(match.map);
+    on.match = match;
+    on.me = match.byId(ME);
+    for (const p of match.players) { const v = person(p); on.people.set(p.id, v); setGun(v, p.gun); }
     look.yaw = on.me.yaw; look.pitch = 0;
     on.acc = 0; on.camSet = false; on.over = 0; on.deadShown = false;
-    on.hud.goal.textContent = tt('target', { n: on.match.target });
+    on.hud.shown = {};
+    on.hud.goal.textContent = tt('target', { n: match.target });
     on.hud.feed.replaceChildren();
     if (!touch) on.hud.hint.textContent = tt('clickToPlay');
     lockMouse();
   }
-  function endMatch() { on.match = null; on.me = null; clearPeople(); on.hud.dead.style.display = 'none'; on.hud.tab.style.display = 'none'; }
+  function endMatch() { leaveVs(true); ME = 'me'; on.match = null; on.me = null; clearPeople(); on.hud.dead.style.display = 'none'; on.hud.tab.style.display = 'none'; }
   function result() {
-    const m = on.match, won = m.winner === 0, rec = afterStrike(store, { won, kills: on.me.kills });
+    const m = on.match, won = m.winner === on.me.team, rec = afterStrike(store, { won, kills: on.me.kills });
     if (won) game.me?.play?.('cheer');
     card((c) => {
       c.append(el('h3', null, tt('title')));
@@ -643,7 +843,9 @@ export function createStrike(game, { practice } = {}) {
       fillBoard(c);
       c.append(el('p', 'dim', tt('record', { p: rec.played, w: rec.wins, b: rec.best })));
       const row = el('div', 'row');
-      row.append(button('🔫 ' + tt('again'), 'go', () => { endMatch(); begin(); }), button(tt('menu'), null, () => { endMatch(); menu(); }), button(tt('close'), null, () => close()));
+      const vs = !!on.vs;
+      if (!vs) row.append(button('🔫 ' + tt('again'), 'go', () => { endMatch(); begin(); }));
+      row.append(button(tt('menu'), vs ? 'go' : null, () => { endMatch(); menu(); }), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -701,16 +903,16 @@ export function createStrike(game, { practice } = {}) {
         puff(on.arena.flashes, f[0], f[1], f[2], e.gun === 'eagle' ? 0.7 : 0.45);
         if (e.wall) puff(on.arena.sparks, e.to[0], e.to[1], e.to[2], 0.3);
         const dist = Math.hypot(p.x - me.x, p.z - me.z);
-        gunSound(e.gun, e.by === 'me' ? 1 : Math.max(0, 1 - dist / 40) * 0.6);
-        if (e.by === 'me') on.kick = Math.min(0.06, on.kick + (e.gun === 'eagle' ? 0.05 : 0.012));
+        gunSound(e.gun, e.by === ME ? 1 : Math.max(0, 1 - dist / 40) * 0.6);
+        if (e.by === ME) on.kick = Math.min(0.06, on.kick + (e.gun === 'eagle' ? 0.05 : 0.012));
       } else if (e.k === 'hit') {
-        if (e.by === 'me') {
+        if (e.by === ME) {
           const h = on.hud;
           h.hit.style.color = e.zone === 'core' ? '#ff4040' : e.zone === 'limb' ? '#cfd8e8' : '#ffffff';
           h.hit.style.opacity = '1'; h.hitT = 0.2;
           game.sfx?.tock(0.35, e.zone === 'core' ? 2200 : 1700);
         }
-        if (e.to === 'me') {
+        if (e.to === ME) {
           on.hud.hurtT = 0.5;
           const p = m.byId(e.by);
           on.hurtFrom = p ? Math.atan2(p.x - me.x, p.z - me.z) : null;
@@ -719,30 +921,34 @@ export function createStrike(game, { practice } = {}) {
         const by = m.byId(e.by), to = m.byId(e.to);
         const zone = e.zone === 'core' ? ' 🎯' : '';
         feed([who(by), document.createTextNode(` ${GUN[e.gun].icon}${zone} `), who(to)]);
-        if (e.by === 'me') { if (e.zone === 'core') big(tt('head'), 1); else small('+1', 0.8); game.sfx?.tock(0.6, 600); }
-        if (e.to === 'me') { showDead(by); on.hud.tab.style.display = 'none'; }
+        if (e.by === ME) { if (e.zone === 'core') big(tt('head'), 1); else small('+1', 0.8); game.sfx?.tock(0.6, 600); }
+        if (e.to === ME) { showDead(by); on.hud.tab.style.display = 'none'; }
         const v = on.people.get(e.to);
         if (v) v.fall = 0.001;
       } else if (e.k === 'spawn') {
         const v = on.people.get(e.id), p = m.byId(e.id);
         if (v) { v.fall = 0; v.px = p.x; v.pz = p.z; v.yaw = p.yaw; setGun(v, p.gun); }
-        if (e.id === 'me') { on.hud.dead.style.display = 'none'; look.yaw = p.yaw; look.pitch = 0; scopeToggle = false; on.hud.pad?.sc.classList.remove('on'); }
-      } else if (e.k === 'reload' && e.id === 'me') game.sfx?.tock(0.3, 300);
-      else if (e.k === 'loaded' && e.id === 'me') game.sfx?.tock(0.35, 520);
-      else if (e.k === 'over') { on.over = 2.2; big(m.winner === -1 ? tt('draw') : m.winner === 0 ? tt('win') : tt('lose'), 2.2); on.hud.dead.style.display = 'none'; }
+        if (e.id === ME) { on.hud.dead.style.display = 'none'; look.yaw = p.yaw; look.pitch = 0; scopeToggle = false; on.hud.pad?.sc.classList.remove('on'); }
+      } else if (e.k === 'reload' && e.id === ME) game.sfx?.tock(0.3, 300);
+      else if (e.k === 'loaded' && e.id === ME) game.sfx?.tock(0.35, 520);
+      else if (e.k === 'over') { on.over = 2.2; big(m.winner === -1 ? tt('draw') : m.winner === on.me.team ? tt('win') : tt('lose'), 2.2); on.hud.dead.style.display = 'none'; }
     }
   }
 
   // ── Each frame ──
   function frame(dt) {
     on.time += dt;
+    if (on.vs) versus();
+    if (on.vsList && on.time - on.vsList.at > 1.5) fillPeople();
     const m = on.match;
     if (m) {
       on.acc = Math.min(on.acc + dt, 0.25);
       while (on.acc >= TICK && on.match === m) {
         on.acc -= TICK;
         for (const p of m.players) { const v = on.people.get(p.id); if (v) { v.lx = p.x; v.lz = p.z; v.lyaw = p.yaw; } }
-        onEvents(m.step(m.phase === 'over' || on.card ? { me: { yaw: look.yaw, pitch: look.pitch } } : { me: readInput() }));
+        const ev = m.step(m.phase === 'over' || on.card ? { [ME]: { yaw: look.yaw, pitch: look.pitch } } : { [ME]: readInput() });
+        on.vs?.session?.tick(ev);
+        onEvents(ev);
       }
       if (on.match !== m) return;
       if (m.phase === 'over' && on.over > 0 && (on.over -= dt) <= 0) { result(); }
@@ -751,10 +957,10 @@ export function createStrike(game, { practice } = {}) {
       for (const p of m.players) {
         const v = on.people.get(p.id);
         if (!v) continue;
-        if (p.id === 'me') { v.px = p.x; v.pz = p.z; v.yaw = look.yaw; }
+        if (p.id === ME) { v.px = p.x; v.pz = p.z; v.yaw = look.yaw; }
         else { v.px = lerp(v.lx ?? p.x, p.x, k); v.pz = lerp(v.lz ?? p.z, p.z, k); v.yaw = lerpAngle(v.lyaw ?? p.yaw, p.yaw, k); }
         if (v.tag) {
-          if (p.team === 0) v.tag.visible = !p.dead;
+          if (p.team === on.me.team) v.tag.visible = !p.dead;
           else {
             if ((v.seenT -= dt) <= 0) {
               v.seenT = 0.25;
@@ -772,7 +978,7 @@ export function createStrike(game, { practice } = {}) {
       on.preview.players.filter((p) => p.team === 0).forEach((p, i, all) => {
         const v = on.people.get(p.id);
         p.x = i ? -16.6 : -15.2; p.z = i ? (i - all.length / 2) * 1.2 : 0; p.yaw = Math.PI / 2 + (globalThis.__strikeYaw ?? 0.45); p.pitch = 0; p.protect = 0;
-        if (p.id === 'me' && v.gunId !== on.gun) { p.gun = on.gun; setGun(v, on.gun); }
+        if (p.id === ME && v.gunId !== on.gun) { p.gun = on.gun; setGun(v, on.gun); }
         v.px = p.x; v.pz = p.z; v.yaw = p.yaw;
         place(v, p, dt);
       });
@@ -801,11 +1007,11 @@ export function createStrike(game, { practice } = {}) {
     root.position.set(v.px, 0, v.pz);
     root.rotation.y = v.yaw;
     const speed = p.dead ? 0 : Math.min(1, Math.hypot(p.vx || 0, p.vz || 0) / 4.5);
-    holdPose(v.pose, p.id === 'me' ? look.pitch : p.pitch, p.dead);
+    holdPose(v.pose, p.id === ME ? look.pitch : p.pitch, p.dead);
     if (p.dead) v.fall = Math.min(1, v.fall + dt * 3);
     v.rig.rotation.x = -1.45 * v.fall;
     v.rig.position.y = BUILD.lift * (1 - v.fall) + 0.12 * v.fall;
-    if (v.gun) { v.gun.visible = !p.dead; v.gun.rotation.x = -(p.id === 'me' ? look.pitch : p.pitch) * 0.9; }
+    if (v.gun) { v.gun.visible = !p.dead; v.gun.rotation.x = -(p.id === ME ? look.pitch : p.pitch) * 0.9; }
     v.mark.visible = !p.dead;
     // Blink while protected after coming back.
     root.visible = !(p.protect > 0 && Math.floor(on.time * 10) % 2 === 0) && !(p.dead && v.fall >= 1 && p.respawn < 1.2);
@@ -852,7 +1058,7 @@ export function createStrike(game, { practice } = {}) {
     const cam = game.camera;
     let fov = FOV;
     if (on.match && on.me) {
-      const me = on.me, v = on.people.get('me');
+      const me = on.me, v = on.people.get(ME);
       const p = { x: v?.px ?? me.x, z: v?.pz ?? me.z, yaw: look.yaw };
       const o = aimFrom(p);
       on.kick = Math.max(0, (on.kick || 0) - dt * 0.4);
@@ -887,6 +1093,8 @@ export function createStrike(game, { practice } = {}) {
 
   function close() {
     if (!on) return;
+    leaveVs(true);
+    ME = 'me';
     const o = on;
     o.wantClose = true;
     if (locked()) document.exitPointerLock?.();
@@ -909,7 +1117,7 @@ export function createStrike(game, { practice } = {}) {
     close,
     show() {
       if (on || !game.interior || !game.activeScene) return;
-      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, match: null, me: null, people: new Map(), arena: null, arenaMap: null, card: null, cfg: null, gun: 'magpie', kick: 0, myName: game.nickname || L(T.you), preview: null };
+      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, match: null, me: null, people: new Map(), arena: null, arenaMap: null, card: null, cfg: null, gun: 'magpie', kick: 0, myName: game.nickname || L(T.you), preview: null, vs: null, vsList: null, mode: 0 };
       on.hud = buildHud();
       document.documentElement.classList.add('strike-on');
       addEventListener('keydown', onKey, true); addEventListener('keyup', onKey, true);
@@ -924,6 +1132,11 @@ export function createStrike(game, { practice } = {}) {
       frame(dt);
       if (on) camera(dt);
     },
+    // In a match or waiting for someone's answer (game/arcade.js: no new invites).
+    get busy() { return !!(on && (on.vs || on.match)); },
+    invited(inv) { if (on) invited(inv); },
+    heard(from, kind, nonce, data) { if (on) heard(from, kind, nonce, data); },
+    get versus() { return on?.vs ? { st: on.vs.st, host: on.vs.host } : null; },
     // For tests.
     get match() { return on?.match || null; },
     start() { if (on) begin(); },
@@ -931,7 +1144,7 @@ export function createStrike(game, { practice } = {}) {
     trigger(down) { fireHeld = !!down; },
     // Bone positions of your own character, to measure the hit boxes (core/strike.js HB).
     measure() {
-      const v = on?.people?.get('me');
+      const v = on?.people?.get(ME);
       if (!v?.bones) return null;
       const out = {};
       v.ch.root.updateWorldMatrix(true, true);

@@ -40,6 +40,7 @@ export const GUNS = {
 };
 export const GUN_IDS = Object.keys(GUNS);
 
+export const ZONES = ['core', 'head', 'body', 'limb'];
 // Damage of one bullet on a zone ('core', 'head', 'body', 'limb').
 export function damageOf(gunId, zone) {
   const g = GUNS[gunId];
@@ -268,16 +269,19 @@ export const BOT_NAMES = [
 
 // ── The match ────────────────────────────────────────────────────────────
 // players: [{ id, name, team (0|1), gun, bot }] (a side short of `size` is
-// filled with bots). The match moves the players it controls (`local` ids
-// from their input, and the bots); a player with `remote` is moved from
-// outside (core/strike-net.js, later) and only takes hits here.
+// filled with bots). The match moves the players it controls (from their
+// input, and the bots). With two people (core/strike-net.js) the host's match
+// decides everything; the other person's player is `remote` there: it goes
+// where their messages say (setRemote) and its hits are claims the host
+// checks (claim). The guest's match (`guest`: their id) only moves their own
+// player and shows the rest from the host's snapshots (apply).
 //   step(inputs) → events. inputs: { [id]: { mx, mz, yaw, pitch, fire, reload, scope } }
 //   (mx, mz: -1..1, right and forward of where the player looks)
-export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 7, botSkill = 1 } = {}) {
+export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 7, botSkill = 1, guest = null } = {}) {
   const R = rng(seed);
   const m = {
     map, size, phase: 'warmup', t: 0, left: MATCH_SECS, target: KILL_TARGET[Math.max(1, Math.min(4, size)) - 1],
-    score: [0, 0], players: [], winner: null, seed,
+    score: [0, 0], players: [], winner: null, seed, guest, out: [],
   };
   const used = new Set();
   const addPlayer = (q, team, i) => {
@@ -286,7 +290,7 @@ export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 
       gun: GUNS[q.gun] ? q.gun : 'magpie', nextGun: null,
       x: 0, z: 0, yaw: team ? -Math.PI / 2 : Math.PI / 2, pitch: 0, vx: 0, vz: 0,
       hp: HP, ammo: 0, reload: 0, cool: 0, dead: false, respawn: 0, protect: 0, scoped: false, firing: false,
-      kills: 0, deaths: 0, heads: 0, slot: i, lastHitBy: null,
+      kills: 0, deaths: 0, heads: 0, slot: i, lastHitBy: null, spawns: 0, net: null, lastShot: -9, shotsLeft: 0,
       ai: q.bot ? { goal: null, goalT: 0, target: null, seen: 0, err: [0, 0], strafe: 1, strafeT: 0, react: 0 } : null,
     };
     p.ammo = GUNS[p.gun].mag;
@@ -320,8 +324,10 @@ export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 
     p.yaw = p.team ? -Math.PI / 2 : Math.PI / 2; p.pitch = 0;
     if (p.nextGun) { p.gun = p.nextGun; p.nextGun = null; }
     p.hp = HP; p.ammo = GUNS[p.gun].mag; p.reload = 0; p.cool = 0; p.dead = false; p.protect = PROTECT_SECS; p.scoped = false; p.lastHitBy = null;
+    p.spawns++; p.net = null; p.vx = p.vz = 0; p.shotsLeft = GUNS[p.gun].mag;
     if (p.ai) { p.ai.goal = null; p.ai.target = null; }
   };
+  if (guest) for (const p of m.players) if (p.id !== guest) { p.remote = true; p.bot = false; p.ai = null; }
   for (const p of m.players) spawnAt(p);
   m.byId = (id) => m.players.find((p) => p.id === id);
 
@@ -349,8 +355,12 @@ export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 
     ev.push(shot);
     if (hit) {
       shot.hit = hit.q.id; shot.zone = hit.zone;
-      if (hit.q.team !== p.team) damage(hit.q, p, hit.zone, ev);
+      if (hit.q.team !== p.team) {
+        if (guest) { if (!hit.q.protect) ev.push({ k: 'hit', by: p.id, to: hit.q.id, zone: hit.zone, dmg: 0, hp: hit.q.hp, claim: true }); } else damage(hit.q, p, hit.zone, ev);
+      }
     }
+    // The guest's shots go to the host, who decides (claim).
+    if (guest) m.out.push([o, d, t, hit && hit.q.team !== p.team ? m.players.indexOf(hit.q) : -1, hit ? ZONES.indexOf(hit.zone) : 0, shot.wall ? 1 : 0]);
     return shot;
   }
   function damage(q, by, zone, ev) {
@@ -447,22 +457,36 @@ export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 
     return inp;
   }
 
+  // A player moved from outside drifts to where it was last said to be.
+  function follow(p, dt) {
+    const n = p.net;
+    if (!n) { p.vx = p.vz = 0; return; }
+    n.age += dt;
+    if (n.age < 0.5) { n.x += n.vx * dt; n.z += n.vz * dt; }
+    const k = Math.min(1, dt * 12);
+    const nx = p.x + (n.x - p.x) * k, nz = p.z + (n.z - p.z) * k;
+    p.vx = (nx - p.x) / dt; p.vz = (nz - p.z) / dt;
+    p.x = nx; p.z = nz;
+    p.yaw = wrap(p.yaw + wrap(n.yaw - p.yaw) * k); p.pitch += (n.pitch - p.pitch) * k;
+  }
   m.step = function step(inputs = {}) {
     const ev = [], dt = TICK;
     m.t += dt;
-    if (m.phase === 'warmup') {
+    if (guest) { if (m.phase === 'play') m.left = Math.max(0, m.left - dt); } // (the host's clock corrects it)
+    else if (m.phase === 'warmup') {
       if (m.t >= WARMUP_SECS) { m.phase = 'play'; ev.push({ k: 'go' }); }
     } else if (m.phase === 'play') {
       m.left -= dt;
       if (m.left <= 0) { m.left = 0; end(m.score[0] === m.score[1] ? -1 : m.score[0] > m.score[1] ? 0 : 1, ev); }
     }
     for (const p of m.players) {
-      if (p.remote) continue;
       if (p.dead) {
-        if (m.phase === 'play' && (p.respawn -= dt) <= 0) { spawnAt(p); ev.push({ k: 'spawn', id: p.id }); }
+        if (!guest && m.phase === 'play' && (p.respawn -= dt) <= 0) { spawnAt(p); ev.push({ k: 'spawn', id: p.id }); }
+        else if (guest && p.respawn > 0) p.respawn -= dt;
         continue;
       }
       if (p.protect > 0) p.protect -= dt;
+      if (p.remote) { follow(p, dt); continue; }
       const inp = m.phase === 'over' ? {} : p.bot ? botInput(p, dt) : inputs[p.id] || {};
       const g = GUNS[p.gun];
       if (inp.yaw != null && Number.isFinite(inp.yaw)) p.yaw = wrap(inp.yaw);
@@ -497,12 +521,109 @@ export function createMatch({ map = 'warehouse', size = 4, players = [], seed = 
     }
     return ev;
   };
+
+  // ── Two people (core/strike-net.js packs these) ──
+  // Host: where the other person's player is now.
+  m.setRemote = (id, st) => {
+    const p = m.byId(id);
+    if (!p || !p.remote || p.dead || !st) return;
+    const ok = [st.x, st.z, st.yaw, st.pitch].every(Number.isFinite);
+    if (!ok || st.spawns !== p.spawns) return; // (from before they went down)
+    const [w, h] = MAPS[map].size;
+    const x = Math.max(-w / 2, Math.min(w / 2, st.x)), z = Math.max(-h / 2, Math.min(h / 2, st.z));
+    const was = p.net;
+    p.net = { x, z, yaw: st.yaw, pitch: Math.max(-1.2, Math.min(1.2, st.pitch)), vx: 0, vz: 0, age: 0 };
+    if (was && was.age > 0.02) { p.net.vx = Math.max(-6, Math.min(6, (x - was.x0) / was.age)); p.net.vz = Math.max(-6, Math.min(6, (z - was.z0) / was.age)); }
+    p.net.x0 = x; p.net.z0 = z;
+    if (!was) { p.x = x; p.z = z; p.yaw = st.yaw; }
+    p.scoped = !!st.scoped;
+    if (GUNS[st.next] && st.next !== p.gun) {
+      if (m.phase === 'warmup') { p.gun = st.next; p.ammo = GUNS[p.gun].mag; p.shotsLeft = 0; } else p.nextGun = st.next;
+    }
+  };
+  // Host: the other person says they shot (and maybe whom). Believed when it
+  // could be so: their gun's rate and magazine, the one hit an enemy up and
+  // near the bullet's line, no wall before it. Returns the events.
+  m.claim = (id, shot) => {
+    const ev = [], p = m.byId(id);
+    if (!p || !p.remote || p.dead || m.phase !== 'play' || !Array.isArray(shot)) return ev;
+    const [o, d, t, ti, zi, wall] = shot;
+    if (![...(o || []), ...(d || []), t].every(Number.isFinite) || o.length !== 3 || d.length !== 3) return ev;
+    const g = GUNS[p.gun];
+    // No faster than the gun fires (a little slack for bunched messages), and it reloads.
+    if (m.t - p.lastShot < 0.6 / g.rate) return ev;
+    if (p.shotsLeft <= 0) { if (m.t - p.lastShot < g.reload * 0.8) return ev; p.shotsLeft = g.mag; }
+    p.lastShot = m.t; p.shotsLeft--;
+    const len = Math.hypot(d[0], d[1], d[2]) || 1, dir = [d[0] / len, d[1] / len, d[2] / len];
+    const from = aimFrom(p);
+    const tt = Math.max(0, Math.min(g.range, t));
+    const e = { k: 'shot', by: id, gun: p.gun, from, to: [o[0] + dir[0] * tt, o[1] + dir[1] * tt, o[2] + dir[2] * tt], wall: !!wall };
+    ev.push(e);
+    const q = m.players[ti];
+    if (!q || q.team === p.team || q.dead) return ev;
+    if (Math.hypot(o[0] - from[0], o[2] - from[2]) > 3) return ev; // not from where they stand
+    // Their bullet's line passes the one they name, and no wall is in between.
+    const rx = q.x - o[0], ry = 0.6 - o[1], rz = q.z - o[2], along = rx * dir[0] + ry * dir[1] + rz * dir[2];
+    if (along < 0 || along > g.range) return ev;
+    const off = Math.hypot(rx - dir[0] * along, rz - dir[2] * along);
+    if (off > 1.5) return ev;
+    if (rayWalls(map, o, dir, along) < along - 0.5) return ev;
+    e.hit = q.id; e.zone = ZONES[zi] || 'body';
+    damage(q, p, e.zone, ev);
+    return ev;
+  };
+  // Host: everything the guest needs to show the match.
+  m.snapshot = () => ({
+    ph: m.phase, t: +m.t.toFixed(2), left: +m.left.toFixed(1), sc: m.score.slice(), w: m.winner,
+    p: m.players.map((p) => [+p.x.toFixed(2), +p.z.toFixed(2), +p.yaw.toFixed(2), +p.pitch.toFixed(2), p.hp, (p.dead ? 1 : 0) | (p.scoped ? 2 : 0) | (p.protect > 0 ? 4 : 0), GUN_IDS.indexOf(p.gun), p.kills, p.deaths, p.spawns, +p.respawn.toFixed(1)]),
+  });
+  // Guest: the host's snapshot. Returns events (spawn, go, over) for the screen.
+  m.apply = (s) => {
+    const ev = [];
+    if (!s || !Array.isArray(s.p) || s.p.length !== m.players.length) return ev;
+    if (s.ph !== m.phase) {
+      if (s.ph === 'play' && m.phase === 'warmup') ev.push({ k: 'go' });
+      if (s.ph === 'over') { m.winner = s.w; ev.push({ k: 'over', winner: s.w }); }
+      m.phase = s.ph;
+    }
+    m.t = s.t; m.left = s.left; m.score = [s.sc[0] | 0, s.sc[1] | 0];
+    s.p.forEach((a, i) => {
+      const p = m.players[i], [x, z, yaw, pitch, hp, flags, gi, kills, deaths, spawns, respawn] = a;
+      const mine = p.id === guest;
+      const dead = !!(flags & 1);
+      p.hp = hp; p.kills = kills; p.deaths = deaths; p.respawn = respawn;
+      if (spawns !== p.spawns) {
+        // Back on the map (or the first place): there, with the gun they chose.
+        p.spawns = spawns; p.x = x; p.z = z; p.yaw = yaw; p.pitch = 0; p.net = null; p.dead = dead;
+        p.gun = GUN_IDS[gi] || p.gun;
+        if (mine) { p.ammo = GUNS[p.gun].mag; p.reload = 0; p.cool = 0; p.nextGun = null; }
+        ev.push({ k: 'spawn', id: p.id });
+      }
+      if (dead && !p.dead) { p.dead = true; p.scoped = false; p.firing = false; }
+      if (!dead) p.dead = false;
+      p.protect = flags & 4 ? Math.max(p.protect, 0.3) : 0;
+      if (mine) return;
+      p.gun = GUN_IDS[gi] || p.gun;
+      p.scoped = !!(flags & 2);
+      const was = p.net;
+      p.net = { x, z, yaw, pitch, vx: 0, vz: 0, age: 0, x0: x, z0: z };
+      if (was && was.age > 0.02) { p.net.vx = Math.max(-6, Math.min(6, (x - was.x0) / was.age)); p.net.vz = Math.max(-6, Math.min(6, (z - was.z0) / was.age)); }
+    });
+    return ev;
+  };
+  // The other person left: a bot plays on for them.
+  m.toBot = (id) => {
+    const p = m.byId(id);
+    if (!p || !p.remote) return;
+    p.remote = false; p.bot = true; p.net = null;
+    p.ai = { goal: null, goalT: 0, target: null, seen: 0, err: [0, 0], strafe: 1, strafeT: 0, react: 0 };
+  };
   // Pick the gun you come back with next time (or now, while waiting to start).
   m.chooseGun = (id, gun) => {
     const p = m.byId(id);
     if (!p || !GUNS[gun]) return;
-    if (m.phase === 'warmup' || p.dead) { if (m.phase === 'warmup') { p.gun = gun; p.ammo = GUNS[gun].mag; p.reload = 0; } else p.nextGun = gun; }
-    else p.nextGun = gun;
+    p.nextGun = gun;
+    if (m.phase === 'warmup') { p.gun = gun; p.ammo = GUNS[gun].mag; p.reload = 0; }
   };
   // The scoreboard: each team best first.
   m.board = () => [0, 1].map((team) => m.players.filter((p) => p.team === team).sort((a, b) => b.kills - a.kills || a.deaths - b.deaths));
