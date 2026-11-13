@@ -1,143 +1,334 @@
 #!/usr/bin/env node
 // Builds Bukchon's district map (public/regions/another-seoul/districts/bukchon.json)
-// from the hand-made layout below.
+// on its real streets at 1/4, from OpenStreetMap (scripts/data/bukchon-osm.json,
+// made by scripts/extract-bukchon-osm.mjs; © OpenStreetMap contributors, ODbL)
+// and the real ground height (SRTM 30 m), also at 1/4.
 //
 // Bukchon Hanok Village sits between Gyeongbokgung and Changdeokgung, uphill
-// from Anguk Station. The game makes it a small walled village on a hill,
-// loosely after the real streets (OpenStreetMap, © OpenStreetMap
-// contributors): the gate on Bukchon-ro by Anguk Station, a street of shops
-// and the Open House at the bottom (from Bukchon-ro 2-gil), then the hanok
-// alleys of Gahoe-dong climbing north, the main one after Bukchon-ro 11-gil,
-// to a lookout at the top: the famous view down the alley to the city. The
-// alleys up the hill are homes (the Quiet Zone).
+// from Anguk Station. The streets are the real ones: Bukchon-ro north from
+// Anguk Station, Gyedong-gil, Changdeokgung-gil along the palace wall,
+// Yunboseon-gil, and the Gahoe-dong alleys round Gahoe-dong 31 (Bukchon-ro
+// 11-gil and its branches, the famous views). Every alley gets a row of
+// hanok (game size, as many as fit: Bukchon stays dense, Yozi 2026-11-10);
+// the big modern buildings, schools and halls are OSM's outlines. The shops
+// stand at the foot of the hill, on Bukchon-ro 2-gil, lower Gyedong-gil and
+// lower Bukchon-ro. Four of the city's Bukchon 8 Views are photo spots on
+// their real places.
 //
-//   node scripts/build-bukchon.mjs
+// The ground: real height above Anguk Station's street at 1/4 (so slopes
+// are as steep as the real ones), flat at the foot where the shops are
+// (data/bukchon-ground.js, written here).
 //
-// Coordinates are metres: x east, z south. (0, 0) is on Yulgok-ro's centre
-// line in front of Anguk Station (the district's anchor in region.json).
-// Buildings with "hanok": 1 are drawn as hanok (core/hanok.js), not boxes.
+//   node scripts/build-bukchon.mjs          writes bukchon.json, data/bukchon-ground.js,
+//                                           the Bukchon shops' "at" (stores.json) and
+//                                           Gyeongbokgung's map edge (gyeongbokgung.json)
+//
+// Coordinates are metres: x east, z south. (0, 0) is Anguk Station's anchor
+// (region.json). Buildings with "hanok": 1 are drawn as hanok (core/hanok.js).
 
-import { writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { BUKCHON, ground } from '../src/data/bukchon.js';
+import { r1, inPoly, overlap, lineDist, segSegDist, clip, simplify, lengthOf, town, nearestOn } from './street-rows.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const out = path.join(root, 'public/regions/another-seoul/districts/bukchon.json');
-
+const R = path.join(root, 'public', 'regions', 'another-seoul');
+const readJson = (f) => JSON.parse(readFileSync(path.join(R, f), 'utf8'));
+const OSM = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'bukchon-osm.json'), 'utf8'));
 const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 
-const roads = [
-  { k: 'primary', w: 16, p: [[60, 0], [310, 0]], n: N('율곡로', 'Yulgok-ro', '栗谷路', '栗谷路') },
-  { k: 'secondary', w: 8, p: [[24, -8], [24, -40]], n: N('북촌로', 'Bukchon-ro', '北村路', '北村路') },
-  // The lane of shops: its west end is the real Bukchon-ro 2-gil (OSM: from
-  // Bukchon-ro east to Gyedong-gil, 5 m north of this line); on east it is
-  // the game's own lane. (It used to be called Bukchon-ro 5-gil, but the
-  // real 5-gil goes west from Bukchon-ro, 30-140 m from here.)
-  { k: 'tertiary', w: 7, p: [[-6, -40], [24, -40]], n: N('북촌로2길', 'Bukchon-ro 2-gil', '北村路2ギル', '北村路2街') },
-  { k: 'tertiary', w: 7, p: [[24, -40], [126, -40]] },
-  // Up the hill: the main alley to the top, two alleys across, two side alleys.
-  // Narrow, like the real alleys: the house walls stand right at the edge, and
-  // the houses stand side by side, so an alley is all the room there is
-  // between them. Still wide enough for six or more people abreast (a person
-  // is 0.7 m across, PLAYER_R in main.js).
-  { k: 'walk', w: 5, p: [[60, -43], [60, -168]], n: N('북촌로11길', 'Bukchon-ro 11-gil', '北村路11ギル', '北村路11街') },
-  { k: 'walk', w: 4.4, p: [[-6, -112], [126, -112]] },
-  { k: 'walk', w: 4.4, p: [[-6, -140], [126, -140]] },
-  { k: 'walk', w: 4.4, p: [[18, -66], [18, -158]] },
-  { k: 'walk', w: 4.4, p: [[102, -84], [102, -158]] },
-];
+// ---- the area: Yulgok-ro (the game's) to the top of Bukchon-ro, the palace
+// park strip on the west (Gyeongbokgung's map) to Changdeokgung-gil on the east.
+export const AREA = [-92, 6, 95, -240]; // x0, z0 (south), x1, z1 (north)
+const [AX0, AZ0, AX1, AZ1] = AREA;
+const inArea = ([x, z], m = 0) => x > AX0 + m && x < AX1 - m && z < AZ0 - m && z > AZ1 + m;
 
-const areas = [
-  { k: 'plaza', p: rect(88, -50, 120, -72) }, // the Open House courtyard (madang)
-];
-
-// Shops (hanok fronts) on the street at the bottom, listed so stores.json can
-// stand in front of them.
-const buildings = [];
-const add = (p, extra) => buildings.push({ h: 6, hanok: 1, p, ...extra });
-for (let x = 31; x + 22 <= 126; x += 24) add(rect(x, -18, x + 22, -34), { fr: [0, -1] }); // south side of the lane of shops
-add(rect(-6, -18, 18, -34), { fr: [0, -1] });
-for (const [x0, x1] of [[-6, 16], [20, 42], [64, 80]]) add(rect(x0, -46, x1, -62), { fr: [0, 1] }); // north side
-
-// Everything up the hill is homes: blocks between the alleys, filled with
-// small hanok side by side whose walls line the alleys (as in the real
-// Gahoe-dong lanes), kept out of the Open House and the lookout at the top.
-const OPEN = BUKCHON.openHouse.box; // [x0, z0, x1, z1]
-const segDist = (x, z, [x1, z1], [x2, z2]) => {
-  const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz;
-  const t = l2 ? Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2)) : 0;
-  return Math.hypot(x - (x1 + dx * t), z - (z1 + dz * t));
+// ---- the ground (real metres above Anguk Station's street, OSM.grid) ----
+const G = OSM.grid;
+const realH = (x, z) => {
+  const fx = Math.max(0, Math.min(G.nx - 1.001, (x - G.x0) / G.step)), fz = Math.max(0, Math.min(G.nz - 1.001, (z - G.z0) / G.step));
+  const i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, a = (ii, jj) => G.h[jj * G.nx + ii];
+  return (a(i, j) * (1 - u) + a(i + 1, j) * u) * (1 - v) + (a(i, j + 1) * (1 - u) + a(i + 1, j + 1) * u) * v;
 };
-const shops = buildings.slice(); // (the houses up the hill only keep clear of these: side by side, they fill their blocks)
-const overlaps = (x0, z0, x1, z1) => shops.some((b) => {
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  return x0 < Math.max(...xs) + 1 && x1 > Math.min(...xs) - 1 && z1 < Math.max(...zs) + 1 && z0 > Math.min(...zs) - 1;
+// Game height: 1/4 of the real rise above FLAT m (the foot, where the shops
+// are, stays level), and down to 0 at the area's edge (the world round it is
+// flat) no steeper than EDGE_SLOPE: the north edge is ~7 m up, so it ramps
+// down over its last ~45 m instead of a 50% bank.
+const FLAT = 6, EDGE_SLOPE = 0.15;
+function gameH(x, z) {
+  const rise = Math.max(0, realH(x, z) - FLAT) / 4;
+  const soft = rise < 1 ? rise * rise * 0.5 + rise * 0.5 : rise; // (no kink where the slope starts)
+  const d = Math.min(x - AX0, AX1 - x, AZ0 - z, z - AZ1);
+  return Math.max(0, Math.min(soft, d * EDGE_SLOPE));
+}
+const STEP = 6; // the ground grid written for the game (district metres)
+const GROUND = { x0: AX0, z0: AZ1, step: STEP, nx: Math.ceil((AX1 - AX0) / STEP) + 1, nz: Math.ceil((AZ0 - AZ1) / STEP) + 1, h: [] };
+for (let j = 0; j < GROUND.nz; j++) for (let i = 0; i < GROUND.nx; i++) GROUND.h.push(Math.round(gameH(AX0 + i * STEP, AZ1 + j * STEP) * 10));
+writeFileSync(path.join(root, 'src', 'data', 'bukchon-ground.js'), `// Bukchon's ground, written by scripts/build-bukchon.mjs (do not edit): the
+// real height (SRTM 30 m) above Anguk Station's street at 1/4, flat at the
+// foot. A grid from (x0, z0) in district metres, step m apart, h in decimetres.
+export const GROUND = ${JSON.stringify({ ...GROUND, h: undefined })};
+GROUND.h = ${JSON.stringify(GROUND.h)};
+`);
+const { ground } = await import('../src/data/bukchon.js?' + Date.now()); // (the game's own reading of that grid)
+
+// ---- streets ----
+const BASE = {
+  '북촌로': ['Bukchon-ro', '北村路', '北村路'],
+  '계동길': ['Gyedong-gil', '桂洞キル', '桂洞街'],
+  '계동': ['Gyedong', '桂洞', '桂洞'],
+  '창덕궁길': ['Changdeokgung-gil', '昌徳宮キル', '昌德宫街'],
+  '창덕궁': ['Changdeokgung', '昌徳宮', '昌德宫'],
+  '윤보선길': ['Yunboseon-gil', 'ユンボソンキル', '尹潽善街'],
+  '율곡로': ['Yulgok-ro', '栗谷路', '栗谷路'],
+  '삼청로': ['Samcheong-ro', '三清路', '三清路'],
+};
+const SUFFIX = { 가: 'ga', 나: 'na', 다: 'da', 라: 'ra' };
+function streetName(ko) {
+  if (BASE[ko]) return N(ko, ...BASE[ko]);
+  const m = ko.match(/^(.+?)(\d+)([가나다라]?)길$/);
+  if (!m || !BASE[m[1]]) return null;
+  const [en, ja, zh] = BASE[m[1]], s = m[2] + (m[3] ? SUFFIX[m[3]] : '');
+  return N(ko, `${en} ${s}-gil`, `${ja}${m[2]}${m[3]}ギル`, `${zh}${m[2]}${m[3]}街`);
+}
+const width = (r) => {
+  if (r.n === '북촌로') return 7;
+  if (r.n === '계동길' || r.n === '창덕궁길') return 6;
+  if (r.n === '윤보선길' || r.k === 'pedestrian') return 5;
+  // The lanes round Gahoe-dong 31 are close together (8-10 m apart at 1/4):
+  // narrow, like the real ones, so a row of small hanok fits between them
+  // (still four people abreast: a person is 0.7 m across).
+  const mid = r.p[Math.floor(r.p.length / 2)];
+  if (inPoly(mid[0], mid[1], QUIET_ZONE) || /^북촌로(11|5나|15)/.test(r.n)) return 3;
+  return r.n ? 4.4 : 4.2; // (six people abreast)
+};
+const { BUKCHON } = await import('../src/data/bukchon.js?' + Date.now());
+const QUIET_ZONE = BUKCHON.quiet;
+const roads = [];
+for (const r of OSM.roads) {
+  if (r.n === '율곡로' || r.n === '삼청로' || r.k === 'primary' || /link$/.test(r.k)) continue; // (Samcheong-ro: its pavements; the road is Gyeongbokgung's map) // (the game's own Yulgok-ro runs along the south edge)
+  if (r.n === '북촌로' && r.k !== 'tertiary' && r.k !== 'pedestrian') continue; // (its pavements)
+  let p = clip(r.p, (q) => inArea(q, 0.5));
+  if (p.length < 2 || lengthOf(p) < 8) continue;
+  p = simplify(p, 0.4);
+  // Detail where it counts (Yozi 2026-11-09: the signature places in full,
+  // the rest simple): every named street, and the small unnamed paths only
+  // round Gahoe-dong 31 (the Quiet Zone) or when they are long.
+  const mid = p[Math.floor(p.length / 2)];
+  if (!r.n && !inPoly(mid[0], mid[1], QUIET_ZONE) && lengthOf(p) < 40) continue;
+  roads.push({ k: 'walk', w: width({ ...r, p }), p, ...(r.n && streetName(r.n) ? { n: streetName(r.n) } : {}), ko: r.n });
+}
+// (OSM also draws pavements and squares as unnamed ways beside a street:
+// those go, and so do closed loops and Bukchon-ro's paved corner at 2-gil)
+for (let i = roads.length - 1; i >= 0; i--) {
+  const r = roads[i], a = r.p[0], b = r.p.at(-1);
+  if ((r.ko === '북촌로' && lengthOf(r.p) < 20) || (r.ko === '북촌로2길' && lengthOf(r.p) < 12)) { roads.splice(i, 1); continue; }
+  if (r.ko) continue;
+  if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1) { roads.splice(i, 1); continue; }
+  const pts = [];
+  for (let k = 1; k < r.p.length; k++) for (let t = 0; t < 1; t += 0.1) pts.push([r.p[k - 1][0] + (r.p[k][0] - r.p[k - 1][0]) * t, r.p[k - 1][1] + (r.p[k][1] - r.p[k - 1][1]) * t]);
+  const near = pts.filter((q) => roads.some((o) => o.ko && lineDist(q, o.p) < o.w / 2 + 3)).length;
+  if (near > 0.7 * pts.length) roads.splice(i, 1);
+}
+// Bukchon-ro and Gyedong-gil run on down to the game's Yulgok-ro (which is
+// south of the real one here: the city's Yulgok-ro is Gyeongbokgung's map).
+const longest = (ko) => roads.filter((r) => r.ko === ko).sort((a, b) => lengthOf(b.p) - lengthOf(a.p))[0];
+const BUKCHON_RO = longest('북촌로'), GYEDONG = longest('계동길');
+for (const r of [BUKCHON_RO, GYEDONG]) {
+  const s = r.p[0][1] > r.p.at(-1)[1] ? 0 : r.p.length - 1; // its south end
+  const q = r.p[s], to = [r1(q[0] + 2), AZ0 + 2];
+  if (s === 0) r.p.unshift(to); else r.p.push(to);
+}
+// Joins: a way that stops just short of another ends on its middle line.
+for (const r of roads) for (const end of [0, r.p.length - 1]) {
+  const q = r.p[end];
+  let best = null;
+  for (const o of roads) {
+    if (o === r) continue;
+    const n = nearestOn(q, o.p);
+    if (n.d > 0.05 && n.d < o.w / 2 + 2.5 && (!best || n.d < best.d)) best = n;
+  }
+  if (best) r.p[end] = best.at.map(r1);
+}
+for (const r of roads) delete r.ko;
+
+// The neighbours' streets that cross Bukchon's ground (Gyeongbokgung's
+// Yulgok-ro along the south edge, its Samcheong-ro in the north-west corner):
+// nothing is built on them.
+const region = readJson('region.json');
+const [ox, oz] = region.districts.find((d) => d.id === 'bukchon').offset;
+const outside = [];
+for (const d of region.districts) {
+  if (d.id === 'bukchon') continue;
+  let m;
+  try { m = readJson(d.map); } catch { continue; }
+  for (const r of m.roads || []) {
+    const p = r.p.map(([x, z]) => [r1(x + d.offset[0] - ox), r1(z + d.offset[1] - oz)]);
+    if (p.some((q, i) => inArea(q, -20) || (i && inArea([(q[0] + p[i - 1][0]) / 2, (q[1] + p[i - 1][1]) / 2], -20)))) outside.push({ k: r.k, w: r.w, p });
+  }
+}
+
+// ---- big buildings (OSM outlines): schools, offices, halls ----
+const roadHit = (p, gap, list = [...roads, ...outside]) => list.some((r) => {
+  for (let i = 1; i < r.p.length; i++) for (let k = 0; k < p.length; k++) if (segSegDist(r.p[i - 1], r.p[i], p[k], p[(k + 1) % p.length]) < r.w / 2 + gap) return true;
+  return r.p.some((q) => inPoly(q[0], q[1], p));
 });
-const inOpen = (x0, z0, x1, z1) => x1 > OPEN[0] - 2 && x0 < OPEN[2] + 2 && z1 < OPEN[1] + 2 && z0 > OPEN[3] - 2;
-const LOOK = { x0: 47, x1: 73, z: -159 }; // the lookout at the top (terrace, 24 m wide)
-const inLookout = (x0, z0, x1, z1) => x1 > LOOK.x0 && x0 < LOOK.x1 && z1 < LOOK.z;
-// Splits [a, b] into n parts of slightly different sizes, a gap between them.
-const split = (a, b, n, gap, seed) => {
-  const wts = Array.from({ length: n }, (_, i) => 1 + 0.22 * Math.sin(seed * 1.7 + i * 2.3));
-  const sum = wts.reduce((s, w) => s + w, 0), free = b - a - gap * (n - 1), out = [];
-  let x = a;
-  for (const w of wts) { const len = (free * w) / sum; out.push([x, x + len]); x += len + gap; }
-  return out;
+const convex = (pts) => { // (the outline's hull: overlap() and hanok.js want convex shapes)
+  const s = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], hi = [];
+  for (const q of s) { while (lo.length > 1 && cross(lo.at(-2), lo.at(-1), q) <= 0) lo.pop(); lo.push(q); }
+  for (const q of s.reverse()) { while (hi.length > 1 && cross(hi.at(-2), hi.at(-1), q) <= 0) hi.pop(); hi.push(q); }
+  return [...lo.slice(0, -1), ...hi.slice(0, -1)];
 };
-const walkX = roads.filter((r) => r.k === 'walk' && r.p[0][0] === r.p[1][0]).map((r) => ({ x: r.p[0][0], hw: r.w / 2 }));
-const walkZ = roads.filter((r) => r.k === 'walk' && r.p[0][1] === r.p[1][1]).map((r) => ({ z: r.p[0][1], hw: r.w / 2 }));
-const EDGE = 0.15; // from a house wall to the alley's edge
-const cols = [], bands = [];
+const bigs = [];
+let dropped = 0;
+for (const b of OSM.big) {
+  const p = convex(b.p);
+  if (!p.every((q) => inArea(q, 1))) continue;
+  // (streets are drawn wider than 1/4, so a big building beside one shrinks
+  // round its middle until it clears it; one a street runs through is left out)
+  let k = 1;
+  const cx = p.reduce((s, q) => s + q[0], 0) / p.length, cz = p.reduce((s, q) => s + q[1], 0) / p.length;
+  while (k >= 0.6 && roadHit(p.map(([x, z]) => [cx + (x - cx) * k, cz + (z - cz) * k]), 0.6)) k -= 0.05;
+  if (k < 0.6) { dropped++; continue; }
+  p.splice(0, p.length, ...p.map(([x, z]) => [r1(cx + (x - cx) * k), r1(cz + (z - cz) * k)]));
+  const floors = b.lv || (b.k === 'school' ? 3 : 2);
+  const lift = Math.max(...p.map(([x, z]) => ground(x, z)));
+  bigs.push({ h: r1(Math.max(5, (floors * 3.3) / 4 + 3) + lift), p, ...(b.n ? { name: b.n } : {}) });
+}
+
+if (process.env.PROBE) { // (where a W x D compound fits: PROBE=40x36)
+  const [W, D] = process.env.PROBE.split('x').map(Number), hits = [];
+  for (let x = AX0 + 2; x + W < AX1 - 2; x += 2) for (let z = AZ0 - 2; z - D > AZ1 + 2; z -= 2) {
+    const p = rect(x - 1, z + 1, x + W + 1, z - D - 1);
+    const named = roads.filter((r) => r.n), cut = roads.filter((r) => !r.n && r.p.some((q) => inPoly(q[0], q[1], p))).length;
+    const hit = named.some((r) => r.p.some((q) => inPoly(q[0], q[1], p)) || r.p.some((q, i) => i && p.some((c, k) => segSegDist(r.p[i - 1], q, c, p[(k + 1) % 4]) < r.w / 2 + 0.3)));
+    if (!hit && !bigs.some((b) => overlap(b.p, p))) hits.push([x, z, x + W, z - D, cut]);
+  }
+  console.log(hits.length, JSON.stringify(hits.filter((_, i) => i % 5 === 0).slice(0, 80)));
+  process.exit(0);
+}
+// ---- open places ----
+// The Open House: a hanok round a courtyard you can walk into, on
+// the real Bukchon Culture Center's spot (Gyedong-gil, below Jaedong
+// Elementary School, on Naver Map; Yozi 2026-11-13), at 43% of its old
+// size (data/bukchon.js openHouse.sc: the real block is small), its gate on
+// Bukchon-ro 2-gil. The small unnamed paths that crossed its ground go.
+const OPEN = BUKCHON.openHouse.box; // [x0, z0 (south), x1, z1 (north)]
+const OSC = BUKCHON.openHouse.sc;
+const openP = rect(OPEN[0] - 0.5, OPEN[1] + 0.5, OPEN[2] + 0.5, OPEN[3] - 0.5);
+const yardP = rect(OPEN[0], OPEN[1] + 4, OPEN[2], OPEN[1]); // the forecourt (마당) between the gate and Bukchon-ro 2-gil
+for (let i = roads.length - 1; i >= 0; i--) {
+  const r = roads[i];
+  if (!r.n && [openP, yardP].some((P) => r.p.some((q) => inPoly(q[0], q[1], P)) || r.p.some((q, k) => k && P.some((c, m) => segSegDist(r.p[k - 1], q, c, P[(m + 1) % 4]) < r.w / 2 + 0.3)))) roads.splice(i, 1);
+}
+for (let i = bigs.length - 1; i >= 0; i--) if (overlap(bigs[i].p, openP) || overlap(bigs[i].p, yardP)) { console.log('on the Open House ground, left out:', bigs[i].name || 'a building'); bigs.splice(i, 1); }
 {
-  let x = -8;
-  for (const w of [...walkX].sort((a, b) => a.x - b.x)) { cols.push([x, w.x - w.hw - EDGE]); x = w.x + w.hw + EDGE; }
-  cols.push([x, 128]);
-  let z = -66;
-  for (const w of [...walkZ].sort((a, b) => b.z - a.z)) { bands.push([z, w.z + w.hw + EDGE]); z = w.z - w.hw - EDGE; }
-  bands.push([z, -184]);
+  const hits = roads.filter((r) => roadHit.call(null, openP, 0.3, [r]));
+  if (hits.length) throw new Error(`the Open House ${JSON.stringify(openP)} is on ${hits.map((r) => r.n?.en || 'a path').join(', ')}: move it (data/bukchon.js OH)`);
 }
-const r1 = (v) => Math.round(v * 10) / 10;
-cols.forEach(([cx0, cx1], ci) => bands.forEach(([bz0, bz1], bi) => {
-  const xs = split(cx0, cx1, Math.max(1, Math.round((cx1 - cx0) / 12)), 0.4, ci * 5 + bi);
-  const zs = split(bz1, bz0, Math.max(1, Math.round((bz0 - bz1) / 11)), 0.4, ci + bi * 3);
-  for (const [x0, x1] of xs) for (const [z1, z0] of zs) {
-    if (overlaps(x0, z0, x1, z1) || inOpen(x0, z0, x1, z1) || inLookout(x0, z0, x1, z1)) continue;
-    add(rect(r1(x0), r1(z0), r1(x1), r1(z1)), { h: 5 });
+const viewClear = BUKCHON.views.map((v) => ({ line: [v.at, [v.at[0] + 0.01, v.at[1]]], w: 7 }));
+const exitClear = region.subway.stations.flatMap((st) => st.exits || []).map((e) => [e.at[0] - ox, e.at[1] - oz]).filter((q) => inArea(q, -10)).map((q) => ({ line: [q, [q[0] + 0.01, q[1]]], w: 12 })); // (the stairwells and room to walk out)
+const open = [{ p: openP }, { p: yardP }, ...bigs.map((b) => ({ p: b.p })), ...viewClear, ...exitClear];
+
+// ---- hanok rows along every street ----
+// (town() keeps every house 1.2 m off a street's edge; Bukchon's walls
+// stand right at the alley, so it is given the streets 2 m narrower)
+const fitRoads = [...roads.map((r) => ({ ...r, w: r.w - 2 })), ...outside];
+const t = town(9, { inside: (q) => inArea(q, 0.8), roads: fitRoads, open });
+// The shops: at the foot of the hill (Bukchon-ro 2-gil, lower Gyedong-gil and
+// lower Bukchon-ro), hanok shop fronts.
+const SHOP_Z = -130;
+const order = [...roads].sort((a, b) => b.w - a.w || lengthOf(b.p) - lengthOf(a.p));
+const shopLots = [];
+const twoGil = roads.find((r) => r.n?.en === 'Bukchon-ro 2-gil');
+for (const r of [twoGil, GYEDONG, BUKCHON_RO, ...['Yunboseon-gil', 'Bukchon-ro 5-gil', 'Changdeokgung 1-gil', 'Bukchon-ro 4-gil'].map((en) => roads.filter((r) => r.n?.en === en).sort((a, b) => lengthOf(b.p) - lengthOf(a.p))[0])].filter(Boolean)) {
+  for (const side of [1, -1]) {
+    const id = `shop:${r.n.en}:${side}`, before = t.buildings.length;
+    t.row(id, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 9, w: [11.6, 13], h: [6, 6], spot: 1.6, gap: 0.6, from: 0, to: Infinity });
+    // (only the foot of the hill: drop the ones further up)
+    for (let i = t.buildings.length - 1; i >= before; i--) {
+      const b = t.buildings[i];
+      if (Math.min(...b.p.map((q) => q[1])) < SHOP_Z) { t.buildings.splice(i, 1); t.lots[id].splice(i - before, 1); continue; }
+      b.shop = 1;
+    }
+    for (let i = before; i < t.buildings.length; i++) shopLots.push({ b: t.buildings[i], road: r });
   }
-}));
-
-// Which way each hanok faces: towards its nearest street (fr, a unit step on
-// the map), and how high it stands on its stone terrace up the hill (lv, m:
-// the ground at its uphill edge, so the terrace shows on the downhill side).
-for (const b of buildings) {
-  if (!b.hanok || b.fr) continue;
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  const long = Math.max(x1 - x0, z1 - z0) / Math.min(x1 - x0, z1 - z0) > 1.1 ? (x1 - x0 > z1 - z0 ? 'x' : 'z') : null;
-  // Each side's middle: how far to the nearest street (a long side and a real
-  // street, not a footpath, are preferred).
-  let best = Infinity, f = [0, 1];
-  for (const [mx, mz, dir, along] of [[cx, z1, [0, 1], 'x'], [cx, z0, [0, -1], 'x'], [x1, cz, [1, 0], 'z'], [x0, cz, [-1, 0], 'z']]) {
-    let d = Infinity;
-    for (const r of roads) for (let i = 1; i < r.p.length; i++) d = Math.min(d, segDist(mx, mz, r.p[i - 1], r.p[i]) - r.w / 2 + (r.k === 'walk' ? 4 : 0));
-    if (long && along !== long) d += 8;
-    if (d < best) { best = d; f = dir; }
-  }
-  b.fr = f;
 }
-for (const b of buildings) {
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  const lv = ground((Math.min(...xs) + Math.max(...xs)) / 2, Math.min(...zs));
-  if (lv > 0.05) b.lv = Math.round(lv * 100) / 100;
-
+// Homes: every street, the wide ones first (their rows are the long, even ones).
+for (const r of order) for (const side of [1, -1]) {
+  t.row(`home:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 8, w: [7.5, 11], h: [5, 5], spot: 1.6, gap: 0.3 });
+}
+// Then small hanok in the gaps left (the alleys of Gahoe-dong are close
+// together: real lots there are tiny), only on the quiet alleys and the
+// small streets.
+for (const r of order) for (const side of [1, -1]) {
+  t.row(`small:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
+}
+// And a row behind (the blocks of Bukchon are full of hanok: from the alleys
+// and the hill you see a sea of roofs, not empty yards).
+for (const r of order) for (const side of [1, -1]) {
+  t.row(`back:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 8.6, depth: 7, w: [6.5, 10], h: [5, 5], spot: 1.6, gap: 0.3 });
+  t.row(`back2:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 4.8, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
+}
+const hanok = t.buildings;
+// Which way each hanok faces (fr, a unit step on the map, front to the street:
+// town() lays the front edge p[0]-p[1] along the street) and how high it
+// stands on its stone terrace (lv: the ground at its highest corner).
+for (const b of hanok) {
+  const [a, c, d, e] = b.p, fx = (a[0] + c[0] - d[0] - e[0]) / 2, fz = (a[1] + c[1] - d[1] - e[1]) / 2, l = Math.hypot(fx, fz);
+  b.fr = [Number((fx / l).toFixed(4)), Number((fz / l).toFixed(4))];
+  b.hanok = 1;
+  const lv = Math.max(...b.p.map(([x, z]) => ground(x, z)));
+  if (lv > 0.05) b.lv = r1(lv * 10) / 10;
+  delete b.shop;
 }
 
-// A few homes open their courtyard to visitors (출입 가능): a sign by the
-// gate, the gate open, and you can walk into the yard. They are always ㄷ
-// shaped with the gate in the middle of the front (core/hanok.js), so the
-// solid parts can be listed here: the three wings and the front wall.
+// ---- the shops' doors (stores.json): the middle of a front bay ----
+const { shopBays } = await import('../src/core/hanok.js');
+const SHOPS = [ // the five cooking classes (west to east), then nearest Anguk Station first
+  'bibimbap-class', 'sonmat-kimchi', 'tteok-class', 'suragan-cooking', 'kimbap-class',
+  'info-bukchon', 'matcha-garden', 'gahoe-hanbok', 'noeul-teahouse', 'giwa-photo', 'maeum-knot', 'saekji-paper',
+];
+const lotFront = (b) => {
+  const [a, c] = b.p, L = Math.hypot(c[0] - a[0], c[1] - a[1]), u = [(c[0] - a[0]) / L, (c[1] - a[1]) / L];
+  return { a, u, L, mid: [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2] };
+};
+const doors = [];
+for (const { b } of shopLots) {
+  const f = lotFront(b), bays = shopBays(f.L);
+  for (const m of bays) doors.push({ b, at: [r1(f.mid[0] + f.u[0] * m + b.fr[0] * 1.6), r1(f.mid[1] + f.u[1] * m + b.fr[1] * 1.6)] });
+}
+// A door in the middle of each bay: two or three shops share a long hanok
+// front, as before. The five cooking classes take the five doors closest
+// together (they stay side by side, west to east); the information centre
+// the door nearest Anguk Station (the first stop of a visit); the rest go
+// nearest Anguk first.
+const dd = (a, b) => Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]);
+const cluster = doors.map((d) => [...doors].sort((a, b) => dd(a, d) - dd(b, d)).slice(0, 5))
+  .sort((a, b) => a.reduce((t, x) => t + dd(x, a[0]), 0) + 2 * Math.hypot(...a[0].at) - b.reduce((t, x) => t + dd(x, b[0]), 0) - 2 * Math.hypot(...b[0].at))[0] || []; // (close together, and near Anguk Station)
+cluster.sort((a, b) => a.at[0] - b.at[0]);
+const rest = doors.filter((d) => !cluster.includes(d)).sort((a, b) => Math.hypot(...a.at) - Math.hypot(...b.at));
+const perLot = [...cluster, ...rest];
+if (perLot.length < SHOPS.length) { console.warn(`only ${perLot.length} shop lots for ${SHOPS.length} shops`); if (!process.env.DRAFT) process.exit(1); }
+// (stores.json is hand-formatted, so only each shop's "at" is rewritten in the text)
+const storesFile = path.join(R, 'stores.json');
+let storesText = readFileSync(storesFile, 'utf8');
+SHOPS.slice(0, perLot.length).forEach((id, i) => {
+  const k = storesText.indexOf(`"id": "${id}"`);
+  if (k < 0) throw new Error('no shop ' + id);
+  let end = storesText.indexOf('\n    {', k);
+  if (end < 0) end = storesText.length;
+  const [x, z] = perLot[i].at;
+  storesText = storesText.slice(0, k) + storesText.slice(k, end).replace(/"at": \[[^\]]*\]/, `"at": [${r1(x + ox)}, ${r1(z + oz)}]`) + storesText.slice(end);
+});
+if (!process.env.DRAFT) writeFileSync(storesFile, storesText);
+
+// ---- a few homes open their courtyard to visitors (출입 가능) ----
+// Always ㄷ shaped with the gate in the middle of the front (core/hanok.js
+// home()), so the solid parts can be listed: the three wings and the front wall.
 const VISIT = N('출입 가능', 'Visitors welcome', '見学できます', '欢迎参观');
 const VISIT_TEXT = N(
   '이 집은 마당을 방문객에게 열어 두었어요. 조용히 둘러봐 주시고, 방 안이나 장독대는 만지지 말아 주세요.',
@@ -147,21 +338,20 @@ const VISIT_TEXT = N(
 );
 const visitBlockers = [], visitMarks = [];
 {
-  const main = walkX.find((w) => w.x === 60);
-  const cands = buildings.filter((b) => {
-    if (b.h >= 6 || !b.fr || b.fr[1] !== 0) return false;
-    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-    const near = b.fr[0] < 0 ? Math.min(...xs) : Math.max(...xs);
-    return Math.abs(Math.abs(near - main.x) - main.hw - EDGE) < 0.3 && Math.max(...zs) - Math.min(...zs) >= 10 && Math.max(...xs) - Math.min(...xs) >= 11.5; // (deep enough for a yard behind the gate)
-  }).sort((a, b) => b.p[0][1] - a.p[0][1]);
+  const quiet = BUKCHON.quiet;
+  const cands = hanok.filter((b) => {
+    if (b.h >= 6) return false;
+    const f = lotFront(b), D = Math.hypot(b.p[3][0] - b.p[0][0], b.p[3][1] - b.p[0][1]);
+    const c = [(b.p[0][0] + b.p[2][0]) / 2, (b.p[0][1] + b.p[2][1]) / 2];
+    return f.L >= 9 && D >= 7.5 && (inPoly(c[0], c[1], quiet) || Math.hypot(c[0] + 40, c[1] + 170) < 70);
+  });
   const pickAt = [0, Math.floor(cands.length / 2), cands.length - 1];
   for (const b of [...new Set(pickAt.map((i) => cands[i]).filter(Boolean))]) {
     b.visit = 1;
-    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    const L = Math.max(...zs) - Math.min(...zs), D = Math.max(...xs) - Math.min(...xs); // faces along x
-    const ry = Math.atan2(b.fr[0], b.fr[1]), c = Math.cos(ry), sn = Math.sin(ry);
-    const W = (lx, lz) => [r1(cx + lx * c + lz * sn), r1(cz - lx * sn + lz * c)];
+    const f = lotFront(b), L = f.L, D = Math.hypot(b.p[3][0] - b.p[0][0], b.p[3][1] - b.p[0][1]);
+    const cx = (b.p[0][0] + b.p[2][0]) / 2, cz = (b.p[0][1] + b.p[2][1]) / 2;
+    // local frame: lx along the front (f.u), lz towards the front (fr)
+    const W = (lx, lz) => [r1(cx + lx * f.u[0] + lz * b.fr[0]), r1(cz + lx * f.u[1] + lz * b.fr[1])];
     const box = (ax, az, bx, bz) => ({ p: [W(ax, az), W(bx, az), W(bx, bz), W(ax, bz)] });
     // (the same sizes as home() in core/hanok.js)
     const back = Math.min(5.5, D * 0.48), side = Math.min(4.6, L * 0.34), zb = -D / 2 + back / 2 + 0.4, len = D - back - 1.6, zf = D / 2 - 0.3;
@@ -172,72 +362,97 @@ const visitBlockers = [], visitMarks = [];
       visitBlockers.push(box(sx * 1.4, zf - 0.3, sx * L / 2, zf + 0.3)); // the front wall either side of the gate
     }
     const [sx, sz] = W(2.6, D / 2 + 0.25); // on the front wall, beside the gate
-    visitMarks.push({ type: 'sign', x: sx, z: sz, ry, y: r1(ground(sx, sz)), title: VISIT, text: VISIT_TEXT, visit: 1 });
+    visitMarks.push({ type: 'sign', x: sx, z: sz, ry: Number(Math.atan2(b.fr[0], b.fr[1]).toFixed(4)), y: r1(ground(sx, sz)), title: VISIT, text: VISIT_TEXT, visit: 1 });
   }
 }
 
-// Little gardens by the houses: stone planters with a small tree or clipped
-// shrubs where a street corner or a gap between houses leaves room.
+// ---- little gardens: stone planters where a corner leaves room ----
 const planters = [];
 {
-  const free = (x, z, r) => !buildings.some((b) => {
-    const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-    return x + r > Math.min(...xs) && x - r < Math.max(...xs) && z + r > Math.min(...zs) && z - r < Math.max(...zs);
-  }) && !roads.some((rd) => rd.p.some((_, i) => i && segDist(x, z, rd.p[i - 1], rd.p[i]) < rd.w / 2 + r));
-  const spots = [[18, -51], [44, -48], [53, -48], [-3, -65], [123, -65], [46, -164], [74, -164], [8, -183], [112, -183], [33, -183], [87, -183]];
-  spots.forEach(([x, z], i) => { if (free(x, z, 1.1)) planters.push({ type: 'planter', x, z, y: r1(ground(x, z)), kind: i % 3 === 1 ? 'bush' : 'tree' }); });
+  const solid = [...hanok.map((b) => b.p), ...bigs.map((b) => b.p), openP, yardP];
+  const free = (q, rr) => inArea(q, 2) && !solid.some((p) => inPoly(q[0], q[1], p) || lineDist(q, [...p, p[0]]) < rr)
+    && [...roads, ...outside].every((r) => lineDist(q, r.p) > r.w / 2 + rr) && BUKCHON.views.every((v) => Math.hypot(q[0] - v.at[0], q[1] - v.at[1]) > 4);
+  let k = 0;
+  for (const r of order) {
+    if (planters.length >= 14) break;
+    for (const end of [0, r.p.length - 1]) {
+      const q = r.p[end], q2 = r.p[end ? end - 1 : 1], L = Math.hypot(q2[0] - q[0], q2[1] - q[1]), u = [(q2[0] - q[0]) / L, (q2[1] - q[1]) / L];
+      for (const s of [1, -1]) {
+        const at = [r1(q[0] + u[0] * 5 - u[1] * s * (r.w / 2 + 1.3)), r1(q[1] + u[1] * 5 + u[0] * s * (r.w / 2 + 1.3))];
+        if (planters.length < 14 && free(at, 1.1)) planters.push({ type: 'planter', x: at[0], z: at[1], y: r1(ground(...at)), kind: k++ % 3 === 1 ? 'bush' : 'tree' });
+      }
+    }
+  }
 }
 
-// The Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south
-// wall. Its walls and wings are blockers (drawn by the landmark).
+// ---- the alleys' walls (담장): where no hanok front stands at the alley,
+// a stone-and-plaster wall with a tiled cap runs on, so the alleys read as
+// walled lanes, not open yards (Yozi 2026-11-13: it had lost its charm) ----
+const wallRuns = [];
+{
+  const solid = [...hanok.map((b) => b.p), ...bigs.map((b) => b.p), openP, yardP, ...visitBlockers.map((b) => b.p)];
+  const keepClear = [ // (doors, signs, exits, photo spots, planters: room in front of them)
+    ...perLot.slice(0, SHOPS.length).map((d) => [d.at, 2]),
+    ...BUKCHON.views.map((v) => [v.at, 4]),
+    ...planters.map((l) => [[l.x, l.z], 1.6]),
+    ...BUKCHON.signs.map((g) => [g.at, 2]),
+    ...region.subway.stations.flatMap((st) => st.exits || []).map((e) => [[e.at[0] - ox, e.at[1] - oz], 5]),
+    ...BUKCHON.villagers.map((v) => [v, 1.5]),
+    [[0, 3], 10], // Anguk Station's corner
+  ];
+  const ok = (q, r) => inArea(q, 1.5)
+    && !solid.some((p) => inPoly(q[0], q[1], p) || lineDist(q, [...p, p[0]]) < 0.35)
+    && [...roads, ...outside].every((o) => o === r || lineDist(q, o.p) > o.w / 2 + 0.9)
+    && keepClear.every(([c, rr]) => Math.hypot(q[0] - c[0], q[1] - c[1]) > rr);
+  for (const r of roads) {
+    const line = simplify(r.p, 1.5);
+    const shopStreet = r.w >= 6; // (Bukchon-ro, Gyedong-gil, Changdeokgung-gil: shop fronts at the foot, no walls there)
+    for (const side of [1, -1]) {
+      let run = [];
+      const flush = () => { if (run.length >= 3) wallRuns.push(run); run = []; };
+      for (let i = 1; i < line.length; i++) {
+        const [a, b] = [line[i - 1], line[i]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), u = [(b[0] - a[0]) / L, (b[1] - a[1]) / L], n = [-u[1] * side, u[0] * side];
+        const off = r.w / 2 + 0.45;
+        for (let s = i === 1 ? 0 : 1; s <= L; s += 1) {
+          const q = [r1(a[0] + u[0] * s + n[0] * off), r1(a[1] + u[1] * s + n[1] * off)];
+          if (ok(q, r) && !(shopStreet && q[1] > SHOP_Z)) run.push(q); else flush();
+        }
+      }
+      flush();
+    }
+  }
+}
+// One landmark, pieces of up to 3 m that each sit on the slope; a thin
+// blocker along each piece.
+const wallPieces = [];
+for (const run of wallRuns) for (let i = 0; i + 1 < run.length; i += 3) {
+  const a = run[i], b = run[Math.min(i + 3, run.length - 1)];
+  if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.5) continue;
+  wallPieces.push([a[0], a[1], b[0], b[1], r1(Math.min(ground(...a), ground(...b)) * 10) / 10]);
+}
+const wallBlockers = wallPieces.map(([ax, az, bx, bz]) => {
+  const L = Math.hypot(bx - ax, bz - az), nx = -(bz - az) / L * 0.25, nz = (bx - ax) / L * 0.25;
+  return { p: [[r1(ax + nx), r1(az + nz)], [r1(bx + nx), r1(bz + nz)], [r1(bx - nx), r1(bz - nz)], [r1(ax - nx), r1(az - nz)]] };
+});
+
+// ---- the Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south wall ----
+// (its walls at full size round the middle, times OSC: core/bukchon-models.js openhouse)
 const [ox0, oz0, ox1, oz1] = OPEN; // x0 < x1, z0 > z1 (z0 is the south side)
+const ocx = (ox0 + ox1) / 2, ocz = (oz0 + oz1) / 2;
+const orect = (ax, az, bx, bz) => rect(r1(ocx + ax * OSC), r1(ocz + az * OSC), r1(ocx + bx * OSC), r1(ocz + bz * OSC));
 const blockers = [
-  { p: rect(ox0, oz1 + 12, ox1, oz1) }, // main hall (anchae) along the north side
-  { p: rect(ox0, oz0 - 4, ox0 + 9, oz1 + 12) }, // west wing (anbang)
-  { p: rect(ox1 - 9, oz0 - 4, ox1, oz1 + 12) }, // east wing (sarangbang)
-  { p: rect(ox0, oz0, BUKCHON.openHouse.gate[0] - 2.5, oz0 - 1) }, // south wall, left of the gate
-  { p: rect(BUKCHON.openHouse.gate[0] + 2.5, oz0, ox1, oz0 - 1) }, // and right of it
-  { p: rect(58.5, -179.5, 61.5, -182.5) }, // the lookout's coin telescope
+  { p: orect(-20, -6, 20, -18) }, // main hall (anchae) along the north side
+  { p: orect(-20, 14, -11, -6) }, // west wing (anbang)
+  { p: orect(11, 14, 20, -6) }, // east wing (sarangbang)
+  { p: orect(-20, 18, -2.5, 17) }, // south wall, left of the gate
+  { p: orect(2.5, 18, 20, 17) }, // and right of it
   ...visitBlockers, // the homes open to visitors: their wings and front walls (not the yard)
   ...planters.map((l) => ({ p: rect(l.x - 0.8, l.z + 0.8, l.x + 0.8, l.z - 0.8) })),
+  ...wallBlockers,
 ];
 
-// A low granite retaining wall (chukdae) round the village holds up the hill
-// (data/bukchon.js "area"); the village itself is open to see from the street.
-// The gate is on Bukchon-ro by Anguk Station. Up the hill the wall steps up
-// with the ground.
-const [AX0, AZ0, AX1, AZ1] = BUKCHON.area; // x0, z0 (south), x1, z1 (north)
-const GATES = BUKCHON.gates;
-const wallMarks = [];
-const wallRun = (fixed, from, to, alongX) => { // a straight run with gaps for the gates on it
-  const cuts = GATES.filter((g) => (alongX ? g.at[1] === fixed : g.at[0] === fixed)).map((g) => { const c = alongX ? g.at[0] : g.at[1]; return [c - g.w / 2, c + g.w / 2]; }).sort((a, b) => a[0] - b[0]);
-  let a = Math.min(from, to);
-  const end = Math.max(from, to);
-  for (const [c0, c1] of [...cuts, [end, end]]) {
-    // (along the slope, in short steps that follow the ground)
-    for (let s0 = a; c0 - s0 > 0.5;) {
-      const s1 = alongX ? c0 : Math.min(c0, s0 + 8), mid = (s0 + s1) / 2, len = s1 - s0;
-      const y = alongX ? ground(mid, fixed + (fixed < -100 ? 1 : -1)) : ground(fixed + 1, Math.min(s0, s1) + 0.01);
-      wallMarks.push(alongX ? { x: mid, z: fixed, len, ry: 0, y } : { x: fixed, z: mid, len: len + 0.3, ry: Math.PI / 2, y });
-      s0 = s1;
-    }
-    if (c0 - a > 0.5) {
-      blockers.push({ p: alongX ? rect(a, fixed + 0.5, c0, fixed - 0.5) : rect(fixed - 0.5, a, fixed + 0.5, c0) });
-    }
-    a = c1;
-  }
-};
-wallRun(AZ0, AX0, AX1, true);
-wallRun(AZ1, AX0, AX1, true);
-wallRun(AX0, AZ1, AZ0, false);
-wallRun(AX1, AZ1, AZ0, false);
-for (const g of GATES) for (const s of [-1, 1]) { // the gate posts are solid
-  const [x, z] = g.at, k = g.w / 2 + 0.2;
-  blockers.push({ p: g.ry ? rect(x - 0.6, z + s * k - 0.6, x + 0.6, z + s * k + 0.6) : rect(x + s * k - 0.6, z - 0.6, x + s * k + 0.6, z + 0.6) });
-}
-
-// The Quiet Zone signs at the alley entrances (the real rule, checked on
-// 2026-11-07: Seoul Metropolitan Government / Jongno-gu).
+// The Quiet Zone signs where the alleys of Gahoe-dong begin (the real rule,
+// checked on 2026-11-07: Seoul Metropolitan Government / Jongno-gu).
 const QUIET = {
   title: N('조용히 걸어 주세요', 'Quiet Zone', '静かにお歩きください', '请安静行走'),
   text: {
@@ -247,33 +462,60 @@ const QUIET = {
     zh: '这里是居民居住的韩屋小巷，请勿奔跑，安静行走。现实中北村路11街一带的游客参观时间为10:00至17:00。',
   },
 };
+const quietSigns = [];
+for (const r of roads) {
+  if (!/^Bukchon-ro 11/.test(r.n?.en || '')) continue;
+  for (const end of [0, r.p.length - 1]) {
+    const q = r.p[end];
+    if (inPoly(q[0], q[1], BUKCHON.quiet) && roads.some((o) => o !== r && !/^Bukchon-ro 11/.test(o.n?.en || '') && lineDist(q, o.p) < o.w / 2 + 3)) {
+      const q2 = r.p[end ? end - 1 : 1], L = Math.hypot(q2[0] - q[0], q2[1] - q[1]), u = [(q2[0] - q[0]) / L, (q2[1] - q[1]) / L];
+      const at = [r1(q[0] + u[0] * 4 + u[1] * (r.w / 2 + 0.4)), r1(q[1] + u[1] * 4 - u[0] * (r.w / 2 + 0.4))];
+      if (!quietSigns.some((s) => Math.hypot(s.x - at[0], s.z - at[1]) < 12)) quietSigns.push({ type: 'sign', x: at[0], z: at[1], ry: Number(Math.atan2(-u[0], -u[1]).toFixed(4)), y: r1(ground(...at)), title: QUIET.title, text: QUIET.text });
+    }
+  }
+}
 
 const landmarks = [
-  { type: 'hanokwalls', x: (AX0 + AX1) / 2, z: (AZ0 + AZ1) / 2, segs: wallMarks.map((w) => ({ ...w, x: w.x - (AX0 + AX1) / 2, z: w.z - (AZ0 + AZ1) / 2 })) }, // one mesh for the whole wall (segs relative to it)
-  ...BUKCHON.signs.map(({ at: [x, z], ry }) => ({ type: 'sign', x, z, ry, title: BUKCHON.welcome.title, text: { ...Object.fromEntries(Object.entries(BUKCHON.welcome.rules).map(([k, v]) => [k, v])) } })),
-  ...GATES.map((g) => ({ type: 'bukchongate', x: g.at[0], z: g.at[1], ry: g.ry || 0, w: g.w, main: !!g.main })),
-  { type: 'openhouse', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, w: ox1 - ox0, d: oz0 - oz1 },
-  { type: 'terrace', x: 60, z: -172, y: ground(60, -172) }, // the lookout at the top, the photo spot in its gap
+  ...BUKCHON.signs.map(({ at: [x, z], ry }) => ({ type: 'sign', x, z, ry, y: r1(ground(x, z)), title: BUKCHON.welcome.title, text: { ...BUKCHON.welcome.rules } })),
+  { type: 'openhouse', x: ocx, z: ocz, w: 40, d: 36, sc: [OSC, 1] }, // (drawn at full size, scaled across: landmarks.js sc)
   ...visitMarks, // 출입 가능 by the open homes' gates
-  ...planters,
-  ...[[55, -86, 0], [14.5, -86, 0], [106, -86, 0]].map(([x, z, ry]) => ({ type: 'sign', x, z, ry, y: ground(x, z), title: QUIET.title, text: QUIET.text })),
+  ...(planters.length ? [{ type: 'planters', x: r1(planters.reduce((t, l) => t + l.x, 0) / planters.length), z: r1(planters.reduce((t, l) => t + l.z, 0) / planters.length), items: planters.map(({ x, z, y, kind }) => ({ x, z, y, kind })) }] : []), // (one landmark: a few draw calls for all of them)
+  ...quietSigns,
+  ...(wallPieces.length ? [{ type: 'lanewalls', x: 0, z: -110, segs: wallPieces.map(([ax, az, bx, bz, y]) => [r1(ax), r1(az + 110), r1(bx), r1(bz + 110), y]) }] : []), // (all the alley walls: one landmark, a few draw calls)
 ];
 
 const pois = [
-  { kind: 'landmark', x: 60, z: -120, name: N('북촌한옥마을', 'Bukchon Hanok Village', '北村韓屋村', '北村韩屋村') },
-  { kind: 'landmark', x: 104, z: -64, name: N('북촌 열린 한옥', 'Bukchon Open House', '北村 オープンハウス', '北村开放韩屋') },
-  { kind: 'landmark', x: 60, z: -168, name: N('북촌로11길 언덕', 'Bukchon-ro 11-gil Hilltop', '北村路11ギルの丘', '北村路11街坡顶') },
+  { kind: 'landmark', x: -40, z: -175, name: N('북촌한옥마을', 'Bukchon Hanok Village', '北村韓屋村', '北村韩屋村') },
+  { kind: 'landmark', x: (ox0 + ox1) / 2, z: (oz0 + oz1) / 2, name: N('북촌 열린 한옥', 'Bukchon Open House', '北村 オープンハウス', '北村开放韩屋') },
+  ...BUKCHON.views.map((v) => ({ kind: 'landmark', x: v.at[0], z: v.at[1], name: v.name })),
 ];
 
 const map = {
   meta: {
     district: 'bukchon',
-    // For the overlap check: the lane down to Samcheong-ro reaches into
-    // Gyeongbokgung on purpose (scripts/place-districts.mjs).
-    parts: [{ why: 'the hill village, Anguk Station to the hilltop', box: [-10, -186, 130, 0] }],
-    source: 'hand-made (game map, not to scale; loosely after Bukchon, Jongno-gu, street lines from OpenStreetMap © OpenStreetMap contributors, ODbL). Built by scripts/build-bukchon.mjs',
+    parts: [{ why: 'Bukchon on its real streets at 1/4: Anguk Station (Yulgok-ro) to the top of Bukchon-ro, the palace park to Changdeokgung-gil', box: [AX0, AZ1, AX1, AZ0] }],
+    source: 'OpenStreetMap © OpenStreetMap contributors, ODbL (streets, big buildings, the Bukchon 8 Views), SRTM heights, at 1/4; hanok laid along the alleys (game size). Built by scripts/build-bukchon.mjs',
   },
-  roads, buildings, rail: [], areas, blockers, pois, landmarks,
+  roads, buildings: [...hanok, ...bigs.map(({ name: _n, ...b }) => b)], rail: [], areas: [{ k: 'plaza', p: yardP }], blockers, pois, landmarks,
 };
-await writeFile(out, JSON.stringify(map, null, 1) + '\n');
-console.log(`bukchon.json: ${roads.length} roads, ${buildings.length} buildings (${buildings.filter((b) => b.hanok).length} hanok)`);
+writeFileSync(path.join(R, 'districts', 'bukchon.json'), JSON.stringify(map, null, 1) + '\n');
+
+// ---- Gyeongbokgung's map: its box stops at Bukchon's west edge north of
+// Yulgok-ro, and its old placeholder row on Bukchon's ground goes ----
+{
+  const file = path.join(R, 'districts', 'gyeongbokgung.json'), gb = JSON.parse(readFileSync(file, 'utf8'));
+  const gd = region.districts.find((d) => d.id === 'gyeongbokgung').offset, dx = ox - gd[0], dz = oz - gd[1];
+  const before = gb.buildings.length;
+  gb.buildings = gb.buildings.filter((b) => { const cx = b.p.reduce((s, q) => s + q[0], 0) / b.p.length - dx, cz = b.p.reduce((s, q) => s + q[1], 0) / b.p.length - dz; return !inArea([cx, cz]); });
+  const main = gb.meta.parts.find((p) => /^the palace, Gwanghwamun Square/.test(p.why));
+  if (main && main.box[2] > AX0 + dx) {
+    const [x0, z0, x1, z1] = main.box, split = AZ0 + dz;
+    main.box = [x0, split, x1, z1];
+    gb.meta.parts.unshift({ why: 'the palace and Samcheong-ro, north of Yulgok-ro, up to Bukchon', box: [x0, z0, AX0 + dx, split] });
+    main.why = 'Gwanghwamun Square, Yulgok-ro and the blocks south of it';
+  }
+  const pretty = (o) => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']');
+  writeFileSync(file, pretty(gb) + '\n');
+  if (before !== gb.buildings.length) console.log(`gyeongbokgung.json: ${before - gb.buildings.length} buildings on Bukchon's ground removed`);
+}
+console.log(`bukchon.json: ${roads.length} streets, ${hanok.length} hanok (${shopLots.length} shop lots), ${bigs.length} big buildings (${dropped} on a street, left out), ${planters.length} planters, ${quietSigns.length} quiet signs, ${visitMarks.length} open homes, ${wallPieces.length} wall pieces`);

@@ -1,12 +1,12 @@
 // Bukchon landmarks (map "landmarks" in districts/bukchon.json): the Open
 // House (a ㄷ-shaped hanok round a courtyard, with a persimmon tree and a
-// magpie), the rooftop view terrace and Changdeokgung's roofs seen from the
-// east edge. Visual only: collision comes from the map's blockers.
+// magpie) and the stone planters; and the hill itself (buildBukchonHill).
+// Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
-import { HANOK, curvedRoof } from './hanok.js';
+import { HANOK } from './hanok.js';
 import { BUKCHON, ground } from '../data/bukchon.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
@@ -32,30 +32,6 @@ export function mergeStatic(g) {
     mesh.userData.noShadow = ok.every((x) => x.noShadow);
     g.add(mesh);
   }
-}
-const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
-function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
-  for (const geo of curvedRoof(w, d, h, o)) {
-    const m = new THREE.Mesh(geo, tileMat);
-    m.position.set(x, y, z);
-    m.rotation.y = ry;
-    g.add(m);
-  }
-}
-function signTexture(ko, en) {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 160;
-  const x = c.getContext('2d');
-  x.fillStyle = '#2b2118'; x.fillRect(0, 0, 512, 160);
-  x.strokeStyle = '#c9a25a'; x.lineWidth = 8; x.strokeRect(8, 8, 496, 144);
-  x.fillStyle = '#f3e3b5'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = '800 64px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-  x.fillText(ko, 256, 66);
-  x.font = '600 26px system-ui, sans-serif';
-  x.fillText(en, 256, 124);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
 }
 
 const mat = matCache({ flatShading: true });
@@ -150,35 +126,6 @@ const BUILD = {
       box(g, 0.7 * s, 0.12, 0.7 * s, jar.position.x, 0.5 + 1.25 * s, jar.position.z, '#3d2418'); // lid
     }
   },
-  // The rooftop view: a stone terrace with a railing on the south side and a
-  // coin telescope.
-  terrace(g) {
-    box(g, 24, 0.3, 22, 0, 0.15, 0, C.stone); // (small: houses line the alley right up to it)
-    for (let x = -11; x <= 11; x += 2.75) if (Math.abs(x) > 3) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
-    for (const sx of [-1, 1]) box(g, 8.5, 0.15, 0.3, sx * 7.4, 1.4, 10.6, C.wood);
-    box(g, 0.5, 1.1, 0.5, 0, 0.85, -8, '#3a5a7a'); // telescope post
-    box(g, 0.4, 0.4, 1.0, 0, 1.6, -7.8, '#3a5a7a');
-  },
-  // Changdeokgung beyond the east edge: a palace wall and two hall roofs.
-  farpalace(g) {
-    box(g, 2, 3.5, 70, -8, 1.75, 0, '#d9c9b0');
-    box(g, 2.8, 0.5, 71, -8, 3.7, 0, C.roof);
-    for (const [z, w] of [[-12, 24], [16, 18]]) {
-      box(g, w, 6, 10, 16, 3.6, z, '#a23a2c');
-      box(g, w + 1, 1, 11, 16, 6.4, z, '#2f8f6b');
-      roof(g, w * 1.35, 16, 5, 6.8, 16, z);
-    }
-  },
-  // The village wall (담장): a stone lower half, plaster above, a tiled cap.
-  // l.len long along x (turned by l.ry).
-  hanokwall(g, l) { // a granite retaining wall (chukdae) holding up the hill: low at the street, taller up the slope
-    const len = l.len, y = l.y || 0, H = y + 1.1;
-    box(g, len, H, 0.95, 0, H / 2 - y, 0, C.dark);
-    for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.6, sz * 0.49, C.stone); // the stone pattern
-    box(g, len + 0.1, 0.16, 1.05, 0, H - y + 0.08, 0, C.stone); // the capstones
-  },
-  // A stone planter with a small tree (a maple or a persimmon) or clipped
-  // shrubs, kept low.
   planter(g, l) {
     box(g, 1.6, 0.5, 1.6, 0, 0.25, 0, C.stone);
     box(g, 1.4, 0.06, 1.4, 0, 0.5, 0, '#6b5a44');
@@ -196,52 +143,45 @@ const BUILD = {
       g.add(crown);
     }
   },
-  // The whole retaining wall as one landmark (l.segs: { x, z, len, ry, y },
-  // x and z from the landmark's own spot), so it is one draw call, not one
-  // per step.
-  hanokwalls(g, l) {
-    for (const sg of l.segs) {
-      const sub = new THREE.Group();
-      BUILD.hanokwall(sub, sg);
-      sub.position.set(sg.x, (sg.y || 0) - (l.y || 0), sg.z);
-      sub.rotation.y = sg.ry || 0;
-      g.add(sub);
+  // The alleys' walls (담장), all as one landmark (l.segs: [ax, az, bx, bz, y],
+  // from the landmark's spot; y: the ground at the piece's lower end): a
+  // granite footing, a plaster wall and a tiled cap, a little under the
+  // ground so a piece on the slope has no gap below it.
+  lanewalls(g, l) {
+    for (const [ax, az, bx, bz, y] of l.segs) {
+      const L = Math.hypot(bx - ax, bz - az), p = new THREE.Group();
+      p.position.set((ax + bx) / 2, y, (az + bz) / 2);
+      p.rotation.y = Math.atan2(-(bz - az), bx - ax);
+      const len = L + 0.12; // (pieces overlap a little at the joins)
+      box(p, len, 0.9, 0.44, 0, 0.05, 0, '#a59d8f'); // granite footing (-0.4 .. 0.5)
+      box(p, len, 0.85, 0.34, 0, 0.925, 0, '#ece2cd'); // plaster (chest high: the roofs show over it)
+      box(p, len + 0.1, 0.1, 0.58, 0, 1.4, 0, '#3f444b'); // tile eaves
+      box(p, len + 0.1, 0.14, 0.26, 0, 1.5, 0, '#2f3338'); // ridge
+      g.add(p);
     }
   },
-  // A village gate: two posts, painted beams (dancheong green and red), a
-  // signboard and a curved tiled roof. l.w wide (the opening), facing +z.
-  bukchongate(g, l) {
-    const w = l.w, hw = w / 2, H = l.main ? 6.2 : 5;
-    for (const sx of [-1, 1]) {
-      box(g, 0.7, H, 0.7, sx * (hw + 0.2), H / 2, 0, '#7a2e22');
-      box(g, 1.3, 0.5, 1.3, sx * (hw + 0.2), 0.25, 0, C.stone);
-      box(g, 2.2, 1.3, 0.95, sx * (hw + 1.6), 0.65, 0, C.dark); // a stub of the stone wall each side
+  // All the planters as one landmark (l.items: { x, z, y, kind }, district
+  // metres), so they are a few draw calls, not three or four each.
+  planters(g, l) {
+    for (const p of l.items) {
+      const s = new THREE.Group();
+      s.position.set(p.x - l.x, p.y - (l.y || 0), p.z - l.z);
+      BUILD.planter(s, p);
+      g.add(s);
     }
-    box(g, w + 1.6, 0.5, 0.6, 0, H - 0.35, 0, '#2f8f6b');
-    box(g, w + 1.4, 0.3, 0.5, 0, H - 0.95, 0, '#a23a2c');
-    if (l.main) {
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.3), new THREE.MeshBasicMaterial({ map: signTexture('북촌한옥마을', 'Bukchon Hanok Village') }));
-      sign.position.set(0, H - 1.9, 0.36);
-      const back = sign.clone();
-      back.rotation.y = Math.PI;
-      back.position.z = -0.36;
-      g.add(sign, back);
-      box(g, 4.4, 1.45, 0.3, 0, H - 1.9, 0, '#2b2118');
-    }
-    tiles(g, w + 4.6, 4.2, l.main ? 2.0 : 1.6, H, { hip: true, lift: 0.7, seg: 4, rows: 3, color: new THREE.Color(C.roof) });
   },
 };
 
 // Each builder's boxes merged into a few meshes (fewer draw calls).
 export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f]) => [k, (g, l) => { const t = f(g, l); mergeStatic(g); return t; }]));
 
-// The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
+// Bukchon's hill (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
-// Paving, drawn once. 'alley': across the alley (u 0..1), asphalt down the
-// middle with a narrow edging of grey setts at both sides, only a little
-// lighter than the asphalt; one texture is 2 m along. 'yard': big pale
-// granite slabs, 1.6 m.
+// Paving, drawn once. 'alley' (Bukchon-ro): across the street (u 0..1),
+// asphalt down the middle with a narrow edging of grey setts, 2 m along.
+// 'setts' (the lanes): small granite setts with a drain stone each side.
+// 'yard': worn granite slabs between the houses, 2.4 m a texture.
 const paveCache = {};
 function pavingTexture(kind) {
   if (kind in paveCache) return paveCache[kind];
@@ -263,12 +203,25 @@ function pavingTexture(kind) {
       const tones = ['#77756f', '#7d7b75', '#73716c', '#7a7872'];
       for (let r = 0; r < 8; r++) { x.fillStyle = tones[(r + (x0 ? 1 : 0)) % 4]; x.fillRect(x0 + 1, r * 16 + 1, E - 2, 14); }
     }
-  } else {
-    x.fillStyle = '#bdb5a6'; x.fillRect(0, 0, 128, 128);
-    const tones = ['#ddd5c5', '#d5ccbb', '#e3dccd', '#d0c7b6'];
-    for (let r = 0; r < 2; r++) for (let i = 0; i < 2; i++) {
-      x.fillStyle = tones[r * 2 + i];
-      x.fillRect(i * 64 + 2 + (r ? 16 : 0) % 64, r * 64 + 2, 60, 60);
+  } else if (kind === 'setts') { // the lanes: small granite setts in courses, a drain stone each side
+    x.fillStyle = '#7f7a71'; x.fillRect(0, 0, 128, 128); // joints
+    let s = 11; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const tones = ['#b3ab9d', '#a9a194', '#bdb5a7', '#a39b8e', '#b8b0a2'];
+    for (let r = 0; r < 8; r++) {
+      const sh = r % 2 ? 9 : 0;
+      for (let cx = -sh; cx < 128; cx += 18) {
+        x.fillStyle = tones[Math.floor(rnd() * tones.length)];
+        x.fillRect(Math.max(10, cx + 1), r * 16 + 1, Math.min(cx + 17, 118) - Math.max(10, cx + 1), 14);
+      }
+    }
+    for (const x0 of [0, 118]) { x.fillStyle = '#8d877c'; x.fillRect(x0, 0, 10, 128); x.fillStyle = '#9a9488'; for (let r = 0; r < 4; r++) x.fillRect(x0 + 1, r * 32 + 1, 8, 30); }
+  } else { // between the houses: worn granite slabs, quieter than the lanes
+    x.fillStyle = '#9d968a'; x.fillRect(0, 0, 128, 128);
+    const tones = ['#b9b1a3', '#b2aa9c', '#bfb7a9', '#aea698'];
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 3; i++) {
+      x.fillStyle = tones[(r + i) % 4];
+      x.fillRect(i * 43 + 1 + (r % 2 ? 20 : 0), r * 32 + 1, 41, 30);
+      if (r % 2 && i === 2) x.fillRect(1, r * 32 + 1, 19, 30);
     }
   }
   const t = new THREE.CanvasTexture(c);
@@ -280,49 +233,53 @@ function pavingTexture(kind) {
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
-  const [x0, , x1, z1] = BUKCHON.area, foot = BUKCHON.hill.foot;
-  // (fine enough across too: the hill is flat across x, but ground() is 0
-  // right on the edge, so the edge row is taken just inside it)
-  const nx = Math.ceil((x1 - x0) / 4), nz = Math.ceil((foot - z1) / 2);
-  const geo = new THREE.PlaneGeometry(x1 - x0, foot - z1, nx, nz).rotateX(-Math.PI / 2);
+  const [x0, z0, x1, z1] = BUKCHON.area; // (z0: the south edge)
+  // One vertex every 3 m (the ground grid is 6 m): close enough to ground()
+  // that you stand on what you see.
+  const nx = Math.ceil((x1 - x0) / 3), nz = Math.ceil((z0 - z1) / 3);
+  const geo = new THREE.PlaneGeometry(x1 - x0, z0 - z1, nx, nz).rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (foot + z1) / 2;
-    pos.setXYZ(i, x + ox, ground(Math.min(Math.max(x, x0 + 0.01), x1 - 0.01), Math.min(Math.max(z, z1 + 0.01), foot - 0.01)) + 0.02, z + oz);
+    const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (z0 + z1) / 2;
+    pos.setXYZ(i, x + ox, ground(x, z) + 0.02, z + oz);
   }
   geo.computeVertexNormals();
   { // the hillside between the houses is paved too (granite slabs, see pavingTexture)
     const uv = geo.attributes.uv;
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 1.6, pos.getZ(i) / 1.6);
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 2.4, pos.getZ(i) / 2.4);
   }
   const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' }));
   earth.receiveShadow = true;
   g.add(earth);
-  // Alleys: ribbons along each footpath, on the slope.
-  const pts = [], uvs = [], STEP = 1.5;
-  for (const r of roads) {
-    if (r.k !== 'walk') continue;
-    for (let i = 1; i < r.p.length; i++) {
-      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
-      const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
-      for (let k = 0; k < n; k++) {
-        const quad = [k / n, (k + 1) / n].map((t) => {
-          const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
-          return [[x - px, y, z - pz], [x + px, y, z + pz]];
-        });
-        const [[a, b], [c, d]] = quad;
-        pts.push(...a, ...b, ...d, ...a, ...d, ...c);
-        const v0 = (k * len) / n / 2, v1 = ((k + 1) * len) / n / 2; // one tile every 2 m along
-        uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
+  // Alleys: ribbons along each footpath, on the slope. Bukchon-ro (the one
+  // wide street, with cars in the real one) is asphalt; the lanes are setts.
+  for (const [kind, pick] of [['alley', (r) => r.w >= 7], ['setts', (r) => r.w < 7]]) {
+    const pts = [], uvs = [], STEP = 1.5;
+    for (const r of roads) {
+      if (r.k !== 'walk' || !pick(r)) continue;
+      for (let i = 1; i < r.p.length; i++) {
+        const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
+        const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
+        const along = kind === 'setts' ? r.w / 1.6 : 2; // (setts: about 30 cm stones whatever the width)
+        for (let k = 0; k < n; k++) {
+          const quad = [k / n, (k + 1) / n].map((t) => {
+            const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
+            return [[x - px, y, z - pz], [x + px, y, z + pz]];
+          });
+          const [[a, b], [c, d]] = quad;
+          pts.push(...a, ...b, ...d, ...a, ...d, ...c);
+          const v0 = (k * len) / n / along, v1 = ((k + 1) * len) / n / along;
+          uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
+        }
       }
     }
-  }
-  if (pts.length) {
+    if (!pts.length) continue;
     const rg = new THREE.BufferGeometry();
     rg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     rg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     rg.computeVertexNormals();
-    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(pavingTexture('alley') ? { map: pavingTexture('alley'), side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
+    const tex = pavingTexture(kind);
+    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(tex ? { map: tex, side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
     alleys.receiveShadow = true;
     g.add(alleys);
   }

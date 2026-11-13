@@ -3656,9 +3656,9 @@ $('map-btn').onclick = () => {
   const pos = myPlace();
   mapView.show(pos.x, pos.z);
 };
-// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// Bukchon Hanok Village's information centre (a step of the new player's trip, below), and
 // the cards that trip shows. "Back to the guide" puts you beside the square guide.
-const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+const FIRST_TAXI = { x: -1522.5, z: -916.3 }; // Bukchon's information centre on Gyedong-gil, up from Anguk Station (stores.json info-bukchon)
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3755,7 +3755,7 @@ function onTripStep() {
     sfx.pop?.();
     me.play('cheer');
     const route = quests.active?.route;
-    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's Information Center: a guide is right here
       firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
     } else tripTaxiCard();
     return;
@@ -5005,11 +5005,26 @@ const inEnclosure = (d, b) => {
 for (const d of map.meta?.districts || []) {
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
   if (!hanoks.length) continue;
-  const g = buildHanoks(hanoks);
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
-  scene.add(g);
-  openHanok.push(g);
+  // In blocks of 96 m, so the ones behind you or far off aren't drawn
+  // (Bukchon has ~250 hanok at ~700 triangles each).
+  const cells = new Map();
+  for (const b of hanoks) {
+    const k = Math.floor(b.p[0][0] / 96) + ',' + Math.floor(b.p[0][1] / 96);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k).push(b);
+  }
+  for (const list of cells.values()) {
+    const g = buildHanoks(list);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(g);
+    openHanok.push(g);
+  }
+  if (d.id === BUKCHON.district) { // the hill and its alleys
+    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);
+    hill.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    scene.add(hill);
+    openHanok.push(hill);
+  }
 }
 // Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
 // shows its wall and gates from the street; what is inside is drawn once you

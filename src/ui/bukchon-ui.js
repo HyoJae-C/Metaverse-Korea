@@ -13,7 +13,7 @@ import { PENDANT_CHARMS } from '../data/appearance.js';
 export const BK_TEXT = {
   photo: { en: 'Take a photo · {name}', ko: '사진 찍기 · {name}', ja: '写真を撮る · {name}', zh: '拍照 · {name}' },
   views: { en: 'Bukchon photo spot', ko: '북촌 포토스팟', ja: '北村のフォトスポット', zh: '北村拍照点' },
-  viewsHow: { en: 'Climb the alley to the top of the hill and stand on the footprint mark: the famous view down Bukchon-ro 11-gil. 🪙 {a} for your first photo there.', ko: '골목을 따라 언덕 꼭대기까지 올라가 발자국 표시에 서 보세요. 북촌로11길을 내려다보는 그 유명한 장면이에요. 처음 찍으면 🪙 {a}를 받아요.', ja: '路地を丘のてっぺんまで登り、足あとマークに立とう。北村路11ギルを見下ろすあの有名な景色。初めて撮ると🪙 {a}。', zh: '沿着小巷爬到坡顶，站在脚印标记上：就是俯瞰北村路11街的那个有名景色。第一次拍照得 🪙 {a}。' },
+  viewsHow: { en: 'Four of the Bukchon 8 Views have a footprint mark on their real spot: Changdeokgung over the wall, the museum alley, the alley stepping down in Gahoe-dong and the Samcheong-dong stone steps. Stand on each and take a photo: 🪙 {a} in all, with the bonus for all four.', ko: '북촌 8경 중 네 곳의 실제 자리에 발자국 표시가 있어요: 담장 너머 창덕궁, 박물관 골목, 가회동 내리막 골목, 삼청동 돌계단. 표시에 서서 사진을 찍으면 네 곳 보너스까지 모두 🪙 {a}를 받아요.', ja: '北村八景のうち4か所の実際の場所に足あとマークがあります：塀越しの昌徳宮、博物館の路地、嘉会洞の下り坂の路地、三清洞の石段。マークに立って写真を撮ると、4か所のボーナス込みで合計 🪙 {a}。', zh: '北村八景中有四处在真实位置上画了脚印标记：墙外的昌德宫、博物馆小巷、嘉会洞的下坡小巷、三清洞石阶。站在标记上拍照，连同集齐四处的奖励共得 🪙 {a}。' },
   got: { en: '📸 {name} (+🪙 {c})', ko: '📸 {name} (+🪙 {c})', ja: '📸 {name}（+🪙 {c}）', zh: '📸 {name}（+🪙 {c}）' },
   again: { en: '📸 Another nice shot.', ko: '📸 한 장 더 찍었어요.', ja: '📸 もう一枚。', zh: '📸 又拍了一张。' },
   allDone: { en: '🎉 Every Bukchon photo spot!', ko: '🎉 북촌 포토스팟을 다 찍었어요!', ja: '🎉 北村のフォトスポット制覇！', zh: '🎉 北村拍照点全部拍完！' },
@@ -138,7 +138,7 @@ export class BukchonUI {
   views(book, just = 0) {
     this.view = 'views';
     const parts = this._head('📸', L(BK_TEXT.views));
-    parts.push(el('p', 'fine', fmt(L(BK_TEXT.viewsHow), { a: VIEW_REWARD + ALL_VIEWS_REWARD })));
+    parts.push(el('p', 'fine', fmt(L(BK_TEXT.viewsHow), { a: VIEW_REWARD * BUKCHON.views.length + ALL_VIEWS_REWARD })));
     const list = el('div', 'wish-list');
     for (const v of BUKCHON.views) {
       const b = el('div', 'wish-item' + (book.has(v.n) ? ' on' : ''), `${book.has(v.n) ? '✅' : '⬜'} ${v.n}. ${L(v.name)}`);
