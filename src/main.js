@@ -6685,7 +6685,7 @@ function updateAction(p, tSec) {
     } else if (seated?.duck != null) { // in a duck boat (game/duck-boats.js)
       next = duckBoats.seatedAction();
     } else if (seated?.pc) { // a free PC in the PC방
-      next = { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('aim') };
+      next = arcadeGame.camOn() ? null : { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('strike') }; // the team shooter (game/strike.js), aim practice in its menu
     } else if (seated?.tarot) {
       next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { tarotReader()?.ch.wave(); tarotUi.show(); } };
     } else if (tarotNext) {
@@ -7648,7 +7648,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade, brawl: () => arcadeGame.brawl(),
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(),
     loveLock: (view) => loveLockUi.show(view),
   };
 }
