@@ -43,14 +43,18 @@ test('the wall is on its real OpenStreetMap line at 1/4, with its real gaps', ()
   }
 });
 
-test('Hyehwamun is on its real spot at 37.5% of its outline, and you cannot walk through its low arch', () => {
+test('Hyehwamun is on its real spot at 43.75% of its outline, and you walk through its arch', () => {
   const gate = osm.elements.find((e) => e.tags.historic === 'city_gate');
   const pts = gate.geometry.map((q) => toGame(q.lat, q.lon));
   const cx = pts.reduce((s, q) => s + q[0], 0) / pts.length, cz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
-  assert.ok(Math.hypot(r.gate.x + ox - cx, r.gate.z + oz - cz) < 15, 'within 15 m of the real one');
-  assert.ok(r.gate.W > 3 && r.gate.W < 6 && r.gate.D < r.gate.W, `${r.gate.W} x ${r.gate.D} m`);
+  const g = r.gate;
+  assert.ok(Math.hypot(g.x + ox - cx, g.z + oz - cz) < 15, 'within 15 m of the real one');
+  assert.ok(g.W > 4.5 && g.W < 5.6 && g.D < g.W, `${g.W} x ${g.D} m`);
+  assert.ok(g.S + g.A > 1.45, `the arch's top (${g.S + g.A} m) is over the character's head (1.2 m)`);
   const col = new CollisionMap([...map.buildings, ...map.blockers]);
-  assert.ok(col.blocked(r.gate.x + ox, r.gate.z + oz, 0.35));
+  const c = Math.cos(g.ry), s = Math.sin(g.ry), P = (u, v) => [g.x + ox + u * c + v * s, g.z + oz - u * s + v * c];
+  for (let v = -g.D / 2 - 1; v <= g.D / 2 + 1; v += 0.25) assert.ok(!col.blocked(...P(0, v), 0.35), `the arch is open at ${v.toFixed(2)}`);
+  assert.ok(col.blocked(...P(g.W / 3, 0), 0.35), 'the base beside it is solid');
 });
 
 test('the wall: 50% high outside (about 3.5 m), chest high inside, nothing where it has a gap', () => {

@@ -708,8 +708,11 @@ the Dongmyo district (`districts/dongmyo.json`, items marked `nk`, a second
   with the mountains behind) and one inside along the top (roads, `k: walk`,
   `hill: 1`, kept clear of the wall). A row of small houses along each
   (Ihwa-dong and Changsin-dong; fictional).
-- **Hyehwamun** at 37.5% of its OSM outline (4.3 x 2.8 m), on its real spot.
-  You can't walk through it: at that size its arch is lower than you.
+- **Hyehwamun** at 43.75% of its OSM outline (5.1 x 3.3 m), on its real
+  spot: between the small gates' 37.5% and the great gates' 50%, so you
+  walk through its arch (1.2 m wide, 1.5 m high; its proportions are an
+  approximation from photos) and it stays smaller than the great gates
+  (Yozi, 2026-11-13).
 - **Loaded when near.** The ground, the wall, the gate, the paths' paving,
   lamps, woods and walkers are `src/game/naksan.js`, loaded with `import()`
   within about 480 m (`src/game/naksan-near.js`) and hidden past 700 m.

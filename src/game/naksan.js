@@ -104,6 +104,15 @@ export function createNaksan(game) {
     group.add(m);
   }
 
+  // A stretch through Hyehwamun is left out (the gate stands there; its arch is open),
+  // as its blocker is (scripts/build-naksan.mjs).
+  const inGate = (ax, az, bx, bz) => {
+    const { x: gx, z: gz, ry: gr, W: gw, D: gd } = r.gate, c = Math.cos(gr), sn = Math.sin(gr);
+    return [0, 0.25, 0.5, 0.75, 1].some((t) => {
+      const dx = ax + (bx - ax) * t - gx - ox, dz = az + (bz - az) * t - gz - oz;
+      return Math.abs(dx * c - dz * sn) < gw / 2 + 0.6 && Math.abs(dx * sn + dz * c) < gd / 2 + 0.6;
+    });
+  };
   const merlons = []; // [x, z, y, ry]
   { // The wall: a stone body from below the outer foot to just under the
     // parapet's height inside, and the parapet's blocks on its outer edge.
@@ -120,7 +129,7 @@ export function createNaksan(game) {
       for (let i = i0 + 1; i <= i1; i++) {
         const [x1, z1, h1, s1] = line[i - 1], [x2, z2, h2, s2] = line[i];
         const len = Math.hypot(x2 - x1, z2 - z1);
-        if (len < 0.01) continue;
+        if (len < 0.01 || inGate(x1, z1, x2, z2)) continue;
         const ux = (x2 - x1) / len, uz = (z2 - z1) / len, e = 0.25;
         // inside is the left of the line for ins 1 (x east, z south): (uz, -ux)
         const nx = uz * r.ins * T / 2, nz = -ux * r.ins * T / 2;
@@ -170,21 +179,20 @@ export function createNaksan(game) {
     group.add(blocks);
   }
 
-  { // Hyehwamun (혜화문), 37.5%: a granite base with one arch and a small
-    // pavilion with a hipped roof. You can't walk through: the arch is lower
-    // than you at this size.
-    const { x, z, ry, W, D } = r.gate;
+  { // Hyehwamun (혜화문), 43.75%: a granite base with one round-topped arch
+    // you walk through, and a small pavilion with a hipped roof.
+    const { x, z, ry, W, D, H: Hb, A, S } = r.gate;
     const g = new THREE.Group();
-    const box = (w, hh, d, px, py, pz, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), new THREE.MeshLambertMaterial({ color })); m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m; };
-    const Hb = Math.max(1.4, W * 0.34);
-    box(W, Hb, D, 0, Hb / 2, 0, '#cfc6b2');
-    for (const sz of [-1, 1]) { // the arch, dark, on both faces
-      box(W * 0.22, Hb * 0.62, 0.05, 0, Hb * 0.31, sz * (D / 2 + 0.02), '#2c2a28');
-      const top = new THREE.Mesh(new THREE.CircleGeometry(W * 0.11, 12, 0, Math.PI), new THREE.MeshBasicMaterial({ color: '#2c2a28' }));
-      top.position.set(0, Hb * 0.62, sz * (D / 2 + 0.03));
-      if (sz < 0) top.rotation.y = Math.PI;
-      g.add(top);
-    }
+    const stone = new THREE.MeshLambertMaterial({ color: '#cfc6b2' });
+    const box = (w, hh, d, px, py, pz, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), color ? new THREE.MeshLambertMaterial({ color }) : stone); m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m; };
+    for (const sx of [-1, 1]) box(W / 2 - A, Hb, D, sx * (A + (W / 2 - A) / 2), Hb / 2, 0); // either side of the arch
+    const sh = new THREE.Shape(); // over the arch: its round top
+    sh.moveTo(-A, S); sh.lineTo(-A, Hb); sh.lineTo(A, Hb); sh.lineTo(A, S);
+    sh.absarc(0, S, A, 0, Math.PI, false);
+    const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -D / 2);
+    const over = new THREE.Mesh(top, stone);
+    over.castShadow = true;
+    g.add(over);
     const pw = W * 0.78, pd = D * 0.72, ph = Math.max(0.9, W * 0.2);
     box(pw * 0.92, ph, pd * 0.86, 0, Hb + ph / 2, 0, '#f1e7d2');
     for (let i = 0; i < 4; i++) for (const sz of [-1, 1]) box(0.14, ph, 0.14, -pw / 2 + (i * pw) / 3, Hb + ph / 2, sz * pd / 2, '#a23a2c');

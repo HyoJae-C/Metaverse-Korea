@@ -10,8 +10,9 @@
 // Changgyeonggung-ro cuts it just south of Hyehwamun. Sizes (Yozi,
 // 2026-11-13): the route and the hill at 1/4; the wall 50% high on its
 // outer face (about 3.5 m) and chest high (1.3 m) from inside, where the
-// ground is higher, as on the real Naksan; Hyehwamun 37.5% of its real
-// outline.
+// ground is higher, as on the real Naksan; Hyehwamun 43.75% of its real
+// outline (between 37.5% and 50%, so you fit through its arch and it stays
+// smaller than the great gates at 50%: Yozi, 2026-11-13).
 //
 // The hill's heights are a game approximation of the real ones (the plain
 // is 0; Naksan's top, 125 m above the sea and about 95 m above Jongno,
@@ -52,7 +53,7 @@ export const NAKSAN = {
   pathW: 2.5,
   outPath: 3.4, // m from the wall's middle to the outer path's middle
   inPath: 2.9, // and to the inner path's
-  gate: 0.375, // Hyehwamun's size
+  gate: 0.4375, // Hyehwamun's size (Yozi: between 37.5% and 50%)
 };
 
 // The hill's height (m above the plain) by latitude along the wall: a game
@@ -123,7 +124,7 @@ const ridgeLine = line.map(([x, z, lat], i) => {
 const ridge = { line: ridgeLine, ins: 1, wi: NAKSAN.wi, wo: NAKSAN.wo, walls: [], gate: null, parapet: NAKSAN.parapet, thick: NAKSAN.thick };
 { let i0 = 0; for (const w of walls) { ridge.walls.push([i0, i0 + w.length - 1]); i0 += w.length; } }
 
-// Hyehwamun: its OSM outline's long side across the road, 37.5%.
+// Hyehwamun: its OSM outline's long side across the road, 43.75%.
 {
   const pts = gateWay.geometry.map((q) => toGame(q.lat, q.lon)).map(([x, z]) => [x - OX, z - OZ]);
   const cx = pts.reduce((s, q) => s + q[0], 0) / pts.length, cz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
@@ -134,9 +135,12 @@ const ridge = { line: ridgeLine, ins: 1, wi: NAKSAN.wi, wo: NAKSAN.wo, walls: []
     const L = Math.max(...us) - Math.min(...us), D = Math.max(...vs) - Math.min(...vs);
     if (!best || L * D < best.L * best.D) best = { a, L: Math.max(L, D), D: Math.min(L, D), along: L >= D ? a : a + Math.PI / 2 };
   }
-  // The real outline is at 1/4 in game metres: back to real, then 37.5%.
+  // The real outline is at 1/4 in game metres: back to real, then 43.75%.
   const W = r1(best.L * 4 * NAKSAN.gate), D = r1(best.D * 4 * NAKSAN.gate);
-  ridge.gate = { x: r1(cx), z: r1(cz), ry: +(-best.along).toFixed(3), W, D, n: N('혜화문', 'Hyehwamun', '恵化門', '惠化门') };
+  // Its arch (an approximation from photos; no survey): A half its width, the round top
+  // starting at S, H the stone base's height. You walk through it.
+  const H = r1(Math.max(1.4, W * 0.34)), A = r1(W * 0.11), S = r1(H * 0.55);
+  ridge.gate = { x: r1(cx), z: r1(cz), ry: +(-best.along).toFixed(3), W, D, H, A, S, n: N('혜화문', 'Hyehwamun', '恵化門', '惠化门') };
 }
 
 // The wall's blockers: a thin box per stretch.
@@ -146,11 +150,17 @@ const quad = (a, b, w) => {
   const nx = -uz * w / 2, nz = ux * w / 2, e = 0.3;
   return [[a[0] - ux * e + nx, a[1] - uz * e + nz], [b[0] + ux * e + nx, b[1] + uz * e + nz], [b[0] + ux * e - nx, b[1] + uz * e - nz], [a[0] - ux * e - nx, a[1] - uz * e - nz]].map(([x, z]) => [r1(x), r1(z)]);
 };
-for (const [i0, i1] of ridge.walls) for (let i = i0 + 1; i <= i1; i++) blockers.push({ p: quad(ridgeLine[i - 1], ridgeLine[i], NAKSAN.thick), nk: 1 });
-{ // Hyehwamun: you can't walk through at 37.5% (its arch is lower than you).
-  const { x, z, ry, W, D } = ridge.gate, c = Math.cos(ry), s = Math.sin(ry);
-  const P = (u, v) => [r1(x + u * c + v * s), r1(z - u * s + v * c)];
-  blockers.push({ p: [P(-W / 2, -D / 2), P(W / 2, -D / 2), P(W / 2, D / 2), P(-W / 2, D / 2)], nk: 1 });
+const g = ridge.gate, gc = Math.cos(g.ry), gs = Math.sin(g.ry);
+const gateLocal = ([x, z]) => { const dx = x - g.x, dz = z - g.z; return [dx * gc - dz * gs, dx * gs + dz * gc]; }; // world -> the gate's (u across, v through)
+const inGate = (p, m) => { const [u, v] = gateLocal(p); return Math.abs(u) < g.W / 2 + m && Math.abs(v) < g.D / 2 + m; };
+for (const [i0, i1] of ridge.walls) for (let i = i0 + 1; i <= i1; i++) {
+  const a = ridgeLine[i - 1], b = ridgeLine[i];
+  if ([0, 0.25, 0.5, 0.75, 1].some((t) => inGate([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], 0.6))) continue; // (the gate is its own blocker)
+  blockers.push({ p: quad(a, b, NAKSAN.thick), nk: 1 });
+}
+{ // Hyehwamun: its base either side of the arch; the arch is open.
+  const P = (u, v) => [r1(g.x + u * gc + v * gs), r1(g.z - u * gs + v * gc)];
+  for (const [u0, u1] of [[-g.W / 2, -g.A], [g.A, g.W / 2]]) blockers.push({ p: [P(u0, -g.D / 2), P(u1, -g.D / 2), P(u1, g.D / 2), P(u0, g.D / 2)], nk: 1 });
 }
 
 // The paths: the line moved sideways (smoothed a little), from the start to
