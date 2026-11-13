@@ -209,7 +209,7 @@ const map = {
   let prev = null;
   try { prev = JSON.parse(readFileSync(path.join(R, 'districts', 'dongmyo.json'), 'utf8')); } catch { /* first build */ }
   if (prev) {
-    for (const k of ['roads', 'buildings', 'blockers', 'pois']) map[k].push(...(prev[k] || []).filter((it) => it.nk));
+    for (const k of ['roads', 'buildings', 'blockers', 'pois', 'landmarks']) map[k].push(...(prev[k] || []).filter((it) => it.nk));
     map.meta.parts.push(...(prev.meta?.parts || []).filter((p) => p.nk));
     if (prev.meta?.ridge) map.meta.ridge = prev.meta.ridge;
     if (prev.meta?.source?.includes('Naksan')) map.meta.source = prev.meta.source;

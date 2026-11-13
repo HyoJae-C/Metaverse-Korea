@@ -102,9 +102,13 @@ test('the paths are clear of the wall, the houses clear of everything', () => {
   }
 });
 
-test('the place names: Naksan Park on the hill, Hyehwamun at its gate', () => {
+test('the place names: Naksan Park on the hill (a pin on the map), Hyehwamun at its gate', () => {
   const names = dm.pois.filter((p) => p.nk).map((p) => p.name.en);
   assert.deepEqual(names.sort(), ['Hyehwamun', 'Naksan Park', 'Naksan Wall Trail']);
   const park = dm.pois.find((p) => p.name.en === 'Naksan Park');
   assert.ok(ridgeNear(r, park.x, park.z).d > 0, 'inside the wall');
+  // A pin on the map like Olympic Park's Lone Tree (a landmark with a label), found by the search too.
+  const pin = dm.landmarks.find((l) => l.type === 'naksanpin');
+  assert.equal(pin.label.en, 'Naksan Park');
+  assert.deepEqual([pin.x, pin.z], [park.x, park.z]);
 });

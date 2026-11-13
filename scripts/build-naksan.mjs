@@ -254,13 +254,20 @@ const pois = [
   { kind: 'landmark', x: ridge.gate.x, z: ridge.gate.z - 8, nk: 1, name: ridge.gate.n },
 ];
 
+// Pins on the map (a landmark with a label, like Olympic Park's Lone Tree):
+// drawn by nothing, shown on the map and found by its search.
+const pins = [
+  { type: 'naksanpin', x: px, z: pz, label: pois[0].name, nk: 1 },
+];
+
 // Into dongmyo.json: drop what this script wrote before, add it again.
 const old = (it) => !it.nk;
-for (const k of ['roads', 'buildings', 'blockers', 'pois']) map[k] = (map[k] || []).filter(old);
+for (const k of ['roads', 'buildings', 'blockers', 'pois', 'landmarks']) map[k] = (map[k] || []).filter(old);
 map.roads.push(...roads);
 map.buildings.push(...houses);
 map.blockers.push(...blockers);
 map.pois.push(...pois);
+map.landmarks.push(...pins);
 const xs = [], zs = [];
 for (const q of [...ridgeLine, ...outer, ...inner, ...houses.flatMap((b) => b.p)]) { xs.push(q[0]); zs.push(q[1]); }
 map.meta.parts = map.meta.parts.filter((p) => !p.nk);

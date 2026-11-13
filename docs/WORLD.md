@@ -714,6 +714,9 @@ the Dongmyo district (`districts/dongmyo.json`, items marked `nk`, a second
   lamps, woods and walkers are `src/game/naksan.js`, loaded with `import()`
   within about 480 m (`src/game/naksan-near.js`) and hidden past 700 m.
   About 24k triangles and 24 draw calls.
+- **On the map**: Naksan Park is a pin (landmark `naksanpin` with a label,
+  like Olympic Park's Lone Tree), and the map's search finds it
+  (`src/game/landmark-search.js`).
 - `tests/naksan.test.mjs` keeps the wall on the real line, Hyehwamun on its
   spot, and the rest of the city's streets and buildings off the hill.
 
