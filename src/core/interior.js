@@ -1660,10 +1660,14 @@ export function buildInterior(store) {
         sign2.rotation.y = ry;
         scene.add(sign2);
       }
-    } else if (store.workshop === 'japchae') {
-      // Suragan Cooking Class: a long cooking table with a burner and a pan
-      // at each place, bowls of coloured vegetables down the middle, and a
-      // big mixing bowl at the far end. The teacher stands at the head.
+    } else if (store.workshop === 'japchae' || store.workshop === 'kimbap') {
+      // Royal Japchae Class (궁중잡채체험) and Kimbap Making Class (김밥만들기체험),
+      // two rooms side by side in Bukchon. One long cooking table each:
+      // japchae has a burner and a pan at every place on both sides and a big
+      // mixing bowl at the far end; kimbap has a bamboo mat at every place
+      // and a tub of rice at the far end. Bowls of coloured vegetables run
+      // down the middle. The teacher stands at the head.
+      const isKimbap = store.workshop === 'kimbap';
       const tz = -d * 0.06, tw = Math.min(7, w - 8);
       box(tw, 0.08, 1.6, 0, 0.7, tz, '#d9d2c4'); // stainless-look top
       box(tw, 0.62, 1.5, 0, 0.33, tz, '#8a5a3a');
@@ -1672,20 +1676,25 @@ export function buildInterior(store) {
       const vegCol = ['#f08a2c', '#3f8f3f', '#d8402c', '#7a5236', '#f3e7c9', '#ffd23a'];
       for (let k = 0; k < 3; k++) {
         const x = (k - 1) * (tw / 3.2);
-        // Back side: a burner and a pan (japchae).
-        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
-        burner.position.set(x, 0.76, tz - 0.42);
-        scene.add(burner);
-        const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
-        pan.position.set(x, 0.82, tz - 0.42);
-        scene.add(pan);
-        box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz - 0.42, '#3a3a3e'); // handle
-        spots.push({ x, z: tz - 1.3 });
-        // Front side: a bamboo mat (김발) with a sheet of gim and rice (kimbap).
-        box(0.5, 0.02, 0.44, x, 0.75, tz + 0.42, '#c9b27a');
-        box(0.42, 0.012, 0.36, x, 0.767, tz + 0.42, '#1f2a1c');
-        box(0.38, 0.03, 0.24, x, 0.782, tz + 0.37, '#f4f1e8');
-        rolls.push({ x, z: tz + 1.3 });
+        for (const sz of [-1, 1]) {
+          if (isKimbap) {
+            // A bamboo mat (김발) with a sheet of gim and rice.
+            box(0.5, 0.02, 0.44, x, 0.75, tz + sz * 0.42, '#c9b27a');
+            box(0.42, 0.012, 0.36, x, 0.767, tz + sz * 0.42, '#1f2a1c');
+            box(0.38, 0.03, 0.24, x, 0.782, tz + sz * 0.37, '#f4f1e8');
+            rolls.push({ x, z: tz + sz * 1.3 });
+          } else {
+            // A burner and a pan.
+            const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
+            burner.position.set(x, 0.76, tz + sz * 0.42);
+            scene.add(burner);
+            const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
+            pan.position.set(x, 0.82, tz + sz * 0.42);
+            scene.add(pan);
+            box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz + sz * 0.42, '#3a3a3e'); // handle
+            spots.push({ x, z: tz + sz * 1.3 });
+          }
+        }
         // Little bowls of sliced vegetables between the places.
         for (let j = 0; j < 2; j++) {
           const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.07, 12), mat('#f7f3ea'));
@@ -1696,14 +1705,14 @@ export function buildInterior(store) {
           scene.add(veg);
         }
       }
-      stations.japchae = spots;
-      stations.kimbap = rolls;
+      if (isKimbap) stations.kimbap = rolls;
+      else stations.japchae = spots;
       stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
-      // The big mixing bowl with glossy noodles at the far end.
+      // The big bowl at the far end: glossy noodles, or white rice for kimbap.
       const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
       big.position.set(tw / 2 + 1.1, 1.0, tz);
       scene.add(big);
-      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat('#9a6a45'));
+      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat(isKimbap ? '#f4f1e8' : '#9a6a45'));
       noodles.position.set(tw / 2 + 1.1, 0.88, tz);
       scene.add(noodles);
       box(0.9, 0.55, 0.9, tw / 2 + 1.1, 0.28, tz, '#8a5a3a'); // its stand

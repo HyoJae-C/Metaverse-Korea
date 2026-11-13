@@ -2758,7 +2758,7 @@ function enterStore(item, walkIn = null) {
   $('guide').hidden = true;
   if (guide?.kind === 'store' && guide.id === store.id) clearGuide();
   if (built.clerk && !built.clerkNpc) {
-    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : CRAFT[store.craft] ? '🛠️ ' + L(BK_TEXT.master) : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
+    built.clerkNpc = makeNpc($('labels'), store.category === 'school' ? teacherLabel() : store.workshop === 'tarot' ? '🔮 ' + L(TAROT_TEXT.reader) : store.workshop === 'kimchi' ? '👵 ' + L(KIMCHI_TEXT.teacher) : store.workshop === 'kimchi-buy' ? '👵 ' + MARKET_L('boss') : store.workshop === 'japchae' || store.workshop === 'kimbap' ? '👨‍🍳 ' + L(JAPCHAE_TEXT.teacher) : store.category === 'club' ? 'DJ' : store.category === 'bar' ? L(BARTENDER) : store.workshop === 'info' ? '🎮 ' + L(INFO_TEXT.gameGuide) : store.category === 'memorial' ? 'ℹ️ ' + L(roomKit().MEMORIAL_TEXT.guide) : store.workshop === 'pool' ? '🛟 ' + L(POOL_TEXT.lifeguard) : store.workshop === 'bank' ? bankGame.tellerLabel() : CRAFT[store.craft] ? '🛠️ ' + L(BK_TEXT.master) : t('npc.clerk'), store.category === 'memorial' ? roomKit().GUIDE_LOOK : store.workshop === 'pool' ? roomKit().LIFEGUARD_LOOK : store.workshop === 'themepark' ? { ...randomLook(), ...PARK_UNIFORM } : undefined);
     built.clerkNpc.ch.root.position.set(built.clerk.x, built.clerk.y || 0, built.clerk.z);
     // A roaming clerk starts on the shop floor, in front of the counter (all
     // the displays are on that side, so the walk never cuts through it).
@@ -6695,8 +6695,9 @@ function updateAction(p, tSec) {
       next = { key: 'kimbap', label: '🍙 ' + L(KIMBAP_TEXT.open), run: () => { clerk?.ch.wave(); kimbapUi.show(); } };
     } else if (nearStation(p, 'japchae', 1.3)) {
       next = { key: 'japchae', label: '🍝 ' + L(JAPCHAE_TEXT.open), run: () => { clerk?.ch.wave(); japchaeUi.show(); } };
-    } else if (interior.store.workshop === 'japchae' && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
-      next = { key: 'japchae-hint', label: '💬 ' + L(JAPCHAE_TEXT.hint), run: () => { clerk.ch.wave(); shop.toast(L(JAPCHAE_TEXT.hint)); } };
+    } else if ((interior.store.workshop === 'japchae' || interior.store.workshop === 'kimbap') && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.4) {
+      const hint = L((interior.store.workshop === 'kimbap' ? KIMBAP_TEXT : JAPCHAE_TEXT).hint);
+      next = { key: 'japchae-hint', label: '💬 ' + hint, run: () => { clerk.ch.wave(); shop.toast(hint); } };
     } else if (nearStation(p, 'kimchi', 1.3)) {
       next = { key: 'kimchi', label: '🥬 ' + L(KIMCHI_TEXT.open), run: () => { clerk?.ch.wave(); kimchiUi.show(); } };
     } else if (CRAFT[interior.store.craft] && clerk && !seated && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) {

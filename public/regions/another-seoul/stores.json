@@ -649,13 +649,27 @@
       "category": "workshop",
       "workshop": "japchae",
       "size": "large",
-      "name": {"ko": "수라간 요리교실", "en": "Suragan Cooking Class", "ja": "スラッカン料理教室", "zh": "御膳房料理教室", "es": "Clase de cocina Suragan", "id": "Kelas Masak Suragan", "vi": "Lớp nấu ăn Suragan", "hi": "सुरागान कुकिंग क्लास", "fr": "Cours de cuisine Suragan", "th": "คลาสทำอาหารซูรากัน", "ar": "صف طبخ سوراغان"},
-      "tagline": {"en": "Cook Korean dishes by hand: japchae and free-style kimbap", "ko": "손으로 만드는 한국 음식: 잡채와 자유 김밥", "ja": "手作りの韓国料理：チャプチェと自由キンパ", "zh": "亲手做韩国菜：杂菜和自由紫菜包饭", "es": "Cocina coreana a mano: japchae y kimbap libre", "id": "Masak hidangan Korea dengan tangan: japchae dan kimbap bebas", "vi": "Tự tay nấu món Hàn: japchae và kimbap tự do", "hi": "हाथ से कोरियाई खाना: जापचे और फ़्री-स्टाइल किम्बाप", "fr": "Cuisine des plats coréens à la main : japchae et kimbap libre", "th": "ทำอาหารเกาหลีด้วยมือ: จับแชและคิมบับตามใจ", "ar": "اطبخ الأطباق الكورية بيديك: الجابتشي والكيمباب على ذوقك"},
+      "name": {"ko": "궁중잡채체험", "en": "Royal Japchae Class", "ja": "宮廷チャプチェ体験", "zh": "宫廷杂菜体验", "es": "Taller de japchae real", "id": "Kelas Japchae Istana", "vi": "Trải nghiệm japchae cung đình", "hi": "शाही जापचे क्लास", "fr": "Atelier de japchae royal", "th": "คลาสจับแชราชสำนัก", "ar": "صف الجابتشي الملكي"},
+      "tagline": {"en": "Cook japchae the palace way: glass noodles, beef and five colours of vegetables", "ko": "궁중식으로 만드는 잡채: 당면, 소고기, 오색 채소", "ja": "宮廷風チャプチェ作り：春雨、牛肉、五色の野菜", "zh": "宫廷式杂菜：粉丝、牛肉和五色蔬菜", "es": "Japchae al estilo de palacio: fideos de cristal, ternera y verduras de cinco colores", "id": "Masak japchae ala istana: soun, daging sapi dan sayur lima warna", "vi": "Làm japchae kiểu cung đình: miến, thịt bò và rau năm màu", "hi": "महल वाले अंदाज़ में जापचे: ग्लास नूडल्स, बीफ़ और पाँच रंगों की सब्ज़ियाँ", "fr": "Le japchae façon palais : vermicelles, bœuf et légumes de cinq couleurs", "th": "ทำจับแชแบบราชสำนัก: วุ้นเส้น เนื้อวัว และผักห้าสี", "ar": "اطبخ الجابتشي على طريقة القصر: نودلز زجاجية ولحم بقر وخضار بخمسة ألوان"},
       "front": "hanok", "at": [-1512.1, -927],
       "colors": { "sign": "#7a2e5a", "awning": "#efd9a8", "accent": "#fbf4e6" },
       "products": [
         {"id": "sesame-oil", "model": "bottle", "color": "#c9a227", "price": 11000, "name": {"en": "Roasted sesame oil", "ko": "참기름", "ja": "ごま油", "zh": "香油", "es": "Aceite de sésamo tostado", "id": "Minyak wijen sangrai", "vi": "Dầu mè rang", "hi": "भुने तिल का तेल", "fr": "Huile de sésame grillé", "th": "น้ำมันงาคั่ว", "ar": "زيت السمسم المحمّص"}, "desc": {"en": "Nutty, toasty oil that finishes japchae, namul and bibimbap.", "ko": "고소한 참기름. 잡채, 나물, 비빔밥의 마무리예요."}},
-        {"id": "suragan-notebook", "model": "notebook", "color": "#c94f3d", "price": 8000, "name": {"en": "Suragan recipe notebook", "ko": "수라간 레시피 노트", "ja": "スラッカンのレシピノート", "zh": "御膳房食谱本", "es": "Cuaderno de recetas Suragan", "id": "Buku resep Suragan", "vi": "Sổ công thức Suragan", "hi": "सुरागान रेसिपी नोटबुक", "fr": "Carnet de recettes Suragan", "th": "สมุดสูตรอาหารซูรากัน", "ar": "دفتر وصفات سوراغان"}, "desc": {"en": "A notebook with the japchae recipe from today's class on the first page.", "ko": "첫 장에 오늘 배운 잡채 레시피가 적힌 노트예요."}}
+        {"id": "suragan-notebook", "model": "notebook", "color": "#c94f3d", "price": 8000, "name": {"en": "Japchae recipe notebook", "ko": "잡채 레시피 노트", "ja": "チャプチェのレシピノート", "zh": "杂菜食谱本", "es": "Cuaderno de recetas de japchae", "id": "Buku resep japchae", "vi": "Sổ công thức japchae", "hi": "जापचे रेसिपी नोटबुक", "fr": "Carnet de recettes de japchae", "th": "สมุดสูตรจับแช", "ar": "دفتر وصفات الجابتشي"}, "desc": {"en": "A notebook with the japchae recipe from today's class on the first page.", "ko": "첫 장에 오늘 배운 잡채 레시피가 적힌 노트예요."}}
+      ]
+    },
+    {
+      "id": "kimbap-class",
+      "category": "workshop",
+      "workshop": "kimbap",
+      "size": "large",
+      "name": {"ko": "김밥만들기체험", "en": "Kimbap Making Class", "ja": "キンパ作り体験", "zh": "紫菜包饭制作体验", "es": "Taller de kimbap", "id": "Kelas Membuat Kimbap", "vi": "Trải nghiệm làm kimbap", "hi": "किम्बाप बनाने की क्लास", "fr": "Atelier de kimbap", "th": "คลาสทำคิมบับ", "ar": "صف صنع الكيمباب"},
+      "tagline": {"en": "Roll your own kimbap on a bamboo mat, with the fillings you like", "ko": "김발 위에 좋아하는 속재료로 나만의 김밥 말기", "ja": "巻きすの上で好きな具を巻いて自分だけのキンパ", "zh": "在竹帘上用喜欢的馅料卷出自己的紫菜包饭", "es": "Enrolla tu propio kimbap en una esterilla, con los rellenos que quieras", "id": "Gulung kimbap sendiri di tikar bambu, dengan isian favoritmu", "vi": "Tự cuộn kimbap trên mành tre với nhân bạn thích", "hi": "बाँस की चटाई पर अपनी पसंद की भरावन से अपना किम्बाप रोल करें", "fr": "Roule ton propre kimbap sur une natte en bambou, avec les garnitures de ton choix", "th": "ม้วนคิมบับของคุณเองบนเสื่อไม้ไผ่ ใส่ไส้ที่ชอบ", "ar": "لُفّ الكيمباب بنفسك على حصيرة الخيزران بالحشوات التي تحبها"},
+      "front": "hanok", "at": [-1505, -927],
+      "colors": { "sign": "#2f6b3a", "awning": "#e6dcb0", "accent": "#f6f3e4" },
+      "products": [
+        {"id": "danmuji-jar", "model": "jar", "color": "#f2c81e", "price": 6000, "name": {"en": "Danmuji (pickled radish)", "ko": "단무지", "ja": "たくあん", "zh": "腌萝卜", "es": "Danmuji (rábano encurtido)", "id": "Danmuji (lobak acar)", "vi": "Danmuji (củ cải muối)", "hi": "दानमुजी (अचारी मूली)", "fr": "Danmuji (radis mariné)", "th": "ทันมูจี (หัวไชเท้าดอง)", "ar": "دانموجي (فجل مخلّل)"}, "desc": {"en": "Sweet, crunchy yellow radish: the bright stripe in the middle of every kimbap.", "ko": "달고 아삭한 노란 단무지. 김밥 한가운데 노란 줄이에요."}},
+        {"id": "kimbap-notebook", "model": "notebook", "color": "#3f8f3f", "price": 8000, "name": {"en": "Kimbap recipe notebook", "ko": "김밥 레시피 노트", "ja": "キンパのレシピノート", "zh": "紫菜包饭食谱本", "es": "Cuaderno de recetas de kimbap", "id": "Buku resep kimbap", "vi": "Sổ công thức kimbap", "hi": "किम्बाप रेसिपी नोटबुक", "fr": "Carnet de recettes de kimbap", "th": "สมุดสูตรคิมบับ", "ar": "دفتر وصفات الكيمباب"}, "desc": {"en": "A notebook with today's kimbap fillings drawn on the first page.", "ko": "첫 장에 오늘 넣은 김밥 속재료가 그려진 노트예요."}}
       ]
     },
     {
