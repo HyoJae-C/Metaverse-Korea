@@ -105,16 +105,16 @@ try {
   for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await b.waitForTimeout(140); }
   await b.waitForTimeout(1200);
   const sb2 = await state(b), sa2 = await state(a);
-  assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} → ${sb2.a})`);
+  assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} �� ${sb2.a})`);
   assert(sa2.round === sb2.round && Math.abs(sa2.a - sb2.a) <= 30, 'and the host sees it');
   // Bobby leaves: Alice is told and is back at the menu.
   await b.keyboard.press('Escape');
   assert(await until(a, () => /Bobby/.test(document.querySelector('#brawl .bw-note')?.textContent || ''), null, 15000), 'the one who stayed is told the other left');
   assert((await state(a)).vs === null && await b.evaluate(() => !__mk.brawl().open), 'the match is over on both screens');
   assert(await until(c, () => (__mk.brawlTv() || []).every((x) => !x), null, 15000), 'the wall screen goes back to waiting when the match ends');
-  // A match against the game's own rival is shown too.
+    // Solo play advertises a status only, never a replay of the match.
   await a.click('#brawl .bw-card .go');
-  assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.b === 'r0' && x.live), null, 30000), 'a match against the house plays on a screen too');
+    assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.solo && !x.live && !x.hp), null, 30000), 'solo play shows status without streaming the match');
   await c.waitForTimeout(2500);
   await shot(c, 'solo-wall-screen');
   await c.click('#tv-x');

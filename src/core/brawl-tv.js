@@ -9,7 +9,7 @@
 //                              b: who the sender fights: another player's id,
 //                              or 'r<n>' for the game's own rival n. n: the
 //                              sender's and the other's names.
-//   brawltv:i:<t>:<aa…>:<bb…>  both fighters' inputs from tick t on, two
+//   brawltv:i:<t>:<aa��>:<bb��>  both fighters' inputs from tick t on, two
 //                              base-36 digits a tick
 //   brawltv:x                  the match is over, or the player left
 import { stepMatch, packMatch, unpackMatch } from './brawl.js';
@@ -20,6 +20,17 @@ export const BATCH = 20; // ticks in a batch of inputs (3 messages a second)
 export const KEY_EVERY = 300; // ticks between whole matches (5 s)
 const BEHIND = 30; // ticks the screen stays behind what it has, to play evenly
 const enc = (n) => n.toString(36).padStart(2, '0');
+
+// Solo play advertises only a status, never inputs, HP or match snapshots.
+export function createSoloCaster(send) {
+  let ticks = 0, over = false;
+  const status = () => send(TV + 'p');
+  return {
+    start() { status(); },
+    step() { if (!over && ++ticks % KEY_EVERY === 0) status(); },
+    end() { if (!over) { over = true; send(TV + 'x'); } },
+  };
+}
 
 // The player's side. send(text): to the room. about: { b, n } (see above).
 export function createCaster(send, about) {
@@ -43,7 +54,7 @@ export function createCaster(send, about) {
 // The screen's side: one match at a time, from whoever was heard first.
 export function createViewer() {
   let from = null, info = null, match = null, t = 0, heardAt = 0, now = 0;
-  let queue = []; // [ia, ib] for ticks t, t + 1, …
+  let queue = []; // [ia, ib] for ticks t, t + 1, ��
   let next = null; // a whole match for a tick we have not reached yet
   let fresh = false, playing = false;
   const drop = () => { from = info = match = next = null; queue = []; t = 0; playing = false; };
@@ -61,6 +72,12 @@ export function createViewer() {
       const kind = text[TV.length], body = text.slice(TV.length + 2);
       if (from && id !== from) { if (now - heardAt < 4) return true; drop(); } // (one match at a time; a silent one gives way)
       if (kind === 'x') { if (id === from) drop(); return true; }
+      if (kind === 'p') {
+        const changed = from !== id || !info?.solo;
+        drop(); from = id; info = { solo: true }; heardAt = now;
+        fresh = changed;
+        return true;
+      }
       if (kind === 's') {
         let k;
         try { k = JSON.parse(body); } catch { return true; }
@@ -107,7 +124,7 @@ export function createScreens(n = 2) {
     views,
     heard(id, text) {
       if (typeof text !== 'string' || !text.startsWith(TV)) return false;
-      const v = views.find((q) => q.from === id) || (text[TV.length] === 's' ? views.find((q) => !q.from) || views.find((q) => q.stale) : null);
+      const v = views.find((q) => q.from === id) || (['s', 'p'].includes(text[TV.length]) ? views.find((q) => !q.from) || views.find((q) => q.stale) : null);
       v?.heard(id, text);
       return true;
     },
