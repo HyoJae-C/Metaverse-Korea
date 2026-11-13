@@ -171,6 +171,7 @@ export class RemotePlayers {
     for (const el of [p.tag, p.bubble]) if (el) el.style.display = 'none';
   }
   nameOf(id) { return this.players.get(id)?.name ?? null; }
+  lookOf(id) { return this.players.get(id)?.look ?? null; } // what they wear (to stand them in a minigame)
   // Where another player is right now (x, z), or null.
   // Where someone is, by their latest update (not where the smoothed
   // character has got to yet: after a jump that can lag by many metres).

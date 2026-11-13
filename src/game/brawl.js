@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor } from '../core/brawl.js';
+import { createSession } from '../core/brawl-net.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
@@ -76,6 +77,23 @@ const T = {
     ar: 'اندفاع: اضغط ← أو → مرتين (أو Shift). يمكن أن يقطعه هجوم.',
   },
   you: { en: 'You', ko: '나', ja: '自分', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
+  // With someone else in the room.
+  vsTitle: { en: '👥 Fight someone here', ko: '👥 옆 사람과 대전', ja: '👥 ここにいる人と対戦', zh: '👥 和这里的人对战', es: '👥 Pelea con alguien de aquí', id: '👥 Lawan orang di sini', vi: '👥 Đấu với người ở đây', hi: '👥 यहाँ किसी से लड़ें', fr: '👥 Affronte quelqu’un ici', th: '👥 สู้กับคนในห้องนี้', ar: '👥 قاتل شخصًا هنا' },
+  vsNone: { en: 'Nobody else is in this room right now.', ko: '지금 이 방에 다른 사람이 없어요.', ja: '今この部屋にほかの人はいません。', zh: '现在这个房间里没有其他人。', es: 'Ahora no hay nadie más en esta sala.', id: 'Belum ada orang lain di ruangan ini.', vi: 'Hiện không có ai khác trong phòng này.', hi: 'अभी इस कमरे में और कोई नहीं है।', fr: 'Personne d’autre dans cette salle pour l’instant.', th: 'ตอนนี้ไม่มีคนอื่นในห้องนี้', ar: 'لا أحد غيرك في هذه الغرفة الآن.' },
+  vsWait: { en: 'Waiting for {name}…', ko: '{name}님을 기다리는 중…', ja: '{name}さんを待っています…', zh: '正在等待{name}…', es: 'Esperando a {name}…', id: 'Menunggu {name}…', vi: 'Đang chờ {name}…', hi: '{name} का इंतज़ार…', fr: 'En attente de {name}…', th: 'กำลังรอ {name}…', ar: 'بانتظار {name}…' },
+  vsAsk: { en: '{name} challenges you!', ko: '{name}님이 대결을 신청했어요!', ja: '{name}さんが勝負を挑んできました！', zh: '{name}向你发起挑战！', es: '¡{name} te reta!', id: '{name} menantangmu!', vi: '{name} thách đấu bạn!', hi: '{name} ने आपको चुनौती दी!', fr: '{name} te défie !', th: '{name} ท้าคุณ!', ar: '{name} يتحداك!' },
+  ready: { en: 'Ready', ko: '준비 완료', ja: '準備OK', zh: '准备好了', es: 'Listo', id: 'Siap', vi: 'Sẵn sàng', hi: 'तैयार', fr: 'Prêt', th: 'พร้อม', ar: 'جاهز' },
+  cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消', es: 'Cancelar', id: 'Batal', vi: 'Hủy', hi: 'रद्द करें', fr: 'Annuler', th: 'ยกเลิก', ar: 'إلغاء' },
+  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
+  vsNo: { en: '{name} said no this time.', ko: '{name}님이 이번엔 거절했어요.', ja: '{name}さんは今回は断りました。', zh: '{name}这次拒绝了。', es: '{name} dijo que no esta vez.', id: '{name} menolak kali ini.', vi: '{name} từ chối lần này.', hi: '{name} ने इस बार मना किया।', fr: '{name} a refusé cette fois.', th: '{name} ปฏิเสธรอบนี้', ar: '{name} رفض هذه المرة.' },
+  vsBusy: { en: '{name} is busy right now.', ko: '{name}님은 지금 바빠요.', ja: '{name}さんは今手が離せません。', zh: '{name}现在正忙。', es: '{name} está ocupado ahora.', id: '{name} sedang sibuk.', vi: '{name} đang bận.', hi: '{name} अभी व्यस्त हैं।', fr: '{name} est occupé pour l’instant.', th: '{name} ไม่ว่างตอนนี้', ar: '{name} مشغول الآن.' },
+  vsGone: { en: 'No answer.', ko: '응답이 없어요.', ja: '返事がありません。', zh: '没有回应。', es: 'Sin respuesta.', id: 'Tidak ada jawaban.', vi: 'Không có phản hồi.', hi: 'कोई जवाब नहीं।', fr: 'Pas de réponse.', th: 'ไม่มีการตอบรับ', ar: 'لا رد.' },
+  vsLink: { en: 'Connecting…', ko: '연결 중…', ja: '接続中…', zh: '连接中…', es: 'Conectando…', id: 'Menghubungkan…', vi: 'Đang kết nối…', hi: 'जुड़ रहा है…', fr: 'Connexion…', th: 'กำลังเชื่อมต่อ…', ar: 'جارٍ الاتصال…' },
+  vsLeft: { en: '{name} left the fight. You win!', ko: '{name}님이 나갔어요. 승리!', ja: '{name}さんが退出しました。あなたの勝ち！', zh: '{name}离开了。你赢了！', es: '{name} se fue. ¡Ganas tú!', id: '{name} keluar. Kamu menang!', vi: '{name} đã rời đi. Bạn thắng!', hi: '{name} चले गए। आप जीते!', fr: '{name} est parti. Tu gagnes !', th: '{name} ออกไปแล้ว คุณชนะ!', ar: '{name} غادر. فزت!' },
+  vsLost: { en: 'The connection was lost.', ko: '연결이 끊겼어요.', ja: '接続が切れました。', zh: '连接已断开。', es: 'Se perdió la conexión.', id: 'Koneksi terputus.', vi: 'Mất kết nối.', hi: 'कनेक्शन टूट गया।', fr: 'La connexion a été perdue.', th: 'การเชื่อมต่อหลุด', ar: 'انقطع الاتصال.' },
+  vsLose: { en: '{name} wins this time.', ko: '이번엔 {name}님의 승리.', ja: '今回は{name}さんの勝ち。', zh: '这次{name}赢了。', es: 'Esta vez gana {name}.', id: 'Kali ini {name} menang.', vi: 'Lần này {name} thắng.', hi: 'इस बार {name} जीते।', fr: 'Cette fois, {name} gagne.', th: 'รอบนี้ {name} ชนะ', ar: 'فاز {name} هذه المرة.' },
+  draw: { en: 'Draw!', ko: '무승부!', ja: '引き分け！', zh: '平局！', es: '¡Empate!', id: 'Seri!', vi: 'Hòa!', hi: 'ड्रॉ!', fr: 'Égalité !', th: 'เสมอ!', ar: 'تعادل!' },
+  vsSlow: { en: 'Waiting for the other player…', ko: '상대를 기다리는 중…', ja: '相手を待っています…', zh: '正在等待对方…', es: 'Esperando al otro jugador…', id: 'Menunggu pemain lain…', vi: 'Đang chờ người chơi kia…', hi: 'दूसरे खिलाड़ी का इंतज़ार…', fr: 'En attente de l’autre joueur…', th: 'กำลังรออีกฝ่าย…', ar: 'بانتظار اللاعب الآخر…' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
 
@@ -152,6 +170,7 @@ const RIVAL = [
 
 // The ring's build (× the street's): about three heads tall instead of two.
 const BUILD = globalThis.__brawlBuild || { head: 0.75, torso: 1.08, arm: 1.3, leg: 1.4, lift: 0.1 };
+const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
 const STAGE_Y = -80; // under the room, out of its sight
 const FOV = 38;
 
@@ -196,14 +215,18 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-card p { margin: 8px 0; font-size: 14px; line-height: 1.45; }
 .bw-card .dim { opacity: .8; font-size: 13px; }
 .bw-card .big { font-size: 18px; font-weight: 800; }
+.bw-vs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 2px 0 10px; }
+.bw-vs p { margin: 0; }
+.bw-vs button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bw-note { background: rgba(255,210,60,.16); border-radius: 10px; padding: 6px 10px; }
 .bw-ladder { display: flex; justify-content: center; gap: 6px; margin: 10px 0; }
 .bw-ladder b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #2c2550; border: 2px solid #5a4f8c; font-size: 13px; }
 .bw-ladder b.done { background: #ffd23c; color: #2a1030; border-color: #fff; }
 .bw-ladder b.now { border-color: #ff5a6e; box-shadow: 0 0 10px #ff5a6e; }
 .bw-styles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
-.bw-styles button { padding: 8px 0; font-size: clamp(10px, 2.9vw, 12px); min-width: 0; overflow-wrap: anywhere; font-weight: 700; border: 2px solid transparent; line-height: 1.2; }
-.bw-styles button b { display: block; font-size: 22px; }
-.bw-styles button.sel { border-color: #ffd23c; background: #4a3f86; }
+.bw-card .bw-styles button { padding: 8px 0; font-size: clamp(10px, 2.9vw, 13px); min-width: 0; overflow-wrap: anywhere; font-weight: 700; border: 2px solid transparent; line-height: 1.2; }
+.bw-card .bw-styles button b { display: block; font-size: 22px; }
+.bw-card .bw-styles button.sel { border-color: #ffd23c; background: #4a3f86; }
 .bw-stat { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: center; margin: 3px auto; max-width: 240px; font-size: 14px; }
 .bw-stat i { height: 8px; border-radius: 4px; background: #2c2550; overflow: hidden; display: block; }
 .bw-stat i u { display: block; height: 100%; background: #ffd23c; }
@@ -589,32 +612,42 @@ export function createBrawl(game) {
     box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? `${BTN.lp} + ${BTN.rp}` : `${BTN.lk} + ${BTN.rk}`) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
     box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
   }
-  function menu() {
+  // The eight styles to pick from, and what the picked one does.
+  function styleGrid(c) {
+    const grid = el('div', 'bw-styles'), info = el('div');
+    const pick = (id) => {
+      on.style = id;
+      saveStyle(store, id);
+      for (const b of grid.children) b.classList.toggle('sel', b.dataset.id === id);
+      styleInfo(info, id);
+      showStyles();
+    };
+    for (const id of STYLE_IDS) {
+      const b = button(L(STYLE[id].name), null, () => pick(id));
+      b.dataset.id = id;
+      b.prepend(el('b', null, STYLE[id].icon));
+      grid.append(b);
+    }
+    c.append(grid, info);
+    pick(on.style);
+  }
+  function menu(note) {
     const rec = loadBrawl(store);
     on.style = rec.style || on.style || 'brawler';
+    on.flip = 0;
     setRival(rec.stage);
     on.match = null;
     card((c) => {
       c.append(el('h3', null, '🥊 ' + tt('title')));
+      if (note) c.append(el('p', 'bw-note', note));
+      // Anyone else in the room: fight them instead (no need to be friends).
+      const list = el('div', 'bw-vs');
+      c.append(el('p', 'dim', tt('vsTitle')), list);
+      on.vsList = { list, at: -9, key: null };
       c.append(el('p', 'dim', tt('rival', { n: rec.stage + 1, max: RIVALS }) + ' · ' + L(RIVAL[rec.stage].name) + ' (' + styleTag(RIVAL[rec.stage].style) + ')'));
       ladder(c, rec, rec.stage);
       c.append(el('p', 'big', tt('pick')));
-      const grid = el('div', 'bw-styles'), info = el('div');
-      const pick = (id) => {
-        on.style = id;
-        saveStyle(store, id);
-        for (const b of grid.children) b.classList.toggle('sel', b.dataset.id === id);
-        styleInfo(info, id);
-        showStyles();
-      };
-      for (const id of STYLE_IDS) {
-        const b = button(L(STYLE[id].name), null, () => pick(id));
-        b.dataset.id = id;
-        b.prepend(el('b', null, STYLE[id].icon));
-        grid.append(b);
-      }
-      c.append(grid, info);
-      pick(on.style);
+      styleGrid(c);
       const more = el('details');
       more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
       if (!touch) more.append(el('p', 'dim', tt('keys')));
@@ -622,6 +655,127 @@ export function createBrawl(game) {
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
       row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
+      c.append(row);
+    });
+    fillPeople();
+  }
+  const people = () => {
+    const p = game.me?.root?.position;
+    if (!p || !game.others?.nearbyFree) return [];
+    return game.others.nearbyFree(p.x, p.z, 40).filter((f) => !game.safety?.isBlocked(f.id, f.name)).slice(0, 8);
+  };
+  function fillPeople() {
+    const v = on.vsList;
+    if (!v?.list.isConnected) { on.vsList = null; return; }
+    v.at = on.time;
+    const now = people(), key = now.map((f) => f.id + f.name).join('|');
+    if (key === v.key) return;
+    v.key = key;
+    v.list.replaceChildren();
+    if (!now.length) v.list.append(el('p', 'dim', tt('vsNone')));
+    for (const f of now) { const b = button('⚔️ ' + f.name, null, () => invite(f)); b.dataset.peer = f.id; v.list.append(b); }
+  }
+
+  // ── With someone else in the room (core/brawl-net.js) ──
+  // The asking and answering go over the room's messages (game/arcade.js
+  // hands us ours): brawl:<to>:<kind>:<nonce>:<style>, kind i (fight me?),
+  // a (picking a style), y (ready), n (no), b (busy), c (never mind). The
+  // match itself has its own channel, so the room hears none of it.
+  const tell = (to, kind, nonce) => game.net?.sendEmote?.(`brawl:${to}:${kind}:${nonce}:${Math.max(0, STYLE_IDS.indexOf(on.style))}`);
+  function invite(peer) {
+    if (on.vs || on.match) return;
+    const nonce = Math.random().toString(36).slice(2, 10);
+    on.vs = { host: true, peer: { id: peer.id, name: peer.name }, nonce, st: 'wait', until: on.time + 32 };
+    tell(peer.id, 'i', nonce);
+    waitCard(tt('vsWait', { name: peer.name }));
+  }
+  function waitCard(text) {
+    card((c) => {
+      c.append(el('h3', null, '🥊 ' + tt('title')), el('p', 'big', text));
+      const row = el('div', 'row');
+      row.append(button(tt('cancel'), null, () => { leaveVs(true); menu(); }));
+      c.append(row);
+    });
+  }
+  // Out of a fight with someone, at any point. say: let them know.
+  function leaveVs(say) {
+    const vs = on?.vs;
+    if (!vs) return;
+    if (say) {
+      if (vs.link) { try { vs.link.send({ bye: 1 }); } catch { /* closed */ } }
+      else tell(vs.peer.id, vs.host ? 'c' : 'n', vs.nonce);
+    }
+    vs.dead = true;
+    const link = vs.link;
+    if (link) setTimeout(() => link.close(), 300); // (after the goodbye has gone)
+    on.vs = null; on.match = null; on.flip = 0;
+  }
+  // Someone asked us (we said yes on the room's card, or the game was open).
+  function invited(inv) {
+    if (on.vs || on.match) { game.net?.sendEmote?.(`brawl:${inv.from}:b:${inv.nonce}:0`); return; }
+    on.vs = { host: false, peer: { id: inv.from, name: inv.name }, nonce: inv.nonce, st: 'pick', until: on.time + 28, style: STYLE_IDS[inv.style] || 'brawler' };
+    on.style = loadBrawl(store).style || on.style;
+    tell(inv.from, 'a', inv.nonce);
+    setFoe('p:' + inv.from, game.others.lookOf?.(inv.from) || {}, inv.name, on.vs.style, VS_SKY);
+    card((c) => {
+      c.append(el('h3', null, '🥊 ' + tt('title')), el('p', 'big', tt('vsAsk', { name: inv.name })), el('p', 'dim', inv.name + ': ' + styleTag(on.vs.style)));
+      c.append(el('p', 'big', tt('pick')));
+      styleGrid(c);
+      const row = el('div', 'row');
+      row.append(button('🥊 ' + tt('ready'), 'go', () => { const vs = on.vs; tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
+      c.append(row);
+    });
+  }
+  // A message about a fight, from the other player (game/arcade.js).
+  function heard(from, kind, nonce, style) {
+    const vs = on?.vs;
+    if (!vs || vs.peer.id !== from || vs.nonce !== nonce) return;
+    if (vs.host && vs.st === 'wait') {
+      if (kind === 'a') vs.until = on.time + 32;
+      else if (kind === 'y') connect(STYLE_IDS[style] || 'brawler');
+      else if (kind === 'n' || kind === 'b') { leaveVs(false); menu(tt(kind === 'n' ? 'vsNo' : 'vsBusy', { name: vs.peer.name })); }
+    } else if (!vs.host && vs.st === 'pick' && kind === 'c') { leaveVs(false); menu(tt('vsGone')); }
+  }
+  // Both said yes: open the match's own channel and say hello on it until
+  // the other answers; then the match starts on both screens.
+  function connect(theirStyle) {
+    const vs = on.vs;
+    vs.st = 'link'; vs.style = theirStyle; vs.until = on.time + 15; vs.hiAt = 0;
+    on.flip = vs.host ? 0 : 1;
+    setFoe('p:' + vs.peer.id, game.others.lookOf?.(vs.peer.id) || {}, vs.peer.name, theirStyle, VS_SKY);
+    waitCard(tt('vsLink'));
+    const onMsg = (m) => {
+      if (vs.dead || !on || on.vs !== vs || !m || typeof m !== 'object') return;
+      vs.heardAt = on.time;
+      if (m.bye) { leaveVs(false); menu(tt('vsLeft', { name: vs.peer.name })); return; }
+      if (!vs.session) startVs();
+      if (m.hi) { if (m.hi === 1) vs.link?.send({ hi: 2 }); } else vs.session.receive(m);
+    };
+    Promise.resolve().then(() => game.link('brawl-' + vs.nonce, onMsg)).then((link) => {
+      if (vs.dead) { link.close(); return; }
+      vs.link = link;
+    }).catch((err) => {
+      console.warn('[brawl] no channel for the match:', err);
+      if (on?.vs === vs) { leaveVs(false); menu(tt('vsLost')); }
+    });
+  }
+  function startVs() {
+    const vs = on.vs;
+    vs.st = 'play';
+    vs.session = createSession({ side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); } });
+    startUi();
+    on.match = vs.session.match;
+  }
+  function vsResult(res) {
+    const vs = on.vs, name = vs.peer.name, peer = vs.peer;
+    const won = res === on.flip;
+    if (won) game.me?.play?.('cheer');
+    leaveVs(false);
+    card((c) => {
+      c.append(el('h3', null, '🥊 ' + tt('title')));
+      c.append(el('p', 'big', res === 2 ? tt('draw') : won ? tt('won', { name }) : tt('vsLose', { name })));
+      const row = el('div', 'row');
+      row.append(button('🥊 ' + tt('again'), 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -641,7 +795,7 @@ export function createBrawl(game) {
   function showStyles() {
     if (!on.hud) return;
     on.hud.a.style.textContent = styleTag(on.style);
-    if (on.rivalStage >= 0) on.hud.b.style.textContent = styleTag(RIVAL[on.rivalStage].style);
+    if (on.foeStyle) on.hud.b.style.textContent = styleTag(on.foeStyle);
   }
 
   // ── The fighters ──
@@ -672,31 +826,41 @@ export function createBrawl(game) {
     for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
     for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
   }
-  function setRival(stage) {
-    if (on.rivalStage === stage) return;
-    on.rivalStage = stage;
+  // Who stands across the ring: one of the five rivals, or another player.
+  function setFoe(key, look, name, style, sky) {
+    on.foeStyle = style;
+    if (on.foeKey === key) { showStyles(); return; }
+    on.foeKey = key;
     if (on.rival) { on.rival.ch.setMoves(null); on.rival.ch.root.removeFromParent(); }
     // The sky of this rival's round.
-    const stageNow = buildStage(RIVAL[stage].sky);
+    const stageNow = buildStage(sky);
     for (const f of [on.me, on.rival]) if (f) f.ch.root.removeFromParent();
     on.stage?.dispose();
     on.stage = stageNow;
     on.scene.add(stageNow.g);
     if (on.me) stageNow.g.add(on.me.ch.root); else on.me = fighter(game.look, 0);
-    on.rival = fighter(RIVAL[stage].look, 1);
+    on.rival = fighter(look, 1);
     on.hud.a.label.textContent = game.nickname || tt('you');
-    on.hud.b.label.textContent = L(RIVAL[stage].name);
+    on.hud.b.label.textContent = name;
     showStyles();
   }
-  function begin(stage) {
+  function setRival(stage) {
+    on.rivalStage = stage;
+    setFoe('r:' + stage, RIVAL[stage].look, L(RIVAL[stage].name), RIVAL[stage].style, RIVAL[stage].sky);
+  }
+  function startUi() {
     on.card?.remove(); on.card = null;
     if (on.hud.pad) on.hud.pad.style.display = '';
     on.hud.root.querySelector('.bw-keys')?.style.removeProperty('display');
     held.clear(); pressed.clear();
+    on.acc = 0; on.freeze = 0; on.shake = 0; on.overT = 0; on.cheer = null;
+    for (const s of [on.hud.a, on.hud.b]) { s.shown = -1; s.s.classList.remove('rage'); }
+  }
+  function begin(stage) {
+    if (on.vs) return;
+    startUi();
     on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
     on.stageNo = stage;
-    on.acc = 0; on.freeze = 0; on.shake = 0; on.overT = 0;
-    for (const s of [on.hud.a, on.hud.b]) { s.shown = -1; s.s.classList.remove('rage'); }
   }
 
   function spark(x, y, z, color, size) {
@@ -711,7 +875,7 @@ export function createBrawl(game) {
     const m = on.match, { sfx } = game;
     for (const e of ev) {
       if (e.k === 'round') {
-        say(m.wins[0] === ROUNDS_TO_WIN - 1 && m.wins[1] === ROUNDS_TO_WIN - 1 ? 'FINAL ROUND' : 'ROUND ' + e.n, styleTag(m.a.style) + '  VS  ' + styleTag(m.b.style), 1.6);
+        say(m.wins[0] === ROUNDS_TO_WIN - 1 && m.wins[1] === ROUNDS_TO_WIN - 1 ? 'FINAL ROUND' : 'ROUND ' + e.n, styleTag((on.flip ? m.b : m.a).style) + '  VS  ' + styleTag((on.flip ? m.a : m.b).style), 1.6);
         for (const f of [on.me, on.rival]) { f.clipT = 1.7; f.ch.play('bow'); }
         sfx.tock(0.5, 500);
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
@@ -719,26 +883,26 @@ export function createBrawl(game) {
       else if (e.k === 'dash') sfx.tock(0.2, 1100);
       else if (e.k === 'shot') sfx.tock(0.5, 1500);
       else if (e.k === 'blink') { spark(e.from[0], 0.7, e.from[1], '#b9a6f0', 1.2); spark(e.x, 0.7, e.z, '#b9a6f0', 1.2); sfx.tock(0.4, 1800); }
-      else if (e.k === 'combo') { const c = on.hud.combo[e.by]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
-      else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); on.freeze = 3; }
+      else if (e.k === 'combo') { const c = on.hud.combo[e.by ^ on.flip]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
+      else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); if (!on.vs) on.freeze = 3; }
       else if (e.k === 'hit') {
         const big = e.dmg >= 14 || e.launch || e.ko || e.fin;
         spark(e.x, e.y, e.z, e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', big ? 1.5 : 1);
         sfx.tock(big ? 1 : 0.7, big ? 170 : 250);
-        on.freeze = e.ko ? 16 : big ? 7 : 4;
+        if (!on.vs) on.freeze = e.ko ? 16 : big ? 7 : 4; // (two screens cannot stop the clock for a hit)
         on.shake = Math.max(on.shake, big ? 0.14 : 0.06);
-        const c = on.hud.combo[e.by];
+        const c = on.hud.combo[e.by ^ on.flip];
         if ((e.combo >= 2 || e.counter) && !(e.fin && on.comboAt === on.time)) {
           c.textContent = e.combo >= 2 ? tt('hits', { n: e.combo }) : 'COUNTER!';
           c.classList.add('show'); on.hud.comboT[e.by] = 1.1;
         }
       } else if (e.k === 'down') { sfx.tock(0.6, 110); on.shake = Math.max(on.shake, 0.08); }
-      else if (e.k === 'rage') on.hud[e.who ? 'b' : 'a'].s.classList.add('rage');
+      else if (e.k === 'rage') on.hud[e.who ^ on.flip ? 'b' : 'a'].s.classList.add('rage');
       else if (e.k === 'ko' || e.k === 'time') {
         say(e.k === 'time' ? 'TIME UP' : 'K.O.', e.perfect ? 'PERFECT!' : '', 2.4);
         sfx.tock(1, 130);
         on.cheer = e.winner == null ? null : { who: e.winner, at: 55 };
-      } else if (e.k === 'over') on.overT = 0.6;
+      } else if (e.k === 'over') { on.overT = on.vs ? 1.2 : 0.6; on.overRes = e.result; }
     }
   }
 
@@ -747,36 +911,67 @@ export function createBrawl(game) {
     const root = f.ch.root;
     root.position.set(s.x, 0, s.z);
     poseOf(s, on.time, f.pose, f.body);
-    if (s.side) mirror(f.pose);
+    const right = s.side ^ on.flip; // on the right of the screen
+    if (right) mirror(f.pose);
     if (f.clipT > 0) f.clipT -= dt;
     f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
     f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
     f.rig.rotation.x = f.body.pitch;
     root.visible = !f.body.hide;
     // Chest a little toward the camera, like a fighting stance.
-    const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (s.side ? 0.4 : -0.4);
-    root.rotation.y = Math.PI / 2 - s.face + open + (s.side ? 1 : -1) * f.body.yaw;
+    const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (right ? 0.4 : -0.4);
+    root.rotation.y = Math.PI / 2 - s.face + open + (right ? 1 : -1) * f.body.yaw;
     f.ch.animate(dt, 0, false);
     reshape(f);
   }
 
+  // A fight with someone: waiting for an answer runs out, hello on the
+  // match's channel, and the match itself (the clock never stops for a hit).
+  function versus(dt) {
+    const vs = on.vs;
+    if (vs.st !== 'play') {
+      if (on.time > vs.until) { const st = vs.st; leaveVs(true); menu(tt(st === 'link' ? 'vsLost' : 'vsGone')); return; }
+      if (vs.st === 'link' && vs.link && on.time - vs.hiAt > 0.4) { vs.hiAt = on.time; vs.link.send({ hi: 1 }); }
+      return;
+    }
+    const sn = vs.session;
+    on.acc = Math.min(on.acc + dt, 0.25);
+    while (on.acc >= TICK && on.vs === vs) {
+      on.acc -= TICK;
+      const ev = sn.tick(readInput());
+      on.match = sn.match;
+      onEvents(ev);
+    }
+    if (on.vs !== vs) return;
+    if (sn.waiting && on.hud.msgT <= 0) on.hud.sub.textContent = tt('vsSlow');
+    else if (!sn.waiting && on.hud.msgT <= 0 && on.hud.sub.textContent) on.hud.sub.textContent = '';
+    // Nothing from them for a while (they closed the game, or the network did).
+    if (on.overT <= 0 && on.time - (vs.heardAt ?? on.time) > 8) { leaveVs(true); menu(tt('vsLost')); }
+  }
   function frame(dt) {
-    const m = on.match, h = on.hud;
+    const h = on.hud;
     on.time += dt;
+    if (on.vs) versus(dt);
+    if (on.vsList && on.time - on.vsList.at > 1.5) fillPeople();
+    const m = on.match;
     if (m) {
-      if (on.freeze > 0) on.freeze -= dt * 60;
+      if (on.vs) { /* (played above) */ }
+      else if (on.freeze > 0) on.freeze -= dt * 60;
       else {
         on.acc = Math.min(on.acc + dt, 0.1);
         while (on.acc >= TICK && on.freeze <= 0) {
           on.acc -= TICK;
           onEvents(m.step(m.phase === 'fight' ? readInput() : undefined));
-          if (on.cheer && m.phase === 'ko' && m.t === on.cheer.at) {
-            const w = on.cheer.who ? on.rival : on.me, s = on.cheer.who ? m.b : m.a;
-            if (s.st === 'idle') { w.clipT = 1.7; w.ch.play('cheer'); }
-          }
         }
       }
-      place(on.me, m.a, dt); place(on.rival, m.b, dt);
+      // The winner cheers a moment after the other is down.
+      if (on.cheer && m.phase === 'ko' && m.t >= on.cheer.at) {
+        const w = on.cheer.who ^ on.flip ? on.rival : on.me, s = on.cheer.who ? m.b : m.a;
+        if (s.st === 'idle') { w.clipT = 1.7; w.ch.play('cheer'); }
+        on.cheer = null;
+      }
+      const mine = on.flip ? m.b : m.a, theirs = on.flip ? m.a : m.b;
+      place(on.me, mine, dt); place(on.rival, theirs, dt);
       // Balls of light in flight.
       for (const [i, f] of [m.a, m.b].entries()) {
         const sp = on.stage.shots[i];
@@ -784,14 +979,15 @@ export function createBrawl(game) {
         if (f.shot) { sp.position.set(f.shot.x, 0.78, f.shot.z); sp.material.rotation += dt * 9; sp.scale.setScalar(0.75 + Math.sin(on.time * 30) * 0.08); }
       }
       // The bars, the clock, the rounds won.
-      for (const [s, f] of [[h.a, m.a], [h.b, m.b]]) {
+      for (const [s, f] of [[h.a, mine], [h.b, theirs]]) {
         if (s.shown !== f.hp) { s.shown = f.hp; const k = `scaleX(${f.hp / f.maxHp})`; s.hp.style.transform = k; s.ghost.style.transform = k; }
         if (!f.rage) s.s.classList.remove('rage');
         s.pips.forEach((p, i) => p.classList.toggle('on', i < m.wins[f.side]));
       }
       const left = String(Math.ceil(m.left / 60));
       if (h.time.textContent !== left) h.time.textContent = left;
-      if (m.phase === 'over' && on.overT > 0 && (on.overT -= dt) <= 0) {
+      if (on.vs) { if (on.overT > 0 && (on.overT -= dt) <= 0) vsResult(on.overRes); }
+      else if (m.phase === 'over' && on.overT > 0 && (on.overT -= dt) <= 0) {
         const won = m.result === 0;
         if (won) game.me?.play?.('cheer');
         on.match = null;
@@ -800,9 +996,9 @@ export function createBrawl(game) {
     } else {
       // Waiting at the menu: both stand ready.
       for (const sp of on.stage.shots) sp.visible = false;
-      on.idle[0].style = on.style; on.idle[1].style = RIVAL[on.rivalStage]?.style || 'brawler';
+      on.idle[0].style = on.style; on.idle[1].style = on.foeStyle || 'brawler';
       for (const f of [on.me, on.rival]) {
-        const s = on.idle[f.side];
+        const s = on.idle[f === on.me ? 0 : 1];
         place(f, s, dt);
       }
     }
@@ -819,7 +1015,8 @@ export function createBrawl(game) {
 
   function camera(dt) {
     const { camera: cam } = game;
-    const a = on.match ? on.match.a : on.idle[0], b = on.match ? on.match.b : on.idle[1];
+    const flip = on.match ? on.flip : 0; // (the guest looks from the other side: their fighter on the left too)
+    const a = on.match ? (flip ? on.match.b : on.match.a) : on.idle[0], b = on.match ? (flip ? on.match.a : on.match.b) : on.idle[1];
     const dx = b.x - a.x, dz = b.z - a.z, dist = Math.hypot(dx, dz) || 1;
     const ux = dx / dist, uz = dz / dist;
     const aspect = innerWidth / innerHeight;
@@ -842,6 +1039,7 @@ export function createBrawl(game) {
 
   function close() {
     if (!on) return;
+    leaveVs(true);
     const o = on;
     on = null;
     removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true); removeEventListener('keydown', onShift, true);
@@ -860,7 +1058,7 @@ export function createBrawl(game) {
     close,
     show() {
       if (on || !game.interior || !game.activeScene) return;
-      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
+      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, flip: 0, vs: null, foeKey: null, foeStyle: null, vsList: null, cheer: null, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
       on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0, style: 'brawler' }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0, style: 'brawler' }];
       on.hud = buildHud();
       document.documentElement.classList.add('brawl-on');
@@ -876,6 +1074,13 @@ export function createBrawl(game) {
     },
     // For tests: the match in play and a way to start one.
     get match() { return on?.match || null; },
+    // Fighting, or waiting for someone to answer (game/arcade.js: no new invites).
+    get busy() { return !!(on && (on.vs || on.match)); },
+    get versus() { return on?.vs ? { st: on.vs.st, host: on.vs.host, head: on.vs.session?.head ?? 0, sure: on.vs.session?.sure ?? 0 } : null; },
+    invited(inv) { if (on) invited(inv); },
+    heard(from, kind, nonce, style) { if (on) heard(from, kind, nonce, style); },
+    // Two invites crossing: the smaller id stays the host, the other answers.
+    crossed(from) { const vs = on?.vs; if (!(vs?.host && vs.st === 'wait' && vs.peer.id === from)) return false; if (game.myId < from) return 'keep'; leaveVs(false); return 'yield'; },
     start(stage = 0) { if (on) { setRival(stage); begin(stage); } },
   };
 }
