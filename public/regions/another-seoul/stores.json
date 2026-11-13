@@ -634,7 +634,7 @@
       "category": "workshop",
       "workshop": "kimchi",
       "size": "large",
-      "name": {"ko": "손맛 김치학교", "en": "Sonmat Kimchi School", "ja": "ソンマット キムチ学校", "zh": "手艺泡菜学堂", "es": "Escuela de Kimchi Sonmat", "id": "Sekolah Kimchi Sonmat", "vi": "Trường Kim chi Sonmat", "hi": "सोनमात किमची स्कूल", "fr": "École de kimchi Sonmat", "th": "โรงเรียนกิมจิซนมัด", "ar": "مدرسة سونمات للكيمتشي"},
+      "name": {"ko": "김치만들기체험", "en": "Kimchi Making Class", "ja": "キムチ作り体験", "zh": "泡菜制作体验", "es": "Taller de kimchi", "id": "Kelas Membuat Kimchi", "vi": "Trải nghiệm làm kim chi", "hi": "किमची बनाने की क्लास", "fr": "Atelier de kimchi", "th": "คลาสทำกิมจิ", "ar": "صف صنع الكيمتشي"},
       "tagline": {"en": "Make kimchi the kimjang way, step by step", "ko": "김장하듯 한 단계씩 김치를 담가 봐요", "ja": "キムジャンのように一歩ずつキムチ作り", "zh": "像过冬腌泡菜一样，一步步做泡菜", "es": "Haz kimchi como en el kimjang, paso a paso", "id": "Buat kimchi ala kimjang, langkah demi langkah", "vi": "Làm kim chi kiểu kimjang, từng bước một", "hi": "किमजांग की तरह, एक-एक कदम किमची बनाएँ", "fr": "Fais du kimchi à la façon du kimjang, étape par étape", "th": "ทำกิมจิแบบคิมจัง ทีละขั้นตอน", "ar": "اصنع الكيمتشي على طريقة الكيمجانغ خطوة بخطوة"},
       "front": "hanok", "at": [-1541, -927],
       "colors": { "sign": "#b5341f", "awning": "#e9d8b4", "accent": "#f8f1e2" },
@@ -656,6 +656,34 @@
       "products": [
         {"id": "sesame-oil", "model": "bottle", "color": "#c9a227", "price": 11000, "name": {"en": "Roasted sesame oil", "ko": "참기름", "ja": "ごま油", "zh": "香油", "es": "Aceite de sésamo tostado", "id": "Minyak wijen sangrai", "vi": "Dầu mè rang", "hi": "भुने तिल का तेल", "fr": "Huile de sésame grillé", "th": "น้ำมันงาคั่ว", "ar": "زيت السمسم المحمّص"}, "desc": {"en": "Nutty, toasty oil that finishes japchae, namul and bibimbap.", "ko": "고소한 참기름. 잡채, 나물, 비빔밥의 마무리예요."}},
         {"id": "suragan-notebook", "model": "notebook", "color": "#c94f3d", "price": 8000, "name": {"en": "Japchae recipe notebook", "ko": "잡채 레시피 노트", "ja": "チャプチェのレシピノート", "zh": "杂菜食谱本", "es": "Cuaderno de recetas de japchae", "id": "Buku resep japchae", "vi": "Sổ công thức japchae", "hi": "जापचे रेसिपी नोटबुक", "fr": "Carnet de recettes de japchae", "th": "สมุดสูตรจับแช", "ar": "دفتر وصفات الجابتشي"}, "desc": {"en": "A notebook with the japchae recipe from today's class on the first page.", "ko": "첫 장에 오늘 배운 잡채 레시피가 적힌 노트예요."}}
+      ]
+    },
+    {
+      "id": "tteok-class",
+      "category": "workshop",
+      "workshop": "tteok",
+      "size": "large",
+      "name": {"ko": "떡만들기체험", "en": "Tteok Making Class", "ja": "お餅作り体験", "zh": "米糕制作体验", "es": "Taller de tteok", "id": "Kelas Membuat Tteok", "vi": "Trải nghiệm làm bánh tteok", "hi": "टोक बनाने की क्लास", "fr": "Atelier de tteok", "th": "คลาสทำต็อก", "ar": "صف صنع التوك"},
+      "tagline": {"en": "Shape songpyeon, the half-moon rice cakes of Chuseok, and steam them on pine needles", "ko": "추석 반달 떡 송편을 빚어 솔잎에 쪄요", "ja": "秋夕の半月餅ソンピョンを作って松葉で蒸そう", "zh": "包中秋的半月米糕松饼，垫松针蒸熟", "es": "Haz songpyeon, los pasteles de media luna de Chuseok, al vapor sobre pino", "id": "Bentuk songpyeon, kue bulan sabit Chuseok, lalu kukus di atas daun pinus", "vi": "Nặn songpyeon, bánh bán nguyệt dịp Chuseok, hấp trên lá thông", "hi": "चुसोक के आधे-चाँद वाले सोंगप्योन बनाएँ और चीड़ की पत्तियों पर भाप दें", "fr": "Façonne des songpyeon, les demi-lunes de Chuseok, cuites sur des aiguilles de pin", "th": "ปั้นซงพยอน ขนมครึ่งเสี้ยวของวันชูซก แล้วนึ่งบนใบสน", "ar": "شكّل السونغبيون، كعك نصف القمر في تشوسوك، واطهه فوق إبر الصنوبر"},
+      "front": "hanok", "at": [-1533.2, -927],
+      "colors": { "sign": "#a8466a", "awning": "#f3dfe4", "accent": "#fbf4f6" },
+      "products": [
+        {"id": "sesame-honey", "model": "jar", "color": "#c98a3e", "price": 9000, "name": {"en": "Sesame honey filling", "ko": "깨꿀 소", "ja": "ごまはちみつあん", "zh": "芝麻蜂蜜馅", "es": "Relleno de sésamo y miel", "id": "Isian wijen madu", "vi": "Nhân mè mật ong", "hi": "तिल-शहद की भरावन", "fr": "Farce sésame-miel", "th": "ไส้งาน้ำผึ้ง", "ar": "حشوة السمسم والعسل"}, "desc": {"en": "Toasted sesame ground with honey: the favourite songpyeon filling.", "ko": "볶은 깨를 꿀과 버무린 송편 소예요. 제일 인기 있는 소예요."}},
+        {"id": "tteok-notebook", "model": "notebook", "color": "#f2b8c6", "price": 8000, "name": {"en": "Tteok recipe notebook", "ko": "떡 레시피 노트", "ja": "お餅のレシピノート", "zh": "米糕食谱本", "es": "Cuaderno de recetas de tteok", "id": "Buku resep tteok", "vi": "Sổ công thức bánh tteok", "hi": "टोक रेसिपी नोटबुक", "fr": "Carnet de recettes de tteok", "th": "สมุดสูตรต็อก", "ar": "دفتر وصفات التوك"}, "desc": {"en": "A notebook with today's songpyeon drawn on the first page.", "ko": "첫 장에 오늘 빚은 송편이 그려진 노트예요."}}
+      ]
+    },
+    {
+      "id": "bibimbap-class",
+      "category": "workshop",
+      "workshop": "bibimbap",
+      "size": "large",
+      "name": {"ko": "비빔밥만들기체험", "en": "Bibimbap Making Class", "ja": "ビビンバ作り体験", "zh": "拌饭制作体验", "es": "Taller de bibimbap", "id": "Kelas Membuat Bibimbap", "vi": "Trải nghiệm làm bibimbap", "hi": "बिबिम्बाप बनाने की क्लास", "fr": "Atelier de bibimbap", "th": "คลาสทำบิบิมบับ", "ar": "صف صنع البيبيمباب"},
+      "tagline": {"en": "Season namul, lay a bowl of colours, then mix it all up", "ko": "나물을 무치고 알록달록 담아 쓱쓱 비벼요", "ja": "ナムルを和え、色とりどりに盛って混ぜよう", "zh": "拌凉菜，摆出五彩一碗，再拌匀", "es": "Aliña el namul, monta un bol de colores y mézclalo todo", "id": "Bumbui namul, tata mangkuk warna-warni, lalu aduk semuanya", "vi": "Trộn rau namul, xếp bát đủ màu rồi trộn đều", "hi": "नामुल तैयार करें, रंगों का कटोरा सजाएँ, फिर सब मिलाएँ", "fr": "Assaisonne les namul, dresse un bol coloré, puis mélange tout", "th": "ปรุงนามุล จัดชามหลากสี แล้วคลุกให้ทั่ว", "ar": "تبّل النامول ورتّب وعاءً ملونًا ثم اخلط كل شيء"},
+      "front": "hanok", "at": [-1548.8, -927],
+      "colors": { "sign": "#c0582b", "awning": "#f4e2c8", "accent": "#fcf6ee" },
+      "products": [
+        {"id": "gochujang-jar", "model": "jar", "color": "#a8261c", "price": 9000, "name": {"en": "Gochujang", "ko": "고추장", "ja": "コチュジャン", "zh": "辣椒酱", "es": "Gochujang", "id": "Gochujang", "vi": "Tương ớt gochujang", "hi": "गोचुजांग", "fr": "Gochujang", "th": "โคชูจัง", "ar": "غوتشوجانغ"}, "desc": {"en": "Sweet, spicy red chilli paste: the sauce that ties a bibimbap together.", "ko": "달콤 매콤한 고추장. 비빔밥을 하나로 묶는 양념이에요."}},
+        {"id": "brass-bowl", "model": "bowl", "color": "#c9a227", "price": 15000, "name": {"en": "Brass bowl (yugi)", "ko": "놋그릇", "ja": "真鍮の器（ユギ）", "zh": "黄铜碗（鍮器）", "es": "Cuenco de latón (yugi)", "id": "Mangkuk kuningan (yugi)", "vi": "Bát đồng (yugi)", "hi": "पीतल का कटोरा (युगी)", "fr": "Bol en laiton (yugi)", "th": "ชามทองเหลือง (ยูกี)", "ar": "وعاء نحاسي (يوغي)"}, "desc": {"en": "A traditional brass bowl that keeps rice warm, as in old royal kitchens.", "ko": "밥을 따뜻하게 지켜 주는 전통 놋그릇이에요."}}
       ]
     },
     {
