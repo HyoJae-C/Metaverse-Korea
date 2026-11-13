@@ -1,12 +1,12 @@
-// What's on in Seoul Forest's culture center and the forest galleries
-// (stores.json category "culture"; rooms drawn by core/culture.js).
+// What's on in Seoul Forest's forest galleries (stores.json category
+// "culture"; rooms drawn by core/culture.js). The culture center itself is
+// a photo show on three floors now (data/photo-show.js, core/photo-show.js).
 // To put on a show, give the place a title and works. Each work hangs in the
 // next frame on the walls:
 //   { title: { ko, en }, by: { ko, en }, image: 'exhibitions/<file>.webp' }
 // image is a path under public/ (optional: without it the frame shows the
 // title on a plain card). A place with no works shows "coming soon" cards.
 export const EXHIBITIONS = {
-  'seoul-forest-culture': { title: null, works: [] },
   'forest-gallery-1': { title: null, works: [] },
   'forest-gallery-2': { title: null, works: [] },
   'forest-gallery-3': { title: null, works: [] },

@@ -2984,7 +2984,7 @@ function enterStore(item, walkIn = null) {
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
   const museum = store.category === 'museum';
-  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
+  const hello = store.category === 'school' ? PHRASES.school[0] : quiet ? PHRASES.library[0] : museum ? PHRASES.museum[0] : store.category === 'memorial' ? PHRASES.memorial[0] : store.workshop === 'photo-show' ? PHRASES.photoshow[0] : store.category === 'culture' ? PHRASES.culture[0] : PHRASES.welcome[0];
   if (clerk && !walkIn) setTimeout(() => clerk && say(clerk, $('labels'), hello), 600);
   if (store.open) {
     // An open-air park is part of the street: the same people around you
@@ -3015,10 +3015,10 @@ const memorialFloors = () => roomKit().MEMORIAL_FLOORS.map(({ floor, halls }) =>
   floor, lines: [...(floor === 2 ? [L(roomKit().DONATED.title)] : []), ...halls.map((k) => L(roomKit().MEMORIAL_HALLS[k].name))],
 }));
 
-// The museums' lifts (the art museum and the War History Museum): each floor
+// The museums' lifts (the art museum, the War History Museum, Seoul Forest's photo show): each floor
 // is its own interior; you step out by the lift.
 function goMuseumFloor(floor) {
-  if (mode !== 'store' || !['museum', 'memorial'].includes(interior?.store.category) || roomKit().floorOf(interior.store) === floor) return;
+  if (mode !== 'store' || !(['museum', 'memorial'].includes(interior?.store.category) || interior?.store.workshop === 'photo-show') || roomKit().floorOf(interior.store) === floor) return;
   const front = interior.front;
   standUp();
   if (museumUi.open) museumUi.close();
@@ -6697,7 +6697,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
-      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : undefined) };
+      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : interior.store.workshop === 'photo-show' ? roomKit().photoFloors(getLanguage() === 'ko') : undefined) };
     } else if (nearStation(p, 'flower', 1.3)) {
       next = { key: 'flower', label: '💐 ' + L(roomKit().MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
     } else if (roomKit().nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
@@ -6705,7 +6705,7 @@ function updateAction(p, tSec) {
       next = { key: 'panel:' + pn.kind, label: `📖 ${L(roomKit().MEMORIAL_TEXT.read)} · ${localName(pn.title, getLanguage())}`, run: () => museumUi.showText(pn) };
     } else if (roomKit().nearestPainting(interior.stations?.paintings, p.x, p.z)) {
       const pt = roomKit().nearestPainting(interior.stations.paintings, p.x, p.z).painting;
-      next = { key: 'painting:' + pt.id, label: `${pt.credit ? '📷' : '🖼️'} ${L(pt.credit ? roomKit().MEMORIAL_TEXT.look : roomKit().MUSEUM_TEXT.look)} · ${pt.credit ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
+      next = { key: 'painting:' + pt.id, label: `${pt.credit || pt.photo ? '📷' : '🖼️'} ${L(pt.credit || pt.photo ? roomKit().MEMORIAL_TEXT.look : roomKit().MUSEUM_TEXT.look)} · ${pt.credit || pt.photo ? localName(pt.title, getLanguage()) : getLanguage() === 'ko' ? pt.title.ko : pt.title.en}`, run: () => museumUi.show(pt) };
     } else if (nearStation(p, 'books', 1.5)) {
       const shelf = interior.stations.books.reduce((a, st) => (Math.hypot(p.x - st.x, p.z - st.z) < Math.hypot(p.x - a.x, p.z - a.z) ? st : a));
       next = { key: 'books:' + shelf.section, label: '📚 ' + t('book.pick'), run: () => bookUi.showShelf(shelf.section) };
@@ -6831,7 +6831,7 @@ function updateAction(p, tSec) {
       const job = jobOf(interior.store);
       next = { key: 'job', label: '💼 ' + fmt(L(JOB_TEXT.work), { role: L(JOB_TEXT.role[job]) }), run: () => { clerk.ch.wave(); openJob(job); } };
     } else if (clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.2) {
-      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[['library', 'school', 'museum', 'memorial', 'culture'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
+      next = { key: 'clerk', label: '👋 ' + t('npc.hi', { name: clerk.name }), run: () => { clerk.ch.wave(); const lines = PHRASES[interior?.store.workshop === 'photo-show' ? 'photoshow' : ['library', 'school', 'museum', 'memorial', 'culture'].includes(interior?.store.category) ? interior.store.category : 'shop']; say(clerk, $('labels'), lines[Math.floor(Math.random() * lines.length)]); } };
     } else if (interior.pets?.nearest(p.x, p.z)) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
