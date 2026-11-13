@@ -52,15 +52,15 @@ export function createArcade(game) {
   // camera (game/darts-view.js), so they need not walk to the throw line.
   let ask = null, askTimer = 0;
   function closeAsk() { clearTimeout(askTimer); ask?.remove(); ask = null; }
-  function showAsk(inv) {
+  function showAsk(inv, text = fmt(L(DARTS_INVITE), { name: inv.name }), yes = acceptInvite, no = () => declineInvite(inv)) {
     closeAsk();
     ask = document.createElement('div');
     ask.id = 'darts-ask';
     ask.style.cssText = ASK_CSS;
     const h = document.createElement('div');
-    h.textContent = fmt(L(DARTS_INVITE), { name: inv.name });
+    h.textContent = text;
     ask.append(h);
-    for (const [label, run, bg] of [[L(DARTS_ASK.yes), acceptInvite, '#ffd36b'], [L(DARTS_ASK.no), () => declineInvite(inv), '#eee']]) {
+    for (const [label, run, bg] of [[L(DARTS_ASK.yes), yes, '#ffd36b'], [L(DARTS_ASK.no), no, '#eee']]) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = label;
@@ -87,6 +87,50 @@ export function createArcade(game) {
     if (!ui.open) ui.show();
     ui.accept(inv);
   }
+  // The fighting game with someone in the room (game/brawl.js): messages
+  // brawl:<to>:<kind>:<nonce>:<style>. An invite shows the card (anywhere in
+  // the claw-machine room; the match is played on the game's own camera);
+  // the rest goes to the game. True when it was one of these.
+  const loadBrawl = () => (brawlLoading ||= import('./brawl.js').then((m) => (brawl = m.createBrawl(game))).catch((e) => { brawlLoading = null; throw e; }));
+  function onBrawlMsg(from, e) {
+    if (typeof e !== 'string' || !e.startsWith('brawl:')) return false;
+    const [, to, kind, nonce, style] = e.split(':');
+    const name = game.others.nameOf(from);
+    if (to !== myId || !nonce || name == null || safety.isBlocked(from, name)) return true;
+    if (kind !== 'i') { brawl?.heard(from, kind, nonce, +style || 0); return true; }
+    const inv = { from, name, nonce, style: +style || 0, at: performance.now() };
+    const no = (k) => game.net.sendEmote(`brawl:${from}:${k}:${nonce}:0`);
+    if (!game.interior?.stations?.fight) return true; // (not in a room with the game)
+    const cross = brawl?.crossed(from); // we asked them at the same moment
+    if (cross === 'keep') return true;
+    if (brawl?.busy) { no('b'); return true; }
+    if (brawl?.open) { brawl.invited(inv); sfx.tock(0.6, 900); return true; } // (at the game's menu: asked there)
+    const at = game.interior;
+    const join = async () => {
+      if (performance.now() - inv.at > INVITE_MS || game.others.nameOf(from) == null) return;
+      await loadBrawl();
+      if (game.interior !== at) return;
+      if (!brawl.open) brawl.show();
+      brawl.invited(inv);
+    };
+    if (cross === 'yield') join();
+    else showAsk(inv, fmt(L(BRAWL_INVITE), { name }), join, () => no('n'));
+    sfx.tock(0.6, 900);
+    return true;
+  }
+  const BRAWL_INVITE = {
+    en: '🥊 {name} challenges you to Rooftop Rumble!',
+    ko: '🥊 {name}님이 옥상 격투왕 대결을 신청했어요!',
+    ja: '🥊 {name}さんが屋上ランブルで勝負を挑んできました！',
+    zh: '🥊 {name}向你发起天台格斗王挑战！',
+    es: '🥊 ¡{name} te reta a Rooftop Rumble!',
+    id: '🥊 {name} menantangmu di Rooftop Rumble!',
+    vi: '🥊 {name} thách bạn đấu Rooftop Rumble!',
+    hi: '🥊 {name} ने आपको रूफ़टॉप रंबल की चुनौती दी!',
+    fr: '🥊 {name} te défie à Rooftop Rumble !',
+    th: '🥊 {name} ท้าคุณสู้ศึกดาดฟ้า!',
+    ar: '🥊 {name} يتحداك في نزال السطح!',
+  };
   async function openArcade(kind) {
     // Turn to face the cage, the targets or the board (the camera stays as the player has it).
     const p = game.me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
@@ -97,7 +141,8 @@ export function createArcade(game) {
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
     if (kind === 'fight') {
       const at = game.interior;
-      brawl = await (brawlLoading ||= import('./brawl.js').then((m) => m.createBrawl(game)).catch((e) => { brawlLoading = null; throw e; }));
+      await loadBrawl();
+      closeAsk();
       if (game.interior === at) brawl.show();
       return;
     }
@@ -282,6 +327,6 @@ export function createArcade(game) {
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active), fightUi, brawl: () => brawl, camera: (dt) => { brawl?.update(dt); dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active), fightUi, brawl: () => brawl, camera: (dt) => { brawl?.update(dt); dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }

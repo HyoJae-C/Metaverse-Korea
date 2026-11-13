@@ -432,49 +432,72 @@ export function createAi(level, rand = Math.random) {
 // intro, or 'over'. wins: [player, rival]. result: 0 the player won, 1 the
 // rival, null not over yet.
 const INTRO = 110, KO_HOLD = 170, MAX_ROUNDS = 5;
-export function createMatch({ level = 0, rand = Math.random, style = 'brawler', rivalStyle = 'brawler' } = {}) {
-  const m = {
-    a: newFighter(0, style), b: newFighter(1, rivalStyle), phase: 'intro', t: 0, round: 1, wins: [0, 0],
+// One tick of a match for both fighters (ia, ib: their inputs). The match is
+// plain data, so two players' screens can copy it and run it again
+// (core/brawl-net.js). versus: two people; level after five rounds is a draw
+// (result 2) instead of the house winning.
+export function newMatch(style = 'brawler', rivalStyle = 'brawler', versus = false) {
+  return {
+    a: newFighter(0, style), b: newFighter(1, rivalStyle), styles: [style, rivalStyle], versus, phase: 'intro', t: 0, round: 1, wins: [0, 0],
     left: ROUND_TICKS, result: null, roundWinner: null, timeUp: false, perfect: false,
-    ai: createAi(level, rand),
   };
-  m.step = (input = NO_INPUT) => {
-    const ev = [];
-    m.t++;
-    if (m.phase === 'intro') {
-      if (m.t === 1) ev.push({ k: 'round', n: m.round });
-      if (m.t >= INTRO) { m.phase = 'fight'; m.t = 0; ev.push({ k: 'fight' }); }
-    } else if (m.phase === 'fight') {
-      ev.push(...stepFight(m.a, m.b, input, m.ai(m.b, m.a)));
-      m.left--;
-      const dead = m.a.hp <= 0 || m.b.hp <= 0;
-      if (dead || m.left <= 0) {
-        m.timeUp = !dead;
-        const ra = m.a.hp / m.a.maxHp, rb = m.b.hp / m.b.maxHp; // (on time: who has more of their own bar left)
-        m.roundWinner = ra === rb ? null : ra > rb ? 0 : 1;
-        if (m.roundWinner != null) m.wins[m.roundWinner]++;
-        m.perfect = m.roundWinner != null && (m.roundWinner ? m.b : m.a).hp === (m.roundWinner ? m.b : m.a).maxHp;
-        m.phase = 'ko'; m.t = 0;
-        ev.push({ k: m.timeUp ? 'time' : 'ko', winner: m.roundWinner, perfect: m.perfect });
-      }
-    } else if (m.phase === 'ko') {
-      ev.push(...stepFight(m.a, m.b)); // the loser falls; nobody acts
-      if (m.t >= KO_HOLD) {
-        const done = m.wins[0] >= ROUNDS_TO_WIN || m.wins[1] >= ROUNDS_TO_WIN || m.round >= MAX_ROUNDS;
-        if (done) {
-          m.phase = 'over';
-          m.result = m.wins[0] > m.wins[1] ? 0 : 1; // (level after five rounds: the house wins)
-          ev.push({ k: 'over', result: m.result });
-        } else {
-          m.round++;
-          m.a = newFighter(0, style); m.b = newFighter(1, rivalStyle);
-          m.left = ROUND_TICKS; m.phase = 'intro'; m.t = 0;
-        }
+}
+export function stepMatch(m, ia = NO_INPUT, ib = NO_INPUT) {
+  const ev = [];
+  m.t++;
+  if (m.phase === 'intro') {
+    if (m.t === 1) ev.push({ k: 'round', n: m.round });
+    if (m.t >= INTRO) { m.phase = 'fight'; m.t = 0; ev.push({ k: 'fight' }); }
+  } else if (m.phase === 'fight') {
+    ev.push(...stepFight(m.a, m.b, ia, typeof ib === 'function' ? ib() : ib));
+    m.left--;
+    const dead = m.a.hp <= 0 || m.b.hp <= 0;
+    if (dead || m.left <= 0) {
+      m.timeUp = !dead;
+      const ra = m.a.hp / m.a.maxHp, rb = m.b.hp / m.b.maxHp; // (on time: who has more of their own bar left)
+      m.roundWinner = ra === rb ? null : ra > rb ? 0 : 1;
+      if (m.roundWinner != null) m.wins[m.roundWinner]++;
+      m.perfect = m.roundWinner != null && (m.roundWinner ? m.b : m.a).hp === (m.roundWinner ? m.b : m.a).maxHp;
+      m.phase = 'ko'; m.t = 0;
+      ev.push({ k: m.timeUp ? 'time' : 'ko', winner: m.roundWinner, perfect: m.perfect });
+    }
+  } else if (m.phase === 'ko') {
+    ev.push(...stepFight(m.a, m.b)); // the loser falls; nobody acts
+    if (m.t >= KO_HOLD) {
+      const done = m.wins[0] >= ROUNDS_TO_WIN || m.wins[1] >= ROUNDS_TO_WIN || m.round >= MAX_ROUNDS;
+      if (done) {
+        m.phase = 'over';
+        // (level after five rounds: the house wins; between two people, a draw)
+        m.result = m.wins[0] > m.wins[1] ? 0 : m.wins[0] === m.wins[1] && m.versus ? 2 : 1;
+        ev.push({ k: 'over', result: m.result });
+      } else {
+        m.round++;
+        m.a = newFighter(0, m.styles[0]); m.b = newFighter(1, m.styles[1]);
+        m.left = ROUND_TICKS; m.phase = 'intro'; m.t = 0;
       }
     }
-    return ev;
-  };
+  }
+  return ev;
+}
+export function createMatch({ level = 0, rand = Math.random, style = 'brawler', rivalStyle = 'brawler' } = {}) {
+  const m = newMatch(style, rivalStyle);
+  m.ai = createAi(level, rand);
+  const think = () => m.ai(m.b, m.a);
+  m.step = (input = NO_INPUT) => stepMatch(m, input, think);
   return m;
+}
+// A copy of a match two screens can send each other or run ahead on: the
+// fighters' move tables (the same for a style everywhere) are left out and
+// put back.
+const copyFighter = (f, mv) => ({ ...f, mv, seq: [...f.seq], buf: { ...f.buf }, shot: f.shot ? { ...f.shot } : null });
+export function copyMatch(m) {
+  return { ...m, a: copyFighter(m.a, m.a.mv), b: copyFighter(m.b, m.b.mv), wins: [...m.wins], styles: [...m.styles] };
+}
+export function packMatch(m) {
+  return { ...m, a: copyFighter(m.a, undefined), b: copyFighter(m.b, undefined), wins: [...m.wins], styles: [...m.styles] };
+}
+export function unpackMatch(o) {
+  return { ...o, a: copyFighter(o.a, movesFor(o.a.style)), b: copyFighter(o.b, movesFor(o.b.style)), wins: [...o.wins], styles: [...o.styles] };
 }
 
 // ── The ladder and the record ────────────────────────────────────────────
