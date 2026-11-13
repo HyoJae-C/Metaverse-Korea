@@ -207,6 +207,7 @@ import { lawnFrom } from './core/picnic-mat.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
+import { createNavWindow } from './core/nav-window.js';
 import { LocalFriends } from './core/friends.js';
 import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
@@ -804,13 +805,13 @@ const storefronts = new Storefronts(scene, shownStores(storeData), map, region.c
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
-// Walking routes around walls (built the first time a route is needed).
-// 1.5 m cells: 1 m cells were 13 M cells (about 270 MB) for all of Seoul
-// and far routes ran out of search; 2 m cells closed Bukchon's alleys.
-let navGrid = null;
-const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1, cell: 1.5 }));
+// Walking routes around walls: a grid of the 1.4 km round the walker
+// (core/nav-window.js), built the first time a route is needed; farther
+// places go by the road graph. 1.5 m cells: 2 m cells closed Bukchon's alleys.
+const nav = createNavWindow((b) => new NavGrid(collision.polys.map((q) => q.p), map.roads, b, { r: PLAYER_R + 0.1, cell: 1.5 }), bounds);
 function planRoute(ax, az, bx, bz) {
-  const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
+  const grid = nav(ax, az);
+  const poly = (grid.inside(bx, bz) && grid.route(ax, az, bx, bz)) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
   return poly;
 }
