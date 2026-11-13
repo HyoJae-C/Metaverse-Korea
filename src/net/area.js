@@ -37,9 +37,17 @@ function neighbourKeys(room, cellSize, x, z) {
   return keys;
 }
 
-export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0, privateChat = true }) {
+//
+// shows(peer): which of the people around us we see and send our movement
+// to (on the street: friends only, see main.js). Everyone else is only known
+// to be around: nothing of theirs is shown and they alone never make us
+// send, but their chat lines are still heard (handlers.onChat gets the name
+// they announced as its 4th argument). Call refilter() when the answer may
+// have changed (a friend was added or removed).
+export async function createAreaNet(provider, handlers, cfg, { room, self, cellSize, x = 0, z = 0, privateChat = true, shows = null }) {
   const cells = new Map(); // key → { adapter, ready: Promise }
-  const peerCells = new Map(); // peer id → Set of cell keys it was seen in
+  const peerCells = new Map(); // peer id → Set of cell keys it was seen in (the people we show)
+  const around = new Map(); // peer id → { peer, keys: Set, st } everyone in our cells, shown or not
   const leaveTimers = new Map();
   let ownKey = null;
   let me = { ...self };
@@ -50,6 +58,14 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   let crowdTimer = null;
 
   const seen = (id, key, peer) => {
+    let a = around.get(id);
+    if (!a) around.set(id, (a = { peer, keys: new Set(), st: null }));
+    a.peer = peer;
+    a.keys.add(key);
+    if (shows && !shows(peer)) return;
+    show(id, key, peer);
+  };
+  const show = (id, key, peer) => {
     let set = peerCells.get(id);
     const isNew = !set;
     if (!set) peerCells.set(id, (set = new Set()));
@@ -62,6 +78,8 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     if (isNew) handlers.onJoin(peer);
   };
   const gone = (id, key) => {
+    const a = around.get(id);
+    if (a) { a.keys.delete(key); if (!a.keys.size) around.delete(id); }
     const set = peerCells.get(id);
     if (!set) return;
     set.delete(key);
@@ -80,11 +98,14 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     const cellHandlers = {
       onJoin: (peer) => seen(peer.id, key, peer),
       onLeave: (id) => gone(id, key),
-      onState: (id, st) => known(id) && handlers.onState(id, st),
+      onState: (id, st) => {
+        if (known(id)) handlers.onState(id, st);
+        else if (around.has(id)) around.get(id).st = st; // (played if we come to show them)
+      },
       onEmote: (id, e) => known(id) && handlers.onEmote(id, e),
       onLook: (id, look) => known(id) && handlers.onLook?.(id, look),
       // Room chat only while the private chat channel isn't open.
-      onChat: (id, t) => !chatLink?.ready && known(id) && handlers.onChat?.(id, t),
+      onChat: (id, t) => !chatLink?.ready && around.has(id) && handlers.onChat?.(id, t, undefined, around.get(id).peer.name),
     };
     const adapter = await createNet(provider, cellHandlers, cfg);
     const entry = { adapter, listenOnly };
@@ -109,7 +130,26 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     cells.delete(key);
     clearTimeout(entry.retry);
     entry.adapter.disconnect();
-    for (const [id, set] of peerCells) if (set.has(key)) gone(id, key);
+    for (const [id, a] of [...around]) if (a.keys.has(key)) gone(id, key);
+  }
+
+  // Who we show may have changed: show the ones we now do (with the last
+  // movement we heard from them), drop the ones we no longer do at once.
+  function refilter() {
+    if (closed || !shows) return;
+    for (const [id, a] of around) {
+      const want = !!shows(a.peer), have = known(id);
+      if (want && !have) {
+        for (const key of a.keys) show(id, key, a.peer);
+        if (a.st && known(id)) handlers.onState(id, a.st);
+        a.st = null;
+      } else if (!want && have) {
+        clearTimeout(leaveTimers.get(id));
+        leaveTimers.delete(id);
+        peerCells.delete(id);
+        handlers.onLeave(id);
+      }
+    }
   }
 
   async function moveTo(px, pz) {
@@ -169,7 +209,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
   // rooms so its (slower, checked) join never holds up joining them.
   const chatTimer = privateChat && own().openChat && setTimeout(() => {
     // n: the sender's real name, added by the server (019_chat_names.sql).
-    if (!closed) chatLink = own()?.openChat(room, (id, t, n) => known(id) && handlers.onChat?.(id, t, n));
+    if (!closed) chatLink = own()?.openChat(room, (id, t, n) => around.has(id) && handlers.onChat?.(id, t, n, around.get(id).peer.name));
   }, 3000);
 
   return {
@@ -178,6 +218,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     },
     get chatReady() { return !!chatLink?.ready; }, // on the private chat channel (else room chat)
     get peers() { return visible(); }, // people we can see right now
+    refilter,
     get group() { return group; },
     // Nobody around: send nothing. Supabase counts every broadcast once when
     // sent, even into an empty room, and most play time is spent alone, so
@@ -212,6 +253,7 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
       for (const t of leaveTimers.values()) clearTimeout(t);
       leaveTimers.clear();
       peerCells.clear();
+      around.clear();
     },
   };
 }
