@@ -285,14 +285,6 @@ const OWN_BUILD = {
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
   outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
-  mountain(g, l) {
-    // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
-    const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
-    m.scale.set(1.4, 1, 0.7);
-    if (l?.scale) m.scale.multiplyScalar(l.scale);
-    m.position.y = 50 * (l?.scale || 1);
-    g.add(m);
-  },
   namsan(g, l) {
     // Namsan: a wooded hill on an ellipse (l.rx, l.rz, l.h), or on its real
     // outline round the top (l.rad), that leans so its
