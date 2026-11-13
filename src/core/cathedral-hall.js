@@ -96,6 +96,28 @@ function glassTexture() {
   return t;
 }
 
+// The confessional's name board: gold letters on dark wood.
+function confessionSign() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 80;
+  const g = c.getContext('2d');
+  g.fillStyle = '#3a2418';
+  g.fillRect(0, 0, 512, 80);
+  g.strokeStyle = '#c9a640';
+  g.lineWidth = 3;
+  g.strokeRect(4, 4, 504, 72);
+  g.fillStyle = '#e9c964';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.font = 'bold 38px sans-serif';
+  g.fillText('고해성사실', 256, 32);
+  g.font = '15px sans-serif';
+  g.fillText('CONFESSION', 256, 63);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 // A rose window: petals round a centre, in the same glass colours.
 function roseTexture() {
   const c = document.createElement('canvas');
@@ -390,6 +412,10 @@ export function buildCathedralHall(store, ROOM, EXIT) {
     b.box(0.04, 0.04, 0.8, kf - 0.04, 1.95, K.z + e * 0.94, C.gold); // their rods
   }
   block(K.x, K.z, K.w, K.d);
+  // Its name over the doors (Yozi: 고해성사실), with the English under it.
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.36).rotateY(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: confessionSign() }));
+  sign.position.set(kf - 0.03, 2.17, K.z);
+  scene.add(sign);
 
   // Brass lamps hanging down the nave, warm and glowing.
   for (const z of [-7.2, -1, 5.2]) for (const s of [-1, 1]) {
