@@ -230,7 +230,8 @@ for (let i = bigs.length - 1; i >= 0; i--) if (overlap(bigs[i].p, openP) || over
   if (hits.length) throw new Error(`the Open House ${JSON.stringify(openP)} is on ${hits.map((r) => r.n?.en || 'a path').join(', ')}: move it (data/bukchon.js OH)`);
 }
 const viewClear = BUKCHON.views.map((v) => ({ line: [v.at, [v.at[0] + 0.01, v.at[1]]], w: 7 }));
-const open = [{ p: openP }, { p: yardP }, ...bigs.map((b) => ({ p: b.p })), ...viewClear];
+const exitClear = region.subway.stations.flatMap((st) => st.exits || []).map((e) => [e.at[0] - ox, e.at[1] - oz]).filter((q) => inArea(q, -10)).map((q) => ({ line: [q, [q[0] + 0.01, q[1]]], w: 12 })); // (the stairwells and room to walk out)
+const open = [{ p: openP }, { p: yardP }, ...bigs.map((b) => ({ p: b.p })), ...viewClear, ...exitClear];
 
 // ---- hanok rows along every street ----
 // (town() keeps every house 1.2 m off a street's edge; Bukchon's walls
@@ -265,6 +266,12 @@ for (const r of order) for (const side of [1, -1]) {
 // small streets.
 for (const r of order) for (const side of [1, -1]) {
   t.row(`small:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
+}
+// And a row behind (the blocks of Bukchon are full of hanok: from the alleys
+// and the hill you see a sea of roofs, not empty yards).
+for (const r of order) for (const side of [1, -1]) {
+  t.row(`back:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 8.6, depth: 7, w: [6.5, 10], h: [5, 5], spot: 1.6, gap: 0.3 });
+  t.row(`back2:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 4.8, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
 }
 const hanok = t.buildings;
 // Which way each hanok faces (fr, a unit step on the map, front to the street:
@@ -378,6 +385,56 @@ const planters = [];
   }
 }
 
+// ---- the alleys' walls (담장): where no hanok front stands at the alley,
+// a stone-and-plaster wall with a tiled cap runs on, so the alleys read as
+// walled lanes, not open yards (Yozi 2026-11-13: it had lost its charm) ----
+const wallRuns = [];
+{
+  const solid = [...hanok.map((b) => b.p), ...bigs.map((b) => b.p), openP, yardP, ...visitBlockers.map((b) => b.p)];
+  const keepClear = [ // (doors, signs, exits, photo spots, planters: room in front of them)
+    ...perLot.slice(0, SHOPS.length).map((d) => [d.at, 2]),
+    ...BUKCHON.views.map((v) => [v.at, 4]),
+    ...planters.map((l) => [[l.x, l.z], 1.6]),
+    ...BUKCHON.signs.map((g) => [g.at, 2]),
+    ...region.subway.stations.flatMap((st) => st.exits || []).map((e) => [[e.at[0] - ox, e.at[1] - oz], 5]),
+    ...BUKCHON.villagers.map((v) => [v, 1.5]),
+    [[0, 3], 10], // Anguk Station's corner
+  ];
+  const ok = (q, r) => inArea(q, 1.5)
+    && !solid.some((p) => inPoly(q[0], q[1], p) || lineDist(q, [...p, p[0]]) < 0.35)
+    && [...roads, ...outside].every((o) => o === r || lineDist(q, o.p) > o.w / 2 + 0.9)
+    && keepClear.every(([c, rr]) => Math.hypot(q[0] - c[0], q[1] - c[1]) > rr);
+  for (const r of roads) {
+    const line = simplify(r.p, 1.5);
+    const shopStreet = r.w >= 6; // (Bukchon-ro, Gyedong-gil, Changdeokgung-gil: shop fronts at the foot, no walls there)
+    for (const side of [1, -1]) {
+      let run = [];
+      const flush = () => { if (run.length >= 3) wallRuns.push(run); run = []; };
+      for (let i = 1; i < line.length; i++) {
+        const [a, b] = [line[i - 1], line[i]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), u = [(b[0] - a[0]) / L, (b[1] - a[1]) / L], n = [-u[1] * side, u[0] * side];
+        const off = r.w / 2 + 0.45;
+        for (let s = i === 1 ? 0 : 1; s <= L; s += 1) {
+          const q = [r1(a[0] + u[0] * s + n[0] * off), r1(a[1] + u[1] * s + n[1] * off)];
+          if (ok(q, r) && !(shopStreet && q[1] > SHOP_Z)) run.push(q); else flush();
+        }
+      }
+      flush();
+    }
+  }
+}
+// One landmark, pieces of up to 3 m that each sit on the slope; a thin
+// blocker along each piece.
+const wallPieces = [];
+for (const run of wallRuns) for (let i = 0; i + 1 < run.length; i += 3) {
+  const a = run[i], b = run[Math.min(i + 3, run.length - 1)];
+  if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.5) continue;
+  wallPieces.push([a[0], a[1], b[0], b[1], r1(Math.min(ground(...a), ground(...b)) * 10) / 10]);
+}
+const wallBlockers = wallPieces.map(([ax, az, bx, bz]) => {
+  const L = Math.hypot(bx - ax, bz - az), nx = -(bz - az) / L * 0.25, nz = (bx - ax) / L * 0.25;
+  return { p: [[r1(ax + nx), r1(az + nz)], [r1(bx + nx), r1(bz + nz)], [r1(bx - nx), r1(bz - nz)], [r1(ax - nx), r1(az - nz)]] };
+});
+
 // ---- the Open House: a ㄷ-shaped hanok round a courtyard, a gate in the south wall ----
 // (its walls at full size round the middle, times OSC: core/bukchon-models.js openhouse)
 const [ox0, oz0, ox1, oz1] = OPEN; // x0 < x1, z0 > z1 (z0 is the south side)
@@ -391,6 +448,7 @@ const blockers = [
   { p: orect(2.5, 18, 20, 17) }, // and right of it
   ...visitBlockers, // the homes open to visitors: their wings and front walls (not the yard)
   ...planters.map((l) => ({ p: rect(l.x - 0.8, l.z + 0.8, l.x + 0.8, l.z - 0.8) })),
+  ...wallBlockers,
 ];
 
 // The Quiet Zone signs where the alleys of Gahoe-dong begin (the real rule,
@@ -423,6 +481,7 @@ const landmarks = [
   ...visitMarks, // 출입 가능 by the open homes' gates
   ...(planters.length ? [{ type: 'planters', x: r1(planters.reduce((t, l) => t + l.x, 0) / planters.length), z: r1(planters.reduce((t, l) => t + l.z, 0) / planters.length), items: planters.map(({ x, z, y, kind }) => ({ x, z, y, kind })) }] : []), // (one landmark: a few draw calls for all of them)
   ...quietSigns,
+  ...(wallPieces.length ? [{ type: 'lanewalls', x: 0, z: -110, segs: wallPieces.map(([ax, az, bx, bz, y]) => [r1(ax), r1(az + 110), r1(bx), r1(bz + 110), y]) }] : []), // (all the alley walls: one landmark, a few draw calls)
 ];
 
 const pois = [
@@ -459,4 +518,4 @@ writeFileSync(path.join(R, 'districts', 'bukchon.json'), JSON.stringify(map, nul
   writeFileSync(file, pretty(gb) + '\n');
   if (before !== gb.buildings.length) console.log(`gyeongbokgung.json: ${before - gb.buildings.length} buildings on Bukchon's ground removed`);
 }
-console.log(`bukchon.json: ${roads.length} streets, ${hanok.length} hanok (${shopLots.length} shop lots), ${bigs.length} big buildings (${dropped} on a street, left out), ${planters.length} planters, ${quietSigns.length} quiet signs, ${visitMarks.length} open homes`);
+console.log(`bukchon.json: ${roads.length} streets, ${hanok.length} hanok (${shopLots.length} shop lots), ${bigs.length} big buildings (${dropped} on a street, left out), ${planters.length} planters, ${quietSigns.length} quiet signs, ${visitMarks.length} open homes, ${wallPieces.length} wall pieces`);

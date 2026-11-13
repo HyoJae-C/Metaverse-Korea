@@ -143,6 +143,23 @@ const BUILD = {
       g.add(crown);
     }
   },
+  // The alleys' walls (담장), all as one landmark (l.segs: [ax, az, bx, bz, y],
+  // from the landmark's spot; y: the ground at the piece's lower end): a
+  // granite footing, a plaster wall and a tiled cap, a little under the
+  // ground so a piece on the slope has no gap below it.
+  lanewalls(g, l) {
+    for (const [ax, az, bx, bz, y] of l.segs) {
+      const L = Math.hypot(bx - ax, bz - az), p = new THREE.Group();
+      p.position.set((ax + bx) / 2, y, (az + bz) / 2);
+      p.rotation.y = Math.atan2(-(bz - az), bx - ax);
+      const len = L + 0.12; // (pieces overlap a little at the joins)
+      box(p, len, 0.9, 0.44, 0, 0.05, 0, '#a59d8f'); // granite footing (-0.4 .. 0.5)
+      box(p, len, 0.85, 0.34, 0, 0.925, 0, '#ece2cd'); // plaster (chest high: the roofs show over it)
+      box(p, len + 0.1, 0.1, 0.58, 0, 1.4, 0, '#3f444b'); // tile eaves
+      box(p, len + 0.1, 0.14, 0.26, 0, 1.5, 0, '#2f3338'); // ridge
+      g.add(p);
+    }
+  },
   // All the planters as one landmark (l.items: { x, z, y, kind }, district
   // metres), so they are a few draw calls, not three or four each.
   planters(g, l) {
@@ -161,10 +178,10 @@ export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f
 // Bukchon's hill (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
-// Paving, drawn once. 'alley': across the alley (u 0..1), asphalt down the
-// middle with a narrow edging of grey setts at both sides, only a little
-// lighter than the asphalt; one texture is 2 m along. 'yard': big pale
-// granite slabs, 1.6 m.
+// Paving, drawn once. 'alley' (Bukchon-ro): across the street (u 0..1),
+// asphalt down the middle with a narrow edging of grey setts, 2 m along.
+// 'setts' (the lanes): small granite setts with a drain stone each side.
+// 'yard': worn granite slabs between the houses, 2.4 m a texture.
 const paveCache = {};
 function pavingTexture(kind) {
   if (kind in paveCache) return paveCache[kind];
@@ -186,12 +203,25 @@ function pavingTexture(kind) {
       const tones = ['#77756f', '#7d7b75', '#73716c', '#7a7872'];
       for (let r = 0; r < 8; r++) { x.fillStyle = tones[(r + (x0 ? 1 : 0)) % 4]; x.fillRect(x0 + 1, r * 16 + 1, E - 2, 14); }
     }
-  } else {
-    x.fillStyle = '#bdb5a6'; x.fillRect(0, 0, 128, 128);
-    const tones = ['#ddd5c5', '#d5ccbb', '#e3dccd', '#d0c7b6'];
-    for (let r = 0; r < 2; r++) for (let i = 0; i < 2; i++) {
-      x.fillStyle = tones[r * 2 + i];
-      x.fillRect(i * 64 + 2 + (r ? 16 : 0) % 64, r * 64 + 2, 60, 60);
+  } else if (kind === 'setts') { // the lanes: small granite setts in courses, a drain stone each side
+    x.fillStyle = '#7f7a71'; x.fillRect(0, 0, 128, 128); // joints
+    let s = 11; const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const tones = ['#b3ab9d', '#a9a194', '#bdb5a7', '#a39b8e', '#b8b0a2'];
+    for (let r = 0; r < 8; r++) {
+      const sh = r % 2 ? 9 : 0;
+      for (let cx = -sh; cx < 128; cx += 18) {
+        x.fillStyle = tones[Math.floor(rnd() * tones.length)];
+        x.fillRect(Math.max(10, cx + 1), r * 16 + 1, Math.min(cx + 17, 118) - Math.max(10, cx + 1), 14);
+      }
+    }
+    for (const x0 of [0, 118]) { x.fillStyle = '#8d877c'; x.fillRect(x0, 0, 10, 128); x.fillStyle = '#9a9488'; for (let r = 0; r < 4; r++) x.fillRect(x0 + 1, r * 32 + 1, 8, 30); }
+  } else { // between the houses: worn granite slabs, quieter than the lanes
+    x.fillStyle = '#9d968a'; x.fillRect(0, 0, 128, 128);
+    const tones = ['#b9b1a3', '#b2aa9c', '#bfb7a9', '#aea698'];
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 3; i++) {
+      x.fillStyle = tones[(r + i) % 4];
+      x.fillRect(i * 43 + 1 + (r % 2 ? 20 : 0), r * 32 + 1, 41, 30);
+      if (r % 2 && i === 2) x.fillRect(1, r * 32 + 1, 19, 30);
     }
   }
   const t = new THREE.CanvasTexture(c);
@@ -216,36 +246,40 @@ export function buildBukchonHill(roads, [ox, oz]) {
   geo.computeVertexNormals();
   { // the hillside between the houses is paved too (granite slabs, see pavingTexture)
     const uv = geo.attributes.uv;
-    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 1.6, pos.getZ(i) / 1.6);
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 2.4, pos.getZ(i) / 2.4);
   }
   const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' }));
   earth.receiveShadow = true;
   g.add(earth);
-  // Alleys: ribbons along each footpath, on the slope.
-  const pts = [], uvs = [], STEP = 1.5;
-  for (const r of roads) {
-    if (r.k !== 'walk') continue;
-    for (let i = 1; i < r.p.length; i++) {
-      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
-      const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
-      for (let k = 0; k < n; k++) {
-        const quad = [k / n, (k + 1) / n].map((t) => {
-          const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
-          return [[x - px, y, z - pz], [x + px, y, z + pz]];
-        });
-        const [[a, b], [c, d]] = quad;
-        pts.push(...a, ...b, ...d, ...a, ...d, ...c);
-        const v0 = (k * len) / n / 2, v1 = ((k + 1) * len) / n / 2; // one tile every 2 m along
-        uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
+  // Alleys: ribbons along each footpath, on the slope. Bukchon-ro (the one
+  // wide street, with cars in the real one) is asphalt; the lanes are setts.
+  for (const [kind, pick] of [['alley', (r) => r.w >= 7], ['setts', (r) => r.w < 7]]) {
+    const pts = [], uvs = [], STEP = 1.5;
+    for (const r of roads) {
+      if (r.k !== 'walk' || !pick(r)) continue;
+      for (let i = 1; i < r.p.length; i++) {
+        const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
+        const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
+        const along = kind === 'setts' ? r.w / 1.6 : 2; // (setts: about 30 cm stones whatever the width)
+        for (let k = 0; k < n; k++) {
+          const quad = [k / n, (k + 1) / n].map((t) => {
+            const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
+            return [[x - px, y, z - pz], [x + px, y, z + pz]];
+          });
+          const [[a, b], [c, d]] = quad;
+          pts.push(...a, ...b, ...d, ...a, ...d, ...c);
+          const v0 = (k * len) / n / along, v1 = ((k + 1) * len) / n / along;
+          uvs.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
+        }
       }
     }
-  }
-  if (pts.length) {
+    if (!pts.length) continue;
     const rg = new THREE.BufferGeometry();
     rg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     rg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     rg.computeVertexNormals();
-    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(pavingTexture('alley') ? { map: pavingTexture('alley'), side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
+    const tex = pavingTexture(kind);
+    const alleys = new THREE.Mesh(rg, new THREE.MeshLambertMaterial(tex ? { map: tex, side: THREE.DoubleSide } : { color: '#8f8c88', side: THREE.DoubleSide }));
     alleys.receiveShadow = true;
     g.add(alleys);
   }

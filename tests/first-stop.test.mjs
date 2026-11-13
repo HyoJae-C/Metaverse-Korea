@@ -23,7 +23,7 @@ test('new players start on Bukchon-ro just up from Anguk Station, facing up into
   const near = anguk.exits.some((e) => Math.hypot(e.at[0] - f.x, e.at[1] - f.z) < 40);
   assert.ok(near, 'a few steps from Anguk Station');
   assert.ok(!map.buildings.some((b) => inPoly(lx, lz, b.p)), 'not inside a house');
-  assert.ok(Math.abs(Math.sin(f.ry)) < 0.01 && Math.cos(f.ry) < 0, 'facing north (up the village)');
+  assert.ok(Math.abs(Math.sin(f.ry)) < 0.4 && Math.cos(f.ry) < 0, 'facing north, up Bukchon-ro (a little west of north)');
 });
 
 test('the start screen offers sights, shopping, an outing, a quiet walk and arriving at Seoul Station, each with a spot, a trip and words', () => {

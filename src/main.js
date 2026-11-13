@@ -5005,11 +5005,26 @@ const inEnclosure = (d, b) => {
 for (const d of map.meta?.districts || []) {
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
   if (!hanoks.length) continue;
-  const g = buildHanoks(hanoks);
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
-  scene.add(g);
-  openHanok.push(g);
+  // In blocks of 96 m, so the ones behind you or far off aren't drawn
+  // (Bukchon has ~250 hanok at ~700 triangles each).
+  const cells = new Map();
+  for (const b of hanoks) {
+    const k = Math.floor(b.p[0][0] / 96) + ',' + Math.floor(b.p[0][1] / 96);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k).push(b);
+  }
+  for (const list of cells.values()) {
+    const g = buildHanoks(list);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(g);
+    openHanok.push(g);
+  }
+  if (d.id === BUKCHON.district) { // the hill and its alleys
+    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);
+    hill.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    scene.add(hill);
+    openHanok.push(hill);
+  }
 }
 // Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
 // shows its wall and gates from the street; what is inside is drawn once you
