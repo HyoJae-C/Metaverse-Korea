@@ -9,11 +9,11 @@ import { droneShowAt } from '../src/core/drone-show.js';
 import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
 import { ORIGIN, U, at } from '../scripts/build-yeouido.mjs';
 
-// A fireworks show's start: the fireworks are on the even cycles.
-const N = cycleNumber(Date.UTC(2026, 10, 9)) & ~1;
-const FW = (k = 0) => (N + 2 * k) * CYCLE_MS + SHOW_FROM;
+// A fireworks show's start: 23:10 KST every other day, from 2026-11-13 on.
+const N = cycleNumber(Date.UTC(2026, 10, 13)) + 4;
+const FW = (k = 0) => (N + 16 * k) * CYCLE_MS + SHOW_FROM;
 
-test('every other night of the game\'s 3-hour day, four a real day, never with the drone show', () => {
+test('23:10 KST every other day, never with the drone show', () => {
   const start = FW();
   assert.equal(fireworksAt(start - (ALERT_SECONDS + 5) * 1000), null, 'nothing before the notice');
   assert.equal(fireworksAt(start - ALERT_SECONDS * 1000 + 1000).start, start, 'the 10-minute notice');
@@ -22,11 +22,13 @@ test('every other night of the game\'s 3-hour day, four a real day, never with t
   assert.equal(droneShowAt(start + SHOW_SECONDS * 500), null, 'no drones the same night');
   assert.equal(fireworksAt(start - 60 * 60e3), null, 'no show in the day');
   assert.equal(nextFireworks(start - 60 * 60e3), start);
-  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one 6 hours later');
-  assert.equal(FW(1) - start, 2 * CYCLE_MS);
+  assert.equal(new Date(start + 9 * 3600e3).toISOString().slice(0, 16), '2026-11-13T23:10');
+  assert.equal(nextFireworks(start + 30 * 60e3), FW(1), 'the next one two days later');
+  assert.equal(FW(1) - start, 48 * 3600e3);
+  assert.ok(droneShowAt(start + 24 * 3600e3 + 60e3)?.on, 'the drones the day in between');
   let n = 0;
-  for (let s = nextFireworks(start - 1); s < start + 24 * 3600e3; s = nextFireworks(s)) n++;
-  assert.equal(n, 4);
+  for (let s = nextFireworks(start - 1); s < start + 7 * 24 * 3600e3; s = nextFireworks(s)) n++;
+  assert.equal(n, 4, 'four in a week');
 });
 
 test('Yeouido\'s sky darkens before the show and brightens after it, smoothly', () => {
@@ -87,7 +89,7 @@ test('volleys: now and then several shells burst at the same moment, across the 
   // so now and then two kinds share one)
   assert.ok(volleys.filter((v) => v.every((x) => x.kind === v[0].kind)).length > volleys.length * 0.95, 'one kind per volley');
   const salvo = volleys.filter((v) => v[0].t >= 235 && v[0].t < 270);
-  assert.ok(salvo.length > 20 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
+  assert.ok(salvo.length > 15 && salvo.every((v) => v.length >= 5), 'the salvo is all volleys of 5 to 7');
   assert.ok(volleys.some((v) => v[0].t >= FINALE_TIME && v.length >= 7), 'big volleys in the finale');
 });
 

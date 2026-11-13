@@ -140,8 +140,15 @@ export class Zones {
   update(camera, px, pz, t) {
     let inside = null, bestD = Infinity;
     for (const it of this.items) {
+      // The board hangs at the pole's middle, so the pole cut through its
+      // name. Slide the board and the letter a little toward the camera so
+      // both always sit in front of the pole and the beam.
+      let dx = camera.position.x - it.x, dz = camera.position.z - it.z;
+      const len = Math.hypot(dx, dz) || 1;
+      dx /= len; dz /= len;
+      it.board.position.set(dx * FRONT, 4.4, dz * FRONT);
       it.board.lookAt(camera.position.x, it.board.getWorldPosition(_v).y, camera.position.z);
-      it.letter.position.y = 7 + Math.sin(t * 1.5 + it.x) * 0.15;
+      it.letter.position.set(dx * FRONT, 7 + Math.sin(t * 1.5 + it.x) * 0.15, dz * FRONT);
       const d = Math.hypot(it.x - px, it.z - pz);
       if (d < it.zone.radius && d < bestD) { bestD = d; inside = it.zone; }
     }
@@ -150,3 +157,4 @@ export class Zones {
 }
 
 const _v = new THREE.Vector3();
+const FRONT = 0.3; // m in front of the pole (its radius is 0.15)

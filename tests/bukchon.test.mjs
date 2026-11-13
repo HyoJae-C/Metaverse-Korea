@@ -74,7 +74,7 @@ test('hanok houses keep off the streets', () => {
 test('Bukchon shops stand in Bukchon, with hanok fronts', () => {
   // The hands-on rooms all stand in Bukchon, along Bukchon-ro 2-gil, each on a
   // hanok's long front (on a short gable end the shop front sticks out past the eaves).
-  const ids = ['info-bukchon', 'gahoe-hanbok', 'noeul-teahouse', 'giwa-photo', 'maeum-knot', 'saekji-paper', 'sonmat-kimchi', 'suragan-cooking', 'matcha-garden'];
+  const ids = ['info-bukchon', 'gahoe-hanbok', 'noeul-teahouse', 'giwa-photo', 'maeum-knot', 'saekji-paper', 'sonmat-kimchi', 'suragan-cooking', 'kimbap-class', 'tteok-class', 'bibimbap-class', 'matcha-garden'];
   const parts = region.districts.map((d) => ({ ...d, map: read(d.map) }));
   const boxes = districtBoxes(mergeDistricts(parts));
   for (const id of ids) {

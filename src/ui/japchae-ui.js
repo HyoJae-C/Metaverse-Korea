@@ -1,4 +1,4 @@
-// Japchae class panel at Suragan Cooking Class (rules in core/japchae-game.js,
+// Japchae class panel at the Royal Japchae Class (궁중잡채체험) (rules in core/japchae-game.js,
 // text in japchae-text.js). Eight steps from slicing the vegetables to the
 // finished plate; each step ends with the teacher's verdict and its score,
 // and the end shows a medal, the steps, the Korean words met on the way and

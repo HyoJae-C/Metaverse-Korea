@@ -14,8 +14,8 @@
 
 import { smooth, showStarts, FIREWORKS } from './show-clock.js';
 
-// When: every other night of the game's three-hour day (show-clock.js),
-// taking turns with the Ttukseom drone show: four times a real day.
+// When: 23:10 KST every other day, taking turns with the Ttukseom drone
+// show (show-clock.js PLAN): rare, so it feels special.
 // 8¾ minutes (t = 0 … 525; 70 minutes on the game's clock). Was 20: too long
 // to stay exciting, and a show that's over soon is one you make a point of
 // catching (Yozi: "너무길어서 오히려 보는사람이 지루하고 불꽃놀이 희귀성이

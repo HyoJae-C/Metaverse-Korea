@@ -1660,10 +1660,16 @@ export function buildInterior(store) {
         sign2.rotation.y = ry;
         scene.add(sign2);
       }
-    } else if (store.workshop === 'japchae') {
-      // Suragan Cooking Class: a long cooking table with a burner and a pan
-      // at each place, bowls of coloured vegetables down the middle, and a
-      // big mixing bowl at the far end. The teacher stands at the head.
+    } else if (['japchae', 'kimbap', 'tteok', 'bibimbap'].includes(store.workshop)) {
+      // Royal Japchae Class (궁중잡채체험), Kimbap Making Class (김밥만들기체험),
+      // Tteok Making Class (떡만들기체험) and Bibimbap Making Class
+      // (비빔밥만들기체험), rooms along Bukchon-ro 2-gil. One long cooking table
+      // each, with a place on both sides: japchae has a burner and a pan,
+      // kimbap a bamboo mat, tteok a wooden board with balls of dough, and
+      // bibimbap a brass bowl of rice. At the far end, a big bowl (noodles,
+      // rice) or, for tteok, a wooden steamer (시루). Bowls of coloured
+      // vegetables run down the middle. The teacher stands at the head.
+      const kind = store.workshop, isKimbap = kind === 'kimbap';
       const tz = -d * 0.06, tw = Math.min(7, w - 8);
       box(tw, 0.08, 1.6, 0, 0.7, tz, '#d9d2c4'); // stainless-look top
       box(tw, 0.62, 1.5, 0, 0.33, tz, '#8a5a3a');
@@ -1672,20 +1678,43 @@ export function buildInterior(store) {
       const vegCol = ['#f08a2c', '#3f8f3f', '#d8402c', '#7a5236', '#f3e7c9', '#ffd23a'];
       for (let k = 0; k < 3; k++) {
         const x = (k - 1) * (tw / 3.2);
-        // Back side: a burner and a pan (japchae).
-        const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
-        burner.position.set(x, 0.76, tz - 0.42);
-        scene.add(burner);
-        const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
-        pan.position.set(x, 0.82, tz - 0.42);
-        scene.add(pan);
-        box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz - 0.42, '#3a3a3e'); // handle
-        spots.push({ x, z: tz - 1.3 });
-        // Front side: a bamboo mat (김발) with a sheet of gim and rice (kimbap).
-        box(0.5, 0.02, 0.44, x, 0.75, tz + 0.42, '#c9b27a');
-        box(0.42, 0.012, 0.36, x, 0.767, tz + 0.42, '#1f2a1c');
-        box(0.38, 0.03, 0.24, x, 0.782, tz + 0.37, '#f4f1e8');
-        rolls.push({ x, z: tz + 1.3 });
+        for (const sz of [-1, 1]) {
+          if (kind === 'tteok') {
+            // A wooden board with three balls of dough (white, green, pink).
+            box(0.5, 0.03, 0.36, x, 0.755, tz + sz * 0.42, '#c49a6c');
+            ['#f6f1e6', '#8fbf6a', '#f2b8c6'].forEach((c, j) => {
+              const ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), mat(c));
+              ball.position.set(x - 0.14 + j * 0.14, 0.81, tz + sz * 0.42);
+              scene.add(ball);
+            });
+            rolls.push({ x, z: tz + sz * 1.3 });
+          } else if (kind === 'bibimbap') {
+            // A brass bowl (놋그릇) of rice.
+            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.12, 0.1, 16), mat('#c9a227'));
+            bowl.position.set(x, 0.79, tz + sz * 0.42);
+            scene.add(bowl);
+            const rice = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.015, 16), mat('#f4f1e8'));
+            rice.position.set(x, 0.84, tz + sz * 0.42);
+            scene.add(rice);
+            rolls.push({ x, z: tz + sz * 1.3 });
+          } else if (isKimbap) {
+            // A bamboo mat (김발) with a sheet of gim and rice.
+            box(0.5, 0.02, 0.44, x, 0.75, tz + sz * 0.42, '#c9b27a');
+            box(0.42, 0.012, 0.36, x, 0.767, tz + sz * 0.42, '#1f2a1c');
+            box(0.38, 0.03, 0.24, x, 0.782, tz + sz * 0.37, '#f4f1e8');
+            rolls.push({ x, z: tz + sz * 1.3 });
+          } else {
+            // A burner and a pan.
+            const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), mat('#2b2b2e'));
+            burner.position.set(x, 0.76, tz + sz * 0.42);
+            scene.add(burner);
+            const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.07, 18, 1, true), mat('#3a3a3e', { side: THREE.DoubleSide }));
+            pan.position.set(x, 0.82, tz + sz * 0.42);
+            scene.add(pan);
+            box(0.3, 0.025, 0.04, x + 0.36, 0.84, tz + sz * 0.42, '#3a3a3e'); // handle
+            spots.push({ x, z: tz + sz * 1.3 });
+          }
+        }
         // Little bowls of sliced vegetables between the places.
         for (let j = 0; j < 2; j++) {
           const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.07, 12), mat('#f7f3ea'));
@@ -1696,16 +1725,26 @@ export function buildInterior(store) {
           scene.add(veg);
         }
       }
-      stations.japchae = spots;
-      stations.kimbap = rolls;
+      if (kind === 'japchae') stations.japchae = spots;
+      else stations[kind] = rolls;
       stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
-      // The big mixing bowl with glossy noodles at the far end.
-      const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
-      big.position.set(tw / 2 + 1.1, 1.0, tz);
-      scene.add(big);
-      const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat('#9a6a45'));
-      noodles.position.set(tw / 2 + 1.1, 0.88, tz);
-      scene.add(noodles);
+      if (kind === 'tteok') {
+        // A wooden steamer (시루) on a stand, pine needles peeking out.
+        const siru = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.5, 18), mat('#9a6a45'));
+        siru.position.set(tw / 2 + 1.1, 0.8, tz);
+        scene.add(siru);
+        const pine = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.04, 18), mat('#3f6b3a'));
+        pine.position.set(tw / 2 + 1.1, 1.07, tz);
+        scene.add(pine);
+      } else {
+        // The big bowl at the far end: glossy noodles, or white rice.
+        const big = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat('#e9e4da', { side: THREE.DoubleSide }));
+        big.position.set(tw / 2 + 1.1, 1.0, tz);
+        scene.add(big);
+        const noodles = new THREE.Mesh(new THREE.CircleGeometry(0.38, 18).rotateX(-Math.PI / 2), mat(kind === 'japchae' ? '#9a6a45' : '#f4f1e8'));
+        noodles.position.set(tw / 2 + 1.1, 0.88, tz);
+        scene.add(noodles);
+      }
       box(0.9, 0.55, 0.9, tw / 2 + 1.1, 0.28, tz, '#8a5a3a'); // its stand
       block(tw / 2 + 1.1, tz, 1, 1);
       // A low stone ledge of sauce jars (간장 · soy sauce) by the front-left wall.
@@ -1720,7 +1759,7 @@ export function buildInterior(store) {
       });
       block(jx0 + 2.1, jz, 5, 1.2);
     } else if (store.workshop === 'kimchi') {
-      // Sonmat Kimchi School: a long low work table with cabbages, bowls of
+      // Kimchi Making Class (김치만들기체험): a long low work table with cabbages, bowls of
       // red seasoning and a salt sack; a big red rubber tub (고무대야) of
       // salted cabbage; a row of onggi jars (장독) by the front wall. The
       // teacher stands at the head of the table; students stand along it.

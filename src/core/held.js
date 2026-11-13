@@ -17,7 +17,7 @@ export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0]
 export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'bait'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
-export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
+export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
 // (a frisbee also carries its colour: 'gift:frisbee.2')
 export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
 export const COFFEE_SIPS = 5; // taps to finish a cup
@@ -292,6 +292,13 @@ function giftLook(g, sub) {
   } else if (sub === 'kimchi') { // a glass jar of homemade kimchi with a lid
     add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 14), '#c8392b', 0, 0.05);
     add(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 14), '#2f6f4f', 0, 0.11);
+  } else if (sub === 'tteok') { // a little wooden box of songpyeon: white, green and pink half-moons
+    add(new THREE.BoxGeometry(0.11, 0.035, 0.11), '#b88a5a', 0, 0.018);
+    ['#f6f1e6', '#8fbf6a', '#f2b8c6'].forEach((c, k) => add(new THREE.SphereGeometry(0.022, 8, 6).scale(1.3, 0.7, 0.8), c, -0.03 + k * 0.03, 0.045));
+  } else if (sub === 'bibimbap') { // a brass bowl with coloured toppings and an egg on top
+    add(new THREE.CylinderGeometry(0.065, 0.045, 0.05, 16), '#c9a227', 0, 0.025);
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 16), '#d9402c', 0, 0.052);
+    add(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 12), '#ffd23a', 0, 0.058);
   } else { // japchae, kimbap: a homemade lunch box (dosirak) with a cloth knot
     add(new THREE.BoxGeometry(0.1, 0.06, 0.13), sub === 'kimbap' ? '#2b3a2b' : '#c98a3e', 0, 0.03);
     add(new THREE.BoxGeometry(0.105, 0.012, 0.135), '#f4d35e', 0, 0.066);

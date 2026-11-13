@@ -427,6 +427,22 @@ export function createChat(game) {
     const asked = friendList.incoming.some((x) => x.name === personFor.name); // they sent me one
     btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : asked ? '✅ ' + L(FRIEND_TEXT.acceptReq) : '➕ ' + L(FRIEND_TEXT.addFriend);
   }
+  // Gifts go to friends only (game/gifts.js): what someone is to me, by name
+  // like the person menu: 'friend', 'out' (I asked), 'in' (they asked) or null.
+  let testFriends = null; // e2e only (__mk.giftFriends): names taken as friends
+  function friendStatus(name) {
+    if (testFriends?.has(name)) return 'friend';
+    if (!friendBackend) return null;
+    if (friendList.friends.some((x) => x.name === name)) return 'friend';
+    if (friendList.outgoing.some((x) => x.name === name)) return 'out';
+    if (friendList.incoming.some((x) => x.name === name)) return 'in';
+    return null;
+  }
+  async function addFriend(name) {
+    const st = friendStore();
+    if (!st) { game.shop.toast(L(FRIEND_TEXT.noAccount)); return; }
+    friendsUi._result(await st.add(name), name);
+  }
   $('person-friend').onclick = async () => {
     if (!personFor) return;
     const st = friendStore();
@@ -522,5 +538,5 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

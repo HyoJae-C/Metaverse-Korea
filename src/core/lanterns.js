@@ -30,6 +30,7 @@
 // arrive later see it too. A few lanterns float by on their own, from the
 // clock, so the stream is never empty.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mergeStatic } from './merge-static.js';
 import { canvasTex } from './three-kit.js';
 import { glowAtNight } from './weather.js';
@@ -473,7 +474,8 @@ export function buildLanternFestival(g, s) {
   }
   const ticks = [];
   if (conf.tunnel) ticks.push(lightTunnel(root, s, conf.tunnel));
-  if (conf.mural) procession(root, s, conf.mural);
+  const keep = [];
+  if (conf.mural) keep.push(procession(root, s, conf.mural));
   if (conf.wish) { // a sign at the start of the wish lantern corner, on both walkways
     for (const sd of [-1, 1]) {
       const sign = signPost(['소원등'], '#b03a2e');
@@ -482,7 +484,7 @@ export function buildLanternFestival(g, s) {
       root.add(sign);
     }
   }
-  mergeStatic(root); // the still figures, ropes and signs: a mesh per colour (core/merge-static.js)
+  mergeStatic(root, keep); // the still figures, ropes and signs: a mesh per colour (core/merge-static.js)
   return { root, tick: (t) => { for (const f of ticks) f(t); } };
 }
 
@@ -566,12 +568,15 @@ function procession(root, s, c) {
     else g.translate(x + w / 2, 0, 0);
     geos.push(g);
   });
-  for (const g of geos) {
-    const m = new THREE.Mesh(g, mat);
-    m.position.set(c.from, -D + 0.55 + h / 2, sd * (hw - 0.31));
-    m.userData.noShadow = true;
-    root.add(m);
-  }
+  // One mesh for all the panels, kept out of mergeStatic: its picture loads
+  // later, so the merge would see a plain material and throw the UVs away
+  // (the wall went blank from 2026-11-09 until this was fixed).
+  const wall = new THREE.Mesh(mergeGeometries(geos), mat);
+  for (const g of geos) g.dispose();
+  wall.name = 'banchado';
+  wall.position.set(c.from, -D + 0.55 + h / 2, sd * (hw - 0.31));
+  wall.userData.noShadow = true;
+  root.add(wall);
   // A frame of dark stone round it, and between the panels.
   const frame = lam('#6f655a');
   for (const y of [-D + 0.5, -D + 0.6 + h]) {
@@ -590,6 +595,7 @@ function procession(root, s, c) {
   sign.position.set(c.from - 1.5, -D, sd * (hw - 1.6));
   sign.rotation.y = sd > 0 ? Math.PI : 0;
   root.add(sign);
+  return wall;
 }
 // A little sign on a post, in Korean (the action next to it explains it in
 // the player's language).
