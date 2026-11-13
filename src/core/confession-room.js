@@ -44,7 +44,7 @@ export const CONFESSION_STORE = {
   workshop: 'confession',
   size: 'confession',
   solo: true,
-  name: { en: 'Confession Room', ko: '고해실', ja: '告解室', zh: '告解室' },
+  name: { en: 'Confession Room', ko: '고해성사실', ja: '告解室', zh: '告解室' },
   tagline: {
     en: 'Inside Myeongdong Cathedral: just you and the priest. Nothing you type here leaves your device.',
     ko: '명동대성당 안: 나와 신부님뿐. 여기서 친 글은 내 기기 밖으로 나가지 않아요.',
@@ -56,7 +56,7 @@ export const CONFESSION_STORE = {
 };
 
 export const CONFESSION_TEXT = {
-  enter: { en: 'Go to confession', ko: '고해실에 들어가기', ja: '告解室に入る', zh: '进入告解室' },
+  enter: { en: 'Go to confession', ko: '고해성사실에 들어가기', ja: '告解室に入る', zh: '进入告解室' },
   back: { en: 'Back to the cathedral', ko: '성당으로 돌아가기', ja: '聖堂に戻る', zh: '回到教堂' },
   priest: { en: 'Priest', ko: '신부님', ja: '神父さま', zh: '神父' },
   private: {
