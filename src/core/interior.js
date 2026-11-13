@@ -24,6 +24,7 @@ import { buildStation, buildTrainCar, CAR } from './subway-rooms.js';
 import { PALETTES, LIP_FAMILIES } from '../data/appearance.js';
 import { buildGallery, ROOM_MUSEUM } from './museum.js';
 import { buildCulture } from './culture.js';
+import { buildPhotoShow, ROOM_PHOTO } from './photo-show.js';
 import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
 import { ROOM_DOME } from './dome-outside.js';
 import { ACTIVITY_ROOMS, decorateActivityRoom } from './activity-rooms.js';
@@ -59,6 +60,7 @@ export const ROOM_SIZES = {
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
+  photoshow: ROOM_PHOTO, // Seoul Forest's culture center: a photo show on three floors (see photo-show.js)
   pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
   dome: ROOM_DOME, // Modu Ballpark, the baseball stadium (see dome.js)
@@ -261,7 +263,7 @@ export function buildInterior(store) {
   wall(w, 0, d / 2, Math.PI);
 
   // Exit door on the front wall (none upstairs in the museums).
-  const noExit = (store.category === 'museum' || store.category === 'memorial') && store.floor > 1;
+  const noExit = (store.category === 'museum' || store.category === 'memorial' || store.workshop === 'photo-show') && store.floor > 1;
   // One-sided and facing in, like the walls, so a camera behind the player
   // (outside the front wall) looks through it instead of at a dark slab.
   const door = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), new THREE.MeshLambertMaterial({ color: store.colors.sign }));
@@ -288,7 +290,7 @@ export function buildInterior(store) {
   const tw = Math.min(10, w - 1, (h - 2.55) * 6.4), th = tw / 6.4; // stays above the big mirrors
   const title = new THREE.Mesh(new THREE.PlaneGeometry(tw, th), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
   title.position.set(0, h - 0.15 - th / 2, -d / 2 + 0.02);
-  if (store.category !== 'home' && store.category !== 'memorial' && !store.cinema) scene.add(title); // the cinema's back wall is its screen
+  if (store.category !== 'home' && store.category !== 'memorial' && !store.cinema && store.workshop !== 'photo-show') scene.add(title); // (the photo show's back wall is its dark gallery) // the cinema's back wall is its screen
 
   const colliders = [];
   const box = (sx, sy, sz, x, y, z, color) => {
@@ -553,8 +555,16 @@ export function buildInterior(store) {
     seats.push(...hall.seats);
     clerk = hall.clerk;
     see = hall.see;
+  } else if (store.workshop === 'photo-show') {
+    // Seoul Forest's culture center: a photo show on three floors (core/photo-show.js).
+    const show = buildPhotoShow(scene, ROOM, { box, block, mat }, store.floor || 1);
+    stations.paintings = show.looks;
+    stations.lift = show.lift;
+    seats.push(...show.seats);
+    clerk = show.clerk;
+    see = show.see;
   } else if (store.category === 'culture') {
-    // Seoul Forest's culture center and forest galleries (core/culture.js).
+    // The forest galleries (core/culture.js).
     const room = buildCulture(scene, ROOM, { box, block, mat }, store);
     seats.push(...room.seats);
     clerk = room.clerk;
@@ -1974,7 +1984,7 @@ export function buildInterior(store) {
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home' && !store.cinema) for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
+  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);

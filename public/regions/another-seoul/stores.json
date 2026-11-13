@@ -2755,10 +2755,11 @@
     {
       "id": "seoul-forest-culture",
       "category": "culture",
-      "size": "large",
+      "workshop": "photo-show",
+      "size": "photoshow",
       "at": [-354, -36],
       "name": { "ko": "서울숲 문화센터", "en": "Seoul Forest Culture Center", "ja": "ソウルの森文化センター", "zh": "首尔林文化中心" },
-      "tagline": { "en": "Exhibitions in the forest. The next show is being prepared.", "ko": "숲속의 전시 공간. 다음 전시를 준비하고 있어요.", "ja": "森の中の展示スペース。次の展示を準備中です。", "zh": "林中的展览空间，下一场展览正在筹备中。" },
+      "tagline": { "en": "Photo exhibition \"Seoul As I Saw It\" by Sai e: 31 photos on three floors", "ko": "사이에 작가 사진전 「내가 본 서울」: 3개 층에 사진 31점", "ja": "サイエ写真展「私が見たソウル」：3フロアに写真31点", "zh": "Sai e 摄影展《我眼中的首尔》：三层楼共31幅照片" },
       "colors": { "sign": "#2f6b3f", "awning": "#9fd8b4", "accent": "#f6f4ee" },
       "products": []
     },
