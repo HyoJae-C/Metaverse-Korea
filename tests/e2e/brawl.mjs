@@ -1,4 +1,4 @@
-// End-to-end check: the fighting game cabinet in the claw-machine room.
+// End-to-end check: the fighting game cabinets in the arcade.
 // The cabinet's action opens Rooftop Rumble; a match starts, the buttons
 // hit, and leaving gives the room back.
 //   npm run build && npx vite preview --port 4173 &
@@ -20,9 +20,9 @@ await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
 if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
 const shot = async (n) => { if (S) await page.screenshot({ path: `${S}/${n}${phone ? '-phone' : ''}.png` }); };
 
-await page.evaluate(() => __mk.enter('lucky-claw'));
+await page.evaluate(() => __mk.enter('punch-arcade'));
 await page.waitForTimeout(1500);
-const st = { x: -2.8, z: 1.3 }; // in front of the cabinet by the left wall (core/interior.js, a small room)
+const st = { x: -9.3, z: 1.6 }; // in front of a cabinet by the left wall (core/activity-rooms.js arcade)
 await page.evaluate(([x, z]) => __mk.place(x, z), [st.x, st.z]);
 await page.waitForTimeout(500);
 await shot('brawl-room');

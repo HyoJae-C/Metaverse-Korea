@@ -45,7 +45,9 @@ const held = (n) => (n & 15) | (1 << 4); // the stick only: no buttons, no dash
 
 // side: 0 the host (the left fighter in the rules), 1 the guest.
 // send(msg): to the other player. styles: [host's, guest's].
-export function createSession({ side, styles, send }) {
+// onSure(ia, ib, match): each tick once it is certain, in order (the host
+// shows the match on the arcade's wall screen from these: core/brawl-tv.js).
+export function createSession({ side, styles, send, onSure }) {
   let conf = newMatch(styles[0], styles[1], true); // the match after `sure` ticks, certain
   let sure = 0;
   let head = 0; // ticks we have played
@@ -82,6 +84,7 @@ export function createSession({ side, styles, send }) {
   function advance(out) {
     while (sure < head && sure <= theirsTo) {
       fresh(step(conf, sure, true), sure, true, out);
+      if (onSure) { const me = inputAt(mine, sure), them = inputAt(theirs, sure); onSure(side ? them : me, side ? me : them, conf); }
       sure++;
       softTo = Math.max(softTo, sure);
       if (sure % SNAP_EVERY === 0) {

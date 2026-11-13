@@ -9,6 +9,7 @@ import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor } from '../core/brawl.js';
 import { createSession } from '../core/brawl-net.js';
+import { createCaster } from '../core/brawl-tv.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
@@ -101,7 +102,7 @@ const tt = (k, v) => fmt(L(T[k]), v);
 // the sky over their round.
 // The eight styles: a name, a line about it, the signature move's name, and
 // how it stands (bone offsets like STANCE below).
-const STYLE = {
+export const STYLE = {
   brawler: {
     icon: '🥊',
     name: { en: 'Brawler', ko: '격투가', ja: '格闘家', zh: '格斗家', es: 'Luchador', id: 'Petarung', vi: 'Võ sĩ', hi: 'लड़ाका', fr: 'Bagarreur', th: 'นักสู้', ar: 'المقاتل' },
@@ -160,7 +161,7 @@ const STYLE = {
 };
 const BTN = { lp: '👊ʟ', rp: '👊ʀ', lk: '🦶ʟ', rk: '🦶ʀ' };
 
-const RIVAL = [
+export const RIVAL = [
   { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
   { name: { en: 'Night-shift Mina', ko: '야간조 미나', ja: '夜勤のミナ', zh: '夜班米娜' }, style: 'ninja', look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
   { name: { en: 'Busker Joon', ko: '버스커 준', ja: 'バスカー・ジュン', zh: '街头艺人俊' }, style: 'dancer', look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
@@ -170,7 +171,7 @@ const RIVAL = [
 
 // The ring's build (× the street's): about three heads tall instead of two.
 const BUILD = globalThis.__brawlBuild || { head: 0.75, torso: 1.08, arm: 1.3, leg: 1.4, lift: 0.1 };
-const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
+export const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
 const STAGE_Y = -80; // under the room, out of its sight
 const FOV = 38;
 
@@ -410,9 +411,9 @@ function sparkTexture() {
   g.fill();
   return new THREE.CanvasTexture(c);
 }
-function buildStage(sky) {
+export function buildStage(sky, y = STAGE_Y) {
   const g = new THREE.Group();
-  g.position.y = STAGE_Y;
+  g.position.y = y;
   const own = []; // to free
   const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); own.push(geo, mat); if (mat.map) own.push(mat.map); g.add(m); return m; };
   const dome = add(new THREE.SphereGeometry(60, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(sky), side: THREE.BackSide, depthWrite: false }));
@@ -457,6 +458,52 @@ function buildStage(sky) {
     return sp;
   });
   return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
+}
+
+// ── The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ──
+export function makeFighter(look, side, parent) {
+  const ch = createCharacter(look);
+  const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
+  const f = { ch, rig, pose: P({}), body: {}, clipT: 0, live: true, side };
+  ch.root.position.set(side ? 1.1 : -1.1, 0, 0);
+  ch.root.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
+  ch.setMoves(() => (f.live ? f.pose : null));
+  parent.add(ch.root);
+  return f;
+}
+// In the ring only, fighters are built taller: a smaller head and longer
+// arms and legs, so a punch and a kick read from across the screen. Set
+// every frame after the clip's own pose (the model resets the head's size).
+function reshape(f) {
+  const root = f.ch.root;
+  if (!f.bones) {
+    const get = (n) => root.getObjectByName(n);
+    const b = { head: get('head'), spine: get('spine'), arms: [get('upperarml'), get('upperarmr')], legs: [get('upperlegl'), get('upperlegr')] };
+    if (!b.head || !b.legs[0]) return; // (the model is still on its way)
+    f.bones = b;
+  }
+  const b = f.bones;
+  b.spine?.scale.setScalar(BUILD.torso);
+  b.head.scale.multiplyScalar(BUILD.head / BUILD.torso);
+  for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
+  for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
+}
+// Stand fighter f as the rules have it (s). right: on the right of the picture.
+export function placeFighter(f, s, dt, time, right) {
+  const root = f.ch.root;
+  root.position.set(s.x, 0, s.z);
+  poseOf(s, time, f.pose, f.body);
+  if (right) mirror(f.pose);
+  if (f.clipT > 0) f.clipT -= dt;
+  f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
+  f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
+  f.rig.rotation.x = f.body.pitch;
+  root.visible = !f.body.hide;
+  // Chest a little toward the camera, like a fighting stance.
+  const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (right ? 0.4 : -0.4);
+  root.rotation.y = Math.PI / 2 - s.face + open + (right ? 1 : -1) * f.body.yaw;
+  f.ch.animate(dt, 0, false);
+  reshape(f);
 }
 
 // ── The game ─────────────────────────────────────────────────────────────
@@ -632,6 +679,7 @@ export function createBrawl(game) {
     pick(on.style);
   }
   function menu(note) {
+    endCast();
     const rec = loadBrawl(store);
     on.style = rec.style || on.style || 'brawler';
     on.flip = 0;
@@ -706,6 +754,7 @@ export function createBrawl(game) {
       else tell(vs.peer.id, vs.host ? 'c' : 'n', vs.nonce);
     }
     vs.dead = true;
+    endCast();
     const link = vs.link;
     if (link) setTimeout(() => link.close(), 300); // (after the goodbye has gone)
     on.vs = null; on.match = null; on.flip = 0;
@@ -762,7 +811,11 @@ export function createBrawl(game) {
   function startVs() {
     const vs = on.vs;
     vs.st = 'play';
-    vs.session = createSession({ side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); } });
+    vs.session = createSession({
+      side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); },
+      onSure: vs.host ? (ia, ib, m) => on?.cast?.step(ia, ib, m) : undefined, // (the host shows it to the room)
+    });
+    if (vs.host) cast({ b: vs.peer.id, n: [game.nickname || '', vs.peer.name] }, vs.session.certain);
     startUi();
     on.match = vs.session.match;
   }
@@ -799,33 +852,7 @@ export function createBrawl(game) {
   }
 
   // ── The fighters ──
-  function fighter(look, side) {
-    const ch = createCharacter(look);
-    const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
-    const f = { ch, rig, pose: P({}), body: {}, clipT: 0, live: true, side, shownX: side ? 1.1 : -1.1, shownZ: 0 };
-    ch.root.position.set(f.shownX, 0, 0);
-    ch.root.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
-    ch.setMoves(() => (f.live ? f.pose : null));
-    on.stage.g.add(ch.root);
-    return f;
-  }
-  // In the ring only, fighters are built taller: a smaller head and longer
-  // arms and legs, so a punch and a kick read from across the screen. Set
-  // every frame after the clip's own pose (the model resets the head's size).
-  function reshape(f) {
-    const root = f.ch.root;
-    if (!f.bones) {
-      const get = (n) => root.getObjectByName(n);
-      const b = { head: get('head'), spine: get('spine'), arms: [get('upperarml'), get('upperarmr')], legs: [get('upperlegl'), get('upperlegr')] };
-      if (!b.head || !b.legs[0]) return; // (the model is still on its way)
-      f.bones = b;
-    }
-    const b = f.bones;
-    b.spine?.scale.setScalar(BUILD.torso);
-    b.head.scale.multiplyScalar(BUILD.head / BUILD.torso);
-    for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
-    for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
-  }
+  const fighter = (look, side) => makeFighter(look, side, on.stage.g);
   // Who stands across the ring: one of the five rivals, or another player.
   function setFoe(key, look, name, style, sky) {
     on.foeStyle = style;
@@ -848,6 +875,13 @@ export function createBrawl(game) {
     on.rivalStage = stage;
     setFoe('r:' + stage, RIVAL[stage].look, L(RIVAL[stage].name), RIVAL[stage].style, RIVAL[stage].sky);
   }
+  // The match goes out to the room, for the arcade's wall screens (core/brawl-tv.js).
+  function cast(about, m) {
+    endCast();
+    on.cast = createCaster((text) => game.net?.sendEmote?.(text), about);
+    on.cast.start(m);
+  }
+  function endCast() { on?.cast?.end(); if (on) on.cast = null; }
   function startUi() {
     on.card?.remove(); on.card = null;
     if (on.hud.pad) on.hud.pad.style.display = '';
@@ -859,7 +893,9 @@ export function createBrawl(game) {
   function begin(stage) {
     if (on.vs) return;
     startUi();
-    on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
+    const m = on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
+    cast({ b: 'r' + stage, n: [game.nickname || '', ''] }, m);
+    m.onStep = (ia, ib) => on?.cast?.step(ia, ib, m);
     on.stageNo = stage;
   }
 
@@ -907,23 +943,7 @@ export function createBrawl(game) {
   }
 
   const v = new THREE.Vector3(), camAt = new THREE.Vector3(), camTo = new THREE.Vector3();
-  function place(f, s, dt) {
-    const root = f.ch.root;
-    root.position.set(s.x, 0, s.z);
-    poseOf(s, on.time, f.pose, f.body);
-    const right = s.side ^ on.flip; // on the right of the screen
-    if (right) mirror(f.pose);
-    if (f.clipT > 0) f.clipT -= dt;
-    f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
-    f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
-    f.rig.rotation.x = f.body.pitch;
-    root.visible = !f.body.hide;
-    // Chest a little toward the camera, like a fighting stance.
-    const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (right ? 0.4 : -0.4);
-    root.rotation.y = Math.PI / 2 - s.face + open + (right ? 1 : -1) * f.body.yaw;
-    f.ch.animate(dt, 0, false);
-    reshape(f);
-  }
+  const place = (f, st, dt) => placeFighter(f, st, dt, on.time, st.side ^ on.flip);
 
   // A fight with someone: waiting for an answer runs out, hello on the
   // match's channel, and the match itself (the clock never stops for a hit).
@@ -991,6 +1011,7 @@ export function createBrawl(game) {
         const won = m.result === 0;
         if (won) game.me?.play?.('cheer');
         on.match = null;
+        endCast();
         result(on.stageNo, won);
       }
     } else {
@@ -1040,6 +1061,7 @@ export function createBrawl(game) {
   function close() {
     if (!on) return;
     leaveVs(true);
+    endCast();
     const o = on;
     on = null;
     removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true); removeEventListener('keydown', onShift, true);
@@ -1058,7 +1080,7 @@ export function createBrawl(game) {
     close,
     show() {
       if (on || !game.interior || !game.activeScene) return;
-      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, flip: 0, vs: null, foeKey: null, foeStyle: null, vsList: null, cheer: null, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
+      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, flip: 0, vs: null, foeKey: null, foeStyle: null, vsList: null, cheer: null, cast: null, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
       on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0, style: 'brawler' }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0, style: 'brawler' }];
       on.hud = buildHud();
       document.documentElement.classList.add('brawl-on');

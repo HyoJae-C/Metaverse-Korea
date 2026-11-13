@@ -482,8 +482,14 @@ export function stepMatch(m, ia = NO_INPUT, ib = NO_INPUT) {
 export function createMatch({ level = 0, rand = Math.random, style = 'brawler', rivalStyle = 'brawler' } = {}) {
   const m = newMatch(style, rivalStyle);
   m.ai = createAi(level, rand);
-  const think = () => m.ai(m.b, m.a);
-  m.step = (input = NO_INPUT) => stepMatch(m, input, think);
+  // m.onStep(ia, ib): what each tick was played with (the arcade's wall
+  // screen replays it: core/brawl-tv.js).
+  m.step = (input = NO_INPUT) => {
+    const ib = m.phase === 'fight' ? m.ai(m.b, m.a) : NO_INPUT;
+    const ev = stepMatch(m, input, ib);
+    m.onStep?.(input, ib);
+    return ev;
+  };
   return m;
 }
 // A copy of a match two screens can send each other or run ahead on: the
