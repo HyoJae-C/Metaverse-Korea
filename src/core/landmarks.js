@@ -316,15 +316,18 @@ const OWN_BUILD = {
     }
     geo.computeVertexNormals();
     g.add(new THREE.Mesh(geo, mat('#86b56f')));
+    // (the trails, and the city wall's stretches: scripts/build-namsan-wall.mjs, game/namsan-wall.js)
+    const lines = [trail, ...(l.wtrail || []), ...(l.wall?.runs || [])];
     const near = (x, z, m) => {
-      for (let i = 1; i < trail.length; i++) {
-        const [ax, az] = trail[i - 1], [bx, bz] = trail[i], dx = bx - ax, dz = bz - az;
+      for (const p of lines) for (let i = 1; i < p.length; i++) {
+        const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
         const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
         if (Math.hypot(x - ax - dx * t, z - az - dz * t) < m) return true;
       }
       return false;
     };
     if (trail.length > 1) g.add(namsanTrailMesh(sh, trail, l.trailW || 3));
+    for (const run of l.wtrail || []) g.add(namsanTrailMesh(sh, run, l.wtrailW || 3));
     // Trees on the slopes (one instanced mesh), none on the summit or the trail.
     const tree = new THREE.ConeGeometry(4, 11, 6);
     tree.translate(0, 5, 0);
@@ -337,7 +340,7 @@ const OWN_BUILD = {
       const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
       const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
       const s = 0.7 + rnd() * 0.7;
-      if (trail.length && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
+      if (lines.some((p) => p.length) && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
       if (sh.flat && Math.hypot(x - sh.px, z - sh.pz) < sh.flat + 16) continue; // the summit plaza and the way to the cable car's upper station
       trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
     }

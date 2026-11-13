@@ -723,8 +723,44 @@ the Dongmyo district (`districts/dongmyo.json`, items marked `nk`, a second
 - `tests/naksan.test.mjs` keeps the wall on the real line, Hyehwamun on its
   spot, and the rest of the city's streets and buildings off the hill.
 
-The rest of the wall (Namsan, Bugaksan, Inwangsan and the downtown gaps) is
-planned in that order (Yozi, 2026-11-13).
+## The Seoul City Wall on Namsan, and Gwanghuimun
+
+`scripts/build-namsan-wall.mjs` (run after `build-namsan-real.mjs --trail`)
+puts the wall from Namsan's west slope over the summit and down through
+Jangchung-dong to Gwanghuimun, and its trail from Baekbeom Square, into
+Itaewon's map (items marked `hw`, and the namsan landmark's `wall` and
+`wtrail`) and, east of Itaewon's box, Euljiro's (with a `meta.parts` box).
+
+- **The wall** is OpenStreetMap's line at 1/4 (`scripts/data/namsan-wall-osm.json`,
+  export of 2026-11-13), with its real gaps: OSM has none up the west slope
+  from Baekbeom Square, none across Jangchungdan-ro by the National Theater
+  and little between Jangchung-dong and Gwanghuimun. It also opens round the
+  summit plaza and where a trail goes through it. 50% high (about 3.5 m;
+  Yozi, 2026-11-13), on the hill's ground. On the hill it needs no blocker
+  (the hill is one); off it, it has ordinary blockers.
+- **The trail** (남산 성곽길) is OSM's 서울한양도성 남산구간 ways from Baekbeom
+  Square up to the summit plaza and down to Gwanghuimun (the outside way
+  where there are two), about 1.2 km. On the hill it is decks through the
+  hill's blocker (`game/namsan-walk.js`) drawn on the slope
+  (`core/landmarks.js`); off it, a walk road with a strip of park. East of
+  the summit it shares the summit trail from Sowol-ro. Both are kept off the
+  wall.
+- **Gwanghuimun** at 43.75% like Hyehwamun (Yozi, 2026-11-13), 5.1 x 3.3 m
+  (OSM has no outline: its real size is taken as Hyehwamun's), on its real
+  spot moved 5.7 m along the wall off Toegye-ro; you walk through its arch.
+  Euljiro's made-up buildings there were narrowed to make room (Seoul Bank's
+  door moved with its front).
+- **Sungnyemun** is at 50% like Heunginjimun (`sc: [0.5]`, base 14 x 6 m;
+  `scripts/build-euljiro.mjs` SUNGNYEMUN_SCALE), its wall stubs at
+  Heunginjimun's 60%.
+- **Loaded when near**: the wall, the gate and the woods off the hill are
+  `src/game/namsan-wall.js` (with the Naksan wall's parts,
+  `src/game/city-wall-parts.js`), loaded within about 480 m and hidden past
+  700 m. About 22k triangles.
+- `tests/namsan-wall.test.mjs` keeps the wall on the real line, the trail
+  walkable end to end and off the wall, and both gates' arches open.
+
+Bugaksan, Inwangsan and the downtown gaps are next (Yozi, 2026-11-13).
 
 ## Gyeongbokgung's palace
 
