@@ -66,6 +66,9 @@ const TOPS = {
   'breton-navy': { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', collar: 'top', stripes: { step: 0.07, width: 0.025, role: 'accent' } }, colors: { top: W, accent: 0x2c3a6e } },
   // A turtleneck.
   'turtle-camel': { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'top', turtle: 'top', bulk: 0.006 }, colors: { top: 0xd9ab72 } },
+  // A grey fishing vest with a zip and pockets over a long-sleeved T-shirt:
+  // the Han River parks' bait-stall grandpa wears it (game/fish-bait.js).
+  'vest-fishing': { outfit: { hem: 0.56, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', zip: 'accent', pockets: 'stitch', collar: 'top', bulk: 0.02 }, colors: { top: 0x8f9188, accent: 0x3b3a40, stitch: 0x7a7c73, accent2: 0xe9e3d3 } },
   // A padded vest over a long-sleeved T-shirt.
   'vest-padded': { outfit: { hem: 0.54, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', quilt: true, zip: 'accent', collar: 'top', bulk: 0.035 }, colors: { top: 0x8cc4ec, accent: 0x6aa6d4, stitch: 0x6c9fc8, accent2: W } },
 };

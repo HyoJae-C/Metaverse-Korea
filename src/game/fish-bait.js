@@ -11,8 +11,9 @@ import { lazyPanel } from '../core/lazy-panel.js';
 import { BaitHook, baitById, baitEntry } from '../core/bait.js';
 import { DEFAULT_LOOK } from '../data/appearance.js';
 
-// The bait stall's old fisherman: silver hair, glasses and a bucket hat.
-const SELLER_LOOK = { ...DEFAULT_LOOK, model: 'ranger', shirt: 'leaf', pants: 'olive', hair: 'ash', dye: 'silver', hairStyle: 'buzz', skin: 'warm', head: 'bucket-cream', face: 'glasses' };
+// The bait stall's old fisherman: silver hair, glasses, a grey bucket hat
+// and a zipped fishing vest with pockets (Yozi 2026-11-13).
+const SELLER_LOOK = { ...DEFAULT_LOOK, model: 'vest-fishing', shirt: 'leaf', pants: 'olive', hair: 'ash', dye: 'silver', hairStyle: 'buzz', skin: 'warm', head: 'bucket-grey', face: 'glasses' };
 // What he says when you come to the stall.
 const SELLER_LINES = [
   ['좋은 미끼가 좋은 손맛을 부르지!', 'joeun mikkiga joeun sonmaseul bureuji!', 'bait.hi1'],

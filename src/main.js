@@ -2810,7 +2810,7 @@ function enterStore(item, walkIn = null) {
   studioPose = '';
   if (built.barkeep && !built.barkeepNpc) {
     built.barkeepNpc = makeNpc($('labels'), L(BARTENDER));
-    built.barkeepNpc.ch.root.position.set(built.barkeep.x, 0, built.barkeep.z);
+    built.barkeepNpc.ch.root.position.set(built.barkeep.x, built.barkeep.y || 0, built.barkeep.z); // (y: a step behind a bar, core/counter-face.js)
     built.barkeepNpc.ch.root.rotation.y = built.barkeep.ry;
     built.scene.add(built.barkeepNpc.ch.root);
   }

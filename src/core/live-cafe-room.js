@@ -6,6 +6,9 @@
 // stations.livestage is the singer's spot (game/live-stage.js: step on it and
 // turn the mic on; only people in this room hear you).
 import * as THREE from 'three';
+import { liftFor } from './counter-face.js';
+
+const BAR_TOP = 0.76; // the bar's top (a club's bar height, core/interior.js BAR_H)
 
 export const LIVE_STAGE_DEPTH = 2.8; // the stage, from the back wall
 const SEAT_H = 0.38; // (same chair height as core/interior.js)
@@ -64,15 +67,17 @@ export function decorateLiveCafe(store, { scene, box, block, mat, stations, seat
     block(px, pz, 0.5, 0.5);
   }
 
-  // The bar along the right wall, with the bartender behind it.
-  const bx = w / 2 - 1.1;
-  box(0.7, 1.05, 4.2, bx, 0.53, 1.2, '#4a3226');
-  box(0.8, 0.05, 4.3, bx, 1.07, 1.2, store.colors.awning);
+  // The bar along the right wall, with the bartender behind it on a low
+  // step: bar height, and the face shows over it (core/counter-face.js).
+  const bx = w / 2 - 1.1, barTop = BAR_TOP, step = liftFor(barTop);
+  box(0.7, barTop - 0.05, 4.2, bx, (barTop - 0.05) / 2, 1.2, '#4a3226');
+  box(0.8, 0.05, 4.3, bx, barTop - 0.025, 1.2, store.colors.awning);
+  box(0.6, step, 4.2, bx + 0.6, step / 2, 1.2, '#3a281e');
   block(bx, 1.2, 0.8, 4.3);
   for (const z of [0.2, 1.2, 2.2]) {
-    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.7, 12), cushion);
-    s.position.set(bx - 0.75, 0.35, z);
+    const s = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.48, 12), cushion);
+    s.position.set(bx - 0.75, 0.24, z);
     scene.add(s);
   }
-  return { barkeep: { x: bx + 0.6, z: 1.2, ry: -Math.PI / 2 } };
+  return { barkeep: { x: bx + 0.6, y: step, z: 1.2, ry: -Math.PI / 2 } };
 }

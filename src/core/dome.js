@@ -17,6 +17,7 @@ import { createCharacter } from './character.js';
 import { matCache, canvasTex } from './three-kit.js';
 import { ROOM_DOME, polar } from './dome-outside.js';
 import { gameAt, boardAt, standings, rng, TEAMS, GAME_LEN, GAME_CYCLE, nextGameOf } from './ballgame.js';
+import { COUNTER_H } from './counter-face.js';
 
 const mat = matCache();
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -334,8 +335,8 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
 
   // ---- The food stand on the concourse (chicken and cola) ----
   const fa = 0.3, fp = polar(57.4, fa), fry = faceCentre(fp.x, fp.z);
-  box(6.4, 1.0, 1.0, fp.x, 0.5, fp.z, '#f5efe4', fry);
-  box(6.6, 0.08, 1.1, fp.x, 1.02, fp.z, '#e5383b', fry);
+  box(6.4, COUNTER_H - 0.04, 1.0, fp.x, (COUNTER_H - 0.04) / 2, fp.z, '#f5efe4', fry); // (COUNTER_H: the seller's face shows, core/counter-face.js)
+  box(6.6, 0.08, 1.1, fp.x, COUNTER_H, fp.z, '#e5383b', fry);
   const back = polar(59.0, fa);
   box(6.8, 3.2, 0.4, back.x, 1.6, back.z, '#fff3e0', fry);
   const foodSign = canvasTex(1024, 192, (g, w, h) => {
@@ -357,7 +358,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     const a = fa + (i - (menu.length - 1) / 2) * (1.3 / 57.4);
     const p = polar(57.3, a), stand = polar(55.6, a);
     const g = new THREE.Group();
-    g.position.set(p.x, 1.06, p.z);
+    g.position.set(p.x, COUNTER_H + 0.04, p.z);
     g.rotation.y = fry;
     const item = product.model === 'cup'
       ? new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.32, 14).translate(0, 0.16, 0), mat(product.color || '#b5381f'))
