@@ -30,6 +30,8 @@ export function createArcade(game) {
   let climbView = null, climbWall = null; // and on the climbing wall panel you stand at (game/climb-view.js)
   let bowlLanes = null; // the others' games on the lanes and the lane screens (game/bowling-lanes.js)
   let bowlInvite = null; // { from, name, at }: someone asked you to bowl with them
+  let brawl = null, brawlLoading = null; // the fighting game cabinet (game/brawl.js), once played
+  const fightUi = { get open() { return !!brawl?.open; }, close() { brawl?.close(); } };
   let bowlQueue = Promise.resolve(); // bowling messages, in order (the code loads on the first)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
@@ -93,6 +95,12 @@ export function createArcade(game) {
     if (kind === 'bowling') bowlLane = st || null;
     if (kind === 'climbing') climbWall = st || null;
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
+    if (kind === 'fight') {
+      const at = game.interior;
+      brawl = await (brawlLoading ||= import('./brawl.js').then((m) => m.createBrawl(game)).catch((e) => { brawlLoading = null; throw e; }));
+      if (game.interior === at) brawl.show();
+      return;
+    }
     if (!arcade[kind]) {
       // The first time, the panel loads: by then you may have walked off or
       // left; open it only if you are still in the same place.
@@ -270,9 +278,10 @@ export function createArcade(game) {
     bowling: { en: 'Bowl', ko: '볼링 치기', ja: 'ボウリングする', zh: '打保龄球', es: 'Jugar a los bolos', id: 'Main bowling', vi: 'Chơi bowling', hi: 'बॉलिंग खेलें', fr: 'Jouer au bowling', th: 'เล่นโบว์ลิ่ง', ar: 'العب البولينغ' },
     climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', hi: 'चढ़ाई करें', fr: 'Grimper', th: 'ปีนผา', ar: 'تسلّق' },
     aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
+    fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active), fightUi, brawl: () => brawl, camera: (dt) => { brawl?.update(dt); dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
