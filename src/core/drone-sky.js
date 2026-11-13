@@ -102,11 +102,11 @@ const ACT3 = [
 
 // The last hello, one per show in turn (Yozi 2026-11-12): the game's other
 // languages. (Korean, English, Japanese and Chinese come every show; 你好
-// reads the same in Taiwan and Hong Kong.) The turn starts with French at
-// the show of 2026-11-12 02:10 KST (number FIRST_HELLO_SHOW): the night
-// before had Spanish.
+// reads the same in Taiwan and Hong Kong.) The turn starts again with
+// French at the first show of the rarer plan, 2026-11-14 23:10 KST (number
+// FIRST_HELLO_SHOW).
 const HELLOS = ['BONJOUR', 'สวัสดี', 'XIN CHÀO', 'HALO', 'नमस्ते', 'مرحبا', 'HOLA'];
-const FIRST_HELLO_SHOW = 62305; // 2026-11-12 02:10 KST (drone shows counted by show-clock.js droneNumber)
+const FIRST_HELLO_SHOW = 10385; // 2026-11-14 23:10 KST (drone shows counted by show-clock.js droneNumber)
 export const helloOf = (start) => { const k = (showNumber(start) - FIRST_HELLO_SHOW) % HELLOS.length; return HELLOS[(k + HELLOS.length) % HELLOS.length]; };
 
 // Two routines take turns, one per show (Yozi 2026-11-12): routine 2 at the

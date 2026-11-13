@@ -26,8 +26,8 @@ export const FINALE = [SHOW_SECONDS - 60, SHOW_SECONDS]; // photo time: every je
 
 const MIN = 60e3, HOUR = 60 * MIN, KST = 9 * HOUR;
 
-// No show while Yeouido's fireworks are on (fireworks-show.js: every other
-// night of the game's day), so nobody has to choose between the two.
+// No show while Yeouido's fireworks are on (fireworks-show.js: 23:10 KST
+// every other day), so nobody has to choose between the two.
 export function clashesWithFireworks(start) {
   const a0 = start - DUSK_SECONDS * 1000, a1 = start + (SHOW_SECONDS + DAWN_SECONDS) * 1000;
   return showStarts(start, FIREWORKS).some((f) => a0 < f + FIREWORKS_SECONDS * 1000 && f < a1);

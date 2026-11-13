@@ -3,15 +3,14 @@
 //
 // The game's day is three hours long, the same for everyone (worked out
 // from the clock, like the weather): 22.5 minutes of morning, 75 of day,
-// 22.5 of sunset and 60 of night. Every night has a show: the Yeouido
-// fireworks and the Ttukseom drone show take turns (four fireworks and
-// three drone shows a real day), except one night a day, 20:10 KST, which
-// is the lantern parade to Jogyesa's (like the real festival, rare: once a
-// year in Seoul, once a day here, at Japan's, China's and Taiwan's evening).
-// Wherever you live, night comes round within three hours and a show with
-// it. (Yozi 2026-11-11: three hours, a longer night for the shows and
-// Myeongdong's night carts; was two hours with a show every other night.
-// 2026-11-12: the lantern parade, once a day at 20:10 KST.)
+// 22.5 of sunset and 60 of night. Most nights are quiet now (the night
+// market, the sunset): a show is rare, so it feels special (Yozi
+// 2026-11-13: a show every night, eight a day, and people lost interest).
+// Two nights a day have one, at Japan's, China's and Taiwan's evening:
+// 20:10 KST the lantern parade to Jogyesa's every day, and 23:10 KST the
+// Yeouido fireworks and the Ttukseom drone show taking turns day by day
+// (PLAN). (2026-11-11: three hours, a longer night for the shows and
+// Myeongdong's night carts; was two hours with a show every other night.)
 
 // 0 → 1 with soft ends (smoothstep), clamped.
 export const smooth = (x) => { const k = Math.min(1, Math.max(0, x)); return k * k * (3 - 2 * k); };
@@ -25,14 +24,22 @@ export const FIREWORKS = 0, DRONES = 1, LANTERNS = 2; // which show a cycle has 
 
 export const cycleNumber = (t) => Math.floor(t / CYCLE_MS);
 export const cycleMs = (t) => ((t % CYCLE_MS) + CYCLE_MS) % CYCLE_MS; // how far into its cycle
-export const SHOW_EVERY = 2; // cycles from one fireworks show to the next
-export const DAY_CYCLES = (24 * 60 * MIN) / CYCLE_MS; // 8 (cycles start at 0:00 UTC)
-export const LANTERN_CYCLE = 3; // of the day's 8: its show at 11:10 UTC, 20:10 KST (was a drone show)
+export const DAY_CYCLES = (24 * 60 * MIN) / CYCLE_MS; // 8 (cycles start at 0:00 UTC, 9:00 KST)
+export const NONE = -1; // a quiet night
+// Which night of a day has which show, for PLAN_DAYS days in turn (by the
+// UTC day, which is the KST day for these nights). Night k of a day starts
+// its show at 11:10 + 3k hours KST: 3 → 20:10, 4 → 23:10.
+const PLAN = [
+  { 3: LANTERNS, 4: FIREWORKS }, // 2026-11-13 (KST) and every other day
+  { 3: LANTERNS, 4: DRONES },
+];
+export const PLAN_DAYS = PLAN.length;
+export const PERIOD = PLAN_DAYS * DAY_CYCLES; // cycles before the plan repeats
 const mod = (a, b) => ((a % b) + b) % b;
-export const showOf = (n) => (mod(n, DAY_CYCLES) === LANTERN_CYCLE ? LANTERNS : mod(n, SHOW_EVERY));
-// The drone shows counted one by one (three a day), for their changing parts.
-const DRONE_SLOTS = [...Array(DAY_CYCLES).keys()].filter((r) => showOf(r) === DRONES);
-export const droneNumber = (n) => Math.floor(n / DAY_CYCLES) * DRONE_SLOTS.length + DRONE_SLOTS.indexOf(mod(n, DAY_CYCLES));
+export const showOf = (n) => PLAN[mod(Math.floor(n / DAY_CYCLES), PLAN_DAYS)][mod(n, DAY_CYCLES)] ?? NONE;
+// The drone shows counted one by one, for their changing parts.
+const DRONE_SLOTS = [...Array(PERIOD).keys()].filter((r) => showOf(r) === DRONES);
+export const droneNumber = (n) => Math.floor(n / PERIOD) * DRONE_SLOTS.length + DRONE_SLOTS.indexOf(mod(n, PERIOD));
 
 // The game's clock as an hour of a 24-hour day (sunrise 6:00, sunset
 // 18:00, the sky's colours in weather.js): morning runs 5:18–8:00, day
@@ -47,9 +54,9 @@ export function gameHour(now) {
 }
 
 // Start times (ms) of one show (FIREWORKS, DRONES or LANTERNS) around
-// `now`: from a day back to a day ahead (fewer cycles for the frequent ones), in order.
+// `now`: a whole plan back to a whole plan ahead, in order.
 export function showStarts(now, which) {
-  const n = cycleNumber(now), out = [], w = which === LANTERNS ? DAY_CYCLES : SHOW_EVERY + 2;
-  for (let k = n - w; k <= n + w; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
+  const n = cycleNumber(now), out = [];
+  for (let k = n - PERIOD; k <= n + PERIOD; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
   return out;
 }

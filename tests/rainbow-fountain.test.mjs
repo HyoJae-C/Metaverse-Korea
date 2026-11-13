@@ -25,21 +25,21 @@ test('a 20-minute show at half past the hour, Korean time', () => {
 });
 
 test('never while the Yeouido fireworks are on', () => {
-  const day = KST(2026, 11, 9, 0);
+  const day = KST(2026, 11, 13, 0);
   let fw = nextFireworks(day), checked = 0;
-  for (; fw < day + 24 * 3600e3; fw = nextFireworks(fw + 1000), checked++) {
+  for (; fw < day + 4 * 24 * 3600e3; fw = nextFireworks(fw + 1000), checked++) {
     for (let m = 0; m < FIREWORKS_SECONDS / 60; m += 2) assert.ok(!fountainAt(fw + m * 60e3)?.on, new Date(fw + m * 60e3).toISOString());
     assert.ok(nextFountain(fw) >= fw + FIREWORKS_SECONDS * 1000, 'the next one is after the fireworks');
   }
-  assert.equal(checked, 4, 'four fireworks shows a day');
+  assert.equal(checked, 2, 'fireworks every other day');
   // Nearly every hour has one.
   let n = 0;
   for (let h = 0; h < 24; h++) {
-    const start = KST(2026, 11, 9, h, 30);
+    const start = KST(2026, 11, 13, h, 30);
     if (fountainAt(start + 600e3)?.on) n++;
     else assert.ok(clashesWithFireworks(start), `${h}:30 skipped only for the fireworks`); // (one ending at hh:30 still counts: the bridge's dusk starts a minute early)
   }
-  assert.ok(n >= 20, `${n} shows`);
+  assert.ok(n >= 22, `${n} shows`);
 });
 
 test('the sky round the bridge darkens before and brightens after, smoothly', () => {
