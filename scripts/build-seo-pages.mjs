@@ -17,7 +17,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const PAGES = [
   {
     lang: 'en', path: 'about/', label: 'English',
-    title: 'Modu Seoul: walk Seoul in 3D, right in your browser',
+    title: 'Modu Seoul (모두서울): walk Seoul in 3D, right in your browser',
     description: 'A free 3D virtual trip to Seoul, Korea. Walk Seongsu-dong, Hongdae and Itaewon with friends, shop in sample stores, visit cafés and practise Korean. No download, on PC and phone.',
     h1: 'Modu Seoul',
     lead: 'A 3D virtual trip to Seoul, Korea, that you play right in your web browser. No download, no install.',
@@ -36,7 +36,7 @@ export const PAGES = [
   },
   {
     lang: 'ko', path: 'about/ko/', label: '한국어',
-    title: '모두서울: 브라우저에서 바로 걷는 3D 서울 여행',
+    title: '모두서울 (Modu Seoul): 브라우저에서 바로 걷는 3D 서울 여행',
     description: '설치 없이 브라우저에서 바로 즐기는 3D 가상 서울 여행. 친구와 함께 성수동, 홍대, 이태원 거리를 걷고, 가상 매장에서 쇼핑하고, 카페에 들르고, 한국어를 연습해 보세요. PC와 스마트폰 모두 지원.',
     h1: '모두서울 (Modu Seoul)',
     lead: '웹 브라우저에서 바로 즐기는 3D 가상 서울 여행이에요. 다운로드도 설치도 필요 없어요.',

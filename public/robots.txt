@@ -1,4 +1,8 @@
-# Modu Seoul: everything public may be crawled.
+# Modu Seoul (모두서울): everything public may be crawled.
+# Naver's crawler (Yeti) is named on its own too, for Naver Search Advisor.
+User-agent: Yeti
+Allow: /
+
 User-agent: *
 Allow: /
 
