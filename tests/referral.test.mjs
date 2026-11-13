@@ -59,3 +59,20 @@ test('the server keeps the abuse rules', () => {
   assert.doesNotMatch(sql, /insert into public\.reward_rules/, 'wallet_apply must not pay referrals');
   assert.match(sql, /revoke all on function public\.claim_referral\(text\) from public, anon/);
 });
+
+test('a friend name the server could not take is sent again later', async () => {
+  const { keepPending, retryPending } = await import('../src/game/referral-retry.js');
+  const mem = {};
+  const storage = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
+  assert.equal(await retryPending({ cloud: cloudWith({}), storage }), null, 'nothing kept');
+  keepPending(storage, 'Mina', 1000);
+  assert.equal(await retryPending({ cloud: cloudWith({}), storage, now: 2000 }), 'offline');
+  assert.ok(mem['mk.refPending'], 'still offline: kept for next time');
+  const c = cloudWith({ claim_referral: { data: { status: 'ok' } } });
+  assert.equal(await retryPending({ cloud: c, storage, now: 3000 }), 'ok');
+  assert.deepEqual(c.calls[0], ['claim_referral', { friend_name: 'Mina' }]);
+  assert.equal(mem['mk.refPending'], undefined, 'answered: dropped');
+  keepPending(storage, 'Mina', 0);
+  assert.equal(await retryPending({ cloud: c, storage, now: 25 * 3600 * 1000 }), null, 'older than a day: dropped');
+  assert.equal(mem['mk.refPending'], undefined);
+});

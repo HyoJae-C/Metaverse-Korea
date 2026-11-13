@@ -2945,7 +2945,7 @@
       "size": "large",
       "district": "seodaemun",
       "name": { "ko": "레벨업 PC방", "en": "LEVEL UP PC Bang", "ja": "レベルアップ ネットカフェ", "zh": "升级网吧" },
-      "tagline": { "en": "Rows of gaming PCs; sit at a free one for NEON STRIKE aim practice", "ko": "게이밍 PC가 줄지어 있어요. 빈자리에 앉아 네온 스트라이크 에임 연습", "ja": "ゲーミングPCがずらり。空席に座ってNEON STRIKEのエイム練習", "zh": "一排排电竞电脑，找空位坐下玩 NEON STRIKE 瞄准练习" },
+      "tagline": { "en": "Rows of gaming PCs; sit at a free one for NEON STRIKE, a team shooter you play as your own character", "ko": "게이밍 PC가 줄지어 있어요. 빈자리에 앉아 내 캐릭터로 하는 팀 슈팅 네온 스트라이크", "ja": "ゲーミングPCがずらり。空席に座って、自分のキャラで遊ぶチームシューター NEON STRIKE", "zh": "一排排电竞电脑，找空位坐下，用自己的角色玩团队射击 NEON STRIKE" },
       "at": [-2555.8, -407.6],
       "colors": { "sign": "#14101f", "awning": "#5ad1ff", "accent": "#1c1e2a" },
       "products": []

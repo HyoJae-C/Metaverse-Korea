@@ -70,6 +70,10 @@ export function createArcade(game) {
     cam.position.set(x, one.y, one.z + back);
     cam.lookAt(x, one.y, one.z);
   }
+  // NEON STRIKE, the PC방's team shooter (game/strike.js), once played. Its
+  // menu keeps the old aim practice (ui/activity-ui.js AimUI) a tap away.
+  let strike = null, strikeLoading = null;
+  const loadStrike = () => (strikeLoading ||= import('./strike.js').then((m) => (strike = m.createStrike(game, { practice: () => openArcade('aim') }))).catch((e) => { strikeLoading = null; throw e; }));
   let bowlQueue = Promise.resolve(); // bowling messages, in order (the code loads on the first)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
@@ -190,6 +194,12 @@ export function createArcade(game) {
     if (kind === 'climbing') climbWall = st || null;
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
     if (kind === 'watch') { startWatch(); return; }
+    if (kind === 'strike') {
+      const at = game.interior;
+      await loadStrike();
+      if (game.interior === at) strike.show();
+      return;
+    }
     if (kind === 'fight') {
       stopWatch();
       const at = game.interior;
@@ -381,6 +391,6 @@ export function createArcade(game) {
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
