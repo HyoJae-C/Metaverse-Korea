@@ -27,8 +27,10 @@ jobs:
           npx playwright install --with-deps chromium || npx playwright install chromium
           npx vite preview --port 4173 &
           sleep 3
+          # Realtime runs on a fake server inside each script (tests/e2e/fake-realtime.mjs),
+          # so CI uses none of the live Supabase project's monthly realtime messages.
           node tests/e2e/multiplayer.mjs http://localhost:4173/
-          # Gifts between two players (buy, accept, decline): needs the realtime server too.
+          # Gifts between two players (buy, accept, decline).
           node tests/e2e/gifts.mjs http://localhost:4173/
           # Memory budget: iPhone Safari closes the page past its canvas limit.
           node tests/e2e/memory.mjs http://localhost:4173/

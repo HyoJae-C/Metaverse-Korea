@@ -6,6 +6,7 @@
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/memory.mjs http://localhost:4173/
 import { chromium } from 'playwright';
+import { useFakeRealtime } from './fake-realtime.mjs';
 
 export const BUDGET = { canvasMB: 250, textureMB: 100 }; // (Safari's canvas limit is around 384 MB on many iPhones; keep well under it)
 
@@ -15,6 +16,7 @@ const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--js-flags=--expose-gc'],
 });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+await useFakeRealtime(ctx, 'memory'); // (no realtime messages from the live project's quota)
 await ctx.addInitScript(() => {
   // 繁體中文: the language with the most glyphs to draw (the friend's).
   try { localStorage.setItem('mk.lang', 'zht'); } catch { /* ignore */ }

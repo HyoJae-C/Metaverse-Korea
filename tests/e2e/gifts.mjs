@@ -6,7 +6,10 @@
 //   node tests/e2e/gifts.mjs http://localhost:4173/
 // With a build made with VITE_NET_PROVIDER=local, add --bridge: the two
 // browsers' BroadcastChannels are joined through this script (no server).
+// Otherwise realtime runs on a fake server in this script (fake-realtime.mjs),
+// not the live Supabase project; E2E_REAL_REALTIME=1 uses the real one.
 import { chromium } from 'playwright';
+import { useFakeRealtime, summary, log as rtLog } from './fake-realtime.mjs';
 
 const url = process.argv[2] || 'http://localhost:4173/';
 const bridge = process.argv.includes('--bridge');
@@ -20,6 +23,7 @@ let step = 'joining';
 
 async function join(name) {
   const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
+  if (!bridge) await useFakeRealtime(ctx, name);
   const page = await ctx.newPage();
   if (bridge) {
     await page.exposeFunction('__bcSend', (ch, data) => {
@@ -142,9 +146,11 @@ try {
     errors.push(`${n} state: ${JSON.stringify(st)}`);
   }
   errors.push(...logs.slice(-40));
+  if (!bridge) errors.push(...rtLog.slice(-30));
   if (shotDir) { await a.screenshot({ path: shotDir + '/fail-a.png' }); await b.screenshot({ path: shotDir + '/fail-b.png' }); }
 }
 await browser.close();
 for (const e of errors) console.log(e);
 console.log(ok ? 'PASS' : 'FAIL');
+if (!bridge) console.log(summary());
 process.exit(ok ? 0 : 1);
