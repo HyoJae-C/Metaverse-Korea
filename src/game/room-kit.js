@@ -10,3 +10,4 @@ export { LIFEGUARD_LOOK } from '../core/pool-hall.js';
 export { RUNWAY_TEXT } from '../ui/runway-ui.js';
 export { RESALE_TEXT } from '../ui/resale-ui.js';
 export { CathedralMass, CATHEDRAL_TEXT } from '../core/cathedral-mass.js';
+export { CONFESSION_STORE, CONFESSION_TEXT, ConfessionPriest } from '../core/confession-room.js';

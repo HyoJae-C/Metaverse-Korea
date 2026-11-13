@@ -1499,7 +1499,7 @@ startWhereReports({
       const out = outdoors(); // (an open-air Han River park is the street too)
       if (out) { const [x, z] = myWorldSpot(); streetSpot = { x, z }; }
       if (!streetSpot) return null;
-      return { name: nickname, place: out ? 'street' : interior?.store?.id || mode, ...streetSpot };
+      return { name: nickname, place: out ? 'street' : (interior?.store?.solo ? interior.front?.parkFront?.store?.id : interior?.store?.id) || mode, ...streetSpot }; // (the confession room: still "in the cathedral")
     } catch { return null; } // still starting up
   },
   send: (spot) => cloud.reportWhere(spot),
@@ -1843,6 +1843,8 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
+  // In the cathedral's confession room, what you type goes to the priest only.
+  get confession() { return mode === 'store' && interior?.confession ? { hear: (s) => interior.confession.hear(s), placeholder: L(roomKit().CONFESSION_TEXT.placeholder) } : null; },
   get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
   streetPos: () => myPlace(),
 });
@@ -2907,6 +2909,9 @@ function enterStore(item, walkIn = null) {
   // (core/cathedral-mass.js, with the room).
   if (built.stations?.mass && !built.massNpcs) built.massNpcs = new (roomKit().CathedralMass)(built, $('labels'), L);
   interior.massNpcs = built.massNpcs || null;
+  // Its confession room: the priest behind the lattice (core/confession-room.js).
+  if (built.stations?.confession && !built.confession) built.confession = new (roomKit().ConfessionPriest)(built, $('labels'), L, (s) => seatFit(built.scene, s));
+  interior.confession = built.confession || null;
   // Each ride's attendant by its gate, named after the ride (the coaster's too).
   if (built.stations?.rideStaff && !built.rideStaff) {
     built.rideStaff = {};
@@ -2986,7 +2991,8 @@ function enterStore(item, walkIn = null) {
   if (store.category === 'home') {
     goSolo(built.scene); // your home is private for now
     openHome(store, built);
-  } else joinRoom(`${roomId}-${store.id}`, built.scene);
+  } else if (store.solo) goSolo(built.scene); // (the cathedral's confession room: you alone)
+  else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
 
 // The War History Museum's altar: a white chrysanthemum on it and a bow (others
@@ -3044,6 +3050,10 @@ function enterHaunted(inner = roomKit().HAUNT_STORE) { // (also the zoo's Sea An
   hauntFade();
   shop.toast(L(HAUNT_TEXT.hello));
 }
+// The priest's name tag and words go with the room (nothing is kept).
+function hideConfession() {
+  for (const o of interior?.confession?.all || []) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+}
 function backToPark() {
   const park = interior?.front?.parkFront;
   if (mode !== 'store' || !park || performance.now() < hauntSwitching) return;
@@ -3053,8 +3063,14 @@ function backToPark() {
   standUp();
   const fromRunway = interior.store.workshop === 'runway';
   if (fromRunway) { leaveRunwayLine(); runwayLine.clear(); }
+  const fromConfession = !!interior.confession;
+  if (fromConfession) { interior.confession.reset(); hideConfession(); }
   enterStore(park);
-  if (fromRunway) {
+  if (fromConfession) {
+    // Back in the nave, in front of the confessional, facing away from it.
+    const d = interior.stations.confessional[0];
+    moveMeTo(interior.scene, d.x, d.z, -Math.PI / 2);
+  } else if (fromRunway) {
     // Back in DDP Hall, in front of the runway's door, facing into the hall.
     const d = interior.stations.runwayDoor[0];
     moveMeTo(interior.scene, d.x, d.z + 0.6, 0);
@@ -3066,6 +3082,25 @@ function backToPark() {
     moveMeTo(interior.scene, roomKit().HAUNT_SPOT.x, roomKit().HAUNT_SPOT.z, roomKit().HAUNT_SPOT.ry); // out in front of the door
   }
   hauntFade();
+}
+
+// Myeongdong Cathedral's confessional: the confession room behind its
+// curtain (core/confession-room.js) is its own room and you are alone in
+// it. The game leaves multiplayer while you are inside (enterStore:
+// store.solo), and what you type there goes only to the priest, on this
+// device (game/chat.js: game.confession). Its door leads back into the nave.
+function enterConfession() {
+  if (mode !== 'store' || interior?.store.workshop !== 'cathedral' || performance.now() < hauntSwitching) return;
+  hauntSwitching = performance.now() + 700;
+  const front = interior.front;
+  standUp();
+  for (const o of [...(interior.massNpcs?.all || []), ...(interior.patronNpcs || [])]) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  leaveMusicCafe(); // (the organ stays in the nave; it plays again when you come back)
+  enterStore({ ...front, store: roomKit().CONFESSION_STORE, parkFront: front });
+  interior.confession?.reset();
+  interior.confession?.greet();
+  hauntFade();
+  shop.toast(L(roomKit().CONFESSION_TEXT.private), 7000);
 }
 
 // DDP Hall's back door: the Curve Runway is its own room behind it (as with
@@ -3144,6 +3179,8 @@ function leaveStore(walkOut = false) {
   clearMeal();
   closeHome();
   closeHatWorkshop(false);
+  interior.confession?.reset();
+  hideConfession();
   if (orderUi.open) orderUi.close();
   if (grillUi.open) grillUi.close();
   if (fishingUi.open) fishingUi.close();
@@ -6568,7 +6605,7 @@ function updateAction(p, tSec) {
           ? { key: 'gate-in-free:' + gateFree(), label: '🎫 ' + t('gate.freeAgain', { t: `${Math.floor(gateFree() / 60)}:${String(gateFree() % 60).padStart(2, '0')}` }), run: () => passGate(g, true) }
           : { key: 'gate-in', label: `🎫 ${L(GATE_TEXT.in)} · 🪙 ${FARE}`, run: () => passGate(g, true) };
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
-      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : HAUNT_TEXT.back), run: () => backToPark() };
+      next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : interior.confession ? roomKit().CONFESSION_TEXT.back : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
       next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
@@ -6609,6 +6646,8 @@ function updateAction(p, tSec) {
       next = balloonClown.actions(p)[0]; // (the other balloons are in the more list)
     } else if (interior.bumper && bumper.action(p)) {
       next = bumper.action(p);
+    } else if (!seated && nearStation(p, 'confessional', 1.3)) {
+      next = { key: 'confess-in', label: '🕯️ ' + L(roomKit().CONFESSION_TEXT.enter), run: () => enterConfession() };
     } else if (nearStation(p, 'runwayDoor', 1.8)) {
       next = { key: 'runway-in', label: '👠 ' + L(roomKit().RUNWAY_TEXT.enter), run: () => enterRunwayRoom() };
     } else if (interior.themepark && nearStation(p, 'hauntedHouse', 1.8)) {
@@ -7269,6 +7308,7 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     interior?.massNpcs?.update(dt, camera, w, h); // (the cathedral's Mass)
+    interior?.confession?.update(dt, camera, w, h); // (its confession room's priest)
     for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
     for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
     for (const o of interior?.coasterStaff || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (the coaster's attendant) // (bar regulars; the label shows their speech bubbles)
@@ -7428,6 +7468,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     forcePose: (n) => { debugPose = n || null; return me.activityName; },
     studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
+    solo: () => net === SOLO, // out of multiplayer (your home, the confession room)
     runwayFx: (tier, word) => runwayReact(me.root, tier, word),
     runwayLine: (on) => (on ? runwayUi.line.join() : runwayUi.line.leave()),
     runwayOpen: () => runwayUi.show(),

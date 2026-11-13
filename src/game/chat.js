@@ -6,6 +6,9 @@
 // The picker in the chat bar chooses who hears it: everyone nearby (public;
 // the server keeps it 90 days for reports, supabase/024_chat_log.sql), all friends, or one friend. Friend chat is kept like
 // a phone messenger (core/friends.js, the 👥 panel).
+// In Myeongdong Cathedral's confession room (game.confession) nothing is
+// sent at all: the line goes only to the priest on this device
+// (core/confession-room.js), never into the chat log or any save.
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
 import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
 import { NOTICE_LABEL, NoticeFeed, PinnedNotices, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
@@ -129,6 +132,8 @@ export function createChat(game) {
     chatLog.scrollTop = chatLog.scrollHeight;
     input.keys.clear();
     chatInput.focus();
+    if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
+    renderChatTo(); // (back from the confession room: the picker and its words)
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
   function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
@@ -155,6 +160,16 @@ export function createChat(game) {
   $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
   chatBar.addEventListener('submit', async (e) => {
     e.preventDefault();
+    // The confession room: to the priest only, and kept nowhere (not even
+    // in the chat log): just a bubble over your head.
+    const booth = game.confession;
+    if (booth) {
+      const text = cleanChat(chatInput.value);
+      chatInput.value = '';
+      if (text) { showBubble(myLabel, $('labels'), text, 6000, 'chat'); booth.hear(text); }
+      if (input.isTouch) closeChat();
+      return;
+    }
     // Commands start with "/" and are never sent to other people.
     const raw = cleanChat(chatInput.value);
     // Operators: "/공지 message" sends a notice to everyone (the server checks).
