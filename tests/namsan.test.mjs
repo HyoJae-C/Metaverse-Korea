@@ -75,7 +75,7 @@ test('the hill\'s foot follows the real Namsan outline at 1/4 and keeps off the 
   assert.ok(off[off.length >> 1] < 25, `median ${Math.round(off[off.length >> 1])} m off the real edge`);
   // No road of the district runs over the hill (the trails up it aside).
   for (const r of itaewon.roads) {
-    if (r.nw || r.n?.en === 'Namsan trail') continue;
+    if (r.nw || r.hw || r.n?.en === 'Namsan trail') continue; // (and the city wall's trail: tests/namsan-wall.test.mjs)
     for (const [x, z] of r.p) assert.ok(!onNamsan(hill, x - hill.x, z - hill.z), `${r.n?.en} on the hill`);
   }
 });
