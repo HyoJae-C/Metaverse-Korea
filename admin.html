@@ -173,6 +173,13 @@
     <section class="tab" id="tab-chat" hidden>
       <div class="chatbar">
         <b>💬 Chat (채팅)</b>
+        <label class="muted">Show <select id="chatKind">
+          <option value="room">Public chat (live + 90 days)</option>
+          <option value="friend">Friend chat (180 days)</option>
+          <option value="lock">Love-lock notes</option>
+          <option value="board">Board posts</option>
+          <option value="all">Everything (one player's whole history)</option>
+        </select></label>
         <input type="search" id="chatQ" placeholder="Word, name or email" />
         <button id="chatSearch" type="button">Search 90 days</button>
         <button id="chatBack" type="button" hidden>Back to live</button>
@@ -183,7 +190,7 @@
         <p class="chatsize ok" id="chatSize" hidden></p>
         <p class="muted" id="chatNote" hidden></p>
         <button id="chatOlder" type="button" hidden>Load older</button>
-        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent. Friend messages are private and not shown.</p>
+        <p class="empty muted" id="chatEmpty">No chat yet. Public chat shows up here the moment it is sent. Use "Show" for friend chat, love-lock notes and board posts.</p>
         <table class="grid chat"><tbody id="chatList"></tbody></table>
       </div>
     </section>
