@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
-import { TICK, RING_R, MAX_HP, ROUNDS_TO_WIN, MOVES, moveTicks, createMatch, loadBrawl, afterMatch, RIVALS } from '../core/brawl.js';
+import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor } from '../core/brawl.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
@@ -61,20 +61,97 @@ const T = {
   again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
   close: { en: 'Leave', ko: '나가기', ja: 'やめる', zh: '离开', es: 'Salir', id: 'Keluar', vi: 'Rời đi', hi: 'बाहर', fr: 'Quitter', th: 'ออก', ar: 'خروج' },
   hits: { en: '{n} HITS', ko: '{n} 연타', ja: '{n} HITS', zh: '{n} 连击', es: '{n} GOLPES', id: '{n} HIT', vi: '{n} ĐÒN', hi: '{n} हिट', fr: '{n} COUPS', th: '{n} ฮิต', ar: '{n} ضربات' },
+  pick: { en: 'Pick your style', ko: '스타일을 골라요', ja: 'スタイルを選ぼう', zh: '选择你的流派', es: 'Elige tu estilo', id: 'Pilih gayamu', vi: 'Chọn phong cách', hi: 'अपनी शैली चुनें', fr: 'Choisis ton style', th: 'เลือกสไตล์ของคุณ', ar: 'اختر أسلوبك' },
+  dash: {
+    en: 'Dash: tap ← or → twice (or hold Shift). An attack can cut a dash short.',
+    ko: '대시: ← 또는 →를 두 번 톡톡 (또는 Shift). 대시 중에 공격으로 이어져요.',
+    ja: 'ダッシュ：← か → を2回（またはShift）。ダッシュ中に攻撃へつなげます。',
+    zh: '冲刺：连按两下 ← 或 →（或按住 Shift）。冲刺中可以接攻击。',
+    es: 'Carrera: pulsa ← o → dos veces (o Shift). Un ataque puede cortar la carrera.',
+    id: 'Dash: ketuk ← atau → dua kali (atau Shift). Serangan bisa memotong dash.',
+    vi: 'Lướt: nhấn ← hoặc → hai lần (hoặc Shift). Có thể ra đòn giữa lúc lướt.',
+    hi: 'डैश: ← या → दो बार दबाएँ (या Shift)। डैश के बीच वार किया जा सकता है।',
+    fr: 'Dash : appuie deux fois sur ← ou → (ou Maj). Une attaque peut couper le dash.',
+    th: 'แดช: กด ← หรือ → สองครั้ง (หรือ Shift) ออกท่าโจมตีระหว่างแดชได้',
+    ar: 'اندفاع: اضغط ← أو → مرتين (أو Shift). يمكن أن يقطعه هجوم.',
+  },
   you: { en: 'You', ko: '나', ja: '自分', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
 
 // The five rivals (made up for this game), easy to champion: their look and
 // the sky over their round.
+// The eight styles: a name, a line about it, the signature move's name, and
+// how it stands (bone offsets like STANCE below).
+const STYLE = {
+  brawler: {
+    icon: '🥊',
+    name: { en: 'Brawler', ko: '격투가', ja: '格闘家', zh: '格斗家', es: 'Luchador', id: 'Petarung', vi: 'Võ sĩ', hi: 'लड़ाका', fr: 'Bagarreur', th: 'นักสู้', ar: 'المقاتل' },
+    line: { en: 'Good at everything. Keeps both the guard breaker and the flying kick.', ko: '뭐든 고르게 잘해요. 가드 깨기와 날아차기를 둘 다 써요.', ja: '何でもこなす万能型。ガード崩しも飛び蹴りも使えます。', zh: '样样均衡。破防和飞踢都能用。', es: 'Bueno en todo. Tiene rompeguardias y patada voladora.', id: 'Serba bisa. Punya pemecah pertahanan dan tendangan terbang.', vi: 'Giỏi đều mọi thứ. Có cả phá thủ lẫn đá bay.', hi: 'हर चीज़ में अच्छा। गार्ड तोड़ और उड़ती किक दोनों।', fr: 'Bon partout. Garde le brise-garde et le coup de pied sauté.', th: 'เก่งรอบด้าน ใช้ได้ทั้งทำลายการ์ดและกระโดดเตะ', ar: 'جيد في كل شيء. لديه كاسرة الصد والركلة الطائرة.' },
+    sig: { en: 'Guard breaker', ko: '가드 깨기', ja: 'ガード崩し', zh: '破防掌', es: 'Rompeguardias', id: 'Pemecah pertahanan', vi: 'Phá thủ', hi: 'गार्ड तोड़', fr: 'Brise-garde', th: 'ทำลายการ์ด', ar: 'كاسرة الصد' },
+  },
+  ninja: {
+    icon: '🥷',
+    name: { en: 'Ninja', ko: '닌자', ja: '忍者', zh: '忍者', es: 'Ninja', id: 'Ninja', vi: 'Ninja', hi: 'निंजा', fr: 'Ninja', th: 'นินจา', ar: 'النينجا' },
+    line: { en: 'Very fast, little health. Vanishes and strikes from behind.', ko: '아주 빠르지만 체력이 적어요. 사라졌다가 등 뒤에서 쳐요.', ja: 'とても速いが体力は少なめ。消えて背後から斬ります。', zh: '速度极快但血量少。瞬间消失，从背后出击。', es: 'Muy rápido, poca vida. Desaparece y golpea por la espalda.', id: 'Sangat cepat, darah sedikit. Menghilang lalu menyerang dari belakang.', vi: 'Rất nhanh, ít máu. Biến mất rồi đánh từ sau lưng.', hi: 'बहुत तेज़, कम सेहत। ग़ायब होकर पीछे से वार।', fr: 'Très rapide, peu de vie. Disparaît et frappe dans le dos.', th: 'เร็วมากแต่เลือดน้อย หายตัวแล้วโจมตีจากด้านหลัง', ar: 'سريع جدًا وقليل الصحة. يختفي ويضرب من الخلف.' },
+    sig: { en: 'Shadow step', ko: '그림자 걸음', ja: '影歩き', zh: '影步', es: 'Paso sombra', id: 'Langkah bayangan', vi: 'Bước bóng', hi: 'छाया क़दम', fr: 'Pas de l\'ombre', th: 'ก้าวเงา', ar: 'خطوة الظل' },
+    stance: { armL: [-1.1, 0, 0], foreL: [-0.6, 0, 0], armR: [0.5, 0, 0], foreR: [-1.2, 0, 0], legL: [-0.5, 0, 0], kneeL: [0.75, 0, 0], legR: [0.3, 0, 0], kneeR: [0.6, 0, 0], spine: [0.32, 0, 0] },
+  },
+  tank: {
+    icon: '🛡️',
+    name: { en: 'Tank', ko: '탱커', ja: 'タンク', zh: '坦克', es: 'Tanque', id: 'Tank', vi: 'Đỡ đòn', hi: 'टैंक', fr: 'Tank', th: 'แทงก์', ar: 'المدرّع' },
+    line: { en: 'Slow, lots of health. Its charge keeps going through a hit.', ko: '느리지만 체력이 많아요. 돌진은 한 대 맞아도 멈추지 않아요.', ja: '遅いが体力たっぷり。突進は1発受けても止まりません。', zh: '慢但血厚。冲撞时挨一下也不会停。', es: 'Lento, mucha vida. Su carga aguanta un golpe sin pararse.', id: 'Lambat, darah banyak. Serudukannya tidak berhenti walau kena pukul.', vi: 'Chậm, nhiều máu. Cú húc không dừng dù trúng một đòn.', hi: 'धीमा, ढेर सेहत। इसका धावा एक वार खाकर भी नहीं रुकता।', fr: 'Lent, beaucoup de vie. Sa charge encaisse un coup sans s\'arrêter.', th: 'ช้าแต่เลือดเยอะ ท่าพุ่งชนไม่หยุดแม้โดนตีหนึ่งที', ar: 'بطيء وكثير الصحة. اندفاعه لا يتوقف عند ضربة.' },
+    sig: { en: 'Shoulder charge', ko: '어깨 돌진', ja: 'ショルダーチャージ', zh: '肩撞', es: 'Carga de hombro', id: 'Seruduk bahu', vi: 'Húc vai', hi: 'कंधा धावा', fr: 'Charge d\'épaule', th: 'พุ่งชนไหล่', ar: 'اندفاع الكتف' },
+    stance: { armL: [-0.5, -0.5, 0], foreL: [-1.2, 0, 0], armR: [-0.5, 0.5, 0], foreR: [-1.2, 0, 0], legL: [-0.35, 0, 0], kneeL: [0.55, 0, 0], legR: [0.3, 0, 0], kneeR: [0.5, 0, 0], spine: [0.22, 0, 0] },
+  },
+  kicker: {
+    icon: '🦵',
+    name: { en: 'Kicker', ko: '발차기 선수', ja: 'キッカー', zh: '踢击手', es: 'Pateador', id: 'Penendang', vi: 'Cao thủ đá', hi: 'किकर', fr: 'Kicker', th: 'นักเตะ', ar: 'الراكل' },
+    line: { en: 'Fast, strong kicks and weak punches. A spinning kick hits three times.', ko: '발이 빠르고 세지만 주먹은 약해요. 돌려차기가 세 번 맞아요.', ja: 'キックは速くて強く、パンチは弱め。回し蹴りが3回当たります。', zh: '腿快而重，拳偏弱。旋踢连中三下。', es: 'Patadas rápidas y fuertes, puños flojos. Su patada giratoria golpea tres veces.', id: 'Tendangan cepat dan kuat, pukulan lemah. Tendangan putar kena tiga kali.', vi: 'Đá nhanh và mạnh, đấm yếu. Cú đá xoay trúng ba lần.', hi: 'तेज़ दमदार किक, कमज़ोर मुक्के। घूमती किक तीन बार लगती है।', fr: 'Pieds rapides et forts, poings faibles. Son coup tournant touche trois fois.', th: 'เตะเร็วและแรง หมัดเบา เตะหมุนโดนสามครั้ง', ar: 'ركلات سريعة قوية ولكمات ضعيفة. ركلته الدوّارة تصيب ثلاث مرات.' },
+    sig: { en: 'Whirlwind kick', ko: '회오리 차기', ja: '旋風脚', zh: '旋风踢', es: 'Patada torbellino', id: 'Tendangan puting beliung', vi: 'Đá lốc xoáy', hi: 'बवंडर किक', fr: 'Coup de pied tourbillon', th: 'เตะพายุหมุน', ar: 'ركلة الإعصار' },
+    stance: { armL: [-0.3, 0, 0], foreL: [-0.9, 0, 0], armR: [-0.2, 0, 0], foreR: [-0.8, 0, 0], legL: [-0.25, 0, 0], kneeL: [0.3, 0, 0], legR: [0.2, 0, 0], kneeR: [0.25, 0, 0], spine: [0.05, 0, 0] }, bounce: 0.05,
+  },
+  boxer: {
+    icon: '👊',
+    name: { en: 'Boxer', ko: '복서', ja: 'ボクサー', zh: '拳击手', es: 'Boxeador', id: 'Petinju', vi: 'Tay đấm', hi: 'मुक्केबाज़', fr: 'Boxeur', th: 'นักมวย', ar: 'الملاكم' },
+    line: { en: 'Fast, heavy fists and long dashes. Kicks are slow.', ko: '주먹이 빠르고 묵직하고 대시가 길어요. 발은 느려요.', ja: 'パンチは速くて重く、ダッシュも長い。キックは遅め。', zh: '拳又快又重，冲刺距离长。腿比较慢。', es: 'Puños rápidos y duros, carreras largas. Patadas lentas.', id: 'Pukulan cepat dan berat, dash jauh. Tendangan lambat.', vi: 'Đấm nhanh và nặng, lướt xa. Đá chậm.', hi: 'तेज़ भारी मुक्के, लंबा डैश। किक धीमी।', fr: 'Poings rapides et lourds, longs dashs. Pieds lents.', th: 'หมัดเร็วและหนัก แดชไกล เตะช้า', ar: 'لكمات سريعة ثقيلة واندفاع طويل. ركلاته بطيئة.' },
+    sig: { en: 'Haymaker', ko: '한 방 훅', ja: '渾身のフック', zh: '重勾拳', es: 'Gancho total', id: 'Hook pamungkas', vi: 'Cú móc trời giáng', hi: 'ज़ोरदार हुक', fr: 'Crochet massue', th: 'ฮุกเต็มแรง', ar: 'الخطّاف القاضي' },
+    stance: { armL: [-1.3, 0.2, 0], foreL: [-2.1, 0, 0], armR: [-1.2, -0.2, 0], foreR: [-2.2, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.4, 0, 0], legR: [0.25, 0, 0], kneeR: [0.35, 0, 0], spine: [0.25, 0, 0], head: [0.15, 0, 0] }, bounce: 0.035,
+  },
+  grappler: {
+    icon: '🤼',
+    name: { en: 'Grappler', ko: '레슬러', ja: 'レスラー', zh: '摔跤手', es: 'Luchador de agarre', id: 'Pegulat', vi: 'Đô vật', hi: 'पहलवान', fr: 'Lutteur', th: 'นักมวยปล้ำ', ar: 'المصارع' },
+    line: { en: 'Sturdy and strong up close. Its throw cannot be guarded.', ko: '튼튼하고 붙으면 강해요. 메치기는 막을 수 없어요.', ja: '頑丈で接近戦に強い。投げはガードできません。', zh: '结实，贴身很强。摔技无法防御。', es: 'Robusto y fuerte de cerca. Su proyección no se puede cubrir.', id: 'Kokoh dan kuat dari dekat. Bantingannya tak bisa ditahan.', vi: 'Lì đòn, mạnh khi áp sát. Cú quật không thể đỡ.', hi: 'मज़बूत, पास से दमदार। इसका पटका रोका नहीं जा सकता।', fr: 'Solide et fort au corps à corps. Sa projection ne se pare pas.', th: 'แกร่งและแรงเมื่อประชิด ท่าทุ่มป้องกันไม่ได้', ar: 'متين وقوي عن قرب. رميته لا تُصدّ.' },
+    sig: { en: 'Big throw', ko: '메치기', ja: '大投げ', zh: '大摔', es: 'Gran proyección', id: 'Bantingan besar', vi: 'Quật ngã', hi: 'बड़ा पटका', fr: 'Grande projection', th: 'ทุ่มใหญ่', ar: 'الرمية الكبرى' },
+    stance: { armL: [-1.1, -0.6, 0], foreL: [-0.7, 0, 0], armR: [-1.1, 0.6, 0], foreR: [-0.7, 0, 0], legL: [-0.4, 0, 0], kneeL: [0.6, 0, 0], legR: [0.3, 0, 0], kneeR: [0.6, 0, 0], spine: [0.35, 0, 0] },
+  },
+  mystic: {
+    icon: '🔮',
+    name: { en: 'Mystic', ko: '기공사', ja: '気功師', zh: '气功师', es: 'Místico', id: 'Ahli tenaga dalam', vi: 'Khí công sư', hi: 'साधक', fr: 'Mystique', th: 'จอมพลังลมปราณ', ar: 'صاحب الطاقة' },
+    line: { en: 'Fights from far away: throws a ball of light across the ring.', ko: '멀리서 싸워요. 링 건너편까지 빛 덩어리를 날려요.', ja: '遠くから戦います。光の玉をリングの向こうまで飛ばします。', zh: '远距离作战：把光球打到擂台另一头。', es: 'Pelea de lejos: lanza una bola de luz por el ring.', id: 'Bertarung dari jauh: melempar bola cahaya ke seberang ring.', vi: 'Đánh từ xa: phóng quả cầu ánh sáng ngang võ đài.', hi: 'दूर से लड़ता है: रिंग के पार रोशनी का गोला फेंकता है।', fr: 'Combat de loin : lance une boule de lumière à travers le ring.', th: 'สู้จากระยะไกล ปล่อยลูกแสงข้ามเวที', ar: 'يقاتل من بعيد: يرمي كرة ضوء عبر الحلبة.' },
+    sig: { en: 'Light ball', ko: '빛 덩어리', ja: '光弾', zh: '光弹', es: 'Bola de luz', id: 'Bola cahaya', vi: 'Cầu ánh sáng', hi: 'रोशनी का गोला', fr: 'Boule de lumière', th: 'ลูกแสง', ar: 'كرة الضوء' },
+    stance: { armL: [-1.4, 0, 0], foreL: [-0.3, 0, 0], armR: [-0.1, 0, 0], foreR: [-1.5, 0, 0], legL: [-0.35, 0, 0], kneeL: [0.45, 0, 0], legR: [0.3, 0, 0], kneeR: [0.4, 0, 0], spine: [0.05, 0, 0] },
+  },
+  dancer: {
+    icon: '💃',
+    name: { en: 'Dancer', ko: '춤꾼', ja: 'ダンサー', zh: '舞者', es: 'Bailarín', id: 'Penari', vi: 'Vũ công', hi: 'नर्तक', fr: 'Danseur', th: 'นักเต้น', ar: 'الراقص' },
+    line: { en: 'Light on its feet. Spins across the floor with legs flying.', ko: '몸이 가벼워요. 다리를 휘돌리며 바닥을 쓸고 지나가요.', ja: '身軽。足を振り回しながら床を回って進みます。', zh: '身手轻盈。双腿飞旋着扫过地面。', es: 'Pies ligeros. Cruza el suelo girando con las piernas al aire.', id: 'Lincah. Berputar melintasi lantai dengan kaki melayang.', vi: 'Nhẹ nhàng. Xoay tròn trên sàn với đôi chân tung bay.', hi: 'फुर्तीला। टाँगें घुमाते हुए फ़र्श पार करता है।', fr: 'Léger sur ses pieds. Traverse le sol en tournant, jambes en l\'air.', th: 'ตัวเบา หมุนตัวกวาดขาไปทั่วพื้น', ar: 'خفيف القدمين. يدور على الأرض وساقاه تطيران.' },
+    sig: { en: 'Floor spin', ko: '바닥 회전', ja: 'フロアスピン', zh: '地板旋转', es: 'Giro de suelo', id: 'Putaran lantai', vi: 'Xoay sàn', hi: 'फ़र्श चक्कर', fr: 'Vrille au sol', th: 'หมุนพื้น', ar: 'دوران الأرض' },
+    stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
+  },
+};
+const BTN = { lp: '👊ʟ', rp: '👊ʀ', lk: '🦶ʟ', rk: '🦶ʀ' };
+
 const RIVAL = [
-  { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
-  { name: { en: 'Night-shift Mina', ko: '야간조 미나', ja: '夜勤のミナ', zh: '夜班米娜' }, look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
-  { name: { en: 'Busker Joon', ko: '버스커 준', ja: 'バスカー・ジュン', zh: '街头艺人俊' }, look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
-  { name: { en: 'Auntie Kimchi', ko: '김치 이모', ja: 'キムチおばさん', zh: '泡菜阿姨' }, look: { model: 'cardigan-brown', pants: 'cocoa', hair: 'espresso', skin: 'fair', hairStyle: 'curly' }, sky: ['#101a2a', '#1f7a6a'] },
-  { name: { en: 'Master Baekho', ko: '백호 관장', ja: '白虎館長', zh: '白虎馆长' }, look: { model: 'hanbok-durumagi-white', pants: 'cream', hair: 'ash', skin: 'tan', hairStyle: 'manbun' }, sky: ['#0a0a14', '#a8322e'] },
+  { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
+  { name: { en: 'Night-shift Mina', ko: '야간조 미나', ja: '夜勤のミナ', zh: '夜班米娜' }, style: 'ninja', look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
+  { name: { en: 'Busker Joon', ko: '버스커 준', ja: 'バスカー・ジュン', zh: '街头艺人俊' }, style: 'dancer', look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
+  { name: { en: 'Auntie Kimchi', ko: '김치 이모', ja: 'キムチおばさん', zh: '泡菜阿姨' }, style: 'grappler', look: { model: 'cardigan-brown', pants: 'cocoa', hair: 'espresso', skin: 'fair', hairStyle: 'curly' }, sky: ['#101a2a', '#1f7a6a'] },
+  { name: { en: 'Master Baekho', ko: '백호 관장', ja: '白虎館長', zh: '白虎馆长' }, style: 'kicker', look: { model: 'hanbok-durumagi-white', pants: 'cream', hair: 'ash', skin: 'tan', hairStyle: 'manbun' }, sky: ['#0a0a14', '#a8322e'] },
 ];
 
+// The ring's build (× the street's): about three heads tall instead of two.
+const BUILD = globalThis.__brawlBuild || { head: 0.75, torso: 1.08, arm: 1.3, leg: 1.4, lift: 0.1 };
 const STAGE_Y = -80; // under the room, out of its sight
 const FOV = 38;
 
@@ -123,6 +200,18 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-ladder b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #2c2550; border: 2px solid #5a4f8c; font-size: 13px; }
 .bw-ladder b.done { background: #ffd23c; color: #2a1030; border-color: #fff; }
 .bw-ladder b.now { border-color: #ff5a6e; box-shadow: 0 0 10px #ff5a6e; }
+.bw-styles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
+.bw-styles button { padding: 8px 0; font-size: clamp(10px, 2.9vw, 12px); min-width: 0; overflow-wrap: anywhere; font-weight: 700; border: 2px solid transparent; line-height: 1.2; }
+.bw-styles button b { display: block; font-size: 22px; }
+.bw-styles button.sel { border-color: #ffd23c; background: #4a3f86; }
+.bw-stat { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: center; margin: 3px auto; max-width: 240px; font-size: 14px; }
+.bw-stat i { height: 8px; border-radius: 4px; background: #2c2550; overflow: hidden; display: block; }
+.bw-stat i u { display: block; height: 100%; background: #ffd23c; }
+.bw-card .seq { font-size: 13px; margin: 4px 0; }
+.bw-style { font-size: 11px; opacity: .9; margin-top: 1px; text-shadow: 0 1px 3px #000; white-space: nowrap; }
+.bw-side.r .bw-style { text-align: right; }
+.bw-dash { position: absolute; right: calc(170px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 50%; border: 3px solid #fff; background: #6a5acd; color: #fff; font: 800 20px system-ui; padding: 0; touch-action: none; }
+.bw-dash.on { filter: brightness(1.6); }
 .bw-card .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
 .bw-card button { border: 0; border-radius: 12px; padding: 12px 18px; font: 800 16px system-ui; cursor: pointer; background: #3a3260; color: #fff; }
 .bw-card button.go { background: linear-gradient(#ffd23c, #ff8a2e); color: #2a1030; }
@@ -166,27 +255,48 @@ function mirror(p) {
   for (const [l, r] of PAIRS) { const t = p[l]; p[l] = p[r]; p[r] = t; }
   for (const n of BONES) { p[n][1] = -p[n][1]; p[n][2] = -p[n][2]; }
 }
+WIND.charge = P({ ...STANCE, armL: [-0.9, 0.5, 0], foreL: [-2.0, 0, 0], armR: [-0.3, 0, 0], foreR: [-1.6, 0, 0], legL: [-0.6, 0, 0], kneeL: [1.0, 0, 0], legR: [0.2, 0, 0], kneeR: [0.9, 0, 0], spine: [0.5, 0, 0] });
+HIT.charge = P({ ...STANCE, armL: [-1.2, 0.6, 0], foreL: [-2.1, 0, 0], armR: [0.3, 0, 0], foreR: [-1.0, 0, 0], legL: [-0.8, 0, 0], kneeL: [0.8, 0, 0], legR: [0.6, 0, 0], kneeR: [0.2, 0, 0], spine: [0.65, -0.4, 0], head: [-0.3, 0, 0] });
+WIND.hook = P({ ...STANCE, armR: [-0.7, 1.1, 0], foreR: [-1.3, 0, 0], spine: [0.15, -0.6, 0] });
+HIT.hook = P({ ...STANCE, armR: [-1.5, -0.7, 0], foreR: [-1.3, 0, 0], armL: [-0.7, 0, 0], spine: [0.25, 0.8, 0], legR: [0.4, 0, 0] });
+WIND.grab = P({ ...STANCE, armL: [-1.3, -1.0, 0], foreL: [-0.3, 0, 0], armR: [-1.3, 1.0, 0], foreR: [-0.3, 0, 0], spine: [0.25, 0, 0] });
+HIT.grab = P({ ...STANCE, armL: [-1.5, 0.35, 0], foreL: [-0.9, 0, 0], armR: [-1.5, -0.35, 0], foreR: [-0.9, 0, 0], spine: [0.55, 0, 0], legL: [-0.6, 0, 0], kneeL: [0.8, 0, 0] });
+WIND.mill = P({ ...STANCE, armL: [-1.6, 0, 0], foreL: [-0.2, 0, 0], armR: [-1.6, 0, 0], foreR: [-0.2, 0, 0], legL: [-0.8, 0, 0], kneeL: [1.3, 0, 0], legR: [-0.4, 0, 0], kneeR: [1.2, 0, 0], spine: [0.7, 0, 0] });
+HIT.mill = P({ armL: [-2.7, -0.3, 0], armR: [-2.7, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [-1.3, 0, 0], legR: [0.9, 0, 0], kneeL: [0.1, 0, 0], kneeR: [0.2, 0, 0], spine: [0.3, 0, 0], head: [-0.4, 0, 0] });
+const DASH = P({ ...STANCE, armL: [0.5, 0, 0], foreL: [-1.0, 0, 0], armR: [0.6, 0, 0], foreR: [-1.0, 0, 0], legL: [-0.9, 0, 0], kneeL: [0.9, 0, 0], legR: [0.7, 0, 0], kneeR: [0.5, 0, 0], spine: [0.5, 0, 0] });
+const STANCES = {};
+for (const id of STYLE_IDS) STANCES[id] = STYLE[id].stance ? P({ ...STYLE[id].stance }) : STANCE;
 const mix = (out, a, b, k) => { for (const n of BONES) for (let i = 0; i < 3; i++) out[n][i] = lerp(a[n][i], b[n][i], k); return out; };
 
 // f: the fighter (core/brawl.js). Fills `out` with the bone offsets and
 // returns { pitch (lying back), lift (off the floor), yaw (a body turn) }.
 function poseOf(f, time, out, body) {
-  body.pitch = 0; body.lift = f.y; body.yaw = 0;
+  const look = STYLE[f.style] || STYLE.brawler, S = STANCES[f.style] || STANCE;
+  body.pitch = 0; body.lift = f.y; body.yaw = 0; body.hide = false;
   const bob = Math.sin(time * 5 + f.side * 2) * 0.05;
   if (f.st === 'atk') {
-    const m = MOVES[f.move], t = f.t;
+    const m = f.mv[f.move], t = f.t, key = m.pose || f.move;
     if (t <= m.startup) {
       const u = t / m.startup;
-      if (u < 0.55) mix(out, STANCE, WIND[f.move], smooth(u / 0.55));
-      else mix(out, WIND[f.move], HIT[f.move], ((u - 0.55) / 0.45) ** 2);
-    } else if (t <= m.startup + m.active) mix(out, HIT[f.move], HIT[f.move], 0);
-    else mix(out, HIT[f.move], STANCE, smooth((t - m.startup - m.active) / m.recover));
+      if (u < 0.55) mix(out, S, WIND[key], smooth(u / 0.55));
+      else mix(out, WIND[key], HIT[key], ((u - 0.55) / 0.45) ** 2);
+    } else if (t <= m.startup + m.active) mix(out, HIT[key], HIT[key], 0);
+    else mix(out, HIT[key], S, smooth((t - m.startup - m.active) / m.recover));
     const whole = Math.min(1, t / (m.startup + m.active));
-    if (f.move === 'rk') body.yaw = 0.2 * Math.sin(Math.min(1, t / moveTicks(m)) * Math.PI);
+    const out01 = Math.max(0, Math.min(1, (t - m.startup) / m.active));
+    if (key === 'rk' && !m.spin) body.yaw = 0.2 * Math.sin(Math.min(1, t / moveTicks(m)) * Math.PI);
+    if (m.spin) body.yaw = m.spin * Math.PI * 2 * smooth(out01);
+    if (m.blink) body.hide = t >= m.startup - 7 && t < m.startup - 1; // gone for a moment
+    if (key === 'mill') { const k = Math.sin(Math.min(1, t / (m.startup + m.active + 10)) * Math.PI); body.pitch = 1.25 * k; body.lift += 0.34 * k; }
+    if (key === 'charge') body.pitch = 0.25 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 12) : 1);
     if (f.move === 'upper') body.lift += 0.16 * Math.sin(smooth((t - m.startup * 0.6) / (m.active + m.recover * 0.5)) * Math.PI);
-    if (f.move === 'fly') body.pitch = -0.35 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 14) : 1);
+    if (f.move === 'fly' && !m.pose) body.pitch = -0.35 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 14) : 1);
+  } else if (f.st === 'dash') {
+    mix(out, S, DASH, Math.sin(Math.min(1, f.t / 9) * Math.PI));
+    if (f.dashDir < 0) { out.spine[0] = -0.2; }
+    body.lift += 0.05;
   } else if (f.st === 'hit') {
-    mix(out, STANCE, HURT, Math.min(1, f.stun / 8) * Math.min(1, f.t / 2));
+    mix(out, S, HURT, Math.min(1, f.stun / 8) * Math.min(1, f.t / 2));
   } else if (f.st === 'block') {
     mix(out, GUARD, GUARD, 0); out.spine[0] += Math.min(1, f.stun / 6) * 0.12;
   } else if (f.st === 'air') {
@@ -198,11 +308,13 @@ function poseOf(f, time, out, body) {
     body.pitch = -1.45; body.lift = 0.14;
   } else if (f.st === 'getup') {
     const u = smooth(f.t / 16);
-    mix(out, LOOSE, STANCE, u);
+    mix(out, LOOSE, S, u);
     body.pitch = -1.45 * (1 - u); body.lift = 0.14 * (1 - u);
   } else {
-    mix(out, STANCE, GUARD, f.guard ? 1 : 0);
+    mix(out, S, GUARD, f.guard ? 1 : 0);
     out.armL[0] += bob; out.armR[0] -= bob; out.spine[0] += bob * 0.4;
+    if (look.sway) { out.spine[1] += Math.sin(time * 3.2) * look.sway; out.spine[2] += Math.cos(time * 3.2) * look.sway * 0.4; }
+    if (look.bounce) body.lift += Math.abs(Math.sin(time * 7 + f.side)) * look.bounce;
     const stepping = f.st === 'step';
     if (f.walk || stepping) { // a shuffle
       const s = Math.sin(time * 16) * (stepping ? 0.5 : 0.38);
@@ -313,7 +425,15 @@ function buildStage(sky) {
     g.add(sp);
     sparks.push({ sp, t: 1 });
   }
-  return { g, sparks, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
+  const shots = [0, 1].map((i) => {
+    const mat = new THREE.SpriteMaterial({ map: sparkMap, color: i ? '#ff9aa8' : '#7df0ff', transparent: true, depthTest: false, blending: THREE.AdditiveBlending });
+    const sp = new THREE.Sprite(mat);
+    sp.visible = false; sp.renderOrder = 21;
+    own.push(mat);
+    g.add(sp);
+    return sp;
+  });
+  return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
 }
 
 // ── The game ─────────────────────────────────────────────────────────────
@@ -341,11 +461,28 @@ export function createBrawl(game) {
     e.stopPropagation(); // (the game under us must not walk, chat or honk)
     if (!k) return;
     e.preventDefault();
-    if (down) { if (!held.has(k)) pressed.add(k); held.add(k); } else held.delete(k);
+    if (down) {
+      if (!held.has(k)) {
+        pressed.add(k);
+        if (k === 'left' || k === 'right') tapped(k === 'right' ? 1 : -1);
+      }
+      held.add(k);
+    } else held.delete(k);
+  };
+  // Twice the same way in a quarter of a second is a dash.
+  let lastTap = 0, lastTapAt = 0, dashAsk = 0;
+  function tapped(dir) {
+    const now = performance.now();
+    if (dir === lastTap && now - lastTapAt < 280) { dashAsk = dir; lastTap = 0; } else { lastTap = dir; lastTapAt = now; }
+  }
+  const onShift = (e) => {
+    if (!on || e.key !== 'Shift' || e.repeat || e.type !== 'keydown') return;
+    dashAsk = held.has('left') ? -1 : 1;
   };
   function readInput() {
     const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) || stick.mz };
     for (const b of ['lp', 'rp', 'lk', 'rk']) if (pressed.has(b)) inp[b] = true;
+    if (dashAsk) { inp.dash = dashAsk; dashAsk = 0; }
     pressed.clear();
     return inp;
   }
@@ -361,8 +498,9 @@ export function createBrawl(game) {
       const name = el('div', 'bw-name'), label = el('span');
       const pips = Array.from({ length: ROUNDS_TO_WIN }, () => el('i', 'bw-pip'));
       name.append(label, ...pips);
-      s.append(bar, name);
-      return { s, ghost, hp, label, pips, shown: -1 };
+      const style = el('div', 'bw-style');
+      s.append(bar, name, style);
+      return { s, ghost, hp, label, pips, style, shown: -1 };
     };
     const a = side(0), b = side(1), time = el('div', 'bw-time', '45');
     const top = el('div', 'bw-top');
@@ -382,7 +520,9 @@ export function createBrawl(game) {
       const move = (e) => {
         const dx = e.clientX - ox, dy = e.clientY - oy, d = Math.hypot(dx, dy), k = d > 44 ? 44 / d : 1;
         knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+        const was = stick.mx;
         stick.mx = Math.abs(dx) > 16 ? Math.sign(dx) : 0;
+        if (stick.mx && stick.mx !== was) tapped(stick.mx);
         stick.mz = Math.abs(dy) > 26 && Math.abs(dy) > Math.abs(dx) * 0.7 ? -Math.sign(dy) : 0;
       };
       zone.onpointerdown = (e) => {
@@ -403,7 +543,10 @@ export function createBrawl(game) {
         b.onpointerup = b.onpointercancel = b.onpointerleave = () => b.classList.remove('on');
         btns.append(b);
       }
-      pad.append(zone, btns);
+      const dash = el('button', 'bw-dash', '💨');
+      dash.onpointerdown = (e) => { e.preventDefault(); dashAsk = stick.mx < 0 ? -1 : 1; dash.classList.add('on'); };
+      dash.onpointerup = dash.onpointercancel = dash.onpointerleave = () => dash.classList.remove('on');
+      pad.append(zone, btns, dash);
       root.append(pad);
     } else root.append(el('div', 'bw-keys', tt('keys')));
     root.oncontextmenu = (e) => e.preventDefault();
@@ -430,16 +573,52 @@ export function createBrawl(game) {
     for (let i = 0; i < RIVALS; i++) row.append(el('b', i < now ? 'done' : i === now ? 'now' : '', i === RIVALS - 1 ? '👑' : String(i + 1)));
     c.append(row);
   }
+  const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
+  const seqText = (seq) => seq.map((k) => BTN[k]).join(' ');
+  function styleInfo(box, id) {
+    const st = STYLES[id], mv = movesFor(id);
+    box.replaceChildren();
+    box.append(el('p', 'big', styleTag(id)), el('p', null, L(STYLE[id].line)));
+    const power = (st.punch[1] + st.kick[1]) / 2;
+    for (const [icon, k] of [['❤️', st.hp / 120], ['⚡', st.walk / 1.25], ['💪', (power - 0.7) / 0.5]]) {
+      const row = el('div', 'bw-stat'), bar = el('i'), fill = el('u');
+      fill.style.width = Math.round(Math.max(0.12, Math.min(1, k)) * 100) + '%';
+      bar.append(fill); row.append(el('span', null, icon), bar);
+      box.append(row);
+    }
+    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? `${BTN.lp} + ${BTN.rp}` : `${BTN.lk} + ${BTN.rk}`) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
+    box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
+  }
   function menu() {
     const rec = loadBrawl(store);
+    on.style = rec.style || on.style || 'brawler';
     setRival(rec.stage);
     on.match = null;
     card((c) => {
       c.append(el('h3', null, '🥊 ' + tt('title')));
-      c.append(el('p', 'dim', tt('rival', { n: rec.stage + 1, max: RIVALS }) + ' · ' + L(RIVAL[rec.stage].name)));
+      c.append(el('p', 'dim', tt('rival', { n: rec.stage + 1, max: RIVALS }) + ' · ' + L(RIVAL[rec.stage].name) + ' (' + styleTag(RIVAL[rec.stage].style) + ')'));
       ladder(c, rec, rec.stage);
-      c.append(el('p', null, tt('how')), el('p', 'dim', tt('moves')));
-      if (!touch) c.append(el('p', 'dim', tt('keys')));
+      c.append(el('p', 'big', tt('pick')));
+      const grid = el('div', 'bw-styles'), info = el('div');
+      const pick = (id) => {
+        on.style = id;
+        saveStyle(store, id);
+        for (const b of grid.children) b.classList.toggle('sel', b.dataset.id === id);
+        styleInfo(info, id);
+        showStyles();
+      };
+      for (const id of STYLE_IDS) {
+        const b = button(L(STYLE[id].name), null, () => pick(id));
+        b.dataset.id = id;
+        b.prepend(el('b', null, STYLE[id].icon));
+        grid.append(b);
+      }
+      c.append(grid, info);
+      pick(on.style);
+      const more = el('details');
+      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
+      if (!touch) more.append(el('p', 'dim', tt('keys')));
+      c.append(more);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
       row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
@@ -455,9 +634,14 @@ export function createBrawl(game) {
       ladder(c, rec, champ ? RIVALS : rec.stage);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
+  }
+  function showStyles() {
+    if (!on.hud) return;
+    on.hud.a.style.textContent = styleTag(on.style);
+    if (on.rivalStage >= 0) on.hud.b.style.textContent = styleTag(RIVAL[on.rivalStage].style);
   }
 
   // ── The fighters ──
@@ -470,6 +654,23 @@ export function createBrawl(game) {
     ch.setMoves(() => (f.live ? f.pose : null));
     on.stage.g.add(ch.root);
     return f;
+  }
+  // In the ring only, fighters are built taller: a smaller head and longer
+  // arms and legs, so a punch and a kick read from across the screen. Set
+  // every frame after the clip's own pose (the model resets the head's size).
+  function reshape(f) {
+    const root = f.ch.root;
+    if (!f.bones) {
+      const get = (n) => root.getObjectByName(n);
+      const b = { head: get('head'), spine: get('spine'), arms: [get('upperarml'), get('upperarmr')], legs: [get('upperlegl'), get('upperlegr')] };
+      if (!b.head || !b.legs[0]) return; // (the model is still on its way)
+      f.bones = b;
+    }
+    const b = f.bones;
+    b.spine?.scale.setScalar(BUILD.torso);
+    b.head.scale.multiplyScalar(BUILD.head / BUILD.torso);
+    for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
+    for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
   }
   function setRival(stage) {
     if (on.rivalStage === stage) return;
@@ -485,13 +686,14 @@ export function createBrawl(game) {
     on.rival = fighter(RIVAL[stage].look, 1);
     on.hud.a.label.textContent = game.nickname || tt('you');
     on.hud.b.label.textContent = L(RIVAL[stage].name);
+    showStyles();
   }
   function begin(stage) {
     on.card?.remove(); on.card = null;
     if (on.hud.pad) on.hud.pad.style.display = '';
     on.hud.root.querySelector('.bw-keys')?.style.removeProperty('display');
     held.clear(); pressed.clear();
-    on.match = createMatch({ level: stage });
+    on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
     on.stageNo = stage;
     on.acc = 0; on.freeze = 0; on.shake = 0; on.overT = 0;
     for (const s of [on.hud.a, on.hud.b]) { s.shown = -1; s.s.classList.remove('rage'); }
@@ -509,20 +711,24 @@ export function createBrawl(game) {
     const m = on.match, { sfx } = game;
     for (const e of ev) {
       if (e.k === 'round') {
-        say(m.wins[0] === ROUNDS_TO_WIN - 1 && m.wins[1] === ROUNDS_TO_WIN - 1 ? 'FINAL ROUND' : 'ROUND ' + e.n, '', 1.4);
+        say(m.wins[0] === ROUNDS_TO_WIN - 1 && m.wins[1] === ROUNDS_TO_WIN - 1 ? 'FINAL ROUND' : 'ROUND ' + e.n, styleTag(m.a.style) + '  VS  ' + styleTag(m.b.style), 1.6);
         for (const f of [on.me, on.rival]) { f.clipT = 1.7; f.ch.play('bow'); }
         sfx.tock(0.5, 500);
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
-      else if (e.k === 'swing') sfx.tock(0.18, MOVES[e.move].level >= 3 ? 520 : 760);
+      else if (e.k === 'swing') sfx.tock(0.18, (e.by ? m.b : m.a).mv[e.move].level >= 3 ? 520 : 760);
+      else if (e.k === 'dash') sfx.tock(0.2, 1100);
+      else if (e.k === 'shot') sfx.tock(0.5, 1500);
+      else if (e.k === 'blink') { spark(e.from[0], 0.7, e.from[1], '#b9a6f0', 1.2); spark(e.x, 0.7, e.z, '#b9a6f0', 1.2); sfx.tock(0.4, 1800); }
+      else if (e.k === 'combo') { const c = on.hud.combo[e.by]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
       else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); on.freeze = 3; }
       else if (e.k === 'hit') {
-        const big = e.dmg >= 14 || e.launch || e.ko;
-        spark(e.x, e.y, e.z, e.counter ? '#ff6a5a' : '#ffe9a0', big ? 1.5 : 1);
+        const big = e.dmg >= 14 || e.launch || e.ko || e.fin;
+        spark(e.x, e.y, e.z, e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', big ? 1.5 : 1);
         sfx.tock(big ? 1 : 0.7, big ? 170 : 250);
         on.freeze = e.ko ? 16 : big ? 7 : 4;
         on.shake = Math.max(on.shake, big ? 0.14 : 0.06);
         const c = on.hud.combo[e.by];
-        if (e.combo >= 2 || e.counter) {
+        if ((e.combo >= 2 || e.counter) && !(e.fin && on.comboAt === on.time)) {
           c.textContent = e.combo >= 2 ? tt('hits', { n: e.combo }) : 'COUNTER!';
           c.classList.add('show'); on.hud.comboT[e.by] = 1.1;
         }
@@ -544,12 +750,14 @@ export function createBrawl(game) {
     if (s.side) mirror(f.pose);
     if (f.clipT > 0) f.clipT -= dt;
     f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
-    f.rig.position.y = f.body.lift;
+    f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
     f.rig.rotation.x = f.body.pitch;
+    root.visible = !f.body.hide;
     // Chest a little toward the camera, like a fighting stance.
     const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (s.side ? 0.4 : -0.4);
     root.rotation.y = Math.PI / 2 - s.face + open + (s.side ? 1 : -1) * f.body.yaw;
     f.ch.animate(dt, 0, false);
+    reshape(f);
   }
 
   function frame(dt) {
@@ -569,9 +777,15 @@ export function createBrawl(game) {
         }
       }
       place(on.me, m.a, dt); place(on.rival, m.b, dt);
+      // Balls of light in flight.
+      for (const [i, f] of [m.a, m.b].entries()) {
+        const sp = on.stage.shots[i];
+        sp.visible = !!f.shot;
+        if (f.shot) { sp.position.set(f.shot.x, 0.78, f.shot.z); sp.material.rotation += dt * 9; sp.scale.setScalar(0.75 + Math.sin(on.time * 30) * 0.08); }
+      }
       // The bars, the clock, the rounds won.
       for (const [s, f] of [[h.a, m.a], [h.b, m.b]]) {
-        if (s.shown !== f.hp) { s.shown = f.hp; const k = `scaleX(${f.hp / MAX_HP})`; s.hp.style.transform = k; s.ghost.style.transform = k; }
+        if (s.shown !== f.hp) { s.shown = f.hp; const k = `scaleX(${f.hp / f.maxHp})`; s.hp.style.transform = k; s.ghost.style.transform = k; }
         if (!f.rage) s.s.classList.remove('rage');
         s.pips.forEach((p, i) => p.classList.toggle('on', i < m.wins[f.side]));
       }
@@ -585,6 +799,8 @@ export function createBrawl(game) {
       }
     } else {
       // Waiting at the menu: both stand ready.
+      for (const sp of on.stage.shots) sp.visible = false;
+      on.idle[0].style = on.style; on.idle[1].style = RIVAL[on.rivalStage]?.style || 'brawler';
       for (const f of [on.me, on.rival]) {
         const s = on.idle[f.side];
         place(f, s, dt);
@@ -596,7 +812,7 @@ export function createBrawl(game) {
       if (!s.sp.visible) continue;
       s.t += dt / 0.22;
       if (s.t >= 1) { s.sp.visible = false; continue; }
-      s.sp.scale.setScalar(s.size * (0.5 + s.t * 1.1));
+      s.sp.scale.setScalar(s.size * (0.3 + s.t * 0.6));
       s.sp.material.opacity = 1 - s.t * s.t;
     }
   }
@@ -628,7 +844,7 @@ export function createBrawl(game) {
     if (!on) return;
     const o = on;
     on = null;
-    removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true);
+    removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true); removeEventListener('keydown', onShift, true);
     held.clear(); pressed.clear(); stick.mx = stick.mz = 0;
     for (const f of [o.me, o.rival]) { f.ch.setMoves(null); f.ch.root.removeFromParent(); }
     o.stage.dispose();
@@ -644,11 +860,11 @@ export function createBrawl(game) {
     close,
     show() {
       if (on || !game.interior || !game.activeScene) return;
-      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, stage: null, me: null, rival: null, match: null, card: null };
-      on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0 }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0 }];
+      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
+      on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0, style: 'brawler' }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0, style: 'brawler' }];
       on.hud = buildHud();
       document.documentElement.classList.add('brawl-on');
-      addEventListener('keydown', onKey, true); addEventListener('keyup', onKey, true);
+      addEventListener('keydown', onKey, true); addEventListener('keyup', onKey, true); addEventListener('keydown', onShift, true);
       menu();
     },
     // Each frame, after the game's own camera (game/arcade.js).
