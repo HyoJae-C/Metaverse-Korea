@@ -175,6 +175,7 @@ export const ACCESSORIES = {
     { id: 'cap-orange', shape: 'cap', emoji: '🧢', color: 0xff7a00 },
     { id: 'bucket-cream', shape: 'bucket', emoji: '👒', color: 0xf6f1e7 },
     { id: 'bucket-denim', shape: 'bucket', emoji: '👒', color: 0x5b6c8f },
+    { id: 'bucket-grey', shape: 'bucket', emoji: '👒', color: 0x8e8a92 }, // (the bait-stall grandpa's, game/fish-bait.js)
     { id: 'beanie-grey', shape: 'beanie', emoji: '🧶', color: 0x8e8a92 },
     { id: 'beanie-cream', shape: 'beanie', emoji: '🧶', color: 0xefe6d2 },
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },

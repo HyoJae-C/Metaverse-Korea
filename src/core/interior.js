@@ -10,6 +10,7 @@ import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { makeAnimal } from './pets.js';
 import { buildPark } from './park.js';
+import { COUNTER_H, liftFor } from './counter-face.js'; // shop counters: low enough to see the clerk's face over them
 import { buildPoolHall } from './pool-hall.js';
 import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
@@ -70,7 +71,6 @@ export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
 // A room's walkable box (most rooms are centred on 0).
 export const roomBox = (room) => ({ x0: room.x0 ?? -room.w / 2, x1: room.x1 ?? room.w / 2, z0: room.z0 ?? -room.d / 2, z1: room.z1 ?? room.d / 2 });
 const SEAT_H = 0.38; // chair seat height, sized for the chibi characters
-const COUNTER_H = 0.62; // shop counters: low enough to see the clerk's face over them
 const BAR_H = 0.72; // bar counters (club, cocktail bar), with stools
 
 // (one material per colour, shared with the products: core/product-model.js)
@@ -580,8 +580,8 @@ export function buildInterior(store) {
     block(0, bz + 0.1, Math.min(7.2, w - 2.8), 0.3);
     // Teacher's desk.
     const tz = bz + 1.9;
-    box(1.8, 0.8, 0.7, 0, 0.4, tz, '#8a5a3a');
-    box(0.3, 0.05, 0.22, 0.4, 0.83, tz, '#d8452f'); // a book
+    box(1.8, COUNTER_H, 0.7, 0, COUNTER_H / 2, tz, '#8a5a3a'); // (COUNTER_H: the teacher's face shows, core/counter-face.js)
+    box(0.3, 0.05, 0.22, 0.5, COUNTER_H + 0.03, tz, '#d8452f'); // a book
     block(0, tz, 1.9, 0.8);
     clerk = { x: 0, z: tz - 0.8, ry: 0 };
     stations.academy = [{ x: 0, z: tz + 1 }];
@@ -671,7 +671,11 @@ export function buildInterior(store) {
     party.forEach((l, i) => { l.position.set(i ? 4 : -4, 2.6, 1); scene.add(l); });
     // Bar counter with stools on the right wall (the drinks stand on it).
     const cx = w / 2 - 1.4;
-    barkeep = { x: cx + 0.75, z: 1.05, ry: -Math.PI / 2 }; // the bartender, behind the counter
+    // The bartender, behind the counter on a low step (a bar is taller than a
+    // shop counter: the step keeps the face over it, core/counter-face.js).
+    const barStep = liftFor(BAR_H + 0.04);
+    barkeep = { x: cx + 0.75, y: barStep, z: 1.05, ry: -Math.PI / 2 };
+    box(0.6, barStep, 6.4, cx + 0.75, barStep / 2, 1.05, '#2a2533');
     box(0.9, BAR_H, 6.4, cx, BAR_H / 2, 1.05, '#1f1b26');
     box(1.0, 0.06, 6.5, cx, BAR_H + 0.01, 1.05, EDGE);
     block(cx, 1.05, 1.0, 6.5);
@@ -731,7 +735,11 @@ export function buildInterior(store) {
     box(8.6, BAR_H, 0.8, 0, BAR_H / 2, cz, '#3b2418');
     box(8.8, 0.07, 0.95, 0, BAR_H + 0.01, cz, '#8a5a3a');
     block(0, cz, 8.8, 0.95);
-    clerk = { x: 0.6, z: cz - 1.0, ry: 0 }; // the bartender
+    // The bartender, on a low step behind the bar so the face shows over it
+    // (core/counter-face.js).
+    const barStep = liftFor(BAR_H + 0.045);
+    box(8.6, barStep, 1.1, 0, barStep / 2, cz - 0.95, '#2e1c13');
+    clerk = { x: 0.6, y: barStep, z: cz - 1.0, ry: 0 };
     // Back shelves with bottles (the taproom has its tap wall there instead).
     for (const y of style === 'taproom' ? [] : [1.25, 1.85, 2.45]) {
       box(9, 0.06, 0.35, 0, y, -d / 2 + 0.25, '#5a3a28');
@@ -1202,9 +1210,9 @@ export function buildInterior(store) {
         skirt.position.set(tx, (TT - 0.06) / 2 + 0.02, tz);
         scene.add(skirt);
         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), new THREE.MeshBasicMaterial({ color: '#bfe3ff', transparent: true, opacity: 0.85 }));
-        ball.position.set(tx, TT + 0.2, tz - 0.3);
+        ball.position.set(tx + 0.42, TT + 0.2, tz - 0.3); // (to one side: the reader's face shows, core/counter-face.js)
         scene.add(ball);
-        box(0.18, 0.05, 0.18, tx, TT + 0.05, tz - 0.3, '#d4a73a'); // its stand
+        box(0.18, 0.05, 0.18, tx + 0.42, TT + 0.05, tz - 0.3, '#d4a73a'); // its stand
         for (const s2 of [-1, 1]) { // candles
           box(0.06, 0.16, 0.06, tx + s2 * 0.55, TT + 0.11, tz - 0.15, '#f7f1e3');
           const flame = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffd36e' }));
@@ -1872,11 +1880,13 @@ export function buildInterior(store) {
       // in front of you as you come in, with two guides behind it facing the
       // door: game help on the left, the neighbourhood guide on the right.
       const dz = -d / 2 + 2.4, dw = Math.min(5.6, w - 3);
-      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#fffaf0');
-      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // desk top
+      // (COUNTER_H, with the name plates and screens beside the guides, not
+      // in front of them: their faces show, core/counter-face.js)
+      box(dw, COUNTER_H - 0.03, 0.8, 0, (COUNTER_H - 0.03) / 2, dz, '#fffaf0');
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H, dz, store.colors.sign); // desk top
       for (const [gx, color] of [[-dw / 4, '#f2a33a'], [dw / 4, '#3fa66b']]) {
-        box(0.5, 0.36, 0.04, gx, COUNTER_H + 0.42, dz + 0.3, color); // name plates on the desk
-        box(0.42, 0.28, 0.3, gx + 0.55, COUNTER_H + 0.3, dz - 0.15, '#3a3f4a'); // screens
+        box(0.42, 0.2, 0.04, gx - 0.55, COUNTER_H + 0.13, dz + 0.3, color); // name plates on the desk
+        box(0.42, 0.28, 0.3, gx + 0.6, COUNTER_H + 0.17, dz - 0.15, '#3a3f4a'); // screens
       }
       block(0, dz, dw, 0.8);
       clerk = { x: -dw / 4, z: dz - 0.85, ry: 0 }; // game guide
@@ -1888,14 +1898,14 @@ export function buildInterior(store) {
       // chairs on the left, a number ticket machine by the door, two ATMs on
       // the right wall, and a few customers already here.
       const dz = -d / 2 + 2.4, dw = Math.min(9, w - 4), win = dw / 3;
-      box(dw, COUNTER_H + 0.1, 0.8, 0, (COUNTER_H + 0.1) / 2, dz, '#f4f6f5');
-      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H + 0.13, dz, store.colors.sign); // counter top
+      box(dw, COUNTER_H - 0.03, 0.8, 0, (COUNTER_H - 0.03) / 2, dz, '#f4f6f5'); // (COUNTER_H: the teller's face shows over it, core/counter-face.js)
+      box(dw + 0.1, 0.06, 0.9, 0, COUNTER_H, dz, store.colors.sign); // counter top
       const glass = new THREE.MeshLambertMaterial({ color: '#d6efe8', transparent: true, opacity: 0.3, depthWrite: false });
       const plane = (pw, ph, tex) => new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshBasicMaterial({ map: tex }));
       for (let i = 0; i < 3; i++) {
         const wx = (i - 1) * win;
         const pane = new THREE.Mesh(new THREE.PlaneGeometry(win - 0.5, 0.75), glass); // glass over the counter, a gap below to pass things
-        pane.position.set(wx, COUNTER_H + 0.65, dz + 0.1);
+        pane.position.set(wx, COUNTER_H + 0.55, dz + 0.1);
         scene.add(pane);
         const num = plane(0.9, 0.22, labelTexture(String(127 + i * 38).padStart(4, '0'), '#1b1b1b'));
         num.position.set(wx, 2.05, dz + 0.1);
@@ -1903,9 +1913,9 @@ export function buildInterior(store) {
         const tag = plane(0.8, 0.16, labelTexture(`${i + 1}번 창구 · Window ${i + 1}`, store.colors.sign));
         tag.position.set(wx, 1.8, dz + 0.1);
         scene.add(tag);
-        box(0.42, 0.28, 0.3, wx + 0.5, COUNTER_H + 0.3, dz - 0.2, '#3a3f4a'); // screens
+        box(0.42, 0.28, 0.3, wx + 0.55, COUNTER_H + 0.17, dz - 0.2, '#3a3f4a'); // screens (beside the teller)
       }
-      for (let i = 0; i <= 3; i++) box(0.06, 1.3, 0.8, -dw / 2 + i * win, COUNTER_H + 0.75, dz, '#c9d3cf'); // partitions
+      for (let i = 0; i <= 3; i++) box(0.06, 1.3, 0.8, -dw / 2 + i * win, COUNTER_H + 0.62, dz, '#c9d3cf'); // partitions
       box(dw, 0.12, 0.8, 0, 2.2, dz, store.colors.sign); // header over the windows
       block(0, dz, dw, 0.8);
       clerk = { x: 0, z: dz - 0.85, ry: 0 }; // the open window
@@ -2047,10 +2057,10 @@ export function buildInterior(store) {
     // Popcorn stand on the right.
     const px = w / 2 - 2.4, pz = d / 2 - 2.6;
     box(1.6, COUNTER_H, 0.8, px, COUNTER_H / 2, pz, '#b3262e');
-    box(0.6, 0.7, 0.5, px - 0.3, COUNTER_H + 0.35, pz, '#f3e3b0'); // popcorn machine
-    box(0.62, 0.08, 0.52, px - 0.3, COUNTER_H + 0.74, pz, '#b3262e');
+    box(0.6, 0.7, 0.5, px - 0.5, COUNTER_H + 0.35, pz, '#f3e3b0'); // popcorn machine (beside the clerk, not in front: core/counter-face.js)
+    box(0.62, 0.08, 0.52, px - 0.5, COUNTER_H + 0.74, pz, '#b3262e');
     block(px, pz, 1.7, 0.9);
-    clerk = { x: px, z: pz + 0.75, ry: Math.PI };
+    clerk = { x: px + 0.3, z: pz + 0.75, ry: Math.PI };
     // A soft light over the seats, so people can find a seat in the dark.
     const hall = new THREE.PointLight(0xffd9b0, 10, 22);
     hall.position.set(0, h - 1, d / 4);

@@ -10,13 +10,13 @@
 import * as THREE from 'three';
 import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
+import { COUNTER_H } from './counter-face.js'; // low enough to see the seller's face over it
 
 const mats = {};
 const mat = (c, o) => (mats[c + (o ? JSON.stringify(o) : '')] ||= new THREE.MeshLambertMaterial({ color: c, ...o }));
 const glow = (c) => (mats['glow' + c] ||= new THREE.MeshBasicMaterial({ color: c }));
 
 const SEAT_H = 0.38;
-const COUNTER_H = 0.62; // low enough to see the seller's face over it
 export const STALL = { w: 2.4, d: 1.4 };
 
 // Where each stall stands: [x, z, ry]. ry 0 faces the lawn (+z), π/2 faces

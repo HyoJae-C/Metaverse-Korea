@@ -17,8 +17,9 @@ import * as THREE from 'three';
 import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
 import { mergeStatic } from './merge-static.js';
+import { COUNTER_H } from './counter-face.js';
 
-export const CART = { len: 2.2, depth: 1.3, counter: 0.7 }; // (the counter low enough to see the seller's face over it) // (scripts/build-myeongdong.mjs CART)
+export const CART = { len: 2.2, depth: 1.3, counter: COUNTER_H }; // (the counter low enough to see the seller's face over it, core/counter-face.js) // (scripts/build-myeongdong.mjs CART)
 export const SELLER_Z = -0.3; // where the seller stands
 export const BUY_Z = 1.3; // where you stand to look at its food
 // The lamp hangs off the front corner post on a short arm, out past the end
@@ -122,7 +123,7 @@ export function buildNightCarts(store, spots) {
     if (product) {
       const model = productModel(product.model, product.color, product);
       model.scale.setScalar(1.5);
-      const at = new THREE.Vector3(0, 0, 0.42).applyAxisAngle(up, ry);
+      const at = new THREE.Vector3(0.6, 0, 0.42).applyAxisAngle(up, ry); // (beside the seller, not in front of the face)
       model.position.set(x + at.x, counter + 0.04, z + at.z);
       model.rotation.y = ry;
       goods.add(model);

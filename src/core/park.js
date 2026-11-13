@@ -13,6 +13,7 @@ import { randomLook } from '../data/appearance.js';
 import * as droneShow from './drone-show.js';
 import { darkness } from './weather.js';
 import { mergeStatic } from './merge-static.js';
+import { COUNTER_H, KIOSK_GOODS_X, KIOSK_CLERK_X } from './counter-face.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
 const mats = {};
@@ -243,15 +244,15 @@ export function buildPark(store, ROOM, EXIT) {
   const kioskWindow = box(0.05, 1.6, 3.6, kx - 1.52, 1.25, kz, '#cfe8f5').material = mat('#cfe8f5').clone(); // shop window (lit at night: its own material)
   // The counter in front, with the goods on it.
   const cx = kx - 2.8;
-  box(0.45, 0.62, 2.8, cx, 0.31, kz, '#f5efe4');
-  box(0.5, 0.05, 2.85, cx, 0.64, kz, mart.color);
+  box(0.45, COUNTER_H, 2.8, cx, COUNTER_H / 2, kz, '#f5efe4'); // (COUNTER_H: the clerk's face shows, core/counter-face.js)
+  box(0.5, 0.05, 2.85, cx, COUNTER_H + 0.02, kz, mart.color);
   block(kx - 0.5, kz, 4.4, 5.4); // kiosk, clerk's corner and counter
   const products = [];
   const goods = store.products.filter((p) => p.kiosk).slice(0, 3);
   goods.forEach((product, i) => {
-    const z = kz + (i - (goods.length - 1) / 2) * 0.9;
+    const z = kz - KIOSK_GOODS_X[goods.length][i]; // (its counter faces -x: its left is +z)
     const g = new THREE.Group();
-    g.position.set(cx, 0.67, z);
+    g.position.set(cx, COUNTER_H + 0.05, z);
     g.rotation.y = -Math.PI / 2;
     for (const dz of [-0.28, 0, 0.28]) { // three of each, stocked
       const m = productModel(product.model, product.color, product);
@@ -262,7 +263,7 @@ export function buildPark(store, ROOM, EXIT) {
     scene.add(g);
     products.push({ product, mesh: g, pos: new THREE.Vector3(cx - 1.2, 0, z) });
   });
-  const clerk = { x: kx - 2.15, z: kz, ry: -Math.PI / 2 };
+  const clerk = { x: kx - 2.15, z: kz - KIOSK_CLERK_X[goods.length], ry: -Math.PI / 2 }; // (in a gap between the goods, so they don't hide the face: core/counter-face.js)
   // The ramen machine, at the kiosk's river-side corner. Water is free; the
   // ramyeon pack (and an egg) come from the bag.
   const rmx = kx - 2.1, rmz = kz - 3.3;

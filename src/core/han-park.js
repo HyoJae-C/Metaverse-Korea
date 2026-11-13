@@ -18,6 +18,7 @@ import { luckySpot } from './fishing.js';
 import { makeDuckBoat, DUCK_BOATS, RAMEN_SIGN, FISH_SIGN, FISHING_OK, LUCKY_SIGN, SPOT_COLOR, LUCKY_COLOR } from './park.js';
 import { BOAT_R } from './duck-boat.js';
 import { mergeStatic } from './merge-static.js';
+import { COUNTER_H, SIGN_ABOVE, KIOSK_GOODS_X, KIOSK_CLERK_X } from './counter-face.js';
 import * as droneShow from './drone-show.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
@@ -206,15 +207,15 @@ export function buildHanPark(store, L) {
     k.g.add(martSign.mesh);
     kioskWindow = mat('#cfe8f5').clone(); // (lit at night: its own material)
     box(3.6, 1.6, 0.05, 0, 1.25, 1.52, kioskWindow, k.g);
-    box(2.8, 0.62, 0.45, 0, 0.31, 2.3, '#f5efe4', k.g);
-    box(2.85, 0.05, 0.5, 0, 0.64, 2.3, mart.color, k.g);
+    box(2.8, COUNTER_H, 0.45, 0, COUNTER_H / 2, 2.3, '#f5efe4', k.g); // (COUNTER_H: the clerk's face shows, core/counter-face.js)
+    box(2.85, 0.05, 0.5, 0, COUNTER_H + 0.02, 2.3, mart.color, k.g);
     blockIn(k, -2.6, -1.6, 2.6, 2.6);
     colliders[colliders.length - 1].tall = true; // (a building: the camera stops at it)
     const goods = store.products.filter((p) => p.kiosk).slice(0, 3);
     goods.forEach((product, i) => {
-      const lx = (i - (goods.length - 1) / 2) * 0.9;
+      const lx = KIOSK_GOODS_X[goods.length][i];
       const g = new THREE.Group();
-      g.position.set(lx, 0.67, 2.3);
+      g.position.set(lx, COUNTER_H + 0.05, 2.3);
       for (const dx of [-0.28, 0, 0.28]) { // three of each, stocked
         const m = productModel(product.model, product.color, product);
         m.scale.setScalar(dx ? 1.3 : 1.6);
@@ -225,7 +226,7 @@ export function buildHanPark(store, L) {
       const [x, z] = k.at(lx, 3.5);
       products.push({ product, mesh: g, pos: new THREE.Vector3(x, 0, z) });
     });
-    const [cx, cz] = k.at(0, 1.65);
+    const [cx, cz] = k.at(KIOSK_CLERK_X[goods.length] ?? 0, 1.65); // (in a gap between the goods, so they don't hide the face: core/counter-face.js)
     clerk = { x: cx, z: cz, ry: k.ry };
     // The ramen machine: water is free, the ramyeon (and an egg) come from the bag.
     box(0.8, 1.3, 0.7, 3.3, 0.65, 1.8, '#d8452f', k.g);
@@ -296,22 +297,23 @@ export function buildHanPark(store, L) {
   // The bait stall (core/bait.js) beside the fish buyer: a small wooden
   // counter under a green awning with bait tins on it, and an old fisherman
   // in a bucket hat behind it (game/han-parks.js makes him). Its front (+z)
-  // faces the customer.
+  // faces the customer. The counter is COUNTER_H high and the sign hangs
+  // over his head, so his face shows (core/counter-face.js).
   let bSign = null, bait = null, baitSeller = null;
   if (L.bait) {
     const f = sub(...L.bait);
-    box(1.4, 0.85, 0.6, 0, 0.425, 0, '#9a6b43', f.g);
-    box(1.48, 0.06, 0.66, 0, 0.88, 0, '#c9a072', f.g);
+    box(1.4, COUNTER_H - 0.03, 0.6, 0, (COUNTER_H - 0.03) / 2, 0, '#9a6b43', f.g);
+    box(1.48, 0.06, 0.66, 0, COUNTER_H, 0, '#c9a072', f.g);
     for (const sx of [-0.68, 0.68]) for (const sz of [-0.85, 0.28]) box(0.06, 2, 0.06, sx, 1, sz, '#6b4a2e', f.g);
     box(1.6, 0.06, 1.4, 0, 2.02, -0.28, '#4f9a5c', f.g); // the awning
     box(1.6, 0.18, 0.04, 0, 1.93, 0.42, '#f6f1e7', f.g); // its striped front
     BAIT_TINS.forEach((c, i) => {
       const tin = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.1, 12), mat(c));
-      tin.position.set(-0.4 + i * 0.4, 0.96, 0.08);
+      tin.position.set([-0.52, 0.36, 0.56][i], COUNTER_H + 0.08, 0.08); // (to the sides: none in front of his face)
       f.g.add(tin);
     });
     bSign = signBoard(1.2, 0.36, '#4f9a5c');
-    bSign.mesh.position.set(0, 1.62, 0.31);
+    bSign.mesh.position.set(0, SIGN_ABOVE + 0.3, 0.31); // (over his head)
     f.g.add(bSign.mesh);
     blockIn(f, -0.75, -1.1, 0.75, 0.35);
     const [x, z] = f.at(0, 1.0);
