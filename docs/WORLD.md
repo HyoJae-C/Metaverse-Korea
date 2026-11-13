@@ -769,7 +769,42 @@ Itaewon's map (items marked `hw`, and the namsan landmark's `wall` and
 - `tests/namsan-wall.test.mjs` keeps the wall on the real line, the trail
   walkable end to end and off the wall, and both gates' arches open.
 
-Bugaksan, Inwangsan and the downtown gaps are next (Yozi, 2026-11-13).
+## Inwangsan, Bugaksan and the rest of the ring
+
+`scripts/build-north-wall.mjs` puts Inwangsan (인왕산) and Bugaksan (북악산)
+with the Seoul City Wall on their crest, Changuimun and Sukjeongmun, and the
+lost wall's line downtown into `districts/gyeongbokgung.json` (landmark
+`northwall`, items marked `bw`). It replaced the old cone `mountain` behind
+the palace, which was not on the real hills.
+
+- **The wall** follows its OpenStreetMap ways (`scripts/data/north-wall-osm.json`)
+  at 1/4, from Sajik-ro up over Inwangsan, through Changuimun, over Bugaksan
+  past Sukjeongmun to Waryong Park: about 1.76 km in 7 stretches, with the
+  real gaps (Changuimun's road, the city east of Waryong Park). Same body and
+  parapet as Namsan's (`thick` 1.4, `H` 3.5).
+- **The hills' height** (`core/north-ground.js`) is a ridge along the wall,
+  heights from the real ones above the plain at 1/4 (Inwangsan 76, Bugaksan
+  77, Sukjeongmun 52 m), but the game's Gyeongbokgung map is bigger than the
+  real palace and reaches within 10-90 m of the wall. So the city's boxes
+  stay flat and the ground rises from them no steeper than `k` (about 28°),
+  and along the wall the crest climbs at most `grade` (about 14°): the hills
+  are low on the palace side and high outside, about 54 m at the top
+  (Yozi chose this, 2026-11-13). The wall is never steeper than about 21°.
+- **Changuimun and Sukjeongmun** at 43.75% like Hyehwamun (Yozi, 2026-11-13),
+  5.1 x 3.3 m, arches walkable. Sukjeongmun is on its OSM building; Changuimun
+  (no OSM gate) is at the wall's gap where its road crosses.
+- **Where the wall is gone** downtown, from Sajik-ro past Donuimun's and
+  Sowuimun's sites towards Sungnyemun: a line of dark stones in the ground
+  (`marks`, 1.2 m wide, about 500 m) and a marker stone at each site (`sites`).
+  Donuimun's is moved 20 m off a building; Sowuimun's spot is approximate
+  (not from OSM).
+- **Loaded when near**: `src/game/north-wall-near.js` loads
+  `src/game/north-wall.js` (ground grid, wall, gates, woods in 120 m tiles,
+  the stone line) within about 480 m; hidden past 700 m. It adds about
+  40-45k triangles to a frame looking over the hills.
+- `tests/north-wall.test.mjs` keeps the wall on the real line, its slope
+  under 22°, the ground under 32°, the city flat, the gates open and the wall
+  closed elsewhere.
 
 ## Gyeongbokgung's palace
 
