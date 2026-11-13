@@ -479,7 +479,7 @@ load with `import()` when the city is built.
 link in `region.json`.
 
 - **The hill**: its top, with the look-out tower, on N Seoul Tower's real
-  spot, 65 m high (262 m / 4). Its foot (380 × 320 m) fits between Sopa-ro
+  spot, 56 m high (its relief at 1/4; it was 65 m, see the city wall section below). Its foot (380 × 320 m) fits between Sopa-ro
   and Sowol-ro on the west, Namsangol Hanok Village on the north and
   Itaewon's real Sowol-ro on the south (the south side was pulled 10 m in so
   the hill doesn't cover the road; `scripts/build-itaewon.mjs`); real Namsan
@@ -745,6 +745,15 @@ Itaewon's map (items marked `hw`, and the namsan landmark's `wall` and
   (`core/landmarks.js`); off it, a walk road with a strip of park. East of
   the summit it shares the summit trail from Sowol-ro. Both are kept off the
   wall.
+- **The way up**: Namsan is 56 m high, its relief at 1/4 (262 m above the
+  sea, about 225 m above the city round it; it was 65 m, the height above
+  the sea / 4). The hill's west side is short in the game (its foot is
+  pulled in for the streets) and lumpy, so the trail up from Baekbeom Square
+  climbed at up to 45°. Now the ground along each way up (this trail and the
+  one from Sowol-ro) is eased, within 30 m of it, to an even climb from the
+  foot to the summit plaza's edge (the namsan landmark's `spur`,
+  `core/namsan-shape.js`): about 18-21° at the steepest (Yozi, 2026-11-13).
+  The test keeps every trail under 22° and the plaza level.
 - **Gwanghuimun** at 43.75% like Hyehwamun (Yozi, 2026-11-13), 5.1 x 3.3 m
   (OSM has no outline: its real size is taken as Hyehwamun's), on its real
   spot moved 5.7 m along the wall off Toegye-ro; you walk through its arch.

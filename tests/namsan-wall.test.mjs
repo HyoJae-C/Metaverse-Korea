@@ -103,3 +103,18 @@ test('the place names: the Namsan City Wall Trail, and Gwanghuimun at its gate',
   const names = map.pois.filter((p) => p.hw).map((p) => p.name.en).sort();
   assert.deepEqual(names, ['Gwanghuimun', 'Namsan City Wall Trail']);
 });
+
+test('the trails go up Namsan at a walkable grade: nowhere steeper than 22°, and the summit plaza stays level', () => {
+  // (Yozi 2026-11-13: the west way up from Baekbeom Square was up to 45°)
+  const g = (x, z) => namsanGround(hill, x - hill.x, z - hill.z);
+  for (const p of [...hill.wtrail.map(W), W(hill.trail)]) {
+    const s = samples(p, 1);
+    for (let i = 1; i < s.length; i++) {
+      const d = Math.hypot(s[i][0] - s[i - 1][0], s[i][1] - s[i - 1][1]) || 1;
+      const deg = (Math.atan(Math.abs(g(...s[i]) - g(...s[i - 1])) / d) * 180) / Math.PI;
+      assert.ok(deg < 22, `${deg.toFixed(0)}° at ${s[i][0].toFixed(1)}, ${s[i][1].toFixed(1)}`);
+    }
+  }
+  assert.equal(hill.h, 56);
+  for (let a = 0; a < 6.28; a += 0.5) assert.ok(Math.abs(namsanGround(hill, hill.px + Math.cos(a) * 25, hill.pz + Math.sin(a) * 25) - hill.h) < 0.05, 'the plaza is level');
+});
