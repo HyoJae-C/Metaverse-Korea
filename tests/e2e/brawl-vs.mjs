@@ -1,5 +1,5 @@
-// End-to-end check: Rooftop Rumble between two people in a claw-machine
-// room. One asks the other from the game's menu (no need to be friends), the
+// End-to-end check: Rooftop Rumble between two people in the arcade,
+// and a third who watches it on the wall screen. One asks the other from the game's menu (no need to be friends), the
 // other says yes on the card, picks a style and both screens play the same
 // match: each sees their own fighter on the left, hits on one screen take
 // health on the other, and leaving hands the win to whoever stayed.
@@ -31,16 +31,16 @@ async function join(name, x) {
   await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
   await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
-  await page.evaluate(() => __mk.enter('lucky-claw'));
+  await page.evaluate(() => __mk.enter('punch-arcade'));
   await page.waitForTimeout(1500);
-  await page.evaluate(([px, pz]) => __mk.place(px, pz), [x, 1.3]);
+  await page.evaluate(([px, pz]) => __mk.place(px, pz), [x, 1.6]);
   return page;
 }
 const shot = async (p, n) => { if (S) await p.screenshot({ path: `${S}/${n}.png` }); };
 const until = (p, fn, arg, ms = 30000) => p.waitForFunction(fn, arg, { timeout: ms }).then(() => true, () => false);
 const state = (p) => p.evaluate(() => { const b = __mk.brawl(), m = b?.match; return m ? { phase: m.phase, a: m.a.hp, b: m.b.hp, wins: m.wins, round: m.round, vs: b.versus } : { vs: b?.versus || null }; });
 
-const a = await join('Alice', -2.8), b = await join('Bobby', 0);
+const a = await join('Alice', -9.3), b = await join('Bobby', 0), c = await join('Carol', 1.5); // Carol only watches
 try {
   // Alice opens the game at the cabinet and sees Bobby on the list.
   await a.evaluate(() => __mk.act());
@@ -71,16 +71,38 @@ try {
   await a.keyboard.down('KeyD'); await b.keyboard.down('KeyD');
   await a.waitForTimeout(1500);
   await a.keyboard.up('KeyD'); await b.keyboard.up('KeyD');
-  for (let k = 0; k < 30; k++) { await a.keyboard.press(['KeyU', 'KeyI', 'KeyJ'][k % 3]); await a.waitForTimeout(140); }
+  for (let k = 0; k < 30; k++) { await a.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await a.waitForTimeout(140); }
   await a.waitForTimeout(1200);
   const sa = await state(a), sb = await state(b);
   await shot(a, 'vs-fight-host'); await shot(b, 'vs-fight-guest');
   assert(sa.b < 100 || sa.round > 1 || sa.wins[0] > 0, `the host's hits took the guest's health (${JSON.stringify(sa)})`);
   assert(sb.round === sa.round && sb.wins.join() === sa.wins.join() && Math.abs(sb.b - sa.b) <= 30 && Math.abs(sb.a - sa.a) <= 30, `both screens show the same match (${JSON.stringify(sb)})`);
   assert(sa.vs.head - sa.vs.sure < 40 && sb.vs.head - sb.vs.sure < 40, `neither screen is waiting (${sa.vs.head - sa.vs.sure} / ${sb.vs.head - sb.vs.sure} ticks ahead)`);
+  // Carol, standing in the room, sees the match on a wall screen.
+  assert(await until(c, () => __mk.brawlTv()?.[0]?.live === true, null, 30000), 'someone watching gets the match on a wall screen');
+  const tv = (await c.evaluate(() => __mk.brawlTv()))[0];
+  assert(tv.names.join() === 'Alice,Bobby' && tv.b !== 'r0', `the screen names both players (${tv.names})`);
+  await c.waitForTimeout(1500);
+  const tv2 = (await c.evaluate(() => __mk.brawlTv()))[0], sa3 = await state(a);
+  assert(tv2.hp[1] < 100 || sa3.round > 1, `and shows the hits (${tv2.hp} on the screen, ${sa3.a}/${sa3.b} in the game)`);
+  // By the bench she can turn the camera to the screens.
+  await c.evaluate(() => __mk.place(3.2, 4.2));
+  await c.waitForTimeout(600);
+  const watch = await c.evaluate(() => __mk.action());
+  assert(/Watch/.test(watch || ''), `by the bench the action is "${watch}"`);
+  await c.evaluate(() => __mk.act());
+  const pick = c.locator('#action-menu:not([hidden]) .action-choice', { hasText: 'Watch' }); // (by the bench there is also "Sit down")
+  if (await pick.count()) await pick.first().click();
+  assert(await until(c, () => __mk.watching(), null, 5000), 'and it turns the camera to the screens');
+  await c.waitForTimeout(1500);
+  await shot(c, 'vs-wall-screen');
   // The guest's own buttons work too.
   const before = (await state(b)).a;
-  for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyU', 'KeyI'][k % 2]); await b.waitForTimeout(140); }
+  // (A finished string knocked them apart: walk back in. Three software-drawn browsers are slow, so wait for the distance, not a time.)
+  await b.keyboard.down('KeyD');
+  await until(b, () => { const m = __mk.brawl().match; return Math.abs(m.b.x - m.a.x) < 0.9; }, null, 30000);
+  await b.keyboard.up('KeyD');
+  for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await b.waitForTimeout(140); }
   await b.waitForTimeout(1200);
   const sb2 = await state(b), sa2 = await state(a);
   assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} → ${sb2.a})`);
@@ -89,6 +111,18 @@ try {
   await b.keyboard.press('Escape');
   assert(await until(a, () => /Bobby/.test(document.querySelector('#brawl .bw-note')?.textContent || ''), null, 15000), 'the one who stayed is told the other left');
   assert((await state(a)).vs === null && await b.evaluate(() => !__mk.brawl().open), 'the match is over on both screens');
+  assert(await until(c, () => (__mk.brawlTv() || []).every((x) => !x), null, 15000), 'the wall screen goes back to waiting when the match ends');
+  // A match against the game's own rival is shown too.
+  await a.click('#brawl .bw-card .go');
+  assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.b === 'r0' && x.live), null, 30000), 'a match against the house plays on a screen too');
+  await c.waitForTimeout(2500);
+  await shot(c, 'solo-wall-screen');
+  await c.click('#tv-x');
+  assert(await c.evaluate(() => !__mk.watching()), 'the button gives the camera back');
+  await a.keyboard.press('Escape');
+  await a.waitForTimeout(1200);
+  await a.evaluate(() => __mk.act());
+  await a.waitForSelector('#brawl .bw-card', { timeout: 20000 });
   // Again, and this time the other says no.
   await a.click('#brawl .bw-vs button[data-peer]');
   await b.waitForSelector('#darts-ask', { timeout: 15000 });

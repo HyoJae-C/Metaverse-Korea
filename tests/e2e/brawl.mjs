@@ -1,4 +1,4 @@
-// End-to-end check: the fighting game cabinet in the claw-machine room.
+// End-to-end check: the fighting game cabinets in the arcade.
 // The cabinet's action opens Rooftop Rumble; a match starts, the buttons
 // hit, and leaving gives the room back.
 //   npm run build && npx vite preview --port 4173 &
@@ -20,9 +20,9 @@ await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
 if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
 const shot = async (n) => { if (S) await page.screenshot({ path: `${S}/${n}${phone ? '-phone' : ''}.png` }); };
 
-await page.evaluate(() => __mk.enter('lucky-claw'));
+await page.evaluate(() => __mk.enter('punch-arcade'));
 await page.waitForTimeout(1500);
-const st = { x: -2.8, z: 1.3 }; // in front of the cabinet by the left wall (core/interior.js, a small room)
+const st = { x: -9.3, z: 1.6 }; // in front of a cabinet by the left wall (core/activity-rooms.js arcade)
 await page.evaluate(([x, z]) => __mk.place(x, z), [st.x, st.z]);
 await page.waitForTimeout(500);
 await shot('brawl-room');
@@ -40,7 +40,8 @@ if (phone) {
   for (let k = 0; k < 40; k++) { await page.locator('#brawl .bw-btns button').nth(k % 4).dispatchEvent('pointerdown'); await page.waitForTimeout(120); }
 } else {
   await page.keyboard.down('KeyD');
-  for (let k = 0; k < 40; k++) { await page.keyboard.press(['KeyU', 'KeyI', 'KeyJ', 'KeyK'][k % 4]); await page.waitForTimeout(110); if (k === 8) await shot('brawl-hit'); }
+  for (let k = 0; k < 40; k++) { await page.keyboard.press(['KeyJ', 'KeyJ', 'KeyK', 'KeyU'][k % 4]); await page.waitForTimeout(110); if (k === 8) await shot('brawl-hit'); }
+assert(await page.evaluate(() => __mk.brawl().match.a.sp > 0 || __mk.brawl().match.round > 1), 'hitting fills the special bar');
   await page.keyboard.up('KeyD');
 }
 await shot('brawl-mid');
@@ -53,7 +54,7 @@ for (let r = 0; r < 2; r++) {
   await page.waitForFunction(() => __mk.brawl()?.match?.phase === 'fight', null, { timeout: 20000 });
   await page.evaluate(() => { const m = __mk.brawl().match; m.b.hp = 1; m.b.x = m.a.x + 0.8; m.b.z = m.a.z; });
   for (let k = 0; k < 60 && await page.evaluate(() => __mk.brawl()?.match?.phase === 'fight'); k++) {
-    if (phone) await page.locator('#brawl .bw-btns button').nth(0).dispatchEvent('pointerdown'); else await page.keyboard.press('KeyU');
+    if (phone) await page.locator('#brawl .bw-btns button').nth(2).dispatchEvent('pointerdown'); else await page.keyboard.press('KeyJ');
     await page.waitForTimeout(100);
   }
   if (r === 0) { await page.waitForTimeout(700); await shot('brawl-ko'); }

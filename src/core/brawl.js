@@ -1,19 +1,23 @@
 // Rooftop Rumble: the arcade's 3D one-on-one fighting game (game/brawl.js
 // draws it with the player's own character). Pure rules, 60 ticks a second.
 //
-// Two fighters on a round ring always face each other. Four attack buttons,
-// one per limb: lp/rp (left and right punch), lk/rk (left and right kick).
-// Light hits chain into heavier ones (lp → rp → lk → rk). Three specials:
-//   upper  toward + rp   a rising punch that launches (hit them in the air)
-//   palm   lp + rp       a slow two-hand push that goes through a guard
-//   fly    lk + rk       a flying kick: far and strong, wide open if blocked
+// Two fighters on a round ring always face each other. Four buttons:
+//   p   punch: pressed again and again it plays the style's punch string
+//   k   kick: the same for its kick string
+//   s1  special 1 (palm): a slow two-hand push that goes through a guard
+//   s2  special 2 (fly): a flying kick, far and strong, wide open if blocked
+// A special spends one of the two halves of the special bar (sp), which
+// fills by hitting, guarding and being hit, and is kept between rounds.
+// Toward + p is a rising punch that launches (hit them in the air). The
+// moves themselves are one per limb: lp/rp (left and right punch), lk/rk
+// (left and right kick); a string is a row of them.
 // Holding away guards. Up and down side-step round the other fighter, so a
 // straight punch thrown at where they were misses. A dash (toward or away)
 // covers ground fast and can be cut short by an attack.
 //
 // Each fighter has a style (STYLES): its own health, speed, punch and kick
-// strength, one signature move in place of palm or fly, and two button
-// strings that only that style can chain, ending in a harder finisher.
+// strength, one signature move in place of palm or fly, and two strings (one
+// from the punch button, one from the kick button) ending in a harder finisher.
 //
 // Units: metres, ticks (1/60 s), radians. Stick input: mx +1 toward the other
 // fighter, -1 away; mz +1 steps to the fighter's right-hand side (for the
@@ -30,7 +34,12 @@ const WALK = 2.3 * TICK, BACK = 1.1 * TICK;
 const STEP_TICKS = 13, STEP_DIST = 0.95, STEP_REST = 5;
 const DASH_TICKS = 9, DASH_FWD = 1.3, DASH_BACK = 1.0, DASH_REST = 7, DASH_CUT = 4;
 const FINISH_MULT = 1.5; // the last hit of a style's string
-const BUFFER = 9; // a press waits this many ticks for the fighter to be free
+const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far inside its reach, moving at most this far a tick
+const BUFFER = 12;
+export const SP_MAX = 100, SP_COST = 50; // the special bar, and what one special spends
+const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), × the damage taken
+const SPECIAL_DMG = 1.25; // (a special costs bar, so it hurts more)
+const KEEP_GUARD = 15; // ticks a guard holds after the other fighter blinks behind it // a press waits this many ticks for the fighter to be free
 const GRAVITY = 20 * TICK * TICK;
 const MAX_JUGGLE = 3;
 
@@ -61,9 +70,9 @@ export const moveTicks = (m) => m.startup + m.active + m.recover;
 //   ground  cannot catch someone in the air (a grab)
 //   shot    throws a slow ball of light instead of hitting
 //   spin    whole turns of the body (for the picture)
-// combos: the strings only this style chains (after the usual light → heavy).
+// combos: [the punch button's string (from lp), the kick button's (from lk)].
 export const STYLES = {
-  brawler: { hp: 100, walk: 1, dash: 1, punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'lp', 'rp'], ['lp', 'rp', 'lk', 'rk']] },
+  brawler: { hp: 100, walk: 1, dash: 1, punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'rp', 'lk', 'rk'], ['lk', 'rp', 'rk']] },
   ninja: {
     hp: 85, walk: 1.25, dash: 1.3, punch: [0.85, 0.85], kick: [0.9, 0.9], slot: 'fly',
     sig: { startup: 16, active: 4, recover: 22, dmg: 15, range: 1.15, arc: 1.2, block: 10, push: 0.5, lunge: 0, level: 9, knock: true, blink: true, pose: 'rk' },
@@ -72,17 +81,17 @@ export const STYLES = {
   tank: {
     hp: 110, walk: 0.8, dash: 0.8, punch: [1.3, 1.1], kick: [1.3, 1.1], slot: 'palm',
     sig: { startup: 20, active: 5, recover: 30, dmg: 15, range: 1.0, arc: 0.5, block: 14, push: 1.1, lunge: 1.3, level: 9, knock: true, armor: true, pose: 'charge' },
-    combos: [['rp', 'rk'], ['lp', 'rp', 'rp']],
+    combos: [['lp', 'rp', 'rp'], ['lk', 'rk']],
   },
   kicker: {
     hp: 95, walk: 1.1, dash: 1.1, punch: [1.1, 0.8], kick: [0.8, 1.1], slot: 'fly',
     sig: { startup: 14, active: 22, recover: 24, dmg: 8, hits: 3, gap: 7, range: 1.3, arc: 3.2, stun: 14, block: 8, push: 0.3, lunge: 0.5, level: 9, knockLast: true, spin: 2, pose: 'rk' },
-    combos: [['lk', 'rk', 'rk'], ['lp', 'lk', 'lk', 'rk']],
+    combos: [['lp', 'lk', 'lk', 'rk'], ['lk', 'rk', 'rk']],
   },
   boxer: {
     hp: 100, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], slot: 'palm',
     sig: { startup: 15, active: 4, recover: 24, dmg: 20, range: 1.05, arc: 0.9, block: 14, push: 0.8, lunge: 0.5, level: 9, knock: true, pose: 'hook' },
-    combos: [['lp', 'lp', 'rp', 'rp'], ['lp', 'rp', 'lp', 'rp']],
+    combos: [['lp', 'lp', 'rp', 'rp'], ['lk', 'lp', 'rp']],
   },
   grappler: {
     hp: 115, walk: 0.9, dash: 0.9, punch: [1.05, 1.05], kick: [1.1, 1], slot: 'palm',
@@ -97,7 +106,7 @@ export const STYLES = {
   dancer: {
     hp: 92, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], slot: 'fly',
     sig: { startup: 14, active: 20, recover: 30, dmg: 5, hits: 3, gap: 7, range: 1.1, arc: 3.2, stun: 12, block: 7, push: 0.2, lunge: 0.2, glide: 0.9, level: 9, knockLast: true, spin: 3, pose: 'mill' },
-    combos: [['lk', 'lp', 'rk'], ['rk', 'lk', 'rk']],
+    combos: [['lp', 'lk', 'rk'], ['lk', 'lp', 'rk']],
   },
 };
 export const STYLE_IDS = Object.keys(STYLES);
@@ -109,6 +118,10 @@ export function movesFor(styleId) {
     out[id] = { ...m, startup: Math.max(4, Math.round(m.startup * time)), recover: Math.round(m.recover * time), dmg: Math.round(m.dmg * dmg) };
   }
   if (st.sig) out[st.slot] = { ...st.sig };
+  for (const id of ['palm', 'fly']) {
+    out[id].dmg = Math.round(out[id].dmg * SPECIAL_DMG);
+    if (out[id].shot) out[id].shot = { ...out[id].shot, dmg: Math.round(out[id].shot.dmg * SPECIAL_DMG) };
+  }
   return out;
 }
 
@@ -127,33 +140,30 @@ export function newFighter(side, style = 'brawler') {
     side, x: side ? 1.1 : -1.1, z: 0, y: 0, vy: 0, vx: 0, vz: 0,
     face: side ? Math.PI : 0, // 0 looks along +x
     hp: STYLES[st].hp, st: 'idle', t: 0, move: null, hit: false, landed: false,
-    stun: 0, stepDir: 0, rest: 0, juggle: 0, walk: 0, guard: false, rage: false, chain: false, again: false,
-    buf: { lp: 0, rp: 0, lk: 0, rk: 0 }, combo: 0, comboT: 0,
+    stun: 0, stepDir: 0, rest: 0, juggle: 0, walk: 0, guard: false, keep: 0, rage: false, chain: false, sp: 0,
+    buf: { p: 0, k: 0, s1: 0, s2: 0 }, combo: 0, comboT: 0,
   };
 }
 const NO_INPUT = { mx: 0, mz: 0 };
 const canBeHit = (f) => f.st !== 'down' && f.st !== 'getup' && f.st !== 'ko';
 
-// Which move the waiting presses ask for (null: none).
-function wanted(f, inp, level = 0, sameAgain = false) {
+// Which move the waiting presses ask for (null: none). level 0: free to
+// start anything; above: in a move that landed.
+function wanted(f, inp, level = 0) {
   const b = f.buf;
-  if (level === 0 && b.lp && b.rp) return 'palm';
-  if (level === 0 && b.lk && b.rk) return 'fly';
-  // A string only this style has, one button further.
-  if (level > 0) {
-    for (const k of ['lp', 'rp', 'lk', 'rk']) {
-      if (b[k] && STYLES[f.style].combos.some((c) => c.length > f.seq.length && c[f.seq.length] === k && f.seq.every((q, i) => c[i] === q))) return k;
-    }
-  }
-  if (b.rp && inp.mx > 0.5 && MOVES.upper.level > level) return 'upper';
-  for (const k of ['lp', 'rp', 'lk', 'rk']) if (b[k] && (MOVES[k].level > level || (sameAgain && k === 'lp' && level === 1))) return k;
-  return null;
+  if (b.s1 && f.sp >= SP_COST) return 'palm';
+  if (b.s2 && f.sp >= SP_COST) return 'fly';
+  if (!b.p && !b.k) return null;
+  if (level === 0) return b.p ? (inp.mx > 0.5 ? 'upper' : 'lp') : 'lk';
+  // Either button again: the string goes on.
+  const c = STYLES[f.style].combos.find((q) => q.length > f.seq.length && f.seq.every((k, i) => q[i] === k));
+  return c ? c[f.seq.length] : null;
 }
-function startMove(f, id) {
+const gain = (f, n) => { f.sp = clamp(f.sp + n, 0, SP_MAX); };
+export function startMove(f, id) {
   f.chain = false; f.st = 'atk'; f.move = id; f.t = 0; f.hit = false; f.landed = false; f.guard = false; f.armored = false; f.hits = 0; f.fin = false;
-  if (id === 'palm') f.buf.lp = f.buf.rp = 0;
-  else if (id === 'fly') f.buf.lk = f.buf.rk = 0;
-  else f.buf[id === 'upper' ? 'rp' : id] = 0;
+  f.buf.p = f.buf.k = f.buf.s1 = f.buf.s2 = 0;
+  if (id === 'palm' || id === 'fly') f.sp -= SP_COST;
 }
 
 function hurt(a, d, m, id, face, ev, fin = false) {
@@ -165,6 +175,8 @@ function hurt(a, d, m, id, face, ev, fin = false) {
   if (air) { d.juggle++; if (!fin) dmg *= 0.7 ** d.juggle; } // (a string's finisher counts in full)
   dmg = Math.max(1, Math.round(dmg));
   d.hp = Math.max(0, d.hp - dmg);
+  if (m.level < 9 && id !== 'shot') gain(a, SP_HIT);
+  gain(d, dmg * SP_HURT);
   a.combo = a.comboT > 0 ? a.combo + 1 : 1;
   a.comboT = 50;
   // Armour: winding up a heavy move, the first hit hurts but does not stop it.
@@ -197,13 +209,15 @@ function act(f, o, inp, ev) {
   }
   if (f.comboT > 0 && --f.comboT === 0) f.combo = 0;
   if (f.rest > 0) f.rest--;
+  if (f.keep > 0) f.keep--;
   const dx = o.x - f.x, dz = o.z - f.z, dist = Math.hypot(dx, dz) || 1e-6;
   const toward = Math.atan2(dz, dx);
   f.t++;
   f.walk = 0;
   if (f.st === 'idle') {
     f.face = toward;
-    f.guard = inp.mx < -0.3;
+    // (A guard held when the other blinked behind us still holds for a moment: "away" has just turned round.)
+    f.guard = inp.mx < -0.3 || (f.keep > 0 && inp.mx > 0.3);
     const id = wanted(f, inp);
     if (id) { f.seq = [id]; startMove(f, id); return; }
     if (inp.dash && !f.rest) { f.st = 'dash'; f.t = 0; f.dashDir = Math.sign(inp.dash); f.guard = false; ev.push({ k: 'dash', who: f.side }); return; }
@@ -226,14 +240,15 @@ function act(f, o, inp, ev) {
     if (f.t >= DASH_CUT) { const id = wanted(f, inp); if (id) { f.seq = [id]; startMove(f, id); return; } }
     if (f.t >= DASH_TICKS) { f.st = 'idle'; f.t = 0; f.rest = DASH_REST; }
   } else if (f.st === 'atk') {
-    let m = f.mv[f.move];
-    // The second button of a two-button special arriving a moment late.
-    const pairOf = { lp: 'rp', rp: 'lp', lk: 'rk', rk: 'lk' }[f.move];
-    if (f.t <= 4 && pairOf && !f.chain && f.buf[pairOf]) { const t = f.t; startMove(f, f.move[1] === 'p' ? 'palm' : 'fly'); f.seq = [f.move]; f.t = t; m = f.mv[f.move]; }
+    const m = f.mv[f.move];
     if (f.t <= m.startup) {
       if (f.move === 'rk') f.face += clamp(wrap(toward - f.face), -0.03, 0.03); // the roundhouse follows a little
       const room = dist - BODY_R * 2;
-      const stepF = Math.min(m.lunge / m.startup, Math.max(0, room - 0.05));
+      // The next hit of a string steps in as far as it must: the last hit
+      // pushed them back, and a punch after a kick would fall short.
+      let want = m.lunge / m.startup;
+      if (f.chain && m.range) want = clamp((dist - m.range + CHAIN_IN) / Math.max(1, m.startup - f.t + 1) + Math.hypot(o.vx, o.vz), want, CHAIN_STEP);
+      const stepF = Math.min(want, Math.max(0, room - 0.05));
       f.x += Math.cos(f.face) * stepF; f.z += Math.sin(f.face) * stepF;
     }
     // Signature moves: behind them in a blink, a ball of light, a glide, several hits.
@@ -242,6 +257,7 @@ function act(f, o, inp, ev) {
       f.x = o.x + (dx / dist) * 0.85; f.z = o.z + (dz / dist) * 0.85;
       inRing(f);
       f.face = Math.atan2(o.z - f.z, o.x - f.x);
+      if (o.guard) o.keep = KEEP_GUARD;
       ev.push({ k: 'blink', who: f.side, from, x: f.x, z: f.z });
     }
     if (m.shot && f.t === m.startup && !f.shot) {
@@ -259,16 +275,15 @@ function act(f, o, inp, ev) {
     const end = m.startup + m.active;
     // A hit that landed (or was guarded) chains into a heavier button.
     if (f.landed && f.t > end && f.t <= end + 12 && m.level < 9) {
-      const next = wanted(f, inp, m.level, f.move === 'lp' && !f.again);
+      const next = wanted(f, inp, m.level);
       if (next) {
-        const again = next === 'lp';
         f.seq.push(next);
         const fin = STYLES[f.style].combos.some((c) => c.length === f.seq.length && c.every((q, i) => q === f.seq[i]));
-        startMove(f, next); f.again = again; f.chain = true; f.fin = fin; f.face = toward;
+        startMove(f, next); f.chain = true; f.fin = fin; f.face = toward;
         return;
       }
     }
-    if (f.t >= moveTicks(m)) { f.st = 'idle'; f.t = 0; f.move = null; f.y = 0; f.again = false; f.chain = false; f.seq = []; f.fin = false; }
+    if (f.t >= moveTicks(m)) { f.st = 'idle'; f.t = 0; f.move = null; f.y = 0; f.chain = false; f.seq = []; f.fin = false; }
   } else if (f.st === 'hit' || f.st === 'block') {
     if (--f.stun <= 0) { f.st = 'idle'; f.t = 0; }
   } else if (f.st === 'air') {
@@ -279,7 +294,7 @@ function act(f, o, inp, ev) {
       ev.push({ k: 'down', who: f.side, x: f.x, z: f.z });
     }
   } else if (f.st === 'down') {
-    const quick = inp.lp || inp.rp || inp.lk || inp.rk || inp.mx || inp.mz;
+    const quick = inp.p || inp.k || inp.s1 || inp.s2 || inp.mx || inp.mz;
     if (f.t >= 40 || (quick && f.t >= 18)) { f.st = 'getup'; f.t = 0; for (const k in f.buf) f.buf[k] = 0; }
   } else if (f.st === 'getup') {
     f.face = toward;
@@ -307,6 +322,8 @@ function land(a, d, id, face, ev) {
   a.hit = true; a.landed = true; a.hits++; a.hitAt = a.t;
   if (d.guard && (d.st === 'idle' || d.st === 'block') && !m.unblockable) {
     d.st = 'block'; d.stun = m.block; d.t = 0;
+    if (m.level < 9) gain(a, SP_BLOCKED);
+    gain(d, SP_GUARD);
     d.vx = Math.cos(face) * m.push * 0.12; d.vz = Math.sin(face) * m.push * 0.12;
     ev.push({ k: 'block', by: a.side, move: id, x: d.x, z: d.z, y: 0.8 });
     return;
@@ -326,6 +343,7 @@ function fly(a, d, ev) {
   const face = Math.atan2(s.dz, s.dx);
   if (d.guard && (d.st === 'idle' || d.st === 'block')) {
     d.st = 'block'; d.stun = m.block; d.t = 0;
+    gain(d, SP_GUARD);
     ev.push({ k: 'block', by: a.side, move: 'shot', x: d.x, z: d.z, y: 0.8 });
   } else hurt(a, d, m, 'shot', face, ev);
 }
@@ -386,10 +404,8 @@ export function createAi(level, rand = Math.random) {
     // A chain: after a hit lands, maybe the next button.
     if (me.st === 'atk' && me.landed && !queue.length && me.chained !== me.move) {
       me.chained = me.move;
-      // Its own style's string if one fits, else light → heavy.
-      const mine = STYLES[me.style].combos.filter((c) => c.length > me.seq.length && me.seq.every((q, i) => c[i] === q));
-      const next = mine.length ? mine[Math.floor(rand() * mine.length)][me.seq.length] : { lp: rand() < 0.4 ? 'lp' : 'rp', rp: rand() < 0.5 ? 'lk' : 'rk', lk: 'rk' }[me.move];
-      if (next && rand() < L.chain) { queue.push([2, next]); if (next === 'rp' && rand() < L.special) out.mx = plan.mx = 1; }
+      const more = STYLES[me.style].combos.some((c) => c.length > me.seq.length && me.seq.every((q, i) => c[i] === q));
+      if (more && rand() < L.chain) queue.push([2, 'p']);
     }
     if (me.st !== 'atk') me.chained = null;
     if (--wait > 0) return out;
@@ -398,7 +414,7 @@ export function createAi(level, rand = Math.random) {
     if (me.st !== 'idle') return out;
     // In the air above us: hit it again.
     if (foe.st === 'air' && !foe.ko) {
-      if (dist < 1.1 && foe.y > 0.2 && rand() < L.chain + 0.15) queue.push([1, rand() < 0.5 ? 'lp' : 'rp']);
+      if (dist < 1.1 && foe.y > 0.2 && rand() < L.chain + 0.15) queue.push([1, 'p']);
       else plan.mx = dist > 0.9 ? 1 : 0;
       wait = 6;
       return out;
@@ -406,10 +422,10 @@ export function createAi(level, rand = Math.random) {
     if (!canBeHit(foe)) { plan.mx = dist < 1.6 ? -1 : 0; wait = 12; return out; } // give them room to stand up
     const open = foe.st === 'atk' && foe.t > foe.mv[foe.move].startup + foe.mv[foe.move].active; // they missed or were guarded
     if (dist > 1.25) {
-      const sig = STYLES[me.style].slot === 'palm' ? ['lp', 'rp'] : ['lk', 'rk'];
+      const sig = STYLES[me.style].slot === 'palm' ? 's1' : 's2', can = me.sp >= SP_COST;
       const reach = me.mv.palm.shot || me.mv.fly.blink || me.mv.palm.armor || me.mv.fly.glide; // a signature that works from far
-      if (reach && dist < 3.2 && rand() < L.special * 1.2) queue.push([1, sig[0]], [1, sig[1]]);
-      else if (dist < 2.6 && dist > 1.7 && !me.mv.fly.blink && rand() < L.special * 0.6) queue.push([1, 'lk'], [1, 'rk']); // the flying kick from far
+      if (can && reach && dist < 3.2 && rand() < L.special * 1.2) queue.push([1, sig]);
+      else if (can && dist < 2.6 && dist > 1.7 && !me.mv.fly.blink && rand() < L.special * 0.6) queue.push([1, 's2']); // the flying kick from far
       else if (dist > 2.4 && rand() < L.special) out.dash = 1;
       else plan.mx = 1;
       if (rand() < L.step * 0.5) out.mz = rand() < 0.5 ? 1 : -1;
@@ -417,10 +433,10 @@ export function createAi(level, rand = Math.random) {
     }
     if (rand() < (open ? Math.max(L.attack, L.punish) : L.attack)) {
       const r = rand();
-      const sig = STYLES[me.style].slot === 'palm' ? ['lp', 'rp'] : ['lk', 'rk'];
-      if (r < L.special * 0.5 && (foe.guard || STYLES[me.style].sig)) queue.push([1, sig[0]], [1, sig[1]]); // the signature (through a guard, for some)
-      else if (r < L.special) { plan.mx = 1; queue.push([2, 'rp']); wait = 8; } // the launcher
-      else queue.push([1, ['lp', 'lp', 'rp', 'lk', 'rk'][Math.floor(rand() * 5)]]);
+      const sig = STYLES[me.style].slot === 'palm' ? 's1' : 's2';
+      if (me.sp >= SP_COST && r < L.special * 0.5 && (foe.guard || STYLES[me.style].sig)) queue.push([1, sig]); // the signature (through a guard, for some)
+      else if (r < L.special) { plan.mx = 1; queue.push([2, 'p']); wait = 8; } // the launcher
+      else queue.push([1, rand() < 0.6 ? 'p' : 'k']);
     } else if (rand() < 0.4) { plan.mx = -1; wait = 10 + Math.floor(rand() * 14); } // back off behind a guard
     else if (rand() < L.step * 2) out.mz = rand() < 0.5 ? 1 : -1;
     return out;
@@ -472,7 +488,9 @@ export function stepMatch(m, ia = NO_INPUT, ib = NO_INPUT) {
         ev.push({ k: 'over', result: m.result });
       } else {
         m.round++;
+        const sp = [m.a.sp, m.b.sp]; // (the special bar is kept)
         m.a = newFighter(0, m.styles[0]); m.b = newFighter(1, m.styles[1]);
+        m.a.sp = sp[0]; m.b.sp = sp[1];
         m.left = ROUND_TICKS; m.phase = 'intro'; m.t = 0;
       }
     }
@@ -482,8 +500,14 @@ export function stepMatch(m, ia = NO_INPUT, ib = NO_INPUT) {
 export function createMatch({ level = 0, rand = Math.random, style = 'brawler', rivalStyle = 'brawler' } = {}) {
   const m = newMatch(style, rivalStyle);
   m.ai = createAi(level, rand);
-  const think = () => m.ai(m.b, m.a);
-  m.step = (input = NO_INPUT) => stepMatch(m, input, think);
+  // m.onStep(ia, ib): what each tick was played with (the arcade's wall
+  // screen replays it: core/brawl-tv.js).
+  m.step = (input = NO_INPUT) => {
+    const ib = m.phase === 'fight' ? m.ai(m.b, m.a) : NO_INPUT;
+    const ev = stepMatch(m, input, ib);
+    m.onStep?.(input, ib);
+    return ev;
+  };
   return m;
 }
 // A copy of a match two screens can send each other or run ahead on: the
