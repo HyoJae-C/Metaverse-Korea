@@ -63,10 +63,10 @@ export function footprint(p) {
 function lot(b) {
   const f = footprint(b.p);
   if (!b.fr) return { cx: f.cx, cz: f.cz, L: f.w, D: f.d, ry: f.ry };
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  const ex = Math.max(...xs) - Math.min(...xs), ez = Math.max(...zs) - Math.min(...zs);
-  const alongX = Math.abs(b.fr[0]) > Math.abs(b.fr[1]);
-  return { cx: f.cx, cz: f.cz, L: alongX ? ez : ex, D: alongX ? ex : ez, ry: Math.atan2(b.fr[0], b.fr[1]) };
+  // (sizes measured along the front and across it, so a lot turned to a
+  // street at any angle works too)
+  const [fx, fz] = b.fr, along = b.p.map(([x, z]) => -x * fz + z * fx), deep = b.p.map(([x, z]) => x * fx + z * fz);
+  return { cx: f.cx, cz: f.cz, L: Math.max(...along) - Math.min(...along), D: Math.max(...deep) - Math.min(...deep), ry: Math.atan2(fx, fz) };
 }
 
 function paint(g, c) {

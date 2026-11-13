@@ -74,8 +74,8 @@ export const STAMPS = [
     icon: '<path d="M56 82 q44 -26 88 0 q-6 -2 -10 2 h-68 q-4 -4 -10 -2 z"/><path d="M70 84 v8 h60 v-8 M64 92 q36 -12 72 0 M72 96 v28 M128 96 v28 M88 96 v28 M112 96 v28 M60 126 h80"/>',
   },
   {
-    // at the Open House gate, up from the lane of shops
-    id: 'bukchon', place: { at: [-1495, -935] }, color: '#5a4a3a', shape: 'square',
+    // at the Open House gate on Bukchon-ro 2-gil
+    id: 'bukchon', place: { at: [-1531.6, -932.4] }, color: '#5a4a3a', shape: 'square',
     name: { ko: '북촌한옥마을', en: 'Bukchon Hanok Village', ja: '北村韓屋村', zh: '北村韩屋村' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     // a hanok roof over a gate

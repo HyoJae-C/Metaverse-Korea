@@ -1,12 +1,12 @@
 // Bukchon landmarks (map "landmarks" in districts/bukchon.json): the Open
 // House (a ㄷ-shaped hanok round a courtyard, with a persimmon tree and a
-// magpie), the rooftop view terrace and Changdeokgung's roofs seen from the
-// east edge. Visual only: collision comes from the map's blockers.
+// magpie) and the stone planters; and the hill itself (buildBukchonHill).
+// Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
-import { HANOK, curvedRoof } from './hanok.js';
+import { HANOK } from './hanok.js';
 import { BUKCHON, ground } from '../data/bukchon.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
@@ -32,30 +32,6 @@ export function mergeStatic(g) {
     mesh.userData.noShadow = ok.every((x) => x.noShadow);
     g.add(mesh);
   }
-}
-const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
-function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
-  for (const geo of curvedRoof(w, d, h, o)) {
-    const m = new THREE.Mesh(geo, tileMat);
-    m.position.set(x, y, z);
-    m.rotation.y = ry;
-    g.add(m);
-  }
-}
-function signTexture(ko, en) {
-  const c = document.createElement('canvas');
-  c.width = 512; c.height = 160;
-  const x = c.getContext('2d');
-  x.fillStyle = '#2b2118'; x.fillRect(0, 0, 512, 160);
-  x.strokeStyle = '#c9a25a'; x.lineWidth = 8; x.strokeRect(8, 8, 496, 144);
-  x.fillStyle = '#f3e3b5'; x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = '800 64px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-  x.fillText(ko, 256, 66);
-  x.font = '600 26px system-ui, sans-serif';
-  x.fillText(en, 256, 124);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
 }
 
 const mat = matCache({ flatShading: true });
@@ -150,35 +126,6 @@ const BUILD = {
       box(g, 0.7 * s, 0.12, 0.7 * s, jar.position.x, 0.5 + 1.25 * s, jar.position.z, '#3d2418'); // lid
     }
   },
-  // The rooftop view: a stone terrace with a railing on the south side and a
-  // coin telescope.
-  terrace(g) {
-    box(g, 24, 0.3, 22, 0, 0.15, 0, C.stone); // (small: houses line the alley right up to it)
-    for (let x = -11; x <= 11; x += 2.75) if (Math.abs(x) > 3) box(g, 0.25, 1.1, 0.25, x, 0.85, 10.6, C.wood); // (a gap in the middle: the way in)
-    for (const sx of [-1, 1]) box(g, 8.5, 0.15, 0.3, sx * 7.4, 1.4, 10.6, C.wood);
-    box(g, 0.5, 1.1, 0.5, 0, 0.85, -8, '#3a5a7a'); // telescope post
-    box(g, 0.4, 0.4, 1.0, 0, 1.6, -7.8, '#3a5a7a');
-  },
-  // Changdeokgung beyond the east edge: a palace wall and two hall roofs.
-  farpalace(g) {
-    box(g, 2, 3.5, 70, -8, 1.75, 0, '#d9c9b0');
-    box(g, 2.8, 0.5, 71, -8, 3.7, 0, C.roof);
-    for (const [z, w] of [[-12, 24], [16, 18]]) {
-      box(g, w, 6, 10, 16, 3.6, z, '#a23a2c');
-      box(g, w + 1, 1, 11, 16, 6.4, z, '#2f8f6b');
-      roof(g, w * 1.35, 16, 5, 6.8, 16, z);
-    }
-  },
-  // The village wall (담장): a stone lower half, plaster above, a tiled cap.
-  // l.len long along x (turned by l.ry).
-  hanokwall(g, l) { // a granite retaining wall (chukdae) holding up the hill: low at the street, taller up the slope
-    const len = l.len, y = l.y || 0, H = y + 1.1;
-    box(g, len, H, 0.95, 0, H / 2 - y, 0, C.dark);
-    for (let x = -len / 2 + 0.7; x < len / 2 - 0.4; x += 1.4) for (const sz of [-1, 1]) box(g, 0.6, 0.45, 0.04, x, 0.6, sz * 0.49, C.stone); // the stone pattern
-    box(g, len + 0.1, 0.16, 1.05, 0, H - y + 0.08, 0, C.stone); // the capstones
-  },
-  // A stone planter with a small tree (a maple or a persimmon) or clipped
-  // shrubs, kept low.
   planter(g, l) {
     box(g, 1.6, 0.5, 1.6, 0, 0.25, 0, C.stone);
     box(g, 1.4, 0.06, 1.4, 0, 0.5, 0, '#6b5a44');
@@ -196,46 +143,22 @@ const BUILD = {
       g.add(crown);
     }
   },
-  // The whole retaining wall as one landmark (l.segs: { x, z, len, ry, y },
-  // x and z from the landmark's own spot), so it is one draw call, not one
-  // per step.
-  hanokwalls(g, l) {
-    for (const sg of l.segs) {
-      const sub = new THREE.Group();
-      BUILD.hanokwall(sub, sg);
-      sub.position.set(sg.x, (sg.y || 0) - (l.y || 0), sg.z);
-      sub.rotation.y = sg.ry || 0;
-      g.add(sub);
+  // All the planters as one landmark (l.items: { x, z, y, kind }, district
+  // metres), so they are a few draw calls, not three or four each.
+  planters(g, l) {
+    for (const p of l.items) {
+      const s = new THREE.Group();
+      s.position.set(p.x - l.x, p.y - (l.y || 0), p.z - l.z);
+      BUILD.planter(s, p);
+      g.add(s);
     }
-  },
-  // A village gate: two posts, painted beams (dancheong green and red), a
-  // signboard and a curved tiled roof. l.w wide (the opening), facing +z.
-  bukchongate(g, l) {
-    const w = l.w, hw = w / 2, H = l.main ? 6.2 : 5;
-    for (const sx of [-1, 1]) {
-      box(g, 0.7, H, 0.7, sx * (hw + 0.2), H / 2, 0, '#7a2e22');
-      box(g, 1.3, 0.5, 1.3, sx * (hw + 0.2), 0.25, 0, C.stone);
-      box(g, 2.2, 1.3, 0.95, sx * (hw + 1.6), 0.65, 0, C.dark); // a stub of the stone wall each side
-    }
-    box(g, w + 1.6, 0.5, 0.6, 0, H - 0.35, 0, '#2f8f6b');
-    box(g, w + 1.4, 0.3, 0.5, 0, H - 0.95, 0, '#a23a2c');
-    if (l.main) {
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.3), new THREE.MeshBasicMaterial({ map: signTexture('북촌한옥마을', 'Bukchon Hanok Village') }));
-      sign.position.set(0, H - 1.9, 0.36);
-      const back = sign.clone();
-      back.rotation.y = Math.PI;
-      back.position.z = -0.36;
-      g.add(sign, back);
-      box(g, 4.4, 1.45, 0.3, 0, H - 1.9, 0, '#2b2118');
-    }
-    tiles(g, w + 4.6, 4.2, l.main ? 2.0 : 1.6, H, { hip: true, lift: 0.7, seg: 4, rows: 3, color: new THREE.Color(C.roof) });
   },
 };
 
 // Each builder's boxes merged into a few meshes (fewer draw calls).
 export const BUKCHON_BUILD = Object.fromEntries(Object.entries(BUILD).map(([k, f]) => [k, (g, l) => { const t = f(g, l); mergeStatic(g); return t; }]));
 
-// The hill inside Bukchon's wall (data/bukchon.js ground()): a sloped ground
+// Bukchon's hill (data/bukchon.js ground()): a sloped ground
 // and the alleys paved in granite on it. roads: the district's roads (world
 // metres), [ox, oz]: its offset. Built with the village, on the first visit.
 // Paving, drawn once. 'alley': across the alley (u 0..1), asphalt down the
@@ -280,15 +203,15 @@ function pavingTexture(kind) {
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
-  const [x0, , x1, z1] = BUKCHON.area, foot = BUKCHON.hill.foot;
-  // (fine enough across too: the hill is flat across x, but ground() is 0
-  // right on the edge, so the edge row is taken just inside it)
-  const nx = Math.ceil((x1 - x0) / 4), nz = Math.ceil((foot - z1) / 2);
-  const geo = new THREE.PlaneGeometry(x1 - x0, foot - z1, nx, nz).rotateX(-Math.PI / 2);
+  const [x0, z0, x1, z1] = BUKCHON.area; // (z0: the south edge)
+  // One vertex every 3 m (the ground grid is 6 m): close enough to ground()
+  // that you stand on what you see.
+  const nx = Math.ceil((x1 - x0) / 3), nz = Math.ceil((z0 - z1) / 3);
+  const geo = new THREE.PlaneGeometry(x1 - x0, z0 - z1, nx, nz).rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (foot + z1) / 2;
-    pos.setXYZ(i, x + ox, ground(Math.min(Math.max(x, x0 + 0.01), x1 - 0.01), Math.min(Math.max(z, z1 + 0.01), foot - 0.01)) + 0.02, z + oz);
+    const x = pos.getX(i) + (x0 + x1) / 2, z = pos.getZ(i) + (z0 + z1) / 2;
+    pos.setXYZ(i, x + ox, ground(x, z) + 0.02, z + oz);
   }
   geo.computeVertexNormals();
   { // the hillside between the houses is paved too (granite slabs, see pavingTexture)

@@ -3656,9 +3656,9 @@ $('map-btn').onclick = () => {
   const pos = myPlace();
   mapView.show(pos.x, pos.z);
 };
-// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// Bukchon Hanok Village's information centre (a step of the new player's trip, below), and
 // the cards that trip shows. "Back to the guide" puts you beside the square guide.
-const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+const FIRST_TAXI = { x: -1522.5, z: -916.3 }; // Bukchon's information centre on Gyedong-gil, up from Anguk Station (stores.json info-bukchon)
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3755,7 +3755,7 @@ function onTripStep() {
     sfx.pop?.();
     me.play('cheer');
     const route = quests.active?.route;
-    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's Information Center: a guide is right here
       firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
     } else tripTaxiCard();
     return;
