@@ -1367,6 +1367,21 @@ export function buildInterior(store) {
         block(mx, mz, 1.3, 1.1);
         stations.claw.push({ x: mx, z: mz + 1.1 });
       }
+      // A fighting game cabinet by the left wall (game/brawl.js): a dark
+      // body, a glowing screen and a marquee, the stick and buttons in front.
+      const fx = -w / 2 + 0.55, fz = 1.3;
+      box(0.9, 1.0, 0.9, fx, 0.5, fz, '#241d3a');
+      box(0.5, 0.9, 0.9, fx - 0.2, 1.45, fz, '#241d3a');
+      box(0.5, 0.12, 0.8, fx + 0.3, 1.02, fz, '#3a3260');
+      box(0.7, 0.28, 0.9, fx - 0.1, 2.04, fz, '#ffd23c');
+      const fscr = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.6), new THREE.MeshBasicMaterial({ color: '#ff5a6e' }));
+      fscr.position.set(fx + 0.06, 1.48, fz);
+      fscr.rotation.y = Math.PI / 2;
+      scene.add(fscr);
+      for (const [k, c] of ['#3f7fe0', '#e0483f', '#2fa56a', '#d9982a'].entries()) box(0.07, 0.04, 0.07, fx + 0.36 - (k >> 1) * 0.12, 1.1, fz + 0.08 + (k & 1) * 0.13, c);
+      box(0.04, 0.14, 0.04, fx + 0.3, 1.14, fz - 0.2, '#e8e8f0');
+      block(fx, fz, 1.0, 1.0);
+      stations.fight = [{ x: fx + 1.15, z: fz, ry: -Math.PI / 2 }];
     } else if (store.workshop === 'sauna') {
       // 찜질방: a dome-shaped hot kiln (불가마) on the left, an ice room on
       // the right, and warm wooden platforms with mats in the middle.
