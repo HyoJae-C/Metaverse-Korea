@@ -12,17 +12,6 @@
       "at": [83.9, 96.5],
       "colors": { "sign": "#3d6b4f", "awning": "#cfe8d5", "accent": "#f6f1e7" },
       "products": []
-    },
-    {
-      "id": "sunny-villa",
-      "category": "home",
-      "kind": "villa",
-      "size": "small",
-      "name": { "ko": "햇살 빌라", "en": "Sunny Villa" },
-      "tagline": { "en": "A cosy villa room (a Korean low-rise flat)", "ko": "아늑한 빌라 원룸" },
-      "at": [80.7, 135.9],
-      "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
-      "products": []
     }
   ]
 }

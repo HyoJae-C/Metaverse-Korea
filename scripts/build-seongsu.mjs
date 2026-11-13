@@ -900,7 +900,7 @@ export const PLACE = [
   // south
   ['seongsu-fishmarket', 'fish'], ['sinjeon-pocha', 'fish'],
 ];
-// Shops added with the hand-made map, and the two homes (homes.json).
+// Shops added with the hand-made map, and the home (homes.json).
 // (Some of these later moved next to Seongsu Square: see TO_SQUARE / --square.)
 export const PLACE_NEW = [
   ['sudo-shoes', 'ymjW'], ['soga-leather', 'ymjW'], ['gaeul-vintage', 'ymj'], ['wide-pants', 'ymj'], ['tteugae-knit', 'ymjE'],
@@ -910,7 +910,7 @@ export const PLACE_NEW = [
   ['slow-brunch', 'sup2'], ['hotteok-stand', 'achasan'], ['warehouse-roasters', 'achasan'], ['snowflake-bingsu', 'ymjE'],
   ['kkot-flowers', 'seoulsup'], ['bal-socks', 'seoulsup'], ['mallang-popup', 'popup'], ['pixel-popup', 'popup'],
   ['son-kalguksu', 'fish'], ['golmok-chicken', 'fish'], ['dal-tteok', 'fish'], ['seongsu-mandu', 'sup2'],
-  ['forest-lane-apt', 'fish'], ['sunny-villa', 'fish'],
+  ['forest-lane-apt', 'fish'], // (Sunny Villa was folded into it: one home)
   // Perfume shops (3 perfumes each): a perfume alley at the south end of the
   // brick lane next to Ohu Perfume Lab, a row on Yeonmujang-gil, and one by
   // Seongsu Square for people coming from the station.
@@ -988,8 +988,8 @@ export const TO_SQUARE = [
   // knits, caps, pets and things for home on the west side
   ['tteugae-knit', 'sqW'], ['cap-yard', 'sqW'], ['mungnyang-petshop', 'sqW'], ['heuk-ceramics', 'sqW'],
   ['chorok-plants', 'lane'],
-  // the two homes, just across Seoulsup-gil
-  ['forest-lane-apt', 'supE'], ['sunny-villa', 'supE'],
+  // the home, just across Seoulsup-gil
+  ['forest-lane-apt', 'supE'], // (Sunny Villa was folded into it: one home)
 ];
 if (process.argv.includes('--square')) {
   const files = { stores: path.join(dir, 'stores.json'), homes: path.join(dir, 'homes.json') };

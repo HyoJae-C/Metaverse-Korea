@@ -2,6 +2,7 @@
 // catalogue (or walk up to it) to rotate, carry or put it away. One of each
 // piece for now, so rooms stay light. Saved in this browser only (for now).
 import { CollisionMap } from '../core/collision.js';
+import { foldHomes } from '../core/home-fold.js';
 import { FURNITURE, buildFurniture, furnitureById, furnitureCollider } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
@@ -12,6 +13,7 @@ export function createDecor(game) {
   let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
   const homeKey = (id) => 'mk.home.' + id;
   function loadDecor(id) {
+    foldHomes(localStorage); // (the old Sunny Villa layout moves into the one home)
     try {
       const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
       return Array.isArray(a)
