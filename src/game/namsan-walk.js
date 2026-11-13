@@ -15,6 +15,9 @@
 //   walk.nearHeart(p)       at the love-lock heart?
 //   walk.station            the cable car's upper station door [x, z] (game/namsan-cable.js)
 //   walk.stationOut         where you step out of the cable car at the top
+//
+// The city wall's trail over the hill (l.wtrail, scripts/build-namsan-wall.mjs)
+// is decks too; the wall itself (game/namsan-wall.js) loads when you come near.
 import { namsanGround, onNamsan, namsanReach } from '../core/namsan-shape.js';
 
 export const NAMSAN_WALK = {
@@ -28,7 +31,7 @@ export const NAMSAN_WALK = {
 
 const ring = (cx, cz, r, n = 24) => Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; });
 
-export function createNamsanWalk({ landmarks = [], collision, scene = null }) {
+export function createNamsanWalk({ landmarks = [], collision, scene = null, roads = [], buildings = [] }) {
   const l = landmarks.find((q) => q.type === 'namsan' && q.rad);
   const none = { y: () => 0, update() {}, nearHeart: () => false, station: null, stationOut: null, tower: null };
   if (!l) return none;
@@ -47,6 +50,8 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null }) {
   // The trail.
   const line = (l.trail || []).map(([x, z]) => [l.x + x, l.z + z]);
   for (let i = 1; i < line.length; i++) deck(line[i - 1], line[i], l.trailW || W.w);
+  // The city wall's trail.
+  for (const run of l.wtrail || []) for (let i = 1; i < run.length; i++) deck([l.x + run[i - 1][0], l.z + run[i - 1][1]], [l.x + run[i][0], l.z + run[i][1]], l.wtrailW || W.w);
   // The plaza, and a path from its edge to the upper station.
   collision?.addDeck(ring(...tower, W.plazaR + 0.5, 32));
   const cable = landmarks.find((q) => q.type === 'cablecar');
@@ -64,15 +69,24 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null }) {
   const at = ([dx, dz]) => [tower[0] + dx, tower[1] + dz];
   const heartSpot = at(W.heartSpot);
   const reach = namsanReach(l), x0 = l.x - reach, x1 = l.x + reach, z0 = l.z - reach, z1 = l.z + reach;
+  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z));
   let summit = null, loading = false;
+  // The wall: its box, and when it has loaded.
+  const wallPts = (l.wall?.runs || []).flat().map(([x, z]) => [l.x + x, l.z + z]);
+  const wb = wallPts.length && [Math.min(...wallPts.map((q) => q[0])), Math.min(...wallPts.map((q) => q[1])), Math.max(...wallPts.map((q) => q[0])), Math.max(...wallPts.map((q) => q[1]))];
+  let wall = null, wallLoading = false;
   return {
     line, tower, station, stationOut,
-    y(x, z) {
-      if (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z)) return 0;
-      return y(x, z);
-    },
+    y: walkY,
     // Every frame on the street: the plaza's models when you come near.
     update(p) {
+      wall?.update(p);
+      if (wb && !wall && !wallLoading && scene && Math.hypot(Math.max(wb[0] - p.x, 0, p.x - wb[2]), Math.max(wb[1] - p.z, 0, p.z - wb[3])) < W.near) {
+        wallLoading = true;
+        import('./namsan-wall.js')
+          .then(({ buildNamsanWall }) => { wall = buildNamsanWall({ scene, l, y: walkY, roads, buildings }); })
+          .catch((e) => { wallLoading = false; console.warn('namsan wall', e); });
+      }
       if (summit || loading || !scene || Math.hypot(p.x - tower[0], p.z - tower[1]) > W.near) return;
       loading = true;
       import('./namsan-summit.js')

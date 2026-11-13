@@ -1,7 +1,7 @@
 // Naksan (낙산) and the Seoul City Wall over it, from Heunginjimun to
 // Hyehwamun: the hill's ground, the wall with its parapet, the two paths
 // along it (outside at its foot, inside along the top), lamps, woods,
-// Hyehwamun at 37.5%, and people out walking. The numbers come from
+// Hyehwamun at 43.75%, and people out walking. The numbers come from
 // scripts/build-naksan.mjs (dongmyo.json meta.ridge; the wall's blockers,
 // the paths and the houses are ordinary map items, there from the start).
 // The height is core/ridge-ground.js, which main.js uses from the start, so
@@ -10,35 +10,14 @@
 import * as THREE from 'three';
 import { StreetNpcs, PHRASES } from '../core/npcs.js';
 import { ridgeHeightSide, ridgeNear, ridgeBox } from '../core/ridge-ground.js';
-import { hipRoofGeometry } from '../core/landmarks.js';
+import { stoneTexture, smallGate, MERLON, WALL_STONE as STONE } from './city-wall-parts.js';
 import { addSnowCover } from '../core/snow-cover.js';
 
 const CELL = 5; // m: the ground grid
 const FINE = 4; // cells on the wall are cut into FINE x FINE (1.25 m), so none ramps up its face
 const SINK = 0.15; // the grid is drawn this much lower (you walk on the true height)
 const HIDE = 700; // m: past this from the hill, it is not drawn
-const MERLON = { len: 1.5, gap: 0.4, h: 0.8, t: 0.55 }; // the parapet's blocks (여장), on the outer edge
-const STONE = '#cdc5b3';
 const NAMES = ['하늘', '도윤', '수아', '지호', '예린', '준서'];
-
-// A stone-block face: rows of blocks in staggered courses (u along, v up).
-function stoneTexture() {
-  const c = typeof document !== 'undefined' && document.createElement('canvas');
-  if (!c?.getContext) return null;
-  c.width = 128; c.height = 64;
-  const x = c.getContext('2d');
-  x.fillStyle = '#b8af9c'; x.fillRect(0, 0, 128, 64);
-  const tones = ['#d6cebd', '#cbc2ae', '#dfd8c8', '#c4bba7', '#d2c9b6'];
-  for (let row = 0; row < 4; row++) for (let i = -1; i < 5; i++) {
-    const off = row % 2 ? 16 : 0;
-    x.fillStyle = tones[(row * 5 + i * 3 + 7) % tones.length];
-    x.fillRect(i * 32 + off + 1.5, row * 16 + 1.5, 29, 13);
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
 
 // game: { scene, labels, roadGraph, roads (the joined map's), buildings
 // (the joined map's), offset (the district's), ridge (its meta.ridge),
@@ -181,29 +160,10 @@ export function createNaksan(game) {
 
   { // Hyehwamun (혜화문), 43.75%: a granite base with one round-topped arch
     // you walk through, and a small pavilion with a hipped roof.
-    const { x, z, ry, W, D, H: Hb, A, S } = r.gate;
-    const g = new THREE.Group();
-    const stone = new THREE.MeshLambertMaterial({ color: '#cfc6b2' });
-    const box = (w, hh, d, px, py, pz, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), color ? new THREE.MeshLambertMaterial({ color }) : stone); m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m; };
-    for (const sx of [-1, 1]) box(W / 2 - A, Hb, D, sx * (A + (W / 2 - A) / 2), Hb / 2, 0); // either side of the arch
-    const sh = new THREE.Shape(); // over the arch: its round top
-    sh.moveTo(-A, S); sh.lineTo(-A, Hb); sh.lineTo(A, Hb); sh.lineTo(A, S);
-    sh.absarc(0, S, A, 0, Math.PI, false);
-    const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -D / 2);
-    const over = new THREE.Mesh(top, stone);
-    over.castShadow = true;
-    g.add(over);
-    const pw = W * 0.78, pd = D * 0.72, ph = Math.max(0.9, W * 0.2);
-    box(pw * 0.92, ph, pd * 0.86, 0, Hb + ph / 2, 0, '#f1e7d2');
-    for (let i = 0; i < 4; i++) for (const sz of [-1, 1]) box(0.14, ph, 0.14, -pw / 2 + (i * pw) / 3, Hb + ph / 2, sz * pd / 2, '#a23a2c');
-    box(pw + 0.2, 0.18, pd + 0.2, 0, Hb + ph + 0.09, 0, '#2f8f6b');
-    const roof = new THREE.Mesh(hipRoofGeometry(pw + 1.2, pd + 1.0, Math.max(0.7, W * 0.16)), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
-    roof.position.y = Hb + ph + 0.18;
-    roof.castShadow = true;
-    g.add(roof);
+    const { x, z, ry } = r.gate;
+    const g = smallGate(r.gate, 'hyehwamun');
     g.position.set(x + ox, h(x + ox, z + oz), z + oz);
     g.rotation.y = ry;
-    g.name = 'hyehwamun';
     group.add(g);
   }
 

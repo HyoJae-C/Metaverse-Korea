@@ -824,7 +824,7 @@ const naksanY = ridgeDistrict ? ridgeGround(ridgeDistrict.ridge, ridgeDistrict.o
 const naksan = createNaksanNear({ district: ridgeDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, buildings: map.buildings, groundY: naksanY, randomLook });
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
-const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene });
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings });
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
