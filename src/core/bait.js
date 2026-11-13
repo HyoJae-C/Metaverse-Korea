@@ -9,16 +9,17 @@
 // and ★4 as it is today, ★2 keeps its share and ★1 gives up the difference.
 // It doesn't change the old boot, the escapes, auto fishing (never a rare
 // fish) or the legend pity. (Yozi 2026-11-12: four kinds counting the plain
-// one, five a pack, one pack of each a day, reset at 00:00 KST.)
+// one, five a pack, one pack of each a day, reset at 00:00 KST. 2026-11-13: only a small boost,
+// ★5 at most twice the plain bait's, and lower prices.)
 //
 // The prices and the daily limit are also kept on the server
 // (supabase/042_fish_bait.sql, bait_settings), which wins when online.
 export const BAIT_PACK = 5;
 export const BAIT_DAILY = 1; // packs of each kind a day (Korean day)
 export const BAITS = [
-  { id: 'mid', rare: 4, legend: 0.1, price: 2500, color: '#c98b4f' },
-  { id: 'high', rare: 6, legend: 0.2, price: 7500, color: '#5fb0de' },
-  { id: 'top', rare: 9, legend: 1, price: 15000, color: '#e2b53c' },
+  { id: 'mid', rare: 2.5, legend: 0.06, price: 1000, color: '#c98b4f' },
+  { id: 'high', rare: 3, legend: 0.08, price: 2500, color: '#5fb0de' },
+  { id: 'top', rare: 4, legend: 0.1, price: 5000, color: '#e2b53c' },
 ];
 export const baitById = (id) => BAITS.find((b) => b.id === id) || null;
 

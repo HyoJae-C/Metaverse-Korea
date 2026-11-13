@@ -17,22 +17,25 @@ const tiers = (park, lucky, bait) => {
 };
 const close = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg}: ${a} vs ${b}`);
 
-test('three baits on top of the free one, five a pack, one pack of each a day (Yozi 2026-11-12)', () => {
+test('three baits on top of the free one, five a pack, one pack of each a day (Yozi 2026-11-12; a small boost and lower prices 2026-11-13)', () => {
   assert.deepEqual(BAITS.map((b) => b.id), ['mid', 'high', 'top']);
-  assert.deepEqual(BAITS.map((b) => [b.rare, b.legend, b.price]), [[4, 0.1, 2500], [6, 0.2, 7500], [9, 1, 15000]]);
+  assert.deepEqual(BAITS.map((b) => [b.rare, b.legend, b.price]), [[2.5, 0.06, 1000], [3, 0.08, 2500], [4, 0.1, 5000]]);
   assert.equal(BAIT_PACK, 5);
   assert.equal(BAIT_DAILY, 1);
   for (let i = 1; i < BAITS.length; i++) assert.ok(BAITS[i].rare > BAITS[i - 1].rare && BAITS[i].legend > BAITS[i - 1].legend);
 });
 
-test('a bait sets ★3+ and ★5 at every park, keeps ★2, and the odds still add up to 100%', () => {
+test('a bait sets ★3+ and ★5 at every park (more at the lucky spot), keeps ★2, and the odds still add up to 100%', () => {
   for (const park of [...Object.keys(PARK_FISH), null]) {
     for (const lucky of [false, true]) {
       const plain = tiers(park, lucky, null);
+      // At the lucky spot a bait goes up as much as plain bait does there.
+      const k = lucky ? (plain[3] + plain[4] + plain[5]) / (tiers(park, false, null).slice(3).reduce((a, c) => a + c, 0)) : 1;
+      if (lucky) assert.ok(k > 1, 'the lucky spot is luckier');
       for (const b of BAITS) {
         const t = tiers(park, lucky, b);
-        close(t[3] + t[4] + t[5], b.rare, `${park} ${b.id} ★3+`);
-        close(t[5], b.legend, `${park} ${b.id} ★5`);
+        close(t[3] + t[4] + t[5], b.rare * k, `${park} ${b.id} ★3+`);
+        close(t[5], b.legend * k, `${park} ${b.id} ★5`);
         close(t[2], plain[2], `${park} ${b.id} ★2 kept`);
         close(t.reduce((a, c) => a + c, 0), 100, `${park} ${b.id} total`);
         close(t[4] / t[3], plain[4] / plain[3], `${park} ${b.id} ★3:★4`);
@@ -54,7 +57,7 @@ test('within a tier each kind keeps its share; other parks’ rare kinds still n
     if (!base) assert.equal(baitedChance(f, 'mangwon-hangang', false, top), 0, f.id);
   }
   const whale = AVAILABLE_FISH.find((f) => f.id === 'whale'); // Ttukseom's legend
-  close(baitedChance(whale, 'ttukseom-hangang', false, top), 1, 'whale with premium bait');
+  close(baitedChance(whale, 'ttukseom-hangang', false, top), 0.1, 'whale with premium bait');
 });
 
 test('rollCatch with a bait lands the legend at the bait’s rate', () => {
@@ -66,8 +69,8 @@ test('rollCatch with a bait lands the legend at the bait’s rate', () => {
     if (f !== TRASH && f.rarity === 5) legends++;
     if (f !== TRASH && f.rarity >= 3) rare++;
   }
-  assert.ok(Math.abs(legends / n - 0.0096) < 0.0005, `legend ${legends / n}`);
-  assert.ok(Math.abs(rare / n - 0.0864) < 0.001, `rare ${rare / n}`);
+  assert.ok(Math.abs(legends / n - 0.00096) < 0.0002, `legend ${legends / n}`);
+  assert.ok(Math.abs(rare / n - 0.0384) < 0.001, `rare ${rare / n}`);
 });
 
 test('the hook: put a bait on, one a bite, what was on before comes back', () => {
@@ -95,22 +98,22 @@ test('bait in the bag and the hand: only known baits, up to five', () => {
 });
 
 test('the stall (offline): one pack of each a day, new stock at 00:00 KST, a retry charges once', async () => {
-  let coins = 30000;
+  let coins = 8500;
   const wallet = { spend: (n) => (coins >= n ? ((coins -= n), true) : false) };
   const shop = new LocalBaitShop(wallet, memory());
   const t0 = Date.parse('2026-11-12T14:30:00Z'); // 23:30 KST
   assert.equal(kstDay(t0), '2026-11-12');
   assert.deepEqual((await shop.info(t0)).bought, {});
-  assert.deepEqual(await shop.buy({ requestId: 'a', b: 'top', price: 15000 }, null, t0), { charged: true });
-  assert.deepEqual(await shop.buy({ requestId: 'a', b: 'top', price: 15000 }, null, t0), { charged: false }); // the same tap again
-  assert.equal(coins, 15000);
-  assert.deepEqual(await shop.buy({ requestId: 'b', b: 'top', price: 15000 }, null, t0), { error: 'limit' });
-  assert.deepEqual(await shop.buy({ requestId: 'c', b: 'mid', price: 100 }, null, t0), { error: 'price', price: 2500 });
-  assert.deepEqual(await shop.buy({ requestId: 'c', b: 'mid', price: 2500 }, null, t0), { charged: true });
+  assert.deepEqual(await shop.buy({ requestId: 'a', b: 'top', price: 5000 }, null, t0), { charged: true });
+  assert.deepEqual(await shop.buy({ requestId: 'a', b: 'top', price: 5000 }, null, t0), { charged: false }); // the same tap again
+  assert.equal(coins, 3500);
+  assert.deepEqual(await shop.buy({ requestId: 'b', b: 'top', price: 5000 }, null, t0), { error: 'limit' });
+  assert.deepEqual(await shop.buy({ requestId: 'c', b: 'mid', price: 100 }, null, t0), { error: 'price', price: 1000 });
+  assert.deepEqual(await shop.buy({ requestId: 'c', b: 'mid', price: 1000 }, null, t0), { charged: true });
   assert.deepEqual((await shop.info(t0)).bought, { top: 1, mid: 1 });
   const t1 = Date.parse('2026-11-12T15:00:00Z'); // 00:00 KST the next day
   assert.equal(kstDay(t1), '2026-11-13');
   assert.deepEqual((await shop.info(t1)).bought, {});
-  assert.deepEqual(await shop.buy({ requestId: 'd', b: 'top', price: 15000 }, null, t1), { error: 'coins' });
-  assert.deepEqual(await shop.buy({ requestId: 'e', b: 'high', price: 7500 }, null, t1), { charged: true });
+  assert.deepEqual(await shop.buy({ requestId: 'd', b: 'top', price: 5000 }, null, t1), { error: 'coins' });
+  assert.deepEqual(await shop.buy({ requestId: 'e', b: 'high', price: 2500 }, null, t1), { charged: true });
 });

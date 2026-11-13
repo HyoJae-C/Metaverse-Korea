@@ -28,7 +28,7 @@ create table if not exists public.bait_settings (
   daily int not null default 1 check (daily >= 0),
   pack int not null default 5 check (pack between 1 and 99)
 );
-insert into public.bait_settings (id, price) values ('mid', 2500), ('high', 7500), ('top', 15000)
+insert into public.bait_settings (id, price) values ('mid', 1000), ('high', 2500), ('top', 5000)
   on conflict (id) do nothing;
 alter table public.bait_settings enable row level security;
 revoke all on public.bait_settings from anon, authenticated;

@@ -900,14 +900,18 @@ export function luckySpot(n, now = Date.now()) {
 // With a bait on the hook (core/bait.js): ★3 and up bite `bait.rare` % of
 // the time in all, `bait.legend` % of it the park's ★5, the rest shared by
 // ★3 and ★4 as usual; ★2 keeps its share (the lucky spot's, there) and ★1
-// gives up the difference. Each kind keeps its place within its tier.
+// gives up the difference. Each kind keeps its place within its tier. At the
+// lucky spot the bait's odds go up as much as plain bait's do there, so a
+// bait never makes the lucky spot worse.
 const tierChance = (r, park, lucky) => AVAILABLE_FISH.reduce((a, q) => a + (q.rarity === r ? (lucky ? luckyChance(q, park) : chanceAt(q, park)) : 0), 0);
 export function baitedChance(f, park = null, lucky = false, bait = null) {
   const c = lucky ? luckyChance(f, park) : chanceAt(f, park);
   if (!bait || !c) return c;
-  const t = tierChance(f.rarity, park, lucky), rest = bait.rare - bait.legend, r34 = TIER_SHARE[3] + TIER_SHARE[4];
-  const want = f.rarity >= 5 ? bait.legend : f.rarity === 4 ? rest * TIER_SHARE[4] / r34 : f.rarity === 3 ? rest * TIER_SHARE[3] / r34
-    : f.rarity === 2 ? t : 100 - bait.rare - tierChance(2, park, lucky);
+  const rare3 = (l) => tierChance(3, park, l) + tierChance(4, park, l) + tierChance(5, park, l);
+  const k = lucky ? rare3(true) / rare3(false) : 1, rare = bait.rare * k, legend = bait.legend * k;
+  const t = tierChance(f.rarity, park, lucky), rest = rare - legend, r34 = TIER_SHARE[3] + TIER_SHARE[4];
+  const want = f.rarity >= 5 ? legend : f.rarity === 4 ? rest * TIER_SHARE[4] / r34 : f.rarity === 3 ? rest * TIER_SHARE[3] / r34
+    : f.rarity === 2 ? t : 100 - rare - tierChance(2, park, lucky);
   return c * Math.max(0, want) / t;
 }
 export function rollFish(rand = Math.random, lucky = false, park = null, bait = null) {
