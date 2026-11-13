@@ -2,7 +2,7 @@
 // last 90 days from the server's log (supabase/024_chat_log.sql) so a
 // report can be checked later. The "Show" menu switches to the other text
 // players write to each other, from supabase/043_ops_all_chat.sql: friend
-// chat (180 days), love-lock notes, board posts, or all of it at once (to
+// chat (90 days), love-lock notes, board posts, or all of it at once (to
 // see everything one player wrote). The confession room is never here: it
 // sends and saves nothing.
 //
@@ -55,9 +55,19 @@ export function chatLine(payload) {
   return { name: clean(payload?.n, 32) || '?', text };
 }
 
+// A country code ('JP') as its flag and code ('🇯🇵 JP'); '' for none or
+// unknown ('XX'). The code is the game's guess from the time zone
+// (supabase/010_countries.sql, 044_chat_90_days_country.sql).
+export function countryTag(cc) {
+  const c = String(cc || '').toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c) || c === 'XX') return '';
+  return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65)) + ' ' + c;
+}
+
 // A row of ops_chat_log as a line.
 export function logLine(region, r) {
   return {
+    country: countryTag(r.country),
     logId: r.id, at: Date.parse(r.at), place: roomPlace(region, r.room), id: r.net_id, uid: r.uid,
     name: clean(r.name, 32) || '?', text: clean(r.msg, 200), guest: !!r.guest, banned: !!r.banned,
   };
@@ -68,7 +78,7 @@ export function logLine(region, r) {
 export function allLine(region, r) {
   const kind = r.kind in KINDS ? r.kind : 'room';
   return {
-    kind, ref: r.ref, at: Date.parse(r.at), atRaw: r.at, uid: r.uid, id: '',
+    kind, ref: r.ref, at: Date.parse(r.at), atRaw: r.at, uid: r.uid, id: '', country: countryTag(r.country),
     place: kind === 'room' ? roomPlace(region, r.place || '') : String(r.place || ''),
     name: clean(r.name, 32) || '?', text: clean(r.msg, 1000), guest: !!r.guest, banned: !!r.banned,
     toUid: r.to_uid || null, toName: r.to_name == null ? null : clean(r.to_name, 32) || '?', state: r.state || '',
@@ -161,6 +171,7 @@ export function createChatPanel({ client, region, $, describePlace, badge, setSt
     cell(when(l.at), 'muted');
     cell(placeLabel(l, describe));
     const who = cell(l.name, 'who');
+    if (l.country) who.append(' ', Object.assign(document.createElement('span'), { className: 'muted', textContent: l.country, title: 'Country the player last played from (guessed from the time zone)' }));
     if (l.guest) who.append(' ', Object.assign(document.createElement('span'), { className: 'tag', textContent: 'guest' }));
     const said = cell(l.text);
     if (l.state) said.prepend(Object.assign(document.createElement('span'), { className: 'tag', textContent: l.state }), ' ');
