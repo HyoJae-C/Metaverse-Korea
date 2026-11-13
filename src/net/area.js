@@ -186,8 +186,12 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     sendState(st) { if (visible()) own()?.sendState(st); },
     sendEmote(e) { if (visible()) own()?.sendEmote(e); },
     sendChat(t) {
-      if (chatLink?.ready) chatLink.send(me.id, t, cfg.claimChatId);
-      else own()?.sendChat?.(t);
+      if (chatLink?.ready) { chatLink.send(me.id, t, cfg.claimChatId); return; }
+      const adapter = own();
+      // On the room channel: logged on the server first (adapter.logChat),
+      // unless this is a test room without accounts.
+      if (!privateChat || !adapter?.logChat) { adapter?.sendChat?.(t); return; }
+      adapter.logChat(room, t).then((r) => { if (r !== 'chat' && !closed) adapter.sendChat?.(t); });
     },
     sendLook(look) {
       me = { ...me, look };

@@ -52,3 +52,35 @@ test('the size line warns early when the log fills faster than planned', async (
   assert.equal(sizeReport({ rows: 20000, bytes: 6e6, week: 20000, oldest: '2026-11-07T00:00:00Z', db_bytes: 50e6 }, now).level, 'warn');
   assert.match(sizeReport({ rows: 0, bytes: 0, week: 0, db_bytes: 0 }, now).text, /0 lines/);
 });
+
+import { KINDS, allLine, placeLabel } from '../src/admin/chat-panel.js';
+
+test('every kind of chat becomes a line with the right place', () => {
+  const base = { ref: 7, at: '2026-11-13T04:45:37.150308+00:00', uid: 'u1', name: 'Bob', msg: 'hi', guest: false, banned: false, state: '' };
+  const friend = allLine('seoul', { ...base, kind: 'friend', to_uid: 'u2', to_name: 'Cat' });
+  assert.equal(placeLabel(friend), '👥 → Cat');
+  assert.equal(friend.atRaw, base.at, 'exact server time kept for "load older"');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'friend', to_uid: null, to_name: null })), '👥 → All friends');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'lock', place: 'heart' })), '🔒 Love lock');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'board', place: 'ask' })), '📮 Inquiry board');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'board', place: 'free' })), '📋 Free board');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'room', place: 'seoul' })), '🚶 Street');
+  assert.equal(placeLabel(allLine('seoul', { ...base, kind: 'room', place: 'seoul-ongi-cafe' }), (p) => 'In ' + p), '🏠 ongi-cafe');
+  assert.equal(allLine('seoul', { ...base, kind: 'lock', state: 'hidden' }).state, 'hidden');
+});
+
+test('the confession room is not a kind the operator page can show', () => {
+  assert.deepEqual(Object.keys(KINDS).sort(), ['all', 'board', 'friend', 'lock', 'room']);
+});
+
+test('every chat function the operator page calls exists in the SQL', async () => {
+  const { readFileSync } = await import('node:fs');
+  const sql = readFileSync(new URL('../supabase/043_ops_all_chat.sql', import.meta.url), 'utf8');
+  const panel = readFileSync(new URL('../src/admin/chat-panel.js', import.meta.url), 'utf8');
+  for (const fn of ['ops_all_chat', 'ops_set_lock_hidden']) {
+    assert.ok(panel.includes(`'${fn}'`), fn + ' used');
+    assert.match(sql, new RegExp(`function public\\.${fn}\\(`), fn + ' defined');
+  }
+  assert.match(sql, /grant execute on function public\.room_chat_log\(text, text, text\) to authenticated/);
+  assert.doesNotMatch(sql, /realtime\.send/, 'logging adds no realtime messages');
+});

@@ -156,6 +156,17 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     sendChat(t) {
       channel?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
     },
+    // Before saying a line on the room channel (the private chat channel
+    // isn't open yet): the server logs it like room_chat_send does, so the
+    // operator can see it too (043_ops_all_chat.sql), without sending
+    // anything over realtime. Resolves 'chat' when we may not chat (banned);
+    // anything else (logged, or the function isn't set up) lets the line go.
+    async logChat(room, t) {
+      try {
+        const { data, error } = await client.rpc('room_chat_log', { room, net_id: self.id, msg: t });
+        return error ? 'error' : data;
+      } catch { return 'error'; }
+    },
     sendLook(look) {
       self = { ...self, look };
       channel?.send({ type: 'broadcast', event: 'l', payload: { id: self.id, look } });
