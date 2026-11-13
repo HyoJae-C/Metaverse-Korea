@@ -201,7 +201,7 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-ladder b.done { background: #ffd23c; color: #2a1030; border-color: #fff; }
 .bw-ladder b.now { border-color: #ff5a6e; box-shadow: 0 0 10px #ff5a6e; }
 .bw-styles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 8px 0; }
-.bw-styles button { padding: 8px 1px; font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; border: 2px solid transparent; line-height: 1.2; }
+.bw-styles button { padding: 8px 0; font-size: clamp(10px, 2.9vw, 12px); min-width: 0; overflow-wrap: anywhere; font-weight: 700; border: 2px solid transparent; line-height: 1.2; }
 .bw-styles button b { display: block; font-size: 22px; }
 .bw-styles button.sel { border-color: #ffd23c; background: #4a3f86; }
 .bw-stat { display: grid; grid-template-columns: 26px 1fr; gap: 6px; align-items: center; margin: 3px auto; max-width: 240px; font-size: 14px; }
