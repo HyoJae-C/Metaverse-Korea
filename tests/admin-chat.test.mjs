@@ -84,3 +84,13 @@ test('every chat function the operator page calls exists in the SQL', async () =
   assert.match(sql, /grant execute on function public\.room_chat_log\(text, text, text\) to authenticated/);
   assert.doesNotMatch(sql, /realtime\.send/, 'logging adds no realtime messages');
 });
+
+import { countryTag, logLine } from '../src/admin/chat-panel.js';
+
+test('countries show as a flag and code; unknown shows nothing', () => {
+  assert.equal(countryTag('jp'), '🇯🇵 JP');
+  assert.equal(countryTag('XX'), '');
+  assert.equal(countryTag(null), '');
+  assert.equal(countryTag('KOR'), '');
+  assert.equal(logLine('seoul', { id: 1, at: '2026-11-13T00:00:00Z', room: 'seoul', net_id: 'n', msg: 'hi', country: 'KR' }).country, '🇰🇷 KR');
+});
