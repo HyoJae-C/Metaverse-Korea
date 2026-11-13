@@ -2209,6 +2209,11 @@ const fishBait = createFishBait({
   get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
 });
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
+// The errand chip needs places made further down (open parks, guides,
+// storefront doors); until it is set up, a cup restored from the save in
+// setHeld below must not draw it (a finished errand + a held drink broke the
+// load: "openParkHere is not a function", then every message from others).
+let questChipReady = false;
 const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
@@ -6231,6 +6236,7 @@ function questPlace(q, ready) {
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
 }
 function refreshQuestChip() {
+  if (!questChipReady) return; // (drawn once at the end of setting up, below)
   const q = quests.active;
   $('quest-bar').hidden = !q;
   if (!q) return;
@@ -6303,6 +6309,7 @@ $('quest-chip').onclick = () => {
   try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }
   refreshQuestChip();
 };
+questChipReady = true;
 refreshQuestChip();
 
 // On the square: near the guide and the big screen.
