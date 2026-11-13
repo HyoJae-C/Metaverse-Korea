@@ -33,6 +33,10 @@ export const HALL_LAYOUT = {
   servers: [[-1.8, -12.7], [1.8, -12.7]], // the altar servers' places
   pews: { xs: [1.3, 2.1, 2.9, 3.7], z0: -8.2, gap: 1.6, rows: 12 }, // seats on each side (x and -x)
   loft: { z: 13.4, y: 4.2 }, // the organ loft's front edge and floor
+  // The confessional: a wooden booth against the right aisle's wall, past
+  // the last column by the door. Its curtain leads into the confession room
+  // (core/confession-room.js), where you are alone.
+  confessional: { x: 6.95, z: 12.4, w: 1.3, d: 2.7, h: 2.4 },
 };
 
 const C = {
@@ -42,7 +46,8 @@ const C = {
 };
 
 // Collects meshes and merges those that share a colour (a few draw calls).
-class Batch {
+// (Also the confession room's, core/confession-room.js.)
+export class Batch {
   constructor() { this.parts = new Map(); }
   add(geo, color, x = 0, y = 0, z = 0, { rx = 0, ry = 0, rz = 0, basic = false, back = false, sx = 1, sy = 1, sz = 1 } = {}) {
     const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
@@ -369,6 +374,23 @@ export function buildCathedralHall(store, ROOM, EXIT) {
     b.add(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), '#a9c6d8', x, 0.755, z);
     block(x, z, 0.5, 0.5);
   }
+  // The confessional (L.confessional): a dark wooden booth, the priest's
+  // door in the middle with a small cross over it, a purple curtain on
+  // either side. You walk up to it (the station in front) to go in.
+  const K = L.confessional, kf = K.x - K.w / 2; // kf: its front, facing the nave
+  b.box(K.w, K.h, K.d, K.x, K.h / 2, K.z, C.woodDark);
+  b.box(K.w + 0.12, 0.14, K.d + 0.16, K.x, K.h + 0.07, K.z, C.wood); // the cornice
+  b.box(0.06, 0.46, 0.06, kf + 0.25, K.h + 0.37, K.z, C.gold); // the cross on top
+  b.box(0.06, 0.06, 0.28, kf + 0.25, K.h + 0.46, K.z, C.gold);
+  b.box(0.04, 1.95, 0.78, kf - 0.02, 0.975, K.z, C.wood); // the priest's door
+  for (const dy of [0, 0.12, 0.24]) b.box(0.05, 0.03, 0.4, kf - 0.04, 1.45 + dy, K.z, C.woodDark); // its little grille
+  b.box(0.05, 0.05, 0.03, kf - 0.05, 1.0, K.z - 0.28, C.gold); // its handle
+  for (const e of [-1, 1]) {
+    b.box(0.03, 1.85, 0.72, kf - 0.02, 1.0, K.z + e * 0.94, '#5b3a78'); // the curtains
+    b.box(0.04, 0.04, 0.8, kf - 0.04, 1.95, K.z + e * 0.94, C.gold); // their rods
+  }
+  block(K.x, K.z, K.w, K.d);
+
   // Brass lamps hanging down the nave, warm and glowing.
   for (const z of [-7.2, -1, 5.2]) for (const s of [-1, 1]) {
     const x = s * 2.2;
@@ -398,7 +420,7 @@ export function buildCathedralHall(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: EXIT,
-    stations: { patrons, mass: { ...L } },
+    stations: { patrons, mass: { ...L }, confessional: [{ x: kf - 0.75, z: K.z }] },
     animate,
     // The camera stays inside the walls (and in front of the organ pipes).
     camBlocked: (x, z) => Math.abs(x) > AW - 0.3 || z > F - 0.8 || z < -d / 2 + 0.4,
