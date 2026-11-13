@@ -1536,6 +1536,13 @@ const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
 // (just below) already calls off any waiting gifts.
 let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
+// On the street only friends see each other and send each other their
+// movement (most realtime messages were strangers walking past each other);
+// inside a shop or a game room everyone does. Set once chat (and with it the
+// friend list) exists. Test rooms and local play have no accounts, so
+// everyone shows there (the e2e turns it on: __mk.friendsOnly).
+let streetFriend = null;
+let friendsOnlyStreet = !testRoom && config.netProvider === 'supabase';
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
@@ -1655,10 +1662,19 @@ async function joinRoom(room, roomScene, area = null) {
     onLook: (id, look) => others.setLook(id, look),
     // serverName: the sender's real name, when the server sent it
     // (019_chat_names.sql); the name tag itself comes from the sender.
-    onChat: (id, raw, serverName) => {
+    // saidName: the name they announced, for someone around us we don't show
+    // (a stranger on the street): their line goes in the chat log only.
+    onChat: (id, raw, serverName, saidName) => {
       if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
       const text = filterText(cleanChat(raw));
       if (!text) return;
+      if (others.nameOf(id) == null) {
+        const who = filterText(cleanName(serverName || saidName || '').trim());
+        if (!who || safety.isBlocked(id, who)) return;
+        addChatLine(who, text, '', id);
+        recentLines.set(id, (recentLines.get(id) || []).concat(text).slice(-10));
+        return;
+      }
       // On the street only people within a few metres are heard, briefly.
       const street = !interior;
       if (street) {
@@ -1686,6 +1702,7 @@ async function joinRoom(room, roomScene, area = null) {
       // private chat channel only carries chat from accounts: chat there on
       // the room channels instead.
       privateChat: !testRoom,
+      shows: area ? (p) => !friendsOnlyStreet || !!streetFriend?.(String(p.name ?? '').trim()) : null,
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
@@ -1856,6 +1873,7 @@ const chat = createChat({
   streetPos: () => myPlace(),
 });
 const { cleanChat, addChatLine } = chat;
+streetFriend = (name) => chat.friendStatus(name) === 'friend';
 
 // ---------- Stores, zones, map, guide ----------
 let mode = 'street';
@@ -7624,6 +7642,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),
     gifts: () => ({ out: gifts.out.size, cards: gifts.cards().length }),
+    friendsOnly: (on) => { friendsOnlyStreet = !!on; net.refilter?.(); }, // e2e: the street's friends-only rule in a test room
     giftFriends: (names) => chat.testFriends(names), // e2e: friends for gifts without making real friends on the server
     turntable: () => interior?.turntable && [interior.turntable.x, interior.turntable.z],
     blocked: (x, z) => collision.blocked(x, z, PLAYER_R),

@@ -95,3 +95,52 @@ test('test rooms without accounts chat on the room channel without logging', asy
   assert.deepEqual(logged, []);
   net.disconnect();
 });
+
+test('with a shows() filter only those people are seen and sent to; the rest are only heard in chat', async () => {
+  const sent = [], log = [];
+  let cell = null;
+  registerAdapter('friends-only', async (h) => ({
+    async connect({ listenOnly }) { if (!listenOnly) cell = h; },
+    sendState: (st) => sent.push(st),
+    sendEmote: (e) => sent.push(e),
+    setListenOnly() {}, updateSelf() {}, disconnect() {},
+  }));
+  const friends = new Set(['Mina']);
+  const net = await createAreaNet('friends-only', {
+    onJoin: (p) => log.push('join ' + p.id), onLeave: (id) => log.push('leave ' + id),
+    onState: (id, st) => log.push('state ' + id + ' ' + st.x), onEmote: (id, e) => log.push('emote ' + id + ' ' + e),
+    onChat: (id, t, n, said) => log.push('chat ' + id + ' ' + t + ' ' + said),
+  }, {}, { room: 'r', self: { id: 'me' }, cellSize: 0, privateChat: false, shows: (p) => friends.has(p.name) });
+
+  cell.onJoin({ id: 's', name: 'Stranger' });
+  cell.onState('s', { x: 5 });
+  cell.onEmote('s', 'wave');
+  net.sendState({ x: 1 });
+  assert.deepEqual(log, [], 'a stranger is not shown');
+  assert.equal(sent.length, 0, 'and nothing is sent for them');
+  assert.equal(net.peers, 0);
+  cell.onChat('s', 'hello');
+  assert.deepEqual(log, ['chat s hello Stranger'], 'but their chat is heard, with their name');
+
+  cell.onJoin({ id: 'f', name: 'Mina' });
+  net.sendState({ x: 2 });
+  assert.deepEqual(log.slice(1), ['join f']);
+  assert.deepEqual(sent, [{ x: 2 }], 'a friend around: sent');
+
+  // The stranger becomes a friend: shown at once, where we last heard them.
+  friends.add('Stranger');
+  net.refilter();
+  assert.deepEqual(log.slice(2), ['join s', 'state s 5']);
+  assert.equal(net.peers, 2);
+  // And no longer a friend: gone at once.
+  friends.delete('Mina');
+  net.refilter();
+  assert.deepEqual(log.slice(4), ['leave f']);
+  cell.onState('f', { x: 9 });
+  assert.equal(log.length, 5, 'their movement is ignored again');
+  // Someone we don't show leaving the room is forgotten quietly.
+  cell.onLeave('f');
+  cell.onChat('f', 'still here?');
+  assert.equal(log.length, 5);
+  net.disconnect();
+});

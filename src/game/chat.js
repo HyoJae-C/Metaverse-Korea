@@ -312,6 +312,7 @@ export function createChat(game) {
     // Hide people I've blocked.
     const ok = (f) => !safety.isBlocked(null, f.name);
     friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
+    game.net?.refilter?.(); // on the street only friends are shown (net/area.js)
     const seen = new Set(friendList.incoming.map((f) => f.uid));
     // A new request: say who, and if they're around me, where — and make
     // them easy to spot (their name tag glows, a 👋 pops over their head).
@@ -553,5 +554,5 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

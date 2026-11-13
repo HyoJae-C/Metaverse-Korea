@@ -87,6 +87,22 @@ try {
   if (badge.all >= 2 ? badge.hidden || badge.n !== badge.all : !badge.hidden) throw new Error(`online badge should show the global count ${badge.all} (${JSON.stringify(badge)})`);
   await b.evaluate(([x, z]) => __mk.goto(x + 3, z), [ax, az]);
   await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 15000 });
+  // On the live street only friends see each other (test rooms show
+  // everyone until asked): strangers vanish, but their chat is still heard.
+  for (const p of [a, b]) await p.evaluate(() => __mk.friendsOnly(true));
+  for (const p of [a, b]) await p.waitForFunction(() => __mk.near() === 0 && __mk.peers().length === 0, null, { timeout: 15000 });
+  await b.click('#chat-btn');
+  await b.fill('#chat-input', 'anyone around?');
+  await b.press('#chat-input', 'Enter');
+  await b.press('#chat-input', 'Escape');
+  await a.waitForFunction(() => [...document.querySelectorAll('#chat-log .chat-line')].some((l) => l.textContent.includes('E2E B') && l.textContent.includes('anyone around?')), null, { timeout: 15000 });
+  if (await a.evaluate(() => __mk.peers().length)) throw new Error('a stranger was shown on a friends-only street');
+  // Friends now: each shows the other at once, where they stand.
+  await a.evaluate(() => __mk.giftFriends(['E2E B']));
+  await b.evaluate(() => __mk.giftFriends(['E2E A']));
+  const [bx, bz] = await b.evaluate(() => __mk.me());
+  await a.waitForFunction(([x, z]) => __mk.near() === 1 && __mk.peers().some((p) => p.name === 'E2E B' && Math.hypot(p.x - x, p.z - z) < 2), [bx, bz], { timeout: 20000 });
+  await b.waitForFunction(() => __mk.near() === 1, null, { timeout: 15000 });
   ok = true;
 } catch (e) {
   errors.push('assertion: ' + e.message);
