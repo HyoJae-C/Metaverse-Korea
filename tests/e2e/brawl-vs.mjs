@@ -105,7 +105,7 @@ try {
   for (let k = 0; k < 24; k++) { await b.keyboard.press(['KeyJ', 'KeyK'][k % 2]); await b.waitForTimeout(140); }
   await b.waitForTimeout(1200);
   const sb2 = await state(b), sa2 = await state(a);
-  assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} �� ${sb2.a})`);
+  assert(sb2.a < before || sb2.round !== sb.round || sb2.wins.join() !== sb.wins.join(), `the guest's hits took the host's health (${before} → ${sb2.a})`);
   assert(sa2.round === sb2.round && Math.abs(sa2.a - sb2.a) <= 30, 'and the host sees it');
   // Bobby leaves: Alice is told and is back at the menu.
   await b.keyboard.press('Escape');

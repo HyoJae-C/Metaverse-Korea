@@ -175,7 +175,7 @@ test('brawl: the ladder moves up on a win, stays on a loss, starts again after t
   assert.deepEqual(loadBrawl(st), { stage: 0, best: 0, crowns: 0, style: null });
 });
 
-// ���� Styles, dashes and strings ��������������������������������������������������������������������������������������
+// ── Styles, dashes and strings ───────────────────────────────────────────
 const duel = (sa, sb, gap = 0.8) => { const a = newFighter(0, sa), b = newFighter(1, sb); a.x = -gap / 2; b.x = gap / 2; return [a, b]; };
 const SIG = (id) => (STYLES[id].slot === 'palm' ? { s1: true } : { s2: true });
 const duelFull = (...q) => { const [a, b] = duel(...q); a.sp = SP_MAX; return [a, b]; };

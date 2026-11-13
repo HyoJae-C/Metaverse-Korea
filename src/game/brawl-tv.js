@@ -68,7 +68,7 @@ export function createBrawlTv(game) {
     g.fillStyle = '#171329'; g.fillRect(0, 0, ...PX);
     g.fillStyle = '#c39bff'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.font = 'bold 32px system-ui, sans-serif';
-    g.fillText(L({ en: 'Solo game in progress', ko: 'ȥ�� ���� ��', ja: '�ҪȪ�ǫ׫쫤��', zh: '?����?��' }), PX[0] / 2, PX[1] / 2, PX[0] - 32);
+    g.fillText(L({ en: 'Solo game in progress', ko: '혼자 게임 중', ja: 'ひとりでプレイ中', zh: '单人游戏中' }), PX[0] / 2, PX[1] / 2, PX[0] - 32);
     const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace;
     slot.screen.material.map = tex; slot.screen.material.needsUpdate = true;
     slot.strip.visible = false;

@@ -37,7 +37,7 @@ const FINISH_MULT = 1.5; // the last hit of a style's string
 const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far inside its reach, moving at most this far a tick
 const BUFFER = 12;
 export const SP_MAX = 100, SP_COST = 50; // the special bar, and what one special spends
-const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), �� the damage taken
+const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), × the damage taken
 const SPECIAL_DMG = 1.25; // (a special costs bar, so it hurts more)
 export const NORMAL_DAMAGE_MULT = 0.75;
 export const COMMAND_TICKS = 30; // down, toward + punch/kick within half a second
@@ -61,8 +61,8 @@ export const MOVES = {
 };
 export const moveTicks = (m) => m.startup + m.active + m.recover;
 
-// ���� Styles ������������������������������������������������������������������������������������������������������������������������������
-// hp, walk and dash (�� the usual), punch and kick: [time ��, damage ��] (a time
+// ── Styles ───────────────────────────────────────────────────────────────
+// hp, walk and dash (× the usual), punch and kick: [time ×, damage ×] (a time
 // under 1 is quicker). sig: the signature move and the slot it takes ('palm'
 // = both punches, 'fly' = both kicks); the other slot keeps the usual move.
 //   blink   steps behind the other fighter just before it hits
@@ -390,8 +390,8 @@ export function stepFight(a, b, ia = NO_INPUT, ib = NO_INPUT) {
   return ev;
 }
 
-// ���� The computer's fighter ����������������������������������������������������������������������������������������������
-// level 0 (easy) �� 4 (the champion).
+// ── The computer's fighter ───────────────────────────────────────────────
+// level 0 (easy) … 4 (the champion).
 export const AI_LEVELS = [
   { think: 28, guard: 0.12, attack: 0.35, chain: 0.15, step: 0, special: 0, punish: 0.2 },
   { think: 22, guard: 0.28, attack: 0.45, chain: 0.35, step: 0.04, special: 0.1, punish: 0.35 },
@@ -460,8 +460,8 @@ export function createAi(level, rand = Math.random) {
   };
 }
 
-// ���� A match: best of three rounds ��������������������������������������������������������������������������������
-// phase: 'intro' (bow, 3-2-1) �� 'fight' �� 'ko' (the fall) �� next round's
+// ── A match: best of three rounds ────────────────────────────────────────
+// phase: 'intro' (bow, 3-2-1) → 'fight' → 'ko' (the fall) → next round's
 // intro, or 'over'. wins: [player, rival]. result: 0 the player won, 1 the
 // rival, null not over yet.
 const INTRO = 110, KO_HOLD = 170, MAX_ROUNDS = 5;
@@ -541,12 +541,12 @@ export function unpackMatch(o) {
   return { ...o, a: copyFighter(o.a, movesFor(o.a.style)), b: copyFighter(o.b, movesFor(o.b.style)), wins: [...o.wins], styles: [...o.styles] };
 }
 
-// ���� The ladder and the record ����������������������������������������������������������������������������������������
+// ── The ladder and the record ────────────────────────────────────────────
 // Five rivals, easy to champion (their names and looks: game/brawl.js).
 export const RIVALS = 5;
 export const BRAWL_KEY = 'mk.brawl';
-// { stage: the next rival to meet (0��4), best: most rivals beaten in a row
-// (0��5), crowns: times the champion fell, style: the style last picked }
+// { stage: the next rival to meet (0…4), best: most rivals beaten in a row
+// (0…5), crowns: times the champion fell, style: the style last picked }
 export function saveStyle(store, style) {
   const rec = loadBrawl(store);
   rec.style = STYLES[style] ? style : null;
