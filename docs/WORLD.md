@@ -684,6 +684,48 @@ which is too close to the stream for the island). The district's
 `meta.parts` lists the main part in 25 m strips (its north edge follows the
 south road) and a box for each of the three parts of their own.
 
+## Naksan and the Seoul City Wall (Jongno-gu)
+
+`scripts/build-naksan.mjs` puts Naksan (낙산) and its stretch of the Seoul
+City Wall (한양도성), from Heunginjimun up over the hill to Hyehwamun, into
+the Dongmyo district (`districts/dongmyo.json`, items marked `nk`, a second
+`meta.parts` box), the way Namsan is part of Itaewon's map. Run it after
+`build-dongmyo.mjs` (which keeps the `nk` items).
+
+- **The wall** is OpenStreetMap's line at 1/4 (`scripts/data/naksan-osm.json`,
+  export of 2026-11-13), with its real gaps: by the top of the hill, where
+  the paths go through, and where Changgyeonggung-ro cuts it just south of
+  Hyehwamun. Sizes (Yozi, 2026-11-13): 50% high on its outer face (about
+  3.5 m) and chest high (1.3 m) from inside, where the ground is higher, as
+  on the real Naksan; the parapet's blocks (여장) stand on its outer edge.
+  Its blockers are ordinary map blockers.
+- **The hill** is `meta.ridge` (`src/core/ridge-ground.js`): the ridge's
+  height along the wall's line, falling off to 0 either side, with the
+  ground at the outer foot `step` lower. Its top is 23 m (Naksan's 125 m
+  above the sea, less the plain, at 1/4), level by Jongno and Hyehwamun.
+  The heights are a game approximation, not a survey.
+- **Paths**: one outside along the wall's foot (the famous view of the wall
+  with the mountains behind) and one inside along the top (roads, `k: walk`,
+  `hill: 1`, kept clear of the wall). A row of small houses along each
+  (Ihwa-dong and Changsin-dong; fictional).
+- **Hyehwamun** at 43.75% of its OSM outline (5.1 x 3.3 m), on its real
+  spot: between the small gates' 37.5% and the great gates' 50%, so you
+  walk through its arch (1.2 m wide, 1.5 m high; its proportions are an
+  approximation from photos) and it stays smaller than the great gates
+  (Yozi, 2026-11-13).
+- **Loaded when near.** The ground, the wall, the gate, the paths' paving,
+  lamps, woods and walkers are `src/game/naksan.js`, loaded with `import()`
+  within about 480 m (`src/game/naksan-near.js`) and hidden past 700 m.
+  About 24k triangles and 24 draw calls.
+- **On the map**: Naksan Park is a pin (landmark `naksanpin` with a label,
+  like Olympic Park's Lone Tree), and the map's search finds it
+  (`src/game/landmark-search.js`).
+- `tests/naksan.test.mjs` keeps the wall on the real line, Hyehwamun on its
+  spot, and the rest of the city's streets and buildings off the hill.
+
+The rest of the wall (Namsan, Bugaksan, Inwangsan and the downtown gaps) is
+planned in that order (Yozi, 2026-11-13).
+
 ## Gyeongbokgung's palace
 
 Everything inside the palace wall is built from OpenStreetMap by

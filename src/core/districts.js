@@ -35,7 +35,7 @@ export function mergeDistricts(parts, links = [], water = [], closed = []) {
     for (const poi of map.pois || []) out.pois.push({ ...poi, x: poi.x + dx, z: poi.z + dz, d: id });
     for (const l of map.landmarks || []) out.landmarks.push(l.p ? { ...l, p: shiftPoly(l.p, dx, dz) } : { ...l, x: l.x + dx, z: l.z + dz });
     for (const s of map.streams || []) out.streams.push({ ...s, at: [s.at[0] + dx, s.at[1] + dz], d: id }); // core/stream.js
-    out.meta.districts.push({ id, offset: [dx, dz], ...(map.meta?.parts ? { parts: map.meta.parts } : {}), ...(map.meta?.enclosure ? { enclosure: map.meta.enclosure } : {}), ...(map.meta?.hill ? { hill: map.meta.hill } : {}) }); // hill: a sloped street (core/hill-ground.js)
+    out.meta.districts.push({ id, offset: [dx, dz], ...(map.meta?.parts ? { parts: map.meta.parts } : {}), ...(map.meta?.enclosure ? { enclosure: map.meta.enclosure } : {}), ...(map.meta?.hill ? { hill: map.meta.hill } : {}), ...(map.meta?.ridge ? { ridge: map.meta.ridge } : {}) }); // hill: a sloped street (core/hill-ground.js); ridge: a hill with a city wall on top (core/ridge-ground.js)
   }
   for (const r of links) out.roads.push({ ...r, d: 'link' });
   for (const w of water) {

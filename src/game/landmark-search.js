@@ -40,6 +40,9 @@ export const LANDMARK_SEARCH = [
     name: { en: 'Modu Tower', ko: '모두타워', ja: 'モドゥタワー', zh: 'Modu塔' } },
   { type: 'tower63', icon: '🏢', go: [0, 12],
     name: { en: '63 Building', ko: '63빌딩', ja: '63ビル', zh: '63大厦' } },
+  { type: 'naksanpin', icon: '⛰️', go: [0, 0], // Naksan Park, on the hill inside the city wall
+    name: { en: 'Naksan Park (Seoul City Wall)', ko: '낙산공원 (한양도성)', ja: '駱山公園（漢陽都城）', zh: '骆山公园（汉阳都城）' },
+    also: ['Naksan', 'City Wall', 'Seoul City Wall', 'Hanyangdoseong', '낙산', '성곽길', '한양도성', '駱山', '骆山'] },
   { type: 'peacegate', icon: '⛩️', go: [0, 12],
     name: { en: 'World Peace Gate', ko: '평화의 문', ja: '平和の門', zh: '和平之门' },
     also: ['Peace Gate', '평화의문'] },
