@@ -9,7 +9,7 @@
 //                              b: who the sender fights: another player's id,
 //                              or 'r<n>' for the game's own rival n. n: the
 //                              sender's and the other's names.
-//   brawltv:i:<t>:<aa��>:<bb��>  both fighters' inputs from tick t on, two
+//   brawltv:i:<t>:<aa…>:<bb…>  both fighters' inputs from tick t on, two
 //                              base-36 digits a tick
 //   brawltv:x                  the match is over, or the player left
 import { stepMatch, packMatch, unpackMatch } from './brawl.js';
@@ -54,7 +54,7 @@ export function createCaster(send, about) {
 // The screen's side: one match at a time, from whoever was heard first.
 export function createViewer() {
   let from = null, info = null, match = null, t = 0, heardAt = 0, now = 0;
-  let queue = []; // [ia, ib] for ticks t, t + 1, ��
+  let queue = []; // [ia, ib] for ticks t, t + 1, …
   let next = null; // a whole match for a tick we have not reached yet
   let fresh = false, playing = false;
   const drop = () => { from = info = match = next = null; queue = []; t = 0; playing = false; };

@@ -12,89 +12,89 @@ import { createSession } from '../core/brawl-net.js';
 import { createCaster, createSoloCaster } from '../core/brawl-tv.js';
 
 const T = {
-  title: { en: 'Rooftop Rumble', ko: '���� ������', ja: '�߾���֫�', zh: '����̫����', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: '??????? ????', fr: 'Rooftop Rumble', th: '?????????', ar: '???? ?????' },
+  title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
   how: {
     en: 'You fight as your own character. Keep pressing punch, or kick, and a string of hits comes out. Hold away from your rival to guard, and step up or down to slip round a punch. Hitting, guarding and being hit fill the special bar; each half of it is one special. Best of three rounds.',
-    ko: '�� ĳ���� �״�� �ο���. �ָ��̳� �� ��ư�� ��� ������ ���ӱⰡ ������. ��� �ݴ������� ������ ������ ����, ���Ʒ��� �������ؼ� �ָ��� ���ؿ�. ������, ����, ������ �ʻ�� �������� ����, �� ĭ�� �ʻ�� �� ���̿���. 3�� 2����.',
-    ja: '���ªΫ���髯��?�Ϊު�?���ު����ѫ�������ë����㪷?���������֧?������ު�����⢪���?������êѪʪ��ǫ�?�ɡ�߾����?��Ѫ��ƫѫ���򪫪諾����?�ƪ�?��?�ɪ���?���骦����߯��?�������ުꡢ���ª���߯��1�ޡ�3���ݶ��',
-    zh: '��?����������߾?��?����������������?�������???���۰�����٣�߾��?�??���롣?�顢���١�?��Դ???��?�ˣ�����̫ʦۯ�����?����߲��??��',
-    es: 'Peleas con tu propio personaje. Sigue pulsando puno o patada y sale un combo. Manten hacia atras para cubrirte y da un paso arriba o abajo para esquivar. Golpear, cubrirte y recibir golpes llenan la barra especial; cada mitad es un especial. Al mejor de tres.',
+    ko: '내 캐릭터 그대로 싸워요. 주먹이나 발 버튼만 계속 누르면 연속기가 나가요. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 때리고, 막고, 맞으면 필살기 게이지가 차고, 한 칸에 필살기 한 번이에요. 3판 2선승.',
+    ja: '自分のキャラクターのまま戦います。パンチかキックを押し続けるだけで連続技が出ます。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。当てる・ガードする・くらうと必殺ゲージがたまり、半分で必殺技1回。3本勝負。',
+    zh: '用你自己的角色上场。连按拳或脚就能打出连招。按住远离对手的方向防御，上下横移躲开直拳。击中、防御、挨打都会积攒必杀槽，每半格可放一次必杀技。三局两胜。',
+    es: 'Peleas con tu propio personaje. Sigue pulsando puño o patada y sale un combo. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Golpear, cubrirte y recibir golpes llenan la barra especial; cada mitad es un especial. Al mejor de tres.',
     id: 'Kamu bertarung dengan karaktermu sendiri. Tekan terus pukulan atau tendangan dan kombonya keluar. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Memukul, bertahan, dan terkena pukulan mengisi bar spesial; tiap setengahnya satu jurus spesial. Dua dari tiga ronde.',
-    vi: 'B?n chi?n ��?u b?ng chinh nhan v?t c?a minh. C? b?m lien t?c ��?m ho?c ��a la ra chu?i ��on. Gi? h??ng ra xa ��?i th? ��? ��?, b??c len ho?c xu?ng ��? ne. ��anh trung, ��? ��on va b? ��anh ��?u n?p thanh tuy?t chieu; m?i n?a thanh la m?t tuy?t chieu. Th?ng 2 tren 3 hi?p.',
-    hi: '?? ???? ?? ?????? ?? ????? ???? ?????? ?? ??? ???-??? ????? ???? ?? ?????? ?????? ??? ???? ?? ??? ????????????? ?? ??? ???? ????, ?????? ?? ???? ?? ??? ??? ?? ???? ????? ?????, ????? ?? ??? ???? ?? ?????? ??? ???? ??; ?? ??? ?????? ?? ?? ??????? ??? ??? ?? ?? ??????',
-    fr: "Tu te bats avec ton propre personnage. Continue d'appuyer sur poing ou sur pied et un enchainement sort. Maintiens la direction opposee pour te proteger, fais un pas en haut ou en bas pour esquiver. Frapper, parer et encaisser remplissent la jauge speciale ; chaque moitie vaut un coup special. Deux manches gagnantes.",
-    th: '??????????????????????? ???????????????? ? ????????????? ???????????????????????????????????? ?????????????????????????? ????? ??????? ?????????????????????????? ???????????????????????? ??? 2 ?? 3 ??',
-    ar: '????? ??????? ??? ??. ???? ????? ??? ?????? ?? ?????? ????? ????? ?????. ???? ??????? ?? ???? ????? ?????? ?????? ?? ?????? ?????? ??????. ????? ????? ?????? ??????? ???? ???? ?????? ??????? ??? ??? ??? ???? ???? ?????. ?????? ?? ???? ?????.',
+    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Cứ bấm liên tục đấm hoặc đá là ra chuỗi đòn. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đánh trúng, đỡ đòn và bị đánh đều nạp thanh tuyệt chiêu; mỗi nửa thanh là một tuyệt chiêu. Thắng 2 trên 3 hiệp.',
+    hi: 'आप अपने ही किरदार से लड़ते हैं। मुक्का या किक बार-बार दबाते रहें और कॉम्बो निकलता है। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। मारने, रोकने और मार खाने से स्पेशल बार भरता है; हर आधे हिस्से से एक स्पेशल। तीन में से दो राउंड।',
+    fr: "Tu te bats avec ton propre personnage. Continue d'appuyer sur poing ou sur pied et un enchaînement sort. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Frapper, parer et encaisser remplissent la jauge spéciale ; chaque moitié vaut un coup spécial. Deux manches gagnantes.",
+    th: 'สู้ด้วยตัวละครของคุณเอง กดหมัดหรือเตะรัว ๆ คอมโบก็ออกเอง กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ตีโดน ป้องกัน และโดนตีจะเติมเกจท่าไม้ตาย ครึ่งเกจใช้ได้หนึ่งครั้ง ชนะ 2 ใน 3 ยก',
+    ar: 'تقاتل بشخصيتك كما هي. واصل الضغط على اللكمة أو الركلة فتخرج سلسلة ضربات. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضرب والصد وتلقّي الضربات تملأ شريط الضربة الخاصة، وكل نصف منه ضربة خاصة واحدة. الأفضل من ثلاث جولات.',
   },
   moves: {
-    en: '�� + punch: launcher �� ?1: guard breaker �� ?2: flying kick',
-    ko: '�� + �ָ�: ���� �� ?1: ���� ���� �� ?2: ��������',
-    ja: '�棫�ѫ����ݩ������ �� ?1����?���ڪ� �� ?2��ޫ������',
-    zh: '�� + �룺ݩ�� �� ?1������ �� ?2��??',
-    es: '�� + puno: lanzador �� ?1: rompeguardias �� ?2: patada voladora',
-    id: '�� + pukulan: pelontar �� ?1: pemecah pertahanan �� ?2: tendangan terbang',
-    vi: '�� + ��?m: h?t tung �� ?1: pha th? �� ?2: ��a bay',
-    hi: '�� + ??????: ?????? �� ?1: ????? ???? �� ?2: ????? ???',
-    fr: '�� + poing : lanceur �� ?1 : brise-garde �� ?2 : coup de pied saute',
-    th: '�� + ????: ?????? �� ?1: ?????????? �� ?2: ??????',
-    ar: '�� + ????: ???? ????? �� ?1: ????? ???? �� ?2: ???? ?????',
+    en: '→ + punch: launcher · ⭐1: guard breaker · ⭐2: flying kick',
+    ko: '→ + 주먹: 띄우기 · ⭐1: 가드 깨기 · ⭐2: 날아차기',
+    ja: '→＋パンチ：浮かせ技 · ⭐1：ガード崩し · ⭐2：飛び蹴り',
+    zh: '→ + 拳：浮空 · ⭐1：破防 · ⭐2：飞踢',
+    es: '→ + puño: lanzador · ⭐1: rompeguardias · ⭐2: patada voladora',
+    id: '→ + pukulan: pelontar · ⭐1: pemecah pertahanan · ⭐2: tendangan terbang',
+    vi: '→ + đấm: hất tung · ⭐1: phá thủ · ⭐2: đá bay',
+    hi: '→ + मुक्का: लॉन्चर · ⭐1: गार्ड तोड़ · ⭐2: उड़ती किक',
+    fr: '→ + poing : lanceur · ⭐1 : brise-garde · ⭐2 : coup de pied sauté',
+    th: '→ + หมัด: ท่าเสย · ⭐1: ทำลายการ์ด · ⭐2: เตะลอย',
+    ar: '→ + لكمة: ضربة رافعة · ⭐1: كاسرة الصد · ⭐2: ركلة طائرة',
   },
   keys: {
-    en: 'A D move �� W S side-step �� J punch �� K kick �� U I specials',
-    ko: 'A D �̵� �� W S ������ �� J �ָ� �� K �� �� U I �ʻ��',
-    ja: 'A D ��� �� W S ?��� �� J �ѫ�� �� K ���ë� �� U I ��߯��',
-    zh: 'A D �? �� W S ?� �� J �� �� K �� �� U I ��?��',
-    es: 'A D mover �� W S paso lateral �� J puno �� K patada �� U I especiales',
-    id: 'A D gerak �� W S langkah samping �� J pukulan �� K tendangan �� U I spesial',
-    vi: 'A D di chuy?n �� W S b??c ngang �� J ��?m �� K ��a �� U I tuy?t chieu',
-    hi: 'A D ???? �� W S ??? ??? �� J ?????? �� K ??? �� U I ??????',
-    fr: 'A D bouger �� W S pas de cote �� J poing �� K pied �� U I speciaux',
-    th: 'A D ???? �� W S ???????? �� J ???? �� K ??? �� U I ?????????',
-    ar: 'A D ????? �� W S ???? ?????? �� J ???? �� K ???? �� U I ????? ????',
+    en: 'A D move · W S side-step · J punch · K kick · U I specials',
+    ko: 'A D 이동 · W S 옆걸음 · J 주먹 · K 발 · U I 필살기',
+    ja: 'A D 移動 · W S 横移動 · J パンチ · K キック · U I 必殺技',
+    zh: 'A D 移动 · W S 横移 · J 拳 · K 脚 · U I 必杀技',
+    es: 'A D mover · W S paso lateral · J puño · K patada · U I especiales',
+    id: 'A D gerak · W S langkah samping · J pukulan · K tendangan · U I spesial',
+    vi: 'A D di chuyển · W S bước ngang · J đấm · K đá · U I tuyệt chiêu',
+    hi: 'A D चलें · W S बगल कदम · J मुक्का · K किक · U I स्पेशल',
+    fr: 'A D bouger · W S pas de côté · J poing · K pied · U I spéciaux',
+    th: 'A D เดิน · W S ก้าวข้าง · J หมัด · K เตะ · U I ท่าไม้ตาย',
+    ar: 'A D تحرّك · W S خطوة جانبية · J لكمة · K ركلة · U I ضربات خاصة',
   },
-  start: { en: 'Fight {name}', ko: '{name}�� ���', ja: '{name}��??', zh: '��?{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: '��?u v?i {name}', hi: '{name} ?? ?????', fr: 'Affronter {name}', th: '?????? {name}', ar: '???? {name}' },
-  rival: { en: 'Rival {n} of {max}', ko: '��� {n} / {max}', ja: '�髤�Ы� {n} / {max}', zh: '?� {n} / {max}', es: 'Rival {n} de {max}', id: 'Lawan {n} dari {max}', vi: '��?i th? {n} / {max}', hi: '????????????? {n} / {max}', fr: 'Rival {n} sur {max}', th: '????????? {n} / {max}', ar: '????? {n} ?? {max}' },
-  best: { en: 'Best: {n} rivals beaten', ko: '�ְ� ���: {n}�� ����', ja: '�٫��ȣ�{n}��?��', zh: '��ʢ��??{n}��', es: 'Record: {n} rivales vencidos', id: 'Terbaik: {n} lawan kalah', vi: 'T?t nh?t: h? {n} ��?i th?', hi: '?????: {n} ????????????? ????', fr: 'Record : {n} rivaux battus', th: '????????: ??? {n} ??', ar: '??????: ???? {n} ????' },
-  crowns: { en: '?? Champion �� {n}', ko: '?? è�Ǿ� {n}ȸ', ja: '?? �����ԫ��� {n}��', zh: '?? ή? {n}�', es: '?? Campeon �� {n}', id: '?? Juara �� {n}', vi: '?? Vo ��?ch �� {n}', hi: '?? ??????? �� {n}', fr: '?? Champion �� {n}', th: '?? ????? �� {n}', ar: '?? ??? �� {n}' },
-  won: { en: 'You beat {name}!', ko: '{name}�� �̰���!', ja: '{name}��㭪��ު�����', zh: '?��?��{name}��', es: '��Venciste a {name}!', id: 'Kamu mengalahkan {name}!', vi: 'B?n ��a th?ng {name}!', hi: '???? {name} ?? ??? ????!', fr: 'Tu as battu {name} !', th: '?????? {name}!', ar: '???? {name}!' },
-  lost: { en: '{name} wins this time. Try again?', ko: '�̹��� {name}�� �¸�. �ٽ� �� �����?', ja: '���ު�{name}��㭪����⪦������', zh: '?�{name}?�����?��󭣿', es: 'Esta vez gana {name}. ��Otra vez?', id: 'Kali ini {name} menang. Coba lagi?', vi: 'L?n nay {name} th?ng. Th? l?i nhe?', hi: '?? ??? {name} ????? ??? ????? ?????', fr: 'Cette fois, {name} gagne. On reessaie ?', th: '?????? {name} ??? ???????????????', ar: '??? {name} ??? ?????. ????? ???????' },
-  champ: { en: '?? You are the rooftop champion!', ko: '?? ���� è�Ǿ��� �ƾ��!', ja: '?? �߾�����ԫ���˪ʪ�ު�����', zh: '?? ?��������ή?��', es: '?? ��Eres el campeon de la azotea!', id: '?? Kamu juara atap!', vi: '?? B?n la nha vo ��?ch san th??ng!', hi: '?? ?? ?? ?? ??????? ???!', fr: '?? Tu es le champion du toit !', th: '?? ?????????????????!', ar: '?? ??? ??? ?????!' },
-  next: { en: 'Next rival', ko: '���� ���', ja: '�Ϋ髤�Ы�', zh: '����??�', es: 'Siguiente rival', id: 'Lawan berikutnya', vi: '��?i th? ti?p theo', hi: '???? ?????????????', fr: 'Rival suivant', th: '????????', ar: '????? ??????' },
-  again: { en: 'Again', ko: '�� �� ��', ja: '�⪦����', zh: '�?���', es: 'Otra vez', id: 'Lagi', vi: 'L?n n?a', hi: '??? ??', fr: 'Rejouer', th: '????????', ar: '??? ????' },
-  close: { en: 'Leave', ko: '������', ja: '����', zh: '??', es: 'Salir', id: 'Keluar', vi: 'R?i ��i', hi: '????', fr: 'Quitter', th: '???', ar: '????' },
-  hits: { en: '{n} HITS', ko: '{n} ��Ÿ', ja: '{n} HITS', zh: '{n} ??', es: '{n} GOLPES', id: '{n} HIT', vi: '{n} ��ON', hi: '{n} ???', fr: '{n} COUPS', th: '{n} ???', ar: '{n} ?????' },
-  pick: { en: 'Pick your style', ko: '��Ÿ���� ����', ja: '����������Ԫܪ�', zh: '???��׵��', es: 'Elige tu estilo', id: 'Pilih gayamu', vi: 'Ch?n phong cach', hi: '???? ???? ?????', fr: 'Choisis ton style', th: '????????????????', ar: '???? ??????' },
+  start: { en: 'Fight {name}', ko: '{name}와 대결', ja: '{name}と対戦', zh: '挑战{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: 'Đấu với {name}', hi: '{name} से लड़ें', fr: 'Affronter {name}', th: 'สู้กับ {name}', ar: 'قاتل {name}' },
+  rival: { en: 'Rival {n} of {max}', ko: '상대 {n} / {max}', ja: 'ライバル {n} / {max}', zh: '对手 {n} / {max}', es: 'Rival {n} de {max}', id: 'Lawan {n} dari {max}', vi: 'Đối thủ {n} / {max}', hi: 'प्रतिद्वंद्वी {n} / {max}', fr: 'Rival {n} sur {max}', th: 'คู่ต่อสู้ {n} / {max}', ar: 'الخصم {n} من {max}' },
+  best: { en: 'Best: {n} rivals beaten', ko: '최고 기록: {n}명 격파', ja: 'ベスト：{n}人撃破', zh: '最佳：击败{n}人', es: 'Récord: {n} rivales vencidos', id: 'Terbaik: {n} lawan kalah', vi: 'Tốt nhất: hạ {n} đối thủ', hi: 'बेस्ट: {n} प्रतिद्वंद्वी हराए', fr: 'Record : {n} rivaux battus', th: 'ดีที่สุด: ชนะ {n} คน', ar: 'الأفضل: هزمت {n} خصوم' },
+  crowns: { en: '👑 Champion × {n}', ko: '👑 챔피언 {n}회', ja: '👑 チャンピオン {n}回', zh: '👑 冠军 {n}次', es: '👑 Campeón × {n}', id: '👑 Juara × {n}', vi: '👑 Vô địch × {n}', hi: '👑 चैंपियन × {n}', fr: '👑 Champion × {n}', th: '👑 แชมป์ × {n}', ar: '👑 بطل × {n}' },
+  won: { en: 'You beat {name}!', ko: '{name}를 이겼어요!', ja: '{name}に勝ちました！', zh: '你打败了{name}！', es: '¡Venciste a {name}!', id: 'Kamu mengalahkan {name}!', vi: 'Bạn đã thắng {name}!', hi: 'आपने {name} को हरा दिया!', fr: 'Tu as battu {name} !', th: 'คุณชนะ {name}!', ar: 'هزمت {name}!' },
+  lost: { en: '{name} wins this time. Try again?', ko: '이번엔 {name}의 승리. 다시 해 볼까요?', ja: '今回は{name}の勝ち。もう一度？', zh: '这次{name}赢了。再来一次？', es: 'Esta vez gana {name}. ¿Otra vez?', id: 'Kali ini {name} menang. Coba lagi?', vi: 'Lần này {name} thắng. Thử lại nhé?', hi: 'इस बार {name} जीते। फिर कोशिश करें?', fr: 'Cette fois, {name} gagne. On réessaie ?', th: 'รอบนี้ {name} ชนะ ลองอีกครั้งไหม?', ar: 'فاز {name} هذه المرة. تحاول مجددًا؟' },
+  champ: { en: '👑 You are the rooftop champion!', ko: '👑 옥상 챔피언이 됐어요!', ja: '👑 屋上チャンピオンになりました！', zh: '👑 你成了天台冠军！', es: '👑 ¡Eres el campeón de la azotea!', id: '👑 Kamu juara atap!', vi: '👑 Bạn là nhà vô địch sân thượng!', hi: '👑 आप छत के चैंपियन हैं!', fr: '👑 Tu es le champion du toit !', th: '👑 คุณคือแชมป์ดาดฟ้า!', ar: '👑 أنت بطل السطح!' },
+  next: { en: 'Next rival', ko: '다음 상대', ja: '次のライバル', zh: '下一个对手', es: 'Siguiente rival', id: 'Lawan berikutnya', vi: 'Đối thủ tiếp theo', hi: 'अगला प्रतिद्वंद्वी', fr: 'Rival suivant', th: 'คู่ต่อไป', ar: 'الخصم التالي' },
+  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', hi: 'फिर से', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
+  close: { en: 'Leave', ko: '나가기', ja: 'やめる', zh: '离开', es: 'Salir', id: 'Keluar', vi: 'Rời đi', hi: 'बाहर', fr: 'Quitter', th: 'ออก', ar: 'خروج' },
+  hits: { en: '{n} HITS', ko: '{n} 연타', ja: '{n} HITS', zh: '{n} 连击', es: '{n} GOLPES', id: '{n} HIT', vi: '{n} ĐÒN', hi: '{n} हिट', fr: '{n} COUPS', th: '{n} ฮิต', ar: '{n} ضربات' },
+  pick: { en: 'Pick your style', ko: '스타일을 골라요', ja: 'スタイルを選ぼう', zh: '选择你的流派', es: 'Elige tu estilo', id: 'Pilih gayamu', vi: 'Chọn phong cách', hi: 'अपनी शैली चुनें', fr: 'Choisis ton style', th: 'เลือกสไตล์ของคุณ', ar: 'اختر أسلوبك' },
   dash: {
-    en: 'Dash: tap �� or �� twice (or hold Shift). An attack can cut a dash short.',
-    ko: '���: �� �Ǵ� �渦 �� �� ���� (�Ǵ� Shift). ��� �߿� �������� �̾�����.',
-    ja: '���ë��壺�� �� �� ��2�ޣ��ު���Shift�������ë��������?�تĪʪ��ު���',
-    zh: '?����?��?�� �� �� �棨����� Shift����?����ʦ�����?��',
-    es: 'Carrera: pulsa �� o �� dos veces (o Shift). Un ataque puede cortar la carrera.',
-    id: 'Dash: ketuk �� atau �� dua kali (atau Shift). Serangan bisa memotong dash.',
-    vi: 'L??t: nh?n �� ho?c �� hai l?n (ho?c Shift). Co th? ra ��on gi?a luc l??t.',
-    hi: '???: �� ?? �� ?? ??? ????? (?? Shift)? ??? ?? ??? ??? ???? ?? ???? ???',
-    fr: 'Dash : appuie deux fois sur �� ou �� (ou Maj). Une attaque peut couper le dash.',
-    th: '???: ?? �� ???? �� ???????? (???? Shift) ????????????????????????',
-    ar: '??????: ???? �� ?? �� ????? (?? Shift). ???? ?? ????? ????.',
+    en: 'Dash: tap ← or → twice (or hold Shift). An attack can cut a dash short.',
+    ko: '대시: ← 또는 →를 두 번 톡톡 (또는 Shift). 대시 중에 공격으로 이어져요.',
+    ja: 'ダッシュ：← か → を2回（またはShift）。ダッシュ中に攻撃へつなげます。',
+    zh: '冲刺：连按两下 ← 或 →（或按住 Shift）。冲刺中可以接攻击。',
+    es: 'Carrera: pulsa ← o → dos veces (o Shift). Un ataque puede cortar la carrera.',
+    id: 'Dash: ketuk ← atau → dua kali (atau Shift). Serangan bisa memotong dash.',
+    vi: 'Lướt: nhấn ← hoặc → hai lần (hoặc Shift). Có thể ra đòn giữa lúc lướt.',
+    hi: 'डैश: ← या → दो बार दबाएँ (या Shift)। डैश के बीच वार किया जा सकता है।',
+    fr: 'Dash : appuie deux fois sur ← ou → (ou Maj). Une attaque peut couper le dash.',
+    th: 'แดช: กด ← หรือ → สองครั้ง (หรือ Shift) ออกท่าโจมตีระหว่างแดชได้',
+    ar: 'اندفاع: اضغط ← أو → مرتين (أو Shift). يمكن أن يقطعه هجوم.',
   },
-  you: { en: 'You', ko: '��', ja: '����', zh: '?', es: 'Tu', id: 'Kamu', vi: 'B?n', hi: '??', fr: 'Toi', th: '???', ar: '???' },
+  you: { en: 'You', ko: '나', ja: '自分', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
   // With someone else in the room.
-  vsTitle: { en: '?? Fight someone here', ko: '?? �� ����� ����', ja: '?? �����˪����Ѫ�??', zh: '?? ��?������??', es: '?? Pelea con alguien de aqui', id: '?? Lawan orang di sini', vi: '?? ��?u v?i ng??i ? ��ay', hi: '?? ???? ???? ?? ?????', fr: '?? Affronte quelqu��un ici', th: '?? ?????????????????', ar: '?? ???? ????? ???' },
-  vsNone: { en: 'Nobody else is in this room right now.', ko: '���� �� �濡 �ٸ� ����� �����.', ja: '�Ѫ���ݻ詪˪۪����ѪϪ��ު���', zh: '?�??ۮ?��?�������ѡ�', es: 'Ahora no hay nadie mas en esta sala.', id: 'Belum ada orang lain di ruangan ini.', vi: 'Hi?n khong co ai khac trong phong nay.', hi: '??? ?? ???? ??? ?? ??? ???? ???', fr: 'Personne d��autre dans cette salle pour l��instant.', th: '??????????????????????????', ar: '?? ??? ???? ?? ??? ?????? ????.' },
-  vsWait: { en: 'Waiting for {name}��', ko: '{name}���� ��ٸ��� �ߡ�', ja: '{name}�������êƪ��ު���', zh: '�������{name}��', es: 'Esperando a {name}��', id: 'Menunggu {name}��', vi: '��ang ch? {name}��', hi: '{name} ?? ???????��', fr: 'En attente de {name}��', th: '??????? {name}��', ar: '??????? {name}��' },
-  vsAsk: { en: '{name} challenges you!', ko: '{name}���� ����� ��û�߾��!', ja: '{name}�����ݶ������Ǫ��ު�����', zh: '{name}��??����?��', es: '��{name} te reta!', id: '{name} menantangmu!', vi: '{name} thach ��?u b?n!', hi: '{name} ?? ???? ?????? ??!', fr: '{name} te defie !', th: '{name} ??????!', ar: '{name} ??????!' },
-  ready: { en: 'Ready', ko: '�غ� �Ϸ�', ja: '����OK', zh: '��?����', es: 'Listo', id: 'Siap', vi: 'S?n sang', hi: '?????', fr: 'Pret', th: '?????', ar: '????' },
-  cancel: { en: 'Cancel', ko: '���', ja: '����󫻫�', zh: '���', es: 'Cancelar', id: 'Batal', vi: 'H?y', hi: '???? ????', fr: 'Annuler', th: '??????', ar: '?????' },
-  no: { en: 'No thanks', ko: '�����ƿ�', ja: '���ƪ���', zh: '����', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Khong, c?m ?n', hi: '????, ???????', fr: 'Non merci', th: '?????????', ar: '??? ?????' },
-  vsNo: { en: '{name} said no this time.', ko: '{name}���� �̹��� �����߾��.', ja: '{name}��������ު�?��ު�����', zh: '{name}?���?����', es: '{name} dijo que no esta vez.', id: '{name} menolak kali ini.', vi: '{name} t? ch?i l?n nay.', hi: '{name} ?? ?? ??? ??? ?????', fr: '{name} a refuse cette fois.', th: '{name} ????????????', ar: '{name} ??? ??? ?????.' },
-  vsBusy: { en: '{name} is busy right now.', ko: '{name}���� ���� �ٺ���.', ja: '{name}�������⢪���ު���', zh: '{name}?����ϡ�', es: '{name} esta ocupado ahora.', id: '{name} sedang sibuk.', vi: '{name} ��ang b?n.', hi: '{name} ??? ?????? ????', fr: '{name} est occupe pour l��instant.', th: '{name} ?????????????', ar: '{name} ????? ????.' },
-  vsGone: { en: 'No answer.', ko: '������ �����.', ja: '����������ު���', zh: '?����?��', es: 'Sin respuesta.', id: 'Tidak ada jawaban.', vi: 'Khong co ph?n h?i.', hi: '??? ???? ?????', fr: 'Pas de reponse.', th: '??????????????', ar: '?? ??.' },
-  vsLink: { en: 'Connecting��', ko: '���� �ߡ�', ja: '��?�顦', zh: '?���顦', es: 'Conectando��', id: 'Menghubungkan��', vi: '��ang k?t n?i��', hi: '???? ??? ??��', fr: 'Connexion��', th: '??????????????��', ar: '???? ???????��' },
-  vsLeft: { en: '{name} left the fight. You win!', ko: '{name}���� �������. �¸�!', ja: '{name}�������󪷪ު��������ʪ���㭪���', zh: '{name}??����??����', es: '{name} se fue. ��Ganas tu!', id: '{name} keluar. Kamu menang!', vi: '{name} ��a r?i ��i. B?n th?ng!', hi: '{name} ??? ??? ?? ????!', fr: '{name} est parti. Tu gagnes !', th: '{name} ????????? ??????!', ar: '{name} ????. ???!' },
-  vsLost: { en: 'The connection was lost.', ko: '������ ������.', ja: '��?��﷪�ު�����', zh: '?���??��', es: 'Se perdio la conexion.', id: 'Koneksi terputus.', vi: 'M?t k?t n?i.', hi: '??????? ??? ????', fr: 'La connexion a ete perdue.', th: '????????????????', ar: '????? ???????.' },
-  vsLose: { en: '{name} wins this time.', ko: '�̹��� {name}���� �¸�.', ja: '���ު�{name}�����㭪���', zh: '?�{name}?����', es: 'Esta vez gana {name}.', id: 'Kali ini {name} menang.', vi: 'L?n nay {name} th?ng.', hi: '?? ??? {name} ?????', fr: 'Cette fois, {name} gagne.', th: '?????? {name} ???', ar: '??? {name} ??? ?????.' },
-  draw: { en: 'Draw!', ko: '���º�!', ja: '�ڪ��ª���', zh: '���ѣ�', es: '��Empate!', id: 'Seri!', vi: 'Hoa!', hi: '????!', fr: 'Egalite !', th: '????!', ar: '?????!' },
-  vsSlow: { en: 'Waiting for the other player��', ko: '��븦 ��ٸ��� �ߡ�', ja: '��⢪���êƪ��ު���', zh: '�������?۰��', es: 'Esperando al otro jugador��', id: 'Menunggu pemain lain��', vi: '��ang ch? ng??i ch?i kia��', hi: '????? ??????? ?? ???????��', fr: 'En attente de l��autre joueur��', th: '??????????????��', ar: '??????? ?????? ?????��' },
+  vsTitle: { en: '👥 Fight someone here', ko: '👥 옆 사람과 대전', ja: '👥 ここにいる人と対戦', zh: '👥 和这里的人对战', es: '👥 Pelea con alguien de aquí', id: '👥 Lawan orang di sini', vi: '👥 Đấu với người ở đây', hi: '👥 यहाँ किसी से लड़ें', fr: '👥 Affronte quelqu’un ici', th: '👥 สู้กับคนในห้องนี้', ar: '👥 قاتل شخصًا هنا' },
+  vsNone: { en: 'Nobody else is in this room right now.', ko: '지금 이 방에 다른 사람이 없어요.', ja: '今この部屋にほかの人はいません。', zh: '现在这个房间里没有其他人。', es: 'Ahora no hay nadie más en esta sala.', id: 'Belum ada orang lain di ruangan ini.', vi: 'Hiện không có ai khác trong phòng này.', hi: 'अभी इस कमरे में और कोई नहीं है।', fr: 'Personne d’autre dans cette salle pour l’instant.', th: 'ตอนนี้ไม่มีคนอื่นในห้องนี้', ar: 'لا أحد غيرك في هذه الغرفة الآن.' },
+  vsWait: { en: 'Waiting for {name}…', ko: '{name}님을 기다리는 중…', ja: '{name}さんを待っています…', zh: '正在等待{name}…', es: 'Esperando a {name}…', id: 'Menunggu {name}…', vi: 'Đang chờ {name}…', hi: '{name} का इंतज़ार…', fr: 'En attente de {name}…', th: 'กำลังรอ {name}…', ar: 'بانتظار {name}…' },
+  vsAsk: { en: '{name} challenges you!', ko: '{name}님이 대결을 신청했어요!', ja: '{name}さんが勝負を挑んできました！', zh: '{name}向你发起挑战！', es: '¡{name} te reta!', id: '{name} menantangmu!', vi: '{name} thách đấu bạn!', hi: '{name} ने आपको चुनौती दी!', fr: '{name} te défie !', th: '{name} ท้าคุณ!', ar: '{name} يتحداك!' },
+  ready: { en: 'Ready', ko: '준비 완료', ja: '準備OK', zh: '准备好了', es: 'Listo', id: 'Siap', vi: 'Sẵn sàng', hi: 'तैयार', fr: 'Prêt', th: 'พร้อม', ar: 'جاهز' },
+  cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消', es: 'Cancelar', id: 'Batal', vi: 'Hủy', hi: 'रद्द करें', fr: 'Annuler', th: 'ยกเลิก', ar: 'إلغاء' },
+  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
+  vsNo: { en: '{name} said no this time.', ko: '{name}님이 이번엔 거절했어요.', ja: '{name}さんは今回は断りました。', zh: '{name}这次拒绝了。', es: '{name} dijo que no esta vez.', id: '{name} menolak kali ini.', vi: '{name} từ chối lần này.', hi: '{name} ने इस बार मना किया।', fr: '{name} a refusé cette fois.', th: '{name} ปฏิเสธรอบนี้', ar: '{name} رفض هذه المرة.' },
+  vsBusy: { en: '{name} is busy right now.', ko: '{name}님은 지금 바빠요.', ja: '{name}さんは今手が離せません。', zh: '{name}现在正忙。', es: '{name} está ocupado ahora.', id: '{name} sedang sibuk.', vi: '{name} đang bận.', hi: '{name} अभी व्यस्त हैं।', fr: '{name} est occupé pour l’instant.', th: '{name} ไม่ว่างตอนนี้', ar: '{name} مشغول الآن.' },
+  vsGone: { en: 'No answer.', ko: '응답이 없어요.', ja: '返事がありません。', zh: '没有回应。', es: 'Sin respuesta.', id: 'Tidak ada jawaban.', vi: 'Không có phản hồi.', hi: 'कोई जवाब नहीं।', fr: 'Pas de réponse.', th: 'ไม่มีการตอบรับ', ar: 'لا رد.' },
+  vsLink: { en: 'Connecting…', ko: '연결 중…', ja: '接続中…', zh: '连接中…', es: 'Conectando…', id: 'Menghubungkan…', vi: 'Đang kết nối…', hi: 'जुड़ रहा है…', fr: 'Connexion…', th: 'กำลังเชื่อมต่อ…', ar: 'جارٍ الاتصال…' },
+  vsLeft: { en: '{name} left the fight. You win!', ko: '{name}님이 나갔어요. 승리!', ja: '{name}さんが退出しました。あなたの勝ち！', zh: '{name}离开了。你赢了！', es: '{name} se fue. ¡Ganas tú!', id: '{name} keluar. Kamu menang!', vi: '{name} đã rời đi. Bạn thắng!', hi: '{name} चले गए। आप जीते!', fr: '{name} est parti. Tu gagnes !', th: '{name} ออกไปแล้ว คุณชนะ!', ar: '{name} غادر. فزت!' },
+  vsLost: { en: 'The connection was lost.', ko: '연결이 끊겼어요.', ja: '接続が切れました。', zh: '连接已断开。', es: 'Se perdió la conexión.', id: 'Koneksi terputus.', vi: 'Mất kết nối.', hi: 'कनेक्शन टूट गया।', fr: 'La connexion a été perdue.', th: 'การเชื่อมต่อหลุด', ar: 'انقطع الاتصال.' },
+  vsLose: { en: '{name} wins this time.', ko: '이번엔 {name}님의 승리.', ja: '今回は{name}さんの勝ち。', zh: '这次{name}赢了。', es: 'Esta vez gana {name}.', id: 'Kali ini {name} menang.', vi: 'Lần này {name} thắng.', hi: 'इस बार {name} जीते।', fr: 'Cette fois, {name} gagne.', th: 'รอบนี้ {name} ชนะ', ar: 'فاز {name} هذه المرة.' },
+  draw: { en: 'Draw!', ko: '무승부!', ja: '引き分け！', zh: '平局！', es: '¡Empate!', id: 'Seri!', vi: 'Hòa!', hi: 'ड्रॉ!', fr: 'Égalité !', th: 'เสมอ!', ar: 'تعادل!' },
+  vsSlow: { en: 'Waiting for the other player…', ko: '상대를 기다리는 중…', ja: '相手を待っています…', zh: '正在等待对方…', es: 'Esperando al otro jugador…', id: 'Menunggu pemain lain…', vi: 'Đang chờ người chơi kia…', hi: 'दूसरे खिलाड़ी का इंतज़ार…', fr: 'En attente de l’autre joueur…', th: 'กำลังรออีกฝ่าย…', ar: 'بانتظار اللاعب الآخر…' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
 
@@ -104,72 +104,72 @@ const tt = (k, v) => fmt(L(T[k]), v);
 // how it stands (bone offsets like STANCE below).
 export const STYLE = {
   brawler: {
-    icon: '??',
-    name: { en: 'Brawler', ko: '������', ja: '̫?ʫ', zh: '̫��ʫ', es: 'Luchador', id: 'Petarung', vi: 'Vo s?', hi: '??????', fr: 'Bagarreur', th: '??????', ar: '???????' },
-    line: { en: 'Good at everything. Keeps both the guard breaker and the flying kick.', ko: '���� ������ ���ؿ�. ���� ����� �������⸦ �� �� ���.', ja: '���Ǫ⪳�ʪ�ز��������?���ڪ���ޫ��������Ū��ު���', zh: '??г����������??Դ���ġ�', es: 'Bueno en todo. Tiene rompeguardias y patada voladora.', id: 'Serba bisa. Punya pemecah pertahanan dan tendangan terbang.', vi: 'Gi?i ��?u m?i th?. Co c? pha th? l?n ��a bay.', hi: '?? ???? ??? ?????? ????? ???? ?? ????? ??? ??????', fr: 'Bon partout. Garde le brise-garde et le coup de pied saute.', th: '??????????? ????????????????????????????????', ar: '??? ?? ?? ???. ???? ????? ???? ??????? ???????.' },
-    sig: { en: 'Guard breaker', ko: '���� ����', ja: '��?���ڪ�', zh: '������', es: 'Rompeguardias', id: 'Pemecah pertahanan', vi: 'Pha th?', hi: '????? ????', fr: 'Brise-garde', th: '??????????', ar: '????? ????' },
+    icon: '🥊',
+    name: { en: 'Brawler', ko: '격투가', ja: '格闘家', zh: '格斗家', es: 'Luchador', id: 'Petarung', vi: 'Võ sĩ', hi: 'लड़ाका', fr: 'Bagarreur', th: 'นักสู้', ar: 'المقاتل' },
+    line: { en: 'Good at everything. Keeps both the guard breaker and the flying kick.', ko: '뭐든 고르게 잘해요. 가드 깨기와 날아차기를 둘 다 써요.', ja: '何でもこなす万能型。ガード崩しも飛び蹴りも使えます。', zh: '样样均衡。破防和飞踢都能用。', es: 'Bueno en todo. Tiene rompeguardias y patada voladora.', id: 'Serba bisa. Punya pemecah pertahanan dan tendangan terbang.', vi: 'Giỏi đều mọi thứ. Có cả phá thủ lẫn đá bay.', hi: 'हर चीज़ में अच्छा। गार्ड तोड़ और उड़ती किक दोनों।', fr: 'Bon partout. Garde le brise-garde et le coup de pied sauté.', th: 'เก่งรอบด้าน ใช้ได้ทั้งทำลายการ์ดและกระโดดเตะ', ar: 'جيد في كل شيء. لديه كاسرة الصد والركلة الطائرة.' },
+    sig: { en: 'Guard breaker', ko: '가드 깨기', ja: 'ガード崩し', zh: '破防掌', es: 'Rompeguardias', id: 'Pemecah pertahanan', vi: 'Phá thủ', hi: 'गार्ड तोड़', fr: 'Brise-garde', th: 'ทำลายการ์ด', ar: 'كاسرة الصد' },
   },
   ninja: {
-    icon: '??',
-    name: { en: 'Ninja', ko: '����', ja: '����', zh: '����', es: 'Ninja', id: 'Ninja', vi: 'Ninja', hi: '?????', fr: 'Ninja', th: '?????', ar: '???????' },
-    line: { en: 'Very fast, little health. Vanishes and strikes from behind.', ko: '���� �������� ü���� �����. ������ٰ� �� �ڿ��� �Ŀ�.', ja: '�Ȫƪ��ܪ���?����ᴪʪᡣἪ������������֪�ު���', zh: '����?��ӣ����ᴡ���?�����?������?��', es: 'Muy rapido, poca vida. Desaparece y golpea por la espalda.', id: 'Sangat cepat, darah sedikit. Menghilang lalu menyerang dari belakang.', vi: 'R?t nhanh, it mau. Bi?n m?t r?i ��anh t? sau l?ng.', hi: '???? ????, ?? ????? ????? ???? ???? ?? ????', fr: 'Tres rapide, peu de vie. Disparait et frappe dans le dos.', th: '??????????????????? ??????????????????????????', ar: '???? ???? ????? ?????. ????? ????? ?? ?????.' },
-    sig: { en: 'Shadow step', ko: '�׸��� ����', ja: '�?��', zh: '���', es: 'Paso sombra', id: 'Langkah bayangan', vi: 'B??c bong', hi: '???? ????', fr: 'Pas de l\'ombre', th: '???????', ar: '???? ????' },
+    icon: '🥷',
+    name: { en: 'Ninja', ko: '닌자', ja: '忍者', zh: '忍者', es: 'Ninja', id: 'Ninja', vi: 'Ninja', hi: 'निंजा', fr: 'Ninja', th: 'นินจา', ar: 'النينجا' },
+    line: { en: 'Very fast, little health. Vanishes and strikes from behind.', ko: '아주 빠르지만 체력이 적어요. 사라졌다가 등 뒤에서 쳐요.', ja: 'とても速いが体力は少なめ。消えて背後から斬ります。', zh: '速度极快但血量少。瞬间消失，从背后出击。', es: 'Muy rápido, poca vida. Desaparece y golpea por la espalda.', id: 'Sangat cepat, darah sedikit. Menghilang lalu menyerang dari belakang.', vi: 'Rất nhanh, ít máu. Biến mất rồi đánh từ sau lưng.', hi: 'बहुत तेज़, कम सेहत। ग़ायब होकर पीछे से वार।', fr: 'Très rapide, peu de vie. Disparaît et frappe dans le dos.', th: 'เร็วมากแต่เลือดน้อย หายตัวแล้วโจมตีจากด้านหลัง', ar: 'سريع جدًا وقليل الصحة. يختفي ويضرب من الخلف.' },
+    sig: { en: 'Shadow step', ko: '그림자 걸음', ja: '影歩き', zh: '影步', es: 'Paso sombra', id: 'Langkah bayangan', vi: 'Bước bóng', hi: 'छाया क़दम', fr: 'Pas de l\'ombre', th: 'ก้าวเงา', ar: 'خطوة الظل' },
     stance: { armL: [-1.1, 0, 0], foreL: [-0.6, 0, 0], armR: [0.5, 0, 0], foreR: [-1.2, 0, 0], legL: [-0.5, 0, 0], kneeL: [0.75, 0, 0], legR: [0.3, 0, 0], kneeR: [0.6, 0, 0], spine: [0.32, 0, 0] },
   },
   tank: {
-    icon: '???',
-    name: { en: 'Tank', ko: '��Ŀ', ja: '����', zh: '��к', es: 'Tanque', id: 'Tank', vi: '��? ��on', hi: '????', fr: 'Tank', th: '?????', ar: '???????' },
-    line: { en: 'Slow, lots of health. Its charge keeps going through a hit.', ko: '�������� ü���� ���ƿ�. ������ �� �� �¾Ƶ� ������ �ʾƿ�.', ja: '?����?�����êתꡣ�����1?�����ƪ��ު�ު���', zh: 'طӣ������?��??�������?�Ρ�', es: 'Lento, mucha vida. Su carga aguanta un golpe sin pararse.', id: 'Lambat, darah banyak. Serudukannya tidak berhenti walau kena pukul.', vi: 'Ch?m, nhi?u mau. Cu huc khong d?ng du trung m?t ��on.', hi: '????, ??? ????? ???? ???? ?? ??? ???? ?? ???? ??????', fr: 'Lent, beaucoup de vie. Sa charge encaisse un coup sans s\'arreter.', th: '??????????????? ???????????????????????????????', ar: '???? ????? ?????. ??????? ?? ????? ??? ????.' },
-    sig: { en: 'Shoulder charge', ko: '��� ����', ja: '������?����?��', zh: '̷��', es: 'Carga de hombro', id: 'Seruduk bahu', vi: 'Huc vai', hi: '???? ????', fr: 'Charge d\'epaule', th: '??????????', ar: '?????? ?????' },
+    icon: '🛡️',
+    name: { en: 'Tank', ko: '탱커', ja: 'タンク', zh: '坦克', es: 'Tanque', id: 'Tank', vi: 'Đỡ đòn', hi: 'टैंक', fr: 'Tank', th: 'แทงก์', ar: 'المدرّع' },
+    line: { en: 'Slow, lots of health. Its charge keeps going through a hit.', ko: '느리지만 체력이 많아요. 돌진은 한 대 맞아도 멈추지 않아요.', ja: '遅いが体力たっぷり。突進は1発受けても止まりません。', zh: '慢但血厚。冲撞时挨一下也不会停。', es: 'Lento, mucha vida. Su carga aguanta un golpe sin pararse.', id: 'Lambat, darah banyak. Serudukannya tidak berhenti walau kena pukul.', vi: 'Chậm, nhiều máu. Cú húc không dừng dù trúng một đòn.', hi: 'धीमा, ढेर सेहत। इसका धावा एक वार खाकर भी नहीं रुकता।', fr: 'Lent, beaucoup de vie. Sa charge encaisse un coup sans s\'arrêter.', th: 'ช้าแต่เลือดเยอะ ท่าพุ่งชนไม่หยุดแม้โดนตีหนึ่งที', ar: 'بطيء وكثير الصحة. اندفاعه لا يتوقف عند ضربة.' },
+    sig: { en: 'Shoulder charge', ko: '어깨 돌진', ja: 'ショルダーチャージ', zh: '肩撞', es: 'Carga de hombro', id: 'Seruduk bahu', vi: 'Húc vai', hi: 'कंधा धावा', fr: 'Charge d\'épaule', th: 'พุ่งชนไหล่', ar: 'اندفاع الكتف' },
     stance: { armL: [-0.5, -0.5, 0], foreL: [-1.2, 0, 0], armR: [-0.5, 0.5, 0], foreR: [-1.2, 0, 0], legL: [-0.35, 0, 0], kneeL: [0.55, 0, 0], legR: [0.3, 0, 0], kneeR: [0.5, 0, 0], spine: [0.22, 0, 0] },
   },
   kicker: {
-    icon: '??',
-    name: { en: 'Kicker', ko: '������ ����', ja: '���ë�?', zh: '??�', es: 'Pateador', id: 'Penendang', vi: 'Cao th? ��a', hi: '????', fr: 'Kicker', th: '??????', ar: '??????' },
-    line: { en: 'Fast, strong kicks and weak punches. A spinning kick hits three times.', ko: '���� ������ ������ �ָ��� ���ؿ�. �������Ⱑ �� �� �¾ƿ�.', ja: '���ë����ܪ���?�����ѫ����尪ᡣ�ު����ꪬ3��?����ު���', zh: '������죬����尡���??��߲����', es: 'Patadas rapidas y fuertes, punos flojos. Su patada giratoria golpea tres veces.', id: 'Tendangan cepat dan kuat, pukulan lemah. Tendangan putar kena tiga kali.', vi: '��a nhanh va m?nh, ��?m y?u. Cu ��a xoay trung ba l?n.', hi: '???? ????? ???, ?????? ??????? ????? ??? ??? ??? ???? ???', fr: 'Pieds rapides et forts, poings faibles. Son coup tournant touche trois fois.', th: '????????????? ??????? ??????????????????', ar: '????? ????? ???? ?????? ?????. ????? ???????? ???? ???? ????.' },
-    sig: { en: 'Whirlwind kick', ko: 'ȸ���� ����', ja: '������', zh: '��??', es: 'Patada torbellino', id: 'Tendangan puting beliung', vi: '��a l?c xoay', hi: '????? ???', fr: 'Coup de pied tourbillon', th: '???????????', ar: '???? ???????' },
+    icon: '🦵',
+    name: { en: 'Kicker', ko: '발차기 선수', ja: 'キッカー', zh: '踢击手', es: 'Pateador', id: 'Penendang', vi: 'Cao thủ đá', hi: 'किकर', fr: 'Kicker', th: 'นักเตะ', ar: 'الراكل' },
+    line: { en: 'Fast, strong kicks and weak punches. A spinning kick hits three times.', ko: '발이 빠르고 세지만 주먹은 약해요. 돌려차기가 세 번 맞아요.', ja: 'キックは速くて強く、パンチは弱め。回し蹴りが3回当たります。', zh: '腿快而重，拳偏弱。旋踢连中三下。', es: 'Patadas rápidas y fuertes, puños flojos. Su patada giratoria golpea tres veces.', id: 'Tendangan cepat dan kuat, pukulan lemah. Tendangan putar kena tiga kali.', vi: 'Đá nhanh và mạnh, đấm yếu. Cú đá xoay trúng ba lần.', hi: 'तेज़ दमदार किक, कमज़ोर मुक्के। घूमती किक तीन बार लगती है।', fr: 'Pieds rapides et forts, poings faibles. Son coup tournant touche trois fois.', th: 'เตะเร็วและแรง หมัดเบา เตะหมุนโดนสามครั้ง', ar: 'ركلات سريعة قوية ولكمات ضعيفة. ركلته الدوّارة تصيب ثلاث مرات.' },
+    sig: { en: 'Whirlwind kick', ko: '회오리 차기', ja: '旋風脚', zh: '旋风踢', es: 'Patada torbellino', id: 'Tendangan puting beliung', vi: 'Đá lốc xoáy', hi: 'बवंडर किक', fr: 'Coup de pied tourbillon', th: 'เตะพายุหมุน', ar: 'ركلة الإعصار' },
     stance: { armL: [-0.3, 0, 0], foreL: [-0.9, 0, 0], armR: [-0.2, 0, 0], foreR: [-0.8, 0, 0], legL: [-0.25, 0, 0], kneeL: [0.3, 0, 0], legR: [0.2, 0, 0], kneeR: [0.25, 0, 0], spine: [0.05, 0, 0] }, bounce: 0.05,
   },
   boxer: {
-    icon: '??',
-    name: { en: 'Boxer', ko: '����', ja: '�ܫ���?', zh: '��?�', es: 'Boxeador', id: 'Petinju', vi: 'Tay ��?m', hi: '??????????', fr: 'Boxeur', th: '??????', ar: '???????' },
-    line: { en: 'Fast, heavy fists and long dashes. Kicks are slow.', ko: '�ָ��� ������ �����ϰ� ��ð� ����. ���� ������.', ja: '�ѫ�����ܪ����쪯�����ë�������������ë���?�ᡣ', zh: '���������죬?����??������?ط��', es: 'Punos rapidos y duros, carreras largas. Patadas lentas.', id: 'Pukulan cepat dan berat, dash jauh. Tendangan lambat.', vi: '��?m nhanh va n?ng, l??t xa. ��a ch?m.', hi: '???? ???? ??????, ???? ???? ??? ?????', fr: 'Poings rapides et lourds, longs dashs. Pieds lents.', th: '??????????????? ?????? ??????', ar: '????? ????? ????? ??????? ????. ?????? ?????.' },
-    sig: { en: 'Haymaker', ko: '�� �� ��', ja: '����Ϋիë�', zh: '������', es: 'Gancho total', id: 'Hook pamungkas', vi: 'Cu moc tr?i giang', hi: '??????? ???', fr: 'Crochet massue', th: '??????????', ar: '??????? ??????' },
+    icon: '👊',
+    name: { en: 'Boxer', ko: '복서', ja: 'ボクサー', zh: '拳击手', es: 'Boxeador', id: 'Petinju', vi: 'Tay đấm', hi: 'मुक्केबाज़', fr: 'Boxeur', th: 'นักมวย', ar: 'الملاكم' },
+    line: { en: 'Fast, heavy fists and long dashes. Kicks are slow.', ko: '주먹이 빠르고 묵직하고 대시가 길어요. 발은 느려요.', ja: 'パンチは速くて重く、ダッシュも長い。キックは遅め。', zh: '拳又快又重，冲刺距离长。腿比较慢。', es: 'Puños rápidos y duros, carreras largas. Patadas lentas.', id: 'Pukulan cepat dan berat, dash jauh. Tendangan lambat.', vi: 'Đấm nhanh và nặng, lướt xa. Đá chậm.', hi: 'तेज़ भारी मुक्के, लंबा डैश। किक धीमी।', fr: 'Poings rapides et lourds, longs dashs. Pieds lents.', th: 'หมัดเร็วและหนัก แดชไกล เตะช้า', ar: 'لكمات سريعة ثقيلة واندفاع طويل. ركلاته بطيئة.' },
+    sig: { en: 'Haymaker', ko: '한 방 훅', ja: '渾身のフック', zh: '重勾拳', es: 'Gancho total', id: 'Hook pamungkas', vi: 'Cú móc trời giáng', hi: 'ज़ोरदार हुक', fr: 'Crochet massue', th: 'ฮุกเต็มแรง', ar: 'الخطّاف القاضي' },
     stance: { armL: [-1.3, 0.2, 0], foreL: [-2.1, 0, 0], armR: [-1.2, -0.2, 0], foreR: [-2.2, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.4, 0, 0], legR: [0.25, 0, 0], kneeR: [0.35, 0, 0], spine: [0.25, 0, 0], head: [0.15, 0, 0] }, bounce: 0.035,
   },
   grappler: {
-    icon: '??',
-    name: { en: 'Grappler', ko: '������', ja: '�쫹��?', zh: '??�', es: 'Luchador de agarre', id: 'Pegulat', vi: '��o v?t', hi: '??????', fr: 'Lutteur', th: '??????????', ar: '???????' },
-    line: { en: 'Sturdy and strong up close. Its throw cannot be guarded.', ko: 'ưư�ϰ� ������ ���ؿ�. ��ġ��� ���� �� �����.', ja: '���۪�����?��?�����᪲�ϫ�?�ɪǪ��ު���', zh: '??��?��?˭��?���������١�', es: 'Robusto y fuerte de cerca. Su proyeccion no se puede cubrir.', id: 'Kokoh dan kuat dari dekat. Bantingannya tak bisa ditahan.', vi: 'Li ��on, m?nh khi ap sat. Cu qu?t khong th? ��?.', hi: '??????, ??? ?? ?????? ???? ???? ???? ???? ?? ?????', fr: 'Solide et fort au corps a corps. Sa projection ne se pare pas.', th: '?????????????????????? ????????????????????', ar: '???? ???? ?? ???. ????? ?? ?????.' },
-    sig: { en: 'Big throw', ko: '��ġ��', ja: '���᪲', zh: '��?', es: 'Gran proyeccion', id: 'Bantingan besar', vi: 'Qu?t nga', hi: '???? ????', fr: 'Grande projection', th: '????????', ar: '?????? ??????' },
+    icon: '🤼',
+    name: { en: 'Grappler', ko: '레슬러', ja: 'レスラー', zh: '摔跤手', es: 'Luchador de agarre', id: 'Pegulat', vi: 'Đô vật', hi: 'पहलवान', fr: 'Lutteur', th: 'นักมวยปล้ำ', ar: 'المصارع' },
+    line: { en: 'Sturdy and strong up close. Its throw cannot be guarded.', ko: '튼튼하고 붙으면 강해요. 메치기는 막을 수 없어요.', ja: '頑丈で接近戦に強い。投げはガードできません。', zh: '结实，贴身很强。摔技无法防御。', es: 'Robusto y fuerte de cerca. Su proyección no se puede cubrir.', id: 'Kokoh dan kuat dari dekat. Bantingannya tak bisa ditahan.', vi: 'Lì đòn, mạnh khi áp sát. Cú quật không thể đỡ.', hi: 'मज़बूत, पास से दमदार। इसका पटका रोका नहीं जा सकता।', fr: 'Solide et fort au corps à corps. Sa projection ne se pare pas.', th: 'แกร่งและแรงเมื่อประชิด ท่าทุ่มป้องกันไม่ได้', ar: 'متين وقوي عن قرب. رميته لا تُصدّ.' },
+    sig: { en: 'Big throw', ko: '메치기', ja: '大投げ', zh: '大摔', es: 'Gran proyección', id: 'Bantingan besar', vi: 'Quật ngã', hi: 'बड़ा पटका', fr: 'Grande projection', th: 'ทุ่มใหญ่', ar: 'الرمية الكبرى' },
     stance: { armL: [-1.1, -0.6, 0], foreL: [-0.7, 0, 0], armR: [-1.1, 0.6, 0], foreR: [-0.7, 0, 0], legL: [-0.4, 0, 0], kneeL: [0.6, 0, 0], legR: [0.3, 0, 0], kneeR: [0.6, 0, 0], spine: [0.35, 0, 0] },
   },
   mystic: {
-    icon: '??',
-    name: { en: 'Mystic', ko: '�����', ja: '?����', zh: '?��?', es: 'Mistico', id: 'Ahli tenaga dalam', vi: 'Khi cong s?', hi: '????', fr: 'Mystique', th: '?????????????', ar: '???? ??????' },
-    line: { en: 'Fights from far away: throws a ball of light across the ring.', ko: '�ָ��� �ο���. �� �ǳ������� �� ����� ������.', ja: '��������?���ު����ê�謪��󫰪��������ު�ޫ�Ъ��ު���', zh: '?��?��?������Ϲ����?��?��?��', es: 'Pelea de lejos: lanza una bola de luz por el ring.', id: 'Bertarung dari jauh: melempar bola cahaya ke seberang ring.', vi: '��anh t? xa: phong qu? c?u anh sang ngang vo ��ai.', hi: '??? ?? ????? ??: ???? ?? ??? ????? ?? ???? ?????? ???', fr: 'Combat de loin : lance une boule de lumiere a travers le ring.', th: '????????????? ???????????????????', ar: '????? ?? ????: ???? ??? ??? ??? ??????.' },
-    sig: { en: 'Light ball', ko: '�� ���', ja: '��?', zh: '��?', es: 'Bola de luz', id: 'Bola cahaya', vi: 'C?u anh sang', hi: '????? ?? ????', fr: 'Boule de lumiere', th: '??????', ar: '??? ?????' },
+    icon: '🔮',
+    name: { en: 'Mystic', ko: '기공사', ja: '気功師', zh: '气功师', es: 'Místico', id: 'Ahli tenaga dalam', vi: 'Khí công sư', hi: 'साधक', fr: 'Mystique', th: 'จอมพลังลมปราณ', ar: 'صاحب الطاقة' },
+    line: { en: 'Fights from far away: throws a ball of light across the ring.', ko: '멀리서 싸워요. 링 건너편까지 빛 덩어리를 날려요.', ja: '遠くから戦います。光の玉をリングの向こうまで飛ばします。', zh: '远距离作战：把光球打到擂台另一头。', es: 'Pelea de lejos: lanza una bola de luz por el ring.', id: 'Bertarung dari jauh: melempar bola cahaya ke seberang ring.', vi: 'Đánh từ xa: phóng quả cầu ánh sáng ngang võ đài.', hi: 'दूर से लड़ता है: रिंग के पार रोशनी का गोला फेंकता है।', fr: 'Combat de loin : lance une boule de lumière à travers le ring.', th: 'สู้จากระยะไกล ปล่อยลูกแสงข้ามเวที', ar: 'يقاتل من بعيد: يرمي كرة ضوء عبر الحلبة.' },
+    sig: { en: 'Light ball', ko: '빛 덩어리', ja: '光弾', zh: '光弹', es: 'Bola de luz', id: 'Bola cahaya', vi: 'Cầu ánh sáng', hi: 'रोशनी का गोला', fr: 'Boule de lumière', th: 'ลูกแสง', ar: 'كرة الضوء' },
     stance: { armL: [-1.4, 0, 0], foreL: [-0.3, 0, 0], armR: [-0.1, 0, 0], foreR: [-1.5, 0, 0], legL: [-0.35, 0, 0], kneeL: [0.45, 0, 0], legR: [0.3, 0, 0], kneeR: [0.4, 0, 0], spine: [0.05, 0, 0] },
   },
   dancer: {
-    icon: '??',
-    name: { en: 'Dancer', ko: '���', ja: '����?', zh: '����', es: 'Bailarin', id: 'Penari', vi: 'V? cong', hi: '?????', fr: 'Danseur', th: '???????', ar: '??????' },
-    line: { en: 'Light on its feet. Spins across the floor with legs flying.', ko: '���� ��������. �ٸ��� �ֵ����� �ٴ��� ���� ��������.', ja: '��?������ɪ��ު��ʪ����ɪ��ުê���ߪު���', zh: '���?�á�?��?���??�����', es: 'Pies ligeros. Cruza el suelo girando con las piernas al aire.', id: 'Lincah. Berputar melintasi lantai dengan kaki melayang.', vi: 'Nh? nhang. Xoay tron tren san v?i ��oi chan tung bay.', hi: '????????? ?????? ?????? ??? ????? ??? ???? ???', fr: 'Leger sur ses pieds. Traverse le sol en tournant, jambes en l\'air.', th: '?????? ???????????????????????', ar: '???? ???????. ???? ??? ????? ?????? ??????.' },
-    sig: { en: 'Floor spin', ko: '�ٴ� ȸ��', ja: '�ի������ԫ�', zh: '�����?', es: 'Giro de suelo', id: 'Putaran lantai', vi: 'Xoay san', hi: '????? ?????', fr: 'Vrille au sol', th: '????????', ar: '????? ?????' },
+    icon: '💃',
+    name: { en: 'Dancer', ko: '춤꾼', ja: 'ダンサー', zh: '舞者', es: 'Bailarín', id: 'Penari', vi: 'Vũ công', hi: 'नर्तक', fr: 'Danseur', th: 'นักเต้น', ar: 'الراقص' },
+    line: { en: 'Light on its feet. Spins across the floor with legs flying.', ko: '몸이 가벼워요. 다리를 휘돌리며 바닥을 쓸고 지나가요.', ja: '身軽。足を振り回しながら床を回って進みます。', zh: '身手轻盈。双腿飞旋着扫过地面。', es: 'Pies ligeros. Cruza el suelo girando con las piernas al aire.', id: 'Lincah. Berputar melintasi lantai dengan kaki melayang.', vi: 'Nhẹ nhàng. Xoay tròn trên sàn với đôi chân tung bay.', hi: 'फुर्तीला। टाँगें घुमाते हुए फ़र्श पार करता है।', fr: 'Léger sur ses pieds. Traverse le sol en tournant, jambes en l\'air.', th: 'ตัวเบา หมุนตัวกวาดขาไปทั่วพื้น', ar: 'خفيف القدمين. يدور على الأرض وساقاه تطيران.' },
+    sig: { en: 'Floor spin', ko: '바닥 회전', ja: 'フロアスピン', zh: '地板旋转', es: 'Giro de suelo', id: 'Putaran lantai', vi: 'Xoay sàn', hi: 'फ़र्श चक्कर', fr: 'Vrille au sol', th: 'หมุนพื้น', ar: 'دوران الأرض' },
     stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
   },
 };
-const BTN = { p: '??', k: '??', s1: '?1', s2: '?2' };
+const BTN = { p: '👊', k: '🦶', s1: '⭐1', s2: '⭐2' };
 
 export const RIVAL = [
-  { name: { en: 'Dalgona Kid', ko: '�ް��� Ű��', ja: '���뫴��?���ë�', zh: '?�����' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
-  { name: { en: 'Night-shift Mina', ko: '�߰��� �̳�', ja: '��êΫ߫�', zh: '���ڷ��' }, style: 'ninja', look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
-  { name: { en: 'Busker Joon', ko: '����Ŀ ��', ja: '�Ы���??�����', zh: 'ʶ??����' }, style: 'dancer', look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
-  { name: { en: 'Auntie Kimchi', ko: '��ġ �̸�', ja: '��������Ъ���', zh: '������' }, style: 'grappler', look: { model: 'cardigan-brown', pants: 'cocoa', hair: 'espresso', skin: 'fair', hairStyle: 'curly' }, sky: ['#101a2a', '#1f7a6a'] },
-  { name: { en: 'Master Baekho', ko: '��ȣ ����', ja: '����ν��', zh: '����??' }, style: 'kicker', look: { model: 'hanbok-durumagi-white', pants: 'cream', hair: 'ash', skin: 'tan', hairStyle: 'manbun' }, sky: ['#0a0a14', '#a8322e'] },
+  { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
+  { name: { en: 'Night-shift Mina', ko: '야간조 미나', ja: '夜勤のミナ', zh: '夜班米娜' }, style: 'ninja', look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
+  { name: { en: 'Busker Joon', ko: '버스커 준', ja: 'バスカー・ジュン', zh: '街头艺人俊' }, style: 'dancer', look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
+  { name: { en: 'Auntie Kimchi', ko: '김치 이모', ja: 'キムチおばさん', zh: '泡菜阿姨' }, style: 'grappler', look: { model: 'cardigan-brown', pants: 'cocoa', hair: 'espresso', skin: 'fair', hairStyle: 'curly' }, sky: ['#101a2a', '#1f7a6a'] },
+  { name: { en: 'Master Baekho', ko: '백호 관장', ja: '白虎館長', zh: '白虎馆长' }, style: 'kicker', look: { model: 'hanbok-durumagi-white', pants: 'cream', hair: 'ash', skin: 'tan', hairStyle: 'manbun' }, sky: ['#0a0a14', '#a8322e'] },
 ];
 
-// The ring's build (�� the street's): about three heads tall instead of two.
+// The ring's build (× the street's): about three heads tall instead of two.
 const BUILD = globalThis.__brawlBuild || { head: 0.75, torso: 1.08, arm: 1.3, leg: 1.4, lift: 0.1 };
 export const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
 const STAGE_Y = -80; // under the room, out of its sight
@@ -253,7 +253,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 const smooth = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
 const lerp = (a, b, k) => a + (b - a) * k;
 
-// ���� Poses ��������������������������������������������������������������������������������������������������������������������������������
+// ── Poses ────────────────────────────────────────────────────────────────
 // Bone offsets over the standing clip (core/model-pack.js): arm -x forward
 // and up, fore -x bends the elbow, leg -x forward, knee +x bends.
 const BONES = ['armL', 'armR', 'foreL', 'foreR', 'spine', 'head', 'legL', 'legR', 'kneeL', 'kneeR'];
@@ -357,7 +357,7 @@ function poseOf(f, time, out, body) {
   return body;
 }
 
-// ���� The stage ������������������������������������������������������������������������������������������������������������������������
+// ── The stage ────────────────────────────────────────────────────────────
 function skyTexture([top, glow]) {
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 512;
@@ -468,7 +468,7 @@ export function buildStage(sky, y = STAGE_Y) {
   return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
 }
 
-// ���� The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ����
+// ── The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ──
 export function makeFighter(look, side, parent) {
   const ch = createCharacter(look);
   const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
@@ -514,15 +514,15 @@ export function placeFighter(f, s, dt, time, right) {
   reshape(f);
 }
 
-// ���� The game ��������������������������������������������������������������������������������������������������������������������������
+// ── The game ─────────────────────────────────────────────────────────────
 export function createBrawl(game) {
   const store = localStorage;
-  let on = null; // the stage, the two characters, the screen�� while open
+  let on = null; // the stage, the two characters, the screen… while open
   const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
   if (!document.getElementById('brawl-css')) { const st = el('style'); st.id = 'brawl-css'; st.textContent = CSS; document.head.append(st); }
 
-  // ���� Input ����
+  // ── Input ──
   const held = new Set(), pressed = new Set();
   const stick = { mx: 0, mz: 0 };
   const KEYS = {
@@ -570,7 +570,7 @@ export function createBrawl(game) {
     return inp;
   }
 
-  // ���� The screen ����
+  // ── The screen ──
   function buildHud() {
     const root = el('div');
     root.id = 'brawl';
@@ -592,32 +592,32 @@ export function createBrawl(game) {
     top.append(a.s, time, b.s);
     const msg = el('div', 'bw-msg'), sub = el('div', 'bw-sub');
     const combo = [el('div', 'bw-combo'), el('div', 'bw-combo r')];
-    const x = el('button', 'bw-x', '?');
+    const x = el('button', 'bw-x', '✕');
     x.setAttribute('aria-label', tt('close'));
     x.onclick = () => close();
     root.append(top, msg, sub, ...combo, x);
-    const commandButton = el('button', 'bw-command-button', L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
+    const commandButton = el('button', 'bw-command-button', L({ en: 'Commands', ko: '커맨드표' }));
     commandButton.style.cssText = 'position:absolute;right:12px;top:110px;pointer-events:auto;padding:12px 18px;border:2px solid #c39bff;border-radius:14px;background:#211932;color:white;font:bold 17px system-ui;cursor:pointer';
     const commands = document.createElement('dialog');
     commands.style.cssText = 'pointer-events:auto;box-sizing:border-box;width:min(94vw,720px);max-height:88dvh;overflow:auto;padding:24px;border:2px solid #c39bff;border-radius:20px;background:#171329;color:white;font:18px system-ui';
-    commands.setAttribute('aria-label', L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
-    const heading = el('h2', null, L({ en: 'Commands', ko: 'Ŀ�ǵ�ǥ' }));
-    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. �� means toward your rival. Specials cost 50 gauge.', ko: '�̱��� �Ͻ������˴ϴ�. �¶��� ������ ��� ����˴ϴ�. ��� ��� �����̸�, �ʻ��� ������ 50�� �ʿ��մϴ�.' }));
+    commands.setAttribute('aria-label', L({ en: 'Commands', ko: '커맨드표' }));
+    const heading = el('h2', null, L({ en: 'Commands', ko: '커맨드표' }));
+    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. → means toward your rival. Specials cost 50 gauge.', ko: '싱글은 일시정지됩니다. 온라인 대전은 계속 진행됩니다. →는 상대 방향이며, 필살기는 게이지 50이 필요합니다.' }));
     const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
     for (const [label, input] of [
-      [L({ en: 'Punch / kick', ko: '��ġ / ű' }), '?? J / ?? K'],
-      [L({ en: 'Combo', ko: '���� ����' }), '?? �� ?? �� ?? / ?? �� ?? �� ??'],
-      [L({ en: 'Launcher', ko: '����' }), '�� + ?? J'],
-      [L({ en: 'Special 1', ko: '�ʻ�� 1' }), '�� �� + ?? J  /  ?1 U'],
-      [L({ en: 'Special 2', ko: '�ʻ�� 2' }), '�� �� + ?? K  /  ?2 I'],
-      [L({ en: 'Guard', ko: '���' }), '��'],
-      [L({ en: 'Dash', ko: '���' }), '�� �� / �� �� / Shift'],
+      [L({ en: 'Punch / kick', ko: '펀치 / 킥' }), '👊 J / 🦶 K'],
+      [L({ en: 'Combo', ko: '연속 공격' }), '👊 → 👊 → 👊 / 🦶 → 🦶 → 🦶'],
+      [L({ en: 'Launcher', ko: '띄우기' }), '→ + 👊 J'],
+      [L({ en: 'Special 1', ko: '필살기 1' }), '↓ → + 👊 J  /  ⭐1 U'],
+      [L({ en: 'Special 2', ko: '필살기 2' }), '↓ → + 🦶 K  /  ⭐2 I'],
+      [L({ en: 'Guard', ko: '방어' }), '←'],
+      [L({ en: 'Dash', ko: '대시' }), '→ → / ← ← / Shift'],
     ]) {
       const row = document.createElement('tr');
       for (const text of [label, input]) { const cell = document.createElement('td'); cell.textContent = text; cell.style.cssText = 'padding:15px 8px;border-bottom:1px solid #49365f'; row.append(cell); }
       table.append(row);
     }
-    const dismiss = el('button', null, L({ en: 'Close', ko: '�ݱ�' }));
+    const dismiss = el('button', null, L({ en: 'Close', ko: '닫기' }));
     dismiss.style.cssText = 'margin-top:20px;width:100%;padding:14px;border:0;border-radius:12px;background:#c39bff;font:bold 20px system-ui;cursor:pointer';
     dismiss.onclick = () => commands.close();
     commands.append(heading, note, table, dismiss);
@@ -647,7 +647,7 @@ export function createBrawl(game) {
       zone.onpointermove = (e) => { if (e.pointerId === id) move(e); };
       zone.onpointerup = zone.onpointercancel = (e) => { if (e.pointerId !== id) return; id = null; stick.mx = stick.mz = 0; knob.style.transform = ''; };
       const btns = el('div', 'bw-btns');
-      for (const [k, icon, tag, col] of [['s1', '?', '1', '#8a5ad6'], ['s2', '?', '2', '#d9982a'], ['p', '??', '', '#3f7fe0'], ['k', '??', '', '#e0483f']]) {
+      for (const [k, icon, tag, col] of [['s1', '⭐', '1', '#8a5ad6'], ['s2', '⭐', '2', '#d9982a'], ['p', '👊', '', '#3f7fe0'], ['k', '🦶', '', '#e0483f']]) {
         const b = el('button', k[0] === 's' ? 'sp' : null, icon);
         if (tag) b.append(el('small', null, tag));
         b.style.background = col;
@@ -655,13 +655,13 @@ export function createBrawl(game) {
         b.onpointerup = b.onpointercancel = b.onpointerleave = () => b.classList.remove('on');
         btns.append(b);
       }
-      const dash = el('button', 'bw-dash', '??');
+      const dash = el('button', 'bw-dash', '💨');
       dash.onpointerdown = (e) => { e.preventDefault(); dashAsk = stick.mx < 0 ? -1 : 1; dash.classList.add('on'); };
       dash.onpointerup = dash.onpointercancel = dash.onpointerleave = () => dash.classList.remove('on');
       pad.append(zone, btns, dash);
       root.append(pad);
-    } else root.append(el('div', 'bw-keys', tt('keys') + ' �� �� �� + J / K = ?1 / ?2'));
-    if (touch) root.append(el('div', 'bw-keys', '�� �� + ?? / ?? = ?1 / ?2'));
+    } else root.append(el('div', 'bw-keys', tt('keys') + ' · ↓ → + J / K = ⭐1 / ⭐2'));
+    if (touch) root.append(el('div', 'bw-keys', '↓ → + 👊 / 🦶 = ⭐1 / ⭐2'));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
     return { root, a, b, time, msg, sub, combo, pad, commands, comboT: [0, 0], msgT: 0 };
@@ -683,7 +683,7 @@ export function createBrawl(game) {
   const button = (text, cls, fn) => { const b = el('button', cls, text); b.onclick = fn; return b; };
   function ladder(c, rec, now) {
     const row = el('div', 'bw-ladder');
-    for (let i = 0; i < RIVALS; i++) row.append(el('b', i < now ? 'done' : i === now ? 'now' : '', i === RIVALS - 1 ? '??' : String(i + 1)));
+    for (let i = 0; i < RIVALS; i++) row.append(el('b', i < now ? 'done' : i === now ? 'now' : '', i === RIVALS - 1 ? '👑' : String(i + 1)));
     c.append(row);
   }
   const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
@@ -693,14 +693,14 @@ export function createBrawl(game) {
     box.replaceChildren();
     box.append(el('p', 'big', styleTag(id)), el('p', null, L(STYLE[id].line)));
     const power = (st.punch[1] + st.kick[1]) / 2;
-    for (const [icon, k] of [['??', st.hp / 120], ['?', st.walk / 1.25], ['??', (power - 0.7) / 0.5]]) {
+    for (const [icon, k] of [['❤️', st.hp / 120], ['⚡', st.walk / 1.25], ['💪', (power - 0.7) / 0.5]]) {
       const row = el('div', 'bw-stat'), bar = el('i'), fill = el('u');
       fill.style.width = Math.round(Math.max(0.12, Math.min(1, k)) * 100) + '%';
       bar.append(fill); row.append(el('span', null, icon), bar);
       box.append(row);
     }
-    box.append(el('p', 'seq', '? ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ��${mv[st.slot].hits}` : '')));
-    box.append(el('p', 'seq', '?? ' + st.combos.map(seqText).join('   ��   ')));
+    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
+    box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
   }
   // The eight styles to pick from, and what the picked one does.
   function styleGrid(c) {
@@ -729,23 +729,23 @@ export function createBrawl(game) {
     setRival(rec.stage);
     on.match = null;
     card((c) => {
-      c.append(el('h3', null, '?? ' + tt('title')));
+      c.append(el('h3', null, '🥊 ' + tt('title')));
       if (note) c.append(el('p', 'bw-note', note));
       // Anyone else in the room: fight them instead (no need to be friends).
       const list = el('div', 'bw-vs');
       c.append(el('p', 'dim', tt('vsTitle')), list);
       on.vsList = { list, at: -9, key: null };
-      c.append(el('p', 'dim', tt('rival', { n: rec.stage + 1, max: RIVALS }) + ' �� ' + L(RIVAL[rec.stage].name) + ' (' + styleTag(RIVAL[rec.stage].style) + ')'));
+      c.append(el('p', 'dim', tt('rival', { n: rec.stage + 1, max: RIVALS }) + ' · ' + L(RIVAL[rec.stage].name) + ' (' + styleTag(RIVAL[rec.stage].style) + ')'));
       ladder(c, rec, rec.stage);
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const more = el('details');
-      more.append(el('summary', 'dim', '?'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
+      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
       if (!touch) more.append(el('p', 'dim', tt('keys')));
       c.append(more);
-      if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' �� ' + tt('crowns', { n: rec.crowns }) : '')));
+      if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('?? ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
       c.append(row);
     });
     fillPeople();
@@ -764,10 +764,10 @@ export function createBrawl(game) {
     v.key = key;
     v.list.replaceChildren();
     if (!now.length) v.list.append(el('p', 'dim', tt('vsNone')));
-    for (const f of now) { const b = button('?? ' + f.name, null, () => invite(f)); b.dataset.peer = f.id; v.list.append(b); }
+    for (const f of now) { const b = button('⚔️ ' + f.name, null, () => invite(f)); b.dataset.peer = f.id; v.list.append(b); }
   }
 
-  // ���� With someone else in the room (core/brawl-net.js) ����
+  // ── With someone else in the room (core/brawl-net.js) ──
   // The asking and answering go over the room's messages (game/arcade.js
   // hands us ours): brawl:<to>:<kind>:<nonce>:<style>, kind i (fight me?),
   // a (picking a style), y (ready), n (no), b (busy), c (never mind). The
@@ -782,7 +782,7 @@ export function createBrawl(game) {
   }
   function waitCard(text) {
     card((c) => {
-      c.append(el('h3', null, '?? ' + tt('title')), el('p', 'big', text));
+      c.append(el('h3', null, '🥊 ' + tt('title')), el('p', 'big', text));
       const row = el('div', 'row');
       row.append(button(tt('cancel'), null, () => { leaveVs(true); menu(); }));
       c.append(row);
@@ -810,11 +810,11 @@ export function createBrawl(game) {
     tell(inv.from, 'a', inv.nonce);
     setFoe('p:' + inv.from, game.others.lookOf?.(inv.from) || {}, inv.name, on.vs.style, VS_SKY);
     card((c) => {
-      c.append(el('h3', null, '?? ' + tt('title')), el('p', 'big', tt('vsAsk', { name: inv.name })), el('p', 'dim', inv.name + ': ' + styleTag(on.vs.style)));
+      c.append(el('h3', null, '🥊 ' + tt('title')), el('p', 'big', tt('vsAsk', { name: inv.name })), el('p', 'dim', inv.name + ': ' + styleTag(on.vs.style)));
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const row = el('div', 'row');
-      row.append(button('?? ' + tt('ready'), 'go', () => { const vs = on.vs; tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
+      row.append(button('🥊 ' + tt('ready'), 'go', () => { const vs = on.vs; tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
       c.append(row);
     });
   }
@@ -868,10 +868,10 @@ export function createBrawl(game) {
     if (won) game.me?.play?.('cheer');
     leaveVs(false);
     card((c) => {
-      c.append(el('h3', null, '?? ' + tt('title')));
+      c.append(el('h3', null, '🥊 ' + tt('title')));
       c.append(el('p', 'big', res === 2 ? tt('draw') : won ? tt('won', { name }) : tt('vsLose', { name })));
       const row = el('div', 'row');
-      row.append(button('?? ' + tt('again'), 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ?', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('again'), 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -879,12 +879,12 @@ export function createBrawl(game) {
     const rec = afterMatch(store, stage, won), name = L(RIVAL[stage].name);
     const champ = won && stage === RIVALS - 1;
     card((c) => {
-      c.append(el('h3', null, '?? ' + tt('title')));
+      c.append(el('h3', null, '🥊 ' + tt('title')));
       c.append(el('p', 'big', champ ? tt('champ') : won ? tt('won', { name }) : tt('lost', { name })));
       ladder(c, rec, champ ? RIVALS : rec.stage);
-      if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' �� ' + tt('crowns', { n: rec.crowns }) : '')));
+      if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('?? ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ?', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -894,7 +894,7 @@ export function createBrawl(game) {
     if (on.foeStyle) on.hud.b.style.textContent = styleTag(on.foeStyle);
   }
 
-  // ���� The fighters ����
+  // ── The fighters ──
   const fighter = (look, side) => makeFighter(look, side, on.stage.g);
   // Who stands across the ring: one of the five rivals, or another player.
   function setFoe(key, look, name, style, sky) {
@@ -966,7 +966,7 @@ export function createBrawl(game) {
           spark(fighter.x, 0.85, fighter.z, '#c39bff', 2.1);
           sfx.tock(0.7, 1250);
           const c = on.hud.combo[e.by ^ on.flip];
-          c.textContent = '? ' + (e.move === 'palm' ? '1' : '2');
+          c.textContent = '⭐ ' + (e.move === 'palm' ? '1' : '2');
           c.classList.add('show'); on.hud.comboT[e.by] = 0.8;
         } else sfx.tock(0.18, fighter.mv[e.move].level >= 3 ? 520 : 760);
       }
