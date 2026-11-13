@@ -37,8 +37,10 @@ const FINISH_MULT = 1.5; // the last hit of a style's string
 const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far inside its reach, moving at most this far a tick
 const BUFFER = 12;
 export const SP_MAX = 100, SP_COST = 50; // the special bar, and what one special spends
-const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), × the damage taken
+const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), �� the damage taken
 const SPECIAL_DMG = 1.25; // (a special costs bar, so it hurts more)
+export const NORMAL_DAMAGE_MULT = 0.75;
+export const COMMAND_TICKS = 30; // down, toward + punch/kick within half a second
 const KEEP_GUARD = 15; // ticks a guard holds after the other fighter blinks behind it // a press waits this many ticks for the fighter to be free
 const GRAVITY = 20 * TICK * TICK;
 const MAX_JUGGLE = 3;
@@ -59,8 +61,8 @@ export const MOVES = {
 };
 export const moveTicks = (m) => m.startup + m.active + m.recover;
 
-// ── Styles ───────────────────────────────────────────────────────────────
-// hp, walk and dash (× the usual), punch and kick: [time ×, damage ×] (a time
+// ���� Styles ������������������������������������������������������������������������������������������������������������������������������
+// hp, walk and dash (�� the usual), punch and kick: [time ��, damage ��] (a time
 // under 1 is quicker). sig: the signature move and the slot it takes ('palm'
 // = both punches, 'fly' = both kicks); the other slot keeps the usual move.
 //   blink   steps behind the other fighter just before it hits
@@ -142,6 +144,7 @@ export function newFighter(side, style = 'brawler') {
     hp: STYLES[st].hp, st: 'idle', t: 0, move: null, hit: false, landed: false,
     stun: 0, stepDir: 0, rest: 0, juggle: 0, walk: 0, guard: false, keep: 0, rage: false, chain: false, sp: 0,
     buf: { p: 0, k: 0, s1: 0, s2: 0 }, combo: 0, comboT: 0,
+    command: { left: 0, stage: 0, down: false, toward: false },
   };
 }
 const NO_INPUT = { mx: 0, mz: 0 };
@@ -171,7 +174,7 @@ function hurt(a, d, m, id, face, ev, fin = false) {
   const air = d.st === 'air';
   const theirs = d.st === 'atk' ? d.mv[d.move] : null;
   const counter = !!theirs && d.t < theirs.startup + theirs.active;
-  let dmg = m.dmg * (a.rage ? RAGE_MULT : 1) * (counter ? COUNTER_MULT : 1) * (fin ? FINISH_MULT : 1);
+  let dmg = m.dmg * (m.level < 9 && id !== 'shot' ? NORMAL_DAMAGE_MULT : 1) * (a.rage ? RAGE_MULT : 1) * (counter ? COUNTER_MULT : 1) * (fin ? FINISH_MULT : 1);
   if (air) { d.juggle++; if (!fin) dmg *= 0.7 ** d.juggle; } // (a string's finisher counts in full)
   dmg = Math.max(1, Math.round(dmg));
   d.hp = Math.max(0, d.hp - dmg);
@@ -203,6 +206,20 @@ function hurt(a, d, m, id, face, ev, fin = false) {
 
 // One fighter's own tick (moving, starting and running moves).
 function act(f, o, inp, ev) {
+  // Recognise commands in the shared simulation, so AI/local/online use the
+  // same tick clock. Existing one-button specials remain available on touch.
+  const c = f.command, down = inp.mz < -0.5, towardPress = inp.mx > 0.5;
+  if (c.left > 0 && --c.left === 0) c.stage = 0;
+  if (down && !c.down) { c.stage = 1; c.left = COMMAND_TICKS; }
+  if (c.stage === 1 && towardPress && !c.toward) c.stage = 2;
+  if (inp.mx < -0.5 || inp.mz > 0.5 || ['hit', 'air', 'down', 'getup', 'ko', 'block'].includes(f.st)) c.stage = c.left = 0;
+  if (c.stage === 2 && (inp.p || inp.k)) {
+    if (f.sp >= SP_COST) inp = { ...inp, p: false, k: false, [inp.p ? 's1' : 's2']: true };
+    // Down also starts a side-step; the completed command cancels that step.
+    if (f.st === 'step') { f.st = 'idle'; f.t = 0; }
+    c.stage = c.left = 0;
+  }
+  c.down = down; c.toward = towardPress;
   for (const k in f.buf) {
     if (inp[k]) f.buf[k] = BUFFER;
     else if (f.buf[k] > 0) f.buf[k]--;
@@ -373,8 +390,8 @@ export function stepFight(a, b, ia = NO_INPUT, ib = NO_INPUT) {
   return ev;
 }
 
-// ── The computer's fighter ───────────────────────────────────────────────
-// level 0 (easy) … 4 (the champion).
+// ���� The computer's fighter ����������������������������������������������������������������������������������������������
+// level 0 (easy) �� 4 (the champion).
 export const AI_LEVELS = [
   { think: 28, guard: 0.12, attack: 0.35, chain: 0.15, step: 0, special: 0, punish: 0.2 },
   { think: 22, guard: 0.28, attack: 0.45, chain: 0.35, step: 0.04, special: 0.1, punish: 0.35 },
@@ -443,8 +460,8 @@ export function createAi(level, rand = Math.random) {
   };
 }
 
-// ── A match: best of three rounds ────────────────────────────────────────
-// phase: 'intro' (bow, 3-2-1) → 'fight' → 'ko' (the fall) → next round's
+// ���� A match: best of three rounds ��������������������������������������������������������������������������������
+// phase: 'intro' (bow, 3-2-1) �� 'fight' �� 'ko' (the fall) �� next round's
 // intro, or 'over'. wins: [player, rival]. result: 0 the player won, 1 the
 // rival, null not over yet.
 const INTRO = 110, KO_HOLD = 170, MAX_ROUNDS = 5;
@@ -513,7 +530,7 @@ export function createMatch({ level = 0, rand = Math.random, style = 'brawler', 
 // A copy of a match two screens can send each other or run ahead on: the
 // fighters' move tables (the same for a style everywhere) are left out and
 // put back.
-const copyFighter = (f, mv) => ({ ...f, mv, seq: [...f.seq], buf: { ...f.buf }, shot: f.shot ? { ...f.shot } : null });
+const copyFighter = (f, mv) => ({ ...f, mv, seq: [...f.seq], buf: { ...f.buf }, command: { left: 0, stage: 0, down: false, toward: false, ...f.command }, shot: f.shot ? { ...f.shot } : null });
 export function copyMatch(m) {
   return { ...m, a: copyFighter(m.a, m.a.mv), b: copyFighter(m.b, m.b.mv), wins: [...m.wins], styles: [...m.styles] };
 }
@@ -524,12 +541,12 @@ export function unpackMatch(o) {
   return { ...o, a: copyFighter(o.a, movesFor(o.a.style)), b: copyFighter(o.b, movesFor(o.b.style)), wins: [...o.wins], styles: [...o.styles] };
 }
 
-// ── The ladder and the record ────────────────────────────────────────────
+// ���� The ladder and the record ����������������������������������������������������������������������������������������
 // Five rivals, easy to champion (their names and looks: game/brawl.js).
 export const RIVALS = 5;
 export const BRAWL_KEY = 'mk.brawl';
-// { stage: the next rival to meet (0…4), best: most rivals beaten in a row
-// (0…5), crowns: times the champion fell, style: the style last picked }
+// { stage: the next rival to meet (0��4), best: most rivals beaten in a row
+// (0��5), crowns: times the champion fell, style: the style last picked }
 export function saveStyle(store, style) {
   const rec = loadBrawl(store);
   rec.style = STYLES[style] ? style : null;
