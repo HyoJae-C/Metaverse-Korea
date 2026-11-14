@@ -39,7 +39,7 @@ export function createArcade(game) {
   function stopWatch() {
     if (!watch) return;
     game.camera.fov = watch.fov; game.camera.updateProjectionMatrix();
-    watch.btn.remove();
+    watch.bar.remove();
     document.documentElement.classList.remove('tv-on');
     watch = null;
   }
@@ -49,22 +49,39 @@ export function createArcade(game) {
     if (!document.getElementById('tv-css')) {
       const st = document.createElement('style');
       st.id = 'tv-css';
-      st.textContent = 'html.tv-on #hud > *, html.tv-on #labels, html.tv-on .credit { visibility: hidden !important; } #tv-x { position: fixed; z-index: 60; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); border: 0; border-radius: 999px; padding: 12px 22px; font: 800 16px system-ui, sans-serif; color: #2b2230; background: #ffd23c; box-shadow: 0 6px 24px rgba(0,0,0,.35); cursor: pointer; }';
+      st.textContent = 'html.tv-on #hud > *, html.tv-on #labels, html.tv-on .credit { visibility: hidden !important; } #tv-bar { position: fixed; z-index: 60; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 8px; } #tv-bar button { border: 0; border-radius: 999px; padding: 12px 18px; font: 800 16px system-ui, sans-serif; color: #2b2230; background: #fff4c9; box-shadow: 0 6px 24px rgba(0,0,0,.35); cursor: pointer; white-space: nowrap; } #tv-bar button.on, #tv-bar #tv-x { background: #ffd23c; }';
       document.head.append(st);
     }
-    const btn = document.createElement('button');
-    btn.id = 'tv-x'; btn.type = 'button'; btn.textContent = '✕ ' + L(ARCADE_OPEN.unwatch);
-    btn.onclick = stopWatch;
-    document.body.append(btn);
+    // Screen 1, screen 2 (one at a time, close up), and stop.
+    const bar = document.createElement('div');
+    bar.id = 'tv-bar';
+    const live = tv?.state.findIndex((q) => q?.live) ?? -1;
+    const picks = screens.map((_, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.id = 'tv-' + (i + 1); b.textContent = '📺 ' + fmt(L(ARCADE_OPEN.watchN), { n: i + 1 });
+      b.onclick = () => pick(i);
+      return b;
+    });
+    const x = document.createElement('button');
+    x.id = 'tv-x'; x.type = 'button'; x.textContent = '✕ ' + L(ARCADE_OPEN.unwatch);
+    x.onclick = stopWatch;
+    bar.append(...picks, x);
+    document.body.append(bar);
     document.documentElement.classList.add('tv-on');
-    watch = { room: game.interior, fov: game.camera.fov, btn };
+    watch = { room: game.interior, fov: game.camera.fov, bar, picks, screen: 0 };
+    pick(Math.max(0, live)); // (the one with a match on, if any)
+  }
+  function pick(i) {
+    if (!watch) return;
+    watch.screen = i;
+    watch.picks.forEach((b, j) => b.classList.toggle('on', j === i));
   }
   function watchCamera() {
     const screens = game.interior === watch.room && game.interior.stations.fightTv;
     if (!screens) { stopWatch(); return; }
     const cam = game.camera, aspect = innerWidth / innerHeight, sp = screens.map((q) => q.screen.position);
-    const wide = aspect >= 1.15, live = tv?.state.findIndex((q) => q?.live) ?? -1, one = sp[Math.max(0, live)];
-    const half = wide ? Math.abs(sp[1].x - sp[0].x) / 2 + 3.45 : 3.45, x = wide ? (sp[0].x + sp[1].x) / 2 : one.x, back = 10;
+    const one = sp[Math.min(watch.screen, sp.length - 1)];
+    const half = 3.45, x = one.x, back = 10; // (the screen picked, close up)
     // As close as shows the screens whole: across, and top to bottom.
     const fov = Math.min(80, 2 * Math.atan(Math.max(half / (back * aspect), 2.3 / back)) * 180 / Math.PI);
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
@@ -396,6 +413,7 @@ export function createArcade(game) {
     climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', hi: 'चढ़ाई करें', fr: 'Grimper', th: 'ปีนผา', ar: 'تسلّق' },
     aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
     watch: { en: 'Watch the screens', ko: '스크린 보기', ja: 'スクリーンを見る', zh: '看大屏幕', es: 'Ver las pantallas', id: 'Tonton layar', vi: 'Xem màn hình', hi: 'स्क्रीन देखें', fr: 'Regarder les écrans', th: 'ดูจอ', ar: 'شاهد الشاشات' },
+    watchN: { en: 'Screen {n}', ko: '{n}번 보기', ja: '{n}番を見る', zh: '看{n}号', es: 'Pantalla {n}', id: 'Layar {n}', vi: 'Màn {n}', hi: 'स्क्रीन {n}', fr: 'Écran {n}', th: 'จอ {n}', ar: 'الشاشة {n}' },
     unwatch: { en: 'Stop watching', ko: '그만 보기', ja: '見るのをやめる', zh: '不看了', es: 'Dejar de ver', id: 'Berhenti menonton', vi: 'Thôi xem', hi: 'देखना बंद करें', fr: 'Arrêter', th: 'เลิกดู', ar: 'توقف عن المشاهدة' },
     fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
