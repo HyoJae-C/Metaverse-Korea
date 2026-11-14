@@ -7,7 +7,7 @@
 // caller can fall back to the demo countdown.
 //
 // Setup on Google's side (see config.rewardedAd): an AdSense account with
-// another-seoul.com added and approved, H5 Games Ads enabled for the account,
+// moduseoul.com added and approved, H5 Games Ads enabled for the account,
 // /ads.txt with the publisher line, and the AdSense "Privacy & messaging"
 // consent message turned on for the EEA, UK and Switzerland.
 

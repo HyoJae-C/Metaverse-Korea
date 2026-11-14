@@ -13,6 +13,9 @@ export const LANDMARK_SEARCH = [
   { type: 'sungnyemun', icon: '🏯', go: [0, 20], // the lawn south of the gate, by its stamp
     name: { en: 'Sungnyemun (Namdaemun)', ko: '숭례문 (남대문)', ja: '崇礼門（南大門）', zh: '崇礼门（南大门）' },
     also: ['Namdaemun Gate', 'Great South Gate', '남대문', '南大門', '南大门'] },
+  { type: 'oldstation', icon: '🚉', go: [11, 0], // the plaza in front of it
+    name: { en: 'Old Seoul Station (Culture Station Seoul 284)', ko: '구 서울역사 (문화역서울284)', ja: '旧ソウル駅舎（文化駅ソウル284）', zh: '旧首尔站（文化站首尔284）' },
+    also: ['Seoul Station', 'Culture Station Seoul 284', '서울역', '문화역서울284', 'ソウル駅', '首尔站'] },
   { type: 'heunginjimun', icon: '🏯', go: [8, 0],
     name: { en: 'Heunginjimun (Dongdaemun Gate)', ko: '흥인지문 (동대문)', ja: '興仁之門（東大門）', zh: '兴仁之门（东大门）' },
     also: ['Dongdaemun Gate', 'Great East Gate', '동대문', '東大門', '东大门'] },
@@ -34,9 +37,12 @@ export const LANDMARK_SEARCH = [
     name: { en: 'Namsan Cable Car (N Seoul Tower)', ko: '남산 케이블카 (N서울타워)', ja: '南山ケーブルカー（Nソウルタワー）', zh: '南山缆车（N首尔塔）' },
     also: ['Namsan', 'N Tower', 'Seoul Tower', '남산', '남산타워', '서울타워'] },
   { type: 'haneultower', icon: '🗼', go: [0, 20],
-    name: { en: 'Another Tower', ko: '어나더타워', ja: 'アナザータワー', zh: '另一塔' } },
+    name: { en: 'Modu Tower', ko: '모두타워', ja: 'モドゥタワー', zh: 'Modu塔' } },
   { type: 'tower63', icon: '🏢', go: [0, 12],
     name: { en: '63 Building', ko: '63빌딩', ja: '63ビル', zh: '63大厦' } },
+  { type: 'naksanpin', icon: '⛰️', go: [0, 0], // Naksan Park, on the hill inside the city wall
+    name: { en: 'Naksan Park (Seoul City Wall)', ko: '낙산공원 (한양도성)', ja: '駱山公園（漢陽都城）', zh: '骆山公园（汉阳都城）' },
+    also: ['Naksan', 'City Wall', 'Seoul City Wall', 'Hanyangdoseong', '낙산', '성곽길', '한양도성', '駱山', '骆山'] },
   { type: 'peacegate', icon: '⛩️', go: [0, 12],
     name: { en: 'World Peace Gate', ko: '평화의 문', ja: '平和の門', zh: '和平之门' },
     also: ['Peace Gate', '평화의문'] },

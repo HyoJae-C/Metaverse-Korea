@@ -285,18 +285,23 @@ pois.push(
 // middle with short stretches of the restored wall either side; a path
 // through its arch (people walk through it today).
 export const GATE = { x: -1774, z: -429, ring: [-1828, -465, -1720, -393] };
+export const SUNGNYEMUN_SCALE = 0.5;
 {
   const { x, z, ring: [rx0, rz0, rx1, rz1] } = GATE;
   roads.push({ k: 'primary', w: 14, p: [[rx0, rz0], [rx1, rz0], [rx1, rz1], [rx0, rz1], [rx0, rz0]], n: N('세종대로', 'Sejong-daero', '世宗大路', '世宗大路') });
-  roads.push({ k: 'walk', w: 4, p: [[x, rz0 + 7], [x, rz1 - 7]] });
+  roads.push({ k: 'walk', w: 2.5, p: [[x, rz0 + 7], [x, rz1 - 7]] });
   areas.push({ k: 'park', p: rect(rx0 + 9, rz0 + 9, rx1 - 9, rz1 - 9) });
-  // The stone base: two piers either side of the arch (5 m wide), and the
-  // wall stubs.
-  blockers.push({ p: rect(x - 14, z - 6, x - 2.5, z + 6) }, { p: rect(x + 2.5, z - 6, x + 14, z + 6) });
-  blockers.push({ p: rect(x - 34, z - 1.5, x - 14, z + 1.5) }, { p: rect(x + 14, z - 1.5, x + 30, z + 1.5) });
-  landmarks.push({ type: 'sungnyemun', x, z });
-  landmarks.push({ type: 'citywall', x: x - 24, z, len: 20, ry: Math.PI / 2, gates: 0 });
-  landmarks.push({ type: 'citywall', x: x + 22, z, len: 16, ry: Math.PI / 2, gates: 0 });
+  // At half the real size, like Heunginjimun (Yozi, 2026-11-13: the great
+  // gates 50%): the model (greatGate, about the real size) at sc 0.5, so its
+  // base is 14 x 6 m. The stone base: two piers either side of the arch
+  // (2.5 m wide), and the wall stubs at Heunginjimun's 60% (sc 0.6, 3.3 m
+  // high), out to where they ended before.
+  const S = SUNGNYEMUN_SCALE;
+  blockers.push({ p: rect(x - 14 * S, z - 6 * S, x - 2.5 * S, z + 6 * S) }, { p: rect(x + 2.5 * S, z - 6 * S, x + 14 * S, z + 6 * S) });
+  blockers.push({ p: rect(x - 34, z - 1.2, x - 14 * S, z + 1.2) }, { p: rect(x + 14 * S, z - 1.2, x + 30, z + 1.2) });
+  landmarks.push({ type: 'sungnyemun', x, z, sc: [S] });
+  landmarks.push({ type: 'citywall', x: x - (34 + 14 * S) / 2, z, len: +((34 - 14 * S) / 0.6).toFixed(1), ry: Math.PI / 2, gates: 0, sc: [0.6, 0.6] });
+  landmarks.push({ type: 'citywall', x: x + (30 + 14 * S) / 2, z, len: +((30 - 14 * S) / 0.6).toFixed(1), ry: Math.PI / 2, gates: 0, sc: [0.6, 0.6] });
   landmarks.push({ type: 'sign', x: x + 8, z: z + 16, ry: 0, title: SUNGNYEMUN.title, text: SUNGNYEMUN.text });
   pois.push({ kind: 'landmark', x, z: z + 10, name: N('숭례문 (남대문)', 'Sungnyemun (Namdaemun)', '崇礼門（南大門）', '崇礼门（南大门）') });
 }

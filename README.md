@@ -1,4 +1,4 @@
-# Another Seoul
+# Modu Seoul
 
 A browser-based 3D virtual trip to Korea for international visitors. No install: open the website and walk.
 First stop: **Seongsu-dong, Seoul**.
@@ -132,7 +132,7 @@ automatically. While a model loads, or if it fails, the simple built-in chibi is
 
 ### Domain and Google sign-in
 
-The site lives at https://another-seoul.com/ (GitHub Pages with a custom domain). DNS, Google Cloud and
+The site lives at https://moduseoul.com/ (GitHub Pages with a custom domain). DNS, Google Cloud and
 Supabase settings for the domain and Google sign-in are in `docs/DOMAIN-AND-GOOGLE.md`.
 
 ### Cloud saves (guest accounts)

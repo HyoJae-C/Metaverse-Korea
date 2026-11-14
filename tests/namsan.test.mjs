@@ -27,7 +27,7 @@ test('the tower stands on N Seoul Tower\'s real spot, on top of a hill a quarter
   assert.match(osm.license, /OpenStreetMap contributors/);
   const top = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
   assert.ok(dist(top, toGame(...osm.tower)) < 15, `tower ${Math.round(dist(top, toGame(...osm.tower)))} m off`);
-  assert.equal(hill.h, 65); // 262 m / 4
+  assert.equal(hill.h, 56); // 262 m above the sea, about 225 m above the city round it: / 4 (Yozi 2026-11-13)
   // The leaning hill's highest point is where the tower is.
   assert.ok(Math.abs(namsanGround(hill, hill.px, hill.pz) - hill.h) < 0.5);
   assert.ok(namsanGround(hill, hill.px + 30, hill.pz) < hill.h && namsanGround(hill, hill.px - 30, hill.pz) < hill.h);
@@ -75,7 +75,7 @@ test('the hill\'s foot follows the real Namsan outline at 1/4 and keeps off the 
   assert.ok(off[off.length >> 1] < 25, `median ${Math.round(off[off.length >> 1])} m off the real edge`);
   // No road of the district runs over the hill (the trails up it aside).
   for (const r of itaewon.roads) {
-    if (r.nw || r.n?.en === 'Namsan trail') continue;
+    if (r.nw || r.hw || r.n?.en === 'Namsan trail') continue; // (and the city wall's trail: tests/namsan-wall.test.mjs)
     for (const [x, z] of r.p) assert.ok(!onNamsan(hill, x - hill.x, z - hill.z), `${r.n?.en} on the hill`);
   }
 });

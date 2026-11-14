@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { rodSkin } from './rod-skins.js';
 import { frisbeeColor } from './frisbee.js';
 import { shadeHex } from './lipstick.js';
+import { baitById } from './bait.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -13,15 +14,15 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'blush'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'bait', 'blush'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
-export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap'];
+export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
 // (a frisbee also carries its colour: 'gift:frisbee.2')
 export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
-// Another Land's food truck snacks (park-food.js): an ice cream cone, a
+// Modu Land's food truck snacks (park-food.js): an ice cream cone, a
 // churro, a hot dog, in metres at hand size (the trucks scale them up).
 export const SNACKS = ['icecream', 'churro', 'hotdog'];
 export function snackModel(id) {
@@ -43,7 +44,7 @@ export function snackModel(id) {
   return g;
 }
 
-// Balloon art from Another Land's clown (game/balloon-clown.js): a sword or
+// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword or
 // a dog in the hand, a crown worn on the head ('balloon:crown'). Twisted
 // glossy sausages of latex, in metres (the crown in the head's own units).
 export const BALLOONS = ['sword', 'dog', 'crown'];
@@ -156,7 +157,7 @@ export function makeHeld(kind) {
     tassel.position.y = 0.76; tassel.scale.set(1, 1.6, 1);
     g.add(shaft, blade, tassel);
   } else if (kind === 'bat') {
-    // A baseball bat (the batters at Seoul Another Dome), held upright.
+    // A baseball bat (the batters at Modu Ballpark), held upright.
     const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.013, 0.62, 10), mat('#c99a5b'));
     bat.position.y = 0.3;
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.02, 10), mat('#3b2418'));
@@ -245,6 +246,15 @@ export function makeHeld(kind) {
     lid.position.set(0, 0.04, -0.035);
     lid.rotation.x = -1.3;
     g.add(base, pan, lid);
+  } else if (kind === 'bait') {
+    // A bait tin ('bait:<bait id>'): a round can with a lid in the bait's colour.
+    const can = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 14), mat('#d8dde2'));
+    can.position.y = 0.02;
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0355, 0.0355, 0.018, 14), mat(baitById(sub)?.color || '#c98b4f'));
+    band.position.y = 0.02;
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.037, 0.008, 14), mat(baitById(sub)?.color || '#c98b4f'));
+    lid.position.y = 0.044;
+    g.add(can, band, lid);
   } else if (kind === 'perfume') {
     // A perfume bottle: square glass, pink juice, a gold collar and a cap.
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.035), new THREE.MeshLambertMaterial({ color: '#f4eef8', transparent: true, opacity: 0.6 }));
@@ -293,6 +303,13 @@ function giftLook(g, sub) {
   } else if (sub === 'kimchi') { // a glass jar of homemade kimchi with a lid
     add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 14), '#c8392b', 0, 0.05);
     add(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 14), '#2f6f4f', 0, 0.11);
+  } else if (sub === 'tteok') { // a little wooden box of songpyeon: white, green and pink half-moons
+    add(new THREE.BoxGeometry(0.11, 0.035, 0.11), '#b88a5a', 0, 0.018);
+    ['#f6f1e6', '#8fbf6a', '#f2b8c6'].forEach((c, k) => add(new THREE.SphereGeometry(0.022, 8, 6).scale(1.3, 0.7, 0.8), c, -0.03 + k * 0.03, 0.045));
+  } else if (sub === 'bibimbap') { // a brass bowl with coloured toppings and an egg on top
+    add(new THREE.CylinderGeometry(0.065, 0.045, 0.05, 16), '#c9a227', 0, 0.025);
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 16), '#d9402c', 0, 0.052);
+    add(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 12), '#ffd23a', 0, 0.058);
   } else { // japchae, kimbap: a homemade lunch box (dosirak) with a cloth knot
     add(new THREE.BoxGeometry(0.1, 0.06, 0.13), sub === 'kimbap' ? '#2b3a2b' : '#c98a3e', 0, 0.03);
     add(new THREE.BoxGeometry(0.105, 0.012, 0.135), '#f4d35e', 0, 0.066);

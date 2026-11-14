@@ -1,8 +1,10 @@
-// End-to-end check: two separate browsers join the same room through the
-// configured realtime provider and see each other.
+// End-to-end check: two separate browsers join the same room and see each
+// other. Realtime runs on a fake server in this script (fake-realtime.mjs),
+// not on the live Supabase project; E2E_REAL_REALTIME=1 uses the real one.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/multiplayer.mjs http://localhost:4173/
 import { chromium } from 'playwright';
+import { useFakeRealtime, summary, log as rtLog } from './fake-realtime.mjs';
 
 const url = process.argv[2] || 'http://localhost:4173/';
 // Each player gets a browser of their own, as in real life. Two contexts in
@@ -20,6 +22,7 @@ async function join(name) {
   const browser = await launch();
   browsers.push(browser);
   const ctx = await browser.newContext({ viewport: { width: 900, height: 600 } });
+  await useFakeRealtime(ctx, name);
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
   page.on('console', (m) => (m.type() === 'warning' || m.type() === 'error') && errors.push(`${name}: ${m.text()}`));
@@ -100,9 +103,11 @@ try {
     }).catch((err) => ({ error: err.message }));
     errors.push(`${n}: ${JSON.stringify(info)}`);
   }
+  errors.push(...rtLog.slice(-30));
 }
 await a.screenshot({ path: 'e2e-multiplayer.png' });
 console.log(ok ? 'PASS: players see each other, emotes and chat arrive, area cells switch' : 'FAIL');
+console.log(summary());
 if (errors.length) console.log(errors.join('\n'));
 for (const b of browsers) await b.close();
 process.exit(ok ? 0 : 1);

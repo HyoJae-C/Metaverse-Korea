@@ -1,4 +1,4 @@
-// End-to-end check: Another Land's roller coaster, on its island in Seokchon
+// End-to-end check: Modu Land's roller coaster, on its island in Seokchon
 // Lake. Buy the ride-all day pass at the ticket window under the island, up
 // the stairs onto the island, wait at the platform for a train, get on, ride
 // the lap (the camera widens in the drop), switch the view, and step off
@@ -48,7 +48,7 @@ await shot('island');
 await page.evaluate(() => __mk.place(-24.2, -16.5)); // (at the hall's door: stores.json open.hall, 5.3 m east)
 await page.waitForTimeout(400);
 const dl = await page.evaluate(() => __mk.action());
-assert(/^⬇️ Enter Another Land Underground/.test(dl || ''), `stairs down: ${dl}`);
+assert(/^⬇️ Enter Modu Land Underground/.test(dl || ''), `stairs down: ${dl}`);
 
 // The platform.
 await page.evaluate(() => { __mk.place(-27.4, 2.4); __mk.cam({ yaw: Math.PI / 2 + 0.5, pitch: 0.35, dist: 12 }); });

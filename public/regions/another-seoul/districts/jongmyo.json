@@ -3,9 +3,9 @@
   "district": "jongmyo",
   "parts": [
    {
-    "why": "the Information Center and the grove, Jongmyo Square and the shrine",
+    "why": "the Information Center, the gold and silver workshop and the grove, Jongmyo Square and the shrine",
     "box": [
-     -86,
+     -99,
      -135,
      86,
      30
@@ -68,6 +68,31 @@
     ],
     [
      -78,
+     3
+    ]
+   ]
+  },
+  {
+   "h": 9,
+   "fr": [
+    0,
+    1
+   ],
+   "p": [
+    [
+     -97,
+     14
+    ],
+    [
+     -85,
+     14
+    ],
+    [
+     -85,
+     3
+    ],
+    [
+     -97,
      3
     ]
    ]

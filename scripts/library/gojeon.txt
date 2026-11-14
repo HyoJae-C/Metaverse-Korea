@@ -4,12 +4,12 @@
 @color #8a3a2a
 @title.en Korean Classic Novels, Retold Short (Korean only)
 @title.ko 짧게 읽는 고전소설
-@author.en Classic Joseon novels, retold for Another Seoul
-@author.ko 조선 고전소설 (Another Seoul이 새로 씀)
+@author.en Classic Joseon novels, retold for Modu Seoul
+@author.ko 조선 고전소설 (모두서울이 새로 씀)
 @about.en Three classic Joseon novels everyone in Korea knows, retold short in easy Korean: Chunhyang, Shim Cheong, and Hong Gil-dong. Korean text only.
 @about.ko 한국 사람이라면 누구나 아는 조선 시대 소설 세 편을 쉬운 말로 짧게 다시 썼어요. 춘향전, 심청전, 홍길동전.
 @source Classic Joseon novels (춘향전, 심청전, 홍길동전), retold in new words
-@license The original novels are hundreds of years old and belong to everyone. This retelling is written new for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@license The original novels are hundreds of years old and belong to everyone. This retelling is written new for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 춘향전
 전라도 남원 고을, 단옷날이었어요. 사또의 아들 이몽룡은 광한루에 놀러 갔다가, 그네를 타는 한 처녀를 보았어요. 퇴기 월매의 딸, 성춘향이었지요.

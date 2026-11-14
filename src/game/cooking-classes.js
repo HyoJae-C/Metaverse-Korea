@@ -1,10 +1,10 @@
-// Panels for the cooking classes (kimchi, japchae, kimbap), the market's kimchi
+// Panels for the cooking classes (kimchi, japchae, kimbap, tteok, bibimbap), the market's kimchi
 // stall and the museums, built once at startup.
 //
-// Kimjang class at Sonmat Kimchi School (Gyeongbokgung): ten steps from the
+// Kimjang class at the Kimchi Making Class (김치만들기체험) (Gyeongbokgung): ten steps from the
 // cabbage to the jar; the finished kimchi goes in the bag.
 //
-// The three classes are downloaded the first time one is opened
+// The classes are downloaded the first time one is opened
 // (core/lazy-panel.js): their texts alone are ~200 KB in twelve languages.
 import { BOSS_LINES } from '../ui/market-text.js';
 import { KimchiSellUI, ML as MARKET_L } from '../ui/kimchi-sell-ui.js';
@@ -41,7 +41,7 @@ export function createCookingClasses(game) {
     },
     onLimit: () => game.clerk && say(game.clerk, $('labels'), BOSS_LINES.enough),
   });
-  // Japchae class at Suragan Cooking Class, next to the kimchi school.
+  // Royal Japchae Class (궁중잡채체험), along the row from the kimchi class.
   const japchaeUi = lazyPanel(async () => {
     const [{ JapchaeUI }, { JT: JAPCHAE_TEXT }] = await Promise.all([import('../ui/japchae-ui.js'), import('../ui/japchae-text.js')]);
     return new JapchaeUI({
@@ -52,7 +52,7 @@ export function createCookingClasses(game) {
       onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
     });
   });
-  // Free-style kimbap at the same class, at the bamboo mats on the near side.
+  // Free-style kimbap at the Kimbap Making Class (김밥만들기체험), next door.
   const kimbapUi = lazyPanel(async () => {
     const [{ KimbapUI }, { BT: KIMBAP_TEXT }] = await Promise.all([import('../ui/kimbap-ui.js'), import('../ui/kimbap-text.js')]);
     return new KimbapUI({
@@ -63,5 +63,35 @@ export function createCookingClasses(game) {
       onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
     });
   });
-  return { museumUi, kimchiUi, japchaeUi, kimbapUi, kimchiSellUi };
+  // Tteok Making Class (떡만들기체험, songpyeon) and Bibimbap Making Class
+  // (비빔밥만들기체험): steps of the shared kinds (core/cook-class.js), one panel
+  // (ui/cook-class-ui.js), each with its own steps and text.
+  const cookClass = (root, load) => lazyPanel(async () => {
+    const [{ CookClassUI }, c] = await Promise.all([import('../ui/cook-class-ui.js'), load()]);
+    return new CookClassUI({
+      root: $(root),
+      game: c.game,
+      text: c.text,
+      lines: c.lines,
+      wallet,
+      onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
+      onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(c.text.item, 'en'), icon: c.game.icon, g: c.game.id, q: score }),
+    });
+  });
+  const tteokUi = cookClass('tteok-panel', async () => {
+    const [{ TTEOK_GAME, STEPS, WORDS }, { TK, TTEOK_LINES }] = await Promise.all([import('../core/tteok-game.js'), import('../ui/tteok-text.js')]);
+    return {
+      game: { id: TTEOK_GAME, icon: '🍡', steps: STEPS, words: WORDS, stepIcon: { dough: '🥣', knead: '👐', fill: '🍯', shape: '🌙', steam: '♨️', finish: '✨' } },
+      text: TK, lines: TTEOK_LINES,
+    };
+  });
+  const bibimbapUi = cookClass('bibimbap-panel', async () => {
+    const [{ BIBIMBAP_GAME, STEPS, WORDS }, { BK, BIBIMBAP_LINES }] = await Promise.all([import('../core/bibimbap-game.js'), import('../ui/bibimbap-text.js')]);
+    return {
+      game: { id: BIBIMBAP_GAME, icon: '🥗', steps: STEPS, words: WORDS, stepIcon: { namul: '🥬', top: '🥕', arrange: '🌈', egg: '🍳', sauce: '🌶️', mix: '🥄' } },
+      text: BK, lines: BIBIMBAP_LINES,
+    };
+  });
+  return { museumUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi };
 }

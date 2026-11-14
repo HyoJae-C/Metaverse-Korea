@@ -44,9 +44,9 @@ Korean only (no translation):
 | sijo | 시 | 12 sijo (양사언, 이방원, 정몽주, 황진이, 정철, 이조년, 우탁, 윤선도, 월산대군, 송순, 길재) | 14th–17th c. | centuries old; notes written new, CC0 |
 | haedal | 동화 | 해님 달님, 선녀와 나무꾼, 견우와 직녀, 콩쥐 팥쥐, 은혜 갚은 까치 | folk tales | retold new, CC0 |
 | funnytales | 동화 | 방귀쟁이 며느리, 호랑이와 곶감, 젊어지는 샘물, 바닷물은 왜 짤까, 도깨비 감투 | folk tales | retold new, CC0 |
-| english, japanese, chinese | 어학 | travel English, Japanese, Chinese first steps | Another Seoul | written new, CC0 |
-| jachi, homecafe, clean, stretch, plants, money, trash, pyeonuijeom | 생활 | recipes, drinks, cleaning, stretches, plants, money, recycling, convenience-store combos | Another Seoul | written new, CC0 |
-| howto, japhak | 생활 | a silly how-to book, true fun facts | Another Seoul | written new, CC0 (wikiHow is not used: its CC BY-NC-SA license forbids commercial use) |
+| english, japanese, chinese | 어학 | travel English, Japanese, Chinese first steps | Modu Seoul | written new, CC0 |
+| jachi, homecafe, clean, stretch, plants, money, trash, pyeonuijeom | 생활 | recipes, drinks, cleaning, stretches, plants, money, recycling, convenience-store combos | Modu Seoul | written new, CC0 |
+| howto, japhak | 생활 | a silly how-to book, true fun facts | Modu Seoul | written new, CC0 (wikiHow is not used: its CC BY-NC-SA license forbids commercial use) |
 
 Left out on purpose: 황순원 「소나기」, 주요섭 「사랑손님과 어머니」 and
 백석's poems are still under copyright. Works with a strong political or

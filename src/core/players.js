@@ -1,6 +1,7 @@
 // Other players: spawns their characters, interpolates movement and shows
 // name tags and emote bubbles.
 import { parseRide } from './bike-garage.js';
+import { dalRiderY, dalClock } from './seoul-dal.js';
 import { t, getLanguage } from './i18n.js';
 import * as THREE from 'three';
 import { HELD_KINDS, heldBase } from './held.js';
@@ -170,6 +171,7 @@ export class RemotePlayers {
     for (const el of [p.tag, p.bubble]) if (el) el.style.display = 'none';
   }
   nameOf(id) { return this.players.get(id)?.name ?? null; }
+  lookOf(id) { return this.players.get(id)?.look ?? null; } // what they wear (to stand them in a minigame)
   // Where another player is right now (x, z), or null.
   // Where someone is, by their latest update (not where the smoothed
   // character has got to yet: after a jump that can lag by many metres).
@@ -271,6 +273,8 @@ export class RemotePlayers {
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
         r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(p.target.fl || p.target.cr ? 260 : 140, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit, Seoul Dal
+        const dalY = p.target.dl ? dalRiderY(p.target.dl, dalClock()) : null; // in Seoul Dal's gondola: its height from the clock, not their stepped updates
+        if (dalY !== null) r.position.y = dalY;
         let d = p.target.ry - r.rotation.y;
         d = Math.atan2(Math.sin(d), Math.cos(d));
         r.rotation.y += d * k;

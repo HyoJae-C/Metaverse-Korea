@@ -1,4 +1,4 @@
-// End-to-end check: Another Land's ticket guide by the booth where the
+// End-to-end check: Modu Land's ticket guide by the booth where the
 // bridge lands on the island. Walk up: their list explains the tickets and
 // sells them; buy "any 5 rides", and the drop tower takes a ride off it
 // instead of coins.

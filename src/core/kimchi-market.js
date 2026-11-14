@@ -1,6 +1,6 @@
 // Selling homemade food at the market (no DOM, so it can be unit-tested).
-// A jar from the kimjang class at Sonmat Kimchi School, a box of japchae or
-// a roll of kimbap from Suragan Cooking Class carries its dish and score
+// A jar from the kimjang class at the Kimchi Making Class (김치만들기체험), a box of japchae from the Royal Japchae Class or
+// a roll of kimbap from the Kimbap Making Class carries its dish and score
 // (bag entry { kind: 'gift', g: 'kimchi' | 'japchae' | 'kimbap', q: 0-100 }).
 // The side-dish stall at Yongmaru Market in Itaewon buys them: the better
 // the dish, the more coins. Only a few a day in all, so cooking can't farm

@@ -44,6 +44,17 @@ export class MuseumUI {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.close();
+    if (p.photo) { // Seoul Forest's photo show (data/photo-show.js): the photo, the show and the artist
+      const img = el('img', 'museum-img');
+      img.src = p.url;
+      img.alt = `${p.title.en} (${p.title.ko})`;
+      img.decoding = 'async';
+      const b = el('div', 'museum-lang');
+      b.append(el('h3', null, `${p.title.ko} · ${localName(p.title, getLanguage())}`), el('p', 'museum-meta', `📷 ${p.artist.ko} · ${p.artist.en}${p.n ? ` · ${p.n} / 30` : ''}`));
+      this.root.replaceChildren(x, img, b);
+      this.root.hidden = false;
+      return;
+    }
     const img = el('img', 'museum-img');
     img.src = paintingUrl(p);
     img.alt = `${p.title.en} (${p.title.ko})`;

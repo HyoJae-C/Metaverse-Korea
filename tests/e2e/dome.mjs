@@ -1,4 +1,4 @@
-// End-to-end check: Seoul Another Dome. Walk in mid-game (the clock is moved
+// End-to-end check: Modu Ballpark. Walk in mid-game (the clock is moved
 // to 200 s into a game), see the free seats and the food stand, sit down,
 // and check nothing throws while the game plays.
 //   npm run build && npx vite preview --port 4173 &

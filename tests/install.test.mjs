@@ -37,7 +37,7 @@ test('the home screen nudge shows on phones a couple of times at most', () => {
 
 test('the web app manifest has what browsers need to install it', () => {
   const m = JSON.parse(readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8'));
-  assert.equal(m.name, 'Another Seoul');
+  assert.equal(m.name, 'Modu Seoul');
   assert.equal(m.display, 'standalone');
   assert.equal(m.start_url, './');
   const sizes = m.icons.map((i) => i.sizes);

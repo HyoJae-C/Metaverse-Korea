@@ -47,6 +47,17 @@ test('wallet balance changes become earned, spent and purchases', () => {
   assert.equal(c.snapshot().coinsIn, 10, 'balance tracking survives a reset');
 });
 
+test('realtime message counters ride along with the session counts and reset with them', () => {
+  const rt = { mv: 0, mvr: 0, vs: 0 };
+  const c = createCounts(rt);
+  rt.mv += 3; rt.vs += 2;
+  assert.deepEqual(c.snapshot().rt, { mv: 3, mvr: 0, vs: 2 });
+  assert.notEqual(c.snapshot().rt, rt, 'a copy: later counts do not change a report already made');
+  c.reset();
+  assert.deepEqual(rt, { mv: 0, mvr: 0, vs: 0 });
+  assert.equal(createCounts().snapshot().rt, undefined);
+});
+
 test('someone near means within 25 m', () => {
   assert.equal(someoneNear({ x: 0, z: 0 }, [{ x: 30, z: 0 }, { x: 0, z: 26 }]), false);
   assert.equal(someoneNear({ x: 0, z: 0 }, [{ x: 30, z: 0 }, { x: 15, z: 15 }]), true);

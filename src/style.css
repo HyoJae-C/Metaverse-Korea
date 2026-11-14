@@ -256,6 +256,33 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.she
 @media (max-width: 700px), (max-height: 500px) {
   html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
 }
+/* The screenshot button (game/screen-shot.js): under the eye, in the empty
+   top-left corner; it stays when the eye hides the rest. */
+.ui-shot {
+  position: absolute; z-index: 5; display: grid; place-items: center;
+  left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+  width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
+  background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
+}
+/* Touch screens (Yozi): 📷 beside the eye, the map button under it. */
+body:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); top: max(12px, env(safe-area-inset-top)); }
+body:not(.in-store) .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) - 2px); top: calc(max(12px, env(safe-area-inset-top)) + 50px); }
+html:not(.ui-hidden) .in-store .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
+html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
+@media (max-height: 500px) {
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
+}
+@media (max-width: 700px) { /* (phones: the pinned notice sits under the minimap; the eye's spot is back when it goes) */
+  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { display: none; }
+}
+.shot-flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
+.shot-flash.on { animation: shot-flash 0.45s ease-out; }
+@keyframes shot-flash { from { opacity: 0.85; } to { opacity: 0; } }
+.shot-panel { display: grid; gap: 12px; z-index: 12; }
+#hud .shot-panel > .sheet-x:first-child { position: absolute; float: none; margin: 0; top: 8px; right: 8px; }
+.shot-img { display: block; justify-self: center; max-width: 100%; max-height: 56vh; border-radius: 14px; box-shadow: var(--shadow); }
+.shot-actions { display: flex; gap: 10px; }
+.shot-actions > * { flex: 1; margin: 0; display: grid; place-items: center; text-decoration: none; }
 .help {
   position: absolute;
   left: 50%; bottom: max(44px, calc(env(safe-area-inset-bottom) + 36px));
@@ -1405,6 +1432,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 /* Hanbok rental: the time left, beside the coins. */
 .rent-chip { background: #fde4ea; color: #7a1f33; font-weight: 800; }
 .rent-chip[hidden] { display: none; }
+/* Seoul Forest's tandem rental: the meter (game/tandem-rental.js). */
+.tandem-chip { background: #dff3e5; color: #1f5c38; }
 /* Narrow phones: below the chip row, not in it (the row is full). In a shop
    the banner is there, and the product card shows the time instead. */
 @media (max-width: 480px) {
@@ -1652,8 +1681,8 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .bag-slot.worn { background: #fff4e6; }
 .bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
-.closet-icon { position: relative; color: #4a4550; display: inline-grid; place-items: center; line-height: 1; }
-.closet-icon svg { display: block; }
+.closet-icon { position: relative; display: inline-grid; place-items: center; line-height: 1; }
+.closet-img { display: block; width: 1.15em; height: 1.15em; }
 .closet-dot { position: absolute; right: -0.28em; bottom: -0.18em; width: 0.42em; height: 0.42em; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.18); }
 .closet-title .closet-icon { font-size: 1.1em; margin-right: 0.1em; }
 .closet-retired { display: inline-block; padding: 1px 6px; border-radius: 8px; background: #efe6da; color: var(--ink-soft); font-size: 11px; font-weight: 700; vertical-align: middle; }
@@ -1697,6 +1726,20 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .wish-list { display: grid; gap: 6px; }
 .wish-item { text-align: left; padding: 9px 12px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; font-size: 14px; }
 .wish-item.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.temple-see { text-align: center; }
+.temple-list { display: grid; gap: 6px; max-height: 46vh; overflow-y: auto; }
+.temple-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; }
+.temple-row.mine { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.temple-dot { flex: none; width: 18px; height: 22px; border-radius: 50% 50% 45% 45%; box-shadow: 0 0 8px rgba(255, 180, 80, .7); }
+.temple-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.temple-wish { font-size: 13px; color: #6b5d50; }
+.temple-mine { color: #e2557f; font-weight: 700; }
+.wish-grid { grid-template-columns: repeat(5, 1fr); }
+.wish-grid .wish-item { display: flex; flex-direction: column; align-items: center; padding: 6px 2px; text-align: center; }
+.wish-big { font-size: 22px; line-height: 1.2; }
+.wish-grid small { font-size: 11px; color: #8a7a6a; }
+.wish-pick { margin: 0; text-align: center; font-weight: 700; }
+.wish-foot { position: sticky; bottom: -18px; margin: 0 -18px -18px; padding: 8px 18px 18px; display: grid; gap: 6px; background: #fff8ec; box-shadow: 0 -8px 10px -8px rgba(74, 63, 53, 0.25); z-index: 2; }
 .wish-mural { margin: 0; line-height: 1.55; font-size: 14px; }
 .lock-memo { position: relative; border-radius: 6px 6px 14px 14px; background-color: #fffbe8; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, #ecdcae 23px, #ecdcae 24px); background-position: 0 10px; box-shadow: 0 2px 0 #eadfc0, 0 6px 14px rgba(120, 90, 40, .12); padding: 10px 14px 12px; }
 .lock-memo::before { content: ''; position: absolute; left: 50%; top: -7px; width: 64px; height: 14px; transform: translateX(-50%) rotate(-2deg); background: rgba(255, 175, 200, .7); border-radius: 2px; }
@@ -2147,7 +2190,8 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .gift-thing b { color: var(--accent-dark); }
 .gift-icon { font-size: 24px; }
 .gift-people { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; max-height: 30vh; overflow-y: auto; }
-.gift-person.chip { background: #fff; padding: 8px 14px; }
+.gift-person.chip, .gift-add.chip { background: #fff; padding: 8px 14px; }
+.gift-others { margin-top: 6px; max-height: 20vh; }
 .gift-cards {
   position: absolute; left: 50%; transform: translateX(-50%); z-index: 8;
   top: calc(max(12px, env(safe-area-inset-top)) + 112px);
@@ -2745,7 +2789,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
    notices) steps aside instead of showing through it, and the chat log moves
    right under the bar, where the keyboard can't cover it. */
 @media (pointer: coarse) {
-  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .corner-map) { visibility: hidden; }
+  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
   html:not(.android) body:has(#hud.chat-open) .tools .tool:not(#chat-btn, #bike-btn) { visibility: hidden; }
   #hud.chat-open .chat-log {
     top: calc(env(safe-area-inset-top, 0px) + 12px + var(--chat-bar-h, 52px) + 8px); bottom: auto;
@@ -2769,3 +2813,13 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .live-panel button { flex: 1 1 auto; font-size: 13px; font-weight: 800; padding: 7px 10px; border-radius: 12px; background: #fff; color: var(--ink); }
 .live-panel button.primary { width: auto; font-size: 13px; padding: 7px 10px; color: #fff; background: var(--accent); }
 .live-panel input[type='range'] { flex: 1 1 100%; }
+/* The bait stall (ui/bait-ui.js) */
+.bait-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.bait-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.05); }
+.bait-dot { width: 18px; height: 18px; border-radius: 50%; flex: none; border: 2px solid rgba(0, 0, 0, 0.15); }
+.bait-dot.plain { background: #d8dde2; }
+.bait-text { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.bait-text small { opacity: 0.75; }
+.bait-row button { flex: none; width: auto; white-space: nowrap; font-size: 15px; padding: 8px 14px; border-radius: 14px; }
+.bait-row button.chip { box-shadow: none; opacity: 0.7; }
+.bait-free { font-weight: 700; opacity: 0.7; }

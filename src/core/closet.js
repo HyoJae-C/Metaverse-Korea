@@ -22,7 +22,7 @@ export function closetKind(it) {
   return null;
 }
 
-// The colour dot beside a piece's icon (ui/closet-icons.js) tells two colours
+// The colour dot beside a piece's icon (ui/bag-ui.js) tells two colours
 // of one design apart.
 // The main colour of a piece, as '#rrggbb' (null when it has none).
 export function closetColor(it) {

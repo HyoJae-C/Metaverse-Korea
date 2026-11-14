@@ -78,19 +78,30 @@ export class CloudSave {
     this.version = null; // updated_at of the row as this device last saw it
     this.parked = false; // another device took over: stop saving
     this.elsewhereListeners = [];
+    this.staleListeners = [];
+    this.loading = false; // signing in / reading the save; local changes don't count yet
+    this.late = false; // load() gave up waiting and the game started on this device's copy
   }
 
   get guest() { return !!this.user?.is_anonymous; }
 
   // Sign in (guest if needed) and bring the newer save onto this device.
   // Must run before the game reads its saved data. Never throws.
-  async load(timeoutMs = 3000) {
+  // If the account's save arrives after the game has already started on this
+  // device's older copy (slow network), the late answer is not allowed to
+  // upload that old copy: it writes the account's save here and asks for a
+  // reload (onStale), so the game reads it fresh.
+  async load(timeoutMs = 6000) {
     if (!this.cfg?.url || !this.cfg?.key) return this._set('local');
+    this.loading = true;
+    const run = this._load().finally(() => { this.loading = false; });
     try {
-      await Promise.race([this._load(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))]);
+      await Promise.race([run, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeoutMs))]);
     } catch (e) {
       console.info('[cloud-save] staying local:', e.message);
+      if (this.loading) this.late = true;
       this._set(this.user ? 'error' : 'local');
+      run.catch(() => {}); // a late failure just stays local
     }
     this._watch();
   }
@@ -112,6 +123,7 @@ export class CloudSave {
     const localAt = Number(localStorage.getItem(AT_KEY)) || 0;
     const remoteAt = row ? Date.parse(row.updated_at) : 0;
     const owner = localStorage.getItem(OWNER_KEY);
+    if (this.late) return this._lateSave(row, local, owner);
     const which = pickNewer(localAt, remoteAt, local, row?.data || {}, !!owner && owner !== this.user.id);
     localStorage.setItem(OWNER_KEY, this.user.id);
     this.version = row?.updated_at || null;
@@ -120,6 +132,27 @@ export class CloudSave {
     // device that was open before stops saving over it.
     await this._upload(which === 'remote' ? snapshot() : local);
     this._set('cloud');
+  }
+
+  // The save came back after the game had started here. If it holds anything
+  // this device doesn't, never upload over it: take it, stop saving, reload.
+  // (A device whose copy is the same, or that has no save yet, just goes on.)
+  async _lateSave(row, local, owner) {
+    localStorage.setItem(OWNER_KEY, this.user.id);
+    this.version = row?.updated_at || null;
+    const remote = { ...(row?.data || {}) };
+    delete remote[DEVICE_KEY];
+    if (!row || ((!owner || owner === this.user.id) && JSON.stringify(remote) === JSON.stringify(local))) {
+      this.late = false;
+      await this._upload(local);
+      this._set('cloud');
+      return;
+    }
+    applySnapshot(row.data);
+    this.parked = true;
+    this.stale = true;
+    localStorage.setItem(AT_KEY, '0'); // the reload takes the account's save
+    this.staleListeners.forEach((f) => f());
   }
 
   // Write the save, but only if no other device wrote since we last did.
@@ -193,7 +226,7 @@ export class CloudSave {
     const tick = async () => {
       const data = snapshot();
       const json = JSON.stringify(data);
-      if (this.parked || json === this.lastJson) return;
+      if (this.parked || this.loading || json === this.lastJson) return;
       localStorage.setItem(AT_KEY, String(Date.now())); // changed here, now
       if (!this.client || !this.user) return;
       try { if (await this._upload(data)) this._set('cloud'); } catch { this._set('error'); }
@@ -481,7 +514,9 @@ export class CloudSave {
 
   onChange(f) { this.listeners.push(f); }
   // Called once when another device takes over this account's save.
-  onElsewhere(f) { this.elsewhereListeners.push(f); if (this.parked && !this.stoppedForTab) f(); }
+  onElsewhere(f) { this.elsewhereListeners.push(f); if (this.parked && !this.stoppedForTab && !this.stale) f(); }
+  // The account's save arrived late and is now on this device: reload to play it.
+  onStale(f) { this.staleListeners.push(f); if (this.stale) f(); }
   _set(s) { this.status = s; this.listeners.forEach((f) => f(s)); }
 }
 

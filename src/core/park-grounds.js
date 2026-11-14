@@ -1,4 +1,4 @@
-// Another Land's grounds (themepark.js builds the rides on top): the paved
+// Modu Land's grounds (themepark.js builds the rides on top): the paved
 // paths with their curbs, Main Street from the gate to the round central
 // plaza and its cake fountain, a low candy fence round each ride's yard with
 // a named gate, the park's own fence, lamps, flower beds, bunting, benches,
@@ -117,7 +117,7 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   for (const [ax, az, bx, bz] of [[X0, Z0, X1, Z0], [X0, Z0, X0, Z1], [X1, Z0, X1, Z1], [X0, Z1, -4.2, Z1], [4.2, Z1, X1, Z1]]) fenceLine(ax, az, bx, bz, 1.2, HOT);
 
   // The entrance arch over Main Street: two candy towers and the park's name.
-  const s = gateSign({ ko: '어나더랜드', en: 'Another Land', ja: 'アナザーランド', zh: '另一乐园', es: 'Another Land', id: 'Another Land', vi: 'Another Land', hi: 'अनदर लैंड', fr: 'Another Land', th: 'แอนาเธอร์แลนด์', ar: 'أناذر لاند' }, '🍭', 768, 200);
+  const s = gateSign({ ko: '모두랜드', en: 'Modu Land', ja: 'モドゥランド', zh: 'Modu乐园', es: 'Modu Land', id: 'Modu Land', vi: 'Modu Land', hi: 'मोडू लैंड', fr: 'Modu Land', th: 'โมดูแลนด์', ar: 'مودو لاند' }, '🍭', 768, 200);
   signs.push(s);
   const AZ = Z1 - 2.2;
   for (const k of [-1, 1]) {

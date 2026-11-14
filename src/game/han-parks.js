@@ -12,7 +12,8 @@
 // metres (game/duck-boats.js uses `frame` to bring them out).
 //
 // game: { scene, landmarks, store(id), collision, makeNpc(name, opts),
-// clerkName(), me, signLang(), night(), greet(npcs, p), acts: { duck, mart, fish, sell,
+// clerkName(), baitSeller(): { name, look } (the bait stall's old fisherman), me,
+// signLang(), night(), greet(npcs, p), acts: { duck, mart, fish, sell, bait,
 // ramen, look }, onVisit(store) } as getters where they change.
 
 // (distances to the park's edge, its bounds: a long one like Yeouido's
@@ -62,8 +63,8 @@ export function createHanParks(game) {
     const fishing = b.fishing.map((f) => { const [x, z] = toWorld(o, f.x, f.z); return { x, z, get lucky() { return !!f.lucky; } }; });
     const spot = (q) => { if (!q) return null; const [x, z] = toWorld(o, q.x, q.z); return { x, z }; };
     // The staff stand on the street itself (in its metres), like everyone else.
-    const staff = (at, name, hideTag) => {
-      const n = game.makeNpc(name);
+    const staff = (at, name, hideTag, look) => {
+      const n = game.makeNpc(name, look);
       const [x, z] = toWorld(o, at.x, at.z);
       n.ch.root.position.set(x, 0, z);
       n.ch.root.rotation.y = at.ry + o.ry;
@@ -74,13 +75,15 @@ export function createHanParks(game) {
     };
     const clerkNpc = b.clerk ? staff(b.clerk, game.clerkName()) : null;
     const vendorNpcs = b.vendors.map((v) => staff(v, '', true));
+    const baitWho = b.baitSeller && game.baitSeller?.();
+    const baitNpc = baitWho ? staff(b.baitSeller, baitWho.name, false, baitWho.look) : null;
     o.built = {
-      b, clerkNpc, vendorNpcs, lang: undefined,
+      b, clerkNpc, vendorNpcs, baitNpc, lang: undefined,
       // What the rest of the game sees while you're in it (main.js hanPark()).
       here: {
         store: o.store, hanRiver: true, street: true,
-        fishing, fishBuy: spot(b.fishBuy), ramen: spot(b.ramen), products,
-        clerkNpc, vendors: b.vendors, vendorNpcs,
+        fishing, fishBuy: spot(b.fishBuy), bait: spot(b.bait), ramen: spot(b.ramen), products,
+        clerkNpc, vendors: b.vendors, vendorNpcs, baitNpc,
         ducks: b.ducks.length ? b.ducks : null, duckArea: b.duckArea, scene: b.group,
         river: { position: { y: 0.03 } }, // (the street's water, world.js)
         show: b.show, // (Ttukseom's drone show, or null)
@@ -103,7 +106,7 @@ export function createHanParks(game) {
       }
       const B = o.built, shown = d < SHOW_NEAR;
       B.b.group.visible = shown;
-      for (const n of [B.clerkNpc, ...B.vendorNpcs]) if (n) {
+      for (const n of [B.clerkNpc, B.baitNpc, ...B.vendorNpcs]) if (n) {
         const close = d < STAFF_NEAR && near(n, p, STAFF_NEAR);
         n.ch.root.visible = close;
         if (close) n.ch.animate(dt, 0); else n.tag.style.display = 'none';
@@ -137,6 +140,7 @@ export function createHanParks(game) {
     if (h.store.kiosk && h.clerkNpc && near(h.clerkNpc, p, 3)) push(A.mart());
     if (h.fishing.some((f) => at(f, 1.8))) push(A.fish());
     if (at(h.fishBuy, 1.6)) push(A.sell());
+    if (at(h.bait, 1.6)) push(A.bait?.());
     if (at(h.ramen, 1.8)) push(A.ramen());
     const goods = h.products.map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
     for (const { pr } of goods.slice(0, 3)) push(A.look(pr, h.store));
@@ -145,7 +149,7 @@ export function createHanParks(game) {
   // Its clerk and sellers' name tags and bubbles (main.js placeLabels).
   function staffNear(p) {
     const out = [];
-    for (const o of parks) if (o.built) for (const n of [o.built.clerkNpc, ...o.built.vendorNpcs]) if (n && near(n, p, STAFF_NEAR)) out.push(n);
+    for (const o of parks) if (o.built) for (const n of [o.built.clerkNpc, o.built.baitNpc, ...o.built.vendorNpcs]) if (n && near(n, p, STAFF_NEAR)) out.push(n);
     return out;
   }
   // Where the parks are (the map, a taxi): store id → [x, z] of its middle.

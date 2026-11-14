@@ -119,3 +119,34 @@ test('a first save on a new account is inserted', () => withLocalStorage(async (
   assert.equal(await cs._upload(), true);
   assert.equal(db.row.data['mk.wallet'], '{"coins":5}');
 }));
+
+test('a save that arrives after the game started here is taken, never overwritten', () => withLocalStorage(async () => {
+  // The laptop kept last night's copy; the phone saved today's progress.
+  const db = fakeTable({ user_id: 'u', updated_at: '2026-11-11T08:52:00.000Z', data: { 'mk.wallet': '{"coins":50}', 'mk.stamps': '{"drone-show":1}', 'mkcloud.device': 'phone' } });
+  const cs = new CloudSave({});
+  Object.assign(cs, { client: db.client, user: { id: 'u' }, late: true });
+  localStorage.setItem('mkcloud.uid', 'u');
+  localStorage.setItem('mkcloud.at', String(Date.parse('2026-11-11T11:00:00.000Z'))); // touched while waiting
+  let stale = 0, elsewhere = 0;
+  cs.onStale(() => stale++);
+  cs.onElsewhere(() => elsewhere++);
+  await cs._lateSave({ ...db.row }, snapshot(), 'u');
+  assert.equal(db.writes, 0); // the phone's progress stays
+  assert.equal(localStorage.getItem('mk.stamps'), '{"drone-show":1}'); // and is here for the reload
+  assert.equal(localStorage.getItem('mkcloud.at'), '0');
+  assert.equal(stale, 1);
+  assert.equal(elsewhere, 0);
+  assert.equal(await cs._upload(), false); // nothing more is sent from the old game
+}));
+
+test('a late save that matches this device just carries on', () => withLocalStorage(async () => {
+  const db = fakeTable({ user_id: 'u', updated_at: '2026-11-11T08:52:00.000Z', data: { 'mk.wallet': '{"coins":5}', 'mkcloud.device': 'old' } });
+  const cs = new CloudSave({});
+  Object.assign(cs, { client: db.client, user: { id: 'u' }, late: true });
+  let stale = 0;
+  cs.onStale(() => stale++);
+  await cs._lateSave({ ...db.row }, snapshot(), 'u');
+  assert.equal(stale, 0);
+  assert.equal(cs.late, false);
+  assert.equal(db.row.data['mkcloud.device'], cs.device); // claimed for this device
+}));

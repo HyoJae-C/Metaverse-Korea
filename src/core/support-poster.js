@@ -10,11 +10,11 @@ const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
 export const SUPPORT_TEXT = {
   head: {
-    en: 'Enjoying Another Seoul?', ko: '어나더서울, 재밌으셨나요?', ja: 'アナザーソウル、楽しんでる？',
-    zh: '喜欢另一个首尔吗？', es: '¿Te gusta Another Seoul?', vi: 'Bạn thích Another Seoul chứ?',
-    id: 'Suka Another Seoul?', ar: 'هل تستمتع بـ Another Seoul؟', hi: 'Another Seoul पसंद आया?',
-    fr: 'Tu aimes Another Seoul ?',
-    th: 'ชอบ Another Seoul ไหม?',
+    en: 'Enjoying Modu Seoul?', ko: '모두서울, 재밌으셨나요?', ja: 'モドゥ・ソウル、楽しんでる？',
+    zh: '喜欢Modu Seoul吗？', es: '¿Te gusta Modu Seoul?', vi: 'Bạn thích Modu Seoul chứ?',
+    id: 'Suka Modu Seoul?', ar: 'هل تستمتع بـ Modu Seoul؟', hi: 'Modu Seoul पसंद आया?',
+    fr: 'Tu aimes Modu Seoul ?',
+    th: 'ชอบ Modu Seoul ไหม?',
   },
   body: {
     en: 'One person makes this city.', ko: '이 도시는 한 사람이 만들고 있어요.', ja: 'この街は一人で作っています。',

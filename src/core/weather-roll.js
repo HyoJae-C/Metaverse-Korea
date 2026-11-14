@@ -1,6 +1,8 @@
 // The weather roll, shared by the game and the operator page (no three.js).
 // Weather: rolled from the clock, the same for every player.
 
+import { cycleMs, CYCLE } from './show-clock.js';
+
 export const WEATHER_ICON = { clear: '☀️', cloudy: '☁️', fog: '🌫️', rain: '🌧️', snow: '❄️', storm: '⛈️' };
 
 // Game weather (no live data): every 30 minutes the same roll for everyone,
@@ -30,9 +32,19 @@ export function weatherSettings(raw) {
   const from = Date.parse(raw?.from), until = Date.parse(raw?.until);
   return { season, fixed, from: Number.isFinite(from) ? from : -Infinity, until: Number.isFinite(until) ? until : Infinity };
 }
-// The weather at a moment for everyone: a weather an operator is holding,
-// else the season's roll for that 30-minute slot.
+// For now the sky is always clear round the sunset, from 10 minutes before
+// it until its glow has gone (Yozi 2026-11-11: few players yet, and one who
+// comes for the sunset and finds rain may not come back). Over any season
+// or held weather.
+const MIN = 60e3;
+const CLEAR_FROM = (CYCLE.morning + CYCLE.day - 10) * MIN, CLEAR_TO = (CYCLE.morning + CYCLE.day + CYCLE.sunset + 8) * MIN;
+export const sunsetClear = (ms) => { const c = cycleMs(ms); return c >= CLEAR_FROM && c < CLEAR_TO; };
+
+// The weather at a moment for everyone: clear round the sunset, else a
+// weather an operator is holding, else the season's roll for that 30-minute
+// slot.
 export function weatherAt(ms, settings = null) {
+  if (sunsetClear(ms)) return 'clear';
   const s = settings || { season: 'default', fixed: null };
   if (s.fixed && ms >= s.from && ms < s.until) return s.fixed;
   const season = s.season === 'auto' ? seasonAt(ms) : s.season;

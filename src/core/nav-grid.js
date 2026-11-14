@@ -15,7 +15,9 @@ const ROAD_COST = 1, OPEN_COST = 1.7;
 export class NavGrid {
   // polys: wall footprints ([[x, z], ...]); r: a person's radius. roads:
   // map roads ({ p, w }). bounds: { minX, minZ, maxX, maxZ }.
-  constructor(polys, roads, bounds, { cell = 1, r = 0.45 } = {}) {
+  // decks: bridge decks ([[x, z], ...]) that are open ground over whatever
+  // wall (a river) lies under them.
+  constructor(polys, roads, bounds, { cell = 1, r = 0.45, decks = [] } = {}) {
     this.cell = cell;
     this.x0 = Math.floor(bounds.minX) - 2;
     this.z0 = Math.floor(bounds.minZ) - 2;
@@ -30,9 +32,13 @@ export class NavGrid {
     // against every edge took over a minute on phones for the long river
     // outlines (hundreds of corners, a kilometre across).
     const xs = [];
+    // (The grid may be a window on a much bigger map, core/nav-window.js:
+    // walls and roads wholly outside it are skipped.)
+    const gx1 = this.x0 + this.w * cell, gz1 = this.z0 + this.h * cell;
     for (const p of polys) {
-      let minZ = Infinity, maxZ = -Infinity;
-      for (const [, z] of p) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
+      let minZ = Infinity, maxZ = -Infinity, minX = Infinity, maxX = -Infinity;
+      for (const [x, z] of p) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); minX = Math.min(minX, x); maxX = Math.max(maxX, x); }
+      if (maxX < this.x0 - 2 || minX > gx1 + 2 || maxZ < this.z0 - 2 || minZ > gz1 + 2) continue;
       const j0 = Math.max(0, this._j(minZ)), j1 = Math.min(this.h - 1, this._j(maxZ));
       for (let j = j0; j <= j1; j++) {
         const z = this.z0 + (j + 0.5) * cell;
@@ -53,6 +59,7 @@ export class NavGrid {
       const R = Math.ceil(r / cell) + 1;
       for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
         const A = p[b], B = p[a];
+        if (Math.max(A[0], B[0]) < this.x0 - 2 || Math.min(A[0], B[0]) > gx1 + 2 || Math.max(A[1], B[1]) < this.z0 - 2 || Math.min(A[1], B[1]) > gz1 + 2) continue;
         const n = Math.max(1, Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1]) / cell));
         for (let s = 0; s <= n; s++) {
           const ci = this._i(A[0] + ((B[0] - A[0]) * s) / n), cj = this._j(A[1] + ((B[1] - A[1]) * s) / n);
@@ -65,10 +72,30 @@ export class NavGrid {
         }
       }
     }
+    for (const p of decks) {
+      let minZ = Infinity, maxZ = -Infinity;
+      for (const [, z] of p) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
+      if (maxZ < this.z0 || minZ > gz1) continue;
+      for (let j = Math.max(0, this._j(minZ)); j <= Math.min(this.h - 1, this._j(maxZ)); j++) {
+        const z = this.z0 + (j + 0.5) * cell;
+        xs.length = 0;
+        for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
+          const [xi, zi] = p[a], [xj, zj] = p[b];
+          if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
+        }
+        xs.sort((u, v) => u - v);
+        for (let k = 0; k + 1 < xs.length; k += 2) {
+          // (a person's width in from each edge, so the route keeps off the rail)
+          const i0 = Math.max(0, Math.ceil((xs[k] + r - this.x0) / cell - 0.5)), i1 = Math.min(this.w - 1, Math.ceil((xs[k + 1] - r - this.x0) / cell - 0.5) - 1);
+          for (let i = i0; i <= i1; i++) this.cost[j * this.w + i] = OPEN_COST;
+        }
+      }
+    }
     for (const r of roads || []) {
       const half = Math.max(1.5, (r.w || 6) / 2);
       for (let k = 1; k < r.p.length; k++) {
         const [x1, z1] = r.p[k - 1], [x2, z2] = r.p[k];
+        if (Math.max(x1, x2) < this.x0 - half || Math.min(x1, x2) > gx1 + half || Math.max(z1, z2) < this.z0 - half || Math.min(z1, z2) > gz1 + half) continue;
         const n = Math.ceil(Math.hypot(x2 - x1, z2 - z1) / (cell * 0.5));
         for (let s = 0; s <= n; s++) {
           const x = x1 + ((x2 - x1) * s) / n, z = z1 + ((z2 - z1) * s) / n;
@@ -93,6 +120,12 @@ export class NavGrid {
   _j(z) { return Math.floor((z - this.z0) / this.cell); }
   _x(id) { return this.x0 + ((id % this.w) + 0.5) * this.cell; }
   _z(id) { return this.z0 + (Math.floor(id / this.w) + 0.5) * this.cell; }
+  // Is (x, z) on the grid at all? (A window grid, core/nav-window.js, covers
+  // only part of the map.)
+  inside(x, z) {
+    const i = this._i(x), j = this._j(z);
+    return i >= 0 && j >= 0 && i < this.w && j < this.h;
+  }
   open(x, z) {
     const i = this._i(x), j = this._j(z);
     return i >= 0 && j >= 0 && i < this.w && j < this.h && this.cost[j * this.w + i] > 0;

@@ -1,4 +1,4 @@
-// Free-style kimbap (김밥) at Suragan Cooking Class, the rules without any
+// Free-style kimbap (김밥) at the Kimbap Making Class (김밥만들기체험), the rules without any
 // DOM so they can be unit-tested. Kimbap has no fixed recipe: the class
 // shows a classic one but players fill theirs with anything on the shelf.
 // Seven steps:

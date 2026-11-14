@@ -8,6 +8,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 import { createRetention } from './retention.js';
 import { MAX_NOTICE, cleanNotice, deleteNotice, sendNotice } from '../core/announce.js';
 import { createWeatherPanel } from './weather-panel.js';
+import { countryTag } from './chat-panel.js';
 
 const when = (iso) => (iso ? new Date(iso).toLocaleString() : '–');
 
@@ -159,6 +160,10 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
     const { data, error } = await call('ops_players', { q: $('playerQ').value.trim(), lim: 200 }, null);
     if (error) { box.innerHTML = `<tr><td colspan="5" class="empty">${missing(error) ? SETUP : escapeHtml(error.message)}</td></tr>`; return; }
     if (!data.length) { box.innerHTML = '<tr><td colspan="5" class="empty">Nobody found.</td></tr>'; return; }
+    // Countries (supabase/044_chat_90_days_country.sql): first known (about
+    // sign-up) and latest, guessed from the time zone. Missing SQL: none.
+    const { data: cc } = await client.rpc('ops_player_countries', { uids: data.map((u) => u.uid) });
+    const countries = new Map((cc || []).map((r) => [r.uid, r]));
     box.replaceChildren(...data.map((u) => {
       const tr = el('tr');
       const name = el('td');
@@ -169,6 +174,8 @@ export function createPanels({ client, $, escapeHtml, agoText, describePlace, se
       acct.append(el('span', u.guest ? 'tag' : 'tag green', u.guest ? 'guest' : 'Google'));
       if (u.email) acct.append(el('div', 'muted', u.email));
       if (u.posts) acct.append(el('div', 'muted', `${u.posts} board post${u.posts > 1 ? 's' : ''}`));
+      const c = countries.get(u.uid), first = countryTag(c?.first_country), last = countryTag(c?.last_country);
+      if (first) acct.append(el('div', 'muted', `Signed up from ${first}${last && last !== first ? ` · now ${last}` : ''}`));
       const joined = el('td', 'muted', when(u.joined));
       const seen = el('td');
       const fresh = u.last_seen && Date.now() - Date.parse(u.last_seen) < 90000;

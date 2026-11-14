@@ -13,7 +13,7 @@
 export const STAMPS = [
   {
     // on the Namsan summit plaza (outdoors on the hilltop, game/namsan-summit.js), across from the love locks
-    id: 'namsan', place: { at: [-1469.8, -188.8], y: 65.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
+    id: 'namsan', place: { at: [-1469.8, -188.8], y: 56.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
     name: { ko: '남산타워', en: 'N Seoul Tower', ja: 'Nソウルタワー', zh: 'N首尔塔' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M100 40 v12 M92 58 h16 l-3 10 h-10 z M97 68 l-5 62 h16 l-5 -62 M86 130 h28" /><circle cx="100" cy="62" r="2"/><path d="M60 138 q20 -18 40 -6 q22 -14 42 6" />',
@@ -224,9 +224,9 @@ export const STAMPS = [
     icon: '<path d="M54 122 h92 l10 20 h-112 z"/><path d="M50 142 v8 M64 142 v8 M78 142 v8 M92 142 v8 M108 142 v8 M122 142 v8 M136 142 v8 M150 142 v8"/><path d="M78 112 q-10 -30 16 -42 q28 -10 38 14 q8 22 -16 32 q-22 8 -38 -4 z"/><circle cx="96" cy="86" r="2"/><circle cx="114" cy="94" r="2"/><circle cx="102" cy="104" r="2"/>',
   },
   {
-    // on the concourse of Seoul Another Dome, left of the door as you come in
+    // on the concourse of Modu Ballpark, left of the door as you come in
     id: 'another-dome', place: { store: 'seoul-another-dome', room: true, at: [-14, 54.5], ry: 2.89 }, color: '#1f4f8f', shape: 'circle',
-    name: { ko: '서울 어나더 돔', en: 'Seoul Another Dome', ja: 'ソウル・アナザードーム', zh: '首尔另一个巨蛋' },
+    name: { ko: '모두야구장', en: 'Modu Ballpark', ja: 'モドゥ野球場', zh: 'Modu棒球场' },
     gu: { ko: '송파구', en: 'Songpa-gu', ja: '松坡区', zh: '松坡区' },
     // a baseball with its stitches, and a bat across it
     icon: '<circle cx="92" cy="104" r="30"/><path d="M72 82 q12 22 0 44 M112 82 q-12 22 0 44"/><path d="M118 70 l34 -34 l8 8 l-34 34 z M118 70 l-8 8"/>',

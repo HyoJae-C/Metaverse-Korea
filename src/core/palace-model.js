@@ -24,7 +24,7 @@ const C = {
   roof: new THREE.Color('#474c55'), roofEnd: new THREE.Color('#8a3a2c'),
 };
 const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
-function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
+export function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
   const geos = curvedRoof(w, d, h, { color: C.roof, end: C.roofEnd, ...o });
   for (const geo of o.noRidge ? geos.slice(0, 1) : geos) { // (noRidge: the king's and queen's halls have no ridge, 무량각)
     const m = new THREE.Mesh(geo, tileMat);
@@ -35,7 +35,7 @@ function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
 }
 // The painted band under the eaves: a green beam, a thin red line, and the
 // bracket sets (공포) as a deeper dark-green course.
-function band(g, w, d, y) {
+export function band(g, w, d, y) {
   box(g, w + 0.4, 0.7, d + 0.4, 0, y + 0.35, 0, C.beam);
   box(g, w + 0.5, 0.18, d + 0.5, 0, y + 0.05, 0, C.beamRed);
   box(g, w + 1.4, 0.8, d + 1.4, 0, y + 1.1, 0, C.bracket);
@@ -43,7 +43,7 @@ function band(g, w, d, y) {
 }
 // A hall's body: posts all round, red lattice doors set in behind the front
 // row, plastered walls at the back and the ends.
-function body(g, w, d, H, y, bays = 5) {
+export function body(g, w, d, H, y, bays = 5) {
   const hw = w / 2, hd = d / 2;
   box(g, w - 1.2, H, d - 1.2, 0, y + H / 2, 0, C.wall);
   box(g, w - 1.4, H * 0.82, 0.2, 0, y + H * 0.41, hd - 0.55, C.door);
@@ -81,7 +81,7 @@ function beast(g, x, y, z, ry = 0, s = 1) {
 // A name board in gold-framed navy with Chinese characters (勤政殿…).
 // Joseon boards read from the right, so the name ('光化門') is painted in
 // reverse: 門化光 from the left. ground / ink: the board's colours.
-function nameBoard(han, w, h, ground = '#1d2a3a', ink = '#f2e6c4') {
+export function nameBoard(han, w, h, ground = '#1d2a3a', ink = '#f2e6c4') {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 96;
   const x = c.getContext('2d');

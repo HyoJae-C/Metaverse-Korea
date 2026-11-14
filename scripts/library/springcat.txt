@@ -9,7 +9,7 @@
 @about.en Poems from the 1920s and 1930s about a spring cat, a hometown, peonies, sunlight on a stone wall and green grapes in July.
 @about.ko 1920~30년대 시인들이 쓴 봄, 고향, 모란, 청포도의 시를 모았어요.
 @source https://ko.wikisource.org/wiki/봄은_고양이로다 · https://ko.wikisource.org/wiki/향수/향수 · https://ko.wikisource.org/wiki/향수/호수1 · https://ko.wikisource.org/wiki/향수/홍시 · https://ko.wikisource.org/wiki/영랑시집 · https://ko.wikisource.org/wiki/청포도
-@license Public domain. Lee Jang-hee died in 1929, Yi Yuksa in 1944, Jeong Ji-yong and Kim Yeong-rang in 1950, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource, changed to modern spelling. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Lee Jang-hee died in 1929, Yi Yuksa in 1944, Jeong Ji-yong and Kim Yeong-rang in 1950, so these poems have been free for everyone since Korean copyright ended. Text from Korean Wikisource, changed to modern spelling. English translation written for Modu Seoul (free to use, CC0).
 ===
 # 봄은 고양이로다 · 이장희 | Spring Is a Cat · Lee Jang-hee
 꽃가루와 같이 부드러운 고양이의 털에

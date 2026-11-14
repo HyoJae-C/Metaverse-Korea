@@ -1,4 +1,4 @@
-// Gift UI: pick a friend in the shop, and the card a friend sees when a gift
+// Gift UI: pick a friend in the shop (friends only), and the card a friend sees when a gift
 // comes in. The rules are in core/gifts.js; main.js pays, sends and delivers.
 import { localName, getLanguage } from '../core/i18n.js';
 
@@ -8,8 +8,11 @@ export const fmt = (s, v = {}) => s.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
 export const GIFT_TEXT = {
   button: { en: '🎁 Gift to a friend', ko: '🎁 친구에게 선물하기', ja: '🎁 友だちにプレゼント', zh: '🎁 送给朋友', es: '🎁 Regalar a un amigo', ar: '🎁 أهدِه لصديق', vi: '🎁 Tặng bạn bè', hi: '🎁 दोस्त को तोहफ़ा दें', fr: '🎁 Offrir à un ami', th: '🎁 ให้ของขวัญเพื่อน', id: '🎁 Hadiahkan ke teman' },
   pick: { en: 'Who is it for?', ko: '누구에게 선물할까요?', ja: '誰にプレゼントする？', zh: '送给谁？', es: '¿Para quién es?', ar: 'لمن الهدية؟', vi: 'Tặng cho ai?', hi: 'यह किसके लिए है?', fr: 'C\'est pour qui ?', th: 'ให้ใครดี?', id: 'Untuk siapa?' },
-  hint: { en: 'People in this shop. You pay now; it goes to their bag or items once they accept. If they say no, your money comes back.', ko: '이 매장에 있는 사람들이에요. 지금 결제하고, 상대가 받으면 가방이나 아이템으로 들어가요. 거절하면 돈이 돌아와요.', ja: 'このお店にいる人です。今支払い、相手が受け取るとバッグかアイテムに入ります。断られたらお金は戻ります。', zh: '这家店里的人。现在付款，对方接受后会放进包里或道具里。对方拒绝的话钱会退回。', es: 'Personas en esta tienda. Pagas ahora; llega a su bolsa u objetos cuando lo acepten. Si dicen que no, recuperas tu dinero.', ar: 'الأشخاص في هذا المتجر. تدفع الآن، وتصل الهدية إلى حقيبتهم أو أغراضهم عند قبولها. إن رفضوا يعود مالك.', vi: 'Những người trong cửa hàng này. Bạn trả ngay; món quà vào túi hoặc vật phẩm của họ khi họ nhận. Nếu họ từ chối, tiền sẽ được trả lại.', hi: 'इस दुकान में मौजूद लोग। आप अभी भुगतान करें; उनके स्वीकार करने पर यह उनके बैग या आइटम में जाएगा। मना करने पर पैसे वापस आ जाएँगे।', fr: 'Les personnes dans cette boutique. Tu paies maintenant ; ça arrive dans leur sac ou leurs objets une fois accepté. S\'ils refusent, ton argent revient.', th: 'คนในร้านนี้ คุณจ่ายตอนนี้ แล้วของจะเข้ากระเป๋าหรือไอเทมของเขาเมื่อเขารับ ถ้าเขาปฏิเสธ เงินจะคืนให้คุณ', id: 'Orang-orang di toko ini. Kamu bayar sekarang; hadiah masuk ke tas atau item mereka setelah diterima. Kalau ditolak, uangmu kembali.' },
+  hint: { en: 'Your friends in this shop. You pay now; it goes to their bag or items once they accept. If they say no, your money comes back.', ko: '이 매장에 있는 친구들이에요. 지금 결제하고, 친구가 받으면 가방이나 아이템으로 들어가요. 거절하면 돈이 돌아와요.', ja: 'このお店にいる友だちです。今支払い、相手が受け取るとバッグかアイテムに入ります。断られたらお金は戻ります。', zh: '这家店里的好友。现在付款，对方接受后会放进包里或道具里。对方拒绝的话钱会退回。', es: 'Tus amigos en esta tienda. Pagas ahora; llega a su bolsa u objetos cuando lo acepten. Si dicen que no, recuperas tu dinero.', ar: 'أصدقاؤك في هذا المتجر. تدفع الآن، وتصل الهدية إلى حقيبتهم أو أغراضهم عند قبولها. إن رفضوا يعود مالك.', vi: 'Bạn bè của bạn trong cửa hàng này. Bạn trả ngay; món quà vào túi hoặc vật phẩm của họ khi họ nhận. Nếu họ từ chối, tiền sẽ được trả lại.', hi: 'इस दुकान में आपके दोस्त। आप अभी भुगतान करें; उनके स्वीकार करने पर यह उनके बैग या आइटम में जाएगा। मना करने पर पैसे वापस आ जाएँगे।', fr: 'Tes amis dans cette boutique. Tu paies maintenant ; ça arrive dans leur sac ou leurs objets une fois accepté. S\'ils refusent, ton argent revient.', th: 'เพื่อนของคุณในร้านนี้ คุณจ่ายตอนนี้ แล้วของจะเข้ากระเป๋าหรือไอเทมของเขาเมื่อเขารับ ถ้าเขาปฏิเสธ เงินจะคืนให้คุณ', id: 'Teman-temanmu di toko ini. Kamu bayar sekarang; hadiah masuk ke tas atau item mereka setelah diterima. Kalau ditolak, uangmu kembali.' },
   nobody: { en: 'Nobody else is in this shop right now. Come back with a friend!', ko: '지금 이 매장에는 다른 사람이 없어요. 친구와 함께 와 보세요!', ja: '今このお店には他に誰もいません。友だちと来てね！', zh: '店里现在没有其他人。和朋友一起来吧！', es: 'No hay nadie más en esta tienda ahora. ¡Vuelve con un amigo!', ar: 'لا أحد غيرك في هذا المتجر الآن. عُد مع صديق!', vi: 'Hiện không có ai khác trong cửa hàng. Hãy quay lại cùng bạn bè!', hi: 'अभी इस दुकान में कोई और नहीं है। किसी दोस्त के साथ आइए!', fr: 'Personne d\'autre n\'est dans cette boutique pour l\'instant. Reviens avec un ami !', th: 'ตอนนี้ไม่มีใครอื่นในร้าน มาใหม่พร้อมเพื่อนนะ!', id: 'Sekarang tidak ada orang lain di toko ini. Datang lagi bersama teman!' },
+  noFriends: { en: 'None of your friends are in this shop. Gifts are for friends only.', ko: '이 매장에 친구가 없어요. 선물은 친구에게만 할 수 있어요.', ja: 'このお店に友だちがいません。プレゼントは友だちにだけ贈れます。', zh: '这家店里没有你的好友。礼物只能送给好友。', es: 'Ninguno de tus amigos está en esta tienda. Los regalos son solo para amigos.', ar: 'لا يوجد أي من أصدقائك في هذا المتجر. الهدايا للأصدقاء فقط.', vi: 'Không có bạn bè nào của bạn trong cửa hàng này. Chỉ có thể tặng quà cho bạn bè.', hi: 'इस दुकान में आपका कोई दोस्त नहीं है। तोहफ़े सिर्फ़ दोस्तों को दिए जा सकते हैं।', fr: 'Aucun de tes amis n\'est dans cette boutique. Les cadeaux sont réservés aux amis.', th: 'ไม่มีเพื่อนของคุณอยู่ในร้านนี้ ให้ของขวัญได้เฉพาะเพื่อนเท่านั้น', id: 'Tidak ada temanmu di toko ini. Hadiah hanya untuk teman.' },
+  addHint: { en: 'Also here. Add them as a friend, and once they accept you can send a gift.', ko: '이 매장의 다른 사람들이에요. 친구 추가하고 상대가 수락하면 선물할 수 있어요.', ja: 'このお店の他の人です。フレンド追加して承認されたらプレゼントできます。', zh: '店里的其他人。加为好友，对方接受后就能送礼物。', es: 'También aquí. Añádelos como amigos y, cuando acepten, podrás regalarles.', ar: 'موجودون هنا أيضًا. أضفهم كأصدقاء، وبعد قبولهم يمكنك إرسال هدية.', vi: 'Những người khác ở đây. Kết bạn với họ, khi họ đồng ý bạn có thể tặng quà.', hi: 'यहाँ और लोग भी हैं। उन्हें दोस्त जोड़ें, उनके स्वीकारने पर आप तोहफ़ा भेज सकते हैं।', fr: 'Aussi ici. Ajoute-les en ami ; une fois acceptés, tu pourras leur offrir un cadeau.', th: 'คนอื่นในร้านนี้ เพิ่มเป็นเพื่อน เมื่อเขาตอบรับแล้วคุณจะให้ของขวัญได้', id: 'Juga ada di sini. Tambahkan sebagai teman; setelah mereka menerima, kamu bisa mengirim hadiah.' },
+  notFriend: { en: '{name} isn\'t your friend anymore. Gifts are for friends only.', ko: '{name} 님은 이제 친구가 아니에요. 선물은 친구에게만 할 수 있어요.', ja: '{name}さんはもう友だちではありません。プレゼントは友だちにだけ贈れます。', zh: '{name}已不是你的好友。礼物只能送给好友。', es: '{name} ya no es tu amigo. Los regalos son solo para amigos.', ar: 'لم يعد {name} صديقك. الهدايا للأصدقاء فقط.', vi: '{name} không còn là bạn của bạn. Chỉ có thể tặng quà cho bạn bè.', hi: '{name} अब आपके दोस्त नहीं हैं। तोहफ़े सिर्फ़ दोस्तों को दिए जा सकते हैं।', fr: '{name} n\'est plus ton ami. Les cadeaux sont réservés aux amis.', th: '{name} ไม่ได้เป็นเพื่อนคุณแล้ว ให้ของขวัญได้เฉพาะเพื่อนเท่านั้น', id: '{name} bukan temanmu lagi. Hadiah hanya untuk teman.' },
   cancel: { en: 'Cancel', ko: '취소', ja: 'キャンセル', zh: '取消', es: 'Cancelar', ar: 'إلغاء', vi: 'Hủy', hi: 'रद्द करें', fr: 'Annuler', th: 'ยกเลิก', id: 'Batal' },
   sent: { en: '🎁 Sent to {name}. Waiting for them to accept…', ko: '🎁 {name} 님에게 보냈어요. 받기를 기다리는 중…', ja: '🎁 {name}さんに送りました。受け取りを待っています…', zh: '🎁 已送给{name}，等待对方接受…', es: '🎁 Enviado a {name}. Esperando a que lo acepte…', ar: '🎁 أُرسلت إلى {name}. بانتظار قبولها…', vi: '🎁 Đã gửi cho {name}. Đang chờ họ nhận…', hi: '🎁 {name} को भेजा। उनके स्वीकार करने का इंतज़ार…', fr: '🎁 Envoyé à {name}. En attente de son acceptation…', th: '🎁 ส่งให้ {name} แล้ว รอเขารับ…', id: '🎁 Terkirim ke {name}. Menunggu diterima…' },
   card: { en: '🎁 {name} bought you a gift!', ko: '🎁 {name} 님이 선물을 사 줬어요!', ja: '🎁 {name}さんからプレゼント！', zh: '🎁 {name}给你买了礼物！', es: '🎁 ¡{name} te compró un regalo!', ar: '🎁 اشترى لك {name} هدية!', vi: '🎁 {name} mua quà cho bạn!', hi: '🎁 {name} ने आपके लिए तोहफ़ा ख़रीदा!', fr: '🎁 {name} t\'a acheté un cadeau !', th: '🎁 {name} ซื้อของขวัญให้คุณ!', id: '🎁 {name} membelikanmu hadiah!' },
@@ -61,20 +64,36 @@ export class GiftUI {
 
   // Pick a friend for { icon, name, coins }; people = [{ id, name }],
   // closest first. onPick(person).
-  pick(thing, people, onPick) {
+  // others = the rest here [{ id, name, status }] (status: 'out' I asked,
+  // 'in' they asked, null), shown with an Add friend button: onAdd(person).
+  pick(thing, people, others, onAdd, onPick) {
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', L(GIFT_TEXT.cancel));
     x.onclick = () => this.close();
     const head = el('div', 'gift-thing');
     head.append(el('span', 'gift-icon', thing.icon), el('strong', null, thing.name), el('b', null, `🪙 ${thing.coins}`));
     const list = el('div', 'gift-people');
-    if (!people.length) list.append(el('p', 'order-hint', L(GIFT_TEXT.nobody)));
+    if (!people.length) list.append(el('p', 'order-hint', L(others.length ? GIFT_TEXT.noFriends : GIFT_TEXT.nobody)));
     for (const p of people) {
       const b = el('button', 'chip gift-person', '🎁 ' + p.name);
       b.onclick = () => { this.close(); onPick(p); };
       list.append(b);
     }
-    this.picker.replaceChildren(x, el('h3', null, L(GIFT_TEXT.pick)), head, list, el('p', 'fine', L(GIFT_TEXT.hint)));
+    const parts = [x, el('h3', null, L(GIFT_TEXT.pick)), head, list];
+    if (others.length) {
+      // Not friends yet: send a request from here (a gift once they accept).
+      const add = el('div', 'gift-people gift-others');
+      for (const p of others) {
+        const label = p.status === 'out' ? '⏳ ' + p.name : (p.status === 'in' ? '✅ ' : '➕ ') + p.name;
+        const b = el('button', 'chip gift-add', label);
+        b.disabled = p.status === 'out';
+        b.onclick = () => { b.disabled = true; b.textContent = '⏳ ' + p.name; onAdd(p); };
+        add.append(b);
+      }
+      parts.push(el('p', 'fine', L(GIFT_TEXT.addHint)), add);
+    }
+    parts.push(el('p', 'fine', L(GIFT_TEXT.hint)));
+    this.picker.replaceChildren(...parts);
     this.picker.hidden = false;
   }
 

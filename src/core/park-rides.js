@@ -1,4 +1,4 @@
-// Another Land's rides as numbers (no 3D, so main.js and the tests can use
+// Modu Land's rides as numbers (no 3D, so main.js and the tests can use
 // them without loading the park's models, which come with import() on the
 // first visit: themepark.js). Prices, where each ride stands, where seat i is
 // at time t, the rides' names for their signs and attendants, and the park's

@@ -43,7 +43,7 @@ export function roadEdge(z) {
 // since the zoo became a room you walk into.
 export const ZOO_OPEN = true;
 
-// The zoo is a place you go into, like Another Land: on the street there is
+// The zoo is a place you go into, like Modu Land: on the street there is
 // only the gate plaza, the rainbow gate and the zoo's entrance building at
 // the end of it (its door is the storefront "cgp-zoo"); the woods behind its
 // fence are all you see of the zoo from outside. Walking in opens the zoo
@@ -281,7 +281,7 @@ export const CARTS = { x: 71.5, z: 17, carts: [[0, -7], [0, 0], [0, 7]], sign: [
 
 // The Sea Animals hall's walls (its pen "sea", 24 × 28 m round x 81, z -21),
 // and its door on the north path: the way into the hall's own room
-// (core/zoo-sea-hall.js), as Another Land's haunted house has.
+// (core/zoo-sea-hall.js), as Modu Land's haunted house has.
 // The camel ride (낙타 타기): two saddled camels take turns round the
 // herbivores, from a stand on the path by the camels' pen: east to the ring
 // road, down past the giraffes, back along the elephants, up the cross path

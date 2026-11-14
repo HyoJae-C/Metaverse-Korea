@@ -1,4 +1,4 @@
-// Another Land's balloon clown (풍선 삐에로): one of our usual NPCs in a
+// Modu Land's balloon clown (풍선 삐에로): one of our usual NPCs in a
 // clown's colours, standing tall on big platform shoes by Main Street. Talk
 // to them and pay a little, and they twist you a balloon: a sword or a dog
 // to hold, or a crown to wear (held 'balloon:<kind>', so others see it too).
@@ -78,9 +78,9 @@ export function createBalloonClown(game) {
   const label = () => '🎈 ' + t('clown.name');
 
   return {
-    // Once per Another Land room: the clown, on their shoes.
+    // Once per Modu Land room: the clown, on their shoes.
     spawn(built) {
-      if (!built.themepark || built.island) return null; // (Another Land's island has no plaza for the clown)
+      if (!built.themepark || built.island) return null; // (Modu Land's island has no plaza for the clown)
       if (!built.clownNpc) {
         const o = makeNpc($('labels'), label(), { ...game.randomLook(), ...LOOK });
         o.ch.root.add(stiltShoes());
@@ -110,7 +110,7 @@ export function createBalloonClown(game) {
     buy(b) {
       if (!clown || making || !game.handReady()) return;
       const name = t('balloon.' + b);
-      if (!wallet.spend(BALLOON_PRICE, { name: { en: 'Balloon ' + b }, at: { en: 'Another Land', ko: '어나더랜드' } })) { shop.toast(t('balloon.poor', { n: BALLOON_PRICE })); return; }
+      if (!wallet.spend(BALLOON_PRICE, { name: { en: 'Balloon ' + b }, at: { en: 'Modu Land', ko: '모두랜드' } })) { shop.toast(t('balloon.poor', { n: BALLOON_PRICE })); return; }
       game.refreshWallet();
       game.action = game.STALE;
       making = b;

@@ -54,8 +54,9 @@ export function newSessionId(rand = globalThis.crypto) {
 }
 
 // The counts for one session. coins(balance) turns wallet balance changes
-// into earned / spent; spending also counts as a purchase.
-export function createCounts() {
+// into earned / spent; spending also counts as a purchase. rt: the realtime
+// message counters (net/meter.js), reported along and reset with the rest.
+export function createCounts(rt = null) {
   const c = { fish: 0, coinsIn: 0, coinsOut: 0, buys: 0, chats: 0, nearSec: 0, ads: 0, errors: 0, quests: 0 };
   let bal = null;
   return {
@@ -75,8 +76,8 @@ export function createCounts() {
       }
       bal = b;
     },
-    reset() { for (const k of Object.keys(c)) c[k] = 0; },
-    snapshot() { return { ...c, nearSec: Math.round(c.nearSec) }; },
+    reset() { for (const k of Object.keys(c)) c[k] = 0; if (rt) for (const k of Object.keys(rt)) rt[k] = 0; },
+    snapshot() { return { ...c, nearSec: Math.round(c.nearSec), ...(rt ? { rt: { ...rt } } : null) }; },
   };
 }
 

@@ -13,7 +13,8 @@
 // Jong-ro and the shrine's west wall (the real one spreads through those
 // lanes). Buildings are one row along the big streets (fictional).
 //
-//   node scripts/build-dongmyo.mjs
+//   node scripts/build-dongmyo.mjs   (then scripts/build-naksan.mjs, if its data changed;
+//                                     Naksan's items, marked nk, are kept)
 //
 // The district's (0, 0) is the shrine's main gate (its anchor in
 // region.json); the data file is in world metres (x east, z south) and this
@@ -203,5 +204,16 @@ const map = {
   },
   roads, buildings: out, rail: [], areas, blockers, pois, landmarks,
 };
+// Naksan and its city wall (items marked nk) are scripts/build-naksan.mjs's: keep them.
+{
+  let prev = null;
+  try { prev = JSON.parse(readFileSync(path.join(R, 'districts', 'dongmyo.json'), 'utf8')); } catch { /* first build */ }
+  if (prev) {
+    for (const k of ['roads', 'buildings', 'blockers', 'pois', 'landmarks']) map[k].push(...(prev[k] || []).filter((it) => it.nk));
+    map.meta.parts.push(...(prev.meta?.parts || []).filter((p) => p.nk));
+    if (prev.meta?.ridge) map.meta.ridge = prev.meta.ridge;
+    if (prev.meta?.source?.includes('Naksan')) map.meta.source = prev.meta.source;
+  }
+}
 writeFileSync(path.join(R, 'districts', 'dongmyo.json'), JSON.stringify(map, null, 1) + '\n');
 console.log(`dongmyo.json: ${roads.length} roads, ${out.length} buildings, ${M.stalls.length} stalls, ${M.mats.length} mat spots`);

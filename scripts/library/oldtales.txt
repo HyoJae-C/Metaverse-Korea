@@ -4,12 +4,12 @@
 @color #4f8a3c
 @title.en Old Korean Tales
 @title.ko 옛날 옛적 전래동화
-@author.en Korean folk tales, retold for Another Seoul
-@author.ko 한국 전래동화 (Another Seoul이 새로 씀)
+@author.en Korean folk tales, retold for Modu Seoul
+@author.ko 한국 전래동화 (모두서울이 새로 씀)
 @about.en Five folk tales every Korean child knows: goblins who buy a lump, a golden axe, a swallow's gift, a clever rabbit and a tiger who loves red bean porridge.
 @about.ko 혹부리 영감, 금도끼 은도끼, 흥부와 놀부, 토끼의 간, 팥죽 할머니와 호랑이. 누구나 아는 옛이야기 다섯 편이에요.
 @source Traditional Korean folk tales, told for hundreds of years with no single author.
-@license The old stories belong to everyone. This Korean and English retelling was written new for Another Seoul (free to use, CC0).
+@license The old stories belong to everyone. This Korean and English retelling was written new for Modu Seoul (free to use, CC0).
 ===
 # 혹부리 영감 | The Old Man with the Lump
 옛날 어느 마을에 볼에 커다란 혹이 달린 착한 할아버지가 살았어요. 사람들은 할아버지를 혹부리 영감이라고 불렀지요.

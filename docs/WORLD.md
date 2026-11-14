@@ -153,6 +153,51 @@ lists **districts** joined into one map (`src/core/districts.js`):
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
+## The base map: all of Seoul's big roads (2026-11-14)
+
+Under the hand-built districts lies one base layer,
+`public/regions/another-seoul/base.json` (`region.json` "base"), made from a
+single OpenStreetMap pull of Seoul instead of a snippet per district:
+
+- **Roads**: primary and secondary roads only (no expressways, tunnels or
+  small streets), at 1/4 on the Seoul grid, 14 m and 10 m wide. A two-way road
+  drawn as two lines in OSM is one road here. A base road stops where a
+  district already has that road, at buildings, hills and the city wall, and
+  is joined to a district road end within 45 m.
+- **Water and green**: the Han beyond the districts, the streams, big parks
+  and woods, as flat colours. They stop 12 m short of every district's box.
+  Parks and woods are in their own file (`base-green.json`, "baseGreen") and
+  are fetched a moment after the street is up (`game/base-green.js`): they
+  are a colour only, so the start doesn't wait for them.
+- **Decks**: where a road is over water you walk on a deck
+  (`CollisionMap.addDeck`); it is the road painted over the river, not a
+  modelled bridge yet.
+- **Closed land** (`scripts/build-closed.mjs`): every gu now. Roads are open,
+  the blocks between them are grey and can't be walked into. Stored as one
+  bit per 10 m square (`core/closed-grid.js`), not as a list of rectangles.
+
+**Only near what is built**: within 200 m (`REACH` in
+`scripts/build-base.mjs`; 800 m real) of a district's box. Farther land has
+no base roads or green and is all closed, in every gu; rivers are kept
+whole, and a bridge that would lead only into closed land is left out rather
+than stopping mid-river. The data for the whole city stays in
+`scripts/data/seoul/`: when a district is added, the next `build-base.mjs`
+run brings the base round it. Raise `REACH` to open more.
+
+To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
+the OSM data changes; writes `scripts/data/seoul/`), then
+`node scripts/build-base.mjs` and `node scripts/build-closed.mjs`. Run the
+last two after adding or moving a district, so the base makes room for it.
+`tests/base.test.mjs` checks it against the OSM lines.
+
+In the game the base is drawn in 1 km tiles (`core/world.js` `tiles`) so only
+the squares in view cost anything, and walking routes use a 1.4 km grid round
+the walker (`core/nav-window.js`); farther goals go by the road graph.
+
+Known gaps: no buildings, stations or names outside the districts; bridges
+are flat; small seams remain where the base Han meets the districts' river;
+parks are a colour only (and closed).
+
 ## Adding a district later (e.g. Gyeongbokgung)
 
 1. Draw the district as a small map file: a square, the main street, a few
@@ -218,7 +263,26 @@ along its south edge, laid straight on the bank
 (the `hanpark` landmark, `src/game/han-parks.js`): the fishing pier and fish
 buyer west, the kiosk and food stalls where the path comes down, the duck
 boat dock east of them, and Seoul Battleship Park's warship moored at the
-east end. Every park's fishing spots share one catch table
+east end. Across the river (`scripts/data/mangwon-river-osm.json`,
+OpenStreetMap, only to look at): the real south bank with Yanghwa Han River
+Park, Seonyudo (a hole in the water area: an area's `holes`), and Seongsan
+Bridge (west, red arches) and Yanghwa Bridge (east, over Seonyudo's end, one
+arch) on their real lines at 1/4 (`banpobridge` landmarks, within 5 m),
+starting high over the park from Gangbyeon-buk-ro with no piers on it.
+The park's sunset steps (`steps` with `sunset: true`) face Seongsan Bridge:
+sitting there turns the camera to the sunset and says how long until it
+(`src/game/sunset-spot.js`). The sunset itself is the whole city's
+(`src/core/sunset-sky.js`, run by weather.js): from 16:30 game time a sky
+dome fades from the haze at the horizon to deep blue, with a glow and the
+sun's disc going down due west a little south (behind Seongsan Bridge from
+the steps; it comes up in the east), a path of light on the river (added to
+the water's material) and the light swung low and warm. Each game day has
+one of four sunsets (`SUNSETS`: purple with streak clouds over an orange
+band, yellow with big golden clouds, pink (the first, clear and warm), and
+orange with a big red sun in a banded sky), shuffled every four
+days and the same for everyone (`sunsetLook`; `?sunset=0..3` picks one). The
+weather is always clear from 10 minutes before the sunset until its glow has
+gone (`sunsetClear` in `src/core/weather-roll.js`, for now). Every park's fishing spots share one catch table
 (`src/core/fishing.js`), so no park pays better than another. The script also sets the `at` of
 the shops it lists in `SHOPS`, so run it again after moving a district.
 
@@ -415,6 +479,43 @@ OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
   Audio (no file, no words), quiet, about 70 s. Walking only inside (Yozi
   2026-11-11): running turns into a walk and gets a "shh".
 
+## Seoul Station (Jung-gu)
+
+`scripts/build-seoul-station.mjs` builds `districts/seoul-station.json` from
+OpenStreetMap (`scripts/data/seoul-station-osm.json`, Yozi's export of
+2026-11-12). Its anchor is the middle of the old station building. Sizes in
+`src/data/seoul-station.js`; the models (`src/core/seoul-station-models.js`)
+load with `import()` when the city is built.
+
+- **The old station** (Culture Station Seoul 284) at 37.5% of the real one
+  (Yozi 2026-11-12): a symbol to take photos of, between the 1/4 map and the
+  50% landmarks. Its OSM outline grown 1.5x about its middle, so 52 x 10.5 m.
+  Red brick over a stone ground floor, white bands, slate roofs, curved
+  gables on the end pavilions, the arched front with the clock and three
+  doors, two small domed towers and the green dome. Heights from Yozi's
+  photos. The main block is symmetric about the arch (the photo); what OSM's
+  outline has past it at the north end (about 9.5 m) is drawn as a lower
+  wing. The back has the same walls, windows and roof; the arch, clock and
+  doors are on the front only.
+- **The glass station hall** at 1/4 on its real outline: glass walls, the
+  "서울역 Seoul Station" sign in a stone box on the roof at the north end of
+  the glass front with a blue strip under it, the rotunda, the wide steps
+  down to the plaza and the round pillar in front of them (white, red ring,
+  blue band, dark drum head; Yozi's photo). The Information Center kiosk is
+  tucked in south of the hall's east wing.
+- **Seoul Square** at 1/4 (23 storeys, 22.8 m); its whole west front is a
+  media wall (region.json `screens`, "WELCOME TO 서울 SEOUL"; ads can go there
+  later).
+- **Streets**: Hangang-daero, Sejong-daero (north to Sungnyemun's ring) and
+  Toegye-ro on their real lines; they meet at the station crossing where OSM's
+  lines stop short. The plaza between the old station and Hangang-daero; the
+  tracks behind are closed off with a fence.
+- **Arrival start** (`spawn.starts` `arrive`, the fifth start): on the plaza
+  at the foot of the hall's steps, as if just off the airport train, facing
+  Seoul Square with the old station on the left. Subway exits 1 and 2
+  (Line 1); exit 1 is 7.6 m east of the real one to keep the steps clear.
+- Next (separate change): Seoullo 7017 as a walkway, length 1/4, width 2x.
+
 ## Namsan and its cable car (Yongsan-gu / Jung-gu)
 
 `scripts/build-namsan.mjs` puts Namsan on its real place from OpenStreetMap
@@ -423,7 +524,7 @@ OpenStreetMap (`scripts/data/myeongdong-osm.json`, Yozi's export of
 link in `region.json`.
 
 - **The hill**: its top, with the look-out tower, on N Seoul Tower's real
-  spot, 65 m high (262 m / 4). Its foot (380 × 320 m) fits between Sopa-ro
+  spot, 56 m high (its relief at 1/4; it was 65 m, see the city wall section below). Its foot (380 × 320 m) fits between Sopa-ro
   and Sowol-ro on the west, Namsangol Hanok Village on the north and
   Itaewon's real Sowol-ro on the south (the south side was pulled 10 m in so
   the hill doesn't cover the road; `scripts/build-itaewon.mjs`); real Namsan
@@ -627,6 +728,128 @@ Bridge, with its half-moon ongseong: about 42 m north of its real spot,
 which is too close to the stream for the island). The district's
 `meta.parts` lists the main part in 25 m strips (its north edge follows the
 south road) and a box for each of the three parts of their own.
+
+## Naksan and the Seoul City Wall (Jongno-gu)
+
+`scripts/build-naksan.mjs` puts Naksan (낙산) and its stretch of the Seoul
+City Wall (한양도성), from Heunginjimun up over the hill to Hyehwamun, into
+the Dongmyo district (`districts/dongmyo.json`, items marked `nk`, a second
+`meta.parts` box), the way Namsan is part of Itaewon's map. Run it after
+`build-dongmyo.mjs` (which keeps the `nk` items).
+
+- **The wall** is OpenStreetMap's line at 1/4 (`scripts/data/naksan-osm.json`,
+  export of 2026-11-13), with its real gaps: by the top of the hill, where
+  the paths go through, and where Changgyeonggung-ro cuts it just south of
+  Hyehwamun. Sizes (Yozi, 2026-11-13): 50% high on its outer face (about
+  3.5 m) and chest high (1.3 m) from inside, where the ground is higher, as
+  on the real Naksan; the parapet's blocks (여장) stand on its outer edge.
+  Its blockers are ordinary map blockers.
+- **The hill** is `meta.ridge` (`src/core/ridge-ground.js`): the ridge's
+  height along the wall's line, falling off to 0 either side, with the
+  ground at the outer foot `step` lower. Its top is 23 m (Naksan's 125 m
+  above the sea, less the plain, at 1/4), level by Jongno and Hyehwamun.
+  The heights are a game approximation, not a survey.
+- **Paths**: one outside along the wall's foot (the famous view of the wall
+  with the mountains behind) and one inside along the top (roads, `k: walk`,
+  `hill: 1`, kept clear of the wall). A row of small houses along each
+  (Ihwa-dong and Changsin-dong; fictional).
+- **Hyehwamun** at 43.75% of its OSM outline (5.1 x 3.3 m), on its real
+  spot: between the small gates' 37.5% and the great gates' 50%, so you
+  walk through its arch (1.2 m wide, 1.5 m high; its proportions are an
+  approximation from photos) and it stays smaller than the great gates
+  (Yozi, 2026-11-13).
+- **Loaded when near.** The ground, the wall, the gate, the paths' paving,
+  lamps, woods and walkers are `src/game/naksan.js`, loaded with `import()`
+  within about 480 m (`src/game/naksan-near.js`) and hidden past 700 m.
+  About 24k triangles and 24 draw calls.
+- **On the map**: Naksan Park is a pin (landmark `naksanpin` with a label,
+  like Olympic Park's Lone Tree), and the map's search finds it
+  (`src/game/landmark-search.js`).
+- `tests/naksan.test.mjs` keeps the wall on the real line, Hyehwamun on its
+  spot, and the rest of the city's streets and buildings off the hill.
+
+## The Seoul City Wall on Namsan, and Gwanghuimun
+
+`scripts/build-namsan-wall.mjs` (run after `build-namsan-real.mjs --trail`)
+puts the wall from Namsan's west slope over the summit and down through
+Jangchung-dong to Gwanghuimun, and its trail from Baekbeom Square, into
+Itaewon's map (items marked `hw`, and the namsan landmark's `wall` and
+`wtrail`) and, east of Itaewon's box, Euljiro's (with a `meta.parts` box).
+
+- **The wall** is OpenStreetMap's line at 1/4 (`scripts/data/namsan-wall-osm.json`,
+  export of 2026-11-13), with its real gaps: OSM has none up the west slope
+  from Baekbeom Square, none across Jangchungdan-ro by the National Theater
+  and little between Jangchung-dong and Gwanghuimun. It also opens round the
+  summit plaza and where a trail goes through it. 50% high (about 3.5 m;
+  Yozi, 2026-11-13), on the hill's ground. On the hill it needs no blocker
+  (the hill is one); off it, it has ordinary blockers.
+- **The trail** (남산 성곽길) is OSM's 서울한양도성 남산구간 ways from Baekbeom
+  Square up to the summit plaza and down to Gwanghuimun (the outside way
+  where there are two), about 1.2 km. On the hill it is decks through the
+  hill's blocker (`game/namsan-walk.js`) drawn on the slope
+  (`core/landmarks.js`); off it, a walk road with a strip of park. East of
+  the summit it shares the summit trail from Sowol-ro. Both are kept off the
+  wall.
+- **The way up**: Namsan is 56 m high, its relief at 1/4 (262 m above the
+  sea, about 225 m above the city round it; it was 65 m, the height above
+  the sea / 4). The hill's west side is short in the game (its foot is
+  pulled in for the streets) and lumpy, so the trail up from Baekbeom Square
+  climbed at up to 45°. Now the ground along each way up (this trail and the
+  one from Sowol-ro) is eased, within 30 m of it, to an even climb from the
+  foot to the summit plaza's edge (the namsan landmark's `spur`,
+  `core/namsan-shape.js`): about 18-21° at the steepest (Yozi, 2026-11-13).
+  The test keeps every trail under 22° and the plaza level.
+- **Gwanghuimun** at 43.75% like Hyehwamun (Yozi, 2026-11-13), 5.1 x 3.3 m
+  (OSM has no outline: its real size is taken as Hyehwamun's), on its real
+  spot moved 5.7 m along the wall off Toegye-ro; you walk through its arch.
+  Euljiro's made-up buildings there were narrowed to make room (Seoul Bank's
+  door moved with its front).
+- **Sungnyemun** is at 50% like Heunginjimun (`sc: [0.5]`, base 14 x 6 m;
+  `scripts/build-euljiro.mjs` SUNGNYEMUN_SCALE), its wall stubs at
+  Heunginjimun's 60%.
+- **Loaded when near**: the wall, the gate and the woods off the hill are
+  `src/game/namsan-wall.js` (with the Naksan wall's parts,
+  `src/game/city-wall-parts.js`), loaded within about 480 m and hidden past
+  700 m. About 22k triangles.
+- `tests/namsan-wall.test.mjs` keeps the wall on the real line, the trail
+  walkable end to end and off the wall, and both gates' arches open.
+
+## Inwangsan, Bugaksan and the rest of the ring
+
+`scripts/build-north-wall.mjs` puts Inwangsan (인왕산) and Bugaksan (북악산)
+with the Seoul City Wall on their crest, Changuimun and Sukjeongmun, and the
+lost wall's line downtown into `districts/gyeongbokgung.json` (landmark
+`northwall`, items marked `bw`). It replaced the old cone `mountain` behind
+the palace, which was not on the real hills.
+
+- **The wall** follows its OpenStreetMap ways (`scripts/data/north-wall-osm.json`)
+  at 1/4, from Sajik-ro up over Inwangsan, through Changuimun, over Bugaksan
+  past Sukjeongmun to Waryong Park: about 1.76 km in 7 stretches, with the
+  real gaps (Changuimun's road, the city east of Waryong Park). Same body and
+  parapet as Namsan's (`thick` 1.4, `H` 3.5).
+- **The hills' height** (`core/north-ground.js`) is a ridge along the wall,
+  heights from the real ones above the plain at 1/4 (Inwangsan 76, Bugaksan
+  77, Sukjeongmun 52 m), but the game's Gyeongbokgung map is bigger than the
+  real palace and reaches within 10-90 m of the wall. So the city's boxes
+  stay flat and the ground rises from them no steeper than `k` (about 28°),
+  and along the wall the crest climbs at most `grade` (about 14°): the hills
+  are low on the palace side and high outside, about 54 m at the top
+  (Yozi chose this, 2026-11-13). The wall is never steeper than about 21°.
+- **Changuimun and Sukjeongmun** at 43.75% like Hyehwamun (Yozi, 2026-11-13),
+  5.1 x 3.3 m, arches walkable. Sukjeongmun is on its OSM building; Changuimun
+  (no OSM gate) is at the wall's gap where its road crosses.
+- **Where the wall is gone** downtown, from Sajik-ro past Donuimun's and
+  Sowuimun's sites towards Sungnyemun: a line of dark stones in the ground
+  (`marks`, 1.2 m wide, about 500 m) and a marker stone at each site (`sites`).
+  Donuimun's is moved 20 m off a building; Sowuimun's spot is approximate
+  (not from OSM).
+- **Loaded when near**: `src/game/north-wall-near.js` loads
+  `src/game/north-wall.js` (ground grid, wall, gates, woods in 120 m tiles,
+  the stone line) within about 480 m; hidden past 700 m. It adds about
+  40-45k triangles to a frame looking over the hills.
+- `tests/north-wall.test.mjs` keeps the wall on the real line, its slope
+  under 22°, the ground under 32°, the city flat, the gates open and the wall
+  closed elsewhere.
 
 ## Gyeongbokgung's palace
 

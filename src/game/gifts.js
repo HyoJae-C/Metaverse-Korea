@@ -1,5 +1,7 @@
-// Gifts: buy something in a shop for someone else in the same shop (rules in
-// core/gifts.js). The giver pays now; the friend gets a card to accept, and
+// Gifts: buy something in a shop for a friend in the same shop (rules in
+// core/gifts.js). Friends only (Yozi 2026-11-12: a list of everyone around is
+// hard to pick from): the picker lists friends here, and offers to add the
+// others; a game also turns down an offer from someone who isn't its friend. The giver pays now; the friend gets a card to accept, and
 // it goes into their bag (or their items, for clothes). No, no answer, or
 // someone leaving the shop gives the coins back. Clothes keep a receipt: the
 // giver's game tells the server who got them, and the friend's game fetches
@@ -19,7 +21,7 @@ import { getLanguage, localName } from '../core/i18n.js';
 import { heldFor } from '../ui/counter-ui.js';
 
 export function createGifts(game) {
-  const { $, SHOP_ICON, bag, counterUi, giftUi, gifts, inventory, myId, perfumes, refreshItems,
+  const { $, SHOP_ICON, bag, chat, counterUi, giftUi, gifts, inventory, myId, perfumes, refreshItems,
     refreshWallet, safety, shop, storeData } = game;
   function giftFor(store, product) {
     if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product) || itemSoon(store, product)) return null;
@@ -53,6 +55,8 @@ export function createGifts(game) {
     }
     return out.sort((a, b) => a.d - b.d).slice(0, 12);
   }
+  const isFriend = (name) => chat?.friendStatus?.(name) === 'friend';
+  // The button shows with anyone here, so a player learns gifts are for friends.
   const canGift = (product) => !!giftFor(game.interior?.store, product) && peopleHere().length > 0;
   function startGift(store, product) {
     const g = giftFor(store, product);
@@ -60,7 +64,10 @@ export function createGifts(game) {
     const name = localName(g.name, getLanguage());
     shop.closeProduct();
     counterUi.close();
-    giftUi.pick({ icon: g.icon, name, coins: g.coins }, peopleHere(), (to) => {
+    const here = peopleHere().map((p) => ({ ...p, status: chat?.friendStatus?.(p.name) || null }));
+    const onAdd = (p) => chat?.addFriend?.(p.name);
+    giftUi.pick({ icon: g.icon, name, coins: g.coins }, here.filter((p) => p.status === 'friend'), here.filter((p) => p.status !== 'friend'), onAdd, (to) => {
+      if (!isFriend(to.name)) { shop.toast(fmt(L(GIFT_TEXT.notFriend), { name: to.name })); return; }
       const why = gifts.why(to.id);
       if (why) { shop.toast(fmt(L(GIFT_TEXT[why]), { name: to.name, n: GIFTS_PER_DAY })); return; }
       if (!game.others.players.has(to.id)) { shop.toast(L(GIFT_TEXT.nobody)); return; }
@@ -90,6 +97,7 @@ export function createGifts(game) {
     const name = game.others.nameOf(from) || '?';
     if (m.verb === 'offer') {
       if (safety.isBlocked(from, name)) return; // blocked: as if it never came (their coins come back on time out)
+      if (!isFriend(name)) { game.net.sendEmote(giftMsg('no', from, m.gid, 'no')); return; } // friends only (an older game may still send)
       const store = storeData.find((s) => s.id === m.store);
       if (!giftFor(store, productById(m.store, m.product))) return; // not something this game version sells
       const r = gifts.heard(from, name, m);

@@ -14,9 +14,13 @@ export const HAND_Y = 1.1; // where it leaves the hand
 export const DISC_R = 0.14; // a dog-size frisbee (radius, m)
 
 // Is (x, z) open grass, with a little room around it? room: the park as in
-// picnic.js ({ lawns, colliders, blocked(rect) }).
+// picnic.js ({ lawns, colliders, blocked(rect) }). blocked gets the box and
+// its points (corners and centre) as pts, as canSpread gives it for a mat:
+// the street parks' blocked walks pts, and without them it threw every frame
+// (pet out, frisbee in the bag, on Seoul Forest's grass), so the camera stopped.
 export function clearGrass(room, x, z, r = 0.35) {
   const rect = { x0: x - r, x1: x + r, z0: z - r, z1: z + r };
+  rect.pts = [[rect.x0, rect.z0], [rect.x1, rect.z0], [rect.x1, rect.z1], [rect.x0, rect.z1], [x, z]];
   if (!room?.lawns?.some((l) => rect.x0 >= l.x0 && rect.x1 <= l.x1 && rect.z0 >= l.z0 && rect.z1 <= l.z1)) return false;
   for (const c of room.colliders || []) {
     if (!c.p) continue;

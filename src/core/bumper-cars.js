@@ -1,4 +1,4 @@
-// Another Land's bumper cars (범퍼카): the rink, how a car drives, and how a
+// Modu Land's bumper cars (범퍼카): the rink, how a car drives, and how a
 // round and its waiting line run. No DOM and no three.js, so it can be
 // unit-tested. Metres and seconds, in the theme park's room space
 // (themepark.js). The game around it is game/bumper.js.

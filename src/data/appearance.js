@@ -5,8 +5,9 @@
 //   { shirt, pants, hair, skin, head, face, ear, neck, back }
 // plus shoes and skirt (the shoe and skirt shops),
 // plus hatColor/hatPatch (hat workshop), dye and hairStyle (hair salon), lip
-// (Petal Lip), and eyes, tone and
-// small (clinic: eye colour, skin tone, a smaller head).
+// (Petal Lip), and eyes, tone, eyeShape, nose and jaw (clinics: eye colour,
+// skin tone and the face's shape; the head's size is the same for everyone,
+// so hats and glasses fit).
 // colours are palette ids, accessories are ids or null. One accessory per
 // slot, so at most five at once.
 
@@ -23,6 +24,8 @@ export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'tw
 export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
+export const NOSE_IDS = ['big', 'small', 'high'];
+export const JAW_IDS = ['vline', 'square'];
 
 // Printed T-shirts (drawn in core/tee-prints.js).
 export const TEE_IDS = ['simurugi', 'mongle', 'mandu', 'ddeok'];
@@ -121,6 +124,44 @@ export const ANIMAL_LOOKS = [
 // own colour. The plain ids (bucket, cap, ...) are the hat workshop's shapes,
 // worn with a chosen hatColor; the coloured variants come from the shops.
 // Glasses: `lens` is the lens colour and `tint` its opacity.
+// The pendant charms: five shapes (Gyeol Ring Studio, Seongsu) (moon, plum blossom,
+// heart, star, butterfly) or a
+// round tag engraved with a word Koreans wish on, the Hangul large and its
+// hanja small under it (Yozi: Hangul first). A fixed list
+// (Yozi 2026-11-11), so there is nothing to type and nothing to filter.
+const wish = (hanja, letter, en, ja, zh) => ({ hanja, letter, name: { en: `${letter} ${hanja} · ${en}`, ko: `${letter} ${hanja}`, ja: `${letter} ${hanja}（${ja}）`, zh: `${letter} ${hanja}（${zh}）` } });
+export const PENDANT_CHARMS = {
+  moon: { emoji: '🌙', name: { en: 'Moon', ko: '달', ja: '月', zh: '月亮' } },
+  plum: { emoji: '🌸', name: { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' } },
+  heart: { emoji: '💗', name: { en: 'Heart', ko: '하트', ja: 'ハート', zh: '爱心' } },
+  star: { emoji: '⭐', name: { en: 'Star', ko: '별', ja: '星', zh: '星星' } },
+  butterfly: { emoji: '🦋', name: { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' } },
+  jeong: wish('情', '정', 'warm heart', '情け', '情谊'),
+  an: { ...wish('安', '안', 'peace', '安らぎ', '平安'), retired: true }, // (off the studio's list, Yozi 2026-11-12; kept for those who made one)
+  cheong: wish('淸', '청', 'clear', '清らか', '清澈'),
+  jin: wish('眞', '진', 'truth', 'まこと', '真诚'),
+  bok: wish('福', '복', 'luck', '福', '福气'),
+  ae: wish('愛', '애', 'love', '愛', '爱'),
+  hui: wish('喜', '희', 'joy', '喜び', '喜悦'),
+  rak: wish('樂', '락', 'delight', '楽しみ', '快乐'),
+  mong: wish('夢', '몽', 'dream', '夢', '梦想'),
+  sin: wish('信', '신', 'trust', '信頼', '信任'),
+  sim: wish('心', '심', 'heart', '心', '心'),
+  seon: wish('善', '선', 'kindness', '善', '善良'),
+  mi: wish('美', '미', 'beauty', '美', '美丽'),
+  bu: wish('富', '부', 'wealth', '富', '富裕'),
+  gwi: wish('貴', '귀', 'honour', '貴さ', '尊贵'),
+  yeong: wish('榮', '영', 'glory', '栄え', '荣耀'),
+  hwa: wish('華', '화', 'splendour', '華やか', '繁华'),
+  gwang: wish('光', '광', 'light', '光', '光明'),
+  gil: wish('吉', '길', 'good fortune', '吉', '吉祥'),
+  geon: { ...wish('健', '건', 'health', '健やか', '健康'), retired: true },
+  yeon: wish('緣', '연', 'bond', '縁', '缘分'), // (these four added, Yozi 2026-11-12: 22 words, 11 in each studio)
+  yong: wish('勇', '용', 'courage', '勇気', '勇气'),
+  eun: wish('恩', '은', 'gratitude', '恩', '恩情'),
+  hye: wish('慧', '혜', 'wisdom', '知恵', '智慧'),
+};
+
 export const ACCESSORIES = {
   head: [
     { id: 'bucket', emoji: '👒', color: 0xffd36e },
@@ -136,6 +177,7 @@ export const ACCESSORIES = {
     { id: 'cap-orange', shape: 'cap', emoji: '🧢', color: 0xff7a00 },
     { id: 'bucket-cream', shape: 'bucket', emoji: '👒', color: 0xf6f1e7 },
     { id: 'bucket-denim', shape: 'bucket', emoji: '👒', color: 0x5b6c8f },
+    { id: 'bucket-grey', shape: 'bucket', emoji: '👒', color: 0x8e8a92 }, // (the bait-stall grandpa's, game/fish-bait.js)
     { id: 'beanie-grey', shape: 'beanie', emoji: '🧶', color: 0x8e8a92 },
     { id: 'beanie-cream', shape: 'beanie', emoji: '🧶', color: 0xefe6d2 },
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
@@ -169,9 +211,10 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
-    // Pendants from Seosunra-gil (Sunra Silver Studio, Gold & Silver Lane):
-    // a fine chain with a charm (charm: moon, plum blossom, or 복 "luck").
-    ...['silver', 'gold'].flatMap((metal) => ['moon', 'plum', 'bok'].map((charm) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, emoji: charm === 'moon' ? '🌙' : charm === 'plum' ? '🌸' : '🍀', color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
+    // Necklaces from Jongno Geumeunbang and Gyeol Ring Studio:
+    // a fine chain with a charm: a moon, a plum blossom, or a round tag
+    // engraved with a hanja word (PENDANT_CHARMS).
+    ...['silver', 'gold'].flatMap((metal) => Object.entries(PENDANT_CHARMS).map(([charm, c]) => ({ id: `pendant-${metal}-${charm}`, shape: 'pendant', charm, hanja: c.hanja, letter: c.letter, emoji: c.emoji || c.letter, color: metal === 'gold' ? 0xe8b84a : 0xd9dde2 }))),
   ],
   back: [
     { id: 'backpack', emoji: '🎒', color: 0x8fd3c7 },
@@ -196,8 +239,8 @@ export const DEFAULT_LOOK = {
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip
   blush: null, // blush from the lip shops
-  eyeShape: null, // cosmetic clinics
-  eyes: null, tone: null, small: false, // clinic
+  eyeShape: null, nose: null, jaw: null, // cosmetic clinics
+  eyes: null, tone: null, // clinic
   tee: null, // printed T-shirt (an item from the bag)
   shoes: null, // shoe colour from the shoe shops
   skirt: null, // a skirt from the skirt shops (data/skirts.js), worn over the trousers
@@ -239,13 +282,12 @@ export function sanitizeLook(raw) {
   if (typeof raw.dye === 'string' && Object.hasOwn(PALETTES.dye, raw.dye)) look.dye = raw.dye;
   if (typeof raw.hairStyle === 'string' && HAIR_STYLES.includes(raw.hairStyle)) look.hairStyle = raw.hairStyle;
   if (typeof raw.eyeShape === 'string' && EYE_SHAPE_IDS.includes(raw.eyeShape)) look.eyeShape = raw.eyeShape;
+  if (typeof raw.nose === 'string' && NOSE_IDS.includes(raw.nose)) look.nose = raw.nose;
+  if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
   if (typeof raw.blush === 'string' && Object.hasOwn(PALETTES.blush, raw.blush)) look.blush = raw.blush;
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
-  // Head size: 'small' or 'big' (true: an older save's small head).
-  if (raw.small === true || raw.small === 'small') look.small = 'small';
-  else if (raw.small === 'big') look.small = 'big';
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;
   if (typeof raw.shoes === 'string' && Object.hasOwn(PALETTES.shoes, raw.shoes)) look.shoes = raw.shoes;
   if (skirtById(raw.skirt)) look.skirt = raw.skirt;

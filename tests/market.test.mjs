@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MARKET, priceRange, sellerGets, clampPrice, listable, shown, mats, newlySold, MarketClient } from '../src/core/market.js';
+import { MARKET, priceRange, sellerGets, clampPrice, listable, shown, mats, layout, newlySold, MarketClient } from '../src/core/market.js';
 import { Receipts } from '../src/core/resale.js';
 import { WEARABLES } from '../src/data/wearables.js';
 
@@ -126,4 +126,14 @@ test('Dongmyo: 12 mat spots on the plaza, clear of the meeting-spot sign and the
     assert.ok(Math.hypot(x + ox - zone.at[0], z + oz - zone.at[1]) > 2.5, 'not on the meeting-spot sign');
     for (const s of dm.landmarks.filter((l) => l.type === 'fleastall')) assert.ok(Math.hypot(x - s.x, z - s.z) > 4, 'not under a stall');
   }
+});
+
+test('sellers go on the stalls first, then on the mats; more than both fit is left out', () => {
+  const list = Array.from({ length: 25 }, (_, i) => ({ mat: i + 1 }));
+  const p = layout(list, 10, 12);
+  assert.equal(p.length, 22);
+  assert.deepEqual(p.slice(0, 10).map((x) => x.stall), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual([p[10].m.mat, p[10].mat, p[21].mat], [11, 0, 11]);
+  assert.deepEqual(layout([{ mat: 7 }], 10, 12), [{ m: { mat: 7 }, stall: 0 }], 'one seller: the first stall');
+  assert.deepEqual(layout(null, 10, 12), []);
 });

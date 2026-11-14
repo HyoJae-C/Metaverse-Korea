@@ -105,7 +105,7 @@ export function createTaxi(game) {
   const PLACE_KINDS = { play: '🎮', workshop: '🎨', culture: '🖼️', museum: '🏛️', memorial: '🕊️', park: '🌳', club: '🎧', school: '📚' };
   const CLINIC = '💉';
   const isClinic = (s) => s.workshop === 'clinic' || s.workshop === 'clinic2';
-  const SKIP_WORKSHOP = new Set(['kimchi', 'japchae', 'bike']); // (cooking classes are food; the bike shops sell skins)
+  const SKIP_WORKSHOP = new Set(['kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap', 'bike']); // (cooking classes are food; the bike shops sell skins)
   const NOT_YET = /coming soon|being prepared/i; // (a gallery or corner still getting ready)
   const PETS = '🐶';
   const placeIcon = (s) => (isClinic(s) ? CLINIC : s.pets ? PETS : !s.perfumery && !SKIP_WORKSHOP.has(s.workshop) && PLACE_KINDS[s.category]) || null;

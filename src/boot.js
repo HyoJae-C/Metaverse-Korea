@@ -5,6 +5,7 @@
 // file is tiny, so the start screen is usable almost at once and the game
 // arrives while the player picks a language. "Next" stays disabled until
 // main.js has set up the following steps (it enables the button).
+import './core/domain-move.js'; // first: brings a save over from the old address
 import { setLanguage, getSavedLanguage, loadLanguage } from './core/i18n.js';
 import { renderLangDropdown } from './ui/lang-picker.js';
 

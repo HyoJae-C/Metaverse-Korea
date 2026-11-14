@@ -1,4 +1,4 @@
-// Another Land's island in Seokchon Lake, open to the street (stores.json
+// Modu Land's island in Seokchon Lake, open to the street (stores.json
 // "open", drawn over the street like a Han River park): the Cotton Candy
 // Express exactly as it was (track, speed, station, attendant) with its candy
 // wood round it; the Rainbow Wheel by the bridge, the Lollipop Drop beside
@@ -9,7 +9,7 @@
 // middle with the stairs down to the rest of the park under the island (the
 // "another-land" room, store.below; park-hall.js). The room is in the
 // coaster's own metres; the island's shore (store.open.lawn, the
-// same metres) is its edge, with a gap where Another Land Bridge lands
+// same metres) is its edge, with a gap where Modu Land Bridge lands
 // (store.open.bridge).
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';

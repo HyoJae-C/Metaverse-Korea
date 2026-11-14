@@ -10,7 +10,7 @@
 @about.en Three tiny stories for children: twelve candles, a thread that will not leave a girl's tongue, and a silly tongue-twister about a crooked old lady.
 @about.ko 촛불, 이상한 실, 꼬부랑 이야기. 아주 짧은 이야기 세 편이에요.
 @source https://ko.wikisource.org/wiki/제일_짧은_동화
-@license Public domain. Bang Jeong-hwan died in 1931, so these stories have been free for everyone since Korean copyright ended. Text from Korean Wikisource (magazine "Eorini", March 1930). English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Bang Jeong-hwan died in 1931, so these stories have been free for everyone since Korean copyright ended. Text from Korean Wikisource (magazine "Eorini", March 1930). English translation written for Modu Seoul (free to use, CC0).
 ===
 제일 짧은 동화 ── 이것은 골라내기가 퍽 어렵습니다. 내가 기억할 수 있는 이야기 중에서 두어 개만 고르면, 이런 것이 있습니다.
 

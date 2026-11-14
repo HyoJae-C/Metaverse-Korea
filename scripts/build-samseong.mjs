@@ -37,6 +37,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { bongeunsa } from './bongeunsa-layout.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -132,9 +133,11 @@ export const TOWER = { u0: -78, v0: -46, u1: -54, v1: -16, h: 88 };
 export const SQUARE = { u0: -50, v0: -62, u1: -12, v1: -12 }; // KONEXT Square, on the station corner
 const mid = (b) => fromGrid([(b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2]);
 
-// Bongeunsa's grounds north of Bongeunsa-ro (the real temple's outline,
-// kept off the streets): trees.
-const TEMPLE = [[-177, -183], [-177, -169], [-150, -160], [-147, -147], [-107, -153], [-101, -166], [-100, -186], [-96, -196], [-104, -218], [-142, -206], [-161, -198]];
+// Bongeunsa north of Bongeunsa-ro: its grounds, halls, the Maitreya Buddha
+// (scripts/bongeunsa-layout.mjs). The real grounds reach the kerb, but the
+// game's streets are drawn a little wider than 1/4 (Bongeunsa-ro 14 m), so
+// their corners step back off the pavement (offStreets, below).
+export const TEMPLE = bongeunsa(local, (q) => Math.min(...ROADS.map((r) => lineDist(q, r.p) - r.w / 2)));
 
 // Is a polygon clear of every street (by its half width plus a pavement) and
 // of Tancheon and its banks?
@@ -146,6 +149,32 @@ function clash(p, pave = 2) {
   if (pts.some((q) => inPoly(q, banks))) return TANCHEON;
   return null;
 }
+
+// Moves a polygon's corners off every street, to its half width + pave.
+function nearest([px, pz], p) {
+  let best = null;
+  for (let i = 1; i < p.length; i++) {
+    const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+    const t = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / l2)) : 0;
+    const q = [ax + dx * t, az + dz * t], d = Math.hypot(px - q[0], pz - q[1]);
+    if (!best || d < best.d) best = { q, d };
+  }
+  return best;
+}
+function offStreets(poly, pave) {
+  return poly.map(([x, z]) => {
+    for (const r of ROADS) {
+      const { q, d } = nearest([x, z], r.p), need = r.w / 2 + pave;
+      if (d >= need) continue;
+      // (away from the street, towards the temple's middle if right on its line)
+      const ux = d > 0.01 ? (x - q[0]) / d : 0, uz = d > 0.01 ? (z - q[1]) / d : -1;
+      x = r1(q[0] + ux * need); z = r1(q[1] + uz * need);
+    }
+    return [x, z];
+  });
+}
+TEMPLE.grounds = offStreets(TEMPLE.grounds, 1.2);
+TEMPLE.areas[0].p = TEMPLE.grounds;
 
 function build() {
   const custom = [
@@ -168,7 +197,8 @@ function build() {
     // South of Teheran-ro: a row of office towers along the street.
     [-140, 16, -122, 56, 42], [-118, 16, -92, 56, 56], [-80, 16, -48, 56, 34], [-42, 16, -16, 56, 62], [26, 16, 56, 56, 46], [60, 20, 92, 56, 52],
   ];
-  const buildings = [...custom];
+  for (const b of TEMPLE.buildings) { const r = clash(b.p, 1); if (r) throw new Error(`Bongeunsa hall on a street (${JSON.stringify(b.p)})`); }
+  const buildings = [...custom, ...TEMPLE.buildings];
   for (const [u0, v0, u1, v1, h] of rows) {
     const p = grect(u0, v0, u1, v1);
     if (clash(p)) { console.log(`  (left out: building at grid ${u0},${v0} on a street or the stream)`); continue; }
@@ -192,26 +222,28 @@ function build() {
     { k: 'plaza', p: grect(-82, -62, SQUARE.u0, -12) }, // round the tower to Asem-ro
     // Planters with trees on the plaza, leaving the middle and the way to the doors open.
     ...planters.map(([u, v]) => ({ k: 'park', trees: true, p: grect(u - 3, v - 3, u + 3, v + 3) })),
-    // Bongeunsa's grounds (the temple itself is not built yet).
-    { k: 'park', trees: true, p: TEMPLE },
+    // Bongeunsa's grounds: paved yards, woods on the hill, Haesu Gwaneum's pond.
+    ...TEMPLE.areas,
     // Tancheon and its banks.
     { k: 'grass', p: strip(TANCHEON.p, -TANCHEON.w / 2 - TANCHEON.bank, -TANCHEON.w / 2) },
     { k: 'grass', p: strip(TANCHEON.p, TANCHEON.w / 2, TANCHEON.w / 2 + TANCHEON.bank) },
     { k: 'water', p: water },
   ];
-  if (clash(TEMPLE, 1)) throw new Error('Bongeunsa\'s trees on a street');
+  const onStreet = clash(TEMPLE.grounds, 1);
+  if (onStreet) throw new Error(`Bongeunsa's grounds on ${onStreet.p === BONGEUNSA.p ? 'Bongeunsa-ro' : 'a street'}`);
   // You can't walk into Tancheon, except over Samseong Bridge (Olympic-ro).
   const br = crossing(OLYMPIC.p, TANCHEON.p);
   const [ax, az] = OLYMPIC.p[br.i - 1], [bx, bz] = OLYMPIC.p[br.i];
   const L = Math.hypot(bx - ax, bz - az), u = [(bx - ax) / L, (bz - az) / L];
   const gap = OLYMPIC.w / 2 + 1;
-  const blockers = [{ p: clip(water, [br.x, br.z], u, 1, gap) }, { p: clip(water, [br.x, br.z], u, -1, gap) }];
+  const blockers = [...TEMPLE.blockers, { p: clip(water, [br.x, br.z], u, 1, gap) }, { p: clip(water, [br.x, br.z], u, -1, gap) }];
   // (the bridge's length: across the water at the road's slant)
   const [rx, rz] = TANCHEON.p[br.j - 1], [sx, sz] = TANCHEON.p[br.j];
   const rl = Math.hypot(sx - rx, sz - rz), sin = Math.abs(u[0] * (sz - rz) / rl - u[1] * (sx - rx) / rl);
   const [cx, cz] = mid({ u0: MALL.u0, v0: MALL.v0, u1: MALL.u1, v1: MALL.v1 });
   const [px, pz] = mid(PAVILION);
   const landmarks = [
+    ...TEMPLE.landmarks,
     { type: 'konext', x: cx, z: cz, ry: THETA, w: MALL.u1 - MALL.u0, d: MALL.v1 - MALL.v0, h: MALL.h },
     { type: 'aquarium', x: px, z: pz, ry: THETA, w: PAVILION.u1 - PAVILION.u0, d: PAVILION.v1 - PAVILION.v0, h: PAVILION.h },
     { type: 'samseongbridge', x: r1(br.x), z: r1(br.z), ry: Math.atan2(-u[1], u[0]), len: Math.round(TANCHEON.w / sin + 4), w: OLYMPIC.w },
@@ -230,7 +262,7 @@ function build() {
     { kind: 'landmark', x: cx, z: cz, name: name('KONEXT', '코넥스트', 'コネクスト', 'KONEXT') },
     { kind: 'landmark', ...xz([-32, -40]), name: name('KONEXT Square', '코넥스트 광장', 'コネクスト広場', 'KONEXT广场') },
     { kind: 'landmark', x: tc[0], z: tc[1], name: name('Tancheon', '탄천', '炭川', '炭川') },
-    { kind: 'landmark', x: -135, z: -185, name: name('Bongeunsa', '봉은사', '奉恩寺', '奉恩寺') },
+    ...TEMPLE.pois,
   ];
   return {
     meta: {

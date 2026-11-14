@@ -36,10 +36,10 @@ export function addBrickPattern(material, { w = 0.5, h = 0.2, mortar = 0.035, jo
             vec2 fw = max(fwidth(vec2(u, v)), vec2(1e-4));
             vec2 mw = vec2(${f(mortar / w)}, ${f(mortar / h)});
             vec2 line = 1.0 - smoothstep(mw, mw + fw, cell) + smoothstep(1.0 - fw, vec2(1.0), cell);
-            float fade = 1.0 - smoothstep(0.22, 0.5, max(fw.x, fw.y));
-            float shade = 0.92 + 0.16 * fract(sin(dot(vec2(floor(u), row), vec2(12.9898, 78.233))) * 43758.5453);
+            float fade = 1.0 - smoothstep(0.1, 0.3, max(fw.x, fw.y));
+            float shade = 0.95 + 0.1 * fract(sin(dot(vec2(floor(u), row), vec2(12.9898, 78.233))) * 43758.5453);
             diffuseColor.rgb *= mix(1.0, shade, fade);
-            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(${joint}), clamp(max(line.x, line.y), 0.0, 1.0) * fade * 0.85);
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(${joint}), clamp(max(line.x, line.y), 0.0, 1.0) * fade * 0.55);
           }
         }`);
   };

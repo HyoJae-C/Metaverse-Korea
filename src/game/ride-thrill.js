@@ -1,4 +1,4 @@
-// The Cotton Candy Express's sense of speed, lent to Another Land's swing
+// The Cotton Candy Express's sense of speed, lent to Modu Land's swing
 // ride, drop tower and gyro swing: the same numbers (coaster.js rideFx: a wider view
 // and a shake that grow with the speed, a narrow view while it climbs and
 // holds) and the same overlay and sounds (ui/coaster-fx.js: speed lines,

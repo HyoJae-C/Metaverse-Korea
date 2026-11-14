@@ -18,9 +18,13 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { toGame } from '../src/core/seoul-grid.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OSM = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'mangwon-osm.json'), 'utf8'));
+// The river in front of the park: the south bank, Seonyudo, Yanghwa Han River
+// Park and the two bridges, lat/lon from OpenStreetMap.
+const RIVER = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'mangwon-river-osm.json'), 'utf8'));
 const r1 = (v) => Math.round(v * 10) / 10;
 const name = (en, ko, ja, zh) => ({ ko, en, ja, zh });
 
@@ -213,9 +217,9 @@ export function mangwon() {
     { k: 'grass', p: rect(U_WEST, PATH_V + 3, U_EAST, 0) },
     // The picnic lawn by the water east of the pier (no trees): mats and frisbees.
     { k: 'grass', lawn: true, p: rect(Math.min(...LAWN), -9, Math.max(...LAWN), -1.2) },
-    { k: 'water', p: rect(U_WEST - 20, 0, U_EAST + 20, 230) }, // about the real river's width
+    ...RIVER_AREAS.areas,
   ];
-  const blockers = [{ p: rect(U_WEST - 20, 0, U_EAST + 20, 230) }];
+  const blockers = [{ p: RIVER_AREAS.block }];
   const mid = [(ma[0] + mb[0]) / 2, (ma[1] + mb[1]) / 2];
   const mry = along(mdir[0], mdir[1]); // the alley's direction (south-east)
   const poeunMid = poeun[Math.floor(poeun.length / 2)];
@@ -246,6 +250,7 @@ export function mangwon() {
       } },
   ];
   for (const u of [WAY_U - 110, WAY_U + 90, WAY_U + 130, WAY_U + 170, WAY_U + 210]) landmarks.push({ type: 'bench', ...xz(at(u, -7)), ry: r1(ROT + Math.PI) }); // facing the river
+  landmarks.push(...BRIDGES);
   // The park itself (game/han-parks.js): at the bank's edge, turned to face the river.
   landmarks.push({ type: 'hanpark', store: 'mangwon-hangang', ...xz(at(PARK_U, 0)), ry: r1(Math.PI - ANGLE), bounds: PARK.bounds, layout: PARK.layout });
   const pois = [
@@ -286,6 +291,92 @@ function stationExits(line) {
   return [-1, 1].map((side, i) => ({ n: i + 1, at: [r1(q[0] - dir[1] * off * side), r1(q[1] + dir[0] * off * side)], ry: Number(Math.atan2(dir[0] * side, dir[1] * side).toFixed(4)) }));
 }
 
+// ---- the river in front of the park (from scripts/data/mangwon-river-osm.json)
+// The north bank is the straight line v = 0; across the river, the real south
+// bank (Yanghwa Han River Park), Seonyudo in the river, and Seongsan and
+// Yanghwa Bridges over it. Nothing over there can be walked to: they are the
+// view from the park, west to the sunset behind Seongsan Bridge's arches.
+const geoUV = ([lat, lon]) => toUV(local(toGame(lat, lon)));
+const RIVER_W = U_WEST - 20, RIVER_E = U_EAST + 20; // the district's stretch of river (u)
+const rUV = (q) => q.map(r1);
+// The south bank's water edge: v at u (straight between its points; the
+// last point's v past the east end).
+const SOUTH = RIVER.south.map(geoUV).sort((a, b) => a[0] - b[0]);
+const southV = (u) => {
+  const i = SOUTH.findIndex((q) => q[0] >= u);
+  if (i <= 0) return SOUTH[i < 0 ? SOUTH.length - 1 : 0][1];
+  const [a, b] = [SOUTH[i - 1], SOUTH[i]];
+  return a[1] + ((b[1] - a[1]) * (u - a[0])) / (b[0] - a[0]);
+};
+// A polygon cut to the river's stretch (RIVER_W <= u <= RIVER_E).
+function clipU(poly, lo, hi) {
+  let out = poly;
+  for (const [edge, keep] of [[lo, (q) => q[0] >= lo], [hi, (q) => q[0] <= hi]]) {
+    const src = out;
+    out = [];
+    for (let i = 0; i < src.length; i++) {
+      const a = src[i], b = src[(i + 1) % src.length];
+      if (keep(a)) out.push(a);
+      if (keep(a) !== keep(b)) { const t = (edge - a[0]) / (b[0] - a[0]); out.push([edge, a[1] + (b[1] - a[1]) * t]); }
+    }
+  }
+  return out;
+}
+export const RIVER_AREAS = (() => {
+  const isle = RIVER.seonyudo.map(geoUV);
+  // The water: north bank, east edge, the south bank back west; Seonyudo
+  // is a hole in it (core/world.js area `holes`). Past the east edge, a
+  // piece up to where the region's water from Yeouido begins (region.json
+  // water[0] starts on a slant there and left a corner of dry land).
+  const bank = SOUTH.filter((q) => q[0] > RIVER_W && q[0] < RIVER_E).reverse();
+  const water = [[RIVER_W, 0], [RIVER_E, 0], [RIVER_E, southV(RIVER_E)], ...bank, [RIVER_W, southV(RIVER_W)]];
+  const corner = [[RIVER_E - 5, 0], [410, 148], [SOUTH.at(-1)[0], SOUTH.at(-1)[1]], ...SOUTH.filter((q) => q[0] > RIVER_E - 5).reverse(), [RIVER_E - 5, southV(RIVER_E - 5)]];
+  const ring = isle;
+  const park = clipU(RIVER.yanghwaPark.map(geoUV), RIVER_W, RIVER_E);
+  const toLocal = (p) => p.map(rUV).map(([u, v]) => at(u, v));
+  return {
+    areas: [
+      { k: 'water', p: toLocal(water), holes: [toLocal(ring)] }, // the real river's banks (the north one drawn straight)
+      { k: 'water', p: toLocal(corner) },
+      { k: 'park', trees: true, p: toLocal(ring) }, // Seonyudo (선유도), only to look at
+      { k: 'park', trees: true, p: toLocal(park) }, // Yanghwa Han River Park on the south bank
+    ],
+    block: [at(RIVER_W, 0), at(RIVER_E, 0), at(RIVER_E, 300), at(RIVER_W, 300)], // the river and the far bank
+    southV,
+  };
+})();
+
+// Seongsan Bridge (성산대교, west: the sunset goes down behind its red arches)
+// and Yanghwa Bridge (양화대교, east: over the end of Seonyudo, its one arch
+// over the north channel), on their real lines at 1/4, only to look at
+// (core/banpo-bridge.js). Each starts on Gangbyeon-buk-ro, high over the park
+// with no piers on it, and comes down past the south bank. The real bridges
+// carry both ways on two decks; drawn as one.
+const BRIDGE_V0 = GANGBYEON_V + 4; // (v) where each starts
+function bridgeLine(ko) {
+  const pts = RIVER.bridges[ko].flatMap((w) => w.p.map(geoUV));
+  // the carriageways' middle: the average u every 20 m across the river
+  const end = Math.max(...pts.map((q) => q[1])), line = [];
+  for (let v = BRIDGE_V0; v < end + 10; v += 20) {
+    const near = pts.filter((q) => Math.abs(q[1] - v) < 14);
+    if (near.length) line.push([near.reduce((s, q) => s + q[0], 0) / near.length, v]);
+  }
+  // to 25 m past the south bank, no further
+  const stop = (q) => q[1] > southV(q[0]) + 25;
+  const i = line.findIndex(stop);
+  return i > 0 ? line.slice(0, i + 1) : line;
+}
+export const BRIDGES = [
+  ['seongsan', '성산대교', { archColor: '#b5473a', arches: (len) => [0.2, 0.34, 0.48, 0.62, 0.76, 0.9].map((k) => r1(k * len)).reduce((a, s, i, l) => (i ? [...a, [l[i - 1], s]] : a), []) }],
+  ['yanghwa', '양화대교', { archColor: '#e6eaee', arches: (len) => [[r1(0.3 * len), r1(0.48 * len)]] }],
+].map(([which, ko, o]) => {
+  const line = bridgeLine(ko).map(([u, v]) => at(u, v));
+  const [x0, z0] = line[0];
+  const pts = line.map(([x, z]) => [r1(x - x0), r1(z - z0)]);
+  const len = pts.reduce((s, q, i) => (i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0), 0);
+  return { type: 'banpobridge', which, x: x0, z: z0, pts, w: 10, top: 6, ramp: [20, 25], pipes: false, archColor: o.archColor, arches: o.arches(len), noPiers: [[0, 0, -BRIDGE_V0 + 4]] };
+});
+
 // Mangwon Han River Park, laid straight on the street (game/han-parks.js;
 // core/han-park.js builds what the map can't draw). Its own frame faces the
 // river: X runs up the river (u = PARK_U - X), Z inland from the bank's edge
@@ -320,6 +411,9 @@ export const PARK = {
     beds: [[-6, 6.4, 3], [56, 8.6, 2.6], [88, 6.4, 3]],
     trees: [[-84, 7.2], [128, 7.4], [150, 7]],
     bushes: [[-34, 7.6], [24, 8], [92, 8.2]],
+    // The sunset steps: turned to face Seongsan Bridge, where the sun goes
+    // down (core/sunset-sky.js), with the open water in front.
+    steps: [{ x: -50, z: 6, w: 9, rows: 3, gap: 1.5, ry: -0.66, sunset: true }],
   },
 };
 const PARK_LAWN = [-150, -36]; // the picnic lawn (X): east of the pier

@@ -122,7 +122,7 @@ test('the arcade opens the ghost lantern with its own panel (not the darts one)'
   assert.match(readFileSync(new URL('../index.html', import.meta.url), 'utf8'), /id="haunt-panel"/);
 });
 
-test('Another Land spread out: every ride gate, food truck and the clown is a walk from the gate, and the rides stand apart', async () => {
+test('Modu Land spread out: every ride gate, food truck and the clown is a walk from the gate, and the rides stand apart', async () => {
   const { RIDE_GATES, UNDER_RIDES, FOOD_TRUCKS, CLOWN, truckWindow, RIDES } = await import('../src/core/park-rides.js');
   const { GATE: BUMPER_GATE } = await import('../src/core/bumper-cars.js');
   const room = ROOM_SIZES.themepark;

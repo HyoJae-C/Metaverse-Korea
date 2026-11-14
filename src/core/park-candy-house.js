@@ -1,10 +1,10 @@
-// Another Land's gate where its bridge lands on the island: a candy castle.
+// Modu Land's gate where its bridge lands on the island: a candy castle.
 // A gingerbread keep with icing piped along its battlements, a round tower
 // in the middle under a pink cone, two smaller towers either side under mint
 // and coral cones, a heart cookie over the way in, candy-cane posts round the
 // archway the walk goes through, giant swirl lollipops on its front corners,
-// and the park's name over the arch in raised icing letters, 어나더랜드 over
-// ANOTHER LAND, front and back. At night its windows, the letters and the
+// and the park's name over the arch in raised icing letters, 모두랜드 over
+// MODU LAND, front and back. At night its windows, the letters and the
 // bulbs along its battlements light up (setNight).
 // park-island.js places it (store.open.house) and bakes it with the rest of
 // the island's still parts; what glows is one more mesh (`glow`).
@@ -15,7 +15,7 @@ const ICING = '#fffaf3', GINGER = '#f0b45e', DARK = '#9a5a2c', CHOC = '#6b3f2a',
 // Its size: 8.4 m across, 4.6 m deep, walls 4.2 m high, the middle tower's
 // tip at about 11 m; the archway 3 m wide and 3.4 m high.
 export const HOUSE = { w: 8.4, d: 4.6, wall: 4.2, ridge: 11, arch: 3, archH: 3.4 };
-export const GATE_NAME = { ko: '어나더랜드', en: 'ANOTHER LAND' };
+export const GATE_NAME = { ko: '모두랜드', en: 'MODU LAND' };
 
 // Raised letters: the text drawn on a small canvas, then every run of inked
 // pixels in a row turned into a box (rows with the same runs stacked into
@@ -192,7 +192,7 @@ export function buildCandyHouse(scene, block, mat, at) {
   }
 
   // ── The name over the arch in raised icing letters on a raised pink
-  // outline, front and back: 어나더랜드 over ANOTHER LAND.
+  // outline, front and back: 모두랜드 over MODU LAND.
   const lines = [{ text: GATE_NAME.ko, px: 66, y: 42, g: 4, e: 15 }, { text: GATE_NAME.en, px: 32, y: 93, g: 0, e: 8 }];
   const words = raisedText(lines, 3.4, 0.16, 'g'), edge = raisedText(lines, 3.4, 0.1, 'e'); // (the icing a little bolder than the font, the pink edge round it)
   for (const z of [-1, 1]) {

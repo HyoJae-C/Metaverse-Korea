@@ -165,6 +165,12 @@ function torso(out, o) {
   if (o.pocket) box(out, [0, 0.72, front(0.0)], [0.26, 0.13, 0.03], o.pocket, [['spine', 1]]);
   if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
+  // A fishing vest's pockets: two on the chest, two bigger ones below, each
+  // side of the zip.
+  if (o.pockets) for (const sx of [-1, 1]) {
+    box(out, [sx * 0.12, 0.97, front(0.008)], [0.1, 0.09, 0.025], o.pockets, [['chest', 1]]);
+    box(out, [sx * 0.13, 0.75, front(0.006)], [0.13, 0.12, 0.03], o.pockets, [['spine', 1]]);
+  }
   // Hanbok: the goreum, a ribbon tied on the right of the chest with two
   // long ends hanging down (one longer than the other).
   if (o.goreum) {

@@ -2,7 +2,7 @@
 // middle of Myeongdong's shopping street): out from sunset until morning,
 // gone in the day (the game's three-hour day, core/show-clock.js). The carts
 // themselves (core/night-carts-model.js) are downloaded the first time you
-// come near them in the evening. Each has a seller and one kind of food to
+// come near them. Each has a seller and one kind of food to
 // buy, the way the Han River market's stalls sell theirs (stores.json:
 // the store's "market" stalls and its products' "stall").
 //
@@ -10,9 +10,10 @@
 // night(), greet(npcs, p), look(pr, store) } as getters where they change.
 import { gameHour } from '../core/show-clock.js';
 
-const BUILD_NEAR = 160; // downloaded and built from this far off (m)
+const BUILD_NEAR = 160; // downloaded and built from this far off (m), in the day too
 const SHOW_NEAR = 220; // drawn within this many metres
-const STAFF_NEAR = 35; // a seller (about 20 meshes) from this close (each)
+const STAFF_NEAR = 30; // a seller (about 20 meshes) from this close (each)
+const STAFF_MAX = 6; // and no more than this many at once
 const LOOK_NEAR = 1.6; // close enough to its counter to look at the food
 // The game's sunset starts at 16:30 on its clock and the morning at 5:18
 // (core/show-clock.js SKY_HOURS): the carts are out in between.
@@ -53,7 +54,7 @@ export function createNightCarts(game) {
     for (const o of sites) {
       const d = far(o, p);
       if (!o.built) {
-        if (out && d < BUILD_NEAR && !o.loading) {
+        if (d < BUILD_NEAR && !o.loading) { // (day or night: built ahead, so they're there the moment the sun sets)
           o.loading = true;
           import('../core/night-carts-model.js').then((m) => build(o, m)).catch(() => { o.loading = false; }); // (offline: try again later)
         }
@@ -62,8 +63,10 @@ export function createNightCarts(game) {
       const B = o.built;
       o.shown = out && d < SHOW_NEAR;
       B.b.group.visible = o.shown;
+      // Only the nearest few sellers are drawn (each is about 20 meshes).
+      const near = o.shown ? B.npcs.map((n) => [n, Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z)]).filter(([, dd]) => dd < STAFF_NEAR).sort((a, b) => a[1] - b[1]).slice(0, STAFF_MAX).map(([n]) => n) : [];
       for (const n of B.npcs) {
-        const close = o.shown && Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z) < STAFF_NEAR;
+        const close = near.includes(n);
         n.ch.root.visible = close;
         if (close) n.ch.animate(dt, 0); else n.tag.style.display = 'none';
       }

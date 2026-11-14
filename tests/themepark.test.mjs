@@ -98,7 +98,7 @@ test('ride guests only sit in the theme park, not in a Han River park', async ()
   assert.equal(hanPark.riderNpcs, undefined);
 });
 
-test('Another Land and the Han River parks have their own flags, no shared `park`', async () => {
+test('Modu Land and the Han River parks have their own flags, no shared `park`', async () => {
   const { readFileSync } = await import('node:fs');
   const src = (f) => readFileSync(new URL('../src/core/' + f, import.meta.url), 'utf8');
   assert.match(src('themepark.js'), /themepark: true/);
@@ -110,10 +110,10 @@ test('Another Land and the Han River parks have their own flags, no shared `park
 });
 
 // Seokchon Lake is at the real 1/4 scale like the rest of Seoul: the real
-// lakes hold 217,850 m2 of water, so 1/16 of it here. Another Land's island
+// lakes hold 217,850 m2 of water, so 1/16 of it here. Modu Land's island
 // (stores.json "open", in the coaster's metres) lies on the map's island,
-// its bridge landing on Another Land Bridge.
-test('Seokchon Lake: real 1/4 water, Another Land open on its island', async () => {
+// its bridge landing on Modu Land Bridge.
+test('Seokchon Lake: real 1/4 water, Modu Land open on its island', async () => {
   const { readFileSync } = await import('node:fs');
   const { inPoly } = await import('../src/core/geom.js');
   const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
@@ -140,9 +140,9 @@ test('Seokchon Lake: real 1/4 water, Another Land open on its island', async () 
   let wet = 0;
   for (const [x, z] of lawn) { const d = Math.hypot(x - cx, z - cz); if (water.some((a) => inPoly(x + ((x - cx) / d) * 3, z + ((z - cz) / d) * 3, a.p))) wet++; }
   assert.ok(wet / lawn.length > 0.8, `water round the island (${wet}/${lawn.length})`);
-  // The bridge lands on it: Another Land Bridge's end is at the gap in the shore.
-  const road = map.roads.find((r) => r.n?.en === 'Another Land Bridge');
-  assert.ok(road, 'Another Land Bridge');
+  // The bridge lands on it: Modu Land Bridge's end is at the gap in the shore.
+  const road = map.roads.find((r) => r.n?.en === 'Modu Land Bridge');
+  assert.ok(road, 'Modu Land Bridge');
   const [bx, bz] = world(isl.open.bridge);
   const ends = [road.p[0], road.p[road.p.length - 1]];
   assert.ok(ends.some(([x, z]) => Math.hypot(x - bx, z - bz) < 4), `bridge lands at ${bx.toFixed(1)},${bz.toFixed(1)}`);

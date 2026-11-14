@@ -1,4 +1,4 @@
-// Looking up at Another Tower (core/haneul.js, 278 m to the tip). The usual
+// Looking up at Modu Tower (core/haneul.js, 278 m to the tip). The usual
 // camera can't tilt above level (pitch 0.12 at the lowest), so near the tower
 // its top was cut off by the top of the screen, even from 450 m away. Within
 // RANGE of it, dragging the view up goes further: the camera sinks to the

@@ -9,7 +9,7 @@
 @about.en Three poems from "The Silence of Love" (1926), about waiting for someone who has gone away.
 @about.ko 시집 『님의 침묵』(1926)에서 떠난 임을 기다리는 시 세 편을 골랐어요.
 @source https://ko.wikisource.org/wiki/님의_침묵
-@license Public domain. Han Yong-un died in 1944, so these poems have been free for everyone since Korean copyright ended. Modern-spelling text from Korean Wikisource. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Han Yong-un died in 1944, so these poems have been free for everyone since Korean copyright ended. Modern-spelling text from Korean Wikisource. English translation written for Modu Seoul (free to use, CC0).
 ===
 # 님의 침묵 | The Silence of Love
 임은 갔습니다. 아아, 사랑하는 나의 임은 갔습니다.

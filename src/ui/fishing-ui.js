@@ -82,7 +82,7 @@ export function fishBook(dex, fresh = null) {
   const wrap = el('div', 'fish-book');
   const head = el('div', 'stamp-head');
   const available = AVAILABLE_FISH.filter(f => dex.has(f.id)).length;
-  head.append(el('span', 'stamp-kicker', 'ANOTHER SEOUL · FISHING JOURNAL'),
+  head.append(el('span', 'stamp-kicker', 'MODU SEOUL · FISHING JOURNAL'),
     el('strong', 'fish-book-title', text('나의 낚시 도감', 'My fishing journal')),
     el('p', 'dex-summary', text(`공개된 ${AVAILABLE_FISH.length}종 중 `, 'Available collection ') + available + '/' + AVAILABLE_FISH.length),
     el('small', null, text('전체 49종 · 새 친구들이 차례로 찾아와요', '49 species planned · more friends to come')));

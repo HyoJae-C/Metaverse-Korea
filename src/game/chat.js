@@ -6,6 +6,9 @@
 // The picker in the chat bar chooses who hears it: everyone nearby (public;
 // the server keeps it 90 days for reports, supabase/024_chat_log.sql), all friends, or one friend. Friend chat is kept like
 // a phone messenger (core/friends.js, the 👥 panel).
+// In Myeongdong Cathedral's confession room (game.confession) nothing is
+// sent at all: the line goes only to the priest on this device
+// (core/confession-room.js), never into the chat log or any save.
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
 import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
 import { NOTICE_LABEL, NoticeFeed, PinnedNotices, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
@@ -19,7 +22,7 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
-import { nextShow, showNoticeText } from '../core/show-notice.js';
+import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -129,6 +132,8 @@ export function createChat(game) {
     chatLog.scrollTop = chatLog.scrollHeight;
     input.keys.clear();
     chatInput.focus();
+    if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
+    renderChatTo(); // (back from the confession room: the picker and its words)
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
   function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
@@ -155,6 +160,16 @@ export function createChat(game) {
   $('chat-btn').onclick = () => (chatBar.hidden ? openChat() : closeChat());
   chatBar.addEventListener('submit', async (e) => {
     e.preventDefault();
+    // The confession room: to the priest only, and kept nowhere (not even
+    // in the chat log): just a bubble over your head.
+    const booth = game.confession;
+    if (booth) {
+      const text = cleanChat(chatInput.value);
+      chatInput.value = '';
+      if (text) { showBubble(myLabel, $('labels'), text, 6000, 'chat'); booth.hear(text); }
+      if (input.isTouch) closeChat();
+      return;
+    }
     // Commands start with "/" and are never sent to other people.
     const raw = cleanChat(chatInput.value);
     // Operators: "/공지 message" sends a notice to everyone (the server checks).
@@ -219,7 +234,7 @@ export function createChat(game) {
         const added = game.inventory.add(...unlocked);
         game.shop.toast(added.length ? t('items.added', { list: added.map((id) => ITEMS[id].emoji + ' ' + localName(ITEMS[id].name, getLanguage())).join(', ') }) : t('items.already'));
         refreshItems();
-      } else game.shop.toast(t('chat.unknownCommand'));
+      } else if (!await (await import('./random-outfit.js')).runOutfitCode(game, code)) game.shop.toast(t('chat.unknownCommand')); // /랜덤복장…, loaded on first use
       return;
     }
     // Google-only chat (config.chatGoogleOnly): guests get a sign-in prompt
@@ -427,6 +442,22 @@ export function createChat(game) {
     const asked = friendList.incoming.some((x) => x.name === personFor.name); // they sent me one
     btn.textContent = f ? '💌 ' + L(FRIEND_TEXT.isFriend) : out ? '⏳ ' + fmt(L(FRIEND_TEXT.waiting), { name: personFor.name }) : asked ? '✅ ' + L(FRIEND_TEXT.acceptReq) : '➕ ' + L(FRIEND_TEXT.addFriend);
   }
+  // Gifts go to friends only (game/gifts.js): what someone is to me, by name
+  // like the person menu: 'friend', 'out' (I asked), 'in' (they asked) or null.
+  let testFriends = null; // e2e only (__mk.giftFriends): names taken as friends
+  function friendStatus(name) {
+    if (testFriends?.has(name)) return 'friend';
+    if (!friendBackend) return null;
+    if (friendList.friends.some((x) => x.name === name)) return 'friend';
+    if (friendList.outgoing.some((x) => x.name === name)) return 'out';
+    if (friendList.incoming.some((x) => x.name === name)) return 'in';
+    return null;
+  }
+  async function addFriend(name) {
+    const st = friendStore();
+    if (!st) { game.shop.toast(L(FRIEND_TEXT.noAccount)); return; }
+    friendsUi._result(await st.add(name), name);
+  }
   $('person-friend').onclick = async () => {
     if (!personFor) return;
     const st = friendStore();
@@ -443,7 +474,8 @@ export function createChat(game) {
   // (030_pinned_notices.sql). The ▴ folds them to a small 📢 chip; a new one
   // opens them again.
   // Under them, always one more: the next fireworks or drone show
-  // (core/show-notice.js), in the player's own time. Folded or not is
+  // (core/show-notice.js), in the player's own time, and the next sunset
+  // (Yozi 2026-11-11: like the shows). Folded or not is
   // remembered on this device.
   const pinBox = $('notice-pin');
   const FOLD_KEY = 'noticePinFolded';
@@ -467,9 +499,9 @@ export function createChat(game) {
   };
   let showLine = '';
   function renderPinned(list = pinned.list()) {
-    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
-    showLine = show.label + show.text;
-    const count = list.length + 1;
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock), sun = sunsetNoticeText(nextSunset(now), now, t, clock);
+    showLine = show.label + show.text + sun.label + sun.text;
+    const count = list.length + 2;
     pinBox.hidden = false;
     pinBox.classList.toggle('folded', pinFolded);
     const fold = document.createElement('button');
@@ -486,13 +518,13 @@ export function createChat(game) {
       r.append(b, document.createTextNode(' ' + body));
       return r;
     };
-    const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text)];
+    const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text), row(sun.label, sun.text)];
     pinBox.replaceChildren(...rows, fold);
   }
   // The countdown: checked every 15 s, drawn again only when its words change.
   setInterval(() => {
-    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock);
-    if (show.label + show.text !== showLine) renderPinned();
+    const now = Date.now(), show = showNoticeText(nextShow(now), now, t, clock), sun = sunsetNoticeText(nextSunset(now), now, t, clock);
+    if (show.label + show.text + sun.label + sun.text !== showLine) renderPinned();
   }, 15000);
   renderPinned();
   const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {
@@ -521,5 +553,5 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

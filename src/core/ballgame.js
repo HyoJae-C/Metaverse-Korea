@@ -1,4 +1,4 @@
-// Seoul Another Dome (서울 어나더 돔): the baseball league, no THREE or DOM
+// Modu Ballpark (모두야구장): the baseball league, no THREE or DOM
 // (core/dome.js draws the stadium and plays these games out).
 //
 // Eight fictional teams play one game at a time in the dome. A new game
@@ -18,17 +18,20 @@ export const GAME_LEN = 8 * 60; // the game itself lasts 8 minutes
 export const INTRO = 12; // s of "PLAY BALL" before the first pitch
 export const OUTRO = 28; // s of the final score at the end of the game
 
-// Fictional teams ("neighbourhood + animal"). None is a real KBO team or a
-// well-known mascot. color: the jersey; trim: the letters and the cap.
+// Fictional teams ("district + animal"): Seoul's eight most populous gu, so
+// many Seoulites find their own team (Yozi 2026-11-15). Each animal has a tie
+// to its gu (Gangseo's wetland herons, Gangdong's Han River otters, Bukhansan's
+// squirrels in Eunpyeong, the poem "Seongbuk-dong Pigeons"...). None is a real
+// KBO team or a well-known mascot. color: the jersey; trim: the letters and the cap.
 export const TEAMS = [
-  { id: 'herons', short: 'CHE', color: '#2f6fd6', trim: '#ffffff', name: { en: 'Cheonggye Herons', ko: '청계 왜가리', ja: '清渓アオサギ', zh: '清溪苍鹭' }, chant: ['청계! 왜가리!', 'cheonggye! waegari!'] },
-  { id: 'comets', short: 'JAM', color: '#f28a1e', trim: '#1d2440', name: { en: 'Jamsil Comets', ko: '잠실 혜성', ja: '蚕室コメッツ', zh: '蚕室彗星' }, chant: ['잠실! 혜성!', 'jamsil! hyeseong!'] },
-  { id: 'magpies', short: 'NAM', color: '#26262c', trim: '#f4f4f4', name: { en: 'Namsan Magpies', ko: '남산 까치', ja: '南山カササギ', zh: '南山喜鹊' }, chant: ['남산! 까치!', 'namsan! kkachi!'] },
-  { id: 'otters', short: 'HAN', color: '#2f9e5b', trim: '#f6e7b0', name: { en: 'Hangang Otters', ko: '한강 수달', ja: '漢江カワウソ', zh: '汉江水獭' }, chant: ['한강! 수달!', 'hangang! sudal!'] },
-  { id: 'cats', short: 'HON', color: '#8a5cc9', trim: '#ffd84a', name: { en: 'Hongdae Cats', ko: '홍대 고양이', ja: '弘大キャッツ', zh: '弘大猫咪' }, chant: ['홍대! 고양이!', 'hongdae! goyangi!'] },
-  { id: 'pigeons', short: 'SEO', color: '#8c96a3', trim: '#2c3a6b', name: { en: 'Seongsu Pigeons', ko: '성수 비둘기', ja: '聖水ハト', zh: '圣水鸽子' }, chant: ['성수! 비둘기!', 'seongsu! bidulgi!'] },
-  { id: 'squirrels', short: 'BUK', color: '#8a5a34', trim: '#f3e2c4', name: { en: 'Bukhansan Squirrels', ko: '북한산 다람쥐', ja: '北漢山リス', zh: '北汉山松鼠' }, chant: ['북한산! 다람쥐!', 'bukhansan! daramjwi!'] },
-  { id: 'deer', short: 'YDP', color: '#f2c230', trim: '#6b4a2f', name: { en: 'Yeongdeungpo Water Deer', ko: '영등포 고라니', ja: '永登浦キバノロ', zh: '永登浦獐子' }, chant: ['영등포! 고라니!', 'yeongdeungpo! gorani!'] },
+  { id: 'herons', short: 'GSO', color: '#2f6fd6', trim: '#ffffff', name: { en: 'Gangseo Herons', ko: '강서 왜가리', ja: '江西アオサギ', zh: '江西苍鹭' }, chant: ['강서! 왜가리!', 'gangseo! waegari!'] },
+  { id: 'comets', short: 'SPA', color: '#f28a1e', trim: '#1d2440', name: { en: 'Songpa Comets', ko: '송파 혜성', ja: '松坡コメッツ', zh: '松坡彗星' }, chant: ['송파! 혜성!', 'songpa! hyeseong!'] },
+  { id: 'magpies', short: 'GWA', color: '#26262c', trim: '#f4f4f4', name: { en: 'Gwanak Magpies', ko: '관악 까치', ja: '冠岳カササギ', zh: '冠岳喜鹊' }, chant: ['관악! 까치!', 'gwanak! kkachi!'] },
+  { id: 'otters', short: 'GDG', color: '#2f9e5b', trim: '#f6e7b0', name: { en: 'Gangdong Otters', ko: '강동 수달', ja: '江東カワウソ', zh: '江东水獭' }, chant: ['강동! 수달!', 'gangdong! sudal!'] },
+  { id: 'cats', short: 'GNM', color: '#8a5cc9', trim: '#ffd84a', name: { en: 'Gangnam Cats', ko: '강남 고양이', ja: '江南キャッツ', zh: '江南猫咪' }, chant: ['강남! 고양이!', 'gangnam! goyangi!'] },
+  { id: 'pigeons', short: 'SBK', color: '#8c96a3', trim: '#2c3a6b', name: { en: 'Seongbuk Pigeons', ko: '성북 비둘기', ja: '城北ハト', zh: '城北鸽子' }, chant: ['성북! 비둘기!', 'seongbuk! bidulgi!'] },
+  { id: 'squirrels', short: 'EPY', color: '#8a5a34', trim: '#f3e2c4', name: { en: 'Eunpyeong Squirrels', ko: '은평 다람쥐', ja: '恩平リス', zh: '恩平松鼠' }, chant: ['은평! 다람쥐!', 'eunpyeong! daramjwi!'] },
+  { id: 'deer', short: 'NWN', color: '#f2c230', trim: '#6b4a2f', name: { en: 'Nowon Water Deer', ko: '노원 고라니', ja: '蘆原キバノロ', zh: '芦原獐子' }, chant: ['노원! 고라니!', 'nowon! gorani!'] },
 ];
 
 // The schedule: a round robin (every team meets every other once) in

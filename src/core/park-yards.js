@@ -1,4 +1,4 @@
-// Another Land's ride yards: a low candy fence round each ride (a ring, or a
+// Modu Land's ride yards: a low candy fence round each ride (a ring, or a
 // box, with a gap where its gate is), the gate's two striped posts with the
 // ride's name on a board over the way in, and a short queue rail in front.
 // The room under the island (park-grounds.js) and the island itself

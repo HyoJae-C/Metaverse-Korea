@@ -1,4 +1,4 @@
-// Guests already riding Another Land's rides (the carousel, the ship, the
+// Guests already riding Modu Land's rides (the carousel, the ship, the
 // drop tower, two gondolas of the wheel, the swing ride, the teacups, the
 // train, one seat of the log flume and the gyro swing), so the
 // rides aren't empty when you walk up: they sit in their seats on the

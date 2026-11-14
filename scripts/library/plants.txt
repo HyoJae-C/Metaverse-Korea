@@ -4,12 +4,12 @@
 @color #3f8a3f
 @title.en Growing House Plants (Korean only)
 @title.ko 반려식물 키우기
-@author.en Another Seoul
-@author.ko Another Seoul 편집부
+@author.en Modu Seoul
+@author.ko 모두서울 편집부
 @about.en Easy plants for a small room, and how to water them, give them light, and repot them. Korean text only.
 @about.ko 작은 방에서도 잘 자라는 식물과 물 주기, 햇빛, 분갈이 기초.
-@source Written new for Another Seoul
-@license Written for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@source Written new for Modu Seoul
+@license Written for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 처음이라면 이 식물
 잘 죽지 않는 식물부터 시작해요.

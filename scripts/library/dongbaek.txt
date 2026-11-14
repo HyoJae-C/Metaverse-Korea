@@ -10,7 +10,7 @@
 @about.en A funny country love story. A farm boy cannot understand why Jeom-sun keeps setting her rooster on his. Note: in the Gangwon dialect of the story, "dongbaek" means the little yellow flowers of the spicebush, not red camellias.
 @about.ko 점순이는 왜 자꾸 닭싸움을 붙일까? 시골 소년과 소녀의 풋풋한 이야기예요. 소설 속 '노란 동백꽃'은 강원도 말로 생강나무 꽃이에요.
 @source https://ko.wikisource.org/wiki/동백꽃
-@license Public domain. Kim Yu-jeong died in 1937, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource; a few line-break typos fixed. English translation written for Another Seoul (free to use, CC0).
+@license Public domain. Kim Yu-jeong died in 1937, so this story has been free for everyone since Korean copyright ended. Text from Korean Wikisource; a few line-break typos fixed. English translation written for Modu Seoul (free to use, CC0).
 ===
 오늘도 또 우리 수탉이 막 쫓기었다. 내가 점심을 먹고 나무를 하러 갈 양으로 나올 때이었다. 산으로 올라서려니까 등뒤에서 푸드득푸드득, 하고 닭의 횃소리가 야단이다. 깜짝 놀라서 고개를 돌려보니 아니나다르랴, 두 놈이 또 얼리었다.
 

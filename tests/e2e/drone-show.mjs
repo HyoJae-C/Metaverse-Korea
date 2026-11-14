@@ -5,6 +5,7 @@
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/drone-show.mjs http://localhost:4173/ [shot dir] [phone]
 import { chromium, devices } from 'playwright';
+import { nextDroneShow } from '../../src/core/drone-show.js';
 
 const url = process.argv[2] || 'http://localhost:4173/';
 const shotDir = process.argv[3] || null;
@@ -17,7 +18,7 @@ page.on('pageerror', (e) => errors.push(e.message));
 const mk = (f, ...x) => page.evaluate(([f, x]) => window.__mk[f](...x), [f, x]);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (f, ms = 20000, what = '') => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await f(); if (v) return v; await wait(150); } throw new Error('timed out ' + what); };
-const START = Date.UTC(2026, 10, 9, 9, 0, 0); // 18:00 KST
+const START = nextDroneShow(Date.UTC(2026, 10, 9, 9, 0, 0)); // the first show after 18:00 KST
 let ok = false;
 try {
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=e2e' + Math.random().toString(36).slice(2, 8));
@@ -35,7 +36,7 @@ try {
   let st = await stand();
   if (st.night !== 0 || st.stamp) throw new Error('night or stamp in the day: ' + JSON.stringify(st));
   if (shotDir) await page.screenshot({ path: `${shotDir}/0-day.png` });
-  const moments = [[-150, 'lift'], [-5, 'countdown'], [8, 'another-seoul'], [52, 'eo-na-deo'], [92, 'korea'], [140, 'fan'], [185, 'tower'], [230, 'palace'], [315, 'waver'], [370, 'whale'], [480, 'ramen'], [528, 'meokgo'], [548, 'ttukseom'], [636, 'geurigo'], [665, 'neo-heart'], [720, 'photo-frame'], [790, 'act3'], [860, 'wave'], [900, 'star'], [935, 'moon'], [990, 'clover'], [1040, 'sugo'], [1080, 'burst'], [1170, 'next-show']];
+  const moments = [[-150, 'lift'], [-5, 'countdown'], [12, 'another-seoul'], [80, 'annyeong'], [101, 'konnichiwa'], [135, 'waver'], [156, 'fan'], [179, 'hanbok'], [199, 'janggu'], [217, 'mask'], [235, 'taekwondo'], [267, 'palace'], [305, 'tower'], [341, 'another-tower'], [361, 'mugunghwa'], [381, 'subway'], [420, 'whale'], [468, 'duck'], [485, 'bike'], [503, 'bridge'], [533, 'chimaek'], [560, 'ramen'], [583, 'meokgo'], [613, 'wheel'], [635, 'coaster'], [706, 'neo-heart'], [724, 'hearts'], [781, 'photo-frame'], [809, 'act3'], [850, 'lightstick'], [876, 'wave'], [900, 'star'], [934, 'moon'], [961, 'dipper'], [989, 'shooting-star'], [1015, 'clover'], [1041, 'blossom'], [1059, 'rainbow'], [1079, 'firework'], [1100, 'sugo'], [1139, 'burst'], [1190, 'next-show']];
   for (const [t, name] of moments) {
     await page.clock.setFixedTime(START + t * 1000);
     if (t === -150) await mk('cam', { yaw: 2.981 });

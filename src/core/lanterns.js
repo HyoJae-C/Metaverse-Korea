@@ -6,8 +6,9 @@
 // showing the real painting of King Jeongjo's royal procession, and a wish lantern corner at the east end
 // where small lanterns float down and gather.
 //
-// The game has no night for now, so everything is bright and colourful by
-// day; only the lanterns under the bridges, in the shade, look lit.
+// By day everything is bright and colourful and only the lanterns under the
+// bridges, in the shade, look lit; after dark (weather.js glowAtNight) the
+// paper figures light up from inside in their own colours.
 // All designs here are original, except the procession painting (credited below).
 //
 // Map data, on a stream (u along the channel from its west end, v across it):
@@ -29,8 +30,10 @@
 // arrive later see it too. A few lanterns float by on their own, from the
 // clock, so the stream is never empty.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mergeStatic } from './merge-static.js';
 import { canvasTex } from './three-kit.js';
+import { glowAtNight } from './weather.js';
 
 export const WISH = { price: 5000, speed: 0.3, every: 25, life: 600, max: 72, cooldown: 8 };
 export const WISH_COLORS = ['#ff6b6b', '#ffb347', '#ffe066', '#7bd389', '#7ab8ff', '#c39bff', '#ff8fc7'];
@@ -305,7 +308,7 @@ function moon() {
   return g;
 }
 
-const FIGURES = { carp, tiger, lotus, moon };
+export const FIGURES = { carp, tiger, lotus, moon };
 export const FIGURE_KINDS = Object.keys(FIGURES);
 
 // Cheongsachorong: a red silk body with blue bands top and bottom and a gold cap.
@@ -333,6 +336,49 @@ function instanced(parent, parts, mats4, colors = null) {
   return out;
 }
 
+// A paper figure lit from inside after dark: every part that already glows a
+// little by day (its emissive) glows in its own colour at night. Materials
+// are shared (lam's cache), so each is set up once, unless `own`: then the
+// figure gets its own copies, to be lit on its own (setFigureGlow).
+// → the glow entries (weather.js glowAtNight).
+const glowSet = new WeakSet();
+export const NIGHT_GLOW = 0.85;
+export function lightUp(fig, own = false) {
+  const copies = new Map(), out = [];
+  fig.traverse((o) => {
+    if (!o.isMesh) return;
+    if (own && o.material) {
+      if (!copies.has(o.material)) copies.set(o.material, o.material.clone());
+      o.material = copies.get(o.material);
+    }
+    const m = o.material;
+    if (!m?.emissive || glowSet.has(m)) return;
+    glowSet.add(m);
+    const e = m.emissive, day = (0.3 * e.r + 0.6 * e.g + 0.1 * e.b) * m.emissiveIntensity;
+    if (day <= 0) return; // frames, eyes: stay dark
+    if (m.map) { m.emissive.set('#ffffff'); m.emissiveMap = m.map; } // glows in its own painted colours
+    else m.emissive.copy(m.color);
+    const lum = m.map ? 0.85 : 0.3 * m.color.r + 0.6 * m.color.g + 0.1 * m.color.b;
+    out.push(glowAtNight(m, NIGHT_GLOW, Math.min(NIGHT_GLOW, day / Math.max(0.05, lum)))); // the same look by day as before
+  });
+  return out;
+}
+// How bright a festival figure is at night: k × its usual glow (1: as usual;
+// below 1 its paper darkens too, as if the light inside were out). `dark`:
+// how dark it is (weather.js darkness()), so it never shows by day.
+export function setFigureGlow(fig, k, dark = 1) {
+  const shade = dark > 0.2 ? 1 - 0.85 * (1 - Math.min(1, k)) : 1;
+  for (const e of fig.glow) e[1] = NIGHT_GLOW * k;
+  for (const m of fig.mats) {
+    m.userData.paper ||= m.color.clone();
+    m.color.copy(m.userData.paper).multiplyScalar(shade);
+  }
+}
+// The festival's figures in the water, for the lantern parade to light up
+// one by one: [{ u (along the stream), glow, mats (all its own materials) }].
+let festival = [];
+export const festivalFigures = () => festival;
+
 export function buildLanternFestival(g, s) {
   const conf = s.lanterns || {}, len = s.len, hw = s.w / 2, D = s.depth || 4;
   const root = new THREE.Group();
@@ -341,7 +387,8 @@ export function buildLanternFestival(g, s) {
   const M = (x, y, z, ry = 0, sc = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry), new THREE.Vector3(sc, sc, sc));
   const decks = (s.bridges || []).map((b) => [b.u - b.w / 2 - 1, b.u + b.w / 2 + 1]);
   const onDeck = (u) => decks.some(([a, b]) => u > a && u < b);
-  // Figures in the water.
+  // Figures in the water, each with its own materials (lit one by one on parade nights).
+  if (conf.figures?.length) festival = []; // (a stream without figures leaves them be)
   for (const f of conf.figures || []) {
     const make = FIGURES[f.kind];
     if (!make) continue;
@@ -349,6 +396,9 @@ export function buildLanternFestival(g, s) {
     m.position.set(f.u, -D - 0.3, f.v || 0);
     m.rotation.y = f.ry || 0;
     root.add(m);
+    const glow = lightUp(m, true), mats = new Set();
+    m.traverse((o) => { if (o.isMesh && o.material?.color) mats.add(o.material); });
+    festival.push({ u: f.u, glow, mats: [...mats] });
   }
   // Cheongsachorong hanging from brackets on both railings, at street level.
   const step = conf.railing || 0;
@@ -424,7 +474,8 @@ export function buildLanternFestival(g, s) {
   }
   const ticks = [];
   if (conf.tunnel) ticks.push(lightTunnel(root, s, conf.tunnel));
-  if (conf.mural) procession(root, s, conf.mural);
+  const keep = [];
+  if (conf.mural) keep.push(procession(root, s, conf.mural));
   if (conf.wish) { // a sign at the start of the wish lantern corner, on both walkways
     for (const sd of [-1, 1]) {
       const sign = signPost(['소원등'], '#b03a2e');
@@ -433,7 +484,7 @@ export function buildLanternFestival(g, s) {
       root.add(sign);
     }
   }
-  mergeStatic(root); // the still figures, ropes and signs: a mesh per colour (core/merge-static.js)
+  mergeStatic(root, keep); // the still figures, ropes and signs: a mesh per colour (core/merge-static.js)
   return { root, tick: (t) => { for (const f of ticks) f(t); } };
 }
 
@@ -517,12 +568,15 @@ function procession(root, s, c) {
     else g.translate(x + w / 2, 0, 0);
     geos.push(g);
   });
-  for (const g of geos) {
-    const m = new THREE.Mesh(g, mat);
-    m.position.set(c.from, -D + 0.55 + h / 2, sd * (hw - 0.31));
-    m.userData.noShadow = true;
-    root.add(m);
-  }
+  // One mesh for all the panels, kept out of mergeStatic: its picture loads
+  // later, so the merge would see a plain material and throw the UVs away
+  // (the wall went blank from 2026-11-09 until this was fixed).
+  const wall = new THREE.Mesh(mergeGeometries(geos), mat);
+  for (const g of geos) g.dispose();
+  wall.name = 'banchado';
+  wall.position.set(c.from, -D + 0.55 + h / 2, sd * (hw - 0.31));
+  wall.userData.noShadow = true;
+  root.add(wall);
   // A frame of dark stone round it, and between the panels.
   const frame = lam('#6f655a');
   for (const y of [-D + 0.5, -D + 0.6 + h]) {
@@ -541,6 +595,7 @@ function procession(root, s, c) {
   sign.position.set(c.from - 1.5, -D, sd * (hw - 1.6));
   sign.rotation.y = sd > 0 ? Math.PI : 0;
   root.add(sign);
+  return wall;
 }
 // A little sign on a post, in Korean (the action next to it explains it in
 // the player's language).

@@ -21,11 +21,11 @@ export function stampSvg(s, i = 0, { ink = true } = {}) {
     frame = `<circle cx="100" cy="100" r="92" stroke-width="5"/><circle cx="100" cy="100" r="80" stroke-width="1.8"/><circle cx="100" cy="100" r="54" stroke-width="1.8" stroke-dasharray="2 4"/>`;
     text = `<path id="${id}t" d="M 34 100 a 66 66 0 0 1 132 0" fill="none" stroke="none"/><path id="${id}b" d="M 26 100 a 74 74 0 0 0 148 0" fill="none" stroke="none"/>
 <text font-family="${FONT_NAME}" font-weight="900" font-size="21" letter-spacing="2" fill="${c}" stroke="none"><textPath href="#${id}t" startOffset="50%" text-anchor="middle">${name}</textPath></text>
-<text font-family="${FONT_SMALL}" font-weight="700" font-size="12" letter-spacing="3" fill="${c}" stroke="none"><textPath href="#${id}b" startOffset="50%" text-anchor="middle">ANOTHER SEOUL · ${gu}</textPath></text>`;
+<text font-family="${FONT_SMALL}" font-weight="700" font-size="12" letter-spacing="3" fill="${c}" stroke="none"><textPath href="#${id}b" startOffset="50%" text-anchor="middle">MODU SEOUL · ${gu}</textPath></text>`;
   } else {
     frame = `<rect x="12" y="12" width="176" height="176" rx="22" stroke-width="5"/><rect x="22" y="22" width="156" height="156" rx="14" stroke-width="1.8"/>`;
     text = `<text x="100" y="48" text-anchor="middle" font-family="${FONT_NAME}" font-weight="900" font-size="${name.length > 6 ? 18 : 21}" fill="${c}" stroke="none">${name}</text>
-<text x="100" y="164" text-anchor="middle" font-family="${FONT_SMALL}" font-weight="700" font-size="10" letter-spacing="1.2" fill="${c}" stroke="none">ANOTHER SEOUL · ${gu}</text>`;
+<text x="100" y="164" text-anchor="middle" font-family="${FONT_SMALL}" font-weight="700" font-size="10" letter-spacing="1.2" fill="${c}" stroke="none">MODU SEOUL · ${gu}</text>`;
   }
   const icon = s.shape === 'circle'
     ? `<g transform="translate(100 100) scale(.62) translate(-100 -96)">${s.icon}</g>`

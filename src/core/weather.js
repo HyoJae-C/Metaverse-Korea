@@ -5,6 +5,10 @@ import * as THREE from 'three';
 import { snowDepth, snowUniform, SETTLE_MS, MELT_MS } from './snow-cover.js';
 
 const REFRESH_MS = 15 * 1000; // the clock chip and the next 30-minute weather slot
+const SETTINGS_KEY = 'weatherSettings', SETTINGS_WAIT_MS = 12 * 1000; // (main.js asks the server ~4 s after start)
+const savedSettings = () => {
+  try { const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); return raw ? weatherSettings(raw) : null; } catch { return null; }
+};
 
 // Rain and snow slow you down a little outdoors: on foot and by bike.
 // An umbrella keeps the rain off, so walking is only a touch slower.
@@ -20,6 +24,7 @@ export function weatherSpeed(kind, { bike = false, umbrella = false } = {}) {
 export { WEATHER_ICON, WEATHER_SLOT_MS, WEATHER_ODDS, SEASON_ODDS, SEASONS, seasonAt, weatherSettings, weatherAt, rolledWeather } from './weather-roll.js';
 import { WEATHER_ICON, weatherAt, weatherSettings } from './weather-roll.js';
 import { gameHour, SKY_SUN } from './show-clock.js';
+import { createSunsetSky } from './sunset-sky.js';
 const NIGHT_ICON = { clear: '🌙' };
 
 // Time of day: the game's own three-hour day (show-clock.js), the same for
@@ -59,10 +64,16 @@ const NIGHT_LIGHT = {
   hemi: new THREE.Color(0xa9b9ff), ground: new THREE.Color(0x46507a),
   ambient: new THREE.Color(0x9fadde), sun: new THREE.Color(0xc4d2ff),
 };
-const glowing = []; // [material, strength]: emissive that comes on after dark
-export function glowAtNight(material, strength = 1) {
-  material.emissiveIntensity = 0;
-  glowing.push([material, strength]);
+const SUNSET_LIGHT = { hemi: new THREE.Color(0xffc49e), ambient: new THREE.Color(0xffd2b8) };
+const glowing = []; // [material, strength, base]: emissive that comes on after dark
+// base: how much it glows by day (0: not at all), strength: at night.
+// → the entry: its strength (e[1]) can change later (the lantern parade
+// lights Cheonggyecheon's figures one by one).
+export function glowAtNight(material, strength = 1, base = 0) {
+  const e = [material, strength, base];
+  material.emissiveIntensity = base;
+  glowing.push(e);
+  return e;
 }
 
 const SKY = {
@@ -77,9 +88,16 @@ export class WeatherSystem {
     Object.assign(this, { scene, sun, hemi, ambient, region, onUpdate });
     this.dayLight = { hemi: hemi.color.clone(), ground: hemi.groundColor.clone(), ambient: ambient.color.clone(), sun: sun.color.clone() };
     this.kind = 'clear';
-    this.settings = null; // the operators' season / held weather (setSettings)
+    // The operators' season / held weather (setSettings). Until the server's
+    // comes (a few seconds after start) the last one seen here stands, or a
+    // clear sky on a first visit: rolling with the default odds first showed
+    // snow, then rain a second later when the season came (Yozi 2026-11-11).
+    this.settings = savedSettings();
+    this.ready = !!this.settings;
+    setTimeout(() => { if (!this.ready) { this.ready = true; this.depthAt = 0; this.refresh(); } }, SETTINGS_WAIT_MS);
     this.temp = null;
     this.sky = new THREE.Color();
+    this.sunset = createSunsetSky(scene); // the low sun, its glow and its light on the river
     this.particles = null;
     const forced = new URLSearchParams(location.search).get('weather');
     this.forced = forced && WEATHER_ICON[forced] ? forced : null;
@@ -89,7 +107,7 @@ export class WeatherSystem {
   }
 
   refresh() {
-    const kind = this.forced || (this.showClear ? 'clear' : weatherAt(Date.now(), this.settings));
+    const kind = this.forced || (this.showClear || !this.ready ? 'clear' : weatherAt(Date.now(), this.settings));
     if (kind !== this.kind || !this.started) this.setKind(kind);
     this.started = true;
     this.onUpdate?.(this.status());
@@ -107,6 +125,8 @@ export class WeatherSystem {
   // The operators' setting changed (supabase/023_weather.sql).
   setSettings(raw) {
     this.settings = raw ? weatherSettings(raw) : null;
+    this.ready = true;
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(raw || null)); } catch { /* private mode */ }
     this.depthAt = 0; // work the snow out again
     this.refresh();
   }
@@ -136,6 +156,7 @@ export class WeatherSystem {
   // How deep the snow is now, from the shared weather of the last few
   // minutes (worked out once a second).
   snowNow() {
+    if (!this.ready) return 0;
     const now = Date.now();
     if (now - (this.depthAt || 0) >= 1000) {
       this.depthAt = now;
@@ -154,6 +175,7 @@ export class WeatherSystem {
     const twilight = 1 - Math.abs(d - 0.5) * 2; // peaks mid-ramp
     this.sky.copy(SKY.night).lerp(SKY.day, d).lerp(SKY.dusk, twilight * 0.55 * (1 - overcast));
     this.sky.lerp(SKY.grey, overcast * 0.6 * Math.max(d, 0.25));
+    this.sunset.update(hourNow(), Math.max(overcast, this.nightMix || 0), this.sky, dt); // (warms the haze at sunset)
     this.scene.background.copy(this.sky);
     if (this.scene.fog) {
       this.scene.fog.color.copy(this.sky);
@@ -173,9 +195,16 @@ export class WeatherSystem {
     this.hemi.groundColor.copy(D.ground).lerp(NIGHT_LIGHT.ground, n);
     this.ambient.color.copy(D.ambient).lerp(NIGHT_LIGHT.ambient, n);
     this.sun.color.copy(D.sun).lerp(NIGHT_LIGHT.sun, n);
+    // Sunset: the low sun's warm light (core/sunset-sky.js).
+    const sm = this.sunset.mix;
+    if (sm > 0) {
+      this.sun.color.lerp(this.sunset.light, sm * 0.85); // (each sunset's own)
+      this.hemi.color.lerp(SUNSET_LIGHT.hemi, sm * 0.6);
+      this.ambient.color.lerp(SUNSET_LIGHT.ambient, sm * 0.45);
+    }
     // Lit windows: on from dusk (a few stay dark: the texture says which).
     const glow = Math.max(0, n - 0.15) / 0.85;
-    for (const [m, k] of glowing) m.emissiveIntensity = glow * k;
+    for (const [m, k, b] of glowing) m.emissiveIntensity = b + glow * (k - b);
 
     // Snow on the ground: from the shared clock, so everyone sees the same
     // depth; with ?weather= forced it settles from the moment you arrive

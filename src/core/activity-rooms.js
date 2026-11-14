@@ -2,6 +2,7 @@
 //   bowling   볼링장: eight lanes, ball returns, score screens over the pins, benches
 //   climbing  클라이밍짐: a bouldering wall with colour-coded holds and mats
 //   pcbang    PC방: rows of gaming desks with glowing screens
+//   arcade    오락실: four fighting-game cabinets and two wall screens that show the matches
 // Every room already has people in it (stations.patrons, which main.js
 // stands, seats or sets to an activity), so it never looks empty.
 // Called from buildInterior (core/interior.js) with its helpers.
@@ -12,7 +13,7 @@ import { pinGeometry, pinMaterial } from './bowling-pin.js';
 import { laneScreen } from './bowling-screen.js';
 import { mergeStatic } from './merge-static.js';
 
-export const ACTIVITY_ROOMS = new Set(['bowling', 'climbing', 'pcbang']);
+export const ACTIVITY_ROOMS = new Set(['bowling', 'climbing', 'pcbang', 'arcade']);
 const SEAT_H = 0.38; // (same chair height as core/interior.js)
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -42,6 +43,7 @@ export function decorateActivityRoom(store, ctx) {
   if (store.workshop === 'bowling') return bowling(store, ctx);
   if (store.workshop === 'climbing') return climbing(store, ctx);
   if (store.workshop === 'pcbang') return pcbang(store, ctx);
+  if (store.workshop === 'arcade') return arcade(store, ctx);
   return null;
 }
 
@@ -314,4 +316,90 @@ function pcbang(store, { scene, box, block, mat, stations, seats, w, d, h }) {
     for (const s of screens) s.scr.material.color.copy(tmp.copy(s.base).multiplyScalar(0.8 + 0.2 * Math.sin(t * 3 + s.k * 1.7)));
   };
   return { animate };
+}
+
+// ── Arcade ───────────────────────────────────────────────────────────────
+// Four Rooftop Rumble cabinets (game/brawl.js), two by each side wall, and
+// two big screens on the back wall. A match played here is shown on a screen
+// for everyone in the room (game/brawl-tv.js draws it; stations.fightTv are
+// the screens); with nobody playing they show the game's title. The middle
+// of the floor is left open for people to stand and watch, with two benches.
+export const ARCADE_TV = { w: 6.4, h: 3.6, y: 2.4, xs: [-3.6, 3.6] };
+function arcadeIdle(n) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 288;
+  const g = c.getContext('2d');
+  const sky = g.createLinearGradient(0, 0, 0, 288);
+  sky.addColorStop(0, '#120e22'); sky.addColorStop(1, '#5a2a5e');
+  g.fillStyle = sky; g.fillRect(0, 0, 512, 288);
+  g.fillStyle = '#ffd23c'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = 'italic 900 54px system-ui, sans-serif';
+  g.fillText('ROOFTOP RUMBLE', 256, 112, 480);
+  g.fillStyle = '#ffffff'; g.font = `700 26px ${FONT}`;
+  g.fillText('도전자를 기다리는 중', 256, 176, 480);
+  g.font = '700 18px system-ui, sans-serif'; g.globalAlpha = 0.8;
+  g.fillText('WAITING FOR CHALLENGERS', 256, 212, 480);
+  g.fillText('SCREEN ' + n, 256, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function arcade(store, { scene, box, block, mat, stations, seats, w, d, h }) {
+  stations.fight = [];
+  // A cabinet against a side wall: a dark body, a glowing screen and a
+  // marquee, the stick and buttons in front. dir: +1 looks into the room
+  // from the left wall, -1 from the right.
+  const cabinet = (fx, fz, dir) => {
+    box(0.9, 1.0, 0.9, fx, 0.5, fz, '#241d3a');
+    box(0.5, 0.9, 0.9, fx - 0.2 * dir, 1.45, fz, '#241d3a');
+    box(0.5, 0.12, 0.8, fx + 0.3 * dir, 1.02, fz, '#3a3260');
+    box(0.7, 0.28, 0.9, fx - 0.1 * dir, 2.04, fz, '#ffd23c');
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.6), new THREE.MeshBasicMaterial({ color: '#ff5a6e' }));
+    scr.position.set(fx + 0.06 * dir, 1.48, fz);
+    scr.rotation.y = dir * Math.PI / 2;
+    scene.add(scr);
+    for (const [k, c] of ['#3f7fe0', '#e0483f', '#2fa56a', '#d9982a'].entries()) box(0.07, 0.04, 0.07, fx + (0.36 - (k >> 1) * 0.12) * dir, 1.1, fz + 0.08 + (k & 1) * 0.13, c);
+    box(0.04, 0.14, 0.04, fx + 0.3 * dir, 1.14, fz - 0.2, '#e8e8f0');
+    block(fx, fz, 1.0, 1.0);
+    stations.fight.push({ x: fx + 1.15 * dir, z: fz, ry: -dir * Math.PI / 2 });
+  };
+  for (const fz of [-2.2, 1.6]) { cabinet(-w / 2 + 0.55, fz, 1); cabinet(w / 2 - 0.55, fz, -1); }
+  // The two wall screens, each in a dark frame, a strip along the top for
+  // the names and health bars (game/brawl-tv.js writes on it).
+  box(ARCADE_TV.xs[1] - ARCADE_TV.xs[0] + ARCADE_TV.w + 0.4, ARCADE_TV.h + 0.4, 0.08, 0, ARCADE_TV.y, -d / 2 + 0.04, '#0c0b14'); // one dark panel behind both
+  stations.fightTv = ARCADE_TV.xs.map((x, i) => {
+    const z = -d / 2 + 0.06;
+    const idle = arcadeIdle(i + 1);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(ARCADE_TV.w, ARCADE_TV.h), new THREE.MeshBasicMaterial({ map: idle }));
+    screen.position.set(x, ARCADE_TV.y, z + 0.03);
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(ARCADE_TV.w, ARCADE_TV.w * 48 / 512), new THREE.MeshBasicMaterial({ transparent: true }));
+    strip.position.set(x, ARCADE_TV.y + ARCADE_TV.h / 2 - ARCADE_TV.w * 24 / 512, z + 0.04);
+    strip.visible = false;
+    scene.add(screen, strip);
+    return { screen, strip, idle };
+  });
+  // Neon round the top of the walls, and a star on the floor like the ring's.
+  const neon = new THREE.MeshBasicMaterial({ color: '#ff5a6e' });
+  for (const [sx, sz, px, pz] of [[w, 0.06, 0, -d / 2 + 0.04], [0.06, d, -w / 2 + 0.04, 0], [0.06, d, w / 2 - 0.04, 0]]) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.06, sz), neon);
+    m.position.set(px, h - 0.25, pz);
+    scene.add(m);
+  }
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(2.6, 40).rotateX(-Math.PI / 2), mat('#2a2148'));
+  rug.position.set(0, 0.012, 0.4);
+  const ringMark = new THREE.Mesh(new THREE.RingGeometry(2.3, 2.45, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffd23c' }));
+  ringMark.position.set(0, 0.016, 0.4);
+  scene.add(rug, ringMark);
+  // Benches facing the screens, and a few regulars watching.
+  for (const bx of [-3.2, 3.2]) {
+    const bz = 3.4;
+    box(3.0, 0.1, 0.5, bx, SEAT_H, bz, '#3a3260');
+    for (const lx of [-1.3, 1.3]) box(0.1, SEAT_H, 0.4, bx + lx, SEAT_H / 2, bz, '#241d3a');
+    block(bx, bz, 3.0, 0.5);
+    for (const sx of [-1, 0, 1]) seats.push({ x: bx + sx, z: bz, ry: Math.PI, stand: [bx + sx, bz + 0.8] });
+  }
+  // Stand on the ring mark or by a bench to turn the camera to the screens (game/arcade.js).
+  stations.watch = [{ x: 0, z: 0.4 }, { x: -3.2, z: 4.2 }, { x: 3.2, z: 4.2 }];
+  (stations.patrons ||= []).push({ x: -1.4, z: 0.2, ry: Math.PI }, { x: 1.9, z: 1.1, ry: Math.PI - 0.3 }, { x: 5.4, z: -0.3, ry: Math.PI + 0.5 });
+  return null;
 }

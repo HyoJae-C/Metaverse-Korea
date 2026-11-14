@@ -179,11 +179,19 @@ export async function createAreaNet(provider, handlers, cfg, { room, self, cellS
     get chatReady() { return !!chatLink?.ready; }, // on the private chat channel (else room chat)
     get peers() { return visible(); }, // people we can see right now
     get group() { return group; },
-    sendState(st) { own()?.sendState(st); },
-    sendEmote(e) { own()?.sendEmote(e); },
+    // Nobody around: send nothing. Supabase counts every broadcast once when
+    // sent, even into an empty room, and most play time is spent alone, so
+    // this was most of the month's realtime messages. Whoever arrives makes
+    // the game resend our state at once (main.js: onJoin clears lastSent).
+    sendState(st) { if (visible()) own()?.sendState(st); },
+    sendEmote(e) { if (visible()) own()?.sendEmote(e); },
     sendChat(t) {
-      if (chatLink?.ready) chatLink.send(me.id, t, cfg.claimChatId);
-      else own()?.sendChat?.(t);
+      if (chatLink?.ready) { chatLink.send(me.id, t, cfg.claimChatId); return; }
+      const adapter = own();
+      // On the room channel: logged on the server first (adapter.logChat),
+      // unless this is a test room without accounts.
+      if (!privateChat || !adapter?.logChat) { adapter?.sendChat?.(t); return; }
+      adapter.logChat(room, t).then((r) => { if (r !== 'chat' && !closed) adapter.sendChat?.(t); });
     },
     sendLook(look) {
       me = { ...me, look };

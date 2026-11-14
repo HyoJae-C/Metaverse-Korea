@@ -1,4 +1,4 @@
-// Another Land's food trucks (themepark.js places them): three little vans
+// Modu Land's food trucks (themepark.js places them): three little vans
 // on the lane to the bumper cars, each with its serving hatch open to the
 // lane, an awning, a big model of its snack on the roof and its name on a
 // board. Ice cream cones, churros and hot dogs (park-rides.js FOOD_TRUCKS).
@@ -163,7 +163,7 @@ export function buildFoodTrucks(scene, block, mat) {
     const win = truckWindow(f);
     products.push({
       product: { id: 'al-' + f.id, model: f.id, snack: f.id, color: f.color, price: f.price, stall: f.id, name: f.name,
-        desc: { en: 'From the food truck in Another Land. Eat it as you walk round the park.', ko: '어나더랜드 푸드트럭 간식. 공원을 걸으면서 먹어요.', ja: 'アナザーランドのフードトラックのおやつ。歩きながら食べよう。', zh: '另一乐园餐车的小吃，边逛边吃。' } },
+        desc: { en: 'From the food truck in Modu Land. Eat it as you walk round the park.', ko: '모두랜드 푸드트럭 간식. 공원을 걸으면서 먹어요.', ja: 'モドゥランドのフードトラックのおやつ。歩きながら食べよう。', zh: 'Modu乐园餐车的小吃，边逛边吃。' } },
       mesh: g, pos: new THREE.Vector3(win.x, 0, win.z),
     });
     vendors.push({ ...truckSeller(f), stall: f.id });

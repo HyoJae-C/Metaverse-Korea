@@ -91,7 +91,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
   roof(g, w * 1.35, d * 1.6, h * 0.9, y + h);
 }
 
-const BUILD = {
+const OWN_BUILD = {
   haneulstore: (g, l) => haneulStore(g, l), // HANEUL department store and mall on Seokchon Lake's north shore
   haneultower: (g) => haneulTower(g),
   lakeshore: (g, l) => buildLakeshore(g, l), // Seokchon Lake's sunken water, banks and lakeside walk
@@ -104,7 +104,7 @@ const BUILD = {
   samseongbridge: (g, l) => samseongBridge(g, l), // Teheran-ro over Tancheon
   lonetree: (g) => loneTree(g),
   poolhall: (g, l) => poolHall(g, l), // Olympic Park Pool's outside (the hall inside: core/pool-hall.js)
-  dome: (g, l) => domeOutside(g, l), // Seoul Another Dome's outside (the stadium inside: core/dome.js)
+  dome: (g, l) => domeOutside(g, l), // Modu Ballpark's outside (the stadium inside: core/dome.js)
   pavilion(g, l) {
     // Stone pillars standing in the pond, a raised floor, a big roof (Gyeonghoeru). l.s: scale.
     if (l.s) { const h = new THREE.Group(); h.scale.setScalar(l.s); g.add(h); g = h; }
@@ -128,6 +128,43 @@ const BUILD = {
     // culling knows where it stands.
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
+  },
+  bongeunsa(g, l) {
+    // Bongeunsa's halls, Beopwangru, its lanterns, pagoda, Haesu Gwaneum,
+    // bell pavilion and Iljumun (core/bongeunsa-model.js, loaded when the
+    // city is built). The pagoda's step goes in now, so the far culling
+    // knows where it stands.
+    if (l.pagoda) box(g, 1.0, 0.22, 1.0, l.pagoda[0], 0.11, l.pagoda[1], C.stone);
+    import('./bongeunsa-model.js').then(({ buildTemple }) => buildTemple(g, l));
+  },
+  maitreya(g, l) {
+    // Bongeunsa's Maitreya Buddha on its plaza (core/bongeunsa-model.js).
+    box(g, 4.2, 0.15, 4.2, 0, 0.075, 0, C.stone);
+    import('./bongeunsa-model.js').then(({ buildMaitreya }) => buildMaitreya(g, l));
+  },
+  // Seoul Station (core/seoul-station-models.js, loaded when the city is
+  // built): the old station at 37.5%, the glass hall, the fence round the
+  // tracks. A low base goes in now, so the far culling knows where they stand.
+  oldstation(g, l) {
+    const fp = (p) => { const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]); return [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)]; };
+    const [x0, x1, z0, z1] = fp(l.outline);
+    box(g, x1 - x0, 0.05, z1 - z0, (x0 + x1) / 2, 0.025, (z0 + z1) / 2, C.plinth);
+    import('./seoul-station-models.js').then(({ buildOldStation }) => buildOldStation(g, l));
+  },
+  stationhall(g, l) {
+    const xs = l.outline.map((q) => q[0]), zs = l.outline.map((q) => q[1]);
+    box(g, Math.max(...xs) - Math.min(...xs), 0.05, Math.max(...zs) - Math.min(...zs), (Math.max(...xs) + Math.min(...xs)) / 2, 0.025, (Math.max(...zs) + Math.min(...zs)) / 2, C.plinth);
+    import('./seoul-station-models.js').then(({ buildStationHall }) => buildStationHall(g, l));
+  },
+  yardfence(g, l) {
+    import('./seoul-station-models.js').then(({ buildYardFence }) => buildYardFence(g, l));
+  },
+  jogyesa(g) {
+    // Jogyesa's halls, gate, trees and lantern canopy (core/jogyesa-model.js,
+    // loaded when the city is built). A slab under Daeungjeon goes in now, so the
+    // far culling knows where it stands.
+    box(g, 18, 0.04, 11.6, 0, 0.02, 0, C.stoneDark);
+    import('./jogyesa-model.js').then(({ buildJogyesa }) => buildJogyesa(g));
   },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
@@ -248,33 +285,17 @@ const BUILD = {
   warmemorial: (g) => warMemorial(g), // the War History Museum (modelled on the War Memorial of Korea), west along Itaewon-ro (core/war-memorial-site.js)
   outdoorexhibits: (g) => outdoorExhibits(g), // its outdoor exhibition
   sign, // wooden information boards (core/park-signs.js)
-  ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
-  ...DONGMYO_MODELS, // Dongmyo flea market's stalls (core/dongmyo-models.js)
-  ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
-  ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
-  ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
-  ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
-  ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
-  ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
-  mountain(g, l) {
-    // Bugaksan behind the palace (or Namsan behind Itaewon, l.scale).
-    const m = new THREE.Mesh(new THREE.ConeGeometry(230, 110, 9, 2), mat('#7fae6b'));
-    m.scale.set(1.4, 1, 0.7);
-    if (l?.scale) m.scale.multiplyScalar(l.scale);
-    m.position.y = 50 * (l?.scale || 1);
-    g.add(m);
-  },
   namsan(g, l) {
     // Namsan: a wooded hill on an ellipse (l.rx, l.rz, l.h), or on its real
     // outline round the top (l.rad), that leans so its
     // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
     // (core/namsan-shape.js). Scenery: the map's blockers keep you off it,
     // except on its trail (l.trail, game/namsan-walk.js), drawn on the slope.
-    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat };
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat, spur: l.spur };
     const trail = l.trail || [];
     // (finer where there is a trail, so the slope under it is close to the
     // true height it is walked at)
-    const geo = trail.length ? new THREE.SphereGeometry(1, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    const geo = trail.length ? new THREE.SphereGeometry(1, l.spur ? 128 : 48, l.spur ? 40 : 24, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
@@ -287,15 +308,18 @@ const BUILD = {
     }
     geo.computeVertexNormals();
     g.add(new THREE.Mesh(geo, mat('#86b56f')));
+    // (the trails, and the city wall's stretches: scripts/build-namsan-wall.mjs, game/namsan-wall.js)
+    const lines = [trail, ...(l.wtrail || []), ...(l.wall?.runs || [])];
     const near = (x, z, m) => {
-      for (let i = 1; i < trail.length; i++) {
-        const [ax, az] = trail[i - 1], [bx, bz] = trail[i], dx = bx - ax, dz = bz - az;
+      for (const p of lines) for (let i = 1; i < p.length; i++) {
+        const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
         const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
         if (Math.hypot(x - ax - dx * t, z - az - dz * t) < m) return true;
       }
       return false;
     };
     if (trail.length > 1) g.add(namsanTrailMesh(sh, trail, l.trailW || 3));
+    for (const run of l.wtrail || []) g.add(namsanTrailMesh(sh, run, l.wtrailW || 3));
     // Trees on the slopes (one instanced mesh), none on the summit or the trail.
     const tree = new THREE.ConeGeometry(4, 11, 6);
     tree.translate(0, 5, 0);
@@ -308,7 +332,7 @@ const BUILD = {
       const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
       const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
       const s = 0.7 + rnd() * 0.7;
-      if (trail.length && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
+      if (lines.some((p) => p.length) && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
       if (sh.flat && Math.hypot(x - sh.px, z - sh.pz) < sh.flat + 16) continue; // the summit plaza and the way to the cable car's upper station
       trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
     }
@@ -478,7 +502,29 @@ function blossoms(g, l) {
   g.add(trunks, crowns);
 }
 
+// Every builder by landmark type. Put together on first use, not when this
+// file loads: bukchon-models.js and palace-model.js import this file back,
+// so when the bundle runs one of them first, their *_BUILD tables are not
+// filled in yet at load time. Spread then, they added nothing and every
+// palace and Bukchon landmark (Gwanghwamun, the gates, Geunjeongjeon, the
+// Open House...) silently went missing (2026-11-12, after Jogyesa and
+// Bongeunsa started importing palace-model.js).
+let BUILD = null;
+export function landmarkBuilders() {
+  return (BUILD ||= {
+    ...OWN_BUILD,
+    ...EULJIRO_BUILD, // Euljiro & Dongdaemun: DDP, the city wall, Namsangol's gate (core/euljiro-models.js)
+    ...DONGMYO_MODELS, // Dongmyo flea market's stalls (core/dongmyo-models.js)
+    ...JONGMYO_BUILD, // Jongmyo & Seosunra-gil: shrine gates and halls, the stone path, the woods (core/jongmyo-models.js)
+    ...PALACE_BUILD, // Gyeongbokgung: Gwanghwamun, the gates, Yeongjegyo, the corridors, Geunjeongjeon, the rank stones (core/palace-model.js)
+    ...BOSINGAK_BUILD, // Bosingak, the bell pavilion on Jongno (core/bosingak-model.js)
+    ...YEOUIDO_BUILD, // Yeouido: Seogang Bridge, the 63 tower, Mul-bit Square's fountain (core/yeouido-models.js)
+    ...BUKCHON_BUILD, // Bukchon: the Open House, rooftop terrace (core/bukchon-models.js)
+    ...PARK_BUILD, // Seoul Forest: rose garden, benches, plaza, ice cream sculptures (core/park-art.js)
+  });
+}
 export function buildLandmarks(list = [], scene) {
+  const BUILD = landmarkBuilders();
   const root = new THREE.Group();
   root.name = 'landmarks';
   const ticks = [];

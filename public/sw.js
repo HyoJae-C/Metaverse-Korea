@@ -1,4 +1,4 @@
-// Another Seoul service worker: lets the game be added to the home screen and
+// Modu Seoul service worker: lets the game be added to the home screen and
 // opens faster the second time. It is careful to stay out of the way:
 // - only same-origin GET requests are handled, so Supabase (save, login,
 //   multiplayer) and Google sign-in always go straight to the network;

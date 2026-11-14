@@ -1,10 +1,10 @@
 // HANEUL (하늘), a fictional department store and mall on the north shore of
 // Seokchon Lake (Songpa), where a big shopping complex stands by Jamsil
-// Station in real life, and Another Tower beside the station, where the real
+// Station in real life, and Modu Tower beside the station, where the real
 // 555 m tower stands. The names and the designs are our own.
 //   haneulstore: a store block (department store or mall) with glass bands
 //                and a name board on the roof, seen from Olympic-ro and the lake.
-//   haneultower: Another Tower, a tapering octagonal glass tower with a spire, the landmark
+//   haneultower: Modu Tower, a tapering octagonal glass tower with a spire, the landmark
 //                you spot from across the river.
 // Their footprints are buildings in the map with "custom": true (collision and
 // the shop door), drawn here instead of the usual windowed block.

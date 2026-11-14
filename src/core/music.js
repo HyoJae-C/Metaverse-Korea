@@ -449,7 +449,7 @@ export class Sfx {
   // Automatic sliding door: a soft motor hum and the glass panels gliding
   // open ("shhh"), ending in a gentle stop. Quiet and smooth, no chime.
   // (Kept the name doorbell: every door uses it.)
-  // ---- Seoul Another Dome (core/dome.js) ----
+  // ---- Modu Ballpark (core/dome.js) ----
   // The crowd roaring for a hit (loud 0..1; a home run is 1).
   crowd(loud = 0.6) {
     if (!this.on || !this._ctx()) return;

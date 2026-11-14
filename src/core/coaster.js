@@ -1,9 +1,9 @@
-// The Cotton Candy Express (솜사탕 특급): Another Land's roller coaster.
+// The Cotton Candy Express (솜사탕 특급): Modu Land's roller coaster.
 // Pure track and timing (no DOM), so it can be unit-tested. Metres and
 // seconds, in the island room's space (park-island.js); the model is
 // coaster-model.js and riding it is in main.js.
 //
-// The track is one closed loop over Another Land's island (park-island.js):
+// The track is one closed loop over Modu Land's island (park-island.js):
 // the station at the south end, a chain lift up to 18 m, a stop at the top
 // with the front car hanging over the edge, a 17 m first drop, an airtime
 // hill, a vertical loop, a long run east along the north shore to a helix on the island's

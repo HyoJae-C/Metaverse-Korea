@@ -21,6 +21,7 @@ import * as THREE from 'three';
 import { PAINTINGS, CREDIT, DISCLAIMER, HALLS, FLOORS, COMING_SOON } from '../data/paintings.js';
 import { canvasTex, wrapText as wrap } from './three-kit.js';
 import { segmentsCross as crosses } from './collision.js';
+import { COUNTER_H } from './counter-face.js';
 
 export const ROOM_MUSEUM = { w: 52, d: 32, h: 6 };
 const SPACING = 4.4; // metres between frame centres
@@ -317,10 +318,10 @@ export function buildGallery(scene, room, { box, block }, floor = 1) {
     way.signs.push(sign(scene, 3.8, 0.62, 0, 3.2, LOBBY_Z + 0.11, 0, '전시실 · 1F 김홍도관', 'Galleries · Kim Hong-do Halls'));
     // Information desk with the docent, in front of the way in.
     const iz = LOBBY_Z + 3.2;
-    box(4.2, 0.95, 0.8, 0, 0.475, iz, '#e9e0cc');
-    box(4.3, 0.06, 0.9, 0, 0.98, iz, '#3b2a1e');
+    box(4.2, COUNTER_H - 0.03, 0.8, 0, (COUNTER_H - 0.03) / 2, iz, '#e9e0cc'); // (COUNTER_H: the docent's face shows, core/counter-face.js)
+    box(4.3, 0.06, 0.9, 0, COUNTER_H, iz, '#3b2a1e');
     block(0, iz, 4.2, 0.8);
-    sign(scene, 1.8, 0.42, 0, 0.55, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3b2a1e' });
+    sign(scene, 1.8, 0.36, 0, 0.36, iz + 0.41, 0, 'ℹ️ 안내 · Information', null, { bg: '#3b2a1e' });
     clerk = { x: 0, z: iz - 0.75, ry: 0 };
   }
 

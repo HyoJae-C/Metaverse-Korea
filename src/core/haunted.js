@@ -1,4 +1,4 @@
-// Another Land's haunted house (귀신의 집): a small, cute ghost mansion in
+// Modu Land's haunted house (귀신의 집): a small, cute ghost mansion in
 // the theme park (outside: buildHauntedFacade, placed by themepark.js) and
 // its own interior (buildHauntedHouse): a foyer, a portrait corridor whose
 // eyes follow you, a ghost that rises at the corner, and the lantern room
@@ -23,10 +23,10 @@ export const HAUNT_STORE = {
   size: 'medium',
   name: { en: 'Haunted House', ko: '귀신의 집', ja: 'お化け屋敷', zh: '鬼屋', es: 'Casa encantada', id: 'Rumah Hantu', vi: 'Nhà ma', hi: 'भूतिया घर', fr: 'Maison hantée', th: 'บ้านผีสิง', ar: 'البيت المسكون' },
   tagline: {
-    en: 'A cute ghost mansion in Another Land: portraits that watch you and a ghost-lantern game',
-    ko: '어나더랜드의 귀여운 유령 저택: 나를 쳐다보는 초상화와 유령 랜턴 게임',
-    ja: 'アナザーランドのかわいいお化け屋敷：見つめる肖像画とおばけランタンゲーム',
-    zh: '另一乐园的可爱鬼屋：会盯着你的肖像画和幽灵灯笼游戏',
+    en: 'A cute ghost mansion in Modu Land: portraits that watch you and a ghost-lantern game',
+    ko: '모두랜드의 귀여운 유령 저택: 나를 쳐다보는 초상화와 유령 랜턴 게임',
+    ja: 'モドゥランドのかわいいお化け屋敷：見つめる肖像画とおばけランタンゲーム',
+    zh: 'Modu乐园的可爱鬼屋：会盯着你的肖像画和幽灵灯笼游戏',
   },
   colors: { sign: '#8762ba', awning: '#d9c4ef', accent: '#3b2a52' },
   products: [],

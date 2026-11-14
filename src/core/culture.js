@@ -5,6 +5,7 @@
 // shows a soft "coming soon" card.
 import * as THREE from 'three';
 import { EXHIBITIONS, COMING_SOON } from '../data/exhibitions.js';
+import { COUNTER_H } from './counter-face.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';
@@ -68,8 +69,8 @@ export function buildCulture(scene, room, { box, block }, store) {
   poster.position.set(-w / 4, 1.45, -d / 2 + 0.03);
   scene.add(poster);
   const dx = w / 4, dz = -d / 2 + 1.7;
-  box(2.2, 0.9, 0.7, dx, 0.45, dz, '#f2efe8');
-  box(2.3, 0.05, 0.8, dx, 0.92, dz, store.colors.sign);
+  box(2.2, COUNTER_H - 0.03, 0.7, dx, (COUNTER_H - 0.03) / 2, dz, '#f2efe8'); // (COUNTER_H: the guide's face shows, core/counter-face.js)
+  box(2.3, 0.05, 0.8, dx, COUNTER_H, dz, store.colors.sign);
   block(dx, dz, 2.3, 0.8);
   const clerk = { x: dx, z: dz - 0.75, ry: 0 };
   // Benches in the middle, back to back, facing the side walls.

@@ -4,12 +4,12 @@
 @color #b8862a
 @title.en First Steps in Chinese, for Korean Speakers (Korean only)
 @title.ko 중국어 첫걸음
-@author.en Another Seoul
-@author.ko Another Seoul 편집부
+@author.en Modu Seoul
+@author.ko 모두서울 편집부
 @about.en Pinyin, the four tones and first phrases in Mandarin Chinese, explained in Korean. Korean text only.
 @about.ko 병음과 네 가지 성조, 첫 인사말을 한국어로 설명했어요. 한자어를 아는 한국 사람에게 익숙한 단어가 많아요.
-@source Written new for Another Seoul
-@license Written for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@source Written new for Modu Seoul
+@license Written for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 중국어는 이렇게 생겼어요
 중국어는 한자로 써요. 중국 대륙에서는 획을 줄인 간체자를 써요.

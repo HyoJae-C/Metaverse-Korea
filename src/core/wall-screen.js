@@ -89,7 +89,8 @@ function fit(g, text, px, maxW, weight = 900) {
   do g.font = `${weight} ${px}px ${FONT}`; while (g.measureText(text).width > maxW && (px -= 4) > 12);
 }
 
-// A tall screen: the next city, in its own script and in English.
+// A tall screen: the next city, in its own script and in English (city.top:
+// the line over it, "COMING NEXT" unless given).
 function drawCity(g, city, t) {
   const { width: W, height: H } = g.canvas;
   const sky = g.createLinearGradient(0, 0, 0, H);
@@ -105,10 +106,11 @@ function drawCity(g, city, t) {
     for (let y = H - bh + 14; y < H - 10; y += 26) g.fillRect(bx + 8, y, 8, 10);
   }
   g.textAlign = 'center'; g.textBaseline = 'middle';
+  const top = city.top ?? 'COMING NEXT'; // (Seoul Square's: "WELCOME TO")
   g.globalAlpha = 0.65 + 0.35 * Math.sin(t * 2.2);
   g.fillStyle = '#ffd36e';
-  fit(g, 'COMING NEXT', 64, W - 60, 800);
-  g.fillText('COMING NEXT', W / 2, H * 0.12);
+  fit(g, top, 64, W - 60, 800);
+  g.fillText(top, W / 2, H * 0.12);
   g.globalAlpha = 1;
   g.fillStyle = '#fff';
   fit(g, city.local, 260, W - 60);

@@ -1,4 +1,4 @@
-// Another Land's ride tickets (이용권), next to the ride-all day pass
+// Modu Land's ride tickets (이용권), next to the ride-all day pass
 // (자유이용권, DayPasses key 'rides'): a few rides paid up front, sold by
 // the ticket guide at the island's gate and at the ticket booth below
 // (game/park-tickets.js). Each is good for 24 hours from buying (PASS_MS),

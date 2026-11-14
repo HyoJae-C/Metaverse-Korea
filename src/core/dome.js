@@ -1,4 +1,4 @@
-// Seoul Another Dome (서울 어나더 돔): the baseball stadium inside (its dome
+// Modu Ballpark (모두야구장): the baseball stadium inside (its dome
 // on the Songpa map is core/dome-outside.js). Loaded the first time someone
 // walks in (main.js enterStore), so the street doesn't carry it. The
 // league and its games are in core/ballgame.js; this file builds the bowl
@@ -17,6 +17,8 @@ import { createCharacter } from './character.js';
 import { matCache, canvasTex } from './three-kit.js';
 import { ROOM_DOME, polar } from './dome-outside.js';
 import { gameAt, boardAt, standings, rng, TEAMS, GAME_LEN, GAME_CYCLE, nextGameOf } from './ballgame.js';
+import { COUNTER_H } from './counter-face.js';
+import { camAt, waveAt } from './ballpark-cams.js';
 
 const mat = matCache();
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -47,6 +49,12 @@ const STAGE_A = 1.12; // the cheering stages (home team at +θ, the 1st base sid
 const CHEER_SEATS = [0.86, 1.04]; // free seats in the home cheering section, next to its stage
 const faceCentre = (x, z) => Math.atan2(-x, -z); // a character at (x, z) looking at the field
 export const rowY = (i) => ROW_Y0 + i * RISE;
+// Which row of the stands (x, z) is in, or -1 off the stands.
+export function rowAt(x, z) {
+  const r = Math.hypot(x, z);
+  if (r < ROW_R0 || r >= CONC_R) return -1;
+  return Math.min(ROWS - 1, Math.floor((r - ROW_R0) / ROW_D));
+}
 
 // Floor height under (x, z): the concourse, a row of the stands (with a
 // quick step up at its back edge), or the field.
@@ -81,7 +89,8 @@ const hashN = (n) => { let x = Math.imul(n | 0, 2654435761) >>> 0; x ^= x >>> 13
 // Two planes per fan (a body tinted with the jersey colour, a head tinted
 // with the skin), one InstancedMesh each. A little shader bit lifts them
 // (per fan: a phase, and which team they cheer for) so a whole side can
-// jump at once with no work on the CPU.
+// jump at once with no work on the CPU, and the wave (core/ballpark-cams.js)
+// run round the bowl: uWave = (its angle, how strong).
 function dollTextures() {
   const body = canvasTex(128, 128, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -109,10 +118,12 @@ function dollMaterial(map, uniforms) {
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, uniforms);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec2 aDoll;\nuniform float uTime;\nuniform vec3 uCheer;')
+      .replace('#include <common>', '#include <common>\nattribute vec3 aDoll;\nuniform float uTime;\nuniform vec3 uCheer;\nuniform vec2 uWave;')
       .replace('#include <begin_vertex>', `#include <begin_vertex>
         float amp = aDoll.y < 0.5 ? uCheer.x : (aDoll.y < 1.5 ? uCheer.y : uCheer.z);
-        transformed.y += max(amp, 0.04) * abs(sin(uTime * 8.0 + aDoll.x)) * 0.32;`);
+        transformed.y += max(amp, 0.04) * abs(sin(uTime * 8.0 + aDoll.x)) * 0.32;
+        float wd = mod(aDoll.z - uWave.x + 9.42478, 6.28318) - 3.14159;
+        transformed.y += uWave.y * exp(-wd * wd * 14.0) * 1.1;`);
   };
   return m;
 }
@@ -179,7 +190,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   }
   // Ads on the wall: our own fictional sponsors and the teams.
   const adTex = canvasTex(2048, 64, (g, w, h) => {
-    const words = ['ANOTHER SEOUL', '서울 어나더 돔', 'SEOUL ANOTHER DOME', ...TEAMS.map((t) => t.name.en.toUpperCase())];
+    const words = ['MODU SEOUL', '모두야구장', 'MODU BALLPARK', ...TEAMS.map((t) => t.name.en.toUpperCase())];
     let x = 0, i = 0;
     while (x < w) {
       const t = TEAMS[i % TEAMS.length];
@@ -255,7 +266,15 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   const r0 = rng(77);
   const patrons = [];
   const taken = new Set();
-  while (patrons.length < 16) {
+  // Three couples side by side, for the Kiss Cam when no players sit together
+  // (core/ballpark-cams.js).
+  for (let n = 0; n < 200 && patrons.length < 6; n++) {
+    const k = Math.floor(r0() * (seats.length - 1));
+    const a = seatSpots[k], b = seatSpots[k + 1];
+    if (taken.has(k) || taken.has(k + 1) || a.i !== b.i || Math.hypot(a.x - b.x, a.z - b.z) > 1.2) continue;
+    for (const j of [k, k + 1]) { taken.add(j); const s = seats[j]; patrons.push({ x: s.x, y: s.y, z: s.z, ry: s.ry, sit: true, seat: j, couple: true }); }
+  }
+  while (patrons.length < 22) {
     const k = Math.floor(r0() * seats.length);
     if (taken.has(k)) continue;
     taken.add(k);
@@ -285,7 +304,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
 
   // The drawn fans in every other seat of the stands.
   const tex = dollTextures();
-  const uniforms = { uTime: { value: 0 }, uCheer: { value: new THREE.Vector3() } };
+  const uniforms = { uTime: { value: 0 }, uCheer: { value: new THREE.Vector3() }, uWave: { value: new THREE.Vector2() } };
   const fans = [];
   const r1 = rng(2032);
   for (let i = 0; i < ROWS; i++) {
@@ -300,13 +319,13 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
       if (r1() < 0.06) continue; // a few empty seats
       const side = abs > SIDE_END ? 2 : th > 0 ? 0 : 1; // 0 home (1st base side), 1 away, 2 the bleachers (anyone)
       const p = polar(r, th);
-      fans.push({ x: p.x, y, z: p.z, side, phase: r1() * Math.PI * 2, skin: Math.floor(r1() * 5), pick: Math.floor(r1() * 8) });
+      fans.push({ x: p.x, y, z: p.z, side, phase: r1() * Math.PI * 2, skin: Math.floor(r1() * 5), pick: Math.floor(r1() * 8), th });
     }
   }
   const SKIN_HEX = ['#ffe6d2', '#ffd9bd', '#e8b48f', '#c98e66', '#8d5b3f'];
   const dollGeo = (w, h, y0) => {
     const g = new THREE.PlaneGeometry(w, h).translate(0, y0 + h / 2, 0);
-    g.setAttribute('aDoll', new THREE.InstancedBufferAttribute(new Float32Array(fans.flatMap((f) => [f.phase, f.side])), 2));
+    g.setAttribute('aDoll', new THREE.InstancedBufferAttribute(new Float32Array(fans.flatMap((f) => [f.phase, f.side, f.th])), 3));
     return g;
   };
   const bodies = new THREE.InstancedMesh(dollGeo(0.72, 0.72, 0.05), dollMaterial(tex.body, uniforms), fans.length);
@@ -334,8 +353,8 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
 
   // ---- The food stand on the concourse (chicken and cola) ----
   const fa = 0.3, fp = polar(57.4, fa), fry = faceCentre(fp.x, fp.z);
-  box(6.4, 1.0, 1.0, fp.x, 0.5, fp.z, '#f5efe4', fry);
-  box(6.6, 0.08, 1.1, fp.x, 1.02, fp.z, '#e5383b', fry);
+  box(6.4, COUNTER_H - 0.04, 1.0, fp.x, (COUNTER_H - 0.04) / 2, fp.z, '#f5efe4', fry); // (COUNTER_H: the seller's face shows, core/counter-face.js)
+  box(6.6, 0.08, 1.1, fp.x, COUNTER_H, fp.z, '#e5383b', fry);
   const back = polar(59.0, fa);
   box(6.8, 3.2, 0.4, back.x, 1.6, back.z, '#fff3e0', fry);
   const foodSign = canvasTex(1024, 192, (g, w, h) => {
@@ -357,7 +376,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     const a = fa + (i - (menu.length - 1) / 2) * (1.3 / 57.4);
     const p = polar(57.3, a), stand = polar(55.6, a);
     const g = new THREE.Group();
-    g.position.set(p.x, 1.06, p.z);
+    g.position.set(p.x, COUNTER_H + 0.04, p.z);
     g.rotation.y = fry;
     const item = product.model === 'cup'
       ? new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.09, 0.32, 14).translate(0, 0.16, 0), mat(product.color || '#b5381f'))
@@ -371,7 +390,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   const noteTex = canvasTex(1024, 300, (g, w, h) => {
     g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `900 64px ${FONT}`; g.fillText('서울 어나더 돔 · SEOUL ANOTHER DOME', w / 2, 62);
+    g.font = `900 64px ${FONT}`; g.fillText('모두야구장 · MODU BALLPARK', w / 2, 62);
     g.font = `700 34px ${FONT}`;
     g.fillText('지금 이곳에는 이런 구장이 영업하지 않아요. 방문 전 확인하세요.', w / 2, 150);
     g.fillText('No stadium like this is open here yet. Please check before you visit.', w / 2, 212);
@@ -455,7 +474,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   // Each play in core/ballgame.js lasts `dur` seconds; within it: the
   // pitch, the swing, where the ball goes and the runners.
   const T_PITCH = 0.85, T_CONTACT = 1.27;
-  const ev = { onCheer: null, onChant: null, onPlay: null }; // main.js: crowd sounds, the cheer leader
+  const ev = { onCheer: null, onChant: null, onPlay: null, onBeat: null }; // main.js: crowd sounds, the cheer leader; onBeat: the clap-along (game/ballpark-fun.js)
   let shown = null; // the play whose start we have handled
   let plan = null; // the current play's ball flight, runners and fielder
   const flightOf = (play, r) => {
@@ -712,7 +731,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
       g.fillStyle = '#ffffff'; g.fillText(msg.text, BW / 2, 420);
     } else {
       g.textAlign = 'center'; g.font = `700 30px ${FONT}`; g.fillStyle = '#56637a';
-      g.fillText('서울 어나더 돔 · SEOUL ANOTHER DOME', BW / 2, 430);
+      g.fillText('모두야구장 · MODU BALLPARK', BW / 2, 430);
     }
   };
   const FLASH = { K: ['STRIKE OUT!', '#ffffff'], GO: ['OUT', '#b8c4d8'], FO: ['OUT', '#b8c4d8'], BB: ['BALL FOUR', '#9fe0a0'], '1B': ['HIT!', '#ffd23f'], '2B': ['DOUBLE!', '#ffd23f'], '3B': ['TRIPLE!', '#ffd23f'], HR: ['HOME RUN!', '#ff6b9a'] };
@@ -721,6 +740,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   const cheer = { home: 0, away: 0, all: 0 };
   let chantAt = 0;
   let t = 0, boardTimer = 0;
+  let cam = null; // the big-screen moment on now (core/ballpark-cams.js)
   const clock = () => Date.now() / 1000;
   const animate = (dt) => {
     t += dt;
@@ -746,10 +766,13 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     }
     // The cheer leader leads a chant for the batting team now and then.
     const batting = st.phase === 'play' ? st.play.bat : null;
-    if (batting && now - chantAt > 9) { chantAt = now; ev.onChant?.(batting === game.home ? 'home' : 'away', batting); }
+    if (batting && now - chantAt > 9) { chantAt = now; ev.onChant?.(batting === game.home ? 'home' : 'away', batting); ev.onBeat?.(batting === game.home ? 'home' : 'away', batting); }
     for (const k of ['home', 'away', 'all']) cheer[k] = Math.max(0, cheer[k] - dt * 0.35);
     uniforms.uTime.value = t;
     uniforms.uCheer.value.set(cheer.home + cheer.all, cheer.away + cheer.all, cheer.all + Math.max(cheer.home, cheer.away) * 0.6);
+    cam = camAt(st);
+    const wave = waveAt(cam);
+    uniforms.uWave.value.set(wave.angle, wave.strength);
     umpire.animate(dt, 0);
     for (const b of bursts) {
       if (!b.pts.visible) continue;
@@ -771,6 +794,11 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     sideOf: (teamId) => { const g = gameAt(clock()).game; return g.home.id === teamId ? 'home' : g.away.id === teamId ? 'away' : null; },
     nextGameOf: (teamId) => nextGameOf(teamId, gameAt(clock()).k),
     gameLen: GAME_LEN,
+    // The big-screen moment on now (the wave, Dance Cam, Kiss Cam), and the
+    // two screens that show it (game/ballpark-cams.js).
+    cam: () => cam,
+    screens: [screen, screen2],
+    field: { y: FIELD_Y },
   };
 
   const stations = { patrons, cheerSquad: squad, dome: domeApi };

@@ -1,4 +1,4 @@
-// The bumper car rink in Another Land (themepark.js places it): a dark
+// The bumper car rink in Modu Land (themepark.js places it): a dark
 // starry floor inside a rubber rail, candy-striped corner posts with strings
 // of twinkling bulbs, a "BUMPER CARS · 범퍼카" sign over the gate, a little
 // queue lane, and six cars, each its own colour. The game is game/bumper.js.

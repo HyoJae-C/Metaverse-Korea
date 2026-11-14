@@ -1,4 +1,4 @@
-// Another Land's ticket guide (매표 안내원): a member of staff in the park's
+// Modu Land's ticket guide (매표 안내원): a member of staff in the park's
 // uniform by the little ticket booth in front of the candy castle, where the
 // bridge lands on the island, so nobody has to wonder where the passes are
 // sold. Walk up and they call out; the action list explains the tickets
@@ -13,7 +13,7 @@ const NEAR_GUIDE = 2.6, NEAR_BOOTH = 1.8, CALL = 9; // metres: talk, the booth's
 const HELLO = [
   ['이용권 여기서 사세요!', 'iyonggwon yeogiseo saseyo!', 'Ride tickets right here!'],
   ['자유이용권 있어요~', 'jayu-iyonggwon isseoyo~', 'Ride-all passes here!'],
-  ['어서 오세요, 어나더랜드예요!', 'eoseo oseyo, eonadeo-raendeu-yeyo!', 'Welcome to Another Land!'],
+  ['어서 오세요, 모두랜드예요!', 'eoseo oseyo, eonadeo-raendeu-yeyo!', 'Welcome to Modu Land!'],
 ];
 const ASK = ['어떤 이용권으로 드릴까요?', 'eotteon iyonggwon-euro deurilkkayo?', 'Which ticket would you like?'];
 const THANKS = ['즐거운 시간 보내세요!', 'jeulgeoun sigan bonaeseyo!', 'Have a great time!'];

@@ -6,7 +6,7 @@
 import { localName, getLanguage, t } from '../core/i18n.js';
 import {
   GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, FARE, lineAhead, stopsBetween,
-  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt, createReentry,
+  streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt, createReentry, stationName as withStationSuffix,
 } from '../core/subway.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 
@@ -23,10 +23,9 @@ const $ = (id) => document.getElementById(id);
 export function createSubway(stations, game) {
   // Walk down an exit's stairs to arrive in the station hall (a room like a
   // shop); walk up any exit's stairs there to come out at that exit.
-  const STATION_SUFFIX = { ko: '역', en: ' Station', ja: '駅', zh: '站' };
   const stationStores = stations.map((sub) => ({
     id: 'subway-' + (sub.id || sub.name?.en || 'station'), category: 'station', size: 'station', subway: sub, products: [],
-    name: Object.fromEntries(Object.entries(sub.name || {}).map(([k, v]) => [k, v + (STATION_SUFFIX[k] ?? '')])),
+    name: withStationSuffix(sub.name),
     tagline: sub.line?.name || {},
     colors: { sign: sub.line?.color || '#f5a200', accent: '#e6e8ec', awning: sub.line?.color || '#f5a200' },
   }));

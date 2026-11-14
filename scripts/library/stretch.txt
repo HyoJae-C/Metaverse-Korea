@@ -4,12 +4,12 @@
 @color #4a9a7a
 @title.en 10-Minute Stretches at Home (Korean only)
 @title.ko 집에서 하는 10분 스트레칭
-@author.en Another Seoul
-@author.ko Another Seoul 편집부
+@author.en Modu Seoul
+@author.ko 모두서울 편집부
 @about.en Gentle stretches for people who sit all day: neck, shoulders, back and legs, with no equipment. Korean text only.
 @about.ko 하루 종일 앉아 있는 사람을 위한 목, 어깨, 허리, 다리 스트레칭. 도구 없이 방에서 할 수 있어요.
-@source Written new for Another Seoul
-@license Written for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@source Written new for Modu Seoul
+@license Written for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 시작하기 전에
 · 숨을 참지 말고 천천히 쉬어요.

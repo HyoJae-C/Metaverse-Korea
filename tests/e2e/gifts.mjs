@@ -1,24 +1,36 @@
 // End-to-end check: two players in the same shop; A buys a gift for B, B
 // accepts it (it lands in B's bag), then B says no to a second one (A gets
-// the coins back). Clothes go to the friend's items.
+// the coins back). Clothes go to the friend's items. Gifts are for friends
+// only: before they're friends, A's picker offers to add B instead.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/gifts.mjs http://localhost:4173/
 // With a build made with VITE_NET_PROVIDER=local, add --bridge: the two
 // browsers' BroadcastChannels are joined through this script (no server).
+// Otherwise realtime runs on a fake server in this script (fake-realtime.mjs),
+// not the live Supabase project; E2E_REAL_REALTIME=1 uses the real one.
 import { chromium } from 'playwright';
+import { useFakeRealtime, summary, log as rtLog } from './fake-realtime.mjs';
 
 const url = process.argv[2] || 'http://localhost:4173/';
 const bridge = process.argv.includes('--bridge');
 const shotDir = process.argv.slice(3).find((a) => !a.startsWith('--')) || null;
 const pages = [];
-const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+// Each player gets a browser of their own (as in multiplayer.mjs): two
+// contexts in one browser share its GPU process, and with software GL the
+// second player's start-up queued behind the first one's frames until the
+// HUD wait timed out on CI (from 2026-11-13, as the city grew).
+const launch = () => chromium.launch({ executablePath: process.env.CHROME || process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browsers = [];
 const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
 const errors = [];
 const logs = [];
 let step = 'joining';
 
 async function join(name) {
+  const browser = await launch();
+  browsers.push(browser);
   const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
+  if (!bridge) await useFakeRealtime(ctx, name);
   const page = await ctx.newPage();
   if (bridge) {
     await page.exposeFunction('__bcSend', (ch, data) => {
@@ -54,8 +66,12 @@ async function join(name) {
   await page.click('#next-btn');
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
-  await page.click('#start-btn', { timeout: 90000 });
-  await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
+  // Building the world blocks the page, so a plain click can time out
+  // waiting for it to come back: press the button from inside the page on
+  // the next tick and wait for the HUD, with room for a slow runner.
+  await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible', timeout: 90000 });
+  await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
+  await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
   if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
   await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
   return page;
@@ -73,6 +89,20 @@ async function bothIn(shop) {
 }
 let ok = false;
 try {
+  // Not friends yet: no one to pick, only B to add.
+  await bothIn('salam-halal');
+  step = 'not friends: picker offers Add friend';
+  await a.evaluate(() => __mk.product(1));
+  await a.waitForSelector('#product-gift:not([hidden])', { timeout: 5000 });
+  await a.click('#product-gift');
+  await a.waitForSelector('.gift-add', { timeout: 5000 });
+  if (await a.isVisible('.gift-person')) throw new Error('a stranger could be picked for a gift');
+  if (shotDir) await a.screenshot({ path: shotDir + '/gift-not-friend.png' });
+  await a.click('#gift-panel .sheet-x');
+  for (const page of [a, b]) await page.evaluate(() => __mk.leave());
+  await a.waitForTimeout(1500);
+  await a.evaluate(() => __mk.giftFriends(['Gift B']));
+  await b.evaluate(() => __mk.giftFriends(['Gift A']));
   for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item']]) {
     await bothIn(shop);
     step = `${shop}: A sends a gift`;
@@ -127,9 +157,11 @@ try {
     errors.push(`${n} state: ${JSON.stringify(st)}`);
   }
   errors.push(...logs.slice(-40));
+  if (!bridge) errors.push(...rtLog.slice(-30));
   if (shotDir) { await a.screenshot({ path: shotDir + '/fail-a.png' }); await b.screenshot({ path: shotDir + '/fail-b.png' }); }
 }
-await browser.close();
+for (const br of browsers) await br.close();
 for (const e of errors) console.log(e);
 console.log(ok ? 'PASS' : 'FAIL');
+if (!bridge) console.log(summary());
 process.exit(ok ? 0 : 1);

@@ -542,6 +542,13 @@ for (const fg of FLOWER_GARDENS) {
 WALKS.push({ w: 3, p: [oldF([-316.5, -62]), oldF([-300.5, -62])] });
 WALKS.push({ w: 3, p: [oldF([-317.4, -22]), oldF([-298.5, -22])] });
 WALKS.push({ w: 3, p: [oldF([-257, 30]), oldF([-270, 33]), oldF([-282, 30]), oldF([-308.5, 15])], n: name('서울숲역 길', 'Station Path', 'ソウルの森駅の道', '首尔林站小路') });
+// The tandem bike rental (game/tandem-rental.js): a kiosk on the Station
+// Path's south side, its counter facing the path, the bikes parked to its
+// east. `clear` keeps the park's trees off it.
+{
+  const [x, z] = oldF([-276, 24]);
+  LANDMARKS.push({ type: 'tandemrental', x, z, ry: 0, clear: 6.5, why: 'by the Station Path, first thing in from Seoul Forest Station' });
+}
 
 // ── The deer meadow and the wildflower patches ─────────────────────────
 // (Given in world metres here; `oldF` turns them into the old frame above.)
@@ -924,7 +931,8 @@ export const PLACE_NEW = [
 // are now: perfume shops to Hongdae's perfume alley, and skincare and
 // lip-tint shops to Myeongdong (scripts/build-myeongdong.mjs SHOPS).
 export const MOVED_AWAY = new Set(['kkeung-sanghoe', 'oops-parfum', 'heart-ppyong', 'moai-scent-lab', 'punggyeong-scent',
-  'mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink']);
+  'mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink', 'son-kalguksu', // (to Myeongdong: scripts/build-myeongdong.mjs SHOPS)
+  'forest-lane-apt']); // (the home: by Seoul Forest Station exit 2, set by hand in homes.json)
 
 // Writes "at" into a hand-formatted JSON file without reformatting it: the
 // store's "anchor" or "at" line is replaced in place.

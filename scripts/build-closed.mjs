@@ -17,6 +17,7 @@
 //
 //   node scripts/build-closed.mjs
 
+import { packClosed, closedRects } from '../src/core/closed-grid.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -27,16 +28,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
 const read = (f) => JSON.parse(readFileSync(path.join(R, f), 'utf8'));
 
-export const GU = ['seocho', 'gangnam', 'dongjak']; // (Dongjak: its empty bank was reachable from Banpo past Seocho's edge)
+export const GU = null; // every gu (it was Seocho, Gangnam and Dongjak until the base map, scripts/build-base.mjs, laid roads through all of Seoul)
 export const CELL = 10; // m
 export const MARGIN = 30; // m of open land around anything built
+export const BASE_MARGIN = 4; // m each side of a base road (scripts/build-base.mjs): through land with nothing built, only the road and its pavement are open
 export const BIKE_MARGIN = 6; // m each side of a bike path (scripts/build-bike-paths.mjs): it runs through the closed land, open
 
-export function buildClosed({ region, seoul, maps, extraPoints = [] }) {
+export function buildClosed({ region, seoul, maps, base = null, extraPoints = [] }) {
   const parts = region.districts.map((d) => ({ ...d, map: maps[d.map] }));
   const map = mergeDistricts(parts, region.links || [], region.water || []);
-  const gu = seoul.gu.filter((g) => GU.includes(g.id));
-  const water = map.areas.filter((a) => a.k === 'water').map((a) => a.p);
+  const gu = seoul.gu.filter((g) => !GU || GU.includes(g.id));
+  // (The base map's water is water; its green is not something built.)
+  const water = map.areas.filter((a) => a.k === 'water').map((a) => a.p).concat((base?.areas || []).filter((a) => a.k === 'water').map((a) => a.p));
   // (A blocker in the water is the river's, not something built.)
   const mid = (p) => [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length];
   const wet = (p) => { const [x, z] = mid(p); return water.some((w) => inPoly(x, z, w)); };
@@ -71,45 +74,32 @@ export function buildClosed({ region, seoul, maps, extraPoints = [] }) {
     }
   };
   for (const r of map.roads) along(r.p, (r.bike ? BIKE_MARGIN : MARGIN) + (r.w || 6) / 2, false);
+  for (const r of base?.roads || []) along(r.p, BASE_MARGIN + (r.w || 6) / 2, false);
+  for (const d of base?.decks || []) along(d.p, 2, true);
   for (const r of map.rail || []) along(r.p, MARGIN, false);
   for (const p of land) along(p, MARGIN, true);
   for (const p of map.pois) stamp(p.x, p.z, MARGIN);
   for (const l of map.landmarks) if (l.p) along(l.p, MARGIN, true); else if (Number.isFinite(l.x)) stamp(l.x, l.z, MARGIN + (l.r || 0));
   for (const [x, z] of extraPoints) stamp(x, z, MARGIN);
 
-  const inAny = (x, z, polys) => polys.some((p) => inPoly(x, z, p));
+  // (Each outline with its box, so a cell is only tested against the ones around it.)
+  const boxed = (polys) => polys.map((p) => { let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity; for (const [x, z] of p) { a = Math.min(a, x); b = Math.max(b, x); c = Math.min(c, z); d = Math.max(d, z); } return { p, a, b, c, d }; });
+  const inAny = (x, z, polys) => polys.some((q) => x >= q.a && x <= q.b && z >= q.c && z <= q.d && inPoly(x, z, q.p));
+  const guB = boxed(gu.map((g) => g.p)), waterB = boxed(water), landB = boxed(land);
   const closed = new Uint8Array(W * H);
   for (let j = 0; j < H; j++) {
     for (let i = 0; i < W; i++) {
       if (open[j * W + i]) continue;
       const x = (c0 + i + 0.5) * CELL, z = (r0 + j + 0.5) * CELL;
-      if (!gu.some((g) => inPoly(x, z, g.p))) continue;
-      if (inAny(x, z, water) || inAny(x, z, land)) continue;
+      if (!inAny(x, z, guB)) continue;
+      if (inAny(x, z, waterB) || inAny(x, z, landB)) continue;
       closed[j * W + i] = 1;
     }
   }
 
-  // Runs along each row, then the same run on the rows below joins it.
-  const rects = [];
-  let prev = new Map(); // "i0,i1" → rect of the row above
-  for (let j = 0; j < H; j++) {
-    const row = new Map();
-    for (let i = 0; i < W;) {
-      if (!closed[j * W + i]) { i++; continue; }
-      let e = i;
-      while (e < W && closed[j * W + e]) e++;
-      const key = i + ',' + e;
-      const up = prev.get(key);
-      if (up) { up[3] = (r0 + j + 1) * CELL; row.set(key, up); } else {
-        const r = [(c0 + i) * CELL, (r0 + j) * CELL, (c0 + e) * CELL, (r0 + j + 1) * CELL];
-        rects.push(r);
-        row.set(key, r);
-      }
-      i = e;
-    }
-    prev = row;
-  }
-  return { rects, cells: closed.reduce((s, v) => s + v, 0) };
+  const packed = packClosed(closed, W, H, c0 * CELL, r0 * CELL, CELL);
+  const rects = closedRects(packed);
+  return { rects, packed, cells: closed.reduce((s, v) => s + v, 0) };
 }
 
 // Every [x, z] pair (two numbers) and { x, z } anywhere in a JSON value.
@@ -128,10 +118,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const region = read('region.json');
   const seoul = read('seoul.json');
   const maps = Object.fromEntries(region.districts.map((d) => [d.map, read(d.map)]));
+  const base = region.base ? read(region.base) : null;
   const { closed: _old, water: _water, ...rest } = region; // (the river's outline is not something built)
   const extraPoints = pointsIn([rest, read('stores.json'), read('zones.json'), read('homes.json')]);
-  const { rects, cells } = buildClosed({ region, seoul, maps, extraPoints });
-  const line = `  "closed": { "note": "Not built yet in Seocho, Gangnam and Dongjak (scripts/build-closed.mjs): rectangles [x0, z0, x1, z1] you can't walk into, drawn grey.", "rects": ${JSON.stringify(rects)} },\n`;
+  const { rects, packed, cells } = buildClosed({ region, seoul, maps, base, extraPoints });
+  const line = `  "closed": ${JSON.stringify({ note: "Land with nothing built yet (scripts/build-closed.mjs): squares you can't walk into, drawn grey; one bit a square (core/closed-grid.js).", ...packed })},
+`;
   const file = path.join(R, 'region.json');
   let text = readFileSync(file, 'utf8');
   text = text.replace(/^ {2}"closed": .*\n/m, '');

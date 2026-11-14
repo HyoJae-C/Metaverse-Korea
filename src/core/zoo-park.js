@@ -1,7 +1,7 @@
 // Children's Grand Park's zoo as a room of its own: you walk in through the
 // entrance building's door at the end of the gate plaza (stores.json
 // "cgp-zoo", workshop "zoo") and the zoo grounds take over the screen, like
-// Another Land. Loaded on the first visit (main.js), with the zoo's animals.
+// Modu Land. Loaded on the first visit (main.js), with the zoo's animals.
 // The layout is scripts/build-grand-park.mjs (src/data/zoo-grounds.json), in
 // the street district's metres: the winding paths round the flower plaza,
 // the pens and their animals (core/zoo.js), the woods round the edge, the

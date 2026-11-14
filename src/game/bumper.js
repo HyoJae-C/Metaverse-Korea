@@ -1,4 +1,4 @@
-// Bumper cars in Another Land (범퍼카): get in at the gate, wait for the
+// Bumper cars in Modu Land (범퍼카): get in at the gate, wait for the
 // countdown, then bump each other round the rink for a minute. Up to six
 // drivers a round; when a round is on (or the cars are full) take a number
 // and you're called for the next one. The rink is core/bumper-rink.js, the

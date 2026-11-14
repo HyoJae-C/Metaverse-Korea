@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DAL, dalAt, gateOpen, opensIn, riderSpot, clock } from '../src/core/seoul-dal.js';
+import { DAL, dalAt, gateOpen, opensIn, riderSpot, clock, dalRiderY } from '../src/core/seoul-dal.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
 import { inPolygon } from '../src/core/seoul-grid.js';
@@ -85,7 +85,7 @@ test('the balloon stands in the real Yeouido Park at 1/4, clear of towers and tr
 
 test('every language has the Seoul Dal words', () => {
   const keys = Object.keys(EN).filter((k) => k.startsWith('dal.') || k === 'ledger.seoulDal');
-  assert.equal(keys.length, 20);
+  assert.equal(keys.length, 24);
   for (const [lang, table] of Object.entries(STRINGS)) {
     if (lang === 'hant') continue; // (made from zh)
     for (const k of keys) assert.ok(table[k], `${lang} ${k}`);
@@ -100,4 +100,12 @@ test('the Seoul Dal stamp is pressed aboard at the top: no stand on the ground, 
   const joined = await loadRegionMap(region, async (f) => read(f));
   const dal = joined.landmarks.find((l) => l.type === 'seouldal');
   assert.ok(Math.hypot(s.place.at[0] - dal.x, s.place.at[1] - dal.z) < 1, 'at the cable foot');
+});
+
+test('a rider aboard is placed from the clock, until the flight lands', () => {
+  const t = DAL.board + DAL.rise / 2; // flight 0, halfway up
+  assert.equal(dalRiderY(1, t), dalAt(t).h + DAL.deck + 0.02);
+  assert.equal(dalRiderY(1, DAL.cycle + 1), null); // landed: flight 1 is boarding
+  assert.equal(dalRiderY(0, t), null);
+  assert.equal(dalRiderY(undefined, t), null);
 });

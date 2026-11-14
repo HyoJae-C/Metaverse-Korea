@@ -10,6 +10,7 @@
 // belongs to the sender's account and adds their real name, so nobody can
 // chat in someone else's name.
 import { createClient } from '@supabase/supabase-js';
+import { count } from '../meter.js';
 
 // One client (one websocket) shared by every room we are in. cfg.accessToken
 // (optional) returns the player's sign-in token, so private channels and the
@@ -98,6 +99,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
           }
         })
         .on('broadcast', { event: 's' }, ({ payload }) => {
+          count('mvr');
           if (known.has(payload.id)) onState(payload.id, payload.st);
           else if (payload?.id && payload.id !== self.id) {
             early.delete(payload.id); // (re-inserted last: the oldest go first)
@@ -106,12 +108,15 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
           }
         })
         .on('broadcast', { event: 'e' }, ({ payload }) => {
+          count('emr');
           if (known.has(payload.id)) onEmote(payload.id, payload.e);
         })
         .on('broadcast', { event: 'l' }, ({ payload }) => {
+          count('emr');
           if (known.has(payload.id)) onLook?.(payload.id, payload.look);
         })
         .on('broadcast', { event: 'c' }, ({ payload }) => {
+          count('emr');
           if (known.has(payload.id)) onChat?.(payload.id, payload.t);
         });
 
@@ -148,16 +153,34 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       });
     },
     sendState(st) {
-      channel?.send({ type: 'broadcast', event: 's', payload: { id: self.id, st } });
+      if (!channel) return;
+      count('mv');
+      channel.send({ type: 'broadcast', event: 's', payload: { id: self.id, st } });
     },
     sendEmote(e) {
-      channel?.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
+      if (!channel) return;
+      count('em');
+      channel.send({ type: 'broadcast', event: 'e', payload: { id: self.id, e } });
     },
     sendChat(t) {
-      channel?.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
+      if (!channel) return;
+      count('em');
+      channel.send({ type: 'broadcast', event: 'c', payload: { id: self.id, t } });
+    },
+    // Before saying a line on the room channel (the private chat channel
+    // isn't open yet): the server logs it like room_chat_send does, so the
+    // operator can see it too (043_ops_all_chat.sql), without sending
+    // anything over realtime. Resolves 'chat' when we may not chat (banned);
+    // anything else (logged, or the function isn't set up) lets the line go.
+    async logChat(room, t) {
+      try {
+        const { data, error } = await client.rpc('room_chat_log', { room, net_id: self.id, msg: t });
+        return error ? 'error' : data;
+      } catch { return 'error'; }
     },
     sendLook(look) {
       self = { ...self, look };
+      if (channel) count('em');
       channel?.send({ type: 'broadcast', event: 'l', payload: { id: self.id, look } });
       if (!listening) channel?.track({ name: self.name, look }); // so newcomers see it too
     },

@@ -1,4 +1,4 @@
-// Free-style kimbap class panel at Suragan Cooking Class (rules in
+// Free-style kimbap class panel at the Kimbap Making Class (김밥만들기체험) (rules in
 // core/kimbap-game.js, text in kimbap-text.js). Seven steps from seasoning
 // the rice to slicing the roll. Players fill it with anything on the shelf;
 // a classic roll is shown as an idea only. How well-liked each filling is

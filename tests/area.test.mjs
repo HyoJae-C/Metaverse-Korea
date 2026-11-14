@@ -27,3 +27,71 @@ test('send rate drops in a crowd so each player receives about the budget', () =
   // What one player receives from 11 others: never above the budget.
   assert.ok(11 * sendRate({ ...o, peers: 11 }) <= 20 + 1e-9);
 });
+
+import { createAreaNet } from '../src/net/area.js';
+import { registerAdapter } from '../src/net/index.js';
+
+test('movement is not broadcast while nobody is around to see it', async () => {
+  const sent = [];
+  let join = null;
+  registerAdapter('count-sends', async (h) => ({
+    async connect({ listenOnly }) { if (!listenOnly) join = h.onJoin; },
+    sendState: (st) => sent.push(st),
+    sendEmote: (e) => sent.push(e),
+    setListenOnly() {}, updateSelf() {}, disconnect() {},
+  }));
+  const noop = () => {};
+  const net = await createAreaNet('count-sends', { onJoin: noop, onLeave: noop, onState: noop, onEmote: noop }, {},
+    { room: 'r', self: { id: 'me' }, cellSize: 0, privateChat: false });
+  net.sendState({ x: 1 });
+  net.sendEmote('wave');
+  assert.equal(sent.length, 0, 'alone: nothing sent');
+  join({ id: 'friend' });
+  net.sendState({ x: 2 });
+  assert.deepEqual(sent, [{ x: 2 }], 'someone nearby: sent');
+  net.disconnect();
+});
+
+test('room-channel chat is logged on the server first, and a banned player says nothing', async () => {
+  const said = [], logged = [];
+  let answer = 'ok';
+  registerAdapter('log-chat', async () => ({
+    async connect() {},
+    sendChat: (t) => said.push(t),
+    logChat: async (room, t) => { logged.push([room, t]); return answer; },
+    setListenOnly() {}, updateSelf() {}, disconnect() {},
+  }));
+  const noop = () => {};
+  const net = await createAreaNet('log-chat', { onJoin: noop, onLeave: noop, onState: noop, onEmote: noop }, {},
+    { room: 'seoul', self: { id: 'me' }, cellSize: 0, privateChat: true });
+  net.sendChat('hi');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(logged, [['seoul', 'hi']]);
+  assert.deepEqual(said, ['hi']);
+  answer = 'chat';
+  net.sendChat('rude');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(said, ['hi'], 'banned: not said');
+  answer = 'error'; // the function isn't set up yet, or the network failed
+  net.sendChat('ok then');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(said, ['hi', 'ok then']);
+  net.disconnect();
+});
+
+test('test rooms without accounts chat on the room channel without logging', async () => {
+  const said = [], logged = [];
+  registerAdapter('log-chat-test-room', async () => ({
+    async connect() {},
+    sendChat: (t) => said.push(t),
+    logChat: async (room, t) => { logged.push(t); return 'ok'; },
+    setListenOnly() {}, updateSelf() {}, disconnect() {},
+  }));
+  const noop = () => {};
+  const net = await createAreaNet('log-chat-test-room', { onJoin: noop, onLeave: noop, onState: noop, onEmote: noop }, {},
+    { room: 'test', self: { id: 'me' }, cellSize: 0, privateChat: false });
+  net.sendChat('hi');
+  assert.deepEqual(said, ['hi']);
+  assert.deepEqual(logged, []);
+  net.disconnect();
+});

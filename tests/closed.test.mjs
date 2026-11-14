@@ -1,3 +1,4 @@
+import { closedRects } from '../src/core/closed-grid.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,8 +13,8 @@ const read = (f) => JSON.parse(readFileSync(new URL(f, R)));
 const region = read('region.json');
 const seoul = read('seoul.json');
 const stores = read('stores.json').stores;
-const map = mergeDistricts(region.districts.map((d) => ({ ...d, map: read(d.map) })), region.links, region.water, region.closed.rects);
-const rects = region.closed.rects;
+const map = mergeDistricts(region.districts.map((d) => ({ ...d, map: read(d.map) })), region.links, region.water, closedRects(region.closed));
+const rects = closedRects(region.closed);
 const collision = new CollisionMap(map.buildings.concat(map.blockers));
 
 // How far (x, z) is from a rectangle (0 inside).
@@ -21,13 +22,14 @@ const rectDist = (x, z, [x0, z0, x1, z1]) => Math.hypot(Math.max(x0 - x, 0, x - 
 const nearest = (x, z) => Math.min(...rects.map((r) => rectDist(x, z, r)));
 const CLEAR = 15; // m: scripts/build-closed.mjs keeps 30
 
-test('only empty land in Seocho, Gangnam and Dongjak is closed', () => {
+test('only empty land inside Seoul is closed (every gu, since the base map)', () => {
   assert.ok(rects.length > 20);
-  const gu = seoul.gu.filter((g) => GU.includes(g.id));
+  assert.equal(GU, null);
+  const gu = seoul.gu;
   for (const [x0, z0, x1, z1] of rects) {
     assert.ok(x1 > x0 && z1 > z0);
     // (A rectangle's cells each have their centre in one of the gu.)
-    assert.ok(gu.some((g) => inPoly(x0 + 5, z0 + 5, g.p)) || gu.some((g) => inPoly(x1 - 5, z1 - 5, g.p)), `rect ${x0},${z0} in ${GU}`);
+    assert.ok(gu.some((g) => inPoly(x0 + 5, z0 + 5, g.p)) || gu.some((g) => inPoly(x1 - 5, z1 - 5, g.p)), `rect ${x0},${z0} in Seoul`);
   }
 });
 

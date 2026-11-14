@@ -4,12 +4,12 @@
 @color #e08a2a
 @title.en The Sun and the Moon: Korean Folk Tales 2 (Korean only)
 @title.ko 해님 달님 · 전래동화 2
-@author.en Korean folk tales, retold for Another Seoul
-@author.ko 한국 전래동화 (Another Seoul이 새로 씀)
+@author.en Korean folk tales, retold for Modu Seoul
+@author.ko 한국 전래동화 (모두서울이 새로 씀)
 @about.en Five of the best-known Korean folk tales, retold in simple Korean: the sun and the moon, the woodcutter and the fairy, the herd boy and the weaver girl, Kongjwi and Patjwi, and the grateful magpie. Korean text only.
 @about.ko 누구나 아는 옛이야기 다섯 편을 쉬운 말로 새로 썼어요. 해님 달님, 선녀와 나무꾼, 견우와 직녀, 콩쥐 팥쥐, 은혜 갚은 까치.
 @source Korean folk tales (no author), retold in new words
-@license Folk tales belong to everyone. This retelling is written new for Another Seoul and free for everyone to use (CC0). Korean only, no translation.
+@license Folk tales belong to everyone. This retelling is written new for Modu Seoul and free for everyone to use (CC0). Korean only, no translation.
 ===
 # 해님 달님
 옛날 옛적, 깊은 산골에 엄마와 오누이가 살았어요. 엄마는 고개 너머 잔칫집에서 일을 하고, 떡을 이고 밤길을 돌아오고 있었지요.

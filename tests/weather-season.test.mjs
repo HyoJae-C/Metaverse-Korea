@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { weatherAt, weatherSettings, seasonAt, rolledWeather, SEASON_ODDS, WEATHER_SLOT_MS } from '../src/core/weather.js';
+import { sunsetClear } from '../src/core/weather-roll.js';
+import { CYCLE, CYCLE_MS } from '../src/core/show-clock.js';
 
 const slots = (n, f) => Array.from({ length: n }, (_, i) => f(i * WEATHER_SLOT_MS + 1000));
 
@@ -9,7 +11,7 @@ test('every season\'s odds add up to one', () => {
 });
 
 test('no setting keeps the old weather', () => {
-  for (const t of slots(50, (ms) => ms)) assert.equal(weatherAt(t, null), rolledWeather(t));
+  for (const t of slots(50, (ms) => ms)) assert.equal(weatherAt(t, null), sunsetClear(t) ? 'clear' : rolledWeather(t));
 });
 
 test('winter snows more than the default, summer never snows', () => {
@@ -23,7 +25,8 @@ test('a held weather lasts until its end', () => {
   assert.equal(weatherAt(5 * 60000, s), 'snow');
   assert.notEqual(weatherAt(10 * 60000, s), 'snow');
   const forever = weatherSettings({ season: 'default', fixed: 'rain', from: new Date(0).toISOString(), until: null });
-  assert.equal(weatherAt(1e12, forever), 'rain');
+  const t = sunsetClear(1e12) ? 1e12 + 3600e3 : 1e12;
+  assert.equal(weatherAt(t, forever), 'rain');
 });
 
 test('bad settings fall back safely', () => {
@@ -36,4 +39,15 @@ test('auto follows Seoul\'s calendar', () => {
   assert.equal(seasonAt(Date.UTC(2026, 6, 10)), 'summer');
   assert.equal(seasonAt(Date.UTC(2026, 9, 10)), 'autumn');
   assert.equal(seasonAt(Date.UTC(2026, 10, 30, 16)), 'winter'); // 1 December in Seoul
+});
+
+test('for now the sky is always clear round the sunset, even over a held weather', () => {
+  const MIN = 60000, sunset = (CYCLE.morning + CYCLE.day) * MIN;
+  const rain = weatherSettings({ season: 'default', fixed: 'rain', from: new Date(0).toISOString(), until: null });
+  for (const c of [0, 5, 10, 20]) {
+    for (const m of [-10, -1, 0, 10, 22, 30]) assert.equal(weatherAt(c * CYCLE_MS + sunset + m * MIN, rain), 'clear', `cycle ${c}, minute ${m}`);
+    assert.equal(weatherAt(c * CYCLE_MS + sunset - 11 * MIN, rain), 'rain', 'before it: the weather as usual');
+    assert.equal(weatherAt(c * CYCLE_MS + sunset + 31 * MIN, rain), 'rain', 'after it');
+  }
+  assert.equal(sunsetClear(sunset), true);
 });

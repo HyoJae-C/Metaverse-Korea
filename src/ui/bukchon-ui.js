@@ -3,10 +3,12 @@
 //                       the Open House, the magpie's persimmons, the welcome)
 //   views(book):        the photo spots: which ones you have
 //   craft(kind):        the workshops (Maeum Knot Studio, Saekji Paper
-//                       Studio, and Sunra Silver Studio on Seosunra-gil):
+//                       Studio; the necklace studios, Jongno Geumeunbang and
+//                       Gyeol Ring Studio, share the panel):
 //                       pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
+import { PENDANT_CHARMS } from '../data/appearance.js';
 
 export const BK_TEXT = {
   photo: { en: 'Take a photo · {name}', ko: '사진 찍기 · {name}', ja: '写真を撮る · {name}', zh: '拍照 · {name}' },
@@ -31,14 +33,17 @@ export const BK_TEXT = {
   hanjiHow: { en: 'Hanji is paper made from mulberry bark: strong, soft and see-through when lit. Pick the paper colour and the pattern cut into it.', ko: '한지는 닥나무 껍질로 만든 종이예요. 질기고 부드러우며 불을 켜면 은은하게 비쳐요. 종이 색과 무늬를 골라요.', ja: '韓紙は楮の皮から作る紙。丈夫でやわらかく、灯すとほのかに透けます。紙の色と模様を選んで。', zh: '韩纸用楮树皮制成，结实柔软，点灯后透出柔光。选纸的颜色和花纹。' },
   pickColor: { en: 'Colour', ko: '색', ja: '色', zh: '颜色' },
   pickShape: { en: 'Pattern', ko: '모양', ja: '模様', zh: '样式' },
+  master: { en: 'Craftsman', ko: '장인', ja: '職人', zh: '工匠' },
   make: { en: 'Make it · 🪙 {n}', ko: '만들기 · 🪙 {n}', ja: '作る · 🪙 {n}', zh: '制作 · 🪙 {n}' },
   have: { en: 'You have 🪙 {n}', ko: '보유 🪙 {n}', ja: '所持 🪙 {n}', zh: '持有 🪙 {n}' },
   poor: { en: 'Not enough money: it costs 🪙 {n}.', ko: '돈이 부족해요. 🪙 {n}이 필요해요.', ja: 'お金が足りません。🪙 {n} 必要です。', zh: '钱不够，需要 🪙 {n}。' },
   made: { en: '{icon} You made a {name}! It is in your bag.', ko: '{icon} {name} 완성! 가방에 넣었어요.', ja: '{icon} {name}が完成！かばんに入れました。', zh: '{icon} 做好了{name}！已放进包里。' },
   bagFull: { en: 'Your bag is full.', ko: '가방이 가득 찼어요.', ja: 'かばんがいっぱいです。', zh: '包满了。' },
-  // Sunra Silver Studio (Seosunra-gil): the pendant is a wearable accessory.
-  pendant: { en: 'Make a pendant', ko: '펜던트 만들기', ja: 'ペンダントを作る', zh: '做一个吊坠' },
-  pendantHow: { en: 'The lanes around Jongno 3-ga are Seoul\'s jewellery quarter, and workshops on Seosunra-gil let you make your own piece. Pick the metal and the charm; the craftsman saws, files and polishes it with you.', ko: '종로3가 일대는 서울의 귀금속 골목이고, 서순라길 공방에서는 직접 장신구를 만들 수 있어요. 금속과 모양을 고르면 장인이 함께 자르고 다듬고 광을 내 줘요.', ja: '鍾路3街一帯はソウルの貴金属街で、西巡邏キルの工房では自分でアクセサリーを作れます。金属とモチーフを選ぶと、職人が一緒に切って削って磨いてくれます。', zh: '钟路3街一带是首尔的首饰街，西巡逻路的工坊可以亲手做饰品。选好金属和造型，工匠会陪你一起切割、打磨、抛光。' },
+  // The necklace studios (Jongno Geumeunbang, Gyeol Ring Studio): the necklace is a wearable accessory.
+  pendant: { en: 'Make a necklace', ko: '목걸이 만들기', ja: 'ネックレスを作る', zh: '做一条项链' },
+  pendantHow: { en: 'This is Seoul\'s jewellery quarter: round Jongno 3-ga, hundreds of small gold and silver shops and workshops fill the lanes. Pick the metal, then a Korean word for luck to engrave (its hanja goes under it); the craftsman cuts and polishes it with you. For a moon, a heart or a butterfly, go to Gyeol Ring Studio in Seongsu.', ko: '여기는 서울의 귀금속 골목, 종로3가예요. 골목마다 작은 금은방과 공방이 수백 곳 모여 있어요. 금속을 고르고 복을 비는 글자를 고르면 장인이 함께 자르고 광을 내 줘요. 달·하트·나비 같은 모양은 성수 결 반지공방에서 만들어요.', ja: 'ここはソウルの貴金属街、鍾路3街。路地には小さな金銀店や工房が数百も集まっています。金属を選んで、福を願う言葉（ハングルと漢字）を選ぶと、職人が一緒に切って磨いてくれます。月やハート、蝶の形は聖水のキョル指輪工房で。', zh: '这里是首尔的首饰街——钟路3街，小巷里聚集着数百家金银店和工坊。选好金属，再选祈福的字（韩文和汉字），工匠会陪你一起切割、抛光。月亮、爱心、蝴蝶等造型可以去圣水的纹理戒指工坊。' },
+  pendantShape: { en: 'Make a necklace', ko: '목걸이 만들기', ja: 'ネックレスを作る', zh: '做一条项链' },
+  pendantShapeHow: { en: 'Seongsu is full of small ring and jewellery workshops where you make your own piece in an hour. Pick the metal and a shape; the craftsman helps you cut and polish it. Want a Korean word engraved instead? Try Jongno Geumeunbang by Jongmyo.', ko: '성수에는 한 시간 만에 내 손으로 반지·목걸이를 만드는 작은 공방이 많아요. 금속과 모양을 고르면 장인이 자르고 광내는 걸 도와줘요. 글자를 새기고 싶으면 종묘 옆 종로금은방에 가 보세요.', ja: '聖水には、1時間で自分だけの指輪やネックレスを作れる小さな工房がたくさん。金属と形を選ぶと、職人が切って磨くのを手伝ってくれます。文字を刻みたいなら宗廟そばの鍾路金銀房へ。', zh: '圣水有很多一小时就能亲手做戒指、项链的小工坊。选好金属和造型，工匠会帮你切割、抛光。想刻字的话，可以去宗庙旁的钟路金银坊。' },
   pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
   pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },
   madeWear: { en: '{icon} You made a {name}! Wear it from your items.', ko: '{icon} {name} 완성! 내 아이템에서 착용할 수 있어요.', ja: '{icon} {name}が完成！アイテムから身につけられます。', zh: '{icon} 做好了{name}！可以在物品里戴上。' },
@@ -46,6 +51,20 @@ export const BK_TEXT = {
 };
 
 // Workshop choices. Names are in English for the bag (like other goods).
+// A necklace studio: its own words (PENDANT_CHARMS ids), or with none the
+// five shapes.
+function necklaceCraft(words) {
+  const tile = ([id, c]) => [id, c.name.ko, c.name, c.hanja ? [c.letter, c.hanja] : [c.emoji, c.name.ko]];
+  const all = Object.entries(PENDANT_CHARMS);
+  return {
+    icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
+    colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
+    shapes: (words ? words.map((w) => all.find(([id]) => id === w)) : all.filter(([, c]) => !c.hanja)).map(tile),
+    grid: true, // tiles 5 across, the Hangul large
+    wear: (c, s) => `acc-pendant-${c}-${s}`,
+  };
+}
+
 export const CRAFT = {
   knot: {
     icon: '🎀', price: 8000,
@@ -59,14 +78,13 @@ export const CRAFT = {
     shapes: [['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['butterfly', '나비', { en: 'Butterflies', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['cloud', '구름', { en: 'Clouds', ko: '구름', ja: '雲', zh: '云纹' }]],
     item: (c, s) => `${c} hanji lantern (${s})`,
   },
-  // Sunra Silver Studio: what you make is worn (an accessory item,
+  // The necklace studios: what you make is worn (an accessory item,
   // data/wearables.js acc-pendant-<metal>-<charm>), not put in the bag.
-  pendant: {
-    icon: '📿', price: 25000, labels: ['pickMetal', 'pickCharm'],
-    colors: [['#d9dde2', 'silver', '은'], ['#e8b84a', 'gold', '금']],
-    shapes: [['moon', '달', { en: 'Moon', ko: '달', ja: '月', zh: '月亮' }], ['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['bok', '복', { en: '복 (luck)', ko: '복', ja: '福（ポク）', zh: '福字' }]],
-    wear: (c, s) => `acc-pendant-${c}-${s}`,
-  },
+  // Jongno Geumeunbang, in the jewellery quarter by Jongmyo, engraves the 22
+  // words; Gyeol Ring Studio in Seongsu makes the five shapes (Yozi
+  // 2026-11-12; Bukchon's Gahoe Silver Studio closed).
+  pendant: necklaceCraft(Object.keys(PENDANT_CHARMS).filter((id) => PENDANT_CHARMS[id].hanja && !PENDANT_CHARMS[id].retired)),
+  pendantShape: necklaceCraft(null),
 };
 // The item a wearable craft makes (null for bag crafts).
 export function craftWear(kind, ci, si) {
@@ -135,6 +153,7 @@ export class BukchonUI {
   }
   craft(kind) {
     this.view = 'craft:' + kind;
+    if (this.kind !== kind) this.ci = this.si = 0; // (another studio: its own list)
     this.kind = kind;
     this.render();
     this.root.hidden = false;
@@ -159,10 +178,15 @@ export class BukchonUI {
     });
     parts.push(colors);
     parts.push(el('b', 'lock-sub', L(BK_TEXT[k.labels?.[1] || 'pickShape'])));
-    const list = el('div', 'wish-list');
+    const list = el('div', 'wish-list' + (k.grid ? ' wish-grid' : ''));
     list.setAttribute('role', 'radiogroup');
-    k.shapes.forEach(([, , name], i) => {
-      const b = el('button', 'wish-item' + (i === this.si ? ' on' : ''), L(name));
+    k.shapes.forEach(([, , name, tile], i) => {
+      const b = el('button', 'wish-item' + (i === this.si ? ' on' : ''), k.grid ? '' : L(name));
+      if (k.grid) {
+        b.append(el('span', 'wish-big', tile[0]), el('small', '', tile[1]));
+        b.setAttribute('aria-label', L(name));
+        b.title = L(name);
+      }
       b.type = 'button';
       b.setAttribute('role', 'radio');
       b.setAttribute('aria-checked', String(i === this.si));
@@ -170,14 +194,22 @@ export class BukchonUI {
       list.append(b);
     });
     parts.push(list);
+    // The pick and the Make button stay pinned to the bottom: on a phone the
+    // 25-tile necklace grid is taller than the screen, and the button below it
+    // was easy to miss.
+    const foot = el('div', 'wish-foot');
+    if (k.grid) foot.append(el('p', 'wish-pick', L(k.shapes[this.si][2])));
     const poor = this.wallet.coins < k.price;
-    parts.push(el('small', 'fine', fmt(L(BK_TEXT.have), { n: this.wallet.coins })));
-    if (poor) parts.push(el('p', 'lock-warn', fmt(L(BK_TEXT.poor), { n: k.price })));
+    foot.append(el('small', 'fine', fmt(L(BK_TEXT.have), { n: this.wallet.coins })));
+    if (poor) foot.append(el('p', 'lock-warn', fmt(L(BK_TEXT.poor), { n: k.price })));
     const go = el('button', 'primary', fmt(L(BK_TEXT.make), { n: k.price }));
     go.type = 'button';
     go.disabled = poor;
     go.onclick = () => { if (this.onMake?.(this.kind, this.ci, this.si)) this.close(); else this.render(); };
-    parts.push(go);
+    foot.append(go);
+    parts.push(foot);
+    const top = this.root.scrollTop;
     this.root.replaceChildren(...parts);
+    this.root.scrollTop = top; // (picking a tile re-renders: stay where you were)
   }
 }

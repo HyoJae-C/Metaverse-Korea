@@ -14,7 +14,7 @@ import { pointInPoly } from './collision.js';
 
 const mats = {};
 const mat = (c, snow) => (mats[c + (snow ? 's' : '')] ||= snow ? addSnowCover(new THREE.MeshLambertMaterial({ color: c })) : bricks(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
-const bricks = (c, m) => (c === C.brick ? addBrickPattern(m, { w: 0.48, h: 0.2, mortar: 0.035 }) : m); // the retaining walls
+const bricks = (c, m) => (c === C.brick ? addBrickPattern(m, { w: 0.84, h: 0.34, mortar: 0.05 }) : m); // the retaining walls
 const C = { paving: '#d6cfc0', grass: '#8fbf6c', ramp: '#cfc6b4', brick: '#a9573f', coping: '#bdb6a8', step: '#c4beb2', metal: '#4d5156', lamp: '#2e3135', glow: '#ffe2a0', hedge: '#4f7f3f', trunk: '#6b4a32', leaf: '#5d8f4a' };
 
 // One step on the stairs' slope (repeated n times up it): the stone tread
