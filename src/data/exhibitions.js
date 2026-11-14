@@ -5,7 +5,9 @@
 // and its works: 4 on each side wall and 2 on the back wall (core/culture.js).
 //   theme: 'colorful' (bright walls, coloured frames) or 'dark' (dark walls)
 //   works: [file (no .webp, under dir), width, height, title?]
-// Images are under public/ and load only when you walk in. A place with no
+// Images are under public/ and load only when you walk in; they are not kept
+// on the player's device (public/sw.js). When a show ends, delete its folder
+// under public/exhibitions so the site doesn't carry it either. A place with no
 // works shows "coming soon" cards.
 export const EXHIBITIONS = {
   // ACIRE's illustrations: no titles, on the artist's wish only the show's.
