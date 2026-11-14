@@ -138,6 +138,7 @@ export class ShopUI {
     this.$('cart-close').onclick = () => { this.$('cart-panel').hidden = true; };
     this.$('cart-checkout').onclick = () => { this.$('cart-note').hidden = false; };
     this.$('store-exit').onclick = () => this.onExit();
+    this.$('store-banner').querySelector('.store-meta').onclick = () => this.$('store-banner').classList.toggle('open');
     cart.onChange(() => this.refreshCart());
     this.refreshCart();
   }
@@ -152,6 +153,7 @@ export class ShopUI {
     const tag = localName(store.tagline, lang) || '';
     this.$('store-tagline').textContent = comingSoon(store) ? `🚧 ${t('map.soon')}${tag ? ' · ' + tag : ''}` : tag;
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
+    this.$('store-banner').classList.remove('open');
     this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture' || store.workshop === 'zoo' || store.workshop === 'zoo-sea'; // (the zoo is a real public place, not a made-up brand)
   }
 

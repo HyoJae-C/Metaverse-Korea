@@ -192,4 +192,5 @@ export const CAM_TEXT = {
     '⚾ التقطت كرة الخطأ! كرات موقّعة: {n}',
   ]),
   missed: tr(['So close! 😅', '아깝다! 😅', '惜しい！😅', '差一点！😅', '¡Casi! 😅', 'Hampir! 😅', 'Suýt nữa! 😅', 'बस थोड़ा सा! 😅', 'Presque ! 😅', 'เกือบแล้ว! 😅', 'كدت! 😅']),
+  score: tr(['Scoreboard', '점수 보기', 'スコアを見る', '看比分', 'Marcador', 'Papan skor', 'Bảng điểm', 'स्कोरबोर्ड', 'Tableau des scores', 'ดูสกอร์', 'لوحة النتائج']),
 };

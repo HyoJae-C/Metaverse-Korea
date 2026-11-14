@@ -6404,7 +6404,7 @@ const ballparkCams = lazyPanel(() => import('./game/ballpark-cams.js').then(({ c
   send: (m) => net.sendEmote(m), toast: (m) => shop.toast(m), blocked: (id) => safety.isBlocked(id, others.nameOf(id)),
   bubble: (text) => showBubble(myLabel, $('labels'), text), npcBubble: (o, text) => showBubble(o, $('labels'), text),
   clearAction: () => { action = STALE; },
-})), { tick: () => {}, action: () => null, standingAction: () => null, more: () => [], onMsg: () => {} });
+})), { tick: () => {}, action: () => null, standingAction: () => null, more: () => [], onMsg: () => {}, scoreAct: () => null });
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
@@ -6530,10 +6530,11 @@ function moreActions(p, door) {
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
-  if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss)
+  if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss, 📊 Scoreboard)
   if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing) return out;
   if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
+  if (interior.dome) { const sb = ballparkCams.scoreAct(); if (sb) out.push(sb); } // Modu Ballpark: 📊 Scoreboard up close
   const im = infoMissionAct(p); if (im) out.push(im);
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
