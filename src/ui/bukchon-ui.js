@@ -2,9 +2,9 @@
 //   card(item, extra):  a short card about a place (the photo spot, a part of
 //                       the Open House, the magpie's persimmons, the welcome)
 //   views(book):        the photo spots: which ones you have
-//   craft(kind):        the workshops (Maeum Knot Studio, Saekji Paper
-//                       Studio; the necklace studios, Jongno Geumeunbang and
-//                       Gyeol Ring Studio, share the panel):
+//   craft(kind):        the workshops (Maeum Knot Studio's bracelets, Saekji
+//                       Paper Studio; the necklace studios, Jongno
+//                       Geumeunbang and Gyeol Ring Studio, share the panel):
 //                       pick a colour and a pattern, pay, take it home
 import { L, fmt } from './pocha-ui.js';
 import { BUKCHON, VIEW_REWARD, ALL_VIEWS_REWARD } from '../data/bukchon.js';
@@ -27,9 +27,9 @@ export const BK_TEXT = {
   close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭' },
   real: { en: 'Real Bukchon: people live here. In the Bukchon-ro 11-gil area, visitors are welcome 10:00 to 17:00 (since Nov 2024; fines from Mar 2025). Check before you go.', ko: '실제 북촌은 주민이 사는 동네예요. 북촌로11길 일대는 관광객 방문 시간이 오전 10시~오후 5시예요(2024년 11월부터, 2025년 3월부터 과태료). 가기 전에 확인하세요.', ja: '実際の北村は人が暮らす町です。北村路11ギル一帯の観光客の訪問時間は10時〜17時（2024年11月から、2025年3月から過料）。行く前に確認を。', zh: '真实的北村是居民生活的街区。北村路11街一带游客参观时间为10:00至17:00（2024年11月起，2025年3月起罚款）。出发前请确认。' },
   // workshops
-  knot: { en: 'Tie a maedeup knot charm', ko: '매듭 노리개 만들기', ja: 'メドゥプのお守りを結ぶ', zh: '编一个韩式绳结挂饰' },
+  knot: { en: 'Tie a maedeup bracelet', ko: '매듭 팔찌 만들기', ja: 'メドゥプのブレスレットを結ぶ', zh: '编一条韩式绳结手链' },
   hanji: { en: 'Make a hanji lantern', ko: '한지 등 만들기', ja: '韓紙の灯りを作る', zh: '做一盏韩纸灯' },
-  knotHow: { en: 'Maedeup is Korean decorative knotting: one silk cord tied into a symmetrical knot, finished with a tassel. Pick the cord colour and the knot.', ko: '매듭은 비단 끈 한 가닥을 좌우 대칭으로 엮고 술을 다는 우리 전통 공예예요. 끈 색과 매듭 모양을 골라요.', ja: 'メドゥプは一本の絹紐を左右対称に結び、房をつける韓国の伝統工芸。紐の色と結び方を選んで。', zh: '韩式绳结是用一根丝绳编成左右对称的结，再系上流苏的传统工艺。选绳子颜色和结的样式。' },
+  knotHow: { en: 'Maedeup is Korean decorative knotting: one silk cord tied into a symmetrical knot. Pick the cord colour and the knot; it becomes a bracelet you wear on your wrist (in place of gloves).', ko: '매듭은 비단 끈 한 가닥을 좌우 대칭으로 엮는 우리 전통 공예예요. 끈 색과 매듭 모양을 고르면 손목에 차는 팔찌가 돼요(장갑 자리에 착용).', ja: 'メドゥプは一本の絹紐を左右対称に結ぶ韓国の伝統工芸。紐の色と結び方を選ぶと、手首につけるブレスレットになります（手袋の代わりにつけます）。', zh: '韩式绳结是用一根丝绳编成左右对称的结的传统工艺。选好绳子颜色和结的样式，就成了戴在手腕上的手链（戴在手套的位置）。' },
   hanjiHow: { en: 'Hanji is paper made from mulberry bark: strong, soft and see-through when lit. Pick the paper colour and the pattern cut into it.', ko: '한지는 닥나무 껍질로 만든 종이예요. 질기고 부드러우며 불을 켜면 은은하게 비쳐요. 종이 색과 무늬를 골라요.', ja: '韓紙は楮の皮から作る紙。丈夫でやわらかく、灯すとほのかに透けます。紙の色と模様を選んで。', zh: '韩纸用楮树皮制成，结实柔软，点灯后透出柔光。选纸的颜色和花纹。' },
   pickColor: { en: 'Colour', ko: '색', ja: '色', zh: '颜色' },
   pickShape: { en: 'Pattern', ko: '모양', ja: '模様', zh: '样式' },
@@ -47,7 +47,7 @@ export const BK_TEXT = {
   pickMetal: { en: 'Metal', ko: '금속', ja: '金属', zh: '金属' },
   pickCharm: { en: 'Charm', ko: '모양', ja: 'モチーフ', zh: '造型' },
   madeWear: { en: '{icon} You made a {name}! Wear it from your items.', ko: '{icon} {name} 완성! 내 아이템에서 착용할 수 있어요.', ja: '{icon} {name}が完成！アイテムから身につけられます。', zh: '{icon} 做好了{name}！可以在物品里戴上。' },
-  haveIt: { en: 'You already have this one: pick another metal or charm.', ko: '이미 가지고 있어요. 다른 금속이나 모양을 골라 보세요.', ja: 'もう持っています。別の金属かモチーフを選んで。', zh: '你已经有这个了，换一种金属或造型吧。' },
+  haveIt: { en: 'You already have this one: pick another colour or shape.', ko: '이미 가지고 있어요. 다른 색이나 모양을 골라 보세요.', ja: 'もう持っています。別の色か形を選んで。', zh: '你已经有这个了，换一种颜色或样式吧。' },
 };
 
 // Workshop choices. Names are in English for the bag (like other goods).
@@ -68,9 +68,15 @@ function necklaceCraft(words) {
 export const CRAFT = {
   knot: {
     icon: '🎀', price: 8000,
-    colors: [['#c8323f', 'red', '다홍'], ['#2f6b4f', 'green', '초록'], ['#2d4f8a', 'blue', '쪽빛'], ['#e3b23c', 'yellow', '노랑'], ['#8b5aa8', 'purple', '보라']],
-    shapes: [['butterfly', '나비매듭', { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['chrysanthemum', '국화매듭', { en: 'Chrysanthemum', ko: '국화', ja: '菊', zh: '菊花' }], ['double-coin', '도래매듭', { en: 'Double coin', ko: '도래', ja: '二つ輪', zh: '双钱' }]],
-    item: (c, s) => `${c} ${s} knot charm`,
+    // Two knots in two colours (Yozi 2026-11-15); the old chrysanthemum and
+    // green, yellow and purple charms still become bracelets (retired,
+    // data/wearables.js).
+    colors: [['#c8323f', 'red', '다홍'], ['#2d4f8a', 'blue', '쪽빛']],
+    shapes: [['butterfly', '나비매듭', { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['double-coin', '도래매듭', { en: 'Double coin', ko: '도래', ja: '二つ輪', zh: '双钱' }]],
+    // A bracelet worn like gloves (data/wearables.js acc-knot-<colour>-<knot>,
+    // Yozi 2026-11-15). It used to be a "knot charm" in the bag, which
+    // couldn't be worn: game/knot-bracelets.js turns those into bracelets.
+    wear: (c, s) => `acc-knot-${c}-${s}`,
   },
   hanji: {
     icon: '🏮', price: 10000,
@@ -78,7 +84,7 @@ export const CRAFT = {
     shapes: [['plum', '매화', { en: 'Plum blossom', ko: '매화', ja: '梅', zh: '梅花' }], ['butterfly', '나비', { en: 'Butterflies', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['cloud', '구름', { en: 'Clouds', ko: '구름', ja: '雲', zh: '云纹' }]],
     item: (c, s) => `${c} hanji lantern (${s})`,
   },
-  // The necklace studios: what you make is worn (an accessory item,
+  // The necklace studios: what you make is worn too (an accessory item,
   // data/wearables.js acc-pendant-<metal>-<charm>), not put in the bag.
   // Jongno Geumeunbang, in the jewellery quarter by Jongmyo, engraves the 22
   // words; Gyeol Ring Studio in Seongsu makes the five shapes (Yozi

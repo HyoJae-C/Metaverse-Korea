@@ -139,8 +139,7 @@ test('workshop pieces are bag goods', () => {
     assert.deepEqual(cleanEntry(e), e);
     assert.ok(e.name.length <= 40);
   }
-  assert.equal(craftEntry('knot', 9, 0), null);
-  assert.equal(craftEntry('knot', 0, 0).name, 'red butterfly knot charm');
+  assert.equal(craftEntry('knot', 0, 0), null, 'knot bracelets are worn, not carried (tests/knot-bracelets.test.mjs)');
 });
 
 test('Bukchon is open on the field, with a low retaining wall: a gap at each gate, every house inside', () => {
