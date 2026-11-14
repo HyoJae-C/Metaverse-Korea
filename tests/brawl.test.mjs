@@ -128,12 +128,12 @@ test('brawl: nobody can be hit lying down, and nobody leaves the ring or overlap
 test('brawl: low on health hits harder; hitting a swing in its startup is a counter', () => {
   const [a, b] = pair(); a.rage = true;
   const ev = run(a, b, [{ k: true }], [], 40);
-  assert.equal(ev.find((e) => e.k === 'hit').dmg, Math.round(a.mv.lk.dmg * 1.2));
+  assert.equal(ev.find((e) => e.k === 'hit').dmg, Math.round(MOVES.lk.dmg * 0.75 * 1.2));
   const [c, d] = pair();
   go(d, 'rk');
   const ev2 = run(c, d, [{ p: true }], [], 40);
   const h = ev2.find((e) => e.k === 'hit');
-  assert.ok(h.counter && h.by === 0 && h.dmg > c.mv.lp.dmg);
+  assert.ok(h.counter && h.by === 0 && h.dmg > Math.round(MOVES.lp.dmg * 0.75));
 });
 
 test('brawl: a match is best of three and always ends; a stronger rival wins more', () => {
@@ -191,7 +191,7 @@ test('brawl styles: eight, each with its own health, moves and two strings', () 
     assert.deepEqual(st.combos.map((c) => c[0]), ['lp', 'lk'], id + ': one string from each button');
     for (const m of Object.values(movesFor(id))) assert.ok(m.startup >= 4 && m.recover > 0 && m.dmg >= 0);
   }
-  for (const k of ['lp', 'rp', 'lk', 'rk', 'upper']) assert.deepEqual(movesFor('brawler')[k], { ...MOVES[k], dmg: Math.round(MOVES[k].dmg * 0.85) }, 'the brawler is the plain move list (normal hits a little lighter)');
+  for (const k of ['lp', 'rp', 'lk', 'rk', 'upper']) assert.deepEqual(movesFor('brawler')[k], MOVES[k], 'the brawler is the plain move list');
   assert.ok(movesFor('brawler').fly.dmg > MOVES.fly.dmg, 'a special costs bar, so it hurts more');
   assert.ok(STYLES.tank.hp > STYLES.brawler.hp && STYLES.brawler.hp > STYLES.ninja.hp);
   assert.ok(movesFor('boxer').lp.startup < MOVES.lp.startup && movesFor('kicker').rk.startup < MOVES.rk.startup);
@@ -369,7 +369,7 @@ test('brawl: the stick picks the move: heavy punch, roundhouse, sweep; a special
   const ev = run(c, d, [{ s1: true }], { hold: { mx: -1 } }, 60);
   assert.ok(ev.some((e) => e.k === 'super' && e.who === 0));
   const normal = movesFor('brawler'), special = normal.palm.dmg;
-  assert.ok(special >= 3 * normal.lp.dmg && special > normal.rk.dmg, 'a special hurts far more than a normal hit');
+  assert.ok(special >= 3 * normal.lp.dmg * 0.75 && special > normal.rk.dmg, 'a special hurts far more than a normal hit');
   const [e, f] = pair();
   e.sp = SP_COST; f.hp = 3;
   run(e, f, [{ s2: true }], { hold: { mx: -1 } }, 80);

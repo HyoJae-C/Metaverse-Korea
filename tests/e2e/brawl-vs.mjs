@@ -112,9 +112,9 @@ try {
   assert(await until(a, () => /Bobby/.test(document.querySelector('#brawl .bw-note')?.textContent || ''), null, 15000), 'the one who stayed is told the other left');
   assert((await state(a)).vs === null && await b.evaluate(() => !__mk.brawl().open), 'the match is over on both screens');
   assert(await until(c, () => (__mk.brawlTv() || []).every((x) => !x), null, 15000), 'the wall screen goes back to waiting when the match ends');
-  // A match against the game's own rival is shown too.
+    // Solo play advertises a status only, never a replay of the match.
   await a.click('#brawl .bw-card .go');
-  assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.b === 'r0' && x.live), null, 30000), 'a match against the house plays on a screen too');
+    assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.solo && !x.live && !x.hp), null, 30000), 'solo play shows status without streaming the match');
   await c.waitForTimeout(2500);
   await shot(c, 'solo-wall-screen');
   await c.click('#tv-x');

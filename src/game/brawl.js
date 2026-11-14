@@ -9,7 +9,7 @@ import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor, SP_COST } from '../core/brawl.js';
 import { createSession } from '../core/brawl-net.js';
-import { createCaster } from '../core/brawl-tv.js';
+import { createCaster, createSoloCaster } from '../core/brawl-tv.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
@@ -536,6 +536,11 @@ export function createBrawl(game) {
   };
   const onKey = (e) => {
     if (!on) return;
+    if (on.hud?.commands?.open) {
+      e.stopPropagation();
+      if (e.code === 'Escape') { e.preventDefault(); on.hud.commands.close(); }
+      return;
+    }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     const down = e.type === 'keydown';
     if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); if (down) close(); return; }
@@ -597,6 +602,37 @@ export function createBrawl(game) {
     x.onclick = () => close();
     const flash = el('div', 'bw-flash');
     root.append(flash, top, msg, sub, ...combo, x);
+    const commandButton = el('button', 'bw-command-button', L({ en: 'Commands', ko: '커맨드표' }));
+    commandButton.style.cssText = 'position:absolute;right:12px;top:110px;pointer-events:auto;padding:12px 18px;border:2px solid #c39bff;border-radius:14px;background:#211932;color:white;font:bold 17px system-ui;cursor:pointer';
+    const commands = document.createElement('dialog');
+    commands.style.cssText = 'pointer-events:auto;box-sizing:border-box;width:min(94vw,720px);max-height:88dvh;overflow:auto;padding:24px;border:2px solid #c39bff;border-radius:20px;background:#171329;color:white;font:18px system-ui';
+    commands.setAttribute('aria-label', L({ en: 'Commands', ko: '커맨드표' }));
+    const heading = el('h2', null, L({ en: 'Commands', ko: '커맨드표' }));
+    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. → means toward your rival. Specials cost 50 gauge.', ko: '싱글은 일시정지됩니다. 온라인 대전은 계속 진행됩니다. →는 상대 방향이며, 필살기는 게이지 50이 필요합니다.' }));
+    const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
+    for (const [label, input] of [
+      [L({ en: 'Punch / kick', ko: '펀치 / 킥' }), '👊 J / 🦶 K'],
+      [L({ en: 'Combo', ko: '연속 공격' }), '👊 → 👊 → 👊 / 🦶 → 🦶 → 🦶'],
+      [L({ en: 'Launcher', ko: '띄우기' }), '→ + 👊 J'],
+      [L({ en: 'Heavy punch', ko: '묵직한 한 방' }), '← + 👊 J'],
+      [L({ en: 'Roundhouse', ko: '돌려차기' }), '→ + 🦶 K'],
+      [L({ en: 'Sweep', ko: '다리 걸기' }), '← + 🦶 K'],
+      [L({ en: 'Rushing punch', ko: '돌진 펀치' }), '→ → + 👊 J'],
+      [L({ en: 'Special 1', ko: '필살기 1' }), '↓ → + 👊 J  /  ⭐1 U'],
+      [L({ en: 'Special 2', ko: '필살기 2' }), '↓ → + 🦶 K  /  ⭐2 I'],
+      [L({ en: 'Guard', ko: '방어' }), '←'],
+      [L({ en: 'Dash', ko: '대시' }), '→ → / ← ← / Shift'],
+    ]) {
+      const row = document.createElement('tr');
+      for (const text of [label, input]) { const cell = document.createElement('td'); cell.textContent = text; cell.style.cssText = 'padding:15px 8px;border-bottom:1px solid #49365f'; row.append(cell); }
+      table.append(row);
+    }
+    const dismiss = el('button', null, L({ en: 'Close', ko: '닫기' }));
+    dismiss.style.cssText = 'margin-top:20px;width:100%;padding:14px;border:0;border-radius:12px;background:#c39bff;font:bold 20px system-ui;cursor:pointer';
+    dismiss.onclick = () => commands.close();
+    commands.append(heading, note, table, dismiss);
+    commandButton.onclick = () => { held.clear(); pressed.clear(); stick.mx = stick.mz = 0; dashAsk = 0; commands.showModal(); };
+    root.append(commandButton, commands);
     let pad = null;
     if (touch) {
       pad = el('div', 'bw-pad');
@@ -634,10 +670,11 @@ export function createBrawl(game) {
       dash.onpointerup = dash.onpointercancel = dash.onpointerleave = () => dash.classList.remove('on');
       pad.append(zone, btns, dash);
       root.append(pad);
-    } else root.append(el('div', 'bw-keys', tt('keys')));
+    } else root.append(el('div', 'bw-keys', tt('keys') + ' · ↓ → + J / K = ⭐1 / ⭐2'));
+    if (touch) root.append(el('div', 'bw-keys', '↓ → + 👊 / 🦶 = ⭐1 / ⭐2'));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
-    return { root, a, b, time, msg, sub, combo, pad, flash, comboT: [0, 0], msgT: 0 };
+    return { root, a, b, time, msg, sub, combo, pad, flash, commands, comboT: [0, 0], msgT: 0 };
   }
   function say(text, sub = '', secs = 1.4) {
     const h = on.hud;
@@ -911,8 +948,10 @@ export function createBrawl(game) {
     if (on.vs) return;
     startUi();
     const m = on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
-    cast({ b: 'r' + stage, n: [game.nickname || '', ''] }, m);
-    m.onStep = (ia, ib) => on?.cast?.step(ia, ib, m);
+    endCast();
+    on.cast = createSoloCaster((text) => game.net?.sendEmote?.(text));
+    on.cast.start();
+    m.onStep = () => on?.cast?.step();
     on.stageNo = stage;
   }
 
@@ -932,7 +971,13 @@ export function createBrawl(game) {
         for (const f of [on.me, on.rival]) { f.clipT = 1.7; f.ch.play('bow'); }
         sfx.tock(0.5, 500);
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
-      else if (e.k === 'swing') sfx.tock(0.18, (e.by ? m.b : m.a).mv[e.move].level >= 3 ? 520 : 760);
+      else if (e.k === 'swing') {
+        const fighter = e.by ? m.b : m.a;
+        if (e.move === 'palm' || e.move === 'fly') { // (a special: its name was shown when it began)
+          spark(fighter.x, 0.85, fighter.z, '#c39bff', 2.1);
+          sfx.tock(0.7, 1250);
+        } else sfx.tock(0.18, fighter.mv[e.move].level >= 3 ? 520 : 760);
+      }
       else if (e.k === 'dash') sfx.tock(0.2, 1100);
       else if (e.k === 'super') { // a special: the screen flashes and holds a moment
         const f = e.who ? m.b : m.a;
@@ -946,8 +991,9 @@ export function createBrawl(game) {
       else if (e.k === 'combo') { const c = on.hud.combo[e.by ^ on.flip]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
       else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); if (!on.vs) on.freeze = 3; }
       else if (e.k === 'hit') {
-        const big = e.dmg >= 14 || e.launch || e.ko || e.fin;
-        spark(e.x, e.y, e.z, e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', big ? 1.5 : 1);
+        const special = ['palm', 'fly', 'shot'].includes(e.move);
+        const big = special || e.dmg >= 14 || e.launch || e.ko || e.fin;
+        spark(e.x, e.y, e.z, special ? '#c39bff' : e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', special ? 2.3 : big ? 1.5 : 1);
         sfx.tock(big ? 1 : 0.7, big ? 170 : 250);
         if (!on.vs) on.freeze = e.ko ? 16 : big ? 7 : 4; // (two screens cannot stop the clock for a hit)
         on.shake = Math.max(on.shake, big ? 0.14 : 0.06);
@@ -1120,6 +1166,7 @@ export function createBrawl(game) {
     update(dt) {
       if (!on) return;
       if (game.interior !== on.interior) { close(); return; }
+      if (on.hud.commands.open && !on.vs) { on.cast?.step(); return; }
       frame(dt);
       if (on) camera(dt);
     },

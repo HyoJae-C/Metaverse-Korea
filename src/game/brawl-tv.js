@@ -26,6 +26,11 @@ export function createBrawlTv(game) {
     const s = shows[i];
     if (!s) return;
     shows[i] = null;
+    if (s.solo) {
+      if (s.screen.material.map === s.tex) { s.screen.material.map = s.idle; s.screen.material.needsUpdate = true; }
+      s.tex.dispose();
+      return;
+    }
     for (const f of [s.a, s.b]) { f.ch.setMoves(null); f.ch.root.removeFromParent(); }
     s.stage.dispose();
     s.rt.dispose(); s.tex.dispose();
@@ -53,6 +58,21 @@ export function createBrawlTv(game) {
       screen: slot.screen, strip: slot.strip, idle: slot.idle,
     };
     slot.strip.material.map = tex; slot.strip.material.needsUpdate = true;
+  }
+  function openSolo(i) {
+    close(i);
+    const slot = room.stations.fightTv[i];
+    const canvas = document.createElement('canvas');
+    [canvas.width, canvas.height] = PX;
+    const g = canvas.getContext('2d');
+    g.fillStyle = '#171329'; g.fillRect(0, 0, ...PX);
+    g.fillStyle = '#c39bff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 32px system-ui, sans-serif';
+    g.fillText(L({ en: 'Solo game in progress', ko: '혼자 게임 중', ja: 'ひとりでプレイ中', zh: '单人游戏中' }), PX[0] / 2, PX[1] / 2, PX[0] - 32);
+    const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace;
+    slot.screen.material.map = tex; slot.screen.material.needsUpdate = true;
+    slot.strip.visible = false;
+    shows[i] = { solo: true, screen: slot.screen, idle: slot.idle, tex };
   }
   // The names, health bars, rounds won and the clock, along the top of the picture.
   function strip(s, m) {
@@ -132,6 +152,10 @@ export function createBrawlTv(game) {
       if (!room) return;
       odd ^= 1;
       tv.views.forEach((view, i) => {
+        if (view.info?.solo) {
+          if (!shows[i]?.solo) openSolo(i);
+          return;
+        }
         const m = view.match;
         if (!m) { close(i); return; }
         if (view.renewed() || !shows[i]) { if (shows[i]?.key !== view.from + '|' + view.info.b) open(i); }
@@ -145,6 +169,6 @@ export function createBrawlTv(game) {
       });
     },
     // For tests: what each screen shows.
-    get state() { return tv.views.map((view, i) => (view.match ? { from: view.from, b: view.info.b, names: shows[i]?.names, phase: view.match.phase, hp: [view.match.a.hp, view.match.b.hp], live: shows[i]?.screen.material.map === shows[i]?.rt.texture } : null)); },
+    get state() { return tv.views.map((view, i) => view.info?.solo ? { from: view.from, solo: true, live: false } : (view.match ? { from: view.from, b: view.info.b, names: shows[i]?.names, phase: view.match.phase, hp: [view.match.a.hp, view.match.b.hp], live: shows[i]?.screen.material.map === shows[i]?.rt.texture } : null)); },
   };
 }

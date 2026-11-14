@@ -41,9 +41,11 @@ const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far insid
 const BUFFER = 12;
 export const SP_MAX = 100, SP_COST = 50; // the special bar, and what one special spends
 const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), × the damage taken
-const SPECIAL_DMG = 1.6, NORMAL_DMG = 0.85; // (a special costs bar, so it hurts a lot more than the rest)
+const SPECIAL_DMG = 1.6; // (a special costs bar, so it hurts a lot more than the rest)
+export const NORMAL_DAMAGE_MULT = 0.75; // every hit but a special's (applied when it lands)
 const CHIP = 0.5; // of a special's damage gets through a guard (never the last point)
-const KEEP_GUARD = 15; // ticks a guard holds after the other fighter blinks behind it // a press waits this many ticks for the fighter to be free
+export const COMMAND_TICKS = 30; // down, toward + punch/kick within half a second
+const KEEP_GUARD = 15; // ticks a guard holds after the other fighter blinks behind it
 const GRAVITY = 20 * TICK * TICK;
 const MAX_JUGGLE = 3;
 
@@ -126,7 +128,6 @@ export function movesFor(styleId) {
     out[id] = { ...m, startup: Math.max(4, Math.round(m.startup * time)), recover: Math.round(m.recover * time), dmg: Math.round(m.dmg * dmg) };
   }
   if (st.sig) out[st.slot] = { ...st.sig };
-  for (const [id, m] of Object.entries(out)) if (!SPECIALS.has(id)) m.dmg = Math.max(1, Math.round(m.dmg * NORMAL_DMG));
   for (const id of SPECIALS) {
     out[id].dmg = Math.round(out[id].dmg * SPECIAL_DMG);
     if (out[id].shot) out[id].shot = { ...out[id].shot, dmg: Math.round(out[id].shot.dmg * SPECIAL_DMG) };
@@ -151,6 +152,7 @@ export function newFighter(side, style = 'brawler') {
     hp: STYLES[st].hp, st: 'idle', t: 0, move: null, hit: false, landed: false,
     stun: 0, stepDir: 0, rest: 0, juggle: 0, walk: 0, guard: false, keep: 0, rage: false, chain: false, sp: 0,
     buf: { p: 0, k: 0, s1: 0, s2: 0 }, combo: 0, comboT: 0,
+    command: { left: 0, stage: 0, down: false, toward: false },
   };
 }
 const NO_INPUT = { mx: 0, mz: 0 };
@@ -188,7 +190,7 @@ function hurt(a, d, m, id, face, ev, fin = false) {
   const air = d.st === 'air';
   const theirs = d.st === 'atk' ? d.mv[d.move] : null;
   const counter = !!theirs && d.t < theirs.startup + theirs.active;
-  let dmg = m.dmg * (a.rage ? RAGE_MULT : 1) * (counter ? COUNTER_MULT : 1) * (fin ? FINISH_MULT : 1);
+  let dmg = m.dmg * (SPECIALS.has(id) || id === 'shot' ? 1 : NORMAL_DAMAGE_MULT) * (a.rage ? RAGE_MULT : 1) * (counter ? COUNTER_MULT : 1) * (fin ? FINISH_MULT : 1);
   if (air) { d.juggle++; if (!fin) dmg *= 0.7 ** d.juggle; } // (a string's finisher counts in full)
   dmg = Math.max(1, Math.round(dmg));
   d.hp = Math.max(0, d.hp - dmg);
@@ -220,6 +222,20 @@ function hurt(a, d, m, id, face, ev, fin = false) {
 
 // One fighter's own tick (moving, starting and running moves).
 function act(f, o, inp, ev) {
+  // Recognise commands in the shared simulation, so AI/local/online use the
+  // same tick clock. Existing one-button specials remain available on touch.
+  const c = f.command, down = inp.mz < -0.5, towardPress = inp.mx > 0.5;
+  if (c.left > 0 && --c.left === 0) c.stage = 0;
+  if (down && !c.down) { c.stage = 1; c.left = COMMAND_TICKS; }
+  if (c.stage === 1 && towardPress && !c.toward) c.stage = 2;
+  if (inp.mx < -0.5 || inp.mz > 0.5 || ['hit', 'air', 'down', 'getup', 'ko', 'block'].includes(f.st)) c.stage = c.left = 0;
+  if (c.stage === 2 && (inp.p || inp.k)) {
+    if (f.sp >= SP_COST) inp = { ...inp, p: false, k: false, [inp.p ? 's1' : 's2']: true };
+    // Down also starts a side-step; the completed command cancels that step.
+    if (f.st === 'step') { f.st = 'idle'; f.t = 0; }
+    c.stage = c.left = 0;
+  }
+  c.down = down; c.toward = towardPress;
   for (const k in f.buf) {
     if (inp[k]) f.buf[k] = BUFFER;
     else if (f.buf[k] > 0) f.buf[k]--;
@@ -532,7 +548,7 @@ export function createMatch({ level = 0, rand = Math.random, style = 'brawler', 
 // A copy of a match two screens can send each other or run ahead on: the
 // fighters' move tables (the same for a style everywhere) are left out and
 // put back.
-const copyFighter = (f, mv) => ({ ...f, mv, seq: [...f.seq], buf: { ...f.buf }, shot: f.shot ? { ...f.shot } : null });
+const copyFighter = (f, mv) => ({ ...f, mv, seq: [...f.seq], buf: { ...f.buf }, command: { left: 0, stage: 0, down: false, toward: false, ...f.command }, shot: f.shot ? { ...f.shot } : null });
 export function copyMatch(m) {
   return { ...m, a: copyFighter(m.a, m.a.mv), b: copyFighter(m.b, m.b.mv), wins: [...m.wins], styles: [...m.styles] };
 }
