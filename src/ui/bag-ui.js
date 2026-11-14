@@ -5,14 +5,13 @@ import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
 
-// A piece's icon in the wardrobe: its own emoji, with a dot of its colour.
-// Sets (one piece for top and bottom) have no emoji, so they get a small
-// picture (public/assets/closet/set.webp, 3.5 KB), fetched only when shown.
-// A top whose emoji isn't clothing (🖤 hoodie, 🍷 hoodie, 🧶 knit, 🤵 suit)
-// shows 👕 here, so the wardrobe reads as clothes at a glance.
+// A piece's icon in the wardrobe: one colour emoji per kind (all tops 👕,
+// all bottoms 👖, skirts too), with a dot of the piece's own colour to tell
+// them apart. Sets (one piece for top and bottom) have no emoji, so they get
+// a small picture (public/assets/closet/set.webp, 3.5 KB), fetched only when
+// shown.
 const SET_ICON = '/assets/closet/set.webp';
-const TOP_EMOJI = new Set(['👕', '👔', '🧥', '🦺', '🥼', '👚', '🎽']);
-const kindEmoji = (d) => (d.kind === 'top' && !TOP_EMOJI.has(d.emoji) ? (d.emoji === '🤵' ? '🧥' : '👕') : d.emoji);
+const KIND_EMOJI = { top: '👕', bottom: '👖', shoes: '👟', hat: '🧢', acc: '👓', bag: '👜' };
 function closetIcon(d, el) {
   const icon = el('span', 'closet-icon');
   if (d.kind === 'dress') {
@@ -20,7 +19,7 @@ function closetIcon(d, el) {
     img.src = SET_ICON;
     img.alt = '';
     icon.append(img);
-  } else icon.textContent = kindEmoji(d);
+  } else icon.textContent = KIND_EMOJI[d.kind] || d.emoji;
   if (d.color) {
     const dot = el('i', 'closet-dot');
     dot.style.background = d.color;
