@@ -1546,13 +1546,12 @@ const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
 // (just below) already calls off any waiting gifts.
 let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
-// On the street only friends see each other and send each other their
-// movement (most realtime messages were strangers walking past each other);
-// inside a shop or a game room everyone does. Set once chat (and with it the
-// friend list) exists. Test rooms and local play have no accounts, so
-// everyone shows there (the e2e turns it on: __mk.friendsOnly).
+// "Friends only on the street" (net/area.js shows): when on, only friends
+// see each other there and send each other their movement; inside a shop or
+// a game room everyone does. Off since 2026-11-15 (Yozi: strangers should be
+// seen too); kept as a switch, and the e2e turns it on (__mk.friendsOnly).
 let streetFriend = null;
-let friendsOnlyStreet = !testRoom && config.netProvider === 'supabase';
+let friendsOnlyStreet = false;
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
