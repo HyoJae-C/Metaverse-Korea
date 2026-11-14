@@ -24,6 +24,8 @@ export const RETIRED = new Set([
   'acc-cap-sky', 'acc-cap-orange', 'acc-beanie-mustard',
   'acc-glasses-gold', 'acc-glasses-pink', 'acc-sunglasses-brown', 'acc-sunglasses-blue',
   'acc-scarf-cream', 'acc-tote-brick',
+  // Maeum Knot Studio makes red and indigo only (2026-11-15); these come from old knot charms.
+  ...['green', 'yellow', 'purple'].flatMap((c) => ['butterfly', 'chrysanthemum', 'double-coin'].map((k) => `acc-knot-${c}-${k}`)),
 ]);
 
 // price: listed in ₩1,000s (70 = ₩70,000).

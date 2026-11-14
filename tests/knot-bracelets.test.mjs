@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CRAFT, craftWear } from '../src/ui/bukchon-ui.js';
-import { WEARABLES } from '../src/data/wearables.js';
-import { ACCESSORIES, sanitizeLook } from '../src/data/appearance.js';
+import { WEARABLES, RETIRED } from '../src/data/wearables.js';
+import { ACCESSORIES, sanitizeLook, KNOT_COLORS, KNOTS } from '../src/data/appearance.js';
 import { Bag } from '../src/core/bag.js';
 import { Inventory } from '../src/core/inventory.js';
 import { Receipts } from '../src/core/resale.js';
@@ -52,5 +52,14 @@ test('only the studio\'s charms are bracelets', () => {
   assert.equal(charmBracelet({ kind: 'gift', name: 'purple chrysanthemum knot charm' }), 'acc-knot-purple-chrysanthemum');
   assert.equal(charmBracelet({ kind: 'gift', name: 'pink hanji lantern (cloud)' }), null);
   assert.equal(charmBracelet({ kind: 'coffee', name: 'red butterfly knot charm' }), null);
-  for (const [, c] of CRAFT.knot.colors) for (const [s] of CRAFT.knot.shapes) assert.ok(WEARABLES[charmBracelet({ kind: 'gift', name: `${c} ${s.replace('-', ' ')} knot charm` })]);
+  for (const c of Object.keys(KNOT_COLORS)) for (const s of Object.keys(KNOTS)) assert.ok(WEARABLES[charmBracelet({ kind: 'gift', name: `${c} ${s.replace('-', ' ')} knot charm` })], 'every old charm colour');
+});
+
+test('the studio makes two colours per knot; the other old colours are retired, still wearable', () => {
+  assert.deepEqual(CRAFT.knot.colors.map(([, c]) => c), ['red', 'blue']);
+  assert.equal(CRAFT.knot.colors.length * CRAFT.knot.shapes.length, 6);
+  for (const c of Object.keys(KNOT_COLORS)) for (const k of Object.keys(KNOTS)) {
+    const id = `acc-knot-${c}-${k}`;
+    assert.equal(RETIRED.has(id), !['red', 'blue'].includes(c), id);
+  }
 });
