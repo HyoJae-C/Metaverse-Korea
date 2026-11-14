@@ -62,3 +62,19 @@ export function claimTab(onTakenOver, {
   }
   return release;
 }
+
+// Resolves once the page is shown: not prerendering, not a hidden tab.
+export function whenShown(doc = globalThis.document) {
+  const shown = () => !doc || (doc.visibilityState !== 'hidden' && !doc.prerendering);
+  if (shown()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!shown()) return;
+      doc.removeEventListener('visibilitychange', check);
+      doc.removeEventListener('prerenderingchange', check);
+      resolve();
+    };
+    doc.addEventListener('visibilitychange', check);
+    doc.addEventListener('prerenderingchange', check);
+  });
+}
