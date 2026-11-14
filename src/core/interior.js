@@ -567,6 +567,7 @@ export function buildInterior(store) {
     // The forest galleries (core/culture.js).
     const room = buildCulture(scene, ROOM, { box, block, mat }, store);
     stations.paintings = room.looks;
+    if (room.hideName) scene.remove(title); // (a show's name is on the back wall instead)
     seats.push(...room.seats);
     clerk = room.clerk;
   } else if (store.category === 'school') {

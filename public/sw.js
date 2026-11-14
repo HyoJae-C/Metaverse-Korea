@@ -8,6 +8,9 @@
 //   they are served from the cache once fetched;
 // - everything else (maps, models, books, sounds) is network-first with the
 //   cached copy as a fallback when offline;
+// - exhibition pictures (exhibitions/) are not saved at all: a show changes
+//   and its pictures would sit on the phone for nothing (Yozi, 2026-11-15).
+//   The browser's own short-lived cache still serves a second visit;
 // - "network-first" waits a few seconds at most when a cached copy exists:
 //   on a connection that hangs instead of failing, the saved copy is used
 //   and the new one keeps downloading for next time.
@@ -30,6 +33,10 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k.startsWith('as-') && !KEEP.includes(k)) await caches.delete(k);
+    try { // exhibition pictures saved by an older worker: let them go
+      const files = await caches.open(FILES);
+      for (const r of await files.keys()) if (new URL(r.url).pathname.includes('/exhibitions/')) await files.delete(r);
+    } catch { /* nothing saved */ }
     await self.clients.claim();
   })());
 });
@@ -109,6 +116,7 @@ self.addEventListener('fetch', (e) => {
     if (isApp) e.respondWith(networkFirst(e, req, PAGES, { key: new Request('./'), wait: WAIT_PAGE, usable: pageUsable }));
     return;
   }
+  if (url.pathname.startsWith(`${scope.pathname}exhibitions/`)) return; // a show's pictures: not kept (see top)
   if (url.pathname.startsWith(`${scope.pathname}assets/`)) { e.respondWith(cacheFirst(req)); return; }
   e.respondWith(networkFirst(e, req, FILES));
 });
