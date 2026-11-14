@@ -798,6 +798,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     // two screens that show it (game/ballpark-cams.js).
     cam: () => cam,
     screens: [screen, screen2],
+    board: boardC, // (the scoreboard's own picture: the 📊 Scoreboard panel shows it up close)
     field: { y: FIELD_Y },
   };
 
