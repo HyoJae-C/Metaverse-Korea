@@ -8,7 +8,10 @@
 //   s2  special 2 (fly): a flying kick, far and strong, wide open if blocked
 // A special spends one of the two halves of the special bar (sp), which
 // fills by hitting, guarding and being hit, and is kept between rounds.
-// Toward + p is a rising punch that launches (hit them in the air). The
+// With the stick: toward + p a rising punch that launches (hit them in the
+// air), away + p a heavy straight, toward + k a roundhouse that floors, away
+// + k a low sweep that floors; p in a forward dash a rushing punch. A special
+// hurts a lot and still hurts through a guard (CHIP). The
 // moves themselves are one per limb: lp/rp (left and right punch), lk/rk
 // (left and right kick); a string is a row of them.
 // Holding away guards. Up and down side-step round the other fighter, so a
@@ -38,7 +41,8 @@ const CHAIN_IN = 0.15, CHAIN_STEP = 0.1; // a chained hit ends up this far insid
 const BUFFER = 12;
 export const SP_MAX = 100, SP_COST = 50; // the special bar, and what one special spends
 const SP_HIT = 8, SP_BLOCKED = 3, SP_GUARD = 6, SP_HURT = 0.5; // a hit landed, a hit guarded (for who threw it, for who guarded), × the damage taken
-const SPECIAL_DMG = 1.25; // (a special costs bar, so it hurts more)
+const SPECIAL_DMG = 1.6, NORMAL_DMG = 0.85; // (a special costs bar, so it hurts a lot more than the rest)
+const CHIP = 0.5; // of a special's damage gets through a guard (never the last point)
 const KEEP_GUARD = 15; // ticks a guard holds after the other fighter blinks behind it // a press waits this many ticks for the fighter to be free
 const GRAVITY = 20 * TICK * TICK;
 const MAX_JUGGLE = 3;
@@ -56,7 +60,11 @@ export const MOVES = {
   upper: { startup: 14, active: 4, recover: 22, dmg: 12, range: 1.05, arc: 0.45, block: 9, push: 0.3, lunge: 0.45, level: 2.5, launch: true },
   palm: { startup: 25, active: 4, recover: 22, dmg: 14, range: 1.05, arc: 0.5, push: 0.9, lunge: 0.6, level: 9, knock: true, unblockable: true },
   fly: { startup: 17, active: 9, recover: 30, dmg: 20, range: 1.1, arc: 0.4, block: 13, push: 0.8, lunge: 1.7, level: 9, knock: true, leap: 0.55 },
+  heavy: { startup: 15, active: 4, recover: 20, dmg: 15, range: 1.1, arc: 0.45, stun: 26, block: 12, push: 0.55, lunge: 0.25, level: 9, pose: 'rp' },
+  sweep: { startup: 14, active: 4, recover: 22, dmg: 11, range: 1.2, arc: 0.8, block: 12, push: 0.25, lunge: 0.15, level: 9, knock: true, pose: 'sweep' },
+  rush: { startup: 8, active: 4, recover: 18, dmg: 12, range: 1.1, arc: 0.5, stun: 22, block: 10, push: 0.6, lunge: 0.7, level: 9, pose: 'rp' },
 };
+const SPECIALS = new Set(['palm', 'fly']);
 export const moveTicks = (m) => m.startup + m.active + m.recover;
 
 // ── Styles ───────────────────────────────────────────────────────────────
@@ -114,11 +122,12 @@ export const STYLE_IDS = Object.keys(STYLES);
 export function movesFor(styleId) {
   const st = STYLES[styleId] || STYLES.brawler, out = {};
   for (const [id, m] of Object.entries(MOVES)) {
-    const [time, dmg] = id === 'lk' || id === 'rk' || id === 'fly' ? st.kick : st.punch;
+    const [time, dmg] = id === 'lk' || id === 'rk' || id === 'fly' || id === 'sweep' ? st.kick : st.punch;
     out[id] = { ...m, startup: Math.max(4, Math.round(m.startup * time)), recover: Math.round(m.recover * time), dmg: Math.round(m.dmg * dmg) };
   }
   if (st.sig) out[st.slot] = { ...st.sig };
-  for (const id of ['palm', 'fly']) {
+  for (const [id, m] of Object.entries(out)) if (!SPECIALS.has(id)) m.dmg = Math.max(1, Math.round(m.dmg * NORMAL_DMG));
+  for (const id of SPECIALS) {
     out[id].dmg = Math.round(out[id].dmg * SPECIAL_DMG);
     if (out[id].shot) out[id].shot = { ...out[id].shot, dmg: Math.round(out[id].shot.dmg * SPECIAL_DMG) };
   }
@@ -154,16 +163,24 @@ function wanted(f, inp, level = 0) {
   if (b.s1 && f.sp >= SP_COST) return 'palm';
   if (b.s2 && f.sp >= SP_COST) return 'fly';
   if (!b.p && !b.k) return null;
-  if (level === 0) return b.p ? (inp.mx > 0.5 ? 'upper' : 'lp') : 'lk';
+  if (level === 0) {
+    const dir = inp.mx > 0.5 ? 1 : inp.mx < -0.5 ? -1 : 0;
+    return b.p ? ['heavy', 'lp', 'upper'][dir + 1] : ['sweep', 'lk', 'rk'][dir + 1];
+  }
   // Either button again: the string goes on.
   const c = STYLES[f.style].combos.find((q) => q.length > f.seq.length && f.seq.every((k, i) => q[i] === k));
   return c ? c[f.seq.length] : null;
+}
+// A move from standing (or a dash): a special is announced.
+function begin(f, id, ev) {
+  f.seq = [id]; startMove(f, id);
+  if (SPECIALS.has(id)) ev.push({ k: 'super', who: f.side, move: id });
 }
 const gain = (f, n) => { f.sp = clamp(f.sp + n, 0, SP_MAX); };
 export function startMove(f, id) {
   f.chain = false; f.st = 'atk'; f.move = id; f.t = 0; f.hit = false; f.landed = false; f.guard = false; f.armored = false; f.hits = 0; f.fin = false;
   f.buf.p = f.buf.k = f.buf.s1 = f.buf.s2 = 0;
-  if (id === 'palm' || id === 'fly') f.sp -= SP_COST;
+  if (SPECIALS.has(id)) f.sp -= SP_COST;
 }
 
 function hurt(a, d, m, id, face, ev, fin = false) {
@@ -219,7 +236,7 @@ function act(f, o, inp, ev) {
     // (A guard held when the other blinked behind us still holds for a moment: "away" has just turned round.)
     f.guard = inp.mx < -0.3 || (f.keep > 0 && inp.mx > 0.3);
     const id = wanted(f, inp);
-    if (id) { f.seq = [id]; startMove(f, id); return; }
+    if (id) { begin(f, id, ev); return; }
     if (inp.dash && !f.rest) { f.st = 'dash'; f.t = 0; f.dashDir = Math.sign(inp.dash); f.guard = false; ev.push({ k: 'dash', who: f.side }); return; }
     if (inp.mz && !f.rest) { f.st = 'step'; f.t = 0; f.stepDir = Math.sign(inp.mz); f.guard = false; return; }
     const sp = STYLES[f.style].walk;
@@ -237,7 +254,7 @@ function act(f, o, inp, ev) {
     const far = (f.dashDir > 0 ? DASH_FWD : DASH_BACK) * STYLES[f.style].dash / DASH_TICKS;
     const v = f.dashDir > 0 ? Math.min(far, Math.max(0, dist - BODY_R * 2 - 0.05)) : -far;
     f.x += (dx / dist) * v; f.z += (dz / dist) * v;
-    if (f.t >= DASH_CUT) { const id = wanted(f, inp); if (id) { f.seq = [id]; startMove(f, id); return; } }
+    if (f.t >= DASH_CUT) { let id = wanted(f, inp); if (id) { if (f.dashDir > 0 && (id === 'lp' || id === 'upper' || id === 'heavy')) id = 'rush'; begin(f, id, ev); return; } }
     if (f.t >= DASH_TICKS) { f.st = 'idle'; f.t = 0; f.rest = DASH_REST; }
   } else if (f.st === 'atk') {
     const m = f.mv[f.move];
@@ -322,6 +339,7 @@ function land(a, d, id, face, ev) {
   a.hit = true; a.landed = true; a.hits++; a.hitAt = a.t;
   if (d.guard && (d.st === 'idle' || d.st === 'block') && !m.unblockable) {
     d.st = 'block'; d.stun = m.block; d.t = 0;
+    if (SPECIALS.has(id)) d.hp = Math.max(1, d.hp - Math.round(m.dmg * CHIP));
     if (m.level < 9) gain(a, SP_BLOCKED);
     gain(d, SP_GUARD);
     d.vx = Math.cos(face) * m.push * 0.12; d.vz = Math.sin(face) * m.push * 0.12;
@@ -343,6 +361,7 @@ function fly(a, d, ev) {
   const face = Math.atan2(s.dz, s.dx);
   if (d.guard && (d.st === 'idle' || d.st === 'block')) {
     d.st = 'block'; d.stun = m.block; d.t = 0;
+    d.hp = Math.max(1, d.hp - Math.round(m.dmg * CHIP));
     gain(d, SP_GUARD);
     ev.push({ k: 'block', by: a.side, move: 'shot', x: d.x, z: d.z, y: 0.8 });
   } else hurt(a, d, m, 'shot', face, ev);

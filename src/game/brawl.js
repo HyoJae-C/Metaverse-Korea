@@ -27,17 +27,17 @@ const T = {
     ar: 'تقاتل بشخصيتك كما هي. واصل الضغط على اللكمة أو الركلة فتخرج سلسلة ضربات. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضرب والصد وتلقّي الضربات تملأ شريط الضربة الخاصة، وكل نصف منه ضربة خاصة واحدة. الأفضل من ثلاث جولات.',
   },
   moves: {
-    en: '→ + punch: launcher · ⭐1: guard breaker · ⭐2: flying kick',
-    ko: '→ + 주먹: 띄우기 · ⭐1: 가드 깨기 · ⭐2: 날아차기',
-    ja: '→＋パンチ：浮かせ技 · ⭐1：ガード崩し · ⭐2：飛び蹴り',
-    zh: '→ + 拳：浮空 · ⭐1：破防 · ⭐2：飞踢',
-    es: '→ + puño: lanzador · ⭐1: rompeguardias · ⭐2: patada voladora',
-    id: '→ + pukulan: pelontar · ⭐1: pemecah pertahanan · ⭐2: tendangan terbang',
-    vi: '→ + đấm: hất tung · ⭐1: phá thủ · ⭐2: đá bay',
-    hi: '→ + मुक्का: लॉन्चर · ⭐1: गार्ड तोड़ · ⭐2: उड़ती किक',
-    fr: '→ + poing : lanceur · ⭐1 : brise-garde · ⭐2 : coup de pied sauté',
-    th: '→ + หมัด: ท่าเสย · ⭐1: ทำลายการ์ด · ⭐2: เตะลอย',
-    ar: '→ + لكمة: ضربة رافعة · ⭐1: كاسرة الصد · ⭐2: ركلة طائرة',
+    en: '→ + 👊 launcher · ← + 👊 heavy punch · → + 🦶 roundhouse · ← + 🦶 sweep · 👊 in a dash: rushing punch · ⭐1 guard breaker · ⭐2 flying kick (they hurt even through a guard)',
+    ko: '→ + 👊 띄우기 · ← + 👊 묵직한 한 방 · → + 🦶 돌려차기 · ← + 🦶 다리 걸기 · 대시 중 👊 돌진 펀치 · ⭐1 가드 깨기 · ⭐2 날아차기 (필살기는 막아도 아파요)',
+    ja: '→＋👊 浮かせ技 · ←＋👊 重い一撃 · →＋🦶 回し蹴り · ←＋🦶 足払い · ダッシュ中👊 突進パンチ · ⭐1 ガード崩し · ⭐2 飛び蹴り（必殺技はガードしても痛い）',
+    zh: '→ + 👊 浮空 · ← + 👊 重拳 · → + 🦶 回旋踢 · ← + 🦶 扫腿 · 冲刺中👊 突进拳 · ⭐1 破防 · ⭐2 飞踢（必杀技防住也会掉血）',
+    es: '→ + 👊 lanzador · ← + 👊 puño fuerte · → + 🦶 patada circular · ← + 🦶 barrido · 👊 en carrera: puño de embestida · ⭐1 rompeguardias · ⭐2 patada voladora (duelen aunque te cubras)',
+    id: '→ + 👊 pelontar · ← + 👊 pukulan berat · → + 🦶 tendangan putar · ← + 🦶 sapuan · 👊 saat dash: pukulan terjang · ⭐1 pemecah pertahanan · ⭐2 tendangan terbang (tetap sakit walau ditahan)',
+    vi: '→ + 👊 hất tung · ← + 👊 cú đấm nặng · → + 🦶 đá xoay · ← + 🦶 quét chân · 👊 khi lướt: cú đấm lao tới · ⭐1 phá thủ · ⭐2 đá bay (đỡ vẫn mất máu)',
+    hi: '→ + 👊 लॉन्चर · ← + 👊 भारी मुक्का · → + 🦶 घूमती किक · ← + 🦶 टांग मारना · डैश में 👊 दौड़ता मुक्का · ⭐1 गार्ड तोड़ · ⭐2 उड़ती किक (रोकने पर भी चोट लगती है)',
+    fr: '→ + 👊 lanceur · ← + 👊 coup lourd · → + 🦶 coup de pied circulaire · ← + 🦶 balayage · 👊 en dash : poing chargé · ⭐1 brise-garde · ⭐2 coup de pied sauté (ils font mal même parés)',
+    th: '→ + 👊 ท่าเสย · ← + 👊 หมัดหนัก · → + 🦶 เตะเหวี่ยง · ← + 🦶 กวาดขา · 👊 ระหว่างแดช: หมัดพุ่ง · ⭐1 ทำลายการ์ด · ⭐2 เตะลอย (ป้องกันก็ยังเจ็บ)',
+    ar: '→ + 👊 ضربة رافعة · ← + 👊 لكمة ثقيلة · → + 🦶 ركلة دائرية · ← + 🦶 كنس القدم · 👊 أثناء الاندفاع: لكمة اندفاع · ⭐1 كاسرة الصد · ⭐2 ركلة طائرة (تؤلم حتى مع الصد)',
   },
   keys: {
     en: 'A D move · W S side-step · J punch · K kick · U I specials',
@@ -196,6 +196,9 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-sp b.full { box-shadow: 0 0 8px #7df0ff; }
 .bw-sp b.full i { background: #fff36b; }
 .bw-pad.no-sp .bw-btns .sp { opacity: .4; }
+.bw-flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,243,107,.55), rgba(255,140,40,.25) 60%, transparent); opacity: 0; }
+.bw-flash.show { animation: bw-flash .45s ease-out; }
+@keyframes bw-flash { from { opacity: 1; } to { opacity: 0; } }
 .bw-name { display: flex; gap: 6px; align-items: center; margin-top: 3px; font-size: 13px; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; }
 .bw-side.r .bw-name { flex-direction: row-reverse; }
 .bw-name span { overflow: hidden; text-overflow: ellipsis; }
@@ -295,6 +298,8 @@ WIND.grab = P({ ...STANCE, armL: [-1.3, -1.0, 0], foreL: [-0.3, 0, 0], armR: [-1
 HIT.grab = P({ ...STANCE, armL: [-1.5, 0.35, 0], foreL: [-0.9, 0, 0], armR: [-1.5, -0.35, 0], foreR: [-0.9, 0, 0], spine: [0.55, 0, 0], legL: [-0.6, 0, 0], kneeL: [0.8, 0, 0] });
 WIND.mill = P({ ...STANCE, armL: [-1.6, 0, 0], foreL: [-0.2, 0, 0], armR: [-1.6, 0, 0], foreR: [-0.2, 0, 0], legL: [-0.8, 0, 0], kneeL: [1.3, 0, 0], legR: [-0.4, 0, 0], kneeR: [1.2, 0, 0], spine: [0.7, 0, 0] });
 HIT.mill = P({ armL: [-2.7, -0.3, 0], armR: [-2.7, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [-1.3, 0, 0], legR: [0.9, 0, 0], kneeL: [0.1, 0, 0], kneeR: [0.2, 0, 0], spine: [0.3, 0, 0], head: [-0.4, 0, 0] });
+WIND.sweep = P({ ...STANCE, legL: [-0.9, 0, 0], kneeL: [1.9, 0, 0], legR: [-0.3, 0.5, 0], kneeR: [1.4, 0, 0], spine: [0.55, 0, 0], armL: [-0.8, -0.6, 0], armR: [-0.4, 0.6, 0] });
+HIT.sweep = P({ ...STANCE, legL: [-1.0, 0, 0], kneeL: [2.0, 0, 0], legR: [-1.35, -0.2, 0], kneeR: [0, 0, 0], spine: [0.75, 0.4, 0], armL: [-0.3, -1.0, 0], armR: [0.2, 0.9, 0] });
 const DASH = P({ ...STANCE, armL: [0.5, 0, 0], foreL: [-1.0, 0, 0], armR: [0.6, 0, 0], foreR: [-1.0, 0, 0], legL: [-0.9, 0, 0], kneeL: [0.9, 0, 0], legR: [0.7, 0, 0], kneeR: [0.5, 0, 0], spine: [0.5, 0, 0] });
 const STANCES = {};
 for (const id of STYLE_IDS) STANCES[id] = STYLE[id].stance ? P({ ...STYLE[id].stance }) : STANCE;
@@ -590,7 +595,8 @@ export function createBrawl(game) {
     const x = el('button', 'bw-x', '✕');
     x.setAttribute('aria-label', tt('close'));
     x.onclick = () => close();
-    root.append(top, msg, sub, ...combo, x);
+    const flash = el('div', 'bw-flash');
+    root.append(flash, top, msg, sub, ...combo, x);
     let pad = null;
     if (touch) {
       pad = el('div', 'bw-pad');
@@ -631,7 +637,7 @@ export function createBrawl(game) {
     } else root.append(el('div', 'bw-keys', tt('keys')));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
-    return { root, a, b, time, msg, sub, combo, pad, comboT: [0, 0], msgT: 0 };
+    return { root, a, b, time, msg, sub, combo, pad, flash, comboT: [0, 0], msgT: 0 };
   }
   function say(text, sub = '', secs = 1.4) {
     const h = on.hud;
@@ -668,6 +674,7 @@ export function createBrawl(game) {
     }
     box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
     box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
+    box.append(el('p', 'dim', tt('moves')));
   }
   // The eight styles to pick from, and what the picked one does.
   function styleGrid(c) {
@@ -707,7 +714,7 @@ export function createBrawl(game) {
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const more = el('details');
-      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
+      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('dash')));
       if (!touch) more.append(el('p', 'dim', tt('keys')));
       c.append(more);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
@@ -927,6 +934,13 @@ export function createBrawl(game) {
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
       else if (e.k === 'swing') sfx.tock(0.18, (e.by ? m.b : m.a).mv[e.move].level >= 3 ? 520 : 760);
       else if (e.k === 'dash') sfx.tock(0.2, 1100);
+      else if (e.k === 'super') { // a special: the screen flashes and holds a moment
+        const f = e.who ? m.b : m.a;
+        spark(f.x, 0.9, f.z, '#fff36b', 1.6); sfx.tock(0.7, 240); on.shake = Math.max(on.shake, 0.12);
+        if (!on.vs) on.freeze = 22;
+        const fl = on.hud.flash; fl.classList.remove('show'); void fl.offsetWidth; fl.classList.add('show');
+        const c = on.hud.combo[e.who ^ on.flip]; c.textContent = '⭐ ' + L(STYLE[f.style].sig); c.classList.add('show'); on.hud.comboT[e.who] = 1.2;
+      }
       else if (e.k === 'shot') sfx.tock(0.5, 1500);
       else if (e.k === 'blink') { spark(e.from[0], 0.7, e.from[1], '#b9a6f0', 1.2); spark(e.x, 0.7, e.z, '#b9a6f0', 1.2); sfx.tock(0.4, 1800); }
       else if (e.k === 'combo') { const c = on.hud.combo[e.by ^ on.flip]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }

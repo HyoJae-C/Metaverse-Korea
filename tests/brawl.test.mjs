@@ -128,12 +128,12 @@ test('brawl: nobody can be hit lying down, and nobody leaves the ring or overlap
 test('brawl: low on health hits harder; hitting a swing in its startup is a counter', () => {
   const [a, b] = pair(); a.rage = true;
   const ev = run(a, b, [{ k: true }], [], 40);
-  assert.equal(ev.find((e) => e.k === 'hit').dmg, Math.round(MOVES.lk.dmg * 1.2));
+  assert.equal(ev.find((e) => e.k === 'hit').dmg, Math.round(a.mv.lk.dmg * 1.2));
   const [c, d] = pair();
   go(d, 'rk');
   const ev2 = run(c, d, [{ p: true }], [], 40);
   const h = ev2.find((e) => e.k === 'hit');
-  assert.ok(h.counter && h.by === 0 && h.dmg > MOVES.lp.dmg);
+  assert.ok(h.counter && h.by === 0 && h.dmg > c.mv.lp.dmg);
 });
 
 test('brawl: a match is best of three and always ends; a stronger rival wins more', () => {
@@ -191,7 +191,7 @@ test('brawl styles: eight, each with its own health, moves and two strings', () 
     assert.deepEqual(st.combos.map((c) => c[0]), ['lp', 'lk'], id + ': one string from each button');
     for (const m of Object.values(movesFor(id))) assert.ok(m.startup >= 4 && m.recover > 0 && m.dmg >= 0);
   }
-  for (const k of ['lp', 'rp', 'lk', 'rk', 'upper']) assert.deepEqual(movesFor('brawler')[k], MOVES[k], 'the brawler is the plain move list');
+  for (const k of ['lp', 'rp', 'lk', 'rk', 'upper']) assert.deepEqual(movesFor('brawler')[k], { ...MOVES[k], dmg: Math.round(MOVES[k].dmg * 0.85) }, 'the brawler is the plain move list (normal hits a little lighter)');
   assert.ok(movesFor('brawler').fly.dmg > MOVES.fly.dmg, 'a special costs bar, so it hurts more');
   assert.ok(STYLES.tank.hp > STYLES.brawler.hp && STYLES.brawler.hp > STYLES.ninja.hp);
   assert.ok(movesFor('boxer').lp.startup < MOVES.lp.startup && movesFor('kicker').rk.startup < MOVES.rk.startup);
@@ -267,7 +267,7 @@ test('brawl styles: a guard held when the ninja blinks behind it still holds', (
   }
   assert.ok(ev.some((e) => e.k === 'blink'));
   assert.ok(ev.some((e) => e.k === 'block') && !ev.some((e) => e.k === 'hit'), 'guarded');
-  assert.equal(t.hp, t.maxHp);
+  assert.equal(t.hp, t.maxHp - Math.round(n.mv.fly.dmg * 0.5), 'only the chip a special always takes');
   // Not guarding before the blink: it hits.
   const [n2, t2] = duelFull('ninja', 'brawler', 2.2);
   ev = [];
@@ -287,7 +287,7 @@ test('brawl: a dash covers ground fast, stops at the other fighter, and an attac
   const [e, f] = duel('boxer', 'brawler', 2.2);
   const ie = [{ dash: 1 }]; ie[8] = { p: true };
   const hit = run(e, f, ie, [], 30).find((q) => q.k === 'hit');
-  assert.ok(hit && hit.move === 'lp', 'a dash into a jab lands');
+  assert.ok(hit && hit.move === 'rush', 'a punch out of a dash is the rushing punch, and it lands');
   const [g, h] = duel('brawler', 'brawler', 1.0);
   const gx = g.x;
   run(g, h, [{ dash: -1 }], [], 10);
@@ -353,4 +353,25 @@ test('pressing only the first button of a string again and again plays the whole
       assert.ok(fin, `${style}, mashing ${first}`);
     }
   }
+});
+
+test('brawl: the stick picks the move: heavy punch, roundhouse, sweep; a special announces itself and chips through a guard', () => {
+  for (const [inp, id] of [[{ p: true, mx: -1 }, 'heavy'], [{ k: true, mx: 1 }, 'rk'], [{ k: true, mx: -1 }, 'sweep'], [{ p: true, mx: 1 }, 'upper']]) {
+    const [a, b] = pair();
+    const ev = run(a, b, [inp], [], 80);
+    assert.ok(ev.some((e) => e.k === 'hit' && e.move === id), id);
+  }
+  const [a, b] = pair();
+  run(a, b, [{ k: true, mx: -1 }], [], 30);
+  assert.ok(['air', 'down'].includes(b.st), 'the sweep floors them');
+  const [c, d] = pair();
+  c.sp = SP_COST;
+  const ev = run(c, d, [{ s1: true }], { hold: { mx: -1 } }, 60);
+  assert.ok(ev.some((e) => e.k === 'super' && e.who === 0));
+  const normal = movesFor('brawler'), special = normal.palm.dmg;
+  assert.ok(special >= 3 * normal.lp.dmg && special > normal.rk.dmg, 'a special hurts far more than a normal hit');
+  const [e, f] = pair();
+  e.sp = SP_COST; f.hp = 3;
+  run(e, f, [{ s2: true }], { hold: { mx: -1 } }, 80);
+  assert.ok(f.hp >= 1, 'a chip never takes the last point');
 });
