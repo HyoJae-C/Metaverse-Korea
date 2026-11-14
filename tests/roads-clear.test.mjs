@@ -23,6 +23,7 @@ const readJson = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
 test('no building or blocker stands on a street', async () => {
   const map = await loadRegionMap(readJson('region.json'), async (f) => readJson(f));
   const solid = new CollisionMap(map.buildings.concat(map.blockers || []));
+  for (const d of map.decks || []) solid.addDeck(d); // (a bridge of the base map: over the river's blocker)
   const blocked = [];
   for (const r of map.roads) {
     if (r.k === 'walk') continue;

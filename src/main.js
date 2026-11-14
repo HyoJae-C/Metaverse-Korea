@@ -768,6 +768,8 @@ const fanAt = palaceAt && [palaceAt[0] + FAN_AT[0], palaceAt[1] + FAN_AT[1]]; //
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
+// Bridges of the base map (core/districts.js decks): walkable over the river's blocker.
+for (const d of map.decks || []) collision.addDeck(d);
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
 const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
@@ -808,7 +810,7 @@ const roadGraph = new RoadGraph(map.roads);
 // Walking routes around walls: a grid of the 1.4 km round the walker
 // (core/nav-window.js), built the first time a route is needed; farther
 // places go by the road graph. 1.5 m cells: 2 m cells closed Bukchon's alleys.
-const nav = createNavWindow((b) => new NavGrid(collision.polys.map((q) => q.p), map.roads, b, { r: PLAYER_R + 0.1, cell: 1.5 }), bounds);
+const nav = createNavWindow((b) => new NavGrid(collision.polys.map((q) => q.p), map.roads, b, { r: PLAYER_R + 0.1, cell: 1.5, decks: map.decks || [] }), bounds);
 function planRoute(ax, az, bx, bz) {
   const grid = nav(ax, az);
   const poly = (grid.inside(bx, bz) && grid.route(ax, az, bx, bz)) || roadGraph.route(ax, az, bx, bz);

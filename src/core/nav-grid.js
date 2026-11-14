@@ -15,7 +15,9 @@ const ROAD_COST = 1, OPEN_COST = 1.7;
 export class NavGrid {
   // polys: wall footprints ([[x, z], ...]); r: a person's radius. roads:
   // map roads ({ p, w }). bounds: { minX, minZ, maxX, maxZ }.
-  constructor(polys, roads, bounds, { cell = 1, r = 0.45 } = {}) {
+  // decks: bridge decks ([[x, z], ...]) that are open ground over whatever
+  // wall (a river) lies under them.
+  constructor(polys, roads, bounds, { cell = 1, r = 0.45, decks = [] } = {}) {
     this.cell = cell;
     this.x0 = Math.floor(bounds.minX) - 2;
     this.z0 = Math.floor(bounds.minZ) - 2;
@@ -67,6 +69,25 @@ export class NavGrid {
               if (this.cost[id] && distSqToSeg(this.x0 + (i + 0.5) * cell, this.z0 + (j + 0.5) * cell, A, B) < r2) this.cost[id] = 0;
             }
           }
+        }
+      }
+    }
+    for (const p of decks) {
+      let minZ = Infinity, maxZ = -Infinity;
+      for (const [, z] of p) { minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z); }
+      if (maxZ < this.z0 || minZ > gz1) continue;
+      for (let j = Math.max(0, this._j(minZ)); j <= Math.min(this.h - 1, this._j(maxZ)); j++) {
+        const z = this.z0 + (j + 0.5) * cell;
+        xs.length = 0;
+        for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
+          const [xi, zi] = p[a], [xj, zj] = p[b];
+          if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
+        }
+        xs.sort((u, v) => u - v);
+        for (let k = 0; k + 1 < xs.length; k += 2) {
+          // (a person's width in from each edge, so the route keeps off the rail)
+          const i0 = Math.max(0, Math.ceil((xs[k] + r - this.x0) / cell - 0.5)), i1 = Math.min(this.w - 1, Math.ceil((xs[k + 1] - r - this.x0) / cell - 0.5) - 1);
+          for (let i = i0; i <= i1; i++) this.cost[j * this.w + i] = OPEN_COST;
         }
       }
     }
