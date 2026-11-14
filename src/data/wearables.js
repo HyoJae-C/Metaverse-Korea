@@ -5,6 +5,7 @@
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
 import { ANIMAL_LOOKS, PENDANT_CHARMS } from './appearance.js';
+import { TEAM_LIST } from './ballpark-teams.js';
 
 const ANIMAL_NAMES = {
   'cat-black': { en: 'Black cat', ko: '검은 고양이', ja: '黒猫', zh: '黑猫' },
@@ -91,6 +92,15 @@ export const WEARABLES = {
   'shoes-tan': item('👞', 60, { shoes: 'tan' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Tan leather loafers', ko: '탄 가죽 로퍼', ja: 'タンの革ローファー', zh: '浅棕色皮质乐福鞋' }),
   'shoes-burgundy': item('👞', 60, { shoes: 'burgundy' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Burgundy leather shoes', ko: '버건디 가죽 구두', ja: 'バーガンディの革靴', zh: '酒红色皮鞋' }),
   // Accessories: one per slot (data/appearance.js ACCESSORIES).
+  // Modu Ballpark's team shop: each team's jersey, cap and cheer towel.
+  ...Object.fromEntries(TEAM_LIST.flatMap((t) => {
+    const n = t.name;
+    return [
+      ['outfit-jersey-' + t.id, item('⚾', 60, { model: 'jersey-' + t.id }, { model: 'basic' }, WEAR_DESC.clothes, { en: `${n.en} jersey`, ko: `${n.ko} 유니폼`, ja: `${n.ja}ユニフォーム`, zh: `${n.zh}球衣` }, { outfit: 'jersey-' + t.id, team: t.id })],
+      ['acc-cap-' + t.id, item('🧢', 25, { head: 'cap-' + t.id, hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: `${n.en} cap`, ko: `${n.ko} 모자`, ja: `${n.ja}キャップ`, zh: `${n.zh}棒球帽` }, { team: t.id })],
+      ['acc-towel-' + t.id, item('🧣', 15, { neck: 'towel-' + t.id }, { neck: null }, WEAR_DESC.accessory, { en: `${n.en} cheer towel`, ko: `${n.ko} 응원 수건`, ja: `${n.ja}応援タオル`, zh: `${n.zh}应援毛巾` }, { team: t.id })],
+    ];
+  })),
   'acc-cap-red': item('🧢', 25, { head: 'cap-red', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Red cap', ko: '빨간 캡모자', ja: '赤いキャップ', zh: '红色棒球帽' }),
   'acc-cap-sky': item('🧢', 25, { head: 'cap-sky', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Sky blue cap', ko: '하늘색 캡모자', ja: '水色のキャップ', zh: '天蓝色棒球帽' }),
   'acc-cap-black': item('🧢', 25, { head: 'cap-black', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Black cap', ko: '검정 캡모자', ja: '黒いキャップ', zh: '黑色棒球帽' }),

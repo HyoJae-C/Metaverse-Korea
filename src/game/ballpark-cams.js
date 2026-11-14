@@ -17,10 +17,14 @@ import { waveAt, waveGap, pickPair, pickOne, seatPairs, npcKisses, bpMsg, parseB
 import { rowAt } from '../core/dome.js';
 import { CAM_TEXT } from '../data/ballpark-cam-text.js';
 import { createCheerAlong, createFoulBalls } from './ballpark-fun.js';
+import { createTowels } from './ballpark-towel.js';
 
 const PX = [512, 256]; // the picture (the scoreboard is 2:1)
 const FOV = 30;
-const POSE_S = { kiss: 2.8, shy: 3, sorry: 2.4, dance: 6, wave: 1.6, clap: 0.5 };
+const POSE_S = { kiss: 2.8, shy: 3, sorry: 2.4, dance: 6, wave: 1.6, clap: 0.5, towel: 2.6, towelClap: 0.9 };
+// With a cheer towel round the neck, cheering holds it up overhead instead
+// (game/ballpark-towel.js): a clap becomes a shake of the towel.
+const TOWEL_POSE = { clap: 'towelClap', wave: 'wave', towel: 'towel' };
 
 const smooth = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
 const env = (t, dur) => smooth(t / 0.3) * (1 - smooth((t - (dur - 0.4)) / 0.4));
@@ -62,6 +66,12 @@ const POSES = {
     const k = env(t, POSE_S.wave);
     return { spine: [-0.12 * k, 0, 0], head: [-0.2 * k, 0, 0], armL: [-2.9 * k, -0.25 * k, 0], armR: [-2.9 * k, 0.25 * k, 0] };
   },
+  // The cheer towel up in both hands, shaken side to side (a team's hit).
+  towel: (t) => {
+    const k = env(t, POSE_S.towel), s = Math.sin(t * 7) * 0.25;
+    return { spine: [-0.08 * k, 0, s * 0.3 * k], head: [-0.15 * k, 0, 0], armL: [-2.75 * k, (-0.35 + s) * k, 0], armR: [-2.75 * k, (0.35 + s) * k, 0], foreL: [-0.35 * k, 0, 0], foreR: [-0.35 * k, 0, 0] };
+  },
+  towelClap: (t) => POSES.towel(t * (POSE_S.towel / POSE_S.towelClap)),
 };
 
 export function createBallparkCams(game) {
@@ -125,6 +135,8 @@ export function createBallparkCams(game) {
   function pose(id, name, other) {
     const ch = charOf(id);
     if (!ch) return;
+    if (ch.towel && TOWEL_POSE[name]) { name = TOWEL_POSE[name]; towels.up(room?.scene, ch, POSE_S[name]); }
+    else if (name === 'towel') return; // (no towel: a team's hit is just the crowd's cheer)
     let side = 1;
     if (other) {
       const a = ch.root.position, b = charOf(other)?.root.position;
@@ -221,6 +233,7 @@ export function createBallparkCams(game) {
   const scoreAct = () => ({ key: 'bp-score:' + !!scorePanel, label: '📊 ' + L(CAM_TEXT.score), run: () => toggleScore() });
 
   function tearDown() {
+    towels.clear();
     toggleScore(false);
     endShow();
     for (const s of screens || []) { s.over.removeFromParent(); s.over.material.dispose(); }
@@ -384,6 +397,7 @@ export function createBallparkCams(game) {
     leaderShout: (text) => { const o = (room?.patronNpcs || []).find((q) => q.squad?.role === 'leader' && q.squad.side === 'home'); if (o) game.npcBubble(o, text); },
     npcNear: (x, z, r) => { let best = null, bd = r; for (const p of npcs(false)) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; best = p.id; } } return best; },
   };
+  const towels = createTowels();
   const clapAlong = createCheerAlong(game, handle);
   const fouls = createFoulBalls(game, handle);
 
@@ -397,6 +411,7 @@ export function createBallparkCams(game) {
     fouls.tick(room);
     if (!room) return;
     clapAlong.tick();
+    towels.tick(dt);
     for (const [ch, p] of posed) { p.t += dt; if (p.t >= POSE_S[p.name]) { ch.setMoves(null); posed.delete(ch); } }
     const c = dome().cam();
     const kind = c && c.kind !== 'wave' ? c.kind : null;
@@ -466,6 +481,10 @@ export function createBallparkCams(game) {
     action: () => kissActs()[0] || danceAct() || waveAct() || fouls.action() || clapAlong.action(),
     // Standing in the stands too: a foul ball coming down near you.
     standingAction: () => (game.seated ? null : fouls.action()),
+    // A team got a hit (core/dome.js ev.onCheer): everyone in the stands
+    // wearing that team's cheer towel holds it up (on every screen alike, so
+    // no messages).
+    teamHit: (teamId) => { if (room) for (const p of players()) if (charOf(p.id)?.towel?.team === teamId) pose(p.id, 'towel'); },
     // The rest for the chooser ("no thanks" next to the kiss).
     more: () => [...kissActs().slice(1), scoreAct()],
     // 📊 Scoreboard, for the list of things to do anywhere in the stadium.

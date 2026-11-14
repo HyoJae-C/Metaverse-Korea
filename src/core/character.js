@@ -178,9 +178,13 @@ export function createCharacter(rawLook) {
     m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
   });
   tryModel();
+  const towel = accessory('neck', look.neck);
   return {
     root,
     head,
+    // The team cheer towel round the neck, if any ({ color, trim, team }):
+    // Modu Ballpark has it held up overhead when cheering (game/ballpark-towel.js).
+    towel: shapeOf(towel) === 'towel' ? towel : null,
     // Put on a costume head (a THREE.Group in chibi head units).
     setMascot(g) { mascot?.removeFromParent(); mascot = g; headAcc.add(g); wearMascot(); },
     // A costume piece on the head or body (NPC costumes), in the chibi's units
@@ -789,6 +793,26 @@ function addAccessories(look, head, torso, body) {
       charm.add(face);
     }
     body.add(chain, bail, charm);
+  } else if (neck && shapeOf(neck) === 'towel') {
+    // A cheer towel (Modu Ballpark's team shop): a flat band round the back
+    // of the neck with both ends hanging down the chest, in the team colour
+    // with a stripe of its trim at the ends. (Held up overhead when cheering:
+    // game/ballpark-towel.js.)
+    const m = mat(neck.color), t = mat(neck.trim ?? 0xffffff);
+    const band = new THREE.Mesh(geo('towelBand', () => new THREE.TorusGeometry(0.18, 0.035, 4, 18, Math.PI * 1.25)), m);
+    band.rotation.set(Math.PI / 2, 0, Math.PI * 0.375 + Math.PI);
+    band.scale.set(1, 1, 0.6);
+    band.position.y = 0.6;
+    body.add(band);
+    for (const sx of [-1, 1]) {
+      const end = new THREE.Mesh(geo('towelEnd', () => new THREE.BoxGeometry(0.075, 0.26, 0.02)), m);
+      end.position.set(0.085 * sx, 0.47, 0.205);
+      end.rotation.set(-0.12, 0, -0.05 * sx);
+      const stripe = new THREE.Mesh(geo('towelStripe', () => new THREE.BoxGeometry(0.077, 0.03, 0.022)), t);
+      stripe.position.y = -0.09;
+      end.add(stripe);
+      body.add(end);
+    }
   } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);
