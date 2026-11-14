@@ -42,6 +42,7 @@ const NEAR_OLD = 16; // m: ... and this near a district's road
 const NEAR_WALL = 8; // m from a district's building
 const MIN_RUN = 30; // m: shorter leftovers are dropped
 const JOIN = 45; // m: a cut end reaches this far for a district road to join
+const STREAM_PAD = 8; // m from a sunken stream's edge where base roads stop
 const BOX_PAD = 12; // m round a district's box where base water and green stop
 
 // Segments in a grid, to ask "what runs near here?".
@@ -146,10 +147,13 @@ export function buildBase({ region, maps, data }) {
   for (const l of city.landmarks) for (const p of l.runs || l.wall?.runs || []) for (let i = 1; i < p.length; i++) runs.add([l.x + p[i - 1][0], l.z + p[i - 1][1]], [l.x + p[i][0], l.z + p[i][1]], l);
   const HILL_PAD = [[0, 0], [9, 0], [-9, 0], [0, 9], [0, -9]];
   // (Is the point in or near a district's building or wall, or on a hill?)
+  const streamLines = (city.streams || []).map((st) => ({ p: st.path.map(([x, z]) => [st.at[0] + x, st.at[1] + z]), r: (st.w || 20) / 2 + STREAM_PAD }));
   const inWall = (pt) => {
     if (hills.some((h) => HILL_PAD.some(([dx, dz]) => h(pt[0] + dx, pt[1] + dz)))) return true;
     if (runs.near(pt, 13, (s) => segDist(pt, s.a, s.b) < 13)) return true;
     if (walls.near(pt, NEAR_WALL, (s) => segDist(pt, s.a, s.b) < NEAR_WALL)) return true;
+    // on or beside a sunken stream (Cheonggyecheon, core/stream.js): its trench, banks and bridges are the district's
+    for (const st of streamLines) for (let i = 1; i < st.p.length; i++) if (segDist(pt, st.p[i - 1], st.p[i]) < st.r) return true;
     // inside a big footprint, far from its edges
     for (const s of solidBox) if (pt[0] > s.x0 && pt[0] < s.x1 && pt[1] > s.z0 && pt[1] < s.z1 && inPolygon(pt[0], pt[1], s.p)) return true;
     return false;

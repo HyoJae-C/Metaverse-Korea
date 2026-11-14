@@ -117,6 +117,17 @@ test('the base is only near what is built: no base road or green far from every 
   }
 });
 
+test('no base road lies on a sunken stream or crosses it (Cheonggyecheon: its trench and bridges are the district\'s)', () => {
+  assert.ok(map.streams.length > 0);
+  for (const st of map.streams) {
+    const line = st.path.map(([x, z]) => [st.at[0] + x, st.at[1] + z]);
+    for (const r of base.roads) for (const [x, z] of samples(r.p, 2)) {
+      const d = Math.min(...line.slice(1).map((b, i) => segDist(x, z, line[i], b)));
+      assert.ok(d > st.w / 2 + 2, `${r.n?.ko || r.k} is ${d.toFixed(1)} m from the middle of ${st.id} at ${Math.round(x)}, ${Math.round(z)}`);
+    }
+  }
+});
+
 test('base water and green keep out of the districts (their own maps rule there)', () => {
   // (Water comes with the base; parks and woods in their own file after the start: game/base-green.js.)
   assert.ok(base.areas.length && base.areas.every((a) => a.k === 'water'));
