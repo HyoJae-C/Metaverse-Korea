@@ -8,6 +8,8 @@
 // colors: fixed colours for roles ("top" and "bottom" default to the look's
 // T-shirt and trouser colours); wear: atlas rules for what is left of the
 // model's head (core/model-pack.js, applyWear), e.g. no earrings.
+import { TEAM_LIST } from '../ballpark-teams.js';
+
 const HANDS = [['Head', '3,0', 'cut']]; // no earrings
 const wear = ({ outfit, colors, rules = [] }) => ({
   outfit,
@@ -58,6 +60,9 @@ const TOPS = {
   'polo-mint': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { top: 0x8fd6c4, accent: 0x74c0ad } },
   // A baseball jersey with white piping and a chest number.
   'jersey-red': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'accent', collar: 'accent', placket: 'accent', badge: 'accent' }, colors: { top: 0xe0574f, accent: W } },
+  // Modu Ballpark's eight team jerseys (data/ballpark-teams.js): the team
+  // colour with piping, collar and number in its trim colour.
+  ...Object.fromEntries(TEAM_LIST.map((t) => ['jersey-' + t.id, { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'accent', collar: 'accent', placket: 'accent', badge: 'accent' }, colors: { top: parseInt(t.color.slice(1), 16), accent: parseInt(t.trim.slice(1), 16) } }])),
   // A track jacket (트레이닝 집업): white zip, collar and cuffs.
   'track-blue': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', zip: 'accent', bulk: 0.01 }, colors: { top: 0x4a8be0, accent: W } },
   // A fluffy fleece with a zip.

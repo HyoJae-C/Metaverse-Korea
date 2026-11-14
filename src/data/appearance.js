@@ -14,6 +14,7 @@
 import { PACK } from './characters/index.js';
 import { emblemById, nameColorById } from '../core/emblems.js';
 import { skirtById } from './skirts.js';
+import { TEAM_LIST } from './ballpark-teams.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
@@ -181,6 +182,8 @@ export const ACCESSORIES = {
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
+    // Modu Ballpark's team caps (the team shop).
+    ...TEAM_LIST.map((t) => ({ id: 'cap-' + t.id, shape: 'cap', emoji: '🧢', color: parseInt(t.color.slice(1), 16) })),
     // Animal-ear headbands from Nyang Meong To Pan (core/animal-wear.js):
     // color the ears and band, inner the inside of the ears.
     ...ANIMAL_LOOKS.map((a) => ({ id: 'ears-' + a.id, shape: 'ears', animal: a.animal, emoji: a.emoji, color: a.color, inner: a.inner, band: a.band ?? a.color })),
@@ -209,6 +212,9 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
+    // Modu Ballpark's cheer towels (the team shop): round the neck, held up
+    // over the head when cheering in the stadium (game/ballpark-cams.js).
+    ...TEAM_LIST.map((t) => ({ id: 'towel-' + t.id, shape: 'towel', emoji: '🧣', color: parseInt(t.color.slice(1), 16), trim: parseInt(t.trim.slice(1), 16), team: t.id })),
     // Necklaces from Jongno Geumeunbang and Gyeol Ring Studio:
     // a fine chain with a charm: a moon, a plum blossom, or a round tag
     // engraved with a hanja word (PENDANT_CHARMS).

@@ -371,7 +371,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
   const clerkP = polar(58.3, fa + 0.02);
   const clerk = { x: clerkP.x, z: clerkP.z, ry: fry };
   const products = [];
-  const menu = store.products || [];
+  const menu = (store.products || []).filter((pr) => !pr.goods);
   menu.forEach((product, i) => {
     const a = fa + (i - (menu.length - 1) / 2) * (1.3 / 57.4);
     const p = polar(57.3, a), stand = polar(55.6, a);
@@ -385,6 +385,79 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     scene.add(g);
     products.push({ product, mesh: g, pos: new THREE.Vector3(stand.x, 0, stand.z) });
   });
+
+  // ---- The team store on the concourse (the other side of the door) ----
+  // Two counters of four teams each; every team has its jersey, cap and
+  // cheer towel on show (stores.json products with "goods": team id), and
+  // its three goods share one spot in front, so standing there offers them.
+  const goods = (store.products || []).filter((pr) => pr.goods);
+  const goodsTeams = TEAMS.filter((t) => goods.some((pr) => pr.goods === t.id));
+  const SLOT = 1.55; // m of counter per team
+  const shopSign = canvasTex(1024, 192, (g, w, h) => {
+    g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `900 86px ${FONT}`; g.fillText('팀 스토어', w / 2, 72);
+    g.font = '800 46px system-ui, sans-serif'; g.fillText('TEAM STORE', w / 2, 150);
+  });
+  const teamTag = (t) => canvasTex(256, 96, (g, w, h) => {
+    g.fillStyle = t.color; g.fillRect(0, 0, w, h);
+    g.fillStyle = t.trim; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `900 40px ${FONT}`; g.fillText(t.name.ko, w / 2, h / 2 + 2);
+  });
+  const goodsClerks = [];
+  for (let c = 0; c * 4 < goodsTeams.length; c++) {
+    const teams = goodsTeams.slice(c * 4, c * 4 + 4);
+    const ca = -0.38 - c * 0.15, cp = polar(57.4, ca), cry = faceCentre(cp.x, cp.z);
+    const len = teams.length * SLOT + 0.4;
+    box(len, COUNTER_H - 0.04, 1.0, cp.x, (COUNTER_H - 0.04) / 2, cp.z, '#f2f6fb', cry);
+    box(len + 0.2, 0.08, 1.1, cp.x, COUNTER_H, cp.z, '#1f4f8f', cry);
+    const bk = polar(59.0, ca);
+    box(len + 0.4, 3.2, 0.4, bk.x, 1.6, bk.z, '#e8eef8', cry);
+    const sg = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.8), new THREE.MeshBasicMaterial({ map: shopSign }));
+    const sgp = polar(58.75, ca);
+    sg.position.set(sgp.x, 2.75, sgp.z); sg.rotation.y = cry;
+    scene.add(sg);
+    block(cp.x, cp.z, len + 0.6, 3.4, cry);
+    const ck = polar(58.3, ca);
+    goodsClerks.push({ x: ck.x, z: ck.z, ry: cry, sit: false });
+    teams.forEach((t, i) => {
+      const off = (i - (teams.length - 1) / 2) * SLOT; // along the counter (m)
+      const a = ca - off / 57.4;
+      const p = polar(57.3, a), stand = polar(55.6, a), wall = polar(58.75, a);
+      const g = new THREE.Group();
+      g.position.set(p.x, COUNTER_H + 0.04, p.z);
+      g.rotation.y = cry;
+      // The jersey on a little stand (a shirt shape), the folded cap and towel.
+      const jersey = new THREE.Group();
+      const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.46, 0.08), mat(t.color));
+      const sleeves = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.14, 0.08), mat(t.color));
+      sleeves.position.y = 0.16;
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.43, 0.05, 0.085), mat(t.trim));
+      stripe.position.y = -0.02;
+      jersey.add(shirt, sleeves, stripe);
+      jersey.position.set(-0.45, 0.42, 0);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6).translate(0, 0.1, 0), mat('#9aa3ad'));
+      pole.position.x = -0.45;
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat(t.color));
+      const brim = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.015, 0.12), mat(t.trim));
+      brim.position.set(0, 0.005, 0.14);
+      cap.add(brim);
+      cap.position.set(0.05, 0, 0);
+      const towel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.22).translate(0, 0.03, 0), mat(t.color));
+      const tstripe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.065, 0.225).translate(0, 0.03, 0), mat(t.trim));
+      tstripe.position.x = 0.12;
+      towel.add(tstripe);
+      towel.position.set(0.48, 0, 0);
+      g.add(jersey, pole, cap, towel);
+      scene.add(g);
+      // The team's name on the back wall, over its goods.
+      const tag = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.48), new THREE.MeshBasicMaterial({ map: teamTag(t) }));
+      tag.position.set(wall.x, 1.85, wall.z); tag.rotation.y = cry;
+      scene.add(tag);
+      const at = new THREE.Vector3(stand.x, 0, stand.z);
+      for (const pr of goods.filter((q) => q.goods === t.id)) products.push({ product: pr, mesh: g, pos: at });
+    });
+  }
 
   // A note by the door: this stadium is the game's (the real dome opens in 2032).
   const noteTex = canvasTex(1024, 300, (g, w, h) => {
@@ -802,6 +875,7 @@ export function buildDome(store, ROOM = ROOM_DOME, EXIT = { x: 0, z: ROOM.d / 2 
     field: { y: FIELD_Y },
   };
 
+  patrons.push(...goodsClerks); // (the team store's sellers: after the seated fans, who keep their numbers)
   const stations = { patrons, cheerSquad: squad, dome: domeApi };
   return {
     scene, products, colliders, seats: freeSeats, clerk, trainer: null, barkeep: null, turntable: null, tv: null, stations, animate, see: null,

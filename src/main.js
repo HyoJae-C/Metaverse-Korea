@@ -3162,6 +3162,7 @@ function wireDome(built, store) {
     const side = dome.sideOf(team.id), other = side === 'home' ? 'away' : 'home';
     if (['1B', '2B', '3B', 'HR'].includes(res)) {
       dome.jump(side, res === 'HR' ? 1.4 : 0.9);
+      ballparkCams.teamHit(team.id); // (cheer towels up: game/ballpark-towel.js)
       if (res === 'HR') dome.jump('all', 0.6);
       sfx.crowd(res === 'HR' ? 1 : 0.55);
       squadOf(side).forEach((o, i) => setTimeout(() => o.ch.play('cheer'), i * 120));
@@ -6404,7 +6405,7 @@ const ballparkCams = lazyPanel(() => import('./game/ballpark-cams.js').then(({ c
   send: (m) => net.sendEmote(m), toast: (m) => shop.toast(m), blocked: (id) => safety.isBlocked(id, others.nameOf(id)),
   bubble: (text) => showBubble(myLabel, $('labels'), text), npcBubble: (o, text) => showBubble(o, $('labels'), text),
   clearAction: () => { action = STALE; },
-})), { tick: () => {}, action: () => null, standingAction: () => null, more: () => [], onMsg: () => {}, scoreAct: () => null });
+})), { tick: () => {}, action: () => null, standingAction: () => null, more: () => [], onMsg: () => {}, scoreAct: () => null, teamHit: () => {} });
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
@@ -7685,7 +7686,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null, ballpark: () => (ballparkCams.loaded ? ballparkCams.state() : null), ballparkSnap: () => (ballparkCams.loaded ? ballparkCams.snap() : null),
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null, ballpark: () => (ballparkCams.loaded ? ballparkCams.state() : null), ballparkHit: (team) => ballparkCams.teamHit(team), ballparkSnap: () => (ballparkCams.loaded ? ballparkCams.snap() : null),
     loveLock: (view) => loveLockUi.show(view),
   };
 }
