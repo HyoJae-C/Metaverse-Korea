@@ -931,7 +931,8 @@ export const PLACE_NEW = [
 // are now: perfume shops to Hongdae's perfume alley, and skincare and
 // lip-tint shops to Myeongdong (scripts/build-myeongdong.mjs SHOPS).
 export const MOVED_AWAY = new Set(['kkeung-sanghoe', 'oops-parfum', 'heart-ppyong', 'moai-scent-lab', 'punggyeong-scent',
-  'mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink', 'son-kalguksu']); // (to Myeongdong: scripts/build-myeongdong.mjs SHOPS)
+  'mulbangul-skin', 'moonlight-beauty', 'lip-red', 'lip-pink', 'son-kalguksu', // (to Myeongdong: scripts/build-myeongdong.mjs SHOPS)
+  'forest-lane-apt']); // (the home: by Seoul Forest Station exit 2, set by hand in homes.json)
 
 // Writes "at" into a hand-formatted JSON file without reformatting it: the
 // store's "anchor" or "at" line is replaced in place.
