@@ -524,6 +524,7 @@ export const EN = {
   'home.leave': 'Go outside',
   'zoo.leave': 'Leave the zoo',
   'home.full': 'Your home is full.',
+  'home.moved': '🏠 Sunny Villa homes moved to Forest Lane Apartments! We joined the two homes to get rooms ready for friend invites, opening soon. Your furniture came with you.',
   'shop.enter': 'Enter {name}',
   'shop.look': 'Look at {name}',
   'shop.leave': 'Leave the store',

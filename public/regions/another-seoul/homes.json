@@ -12,6 +12,18 @@
       "at": [83.9, 96.5],
       "colors": { "sign": "#3d6b4f", "awning": "#cfe8d5", "accent": "#f6f1e7" },
       "products": []
+    },
+    {
+      "id": "sunny-villa",
+      "category": "home",
+      "movedTo": "forest-lane-apt",
+      "kind": "villa",
+      "size": "small",
+      "name": { "ko": "햇살 빌라", "en": "Sunny Villa" },
+      "tagline": { "en": "Homes here moved to Forest Lane Apartments", "ko": "이 집은 숲길 아파트로 합쳐졌어요" },
+      "at": [80.7, 135.9],
+      "colors": { "sign": "#b5653a", "awning": "#f6d6b8", "accent": "#fbf3ea" },
+      "products": []
     }
   ]
 }

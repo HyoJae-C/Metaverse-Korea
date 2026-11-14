@@ -528,6 +528,7 @@ export const ID = {
   'home.leave': 'Keluar rumah',
   'zoo.leave': 'Keluar dari kebun binatang',
   'home.full': 'Rumahmu sudah penuh.',
+  'home.moved': '🏠 Rumah di Sunny Villa pindah ke Forest Lane Apartments! Kami menggabungkan dua rumah untuk menyiapkan undangan teman yang segera dibuka. Perabotmu ikut pindah.',
   'shop.enter': 'Masuk ke {name}',
   'shop.look': 'Lihat {name}',
   'shop.leave': 'Keluar dari toko',

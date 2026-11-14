@@ -9,9 +9,10 @@ const mem = (o) => {
 };
 const L = (n) => JSON.stringify(Array.from({ length: n }, (_, i) => ({ id: 'p' + i, x: 0, z: 0, ry: 0 })));
 
-test('one home is left in homes.json', () => {
-  const homes = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/homes.json', import.meta.url), 'utf8')).homes;
-  assert.deepEqual(homes.map((h) => h.id), [HOME_ID]);
+test('one home is left in homes.json (Sunny Villa only points to it)', () => {
+  const all = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/homes.json', import.meta.url), 'utf8')).homes;
+  assert.deepEqual(all.filter((h) => !h.movedTo).map((h) => h.id), [HOME_ID]);
+  assert.ok(all.filter((h) => h.movedTo).every((h) => h.movedTo === HOME_ID));
 });
 
 test('a villa-only layout moves into the home', () => {

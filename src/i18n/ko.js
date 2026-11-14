@@ -525,6 +525,7 @@ export const KO = {
   'home.leave': '밖으로 나가기',
   'zoo.leave': '동물원에서 나가기',
   'home.full': '집이 가득 찼어요.',
+  'home.moved': '🏠 햇살 빌라 집은 숲길 아파트로 합쳐졌어요! 곧 열릴 친구 초대를 위해 방 시스템을 바꾸느라 부득이하게 합쳤어요. 꾸민 가구는 그대로 옮겨졌어요.',
   'shop.enter': '{name} 들어가기',
   'shop.look': '{name} 보기',
   'shop.leave': '매장 나가기',
