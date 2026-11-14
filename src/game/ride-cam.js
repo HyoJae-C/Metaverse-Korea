@@ -2,14 +2,35 @@
 // own, in main.js): just behind and above you, riding with the seat, so the
 // ship's swing tips the whole view; or from your seat (the action button
 // switches, as on the coaster). The seat comes from park-rides.js seatAt():
-// feet (x, y, z), facing ry, roll (the ship's tilt about the z axis).
+// feet (x, y, z), facing ry, roll (the ship's tilt about the z axis), pitch
+// (the train's and the flume's slopes, + nose down).
+//
+// Riders sit close (the flume's log: 0.56 m apart; the train's benches:
+// 0.64 m), so two things keep their faces whole on screen: the camera tips
+// with the seat's pitch as the rider does (it used to stay upright over the
+// feet, and down the flume's big drop the rider behind leaned into it: the
+// camera sat 0.32 m from their face, inside their head), and the near plane
+// comes in to RIDE_NEAR (the street's 0.3 m cut the neighbour's face away
+// at the edge of the view in the teacups and the log; beauty.js does the
+// same for its close-ups).
 import * as THREE from 'three';
+
+export const RIDE_NEAR = 0.05, STREET_NEAR = 0.3;
+
+// The near plane while riding (on) or back to the street's.
+export function rideNear(camera, on) {
+  const n = on ? RIDE_NEAR : STREET_NEAR;
+  if (camera.near !== n) { camera.near = n; camera.updateProjectionMatrix(); }
+}
 
 export function createRideCam({ camera }) {
   const want = new THREE.Vector3(), seat = new THREE.Vector3(), at = new THREE.Vector3(), f = new THREE.Vector3(), up = new THREE.Vector3(), worldUp = new THREE.Vector3(0, 1, 0);
+  const tilt = new THREE.Euler(0, 0, 0, 'ZYX'), frame = new THREE.Matrix4();
   let cam = null;
   return {
     reset() { cam = null; camera.up.set(0, 1, 0); },
+    // Stepping off: the street's near plane again.
+    off() { cam = null; camera.up.set(0, 1, 0); rideNear(camera, false); },
     // s: the seat; first: from your seat; soft: no leaning (the gentle
     // setting); face: the camera out in front looking back at you (the drop
     // tower and the wheel, where behind you is the tower or the gondola);
@@ -17,10 +38,13 @@ export function createRideCam({ camera }) {
     // wheel's view from outside the gondola, well behind and above the
     // rider, looking out over the park beyond them.
     update(dt, s, first, soft, face = 0, down = 0, scenic = false) {
-      const c = Math.cos(s.roll || 0), sn = Math.sin(s.roll || 0);
-      // The seat's forward and up, tipped by the roll (about z).
-      f.set(Math.sin(s.ry) * c, Math.sin(s.ry) * sn, Math.cos(s.ry));
-      up.set(-sn, c, 0);
+      rideNear(camera, true);
+      // The seat's forward and up, turned as the rider is (main.js:
+      // rotation (pitch, ry, roll), order ZYX): tipped by the pitch, then
+      // the roll (about z).
+      frame.makeRotationFromEuler(tilt.set(s.pitch || 0, s.ry, s.roll || 0));
+      f.set(0, 0, 1).applyMatrix4(frame);
+      up.set(0, 1, 0).applyMatrix4(frame);
       const back = scenic ? 9 : first ? -0.1 : face ? -face : 1.6, high = scenic ? 4.5 : first ? 1.15 : face ? 1.5 : 2.5;
       // Ease the camera's offset from the seat, not its place: the camera
       // moves with the seat exactly (easing its place left it trailing the
