@@ -2733,6 +2733,9 @@ function enterStore(item, walkIn = null) {
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
   }
+  // Sunny Villa's door after the homes were joined (homes.json movedTo): a
+  // notice that your home is now at Forest Lane Apartments.
+  if (item.store.movedTo) { shop.toast(t('home.moved'), 7000); return; }
   // Every room's code (core/interior.js) and the shops' product descriptions
   // (game/store-descs.js) come with the first one walked into; the returned
   // promise keeps the tip cover up meanwhile (game/tips.js).

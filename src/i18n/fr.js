@@ -526,6 +526,7 @@ export const FR = {
   'home.leave': 'Sortir',
   'zoo.leave': 'Quitter le zoo',
   'home.full': 'Ta maison est pleine.',
+  'home.moved': '🏠 Les logements de Sunny Villa ont déménagé à Forest Lane Apartments ! Nous avons réuni les deux maisons pour préparer les invitations d\'amis, bientôt disponibles. Tes meubles ont suivi.',
   'shop.enter': 'Entrer dans {name}',
   'shop.look': 'Regarder {name}',
   'shop.leave': 'Quitter la boutique',

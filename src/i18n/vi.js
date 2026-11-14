@@ -528,6 +528,7 @@ export const VI = {
   'home.leave': 'Ra ngoài',
   'zoo.leave': 'Rời sở thú',
   'home.full': 'Nhà bạn đã đầy.',
+  'home.moved': '🏠 Nhà ở Sunny Villa đã chuyển sang Forest Lane Apartments! Chúng tôi gộp hai nhà để chuẩn bị tính năng mời bạn bè sắp ra mắt. Đồ nội thất của bạn đã được chuyển theo.',
   'shop.enter': 'Vào {name}',
   'shop.look': 'Xem {name}',
   'shop.leave': 'Rời cửa hàng',

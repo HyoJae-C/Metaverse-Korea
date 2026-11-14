@@ -525,6 +525,7 @@ export const ZH = {
   'home.leave': '出门',
   'zoo.leave': '离开动物园',
   'home.full': '房间已经满了。',
+  'home.moved': '🏠 阳光别墅的房间已并入林荫道公寓！为了即将开放的好友邀请，我们不得不调整了房间系统。你布置的家具已一起搬过去了。',
   'shop.enter': '进入{name}',
   'shop.look': '查看{name}',
   'shop.leave': '离开商店',
