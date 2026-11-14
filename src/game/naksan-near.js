@@ -27,5 +27,6 @@ export function createNaksanNear(game) {
     },
     nearest: (x, z) => hill?.nearest(x, z) || null, // a walker to say hello to
     get loaded() { return !!hill; },
+    get group() { return hill?.group || null; }, // (main.js FarCull)
   };
 }
