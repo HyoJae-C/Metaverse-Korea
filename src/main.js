@@ -1658,6 +1658,7 @@ async function joinRoom(room, roomScene, area = null) {
         if (interior?.store.workshop === 'runway' && !safety.isBlocked(id, others.nameOf(id))) { runwayReact(others.rootOf(id), m.tier, m.word); if (m.pose) runwayPose(others.charOf(id), m.pose); }
         return;
       }
+      if (typeof e === 'string' && e.startsWith('bp:')) { ballparkCams.onMsg(id, e); return; } // (game/ballpark-cams.js)
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -2757,7 +2758,7 @@ function enterStore(item, walkIn = null) {
   if (rooms.needsDome(item.store)) {
     if (domeLoading) return;
     domeLoading = true;
-    return import('./core/dome.js').then((m) => { rooms.setDomeBuilder(m.buildDome); domeLoading = false; return enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
+    return Promise.all([import('./core/dome.js'), ballparkCams.ready()]).then(([m]) => { rooms.setDomeBuilder(m.buildDome); domeLoading = false; return enterStore(item); }).catch((e) => { domeLoading = false; console.warn('dome', e); });
   }
   // The zoo: its grounds and animals come on the first visit too.
   if (rooms.needsZoo(item.store)) {
@@ -6395,6 +6396,15 @@ const hatWorkshop = createHatWorkshop({
   shop,
 });
 const { closeHatWorkshop, openHatWorkshop } = hatWorkshop;
+// Modu Ballpark's big-screen moments: the wave, Dance Cam, Kiss Cam
+// (game/ballpark-cams.js, downloaded with the stadium).
+const ballparkCams = lazyPanel(() => import('./game/ballpark-cams.js').then(({ createBallparkCams }) => createBallparkCams({
+  get interior() { return interior; }, get seated() { return seated; }, get me() { return me; }, get others() { return others; },
+  get myId() { return myId; }, get sfx() { return sfx; }, renderer, myName: () => nickname,
+  send: (m) => net.sendEmote(m), toast: (m) => shop.toast(m), blocked: (id) => safety.isBlocked(id, others.nameOf(id)),
+  bubble: (text) => showBubble(myLabel, $('labels'), text), npcBubble: (o, text) => showBubble(o, $('labels'), text),
+  clearAction: () => { action = STALE; },
+})), { tick: () => {}, action: () => null, standingAction: () => null, more: () => [], onMsg: () => {} });
 // Café seats. Sitting snaps you onto the chair facing the table; moving or
 // tapping Stand puts you back beside it. Others see it through the "sit" flag.
 let seated = null;
@@ -6520,6 +6530,7 @@ function moreActions(p, door) {
     const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
+  if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss)
   if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing) return out;
   if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
@@ -6707,6 +6718,10 @@ function updateAction(p, tSec) {
       next = tarotNext;
     } else if (interior.pool && !seated && poolAction(p)) {
       next = poolAction(p);
+    } else if (seated?.dome && ballparkCams.action()) { // Modu Ballpark: kiss, dance, the wave
+      next = ballparkCams.action();
+    } else if (interior.dome && !seated && ballparkCams.standingAction()) { // a foul ball coming down by you
+      next = ballparkCams.standingAction();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
@@ -7232,6 +7247,7 @@ renderer.setAnimationLoop((now) => {
   picnic.tick(); // picnic mats on the park lawn
   frisbee.tick(dt); // playing fetch on the lawn
   snowman.tick(dt); // snowballs and snowmen
+  ballparkCams.tick(dt); // Modu Ballpark's big screen
   if (mode === 'store') interior?.see?.(p.x, p.z, camera.position.x, camera.position.z); // walk-in rooms turn see-through
   if (mode === 'store' && interior?.store.workshop === 'tarot') tarotTick();
   updateAction(p, tSec);
@@ -7668,7 +7684,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null,
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null, ballpark: () => (ballparkCams.loaded ? ballparkCams.state() : null), ballparkSnap: () => (ballparkCams.loaded ? ballparkCams.snap() : null),
     loveLock: (view) => loveLockUi.show(view),
   };
 }

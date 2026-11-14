@@ -16,7 +16,7 @@ test('eight fictional teams, none named after a KBO team', () => {
     assert.match(t.color, /^#[0-9a-f]{6}$/i);
   }
   const names = TEAMS.map((t) => t.name.ko);
-  for (const n of ['청계 왜가리', '잠실 혜성', '남산 까치', '한강 수달', '홍대 고양이', '성수 비둘기', '북한산 다람쥐', '영등포 고라니']) assert.ok(names.includes(n), n);
+  for (const n of ['강서 왜가리', '송파 혜성', '관악 까치', '강동 수달', '강남 고양이', '성북 비둘기', '은평 다람쥐', '노원 고라니']) assert.ok(names.includes(n), n);
 });
 
 test('a round: every pair meets once, every team plays once in each 4 games', () => {
