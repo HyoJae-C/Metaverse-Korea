@@ -152,6 +152,9 @@ export class ShopUI {
     const tag = localName(store.tagline, lang) || '';
     this.$('store-tagline').textContent = comingSoon(store) ? `🚧 ${t('map.soon')}${tag ? ' · ' + tag : ''}` : tag;
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
+    // Modu Ballpark: the big scoreboard is right above the field, where the
+    // card would sit, so the card moves small into the top-left corner.
+    this.$('store-banner').classList.toggle('corner', store.workshop === 'dome');
     this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture' || store.workshop === 'zoo' || store.workshop === 'zoo-sea'; // (the zoo is a real public place, not a made-up brand)
   }
 

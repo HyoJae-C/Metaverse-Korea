@@ -449,6 +449,17 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
   text-transform: uppercase; background: #fff1c9; color: #8a6a1f; padding: 2px 7px; border-radius: 6px;
 }
 .store-banner .chip { flex: none; background: #fff; }
+/* Modu Ballpark: small in the top-left corner, off the big scoreboard. (desktop; phones already have it there) */
+@media (min-width: 701px) {
+  .store-banner.corner {
+    left: 12px; transform: none; max-width: 260px;
+    gap: 6px; padding: 4px 5px 5px 10px; border-radius: 14px; border-top-width: 3px;
+  }
+  .store-banner.corner strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store-banner.corner #store-name-ko, .store-banner.corner small { display: none; }
+  .store-banner.corner .sample { margin-top: 1px; font-size: 9px; letter-spacing: 0; text-transform: none; padding: 1px 4px; }
+  .store-banner.corner .chip { min-height: 30px; padding: 0 8px; font-size: 12px; gap: 3px; }
+}
 .in-store .street-card { display: none; }
 /* The street card is off for now: a cleaner screen (the map has the street). */
 .street-card { display: none !important; }
