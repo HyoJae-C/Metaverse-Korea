@@ -91,6 +91,7 @@ import { createAreaNet } from './net/area.js';
 import { claimTab } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { sendRate } from './net/rate.js';
+import { rt as rtMeter } from './net/meter.js';
 import { startWhereReports } from './net/where.js';
 import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
@@ -343,7 +344,7 @@ regionStart.catch(() => {}); // awaited below; this only avoids an early "unhand
 await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
-const playCounts = createCounts();
+const playCounts = createCounts(rtMeter);
 // The loading funnel (core/sessions.js createVisit): page open → pressed
 // Play → world loaded → a minute of play. (Test rooms run with ?debug,
 // which has no cloud, so nothing is sent from them.)

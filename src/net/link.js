@@ -4,10 +4,11 @@
 // called for what the others send (never our own).
 export async function openLink(provider, cfg, topic, onMsg) {
   if (provider === 'supabase') {
+    const { count } = await import('./meter.js');
     const { sharedClient } = await import('./adapters/supabase.js');
     const client = sharedClient(cfg.url, cfg.key, cfg.accessToken);
     const ch = client.channel('link:' + topic, { config: { broadcast: { self: false } } });
-    ch.on('broadcast', { event: 'm' }, ({ payload }) => onMsg(payload));
+    ch.on('broadcast', { event: 'm' }, ({ payload }) => { count('vsr'); onMsg(payload); });
     await new Promise((resolve, reject) => {
       let done = false;
       const fail = (why) => { if (done) return; done = true; clearTimeout(timer); client.removeChannel(ch).catch(() => {}); reject(new Error('Realtime ' + why)); };
@@ -17,8 +18,9 @@ export async function openLink(provider, cfg, topic, onMsg) {
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') fail(status);
       });
     });
+    count('vsn');
     return {
-      send(msg) { ch.send({ type: 'broadcast', event: 'm', payload: msg }); },
+      send(msg) { count('vs'); ch.send({ type: 'broadcast', event: 'm', payload: msg }); },
       close() { client.removeChannel(ch).catch(() => {}); },
     };
   }
