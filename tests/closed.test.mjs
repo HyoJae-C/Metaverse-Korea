@@ -1,3 +1,4 @@
+import { closedRects } from '../src/core/closed-grid.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,8 +13,8 @@ const read = (f) => JSON.parse(readFileSync(new URL(f, R)));
 const region = read('region.json');
 const seoul = read('seoul.json');
 const stores = read('stores.json').stores;
-const map = mergeDistricts(region.districts.map((d) => ({ ...d, map: read(d.map) })), region.links, region.water, region.closed.rects);
-const rects = region.closed.rects;
+const map = mergeDistricts(region.districts.map((d) => ({ ...d, map: read(d.map) })), region.links, region.water, closedRects(region.closed));
+const rects = closedRects(region.closed);
 const collision = new CollisionMap(map.buildings.concat(map.blockers));
 
 // How far (x, z) is from a rectangle (0 inside).

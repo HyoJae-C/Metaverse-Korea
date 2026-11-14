@@ -155,7 +155,7 @@ lists **districts** joined into one map (`src/core/districts.js`):
 
 ## The base map: all of Seoul's big roads (2026-11-14)
 
-Under the hand-built districts lies one base layer for the whole city,
+Under the hand-built districts lies one base layer,
 `public/regions/another-seoul/base.json` (`region.json` "base"), made from a
 single OpenStreetMap pull of Seoul instead of a snippet per district:
 
@@ -166,11 +166,23 @@ single OpenStreetMap pull of Seoul instead of a snippet per district:
   is joined to a district road end within 45 m.
 - **Water and green**: the Han beyond the districts, the streams, big parks
   and woods, as flat colours. They stop 12 m short of every district's box.
+  Parks and woods are in their own file (`base-green.json`, "baseGreen") and
+  are fetched a moment after the street is up (`game/base-green.js`): they
+  are a colour only, so the start doesn't wait for them.
 - **Decks**: where a road is over water you walk on a deck
   (`CollisionMap.addDeck`); it is the road painted over the river, not a
   modelled bridge yet.
 - **Closed land** (`scripts/build-closed.mjs`): every gu now. Roads are open,
-  the blocks between them are grey and can't be walked into.
+  the blocks between them are grey and can't be walked into. Stored as one
+  bit per 10 m square (`core/closed-grid.js`), not as a list of rectangles.
+
+**Only near what is built**: within 200 m (`REACH` in
+`scripts/build-base.mjs`; 800 m real) of a district's box. Farther land has
+no base roads or green and is all closed, in every gu; rivers are kept
+whole, and a bridge that would lead only into closed land is left out rather
+than stopping mid-river. The data for the whole city stays in
+`scripts/data/seoul/`: when a district is added, the next `build-base.mjs`
+run brings the base round it. Raise `REACH` to open more.
 
 To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
 the OSM data changes; writes `scripts/data/seoul/`), then
