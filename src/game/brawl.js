@@ -88,6 +88,7 @@ const T = {
   no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
   vsNo: { en: '{name} said no this time.', ko: '{name}님이 이번엔 거절했어요.', ja: '{name}さんは今回は断りました。', zh: '{name}这次拒绝了。', es: '{name} dijo que no esta vez.', id: '{name} menolak kali ini.', vi: '{name} từ chối lần này.', hi: '{name} ने इस बार मना किया।', fr: '{name} a refusé cette fois.', th: '{name} ปฏิเสธรอบนี้', ar: '{name} رفض هذه المرة.' },
   vsBusy: { en: '{name} is busy right now.', ko: '{name}님은 지금 바빠요.', ja: '{name}さんは今手が離せません。', zh: '{name}现在正忙。', es: '{name} está ocupado ahora.', id: '{name} sedang sibuk.', vi: '{name} đang bận.', hi: '{name} अभी व्यस्त हैं।', fr: '{name} est occupé pour l’instant.', th: '{name} ไม่ว่างตอนนี้', ar: '{name} مشغول الآن.' },
+  vsFull: { en: 'Both screens have a match on. Try again when one ends.', ko: '지금 대전 2판이 진행 중이에요. 한 판이 끝나면 다시 해 보세요.', ja: '今は対戦が2つ進行中です。1つ終わったらまた試してください。', zh: '现在有两场对战正在进行。等一场结束后再试。', es: 'Ya hay dos combates en curso. Inténtalo cuando termine uno.', id: 'Dua pertandingan sedang berlangsung. Coba lagi setelah satu selesai.', vi: 'Đang có hai trận đấu. Hãy thử lại khi một trận kết thúc.', hi: 'अभी दो मुकाबले चल रहे हैं। एक खत्म होने पर फिर कोशिश करें।', fr: 'Deux combats sont déjà en cours. Réessaie quand l’un se termine.', th: 'ตอนนี้มีการแข่ง 2 คู่อยู่ ลองใหม่เมื่อจบหนึ่งคู่', ar: 'هناك مباراتان جاريتان الآن. حاول مجددًا عند انتهاء إحداهما.' },
   vsGone: { en: 'No answer.', ko: '응답이 없어요.', ja: '返事がありません。', zh: '没有回应。', es: 'Sin respuesta.', id: 'Tidak ada jawaban.', vi: 'Không có phản hồi.', hi: 'कोई जवाब नहीं।', fr: 'Pas de réponse.', th: 'ไม่มีการตอบรับ', ar: 'لا رد.' },
   vsLink: { en: 'Connecting…', ko: '연결 중…', ja: '接続中…', zh: '连接中…', es: 'Conectando…', id: 'Menghubungkan…', vi: 'Đang kết nối…', hi: 'जुड़ रहा है…', fr: 'Connexion…', th: 'กำลังเชื่อมต่อ…', ar: 'جارٍ الاتصال…' },
   vsLeft: { en: '{name} left the fight. You win!', ko: '{name}님이 나갔어요. 승리!', ja: '{name}さんが退出しました。あなたの勝ち！', zh: '{name}离开了。你赢了！', es: '{name} se fue. ¡Ganas tú!', id: '{name} keluar. Kamu menang!', vi: '{name} đã rời đi. Bạn thắng!', hi: '{name} चले गए। आप जीते!', fr: '{name} est parti. Tu gagnes !', th: '{name} ออกไปแล้ว คุณชนะ!', ar: '{name} غادر. فزت!' },
@@ -520,7 +521,7 @@ export function placeFighter(f, s, dt, time, right) {
 }
 
 // ── The game ─────────────────────────────────────────────────────────────
-export function createBrawl(game) {
+export function createBrawl(game, { versusFull = null } = {}) {
   const store = localStorage;
   let on = null; // the stage, the two characters, the screen… while open
   const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -786,6 +787,7 @@ export function createBrawl(game) {
   const tell = (to, kind, nonce) => game.net?.sendEmote?.(`brawl:${to}:${kind}:${nonce}:${Math.max(0, STYLE_IDS.indexOf(on.style))}`);
   function invite(peer) {
     if (on.vs || on.match) return;
+    if (versusFull?.()) { menu(tt('vsFull')); return; } // (two matches between people at a time: core/brawl-room.js)
     const nonce = Math.random().toString(36).slice(2, 10);
     on.vs = { host: true, peer: { id: peer.id, name: peer.name }, nonce, st: 'wait', until: on.time + 32 };
     tell(peer.id, 'i', nonce);

@@ -4,6 +4,7 @@
 import { L, fmt } from '../ui/pocha-ui.js';
 import { DART_COLORS, dartColorOf, dartPack, dartPinMsg, dartsGoMsg, dartsMsg, pickDartColor } from '../core/arcade.js';
 import { WordFx } from '../core/runway-fx.js';
+import { createVersusTally } from '../core/brawl-room.js';
 
 const INVITE_MS = 28000; // a little under the host's 30 s wait (ui/darts-ui.js)
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
@@ -133,7 +134,11 @@ export function createArcade(game) {
   // brawl:<to>:<kind>:<nonce>:<style>. An invite shows the card (anywhere in
   // the claw-machine room; the match is played on the game's own camera);
   // the rest goes to the game. True when it was one of these.
-  const loadBrawl = () => (brawlLoading ||= import('./brawl.js').then((m) => (brawl = m.createBrawl(game))).catch((e) => { brawlLoading = null; throw e; }));
+  // Two matches between people at a time, one a wall screen (core/brawl-room.js).
+  const versus = createVersusTally();
+  let versusRoom = null;
+  const versusFull = () => game.interior === versusRoom && versus.full(performance.now(), myId);
+  const loadBrawl = () => (brawlLoading ||= import('./brawl.js').then((m) => (brawl = m.createBrawl(game, { versusFull }))).catch((e) => { brawlLoading = null; throw e; }));
   // A match somebody plays, for the arcade's wall screens (game/brawl-tv.js,
   // loaded on the first one heard in the arcade).
   let tv = null, tvLoading = null, tvQueue = Promise.resolve();
@@ -145,7 +150,12 @@ export function createArcade(game) {
     }).catch(() => {});
   }
   function onBrawlMsg(from, e) {
-    if (typeof e === 'string' && e.startsWith('brawltv:')) { onTvMsg(from, e); return true; }
+    if (typeof e === 'string' && e.startsWith('brawltv:')) {
+      if (game.interior !== versusRoom) { versus.clear(); versusRoom = game.interior; }
+      versus.heard(from, e, performance.now());
+      onTvMsg(from, e);
+      return true;
+    }
     if (typeof e !== 'string' || !e.startsWith('brawl:')) return false;
     const [, to, kind, nonce, style] = e.split(':');
     const name = game.others.nameOf(from);
@@ -156,7 +166,7 @@ export function createArcade(game) {
     if (!game.interior?.stations?.fight) return true; // (not in a room with the game)
     const cross = brawl?.crossed(from); // we asked them at the same moment
     if (cross === 'keep') return true;
-    if (brawl?.busy) { no('b'); return true; }
+    if (brawl?.busy || versusFull()) { no('b'); return true; } // (busy, or two matches are on already)
     if (brawl?.open) { brawl.invited(inv); sfx.tock(0.6, 900); return true; } // (at the game's menu: asked there)
     const at = game.interior;
     const join = async () => {
