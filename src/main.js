@@ -1554,6 +1554,8 @@ function dropGifts() { giftsGame?.dropGifts(); }
 let streetFriend = null;
 let friendsOnlyStreet = false;
 const friendsOnlyMap = !testRoom && config.netProvider === 'supabase'; // (test rooms have no accounts: everyone)
+// Is a friend among the people we see? (Then our movement goes at the full rate.)
+const friendNear = () => { for (const p of others.players.values()) if (!p.hidden && streetFriend?.(String(p.name ?? '').trim())) return true; return false; };
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
@@ -7357,7 +7359,10 @@ renderer.setAnimationLoop((now) => {
     }
     // Carrying passengers: send more often so their seats keep up.
     // In a crowd, less often (net/rate.js).
-    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin }));
+    let rate = passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin });
+    // Only strangers around on the street: slower (config.netSendRateStranger).
+    if (!passengers.size && !bumper.driving && friendsOnlyMap && outdoors() && !friendNear()) rate = Math.min(rate, riding ? config.netSendRateStrangerRide : config.netSendRateStranger);
+    sendTimer = 1 / rate;
   }
 
   const w = innerWidth, h = innerHeight;
