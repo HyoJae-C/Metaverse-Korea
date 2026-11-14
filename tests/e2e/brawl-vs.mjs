@@ -117,6 +117,13 @@ try {
     assert(await until(c, () => __mk.brawlTv()?.some((x) => x?.solo && !x.live && !x.hp), null, 30000), 'solo play shows status without streaming the match');
   await c.waitForTimeout(2500);
   await shot(c, 'solo-wall-screen');
+  // Screen 1 / screen 2: one at a time, close up.
+  const camX = () => c.evaluate(() => __mk.project(0, 0, 0)[0]); // (where a fixed point lands on screen: moves when the camera does)
+  await c.click('#tv-1'); await c.waitForTimeout(400);
+  const x1 = await camX();
+  await c.click('#tv-2'); await c.waitForTimeout(400);
+  const x2 = await camX();
+  assert(Math.abs(x1 - x2) > 20, `the camera moves to the other screen (${Math.round(x1)} → ${Math.round(x2)})`);
   await c.click('#tv-x');
   assert(await c.evaluate(() => !__mk.watching()), 'the button gives the camera back');
   await a.keyboard.press('Escape');

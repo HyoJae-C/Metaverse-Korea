@@ -142,3 +142,38 @@ test('brawl net: little is sent while standing still, more while fighting, and l
   const lossy = count((t) => (t % 40 === 0 ? { mx: 1, mz: 0, p: true } : { mx: 1, mz: 0 }), 0.6);
   assert.ok(lossy.sure > 1200, `most messages lost: the match still moves on (${lossy.sure})`);
 });
+
+import { createVersusTally, MAX_VERSUS } from '../src/core/brawl-room.js';
+import { createCaster, createSoloCaster } from '../src/core/brawl-tv.js';
+
+test('brawl room: two matches between people at a time; solo play and finished matches do not count', () => {
+  const tally = createVersusTally();
+  assert.equal(MAX_VERSUS, 2);
+  let now = 0;
+  const caster = (host, about) => createCaster((text) => tally.heard(host, text, now), about);
+  const m = newMatch('ninja', 'boxer', true);
+  const one = caster('a', { b: 'b', n: ['A "b":"x"', 'B'] }); // (a name can't pass for the rival)
+  one.start(m);
+  assert.equal(tally.count(now, 'me'), 1);
+  assert.ok(!tally.full(now, 'me'));
+  const solo = caster('c', { b: 'r2', n: ['C', 'Rival'] }); // against the game's own rival
+  solo.start(m);
+  createSoloCaster((text) => tally.heard('s', text, now)).start();
+  assert.equal(tally.count(now, 'me'), 1, 'fights against the game are free');
+  const two = caster('d', { b: 'e', n: ['D', 'E'] });
+  two.start(m);
+  assert.ok(tally.full(now, 'me'), 'two on: a third has to wait');
+  assert.ok(!tally.full(now, 'e') && !tally.full(now, 'd'), 'our own match does not block us (a rematch)');
+  two.end();
+  assert.ok(!tally.full(now, 'me'), 'one ended: room for another');
+  two.end();
+  const again = caster('d', { b: 'e', n: ['D', 'E'] });
+  again.start(m);
+  // The host of a match walks out without a goodbye: it stops counting once quiet.
+  now = 5000;
+  for (let t = 0; t < 20; t++) again.step({}, {}, m); // (still sending)
+  now = 9000;
+  assert.equal(tally.count(now, 'me'), 1, 'the silent match is gone, the live one stays');
+  tally.clear();
+  assert.equal(tally.count(now, 'me'), 0);
+});
