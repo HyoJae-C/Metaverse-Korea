@@ -678,7 +678,6 @@ export const KO = {
   'dal.keptPaid': "결제한 서울달 표가 그대로 있어요. 게이트에서 탑승하세요.",
   'dal.boardPaid': "서울달 타기 · 결제 완료 · {k}/{max}명 탑승",
   'dal.turnPaid': "내 차례! 탑승 · 결제 완료 · {s}초",
-  'credit.icons': '아이콘',
   "fountain.soon": "🌈 1분 뒤 달빛무지개분수가 시작돼요. 강가 잔디밭에서 반포대교를 바라봐요.",
   "fountain.on": "🌈 달빛무지개분수가 켜졌어요. 반포대교 양옆으로 무지개 물줄기가 쏟아져요.",
   "fountain.photo": "📸 사진 찍을 시간! 마지막 1분, 다리 전체가 무지개로 쏟아져요.",

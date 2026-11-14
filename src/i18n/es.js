@@ -674,7 +674,6 @@ export const ES = {
   'dal.keptPaid': "Aún tienes tu billete pagado de Seoul Dal. Sube en la puerta.",
   'dal.boardPaid': "Subir a Seoul Dal · billete pagado · {k}/{max} a bordo",
   'dal.turnPaid': "¡Tu turno! Subir · billete pagado · {s} s",
-  'credit.icons': 'Iconos',
   "fountain.soon": "🌈 La Fuente Arcoíris a la Luz de la Luna empieza en un minuto. Mira el puente Banpo desde el césped junto al río.",
   "fountain.on": "🌈 La Fuente Arcoíris está encendida: agua de colores cae desde ambos lados del puente Banpo.",
   "fountain.photo": "📸 Hora de la foto: todo el puente es un arcoíris durante el último minuto.",
