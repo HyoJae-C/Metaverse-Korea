@@ -604,7 +604,7 @@
       "size": "large",
       "name": { "ko": "펀치 오락실", "en": "Punch Arcade", "ja": "パンチ ゲームセンター", "zh": "重拳游戏厅" },
       "tagline": { "en": "Fight in Rooftop Rumble, alone or against someone here; matches play on the wall screens", "ko": "옥상 격투왕을 혼자 또는 옆 사람과. 경기는 벽 스크린에 나와요", "ja": "屋上ランブルで一人でも、隣の人とも対戦。試合は壁のスクリーンに映ります", "zh": "玩天台格斗王，可以单人也可以和旁边的人对战，比赛会在墙上的大屏幕播放" },
-      "at": [-17.7, 4.6],
+      "at": [32.6, -24.4],
       "colors": { "sign": "#2a2148", "awning": "#ffd23c", "accent": "#1c1830" },
       "products": []
     },
