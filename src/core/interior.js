@@ -227,9 +227,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang' || store.workshop === 'livecafe'; // (the runway: a dark show room; the PC방 glows with its screens; the live café: a spotlit stage)
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang' || store.workshop === 'arcade' || store.workshop === 'livecafe'; // (the runway: a dark show room; the PC방 glows with its screens; the live café: a spotlit stage)
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : store.workshop === 'arcade' ? '#120e1e' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));

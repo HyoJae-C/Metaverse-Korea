@@ -14,6 +14,7 @@ import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
+import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -558,6 +559,7 @@ await new Promise((resolve) => {
       return false;
     }
     if (r === 'ok') referralSent = true;
+    if (r === 'offline') keepPending(localStorage, who); // sent again once in town
     el.value = '';
     return true;
   };
@@ -1623,6 +1625,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (arcadeGame.onBrawlMsg(id, e)) return; // the fighting game with someone in the room (game/arcade.js)
       if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
       if (parseDartsGo(e)) { const m = parseDartsGo(e); if (m.to === myId && !safety.isBlocked(id, others.nameOf(id))) arcade.darts?.go(id, m); return; }
@@ -2209,6 +2212,11 @@ const fishBait = createFishBait({
   get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
 });
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
+// The errand chip needs places made further down (open parks, guides,
+// storefront doors); until it is set up, a cup restored from the save in
+// setHeld below must not draw it (a finished errand + a held drink broke the
+// load: "openParkHere is not a function", then every message from others).
+let questChipReady = false;
 const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
@@ -3203,7 +3211,7 @@ function leaveStore(walkOut = false) {
   tarotUi.close();
   leaveTarotLine(true);
   gymSpot = null; // (you leave by the door, not off the bench)
-  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
@@ -3988,7 +3996,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4539,9 +4547,11 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 // Arcade: batting cage, shooting galleries and darts. (game/arcade.js)
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
-  get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, get look() { return myLook; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  renderer, lowSpec,
+  link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
-const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
+const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
   get seated() { return seated; }, get interior() { return interior; }, get clerk() { return clerk; },
@@ -6152,7 +6162,8 @@ createLedger({ $, wallet });
 // Friend invites (supabase/025_referrals.sql): thank a new player whose
 // friend was paid, and tell me when friends joined with my name (now and
 // every 10 minutes while playing).
-walletReady.then(() => {
+walletReady.then(async () => {
+  if (!referralSent && wallet.server && (await retryPending({ cloud, storage: localStorage })) === 'ok') referralSent = true;
   if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
   const news = async () => {
     if (!wallet.server || document.hidden) return;
@@ -6231,6 +6242,7 @@ function questPlace(q, ready) {
   return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
 }
 function refreshQuestChip() {
+  if (!questChipReady) return; // (drawn once at the end of setting up, below)
   const q = quests.active;
   $('quest-bar').hidden = !q;
   if (!q) return;
@@ -6303,6 +6315,7 @@ $('quest-chip').onclick = () => {
   try { localStorage.setItem(QUEST_FOLD_KEY, questFolded ? '1' : '0'); } catch { /* storage blocked */ }
   refreshQuestChip();
 };
+questChipReady = true;
 refreshQuestChip();
 
 // On the square: near the guide and the big screen.
@@ -6676,7 +6689,7 @@ function updateAction(p, tSec) {
     } else if (seated?.duck != null) { // in a duck boat (game/duck-boats.js)
       next = duckBoats.seatedAction();
     } else if (seated?.pc) { // a free PC in the PC방
-      next = { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('aim') };
+      next = arcadeGame.camOn() ? null : { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('strike') }; // the team shooter (game/strike.js), aim practice in its menu
     } else if (seated?.tarot) {
       next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { tarotReader()?.ch.wave(); tarotUi.show(); } };
     } else if (tarotNext) {
@@ -6728,6 +6741,10 @@ function updateAction(p, tSec) {
     } else if (interior.stations?.sauna?.find((st) => Math.hypot(p.x - st.x, p.z - st.z) < 2)) {
       const st = interior.stations.sauna.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 2);
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
+    } else if (nearStation(p, 'fight', 1.5)) { // the fighting game cabinet (game/brawl.js)
+      next = arcadeGame.camOn() ? null : { key: 'fight', label: '🥊 ' + L(ARCADE_OPEN.fight), run: () => openArcade('fight') };
+    } else if (nearStation(p, 'watch', 2.6)) {
+      next = arcadeGame.camOn() ? null : { key: 'watch', label: '📺 ' + L(ARCADE_OPEN.watch), run: () => openArcade('watch') };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (nearStation(p, 'batting', 1.8)) {
@@ -7637,7 +7654,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade,
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null,
     loveLock: (view) => loveLockUi.show(view),
   };
 }

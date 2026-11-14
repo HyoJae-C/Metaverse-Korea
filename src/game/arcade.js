@@ -30,6 +30,50 @@ export function createArcade(game) {
   let climbView = null, climbWall = null; // and on the climbing wall panel you stand at (game/climb-view.js)
   let bowlLanes = null; // the others' games on the lanes and the lane screens (game/bowling-lanes.js)
   let bowlInvite = null; // { from, name, at }: someone asked you to bowl with them
+  let brawl = null, brawlLoading = null; // the fighting game cabinet (game/brawl.js), once played
+  const fightUi = { get open() { return !!brawl?.open || !!watch; }, close() { brawl?.close(); stopWatch(); } };
+  // Watching the arcade's wall screens: the game's camera turns to them (both
+  // on a wide screen; on a phone held upright, the one with a match on).
+  let watch = null; // { room, fov, x }
+  function stopWatch() {
+    if (!watch) return;
+    game.camera.fov = watch.fov; game.camera.updateProjectionMatrix();
+    watch.btn.remove();
+    document.documentElement.classList.remove('tv-on');
+    watch = null;
+  }
+  function startWatch() {
+    const screens = game.interior?.stations?.fightTv;
+    if (watch || !screens) return;
+    if (!document.getElementById('tv-css')) {
+      const st = document.createElement('style');
+      st.id = 'tv-css';
+      st.textContent = 'html.tv-on #hud > *, html.tv-on #labels, html.tv-on .credit { visibility: hidden !important; } #tv-x { position: fixed; z-index: 60; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); border: 0; border-radius: 999px; padding: 12px 22px; font: 800 16px system-ui, sans-serif; color: #2b2230; background: #ffd23c; box-shadow: 0 6px 24px rgba(0,0,0,.35); cursor: pointer; }';
+      document.head.append(st);
+    }
+    const btn = document.createElement('button');
+    btn.id = 'tv-x'; btn.type = 'button'; btn.textContent = '✕ ' + L(ARCADE_OPEN.unwatch);
+    btn.onclick = stopWatch;
+    document.body.append(btn);
+    document.documentElement.classList.add('tv-on');
+    watch = { room: game.interior, fov: game.camera.fov, btn };
+  }
+  function watchCamera() {
+    const screens = game.interior === watch.room && game.interior.stations.fightTv;
+    if (!screens) { stopWatch(); return; }
+    const cam = game.camera, aspect = innerWidth / innerHeight, sp = screens.map((q) => q.screen.position);
+    const wide = aspect >= 1.15, live = tv?.state.findIndex((q) => q?.live) ?? -1, one = sp[Math.max(0, live)];
+    const half = wide ? Math.abs(sp[1].x - sp[0].x) / 2 + 3.45 : 3.45, x = wide ? (sp[0].x + sp[1].x) / 2 : one.x, back = 10;
+    // As close as shows the screens whole: across, and top to bottom.
+    const fov = Math.min(80, 2 * Math.atan(Math.max(half / (back * aspect), 2.3 / back)) * 180 / Math.PI);
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
+    cam.position.set(x, one.y, one.z + back);
+    cam.lookAt(x, one.y, one.z);
+  }
+  // NEON STRIKE, the PC방's team shooter (game/strike.js), once played. Its
+  // menu keeps the old aim practice (ui/activity-ui.js AimUI) a tap away.
+  let strike = null, strikeLoading = null;
+  const loadStrike = () => (strikeLoading ||= import('./strike.js').then((m) => (strike = m.createStrike(game, { practice: () => openArcade('aim') }))).catch((e) => { strikeLoading = null; throw e; }));
   let bowlQueue = Promise.resolve(); // bowling messages, in order (the code loads on the first)
   // Flight colours (DART_COLORS), one per player: with friends, in line-up
   // order each takes the colour from their id or the next one still free (the
@@ -50,15 +94,15 @@ export function createArcade(game) {
   // camera (game/darts-view.js), so they need not walk to the throw line.
   let ask = null, askTimer = 0;
   function closeAsk() { clearTimeout(askTimer); ask?.remove(); ask = null; }
-  function showAsk(inv) {
+  function showAsk(inv, text = fmt(L(DARTS_INVITE), { name: inv.name }), yes = acceptInvite, no = () => declineInvite(inv)) {
     closeAsk();
     ask = document.createElement('div');
     ask.id = 'darts-ask';
     ask.style.cssText = ASK_CSS;
     const h = document.createElement('div');
-    h.textContent = fmt(L(DARTS_INVITE), { name: inv.name });
+    h.textContent = text;
     ask.append(h);
-    for (const [label, run, bg] of [[L(DARTS_ASK.yes), acceptInvite, '#ffd36b'], [L(DARTS_ASK.no), () => declineInvite(inv), '#eee']]) {
+    for (const [label, run, bg] of [[L(DARTS_ASK.yes), yes, '#ffd36b'], [L(DARTS_ASK.no), no, '#eee']]) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = label;
@@ -85,6 +129,62 @@ export function createArcade(game) {
     if (!ui.open) ui.show();
     ui.accept(inv);
   }
+  // The fighting game with someone in the room (game/brawl.js): messages
+  // brawl:<to>:<kind>:<nonce>:<style>. An invite shows the card (anywhere in
+  // the claw-machine room; the match is played on the game's own camera);
+  // the rest goes to the game. True when it was one of these.
+  const loadBrawl = () => (brawlLoading ||= import('./brawl.js').then((m) => (brawl = m.createBrawl(game))).catch((e) => { brawlLoading = null; throw e; }));
+  // A match somebody plays, for the arcade's wall screens (game/brawl-tv.js,
+  // loaded on the first one heard in the arcade).
+  let tv = null, tvLoading = null, tvQueue = Promise.resolve();
+  function onTvMsg(from, e) {
+    if (!game.interior?.stations?.fightTv || safety.isBlocked(from, game.others.nameOf(from))) return;
+    tvQueue = tvQueue.then(async () => {
+      tv ||= await (tvLoading ||= import('./brawl-tv.js').then((m) => m.createBrawlTv(game)).catch((err) => { tvLoading = null; throw err; }));
+      tv.heard(from, e);
+    }).catch(() => {});
+  }
+  function onBrawlMsg(from, e) {
+    if (typeof e === 'string' && e.startsWith('brawltv:')) { onTvMsg(from, e); return true; }
+    if (typeof e !== 'string' || !e.startsWith('brawl:')) return false;
+    const [, to, kind, nonce, style] = e.split(':');
+    const name = game.others.nameOf(from);
+    if (to !== myId || !nonce || name == null || safety.isBlocked(from, name)) return true;
+    if (kind !== 'i') { brawl?.heard(from, kind, nonce, +style || 0); return true; }
+    const inv = { from, name, nonce, style: +style || 0, at: performance.now() };
+    const no = (k) => game.net.sendEmote(`brawl:${from}:${k}:${nonce}:0`);
+    if (!game.interior?.stations?.fight) return true; // (not in a room with the game)
+    const cross = brawl?.crossed(from); // we asked them at the same moment
+    if (cross === 'keep') return true;
+    if (brawl?.busy) { no('b'); return true; }
+    if (brawl?.open) { brawl.invited(inv); sfx.tock(0.6, 900); return true; } // (at the game's menu: asked there)
+    const at = game.interior;
+    const join = async () => {
+      if (performance.now() - inv.at > INVITE_MS || game.others.nameOf(from) == null) return;
+      await loadBrawl();
+      if (game.interior !== at) return;
+      stopWatch();
+      if (!brawl.open) brawl.show();
+      brawl.invited(inv);
+    };
+    if (cross === 'yield') join();
+    else showAsk(inv, fmt(L(BRAWL_INVITE), { name }), join, () => no('n'));
+    sfx.tock(0.6, 900);
+    return true;
+  }
+  const BRAWL_INVITE = {
+    en: '🥊 {name} challenges you to Rooftop Rumble!',
+    ko: '🥊 {name}님이 옥상 격투왕 대결을 신청했어요!',
+    ja: '🥊 {name}さんが屋上ランブルで勝負を挑んできました！',
+    zh: '🥊 {name}向你发起天台格斗王挑战！',
+    es: '🥊 ¡{name} te reta a Rooftop Rumble!',
+    id: '🥊 {name} menantangmu di Rooftop Rumble!',
+    vi: '🥊 {name} thách bạn đấu Rooftop Rumble!',
+    hi: '🥊 {name} ने आपको रूफ़टॉप रंबल की चुनौती दी!',
+    fr: '🥊 {name} te défie à Rooftop Rumble !',
+    th: '🥊 {name} ท้าคุณสู้ศึกดาดฟ้า!',
+    ar: '🥊 {name} يتحداك في نزال السطح!',
+  };
   async function openArcade(kind) {
     // Turn to face the cage, the targets or the board (the camera stays as the player has it).
     const p = game.me.root.position, near = (q) => Math.hypot(p.x - q.x, p.z - q.z);
@@ -93,6 +193,21 @@ export function createArcade(game) {
     if (kind === 'bowling') bowlLane = st || null;
     if (kind === 'climbing') climbWall = st || null;
     if (st?.ry != null) game.me.root.rotation.y = st.ry;
+    if (kind === 'watch') { startWatch(); return; }
+    if (kind === 'strike') {
+      const at = game.interior;
+      await loadStrike();
+      if (game.interior === at) strike.show();
+      return;
+    }
+    if (kind === 'fight') {
+      stopWatch();
+      const at = game.interior;
+      await loadBrawl();
+      closeAsk();
+      if (game.interior === at) brawl.show();
+      return;
+    }
     if (!arcade[kind]) {
       // The first time, the panel loads: by then you may have walked off or
       // left; open it only if you are still in the same place.
@@ -270,9 +385,12 @@ export function createArcade(game) {
     bowling: { en: 'Bowl', ko: '볼링 치기', ja: 'ボウリングする', zh: '打保龄球', es: 'Jugar a los bolos', id: 'Main bowling', vi: 'Chơi bowling', hi: 'बॉलिंग खेलें', fr: 'Jouer au bowling', th: 'เล่นโบว์ลิ่ง', ar: 'العب البولينغ' },
     climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', hi: 'चढ़ाई करें', fr: 'Grimper', th: 'ปีนผา', ar: 'تسلّق' },
     aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
+    watch: { en: 'Watch the screens', ko: '스크린 보기', ja: 'スクリーンを見る', zh: '看大屏幕', es: 'Ver las pantallas', id: 'Tonton layar', vi: 'Xem màn hình', hi: 'स्क्रीन देखें', fr: 'Regarder les écrans', th: 'ดูจอ', ar: 'شاهد الشاشات' },
+    unwatch: { en: 'Stop watching', ko: '그만 보기', ja: '見るのをやめる', zh: '不看了', es: 'Dejar de ver', id: 'Berhenti menonton', vi: 'Thôi xem', hi: 'देखना बंद करें', fr: 'Arrêter', th: 'เลิกดู', ar: 'توقف عن المشاهدة' },
+    fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active), camera: (dt) => { dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
