@@ -1,6 +1,6 @@
 // Inside Seoul Forest's forest galleries. With a show on (src/data/
-// exhibitions.js): 4 works on each side wall and 2 on the back wall, the
-// show's poster and the info desk by the door, benches in the middle, and
+// exhibitions.js): 4 works on each side wall and 2 on the back wall under
+// the show's name, the info desk by the door, benches in the middle, and
 // the walls in the show's look ('colorful' or 'dark'). With nothing booked:
 // a white room with "coming soon" cards on the side and front walls, the
 // poster and the desk at the back.
@@ -163,16 +163,16 @@ function buildShow(scene, room, { box, block }, store, show) {
     g.add(spot);
     looks.push({ x: sl.look.x, z: sl.look.z, painting: work });
   });
-  // The show's board on the front wall, left of the door.
-  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), new THREE.MeshBasicMaterial({ map: tex(520, 260, (g, cw, ch) => {
+  // The show's name, big at the top of the back wall, seen as you come in
+  // (in place of the room's own name).
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.2), new THREE.MeshBasicMaterial({ map: tex(1040, 240, (g, cw, ch) => {
     g.fillStyle = look.board; g.fillRect(0, 0, cw, ch);
     g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `800 64px ${FONT}`; g.fillText(show.title.ko, cw / 2, ch / 2 - 40, cw - 40);
-    if (show.title.en !== show.title.ko) { g.font = `600 30px ${FONT}`; g.fillText(show.title.en, cw / 2, ch / 2 + 16, cw - 40); }
-    g.font = `500 28px ${FONT}`; g.fillText(`📷 ${show.artist.en}`, cw / 2, ch / 2 + 66, cw - 40);
+    const name = show.title.en !== show.title.ko ? `${show.title.ko} · ${show.title.en}` : show.title.ko;
+    g.font = `800 96px ${FONT}`; g.fillText(name, cw / 2, ch / 2 - 26, cw - 60);
+    g.font = `600 44px ${FONT}`; g.fillText(`📷 ${show.artist.en}`, cw / 2, ch / 2 + 66, cw - 60);
   }) }));
-  board.position.set(-w / 4 - 0.6, 1.9, d / 2 - 0.03);
-  board.rotation.y = Math.PI;
+  board.position.set(0, h - 0.85, -d / 2 + 0.03);
   scene.add(board);
   // The info desk by the door on the right, the guide between it and the wall.
   const dx = w / 4 + 0.6, dz = d / 2 - 1.7;
@@ -189,5 +189,5 @@ function buildShow(scene, room, { box, block }, store, show) {
     block(x, -0.4, 0.6, 2.4);
     for (const o of [-0.6, 0.6]) seats.push({ x, z: -0.4 + o, ry: s * Math.PI / 2, stand: [x + s, -0.4 + o] });
   }
-  return { seats, clerk, looks };
+  return { seats, clerk, looks, hideName: true };
 }
