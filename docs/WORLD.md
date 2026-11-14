@@ -153,6 +153,39 @@ lists **districts** joined into one map (`src/core/districts.js`):
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
+## The base map: all of Seoul's big roads (2026-11-14)
+
+Under the hand-built districts lies one base layer for the whole city,
+`public/regions/another-seoul/base.json` (`region.json` "base"), made from a
+single OpenStreetMap pull of Seoul instead of a snippet per district:
+
+- **Roads**: primary and secondary roads only (no expressways, tunnels or
+  small streets), at 1/4 on the Seoul grid, 14 m and 10 m wide. A two-way road
+  drawn as two lines in OSM is one road here. A base road stops where a
+  district already has that road, at buildings, hills and the city wall, and
+  is joined to a district road end within 45 m.
+- **Water and green**: the Han beyond the districts, the streams, big parks
+  and woods, as flat colours. They stop 12 m short of every district's box.
+- **Decks**: where a road is over water you walk on a deck
+  (`CollisionMap.addDeck`); it is the road painted over the river, not a
+  modelled bridge yet.
+- **Closed land** (`scripts/build-closed.mjs`): every gu now. Roads are open,
+  the blocks between them are grey and can't be walked into.
+
+To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
+the OSM data changes; writes `scripts/data/seoul/`), then
+`node scripts/build-base.mjs` and `node scripts/build-closed.mjs`. Run the
+last two after adding or moving a district, so the base makes room for it.
+`tests/base.test.mjs` checks it against the OSM lines.
+
+In the game the base is drawn in 1 km tiles (`core/world.js` `tiles`) so only
+the squares in view cost anything, and walking routes use a 1.4 km grid round
+the walker (`core/nav-window.js`); farther goals go by the road graph.
+
+Known gaps: no buildings, stations or names outside the districts; bridges
+are flat; small seams remain where the base Han meets the districts' river;
+parks are a colour only (and closed).
+
 ## Adding a district later (e.g. Gyeongbokgung)
 
 1. Draw the district as a small map file: a square, the main street, a few

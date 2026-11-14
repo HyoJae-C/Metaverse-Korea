@@ -22,6 +22,7 @@ test('the Han River bike paths stay out of the water, off buildings and open thr
   assert.ok(bike?.bike, 'link "Han River Bike Path" in region.json, drawn as a bike path');
   assert.equal(bikes.length, 4, 'the north bank either side of Seongsu, and the south bank either side of Banpo');
   const solid = new CollisionMap(map.buildings.concat(map.blockers || [])); // (the closed land's blockers too)
+  for (const d of map.decks || []) solid.addDeck(d); // (over a stream of the base map, the path is on a deck)
   const hits = [];
   for (const r of bikes) {
     for (let i = 1; i < r.p.length; i++) {
