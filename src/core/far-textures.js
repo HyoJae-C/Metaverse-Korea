@@ -3,9 +3,10 @@
 // adds park boards, gate titles, posters and graffiti, most of them far from
 // wherever you are. A texture marked with farFree() keeps the full drawing
 // only within NEAR of the player: past FAR its canvas is saved as a small
-// PNG and the texture shows a 32 px copy (the same colours, blurred, which
-// is all the fog lets you see at that distance); coming back within NEAR
-// draws the full canvas again from the PNG.
+// PNG (encoded in a worker: core/png-worker.js) and the texture shows a
+// 32 px copy (the same colours, blurred, which is all the fog lets you see
+// at that distance); coming back within NEAR draws the full canvas again
+// from the PNG.
 //
 // Works on a texture's source, so clones sharing one canvas (tiled walls,
 // fences) change together. Only for textures drawn once: something that
@@ -69,7 +70,7 @@ function shrink(source, textures, s) {
   const c = source.data;
   if (!(c instanceof HTMLCanvasElement) || !c.width || !c.height) return;
   s.busy = true;
-  c.toBlob((blob) => {
+  toPng(c).then((blob) => {
     s.busy = false;
     if (!blob || source.data !== c) return;
     const k = Math.min(1, SMALL / Math.max(c.width, c.height));
@@ -80,7 +81,33 @@ function shrink(source, textures, s) {
     Object.assign(s, { blob, w: c.width, h: c.height, full: false });
     swap(source, textures, small);
     c.width = c.height = 0; // let the big canvas go now, not whenever it's collected
-  }, 'image/png');
+  }, () => { s.busy = false; });
+}
+
+// The canvas as a PNG. In a worker where the browser can (OffscreenCanvas):
+// canvas.toBlob encodes on the main thread, and a few signs a second turning
+// small stalled walking. createImageBitmap only takes a snapshot.
+let worker = null, jobs = 0;
+const waiting = new Map(); // id -> resolve
+function pngWorker() {
+  if (worker !== null) return worker;
+  worker = false;
+  if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined' || typeof createImageBitmap === 'undefined') return worker;
+  try {
+    worker = new Worker(new URL('./png-worker.js', import.meta.url), { type: 'module' });
+    worker.onmessage = ({ data: { id, blob } }) => { waiting.get(id)?.(blob); waiting.delete(id); };
+    worker.onerror = () => { worker = false; for (const done of waiting.values()) done(null); waiting.clear(); };
+  } catch { worker = false; }
+  return worker;
+}
+const viaToBlob = (c) => new Promise((resolve) => c.toBlob(resolve, 'image/png'));
+async function toPng(c) {
+  const w = pngWorker();
+  if (!w) return viaToBlob(c);
+  const bmp = await createImageBitmap(c);
+  const id = ++jobs;
+  const blob = await new Promise((resolve) => { waiting.set(id, resolve); w.postMessage({ id, bmp }, [bmp]); });
+  return blob || viaToBlob(c); // (the worker could not: the old way)
 }
 
 function grow(source, textures, s) {
