@@ -118,3 +118,27 @@ test('brawl: two people level after five rounds draw; against the house you lose
   const solo = createMatch({ level: 0, rand: () => 0.99 });
   assert.equal(typeof solo.step, 'function');
 });
+
+test('brawl net: little is sent while standing still, more while fighting, and losses never stop the match', () => {
+  const count = (inputs, loss = 0) => {
+    const net = seeded(3), wire = [];
+    let now = 0, n = 0;
+    const mk = (side) => createSession({ side, styles: ['ninja', 'boxer'], send: (m) => { n++; if (net() >= loss) wire.push([now + 6, 1 - side, JSON.parse(JSON.stringify(m))]); } });
+    const s = [mk(0), mk(1)];
+    for (now = 0; now < 1800; now++) {
+      for (let i = wire.length - 1; i >= 0; i--) if (wire[i][0] <= now) { const [, to, m] = wire.splice(i, 1)[0]; s[to].receive(m); }
+      for (const side of [0, 1]) s[side].tick(inputs(now, side));
+    }
+    return { perSecond: n / 2 / 30, sure: Math.min(s[0].sure, s[1].sure) };
+  };
+  const still = count(() => ({ mx: 0, mz: 0 }));
+  assert.ok(still.perSecond < 5, `standing still: ${still.perSecond.toFixed(1)} messages a second each`);
+  assert.ok(still.sure > 1700, 'and the match still moves on');
+  const walking = count((t, side) => ({ mx: side ? -1 : 1, mz: 0 })); // a held stick is what the other screen guesses
+  assert.ok(walking.perSecond < 5, `holding the stick: ${walking.perSecond.toFixed(1)}`);
+  const rand = seeded(9);
+  const busy = count(() => randomInput(rand));
+  assert.ok(busy.perSecond > 9 && busy.perSecond <= 10.6, `pressing all the time: ${busy.perSecond.toFixed(1)} (the old rate was 15)`);
+  const lossy = count((t) => (t % 40 === 0 ? { mx: 1, mz: 0, p: true } : { mx: 1, mz: 0 }), 0.6);
+  assert.ok(lossy.sure > 1200, `most messages lost: the match still moves on (${lossy.sure})`);
+});

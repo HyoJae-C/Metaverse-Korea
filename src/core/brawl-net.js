@@ -17,7 +17,14 @@
 import { newMatch, stepMatch, copyMatch, packMatch, unpackMatch } from './brawl.js';
 
 export const DELAY = 3; // ticks between a press and the punch (50 ms)
-export const SEND_EVERY = 4; // ticks between messages (15 a second)
+// How often we send. Every message is counted by the realtime service, and
+// a match was the game's heaviest use of it per player (15 a second each).
+// So: while we do just what the other screen already guesses (the stick held
+// as it was, no button), nothing new is worth saying and a slow beat keeps
+// the two in step; a press or a turn of the stick goes out on the fast beat,
+// until they tell us they have it.
+export const SEND_EVERY = 6; // ticks between messages while we act (10 a second)
+export const QUIET_EVERY = 15; // … and while we do what they guess (4 a second)
 export const MAX_AHEAD = 40; // ticks we play on guesses before waiting
 export const SNAP_EVERY = 120;
 const KEEP = 600; // ticks of inputs kept (for a host's match that arrives late)
@@ -57,6 +64,7 @@ export function createSession({ side, styles, send, onSure }) {
   let acked = -1; // they have ours up to this tick
   let theirGap = null, skip = 0;
   let sinceSend = 0;
+  let newsAt = -1; // the last tick where we did something they can't guess: quiet once they have it
   const said = new Map(); // what was shown or played: key → tick
   const snaps = new Map(); // tick → our match then (JSON), to compare with the host's
   let softTo = 0; // round calls up to this tick were said (the host's match can take us back)
@@ -127,10 +135,14 @@ export function createSession({ side, styles, send, onSure }) {
       if (go && theirGap != null && gap - theirGap > 3 && ++skip >= 6) { skip = 0; go = false; }
       if (go) head++;
       advance(out);
-      if (++sinceSend >= SEND_EVERY) {
+      if (mine.get(at) !== held(mine.get(at - 1) ?? NONE)) newsAt = at;
+      if (++sinceSend >= (acked >= newsAt ? QUIET_EVERY : SEND_EVERY)) {
         sinceSend = 0;
-        const from = Math.max(acked + 1, at - 30, 0), i = [];
-        for (let t = from; t <= (go ? at : at - 1); t++) i.push(mine.get(t) ?? NONE);
+        // Everything they don't have yet, oldest first (never skipping any:
+        // a message that starts after a hole is no use to them, and with
+        // several lost in a row both screens once waited for ever).
+        const from = Math.max(acked + 1, 0), i = [];
+        for (let t = from; t <= (go ? at : at - 1) && i.length < 60; t++) i.push(mine.get(t) ?? NONE);
         send({ h: head, g: gap, k: theirsTo, f: from, i });
       }
       return out;
