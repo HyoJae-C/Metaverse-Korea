@@ -166,11 +166,15 @@ single OpenStreetMap pull of Seoul instead of a snippet per district:
   is joined to a district road end within 45 m.
 - **Water and green**: the Han beyond the districts, the streams, big parks
   and woods, as flat colours. They stop 12 m short of every district's box.
+  Parks and woods are in their own file (`base-green.json`, "baseGreen") and
+  are fetched a moment after the street is up (`game/base-green.js`): they
+  are a colour only, so the start doesn't wait for them.
 - **Decks**: where a road is over water you walk on a deck
   (`CollisionMap.addDeck`); it is the road painted over the river, not a
   modelled bridge yet.
 - **Closed land** (`scripts/build-closed.mjs`): every gu now. Roads are open,
-  the blocks between them are grey and can't be walked into.
+  the blocks between them are grey and can't be walked into. Stored as one
+  bit per 10 m square (`core/closed-grid.js`), not as a list of rectangles.
 
 To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
 the OSM data changes; writes `scripts/data/seoul/`), then

@@ -268,7 +268,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const maps = Object.fromEntries(region.districts.map((d) => [d.map, read(path.join(R, d.map))]));
   const data = { roads: read(path.join(D, 'roads.json')), water: read(path.join(D, 'water.json')), green: read(path.join(D, 'green.json')) };
   const b = buildBase({ region, maps, data });
-  const json = { note: 'All of Seoul under the districts: big roads, water and green at 1/4 (scripts/build-base.mjs, from OpenStreetMap).', credit: '© OpenStreetMap contributors (ODbL)', roads: b.roads, areas: [...b.water.map((w) => ({ k: 'water', ...w })), ...b.park.map((w) => ({ k: 'park', ...w })), ...b.wood.map((w) => ({ k: 'park', wood: true, ...w }))], decks: b.decks };
+  const json = { note: 'All of Seoul under the districts: big roads, water and green at 1/4 (scripts/build-base.mjs, from OpenStreetMap).', credit: '© OpenStreetMap contributors (ODbL)', roads: b.roads, areas: [...b.water.map((w) => ({ k: 'water', ...w }))], decks: b.decks };
+  // Parks and woods: a colour only, fetched after the start (src/game/base-green.js).
+  const green = { note: 'Seoul\'s big parks and woods at 1/4 (scripts/build-base.mjs, from OpenStreetMap); region.json "baseGreen".', credit: json.credit, areas: [...b.park.map((w) => ({ k: 'park', ...w })), ...b.wood.map((w) => ({ k: 'park', wood: true, ...w }))] };
+  writeFileSync(path.join(R, 'base-green.json'), JSON.stringify(green));
   writeFileSync(path.join(R, 'base.json'), JSON.stringify(json));
   const km = b.roads.reduce((s, r) => s + polyLength(r.p), 0) / 1000;
   console.log(`roads ${b.roads.length} (${km.toFixed(1)} km), water ${b.water.length}, park ${b.park.length}, wood ${b.wood.length}, decks ${b.decks.length}`);

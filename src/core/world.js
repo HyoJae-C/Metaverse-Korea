@@ -36,6 +36,24 @@ const ROOF_TINTS = [
   0xa7b5c9, 0xd9c5a3, 0xd49a8a, 0xb8a089, 0x93b3bd, 0xd8b98a,
 ];
 
+const AREA_Y = [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]];
+
+// The base map's flat colours (water; and parks and woods, which arrive after
+// the start: game/base-green.js), one mesh a kind and a 1 km tile.
+export function makeBaseAreas(areas, lowSpec = false) {
+  const out = [];
+  for (const [kind, y] of AREA_Y) {
+    for (const list of tiles(areas.filter((a) => a.k === kind), (a) => a.p[0])) {
+      const mesh = makeFlatPolys(list.map((a) => a.p), COLORS[kind], y);
+      if (!mesh) continue;
+      mesh.name = kind;
+      mesh.receiveShadow = !lowSpec;
+      out.push(mesh);
+    }
+  }
+  return out;
+}
+
 export function buildWorld(map, scene, opts = {}) {
   const lowSpec = !!opts.lowSpec;
   const group = new THREE.Group();
@@ -52,14 +70,12 @@ export function buildWorld(map, scene, opts = {}) {
     if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
   }
 
+  // The base map's rivers (core/districts.js base) cover the whole city: drawn in tiles.
+  group.add(...makeBaseAreas(map.areas.filter((a) => a.d === 'base')));
+
   // Paving first, then lawns and water a hair above so they don't flicker.
-  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
+  for (const [kind, y] of AREA_Y) {
     const mine = map.areas.filter((a) => a.k === kind && !a.sunk); // sunk: below the street (a stream's water, drawn by core/stream.js)
-    // The base map's parks and rivers (core/districts.js base) cover the whole city: drawn in tiles.
-    for (const list of tiles(mine.filter((a) => a.d === 'base'), (a) => a.p[0])) {
-      const far = makeFlatPolys(list.map((a) => a.p), COLORS[kind], y);
-      if (far) { far.name = kind; group.add(far); }
-    }
     const polys = mine.filter((a) => a.d !== 'base').map((a) => a.p);
     const own = map.areas.filter((a) => a.k === kind && !a.sunk && a.holes).flatMap((a) => a.holes); // (an island in a river: holes inside an area)
     const mesh = makeFlatPolys(polys, COLORS[kind], y, own.length ? (opts.holes || []).concat(own) : opts.holes, opts.stairHoles); // (a stairwell in a park cuts the lawn too)

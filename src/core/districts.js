@@ -15,7 +15,7 @@
 // Map files may also have "blockers": polygons you can't walk into (a river,
 // a palace wall) that are not buildings.
 //
-// closed: land not built yet (region.json "closed".rects, [x0, z0, x1, z1],
+// closed: land not built yet (region.json "closed", core/closed-grid.js: rectangles [x0, z0, x1, z1],
 // scripts/build-closed.mjs): low blockers you can't walk into, and
 // map.closed for drawing it grey.
 //
@@ -23,6 +23,7 @@
 // scripts/build-base.mjs): the big roads (base: true), water and green of
 // the land with no district yet, and decks, the bridges those roads cross
 // water on (collision lets you walk a deck over a river's blocker).
+import { closedRects } from './closed-grid.js';
 import { inPoly } from './geom.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
@@ -67,7 +68,7 @@ export function mergeDistricts(parts, links = [], water = [], closed = [], base 
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
   const [base, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, ...region.districts.map((d) => fetchJson(d.map))]);
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], region.closed?.rects || [], base));
+  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base));
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as

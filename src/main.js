@@ -412,14 +412,15 @@ try {
 // (One map file, or several districts joined into one city: core/districts.js.)
 // A phone on a weak signal can drop one request ("Load failed"): try each
 // file up to three times before giving up, so one hiccup doesn't stop the game.
-const mapPromise = loadRegionMap(region, (file) => {
+const fetchMapFile = (file) => {
   const get = (tries) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
     if (r.status === 404) throw Object.assign(new Error('no map'), { code: 'noMap' });
     if (!r.ok) throw new Error('map ' + r.status);
     return r.json();
   }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
   return get(3);
-});
+};
+const mapPromise = loadRegionMap(region, fetchMapFile);
 // And the player's character model, so it is ready when they walk in.
 preloadModel(loadLook().model);
 
@@ -773,6 +774,8 @@ for (const d of map.decks || []) collision.addDeck(d);
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
 const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
+// The city's parks and woods are painted a moment later: not part of the wait. (game/base-green.js)
+setTimeout(() => import('./game/base-green.js').then(({ createBaseGreen }) => createBaseGreen({ region, fetchJson: fetchMapFile, map, scene, lowSpec: lowSpec || !!softwareGL })).catch(() => {}), 2500);
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall

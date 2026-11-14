@@ -17,6 +17,7 @@
 //
 //   node scripts/build-closed.mjs
 
+import { packClosed, closedRects } from '../src/core/closed-grid.js';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -96,27 +97,9 @@ export function buildClosed({ region, seoul, maps, base = null, extraPoints = []
     }
   }
 
-  // Runs along each row, then the same run on the rows below joins it.
-  const rects = [];
-  let prev = new Map(); // "i0,i1" → rect of the row above
-  for (let j = 0; j < H; j++) {
-    const row = new Map();
-    for (let i = 0; i < W;) {
-      if (!closed[j * W + i]) { i++; continue; }
-      let e = i;
-      while (e < W && closed[j * W + e]) e++;
-      const key = i + ',' + e;
-      const up = prev.get(key);
-      if (up) { up[3] = (r0 + j + 1) * CELL; row.set(key, up); } else {
-        const r = [(c0 + i) * CELL, (r0 + j) * CELL, (c0 + e) * CELL, (r0 + j + 1) * CELL];
-        rects.push(r);
-        row.set(key, r);
-      }
-      i = e;
-    }
-    prev = row;
-  }
-  return { rects, cells: closed.reduce((s, v) => s + v, 0) };
+  const packed = packClosed(closed, W, H, c0 * CELL, r0 * CELL, CELL);
+  const rects = closedRects(packed);
+  return { rects, packed, cells: closed.reduce((s, v) => s + v, 0) };
 }
 
 // Every [x, z] pair (two numbers) and { x, z } anywhere in a JSON value.
@@ -138,8 +121,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const base = region.base ? read(region.base) : null;
   const { closed: _old, water: _water, ...rest } = region; // (the river's outline is not something built)
   const extraPoints = pointsIn([rest, read('stores.json'), read('zones.json'), read('homes.json')]);
-  const { rects, cells } = buildClosed({ region, seoul, maps, base, extraPoints });
-  const line = `  "closed": { "note": "Land with nothing built yet (scripts/build-closed.mjs): rectangles [x0, z0, x1, z1] you can't walk into, drawn grey.", "rects": ${JSON.stringify(rects)} },\n`;
+  const { rects, packed, cells } = buildClosed({ region, seoul, maps, base, extraPoints });
+  const line = `  "closed": ${JSON.stringify({ note: "Land with nothing built yet (scripts/build-closed.mjs): squares you can't walk into, drawn grey; one bit a square (core/closed-grid.js).", ...packed })},
+`;
   const file = path.join(R, 'region.json');
   let text = readFileSync(file, 'utf8');
   text = text.replace(/^ {2}"closed": .*\n/m, '');

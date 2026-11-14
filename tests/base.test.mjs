@@ -12,7 +12,7 @@ import { WIDTH } from '../scripts/build-base.mjs';
 // has only these roads, on their real lines, and is closed either side.
 const R = new URL('../public/regions/another-seoul/', import.meta.url);
 const rj = (f) => JSON.parse(readFileSync(new URL(f, R), 'utf8'));
-const region = rj('region.json'), seoul = rj('seoul.json'), base = rj(region.base);
+const region = rj('region.json'), seoul = rj('seoul.json'), base = rj(region.base), green = rj(region.baseGreen);
 const osm = JSON.parse(readFileSync(new URL('../scripts/data/seoul/roads.json', import.meta.url), 'utf8'));
 const map = await loadRegionMap(region, async (f) => rj(f));
 const segDist = (x, z, [ax, az], [bx, bz]) => { const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - ax - dx * t, z - az - dz * t); };
@@ -22,7 +22,7 @@ test('the base map is in the region, credited, and small enough to fetch at the 
   assert.equal(region.base, 'base.json');
   assert.match(base.credit, /OpenStreetMap/);
   const gz = gzipSync(readFileSync(new URL(region.base, R))).length;
-  assert.ok(gz < 180 * 1024, `base.json is ${Math.round(gz / 1024)} KB gzipped`);
+  assert.ok(gz < 75 * 1024, `base.json is ${Math.round(gz / 1024)} KB gzipped`);
   assert.ok(base.roads.length > 300 && base.decks.length > 50);
 });
 
@@ -98,8 +98,9 @@ test('bridges: a deck wherever a base road is over water, and the Han can be cro
 });
 
 test('base water and green keep out of the districts (their own maps rule there)', () => {
-  assert.ok(base.areas.some((a) => a.k === 'water') && base.areas.some((a) => a.k === 'park'));
-  for (const a of base.areas) assert.ok(['water', 'park'].includes(a.k));
+  // (Water comes with the base; parks and woods in their own file after the start: game/base-green.js.)
+  assert.ok(base.areas.length && base.areas.every((a) => a.k === 'water'));
+  assert.ok(green.areas.length && green.areas.every((a) => a.k === 'park'));
   const seongsu = [0, 0], gwanghwamun = map.meta.districts.find((d) => d.id === 'gyeongbokgung').offset;
-  for (const [x, z] of [seongsu, gwanghwamun]) assert.ok(!base.areas.some((a) => inPolygon(x, z, a.p)), `base area over ${x}, ${z}`);
+  for (const [x, z] of [seongsu, gwanghwamun]) assert.ok(![...base.areas, ...green.areas].some((a) => inPolygon(x, z, a.p)), `base area over ${x}, ${z}`);
 });
