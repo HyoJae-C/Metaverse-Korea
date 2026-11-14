@@ -496,6 +496,7 @@ export const ID = {
   'ledger.together': "Bonus bersama teman",
   'ledger.taxi': "Taksi",
   'ledger.ride': "Wahana",
+  'ledger.arcade': 'Game arkade',
   'ledger.cable': "Kereta gantung Namsan",
   'ledger.loveLock': "Gembok cinta Namsan",
   'ledger.rename': "Ganti nama",
