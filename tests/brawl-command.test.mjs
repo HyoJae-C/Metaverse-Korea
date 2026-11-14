@@ -20,7 +20,7 @@ test('simple down/toward commands select either special and spend the same bar',
 });
 test('expired command and insufficient bar leave normal attacks available', () => {
   assert.equal(command('p', 31).move, 'upper');
-  assert.equal(command('k', 0, 0).move, 'lk');
+  assert.equal(command('k', 0, 0).move, 'rk'); // (toward + kick without the bar: the roundhouse)
 });
 test('command history survives transmission and copies never share mutable state', () => {
   const m = newMatch('brawler', 'ninja', true);

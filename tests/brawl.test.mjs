@@ -267,7 +267,7 @@ test('brawl styles: a guard held when the ninja blinks behind it still holds', (
   }
   assert.ok(ev.some((e) => e.k === 'blink'));
   assert.ok(ev.some((e) => e.k === 'block') && !ev.some((e) => e.k === 'hit'), 'guarded');
-  assert.equal(t.hp, t.maxHp);
+  assert.equal(t.hp, t.maxHp - Math.round(n.mv.fly.dmg * 0.5), 'only the chip a special always takes');
   // Not guarding before the blink: it hits.
   const [n2, t2] = duelFull('ninja', 'brawler', 2.2);
   ev = [];
@@ -287,7 +287,7 @@ test('brawl: a dash covers ground fast, stops at the other fighter, and an attac
   const [e, f] = duel('boxer', 'brawler', 2.2);
   const ie = [{ dash: 1 }]; ie[8] = { p: true };
   const hit = run(e, f, ie, [], 30).find((q) => q.k === 'hit');
-  assert.ok(hit && hit.move === 'lp', 'a dash into a jab lands');
+  assert.ok(hit && hit.move === 'rush', 'a punch out of a dash is the rushing punch, and it lands');
   const [g, h] = duel('brawler', 'brawler', 1.0);
   const gx = g.x;
   run(g, h, [{ dash: -1 }], [], 10);
@@ -353,4 +353,25 @@ test('pressing only the first button of a string again and again plays the whole
       assert.ok(fin, `${style}, mashing ${first}`);
     }
   }
+});
+
+test('brawl: the stick picks the move: heavy punch, roundhouse, sweep; a special announces itself and chips through a guard', () => {
+  for (const [inp, id] of [[{ p: true, mx: -1 }, 'heavy'], [{ k: true, mx: 1 }, 'rk'], [{ k: true, mx: -1 }, 'sweep'], [{ p: true, mx: 1 }, 'upper']]) {
+    const [a, b] = pair();
+    const ev = run(a, b, [inp], [], 80);
+    assert.ok(ev.some((e) => e.k === 'hit' && e.move === id), id);
+  }
+  const [a, b] = pair();
+  run(a, b, [{ k: true, mx: -1 }], [], 30);
+  assert.ok(['air', 'down'].includes(b.st), 'the sweep floors them');
+  const [c, d] = pair();
+  c.sp = SP_COST;
+  const ev = run(c, d, [{ s1: true }], { hold: { mx: -1 } }, 60);
+  assert.ok(ev.some((e) => e.k === 'super' && e.who === 0));
+  const normal = movesFor('brawler'), special = normal.palm.dmg;
+  assert.ok(special >= 3 * normal.lp.dmg * 0.75 && special > normal.rk.dmg, 'a special hurts far more than a normal hit');
+  const [e, f] = pair();
+  e.sp = SP_COST; f.hp = 3;
+  run(e, f, [{ s2: true }], { hold: { mx: -1 } }, 80);
+  assert.ok(f.hp >= 1, 'a chip never takes the last point');
 });
