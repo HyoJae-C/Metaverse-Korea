@@ -1,10 +1,11 @@
-// Inside Seoul Forest's culture center and the forest galleries: a white
-// gallery room with frames on the side and front walls, a poster and an info
-// desk at the back, and benches in the middle. What hangs in the frames
-// comes from src/data/exhibitions.js; with nothing booked yet, each frame
-// shows a soft "coming soon" card.
+// Inside Seoul Forest's forest galleries. With a show on (src/data/
+// exhibitions.js): 4 works on each side wall and 2 on the back wall, the
+// show's poster and the info desk by the door, benches in the middle, and
+// the walls in the show's look ('colorful' or 'dark'). With nothing booked:
+// a white room with "coming soon" cards on the side and front walls, the
+// poster and the desk at the back.
 import * as THREE from 'three';
-import { EXHIBITIONS, COMING_SOON } from '../data/exhibitions.js';
+import { EXHIBITIONS, COMING_SOON, showWork } from '../data/exhibitions.js';
 import { COUNTER_H } from './counter-face.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -33,9 +34,11 @@ function card(work, i) {
 }
 
 // scene, room {w, d, h}, helpers { box, block, mat } from interior.js.
-export function buildCulture(scene, room, { box, block }, store) {
-  const { w, d } = room;
+export function buildCulture(scene, room, helpers, store) {
   const show = EXHIBITIONS[store.id] || { works: [] };
+  if (show.works.length) return buildShow(scene, room, helpers, store, show);
+  const { box, block } = helpers;
+  const { w, d } = room;
   // Frames: 3 on each side wall, 2 on the front wall either side of the door.
   const slots = [];
   for (const s of [-1, 1]) for (const k of [-1, 0, 1]) slots.push({ x: s * (w / 2 - 0.06), z: k * (d / 4), ry: -s * Math.PI / 2 });
@@ -91,5 +94,100 @@ export function buildCulture(scene, room, { box, block }, store) {
     scene.add(leaves);
     block(px, pz, 0.7, 0.7);
   }
-  return { seats, clerk };
+  return { seats, clerk, looks: [] };
+}
+
+// The looks of a show's room: wall colours (back, left, right, front), the
+// frames' colours, and what lies on the floor.
+const LOOKS = {
+  colorful: { walls: ['#ffd166', '#ff8fab', '#7ad3f7', '#9be38a'], frames: ['#ff5d8f', '#ffb703', '#3ab0ff', '#57cc99', '#9b5de5'], floor: '#fff7ec', halo: null, board: '#ff5d8f' },
+  dark: { walls: ['#18181b', '#18181b', '#18181b', '#18181b'], frames: ['#0b0b0d'], floor: '#26262a', halo: '#303036', board: '#18181b' },
+};
+const MAX_SIDE = 1.5; // the longer side of a work on the wall
+
+// Wall spots for a show: 4 on each side wall, then 2 on the back wall.
+export function showSlots(room) {
+  const { w, d } = room;
+  const slots = [];
+  for (const s of [-1, 1]) for (const z of [-3.4, -1.15, 1.15, 3.4]) slots.push({ x: s * (w / 2 - 0.05), z: z * d / 11, ry: -s * Math.PI / 2 });
+  for (const x of [-1.9, 1.9]) slots.push({ x, z: -d / 2 + 0.05, ry: 0, max: 1.3, y: 1.6 }); // (lower and smaller: the room's name is above)
+  for (const sl of slots) sl.look = { x: sl.x + Math.sin(sl.ry) * 1.5, z: sl.z + Math.cos(sl.ry) * 1.5 };
+  return slots;
+}
+
+function buildShow(scene, room, { box, block }, store, show) {
+  const { w, d, h } = room;
+  const look = LOOKS[show.theme] || LOOKS.dark;
+  // The walls and floor in the show's look, just inside the room's own.
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: look.floor }));
+  floor.position.y = 0.006;
+  scene.add(floor);
+  [[w, 0, -d / 2 + 0.015, 0], [d, -w / 2 + 0.015, 0, Math.PI / 2], [d, w / 2 - 0.015, 0, -Math.PI / 2], [w, 0, d / 2 - 0.015, Math.PI]].forEach(([len, x, z, ry], i) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, h), new THREE.MeshLambertMaterial({ color: look.walls[i] }));
+    m.position.set(x, h / 2, z);
+    m.rotation.y = ry;
+    scene.add(m);
+  });
+  // The works, each in a frame (a coloured one in a colourful show) on a
+  // white mat, under a little lamp; in a dark show a soft lit patch behind.
+  const loader = new THREE.TextureLoader();
+  const looks = [];
+  showSlots(room).forEach((sl, i) => {
+    const raw = show.works[i];
+    if (!raw) return;
+    const work = showWork(show, raw, i);
+    const max = sl.max || MAX_SIDE;
+    const W = work.w >= work.h ? max : max * work.w / work.h, H = W * work.h / work.w;
+    const g = new THREE.Group();
+    g.position.set(sl.x, sl.y || 1.75, sl.z);
+    g.rotation.y = sl.ry;
+    scene.add(g);
+    if (look.halo) {
+      const halo = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.8, H + 0.9), new THREE.MeshBasicMaterial({ color: look.halo }));
+      halo.position.set(0, 0.1, 0.01);
+      g.add(halo);
+    }
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(W + 0.22, H + 0.22, 0.04), new THREE.MeshBasicMaterial({ color: look.frames[i % look.frames.length] }));
+    frame.position.z = 0.03;
+    g.add(frame);
+    const matte = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.12, H + 0.12), new THREE.MeshBasicMaterial({ color: '#f6f4ef' }));
+    matte.position.z = 0.052;
+    g.add(matte);
+    const art = new THREE.MeshBasicMaterial({ color: '#cfcac2' }); // until the image arrives
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(W, H), art);
+    pic.position.z = 0.054;
+    g.add(pic);
+    loader.load(work.url, (t) => { t.colorSpace = THREE.SRGBColorSpace; art.map = t; art.color.set('#ffffff'); art.needsUpdate = true; });
+    const spot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.3), new THREE.MeshLambertMaterial({ color: '#2b2b2b' }));
+    spot.position.set(0, H / 2 + 0.45, 0.2);
+    g.add(spot);
+    looks.push({ x: sl.look.x, z: sl.look.z, painting: work });
+  });
+  // The show's board on the front wall, left of the door.
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), new THREE.MeshBasicMaterial({ map: tex(520, 260, (g, cw, ch) => {
+    g.fillStyle = look.board; g.fillRect(0, 0, cw, ch);
+    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `800 64px ${FONT}`; g.fillText(show.title.ko, cw / 2, ch / 2 - 40, cw - 40);
+    if (show.title.en !== show.title.ko) { g.font = `600 30px ${FONT}`; g.fillText(show.title.en, cw / 2, ch / 2 + 16, cw - 40); }
+    g.font = `500 28px ${FONT}`; g.fillText(`📷 ${show.artist.en}`, cw / 2, ch / 2 + 66, cw - 40);
+  }) }));
+  board.position.set(-w / 4 - 0.6, 1.9, d / 2 - 0.03);
+  board.rotation.y = Math.PI;
+  scene.add(board);
+  // The info desk by the door on the right, the guide between it and the wall.
+  const dx = w / 4 + 0.6, dz = d / 2 - 1.7;
+  box(2.2, COUNTER_H - 0.03, 0.7, dx, (COUNTER_H - 0.03) / 2, dz, '#f2efe8'); // (COUNTER_H: the guide's face shows, core/counter-face.js)
+  box(2.3, 0.05, 0.8, dx, COUNTER_H, dz, store.colors.sign);
+  block(dx, dz, 2.3, 0.8);
+  const clerk = { x: dx, z: dz + 0.75, ry: Math.PI };
+  // Benches in the middle, back to back, facing the side walls.
+  const seats = [];
+  for (const s of [-1, 1]) {
+    const x = s * 0.8;
+    box(0.6, 0.08, 2.4, x, 0.4, -0.4, '#a9805a');
+    for (const k of [-1, 1]) box(0.5, 0.4, 0.1, x, 0.2, -0.4 + k * 1.05, '#6b4f36');
+    block(x, -0.4, 0.6, 2.4);
+    for (const o of [-0.6, 0.6]) seats.push({ x, z: -0.4 + o, ry: s * Math.PI / 2, stand: [x + s, -0.4 + o] });
+  }
+  return { seats, clerk, looks };
 }
