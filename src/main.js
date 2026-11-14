@@ -1546,13 +1546,16 @@ const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
 // (just below) already calls off any waiting gifts.
 let giftsGame = null;
 function dropGifts() { giftsGame?.dropGifts(); }
-// On the street only friends see each other and send each other their
-// movement (most realtime messages were strangers walking past each other);
-// inside a shop or a game room everyone does. Set once chat (and with it the
-// friend list) exists. Test rooms and local play have no accounts, so
-// everyone shows there (the e2e turns it on: __mk.friendsOnly).
+// "Friends only on the street" (net/area.js shows): when on, only friends
+// see each other there and send each other their movement; inside a shop or
+// a game room everyone does. Off since 2026-11-15 (Yozi: strangers should be
+// seen too); kept as a switch, and the e2e turns it on (__mk.friendsOnly).
+// The full map's dots are friends only instead (Yozi's choice): see getPlayers.
 let streetFriend = null;
-let friendsOnlyStreet = !testRoom && config.netProvider === 'supabase';
+let friendsOnlyStreet = false;
+const friendsOnlyMap = !testRoom && config.netProvider === 'supabase'; // (test rooms have no accounts: everyone)
+// Is a friend among the people we see? (Then our movement goes at the full rate.)
+const friendNear = () => { for (const p of others.players.values()) if (!p.hidden && streetFriend?.(String(p.name ?? '').trim())) return true; return false; };
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
@@ -3657,7 +3660,8 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
     const pos = mode === 'street' ? me.root.position : op ? myPlace() : interior.front.door;
     return {
       me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
-      others: outdoors() ? others.list() : [],
+      // Only friends get a dot (by name, like gifts); everyone is still seen on the street.
+      others: outdoors() ? others.list().filter((o) => !friendsOnlyMap || !!streetFriend?.(String(o.name ?? '').trim())) : [],
     };
   },
   onGuide: (g) => {
@@ -7355,7 +7359,10 @@ renderer.setAnimationLoop((now) => {
     }
     // Carrying passengers: send more often so their seats keep up.
     // In a crowd, less often (net/rate.js).
-    sendTimer = 1 / (passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin }));
+    let rate = passengers.size || bumper.driving ? 12 : sendRate({ peers: net.peers, base: running || riding ? config.netSendRateRun : config.netSendRate, budget: config.netRecvBudget, min: riding && onlineAll < config.netRideFloorUntil ? config.netSendRateRide : config.netSendRateMin });
+    // Only strangers around on the street: slower (config.netSendRateStranger).
+    if (!passengers.size && !bumper.driving && friendsOnlyMap && outdoors() && !friendNear()) rate = Math.min(rate, riding ? config.netSendRateStrangerRide : config.netSendRateStranger);
+    sendTimer = 1 / rate;
   }
 
   const w = innerWidth, h = innerHeight;
