@@ -60,7 +60,7 @@ import { JONGMYO, JongmyoBook, onSamdo, offSindo, inBox, RITE_WATCH } from './da
 import { BOSINGAK, BOSINGAK_TEXT, BOSINGAK_CARD, newYearRinging, nearBell, strikeBell, bellGain } from './data/bosingak.js';
 import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
-import { createRideCam } from './game/ride-cam.js';
+import { createRideCam, rideNear } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
 import { createTouchSteer } from './game/touch-steer.js';
 import { createFollowCam } from './game/follow-cam.js';
@@ -5487,7 +5487,7 @@ function endRide() {
     me.root.rotation.set(0, Math.atan2(ride.back[0] - me.root.position.x, ride.back[1] - me.root.position.z), 0);
     cam.yaw = me.root.rotation.y + Math.PI;
     me.root.visible = true;
-    rideCam.reset();
+    rideCam.off();
     rideThrill.stop();
   }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
@@ -5598,6 +5598,7 @@ function endCoaster() {
   camera.fov = 62;
   camera.up.set(0, 1, 0);
   camera.updateProjectionMatrix();
+  rideNear(camera, false); // (the near plane came in for the ride: game/ride-cam.js)
   shop.toast(L(COASTER_TEXT.back));
 }
 function updateCoaster(dt) {
@@ -5629,6 +5630,7 @@ function coasterCamera(dt) {
   const f = ride?.pose;
   if (!f) return;
   const tr = f.tr, first = ride.view === 'first';
+  rideNear(camera, true); // (a friend in the next seat: their face isn't cut away)
   const fx = rideFx(tr.k01, tr.phase, rideFxSoft);
   // A little behind and above you, a beat late so the train surges ahead
   // when it speeds up (or in your seat).
@@ -7083,7 +7085,7 @@ renderer.setAnimationLoop((now) => {
   }
   if (mode === 'store' && interior?.store.workshop === 'runway') runwayTick(dt); // (walking with friends: the line)
   if (mode === 'store') interior?.tick?.(dt, me.root.position); // amusement park rides, the haunted house
-  if (mode === 'store') parkRiders.tick(interior?.riderNpcs); // (guests on the carousel and the ship)
+  if (mode === 'store') parkRiders.tick(interior?.riderNpcs, ride && ride.kind !== 'coaster' && ride.view === 'first' ? camera.position : null); // (guests on the carousel and the ship; from your seat, one whose head comes into the camera steps out of sight)
   else landmarks.userData.tick(performance.now() / 1000); // Modu Land's wheel, coaster and drop tower
   if (mode === 'street' && streams.length) { streamModels.userData.tick(performance.now() / 1000); updateWishes(); } // ripples, waterfall, lanterns
   updateDroneShow();
