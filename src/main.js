@@ -1625,7 +1625,6 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
-      if (arcadeGame.onStrikeMsg(id, e)) return; // NEON STRIKE with someone in the PC방 (game/arcade.js)
       if (arcadeGame.onBrawlMsg(id, e)) return; // the fighting game with someone in the room (game/arcade.js)
       if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
