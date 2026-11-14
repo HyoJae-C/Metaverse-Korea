@@ -83,7 +83,7 @@ test('off a base road the land with nothing built is closed', () => {
     n++;
     if (solid.blocked(mx, mz, 0.5)) shut++;
   }
-  assert.ok(n > 100 && shut / n > 0.8, `${shut} of ${n} spots beside base roads are closed`);
+  assert.ok(n > 25 && shut / n > 0.8, `${shut} of ${n} spots beside base roads are closed`);
 });
 
 test('bridges: a deck wherever a base road is over water, and the Han can be crossed far from the districts', () => {
@@ -92,9 +92,23 @@ test('bridges: a deck wherever a base road is over water, and the Han can be cro
   let over = 0;
   for (const r of base.roads) for (const [x, z] of samples(r.p, 3)) if (wet(x, z)) { over++; assert.ok(map.decks.some((d) => inPolygon(x, z, d)), `no deck at ${x.toFixed(0)}, ${z.toFixed(0)}`); }
   assert.ok(over > 300, `${over} samples over water`);
-  // Gayang Bridge (west of every district) and a bridge east of Jamsil: base roads over the Han there.
-  const [gx] = toGame(37.5725, 126.862), [ex] = toGame(37.5436, 127.117);
-  for (const [name, x] of [['Gayang Bridge', gx], ['Cheonho Bridge', ex]]) assert.ok(base.roads.some((r) => samples(r.p, 3).filter(([px, pz]) => Math.abs(px - x) < 120 && wet(px, pz)).length > 20), `${name} crosses the river`);
+  // A bridge between two gu that have districts is whole;
+  // one into a gu with nothing built (Gayang Bridge, Mapo to Gangseo) is left out, not half built.
+  assert.ok(base.roads.some((r) => samples(r.p, 3).filter(([px, pz]) => wet(px, pz)).length > 60), 'a whole bridge over the Han');
+  const [gx, gz] = toGame(37.5725, 126.862); // (mid-river)
+  assert.ok(!base.roads.some((r) => samples(r.p, 3).some(([px, pz]) => Math.hypot(px - gx, pz - gz) < 100 && wet(px, pz))), 'no half of Gayang Bridge');
+});
+
+test('a gu with no district has no base road and no green: it is all closed land', () => {
+  const empty = seoul.gu.filter((g) => !(g.districts || []).length), kept = seoul.gu.filter((g) => (g.districts || []).length);
+  assert.ok(empty.length > 5 && kept.length > 5);
+  const inside = (list, x, z) => list.some((g) => inPolygon(x, z, g.p));
+  // (A sample may sit a step over the border.)
+  const strayRoad = base.roads.flatMap((r) => samples(r.p, 5)).filter(([x, z]) => inside(empty, x, z) && !inside(kept, x, z));
+  assert.ok(strayRoad.length < 40, `${strayRoad.length} base road samples in empty gu`);
+  const far = empty.map((g) => { const n = g.p.length; return [g.p.reduce((t, q) => t + q[0], 0) / n, g.p.reduce((t, q) => t + q[1], 0) / n, g]; }).filter(([x, z, g]) => inPolygon(x, z, g.p));
+  const solid = new CollisionMap(map.buildings.concat(map.blockers));
+  for (const [x, z, g] of far) assert.ok(solid.blocked(x, z, 0.5) || map.areas.some((a) => a.k === 'water' && inPolygon(x, z, a.p)), `${g.id}'s middle is open`);
 });
 
 test('base water and green keep out of the districts (their own maps rule there)', () => {

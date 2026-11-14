@@ -155,7 +155,7 @@ lists **districts** joined into one map (`src/core/districts.js`):
 
 ## The base map: all of Seoul's big roads (2026-11-14)
 
-Under the hand-built districts lies one base layer for the whole city,
+Under the hand-built districts lies one base layer,
 `public/regions/another-seoul/base.json` (`region.json` "base"), made from a
 single OpenStreetMap pull of Seoul instead of a snippet per district:
 
@@ -175,6 +175,13 @@ single OpenStreetMap pull of Seoul instead of a snippet per district:
 - **Closed land** (`scripts/build-closed.mjs`): every gu now. Roads are open,
   the blocks between them are grey and can't be walked into. Stored as one
   bit per 10 m square (`core/closed-grid.js`), not as a list of rectangles.
+
+**Only in the gu that have a district** (`seoul.json` "districts"; 11 of 25
+on 2026-11-15). A gu with nothing built gets no base roads or green and is
+all closed land; rivers are kept whole, and a bridge into such a gu is left
+out rather than stopping mid-river. The data for every gu stays in
+`scripts/data/seoul/`: when a district is added to a gu, the next
+`build-base.mjs` run brings that gu's base back.
 
 To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
 the OSM data changes; writes `scripts/data/seoul/`), then

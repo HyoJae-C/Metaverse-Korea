@@ -77,7 +77,16 @@ const nearestOn = (p, a, b) => {
   return [a[0] + t * dx, a[1] + t * dz];
 };
 
-export function buildBase({ region, maps, data }) {
+// The base is made only in the gu that have a district (seoul.json
+// "districts"); a gu with nothing in it yet gets no roads, water or green
+// and is all closed land (Yozi 2026-11-15: left out until something is built
+// there). Building a district in a gu brings its base back on the next run.
+export const baseGu = (seoul) => seoul.gu.filter((g) => (g.districts || []).length > 0);
+
+export function buildBase({ region, maps, data, seoul }) {
+  const kept = baseGu(seoul).map((g) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of g.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { p: g.p, x0, x1, z0, z1 }; });
+  const inKept = ([x, z]) => kept.some((g) => x >= g.x0 && x <= g.x1 && z >= g.z0 && z <= g.z1 && inPolygon(x, z, g.p));
+  const keptArea = polygonClipping.union(...kept.map((g) => [[g.p.concat([g.p[0]])]]));
   const parts = region.districts.map((d) => ({ ...d, map: maps[d.map] }));
   const city = mergeDistricts(parts, region.links || [], region.water || []);
 
@@ -145,6 +154,8 @@ export function buildBase({ region, maps, data }) {
   };
   const along = (grid, pt, ux, uz, r) => grid.near(pt, r, (s) => Math.abs(s.ux * ux + s.uz * uz) > 0.82 && segDist(pt, s.a, s.b) < r);
 
+  const rawWater = data.water.water.map((a) => a.o.map(g2)).concat(city.areas.filter((a) => a.k === 'water').map((a) => a.p)).map((p) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { p, x0, x1, z0, z1 }; });
+  const inRawWater = ([x, z]) => rawWater.some((w) => x > w.x0 && x < w.x1 && z > w.z0 && z < w.z1 && inPolygon(x, z, w.p));
   const roads = [];
   for (const c of chains) {
     const s = resample(c.p, STEP);
@@ -154,8 +165,24 @@ export function buildBase({ region, maps, data }) {
       if (along(base, pt, ux, uz, NEAR_BASE)) return 1; // the other carriageway
       if (along(old, pt, ux, uz, NEAR_OLD)) return 2; // a district's road
       if (inWall(pt)) return 3;
+      if (!inKept(pt)) return 4; // a gu with nothing built
       return 0;
     });
+    // A bridge into a gu with nothing built stops at this bank, not mid-river.
+    // (A chain that ends at such a gu's border, a bridge that is its own road: its end counts as cut.)
+    for (const [e, f] of [[0, 1], [s.length - 1, s.length - 2]]) {
+      if (state[e] !== 0 || !s[f]) continue;
+      const l = Math.hypot(s[e][0] - s[f][0], s[e][1] - s[f][1]) || 1, ux = (s[e][0] - s[f][0]) / l, uz = (s[e][1] - s[f][1]) / l;
+      if ([10, 25].some((d) => !inKept([s[e][0] + ux * d, s[e][1] + uz * d]))) state[e] = 4;
+    }
+    for (let i = 0; i < s.length; i++) {
+      if (state[i] !== 4) continue;
+      // (and 12 m on, off the water's edge)
+      const nearWater = (k) => [0, 1, 2, 3, 4].some((d) => (s[k - d] && inRawWater(s[k - d])) || (s[k + d] && inRawWater(s[k + d])));
+      for (let k = i - 1; k >= 0 && state[k] === 0 && nearWater(k); k--) state[k] = 4;
+      for (let k = i + 1; k < s.length && state[k] === 0 && nearWater(k); k++) state[k] = 5;
+    }
+    for (let i = 0; i < s.length; i++) if (state[i] === 5) state[i] = 4;
     // Close short gaps (a few samples that happen to pass something).
     for (let i = 0; i < s.length;) {
       if (!state[i]) { i++; continue; }
@@ -200,23 +227,31 @@ export function buildBase({ region, maps, data }) {
   const taken = polygonClipping.union(...boxes);
   // (tol: how far, in game metres, an outline may be smoothed; parks and woods
   // are only a colour on the ground, so they are kept coarse and whole metres.)
-  const cut = (list, minArea, tol, extra = {}) => {
+  const cut = (list, minArea, tol, everywhere = false) => {
     const rd = tol >= 2 ? Math.round : r1;
     const out = [];
     for (const a of list) {
       const poly = [a.o.map(g2), ...(a.h || []).map((h) => h.map(g2))];
       let res;
-      try { res = polygonClipping.difference([poly], taken); } catch { continue; }
+      let cutByGu = false;
+      try {
+        const whole = polygonClipping.difference([poly], taken);
+        res = everywhere ? whole : polygonClipping.intersection(whole, keptArea);
+        const sum = (m) => m.reduce((t, q) => t + polyArea(q[0]), 0);
+        cutByGu = sum(res) < sum(whole) * 0.99;
+      } catch { continue; }
       for (const q of res) {
+        // (Cut at a gu's border, a stream along the border leaves a sliver: dropped.)
+        if (cutByGu && (2 * polyArea(q[0])) / polyLength(q[0]) < 6) continue;
         const [o, ...h] = q.map((ring) => simplify(ring.slice(0, -1), tol, true).map(([x, z]) => [rd(x), rd(z)]));
         if (o.length < 3 || polyArea(o) < minArea) continue;
         const holes = h.filter((ring) => ring.length > 2 && polyArea(ring) > 60);
-        out.push({ p: o, ...(holes.length ? { holes } : {}), ...(a.n ? { n: { ko: a.n, ...(a.en ? { en: a.en } : {}) } } : {}), ...extra });
+        out.push({ p: o, ...(holes.length ? { holes } : {}), ...(a.n ? { n: { ko: a.n, ...(a.en ? { en: a.en } : {}) } } : {}) });
       }
     }
     return out;
   };
-  const water = cut(data.water.water, 300, 1);
+  const water = cut(data.water.water, 300, 1, true) // (rivers whole: a gu's border runs down the middle of the Han);
   const park = cut(data.green.park, 2000, 3);
   const wood = cut(data.green.wood, 3000, 4);
 
@@ -237,7 +272,7 @@ export function buildBase({ region, maps, data }) {
     const side = r.w / 2 + 1;
     const wet = s.map((pt, i) => {
       const a = s[Math.max(0, i - 1)], b = s[Math.min(s.length - 1, i + 1)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, nx = -(b[1] - a[1]) / l, nz = (b[0] - a[0]) / l;
-      return [-side, -side / 2, 0, side / 2, side].some((o) => wetXZ(pt[0] + nx * o, pt[1] + nz * o));
+      return [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1].some((o) => wetXZ(pt[0] + nx * o * side, pt[1] + nz * o * side)); // (every 2 m: a brook 3 m wide beside the road counts)
     });
     const wetAt = (_x, _z, i) => wet[i];
     for (let i = 0; i < s.length;) {
@@ -267,7 +302,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const region = read(path.join(R, 'region.json'));
   const maps = Object.fromEntries(region.districts.map((d) => [d.map, read(path.join(R, d.map))]));
   const data = { roads: read(path.join(D, 'roads.json')), water: read(path.join(D, 'water.json')), green: read(path.join(D, 'green.json')) };
-  const b = buildBase({ region, maps, data });
+  const b = buildBase({ region, maps, data, seoul: read(path.join(R, 'seoul.json')) });
   const json = { note: 'All of Seoul under the districts: big roads, water and green at 1/4 (scripts/build-base.mjs, from OpenStreetMap).', credit: '© OpenStreetMap contributors (ODbL)', roads: b.roads, areas: [...b.water.map((w) => ({ k: 'water', ...w }))], decks: b.decks };
   // Parks and woods: a colour only, fetched after the start (src/game/base-green.js).
   const green = { note: 'Seoul\'s big parks and woods at 1/4 (scripts/build-base.mjs, from OpenStreetMap); region.json "baseGreen".', credit: json.credit, areas: [...b.park.map((w) => ({ k: 'park', ...w })), ...b.wood.map((w) => ({ k: 'park', wood: true, ...w }))] };
