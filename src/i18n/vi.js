@@ -675,7 +675,6 @@ export const VI = {
   'dal.keptPaid': "Bạn vẫn còn vé Seoul Dal đã trả tiền. Lên ở cổng.",
   'dal.boardPaid': "Đi Seoul Dal · vé đã trả · {k}/{max} người",
   'dal.turnPaid': "Đến lượt bạn! Lên · vé đã trả · {s} giây",
-  'credit.icons': 'Biểu tượng',
   "fountain.soon": "🌈 Đài phun nước Cầu vồng Ánh trăng bắt đầu sau một phút. Ngắm cầu Banpo từ bãi cỏ bên sông nhé.",
   "fountain.on": "🌈 Đài phun nước Cầu vồng đang chạy: dòng nước bảy sắc đổ xuống từ hai bên cầu Banpo.",
   "fountain.photo": "📸 Giờ chụp ảnh: cả cây cầu rực cầu vồng trong phút cuối.",

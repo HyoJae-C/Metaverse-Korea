@@ -675,7 +675,6 @@ export const ID = {
   'dal.keptPaid': "Tiket Seoul Dal yang sudah kamu bayar masih ada. Naik di gerbang.",
   'dal.boardPaid': "Naik Seoul Dal · tiket sudah dibayar · {k}/{max} naik",
   'dal.turnPaid': "Giliranmu! Naik · tiket sudah dibayar · {s} dtk",
-  'credit.icons': 'Ikon',
   "fountain.soon": "🌈 Air Mancur Pelangi Cahaya Bulan dimulai satu menit lagi. Tonton Jembatan Banpo dari halaman rumput di tepi sungai.",
   "fountain.on": "🌈 Air Mancur Pelangi menyala: air warna pelangi mengalir dari kedua sisi Jembatan Banpo.",
   "fountain.photo": "📸 Waktunya foto: seluruh jembatan bermandi pelangi di menit terakhir.",

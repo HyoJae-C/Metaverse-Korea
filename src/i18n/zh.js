@@ -678,7 +678,6 @@ export const ZH = {
   'dal.keptPaid': "你已付费的首尔月票还在。请到登乘口登乘。",
   'dal.boardPaid': "乘坐首尔月 · 已付费 · {k}/{max}人",
   'dal.turnPaid': "轮到你了！登乘 · 已付费 · {s}秒",
-  'credit.icons': '图标',
   "fountain.soon": "🌈 月光彩虹喷泉一分钟后开始。到江边草地上看盘浦大桥吧。",
   "fountain.on": "🌈 月光彩虹喷泉开始了：彩虹色的水从盘浦大桥两侧倾泻而下。",
   "fountain.photo": "📸 拍照时间！最后一分钟，整座桥都是彩虹。",

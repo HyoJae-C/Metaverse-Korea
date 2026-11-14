@@ -5,16 +5,22 @@ import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
 
-// The kind icons (ui/closet-icons.js) load the first time the wardrobe opens;
-// until then a piece shows its own emoji.
-let closetSvg = null, svgLoad = null;
-const loadClosetSvgs = (redraw) => (svgLoad ||= import('./closet-icons.js').then((m) => { closetSvg = m.closetSvg; redraw(); }));
-// A piece's icon in the wardrobe: its kind's icon with a dot of its colour.
+// A piece's icon in the wardrobe: its own emoji, with a dot of its colour.
+// Sets (one piece for top and bottom) have no emoji, so they get a small
+// picture (public/assets/closet/set.webp, 3.5 KB), fetched only when shown.
+// A top whose emoji isn't clothing (🖤 hoodie, 🍷 hoodie, 🧶 knit, 🤵 suit)
+// shows 👕 here, so the wardrobe reads as clothes at a glance.
+const SET_ICON = '/assets/closet/set.webp';
+const TOP_EMOJI = new Set(['👕', '👔', '🧥', '🦺', '🥼', '👚', '🎽']);
+const kindEmoji = (d) => (d.kind === 'top' && !TOP_EMOJI.has(d.emoji) ? (d.emoji === '🤵' ? '🧥' : '👕') : d.emoji);
 function closetIcon(d, el) {
   const icon = el('span', 'closet-icon');
-  const svg = closetSvg?.(d.kind);
-  if (svg) icon.innerHTML = svg;
-  else icon.textContent = d.emoji;
+  if (d.kind === 'dress') {
+    const img = el('img', 'closet-img');
+    img.src = SET_ICON;
+    img.alt = '';
+    icon.append(img);
+  } else icon.textContent = kindEmoji(d);
   if (d.color) {
     const dot = el('i', 'closet-dot');
     dot.style.background = d.color;
@@ -215,7 +221,6 @@ export class BagUI {
   // it is with Wear / Take off.
   closetBody(closet, el) {
     const all = closet.ids;
-    if (!closetSvg) loadClosetSvgs(() => { if (this.tab === 'closet') this.render(); });
     if (!all.length) return [el('p', 'fine bag-closet-empty', L(BAG_TEXT.closetEmpty))];
     const info = new Map(all.map((id) => [id, closet.describe(id)]));
     const kinds = CLOSET_KINDS.filter((k) => all.some((id) => info.get(id).kind === k));

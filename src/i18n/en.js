@@ -677,7 +677,6 @@ export const EN = {
   'dal.keptPaid': "You still have your paid Seoul Dal ticket. Board at the gate.",
   'dal.boardPaid': "Ride Seoul Dal · ticket paid · {k}/{max} aboard",
   'dal.turnPaid': "Your turn! Board · ticket paid · {s}s",
-  'credit.icons': 'Icons',
   "fountain.soon": "🌈 The Moonlight Rainbow Fountain starts in a minute. Watch Banpo Bridge from the lawn by the river.",
   "fountain.on": "🌈 The Moonlight Rainbow Fountain is on: rainbow water pours from both sides of Banpo Bridge.",
   "fountain.photo": "📸 Photo time: the whole bridge pours rainbows for the last minute.",
