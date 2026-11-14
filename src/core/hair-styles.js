@@ -376,10 +376,11 @@ export const EYE_TRANSFORM = {
 export function buildBlush(color, cheeks) {
   const g = new THREE.Group();
   g.name = 'blush';
-  const m = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.75, depthWrite: false });
+  // (soft: small and mostly see-through, a light flush rather than a stamp)
+  const m = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: 0.38, depthWrite: false });
   for (const at of cheeks) {
     const c = new THREE.Mesh(sphere(1, 16, 8), m);
-    c.scale.set(0.11, 0.075, 0.02);
+    c.scale.set(0.085, 0.055, 0.02);
     c.position.copy(at);
     c.position.z += 0.005;
     c.rotation.y = Math.sign(at.x) * 0.45;
