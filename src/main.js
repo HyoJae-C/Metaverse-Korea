@@ -7412,7 +7412,11 @@ renderer.setAnimationLoop((now) => {
   }
   billboard?.update(dt);
   if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
-  for (const ws of wallScreens) if (mode === 'street' && Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z) < 300) ws.update(dt); // only the ones you can see
+  for (const ws of wallScreens) { // only the ones you can see are drawn; far ones let their canvas go (WallScreen.sleep)
+    const d = Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z);
+    if (mode === 'street' && d < 300) ws.update(dt);
+    else if (d > 340) ws.sleep();
+  }
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
   guardPosition();
   tmp.set(p.x, p.y + 1.55, p.z).project(camera); // (p.y: up a hill, on stairs)
@@ -7668,7 +7672,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     supportPosters: () => supportPlaces,
     adSpots: () => adPosters.spots.map((s) => [s.id, Math.round(s.front.x), Math.round(s.front.z), s.front.nx, s.front.nz]),
     boards: () => noticeBoards.map((b) => [b.board, b.x, b.z]),
-    wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y]),
+    wallScreens: () => wallScreens.map((w) => [w.root.position.x, w.root.position.y, w.root.position.z, w.root.rotation.y, w.asleep ? 0 : w.tex.image.width]),
     billboardFrame: () => billboard?.canvas.toDataURL('image/png'),
     look: () => ({ ...currentLook }),
     setLook: (patch) => setLook({ ...currentLook, ...patch }),
