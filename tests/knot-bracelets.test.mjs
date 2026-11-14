@@ -55,11 +55,11 @@ test('only the studio\'s charms are bracelets', () => {
   for (const c of Object.keys(KNOT_COLORS)) for (const s of Object.keys(KNOTS)) assert.ok(WEARABLES[charmBracelet({ kind: 'gift', name: `${c} ${s.replace('-', ' ')} knot charm` })], 'every old charm colour');
 });
 
-test('the studio makes two colours per knot; the other old colours are retired, still wearable', () => {
+test('the studio makes two knots in two colours; the other old ones are retired, still wearable', () => {
   assert.deepEqual(CRAFT.knot.colors.map(([, c]) => c), ['red', 'blue']);
-  assert.equal(CRAFT.knot.colors.length * CRAFT.knot.shapes.length, 6);
+  assert.deepEqual(CRAFT.knot.shapes.map(([k]) => k), ['butterfly', 'double-coin']);
   for (const c of Object.keys(KNOT_COLORS)) for (const k of Object.keys(KNOTS)) {
     const id = `acc-knot-${c}-${k}`;
-    assert.equal(RETIRED.has(id), !['red', 'blue'].includes(c), id);
+    assert.equal(RETIRED.has(id), !(['red', 'blue'].includes(c) && k !== 'chrysanthemum'), id);
   }
 });

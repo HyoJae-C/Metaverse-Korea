@@ -24,7 +24,9 @@ export const RETIRED = new Set([
   'acc-cap-sky', 'acc-cap-orange', 'acc-beanie-mustard',
   'acc-glasses-gold', 'acc-glasses-pink', 'acc-sunglasses-brown', 'acc-sunglasses-blue',
   'acc-scarf-cream', 'acc-tote-brick',
-  // Maeum Knot Studio makes red and indigo only (2026-11-15); these come from old knot charms.
+  // Maeum Knot Studio makes butterfly and double-coin knots in red and indigo
+  // only (2026-11-15); these come from old knot charms.
+  'acc-knot-red-chrysanthemum', 'acc-knot-blue-chrysanthemum',
   ...['green', 'yellow', 'purple'].flatMap((c) => ['butterfly', 'chrysanthemum', 'double-coin'].map((k) => `acc-knot-${c}-${k}`)),
 ]);
 

@@ -68,10 +68,11 @@ function necklaceCraft(words) {
 export const CRAFT = {
   knot: {
     icon: '🎀', price: 8000,
-    // Two colours per knot (Yozi's rule for items); the old green, yellow and
-    // purple charms still become bracelets (retired, data/wearables.js).
+    // Two knots in two colours (Yozi 2026-11-15); the old chrysanthemum and
+    // green, yellow and purple charms still become bracelets (retired,
+    // data/wearables.js).
     colors: [['#c8323f', 'red', '다홍'], ['#2d4f8a', 'blue', '쪽빛']],
-    shapes: [['butterfly', '나비매듭', { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['chrysanthemum', '국화매듭', { en: 'Chrysanthemum', ko: '국화', ja: '菊', zh: '菊花' }], ['double-coin', '도래매듭', { en: 'Double coin', ko: '도래', ja: '二つ輪', zh: '双钱' }]],
+    shapes: [['butterfly', '나비매듭', { en: 'Butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' }], ['double-coin', '도래매듭', { en: 'Double coin', ko: '도래', ja: '二つ輪', zh: '双钱' }]],
     // A bracelet worn like gloves (data/wearables.js acc-knot-<colour>-<knot>,
     // Yozi 2026-11-15). It used to be a "knot charm" in the bag, which
     // couldn't be worn: game/knot-bracelets.js turns those into bracelets.
