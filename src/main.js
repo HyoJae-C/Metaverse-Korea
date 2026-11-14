@@ -14,6 +14,7 @@ import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
+import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -206,6 +207,7 @@ import { lawnFrom } from './core/picnic-mat.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
+import { createNavWindow } from './core/nav-window.js';
 import { LocalFriends } from './core/friends.js';
 import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
@@ -410,14 +412,15 @@ try {
 // (One map file, or several districts joined into one city: core/districts.js.)
 // A phone on a weak signal can drop one request ("Load failed"): try each
 // file up to three times before giving up, so one hiccup doesn't stop the game.
-const mapPromise = loadRegionMap(region, (file) => {
+const fetchMapFile = (file) => {
   const get = (tries) => fetch(`${BASE}regions/${regionId}/${file}`).then((r) => {
     if (r.status === 404) throw Object.assign(new Error('no map'), { code: 'noMap' });
     if (!r.ok) throw new Error('map ' + r.status);
     return r.json();
   }).catch((e) => (e.code === 'noMap' || tries <= 1 ? Promise.reject(e) : new Promise((ok) => setTimeout(ok, 1500)).then(() => get(tries - 1))));
   return get(3);
-});
+};
+const mapPromise = loadRegionMap(region, fetchMapFile);
 // And the player's character model, so it is ready when they walk in.
 preloadModel(loadLook().model);
 
@@ -558,6 +561,7 @@ await new Promise((resolve) => {
       return false;
     }
     if (r === 'ok') referralSent = true;
+    if (r === 'offline') keepPending(localStorage, who); // sent again once in town
     el.value = '';
     return true;
   };
@@ -691,6 +695,7 @@ try {
 const lowSpec = matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4;
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowSpec, powerPreference: 'high-performance' }); // alpha: the K-POP café screen is a see-through hole
+renderer.debug.checkShaderErrors = import.meta.env.DEV; // (checking waits for each new shader to finish compiling: ~2 s of stalls on a 600 m walk; errors show in development)
 // iPhone Safari ignores user-scalable=no: stop pinch and double-tap zoom
 // (fast taps on the fishing reel button zoomed the page in).
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -764,9 +769,13 @@ const fanAt = palaceAt && [palaceAt[0] + FAN_AT[0], palaceAt[1] + FAN_AT[1]]; //
 const fanRing = fanAt ? [{ p: ringPoly(fanAt[0], fanAt[1], FAN_KEEP) }] : [];
 const solidBuildings = map.buildings.filter((b) => !b.visit); // (homes open to visitors: their yard is walkable, the map lists their solid parts as blockers)
 const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.flatMap(blockersOf), streamWalls, fanRing)); // blockers: rivers, walls
+// Bridges of the base map (core/districts.js decks): walkable over the river's blocker.
+for (const d of map.decks || []) collision.addDeck(d);
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
 const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
+// The city's parks and woods are painted a moment later: not part of the wait. (game/base-green.js)
+setTimeout(() => import('./game/base-green.js').then(({ createBaseGreen }) => createBaseGreen({ region, fetchJson: fetchMapFile, map, scene, lowSpec: lowSpec || !!softwareGL })).catch(() => {}), 2500);
 const streamModels = buildStreams(streams, scene);
 const subwayEntrances = subwayStations.map((st) => new SubwayEntrances(scene, st));
 renderer.localClippingEnabled = true; // the station's train stays inside the hall
@@ -801,13 +810,13 @@ const storefronts = new Storefronts(scene, shownStores(storeData), map, region.c
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
 const roadGraph = new RoadGraph(map.roads);
-// Walking routes around walls (built the first time a route is needed).
-// 1.5 m cells: 1 m cells were 13 M cells (about 270 MB) for all of Seoul
-// and far routes ran out of search; 2 m cells closed Bukchon's alleys.
-let navGrid = null;
-const nav = () => (navGrid ||= new NavGrid(collision.polys.map((q) => q.p), map.roads, bounds, { r: PLAYER_R + 0.1, cell: 1.5 }));
+// Walking routes around walls: a grid of the 1.4 km round the walker
+// (core/nav-window.js), built the first time a route is needed; farther
+// places go by the road graph. 1.5 m cells: 2 m cells closed Bukchon's alleys.
+const nav = createNavWindow((b) => new NavGrid(collision.polys.map((q) => q.p), map.roads, b, { r: PLAYER_R + 0.1, cell: 1.5, decks: map.decks || [] }), bounds);
 function planRoute(ax, az, bx, bz) {
-  const poly = nav().route(ax, az, bx, bz) || roadGraph.route(ax, az, bx, bz);
+  const grid = nav(ax, az);
+  const poly = (grid.inside(bx, bz) && grid.route(ax, az, bx, bz)) || roadGraph.route(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
   return poly;
 }
@@ -2749,6 +2758,9 @@ function enterStore(item, walkIn = null) {
     moveMeTo(scene, item.door.x, item.door.z, me.root.rotation.y, cam.yaw);
     return;
   }
+  // Sunny Villa's door after the homes were joined (homes.json movedTo): a
+  // notice that your home is now at Forest Lane Apartments.
+  if (item.store.movedTo) { shop.toast(t('home.moved'), 7000); return; }
   // Every room's code (core/interior.js) and the shops' product descriptions
   // (game/store-descs.js) come with the first one walked into; the returned
   // promise keeps the tip cover up meanwhile (game/tips.js).
@@ -4564,6 +4576,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
   get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, get look() { return myLook; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  renderer, lowSpec,
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
@@ -5077,7 +5090,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks]);
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -6177,7 +6190,8 @@ createLedger({ $, wallet });
 // Friend invites (supabase/025_referrals.sql): thank a new player whose
 // friend was paid, and tell me when friends joined with my name (now and
 // every 10 minutes while playing).
-walletReady.then(() => {
+walletReady.then(async () => {
+  if (!referralSent && wallet.server && (await retryPending({ cloud, storage: localStorage })) === 'ok') referralSent = true;
   if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
   const news = async () => {
     if (!wallet.server || document.hidden) return;
@@ -6703,7 +6717,7 @@ function updateAction(p, tSec) {
     } else if (seated?.duck != null) { // in a duck boat (game/duck-boats.js)
       next = duckBoats.seatedAction();
     } else if (seated?.pc) { // a free PC in the PC방
-      next = { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('aim') };
+      next = arcadeGame.camOn() ? null : { key: 'aim', label: '🎮 ' + L(ARCADE_OPEN.aim), run: () => openArcade('strike') }; // the team shooter (game/strike.js), aim practice in its menu
     } else if (seated?.tarot) {
       next = { key: 'tarot', label: '🔮 ' + L(TAROT_TEXT.open), run: () => { tarotReader()?.ch.wave(); tarotUi.show(); } };
     } else if (tarotNext) {
@@ -6757,6 +6771,8 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'fight', 1.5)) { // the fighting game cabinet (game/brawl.js)
       next = arcadeGame.camOn() ? null : { key: 'fight', label: '🥊 ' + L(ARCADE_OPEN.fight), run: () => openArcade('fight') };
+    } else if (nearStation(p, 'watch', 2.6)) {
+      next = arcadeGame.camOn() ? null : { key: 'watch', label: '📺 ' + L(ARCADE_OPEN.watch), run: () => openArcade('watch') };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (nearStation(p, 'batting', 1.8)) {
@@ -6993,6 +7009,9 @@ import('./game/screen-shot.js').then(({ createScreenShot }) => {
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
+// Shaders for everything on the map, built once now rather than the first
+// time each kind comes into view while walking (a stall each time).
+setTimeout(() => renderer.compileAsync(scene, camera).catch(() => {}), 1500);
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
@@ -7667,7 +7686,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade, brawl: () => arcadeGame.brawl(),
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null,
     loveLock: (view) => loveLockUi.show(view),
   };
 }

@@ -68,10 +68,10 @@ export function createMinimap(game) {
   game.hud.append(el);
 
   const map = game.map;
-  const areas = [...(map.areas || [])].sort((a, b) => (ORDER[a.k] ?? 1) - (ORDER[b.k] ?? 1));
+  let areas = [], areaCount = -1;
   const closed = (map.closed || []).map((p) => ({ p }));
   const idx = {
-    areas: gridIndex(areas), closed: gridIndex(closed), roads: gridIndex(map.roads || []),
+    areas: null, closed: gridIndex(closed), roads: gridIndex(map.roads || []),
     buildings: gridIndex(map.buildings || []), rail: gridIndex(map.rail || []),
   };
   let size = 0, dpr = 1, timer = 0, lastYaw = null, lastMe = null, shown = false;
@@ -85,6 +85,11 @@ export function createMinimap(game) {
 
   function draw(p) {
     if (!size) resize();
+    if (areaCount !== (map.areas || []).length) { // (the base map's parks come after the start: game/base-green.js)
+      areas = [...(map.areas || [])].sort((a, b) => (ORDER[a.k] ?? 1) - (ORDER[b.k] ?? 1));
+      idx.areas = gridIndex(areas);
+      areaCount = areas.length;
+    }
     const g = canvas.getContext('2d');
     const r = size / 2, s = r / VIEW_M;
     g.setTransform(1, 0, 0, 1, 0, 0);

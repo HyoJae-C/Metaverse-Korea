@@ -22,7 +22,7 @@ export function latLonToLocal(center, lat, lon) {
 // facade point and outward normal. `isBlocked(x, z)` tells whether a point
 // is inside a building; it rules out walls that face a neighbouring building
 // (the door would be unreachable).
-function nearestFacade(buildings, x, z, isBlocked) {
+export function nearestFacade(buildings, x, z, isBlocked) {
   const cands = [];
   for (const b of buildings) {
     // A raised building (a station deck over the street) has no shop floor.

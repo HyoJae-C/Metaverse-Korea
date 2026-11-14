@@ -67,13 +67,16 @@ export class FarCull {
   // split into its parts, and is also hidden as a whole when its whole box
   // is past the fog: things added inside it later (a wish lantern floating
   // down Cheonggyecheon) go with it. watch: containers (landmarks) whose
-  // children added later are picked up too.
-  constructor(objects, far, watch = []) {
+  // children added later are picked up too. later: getters for groups built
+  // after start (a hill loaded with import() when you come near), each
+  // checked until it returns its group; then its parts are hidden like the rest.
+  constructor(objects, far, watch = [], later = []) {
     this.items = [];
     this.boxes = [];
     this.seen = new Set();
     for (const o of objects) this.add(o);
     this.watch = watch.filter(Boolean).map((c) => ({ c, n: c.children.length }));
+    this.later = later;
     this.far = far;
     this.wait = 0;
     this.at = null; // where the last check was made
@@ -99,6 +102,7 @@ export class FarCull {
     this.wait = now + 400;
     this.at = [p.x, p.z];
     for (const w of this.watch) if (w.c.children.length !== w.n) { w.n = w.c.children.length; for (const k of w.c.children) this.add(k); }
+    if (this.later.length) this.later = this.later.filter((get) => { const g = get(); if (!g) return true; for (const k of g.children) this.add(k); return false; }); // (its parts, not the group: its own update shows and hides the whole)
     const far = this.far();
     for (const it of this.items) {
       const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > far;

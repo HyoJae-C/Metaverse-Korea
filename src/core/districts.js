@@ -15,9 +15,15 @@
 // Map files may also have "blockers": polygons you can't walk into (a river,
 // a palace wall) that are not buildings.
 //
-// closed: land not built yet (region.json "closed".rects, [x0, z0, x1, z1],
+// closed: land not built yet (region.json "closed", core/closed-grid.js: rectangles [x0, z0, x1, z1],
 // scripts/build-closed.mjs): low blockers you can't walk into, and
 // map.closed for drawing it grey.
+//
+// base: all of Seoul under the districts (region.json "base": a file,
+// scripts/build-base.mjs): the big roads (base: true), water and green of
+// the land with no district yet, and decks, the bridges those roads cross
+// water on (collision lets you walk a deck over a river's blocker).
+import { closedRects } from './closed-grid.js';
 import { inPoly } from './geom.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
@@ -26,8 +32,8 @@ const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 
 // water: river stretches between districts (region.json "water"), e.g. the Han
 // River joining one riverside park to the next. Each is a water area and a
 // blocker you can't walk into (leave a gap in it where a bridge crosses).
-export function mergeDistricts(parts, links = [], water = [], closed = []) {
-  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [], closed: [] };
+export function mergeDistricts(parts, links = [], water = [], closed = [], base = null) {
+  const out = { meta: { ...(parts[0]?.map.meta || {}), districts: [] }, pois: [], landmarks: [], streams: [], closed: [], decks: [] };
   for (const k of LISTS) out[k] = [];
   for (const { id, map, offset = [0, 0] } of parts) {
     const [dx, dz] = offset;
@@ -42,6 +48,14 @@ export function mergeDistricts(parts, links = [], water = [], closed = []) {
     out.areas.push({ k: 'water', p: w.p, d: 'link' });
     for (const p of w.blockers || [w.p]) out.blockers.push({ p, d: 'link' });
   }
+  if (base) {
+    for (const r of base.roads || []) out.roads.push({ ...r, d: 'base' });
+    for (const a of base.areas || []) {
+      out.areas.push({ ...a, d: 'base' });
+      if (a.k === 'water') out.blockers.push({ p: a.p, d: 'base' });
+    }
+    for (const d of base.decks || []) out.decks.push(d.p);
+  }
   for (const [x0, z0, x1, z1] of closed) {
     const p = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
     out.closed.push(p);
@@ -53,8 +67,8 @@ export function mergeDistricts(parts, links = [], water = [], closed = []) {
 // Loads a region's map: a single file, or its districts joined together.
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
-  const maps = await Promise.all(region.districts.map((d) => fetchJson(d.map)));
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], region.closed?.rects || []));
+  const [base, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, ...region.districts.map((d) => fetchJson(d.map))]);
+  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base));
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as

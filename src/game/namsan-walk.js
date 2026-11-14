@@ -93,6 +93,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
         .then(({ buildNamsanSummit }) => { summit = buildNamsanSummit({ scene, collision, l, tower, station, trailTop: line.at(-1), y: y(...tower), groundY: y }); })
         .catch((e) => { loading = false; console.warn('namsan summit', e); });
     },
+    get wallGroup() { return wall?.group || null; }, // (main.js FarCull)
     nearHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) < 2.2,
     awayFromHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) > 4.5,
   };

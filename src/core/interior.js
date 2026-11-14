@@ -227,9 +227,9 @@ export function buildInterior(store) {
   const scene = new THREE.Scene();
   const accent = new THREE.Color(store.colors.accent);
   // A club or a bar is dark inside, lit by its own lamps (added below).
-  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang' || store.workshop === 'livecafe'; // (the runway: a dark show room; the PC방 glows with its screens; the live café: a spotlit stage)
+  const night = store.category === 'club' || store.category === 'bar' || !!store.cinema || store.workshop === 'runway' || store.workshop === 'pcbang' || store.workshop === 'arcade' || store.workshop === 'livecafe'; // (the runway: a dark show room; the PC방 glows with its screens; the live café: a spotlit stage)
   const cozy = store.workshop === 'tarot'; // a tarot café: dim and warm, lit by its table lamps
-  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : '#1a120d') : accent.clone().multiplyScalar(0.92);
+  scene.background = night ? new THREE.Color(store.category === 'club' ? '#0e0a18' : store.cinema ? '#0c0b10' : store.workshop === 'runway' ? '#16141c' : store.workshop === 'pcbang' ? '#0d0e17' : store.workshop === 'arcade' ? '#120e1e' : '#1a120d') : accent.clone().multiplyScalar(0.92);
   scene.add(night ? new THREE.HemisphereLight(0xc9b8ff, 0x2a2030, store.category === 'club' ? 0.9 : 0.8) : new THREE.HemisphereLight(0xfff6e8, 0xd9c7b0, cozy ? 1.05 : 1.7));
   scene.add(new THREE.AmbientLight(0xfff0e0, night ? 0.3 : 0.6));
   const lamp = new THREE.PointLight(0xffe2b8, night ? 6 : cozy ? 10 : 25, Math.max(18, ROOM.w * 1.2));
@@ -1367,21 +1367,6 @@ export function buildInterior(store) {
         block(mx, mz, 1.3, 1.1);
         stations.claw.push({ x: mx, z: mz + 1.1 });
       }
-      // A fighting game cabinet by the left wall (game/brawl.js): a dark
-      // body, a glowing screen and a marquee, the stick and buttons in front.
-      const fx = -w / 2 + 0.55, fz = 1.3;
-      box(0.9, 1.0, 0.9, fx, 0.5, fz, '#241d3a');
-      box(0.5, 0.9, 0.9, fx - 0.2, 1.45, fz, '#241d3a');
-      box(0.5, 0.12, 0.8, fx + 0.3, 1.02, fz, '#3a3260');
-      box(0.7, 0.28, 0.9, fx - 0.1, 2.04, fz, '#ffd23c');
-      const fscr = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.6), new THREE.MeshBasicMaterial({ color: '#ff5a6e' }));
-      fscr.position.set(fx + 0.06, 1.48, fz);
-      fscr.rotation.y = Math.PI / 2;
-      scene.add(fscr);
-      for (const [k, c] of ['#3f7fe0', '#e0483f', '#2fa56a', '#d9982a'].entries()) box(0.07, 0.04, 0.07, fx + 0.36 - (k >> 1) * 0.12, 1.1, fz + 0.08 + (k & 1) * 0.13, c);
-      box(0.04, 0.14, 0.04, fx + 0.3, 1.14, fz - 0.2, '#e8e8f0');
-      block(fx, fz, 1.0, 1.0);
-      stations.fight = [{ x: fx + 1.15, z: fz, ry: -Math.PI / 2 }];
     } else if (store.workshop === 'sauna') {
       // 찜질방: a dome-shaped hot kiln (불가마) on the left, an ice room on
       // the right, and warm wooden platforms with mats in the middle.

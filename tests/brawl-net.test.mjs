@@ -5,7 +5,7 @@ import { createSession, packInput, unpackInput, DELAY, MAX_AHEAD } from '../src/
 
 const randomInput = (rand) => {
   const inp = { mx: rand() < 0.5 ? 1 : rand() < 0.3 ? -1 : 0, mz: rand() < 0.05 ? (rand() < 0.5 ? 1 : -1) : 0 };
-  for (const b of ['lp', 'rp', 'lk', 'rk']) if (rand() < 0.06) inp[b] = true;
+  for (const b of ['p', 'k', 's1', 's2']) if (rand() < 0.06) inp[b] = true;
   if (rand() < 0.02) inp.dash = rand() < 0.7 ? 1 : -1;
   return inp;
 };
@@ -30,7 +30,7 @@ function play({ ticks = 1500, lag = () => 6, loss = 0, seed = 7, startLate = 0, 
 }
 
 test('brawl net: an input survives being packed into a number', () => {
-  for (const inp of [{ mx: 0, mz: 0 }, { mx: 1, mz: -1, lp: true }, { mx: -1, mz: 1, dash: -1, rk: true, lk: true }, { mx: 0, mz: 0, dash: 1, lp: true, rp: true, lk: true, rk: true }]) {
+  for (const inp of [{ mx: 0, mz: 0 }, { mx: 1, mz: -1, p: true }, { mx: -1, mz: 1, dash: -1, k: true, s2: true }, { mx: 0, mz: 0, dash: 1, p: true, k: true, s1: true, s2: true }]) {
     assert.deepEqual(unpackInput(packInput(inp)), inp);
   }
   assert.deepEqual(unpackInput(99999), { mx: 0, mz: 0 });

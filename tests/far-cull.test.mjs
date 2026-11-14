@@ -75,3 +75,17 @@ test('looking up at the tower: only near it, and only below the usual lowest til
   for (let i = 0; i < 100; i++) look.tick(cam, { x: 900, z: 0 }, 0.05); // walked away still looking up
   assert.ok(Math.abs(cam.pitch - TOWER_LOOK.from) < 0.01);
 });
+
+test('a hill loaded later: its parts past the fog are hidden, the group is left to its own update', () => {
+  let hill = null;
+  const c = new FarCull([], () => 300, [], [() => hill]);
+  c.update(0.05, { x: 0, z: 0 }, 0); // (not loaded yet: asked again next time)
+  hill = new THREE.Group();
+  const woodsNear = thing(100, 0), woodsFar = thing(900, 0);
+  hill.add(woodsNear, woodsFar);
+  c.update(0.05, { x: 0, z: 0 }, 500);
+  assert.equal(woodsNear.visible, true);
+  assert.equal(woodsFar.visible, false);
+  assert.equal(hill.visible, true);
+  assert.equal(c.later.length, 0);
+});

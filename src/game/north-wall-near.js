@@ -24,5 +24,6 @@ export function createNorthWallNear({ landmarks = [], scene, y }) {
         .catch((e) => { loading = false; console.warn('north wall', e); });
     },
     get loaded() { return !!hills; },
+    get group() { return hills?.group || null; }, // (main.js FarCull)
   };
 }

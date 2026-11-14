@@ -36,6 +36,24 @@ const ROOF_TINTS = [
   0xa7b5c9, 0xd9c5a3, 0xd49a8a, 0xb8a089, 0x93b3bd, 0xd8b98a,
 ];
 
+const AREA_Y = [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]];
+
+// The base map's flat colours (water; and parks and woods, which arrive after
+// the start: game/base-green.js), one mesh a kind and a 1 km tile.
+export function makeBaseAreas(areas, lowSpec = false) {
+  const out = [];
+  for (const [kind, y] of AREA_Y) {
+    for (const list of tiles(areas.filter((a) => a.k === kind), (a) => a.p[0])) {
+      const mesh = makeFlatPolys(list.map((a) => a.p), COLORS[kind], y);
+      if (!mesh) continue;
+      mesh.name = kind;
+      mesh.receiveShadow = !lowSpec;
+      out.push(mesh);
+    }
+  }
+  return out;
+}
+
 export function buildWorld(map, scene, opts = {}) {
   const lowSpec = !!opts.lowSpec;
   const group = new THREE.Group();
@@ -46,12 +64,19 @@ export function buildWorld(map, scene, opts = {}) {
   group.add(makeGround(bounds, opts.holes));
   // Land not built yet: one flat grey mesh just over the ground, under
   // everything else (core/districts.js closed).
-  const closed = makeFlatPolys(map.closed || [], COLORS.closed, 0.006);
-  if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
+  // (In tiles: the whole city's grey land in one mesh would be drawn every frame.)
+  for (const list of tiles(map.closed || [], (p) => p[0])) {
+    const closed = makeFlatPolys(list, COLORS.closed, 0.006);
+    if (closed) { closed.name = 'closed'; closed.userData.noSnow = true; group.add(closed); }
+  }
+
+  // The base map's rivers (core/districts.js base) cover the whole city: drawn in tiles.
+  group.add(...makeBaseAreas(map.areas.filter((a) => a.d === 'base')));
 
   // Paving first, then lawns and water a hair above so they don't flicker.
-  for (const [kind, y] of [['plaza', 0.012], ['sand', 0.012], ['stone', 0.012], ['park', 0.02], ['grass', 0.022], ['water', 0.026]]) {
-    const polys = map.areas.filter((a) => a.k === kind && !a.sunk).map((a) => a.p); // sunk: below the street (a stream's water, drawn by core/stream.js)
+  for (const [kind, y] of AREA_Y) {
+    const mine = map.areas.filter((a) => a.k === kind && !a.sunk); // sunk: below the street (a stream's water, drawn by core/stream.js)
+    const polys = mine.filter((a) => a.d !== 'base').map((a) => a.p);
     const own = map.areas.filter((a) => a.k === kind && !a.sunk && a.holes).flatMap((a) => a.holes); // (an island in a river: holes inside an area)
     const mesh = makeFlatPolys(polys, COLORS[kind], y, own.length ? (opts.holes || []).concat(own) : opts.holes, opts.stairHoles); // (a stairwell in a park cuts the lawn too)
     if (mesh && kind === 'stone') {
@@ -66,7 +91,7 @@ export function buildWorld(map, scene, opts = {}) {
     walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
     bike: map.roads.filter((r) => r.bike),
     minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
-    major: map.roads.filter((r) => majors.has(r.k)),
+    major: map.roads.filter((r) => majors.has(r.k) && !r.base),
   };
   const roadMesh = (list, color, y) => {
     const m = makeRibbons(list, color, y);
@@ -80,6 +105,8 @@ export function buildWorld(map, scene, opts = {}) {
   roadMesh(roadSets.bike, COLORS.bike, ROAD_Y.walk + 0.004); // (over the paths that join it)
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
+  // The base map's big roads, all over the city: in tiles, with plain joints.
+  for (const list of tiles(map.roads.filter((r) => majors.has(r.k) && r.base), (r) => r.p[r.p.length >> 1])) roadMesh(list, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
   const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
@@ -93,7 +120,7 @@ export function buildWorld(map, scene, opts = {}) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
-    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 
@@ -148,6 +175,20 @@ function makeGround(b, holes = []) {
 // geometry by -90° about X puts it back on the ground plane at +z.
 function toShape(p) {
   return new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
+}
+
+// Things spread over the whole city, grouped by the TILE-metre square they
+// start in: one mesh a square, so the camera only draws the squares in view.
+const TILE = 1000;
+function tiles(items, at) {
+  const by = new Map();
+  for (const it of items) {
+    const [x, z] = at(it);
+    const k = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
+    if (!by.has(k)) by.set(k, []);
+    by.get(k).push(it);
+  }
+  return [...by.values()];
 }
 
 function makeFlatPolys(polys, color, y, holes = [], across = []) {
@@ -267,7 +308,18 @@ function makeRibbons(roads, color, y) {
       idx.push(a, d, b, b, d, c);
     }
     // Round caps at each vertex fill the gaps at bends and junctions.
-    for (const [x, z] of p) {
+    // (A base road, core/districts.js: round at its two ends only, and one
+    // triangle each side at a bend. It has thousands of gentle bends.)
+    for (let i = 0; i < p.length; i++) {
+      const [x, z] = p[i];
+      if (r.base && i > 0 && i < p.length - 1) {
+        const side = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz) || 1; return [(-dz / len) * hw, (dx / len) * hw]; };
+        const [ax, az] = side(p[i - 1], p[i]), [bx, bz] = side(p[i], p[i + 1]);
+        const c = pushV(x, z);
+        const l1 = pushV(x + ax, z + az), l2 = pushV(x + bx, z + bz), r1 = pushV(x - ax, z - az), r2 = pushV(x - bx, z - bz);
+        idx.push(c, l2, l1, c, l1, l2, c, r2, r1, c, r1, r2); // (both windings: whichever side the bend opens on)
+        continue;
+      }
       const c = pushV(x, z);
       const first = pos.length / 3;
       for (let s = 0; s < JOINT_SEGS; s++) {

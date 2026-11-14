@@ -48,3 +48,22 @@ test('Ttukseom Han River Park and Songpa are at their real places on the Han', a
   assert.ok(!songpa.anchor.nudge, 'Songpa is not nudged');
   assert.deepEqual(songpa.offset, anchorOffset(songpa.anchor).map(Math.round));
 });
+
+test('shop fronts by Seongsu station do not land on each other (the sign goes on the nearest free wall, not on "at")', async () => {
+  // Punch Arcade's first spot was too close to a station exit: its front
+  // slid 10 m along to the photo studio's wall and the two signs overlapped.
+  const { nearestFacade } = await import('../src/core/storefronts.js');
+  const solids = [...map.buildings, ...(map.blockers || [])].filter((b) => b.p);
+  const blocked = (x, z) => solids.some((b) => inPoly(x, z, b.p));
+  const here = shops.filter((s) => Array.isArray(s.at) && Math.hypot(...s.at) < 120 && !s.hanpark && !s.open && !s.below && !s.carts && s.front !== 'landmark');
+  const spots = here.map((s) => ({ s, f: nearestFacade(map.buildings, s.at[0], s.at[1], blocked) }));
+  for (const { s, f } of spots) {
+    assert.ok(f, `${s.id} has a wall`);
+    assert.ok(Math.hypot(f.x - s.at[0], f.z - s.at[1]) < 4, `${s.id} front is ${Math.hypot(f.x - s.at[0], f.z - s.at[1]).toFixed(1)} m from its spot`);
+  }
+  for (const a of spots) for (const b of spots) if (a.s.id < b.s.id) assert.ok(Math.hypot(a.f.x - b.f.x, a.f.z - b.f.z) >= 6.4, `${a.s.id} and ${b.s.id} fronts overlap`);
+  // The arcade stands clear of the exits (which the map file does not list), well away from any other front.
+  const arcade = spots.find((q) => q.s.id === 'punch-arcade');
+  for (const q of spots) if (q !== arcade) assert.ok(Math.hypot(q.f.x - arcade.f.x, q.f.z - arcade.f.z) >= 20, `the arcade and ${q.s.id}`);
+  assert.ok(Math.hypot(...arcade.s.at) > 30, 'away from the station exits');
+});
