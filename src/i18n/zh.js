@@ -493,6 +493,7 @@ export const ZH = {
   'ledger.together': "和朋友一起的奖励",
   'ledger.taxi': "出租车",
   'ledger.ride': "游乐设施",
+  'ledger.arcade': '街机游戏',
   'ledger.cable': "南山天空缆车",
   'ledger.loveLock': "南山爱情锁",
   'ledger.rename': "改名",

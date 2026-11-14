@@ -493,6 +493,7 @@ export const KO = {
   'ledger.together': "친구와 함께 보너스",
   'ledger.taxi': "택시",
   'ledger.ride': "놀이기구",
+  'ledger.arcade': '오락실 게임',
   'ledger.cable': "남산 하늘 케이블카",
   'ledger.loveLock': "남산 사랑의 자물쇠",
   'ledger.rename': "이름 변경",

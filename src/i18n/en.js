@@ -492,6 +492,7 @@ export const EN = {
   'ledger.together': "Bonus with a friend",
   'ledger.taxi': "Taxi",
   'ledger.ride': "Amusement ride",
+  'ledger.arcade': 'Arcade game',
   'ledger.cable': "Namsan Sky Cable",
   'ledger.loveLock': "Namsan love lock",
   'ledger.rename': "Name change",

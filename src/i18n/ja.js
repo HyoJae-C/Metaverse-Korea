@@ -493,6 +493,7 @@ export const JA = {
   'ledger.together': "友だちとボーナス",
   'ledger.taxi': "タクシー",
   'ledger.ride': "アトラクション",
+  'ledger.arcade': 'ゲームセンター',
   'ledger.cable': "南山スカイケーブル",
   'ledger.loveLock': "南山・愛の南京錠",
   'ledger.rename': "名前の変更",

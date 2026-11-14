@@ -96,8 +96,13 @@ const T = {
   vsLose: { en: '{name} wins this time.', ko: '이번엔 {name}님의 승리.', ja: '今回は{name}さんの勝ち。', zh: '这次{name}赢了。', es: 'Esta vez gana {name}.', id: 'Kali ini {name} menang.', vi: 'Lần này {name} thắng.', hi: 'इस बार {name} जीते।', fr: 'Cette fois, {name} gagne.', th: 'รอบนี้ {name} ชนะ', ar: 'فاز {name} هذه المرة.' },
   draw: { en: 'Draw!', ko: '무승부!', ja: '引き分け！', zh: '平局！', es: '¡Empate!', id: 'Seri!', vi: 'Hòa!', hi: 'ड्रॉ!', fr: 'Égalité !', th: 'เสมอ!', ar: 'تعادل!' },
   vsSlow: { en: 'Waiting for the other player…', ko: '상대를 기다리는 중…', ja: '相手を待っています…', zh: '正在等待对方…', es: 'Esperando al otro jugador…', id: 'Menunggu pemain lain…', vi: 'Đang chờ người chơi kia…', hi: 'दूसरे खिलाड़ी का इंतज़ार…', fr: 'En attente de l’autre joueur…', th: 'กำลังรออีกฝ่าย…', ar: 'بانتظار اللاعب الآخر…' },
+  // A game costs money (wallet ops go to the server's ledger: core/wallet.js).
+  poor: { en: 'Not enough money: a game is 🪙 {n}.', ko: '돈이 부족해요. 한 판에 🪙 {n}이에요.', ja: 'お金が足りません。1回 🪙 {n} です。', zh: '钱不够：一局 🪙 {n}。', es: 'No tienes suficiente dinero: una partida cuesta 🪙 {n}.', id: 'Uang tidak cukup: satu permainan 🪙 {n}.', vi: 'Không đủ tiền: một ván 🪙 {n}.', hi: 'पैसे कम हैं: एक गेम 🪙 {n} का है।', fr: 'Pas assez d’argent : une partie coûte 🪙 {n}.', th: 'เงินไม่พอ เล่นหนึ่งตา 🪙 {n}', ar: 'المال لا يكفي: اللعبة الواحدة 🪙 {n}.' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
+// One game (one rival, or one match with someone) at the cabinet.
+export const PLAY_COST = 1000;
+const PRICE = ' · 🪙 ' + PLAY_COST.toLocaleString('en-US');
 
 // The five rivals (made up for this game), easy to champion: their look and
 // the sky over their round.
@@ -733,6 +738,10 @@ export function createBrawl(game, { versusFull = null } = {}) {
     c.append(grid, info);
     pick(on.style);
   }
+  // Paying for a game. Without a wallet (tests), games are free.
+  const canPay = () => !game.wallet || game.wallet.coins >= PLAY_COST;
+  const pay = () => !game.wallet || game.wallet.spend(PLAY_COST, { k: 'ledger.arcade', name: { en: 'Rooftop Rumble', ko: '옥상 격투왕' } });
+  const poor = () => tt('poor', { n: PLAY_COST.toLocaleString('en-US') });
   function menu(note) {
     endCast();
     const rec = loadBrawl(store);
@@ -757,7 +766,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(more);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }) + PRICE, 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
       c.append(row);
     });
     fillPeople();
@@ -788,6 +797,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   function invite(peer) {
     if (on.vs || on.match) return;
     if (versusFull?.()) { menu(tt('vsFull')); return; } // (two matches between people at a time: core/brawl-room.js)
+    if (!canPay()) { menu(poor()); return; } // (each player pays for their own game when it starts)
     const nonce = Math.random().toString(36).slice(2, 10);
     on.vs = { host: true, peer: { id: peer.id, name: peer.name }, nonce, st: 'wait', until: on.time + 32 };
     tell(peer.id, 'i', nonce);
@@ -827,7 +837,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('ready'), 'go', () => { const vs = on.vs; tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
+      row.append(button('🥊 ' + tt('ready') + PRICE, 'go', () => { const vs = on.vs; if (!canPay()) { leaveVs(true); menu(poor()); return; } tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
       c.append(row);
     });
   }
@@ -853,7 +863,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       if (vs.dead || !on || on.vs !== vs || !m || typeof m !== 'object') return;
       vs.heardAt = on.time;
       if (m.bye) { leaveVs(false); menu(tt('vsLeft', { name: vs.peer.name })); return; }
-      if (!vs.session) startVs();
+      if (!vs.session) { startVs(); if (!vs.session) return; } // (no money after all: out)
       if (m.hi) { if (m.hi === 1) vs.link?.send({ hi: 2 }); } else vs.session.receive(m);
     };
     Promise.resolve().then(() => game.link('brawl-' + vs.nonce, onMsg)).then((link) => {
@@ -866,6 +876,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   }
   function startVs() {
     const vs = on.vs;
+    if (!pay()) { leaveVs(true); menu(poor()); return; }
     vs.st = 'play';
     vs.session = createSession({
       side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); },
@@ -884,7 +895,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(el('h3', null, '🥊 ' + tt('title')));
       c.append(el('p', 'big', res === 2 ? tt('draw') : won ? tt('won', { name }) : tt('vsLose', { name })));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('again'), 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('again') + PRICE, 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -897,7 +908,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       ladder(c, rec, champ ? RIVALS : rec.stage);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')) + PRICE, 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -948,6 +959,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   }
   function begin(stage) {
     if (on.vs) return;
+    if (!pay()) { menu(poor()); return; }
     startUi();
     const m = on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
     endCast();

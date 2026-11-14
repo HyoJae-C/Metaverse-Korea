@@ -494,6 +494,7 @@ export const TH = {
   'ledger.together': 'โบนัสกับเพื่อน',
   'ledger.taxi': 'แท็กซี่',
   'ledger.ride': 'เครื่องเล่น',
+  'ledger.arcade': 'เกมตู้',
   'ledger.cable': 'กระเช้านัมซาน',
   'ledger.loveLock': 'กุญแจคู่รักนัมซาน',
   'ledger.rename': 'เปลี่ยนชื่อ',

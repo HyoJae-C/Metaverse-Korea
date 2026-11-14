@@ -496,6 +496,7 @@ export const HI = {
   'ledger.together': "दोस्त के साथ बोनस",
   'ledger.taxi': "टैक्सी",
   'ledger.ride': "झूला",
+  'ledger.arcade': 'आर्केड गेम',
   'ledger.cable': "नामसान केबल कार",
   'ledger.loveLock': "नामसान लव लॉक",
   'ledger.rename': "नाम बदला",
