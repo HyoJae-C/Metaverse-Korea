@@ -1555,7 +1555,7 @@ let streetFriend = null;
 let friendsOnlyStreet = false;
 const friendsOnlyMap = !testRoom && config.netProvider === 'supabase'; // (test rooms have no accounts: everyone)
 // Is a friend among the people we see? (Then our movement goes at the full rate.)
-const friendNear = () => { for (const p of others.players.values()) if (!p.hidden && streetFriend?.(String(p.name ?? '').trim())) return true; return false; };
+const friendNear = () => { for (const p of others.players.values()) if (!p.hidden && streetFriend?.(p)) return true; return false; };
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
@@ -1716,7 +1716,7 @@ async function joinRoom(room, roomScene, area = null) {
       // private chat channel only carries chat from accounts: chat there on
       // the room channels instead.
       privateChat: !testRoom,
-      shows: area ? (p) => !friendsOnlyStreet || !!streetFriend?.(String(p.name ?? '').trim()) : null,
+      shows: area ? (p) => !friendsOnlyStreet || !!streetFriend?.(p) : null,
     });
     if (token !== joinToken) { n.disconnect(); return; } // a newer join won
     net = n;
@@ -1887,7 +1887,7 @@ const chat = createChat({
   streetPos: () => myPlace(),
 });
 const { cleanChat, addChatLine } = chat;
-streetFriend = (name) => chat.friendStatus(name) === 'friend';
+streetFriend = (p) => chat.friendStatus(String(p.name ?? '').trim()) === 'friend'; // (a player, by name like gifts)
 
 // ---------- Stores, zones, map, guide ----------
 let mode = 'street';
@@ -3661,7 +3661,7 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
     return {
       me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
       // Only friends get a dot (by name, like gifts); everyone is still seen on the street.
-      others: outdoors() ? others.list().filter((o) => !friendsOnlyMap || !!streetFriend?.(String(o.name ?? '').trim())) : [],
+      others: outdoors() ? others.list().filter((o) => !friendsOnlyMap || !!streetFriend?.(o)) : [],
     };
   },
   onGuide: (g) => {

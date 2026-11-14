@@ -12,6 +12,17 @@ import { distSqToSeg } from './collision.js';
 const SQ2 = Math.SQRT2;
 const ROAD_COST = 1, OPEN_COST = 1.7;
 
+// Where the line at depth z crosses polygon p's edges, left to right, into xs
+// (even-odd: the inside runs from xs[0] to xs[1], xs[2] to xs[3], ...).
+function crossings(p, z, xs) {
+  xs.length = 0;
+  for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
+    const [xi, zi] = p[a], [xj, zj] = p[b];
+    if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
+  }
+  xs.sort((u, v) => u - v);
+}
+
 export class NavGrid {
   // polys: wall footprints ([[x, z], ...]); r: a person's radius. roads:
   // map roads ({ p, w }). bounds: { minX, minZ, maxX, maxZ }.
@@ -42,12 +53,7 @@ export class NavGrid {
       const j0 = Math.max(0, this._j(minZ)), j1 = Math.min(this.h - 1, this._j(maxZ));
       for (let j = j0; j <= j1; j++) {
         const z = this.z0 + (j + 0.5) * cell;
-        xs.length = 0;
-        for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
-          const [xi, zi] = p[a], [xj, zj] = p[b];
-          if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
-        }
-        xs.sort((u, v) => u - v);
+        crossings(p, z, xs);
         for (let k = 0; k + 1 < xs.length; k += 2) {
           // centres x with xs[k] <= x < xs[k + 1]
           const i0 = Math.max(0, Math.ceil((xs[k] - this.x0) / cell - 0.5));
@@ -78,12 +84,7 @@ export class NavGrid {
       if (maxZ < this.z0 || minZ > gz1) continue;
       for (let j = Math.max(0, this._j(minZ)); j <= Math.min(this.h - 1, this._j(maxZ)); j++) {
         const z = this.z0 + (j + 0.5) * cell;
-        xs.length = 0;
-        for (let a = 0, b = p.length - 1; a < p.length; b = a++) {
-          const [xi, zi] = p[a], [xj, zj] = p[b];
-          if (zi > z !== zj > z) xs.push(((xj - xi) * (z - zi)) / (zj - zi) + xi);
-        }
-        xs.sort((u, v) => u - v);
+        crossings(p, z, xs);
         for (let k = 0; k + 1 < xs.length; k += 2) {
           // (a person's width in from each edge, so the route keeps off the rail)
           const i0 = Math.max(0, Math.ceil((xs[k] + r - this.x0) / cell - 0.5)), i1 = Math.min(this.w - 1, Math.ceil((xs[k + 1] - r - this.x0) / cell - 0.5) - 1);
