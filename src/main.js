@@ -693,6 +693,7 @@ try {
 const lowSpec = matchMedia('(pointer: coarse)').matches || navigator.hardwareConcurrency <= 4;
 const canvas = $('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowSpec, powerPreference: 'high-performance' }); // alpha: the K-POP café screen is a see-through hole
+renderer.debug.checkShaderErrors = import.meta.env.DEV; // (checking waits for each new shader to finish compiling: ~2 s of stalls on a 600 m walk; errors show in development)
 // iPhone Safari ignores user-scalable=no: stop pinch and double-tap zoom
 // (fast taps on the fishing reel button zoomed the page in).
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -6984,6 +6985,9 @@ import('./game/screen-shot.js').then(({ createScreenShot }) => {
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
 let mapPause = 0; // (seconds since other players last moved while the map is open)
+// Shaders for everything on the map, built once now rather than the first
+// time each kind comes into view while walking (a stall each time).
+setTimeout(() => renderer.compileAsync(scene, camera).catch(() => {}), 1500);
 renderer.setAnimationLoop((now) => {
   if (!gfx.frame(now) || taxi.skipFrame(now)) return; // (at most 60 frames a second; fewer behind the taxi scene: game/taxi.js)
   guardPosition();
