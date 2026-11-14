@@ -176,12 +176,13 @@ single OpenStreetMap pull of Seoul instead of a snippet per district:
   the blocks between them are grey and can't be walked into. Stored as one
   bit per 10 m square (`core/closed-grid.js`), not as a list of rectangles.
 
-**Only in the gu that have a district** (`seoul.json` "districts"; 11 of 25
-on 2026-11-15). A gu with nothing built gets no base roads or green and is
-all closed land; rivers are kept whole, and a bridge into such a gu is left
-out rather than stopping mid-river. The data for every gu stays in
-`scripts/data/seoul/`: when a district is added to a gu, the next
-`build-base.mjs` run brings that gu's base back.
+**Only near what is built**: within 200 m (`REACH` in
+`scripts/build-base.mjs`; 800 m real) of a district's box. Farther land has
+no base roads or green and is all closed, in every gu; rivers are kept
+whole, and a bridge that would lead only into closed land is left out rather
+than stopping mid-river. The data for the whole city stays in
+`scripts/data/seoul/`: when a district is added, the next `build-base.mjs`
+run brings the base round it. Raise `REACH` to open more.
 
 To rebuild: `node scripts/city/prep-seoul-osm.mjs <extract folder>` (only when
 the OSM data changes; writes `scripts/data/seoul/`), then

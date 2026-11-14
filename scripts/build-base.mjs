@@ -77,16 +77,18 @@ const nearestOn = (p, a, b) => {
   return [a[0] + t * dx, a[1] + t * dz];
 };
 
-// The base is made only in the gu that have a district (seoul.json
-// "districts"); a gu with nothing in it yet gets no roads, water or green
-// and is all closed land (Yozi 2026-11-15: left out until something is built
-// there). Building a district in a gu brings its base back on the next run.
-export const baseGu = (seoul) => seoul.gu.filter((g) => (g.districts || []).length > 0);
+// The base is made only near what is built: within REACH metres (800 m real)
+// of a district's box. Farther land has no roads or green and is all closed,
+// whether its gu has a district or not (Yozi 2026-11-15: nothing to walk to
+// there; left out until something is built). Rivers are kept whole. Adding a
+// district brings the base round it on the next run.
+export const REACH = 200;
+export const baseBoxes = (region, maps) => region.districts.flatMap((d) => mapParts(maps[d.map], d.offset || [0, 0])).filter((b) => Number.isFinite(b.x0)).map((b) => ({ x0: b.x0 - REACH, z0: b.z0 - REACH, x1: b.x1 + REACH, z1: b.z1 + REACH }));
 
-export function buildBase({ region, maps, data, seoul }) {
-  const kept = baseGu(seoul).map((g) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of g.p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { p: g.p, x0, x1, z0, z1 }; });
-  const inKept = ([x, z]) => kept.some((g) => x >= g.x0 && x <= g.x1 && z >= g.z0 && z <= g.z1 && inPolygon(x, z, g.p));
-  const keptArea = polygonClipping.union(...kept.map((g) => [[g.p.concat([g.p[0]])]]));
+export function buildBase({ region, maps, data }) {
+  const kept = baseBoxes(region, maps);
+  const inKept = ([x, z]) => kept.some((g) => x >= g.x0 && x <= g.x1 && z >= g.z0 && z <= g.z1);
+  const keptArea = polygonClipping.union(...kept.map((g) => [[[g.x0, g.z0], [g.x1, g.z0], [g.x1, g.z1], [g.x0, g.z1], [g.x0, g.z0]]]));
   const parts = region.districts.map((d) => ({ ...d, map: maps[d.map] }));
   const city = mergeDistricts(parts, region.links || [], region.water || []);
 
@@ -165,7 +167,7 @@ export function buildBase({ region, maps, data, seoul }) {
       if (along(base, pt, ux, uz, NEAR_BASE)) return 1; // the other carriageway
       if (along(old, pt, ux, uz, NEAR_OLD)) return 2; // a district's road
       if (inWall(pt)) return 3;
-      if (!inKept(pt)) return 4; // a gu with nothing built
+      if (!inKept(pt)) return 4; // far from everything built
       return 0;
     });
     // A bridge into a gu with nothing built stops at this bank, not mid-river.
@@ -302,7 +304,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const region = read(path.join(R, 'region.json'));
   const maps = Object.fromEntries(region.districts.map((d) => [d.map, read(path.join(R, d.map))]));
   const data = { roads: read(path.join(D, 'roads.json')), water: read(path.join(D, 'water.json')), green: read(path.join(D, 'green.json')) };
-  const b = buildBase({ region, maps, data, seoul: read(path.join(R, 'seoul.json')) });
+  const b = buildBase({ region, maps, data });
   const json = { note: 'All of Seoul under the districts: big roads, water and green at 1/4 (scripts/build-base.mjs, from OpenStreetMap).', credit: '© OpenStreetMap contributors (ODbL)', roads: b.roads, areas: [...b.water.map((w) => ({ k: 'water', ...w }))], decks: b.decks };
   // Parks and woods: a colour only, fetched after the start (src/game/base-green.js).
   const green = { note: 'Seoul\'s big parks and woods at 1/4 (scripts/build-base.mjs, from OpenStreetMap); region.json "baseGreen".', credit: json.credit, areas: [...b.park.map((w) => ({ k: 'park', ...w })), ...b.wood.map((w) => ({ k: 'park', wood: true, ...w }))] };
