@@ -7,49 +7,50 @@
 import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { L, fmt } from '../ui/pocha-ui.js';
-import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor } from '../core/brawl.js';
+import { TICK, RING_R, ROUNDS_TO_WIN, moveTicks, createMatch, loadBrawl, afterMatch, saveStyle, RIVALS, STYLES, STYLE_IDS, movesFor, SP_COST } from '../core/brawl.js';
 import { createSession } from '../core/brawl-net.js';
+import { createCaster, createSoloCaster } from '../core/brawl-tv.js';
 
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
   how: {
-    en: 'You fight as your own character. Two punches and two kicks, one button per hand and foot. Hold away from your rival to guard, and step up or down to slip round a punch. Light hits chain into heavier ones. Best of three rounds.',
-    ko: '내 캐릭터 그대로 싸워요. 주먹 둘, 발 둘, 손발마다 버튼 하나. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 가벼운 공격에서 센 공격으로 이어져요. 3판 2선승.',
-    ja: '自分のキャラクターのまま戦います。パンチ2つとキック2つ、手足ごとにボタン1つ。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。軽い技から重い技へつながります。3本勝負。',
-    zh: '用你自己的角色上场。两拳两脚，每只手脚一个按键。按住远离对手的方向防御，上下横移躲开直拳。轻攻击可以接重攻击。三局两胜。',
-    es: 'Peleas con tu propio personaje. Dos puñetazos y dos patadas, un botón por mano y pie. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Los golpes ligeros enlazan con los fuertes. Al mejor de tres.',
-    id: 'Kamu bertarung dengan karaktermu sendiri. Dua pukulan dan dua tendangan, satu tombol tiap tangan dan kaki. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Serangan ringan bisa disambung ke yang berat. Dua dari tiga ronde.',
-    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Hai đấm, hai đá, mỗi tay chân một nút. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đòn nhẹ nối được sang đòn nặng. Thắng 2 trên 3 hiệp.',
-    hi: 'आप अपने ही किरदार से लड़ते हैं। दो मुक्के, दो किक, हर हाथ-पैर का एक बटन। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। हल्के वार भारी वार से जुड़ते हैं। तीन में से दो राउंड।',
-    fr: 'Tu te bats avec ton propre personnage. Deux poings, deux pieds, un bouton par main et par pied. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Les coups légers s\'enchaînent vers les plus lourds. Deux manches gagnantes.',
-    th: 'สู้ด้วยตัวละครของคุณเอง หมัดสอง เตะสอง ปุ่มละมือละเท้า กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ท่าเบาต่อเป็นท่าหนักได้ ชนะ 2 ใน 3 ยก',
-    ar: 'تقاتل بشخصيتك كما هي. لكمتان وركلتان، زر لكل يد وقدم. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضربات الخفيفة تتصل بالأقوى. الأفضل من ثلاث جولات.',
+    en: 'You fight as your own character. Keep pressing punch, or kick, and a string of hits comes out. Hold away from your rival to guard, and step up or down to slip round a punch. Hitting, guarding and being hit fill the special bar; each half of it is one special. Best of three rounds.',
+    ko: '내 캐릭터 그대로 싸워요. 주먹이나 발 버튼만 계속 누르면 연속기가 나가요. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 때리고, 막고, 맞으면 필살기 게이지가 차고, 한 칸에 필살기 한 번이에요. 3판 2선승.',
+    ja: '自分のキャラクターのまま戦います。パンチかキックを押し続けるだけで連続技が出ます。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。当てる・ガードする・くらうと必殺ゲージがたまり、半分で必殺技1回。3本勝負。',
+    zh: '用你自己的角色上场。连按拳或脚就能打出连招。按住远离对手的方向防御，上下横移躲开直拳。击中、防御、挨打都会积攒必杀槽，每半格可放一次必杀技。三局两胜。',
+    es: 'Peleas con tu propio personaje. Sigue pulsando puño o patada y sale un combo. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Golpear, cubrirte y recibir golpes llenan la barra especial; cada mitad es un especial. Al mejor de tres.',
+    id: 'Kamu bertarung dengan karaktermu sendiri. Tekan terus pukulan atau tendangan dan kombonya keluar. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Memukul, bertahan, dan terkena pukulan mengisi bar spesial; tiap setengahnya satu jurus spesial. Dua dari tiga ronde.',
+    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Cứ bấm liên tục đấm hoặc đá là ra chuỗi đòn. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đánh trúng, đỡ đòn và bị đánh đều nạp thanh tuyệt chiêu; mỗi nửa thanh là một tuyệt chiêu. Thắng 2 trên 3 hiệp.',
+    hi: 'आप अपने ही किरदार से लड़ते हैं। मुक्का या किक बार-बार दबाते रहें और कॉम्बो निकलता है। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। मारने, रोकने और मार खाने से स्पेशल बार भरता है; हर आधे हिस्से से एक स्पेशल। तीन में से दो राउंड।',
+    fr: "Tu te bats avec ton propre personnage. Continue d'appuyer sur poing ou sur pied et un enchaînement sort. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Frapper, parer et encaisser remplissent la jauge spéciale ; chaque moitié vaut un coup spécial. Deux manches gagnantes.",
+    th: 'สู้ด้วยตัวละครของคุณเอง กดหมัดหรือเตะรัว ๆ คอมโบก็ออกเอง กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ตีโดน ป้องกัน และโดนตีจะเติมเกจท่าไม้ตาย ครึ่งเกจใช้ได้หนึ่งครั้ง ชนะ 2 ใน 3 ยก',
+    ar: 'تقاتل بشخصيتك كما هي. واصل الضغط على اللكمة أو الركلة فتخرج سلسلة ضربات. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضرب والصد وتلقّي الضربات تملأ شريط الضربة الخاصة، وكل نصف منه ضربة خاصة واحدة. الأفضل من ثلاث جولات.',
   },
   moves: {
-    en: '→ + right punch: launcher · both punches: guard breaker · both kicks: flying kick',
-    ko: '→ + 오른 주먹: 띄우기 · 주먹 둘 같이: 가드 깨기 · 발 둘 같이: 날아차기',
-    ja: '→＋右パンチ：浮かせ技 · パンチ同時：ガード崩し · キック同時：飛び蹴り',
-    zh: '→ + 右拳：浮空 · 双拳同按：破防 · 双脚同按：飞踢',
-    es: '→ + puño derecho: lanzador · dos puños: rompeguardias · dos patadas: patada voladora',
-    id: '→ + pukulan kanan: pelontar · dua pukulan: pemecah pertahanan · dua tendangan: tendangan terbang',
-    vi: '→ + đấm phải: hất tung · hai đấm: phá thủ · hai đá: đá bay',
-    hi: '→ + दायाँ मुक्का: लॉन्चर · दोनों मुक्के: गार्ड तोड़ · दोनों किक: उड़ती किक',
-    fr: '→ + poing droit : lanceur · deux poings : brise-garde · deux pieds : coup de pied sauté',
-    th: '→ + หมัดขวา: งัดลอย · สองหมัดพร้อมกัน: ทำลายการ์ด · สองเท้าพร้อมกัน: กระโดดเตะ',
-    ar: '→ + اللكمة اليمنى: رافعة · اللكمتان معًا: كاسرة الصد · الركلتان معًا: ركلة طائرة',
+    en: '→ + 👊 launcher · ← + 👊 heavy punch · → + 🦶 roundhouse · ← + 🦶 sweep · 👊 in a dash: rushing punch · ⭐1 guard breaker · ⭐2 flying kick (they hurt even through a guard)',
+    ko: '→ + 👊 띄우기 · ← + 👊 묵직한 한 방 · → + 🦶 돌려차기 · ← + 🦶 다리 걸기 · 대시 중 👊 돌진 펀치 · ⭐1 가드 깨기 · ⭐2 날아차기 (필살기는 막아도 아파요)',
+    ja: '→＋👊 浮かせ技 · ←＋👊 重い一撃 · →＋🦶 回し蹴り · ←＋🦶 足払い · ダッシュ中👊 突進パンチ · ⭐1 ガード崩し · ⭐2 飛び蹴り（必殺技はガードしても痛い）',
+    zh: '→ + 👊 浮空 · ← + 👊 重拳 · → + 🦶 回旋踢 · ← + 🦶 扫腿 · 冲刺中👊 突进拳 · ⭐1 破防 · ⭐2 飞踢（必杀技防住也会掉血）',
+    es: '→ + 👊 lanzador · ← + 👊 puño fuerte · → + 🦶 patada circular · ← + 🦶 barrido · 👊 en carrera: puño de embestida · ⭐1 rompeguardias · ⭐2 patada voladora (duelen aunque te cubras)',
+    id: '→ + 👊 pelontar · ← + 👊 pukulan berat · → + 🦶 tendangan putar · ← + 🦶 sapuan · 👊 saat dash: pukulan terjang · ⭐1 pemecah pertahanan · ⭐2 tendangan terbang (tetap sakit walau ditahan)',
+    vi: '→ + 👊 hất tung · ← + 👊 cú đấm nặng · → + 🦶 đá xoay · ← + 🦶 quét chân · 👊 khi lướt: cú đấm lao tới · ⭐1 phá thủ · ⭐2 đá bay (đỡ vẫn mất máu)',
+    hi: '→ + 👊 लॉन्चर · ← + 👊 भारी मुक्का · → + 🦶 घूमती किक · ← + 🦶 टांग मारना · डैश में 👊 दौड़ता मुक्का · ⭐1 गार्ड तोड़ · ⭐2 उड़ती किक (रोकने पर भी चोट लगती है)',
+    fr: '→ + 👊 lanceur · ← + 👊 coup lourd · → + 🦶 coup de pied circulaire · ← + 🦶 balayage · 👊 en dash : poing chargé · ⭐1 brise-garde · ⭐2 coup de pied sauté (ils font mal même parés)',
+    th: '→ + 👊 ท่าเสย · ← + 👊 หมัดหนัก · → + 🦶 เตะเหวี่ยง · ← + 🦶 กวาดขา · 👊 ระหว่างแดช: หมัดพุ่ง · ⭐1 ทำลายการ์ด · ⭐2 เตะลอย (ป้องกันก็ยังเจ็บ)',
+    ar: '→ + 👊 ضربة رافعة · ← + 👊 لكمة ثقيلة · → + 🦶 ركلة دائرية · ← + 🦶 كنس القدم · 👊 أثناء الاندفاع: لكمة اندفاع · ⭐1 كاسرة الصد · ⭐2 ركلة طائرة (تؤلم حتى مع الصد)',
   },
   keys: {
-    en: 'A D move · W S side-step · U I punches · J K kicks',
-    ko: 'A D 이동 · W S 옆걸음 · U I 주먹 · J K 발',
-    ja: 'A D 移動 · W S 横移動 · U I パンチ · J K キック',
-    zh: 'A D 移动 · W S 横移 · U I 拳 · J K 脚',
-    es: 'A D mover · W S paso lateral · U I puños · J K patadas',
-    id: 'A D gerak · W S langkah samping · U I pukulan · J K tendangan',
-    vi: 'A D di chuyển · W S bước ngang · U I đấm · J K đá',
-    hi: 'A D चलें · W S बगल कदम · U I मुक्के · J K किक',
-    fr: 'A D bouger · W S pas de côté · U I poings · J K pieds',
-    th: 'A D เดิน · W S ก้าวข้าง · U I หมัด · J K เตะ',
-    ar: 'A D تحرّك · W S خطوة جانبية · U I لكمات · J K ركلات',
+    en: 'A D move · W S side-step · J punch · K kick · U I specials',
+    ko: 'A D 이동 · W S 옆걸음 · J 주먹 · K 발 · U I 필살기',
+    ja: 'A D 移動 · W S 横移動 · J パンチ · K キック · U I 必殺技',
+    zh: 'A D 移动 · W S 横移 · J 拳 · K 脚 · U I 必杀技',
+    es: 'A D mover · W S paso lateral · J puño · K patada · U I especiales',
+    id: 'A D gerak · W S langkah samping · J pukulan · K tendangan · U I spesial',
+    vi: 'A D di chuyển · W S bước ngang · J đấm · K đá · U I tuyệt chiêu',
+    hi: 'A D चलें · W S बगल कदम · J मुक्का · K किक · U I स्पेशल',
+    fr: 'A D bouger · W S pas de côté · J poing · K pied · U I spéciaux',
+    th: 'A D เดิน · W S ก้าวข้าง · J หมัด · K เตะ · U I ท่าไม้ตาย',
+    ar: 'A D تحرّك · W S خطوة جانبية · J لكمة · K ركلة · U I ضربات خاصة',
   },
   start: { en: 'Fight {name}', ko: '{name}와 대결', ja: '{name}と対戦', zh: '挑战{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: 'Đấu với {name}', hi: '{name} से लड़ें', fr: 'Affronter {name}', th: 'สู้กับ {name}', ar: 'قاتل {name}' },
   rival: { en: 'Rival {n} of {max}', ko: '상대 {n} / {max}', ja: 'ライバル {n} / {max}', zh: '对手 {n} / {max}', es: 'Rival {n} de {max}', id: 'Lawan {n} dari {max}', vi: 'Đối thủ {n} / {max}', hi: 'प्रतिद्वंद्वी {n} / {max}', fr: 'Rival {n} sur {max}', th: 'คู่ต่อสู้ {n} / {max}', ar: 'الخصم {n} من {max}' },
@@ -101,7 +102,7 @@ const tt = (k, v) => fmt(L(T[k]), v);
 // the sky over their round.
 // The eight styles: a name, a line about it, the signature move's name, and
 // how it stands (bone offsets like STANCE below).
-const STYLE = {
+export const STYLE = {
   brawler: {
     icon: '🥊',
     name: { en: 'Brawler', ko: '격투가', ja: '格闘家', zh: '格斗家', es: 'Luchador', id: 'Petarung', vi: 'Võ sĩ', hi: 'लड़ाका', fr: 'Bagarreur', th: 'นักสู้', ar: 'المقاتل' },
@@ -158,9 +159,9 @@ const STYLE = {
     stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
   },
 };
-const BTN = { lp: '👊ʟ', rp: '👊ʀ', lk: '🦶ʟ', rk: '🦶ʀ' };
+const BTN = { p: '👊', k: '🦶', s1: '⭐1', s2: '⭐2' };
 
-const RIVAL = [
+export const RIVAL = [
   { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
   { name: { en: 'Night-shift Mina', ko: '야간조 미나', ja: '夜勤のミナ', zh: '夜班米娜' }, style: 'ninja', look: { model: 'track-blue', pants: 'navy', hair: 'black', skin: 'light', hairStyle: 'pony' }, sky: ['#0d1233', '#3c4fa8'] },
   { name: { en: 'Busker Joon', ko: '버스커 준', ja: 'バスカー・ジュン', zh: '街头艺人俊' }, style: 'dancer', look: { model: 'jacket-black', pants: 'black', hair: 'ash', skin: 'warm', hairStyle: 'wolf' }, sky: ['#170d2e', '#7a3fb0'] },
@@ -170,7 +171,7 @@ const RIVAL = [
 
 // The ring's build (× the street's): about three heads tall instead of two.
 const BUILD = globalThis.__brawlBuild || { head: 0.75, torso: 1.08, arm: 1.3, leg: 1.4, lift: 0.1 };
-const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
+export const VS_SKY = ['#121a3a', '#d06a3c']; // the sky over a fight between two players
 const STAGE_Y = -80; // under the room, out of its sight
 const FOV = 38;
 
@@ -187,6 +188,17 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-bar .hp { background: linear-gradient(#ffe46b, #ff9a2e); }
 .bw-side.rage .hp { background: linear-gradient(#ff8a7a, #e0242e); animation: bw-pulse .5s infinite alternate; }
 @keyframes bw-pulse { to { filter: brightness(1.5); } }
+.bw-sp { display: flex; gap: 4px; margin-top: 3px; width: 46%; }
+.bw-side.r .bw-sp { margin-left: auto; flex-direction: row-reverse; }
+.bw-sp b { flex: 1; height: 7px; border-radius: 4px; background: rgba(10,10,20,.72); border: 1.5px solid #fff; overflow: hidden; position: relative; }
+.bw-sp i { position: absolute; inset: 0; background: #7df0ff; transform: scaleX(0); transform-origin: left; }
+.bw-side.r .bw-sp i { transform-origin: right; }
+.bw-sp b.full { box-shadow: 0 0 8px #7df0ff; }
+.bw-sp b.full i { background: #fff36b; }
+.bw-pad.no-sp .bw-btns .sp { opacity: .4; }
+.bw-flash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,243,107,.55), rgba(255,140,40,.25) 60%, transparent); opacity: 0; }
+.bw-flash.show { animation: bw-flash .45s ease-out; }
+@keyframes bw-flash { from { opacity: 1; } to { opacity: 0; } }
 .bw-name { display: flex; gap: 6px; align-items: center; margin-top: 3px; font-size: 13px; text-shadow: 0 1px 3px #000; white-space: nowrap; overflow: hidden; }
 .bw-side.r .bw-name { flex-direction: row-reverse; }
 .bw-name span { overflow: hidden; text-overflow: ellipsis; }
@@ -286,6 +298,8 @@ WIND.grab = P({ ...STANCE, armL: [-1.3, -1.0, 0], foreL: [-0.3, 0, 0], armR: [-1
 HIT.grab = P({ ...STANCE, armL: [-1.5, 0.35, 0], foreL: [-0.9, 0, 0], armR: [-1.5, -0.35, 0], foreR: [-0.9, 0, 0], spine: [0.55, 0, 0], legL: [-0.6, 0, 0], kneeL: [0.8, 0, 0] });
 WIND.mill = P({ ...STANCE, armL: [-1.6, 0, 0], foreL: [-0.2, 0, 0], armR: [-1.6, 0, 0], foreR: [-0.2, 0, 0], legL: [-0.8, 0, 0], kneeL: [1.3, 0, 0], legR: [-0.4, 0, 0], kneeR: [1.2, 0, 0], spine: [0.7, 0, 0] });
 HIT.mill = P({ armL: [-2.7, -0.3, 0], armR: [-2.7, 0.3, 0], foreL: [-0.2, 0, 0], foreR: [-0.2, 0, 0], legL: [-1.3, 0, 0], legR: [0.9, 0, 0], kneeL: [0.1, 0, 0], kneeR: [0.2, 0, 0], spine: [0.3, 0, 0], head: [-0.4, 0, 0] });
+WIND.sweep = P({ ...STANCE, legL: [-0.9, 0, 0], kneeL: [1.9, 0, 0], legR: [-0.3, 0.5, 0], kneeR: [1.4, 0, 0], spine: [0.55, 0, 0], armL: [-0.8, -0.6, 0], armR: [-0.4, 0.6, 0] });
+HIT.sweep = P({ ...STANCE, legL: [-1.0, 0, 0], kneeL: [2.0, 0, 0], legR: [-1.35, -0.2, 0], kneeR: [0, 0, 0], spine: [0.75, 0.4, 0], armL: [-0.3, -1.0, 0], armR: [0.2, 0.9, 0] });
 const DASH = P({ ...STANCE, armL: [0.5, 0, 0], foreL: [-1.0, 0, 0], armR: [0.6, 0, 0], foreR: [-1.0, 0, 0], legL: [-0.9, 0, 0], kneeL: [0.9, 0, 0], legR: [0.7, 0, 0], kneeR: [0.5, 0, 0], spine: [0.5, 0, 0] });
 const STANCES = {};
 for (const id of STYLE_IDS) STANCES[id] = STYLE[id].stance ? P({ ...STYLE[id].stance }) : STANCE;
@@ -410,9 +424,9 @@ function sparkTexture() {
   g.fill();
   return new THREE.CanvasTexture(c);
 }
-function buildStage(sky) {
+export function buildStage(sky, y = STAGE_Y) {
   const g = new THREE.Group();
-  g.position.y = STAGE_Y;
+  g.position.y = y;
   const own = []; // to free
   const add = (geo, mat) => { const m = new THREE.Mesh(geo, mat); own.push(geo, mat); if (mat.map) own.push(mat.map); g.add(m); return m; };
   const dome = add(new THREE.SphereGeometry(60, 32, 16), new THREE.MeshBasicMaterial({ map: skyTexture(sky), side: THREE.BackSide, depthWrite: false }));
@@ -459,6 +473,52 @@ function buildStage(sky) {
   return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
 }
 
+// ── The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ──
+export function makeFighter(look, side, parent) {
+  const ch = createCharacter(look);
+  const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
+  const f = { ch, rig, pose: P({}), body: {}, clipT: 0, live: true, side };
+  ch.root.position.set(side ? 1.1 : -1.1, 0, 0);
+  ch.root.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
+  ch.setMoves(() => (f.live ? f.pose : null));
+  parent.add(ch.root);
+  return f;
+}
+// In the ring only, fighters are built taller: a smaller head and longer
+// arms and legs, so a punch and a kick read from across the screen. Set
+// every frame after the clip's own pose (the model resets the head's size).
+function reshape(f) {
+  const root = f.ch.root;
+  if (!f.bones) {
+    const get = (n) => root.getObjectByName(n);
+    const b = { head: get('head'), spine: get('spine'), arms: [get('upperarml'), get('upperarmr')], legs: [get('upperlegl'), get('upperlegr')] };
+    if (!b.head || !b.legs[0]) return; // (the model is still on its way)
+    f.bones = b;
+  }
+  const b = f.bones;
+  b.spine?.scale.setScalar(BUILD.torso);
+  b.head.scale.multiplyScalar(BUILD.head / BUILD.torso);
+  for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
+  for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
+}
+// Stand fighter f as the rules have it (s). right: on the right of the picture.
+export function placeFighter(f, s, dt, time, right) {
+  const root = f.ch.root;
+  root.position.set(s.x, 0, s.z);
+  poseOf(s, time, f.pose, f.body);
+  if (right) mirror(f.pose);
+  if (f.clipT > 0) f.clipT -= dt;
+  f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
+  f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
+  f.rig.rotation.x = f.body.pitch;
+  root.visible = !f.body.hide;
+  // Chest a little toward the camera, like a fighting stance.
+  const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (right ? 0.4 : -0.4);
+  root.rotation.y = Math.PI / 2 - s.face + open + (right ? 1 : -1) * f.body.yaw;
+  f.ch.animate(dt, 0, false);
+  reshape(f);
+}
+
 // ── The game ─────────────────────────────────────────────────────────────
 export function createBrawl(game) {
   const store = localStorage;
@@ -472,10 +532,15 @@ export function createBrawl(game) {
   const stick = { mx: 0, mz: 0 };
   const KEYS = {
     KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down',
-    KeyU: 'lp', KeyI: 'rp', KeyJ: 'lk', KeyK: 'rk', Numpad4: 'lp', Numpad5: 'rp', Numpad1: 'lk', Numpad2: 'rk',
+    KeyJ: 'p', KeyK: 'k', KeyU: 's1', KeyI: 's2', Numpad1: 'p', Numpad2: 'k', Numpad4: 's1', Numpad5: 's2',
   };
   const onKey = (e) => {
     if (!on) return;
+    if (on.hud?.commands?.open) {
+      e.stopPropagation();
+      if (e.code === 'Escape') { e.preventDefault(); on.hud.commands.close(); }
+      return;
+    }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     const down = e.type === 'keydown';
     if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); if (down) close(); return; }
@@ -504,7 +569,7 @@ export function createBrawl(game) {
   };
   function readInput() {
     const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) || stick.mz };
-    for (const b of ['lp', 'rp', 'lk', 'rk']) if (pressed.has(b)) inp[b] = true;
+    for (const b of ['p', 'k', 's1', 's2']) if (pressed.has(b)) inp[b] = true;
     if (dashAsk) { inp.dash = dashAsk; dashAsk = 0; }
     pressed.clear();
     return inp;
@@ -522,8 +587,10 @@ export function createBrawl(game) {
       const pips = Array.from({ length: ROUNDS_TO_WIN }, () => el('i', 'bw-pip'));
       name.append(label, ...pips);
       const style = el('div', 'bw-style');
-      s.append(bar, name, style);
-      return { s, ghost, hp, label, pips, style, shown: -1 };
+      const sp = el('div', 'bw-sp'), cells = [el('i'), el('i')];
+      sp.append(...cells.map((c) => { const w = el('b'); w.append(c); return w; }));
+      s.append(bar, sp, name, style);
+      return { s, ghost, hp, label, pips, style, cells, shown: -1, sp: -1 };
     };
     const a = side(0), b = side(1), time = el('div', 'bw-time', '45');
     const top = el('div', 'bw-top');
@@ -533,7 +600,39 @@ export function createBrawl(game) {
     const x = el('button', 'bw-x', '✕');
     x.setAttribute('aria-label', tt('close'));
     x.onclick = () => close();
-    root.append(top, msg, sub, ...combo, x);
+    const flash = el('div', 'bw-flash');
+    root.append(flash, top, msg, sub, ...combo, x);
+    const commandButton = el('button', 'bw-command-button', L({ en: 'Commands', ko: '커맨드표' }));
+    commandButton.style.cssText = 'position:absolute;right:12px;top:110px;pointer-events:auto;padding:12px 18px;border:2px solid #c39bff;border-radius:14px;background:#211932;color:white;font:bold 17px system-ui;cursor:pointer';
+    const commands = document.createElement('dialog');
+    commands.style.cssText = 'pointer-events:auto;box-sizing:border-box;width:min(94vw,720px);max-height:88dvh;overflow:auto;padding:24px;border:2px solid #c39bff;border-radius:20px;background:#171329;color:white;font:18px system-ui';
+    commands.setAttribute('aria-label', L({ en: 'Commands', ko: '커맨드표' }));
+    const heading = el('h2', null, L({ en: 'Commands', ko: '커맨드표' }));
+    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. → means toward your rival. Specials cost 50 gauge.', ko: '싱글은 일시정지됩니다. 온라인 대전은 계속 진행됩니다. →는 상대 방향이며, 필살기는 게이지 50이 필요합니다.' }));
+    const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
+    for (const [label, input] of [
+      [L({ en: 'Punch / kick', ko: '펀치 / 킥' }), '👊 J / 🦶 K'],
+      [L({ en: 'Combo', ko: '연속 공격' }), '👊 → 👊 → 👊 / 🦶 → 🦶 → 🦶'],
+      [L({ en: 'Launcher', ko: '띄우기' }), '→ + 👊 J'],
+      [L({ en: 'Heavy punch', ko: '묵직한 한 방' }), '← + 👊 J'],
+      [L({ en: 'Roundhouse', ko: '돌려차기' }), '→ + 🦶 K'],
+      [L({ en: 'Sweep', ko: '다리 걸기' }), '← + 🦶 K'],
+      [L({ en: 'Rushing punch', ko: '돌진 펀치' }), '→ → + 👊 J'],
+      [L({ en: 'Special 1', ko: '필살기 1' }), '↓ → + 👊 J  /  ⭐1 U'],
+      [L({ en: 'Special 2', ko: '필살기 2' }), '↓ → + 🦶 K  /  ⭐2 I'],
+      [L({ en: 'Guard', ko: '방어' }), '←'],
+      [L({ en: 'Dash', ko: '대시' }), '→ → / ← ← / Shift'],
+    ]) {
+      const row = document.createElement('tr');
+      for (const text of [label, input]) { const cell = document.createElement('td'); cell.textContent = text; cell.style.cssText = 'padding:15px 8px;border-bottom:1px solid #49365f'; row.append(cell); }
+      table.append(row);
+    }
+    const dismiss = el('button', null, L({ en: 'Close', ko: '닫기' }));
+    dismiss.style.cssText = 'margin-top:20px;width:100%;padding:14px;border:0;border-radius:12px;background:#c39bff;font:bold 20px system-ui;cursor:pointer';
+    dismiss.onclick = () => commands.close();
+    commands.append(heading, note, table, dismiss);
+    commandButton.onclick = () => { held.clear(); pressed.clear(); stick.mx = stick.mz = 0; dashAsk = 0; commands.showModal(); };
+    root.append(commandButton, commands);
     let pad = null;
     if (touch) {
       pad = el('div', 'bw-pad');
@@ -558,9 +657,9 @@ export function createBrawl(game) {
       zone.onpointermove = (e) => { if (e.pointerId === id) move(e); };
       zone.onpointerup = zone.onpointercancel = (e) => { if (e.pointerId !== id) return; id = null; stick.mx = stick.mz = 0; knob.style.transform = ''; };
       const btns = el('div', 'bw-btns');
-      for (const [k, icon, tag, col] of [['lp', '👊', 'L', '#3f7fe0'], ['rp', '👊', 'R', '#e0483f'], ['lk', '🦶', 'L', '#2fa56a'], ['rk', '🦶', 'R', '#d9982a']]) {
-        const b = el('button', null, icon);
-        b.append(el('small', null, tag));
+      for (const [k, icon, tag, col] of [['s1', '⭐', '1', '#8a5ad6'], ['s2', '⭐', '2', '#d9982a'], ['p', '👊', '', '#3f7fe0'], ['k', '🦶', '', '#e0483f']]) {
+        const b = el('button', k[0] === 's' ? 'sp' : null, icon);
+        if (tag) b.append(el('small', null, tag));
         b.style.background = col;
         b.onpointerdown = (e) => { e.preventDefault(); pressed.add(k); b.classList.add('on'); };
         b.onpointerup = b.onpointercancel = b.onpointerleave = () => b.classList.remove('on');
@@ -571,10 +670,11 @@ export function createBrawl(game) {
       dash.onpointerup = dash.onpointercancel = dash.onpointerleave = () => dash.classList.remove('on');
       pad.append(zone, btns, dash);
       root.append(pad);
-    } else root.append(el('div', 'bw-keys', tt('keys')));
+    } else root.append(el('div', 'bw-keys', tt('keys') + ' · ↓ → + J / K = ⭐1 / ⭐2'));
+    if (touch) root.append(el('div', 'bw-keys', '↓ → + 👊 / 🦶 = ⭐1 / ⭐2'));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
-    return { root, a, b, time, msg, sub, combo, pad, comboT: [0, 0], msgT: 0 };
+    return { root, a, b, time, msg, sub, combo, pad, flash, commands, comboT: [0, 0], msgT: 0 };
   }
   function say(text, sub = '', secs = 1.4) {
     const h = on.hud;
@@ -597,7 +697,7 @@ export function createBrawl(game) {
     c.append(row);
   }
   const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
-  const seqText = (seq) => seq.map((k) => BTN[k]).join(' ');
+  const seqText = (seq, i) => (i ? BTN.k : BTN.p).repeat(seq.length); // (the same button, once a hit)
   function styleInfo(box, id) {
     const st = STYLES[id], mv = movesFor(id);
     box.replaceChildren();
@@ -609,8 +709,9 @@ export function createBrawl(game) {
       bar.append(fill); row.append(el('span', null, icon), bar);
       box.append(row);
     }
-    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? `${BTN.lp} + ${BTN.rp}` : `${BTN.lk} + ${BTN.rk}`) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
+    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
     box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
+    box.append(el('p', 'dim', tt('moves')));
   }
   // The eight styles to pick from, and what the picked one does.
   function styleGrid(c) {
@@ -632,6 +733,7 @@ export function createBrawl(game) {
     pick(on.style);
   }
   function menu(note) {
+    endCast();
     const rec = loadBrawl(store);
     on.style = rec.style || on.style || 'brawler';
     on.flip = 0;
@@ -649,7 +751,7 @@ export function createBrawl(game) {
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const more = el('details');
-      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('moves')), el('p', 'dim', tt('dash')));
+      more.append(el('summary', 'dim', '❓'), el('p', null, tt('how')), el('p', 'dim', tt('dash')));
       if (!touch) more.append(el('p', 'dim', tt('keys')));
       c.append(more);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
@@ -706,6 +808,7 @@ export function createBrawl(game) {
       else tell(vs.peer.id, vs.host ? 'c' : 'n', vs.nonce);
     }
     vs.dead = true;
+    endCast();
     const link = vs.link;
     if (link) setTimeout(() => link.close(), 300); // (after the goodbye has gone)
     on.vs = null; on.match = null; on.flip = 0;
@@ -762,7 +865,11 @@ export function createBrawl(game) {
   function startVs() {
     const vs = on.vs;
     vs.st = 'play';
-    vs.session = createSession({ side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); } });
+    vs.session = createSession({
+      side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); },
+      onSure: vs.host ? (ia, ib, m) => on?.cast?.step(ia, ib, m) : undefined, // (the host shows it to the room)
+    });
+    if (vs.host) cast({ b: vs.peer.id, n: [game.nickname || '', vs.peer.name] }, vs.session.certain);
     startUi();
     on.match = vs.session.match;
   }
@@ -799,33 +906,7 @@ export function createBrawl(game) {
   }
 
   // ── The fighters ──
-  function fighter(look, side) {
-    const ch = createCharacter(look);
-    const rig = ch.root.children.find((c) => c.rotation.order === 'YXZ') || ch.root;
-    const f = { ch, rig, pose: P({}), body: {}, clipT: 0, live: true, side, shownX: side ? 1.1 : -1.1, shownZ: 0 };
-    ch.root.position.set(f.shownX, 0, 0);
-    ch.root.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
-    ch.setMoves(() => (f.live ? f.pose : null));
-    on.stage.g.add(ch.root);
-    return f;
-  }
-  // In the ring only, fighters are built taller: a smaller head and longer
-  // arms and legs, so a punch and a kick read from across the screen. Set
-  // every frame after the clip's own pose (the model resets the head's size).
-  function reshape(f) {
-    const root = f.ch.root;
-    if (!f.bones) {
-      const get = (n) => root.getObjectByName(n);
-      const b = { head: get('head'), spine: get('spine'), arms: [get('upperarml'), get('upperarmr')], legs: [get('upperlegl'), get('upperlegr')] };
-      if (!b.head || !b.legs[0]) return; // (the model is still on its way)
-      f.bones = b;
-    }
-    const b = f.bones;
-    b.spine?.scale.setScalar(BUILD.torso);
-    b.head.scale.multiplyScalar(BUILD.head / BUILD.torso);
-    for (const a of b.arms) a?.scale.setScalar(BUILD.arm / BUILD.torso);
-    for (const l of b.legs) l?.scale.setScalar(BUILD.leg);
-  }
+  const fighter = (look, side) => makeFighter(look, side, on.stage.g);
   // Who stands across the ring: one of the five rivals, or another player.
   function setFoe(key, look, name, style, sky) {
     on.foeStyle = style;
@@ -848,18 +929,29 @@ export function createBrawl(game) {
     on.rivalStage = stage;
     setFoe('r:' + stage, RIVAL[stage].look, L(RIVAL[stage].name), RIVAL[stage].style, RIVAL[stage].sky);
   }
+  // The match goes out to the room, for the arcade's wall screens (core/brawl-tv.js).
+  function cast(about, m) {
+    endCast();
+    on.cast = createCaster((text) => game.net?.sendEmote?.(text), about);
+    on.cast.start(m);
+  }
+  function endCast() { on?.cast?.end(); if (on) on.cast = null; }
   function startUi() {
     on.card?.remove(); on.card = null;
     if (on.hud.pad) on.hud.pad.style.display = '';
     on.hud.root.querySelector('.bw-keys')?.style.removeProperty('display');
     held.clear(); pressed.clear();
     on.acc = 0; on.freeze = 0; on.shake = 0; on.overT = 0; on.cheer = null;
-    for (const s of [on.hud.a, on.hud.b]) { s.shown = -1; s.s.classList.remove('rage'); }
+    for (const s of [on.hud.a, on.hud.b]) { s.shown = s.sp = -1; s.s.classList.remove('rage'); }
   }
   function begin(stage) {
     if (on.vs) return;
     startUi();
-    on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
+    const m = on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
+    endCast();
+    on.cast = createSoloCaster((text) => game.net?.sendEmote?.(text));
+    on.cast.start();
+    m.onStep = () => on?.cast?.step();
     on.stageNo = stage;
   }
 
@@ -879,15 +971,29 @@ export function createBrawl(game) {
         for (const f of [on.me, on.rival]) { f.clipT = 1.7; f.ch.play('bow'); }
         sfx.tock(0.5, 500);
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
-      else if (e.k === 'swing') sfx.tock(0.18, (e.by ? m.b : m.a).mv[e.move].level >= 3 ? 520 : 760);
+      else if (e.k === 'swing') {
+        const fighter = e.by ? m.b : m.a;
+        if (e.move === 'palm' || e.move === 'fly') { // (a special: its name was shown when it began)
+          spark(fighter.x, 0.85, fighter.z, '#c39bff', 2.1);
+          sfx.tock(0.7, 1250);
+        } else sfx.tock(0.18, fighter.mv[e.move].level >= 3 ? 520 : 760);
+      }
       else if (e.k === 'dash') sfx.tock(0.2, 1100);
+      else if (e.k === 'super') { // a special: the screen flashes and holds a moment
+        const f = e.who ? m.b : m.a;
+        spark(f.x, 0.9, f.z, '#fff36b', 1.6); sfx.tock(0.7, 240); on.shake = Math.max(on.shake, 0.12);
+        if (!on.vs) on.freeze = 22;
+        const fl = on.hud.flash; fl.classList.remove('show'); void fl.offsetWidth; fl.classList.add('show');
+        const c = on.hud.combo[e.who ^ on.flip]; c.textContent = '⭐ ' + L(STYLE[f.style].sig); c.classList.add('show'); on.hud.comboT[e.who] = 1.2;
+      }
       else if (e.k === 'shot') sfx.tock(0.5, 1500);
       else if (e.k === 'blink') { spark(e.from[0], 0.7, e.from[1], '#b9a6f0', 1.2); spark(e.x, 0.7, e.z, '#b9a6f0', 1.2); sfx.tock(0.4, 1800); }
       else if (e.k === 'combo') { const c = on.hud.combo[e.by ^ on.flip]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
       else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); if (!on.vs) on.freeze = 3; }
       else if (e.k === 'hit') {
-        const big = e.dmg >= 14 || e.launch || e.ko || e.fin;
-        spark(e.x, e.y, e.z, e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', big ? 1.5 : 1);
+        const special = ['palm', 'fly', 'shot'].includes(e.move);
+        const big = special || e.dmg >= 14 || e.launch || e.ko || e.fin;
+        spark(e.x, e.y, e.z, special ? '#c39bff' : e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', special ? 2.3 : big ? 1.5 : 1);
         sfx.tock(big ? 1 : 0.7, big ? 170 : 250);
         if (!on.vs) on.freeze = e.ko ? 16 : big ? 7 : 4; // (two screens cannot stop the clock for a hit)
         on.shake = Math.max(on.shake, big ? 0.14 : 0.06);
@@ -907,23 +1013,7 @@ export function createBrawl(game) {
   }
 
   const v = new THREE.Vector3(), camAt = new THREE.Vector3(), camTo = new THREE.Vector3();
-  function place(f, s, dt) {
-    const root = f.ch.root;
-    root.position.set(s.x, 0, s.z);
-    poseOf(s, on.time, f.pose, f.body);
-    const right = s.side ^ on.flip; // on the right of the screen
-    if (right) mirror(f.pose);
-    if (f.clipT > 0) f.clipT -= dt;
-    f.live = !(f.clipT > 0) || s.st !== 'idle'; // (bowing or cheering: the clip alone)
-    f.rig.position.y = f.body.lift + BUILD.lift * Math.cos(f.body.pitch);
-    f.rig.rotation.x = f.body.pitch;
-    root.visible = !f.body.hide;
-    // Chest a little toward the camera, like a fighting stance.
-    const open = (s.st === 'down' || s.st === 'ko' || s.st === 'air') ? 0 : (right ? 0.4 : -0.4);
-    root.rotation.y = Math.PI / 2 - s.face + open + (right ? 1 : -1) * f.body.yaw;
-    f.ch.animate(dt, 0, false);
-    reshape(f);
-  }
+  const place = (f, st, dt) => placeFighter(f, st, dt, on.time, st.side ^ on.flip);
 
   // A fight with someone: waiting for an answer runs out, hello on the
   // match's channel, and the match itself (the clock never stops for a hit).
@@ -982,6 +1072,11 @@ export function createBrawl(game) {
       for (const [s, f] of [[h.a, mine], [h.b, theirs]]) {
         if (s.shown !== f.hp) { s.shown = f.hp; const k = `scaleX(${f.hp / f.maxHp})`; s.hp.style.transform = k; s.ghost.style.transform = k; }
         if (!f.rage) s.s.classList.remove('rage');
+        if (s.sp !== f.sp) {
+          s.sp = f.sp;
+          s.cells.forEach((c, i) => { const k = Math.max(0, Math.min(1, (f.sp - SP_COST * i) / SP_COST)); c.style.transform = `scaleX(${k})`; c.parentNode.classList.toggle('full', k >= 1); });
+          if (f === mine) h.pad?.classList.toggle('no-sp', f.sp < SP_COST);
+        }
         s.pips.forEach((p, i) => p.classList.toggle('on', i < m.wins[f.side]));
       }
       const left = String(Math.ceil(m.left / 60));
@@ -991,6 +1086,7 @@ export function createBrawl(game) {
         const won = m.result === 0;
         if (won) game.me?.play?.('cheer');
         on.match = null;
+        endCast();
         result(on.stageNo, won);
       }
     } else {
@@ -1040,6 +1136,7 @@ export function createBrawl(game) {
   function close() {
     if (!on) return;
     leaveVs(true);
+    endCast();
     const o = on;
     on = null;
     removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true); removeEventListener('keydown', onShift, true);
@@ -1058,7 +1155,7 @@ export function createBrawl(game) {
     close,
     show() {
       if (on || !game.interior || !game.activeScene) return;
-      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, flip: 0, vs: null, foeKey: null, foeStyle: null, vsList: null, cheer: null, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
+      on = { interior: game.interior, scene: game.activeScene, fov: game.camera.fov, time: 0, acc: 0, freeze: 0, shake: 0, overT: 0, camSet: false, rivalStage: -1, flip: 0, vs: null, foeKey: null, foeStyle: null, vsList: null, cheer: null, cast: null, style: 'brawler', comboAt: -1, stage: null, me: null, rival: null, match: null, card: null };
       on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0, style: 'brawler' }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0, style: 'brawler' }];
       on.hud = buildHud();
       document.documentElement.classList.add('brawl-on');
@@ -1069,6 +1166,7 @@ export function createBrawl(game) {
     update(dt) {
       if (!on) return;
       if (game.interior !== on.interior) { close(); return; }
+      if (on.hud.commands.open && !on.vs) { on.cast?.step(); return; }
       frame(dt);
       if (on) camera(dt);
     },

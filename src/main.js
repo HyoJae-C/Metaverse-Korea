@@ -14,6 +14,7 @@ import { createGraphicsQuality } from './core/graphics-quality.js';
 import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './core/quests.js';
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
+import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear } from './core/wall-screen.js';
@@ -558,6 +559,7 @@ await new Promise((resolve) => {
       return false;
     }
     if (r === 'ok') referralSent = true;
+    if (r === 'offline') keepPending(localStorage, who); // sent again once in town
     el.value = '';
     return true;
   };
@@ -4547,6 +4549,7 @@ const clawUi = lazyPanel(() => import('./ui/claw-ui.js').then(({ ClawUI }) => ne
 const arcadeGame = createArcade({
   get interior() { return interior; }, get others() { return others; }, get me() { return me; },
   get net() { return net; }, get activeScene() { return activeScene; }, get nickname() { return nickname; }, get look() { return myLook; }, $, cam, camera, canvas, myId, safety, sfx, shop, give: givePrize,
+  renderer, lowSpec,
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
@@ -6160,7 +6163,8 @@ createLedger({ $, wallet });
 // Friend invites (supabase/025_referrals.sql): thank a new player whose
 // friend was paid, and tell me when friends joined with my name (now and
 // every 10 minutes while playing).
-walletReady.then(() => {
+walletReady.then(async () => {
+  if (!referralSent && wallet.server && (await retryPending({ cloud, storage: localStorage })) === 'ok') referralSent = true;
   if (referralSent) setTimeout(() => shop.toast(t('referral.sent')), 4000);
   const news = async () => {
     if (!wallet.server || document.hidden) return;
@@ -6740,6 +6744,8 @@ function updateAction(p, tSec) {
       next = { key: 'sauna:' + st.kind, label: (st.kind === 'hot' ? '🔥 ' : '🧊 ') + t(st.kind === 'hot' ? 'sauna.hot' : 'sauna.ice'), run: () => saunaUi.show(st.kind) };
     } else if (nearStation(p, 'fight', 1.5)) { // the fighting game cabinet (game/brawl.js)
       next = arcadeGame.camOn() ? null : { key: 'fight', label: '🥊 ' + L(ARCADE_OPEN.fight), run: () => openArcade('fight') };
+    } else if (nearStation(p, 'watch', 2.6)) {
+      next = arcadeGame.camOn() ? null : { key: 'watch', label: '📺 ' + L(ARCADE_OPEN.watch), run: () => openArcade('watch') };
     } else if (nearStation(p, 'claw')) {
       next = { key: 'claw', label: '🧸 ' + t('game.claw'), run: () => clawUi.show() };
     } else if (nearStation(p, 'batting', 1.8)) {
@@ -7649,7 +7655,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bikeShop: (id) => openBikeShop(id || 'pedal'),
     ride: (k) => setRiding(k),
     mission: (type, target) => missionEvent(type, target),
-    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(),
+    arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null,
     loveLock: (view) => loveLockUi.show(view),
   };
 }
