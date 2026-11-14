@@ -36,3 +36,25 @@ test('the culture center is the photo show', () => {
   assert.equal(store.workshop, 'photo-show');
   assert.equal(store.size, 'photoshow');
 });
+
+test('forest galleries: ACIRE "colorful" and KimPD "Cinematic", 10 works each, 4 + 4 + 2 on the walls', async () => {
+  const { EXHIBITIONS, showWork } = await import('../src/data/exhibitions.js');
+  const { showSlots } = await import('../src/core/culture.js');
+  const a = EXHIBITIONS['forest-gallery-1'], k = EXHIBITIONS['forest-gallery-2'];
+  assert.equal(a.theme, 'colorful');
+  assert.equal(k.theme, 'dark');
+  assert.equal(k.title.ko, '시네마틱');
+  for (const show of [a, k]) {
+    assert.equal(show.works.length, 10);
+    show.works.forEach((raw, i) => assert.ok(existsSync('public/' + show.dir + raw[0] + '.webp'), raw[0]));
+    assert.ok(show.works.every((raw, i) => showWork(show, raw, i).photo));
+  }
+  assert.ok(a.works.every((raw) => !raw[3])); // ACIRE: no titles
+  assert.deepEqual(k.works.map((raw) => raw[3].ko), Array.from({ length: 10 }, (_, i) => `시네마틱${String(i + 1).padStart(2, '0')}`));
+  const room = { w: 14, d: 11, h: 4 };
+  const slots = showSlots(room);
+  assert.equal(slots.length, 10);
+  assert.equal(slots.filter((s) => s.x < -6).length, 4);
+  assert.equal(slots.filter((s) => s.x > 6).length, 4);
+  assert.equal(slots.filter((s) => s.z < -5).length, 2);
+});

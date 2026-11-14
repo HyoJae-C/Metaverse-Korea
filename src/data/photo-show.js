@@ -55,7 +55,7 @@ export function showPhoto([file, w, h], n) {
   const s = PHOTO_SHOW;
   return {
     id: 'sai-e-' + file, file: s.dir + file + '.webp', url: BASE + s.dir + file + '.webp', w, h, n,
-    title: s.title, artist: s.artist, photo: true,
+    title: s.title, artist: s.artist, photo: true, of: n ? s.photos.length : 0,
   };
 }
 export const photosOn = (floor) => PHOTO_SHOW.photos.slice((floor - 1) * PHOTO_SHOW.perFloor, floor * PHOTO_SHOW.perFloor).map((p, i) => showPhoto(p, (floor - 1) * PHOTO_SHOW.perFloor + i + 1));

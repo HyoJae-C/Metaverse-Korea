@@ -566,6 +566,7 @@ export function buildInterior(store) {
   } else if (store.category === 'culture') {
     // The forest galleries (core/culture.js).
     const room = buildCulture(scene, ROOM, { box, block, mat }, store);
+    stations.paintings = room.looks;
     seats.push(...room.seats);
     clerk = room.clerk;
   } else if (store.category === 'school') {
@@ -1984,7 +1985,7 @@ export function buildInterior(store) {
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], [-w / 2 + 0.7, d / 2 - 0.9]]) {
+  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], ...(store.category === 'culture' ? [] : [[-w / 2 + 0.7, d / 2 - 0.9]])]) { // (a gallery's show board is by the door)
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);

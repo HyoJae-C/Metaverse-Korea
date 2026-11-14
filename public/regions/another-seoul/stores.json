@@ -2804,7 +2804,7 @@
       "size": "medium",
       "at": [-452, 30.5],
       "name": { "ko": "숲속 전시관 1", "en": "Forest Gallery 1", "ja": "森のギャラリー1", "zh": "林中展馆1" },
-      "tagline": { "en": "A little gallery in the west wood. Exhibition coming soon.", "ko": "서쪽 숲속의 작은 전시관. 전시 준비 중이에요.", "ja": "西の森の小さなギャラリー。展示準備中。", "zh": "西林里的小展馆，展览筹备中。" },
+      "tagline": { "en": "ACIRE's exhibition \"colorful\": 10 works", "ko": "ACIRE 작가 「colorful」 전: 작품 10점", "ja": "ACIRE展「colorful」：作品10点", "zh": "ACIRE《colorful》展：10件作品" },
       "colors": { "sign": "#7a5a8c", "awning": "#e2cdee", "accent": "#f7f4f8" },
       "products": []
     },
@@ -2814,7 +2814,7 @@
       "size": "medium",
       "at": [-452, 50.5],
       "name": { "ko": "숲속 전시관 2", "en": "Forest Gallery 2", "ja": "森のギャラリー2", "zh": "林中展馆2" },
-      "tagline": { "en": "A little gallery in the west wood. Exhibition coming soon.", "ko": "서쪽 숲속의 작은 전시관. 전시 준비 중이에요.", "ja": "西の森の小さなギャラリー。展示準備中。", "zh": "西林里的小展馆，展览筹备中。" },
+      "tagline": { "en": "KimPD's photo exhibition \"Cinematic\": 10 photos", "ko": "KimPD 작가 「시네마틱」 사진전: 사진 10점", "ja": "KimPD写真展「シネマティック」：写真10点", "zh": "KimPD摄影展《电影感》：10幅照片" },
       "colors": { "sign": "#3d6f9c", "awning": "#c9def2", "accent": "#f3f6f9" },
       "products": []
     },
