@@ -208,7 +208,7 @@ import { lawnFrom } from './core/picnic-mat.js';
 import { parseSnowMsg } from './core/snowballs.js';
 import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
-import { createNavWindow } from './core/nav-window.js';
+import { createNavWindow, createRoutePlanner } from './core/nav-window.js';
 import { LocalFriends } from './core/friends.js';
 import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
@@ -810,14 +810,14 @@ const storefronts = new Storefronts(scene, shownStores(storeData), map, region.c
 // Empty shop lots get ad posters (region.json "adPosters" books a spot).
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
 const zones = new Zones(scene, zoneData, map, region.center, collision);
-const roadGraph = new RoadGraph(map.roads);
+const roadGraph = new RoadGraph(map.roads.filter((r) => !r.base)); // (the base map's roads share no junctions with the streets: core/districts.js)
 // Walking routes around walls: a grid of the 1.4 km round the walker
-// (core/nav-window.js), built the first time a route is needed; farther
-// places go by the road graph. 1.5 m cells: 2 m cells closed Bukchon's alleys.
+// (core/nav-window.js), built the first time a route is needed; to a farther
+// place the grid leads round the walls to the streets that go there. 1.5 m cells: 2 m cells closed Bukchon's alleys.
 const nav = createNavWindow((b) => new NavGrid(collision.polys.map((q) => q.p), map.roads, b, { r: PLAYER_R + 0.1, cell: 1.5, decks: map.decks || [] }), bounds);
+const routePlanner = createRoutePlanner(nav, roadGraph);
 function planRoute(ax, az, bx, bz) {
-  const grid = nav(ax, az);
-  const poly = (grid.inside(bx, bz) && grid.route(ax, az, bx, bz)) || roadGraph.route(ax, az, bx, bz);
+  const poly = routePlanner.plan(ax, az, bx, bz);
   if (poly.length < 2) poly.push([bx, bz]);
   return poly;
 }
@@ -6955,7 +6955,7 @@ function updateGuide(p, dt) {
   routeTimer -= dt;
   if (routeTimer <= 0) {
     routeTimer = 0.5;
-    if (!routePoly || nearestOnPoly(routePoly, p.x, p.z).d > 6) routePoly = planRoute(p.x, p.z, guide.x, guide.z);
+    if (!routePoly || routePlanner.stale(p.x, p.z) || nearestOnPoly(routePoly, p.x, p.z).d > 6) routePoly = planRoute(p.x, p.z, guide.x, guide.z);
     else routePoly = trimPoly(routePoly, p.x, p.z);
     const poly = routePoly;
     routeLine.set(poly);
