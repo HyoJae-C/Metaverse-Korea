@@ -1550,8 +1550,10 @@ function dropGifts() { giftsGame?.dropGifts(); }
 // see each other there and send each other their movement; inside a shop or
 // a game room everyone does. Off since 2026-11-15 (Yozi: strangers should be
 // seen too); kept as a switch, and the e2e turns it on (__mk.friendsOnly).
+// The full map's dots are friends only instead (Yozi's choice): see getPlayers.
 let streetFriend = null;
 let friendsOnlyStreet = false;
+const friendsOnlyMap = !testRoom && config.netProvider === 'supabase'; // (test rooms have no accounts: everyone)
 let joinToken = 0;
 let lastJoin = null; // [room, roomScene, hasArea]: rejoined after a rename
 // Outdoors: on the street, or on an open-air Han River park's lawn (part of the street).
@@ -3656,7 +3658,8 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
     const pos = mode === 'street' ? me.root.position : op ? myPlace() : interior.front.door;
     return {
       me: { x: pos.x, z: pos.z, ry: mode === 'street' ? me.root.rotation.y : op ? me.root.rotation.y + op.ry : interior.front.group.rotation.y },
-      others: outdoors() ? others.list() : [],
+      // Only friends get a dot (by name, like gifts); everyone is still seen on the street.
+      others: outdoors() ? others.list().filter((o) => !friendsOnlyMap || !!streetFriend?.(String(o.name ?? '').trim())) : [],
     };
   },
   onGuide: (g) => {
