@@ -73,6 +73,7 @@ import { LOCK_LABELS } from './ui/love-lock-labels.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { BukchonUI, BK_TEXT, craftEntry, craftWear, CRAFT } from './ui/bukchon-ui.js';
+import { braceletsFromCharms } from './game/knot-bracelets.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
 import { buildBukchonHill } from './core/bukchon-models.js';
@@ -4230,6 +4231,8 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
 // Second-hand shops: sell clothes I bought back (core/resale.js), paid by
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
+// Maeum Knot Studio's old knot charms in the bag become bracelets you wear (game/knot-bracelets.js).
+braceletsFromCharms({ bag, inventory, receipts, log: wallet.log, price: CRAFT.knot.price });
 receipts.scanOnce(wallet.log, inventory.list(), ITEMS, (note) => note?.at?.en === GIFT_TEXT.ledger.en);
 // Below it, the second-hand rack: what players sold to the shops, at 40% (game/used-rack.js).
 const usedRack = createUsedRack({ wallet, inventory, receipts, items: ITEMS, shop, sfx, refreshWallet, newOpId,
@@ -5146,7 +5149,7 @@ const bukchonUi = new BukchonUI({
   onMake: (kind, ci, si) => {
     const k = CRAFT[kind], entry = craftEntry(kind, ci, si), wear = craftWear(kind, ci, si);
     if (!k || (!entry && !wear)) return false;
-    if (wear) { // a piece you wear (the necklace studios' necklaces): it goes to your items
+    if (wear) { // a piece you wear (necklaces, knot bracelets): it goes to your items
       if (inventory.has(wear)) { shop.toast(L(BK_TEXT.haveIt)); return false; }
       const note = { name: BK_TEXT[kind], at: interior?.store.name };
       if (!wallet.spend(k.price, note)) { shop.toast(fmt(L(BK_TEXT.poor), { n: k.price })); return false; }

@@ -107,6 +107,23 @@ export const HAT_SHAPES = ['bucket', 'cap', 'beanie', 'beret'];
 
 export const SLOTS = ['head', 'face', 'ear', 'neck', 'back', 'hand'];
 
+// Maeum Knot Studio's maedeup bracelets: a silk cord round the wrist with one
+// knot on it, worn in the glove slot (look.hand), so a bracelet and paw
+// gloves don't go on together. The colours and knots of the studio
+// (ui/bukchon-ui.js CRAFT.knot).
+export const KNOT_COLORS = {
+  red: { color: 0xc8323f, name: { en: 'Red', ko: '다홍', ja: '紅', zh: '朱红' } },
+  green: { color: 0x2f6b4f, name: { en: 'Green', ko: '초록', ja: '緑', zh: '绿色' } },
+  blue: { color: 0x2d4f8a, name: { en: 'Indigo', ko: '쪽빛', ja: '藍', zh: '靛蓝' } },
+  yellow: { color: 0xe3b23c, name: { en: 'Yellow', ko: '노랑', ja: '黄', zh: '黄色' } },
+  purple: { color: 0x8b5aa8, name: { en: 'Purple', ko: '보라', ja: '紫', zh: '紫色' } },
+};
+export const KNOTS = {
+  butterfly: { en: 'butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' },
+  chrysanthemum: { en: 'chrysanthemum', ko: '국화', ja: '菊', zh: '菊花' },
+  'double-coin': { en: 'double coin', ko: '도래', ja: '二つ輪', zh: '双钱' },
+};
+
 // The animals of Nyang Meong To Pan (cat, dog, bunny, panda): each as an
 // ear headband and a pair of paw gloves in the same colours. Two colours at
 // most per animal.
@@ -230,7 +247,11 @@ export const ACCESSORIES = {
   ],
   // Gloves, one on each hand: the animal paws match the headbands (pad: the
   // paw pads' colour).
-  hand: ANIMAL_LOOKS.map((a) => ({ id: 'paws-' + a.id, shape: 'paws', animal: a.animal, emoji: a.emoji, color: a.color, pad: a.pad })),
+  // A knot bracelet (KNOT_COLORS, KNOTS) goes in the same slot, on the left wrist.
+  hand: [
+    ...ANIMAL_LOOKS.map((a) => ({ id: 'paws-' + a.id, shape: 'paws', animal: a.animal, emoji: a.emoji, color: a.color, pad: a.pad })),
+    ...Object.entries(KNOT_COLORS).flatMap(([c, k]) => Object.keys(KNOTS).map((knot) => ({ id: `knot-${c}-${knot}`, shape: 'bracelet', knot, emoji: '🎀', color: k.color }))),
+  ],
 };
 // What an accessory is drawn as.
 export const shapeOf = (a) => a?.shape || a?.id || null;

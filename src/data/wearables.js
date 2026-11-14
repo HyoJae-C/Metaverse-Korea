@@ -4,7 +4,7 @@
 // swapped for another, like trousers).
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
-import { ANIMAL_LOOKS, PENDANT_CHARMS } from './appearance.js';
+import { ANIMAL_LOOKS, PENDANT_CHARMS, KNOT_COLORS, KNOTS } from './appearance.js';
 import { TEAM_LIST } from './ballpark-teams.js';
 
 const ANIMAL_NAMES = {
@@ -150,6 +150,11 @@ export const WEARABLES = {
         { en: `${n.en} paw gloves`, ko: `${n.ko} 발바닥 장갑`, ja: `${n.ja}の肉球手袋`, zh: `${n.zh}爪爪手套` })],
     ];
   })),
+  // Maeum Knot Studio (Bukchon): maedeup bracelets, worn like gloves (look.hand).
+  // Made in the studio for ₩8,000, never sold in a shop.
+  ...Object.fromEntries(Object.entries(KNOT_COLORS).flatMap(([c, { name: C }]) => Object.entries(KNOTS).map(([k, K]) => [`acc-knot-${c}-${k}`,
+    item('🎀', 8, { hand: `knot-${c}-${k}` }, { hand: null }, WEAR_DESC.accessory,
+      { en: `${C.en} ${K.en} knot bracelet`, ko: `${C.ko} ${K.ko}매듭 팔찌`, ja: `${C.ja}の${K.ja}結びブレスレット`, zh: `${C.zh}${K.zh}结手链` })]))),
   // Skirts (look.skirt, data/skirts.js): two lengths, many colours and patterns.
   ...Object.fromEntries(Object.entries(SKIRTS).map(([id, sk]) => ['skirt-' + id,
     item('👗', SKIRT_PRICE[sk.length], { skirt: id }, { skirt: null }, WEAR_DESC.skirt, skirtName(sk))])),

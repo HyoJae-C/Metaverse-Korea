@@ -151,7 +151,7 @@ test('Sunra Silver Studio\'s pendants are worn: every metal and charm is a real 
   }
   assert.equal(craftWear('pendant', 9, 0), null);
   assert.equal(craftEntry('pendant', 0, 0), null, 'not a bag good');
-  assert.equal(craftWear('knot', 0, 0), null, 'the knot charms still go in the bag');
+  assert.equal(craftWear('knot', 0, 0), 'acc-knot-red-butterfly', 'the knot bracelets are worn too');
   for (const s of stores) for (const p of s.products || []) if (p.item?.startsWith('acc-pendant')) assert.ok(WEARABLES[p.item], p.id);
 });
 

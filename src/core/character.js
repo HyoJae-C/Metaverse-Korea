@@ -669,6 +669,15 @@ const PAW_DROP = 0.075; // metres from the wrist bone to the mitten's middle
 function addGloves(look, m) {
   const glove = accessory('hand', look.hand);
   if (!glove || !m.hands) return;
+  if (shapeOf(glove) === 'bracelet') { // a knot bracelet: on the left wrist only
+    const h = m.hands[0];
+    if (!h) return;
+    const b = makeBracelet(glove);
+    b.scale.multiplyScalar(1 / m.scale);
+    b.position.y = BRACELET_Y / m.scale;
+    h.add(b);
+    return;
+  }
   for (const [i, h] of m.hands.entries()) {
     if (!h) continue;
     const p = makePaw(glove);
@@ -682,6 +691,42 @@ function addGloves(look, m) {
     p.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     h.add(p);
   }
+}
+
+// Maeum Knot Studio's maedeup bracelet (data/appearance.js KNOT_COLORS,
+// KNOTS), in metres: a silk cord round the wrist (the hand bone's y axis)
+// with its knot on the back of the wrist (+z), facing out.
+const BRACELET_R = 0.042, BRACELET_Y = 0.012;
+function makeBracelet(a) {
+  const g = new THREE.Group();
+  const m = mat(a.color);
+  const cord = new THREE.Mesh(geo('braceletCord', () => new THREE.TorusGeometry(BRACELET_R, 0.008, 6, 24).rotateX(Math.PI / 2)), m);
+  g.add(cord);
+  const knot = new THREE.Group();
+  knot.position.z = BRACELET_R + 0.008;
+  knot.scale.setScalar(1.6); // (bigger than real, so it reads on a chibi)
+  g.add(knot);
+  const ball = (r, x, y, sx = 1, sy = 1) => {
+    const b = new THREE.Mesh(geo('braceletBall', () => new THREE.SphereGeometry(1, 10, 8)), m);
+    b.scale.set(r * sx, r * sy, r * 0.6);
+    b.position.set(x, y, 0);
+    knot.add(b);
+  };
+  if (a.knot === 'butterfly') { // two loops out to the sides of a small knot
+    for (const s of [-1, 1]) ball(0.013, s * 0.015, 0, 1.3, 0.85);
+    ball(0.008, 0, 0);
+  } else if (a.knot === 'chrysanthemum') { // petals round a centre
+    for (let k = 0; k < 6; k++) ball(0.007, Math.cos((k / 6) * Math.PI * 2) * 0.012, Math.sin((k / 6) * Math.PI * 2) * 0.012);
+    ball(0.008, 0, 0);
+  } else { // double coin: two rings side by side, overlapping
+    for (const s of [-1, 1]) {
+      const r = new THREE.Mesh(geo('braceletCoin', () => new THREE.TorusGeometry(0.011, 0.0035, 5, 14)), m);
+      r.position.x = s * 0.008;
+      knot.add(r);
+    }
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
 }
 
 // Just the hat, on its own, sized for a chibi head (radius about 0.33) and
