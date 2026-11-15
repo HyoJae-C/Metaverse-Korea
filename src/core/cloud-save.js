@@ -19,6 +19,8 @@
 // stops saving and tells the player, instead of overwriting the other
 // device's progress with its own older copy.
 
+import { PHONE_PREVIEW } from './phone-preview.js';
+
 const PREFIX = 'mk.';
 const AT_KEY = 'mkcloud.at'; // when local data last changed (ms), not synced
 const TABLE = 'saves';
@@ -384,7 +386,7 @@ export class CloudSave {
   // supabase/008_player_where.sql). Resolves false when the server can't
   // take it (not set up yet), true otherwise.
   async reportWhere({ name, place, x, z }) {
-    if (!this.client || !this.user) return true; // signed in later: keep trying
+    if (!this.client || !this.user || PHONE_PREVIEW) return true; // signed in later: keep trying
     const { error } = await this.client.rpc('report_where', {
       p_name: String(name || '').slice(0, 16), p_place: String(place || '').slice(0, 48),
       p_x: Math.round(x * 10) / 10, p_z: Math.round(z * 10) / 10,
@@ -397,7 +399,7 @@ export class CloudSave {
   // (core/sessions.js, supabase/011_play_sessions.sql). Resolves false when
   // the server can't take it (SQL not run yet), true otherwise.
   async reportSession({ id, region, device, src, fps, counts }) {
-    if (!this.client || !this.user) return true; // signed in later: keep trying
+    if (!this.client || !this.user || PHONE_PREVIEW) return true; // signed in later: keep trying
     const { error } = await this.client.rpc('report_session', {
       p_id: id, p_region: String(region || '').slice(0, 32), p_device: String(device || '').slice(0, 8),
       p_src: String(src || '').slice(0, 16), p_fps: Math.max(0, Math.min(240, Math.round(Number(fps) || 0))),
@@ -410,7 +412,7 @@ export class CloudSave {
   // (core/sessions.js createVisit, supabase/014_retention_more.sql).
   // Resolves false when the server can't take it (SQL not run yet).
   async reportVisit({ id, stage, loadMs, isNew, failed, device, src }) {
-    if (!this.client || !this.user) return true;
+    if (!this.client || !this.user || PHONE_PREVIEW) return true;
     const { error } = await this.client.rpc('report_visit', {
       p_id: id, p_stage: stage | 0, p_load_ms: Math.max(0, Math.round(Number(loadMs) || 0)), p_new: !!isNew,
       p_failed: !!failed, p_device: String(device || '').slice(0, 8), p_src: String(src || '').slice(0, 16),
@@ -421,7 +423,7 @@ export class CloudSave {
   // One error message (already cleaned: core/sessions.js cleanError) for the
   // operator's error list; stored per day without any account id.
   async reportError(msg) {
-    if (!this.client || !this.user) return false;
+    if (!this.client || !this.user || PHONE_PREVIEW) return false;
     const { error } = await this.client.rpc('report_error', { p_msg: String(msg || '').slice(0, 120) });
     return !error;
   }
@@ -430,7 +432,7 @@ export class CloudSave {
   // country statistics (core/country.js, supabase/010_countries.sql). Only
   // a two-letter code and how it was guessed; true when the server took it.
   async reportCountry({ country, source }) {
-    if (!this.client || !this.user) return false;
+    if (!this.client || !this.user || PHONE_PREVIEW) return false;
     const { error } = await this.client.rpc('report_country', {
       p_country: String(country || '').slice(0, 2), p_source: String(source || '').slice(0, 8),
     });

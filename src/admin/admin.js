@@ -371,8 +371,8 @@ function codeMemo() {
 }
 
 // ---------- Tabs ----------
-const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes', 'exhibits'];
-let tab = null, panels = null, chatPanel = null, exhibitPanel = null;
+const TABS = ['overview', 'live', 'chat', 'ask', 'free', 'players', 'notice', 'weather', 'retention', 'codes', 'exhibits', 'phone'];
+let tab = null, panels = null, chatPanel = null, exhibitPanel = null, phonePanel = null;
 function showTab(name) {
   if (!TABS.includes(name)) name = 'overview';
   if (name === tab) return;
@@ -384,6 +384,9 @@ function showTab(name) {
   chatPanel?.show(name === 'chat');
   exhibitPanel?.show(name === 'exhibits');
   panels?.show(name);
+  // The phone view runs a whole game: loaded on first visit, stopped when you leave the tab.
+  if (name === 'phone' && !phonePanel) phonePanel = import('./phone-panel.js').then((m) => m.createPhonePanel({ $, base: BASE }));
+  phonePanel?.then((p) => p.show(tab === 'phone'));
 }
 function badge(id, n) {
   const el = $(id);
