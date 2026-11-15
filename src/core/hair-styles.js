@@ -52,7 +52,7 @@ const sphere = (r, ws = 22, hs = 16, t0 = 0, tl = Math.PI) => new THREE.SphereGe
 export function buildHair(style, material, atlas, ey) {
   const g = new THREE.Group();
   g.name = 'hairStyle';
-  const hairCell = atlas.hair;
+  let hairCell = atlas.hair; // (a shaved head is painted with the skin's cell)
   let shade = [0.15, 0.8]; // atlas light .. dark (a darker pair reads as shaved)
   let range = null; // (see paintCell)
   const add = (geo, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) => {
@@ -211,7 +211,11 @@ export function buildHair(style, material, atlas, ey) {
       add(sphere(0.92, 22, 12, 0, Math.PI * 0.45), 0, 0.2, -0.18, 1.05, 0.9, 1.1, -0.65);
       add(sphere(1, 16, 10), 0, -0.12, -0.82, 0.62, 0.32, 0.3, -0.3); // tucked in at the nape
       break;
-    case 'shaved': // 삭발: monks (NPCs only, not in HAIR_STYLES): the bald head, no hair
+    case 'shaved': // 삭발: monks (NPCs only, not in HAIR_STYLES). The model's skull IS its hair, so
+      // without it the head is open on top: a smooth cap in the skin's own colour closes it.
+      hairCell = atlas.skin;
+      shade = [0.2, 0.6]; // (the cell's lower band is the mouth's darker tone)
+      cap(0.95, 0.56, -0.42, 0.03);
       break;
     case 'buzz': // 버즈컷: clipped all over, close to the head
       shade = [0.55, 0.95];

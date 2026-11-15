@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { JOGYESA as J } from '../src/data/jogyesa.js';
+import { JOGYESA as J, wallRuns, WALL } from '../src/data/jogyesa.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'gyeongbokgung.json');
@@ -56,6 +56,11 @@ B(around(J.bell.x, J.bell.z, J.bell.w + 0.5, J.bell.w + 0.5), 'the bell pavilion
 const U = J.ujeongguk;
 B(around(U.x, U.z, U.w + 2.6, U.d + 2.6), 'Ujeongchongguk on its base');
 map.pois.push({ kind: 'landmark', x: U.x, z: U.z + 4, name: { ko: '우정총국', en: 'Ujeongchongguk (old post office)', ja: '郵征総局', zh: '邮征总局' }, jg });
+
+for (const [x0, z0, x1, z1] of wallRuns()) { // the temple wall: you come in by Iljumun
+  const t = WALL.t / 2 + 0.05;
+  B(rect(Math.min(x0, x1) - t, Math.min(z0, z1) - t, Math.max(x0, x1) + t, Math.max(z0, z1) + t), 'the temple wall');
+}
 
 const pretty = (o) => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']'); // (as build-gyeongbokgung.mjs writes it)
 writeFileSync(MAP, pretty(map) + '\n');

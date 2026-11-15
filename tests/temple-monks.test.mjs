@@ -97,3 +97,18 @@ test('Jogyesa: the whole temple at 37.5%, every hall on its real spot grown abou
   for (const b of map.buildings.filter((q) => !q.jg)) for (const [x, z] of J.site) assert.ok(!inPolygon(x, z, b.p), 'the grounds clear of the blocks beside them');
   assert.ok(J.museum[1] >= 26 && J.museum[3] < D.z - D.d / 2 - 1.3 - 2);
 });
+
+test('Jogyesa: a wall round the grounds, open only at Iljumun', async () => {
+  const { wallRuns } = await import('../src/data/jogyesa.js');
+  const map = mapOf('gyeongbokgung');
+  const walls = map.blockers.filter((b) => b.jg && b.why === 'the temple wall');
+  assert.equal(walls.length, wallRuns().length);
+  const blocked = (x, z) => walls.some((b) => inPolygon(x, z, b.p));
+  const crosses = ([ax, az], [bx, bz]) => { for (let k = 0; k <= 60; k++) if (blocked(ax + (bx - ax) * k / 60, az + (bz - az) * k / 60)) return true; return false; };
+  const I = J.iljumun, xs = J.site.map((q) => q[0]), zs = J.site.map((q) => q[1]);
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  assert.ok(!crosses([x1 + 2, I.z], [x1 - 6, I.z]), 'in through Iljumun from Ujeongguk-ro');
+  for (const z of [z0 + 5, I.z - I.w / 2 - 1, I.z + I.w / 2 + 1, z1 - 5]) assert.ok(crosses([x1 + 2, z], [x1 - 3, z]), `walled along the street at z ${z}`);
+  for (const x of [x0 + 5, (x0 + x1) / 2, x1 - 5]) { assert.ok(crosses([x, z0 - 2], [x, z0 + 3]), 'the north side'); assert.ok(crosses([x, z1 + 2], [x, z1 - 3]), 'the south side'); }
+  assert.ok(crosses([x0 - 2, I.z], [x0 + 3, I.z]), 'the west side');
+});
