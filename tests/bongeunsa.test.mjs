@@ -30,10 +30,11 @@ test('Bongeunsa: the whole temple at 37.5% (the OpenStreetMap outlines grown 1.5
   // Daeungjeon real 24 × 22 m: 9 × 8 m at 37.5% (OSM outline × 1.5).
   assert.equal(SCALE, 1.5);
   assert.ok(H.대웅전.w > 8.5 && H.대웅전.w < 9.8 && H.대웅전.d > 7.6 && H.대웅전.d < 8.8, `Daeungjeon ${H.대웅전.w.toFixed(1)} × ${H.대웅전.d.toFixed(1)}`);
-  assert.ok(H.판전.w > 6 && H.판전.w < 7.2, `Panjeon 37.5% too (${H.판전.w.toFixed(1)} m)`);
-  // A courtyard is left between Daeungjeon and Beopwangru for the lanterns and the pagoda.
-  const [, , , cd] = temple.canopy;
-  assert.ok(cd >= 9, `courtyard ${cd} m deep`);
+  assert.ok(H.판전.w > 4.8 && H.판전.w < 5.8, `Panjeon 37.5% × 0.8 (SHRINK, Yozi: it was too big) (${H.판전.w.toFixed(1)} m)`);
+  // A courtyard is left between Daeungjeon and Beopwangru for the pagoda.
+  const [a, b] = [H.대웅전, H.법왕루], cd = Math.hypot(a.x - b.x, a.z - b.z) * SCALE - (a.d + b.d) / 2; // (spots grow with SCALE; sizes are already grown)
+  assert.ok(cd >= 9, `courtyard ${cd.toFixed(1)} m deep`);
+  assert.ok(!temple.canopy && !temple.lane, 'no lanterns at Bongeunsa (Yozi 2026-11-15)');
   // Every hall inside the real grounds.
   for (const [n, h] of Object.entries(H)) assert.ok(inPolygon(h.x, h.z, BES.grounds), `${n} inside the grounds`);
 });
@@ -51,6 +52,12 @@ test('Bongeunsa: no hall on another or on a street, Jinyeomun open in the middle
   // You walk in through Jinyeomun: its middle is clear of every wall.
   const [gx, gz] = [temple.x + temple.halls.find((h) => h[6] === '眞如門')[0], temple.z + temple.halls.find((h) => h[6] === '眞如門')[1]];
   for (const b of map.buildings) assert.ok(!inPolygon(gx, gz, b.p), 'the gate\'s middle bay is open');
+  // ...wide enough not to catch on (it was 1.4 m and people stuck, Yozi 2026-11-15): 1.9 m clear, front to back.
+  const jry = temple.halls.find((h) => h[6] === '眞如門')[4], jd = temple.halls.find((h) => h[6] === '眞如門')[3];
+  for (const u of [-0.95, 0.95]) for (const v of [-jd / 2 - 0.3, 0, jd / 2 + 0.3]) {
+    const [x, z] = [gx + u * Math.cos(jry) + v * Math.sin(jry), gz - u * Math.sin(jry) + v * Math.cos(jry)];
+    assert.ok(![...map.buildings, ...map.blockers].some((b) => inPolygon(x, z, b.p)), `Jinyeomun clear at ${u}, ${v.toFixed(1)}`);
+  }
   // Iljumun stands off Bongeunsa-ro's pavement.
   const il = [temple.x + temple.iljumun[0], temple.z + temple.iljumun[1]];
   assert.ok(lineDist(il, BONGEUNSA.p) - BONGEUNSA.w / 2 >= 1, 'Iljumun off the street');
@@ -121,4 +128,20 @@ test('Bongeunsa by its own guide map: the halls OSM had no outline for, two hall
   assert.ok(temple.bell && temple.bell2, 'the bell pavilion (18) and the bell house (19)');
   assert.equal(temple.halls.length, Object.keys(H).length - 1, 'every hall drawn (Beopwangru on its own)');
   assert.ok(!TEMPLE.landmarks.some((l) => /문화회관/.test(JSON.stringify(l))), '25 봉은문화회관 left out (Yozi)');
+});
+
+test('Bongeunsa: one way in, a low planting inside the west and south walls, no picnic mats (Yozi 2026-11-15)', () => {
+  const hedges = map.areas.filter((a) => a.trees === 'low');
+  assert.ok(hedges.length, 'the low planting is there');
+  const area = hedges.reduce((t, a) => t + Math.abs(a.p.reduce((s, [x, z], i) => { const [x2, z2] = a.p[(i + 1) % a.p.length]; return s + x * z2 - x2 * z; }, 0)) / 2, 0);
+  assert.ok(area > 150, `planted ${area.toFixed(0)} m²`);
+  for (const h of hedges) assert.ok(map.blockers.some((b) => b.p === h.p || JSON.stringify(b.p) === JSON.stringify(h.p)), 'filled: you can\'t walk into it');
+  // Nothing on the way in from Iljumun to Jinyeomun.
+  const il = [temple.x + temple.iljumun[0], temple.z + temple.iljumun[1]], j = temple.halls.find((h) => h[6] === '眞如門');
+  for (let t = 0; t <= 1; t += 0.1) {
+    const x = il[0] + (temple.x + j[0] - il[0]) * t * 0.8, z = il[1] + (temple.z + j[1] - il[1]) * t * 0.8;
+    assert.ok(!map.blockers.some((b) => inPolygon(x, z, b.p)), `the way in is open (${t.toFixed(1)})`);
+  }
+  // No picnic mats on the temple's woods or planting.
+  for (const a of map.areas.filter((x) => x.k === 'park' && x.trees && x.p.every(([x2, z2]) => Math.hypot(x2 - temple.x, z2 - temple.z) < 80))) assert.ok(a.noMat, 'no mats in the temple');
 });

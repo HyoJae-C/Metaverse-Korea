@@ -3472,7 +3472,7 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // The street's wooded parks (Seoul Forest) take picnic mats too: on the
 // grass, off the paths, clear of trees, benches and sculptures.
 // (lawn: an open picnic lawn with no trees, Yeouido's: one laid at an angle keeps its outline, mats lie square with it)
-const streetLawns = map.areas.filter((a) => (a.k === 'park' && a.trees) || a.lawn).map((a) => {
+const streetLawns = map.areas.filter((a) => ((a.k === 'park' && a.trees) || a.lawn) && !a.noMat).map((a) => { // (noMat: not in a temple)
   if (a.lawn) return lawnFrom(a.p);
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };

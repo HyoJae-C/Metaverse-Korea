@@ -326,12 +326,12 @@ export const PALACE_BUILD = {
       h.position.set(x, 0, z);
       h.rotation.y = ry;
       g.add(h);
-      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88]);
+      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88, d / 2 + Math.max(post / 2, 0.13) + 0.06]); // (out in front of the posts and the beam)
     }
     mergeStatic(g);
-    for (const [han, x, z, w, d, ry, y] of boards) { // name boards on the main halls (one draw call each)
+    for (const [han, x, z, w, , ry, y, out] of boards) { // name boards on the main halls (one draw call each)
       const bw = Math.min(2.4, w * 0.35), sign = nameBoard(han, bw, bw * 0.38);
-      sign.position.set(x + Math.sin(ry) * (d / 2 + 0.12), y, z + Math.cos(ry) * (d / 2 + 0.12));
+      sign.position.set(x + Math.sin(ry) * out, y, z + Math.cos(ry) * out);
       sign.rotation.y = ry;
       g.add(sign);
     }

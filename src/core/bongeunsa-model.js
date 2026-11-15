@@ -1,24 +1,22 @@
 // Bongeunsa (봉은사), the temple opposite KONEXT (map "landmarks" in
 // districts/samseong.json, laid out by scripts/bongeunsa-layout.mjs):
 //   bongeunsa  the halls (core/palace-model.js palacehalls), Beopwangru's two
-//              storeys, the lantern canopy over Daeungjeon's courtyard and the
-//              lanterns along the way in, the three-storey pagoda, Haesu
-//              Gwaneum on her pond, the bell pavilion and Iljumun
+//              storeys, the three-storey pagoda, Haesu Gwaneum on her pond,
+//              the bell pavilions and Iljumun (no lanterns: Yozi 2026-11-15)
 //   maitreya   the Maitreya Buddha (미륵대불): a white granite standing Buddha
 //              under a square canopy (보개) with bells, on a double lotus over
 //              a hexagonal base with columns and carved panels, a curved wall
 //              of small niches behind and stone lanterns in front
 // Loaded with import() by the landmarks' stubs (core/landmarks.js), so none
 // of it is in the first download. Every plain part is baked into one mesh per
-// look (core/merge-static.js bakeColors); the lanterns are one InstancedMesh.
-// The temple pieces (lanternCanopy, stonePagoda, stoneLantern, bellPavilion)
+// look (core/merge-static.js bakeColors).
+// The temple pieces (stonePagoda, stoneLantern, bellPavilion)
 // are exported for other temples (Jogyesa).
 import * as THREE from 'three';
 import { bakeColors } from './merge-static.js';
 import { curvedRoof } from './hanok.js';
 import { PALACE_BUILD } from './palace-model.js';
 import { farFree } from './far-textures.js';
-import { glowAtNight } from './weather.js';
 import { statueFace } from './statue-face.js';
 import { gateKings } from './heavenly-kings.js';
 
@@ -75,66 +73,9 @@ const C = {
   beam: '#2f8a68', beamBlue: '#3f6f9a', bracket: '#2a6f5a', bronze: '#5f6a55', gold: '#d4a73a',
   g0: '#efeee9', g1: '#e2dfd6', g2: '#cdc9be', g3: '#aaa59a', g4: '#8d887e', // white granite, light to dark
 };
-// The lanterns' paper: lit from inside after dark (weather.js glowAtNight).
-function lanternMat() {
-  const m = new THREE.MeshLambertMaterial({ emissive: '#ffb45e' });
-  glowAtNight(m, 0.55);
-  return m;
-}
-const LANTERN_COLORS = ['#f28cb1', '#ffd45c', '#e8483f', '#5b8fd9', '#5cbf72', '#a777d6', '#ff9a4a'].map((c) => new THREE.Color(c));
 
 // --- temple pieces -------------------------------------------------------------
 
-// Paper lanterns (연등) hung in rows: a canopy w × d over a courtyard (rows
-// of one colour each, as Bongeunsa hangs them) at height y, on poles at the
-// corners. Returns the InstancedMesh (one draw call) and adds the wires.
-export function lanternCanopy(g, w, d, y = 3.4, gap = 0.5) {
-  const nx = Math.max(2, Math.round(w / gap)), nz = Math.max(2, Math.round(d / gap));
-  const geo = new THREE.SphereGeometry(0.17, 8, 6);
-  geo.scale(1, 1.2, 1);
-  const m = new THREE.InstancedMesh(geo, lanternMat(), nx * nz);
-  const m4 = new THREE.Matrix4();
-  let i = 0;
-  for (let r = 0; r < nz; r++) {
-    const z = -d / 2 + (r + 0.5) * (d / nz);
-    box(g, w, 0.025, 0.025, 0, y + 0.22, z, C.g4); // the wire
-    for (let k = 0; k < nx; k++, i++) {
-      m.setMatrixAt(i, m4.makeTranslation(-w / 2 + (k + 0.5) * (w / nx), y, z));
-      m.setColorAt(i, LANTERN_COLORS[r % LANTERN_COLORS.length]);
-    }
-  }
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 0.1, y + 0.3, 0.1, sx * w / 2, (y + 0.3) / 2, sz * d / 2, C.g4);
-  m.userData.noShadow = true;
-  g.add(m);
-  return m;
-}
-// Two strings of lanterns either side of a path from a to b ([x, z]).
-function lanternLane(g, a, b, y = 2.8, half = 1.3, gap = 0.5) {
-  const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(2, Math.round(L / gap));
-  const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, sx = -uz, sz = ux;
-  const geo = new THREE.SphereGeometry(0.17, 8, 6);
-  geo.scale(1, 1.2, 1);
-  const m = new THREE.InstancedMesh(geo, lanternMat(), n * 2);
-  const m4 = new THREE.Matrix4(), lane = [LANTERN_COLORS[0], LANTERN_COLORS[1], LANTERN_COLORS[2]];
-  let i = 0;
-  for (const side of [-1, 1]) {
-    const ox = sx * half * side, oz = sz * half * side;
-    const wire = box(g, 0.025, 0.025, L, (a[0] + b[0]) / 2 + ox, y + 0.22, (a[1] + b[1]) / 2 + oz, C.g4);
-    wire.rotation.y = Math.atan2(ux, uz);
-    for (let k = 0; k < n; k++, i++) {
-      const t = (k + 0.5) / n;
-      m.setMatrixAt(i, m4.makeTranslation(a[0] + (b[0] - a[0]) * t + ox, y, a[1] + (b[1] - a[1]) * t + oz));
-      m.setColorAt(i, lane[k % lane.length]);
-    }
-    for (let p = 0; p <= Math.ceil(L / 4); p++) {
-      const t = Math.min(1, (p * 4) / L);
-      box(g, 0.09, y + 0.3, 0.09, a[0] + (b[0] - a[0]) * t + ox, (y + 0.3) / 2, a[1] + (b[1] - a[1]) * t + oz, C.g4);
-    }
-  }
-  m.userData.noShadow = true;
-  g.add(m);
-  return m;
-}
 // A three-storey granite pagoda (삼층석탑) on a two-tier base, about 1.9 m (1/4).
 export function stonePagoda(g, x, z, s = 1) {
   const p = new THREE.Group();
@@ -213,7 +154,7 @@ function beopwangru(g, [x, z, w, d, ry]) {
   box(p, w2 + 1.2, 0.14, d2 + 1.2, 0, y + 0.69, 0, C.beamBlue);
   tiles(p, w + 2.6, d + 2.6, 2.4, y + 0.76, { hip: true, lift: 1.0, seg: 6, rows: 3 });
   const sign = nameBoard('法王樓', 2.4, 0.9);
-  sign.position.set(0, y - H2 * 0.25, d2 / 2 + 0.14);
+  sign.position.set(0, y - H2 * 0.25, d2 / 2 + 0.22); // (in front of the posts)
   p.add(sign);
   p.position.set(x, 0, z);
   p.rotation.y = ry;
@@ -314,18 +255,9 @@ export function buildTemple(g, l) {
   if (l.pagoda) stonePagoda(own, l.pagoda[0], l.pagoda[1], k);
   if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2], 2.8 * k);
   if (l.bell2) bellPavilion(own, l.bell2[0], l.bell2[1], l.bell2[2], 1.9 * k); // 종각, the smaller bell house
-  const lamps = [];
-  if (l.canopy) {
-    const [x, z, w, d, ry] = l.canopy, c = new THREE.Group();
-    c.position.set(x, 0, z);
-    c.rotation.y = ry;
-    own.add(c);
-    lamps.push(lanternCanopy(c, w, d));
-  }
-  if (l.lane) lamps.push(lanternLane(own, l.lane[0], l.lane[1]));
   for (const h of l.hills || []) hill(own, ...h);
   if (l.wall) templeWall(own, l.wall, l.wallH);
-  bakeColors(own, lamps);
+  bakeColors(own);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
 }
 
