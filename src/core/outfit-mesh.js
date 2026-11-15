@@ -260,7 +260,11 @@ function arm(out, o, side) {
   sweep(out, [thumb(0.82, 0.02), thumb(0.85, 0.032), thumb(0.9, 0.03), thumb(0.93, 0.015)], { power: 2 });
 }
 
-function leg(out, o, side) {
+// Trouser cuts (data/appearance.js PANTS_CUT picks one per trouser colour):
+// jeans with a rolled hem, slim slacks, wide trousers over the shoes, and
+// cargo trousers with a pocket on each thigh.
+export const LEG_CUTS = ['jeans', 'slacks', 'wide', 'cargo'];
+function leg(out, o, side, cut = 'jeans') {
   const s = side > 0 ? 'l' : 'r';
   const x = 0.171 * side;
   const rings = [];
@@ -273,33 +277,83 @@ function leg(out, o, side) {
     add(shorts, 0.075, 'skin');
     add(0.2, 0.07, 'skin');
     add(0.12, 0.072, o.socks || 'skin');
+  } else if (cut === 'wide') { // widening down to a hem that covers the shoe's top
+    add(0.34, 0.128, 'bottom');
+    add(0.22, 0.136, 'bottom');
+    add(0.1, 0.143, 'bottom');
+    add(0.075, 0.145, 'bottom');
+  } else if (cut === 'slacks') { // slim, tapered to the ankle
+    add(0.34, 0.11, 'bottom');
+    add(0.22, 0.1, 'bottom');
+    add(0.13, 0.094, 'bottom');
   } else {
     add(0.34, 0.112, 'bottom');
     add(0.22, 0.104, 'bottom');
-    add(0.12, 0.1, 'bottom');
+    if (cut === 'jeans') { // a rolled-up hem
+      add(0.165, 0.101, 'bottom');
+      add(0.165, 0.112, 'bottom');
+      add(0.12, 0.113, 'bottom');
+    } else add(0.12, 0.1, 'bottom');
   }
   sweep(out, rings, { power: 2 });
-  if (o.barefoot) { // swimwear: a bare foot instead of a sneaker
+  if (cut === 'cargo' && !shorts) { // a pocket with a flap on the outer thigh
+    const w = [['upperleg' + s, 0.6], ['lowerleg' + s, 0.4]];
+    box(out, [x + side * 0.118, 0.33, 0.01], [0.03, 0.12, 0.12], 'bottom', w);
+    box(out, [x + side * 0.124, 0.39, 0.01], [0.03, 0.03, 0.13], 'bottom', w);
+  }
+}
+
+// Shoes: sneakers (laces, tongue, heel tab, a light rubber sole) or leather
+// loafers (lower and sleeker, a strap across, a dark sole).
+export const SHOE_KINDS = ['sneaker', 'loafer'];
+function shoes(out, o, side, kind = 'sneaker') {
+  const s = side > 0 ? 'l' : 'r';
+  const x = 0.171 * side;
+  const fw = (z) => (z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]]);
+  if (o.barefoot) { // swimwear: a bare foot instead of a shoe
     const foot = [];
-    const fAdd = (z, h, wd) => foot.push({ c: [x, h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role: 'skin', w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
+    const fAdd = (z, h, wd) => foot.push({ c: [x, h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role: 'skin', w: fw(z) });
     fAdd(-0.08, 0.1, 0.07); fAdd(-0.04, 0.13, 0.08); fAdd(0.04, 0.1, 0.085); fAdd(0.12, 0.07, 0.08); fAdd(0.17, 0.05, 0.065);
     sweep(out, foot, { power: 2.4 });
     return;
   }
-  // A sneaker on the foot, toe to +z, and a sole round it.
   const shoe = [];
-  const sAdd = (z, h, wd, role, y0 = 0) => shoe.push({ c: [x, y0 + h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role, w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
-  sAdd(-0.1, 0.12, 0.085, 'shoes');
-  sAdd(-0.07, 0.15, 0.1, 'shoes');
-  sAdd(0.02, 0.14, 0.105, 'shoes');
-  sAdd(0.11, 0.1, 0.1, 'shoes');
-  sAdd(0.17, 0.075, 0.09, o.toecap || 'shoes'); // (sneakers: a rubber toe cap in the sole's colour)
-  sAdd(0.2, 0.05, 0.07, o.toecap || 'shoes');
-  sweep(out, shoe, { power: 3 });
+  const sAdd = (z, h, wd, role, y0 = 0) => shoe.push({ c: [x, y0 + h / 2, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h / 2, role, w: fw(z) });
   const sole = [];
-  const lAdd = (z, wd) => sole.push({ c: [x, 0.02, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: 0.024, role: 'sole', w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
-  lAdd(-0.115, 0.08); lAdd(-0.08, 0.108); lAdd(0.1, 0.11); lAdd(0.19, 0.085); lAdd(0.215, 0.05);
+  const lAdd = (z, wd, y, h, role) => sole.push({ c: [x, y, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: h, role, w: fw(z) });
+  if (kind === 'loafer') {
+    sAdd(-0.1, 0.1, 0.08, 'shoes', 0.012);
+    sAdd(-0.07, 0.12, 0.092, 'shoes', 0.012);
+    sAdd(0.02, 0.11, 0.096, 'shoes', 0.012);
+    sAdd(0.12, 0.075, 0.09, 'shoes', 0.012);
+    sAdd(0.19, 0.05, 0.075, 'shoes', 0.012);
+    sAdd(0.225, 0.03, 0.05, 'shoes', 0.012);
+    sweep(out, shoe, { power: 3 });
+    lAdd(-0.112, 0.078, 0.012, 0.014, 'stitch'); lAdd(-0.08, 0.098, 0.012, 0.014, 'stitch'); lAdd(0.1, 0.1, 0.012, 0.014, 'stitch'); lAdd(0.2, 0.078, 0.012, 0.014, 'stitch'); lAdd(0.235, 0.045, 0.012, 0.014, 'stitch');
+    sweep(out, sole, { power: 3 });
+    box(out, [x, 0.098, 0.1], [0.1, 0.018, 0.03], 'stitch', fw(0.1)); // the strap across the instep
+    return;
+  }
+  sAdd(-0.1, 0.12, 0.085, 'shoes', 0.02);
+  sAdd(-0.07, 0.15, 0.1, 'shoes', 0.02);
+  sAdd(0.02, 0.14, 0.105, 'shoes', 0.02);
+  sAdd(0.11, 0.1, 0.1, 'shoes', 0.02);
+  sAdd(0.17, 0.075, 0.09, 'shoes', 0.02);
+  sAdd(0.19, 0.06, 0.08, 'sole', 0.02); // a rubber toe cap
+  sAdd(0.2, 0.05, 0.07, 'sole', 0.02);
+  sweep(out, shoe, { power: 3 });
+  // A thick light midsole over a thin dark tread.
+  lAdd(-0.118, 0.084, 0.03, 0.022, 'sole'); lAdd(-0.08, 0.11, 0.03, 0.022, 'sole'); lAdd(0.1, 0.112, 0.03, 0.022, 'sole'); lAdd(0.19, 0.088, 0.03, 0.022, 'sole'); lAdd(0.218, 0.052, 0.03, 0.022, 'sole');
   sweep(out, sole, { power: 3 });
+  const tread = [];
+  const tAdd = (z, wd) => tread.push({ c: [x, 0.008, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: 0.009, role: 'stitch', w: fw(z) });
+  tAdd(-0.12, 0.086); tAdd(-0.08, 0.112); tAdd(0.1, 0.114); tAdd(0.19, 0.09); tAdd(0.22, 0.054);
+  sweep(out, tread, { power: 3 });
+  // Three laces and a heel tab.
+  const fw0 = fw(0);
+  // (in front of the trouser hem, on the slope of the instep)
+  for (const z of [0.075, 0.105, 0.135]) box(out, [x, 0.168 - (z - 0.02) * 0.5, z], [0.1, 0.014, 0.016], 'sole', fw(z));
+  box(out, [x, 0.17, -0.105], [0.05, 0.07, 0.02], 'sole', fw0);
 }
 
 // Builds the outfit's mesh for one model (in place, on the loaded glTF).
@@ -335,8 +389,12 @@ export function buildOutfit(gltf, o, cellUv) {
   // The torso is its own mesh ("Body": bags and scarves are sized from it).
   const geos = {
     Outfit_Body: part((out) => torso(out, o)),
-    Outfit_Limbs: part((out) => { arm(out, o, 1); arm(out, o, -1); leg(out, o, 1); leg(out, o, -1); }),
+    Outfit_Limbs: part((out) => { arm(out, o, 1); arm(out, o, -1); }),
   };
+  // One mesh per trouser cut and per shoe kind: each character shows only
+  // the ones its look picks (core/model-pack.js, attachModel).
+  for (const cut of o.shorts ? ['jeans'] : LEG_CUTS) geos['Outfit_Legs_' + cut] = part((out) => { leg(out, o, 1, cut); leg(out, o, -1, cut); });
+  for (const kind of o.barefoot ? ['sneaker'] : SHOE_KINDS) geos['Outfit_Shoes_' + kind] = part((out) => { shoes(out, o, 1, kind); shoes(out, o, -1, kind); });
   // The model's own body, arms, legs (and the ninja's mask) are hidden.
   let parent = null, material = null;
   scene.traverse((m) => {

@@ -14,7 +14,7 @@ const HANDS = [['Head', '3,0', 'cut']]; // no earrings
 const wear = ({ outfit, colors, rules = [] }) => ({
   outfit,
   rules: [...rules, ...HANDS],
-  colors: { shoes: 0xffffff, sole: 0x5d5952, accent: 0x3b3a40, stitch: 0x1d1d22, ...colors },
+  colors: { shoes: 0xffffff, sole: 0xf1ede4, accent: 0x3b3a40, stitch: 0x1d1d22, ...colors },
 });
 // A crew-neck T-shirt, jeans and sneakers.
 const TEE = { outfit: { hem: 0.6, sleeve: 0.42, collar: 'top' } };
@@ -33,7 +33,7 @@ const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', poi
 // A dark suit jacket, open over a white dress shirt (front and collar), with
 // black leather shoes: the guide at the War History Museum's information
 // desk wears it with a suit skirt (look.skirt).
-const SUIT = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', lapel: 'accent3', tie: 'accent2', buttons: { role: 'stitch', n: 2, x: 0.06, top: 0.8, gap: 0.1 }, bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, accent2: 0x8a2f45, shoes: 0x1d1d22, sole: 0x111114 } };
+const SUIT = { outfit: { dress: true, hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', lapel: 'accent3', tie: 'accent2', buttons: { role: 'stitch', n: 2, x: 0.06, top: 0.8, gap: 0.1 }, bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, accent2: 0x8a2f45, shoes: 0x1d1d22, sole: 0x111114 } };
 // Men's clothes from the Dongdaemun fashion malls (Gentle Floor, Gwajam
 // Club), all on the basic model so the face stays the same.
 // A wool overcoat down to the knees, open over a knit (accent).

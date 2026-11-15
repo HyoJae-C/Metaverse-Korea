@@ -10,12 +10,14 @@ document.body.appendChild(r.domElement);
 const s = new THREE.Scene(); s.background = new THREE.Color(0xe9e4da);
 s.add(new THREE.HemisphereLight(0xffffff, 0xb8ad98, 1.6));
 const d = new THREE.DirectionalLight(0xffffff, 1.6); d.position.set(2, 4, 3); s.add(d);
-const n = ids.length, sp = 1.25;
-const cam = new THREE.OrthographicCamera(-n * sp / 2, n * sp / 2, 1.45, -0.05, 0.1, 50);
+const n = ids.length, sp = +(q.get('sp') || 1.25);
+// fy/fh: a close-up band (bottom y and height, metres), e.g. fy=0&fh=0.5 for shoes.
+const fy = +(q.get('fy') ?? -0.05), fh = +(q.get('fh') ?? 1.5), hw = n * sp / 2 * (fh / 1.5), cx = +(q.get('cx') ?? 0);
+const cam = new THREE.OrthographicCamera(cx - hw, cx + hw, fy + fh, fy, 0.1, 50);
 cam.position.set(0, 0, 10); cam.lookAt(0, 0, 0);
 const chars = ids.map((id, i) => {
-  const [model, shirt = 'cream', pants = 'denim'] = id.split(':');
-  const c = createCharacter({ model, shirt, pants, hair: 'espresso', skin: 'fair' });
+  const [model, shirt = 'cream', pants = 'denim', shoes = null] = id.split(':');
+  const c = createCharacter({ model, shirt, pants, shoes, hair: 'espresso', skin: 'fair' });
   c.root.position.x = (i - (n - 1) / 2) * sp; c.root.rotation.y = yaw;
   s.add(c.root); return c;
 });

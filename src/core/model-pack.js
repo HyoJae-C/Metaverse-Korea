@@ -12,7 +12,7 @@ import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
-import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
+import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
 import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
@@ -718,10 +718,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   m.scale.setScalar(PACK.scale);
   let headMesh = null, bodyMesh = null;
   const dyeMat = dyedMaterial(id, src, look);
+  // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
+  // straight legs under a skirt; a suit's own shoes are leather.
+  const wearDef = PACK.models[id].wear;
+  const cut = look.skirt || wearDef?.outfit?.dress || wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans';
+  const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
+  const picked = (name) => {
+    const [, part, kind] = /^Outfit_(Legs|Shoes)_(\w+)$/.exec(name) || [];
+    if (!part) return true;
+    const want = part === 'Legs' ? cut : shoeKind;
+    // (shorts and swimwear only have one of each)
+    return kind === want || !m.getObjectByName('Outfit_' + part + '_' + want);
+  };
   m.traverse((o) => {
     if (!o.isMesh) return;
     if (dyeMat) o.material = dyeMat;
-    if (PACK.hide.test(o.name) || o.userData.wearHidden) { o.visible = false; return; }
+    if (PACK.hide.test(o.name) || o.userData.wearHidden || !picked(o.name)) { o.visible = false; return; }
     o.castShadow = true;
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
