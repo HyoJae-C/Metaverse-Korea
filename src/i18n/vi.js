@@ -604,7 +604,7 @@ export const VI = {
   'start.shop': 'Mua sắm & làm đẹp · Seongsu',
   'start.activity': 'Vui chơi ngoài trời · sông Hàn',
   'start.heal': 'Thư giãn · Rừng Seoul',
-  'start.arrive': 'Đến nơi · Ga Seoul',
+  'start.stream': 'Dạo phố · Cheonggyecheon',
   'start.any': 'Đâu cũng được · nơi đông người',
   'start.last': 'Vị trí lần trước: {place}',
   'start.button': 'Bắt đầu đi dạo',

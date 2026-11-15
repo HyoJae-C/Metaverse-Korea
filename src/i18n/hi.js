@@ -604,7 +604,7 @@ export const HI = {
   'start.shop': 'शॉपिंग और स्टाइल · सोंगसू',
   'start.activity': 'आउटडोर मज़ा · हान नदी',
   'start.heal': 'सुकून · सियोल फ़ॉरेस्ट',
-  'start.arrive': 'आगमन · सियोल स्टेशन',
+  'start.stream': 'शहर की सैर · चॉन्गेचॉन',
   'start.any': 'कहीं भी · जहाँ लोग हैं',
   'start.last': 'पिछली जगह: {place}',
   'start.button': 'घूमना शुरू करें',

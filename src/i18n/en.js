@@ -607,7 +607,7 @@ export const EN = {
   'start.shop': 'Shopping & style · Seongsu',
   'start.activity': 'Outdoors · Han River',
   'start.heal': 'Relax · Seoul Forest',
-  'start.arrive': 'Arrive · Seoul Station', // the start screen: arrive at Seoul Station, where most visitors really arrive (region.json spawn.starts)
+  'start.stream': 'City stroll · Cheonggyecheon', // the start screen: on Cheonggye Plaza at the head of the stream (region.json spawn.starts)
   'start.any': 'Anywhere · where people are',
   'start.last': 'Last location: {place}',
   'start.button': 'Start walking',

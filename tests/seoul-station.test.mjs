@@ -1,6 +1,6 @@
 // Seoul Station (scripts/build-seoul-station.mjs): the old station at 37.5%
-// of the real one, everything else at 1/4 on its real place, and the arrival
-// start on the plaza with Seoul Square in view.
+// of the real one, everything else at 1/4 on its real place, and the spot at
+// the foot of the steps (once a start) with Seoul Square in view.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -32,10 +32,7 @@ test('the station hall and Seoul Square stand on their real outlines at 1/4', ()
   }
 });
 
-test('the arrival start and the subway exits: on the plaza, near the real exits', () => {
-  const s = region.spawn.starts.find((q) => q.k === 'arrive');
-  assert.equal(s.district, 'seoul-station');
-  assert.deepEqual(s.at, [START[0] - OFFSET[0], START[1] - OFFSET[1]]);
+test('the subway exits: near the real exits', () => {
   for (const e of EXITS) {
     const real = osm.exits.find((q) => q.ref === String(e.n));
     assert.ok(Math.hypot(e.at[0] - real.at[0], e.at[1] - real.at[1]) <= 15, `exit ${e.n} within 15 m`);
