@@ -796,6 +796,18 @@
       ]
     },
     {
+      "id": "modu-sky",
+      "category": "play",
+      "workshop": "skydeck",
+      "size": "skydeck",
+      "at": [1013.5, 899],
+      "district": "songpa",
+      "name": {"en": "Modu Sky", "ko": "모두 스카이", "ja": "モドゥスカイ", "zh": "Modu天空观景台"},
+      "tagline": {"en": "The observation deck at the top of Modu Tower: Seoul all round through the glass, a glass floor to stand on, and the shows over the river at night (a game deck: the view is a drawing)", "ko": "모두타워 꼭대기 전망대: 유리창 너머로 서울 한 바퀴, 발밑이 보이는 유리 바닥, 밤엔 강 건너 쇼까지 (게임 속 전망대예요. 창밖은 그림이에요)", "ja": "モドゥタワー最上階の展望台：ガラス越しにソウルをぐるり、足もとが見えるガラスの床、夜は川向こうのショーも（ゲームの展望台です。景色は絵です）", "zh": "Modu塔顶层的观景台：隔着玻璃环视首尔，可以站上去的玻璃地板，晚上还能看到河对岸的表演（游戏里的观景台：窗外是画）"},
+      "colors": {"sign": "#141a26", "awning": "#d6e2f0", "accent": "#eef3f9"},
+      "products": []
+    },
+    {
       "id": "haneul-mall",
       "category": "lifestyle",
       "size": "large",
