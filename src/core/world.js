@@ -536,6 +536,21 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    if (a.trees === 'low') {
+      // A low planting (Bongeunsa inside its wall): bushes packed close and
+      // a few small round trees, nothing much over 3 m, so the city shows
+      // over it. The bed is a blocker of its own, so no collision check.
+      const G = 1.7;
+      for (let x = Math.min(...xs) + G / 2; x < Math.max(...xs); x += G) {
+        for (let z = Math.min(...zs) + G / 2; z < Math.max(...zs); z += G) {
+          const h = hash(x, z), h2 = hash(z, x), px = x + (h - 0.5) * G * 0.6, pz = z + (h2 - 0.5) * G * 0.6;
+          if (!pointInPolygon(px, pz, a.p) || onAnyRoad(roads, px, pz)) continue;
+          if (h2 < 0.2 && edgeDist(px, pz, a.p) > 1 && isClear(px, pz, 1)) spots.push([px, pz, 0.62 + h * 0.2, crownColor(h)]);
+          else if (isClear(px, pz, 0.7)) bushes.push([px, pz, 0.85 + h * 0.5]);
+        }
+      }
+      continue;
+    }
     // The edge of the wood: two rows of big trees just inside its outline.
     for (const [inset, gap] of [[3.5, 6.5], [9, 8]]) {
       for (let i = 0; i < a.p.length; i++) {

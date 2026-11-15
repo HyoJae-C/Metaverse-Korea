@@ -215,6 +215,14 @@ export const STAMPS = [
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
   },
   {
+    // in Bongeunsa's courtyard, beside the pagoda, facing Beopwangru (scripts/bongeunsa-layout.mjs)
+    id: 'bongeunsa', place: { at: [32.0, 797.6], ry: 0.497 }, color: '#b5462f', shape: 'circle',
+    name: { ko: '봉은사', en: 'Bongeunsa Temple', ja: '奉恩寺', zh: '奉恩寺' },
+    gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
+    // a temple hall's curved roof over its posts, and a lotus in front
+    icon: '<path d="M44 82 q56 -30 112 0 q-8 -4 -14 -2 q-42 -18 -84 0 q-6 -2 -14 2 z"/><path d="M60 86 h80 M66 86 v38 M88 86 v38 M112 86 v38 M134 86 v38 M58 124 h84"/><path d="M100 150 q-10 -10 0 -22 q10 12 0 22 z M100 150 q-20 -2 -24 -14 q14 -2 24 14 z M100 150 q20 -2 24 -14 q-14 -2 -24 14 z"/>',
+  },
+  {
     // in Dongmyo's flea market, between Potato Market's mats and the way up
     // from Dongmyo Station exit 3 (data/dongmyo.js market), facing the station
     id: 'dongmyo-market', place: { at: [-853, -785], ry: 0 }, color: '#a0703a', shape: 'square',
