@@ -536,6 +536,20 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    if (a.trees === 'clump') {
+      // A clump of trees in a temple yard (Bongeunsa): one big tree, smaller
+      // ones round it, bushes at the edge. The clump is its own blocker.
+      const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2, r = (Math.max(...xs) - Math.min(...xs)) / 2, h = hash(cx, cz);
+      spots.push([cx, cz, 2.2 + h * 0.7, crownColor(h)]);
+      const n = 3 + Math.floor(h * 2);
+      for (let i = 0; i < n; i++) {
+        const t = (i / n) * Math.PI * 2 + h * 6, k = hash(cx + i, cz - i);
+        const x = cx + Math.cos(t) * r * 0.62, z = cz + Math.sin(t) * r * 0.62;
+        if (k < 0.3) pines.push([x, z, 1.2 + k]); else spots.push([x, z, 1.1 + k * 0.6, crownColor(k)]);
+        bushes.push([cx + Math.cos(t + 0.5) * r * 0.85, cz + Math.sin(t + 0.5) * r * 0.85, 0.7 + k * 0.4]);
+      }
+      continue;
+    }
     if (a.trees === 'low') {
       // A low planting (Bongeunsa inside its wall): bushes packed close and
       // a few small round trees, nothing much over 3 m, so the city shows
@@ -569,12 +583,13 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
         }
       }
     }
-    for (let x = Math.min(...xs) + PARK / 2; x < Math.max(...xs); x += PARK) {
-      for (let z = Math.min(...zs) + PARK / 2; z < Math.max(...zs); z += PARK) {
+    const step = a.dense ? 5 : PARK; // (dense: a small temple wood, filled close, Yozi 2026-11-15)
+    for (let x = Math.min(...xs) + step / 2; x < Math.max(...xs); x += step) {
+      for (let z = Math.min(...zs) + step / 2; z < Math.max(...zs); z += step) {
         if (spots.length + pines.length >= max * 0.7) break; // (Seoul Forest alone takes ~1,700 on a computer)
         const h = hash(x, z), h2 = hash(z, x);
-        if (edgeDist(x, z, a.p) < 12) continue; // (the edge rows are there)
-        const jx = (h - 0.5) * PARK * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * PARK * 0.7;
+        if (edgeDist(x, z, a.p) < (a.dense ? 2.5 : 12)) continue; // (the edge rows are there)
+        const jx = (h - 0.5) * step * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * step * 0.7;
         const px = x + jx, pz = z + jz;
         // Sizes from a young tree to a big old one; about one in four pointed.
         const pine = h2 < 0.26, s = pine ? 1.3 + ((h2 * 13) % 1) * 1.2 : 1.1 + ((h2 * 17) % 1) ** 1.3 * 1.8;
@@ -584,7 +599,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
         }
         // A bush or two between the trees.
         for (let k = 0; k < 2; k++) {
-          const bx = x + ((h * (31 + k * 17)) % 1 - 0.5) * PARK, bz = z + ((h2 * (23 + k * 11)) % 1 - 0.5) * PARK;
+          const bx = x + ((h * (31 + k * 17)) % 1 - 0.5) * step, bz = z + ((h2 * (23 + k * 11)) % 1 - 0.5) * step;
           const bs = 0.5 + ((h * (5 + k)) % 1) * 0.6;
           if (pointInPolygon(bx, bz, a.p) && isClear(bx, bz, bs) && !collision.blocked(bx, bz, bs) && !onAnyRoad(roads, bx, bz)) bushes.push([bx, bz, bs]);
         }

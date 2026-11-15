@@ -97,6 +97,9 @@ export const WALL = { h: 1.5, t: 0.45, gate: 4.6 };
 // path round the inside was a gap to fill, low so the city shows over the
 // wall from the Buddha's terrace): how deep in from the wall (m).
 export const HEDGE = 3.6;
+// Tree clumps in the yards: how many, the open room each needs round it,
+// and their radius (m).
+export const CLUMP = { n: 7, room: 4, min: 1.6, max: 2.6 };
 // The Maitreya Buddha's plaza: the statue on Naver's pin; its shape and turn
 // from Yozi's aerial photo from the south and the Google satellite capture
 // (turned 55°; fitted on 6 halls, 0.5 m apart): a paved rectangle
@@ -108,7 +111,10 @@ export const PLAZA = { at: grow([11.3, 809.5]), ry: 49.5 * D2R, w: 8.6 * SCALE, 
 // 높아야 해, 계단으로 그쪽으로 가고"; the guide map draws it up on the hill):
 // h m above the yards, held up by a stone wall, with stairs (w wide, run
 // long) down from the gap in the front kerb towards the courtyard.
-export const TERRACE = { h: 2.4, stairs: 2.4, run: 4.8 };
+// Then (Yozi 2026-11-15, with a photo): the stairs wide and low across the
+// whole front, and the way to them rising gently first (ramp: [long, high]),
+// so you climb slowly and see more of the city as you go.
+export const TERRACE = { h: 2.4, stairs: PLAZA.w, run: 5, ramp: [4, 0.45] };
 // The hill behind (world metres: centre, radius, height), round the north
 // and west edges of the grounds; each shrinks to keep clear (below).
 const HILLS_REAL = [
@@ -118,10 +124,13 @@ const HILLS_REAL = [
 export const HILLS = HILLS_REAL.map(([x, z, r, h]) => [...grow([x, z]), r * SCALE, h * 1.2]);
 // The niche wall round the statue, in its own metres (x across, z forward):
 // half a ring 3.9 m out behind it, then straight on either side to 1.5 m in front.
-export const NICHE_WALL = [[-3.9, 1.5], ...Array.from({ length: 9 }, (_, i) => {
-  const t = (i * Math.PI) / 8;
-  return [Math.round(-3.9 * Math.cos(t) * 100) / 100, Math.round(-3.9 * Math.sin(t) * 100) / 100];
-}), [3.9, 1.5]];
+// Grown out to the plaza's back and side edges (Yozi 2026-11-15: "제단쪽
+// 뒤랑 옆벽 끝에 닿게"): half an ellipse, its 0.5 m pieces just inside them.
+const NICHE_X = PLAZA.w / 2 - 0.55, NICHE_Z = PLAZA.statue - 0.55;
+export const NICHE_WALL = [[-NICHE_X, 1.5], ...Array.from({ length: 13 }, (_, i) => {
+  const t = (i * Math.PI) / 12;
+  return [Math.round(-NICHE_X * Math.cos(t) * 100) / 100, Math.round(-NICHE_Z * Math.sin(t) * 100) / 100];
+}), [NICHE_X, 1.5]];
 
 // A hall's footprint from its OSM outline: the smallest rectangle round it
 // turned near the temple's own axis (about 28° off the compass, like the
@@ -275,7 +284,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   strip(-hw - 0.4, back - 0.4, hw + 0.4, back); // the back
   for (const sx of [-1, 1]) {
     strip(sx * hw, back - 0.4, sx * (hw + 0.4), tFront + 0.4); // a side
-    strip(sx * sw, tFront, sx * (hw + 0.4), tFront + 0.4); // the front, either side of the stairs
+    if (sw < hw - 0.05) strip(sx * sw, tFront, sx * (hw + 0.4), tFront + 0.4); // the front, either side of the stairs
     strip(sx * sw, tFront + 0.4, sx * (sw + 0.4), tFront + TERRACE.run); // the stairs' side
   }
   // Haesu Gwaneum's pond: water you can't walk into.
@@ -304,7 +313,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   const keep = [
     ...Object.values(H).map((h) => { const [x, z] = L([h.x, h.z]); return corners({ ...h, x, z }, BASE + 1); }),
     [[-PLAZA.w / 2 - 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, PLAZA.l - PLAZA.statue + 1], [-PLAZA.w / 2 - 1, PLAZA.l - PLAZA.statue + 1]].map(toMap),
-    [[-sw - 1.4, tFront], [sw + 1.4, tFront], [sw + 1.4, tFront + TERRACE.run + 1.5], [-sw - 1.4, tFront + TERRACE.run + 1.5]].map(toMap), // the stairs and their foot
+    [[-sw - 1.4, tFront], [sw + 1.4, tFront], [sw + 1.4, tFront + TERRACE.run + TERRACE.ramp[0] + 1.5], [-sw - 1.4, tFront + TERRACE.run + TERRACE.ramp[0] + 1.5]].map(toMap), // the stairs, the slope up to them and its foot
   ];
   const hills = [];
   for (const [wx, wz, r0, h0] of HILLS) {
@@ -382,8 +391,35 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   // The Maitreya Buddha is its own landmark, so the woods keep off its plaza
   // (clear: core/world.js) and the far culling knows where it stands.
   // (the woods stop at the grounds' edge: at the wall, off the streets)
-  const inGrounds = (poly) => polygonClipping.intersection([poly], [grounds]).map((pg) => pg[0].slice(0, -1).map(([x, z]) => [r1(x), r1(z)]));
-  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], lift: TERRACE.h, stairs: [TERRACE.stairs, TERRACE.run], clear: 8 };
+  // (and off the halls, the Buddha's terrace, its stairs and slope: keep)
+  const inGrounds = (poly) => polygonClipping.difference(polygonClipping.intersection([poly], [grounds]), ...keep.map((k) => [k])).map((pg) => pg[0].slice(0, -1).map(([x, z]) => [r1(x), r1(z)])).filter((p) => p.length > 2);
+  // Clumps of trees in the open yards between the halls (Yozi's aerial
+  // photo): the widest open spots, each at least CLUMP.room m from every
+  // hall (BASE + 1), the wall, the woods and the main way through (Iljumun,
+  // Jinyeomun, Beopwangru, Daeungjeon, and on to the Buddha's slope).
+  const segDist = (x, z, [ax, az], [bx2, bz2]) => { const dx = bx2 - ax, dz = bz2 - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - ax - dx * t, z - az - dz * t); };
+  const edges = (P) => P.map((q, i) => [q, P[(i + 1) % P.length]]);
+  const axis = [[ix, iz], L([H.진여문.x, H.진여문.z]), L([H.법왕루.x, H.법왕루.z]), L([H.대웅전.x, H.대웅전.z]), toMap([0, tFront + TERRACE.run + TERRACE.ramp[0]])];
+  const woodsIn = [woods, eastWoods].flatMap(inGrounds);
+  const lines = [...keep.flatMap(edges), ...edges(G), ...woodsIn.flatMap(edges), ...axis.slice(1).map((q, i) => [axis[i], q])];
+  const inside = (x, z) => keep.some((P) => inPoly(x, z, P)) || woodsIn.some((P) => inPoly(x, z, P)) || !inPoly(x, z, G);
+  const open = [];
+  for (let x = Math.min(...G.map((q) => q[0])); x < Math.max(...G.map((q) => q[0])); x += 1) {
+    for (let z = Math.min(...G.map((q) => q[1])); z < Math.max(...G.map((q) => q[1])); z += 1) {
+      if (inside(x, z)) continue;
+      const r = Math.min(...lines.map(([a, b]) => segDist(x, z, a, b)), Math.hypot(x - px, z - pz) - 2, Math.hypot(x - gx, z - gz) - 3.5);
+      if (r >= CLUMP.room) open.push([x, z, r]);
+    }
+  }
+  open.sort((a, b) => b[2] - a[2]);
+  const clumps = [];
+  for (const [x, z, r] of open) {
+    if (clumps.length >= CLUMP.n) break;
+    if (clumps.every(([cx, cz, cr]) => Math.hypot(x - cx, z - cz) > cr + r)) clumps.push([x, z, Math.min(CLUMP.max, r - CLUMP.room + CLUMP.min)]);
+  }
+  const clumpAreas = clumps.map(([x, z, r]) => ring(x, z, r, r, 10));
+  for (const p of clumpAreas) blockers.push({ p });
+  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], lift: TERRACE.h, stairs: [TERRACE.stairs, TERRACE.run], ramp: TERRACE.ramp, clear: 8 };
   const signAt = L([SPOTS.iljumun[0] - 4.6, SPOTS.iljumun[1] - 2.2]); // (beside the way in, clear of Iljumun's posts)
   const sign = {
     type: 'sign', x: r1(signAt[0]), z: r1(signAt[1]), ry: r3(H.진여문.ry), // (facing the way in from the street, Yozi 2026-11-15)
@@ -402,7 +438,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   return {
     buildings, blockers, landmarks: [landmark, buddha, sign], pois,
     // (noMat: no picnic mats in the temple, Yozi 2026-11-15)
-    areas: [{ k: 'stone', p: grounds }, ...[woods, eastWoods].flatMap(inGrounds).map((p) => ({ k: 'park', trees: true, noMat: true, p })), ...hedges.map((p) => ({ k: 'park', trees: 'low', noMat: true, p })), ...areas],
+    areas: [{ k: 'stone', p: grounds }, ...[woods, eastWoods].flatMap(inGrounds).map((p) => ({ k: 'park', trees: true, dense: true, noMat: true, p })) /* (dense: big and small trees close together, as in Yozi's aerial photo) */, ...hedges.map((p) => ({ k: 'park', trees: 'low', noMat: true, p })), ...clumpAreas.map((p) => ({ k: 'park', trees: 'clump', noMat: true, p })), ...areas],
     grounds,
   };
 }

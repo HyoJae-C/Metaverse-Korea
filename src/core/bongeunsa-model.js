@@ -402,15 +402,18 @@ export function buildMaitreya(g, l) {
     box(base, pw0, T, pl0, 0, T / 2, pc0, C.g3); // the dressed stone wall
     for (let y = 0.45; y < T; y += 0.45) box(base, pw0 + 0.04, 0.04, pl0 + 0.04, 0, y, pc0, C.g4); // its courses
     box(base, pw0 + 0.3, 0.14, pl0 + 0.3, 0, T - 0.05, pc0, C.g2); // the coping
-    const n = Math.max(4, Math.round(T / 0.18)), d = run / n;
+    const [len, rise] = l.ramp || [0, 0];
+    const n = Math.max(4, Math.round((T - rise) / 0.16)), d = run / n; // (low steps, wide as the plaza)
     for (let i = 0; i < n; i++) { // each step's top on the slope you walk up
-      const top = T * (1 - (i + 0.5) / n);
+      const top = T - (T - rise) * ((i + 0.5) / n);
       box(base, sw, top, d + 0.02, 0, top / 2, front + d * (i + 0.5), i % 2 ? C.g1 : C.g0);
     }
-    // The cheek walls either side of the stairs: a triangle (run along the
-    // ground, T + 0.3 up at the top), 0.3 m thick, just outside them.
-    const cheek = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(run, 0), new THREE.Vector2(0, T + 0.3)]);
-    const cheekGeo = new THREE.ExtrudeGeometry(cheek, { depth: 0.3, bevelEnabled: false }).rotateY(-Math.PI / 2); // (shape x -> forward, depth -> -x)
+    // (shape x -> forward, y -> up, depth -> -x)
+    const prism = (pts, depth) => new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([a, b]) => new THREE.Vector2(a, b))), { depth, bevelEnabled: false }).rotateY(-Math.PI / 2);
+    // The gentle paved slope up to the stairs' foot.
+    if (len) add(base, prism([[0, 0], [len, 0], [0, rise]], sw), C.g1, sw / 2, 0, front + run);
+    // The cheek walls either side of the stairs, 0.3 m thick, just outside them.
+    const cheekGeo = prism([[0, 0], [run, 0], [run, rise + 0.3], [0, T + 0.3]], 0.3);
     for (const sx of [-1, 1]) add(base, cheekGeo, C.g2, sx * sw / 2 + (sx > 0 ? 0.3 : 0), 0, front);
     bakeColors(base);
   }
@@ -420,7 +423,8 @@ export function buildMaitreya(g, l) {
   box(all, pw, 0.04, pl, 0, 0.02, pc, C.g1);
   for (const sx of [-1, 1]) box(all, 0.2, 0.12, pl, sx * (pw / 2 - 0.1), 0.06, pc, C.g2);
   box(all, pw, 0.12, 0.2, 0, 0.06, pc - pl / 2 + 0.1, C.g2);
-  for (const sx of [-1, 1]) box(all, (pw - 2.4) / 2, 0.12, 0.2, sx * (pw + 2.4) / 4, 0.06, pc + pl / 2 - 0.1, C.g2); // (the front: open in the middle, where the stairs go down)
+  const gap = l.stairs?.[0] || 2.4; // (the front: open where the stairs go down)
+  if (pw - gap > 0.1) for (const sx of [-1, 1]) box(all, (pw - gap) / 2, 0.12, 0.2, sx * (pw + gap) / 4, 0.06, pc + pl / 2 - 0.1, C.g2);
   box(all, 2.8, 0.03, 2.4, 0, 0.055, 3.6, '#8e2a26');
   const statue = new THREE.Group();
   statue.scale.setScalar((l.h || 11.5) / 12);
