@@ -69,7 +69,31 @@ test('Jogyesa: the canopy in its real shape, close-hung, the yard and the east w
   assert.equal(SLOTS, 400, 'players still have 400 spots (the server\'s count)');
   assert.ok(J.canopy.gap <= 0.65, 'lanterns touch: one roof from above');
   for (const [x, z] of s) assert.ok(inCanopy(x, z), 'inside its parts');
-  assert.ok(s.some(([x, z]) => x > 121 && z < 58), 'the wing you walk under from Iljumun');
-  assert.ok(!s.some(([, z]) => z > 68), 'not further south than the real one');
+  assert.ok(s.some(([x, z]) => x > 120 && Math.abs(z - J.iljumun.z) < 2), 'the wing you walk under from Iljumun');
+  assert.ok(J.canopy.x1 < J.iljumun.x - J.iljumun.d / 2, 'it stops short of the gate');
   assert.ok(J.canopy.yard[1] + 1.9 < J.canopy.z1, 'the parade stands under it');
+});
+
+test('Jogyesa: the whole temple at 37.5%, every hall on its real spot grown about Iljumun', async () => {
+  const { grow, SCALE, PIVOT } = await import('../src/data/jogyesa.js');
+  assert.equal(SCALE, 1.5);
+  // Real middles at 1/4 (OpenStreetMap, the district's metres).
+  const real = { daeungjeon: [111.6, 55.5], geungnakjeon: [104.8, 56.6], iljumun: [129.6, 57.2], ujeongguk: [129.4, 41.2] };
+  for (const [n, p] of Object.entries(real)) {
+    const [x, z] = grow(p), h = J[n];
+    assert.ok(Math.hypot(h.x - x, h.z - z) <= 2.1, `${n} within 2 m of its place (${Math.hypot(h.x - x, h.z - z).toFixed(1)} m)`);
+  }
+  assert.ok(Math.hypot(J.iljumun.x - PIVOT[0], J.iljumun.z - PIVOT[1]) < 6, 'the gate stays by the street');
+  // Daeungjeon: OSM's outline (its plinth) 9.7 x 6.4 m at 1/4.
+  const D = J.daeungjeon;
+  assert.ok(Math.abs(D.w + 2.6 - 9.7 * 1.5) < 0.6 && Math.abs(D.d + 2.6 - 6.4 * 1.5) < 0.6, 'Daeungjeon\'s plinth 37.5%');
+  // The two halls stand side by side without touching, both on the grounds.
+  const G = J.geungnakjeon;
+  assert.ok(G.x + G.w / 2 + 1.3 <= D.x - D.w / 2 - 1.3 + 0.01, 'the plinths don\'t overlap');
+  const xs = J.site.map((q) => q[0]), zs = J.site.map((q) => q[1]);
+  for (const h of [D, G, J.bell, J.sarira, J.ujeongguk]) assert.ok(h.x > Math.min(...xs) + 1 && h.x < Math.max(...xs) - 1 && h.z > Math.min(...zs) + 1 && h.z < Math.max(...zs) - 1, 'on the grounds');
+  // Nothing of the temple under a building, the museum clear of Yulgok-ro and Daeungjeon.
+  const map = mapOf('gyeongbokgung');
+  for (const b of map.buildings.filter((q) => !q.jg)) for (const [x, z] of J.site) assert.ok(!inPolygon(x, z, b.p), 'the grounds clear of the blocks beside them');
+  assert.ok(J.museum[1] >= 26 && J.museum[3] < D.z - D.d / 2 - 1.3 - 2);
 });

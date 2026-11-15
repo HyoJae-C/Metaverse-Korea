@@ -8,10 +8,10 @@ export const MONK_LOOK = { model: 'hanbok-durumagi-gray', skirt: null, tee: null
 
 export const MONK_SITES = [
   {
-    id: 'jogyesa', district: 'gyeongbokgung', at: [115, 60], // (data/jogyesa.js)
+    id: 'jogyesa', district: 'gyeongbokgung', at: [106, 62], // (data/jogyesa.js)
     monks: [
-      { bow: [113.6, 61.2], face: [113.6, 52.5] }, // at Daeungjeon's steps, beside the middle door
-      { walk: [[125, 57.5], [121.5, 60], [121.5, 64.4], [104, 64.4]] }, // in through Iljumun, round under the canopy (clear of the baby Buddha and the pagoda tree)
+      { bow: [103.4, 62.2], face: [103.4, 54.8] }, // at Daeungjeon's steps, beside the middle door
+      { walk: [[124.8, 57.3], [118, 62.5], [118, 71], [99.5, 71]] }, // in through Iljumun, round under the canopy (clear of the baby Buddha, the stele and the pagoda tree)
     ],
   },
   {

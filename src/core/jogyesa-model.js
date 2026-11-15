@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
-import { JOGYESA as J, canopySlots, canopySpan } from '../data/jogyesa.js';
+import { JOGYESA as J, canopySlots, canopySpan, canopyPoles } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -93,6 +93,7 @@ function king(k) {
   if (k.holds === 'pagoda') { box(g, 0.24, 0.24, 0.24, ...hand, C.gold); cyl(g, 0.02, 0.1, 0.25, hand[0], hand[1] + 0.25, hand[2], C.gold, 6); } else if (k.holds === 'lute') box(g, 0.3, 0.8, 0.12, 0, 1.6, 0.42, '#8a5a2b');
   else if (k.holds === 'sword') box(g, 0.08, 1.2, 0.05, hand[0], 1.95, hand[2], '#c9ced6');
   else { const d = cyl(g, 0.07, 0.07, 1.1, hand[0], 1.85, hand[2], '#2f8a68', 6); d.rotation.z = 0.5; blob(g, 0.13, 0.9, 2.35, hand[2], '#d4a73a'); }
+  g.scale.setScalar(J.kingScale || 1);
   g.position.set(k.x, 0.35, k.z);
   g.rotation.y = k.ry;
   return g;
@@ -167,6 +168,23 @@ function stele(T) {
   return g;
 }
 
+// The bell pavilion (범종루): four posts on a stone base, a tiled roof, the
+// bronze bell hanging inside.
+function bellHouse(T) {
+  const g = new THREE.Group(), w = T.w, H = 2.6, hw = w / 2 - 0.25;
+  box(g, w + 0.5, 0.35, w + 0.5, 0, 0.175, 0, C.stone);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 0.26, H, 0.26, sx * hw, 0.35 + H / 2, sz * hw, C.post);
+  const top = new THREE.Group();
+  top.position.y = 0.35;
+  band(top, w - 0.3, w - 0.3, H);
+  g.add(top);
+  tiles(g, w + 2, w + 2, 1.4, 0.35 + H + 1.75, { hip: true, lift: 0.7, seg: 5, rows: 2 });
+  cyl(g, 0.5, 0.62, 1.15, 0, 0.35 + H - 0.95, 0, '#5f6a55', 12); // the bell
+  cyl(g, 0.08, 0.08, 0.35, 0, 0.35 + H - 0.2, 0, '#4b4038', 6);
+  g.position.set(T.x, 0, T.z);
+  return g;
+}
+
 export { canopySlots }; // (data/jogyesa.js)
 
 function canopy(g, ox, oz) {
@@ -189,7 +207,7 @@ function canopy(g, ox, oz) {
     const span = canopySpan(z, c);
     if (span) box(g, span[1] - span[0] + 0.4, 0.03, 0.03, (span[0] + span[1]) / 2 - ox, c.y, z - oz, C.rope);
   }
-  for (const [x, z] of c.poles) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
+  for (const [x, z] of canopyPoles(c)) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
   mergeStatic(g); // the lines and poles (before the lanterns go in: it would bake instanced meshes too)
   for (const m of [lant, tag]) { m.userData.noShadow = true; g.add(m); }
   lant.name = 'jogyesa-canopy'; // (game/lantern-parade.js lights it up row by row)
@@ -213,6 +231,9 @@ export function buildJogyesa(g) {
   sub(sarira, J.sarira);
   sub(babyBuddha, J.babyBuddha);
   sub(stele, J.stele);
+  sub(bellHouse, J.bell);
+  const U = J.ujeongguk;
+  hall(at(new THREE.Group(), U.x, U.z), U, '郵征總局');
   mergeStatic(g); // (before the canopy: it would bake the instanced lanterns too)
   const cg = new THREE.Group();
   g.userData.canopy = canopy(cg, ox, oz);
