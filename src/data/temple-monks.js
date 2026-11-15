@@ -15,10 +15,10 @@ export const MONK_SITES = [
     ],
   },
   {
-    id: 'bongeunsa', district: 'samseong', at: [-124.2, -181.7], // (the courtyard's middle, scripts/bongeunsa-layout.mjs)
+    id: 'bongeunsa', district: 'samseong', at: [-133.3, -197.8], // (the courtyard's middle, scripts/bongeunsa-layout.mjs)
     monks: [
-      { bow: [-122.7, -183.2], face: [-127.4, -187.7] }, // in the courtyard, facing Daeungjeon
-      { walk: [[-114.1, -158.3], [-118.4, -170.2]] }, // the way in, from Jinyeomun to Beopwangru
+      { bow: [-136.9, -200.2], face: [-138.2, -206.9] }, // in the courtyard, facing Daeungjeon
+      { walk: [[-117.6, -160.5], [-126, -183.5]] }, // the way in, from Jinyeomun to Beopwangru
     ],
   },
 ];

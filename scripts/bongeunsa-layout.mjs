@@ -19,16 +19,29 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import polygonClipping from 'polygon-clipping';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const BES = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'bongeunsa-osm.json'), 'utf8'));
+const OSM = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'bongeunsa-osm.json'), 'utf8'));
+// The whole temple at 37.5% (Yozi 2026-11-15, "그냥 진행해"): grounds, halls
+// and yards all grown 1.5 times from their real 1/4 about PIVOT, the east
+// end of the grounds' edge on Bongeunsa-ro, so the temple keeps its two
+// streets and takes the room it needs from the empty land north and west
+// (real: flats and a high school, not built in the game). Before, only the
+// three big halls were 37.5% on 1/4 grounds: three halls had to step aside,
+// the small ones were 2-4 m sheds and the yards were tight.
+export const SCALE = 1.5;
+export const PIVOT = [57, 846.5]; // world metres
+export const grow = ([x, z]) => [PIVOT[0] + (x - PIVOT[0]) * SCALE, PIVOT[1] + (z - PIVOT[1]) * SCALE];
+// The real outlines, grown: what everything below is laid out on.
+export const BES = { ...OSM, grounds: OSM.grounds.map(grow), halls: Object.fromEntries(Object.entries(OSM.halls).map(([n, P]) => [n, P.map(grow)])) };
 const r1 = (v) => Math.round(v * 10) / 10;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const name = (en, ko, ja, zh) => ({ ko, en, ja, zh });
 const D2R = Math.PI / 180;
 
 // Bigger than 1/4: footprint scale from the OSM outline (0.375 / 0.25).
-export const BIG = { 대웅전: 1.5, 법왕루: 1.5, 진여문: 1.5 };
+export const BIG = {}; // (no hall bigger than the rest any more: all of it is 37.5%)
 export const BUDDHA_H = 11.5; // 23 m at 50%
 // Hall kind for core/palace-model.js palacehalls ('h' hall, 'g' gate) and
 // its name board. Beopwangru is drawn by core/bongeunsa-model.js (two storeys).
@@ -42,28 +55,30 @@ const KIND = {
 export const NUDGE = {};
 
 // Spots from the Naver capture (world metres; the fit in the file's header).
-export const SPOTS = {
+const SPOTS_REAL = {
   gwaneum: [38.8, 833.5], // Haesu Gwaneum on a round pond south of the courtyard
   iljumun: [51.7, 850.5], // the one-pillar gate by Bongeunsa-ro
   pagoda: [38.9, 814.6], // the three-storey pagoda in the courtyard
   bell: [26.6, 826], // the bell pavilion (종루)
   drive: [36.8, 851.5], // the drive in from Bongeunsa-ro, south of the pond (a gap in the wall)
 };
+export const SPOTS = Object.fromEntries(Object.entries(SPOTS_REAL).map(([n, p]) => [n, grow(p)]));
 // The temple wall: height, thickness, and the gaps for the two ways in (m).
-export const WALL = { h: 1.5, t: 0.45, gate: 3.4, drive: 5 };
+export const WALL = { h: 1.5, t: 0.45, gate: 4.6, drive: 6 };
 // The Maitreya Buddha's plaza: the statue on Naver's pin; its shape and turn
 // from Yozi's aerial photo from the south and the Google satellite capture
 // (turned 55°; fitted on 6 halls, 0.5 m apart): a paved rectangle
 // 8.6 × 10.3 m (34 × 41 m real) running south-east from the hill, the statue
 // 4 m in from its back edge facing down it (50° east of south, towards the
 // courtyard), the red mat in front, a U-shaped wall of niches round it.
-export const PLAZA = { at: [11.3, 809.5], ry: 49.5 * D2R, w: 8.6, l: 10.3, statue: 4.0 };
+export const PLAZA = { at: grow([11.3, 809.5]), ry: 49.5 * D2R, w: 8.6 * SCALE, l: 10.3 * SCALE, statue: 4.0 * SCALE }; // (the plaza 37.5%; the statue and its wall stay 50%)
 // The hill behind (world metres: centre, radius, height), round the north
 // and west edges of the grounds; each shrinks to keep clear (below).
-export const HILLS = [
+const HILLS_REAL = [
   [-9, 818, 8, 4], [-6, 808, 8, 5], [1, 800, 8, 5.5], [11, 795, 8, 6], [22, 792, 8, 5.5],
   [33, 790, 8, 5], [44, 787, 8, 5.5], [55, 785, 8, 5], [64, 793, 7, 4], [-10, 829, 6, 3.5],
 ];
+export const HILLS = HILLS_REAL.map(([x, z, r, h]) => [...grow([x, z]), r * SCALE, h * 1.2]);
 // The niche wall round the statue, in its own metres (x across, z forward):
 // half a ring 3.9 m out behind it, then straight on either side to 1.5 m in front.
 export const NICHE_WALL = [[-3.9, 1.5], ...Array.from({ length: 9 }, (_, i) => {
@@ -179,14 +194,14 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   }
   // Haesu Gwaneum's pond: water you can't walk into.
   const [gx, gz] = L(SPOTS.gwaneum);
-  const pond = ring(gx, gz, 1.7, 1.7, 12);
+  const pond = ring(gx, gz, 1.7 * SCALE, 1.7 * SCALE, 12);
   areas.push({ k: 'water', p: pond });
   blockers.push({ p: pond });
   // The pagoda and the bell.
   const [px, pz] = L(SPOTS.pagoda);
-  blockers.push({ p: ring(px, pz, 0.7, 0.7, 6) });
+  blockers.push({ p: ring(px, pz, 0.7 * SCALE, 0.7 * SCALE, 6) });
   const [lx, lz] = L(SPOTS.bell);
-  blockers.push({ p: ring(lx, lz, 0.6, 0.6, 6) });
+  blockers.push({ p: ring(lx, lz, 0.6 * SCALE, 0.6 * SCALE, 6) });
   // Iljumun stands at the kerb; the game's Bongeunsa-ro is a little wider
   // than 1/4, so the gate steps back along the way in until 1.2 m is left.
   let [ix, iz] = L(SPOTS.iljumun);
@@ -214,7 +229,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   for (const [wx, wz, r0, h0] of HILLS) {
     const [x, z] = L([wx, wz]);
     let r = r0;
-    while (r > 3 && keep.some((poly) => overlap(poly, ring(x, z, r, r, 10)))) r -= 0.25;
+    while (r > 3 && (street([x, z]) < r + 2 || keep.some((poly) => overlap(poly, ring(x, z, r, r, 10))))) r -= 0.25; // (and 2 m off every street)
     if (r <= 3) continue;
     const h = r1(h0 * Math.min(1, r / r0 + 0.2));
     hills.push([...rel([x, z]), r1(r), h]);
@@ -257,19 +272,21 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
     halls: list, nu, hills,
     gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)],
     iljumun: [...rel([ix, iz]), r3(H.진여문.ry)],
-    canopy, lane,
+    canopy, lane, k: SCALE, // (k: the pond, pagoda, bell pavilion and Iljumun drawn that much bigger than their 1/4 models)
     wall: wall.map((w) => [...rel([w[0], w[1]]), ...rel([w[2], w[3]])]), wallH: WALL.h,
   };
   // The ground: the temple's stone-paved yards; woods on the hill in the north and
   // the west (trees keep off the halls and the Buddha's plaza by themselves).
   const grounds = G;
   // (and a band of trees along the east edge, beyond Jijangjeon and Seonbuldang)
-  const eastWoods = local([[59, 806], [63, 806], [62, 830], [59, 837], [56, 841], [57, 812]]);
-  const woods = local([[-14, 813], [-7, 805], [2, 798], [12, 793], [21, 790], [30, 788], [59, 778], [66, 792], [48, 796], [32, 798], [19, 802], [18, 816], [8, 818], [7, 830], [5, 834], [0, 835], [-3, 827], [-14, 827]]);
+  const eastWoods = local([[59, 806], [63, 806], [62, 830], [59, 837], [56, 841], [57, 812]].map(grow));
+  const woods = local([[-14, 813], [-7, 805], [2, 798], [12, 793], [21, 790], [30, 788], [59, 778], [66, 792], [48, 796], [32, 798], [19, 802], [18, 816], [8, 818], [7, 830], [5, 834], [0, 835], [-3, 827], [-14, 827]].map(grow));
   // The Maitreya Buddha is its own landmark, so the woods keep off its plaza
   // (clear: core/world.js) and the far culling knows where it stands.
+  // (the woods stop at the grounds' edge: at the wall, off the streets)
+  const inGrounds = (poly) => polygonClipping.intersection([poly], [grounds]).map((pg) => pg[0].slice(0, -1).map(([x, z]) => [r1(x), r1(z)]));
   const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], clear: 8 };
-  const signAt = L([SPOTS.iljumun[0] - 3.2, SPOTS.iljumun[1] - 3.5]);
+  const signAt = L([SPOTS.iljumun[0] - 3.2, SPOTS.iljumun[1] - 2.2]);
   const sign = {
     type: 'sign', x: r1(signAt[0]), z: r1(signAt[1]), ry: r3(H.진여문.ry - Math.PI / 2),
     title: name('Bongeunsa Temple', '봉은사', '奉恩寺（ボンウンサ）', '奉恩寺'),
@@ -286,7 +303,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   ];
   return {
     buildings, blockers, landmarks: [landmark, buddha, sign], pois,
-    areas: [{ k: 'stone', p: grounds }, { k: 'park', trees: true, p: woods }, { k: 'park', trees: true, p: eastWoods }, ...areas],
+    areas: [{ k: 'stone', p: grounds }, ...[woods, eastWoods].flatMap(inGrounds).map((p) => ({ k: 'park', trees: true, p })), ...areas],
     grounds,
   };
 }

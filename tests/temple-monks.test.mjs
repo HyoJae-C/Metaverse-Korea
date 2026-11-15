@@ -35,7 +35,7 @@ test('monks: shaved heads, two at each temple, never in a wall or a hall', () =>
     })));
     for (const [x, z] of spots) {
       for (const p of P) for (const [dx, dz] of [[0, 0], [0.3, 0], [-0.3, 0], [0, 0.3], [0, -0.3]]) assert.ok(!inPolygon(x + dx, z + dz, p), `${s.id} monk at ${x.toFixed(1)},${z.toFixed(1)} in a wall or hall`);
-      assert.ok(Math.hypot(x - s.at[0], z - s.at[1]) < 40, `${s.id} monk near the temple`);
+      assert.ok(Math.hypot(x - s.at[0], z - s.at[1]) < 60, `${s.id} monk near the temple`);
     }
   }
 });

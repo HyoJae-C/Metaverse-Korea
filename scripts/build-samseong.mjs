@@ -37,6 +37,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import polygonClipping from 'polygon-clipping';
 import { bongeunsa } from './bongeunsa-layout.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -123,7 +124,11 @@ const asemS = crossing(asemLine, TEHERAN.p), asemN = crossing(asemLine, BONGEUNS
 export const ASEM = { w: 12, p: [[r1(asemS.x), r1(asemS.z)], [r1(asemN.x), r1(asemN.z)]] };
 // Tancheon: 26 m of water (the real stream at 1/4) with grass banks.
 export const TANCHEON = { w: 26, bank: 12, p: local(OSM.tancheon) };
-const ROADS = [TEHERAN, OLYMPIC, YEONGDONG, BONGEUNSA, SAMSEONG_RO, ASEM];
+// Yeongdong-daero runs on north-west past this map's edge as a base road
+// (scripts/build-base.mjs joins it to this one's end): not drawn here, but
+// Bongeunsa's grounds, grown to 37.5%, must keep off it too.
+const YEONGDONG_ON = { w: 24, p: [YEONGDONG.p[0], [-97.1, -222.3], [-181.1, -415.5]] };
+const ROADS = [TEHERAN, OLYMPIC, YEONGDONG, BONGEUNSA, SAMSEONG_RO, ASEM, YEONGDONG_ON];
 
 // KONEXT (grid metres): the mall, the aquarium pavilion on the square and the
 // glass tower on the corner of Teheran-ro and Asem-ro.
@@ -137,7 +142,16 @@ const mid = (b) => fromGrid([(b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2]);
 // (scripts/bongeunsa-layout.mjs). The real grounds reach the kerb, but the
 // game's streets are drawn a little wider than 1/4 (Bongeunsa-ro 14 m), so
 // their corners step back off the pavement (offStreets, below).
-export const TEMPLE = bongeunsa(local, (q) => Math.min(...ROADS.map((r) => lineDist(q, r.p) - r.w / 2)), (p) => offStreets(p, 1.2));
+// The grounds' outline with every street (and 1.3 m of pavement) cut out of
+// it; the biggest piece left is the temple's.
+const area = (P) => Math.abs(P.reduce((t, q, i) => t + q[0] * P[(i + 1) % P.length][1] - P[(i + 1) % P.length][0] * q[1], 0)) / 2;
+function cutStreets(poly) {
+  const disc = ([x, z], r) => Array.from({ length: 16 }, (_, i) => [x + Math.cos(i * Math.PI / 8) * r, z + Math.sin(i * Math.PI / 8) * r]);
+  const left = polygonClipping.difference([poly], ...ROADS.flatMap((r) => [[strip(r.p, -r.w / 2 - 1.3, r.w / 2 + 1.3)], [disc(r.p[0], r.w / 2 + 1.5)], [disc(r.p.at(-1), r.w / 2 + 1.5)]])); // (round ends, like lineDist)
+  const best = left.map((pg) => pg[0].slice(0, -1)).sort((p, q) => area(q) - area(p))[0];
+  return best.map(([x, z]) => [r1(x), r1(z)]);
+}
+export const TEMPLE = bongeunsa(local, (q) => Math.min(...ROADS.map((r) => lineDist(q, r.p) - r.w / 2)), cutStreets);
 
 // Is a polygon clear of every street (by its half width plus a pavement) and
 // of Tancheon and its banks?
@@ -228,7 +242,7 @@ function build() {
     { k: 'water', p: water },
   ];
   const onStreet = clash(TEMPLE.grounds, 1);
-  if (onStreet) throw new Error(`Bongeunsa's grounds on ${onStreet.p === BONGEUNSA.p ? 'Bongeunsa-ro' : 'a street'}`);
+  if (onStreet) throw new Error(`Bongeunsa's grounds on a street: ${JSON.stringify(onStreet.p.slice(0, 2))} ${JSON.stringify(edgePoints(TEMPLE.grounds).filter((q) => lineDist(q, onStreet.p) < onStreet.w / 2 + 1).slice(0, 4))}`);
   // You can't walk into Tancheon, except over Samseong Bridge (Olympic-ro).
   const br = crossing(OLYMPIC.p, TANCHEON.p);
   const [ax, az] = OLYMPIC.p[br.i - 1], [bx, bz] = OLYMPIC.p[br.i];

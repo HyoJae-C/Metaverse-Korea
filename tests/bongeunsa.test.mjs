@@ -1,12 +1,12 @@
 // Bongeunsa (scripts/bongeunsa-layout.mjs, core/bongeunsa-model.js): on its
-// real spot at 1/4, the Maitreya Buddha at 50%, Daeungjeon, Beopwangru and
-// Jinyeomun at 37.5% (Yozi 2026-11-12), nothing on a street or in another
+// real spot, the whole temple at 37.5% (Yozi 2026-11-15; before, only
+// Daeungjeon, Beopwangru and Jinyeomun were), the Maitreya Buddha at 50%, nothing on a street or in another
 // hall, and none of it in the first download.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inPolygon } from '../src/core/seoul-grid.js';
-import { BES, BIG, BUDDHA_H, halls, corners, overlap } from '../scripts/bongeunsa-layout.mjs';
+import { BES, SCALE, BUDDHA_H, halls, corners, overlap } from '../scripts/bongeunsa-layout.mjs';
 import { BONGEUNSA, TEHERAN, YEONGDONG, ASEM, lineDist } from '../scripts/build-samseong.mjs';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
@@ -19,19 +19,19 @@ const buddha = map.landmarks.find((l) => l.type === 'maitreya');
 const H = halls();
 const world = ([x, z]) => [x + ox, z + oz];
 
-test('Bongeunsa: the halls on their OpenStreetMap spots (1/4), the big three at 37.5%', () => {
+test('Bongeunsa: the whole temple at 37.5% (the OpenStreetMap outlines grown 1.5 times), every hall on its spot', () => {
   assert.ok(temple && buddha, 'both landmarks on the map');
   for (const [n, h] of Object.entries(H)) {
     const moved = Math.hypot(h.x - h.osm[0], h.z - h.osm[1]);
-    assert.ok(moved <= 5, `${n} within 5 m of its real spot (moved ${moved.toFixed(1)} m)`);
+    assert.ok(moved < 0.01, `${n} on its real spot: at one scale nothing has to step aside (moved ${moved.toFixed(1)} m)`);
   }
   // Daeungjeon real 24 × 22 m: 9 × 8 m at 37.5% (OSM outline × 1.5).
-  assert.equal(BIG.대웅전, 1.5);
+  assert.equal(SCALE, 1.5);
   assert.ok(H.대웅전.w > 8.5 && H.대웅전.w < 9.8 && H.대웅전.d > 7.6 && H.대웅전.d < 8.8, `Daeungjeon ${H.대웅전.w.toFixed(1)} × ${H.대웅전.d.toFixed(1)}`);
-  assert.ok(H.판전.w < 5, 'Panjeon stays 1/4');
+  assert.ok(H.판전.w > 6 && H.판전.w < 7.2, `Panjeon 37.5% too (${H.판전.w.toFixed(1)} m)`);
   // A courtyard is left between Daeungjeon and Beopwangru for the lanterns and the pagoda.
   const [, , , cd] = temple.canopy;
-  assert.ok(cd >= 3.5, `courtyard ${cd} m deep`);
+  assert.ok(cd >= 9, `courtyard ${cd} m deep`);
   // Every hall inside the real grounds.
   for (const [n, h] of Object.entries(H)) assert.ok(inPolygon(h.x, h.z, BES.grounds), `${n} inside the grounds`);
 });
@@ -85,7 +85,7 @@ test('the Buddha\'s plaza is clear of every hall', () => {
 test('the wooded hill behind the temple keeps off the halls and the Buddha\'s plaza', () => {
   assert.ok(temple.hills.length >= 6, `${temple.hills.length} mounds`);
   for (const [hx, hz, r, h] of temple.hills) {
-    assert.ok(h >= 3 && h <= 6, `mound ${h} m high`);
+    assert.ok(h >= 3 && h <= 7.5, `mound ${h} m high`);
     const [wx, wz] = world([temple.x + hx, temple.z + hz]);
     for (const [n, hl] of Object.entries(H)) {
       assert.ok(Math.min(...corners(hl, 0).map(([x, z]) => Math.hypot(x - wx, z - wz))) > r, `a mound off ${n}`);

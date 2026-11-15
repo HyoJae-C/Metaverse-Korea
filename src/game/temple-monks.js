@@ -6,7 +6,7 @@
 import { createCharacter } from '../core/character.js';
 import { MONK_LOOK } from '../data/temple-monks.js';
 
-const SHOW = 80; // m: drawn closer than this
+const SHOW = 110; // m: drawn closer than this
 const SPEED = 0.8; // m/s, an unhurried walk
 const REST = 4; // s at each end
 const BOW_EVERY = 9; // s

@@ -3,7 +3,7 @@
 // Small on purpose: this is in the first download, the monks are not.
 import { MONK_SITES } from '../data/temple-monks.js';
 
-const NEAR = 120; // m
+const NEAR = 150; // m
 
 // game: { scene, offsets: { district id: [x, z] } }.
 export function createTempleMonksNear(game) {
