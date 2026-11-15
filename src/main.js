@@ -89,7 +89,7 @@ import { CollisionMap, distSqToSeg, pointInPoly } from './core/collision.js';
 import { Input } from './core/input.js';
 import { RemotePlayers, showBubble, showBubbleEl } from './core/players.js';
 import { createAreaNet } from './net/area.js';
-import { claimTab } from './core/single-tab.js';
+import { claimTab, whenShown } from './core/single-tab.js';
 import { watchOnline } from './net/online.js';
 import { sendRate } from './net/rate.js';
 import { rt as rtMeter } from './net/meter.js';
@@ -342,6 +342,17 @@ const regionStart = getJson(`${BASE}regions/index.json`).then((index) => {
   return getJson(`${BASE}regions/${id}/region.json`).then((region) => ({ index, id, region }));
 });
 regionStart.catch(() => {}); // awaited below; this only avoids an early "unhandled" note
+// A page nobody is looking at yet (prerendered while typing the address,
+// opened or restored in the background) must not take the save from the
+// tab being played: it waits until it is shown. Then this tab claims the
+// game first, so an older tab of this browser steps aside before the save
+// below is claimed for this page (else the older tab read the save change
+// as "another device", Yozi 2026-11-15). The notice itself waits for
+// stepAside (below).
+await whenShown();
+let tabTaken = false;
+let onTabTaken = null;
+const releaseTab = claimTab(() => { tabTaken = true; cloud.stop(); onTabTaken?.(); });
 await cloud.load();
 // This play session's counts for the operator's retention numbers
 // (core/sessions.js); the reports start once the world is up (see below).
@@ -1807,6 +1818,7 @@ net = SOLO;
 function stepAside(icon, title, hint) {
   if (tabParked) return;
   tabParked = true;
+  releaseTab(); // a tab that stepped aside no longer answers newer tabs
   joinToken++; // a join still connecting disconnects itself
   net?.disconnect();
   net = SOLO;
@@ -1827,7 +1839,8 @@ function stepAside(icon, title, hint) {
   box.style.zIndex = 10000;
   document.body.appendChild(box);
 }
-claimTab(() => { cloud.stop(); stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint'); });
+onTabTaken = () => stepAside('🗂️', 'tab.elsewhere', 'tab.elsewhereHint');
+if (tabTaken) onTabTaken();
 cloud.onElsewhere(() => stepAside('📱', 'device.elsewhere', 'device.elsewhereHint'));
 // The account's save came in after the game started on this device's older
 // copy: reload once to play the account's save (never save the old one over it).
