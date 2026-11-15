@@ -6,8 +6,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inPolygon } from '../src/core/seoul-grid.js';
-import { BES, SCALE, BUDDHA_H, halls, corners, overlap } from '../scripts/bongeunsa-layout.mjs';
-import { BONGEUNSA, TEHERAN, YEONGDONG, ASEM, lineDist } from '../scripts/build-samseong.mjs';
+import { BES, SCALE, BUDDHA_H, NUDGE, EXTRA, TERRACE, halls, corners, overlap } from '../scripts/bongeunsa-layout.mjs';
+import { terraceHeight } from '../src/core/temple-terrace.js';
+import { BONGEUNSA, TEHERAN, YEONGDONG, ASEM, lineDist, TEMPLE } from '../scripts/build-samseong.mjs';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 const region = read('region.json');
@@ -23,7 +24,8 @@ test('Bongeunsa: the whole temple at 37.5% (the OpenStreetMap outlines grown 1.5
   assert.ok(temple && buddha, 'both landmarks on the map');
   for (const [n, h] of Object.entries(H)) {
     const moved = Math.hypot(h.x - h.osm[0], h.z - h.osm[1]);
-    assert.ok(moved < 0.01, `${n} on its real spot: at one scale nothing has to step aside (moved ${moved.toFixed(1)} m)`);
+    if (h.extra) assert.ok(moved < 0.01 || (moved < 8 && NUDGE[n]?.why), `${n} (from the guide map) moved ${moved.toFixed(1)} m, and says why`);
+    else assert.ok(moved < 0.01, `${n} on its real spot: at one scale nothing has to step aside (moved ${moved.toFixed(1)} m)`);
   }
   // Daeungjeon real 24 × 22 m: 9 × 8 m at 37.5% (OSM outline × 1.5).
   assert.equal(SCALE, 1.5);
@@ -92,4 +94,31 @@ test('the wooded hill behind the temple keeps off the halls and the Buddha\'s pl
     }
     assert.ok(Math.hypot(wx - (buddha.x + ox), wz - (buddha.z + oz)) > r + 4, 'a mound off the Buddha');
   }
+});
+
+test('the Maitreya Buddha stands up on a terrace, reached by its stairs (Yozi 2026-11-15)', () => {
+  assert.equal(buddha.lift, TERRACE.h);
+  assert.ok(TERRACE.h >= 2, 'clearly higher than the yards');
+  const [pw, pl, pc] = buddha.plaza, front = pc + pl / 2, [sw, run] = buddha.stairs;
+  const at = (u, v) => [Math.cos(buddha.ry) * u + Math.sin(buddha.ry) * v, -Math.sin(buddha.ry) * u + Math.cos(buddha.ry) * v]; // (plaza frame -> landmark offset)
+  assert.equal(terraceHeight(buddha, ...at(0, 2)), TERRACE.h, 'the plaza in front of the statue');
+  assert.equal(terraceHeight(buddha, ...at(pw / 2 - 0.2, front - 0.2)), TERRACE.h, 'its corner');
+  const mid = terraceHeight(buddha, ...at(0, front + run / 2));
+  assert.ok(Math.abs(mid - TERRACE.h / 2) < 0.01, `half way down the stairs (${mid})`);
+  assert.equal(terraceHeight(buddha, ...at(0, front + run + 0.3)), 0, 'the foot of the stairs');
+  assert.equal(terraceHeight(buddha, ...at(pw / 2 + 0.6, 0)), 0, 'beside the terrace');
+  // You can't step up its side: the edge is walled off, except the stairs.
+  const blocked = (u, v) => { const [dx, dz] = at(u, v); return map.blockers.some((b) => inPolygon(buddha.x + dx, buddha.z + dz, b.p)); };
+  assert.ok(blocked(pw / 2 + 0.2, 0) && blocked(-pw / 2 - 0.2, 0), 'the sides');
+  assert.ok(blocked(sw / 2 + 0.6, front + 0.2), 'the front beside the stairs');
+  assert.ok(blocked(sw / 2 + 0.2, front + run / 2), 'the stairs\' side');
+  assert.ok(!blocked(0, front + 0.2) && !blocked(0, front + run / 2), 'the stairs are open');
+});
+
+test('Bongeunsa by its own guide map: the halls OSM had no outline for, two halls in OSM\'s one outline', () => {
+  for (const n of Object.keys(EXTRA)) assert.ok(H[n], n);
+  assert.ok(H.향적원 && H.보우당 && H.연회다원 && !H.종루, 'OSM\'s 보우당 split in two; its 종루 is the tea house');
+  assert.ok(temple.bell && temple.bell2, 'the bell pavilion (18) and the bell house (19)');
+  assert.equal(temple.halls.length, Object.keys(H).length - 1, 'every hall drawn (Beopwangru on its own)');
+  assert.ok(!TEMPLE.landmarks.some((l) => /문화회관/.test(JSON.stringify(l))), '25 봉은문화회관 left out (Yozi)');
 });

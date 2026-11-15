@@ -47,8 +47,36 @@ export const BUDDHA_H = 11.5; // 23 m at 50%
 // its name board. Beopwangru is drawn by core/bongeunsa-model.js (two storeys).
 const KIND = {
   대웅전: ['h', '大雄殿'], 판전: ['h', '板殿'], 지장전: ['h', '地藏殿'], 미륵전: ['h', '彌勒殿'], 선불당: ['h', '禪佛堂'],
-  진여문: ['g', '眞如門'], 법왕루: ['nu'],
+  영산전: ['h', '靈山殿'], 진여문: ['g', '眞如門'], 법왕루: ['nu'],
 };
+// Bongeunsa's own guide map (Yozi 2026-11-15, "합칠 건 합치고 분리할 건
+// 분리해서"): its 34 numbered places, fitted onto the OSM halls (an affine
+// fit on 16 halls, 2.0 m apart on average at 1/4; the map is drawn in
+// perspective). What it changes:
+//   - OSM's "종루" outline is the tea house 연회다원 (30): 1.5 m from it on
+//     the guide map; the real bell pavilion (18) is SPOTS.bell, 8 m west.
+//   - OSM's "보우당" outline is two halls joined (22 향적원, the dining hall,
+//     in front; 23 보우당 behind): split in two.
+//   - Halls OSM has no outline for (EXTRA, real 1/4 world metres, centre on
+//     the guide map and a size read off it): drawn too, moved aside where
+//     they would touch a hall (NUDGE says how far).
+//   - 25 봉은문화회관 (the big modern hall in the north-west): left out (Yozi).
+export const RENAME = { 종루: '연회다원' };
+export const SPLIT = { 보우당: [['향적원', [21.5, 841.4]], ['보우당', [22.8, 833.9]]] };
+export const EXTRA = {
+  서래원: { at: [57.4, 847.4], w: 5, d: 2.4 }, // 3: the temple shop and café, by the gate
+  외국인안내소: { at: [47.1, 848.8], w: 2, d: 1.6 }, // 4: the information booth for visitors from abroad
+  전통문화체험관1: { at: [52.2, 802.7], w: 3, d: 2.4 }, // 9
+  전통문화체험관2: { at: [55.1, 806.3], w: 3, d: 2.4 }, // 10
+  영산전: { at: [34.6, 801.3], w: 3.2, d: 2.6 }, // 13, behind Daeungjeon
+  비각: { at: [13.4, 826.2], w: 1.5, d: 1.5 }, // 26: the stele house
+  매화당: { at: [51.1, 809.7], w: 3, d: 2.6 }, // 31
+  구생원: { at: [7.2, 825], w: 3.6, d: 2.4 }, // 32: the temple stay
+  상월선열당: { at: [9.4, 822.9], w: 3, d: 2.4 }, // 33
+  신도휴게공간: { at: [52.4, 816.9], w: 3, d: 1.8 }, // 34: the rest room
+};
+// 19 종각, the second, smaller bell house west of the bell pavilion (real 1/4 world metres).
+const BELL2_REAL = [19.6, 826.6];
 // Halls moved off the real outline so the bigger three fit (world metres,
 // how far and why). Found by pushing each one straight away from the bigger
 // hall until 0.6 m is left between their stone bases.
@@ -59,7 +87,8 @@ const SPOTS_REAL = {
   gwaneum: [38.8, 833.5], // Haesu Gwaneum on a round pond south of the courtyard
   iljumun: [51.7, 850.5], // the one-pillar gate by Bongeunsa-ro
   pagoda: [38.9, 814.6], // the three-storey pagoda in the courtyard
-  bell: [26.6, 826], // the bell pavilion (종루)
+  bell: [26.6, 826], // the bell pavilion (종루, 18 on the guide map)
+  bell2: BELL2_REAL, // the bell house (종각, 19)
   drive: [36.8, 851.5], // the drive in from Bongeunsa-ro, south of the pond (a gap in the wall)
 };
 export const SPOTS = Object.fromEntries(Object.entries(SPOTS_REAL).map(([n, p]) => [n, grow(p)]));
@@ -72,6 +101,11 @@ export const WALL = { h: 1.5, t: 0.45, gate: 4.6, drive: 6 };
 // 4 m in from its back edge facing down it (50° east of south, towards the
 // courtyard), the red mat in front, a U-shaped wall of niches round it.
 export const PLAZA = { at: grow([11.3, 809.5]), ry: 49.5 * D2R, w: 8.6 * SCALE, l: 10.3 * SCALE, statue: 4.0 * SCALE }; // (the plaza 37.5%; the statue and its wall stay 50%)
+// The plaza stands up on a terrace (Yozi 2026-11-15: "불상 쪽은 좀 더
+// 높아야 해, 계단으로 그쪽으로 가고"; the guide map draws it up on the hill):
+// h m above the yards, held up by a stone wall, with stairs (w wide, run
+// long) down from the gap in the front kerb towards the courtyard.
+export const TERRACE = { h: 2.4, stairs: 2.4, run: 4.8 };
 // The hill behind (world metres: centre, radius, height), round the north
 // and west edges of the grounds; each shrinks to keep clear (below).
 const HILLS_REAL = [
@@ -116,22 +150,54 @@ export function overlap(A, B) {
 }
 const BASE = 0.35; // the stone base round every hall (palacehalls draws it 0.7 m wider)
 
-// The halls (world metres), scaled and nudged.
-export function halls() {
+// The halls (world metres), at one scale: OSM's outlines (renamed and split
+// by the guide map), then the guide map's halls OSM has no outline for,
+// each moved aside until it is clear of the others and inside the grounds.
+const inGroundsAt = (x, z, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+export function halls(street = () => Infinity) { // (street: world point -> metres to the nearest street's edge)
   const H = {};
-  for (const [n, P] of Object.entries(BES.halls)) {
-    const h = fit(P), k = BIG[n] || 1;
-    H[n] = { ...h, w: h.w * k, d: h.d * k, osm: [h.x, h.z] };
+  for (const [osmName, P] of Object.entries(BES.halls)) {
+    const h = fit(P), n = RENAME[osmName] || osmName;
+    if (SPLIT[osmName]) {
+      // In two halves across whichever side puts them nearer the guide map's spots.
+      const parts = SPLIT[osmName].map(([m, at]) => [m, grow(at)]);
+      const c = Math.cos(h.ry), s = Math.sin(h.ry), best = [];
+      for (const along of ['w', 'd']) {
+        const ax = along === 'w' ? [c, -s] : [s, c], q = h[along] / 4;
+        const halves = [-1, 1].map((k) => [h.x + ax[0] * q * k, h.z + ax[1] * q * k]);
+        for (const flip of [0, 1]) {
+          const e = parts.reduce((t, [, at], i) => t + Math.hypot(halves[i ^ flip][0] - at[0], halves[i ^ flip][1] - at[1]), 0);
+          if (!best.length || e < best[0]) best.splice(0, 3, e, along, halves.map((_, i) => halves[i ^ flip]));
+        }
+      }
+      const [, along, halves] = best;
+      parts.forEach(([m], i) => {
+        H[m] = { ...h, x: halves[i][0], z: halves[i][1], [along]: h[along] / 2 - 0.9, osm: halves[i], split: osmName }; // (two halls, their stone bases nearly touching)
+      });
+      continue;
+    }
+    H[n] = { ...h, osm: [h.x, h.z], ...(RENAME[osmName] ? { osmName } : {}) };
   }
-  for (const big of Object.keys(BIG)) for (const [n, h] of Object.entries(H)) {
-    if (BIG[n]) continue;
-    const b = H[big];
-    let dx = h.x - b.x, dz = h.z - b.z;
-    const L = Math.hypot(dx, dz) || 1;
-    dx /= L; dz /= L;
+  const ry = H.대웅전.ry, G = BES.grounds;
+  const room = (h) => corners(h, BASE + 1.2).every(([x, z]) => inGroundsAt(x, z, G)) && corners(h, BASE).every((q) => street(q) > 1.5);
+  const clashes = (h) => Object.entries(H).filter(([, o]) => overlap(corners(h, BASE + 0.3), corners(o, BASE + 0.3)));
+  const yard = [(H.대웅전.x + H.법왕루.x) / 2, (H.대웅전.z + H.법왕루.z) / 2];
+  for (const [n, e] of Object.entries(EXTRA)) {
+    const [x, z] = grow(e.at), h = { x, z, w: e.w * SCALE, d: e.d * SCALE, ry, osm: [x, z], extra: true };
+    // Step aside, 25 cm at a time (at most 8 m): away from every hall it
+    // touches, and in towards the courtyard while it is off the grounds.
     let moved = 0;
-    while (overlap(corners(h, BASE + 0.3), corners(b, BASE + 0.3)) && moved < 8) { h.x += dx * 0.25; h.z += dz * 0.25; moved += 0.25; }
-    if (moved) NUDGE[n] = { m: r1(Math.hypot(h.x - h.osm[0], h.z - h.osm[1])), why: `${NUDGE[n] ? NUDGE[n].why.replace(/ \(.*/, '') + ' and ' + big : 'moved off ' + big} (drawn at 37.5%, so bigger than its real outline)` };
+    const why = new Set();
+    for (let hit; ((hit = clashes(h)).length || !room(h)) && moved < 8; moved += 0.25) {
+      let dx = 0, dz = 0;
+      const push = (ax, az, k) => { const L = Math.hypot(h.x - ax, h.z - az) || 1; dx += ((h.x - ax) / L) * k; dz += ((h.z - az) / L) * k; };
+      for (const [m, o] of hit) { push(o.x, o.z, 1); why.add(`clear of ${m}`); }
+      if (!room(h)) { push(yard[0], yard[1], -1); why.add('inside the grounds'); }
+      const L = Math.hypot(dx, dz) || 1;
+      h.x += (dx / L) * 0.25; h.z += (dz / L) * 0.25;
+    }
+    if (moved) NUDGE[n] = { m: r1(Math.hypot(h.x - h.osm[0], h.z - h.osm[1])), why: `${[...why].join(', ')} (the guide map is drawn in perspective)` };
+    H[n] = h;
   }
   return H;
 }
@@ -141,7 +207,7 @@ export function halls() {
 // fit(poly): the grounds' outline moved off the streets.
 export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) {
   const L = ([x, z]) => local([[x, z]])[0];
-  const H = halls();
+  const H = halls((q) => street(L(q)));
   const buildings = [], blockers = [], areas = [];
   // The landmark's own origin: the middle of Daeungjeon's courtyard.
   const O = L([(H.대웅전.x + H.법왕루.x) / 2, (H.대웅전.z + H.법왕루.z) / 2]);
@@ -192,6 +258,16 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
     if ((m[0] + n[0] - inside[0]) ** 2 + (m[1] + n[1] - inside[1]) ** 2 < (m[0] - inside[0]) ** 2 + (m[1] - inside[1]) ** 2) n = [-n[0], -n[1]];
     blockers.push({ p: [a, b, [b[0] + n[0], b[1] + n[1]], [a[0] + n[0], a[1] + n[1]]].map(toMap).map(([x, z]) => [r1(x), r1(z)]) });
   }
+  // The terrace's edge (you go up and down by the stairs only) and the
+  // stairs' sides: 0.4 m strips just outside them.
+  const tFront = PLAZA.l - PLAZA.statue, back = -PLAZA.statue, hw = PLAZA.w / 2, sw = TERRACE.stairs / 2;
+  const strip = (u0, v0, u1, v1) => blockers.push({ p: [[u0, v0], [u1, v0], [u1, v1], [u0, v1]].map(toMap).map(([x, z]) => [r1(x), r1(z)]) });
+  strip(-hw - 0.4, back - 0.4, hw + 0.4, back); // the back
+  for (const sx of [-1, 1]) {
+    strip(sx * hw, back - 0.4, sx * (hw + 0.4), tFront + 0.4); // a side
+    strip(sx * sw, tFront, sx * (hw + 0.4), tFront + 0.4); // the front, either side of the stairs
+    strip(sx * sw, tFront + 0.4, sx * (sw + 0.4), tFront + TERRACE.run); // the stairs' side
+  }
   // Haesu Gwaneum's pond: water you can't walk into.
   const [gx, gz] = L(SPOTS.gwaneum);
   const pond = ring(gx, gz, 1.7 * SCALE, 1.7 * SCALE, 12);
@@ -202,6 +278,8 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   blockers.push({ p: ring(px, pz, 0.7 * SCALE, 0.7 * SCALE, 6) });
   const [lx, lz] = L(SPOTS.bell);
   blockers.push({ p: ring(lx, lz, 0.6 * SCALE, 0.6 * SCALE, 6) });
+  const [l2x, l2z] = L(SPOTS.bell2);
+  blockers.push({ p: ring(l2x, l2z, 0.45 * SCALE, 0.45 * SCALE, 6) });
   // Iljumun stands at the kerb; the game's Bongeunsa-ro is a little wider
   // than 1/4, so the gate steps back along the way in until 1.2 m is left.
   let [ix, iz] = L(SPOTS.iljumun);
@@ -224,6 +302,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   const keep = [
     ...Object.values(H).map((h) => { const [x, z] = L([h.x, h.z]); return corners({ ...h, x, z }, BASE + 1); }),
     [[-PLAZA.w / 2 - 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, -PLAZA.statue - 1], [PLAZA.w / 2 + 1, PLAZA.l - PLAZA.statue + 1], [-PLAZA.w / 2 - 1, PLAZA.l - PLAZA.statue + 1]].map(toMap),
+    [[-sw - 1.4, tFront], [sw + 1.4, tFront], [sw + 1.4, tFront + TERRACE.run + 1.5], [-sw - 1.4, tFront + TERRACE.run + 1.5]].map(toMap), // the stairs and their foot
   ];
   const hills = [];
   for (const [wx, wz, r0, h0] of HILLS) {
@@ -270,7 +349,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   const landmark = {
     type: 'bongeunsa', x: O[0], z: O[1], ry: 0,
     halls: list, nu, hills,
-    gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)],
+    gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)], bell2: [...rel([l2x, l2z]), r3(H.대웅전.ry)],
     iljumun: [...rel([ix, iz]), r3(H.진여문.ry)],
     canopy, lane, k: SCALE, // (k: the pond, pagoda, bell pavilion and Iljumun drawn that much bigger than their 1/4 models)
     wall: wall.map((w) => [...rel([w[0], w[1]]), ...rel([w[2], w[3]])]), wallH: WALL.h,
@@ -285,7 +364,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   // (clear: core/world.js) and the far culling knows where it stands.
   // (the woods stop at the grounds' edge: at the wall, off the streets)
   const inGrounds = (poly) => polygonClipping.intersection([poly], [grounds]).map((pg) => pg[0].slice(0, -1).map(([x, z]) => [r1(x), r1(z)]));
-  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], clear: 8 };
+  const buddha = { type: 'maitreya', x: r1(bx), z: r1(bz), ry: r3(bry), h: BUDDHA_H, wall: NICHE_WALL, plaza: [PLAZA.w, PLAZA.l, r1(PLAZA.l / 2 - PLAZA.statue)], lift: TERRACE.h, stairs: [TERRACE.stairs, TERRACE.run], clear: 8 };
   const signAt = L([SPOTS.iljumun[0] - 3.2, SPOTS.iljumun[1] - 2.2]);
   const sign = {
     type: 'sign', x: r1(signAt[0]), z: r1(signAt[1]), ry: r3(H.진여문.ry - Math.PI / 2),
