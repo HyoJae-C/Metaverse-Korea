@@ -30,6 +30,7 @@ import { lakeHoles } from './core/lakeshore.js';
 import { setParkSignsLang } from './core/park-signs.js';
 import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './core/park-art.js';
 import { yardY } from './core/cathedral-yard-ground.js';
+import { terraceY } from './core/temple-terrace.js';
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
@@ -3336,7 +3337,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan or Bugaksan/Inwangsan
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || terraceY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, Bongeunsa's Buddha terrace, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan or Bugaksan/Inwangsan
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 

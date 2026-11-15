@@ -313,6 +313,7 @@ export function buildTemple(g, l) {
   if (l.gwaneum) gwaneum(own, l.gwaneum, k);
   if (l.pagoda) stonePagoda(own, l.pagoda[0], l.pagoda[1], k);
   if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2], 2.8 * k);
+  if (l.bell2) bellPavilion(own, l.bell2[0], l.bell2[1], l.bell2[2], 1.9 * k); // 종각, the smaller bell house
   const lamps = [];
   if (l.canopy) {
     const [x, z, w, d, ry] = l.canopy, c = new THREE.Group();
@@ -461,6 +462,26 @@ function nicheWall(g, pts) {
 export function buildMaitreya(g, l) {
   const all = new THREE.Group();
   g.add(all);
+  const [pw0, pl0, pc0] = l.plaza || [8.6, 10.3, 1.15];
+  if (l.lift) { // up on its terrace (core/temple-terrace.js): a stone wall round it, stairs down the front
+    const T = l.lift, base = new THREE.Group(), front = pc0 + pl0 / 2, [sw, run] = l.stairs;
+    g.add(base);
+    all.position.y = T;
+    box(base, pw0, T, pl0, 0, T / 2, pc0, C.g3); // the dressed stone wall
+    for (let y = 0.45; y < T; y += 0.45) box(base, pw0 + 0.04, 0.04, pl0 + 0.04, 0, y, pc0, C.g4); // its courses
+    box(base, pw0 + 0.3, 0.14, pl0 + 0.3, 0, T - 0.05, pc0, C.g2); // the coping
+    const n = Math.max(4, Math.round(T / 0.18)), d = run / n;
+    for (let i = 0; i < n; i++) { // each step's top on the slope you walk up
+      const top = T * (1 - (i + 0.5) / n);
+      box(base, sw, top, d + 0.02, 0, top / 2, front + d * (i + 0.5), i % 2 ? C.g1 : C.g0);
+    }
+    // The cheek walls either side of the stairs: a triangle (run along the
+    // ground, T + 0.3 up at the top), 0.3 m thick, just outside them.
+    const cheek = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(run, 0), new THREE.Vector2(0, T + 0.3)]);
+    const cheekGeo = new THREE.ExtrudeGeometry(cheek, { depth: 0.3, bevelEnabled: false }).rotateY(-Math.PI / 2); // (shape x -> forward, depth -> -x)
+    for (const sx of [-1, 1]) add(base, cheekGeo, C.g2, sx * sw / 2 + (sx > 0 ? 0.3 : 0), 0, front);
+    bakeColors(base);
+  }
   // The plaza: a pale paved rectangle [w, l, its middle ahead of the statue],
   // a kerb round it, and the red mat for bows in front of the statue.
   const [pw, pl, pc] = l.plaza || [8.6, 10.3, 1.15];
