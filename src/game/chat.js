@@ -516,7 +516,9 @@ export function createChat(game) {
       r.className = 'notice-pin-row';
       const b = document.createElement('b');
       b.textContent = label;
-      r.append(b, document.createTextNode(' ' + body));
+      const s = document.createElement('span');
+      s.textContent = ' ' + body;
+      r.append(b, s);
       return r;
     };
     const rows = pinFolded ? [] : [...list.map((n) => row('📢 ' + L(NOTICE_LABEL), n.body)), row(show.label, show.text), row(sun.label, sun.text)];
@@ -528,6 +530,8 @@ export function createChat(game) {
     if (show.label + show.text + sun.label + sun.text !== showLine) renderPinned();
   }, 15000);
   renderPinned();
+  // Phones held sideways show one line per notice (style.css): a tap reads it all.
+  pinBox.addEventListener('click', (e) => { if (!e.target.closest('.notice-pin-fold')) pinBox.classList.toggle('expanded'); });
   const noticeFeed = new NoticeFeed(({ id, body, at, pinned: pin }) => {
     // A pinned one stays at the top until deleted, so it does not go into the
     // chat log as well (it showed twice there while typing).

@@ -6424,8 +6424,9 @@ onLanguageChange(renderDaily);
 renderDaily();
 $('daily-btn').onclick = () => { renderDaily(); $('daily-panel').hidden = false; };
 $('daily-close').onclick = () => { $('daily-panel').hidden = true; };
-// Once a day, open the check-in card shortly after arriving.
-if (daily.hasNews() && onboard >= 2) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200); // not in a new player's first minute
+// Once a day, open the check-in card shortly after arriving. Not on a phone
+// held sideways: it would cover most of the screen; the 📅 dot shows instead.
+if (daily.hasNews() && onboard >= 2 && !matchMedia('(orientation: landscape) and (max-height: 500px)').matches) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200); // not in a new player's first minute
 $('checkin-btn').onclick = () => {
   const n = daily.checkIn();
   if (n) shop.toast(t('daily.checked', { n }));
