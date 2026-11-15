@@ -15,6 +15,7 @@
 import * as THREE from 'three';
 import { bakeColors } from './merge-static.js';
 import { farFree } from './far-textures.js';
+import { statueFace, FACE } from './statue-face.js';
 
 const mats = {};
 const mat = (c, side = THREE.FrontSide) => (mats[c + side] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true, side }));
@@ -261,23 +262,24 @@ function sejong(g) {
   book.position.set(-0.45, y0 + 2.9, 0.95);
   book.rotation.set(-0.5, 0.25, 0.1);
   g.add(book);
-  // Head: the face, a trimmed beard, the winged crown.
+  // Head: our characters' face in gilt (core/statue-face.js, Yozi
+  // 2026-11-15), a trimmed beard and moustache, the winged crown.
   cyl(g, 0.32, 0.38, 0.35, 0, y0 + 4.92, -0.55, G1, 8);
-  ball(g, 0.7, 0, y0 + 5.55, -0.5, G1, 0.95, 1.08, 0.95, 14, 10);
+  const HW = 1.6, hy = y0 + 5.5, hz = -0.42;
+  statueFace(g, { width: HW, at: [0, hy, hz], colors: { skin: G1, hair: G3, eyes: '#5a4416' } });
+  const my = hy + FACE.mouth * HW, mz = hz + FACE.front * HW;
+  for (const sx of [-1, 1]) box(g, 0.24, 0.06, 0.08, sx * 0.13, my + 0.07, mz - 0.03, G2).rotation.z = sx * 0.3; // moustache
+  taper(g, 0.12, 0.14, 0.42, 0.3, 0.5, 0, my - 0.3, mz - 0.14, G2); // beard
+  const crown = new THREE.Group(); // (made round a head 1.33 m across; ours is 1.6)
+  crown.position.set(0, y0 + 5.5, -0.5);
+  crown.scale.setScalar(1.17);
+  g.add(crown);
+  cyl(crown, 0.74, 0.74, 0.3, 0, 0.53, -0.02, G3, 16); // crown band
+  ball(crown, 0.7, 0, 0.65, 0.05, G2, 1, 0.42, 0.95, 14, 6);
+  cyl(crown, 0.6, 0.68, 0.55, 0, 0.9, -0.28, G3, 14); // the high back part
+  ball(crown, 0.6, 0, 1.17, -0.28, G2, 1, 0.35, 0.85, 14, 6);
   for (const sx of [-1, 1]) {
-    ball(g, 0.16, sx * 0.67, y0 + 5.55, -0.55, G1, 0.5, 1, 0.8, 8, 6); // ears
-    box(g, 0.28, 0.06, 0.08, sx * 0.25, y0 + 5.8, 0.12, G3).rotation.z = sx * 0.06; // brows
-    box(g, 0.16, 0.05, 0.06, sx * 0.24, y0 + 5.68, 0.14, G3); // eyes
-    box(g, 0.26, 0.07, 0.08, sx * 0.14, y0 + 5.33, 0.16, G2).rotation.z = sx * 0.3; // moustache
-  }
-  taper(g, 0.18, 0.2, 0.16, 0.22, 0.3, 0, y0 + 5.52, 0.18, G1); // nose
-  taper(g, 0.14, 0.18, 0.5, 0.34, 0.55, 0, y0 + 5.0, 0.02, G2); // beard
-  cyl(g, 0.74, 0.74, 0.3, 0, y0 + 6.08, -0.52, G3, 16); // crown band
-  ball(g, 0.7, 0, y0 + 6.2, -0.45, G2, 1, 0.42, 0.95, 14, 6);
-  cyl(g, 0.6, 0.68, 0.55, 0, y0 + 6.45, -0.78, G3, 14); // the high back part
-  ball(g, 0.6, 0, y0 + 6.72, -0.78, G2, 1, 0.35, 0.85, 14, 6);
-  for (const sx of [-1, 1]) {
-    const wing = disc(g, 0.33, sx * 0.33, y0 + 7.02, -1.18, G2, 10);
+    const wing = disc(crown, 0.33, sx * 0.33, 1.47, -0.68, G2, 10);
     wing.scale.set(0.85, 1, 1.3); wing.rotation.z = sx * -0.25;
   }
 
@@ -403,24 +405,25 @@ function admiralYi(g) {
   cyl(g, 0.3, 0.3, 0.07, sx, y0 + 3.36, sz, B0, 10); // guard
   cyl(g, 0.08, 0.09, 1.0, sx, y0 + 3.9, sz, B3, 6); // grip
   ball(g, 0.12, sx, y0 + 4.44, sz, B0, 1, 0.8, 1, 8, 5); // pommel
-  // Head: the face with a full beard, the helmet with its brim, neck guard,
-  // spike and tassel.
+  // Head: our characters' face in bronze (core/statue-face.js), a full
+  // beard, the helmet with its brim, neck guard, spike and tassel.
   cyl(g, 0.34, 0.4, 0.4, 0, y0 + 5.35, 0, B2, 8);
-  ball(g, 0.62, 0, y0 + 5.9, 0.02, B1, 0.95, 1.08, 0.95, 14, 10);
-  for (const s of [-1, 1]) {
-    box(g, 0.26, 0.07, 0.08, s * 0.22, y0 + 6.08, 0.58, B3).rotation.z = s * 0.2; // stern brows
-    box(g, 0.14, 0.05, 0.06, s * 0.22, y0 + 5.96, 0.6, B3);
-    box(g, 0.24, 0.07, 0.08, s * 0.13, y0 + 5.68, 0.62, B2).rotation.z = s * 0.35;
-  }
-  taper(g, 0.16, 0.18, 0.14, 0.2, 0.28, 0, y0 + 5.84, 0.64, B1);
-  taper(g, 0.16, 0.2, 0.55, 0.36, 0.6, 0, y0 + 5.32, 0.42, B2); // beard
-  add(g, new THREE.SphereGeometry(0.7, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), B2, 0, y0 + 6.22, 0).scale.set(1, 0.9, 1);
-  cyl(g, 0.86, 0.86, 0.08, 0, y0 + 6.22, 0, B3, 18); // brim
-  taper(g, 1.5, 0.12, 1.3, 0.1, 0.8, 0, y0 + 5.8, -0.62, B2).rotation.x = 0.15; // neck guard
-  for (const s of [-1, 1]) taper(g, 0.1, 0.6, 0.08, 0.5, 0.6, s * 0.68, y0 + 5.88, -0.28, B2).rotation.z = s * 0.12; // ear flaps
-  cyl(g, 0.12, 0.2, 0.25, 0, y0 + 6.95, 0, B0, 8);
-  cyl(g, 0.02, 0.06, 0.6, 0, y0 + 7.35, 0, B3, 6); // spike
-  ball(g, 0.16, 0, y0 + 7.05, -0.12, B1, 1, 1.5, 1, 8, 5); // tassel
+  const HW = 1.45, hy = y0 + 5.85, hz = 0.05;
+  statueFace(g, { width: HW, at: [0, hy, hz], colors: { skin: B1, hair: B3, eyes: '#1f2420' } });
+  const my = hy + FACE.mouth * HW, mz = hz + FACE.front * HW;
+  for (const s of [-1, 1]) box(g, 0.24, 0.07, 0.08, s * 0.13, my + 0.07, mz - 0.03, B2).rotation.z = s * 0.35; // moustache
+  taper(g, 0.14, 0.18, 0.5, 0.34, 0.6, 0, my - 0.34, mz - 0.16, B2); // beard
+  const helmet = new THREE.Group(); // (made round a head 1.18 m across; ours is 1.45)
+  helmet.position.set(0, y0 + 5.9, 0.02);
+  helmet.scale.setScalar(1.14);
+  g.add(helmet);
+  add(helmet, new THREE.SphereGeometry(0.7, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), B2, 0, 0.32, 0).scale.set(1, 0.9, 1);
+  cyl(helmet, 0.86, 0.86, 0.08, 0, 0.32, 0, B3, 18); // brim
+  taper(helmet, 1.5, 0.12, 1.3, 0.1, 0.8, 0, -0.1, -0.72, B2).rotation.x = 0.15; // neck guard
+  for (const s of [-1, 1]) taper(helmet, 0.1, 0.6, 0.08, 0.5, 0.6, s * 0.72, -0.02, -0.28, B2).rotation.z = s * 0.12; // ear flaps
+  cyl(helmet, 0.12, 0.2, 0.25, 0, 1.05, 0, B0, 8);
+  cyl(helmet, 0.02, 0.06, 0.6, 0, 1.45, 0, B3, 6); // spike
+  ball(helmet, 0.16, 0, 1.15, -0.12, B1, 1, 1.5, 1, 8, 5); // tassel
 
   // The turtle ship (거북선) in front: hull, gun ports, a spiked shell roof,
   // oars, the dragon head at the bow and a tail at the stern.

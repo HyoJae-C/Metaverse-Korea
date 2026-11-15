@@ -114,6 +114,9 @@ function load(id) {
   }
   return cache.get(id);
 }
+// The pack model's loaded file, as the characters use it (core/statue-face.js
+// takes its head for the city's statues).
+export const loadPackModel = load;
 
 // Everyday clothes on the adventurer models. Each model's texture is an
 // 8×4 atlas of flat colour cells, and every part of the mesh points at one

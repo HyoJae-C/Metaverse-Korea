@@ -9,6 +9,8 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
+import { statueFace } from './statue-face.js';
+import { heavenlyKing } from './heavenly-kings.js';
 import { JOGYESA as J, canopySlots, canopySpan, canopyPoles, wallRuns, WALL } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
@@ -76,29 +78,6 @@ function gate(g, I) {
   g.add(back);
 }
 
-// A Heavenly King: a big armoured guardian on a plinth, about 2.6 m tall,
-// facing +z, with what he holds (a pagoda, a lute, a sword or a dragon).
-function king(k) {
-  const g = new THREE.Group();
-  box(g, 0.9, 0.3, 0.8, 0, 0.15, 0, C.stoneDark);
-  cyl(g, 0.38, 0.5, 1.2, 0, 0.9, 0, k.color, 8); // robe
-  box(g, 0.9, 0.75, 0.55, 0, 1.85, 0, k.color); // armoured chest
-  box(g, 0.95, 0.12, 0.6, 0, 1.5, 0, C.gold); // belt
-  box(g, 1.25, 0.22, 0.5, 0, 2.2, 0, C.gold); // shoulder guards
-  blob(g, 0.3, 0, 2.55, 0.02, C.skin, 1.05); // head
-  box(g, 0.34, 0.08, 0.04, 0, 2.62, 0.27, '#2a1d17'); // fierce brows
-  cyl(g, 0.2, 0.28, 0.3, 0, 2.9, 0, C.gold, 6); // crown
-  for (const sx of [-1, 1]) box(g, 0.22, 0.75, 0.22, sx * 0.6, 1.75, 0.15, k.color); // arms
-  const hand = [0.6, 1.4, 0.35];
-  if (k.holds === 'pagoda') { box(g, 0.24, 0.24, 0.24, ...hand, C.gold); cyl(g, 0.02, 0.1, 0.25, hand[0], hand[1] + 0.25, hand[2], C.gold, 6); } else if (k.holds === 'lute') box(g, 0.3, 0.8, 0.12, 0, 1.6, 0.42, '#8a5a2b');
-  else if (k.holds === 'sword') box(g, 0.08, 1.2, 0.05, hand[0], 1.95, hand[2], '#c9ced6');
-  else { const d = cyl(g, 0.07, 0.07, 1.1, hand[0], 1.85, hand[2], '#2f8a68', 6); d.rotation.z = 0.5; blob(g, 0.13, 0.9, 2.35, hand[2], '#d4a73a'); }
-  g.scale.setScalar(J.kingScale || 1);
-  g.position.set(k.x, 0.35, k.z);
-  g.rotation.y = k.ry;
-  return g;
-}
-
 // The pagoda tree (회화나무): a thick old trunk that splits into big limbs,
 // and a wide, loose crown that rises up through the canopy.
 function pagodaTree(T) {
@@ -153,8 +132,8 @@ function babyBuddha(T) {
   cyl(g, 0.7, 0.8, 0.6, 0, 0.3, 0, C.stone, 8);
   cyl(g, 0.55, 0.35, 0.25, 0, 0.72, 0, '#e98aa6', 8); // lotus
   cyl(g, 0.16, 0.22, 0.6, 0, 1.15, 0, C.gold, 8);
-  blob(g, 0.17, 0, 1.6, 0, C.gold, 1);
-  box(g, 0.06, 0.4, 0.06, 0.12, 1.65, 0.02, C.gold); // one hand pointing to the sky
+  statueFace(g, { width: 0.36, at: [0, 1.6, 0.02], colors: { skin: C.gold, hair: '#9a7424', eyes: '#6e5218' } }); // our characters' face, in gilt
+  box(g, 0.06, 0.42, 0.06, 0.2, 1.68, 0.02, C.gold).rotation.z = -0.12; // one hand pointing to the sky
   g.position.set(T.x, 0, T.z);
   return g;
 }
@@ -241,7 +220,7 @@ export function buildJogyesa(g) {
   hall(gg, { ...G, w: G.d, d: G.w }, '極樂殿');
   const I = J.iljumun;
   gate(at(new THREE.Group(), I.x, I.z, Math.PI / 2), I); // road side (+z) to the east
-  for (const k of J.kings) sub(king, k);
+  for (const k of J.kings) sub(heavenlyKing, k, J.kingScale);
   sub(pagodaTree, J.pagodaTree);
   sub(whitePine, J.whitePine);
   sub(sarira, J.sarira);

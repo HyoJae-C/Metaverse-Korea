@@ -19,6 +19,8 @@ import { curvedRoof } from './hanok.js';
 import { PALACE_BUILD } from './palace-model.js';
 import { farFree } from './far-textures.js';
 import { glowAtNight } from './weather.js';
+import { statueFace } from './statue-face.js';
+import { gateKings } from './heavenly-kings.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -239,6 +241,9 @@ function iljumun(g, [x, z, ry], k = 1) {
   p.rotation.y = ry;
   g.add(p);
 }
+// Our characters' face in white granite (the Maitreya Buddha, Gwaneum).
+const GRANITE_FACE = { skin: '#efeee9', hair: '#aaa59a', eyes: '#77726a' };
+
 // Haesu Gwaneum (해수관음상): a white standing Bodhisattva holding a vase,
 // on a rock in her pond (the water is the map's; here the rim, rock, figure).
 function gwaneum(g, [x, z], k = 1) {
@@ -250,8 +255,8 @@ function gwaneum(g, [x, z], k = 1) {
   cyl(p, 0.42, 0.48, 0.18, 0, 0.6, 0, C.g1, 10); // the lotus seat
   const body = add(p, new THREE.LatheGeometry([[0, 0], [0.3, 0], [0.32, 0.15], [0.26, 0.7], [0.27, 1.0], [0.3, 1.15], [0.12, 1.22], [0, 1.23]].map(([r, y]) => new THREE.Vector2(r, y)), 10), C.g0, 0, 0.69, 0);
   body.scale.z = 0.75;
-  ball(p, 0.15, 0, 2.02, 0, C.g0, 0.95, 1.1, 0.95, 8, 6);
-  cyl(p, 0.1, 0.13, 0.16, 0, 2.2, 0, C.g1, 8); // the crown
+  statueFace(p, { width: 0.34, at: [0, 2.0, 0.02], colors: GRANITE_FACE }); // our characters' face (core/statue-face.js)
+  cyl(p, 0.11, 0.15, 0.16, 0, 2.21, -0.01, C.g1, 8); // the crown
   limb(p, [0.27, 1.75, 0], [0.32, 1.42, 0.16], 0.07, 0.06, C.g0, 6);
   limb(p, [0.32, 1.42, 0.16], [0.2, 1.55, 0.3], 0.06, 0.05, C.g0, 6);
   ball(p, 0.07, 0.2, 1.62, 0.32, C.g1, 1, 1.5, 1, 8, 6); // the vase
@@ -299,6 +304,10 @@ export function buildTemple(g, l) {
   const own = new THREE.Group();
   g.add(own);
   if (l.nu) beopwangru(own, l.nu);
+  // The Four Heavenly Kings in Jinyeomun's side bays (palacehalls draws the
+  // gate; its side bays are walled off for walking, scripts/bongeunsa-layout.mjs).
+  const jinyeomun = (l.halls || []).find((h) => h[5] === 'g');
+  if (jinyeomun) own.add(gateKings(jinyeomun, { scale: 0.9, y: 0.55, bay: jinyeomun[2] * 0.375 }));
   const k = l.k || 1; // (the whole temple at 37.5%: these 1/4 models grow with it)
   if (l.iljumun) iljumun(own, l.iljumun, 1 + (k - 1) * 0.7);
   if (l.gwaneum) gwaneum(own, l.gwaneum, k);
@@ -385,21 +394,17 @@ function buddha(g) {
   limb(g, [1.0, y0 + 4.75, 0], [1.08, y0 + 3.55, 0.12], 0.26, 0.22, C.g0);
   limb(g, [1.08, y0 + 3.55, 0.12], [0.96, y0 + 2.75, 0.4], 0.2, 0.15, C.g0);
   box(g, 0.26, 0.42, 0.14, 0.94, y0 + 2.52, 0.46, C.g0);
-  // Neck, head, ears, the curls and the ushnisha (육계), the face.
+  // Neck, our characters' face (core/statue-face.js) with the long ears,
+  // the curls and the ushnisha (육계), the jewel and the urna.
   cyl(g, 0.3, 0.34, 0.34, 0, y0 + 5.38, 0, C.g0, 10);
   for (const yy of [5.33, 5.43]) { const t = add(g, new THREE.TorusGeometry(0.31, 0.02, 4, 12), C.g2, 0, y0 + yy, 0); t.rotation.x = Math.PI / 2; }
-  ball(g, 0.58, 0, y0 + 5.98, 0, C.g0, 0.92, 1.1, 0.96, 12, 9);
-  ball(g, 0.6, 0, y0 + 6.14, -0.06, C.g2, 0.95, 0.82, 0.95, 12, 8); // the curls
-  ball(g, 0.3, 0, y0 + 6.68, -0.04, C.g2, 1, 0.9, 1, 10, 7);
-  ball(g, 0.07, 0, y0 + 6.33, 0.5, C.g1, 1, 1, 0.6, 6, 5); // the jewel at the parting
-  for (const sx of [-1, 1]) {
-    box(g, 0.12, 0.62, 0.24, sx * 0.55, y0 + 5.85, -0.02, C.g0); // the long ears
-    box(g, 0.2, 0.035, 0.05, sx * 0.19, y0 + 6.12, 0.5, C.g3); // brows
-    box(g, 0.16, 0.025, 0.04, sx * 0.19, y0 + 6.01, 0.52, C.g4); // half-closed eyes
-  }
-  ball(g, 0.035, 0, y0 + 6.22, 0.54, C.g3, 1, 1, 0.5, 6, 4); // the urna
-  box(g, 0.1, 0.24, 0.12, 0, y0 + 5.88, 0.53, C.g1); // nose
-  box(g, 0.16, 0.025, 0.04, 0, y0 + 5.7, 0.5, C.g3); // mouth
+  statueFace(g, { width: 1.35, at: [0, y0 + 5.95, 0.02], colors: GRANITE_FACE });
+  const curls = ball(g, 0.72, 0, y0 + 6.12, -0.1, C.g2, 0.98, 0.78, 0.98, 12, 8); // the curls
+  curls.rotation.x = -0.35;
+  ball(g, 0.3, 0, y0 + 6.75, -0.08, C.g2, 1, 0.9, 1, 10, 7);
+  ball(g, 0.07, 0, y0 + 6.36, 0.56, C.g1, 1, 1, 0.6, 6, 5); // the jewel at the parting
+  for (const sx of [-1, 1]) box(g, 0.12, 0.62, 0.24, sx * 0.7, y0 + 5.8, -0.02, C.g0); // the long ears
+  ball(g, 0.035, 0, y0 + 6.04, 0.66, C.g3, 1, 1, 0.5, 6, 4); // the urna
   // The square canopy (보개) on a short post over the head, bells at its corners.
   const yc = y0 + 7.02;
   cyl(g, 0.1, 0.12, 0.22, 0, y0 + 6.92, 0, C.g1, 8);
