@@ -18,11 +18,12 @@ export function towerLift(pitch, dist) {
   return Math.max(0, TOWER_LOOK.from - pitch) * dist * TOWER_LOOK.gain;
 }
 
-export function createTowerLook(at) {
+// also(p): another place that looks up (game/buddha-view.js), its lowest pitch or null.
+export function createTowerLook(at, also = () => null) {
   return {
     min(p) {
       const t = at();
-      return t && Math.hypot(p.x - t.x, p.z - t.z) < TOWER_LOOK.range ? TOWER_LOOK.minPitch : null;
+      return t && Math.hypot(p.x - t.x, p.z - t.z) < TOWER_LOOK.range ? TOWER_LOOK.minPitch : also(p);
     },
     lift: towerLift,
     tick(cam, p, dt) {

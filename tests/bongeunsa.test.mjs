@@ -110,14 +110,23 @@ test('the Maitreya Buddha stands up on a terrace, reached by its stairs (Yozi 20
   const at = (u, v) => [Math.cos(buddha.ry) * u + Math.sin(buddha.ry) * v, -Math.sin(buddha.ry) * u + Math.cos(buddha.ry) * v]; // (plaza frame -> landmark offset)
   assert.equal(terraceHeight(buddha, ...at(0, 2)), TERRACE.h, 'the plaza in front of the statue');
   assert.equal(terraceHeight(buddha, ...at(pw / 2 - 0.2, front - 0.2)), TERRACE.h, 'its corner');
-  const mid = terraceHeight(buddha, ...at(0, front + run / 2));
-  assert.ok(Math.abs(mid - TERRACE.h / 2) < 0.01, `half way down the stairs (${mid})`);
-  assert.equal(terraceHeight(buddha, ...at(0, front + run + 0.3)), 0, 'the foot of the stairs');
+  // Then (Yozi): wide, low stairs across the whole front, a gentle slope up to them.
+  const [len, rise] = buddha.ramp;
+  assert.ok(sw >= pw - 0.01, 'the stairs as wide as the plaza');
+  assert.ok((TERRACE.h - rise) / run < 0.4, 'low steps (under 0.4 m up per metre)');
+  assert.ok(rise / len < 0.13 && rise > 0, 'the slope is gentle');
+  const mid = terraceHeight(buddha, ...at(pw / 2 - 0.3, front + run / 2));
+  assert.ok(Math.abs(mid - (TERRACE.h + rise) / 2) < 0.01, `half way down the stairs, at the side too (${mid})`);
+  const slope = terraceHeight(buddha, ...at(0, front + run + len / 2));
+  assert.ok(Math.abs(slope - rise / 2) < 0.01, `half way up the slope (${slope})`);
+  assert.equal(terraceHeight(buddha, ...at(0, front + run + len + 0.3)), 0, 'the foot of the slope');
   assert.equal(terraceHeight(buddha, ...at(pw / 2 + 0.6, 0)), 0, 'beside the terrace');
+  // The niche wall reaches the plaza's back and sides (Yozi).
+  const xs = buddha.wall.map((q) => q[0]), zs = buddha.wall.map((q) => q[1]), statue = pl / 2 - pc;
+  assert.ok(Math.max(...xs) > pw / 2 - 0.7 && Math.min(...zs) < -statue + 0.7, 'the niche wall out to the edges');
   // You can't step up its side: the edge is walled off, except the stairs.
   const blocked = (u, v) => { const [dx, dz] = at(u, v); return map.blockers.some((b) => inPolygon(buddha.x + dx, buddha.z + dz, b.p)); };
   assert.ok(blocked(pw / 2 + 0.2, 0) && blocked(-pw / 2 - 0.2, 0), 'the sides');
-  assert.ok(blocked(sw / 2 + 0.6, front + 0.2), 'the front beside the stairs');
   assert.ok(blocked(sw / 2 + 0.2, front + run / 2), 'the stairs\' side');
   assert.ok(!blocked(0, front + 0.2) && !blocked(0, front + run / 2), 'the stairs are open');
 });
