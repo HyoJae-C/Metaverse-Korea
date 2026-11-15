@@ -5,7 +5,7 @@
 // download; the panel, the rules and the painter load when first needed.
 import { t } from '../core/i18n.js';
 import { lazyPanel } from '../core/lazy-panel.js';
-import { JOGYESA as J } from '../data/jogyesa.js';
+import { JOGYESA as J, inCanopy } from '../data/jogyesa.js';
 
 const PRICE = 5000; // (shown on the button; the panel asks the server for the real one)
 const PAINT_NEAR = 70; // m from the yard's middle: the hung lanterns are drawn
@@ -18,7 +18,7 @@ export function createTempleLanterns(game) {
   const ok = !!game.off;
   const c = J.canopy;
   const local = (p) => [p.x - game.off[0], p.z - game.off[1]];
-  const underCanopy = (p) => { if (!ok) return false; const [x, z] = local(p); return x > c.x0 - 0.5 && x < c.x1 + 0.5 && z > c.z0 - 1.5 && z < c.z1 + 1; };
+  const underCanopy = (p) => { if (!ok) return false; const [x, z] = local(p); return inCanopy(x, z, c, -1); };
   const near = (p) => { if (!ok) return false; const [x, z] = local(p); return Math.hypot(x - (c.x0 + c.x1) / 2, z - (c.z0 + c.z1) / 2) < PAINT_NEAR; };
 
   // The backend (both kinds load with the panel): in Supabase when signed in.

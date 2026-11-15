@@ -48,7 +48,7 @@ function officialHat() {
 }
 const KEEPER = {
   official: { look: { model: 'basic', tee: null, hair: 'black', dye: 'black', pants: 'charcoal' }, body: () => robe('#9a3a2c', '#2b2f5a'), head: officialHat },
-  monk: { look: { model: 'basic', tee: null, hairStyle: 'buzz', dye: 'ash', pants: 'charcoal' }, body: () => { const g = robe('#8d8f8a', '#6b6d68'); g.add(sash()); return g; }, head: null },
+  monk: { look: { model: 'basic', tee: null, hairStyle: 'shaved', dye: 'ash', pants: 'charcoal' }, body: () => { const g = robe('#8d8f8a', '#6b6d68'); g.add(sash()); return g; }, head: null },
 };
 
 export class BosingakShow {

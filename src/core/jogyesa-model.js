@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
-import { JOGYESA as J, canopySlots } from '../data/jogyesa.js';
+import { JOGYESA as J, canopySlots, canopySpan } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -182,11 +182,14 @@ function canopy(g, ox, oz) {
     tag.setMatrixAt(i, m4);
     lant.setColorAt(i, col.set(CANOPY_COLORS[row % CANOPY_COLORS.length]));
   });
-  // The lines the lanterns hang from (one per row) and the poles holding them up.
-  const rows = Math.round((c.z1 - c.z0) / c.gap) + 1;
-  for (let r = 0; r < rows; r++) box(g, c.x1 - c.x0 + 1, 0.03, 0.03, (c.x0 + c.x1) / 2 - ox, c.y, c.z0 + r * c.gap - oz, C.rope);
-  for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, c.x1 - c.x0 + 1, 0.05, 0.05, (c.x0 + c.x1) / 2 - ox, c.y + 0.05, z - oz, C.rope);
-  for (let x = c.x0; x <= c.x1 + 0.1; x += (c.x1 - c.x0) / 4) for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
+  // The lines the lanterns hang from (one per row, across the part it is
+  // in) and the poles holding them up round the edge (on the north edge the
+  // lines tie to the halls' eaves).
+  for (let z = c.z0 + c.gap / 2; z < c.z1; z += c.gap) {
+    const span = canopySpan(z, c);
+    if (span) box(g, span[1] - span[0] + 0.4, 0.03, 0.03, (span[0] + span[1]) / 2 - ox, c.y, z - oz, C.rope);
+  }
+  for (const [x, z] of c.poles) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
   mergeStatic(g); // the lines and poles (before the lanterns go in: it would bake instanced meshes too)
   for (const m of [lant, tag]) { m.userData.noShadow = true; g.add(m); }
   lant.name = 'jogyesa-canopy'; // (game/lantern-parade.js lights it up row by row)

@@ -218,7 +218,7 @@ function beopwangru(g, [x, z, w, d, ry]) {
   g.add(p);
 }
 // Iljumun (일주문): the one-pillar gate, two posts in a line under a gable roof.
-function iljumun(g, [x, z, ry]) {
+function iljumun(g, [x, z, ry], k = 1) {
   const p = new THREE.Group(), H = 2.6, s = 1.35;
   for (const sx of [-1, 1]) {
     box(p, 0.55, 0.35, 0.55, sx * s, 0.175, 0, C.stone);
@@ -234,13 +234,14 @@ function iljumun(g, [x, z, ry]) {
     if (zz < 0) sign.rotation.y = Math.PI;
     p.add(sign);
   }
+  p.scale.setScalar(k);
   p.position.set(x, 0, z);
   p.rotation.y = ry;
   g.add(p);
 }
 // Haesu Gwaneum (해수관음상): a white standing Bodhisattva holding a vase,
 // on a rock in her pond (the water is the map's; here the rim, rock, figure).
-function gwaneum(g, [x, z]) {
+function gwaneum(g, [x, z], k = 1) {
   const p = new THREE.Group();
   const rim = add(p, new THREE.TorusGeometry(1.75, 0.12, 4, 18), C.g2, 0, 0.08, 0);
   rim.rotation.x = Math.PI / 2;
@@ -255,6 +256,7 @@ function gwaneum(g, [x, z]) {
   limb(p, [0.32, 1.42, 0.16], [0.2, 1.55, 0.3], 0.06, 0.05, C.g0, 6);
   ball(p, 0.07, 0.2, 1.62, 0.32, C.g1, 1, 1.5, 1, 8, 6); // the vase
   limb(p, [-0.27, 1.75, 0], [-0.3, 1.25, 0.08], 0.07, 0.06, C.g0, 6);
+  p.scale.setScalar(k);
   p.position.set(x, 0, z);
   g.add(p);
 }
@@ -275,6 +277,21 @@ function hill(g, x, z, r, h) {
   }
 }
 
+// The temple wall (담장): runs [x0, z0, x1, z1] of a granite base, a
+// plastered wall and a dark tiled top with a ridge.
+function templeWall(g, runs, h = 1.5) {
+  for (const [x0, z0, x1, z1] of runs) {
+    const len = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group();
+    box(p, len + 0.1, 0.4, 0.55, 0, 0.2, 0, C.g3);
+    box(p, len, h - 0.65, 0.42, 0, 0.4 + (h - 0.65) / 2, 0, C.wall);
+    box(p, len + 0.2, 0.14, 0.8, 0, h - 0.18, 0, '#4a4e55');
+    box(p, len + 0.2, 0.12, 0.36, 0, h - 0.06, 0, '#3c4046');
+    p.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+    p.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(p);
+  }
+}
+
 export function buildTemple(g, l) {
   const halls = new THREE.Group();
   g.add(halls);
@@ -282,10 +299,11 @@ export function buildTemple(g, l) {
   const own = new THREE.Group();
   g.add(own);
   if (l.nu) beopwangru(own, l.nu);
-  if (l.iljumun) iljumun(own, l.iljumun);
-  if (l.gwaneum) gwaneum(own, l.gwaneum);
-  if (l.pagoda) stonePagoda(own, ...l.pagoda);
-  if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2]);
+  const k = l.k || 1; // (the whole temple at 37.5%: these 1/4 models grow with it)
+  if (l.iljumun) iljumun(own, l.iljumun, 1 + (k - 1) * 0.7);
+  if (l.gwaneum) gwaneum(own, l.gwaneum, k);
+  if (l.pagoda) stonePagoda(own, l.pagoda[0], l.pagoda[1], k);
+  if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2], 2.8 * k);
   const lamps = [];
   if (l.canopy) {
     const [x, z, w, d, ry] = l.canopy, c = new THREE.Group();
@@ -296,6 +314,7 @@ export function buildTemple(g, l) {
   }
   if (l.lane) lamps.push(lanternLane(own, l.lane[0], l.lane[1]));
   for (const h of l.hills || []) hill(own, ...h);
+  if (l.wall) templeWall(own, l.wall, l.wallH);
   bakeColors(own, lamps);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
 }

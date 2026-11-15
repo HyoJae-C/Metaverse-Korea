@@ -255,6 +255,7 @@ import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { createTandemRentalNear } from './game/tandem-rental-near.js';
 import { createLanternParadeNear } from './game/lantern-parade-near.js';
 import { createTempleLanterns } from './game/temple-lanterns-near.js';
+import { createTempleMonksNear } from './game/temple-monks-near.js';
 import { sunsetNote } from './game/sunset-spot.js';
 import { createSeatFit } from './game/seat-fit.js';
 import { askMyServerName } from './game/my-server-name.js';
@@ -4986,6 +4987,7 @@ const loveLockUi = lazyPanel(() => import('./ui/love-lock-ui.js').then(({ LoveLo
   onHung: () => { refreshWallet(); me.play('cheer'); },
 })), { busy: false });
 // My lantern on Jogyesa's canopy (game/temple-lanterns-near.js).
+const templeMonks = createTempleMonksNear({ scene, offsets: Object.fromEntries((region.districts || []).map((d) => [d.id, d.offset])) }); // monks at Jogyesa and Bongeunsa
 const templeLanterns = createTempleLanterns({
   scene, off: palaceAt, labels: $('labels'), root: $('temple-panel'), cloud, wallet, name: () => nickname, toast: (m) => shop.toast(m),
   onHung: () => { refreshWallet(); me.play('clap'); },
@@ -7395,7 +7397,7 @@ renderer.setAnimationLoop((now) => {
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
