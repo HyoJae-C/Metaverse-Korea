@@ -32,6 +32,12 @@ const NOTICE_TEXT = {
   failed: { en: 'Could not send the notice', ko: '공지를 보내지 못했어요', ja: 'お知らせを送れませんでした', zh: '公告发送失败' },
 };
 
+// The silent dharma halls' only word.
+export const SILENT = '🙏';
+const SILENT_TEXT = {
+  placeholder: { en: 'A silent hall: only 🙏 is sent', ko: '침묵의 법당: 🙏만 보낼 수 있어요', ja: '沈黙のお堂：🙏だけ送れます', zh: '静默的法堂：只能发送🙏', es: 'Sala en silencio: solo se envía 🙏', id: 'Aula hening: hanya 🙏 yang terkirim', vi: 'Điện tĩnh lặng: chỉ gửi được 🙏', hi: 'मौन कक्ष: केवल 🙏 भेजा जाता है', fr: 'Salle du silence : seul 🙏 est envoyé', th: 'ห้องแห่งความเงียบ: ส่งได้แค่ 🙏', ar: 'قاعة صامتة: يُرسل 🙏 فقط' },
+};
+
 export function createChat(game) {
   const { $, OPERATOR_TEXT, cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet,
     safety, setLook } = game;
@@ -133,6 +139,7 @@ export function createChat(game) {
     input.keys.clear();
     chatInput.focus();
     if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
+    if (game.silent) { chatInput.placeholder = L(SILENT_TEXT.placeholder); $('chat-to').hidden = true; return; } // the silent dharma hall: 🙏 only
     renderChatTo(); // (back from the confession room: the picker and its words)
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
@@ -167,6 +174,19 @@ export function createChat(game) {
       const text = cleanChat(chatInput.value);
       chatInput.value = '';
       if (text) { showBubble(myLabel, $('labels'), text, 6000, 'chat'); booth.hear(text); }
+      if (input.isTouch) closeChat();
+      return;
+    }
+    // The temples' silent dharma halls (Yozi 2026-11-15): nothing but 🙏,
+    // whatever you type, to the people in the room.
+    if (game.silent) {
+      chatInput.value = '';
+      const now = performance.now() / 1000;
+      if (now - lastChatAt < config.chatCooldown) return;
+      lastChatAt = now;
+      showBubble(myLabel, $('labels'), SILENT, 4000, 'chat');
+      addChatLine(game.nickname, SILENT, 'mine');
+      game.net.sendChat?.(SILENT);
       if (input.isTouch) closeChat();
       return;
     }
