@@ -32,6 +32,8 @@ import { benchSeats, sculptureNear, hillY, ICECREAM, ICECREAM_TEXT } from './cor
 import { yardY } from './core/cathedral-yard-ground.js';
 import { terraceY } from './core/temple-terrace.js';
 import { createBuddhaView } from './game/buddha-view.js';
+import { createPrayer } from './game/prayer.js';
+import { createMoktak } from './game/moktak.js';
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
 import { buildStreams, streetBlockers as streamStreetBlockers, lowBlockers as streamLowBlockers, holesOf as streamHoles, streamAt, edgeSeats, streamUV } from './core/stream.js';
@@ -1696,7 +1698,7 @@ async function joinRoom(room, roomScene, area = null) {
     // (a stranger on the street): their line goes in the chat log only.
     onChat: (id, raw, serverName, saidName) => {
       if (!config.chatEnabled || safety.isBlocked(id, others.nameOf(id))) return;
-      const text = filterText(cleanChat(raw));
+      const text = inDharmaHall() ? '🙏' : filterText(cleanChat(raw)); // (the silent hall: whatever was sent, only 🙏 shows)
       if (!text) return;
       if (others.nameOf(id) == null) {
         const who = filterText(cleanName(serverName || saidName || '').trim());
@@ -1899,6 +1901,7 @@ const chat = createChat({
   cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
+  get silent() { return inDharmaHall(); }, // (a temple's silent dharma hall: 🙏 only)
   // In the cathedral's confession room, what you type goes to the priest only.
   get confession() { return mode === 'store' && interior?.confession ? { hear: (s) => interior.confession.hear(s), placeholder: L(roomKit().CONFESSION_TEXT.placeholder) } : null; },
   get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
@@ -1914,6 +1917,8 @@ let activeCollision = collision;
 let interior = null; // { store, scene, products, collision, front }
 // In the library chat shows in grey, like a whisper.
 const inLibrary = () => interior?.store.category === 'library';
+// In a temple's silent dharma hall nothing but 🙏 is said (game/chat.js).
+const inDharmaHall = () => mode === 'store' && interior?.store.workshop === 'dharmahall';
 let action = null; // what the action button does right now
 // Assign to `action` to force the button to refresh on the next frame
 // (null would compare equal to "no action" and leave a stale button showing).
@@ -4924,6 +4929,7 @@ let dancing = false;
 let debugPose = null;
 function currentActivity() {
   if (debugPose) return debugPose; // (?debug: __mk.forcePose)
+  if (prayer.pose) return prayer.pose; // praying at an altar (game/prayer.js)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
@@ -5137,6 +5143,8 @@ function palaceAct(p) {
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
 let anotherTower;
+const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { return interior; }, landmarks: map.landmarks, bubble: (text) => showBubble(myLabel, $('labels'), text, 2500) }); // (game/prayer.js: at the temples' altars and the cathedral's)
+const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
 const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min); // (game/tower-look.js: tilt up to Modu Tower's top)
 let fanNoted = false, pungmulNoted = false;
@@ -6564,7 +6572,7 @@ function moreActions(p, door) {
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     if (!seated) out.push(...nightCarts.actions(p)); // a night food cart's counter
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
-    if (bs?.mat) out.push(matSitAct(bs));
+    if (bs?.mat && !bs.cushion) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
     const fb = frisbee.action(p); if (fb) out.push(fb);
     if (!seated) out.push(...snowman.more(p)); // put a snowball on a bigger one: a snowman
@@ -6584,7 +6592,7 @@ function moreActions(p, door) {
   for (const pet of (interior.pets?.list || []).filter((q) => Math.hypot(p.x - q.root.position.x, p.z - q.root.position.z) < 1.6 + interior.pets.radius)) { out.push(petAct(pet, p)); if (pet.adopt && !inventory.has(pet.adopt)) out.push(adoptAct(pet)); }
   const seat = nearestSeat(p);
   if (seat) out.push(sitAct(seat));
-  if (seat?.mat) out.push(matSitAct(seat));
+  if (seat?.mat && !seat.cushion) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
   const fb = frisbee.action(p); if (fb) out.push(fb);
   if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
@@ -6606,7 +6614,9 @@ const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(A
     desc: { en: fmt(ADOPT_TEXT.desc.en, { desc: pet.desc?.en || '' }), ko: fmt(ADOPT_TEXT.desc.ko, { desc: pet.desc?.ko || pet.desc?.en || '' }), ja: fmt(ADOPT_TEXT.desc.ja, { desc: pet.desc?.en || '' }), zh: fmt(ADOPT_TEXT.desc.zh, { desc: pet.desc?.en || '' }) } });
 } });
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
-const sitAct = (seat) => (seat.mat
+const sitAct = (seat) => (seat.cushion // a dharma hall's cushion: sit on the floor facing the Buddhas (core/dharma-hall.js)
+  ? { key: 'sit', label: '🪷 ' + t('shop.sit'), run: () => sitDown({ ...seat, lie: false }) }
+  : seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
   : { key: 'sit', label: (seat.edge ? '🌊 ' : '🪑 ') + t('shop.sit'), run: () => sitDown(seat) }); // 🌊 the edge of a stream
 // On a picnic mat you can also sit up, facing the foot of the mat.
@@ -6640,6 +6650,7 @@ function updateAction(p, tSec) {
     else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
+    else if (!riding && !seated && prayer.act(p)) next = prayer.act(p); // in front of a temple's Buddha (game/prayer.js)
     else if (!riding && stampStands.nearest(p.x, p.z)) next = stampAct(stampStands.nearest(p.x, p.z));
     else if (!riding && bukchonAct(p)) next = bukchonAct(p);
     else if (!riding && jongmyoAct(p)) next = jongmyoAct(p);
@@ -6704,6 +6715,8 @@ function updateAction(p, tSec) {
       if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { if (putDown()) closePiece(); } };
       else if (it) next = { key: 'piece:' + decorGame.decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
       else if (!decorGame.decor.picked) closePiece();
+    } else if (!seated && prayer.act(p)) { // at the cathedral's altar rail (game/prayer.js)
+      next = prayer.act(p);
     } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
@@ -7139,6 +7152,8 @@ renderer.setAnimationLoop((now) => {
     const lifting = me.activityName === 'bench' || [...others.players.values()].some((q) => !q.hidden && q.target?.ac === 'bench');
     for (const m of interior.stations.benchBar) m.visible = !lifting;
   }
+  prayer.tick(p, mag);
+  moktak.tick(p, dt, mode === 'street', inDharmaHall());
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
   fishRig.update(dt, me);

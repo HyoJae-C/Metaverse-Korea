@@ -14,6 +14,7 @@ export function createEmoteWheel(game) {
   const here = (em) => emoteIn(game.room?.(), em);
   function sendEmote(slot) {
     const em = here(slot);
+    if (!em) return; // (hidden in this room)
     missionEvent('emote');
     if (game.onSquare()) missionEvent('squareEmote');
     if (em.anim) game.me.play(em.anim);
@@ -39,7 +40,7 @@ export function createEmoteWheel(game) {
   });
   let wheelOpen = false, dragHot = null, dragStart = null;
   function openWheel() {
-    petals.forEach((b, i) => { const em = here(emoteList[i]); b.textContent = em.emoji; b.setAttribute('aria-label', em.id); });
+    petals.forEach((b, i) => { const em = here(emoteList[i]); b.hidden = !em; if (em) { b.textContent = em.emoji; b.setAttribute('aria-label', em.id); } });
     wheelOpen = true; emoteBar.hidden = false; $('emote-wheel').classList.add('open');
   }
   function closeWheel() {

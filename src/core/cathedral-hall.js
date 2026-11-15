@@ -446,7 +446,7 @@ export function buildCathedralHall(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: EXIT,
-    stations: { patrons, mass: { ...L }, confessional: [{ x: kf - 0.75, z: K.z }] },
+    stations: { patrons, mass: { ...L }, confessional: [{ x: kf - 0.75, z: K.z }], pray: [{ x: 0, z: L.rail + 0.9, r: 2.4, face: Math.PI, pose: 'prayc' }] }, // (pray: at the altar rail, game/prayer.js)
     animate,
     // The camera stays inside the walls (and in front of the organ pipes).
     camBlocked: (x, z) => Math.abs(x) > AW - 0.3 || z > F - 0.8 || z < -d / 2 + 0.4,

@@ -17,7 +17,25 @@ const mir = ([x, y, z]) => [x, -y, -z];
 const arms = (l) => ({ armL: l, armR: mir(l) });
 const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
 
+// A slow 0..1..0 that holds at the top: a bow every `every` s (down 1 s,
+// held `hold` s, up 1 s, eased).
+const bowing = (t, every = 6, hold = 1.2) => {
+  const k = t % every, e = (x) => x * x * (3 - 2 * x);
+  return k < 1 ? e(k) : k < 1 + hold ? 1 : k < 2 + hold ? e(2 + hold - k) : 0;
+};
+
 export const STUDIO_MOVES = {
+  // Praying (game/prayer.js): at a temple (합장, palms together at the chest,
+  // and a deep bow every few seconds) and in the cathedral (hands folded,
+  // head bowed).
+  pray(t) {
+    const b = bowing(t);
+    return { spine: [0.05 + 0.85 * b, 0, 0], head: [0.15 + 0.25 * b, 0, 0], ...arms([0, 0, -1.3]) };
+  },
+  prayc(t) {
+    const b = breath(t);
+    return { spine: [0.08 + 0.02 * b, 0, 0], head: [0.5, 0, 0], ...arms([0, 0, -1.3]) };
+  },
   // Standing tall, both arms up, rising a little with each breath.
   ymountain(t) {
     const b = breath(t);
