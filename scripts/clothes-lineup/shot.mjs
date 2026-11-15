@@ -4,7 +4,7 @@
 import { chromium } from 'playwright';
 const [,, q, out] = process.argv;
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-const p = await b.newPage({ viewport: { width: 1800, height: 520 }, deviceScaleFactor: 2 });
+const p = await b.newPage({ viewport: { width: 4000, height: 1200 }, deviceScaleFactor: 2 });
 p.on('pageerror', (e) => console.log('ERR', e.message));
 await p.goto('http://localhost:5199/scripts/clothes-lineup/lineup.html?' + q);
 await p.waitForTimeout(9000);
