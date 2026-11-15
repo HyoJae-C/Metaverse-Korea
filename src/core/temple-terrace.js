@@ -20,13 +20,54 @@ export function terraceHeight(l, dx, dz) {
   return 0;
 }
 
+// Bongeunsa's Jinyeomun (the 'g' hall of a "bongeunsa" landmark with
+// gateMid) stands on a stone base as palacehalls draws it (core/palace-model.js):
+// B high, w + 0.7 × d + 0.7. Its middle bay is gateMid wide between the posts;
+// steps go up to the base in front and behind (Yozi 2026-11-15: people sank
+// into the base and juddered going through), drawn as a smooth slope.
+export function gateStep([, , w, d], mid) {
+  const B = Math.min(0.6, 0.25 + Math.min(w, d) * 0.05), n = Math.max(2, Math.ceil(B / 0.2));
+  return { B, n, tread: 0.4, run: n * 0.4, bw: (w + 0.7) / 2, bd: (d + 0.7) / 2, sw: mid - 0.4 };
+}
+// The ground's height at (dx, dz) from the gate's middle, in the landmark's frame.
+export function gateHeight(h, mid, dx, dz) {
+  const c = Math.cos(h[4]), s = Math.sin(h[4]);
+  const u = dx * c - dz * s, v = Math.abs(dx * s + dz * c);
+  const { B, run, bw, bd, sw } = gateStep(h, mid);
+  if (Math.abs(u) <= bw && v <= bd) return B;
+  if (Math.abs(u) <= sw / 2 && v < bd + run) return B * (1 - (v - bd) / run);
+  return 0;
+}
+
 const lists = new WeakMap();
-// World (x, z) -> the ground's height on a raised temple plaza in the list.
-export function terraceY(list = [], x, z) {
+const raised = (list) => {
   let ts = lists.get(list);
-  if (!ts) lists.set(list, (ts = list.filter((l) => l.type === 'maitreya' && l.lift)));
-  for (const l of ts) {
+  if (!ts) {
+    ts = [];
+    for (const l of list) {
+      if (l.type === 'maitreya' && l.lift) ts.push(l);
+      if (l.type === 'bongeunsa' && l.gateMid) {
+        const h = (l.halls || []).find((q) => q[5] === 'g');
+        if (!h) continue;
+        const c = Math.cos(l.ry || 0), s = Math.sin(l.ry || 0); // (the landmark's group turned l.ry)
+        ts.push({ gate: h, mid: l.gateMid, ry: l.ry || 0, x: l.x + h[0] * c + h[1] * s, z: l.z - h[0] * s + h[1] * c });
+      }
+    }
+    lists.set(list, ts);
+  }
+  return ts;
+};
+// World (x, z) -> the ground's height on a raised temple plaza or gate base in the list.
+export function terraceY(list = [], x, z) {
+  for (const l of raised(list)) {
     const dx = x - l.x, dz = z - l.z;
+    if (l.gate) {
+      if (dx * dx + dz * dz > 64) continue;
+      const c = Math.cos(l.ry), s = Math.sin(l.ry); // (back into the landmark's frame)
+      const y = gateHeight(l.gate, l.mid, dx * c - dz * s, dx * s + dz * c);
+      if (y) return y;
+      continue;
+    }
     if (dx * dx + dz * dz > 900) continue; // (30 m: the plaza, its stairs and the slope)
     const y = terraceHeight(l, dx, dz);
     if (y) return y;
@@ -36,9 +77,8 @@ export function terraceY(list = [], x, z) {
 
 // The raised plaza's landmark if (x, z) is up on it (not on its stairs), or null.
 export function onTerrace(list = [], x, z) {
-  let ts = lists.get(list);
-  if (!ts) lists.set(list, (ts = list.filter((l) => l.type === 'maitreya' && l.lift)));
-  for (const l of ts) {
+  for (const l of raised(list)) {
+    if (l.gate) continue;
     const dx = x - l.x, dz = z - l.z;
     if (dx * dx + dz * dz < 900 && terraceHeight(l, dx, dz) === l.lift) return l;
   }
