@@ -108,6 +108,7 @@ export const EN = {
   "gym.talk": "Talk to {name}",
   "sauna.hot": "Go into the hot kiln",
   "sauna.ice": "Go into the ice room",
+  "sauna.towelBack": "🐑 A day has passed, so the jjimjilbang took back its sheep towel.",
   "emblem.open": "Decorate my name tag",
   "info.open": "Ask what to do",
   "game.karaoke": "Sing (rhythm game)",

@@ -109,6 +109,7 @@ export const JA = {
   "gym.talk": "{name}と話す",
   "sauna.hot": "汗蒸幕に入る",
   "sauna.ice": "氷の部屋に入る",
+  "sauna.towelBack": "🐑 一日たったので、羊巻きタオルはチムジルバンに回収されました。",
   "emblem.open": "名札を飾る",
   "info.open": "案内を聞く",
   "game.karaoke": "歌う（リズムゲーム）",

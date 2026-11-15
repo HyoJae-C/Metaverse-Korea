@@ -109,6 +109,7 @@ export const ZH = {
   "gym.talk": "和{name}聊天",
   "sauna.hot": "进火窑",
   "sauna.ice": "进冰屋",
+  "sauna.towelBack": "🐑 过了一天，羊角毛巾已被汗蒸房收回。",
   "emblem.open": "装饰名牌",
   "info.open": "咨询",
   "game.karaoke": "唱歌（节奏游戏）",

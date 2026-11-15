@@ -238,6 +238,7 @@ import { createGifts } from './game/gifts.js';
 import { GiftReceipts } from './core/gift-receipts.js';
 import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
+import { createSaunaTowel } from './game/sauna-towel.js';
 import { createCookingClasses } from './game/cooking-classes.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
@@ -2720,6 +2721,11 @@ const hanbokRental = createHanbokRental({
   $, refreshWallet, setLook, shop,
 });
 const { rentHanbok } = hanbokRental;
+// The jjimjilbang's sheep towel goes back a game day after you walk out in it. (game/sauna-towel.js)
+const saunaTowel = createSaunaTowel({
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get mode() { return mode; }, get interior() { return interior; },
+  setLook, shop,
+});
 // Gifts for friends in the same shop, friends only. (game/gifts.js)
 giftsGame = createGifts({
   get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
@@ -4907,15 +4913,7 @@ const saunaUi = lazyPanel(() => import('./ui/sauna-ui.js').then(({ SaunaUI }) =>
   log: new SaunaLog(),
   onEnter: (kind) => showBubble(myLabel, $('labels'), kind === 'hot' ? '🥵' : '🥶', 4000),
   onLeave: (kind, done) => { if (done) { me.play('cheer'); showBubble(myLabel, $('labels'), kind === 'hot' ? '😌' : '😆'); } },
-  towel: {
-    on: () => myLook.head === 'towel',
-    toggle: () => {
-      myLook = { ...myLook, head: myLook.head === 'towel' ? null : 'towel' };
-      if (!myLook.head) delete myLook.head;
-      saveLook(myLook);
-      setLook(myLook);
-    },
-  },
+  towel: saunaTowel, // (taken back a game day after you sneak out in it)
 })));
 // Poses held while doing something: the gym, fishing, dancing in a club.
 // Others see them too (the "ac" field).

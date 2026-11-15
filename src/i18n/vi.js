@@ -865,4 +865,5 @@ export const VI = {
   "bait.desc": "Còn {n}. Cầm trên tay rồi gắn vào lưỡi câu: cá ★3+ cắn {p}% số lần.",
   "bait.hi1": "Mồi ngon thì cá cắn mạnh!",
   "bait.hi2": "Hôm nay con nước tốt lắm!",
+  "sauna.towelBack": "🐑 Đã qua một ngày nên jjimjilbang đã thu lại khăn cừu.",
 };

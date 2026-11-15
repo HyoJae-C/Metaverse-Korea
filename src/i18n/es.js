@@ -864,4 +864,5 @@ export const ES = {
   "bait.desc": "Quedan {n}. Sostenlo y ponlo en el anzuelo: los ★3+ pican el {p}% de las veces.",
   "bait.hi1": "¡Buen cebo, buena picada!",
   "bait.hi2": "¡Hoy la marea está buena!",
+  "sauna.towelBack": "🐑 Pasó un día, así que el jjimjilbang recuperó su toalla de oveja.",
 };
