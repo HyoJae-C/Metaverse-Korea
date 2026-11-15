@@ -1,9 +1,10 @@
 // Home decorating: place furniture from a catalogue, then tap it again in the
 // catalogue (or walk up to it) to rotate, carry or put it away. One of each
-// piece for now, so rooms stay light. Saved in this browser only (for now).
+// piece for now, so rooms stay light. Saved in mk.home.<id>, which rides
+// along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, pieceBlocked, starterLayout } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 
@@ -12,10 +13,12 @@ export function createDecor(game) {
   const MAX_PIECES = 60;
   let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
   const homeKey = (id) => 'mk.home.' + id;
-  function loadDecor(id) {
+  function loadDecor(id, room) {
     foldHomes(localStorage); // (the old Sunny Villa layout moves into the one home)
     try {
-      const a = JSON.parse(localStorage.getItem(homeKey(id)) || '[]');
+      const raw = localStorage.getItem(homeKey(id));
+      if (raw == null && room) return starterLayout(room.w, room.d); // never opened: not an empty floor
+      const a = JSON.parse(raw || '[]');
       return Array.isArray(a)
         ? a.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && a.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
         : [];
@@ -52,7 +55,7 @@ export function createDecor(game) {
   }
   function openHome(store, built) {
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
-    decor = { home: store.id, built, items: loadDecor(store.id), group: built.decorGroup, editing: false, piece: null, carry: null };
+    decor = { home: store.id, built, items: loadDecor(store.id, game.interior?.room), group: built.decorGroup, editing: false, piece: null, carry: null };
     rebuildDecor();
     $('decor-btn').hidden = false;
   }
@@ -86,8 +89,26 @@ export function createDecor(game) {
     if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
     if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
     const [x, z, ry] = spotInFront();
-    decor.items.push({ id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) });
+    const it = { id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) };
+    if (!freeSpot(it)) return shop.toast(t('home.blocked'));
+    decor.items.push(it);
     rebuildDecor();
+  }
+  // Nudge a new piece to the nearest clear spot (rings round where it
+  // landed, inside the room). False if the room has no clear spot near.
+  function freeSpot(it) {
+    const { w, d } = game.interior.room, p = game.me.root.position;
+    const x0 = it.x, z0 = it.z;
+    for (let r = 0; r <= 4; r += 0.5) {
+      for (let k = 0, n = r ? Math.round(r * 8) : 1; k < n; k++) {
+        const a = (k / n) * Math.PI * 2;
+        it.x = THREE.MathUtils.clamp(x0 + Math.cos(a) * r, -w / 2 + 0.8, w / 2 - 0.8);
+        it.z = THREE.MathUtils.clamp(z0 + Math.sin(a) * r, -d / 2 + 0.8, d / 2 - 1.8);
+        if (!pieceBlocked(it, decor.items, p)) return true;
+      }
+    }
+    it.x = x0; it.z = z0;
+    return false;
   }
   function nearestPiece(p) {
     let best = null, bd = 1.6;
@@ -98,7 +119,7 @@ export function createDecor(game) {
     return best;
   }
   function openPiece(it, picked = false) {
-    if (decor.carry && decor.carry !== it) putDown();
+    if (decor.carry && decor.carry !== it && !putDown()) return;
     decor.piece = it;
     decor.picked = picked; // chosen from the catalogue: stays open while you walk
     $('piece-move-label').textContent = t(decor.carry === it ? 'home.putDown' : 'home.carry');
@@ -106,16 +127,21 @@ export function createDecor(game) {
     $('piece-bar').hidden = false;
   }
   function closePiece() {
-    if (decor?.carry) putDown();
+    if (decor?.carry && !putDown()) { // blocked here: it goes back where it was
+      Object.assign(decor.carry, decor.carryFrom);
+      putDown(true);
+    }
     if (decor) { decor.piece = null; decor.picked = false; }
     $('piece-bar').hidden = true;
   }
   // Carry a piece: it floats in front of you until you put it down.
-  function putDown() {
+  function putDown(force = false) {
+    if (!force && decor.carry && pieceBlocked(decor.carry, decor.items)) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
     $('decor-bar').hidden = !decor.editing;
     rebuildDecor();
     if (decor.piece) $('piece-move-label').textContent = t('home.carry');
+    return true;
   }
   function updateCarry() {
     const it = decor?.carry;
@@ -141,11 +167,18 @@ export function createDecor(game) {
   }
   labelDecor();
   onLanguageChange(labelDecor);
-  $('piece-rotate').onclick = () => { if (decor?.piece) { decor.piece.ry += Math.PI / 4; rebuildDecor(); } };
+  $('piece-rotate').onclick = () => {
+    const it = decor?.piece;
+    if (!it) return;
+    it.ry += Math.PI / 4;
+    if (it !== decor.carry && pieceBlocked(it, decor.items)) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
+    rebuildDecor();
+  };
   $('piece-move').onclick = () => {
     if (!decor?.piece) return;
-    if (decor.carry) { putDown(); closePiece(); game.action = STALE; return; }
+    if (decor.carry) { if (putDown()) closePiece(); game.action = STALE; return; }
     decor.carry = decor.piece;
+    decor.carryFrom = { x: decor.piece.x, z: decor.piece.z, ry: decor.piece.ry };
     decor.picked = true;
     $('decor-bar').hidden = true; // see where you're walking
     rebuildDecor();
