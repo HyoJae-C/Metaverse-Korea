@@ -47,7 +47,10 @@ export const SPOTS = {
   iljumun: [51.7, 850.5], // the one-pillar gate by Bongeunsa-ro
   pagoda: [38.9, 814.6], // the three-storey pagoda in the courtyard
   bell: [26.6, 826], // the bell pavilion (종루)
+  drive: [36.8, 851.5], // the drive in from Bongeunsa-ro, south of the pond (a gap in the wall)
 };
+// The temple wall: height, thickness, and the gaps for the two ways in (m).
+export const WALL = { h: 1.5, t: 0.45, gate: 3.4, drive: 5 };
 // The Maitreya Buddha's plaza: the statue on Naver's pin; its shape and turn
 // from Yozi's aerial photo from the south and the Google satellite capture
 // (turned 55°; fitted on 6 halls, 0.5 m apart): a paved rectangle
@@ -119,8 +122,9 @@ export function halls() {
 }
 
 // What the temple adds to the Samseong map. local: world → map metres;
-// street(q): how far a map point is from the nearest street's edge.
-export function bongeunsa(local, street = () => Infinity) {
+// street(q): how far a map point is from the nearest street's edge;
+// fit(poly): the grounds' outline moved off the streets.
+export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) {
   const L = ([x, z]) => local([[x, z]])[0];
   const H = halls();
   const buildings = [], blockers = [], areas = [];
@@ -216,16 +220,49 @@ export function bongeunsa(local, street = () => Infinity) {
     hills.push([...rel([x, z]), r1(r), h]);
     blockers.push({ p: ring(x, z, r * 0.8, r * 0.8, 10) });
   }
+  // The temple wall (담장, Yozi 2026-11-15: "봉은사는 뻥 뚫려있어"): round
+  // the real grounds (OSM's outline), so you come in by the gates, not from
+  // anywhere along Bongeunsa-ro. Two ways in on the street side, as on
+  // Naver's map: Iljumun, and the drive in south of Haesu Gwaneum's pond.
+  // Where a hall stands on the line, the hall is the wall; where a wooded
+  // mound already closes it, it is left out. Each run: [x0, z0, x1, z1]
+  // (landmark metres), a stone base, a plastered wall and a tiled top,
+  // WALL.h high (a people-sized thing: game size, like the shops).
+  const G = fit(local(BES.grounds)); // (the grounds as drawn: kept off the streets)
+  const gates = [[ix, iz, WALL.gate], [...L(SPOTS.drive), WALL.drive]];
+  const solid = [...buildings.map((b) => b.p), ...hills.map(([hx, hz, r]) => ring(hx + O[0], hz + O[1], r * 0.8, r * 0.8, 10))];
+  const inPoly = (x, z, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const wall = [];
+  for (let i = 0; i < G.length; i++) {
+    const a = G[i], b = G[(i + 1) % G.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (len < 0.3) continue;
+    const n = Math.ceil(len / 0.5);
+    let run = null;
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      // (a gate: along the wall within half its width of the gate's foot on
+      // it, if the gate stands within 4 m of the line)
+      const ux = (b[0] - a[0]) / len, uz = (b[1] - a[1]) / len;
+      const open = gates.some(([gx, gz, w]) => Math.abs((gx - x) * uz - (gz - z) * ux) < 4 && Math.abs((gx - x) * ux + (gz - z) * uz) < w / 2) || solid.some((P) => inPoly(x, z, P)) || street([x, z]) < 0.6;
+      if (!open) { if (!run) run = [x, z]; run[2] = x; run[3] = z; }
+      if ((open || k === n) && run) { if (Math.hypot(run[2] - run[0], run[3] - run[1]) > 0.4) wall.push(run); run = null; }
+    }
+  }
+  for (const [x0, z0, x1, z1] of wall) {
+    const len = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / len, uz = (z1 - z0) / len, t = WALL.t / 2 + 0.05;
+    blockers.push({ p: [[x0 - uz * t, z0 + ux * t], [x1 - uz * t, z1 + ux * t], [x1 + uz * t, z1 - ux * t], [x0 + uz * t, z0 - ux * t]].map(([x, z]) => [r1(x), r1(z)]) });
+  }
   const landmark = {
     type: 'bongeunsa', x: O[0], z: O[1], ry: 0,
     halls: list, nu, hills,
     gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)],
     iljumun: [...rel([ix, iz]), r3(H.진여문.ry)],
     canopy, lane,
+    wall: wall.map((w) => [...rel([w[0], w[1]]), ...rel([w[2], w[3]])]), wallH: WALL.h,
   };
   // The ground: the temple's stone-paved yards; woods on the hill in the north and
   // the west (trees keep off the halls and the Buddha's plaza by themselves).
-  const grounds = local(BES.grounds);
+  const grounds = G;
   // (and a band of trees along the east edge, beyond Jijangjeon and Seonbuldang)
   const eastWoods = local([[59, 806], [63, 806], [62, 830], [59, 837], [56, 841], [57, 812]]);
   const woods = local([[-14, 813], [-7, 805], [2, 798], [12, 793], [21, 790], [30, 788], [59, 778], [66, 792], [48, 796], [32, 798], [19, 802], [18, 816], [8, 818], [7, 830], [5, 834], [0, 835], [-3, 827], [-14, 827]]);

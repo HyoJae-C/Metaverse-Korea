@@ -137,7 +137,7 @@ const mid = (b) => fromGrid([(b.u0 + b.u1) / 2, (b.v0 + b.v1) / 2]);
 // (scripts/bongeunsa-layout.mjs). The real grounds reach the kerb, but the
 // game's streets are drawn a little wider than 1/4 (Bongeunsa-ro 14 m), so
 // their corners step back off the pavement (offStreets, below).
-export const TEMPLE = bongeunsa(local, (q) => Math.min(...ROADS.map((r) => lineDist(q, r.p) - r.w / 2)));
+export const TEMPLE = bongeunsa(local, (q) => Math.min(...ROADS.map((r) => lineDist(q, r.p) - r.w / 2)), (p) => offStreets(p, 1.2));
 
 // Is a polygon clear of every street (by its half width plus a pavement) and
 // of Tancheon and its banks?
@@ -173,8 +173,6 @@ function offStreets(poly, pave) {
     return [x, z];
   });
 }
-TEMPLE.grounds = offStreets(TEMPLE.grounds, 1.2);
-TEMPLE.areas[0].p = TEMPLE.grounds;
 
 function build() {
   const custom = [

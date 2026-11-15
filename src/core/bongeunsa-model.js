@@ -275,6 +275,21 @@ function hill(g, x, z, r, h) {
   }
 }
 
+// The temple wall (담장): runs [x0, z0, x1, z1] of a granite base, a
+// plastered wall and a dark tiled top with a ridge.
+function templeWall(g, runs, h = 1.5) {
+  for (const [x0, z0, x1, z1] of runs) {
+    const len = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group();
+    box(p, len + 0.1, 0.4, 0.55, 0, 0.2, 0, C.g3);
+    box(p, len, h - 0.65, 0.42, 0, 0.4 + (h - 0.65) / 2, 0, C.wall);
+    box(p, len + 0.2, 0.14, 0.8, 0, h - 0.18, 0, '#4a4e55');
+    box(p, len + 0.2, 0.12, 0.36, 0, h - 0.06, 0, '#3c4046');
+    p.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+    p.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(p);
+  }
+}
+
 export function buildTemple(g, l) {
   const halls = new THREE.Group();
   g.add(halls);
@@ -296,6 +311,7 @@ export function buildTemple(g, l) {
   }
   if (l.lane) lamps.push(lanternLane(own, l.lane[0], l.lane[1]));
   for (const h of l.hills || []) hill(own, ...h);
+  if (l.wall) templeWall(own, l.wall, l.wallH);
   bakeColors(own, lamps);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
 }

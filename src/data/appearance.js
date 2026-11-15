@@ -22,6 +22,9 @@ export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'tw
   'bowl', 'drill', 'fountain'];
 // Plain hairstyles anyone can pick on the start screen (the rest are cut at
 // the hair salon). With none picked, the model's own hair stays.
+// Hairstyles only the game's own people wear (no salon cuts them): a monk's
+// shaved head (core/hair-styles.js).
+export const NPC_HAIR_STYLES = ['shaved'];
 export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
@@ -304,7 +307,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.hatColor === 'string' && Object.hasOwn(PALETTES.hat, raw.hatColor)) look.hatColor = raw.hatColor;
   if (typeof raw.hatPatch === 'string' && Object.hasOwn(PATCHES, raw.hatPatch)) look.hatPatch = raw.hatPatch;
   if (typeof raw.dye === 'string' && Object.hasOwn(PALETTES.dye, raw.dye)) look.dye = raw.dye;
-  if (typeof raw.hairStyle === 'string' && HAIR_STYLES.includes(raw.hairStyle)) look.hairStyle = raw.hairStyle;
+  if (typeof raw.hairStyle === 'string' && (HAIR_STYLES.includes(raw.hairStyle) || NPC_HAIR_STYLES.includes(raw.hairStyle))) look.hairStyle = raw.hairStyle;
   if (typeof raw.eyeShape === 'string' && EYE_SHAPE_IDS.includes(raw.eyeShape)) look.eyeShape = raw.eyeShape;
   if (typeof raw.nose === 'string' && NOSE_IDS.includes(raw.nose)) look.nose = raw.nose;
   if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;

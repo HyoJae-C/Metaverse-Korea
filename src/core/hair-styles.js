@@ -172,6 +172,8 @@ export function buildHair(style, material, atlas, ey) {
       add(sphere(0.92, 22, 12, 0, Math.PI * 0.45), 0, 0.2, -0.18, 1.05, 0.9, 1.1, -0.65);
       add(sphere(1, 16, 10), 0, -0.12, -0.82, 0.62, 0.32, 0.3, -0.3); // tucked in at the nape
       break;
+    case 'shaved': // 삭발: monks (NPCs only, not in HAIR_STYLES): the bald head, no hair
+      break;
     case 'buzz': // 버즈컷: clipped all over, close to the head
       shade = [0.55, 0.95];
       cap(0.955, 0.48, -0.5, 0.03);
