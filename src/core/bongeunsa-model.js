@@ -19,6 +19,7 @@ import { PALACE_BUILD } from './palace-model.js';
 import { farFree } from './far-textures.js';
 import { statueFace } from './statue-face.js';
 import { gateKings } from './heavenly-kings.js';
+import { gateStep } from './temple-terrace.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -238,10 +239,24 @@ function templeWall(g, runs, h = 1.5) {
   }
 }
 
+// Jinyeomun's steps up to its base, in front and behind its middle bay
+// (core/temple-terrace.js walks you up them as a smooth slope).
+function gateSteps(g, gate, mid) {
+  const [x, z, , , ry] = gate, { B, n, tread, bd, sw } = gateStep(gate, mid);
+  const s = new THREE.Group();
+  s.position.set(x, 0, z);
+  s.rotation.y = ry;
+  for (const sz of [-1, 1]) for (let i = 0; i < n; i++) {
+    const top = B * (1 - (i + 0.5) / n);
+    box(s, sw, top, tread + 0.02, 0, top / 2, sz * (bd + tread * (i + 0.5)), i % 2 ? C.g1 : C.g0);
+  }
+  g.add(s);
+}
+
 export function buildTemple(g, l) {
   const halls = new THREE.Group();
   g.add(halls);
-  PALACE_BUILD.palacehalls(halls, { halls: l.halls });
+  PALACE_BUILD.palacehalls(halls, { halls: l.halls, gateMid: l.gateMid });
   const own = new THREE.Group();
   g.add(own);
   if (l.nu) beopwangru(own, l.nu);
@@ -249,6 +264,7 @@ export function buildTemple(g, l) {
   // gate; its side bays are walled off for walking, scripts/bongeunsa-layout.mjs).
   const jinyeomun = (l.halls || []).find((h) => h[5] === 'g');
   if (jinyeomun) own.add(gateKings(jinyeomun, { scale: 0.9, y: 0.55, bay: jinyeomun[2] * 0.375 }));
+  if (jinyeomun && l.gateMid) gateSteps(own, jinyeomun, l.gateMid);
   const k = l.k || 1; // (the whole temple at 37.5%: these 1/4 models grow with it)
   if (l.iljumun) iljumun(own, l.iljumun, 1 + (k - 1) * 0.7);
   if (l.gwaneum) gwaneum(own, l.gwaneum, k);

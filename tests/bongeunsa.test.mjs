@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inPolygon } from '../src/core/seoul-grid.js';
 import { BES, SCALE, BUDDHA_H, NUDGE, EXTRA, TERRACE, halls, corners, overlap } from '../scripts/bongeunsa-layout.mjs';
-import { terraceHeight } from '../src/core/temple-terrace.js';
+import { terraceHeight, terraceY, gateStep } from '../src/core/temple-terrace.js';
 import { BONGEUNSA, TEHERAN, YEONGDONG, ASEM, lineDist, TEMPLE } from '../scripts/build-samseong.mjs';
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
@@ -61,6 +61,32 @@ test('Bongeunsa: no hall on another or on a street, Jinyeomun open in the middle
   // Iljumun stands off Bongeunsa-ro's pavement.
   const il = [temple.x + temple.iljumun[0], temple.z + temple.iljumun[1]];
   assert.ok(lineDist(il, BONGEUNSA.p) - BONGEUNSA.w / 2 >= 1, 'Iljumun off the street');
+});
+
+test('Jinyeomun: three bays, no post in the way through, steps up onto its base', () => {
+  const gate = temple.halls.find((h) => h[6] === '眞如門'), [hx, hz, w, d, ry] = gate, mid = temple.gateMid;
+  assert.ok(mid >= 2.4, 'a wide middle bay');
+  const { B, run, bd, sw } = gateStep(gate, mid);
+  const at = (u, v) => [temple.x + hx + u * Math.cos(ry) + v * Math.sin(ry), temple.z + hz - u * Math.sin(ry) + v * Math.cos(ry)];
+  // Up on the base all the way through the middle (it was the yard's height: you sank into the stone).
+  for (const v of [-bd + 0.1, -d / 4, 0, d / 4, bd - 0.1]) assert.equal(terraceY(map.landmarks, ...at(0, v)), B, `on the base at ${v.toFixed(1)}`);
+  // The steps climb smoothly from the yard, in front and behind.
+  for (const sv of [-1, 1]) {
+    let last = 0;
+    for (let t = run + 0.3; t >= 0; t -= 0.1) {
+      const y = terraceY(map.landmarks, ...at(sw / 2 - 0.2, sv * (bd + t)));
+      assert.ok(y >= last && y - last <= 0.06, `a smooth climb (${y.toFixed(2)} after ${last.toFixed(2)})`);
+      last = y;
+    }
+    assert.equal(terraceY(map.landmarks, ...at(0, sv * (bd + run + 0.2))), 0, 'the yard past the steps');
+  }
+  // The posts stand on the bay lines, out of the way (player 0.35 m round): the walls start inside them.
+  const post = Math.min(0.45, Math.max(0.22, Math.min(w, d) * 0.07));
+  for (const u of [-1, 1]) for (const v of [-d / 2, 0, d / 2]) {
+    const [x, z] = at(u * mid / 2, v);
+    assert.ok([...map.buildings, ...map.blockers].some((b) => inPolygon(x, z, b.p)), `the post at ${u}, ${v} is behind a wall`);
+  }
+  assert.ok(mid / 2 - post / 2 > 0.95, 'the way through is clear of the posts');
 });
 
 test('the Maitreya Buddha: 50% of the real 23 m, facing south-east down its plaza, the woods off it', () => {

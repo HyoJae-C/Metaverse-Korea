@@ -97,6 +97,10 @@ export const WALL = { h: 1.5, t: 0.45, gate: 4.6 };
 // path round the inside was a gap to fill, low so the city shows over the
 // wall from the Buddha's terrace): how deep in from the wall (m).
 export const HEDGE = 3.6;
+// Jinyeomun's middle bay, the way through, between the posts' lines (m): wider
+// than the side bays, so you walk up its steps clear of the posts (Yozi
+// 2026-11-15: people went through a post and juddered on the base).
+export const GATE_MID = 2.6;
 // Tree clumps in the yards: how many, the open room each needs round it,
 // and their radius (m).
 export const CLUMP = { n: 7, room: 4, min: 1.6, max: 2.6 };
@@ -251,7 +255,10 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
       // (Each side wall starts at the bay's post line, not padded inwards
       // like the halls: padded, the way through was 1.4 m and people stuck
       // on its corners, Yozi 2026-11-15.)
-      const in0 = h.w / 6 - 0.05, out = h.w / 2 + BASE, bw = out - in0;
+      // (Three bays, the middle one GATE_MID between the posts' lines, the
+      // side walls from just inside the posts: no post in the way through,
+      // Yozi 2026-11-15.)
+      const in0 = GATE_MID / 2 - 0.25, out = h.w / 2 + BASE, bw = out - in0;
       for (const sx of [-1, 1]) {
         const c = Math.cos(h.ry), s = Math.sin(h.ry), off = sx * (in0 + bw / 2);
         buildings.push({ h: top, custom: true, p: corners({ x: x + off * c, z: z - off * s, w: bw, d: h.d + 2 * BASE, ry: h.ry }).map(([a, b]) => [r1(a), r1(b)]) });
@@ -376,7 +383,7 @@ export function bongeunsa(local, street = () => Infinity, fit = (poly) => poly) 
   const landmark = {
     type: 'bongeunsa', x: O[0], z: O[1], ry: 0,
     label: name('Bongeunsa Temple', '봉은사', '奉恩寺', '奉恩寺'), // (its name on the map, Yozi 2026-11-15)
-    halls: list, nu, hills,
+    halls: list, gateMid: GATE_MID, nu, hills,
     gwaneum: rel([gx, gz]), pagoda: rel([px, pz]), bell: [...rel([lx, lz]), r3(H.대웅전.ry)], bell2: [...rel([l2x, l2z]), r3(H.대웅전.ry)],
     iljumun: [...rel([ix, iz]), r3(H.진여문.ry)],
     k: SCALE, // (k: the pond, pagoda, bell pavilion and Iljumun drawn that much bigger than their 1/4 models)
