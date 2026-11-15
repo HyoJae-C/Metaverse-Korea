@@ -57,6 +57,24 @@ function box(out, c, size, role, w) {
   }
 }
 
+// A flat shape on the chest (a lapel, a pocket flap, a V of shirt): a 2D
+// outline in x/y, pushed out `depth` from z, leaning back `lean` radians
+// (top further back) so it lies on the chest's slope.
+function plate(out, pts, { z, depth = 0.012, role, w, lean = 0, pivot = 1.0 }) {
+  const g = new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y))), { depth, bevelEnabled: false, curveSegments: 1 }).toNonIndexed();
+  const m = new THREE.Matrix4().makeTranslation(0, pivot, z)
+    .multiply(new THREE.Matrix4().makeRotationX(lean))
+    .multiply(new THREE.Matrix4().makeTranslation(0, -pivot, 0));
+  g.applyMatrix4(m);
+  const p = g.attributes.position, n = g.attributes.normal;
+  for (let i = 0; i < p.count; i += 3) {
+    const ps = [0, 1, 2].map((k) => new THREE.Vector3(p.getX(i + k), p.getY(i + k), p.getZ(i + k)));
+    const ns = [0, 1, 2].map((k) => new THREE.Vector3(n.getX(i + k), n.getY(i + k), n.getZ(i + k)));
+    out.tri(ps, ns, [w, w, w], role);
+  }
+}
+const mirror = (pts) => pts.map(([x, y]) => [-x, y]).reverse();
+
 // Bone weights blended by position along a chain: [[bone, at], ...] sorted
 // by at; t is the position along the same axis.
 function chain(stops, t) {
@@ -136,6 +154,9 @@ function torso(out, o) {
     rings.length = 0;
     add(o.coat, 0.31 + bulk, 0.27 + bulk, 'top', 0.0);
     for (let y = o.coat + 0.09; y < 0.62; y += 0.09) add(y, 0.3 + bulk - (y - o.coat) * 0.05, 0.25 + bulk, 'top', 0.0);
+  } else if (o.rib) { // a ribbed band round the hem (knits, sweatshirts, hoodies)
+    add(hemY, 0.296 + bulk, 0.224 + bulk, o.rib);
+    add(hemY + 0.045, 0.3 + bulk, 0.228 + bulk, 'top');
   } else {
     add(hemY, 0.3 + bulk, 0.228 + bulk, 'top');
   }
@@ -161,8 +182,38 @@ function torso(out, o) {
   }
   const front = (z) => 0.24 + bulk + z;
   if (o.placket) box(out, [0, 0.86, front(0.0)], [0.05, 0.42, 0.02], o.placket, [['spine', 0.5], ['chest', 0.5]]);
-  if (o.panel) box(out, [0, 0.86, front(0.0)], [0.15, 0.48, 0.02], o.panel, [['spine', 0.5], ['chest', 0.5]]);
-  if (o.pocket) box(out, [0, 0.72, front(0.0)], [0.26, 0.13, 0.03], o.pocket, [['spine', 1]]);
+  const chestW = [['spine', 0.4], ['chest', 0.6]];
+  if (o.panel) { // an open front: the shirt under it shows in a V at the neck
+    const bottom = o.coat ? 0.6 : o.hem + 0.01, vy = o.lapel ? 0.88 : 0.98;
+    plate(out, [[-0.05, bottom], [0.05, bottom], [0.05, vy], [0.11, 1.16], [-0.11, 1.16], [-0.05, vy]], { z: front(-0.012), depth: 0.02, role: o.panel, w: chestW, lean: 0.12, pivot: 0.95 });
+  }
+  if (o.tie) { // a necktie down the shirt's V (a suit)
+    plate(out, [[-0.022, 1.12], [0.022, 1.12], [0.016, 1.08], [0.032, 0.9], [0, 0.86], [-0.032, 0.9], [-0.016, 1.08]], { z: front(0.002), depth: 0.012, role: o.tie, w: chestW, lean: 0.12, pivot: 0.95 });
+  }
+  if (o.lapel) for (const sx of [-1, 1]) { // a tailored jacket's notched lapels
+    const pts = [[0.045, 0.88], [0.18, 1.04], [0.155, 1.09], [0.195, 1.11], [0.15, 1.19], [0.1, 1.17]];
+    plate(out, sx > 0 ? pts : mirror(pts), { z: front(0.0), depth: 0.014, role: o.lapel, w: chestW, lean: 0.16, pivot: 0.95 });
+  }
+  if (o.buttons) { // buttons down the front (a coat, a cardigan, a suit)
+    const n = o.buttons.n ?? 2, x = o.buttons.x ?? 0.075;
+    for (let i = 0; i < n; i++) {
+      const y = (o.buttons.top ?? 0.84) - i * (o.buttons.gap ?? 0.09);
+      if (y > (o.coat ? 0.3 : o.hem + 0.03)) box(out, [x, y, front(0.012)], [0.032, 0.032, 0.014], o.buttons.role, y > 0.7 ? chestW : [['spine', 1]]);
+    }
+  }
+  if (o.flaps) for (const sx of [-1, 1]) { // a denim jacket's chest pockets with buttoned flaps
+    plate(out, [[sx * 0.07, 1.0], [sx * 0.17, 1.0], [sx * 0.17, 0.96], [sx * 0.12, 0.94], [sx * 0.07, 0.96]].map(([x, y]) => [x, y]), { z: front(-0.004), depth: 0.016, role: o.flaps, w: [['chest', 1]], lean: 0.1, pivot: 0.98 });
+    box(out, [sx * 0.12, 0.955, front(0.012)], [0.018, 0.018, 0.012], 'stitch', [['chest', 1]]);
+  }
+  if (o.points) for (const sx of [-1, 1]) { // a shirt collar's two points
+    const pts = [[0.012, 1.17], [0.15, 1.17], [0.05, 1.05]];
+    plate(out, sx > 0 ? pts : mirror(pts), { z: front(-0.004), depth: 0.014, role: o.points, w: [['chest', 1]], lean: 0.5, pivot: 1.05 });
+  }
+  if (o.strings) for (const sx of [-1, 1]) { // a hoodie's drawstrings
+    box(out, [sx * 0.055, 1.07, front(0.006)], [0.016, 0.16, 0.014], o.strings, [['chest', 1]]);
+    box(out, [sx * 0.055, 0.985, front(0.01)], [0.026, 0.026, 0.02], o.strings, [['chest', 1]]);
+  }
+  if (o.pocket) plate(out, [[-0.15, 0.64], [0.15, 0.64], [0.15, 0.7], [0.1, 0.79], [-0.1, 0.79], [-0.15, 0.7]], { z: front(-0.012), depth: 0.024, role: o.pocket, w: [['spine', 1]] });
   if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
   // A fishing vest's pockets: two on the chest, two bigger ones below, each
@@ -242,11 +293,11 @@ function leg(out, o, side) {
   sAdd(-0.07, 0.15, 0.1, 'shoes');
   sAdd(0.02, 0.14, 0.105, 'shoes');
   sAdd(0.11, 0.1, 0.1, 'shoes');
-  sAdd(0.17, 0.075, 0.09, 'shoes');
-  sAdd(0.2, 0.05, 0.07, 'shoes');
+  sAdd(0.17, 0.075, 0.09, o.toecap || 'shoes'); // (sneakers: a rubber toe cap in the sole's colour)
+  sAdd(0.2, 0.05, 0.07, o.toecap || 'shoes');
   sweep(out, shoe, { power: 3 });
   const sole = [];
-  const lAdd = (z, wd) => sole.push({ c: [x, 0.016, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: 0.018, role: 'sole', w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
+  const lAdd = (z, wd) => sole.push({ c: [x, 0.02, z], u: [1, 0, 0], v: [0, 1, 0], ru: wd, rv: 0.024, role: 'sole', w: z > 0.06 ? [['toes' + s, 1]] : [['foot' + s, 1]] });
   lAdd(-0.115, 0.08); lAdd(-0.08, 0.108); lAdd(0.1, 0.11); lAdd(0.19, 0.085); lAdd(0.215, 0.05);
   sweep(out, sole, { power: 3 });
 }

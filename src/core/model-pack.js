@@ -137,6 +137,9 @@ function wearUv(role) {
   const [cx, cy] = role === 'skin' ? A.skin : WEAR_CELLS[role] || WEAR_CELLS.top;
   return [(cx + 0.5) / A.cols, (cy + 0.5) / A.rows];
 }
+// accent3 (unless set): a shade of the top's colour, for lapels, collar
+// points and pocket flaps, so they show against the cloth they lie on.
+const shade = (hex, k = 0.8) => [16, 8, 0].reduce((c, b) => c | (Math.round(((hex >> b) & 255) * k) << b), 0);
 function applyWear(gltf, wear) {
   const A = PACK.atlas;
   const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
@@ -286,7 +289,8 @@ function dyedMaterial(id, src, look) {
     const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
     for (const [role, cell] of Object.entries(WEAR_CELLS)) {
       if (!cell) continue;
-      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes : c[role];
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes
+        : role === 'accent3' ? c.accent3 ?? shade(top) : c[role];
       if (hex != null) paint.push([cell, hex]);
     }
   }
