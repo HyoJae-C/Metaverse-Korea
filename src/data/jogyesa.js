@@ -78,6 +78,18 @@ export const JOGYESA = {
   },
 };
 
+// The temple wall (담장, Yozi 2026-11-15: "조계사는 담장이 없어"): round the
+// grounds just inside their edge, open only at Iljumun, so you come in by
+// the gate. Runs [x0, z0, x1, z1]; a stone base, a plastered wall and a
+// tiled top, WALL.h high (people-sized: game size).
+export const WALL = { h: 1.6, t: 0.45, inset: 0.35 };
+export function wallRuns(J = JOGYESA) {
+  const xs = J.site.map((q) => q[0]), zs = J.site.map((q) => q[1]);
+  const x0 = Math.min(...xs) + WALL.inset, x1 = Math.max(...xs) - WALL.inset, z0 = Math.min(...zs) + WALL.inset, z1 = Math.max(...zs) - WALL.inset;
+  const I = J.iljumun, g0 = I.z - I.w / 2, g1 = I.z + I.w / 2; // (the wall meets the gate's two ends)
+  return [[x0, z0, x1, z0], [x1, z0, x1, g0], [x1, g1, x1, z1], [x1, z1, x0, z1], [x0, z1, x0, z0]];
+}
+
 // Where the canopy's lanterns hang: a grid over its parts, minus the spot
 // where the pagoda tree's trunk comes up through it. Each slot: [x, z, row],
 // numbered row by row from the north (the gate side's wing first). Players'

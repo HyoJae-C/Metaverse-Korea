@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
-import { JOGYESA as J, canopySlots, canopySpan, canopyPoles } from '../data/jogyesa.js';
+import { JOGYESA as J, canopySlots, canopySpan, canopyPoles, wallRuns, WALL } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -185,6 +185,22 @@ function bellHouse(T) {
   return g;
 }
 
+// The temple wall (data/jogyesa.js wallRuns): a granite base, a plastered
+// wall and a dark tiled top with a ridge.
+function templeWall(g, ox, oz) {
+  const h = WALL.h;
+  for (const [x0, z0, x1, z1] of wallRuns()) {
+    const len = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group();
+    box(p, len + 0.5, 0.4, 0.55, 0, 0.2, 0, C.stoneDark);
+    box(p, len + 0.4, h - 0.65, 0.42, 0, 0.4 + (h - 0.65) / 2, 0, '#efe6d2');
+    box(p, len + 0.8, 0.14, 0.8, 0, h - 0.18, 0, '#4a4e55');
+    box(p, len + 0.8, 0.12, 0.36, 0, h - 0.06, 0, '#3c4046');
+    p.position.set((x0 + x1) / 2 - ox, 0, (z0 + z1) / 2 - oz);
+    p.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(p);
+  }
+}
+
 export { canopySlots }; // (data/jogyesa.js)
 
 function canopy(g, ox, oz) {
@@ -232,6 +248,7 @@ export function buildJogyesa(g) {
   sub(babyBuddha, J.babyBuddha);
   sub(stele, J.stele);
   sub(bellHouse, J.bell);
+  templeWall(g, ox, oz);
   const U = J.ujeongguk;
   hall(at(new THREE.Group(), U.x, U.z), U, '郵征總局');
   mergeStatic(g); // (before the canopy: it would bake the instanced lanterns too)
