@@ -271,3 +271,48 @@ export function furnitureCollider(item) {
     .map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]);
   return { p };
 }
+
+// Do two convex polygons overlap? (separating axis test; touching edges don't count)
+function polysOverlap(a, b) {
+  for (const poly of [a, b]) {
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, z1] = poly[i], [x2, z2] = poly[(i + 1) % poly.length];
+      const nx = z1 - z2, nz = x2 - x1;
+      const proj = (p) => p.map(([x, z]) => x * nx + z * nz);
+      const pa = proj(a), pb = proj(b);
+      if (Math.max(...pa) <= Math.min(...pb) + 1e-6 || Math.max(...pb) <= Math.min(...pa) + 1e-6) return false;
+    }
+  }
+  return true;
+}
+
+// Is this piece blocked: by another solid piece, or by someone standing at
+// `who` ({ x, z }, about 0.6 m wide)? Rugs never block and are never blocked.
+export function pieceBlocked(item, others, who = null) {
+  const me = furnitureCollider(item);
+  if (!me) return false;
+  if (others.some((o) => o !== item && o.id !== item.id && furnitureCollider(o) && polysOverlap(me.p, furnitureCollider(o).p))) return true;
+  if (who) {
+    const r = 0.3;
+    if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;
+  }
+  return false;
+}
+
+// A first home isn't an empty floor: the room starts with a few basics
+// (a bed in the back corner, a sofa facing the TV on a rug, a plant, a lamp
+// and a little table). Positions are for a room w × d (metres, door at +z),
+// kept clear of the door. Only used the very first time a home is opened.
+export function starterLayout(w, d) {
+  const L = -w / 2, R = w / 2, B = -d / 2;
+  return [
+    { id: 'rug', x: 0, z: B + 2.6, ry: 0 },
+    { id: 'tv', x: 0, z: B + 0.45, ry: 0 },
+    { id: 'sofa', x: 0, z: B + 3.6, ry: Math.PI },
+    { id: 'bed', x: L + 1.2, z: B + 1.25, ry: 0 },
+    { id: 'lamp', x: L + 2.45, z: B + 0.4, ry: 0 },
+    { id: 'plant', x: R - 0.5, z: B + 0.5, ry: 0 },
+    { id: 'table', x: R - 1.4, z: B + 3.2, ry: 0 },
+    { id: 'chair', x: R - 1.4, z: B + 4.0, ry: Math.PI },
+  ];
+}

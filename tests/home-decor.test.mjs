@@ -1,0 +1,37 @@
+// Home decorating: pieces can't be put down on top of each other or on
+// you, and a first home starts with a few basics that all fit the room.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { furnitureById, furnitureCollider, pieceBlocked, starterLayout } from '../src/core/furniture.js';
+
+test('a piece on top of another is blocked; apart, or a rug, is not', () => {
+  const bed = { id: 'bed', x: 0, z: 0, ry: 0 };
+  assert.equal(pieceBlocked({ id: 'sofa', x: 0.3, z: 0.2, ry: 0 }, [bed]), true);
+  assert.equal(pieceBlocked({ id: 'sofa', x: 3, z: 0, ry: 0 }, [bed]), false);
+  assert.equal(pieceBlocked({ id: 'rug', x: 0, z: 0, ry: 0 }, [bed]), false); // rugs go under things
+  assert.equal(pieceBlocked(bed, [bed, { id: 'rug', x: 0, z: 0, ry: 0 }]), false);
+  // Rotated: a 1.8 m sofa turned 90° next to the bed fits side by side.
+  assert.equal(pieceBlocked({ id: 'sofa', x: 1.3, z: 0, ry: Math.PI / 2 }, [bed]), false);
+  assert.equal(pieceBlocked({ id: 'sofa', x: 1.3, z: 0, ry: 0 }, [bed]), true);
+});
+
+test('a piece where you stand is blocked', () => {
+  assert.equal(pieceBlocked({ id: 'table', x: 0, z: 0, ry: 0 }, [], { x: 0.5, z: 0 }), true);
+  assert.equal(pieceBlocked({ id: 'table', x: 0, z: 0, ry: 0 }, [], { x: 2, z: 0 }), false);
+});
+
+test('the starter room fits the apartment, overlaps nothing and keeps the door clear', () => {
+  const w = 14, d = 11;
+  const items = starterLayout(w, d);
+  assert.ok(items.length >= 6);
+  assert.equal(new Set(items.map((i) => i.id)).size, items.length, 'one of each');
+  for (const it of items) {
+    assert.ok(furnitureById(it.id) && !furnitureById(it.id).item, it.id + ' is a free basic');
+    assert.equal(pieceBlocked(it, items), false, it.id + ' overlaps');
+    const c = furnitureCollider(it);
+    for (const [x, z] of c?.p || []) {
+      assert.ok(Math.abs(x) <= w / 2 && Math.abs(z) <= d / 2, it.id + ' inside the room');
+      assert.ok(z < d / 2 - 2.5, it.id + ' clear of the door');
+    }
+  }
+});

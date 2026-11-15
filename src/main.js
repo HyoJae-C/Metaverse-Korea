@@ -1968,9 +1968,10 @@ const shop = new ShopUI({
   onFurniture: (product) => {
     const id = product.furniture;
     if (!ITEMS[id] || inventory.has(id)) return;
-    const coins = coinsFor(product.price);
-    if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
+    const coins = coinsFor(product.price), note = { name: product.name, at: interior?.store.name };
+    if (!wallet.spend(coins, note)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
     inventory.add(id);
+    receipts.record(id, coins, wallet.lastOp, note); // (every item keeps its server receipt)
     refreshWallet();
     labelDecor();
     sfx.pop?.();
@@ -6698,7 +6699,7 @@ function updateAction(p, tSec) {
     } else if (decorGame.decor?.editing) {
       // decorate mode: walk up to a piece to rotate, move or remove it
       const it = nearestPiece(p);
-      if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { putDown(); closePiece(); } };
+      if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { if (putDown()) closePiece(); } };
       else if (it) next = { key: 'piece:' + decorGame.decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
       else if (!decorGame.decor.picked) closePiece();
     } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
