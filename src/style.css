@@ -877,6 +877,12 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   background: var(--panel); border-radius: 22px; padding: 10px 12px; box-shadow: var(--shadow); z-index: 4;
 }
 .decor-bar .fine { margin: 0 0 8px; font-size: 12px; }
+.visit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.visit-row .chip { padding: 5px 10px; font-size: 12px; }
+.visit-row .chip.on { background: var(--accent); color: #fff; }
+.visit-list { display: grid; gap: 8px; margin-top: 10px; max-height: 50vh; overflow-y: auto; }
+.visit-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #fff; font-weight: 800; text-align: left; }
+.visit-list small { font-weight: 700; color: var(--ink-soft); }
 /* A wrapping grid (not one long row): every piece in sight, scroll if many. */
 .decor-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px;
