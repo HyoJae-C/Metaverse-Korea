@@ -1380,22 +1380,43 @@ export function buildInterior(store) {
         const len = Math.hypot(x2 - x1, z2 - z1), nx = -(z2 - z1) / len * t / 2, nz = (x2 - x1) / len * t / 2;
         colliders.push({ p: [[x1 + nx, z1 + nz], [x2 + nx, z2 + nz], [x2 - nx, z2 - nz], [x1 - nx, z1 - nz]] });
       };
-      const R = 2.4, DOOR = 0.42; // dome radius; half the door opening (radians)
+      // The doorway faces A (radians, x→z): turned toward the front of the
+      // room so the fixed shop camera (looking -z) sees the opening, the glow
+      // and the sign, not a blank dome. Sphere angles run phi = π - A.
+      const R = 2.4, DOOR = 0.42, A = 0.65; // dome radius; half the door opening (radians); door direction
+      const dx = Math.cos(A), dz = Math.sin(A);
       const domeMat = seeMat('#9a6a45');
-      // The dome, open at the doorway (facing +x, into the room).
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(R, 24, 10, DOOR - Math.PI / 2, Math.PI * 2 - DOOR * 2, 0, Math.PI / 2), domeMat);
+      // The dome, open at the doorway.
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(R, 24, 10, Math.PI - A + DOOR, Math.PI * 2 - DOOR * 2, 0, Math.PI / 2), domeMat);
       dome.position.set(kx, 0, kz);
       scene.add(dome);
-      const lintel = new THREE.Mesh(new THREE.SphereGeometry(R, 8, 4, -Math.PI / 2 - DOOR, DOOR * 2, 0, 0.75), domeMat);
+      const lintel = new THREE.Mesh(new THREE.SphereGeometry(R, 8, 4, Math.PI - A - DOOR, DOOR * 2, 0, 0.6), domeMat); // over the door (about 2 m up)
       lintel.position.set(kx, 0, kz);
       scene.add(lintel);
       for (let k = 0; k < 14; k++) { // round wall, leaving the doorway open
-        const a0 = DOOR + (k / 14) * (Math.PI * 2 - DOOR * 2), a1 = DOOR + ((k + 1) / 14) * (Math.PI * 2 - DOOR * 2);
+        const a0 = A + DOOR + (k / 14) * (Math.PI * 2 - DOOR * 2), a1 = A + DOOR + ((k + 1) / 14) * (Math.PI * 2 - DOOR * 2);
         wallSeg(kx + Math.cos(a0) * R, kz + Math.sin(a0) * R, kx + Math.cos(a1) * R, kz + Math.sin(a1) * R);
       }
+      // A wooden door frame with a sign, so the way in reads at a glance.
+      const gate = new THREE.Group();
+      gate.position.set(kx, 0, kz);
+      gate.rotation.y = Math.PI / 2 - A; // local +z points out of the door
+      const wood = mat('#6b4428');
+      for (const sx of [-1.02, 1.02]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.1, 0.14), wood);
+        post.position.set(sx, 1.05, 2.3);
+        gate.add(post);
+      }
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 0.18), wood);
+      beam.position.set(0, 2.1, 2.3);
+      gate.add(beam);
+      const kilnSign = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.28), new THREE.MeshBasicMaterial({ map: labelTexture('불가마 · Hot Kiln', '#b5452a') }));
+      kilnSign.position.set(0, 2.38, 2.32);
+      gate.add(kilnSign);
+      scene.add(gate);
       const ember = new THREE.Mesh(new THREE.CircleGeometry(0.9, 18), new THREE.MeshBasicMaterial({ color: '#ff7a2f' }));
       ember.rotation.x = -Math.PI / 2;
-      ember.position.set(kx - 0.2, 0.012, kz);
+      ember.position.set(kx - dx * 0.2, 0.012, kz - dz * 0.2);
       scene.add(ember); // glowing hot floor stones
       const heat = new THREE.PointLight(0xff8a3d, 6, 6);
       heat.position.set(kx, 1.2, kz);
@@ -1421,8 +1442,8 @@ export function buildInterior(store) {
         benches.push(b);
       };
       for (const a of [-0.75, 0, 0.75]) { // angle round the back wall (facing the door)
-        const bx = kx - Math.cos(a) * 1.75, bz2 = kz + Math.sin(a) * 1.75;
-        bench(bx, bz2, Math.atan2(kx + 1 - bx, kz - bz2), '#c9935f', 'hot');
+        const bx = kx + Math.cos(A + Math.PI + a) * 1.75, bz2 = kz + Math.sin(A + Math.PI + a) * 1.75;
+        bench(bx, bz2, Math.atan2(kx + dx - bx, kz + dz - bz2), '#c9935f', 'hot');
       }
       // Ice room: four walls of ice and a roof, door facing into the room.
       const ix = w / 2 - 2.4, IW = 3.4, ID = 3.6, IH = 2.8;
@@ -1438,6 +1459,10 @@ export function buildInterior(store) {
       for (const sz of [-1, 1]) slab(0.2, IH, (ID - 1.2) / 2, ix - IW / 2, IH / 2, kz + sz * (ID + 1.2) / 4); // front, with a door gap
       slab(0.2, IH - 2, 1.2, ix - IW / 2, 2 + (IH - 2) / 2, kz); // over the door
       slab(IW + 0.2, 0.2, ID + 0.2, ix, IH, kz); // roof
+      const iceSign = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.23), new THREE.MeshBasicMaterial({ map: labelTexture('얼음방 · Ice Room', '#3a7fae') }));
+      iceSign.position.set(ix - IW / 2 - 0.11, 2.4, kz);
+      iceSign.rotation.y = -Math.PI / 2; // over the door, facing into the room
+      iceRoom.add(iceSign);
       scene.add(iceRoom);
       wallSeg(ix + IW / 2, kz - ID / 2, ix + IW / 2, kz + ID / 2, 0.25);
       for (const sz of [-1, 1]) {
@@ -1481,7 +1506,7 @@ export function buildInterior(store) {
         }
       };
       addPuffs(22, kx, kz, 1.6, 1.6, '#ffffff', 'steam');
-      addPuffs(6, kx + R + 0.1, kz, 0.2, 0.5, '#ffffff', 'steam'); // escaping at the door
+      addPuffs(6, kx + dx * (R + 0.1), kz + dz * (R + 0.1), 0.35, 0.35, '#ffffff', 'steam'); // escaping at the door
       addPuffs(16, ix, kz, 1.4, 1.5, '#e6f7ff', 'mist');
       let st = 0;
       animate = (dt) => {
