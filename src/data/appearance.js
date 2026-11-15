@@ -259,6 +259,11 @@ export const ACCESSORIES = {
 // What an accessory is drawn as.
 export const shapeOf = (a) => a?.shape || a?.id || null;
 
+// The cut of each trouser colour (core/outfit-mesh.js LEG_CUTS; the rest
+// are jeans) and which shoe colours are leather loafers, not sneakers.
+export const PANTS_CUT = { navy: 'slacks', charcoal: 'slacks', cocoa: 'slacks', sand: 'wide', cream: 'wide', olive: 'cargo' };
+export const LOAFERS = new Set(['brown', 'tan', 'burgundy']);
+
 export const DEFAULT_LOOK = {
   model: MODELS[0],
   shirt: 'coral', pants: 'denim', hair: 'espresso', skin: 'fair',

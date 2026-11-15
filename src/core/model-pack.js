@@ -12,7 +12,7 @@ import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
-import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
+import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
 import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
@@ -137,6 +137,9 @@ function wearUv(role) {
   const [cx, cy] = role === 'skin' ? A.skin : WEAR_CELLS[role] || WEAR_CELLS.top;
   return [(cx + 0.5) / A.cols, (cy + 0.5) / A.rows];
 }
+// accent3 (unless set): a shade of the top's colour, for lapels, collar
+// points and pocket flaps, so they show against the cloth they lie on.
+const shade = (hex, k = 0.8) => [16, 8, 0].reduce((c, b) => c | (Math.round(((hex >> b) & 255) * k) << b), 0);
 function applyWear(gltf, wear) {
   const A = PACK.atlas;
   const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
@@ -286,7 +289,8 @@ function dyedMaterial(id, src, look) {
     const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
     for (const [role, cell] of Object.entries(WEAR_CELLS)) {
       if (!cell) continue;
-      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes : c[role];
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes
+        : role === 'accent3' ? c.accent3 ?? shade(top) : c[role];
       if (hex != null) paint.push([cell, hex]);
     }
   }
@@ -714,10 +718,22 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   m.scale.setScalar(PACK.scale);
   let headMesh = null, bodyMesh = null;
   const dyeMat = dyedMaterial(id, src, look);
+  // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
+  // straight legs under a skirt; a suit's own shoes are leather.
+  const wearDef = PACK.models[id].wear;
+  const cut = look.skirt || wearDef?.outfit?.dress || wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans';
+  const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
+  const picked = (name) => {
+    const [, part, kind] = /^Outfit_(Legs|Shoes)_(\w+)$/.exec(name) || [];
+    if (!part) return true;
+    const want = part === 'Legs' ? cut : shoeKind;
+    // (shorts and swimwear only have one of each)
+    return kind === want || !m.getObjectByName('Outfit_' + part + '_' + want);
+  };
   m.traverse((o) => {
     if (!o.isMesh) return;
     if (dyeMat) o.material = dyeMat;
-    if (PACK.hide.test(o.name) || o.userData.wearHidden) { o.visible = false; return; }
+    if (PACK.hide.test(o.name) || o.userData.wearHidden || !picked(o.name)) { o.visible = false; return; }
     o.castShadow = true;
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
