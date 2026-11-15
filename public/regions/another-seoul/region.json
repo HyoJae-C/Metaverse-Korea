@@ -22,7 +22,7 @@
       { "k": "shop", "icon": "🛍️", "square": true, "district": "seongsu", "why": "Shopping and dressing up: beside the square guide on Seongsu Square, the old start, with the shops, hair salons and clothes around it." },
       { "k": "activity", "icon": "🛶", "district": "seongsu", "at": [86, 349], "heading": 180, "trip": "toBukchon", "why": "An outing: on Ttukseom Han River Park's bank (moved up when the Han got its real width), facing the river (duck boats, fishing, the drone show)." },
       { "k": "heal", "icon": "🌳", "district": "seongsu", "at": [-330, 52], "heading": 0, "trip": "toBukchon", "why": "A quiet walk: in Seoul Forest at the south end of Metasequoia Avenue, looking up the tree-lined walk, near the butterfly greenhouse and the flower gardens." },
-      { "k": "arrive", "icon": "🚉", "district": "seoul-station", "at": [14, 41], "heading": 40, "trip": "bukchon", "why": "Arriving: on Seoul Station's plaza at the foot of the steps from the glass hall, as if just off the airport train, facing Seoul Square's media wall across Hangang-daero, the old station on the left (Yozi 2026-11-12: most visitors really arrive here)." }
+      { "k": "stream", "icon": "🏮", "district": "gyeongbokgung", "at": [33, 192], "heading": 90, "trip": "toBukchon", "why": "A city stroll: on Cheonggye Plaza at the head of Cheonggyecheon, facing east down the stream (the falls, the stairs down to the walkway, the first lantern figures), Gwanghwamun Station a block north for the first trip to Bukchon. Took the place of the Seoul Station start (Yozi 2026-11-15: little to do there; temples stay optional, not pushed on new players)." }
     ]
   },
   "districts": [

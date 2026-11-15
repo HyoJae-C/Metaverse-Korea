@@ -104,8 +104,9 @@ const ROTUNDA = [-1860, -287.4]; // the round entrance: the middle of the hall o
 // of the glass front (the diagonal wall facing north-east over the plaza),
 // like Yozi's photo; ry turns the box's long side along that wall.
 const SIGN = { at: [-1856.2, -274.7], ry: -0.927 };
-// Where a new player who picks "Seoul Station" starts: at the foot of the
-// steps, as if just out of the hall, facing Seoul Square across the road.
+// A clear spot at the foot of the steps, as if just out of the hall, facing
+// Seoul Square across the road. (New players could start here until
+// 2026-11-15, when Cheonggye Plaza took that start: region.json spawn.starts.)
 export const START = [-1842, -276];
 // The Information Center: a small kiosk tucked in south of the hall's east
 // wing, out of the way of the old station's front and of the glass front

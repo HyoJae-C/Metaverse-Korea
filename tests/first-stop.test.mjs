@@ -22,8 +22,8 @@ test('new players start just inside Bukchon\'s gate, facing up into the village,
   assert.ok(Math.abs(Math.sin(f.ry)) < 0.01 && Math.cos(f.ry) < 0, 'facing north (up the village)');
 });
 
-test('the start screen offers sights, shopping, an outing, a quiet walk and arriving at Seoul Station, each with a spot, a trip and words', () => {
-  assert.deepEqual(startList(region).map((s) => s.k), ['tour', 'shop', 'activity', 'heal', 'arrive']);
+test('the start screen offers sights, shopping, an outing, a quiet walk and a city stroll by Cheonggyecheon, each with a spot, a trip and words', () => {
+  assert.deepEqual(startList(region).map((s) => s.k), ['tour', 'shop', 'activity', 'heal', 'stream']);
   for (const s of startList(region)) {
     const sp = startSpot(region, s.k);
     assert.ok(sp, s.k);
@@ -34,6 +34,29 @@ test('the start screen offers sights, shopping, an outing, a quiet walk and arri
   }
   for (const k of [...startList(region).map((s) => s.k), ANY, 'where']) assert.ok(EN['start.' + k], 'start.' + k);
   assert.equal(startSpot(region, 'shop').square, true);
+});
+
+// Yozi 2026-11-15: Cheonggyecheon instead of Seoul Station (little to do
+// there). Temples stay optional: no start sends new players to one.
+test('the city stroll starts on Cheonggye Plaza at the head of the stream, facing down it, a short walk from a station', () => {
+  const s = startSpot(region, 'stream');
+  assert.equal(s.district, 'gyeongbokgung');
+  const off = region.districts.find((d) => d.id === 'gyeongbokgung').offset;
+  const gb = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/gyeongbokgung.json', import.meta.url)));
+  const [lx, lz] = [s.x - off[0], s.z - off[1]];
+  const plaza = gb.areas.find((a) => a.cg && a.k === 'plaza' && a.p.some(([x, z]) => Math.abs(x - 28) < 20 && Math.abs(z - 187) < 25));
+  let inside = false;
+  for (let i = 0, j = plaza.p.length - 1; i < plaza.p.length; j = i++) {
+    const [xi, zi] = plaza.p[i], [xj, zj] = plaza.p[j];
+    if ((zi > lz) !== (zj > lz) && lx < ((xj - xi) * (lz - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  assert.ok(inside, 'on the plaza');
+  const head = gb.streams.find((q) => q.id === 'cheonggyecheon').at;
+  assert.ok(Math.hypot(lx - head[0], lz - head[1]) < 10, 'by the head of the stream');
+  assert.ok(Math.abs(Math.sin(s.ry) - 1) < 0.01, 'facing east, down the stream');
+  const near = Math.min(...region.subway.stations.flatMap((st) => st.exits.map((e) => Math.hypot(e.at[0] - s.x, e.at[1] - s.z))));
+  assert.ok(near < 100, `a station within 100 m (${near.toFixed(0)} m)`);
+  for (const q of startList(region)) assert.ok(!/jogyesa|bongeunsa|temple/i.test(q.district + ' ' + q.k), q.k + ' is not a temple');
 });
 
 test('"anywhere" goes where most people are; nobody about, any start at random', () => {

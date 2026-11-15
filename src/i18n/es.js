@@ -603,7 +603,7 @@ export const ES = {
   'start.shop': 'Compras y estilo · Seongsu',
   'start.activity': 'Aire libre · río Han',
   'start.heal': 'Relax · Bosque de Seúl',
-  'start.arrive': 'Llegada · estación de Seúl',
+  'start.stream': 'Paseo urbano · Cheonggyecheon',
   'start.any': 'Donde sea · donde hay gente',
   'start.last': 'Última ubicación: {place}',
   'start.button': 'Empezar a pasear',
