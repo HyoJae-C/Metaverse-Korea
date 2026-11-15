@@ -12,12 +12,14 @@
 // north, Namsan and its tower and far Yeouido to the west, Ttukseom to the
 // north-west, Seokchon Lake right below to the south. On a fireworks night
 // small bursts go up over Yeouido, on a drone night the drones light up
-// over Ttukseom, at the same times as the real shows (Yozi 2026-11-15).
+// over Ttukseom (the real show's own drones and pictures, drone-sky.js), at
+// the same times as the shows (Yozi 2026-11-15).
 //
 // Loaded with the room builder (core/interior.js), not in the first download.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from './cathedral-hall.js';
+import * as droneShow from './drone-show.js';
 import { CYCLE_MS, SHOW_FROM, FIREWORKS, DRONES, cycleNumber, cycleMs, showOf, smooth } from './show-clock.js';
 
 const SEAT_H = 0.38; // the same seat height as every chair in the game
@@ -37,6 +39,11 @@ export const VIEW = {
   river: 0, // the Han, 1.3 km north
   lake: 190, // Seokchon Lake, below
 };
+// Where the drone show's sky plane (drone-show.js SKY, 28 m wide) sits in
+// the view: e degrees up, on a cylinder of radius r, scaled so it spans
+// about 8 degrees (a hand's width at arm's length, like the real 4.5 km);
+// dot: the drones' size.
+export const DRONE_VIEW = { e: 4.5, r: 80, scale: 0.4, dot: 0.6 };
 
 // Each wall's facing: φ from +z (the lift wall, south) round by +x.
 // A wall facing φ looks out on bearing 180 - φ.
@@ -498,7 +505,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   // The sun or the moon: a soft disc in the painting's sky.
   const disc = new THREE.Mesh(new THREE.CircleGeometry(3, 24), new THREE.MeshBasicMaterial({ color: '#fff3c4', transparent: true, depthWrite: false, fog: false }));
   disc.renderOrder = -2.8;
-  // The shows: a few hundred sparks (fireworks or drones).
+  // The fireworks: a few hundred sparks.
   const SPARKS = 320;
   const sp = new Float32Array(SPARKS * 3), sc = new Float32Array(SPARKS * 3);
   const sparkGeo = new THREE.BufferGeometry();
@@ -565,29 +572,36 @@ export function buildSkyDeck(store, ROOM, EXIT) {
       }
     });
   };
-  // Drones over Ttukseom: they rise in a grid, then turn from shape to shape.
-  const SHAPES = [
-    (t) => [Math.cos(t * Math.PI * 2) * 3, Math.sin(t * Math.PI * 2) * 3], // a ring
-    (t) => { const a = t * Math.PI * 2; return [0.19 * 16 * Math.pow(Math.sin(a), 3), 0.19 * (13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a))]; }, // a heart
-    (t) => { const a = t * Math.PI * 2, r = (Math.floor(t * 10) % 2 ? 1.4 : 3.2); return [Math.sin(a) * r, Math.cos(a) * r]; }, // a star
-    (t) => (t < 0.5 ? [(t * 2 - 0.5) * 0.6, -3 + t * 2 * 6.5] : [Math.cos((t - 0.5) * 4 * Math.PI) * 1.4, 1.2 + Math.sin((t - 0.5) * 4 * Math.PI) * 0.5]), // a tower
-  ];
-  const DRONES_N = 160;
-  const drones = (t) => {
-    const k = Math.floor(t / 22), f = smooth(((t % 22) - 16) / 6);
-    const from = SHAPES[k % SHAPES.length], to = SHAPES[(k + 1) % SHAPES.length];
-    const rise = smooth(t / 12);
-    sc.fill(0);
-    for (let i = 0; i < DRONES_N; i++) {
-      const q = i / DRONES_N, [ax, ay] = from(q), [bx, by] = to(q);
-      const gx0 = ((i % 16) - 7.5) * 0.4, gy0 = Math.floor(i / 16) * 0.4 - 2;
-      const x = ax + (bx - ax) * f, y = ay + (by - ay) * f;
-      const u = gx0 + (x - gx0) * rise, v = -4 + (gy0 + 4 + (y - gy0)) * rise;
-      sp.set(onCylinder(VIEW.ttukseom + u * 0.9, 5 + v * 0.9, R - 3), i * 3);
-      const tw = 0.75 + 0.25 * Math.sin(t * 3 + i);
-      const hue = (k + q) % 1;
-      sc.set([(0.6 + 0.4 * Math.sin(hue * 6.28)) * tw, (0.6 + 0.4 * Math.sin(hue * 6.28 + 2.1)) * tw, (0.8 + 0.2 * Math.sin(hue * 6.28 + 4.2)) * tw], i * 3);
+  // The real Ttukseom drone show (core/drone-sky.js, the same pictures at
+  // the same moment as in the park), small over the river to the north-west.
+  // Its code comes only when a show is near while you're up here.
+  const droneG = new THREE.Group();
+  droneG.visible = false;
+  scene.add(droneG);
+  let droneSky = null, droneLoading = false;
+  const placeDrones = (SKY) => {
+    const yaw = (-VIEW.ttukseom * Math.PI) / 180, k = DRONE_VIEW.scale;
+    const centre = new THREE.Vector3(...onCylinder(VIEW.ttukseom, DRONE_VIEW.e, DRONE_VIEW.r));
+    const local = new THREE.Vector3(SKY.x, SKY.y, SKY.z).multiplyScalar(k).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    droneG.position.copy(centre.sub(local));
+    droneG.rotation.y = yaw;
+    droneG.scale.setScalar(k);
+    droneG.updateMatrixWorld(true);
+  };
+  const drones = (now) => {
+    const s = droneShow.droneShowAt(now);
+    const near = s && s.t > -droneShow.LIFT_SECONDS - 60;
+    if (near && !droneSky && !droneLoading) {
+      droneLoading = true;
+      import('./drone-sky.js').then((m) => {
+        m.useShow(droneShow);
+        placeDrones(droneShow.SKY);
+        droneSky = m.createDroneSky(droneG, { count: 900 });
+        droneSky.points.material.size = DRONE_VIEW.dot; // (far away: smaller dots)
+      }).catch(() => {}).finally(() => { droneLoading = false; }); // (offline: try again later)
     }
+    droneG.visible = !!(near && droneSky);
+    if (droneG.visible) droneSky.update(s.start, s.t, s.night);
   };
 
   const animate = (dt) => {
@@ -596,10 +610,10 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     lastFrame = t;
     if (t - lastPaint > 500) { paintSky(now); lastPaint = t; }
     const show = showAt(now);
-    sparks.visible = !!show;
-    if (show) {
-      if (show.kind === FIREWORKS) fireworks(Math.min(dt, 0.1));
-      else drones(show.t);
+    sparks.visible = show?.kind === FIREWORKS;
+    drones(now);
+    if (sparks.visible) {
+      fireworks(Math.min(dt, 0.1));
       sparkGeo.attributes.position.needsUpdate = true;
       sparkGeo.attributes.color.needsUpdate = true;
     } else bursts.length = 0;
