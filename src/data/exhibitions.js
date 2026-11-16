@@ -1,6 +1,7 @@
-// What's on in Seoul Forest's forest galleries (stores.json category
-// "culture"; rooms drawn by core/culture.js). The culture center itself is
-// a photo show on three floors now (data/photo-show.js, core/photo-show.js).
+// What's on in Seoul Forest's one-room galleries B and C (forest galleries 1
+// and 2; stores.json category "culture"; rooms drawn by core/culture.js).
+// Galleries A (the culture center) and D (forest gallery 3) are photo shows
+// on several floors (data/photo-show.js, core/photo-show.js).
 // To put on a show, give the place a title, the artist, a look for the room
 // and its works: 4 on each side wall and 2 on the back wall (core/culture.js).
 //   theme: 'colorful' (bright walls, coloured frames) or 'dark' (dark walls)
@@ -10,13 +11,13 @@
 // under public/exhibitions so the site doesn't carry it either. A place with no
 // works shows "coming soon" cards.
 export const EXHIBITIONS = {
-  // ACIRE's illustrations: no titles, on the artist's wish only the show's.
+  // Gallery B: ACIRE's illustrations: no titles, on the artist's wish only the show's.
   'forest-gallery-1': {
     title: { ko: 'colorful', en: 'colorful' }, artist: { ko: 'ACIRE', en: 'ACIRE' }, theme: 'colorful',
     dir: 'exhibitions/acire/',
     works: [['01', 960, 960], ['02', 960, 720], ['03', 960, 960], ['04', 960, 960], ['05', 720, 960], ['06', 960, 960], ['07', 960, 960], ['08', 960, 960], ['09', 960, 960], ['10', 960, 960]],
   },
-  // KimPD's photos, each titled 시네마틱01 to 10.
+  // Gallery C: KimPD's photos, each titled 시네마틱01 to 10.
   'forest-gallery-2': {
     title: { ko: '시네마틱', en: 'Cinematic' }, artist: { ko: 'KimPD', en: 'KimPD' }, theme: 'dark',
     dir: 'exhibitions/kimpd/',
@@ -33,7 +34,6 @@ export const EXHIBITIONS = {
       ['10', 640, 960, { ko: '시네마틱10', en: 'Cinematic10' }],
     ],
   },
-  'forest-gallery-3': { title: null, works: [] },
 };
 
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL) || '/';

@@ -151,6 +151,7 @@ export function createZooVisit(game) {
 
   return {
     CART, carts, camels, adopt,
+    peer: (q) => camels.placePeer(q), // someone else on a camel: on its saddle here
     get zoo() { return here() ? zoo : null; },
     get built() { return built; },
     welcome() { // (once in a while, not every time you come back out of the hall)

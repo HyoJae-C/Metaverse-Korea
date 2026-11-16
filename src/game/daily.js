@@ -67,7 +67,7 @@ export function createDaily(game) {
         go.onclick = () => {
           $('daily-panel').hidden = true;
           if (game.mode === 'store') leaveStore();
-          if (m.type === 'visit') setGuide({ kind: 'store', id: target.store.id, x: target.door.x, z: target.door.z, label: localName(target.store.name, getLanguage()) });
+          if (m.type === 'visit') setGuide({ kind: 'store', id: target.store.id, x: (target.go || target.door).x, z: (target.go || target.door).z, label: localName(target.store.name, getLanguage()) });
           else setGuide({ kind: 'npc', id: target.name, x: target.ch.root.position.x, z: target.ch.root.position.z, label: target.name });
         };
         li.append(go);

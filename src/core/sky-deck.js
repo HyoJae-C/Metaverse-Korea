@@ -330,25 +330,68 @@ function signTexture() {
   return t;
 }
 
-// The ride up: a lift's floor counter over the screen as you arrive.
-function liftRide() {
+// The lift: a floor counter over the screen, slow enough to watch (a
+// player's wish, Yozi 2026-11-16: "it's fine to arrive slowly"). Going up
+// as you arrive, down as you leave. Beside the number, a tall gauge with
+// the height and little marks you pass on the way (a Ferris wheel, a tall
+// building, Namsan's tower top, each with its height): pictures and
+// numbers, so every language reads it. A tap skips it.
+export const LIFT = { floors: 117, top: 500, up: 8, down: 6 }; // floors, metres, seconds
+export const LIFT_MARKS = [['🎡', 60], ['🏢', 250], ['🗼', 480]]; // [mark, metres]: a Ferris wheel, a tall building, Namsan's tower top
+// How far along the ride is (0–1) after `k` of its time (0–1): eases in
+// and out, steady in the middle like a real lift.
+export const liftAlong = (k) => {
+  const x = Math.min(1, Math.max(0, k)), e = 0.18; // the first and last 18% speed up and slow down
+  if (x < e) return (x * x) / (2 * e * (1 - e));
+  if (x > 1 - e) return 1 - ((1 - x) * (1 - x)) / (2 * e * (1 - e));
+  return (x - e / 2) / (1 - e);
+};
+export const liftFloor = (along) => Math.max(1, Math.round(1 + (LIFT.floors - 1) * along));
+
+function liftRide(dir = 'up') {
   if (typeof document === 'undefined' || !document.body?.appendChild) return;
-  const o = document.createElement('div');
+  document.querySelector('.skydeck-lift')?.remove();
+  const up = dir === 'up', LEN = (up ? LIFT.up : LIFT.down) * 1000;
+  const el = (tag, css, text) => { const e = document.createElement(tag); if (css) e.style.cssText = css; if (text) e.textContent = text; return e; };
+  const o = el('div', 'position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;gap:clamp(24px,7vw,64px);'
+    + 'background:linear-gradient(#0d1322,#1d2a44);color:#fff;font-family:system-ui,sans-serif;transition:opacity .5s;cursor:pointer');
   o.className = 'skydeck-lift';
-  o.style.cssText = 'position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;'
-    + 'background:linear-gradient(#0d1322,#1d2a44);color:#fff;font:900 64px system-ui,sans-serif;pointer-events:none;transition:opacity .5s';
-  const n = document.createElement('div');
-  const sub = document.createElement('div');
-  sub.style.cssText = 'font:700 18px system-ui,sans-serif;letter-spacing:.2em;color:#e9c46a';
-  sub.textContent = '▲ MODU SKY';
-  o.append(n, sub);
+  // The gauge: a thin shaft, the marks beside it, the car moving along.
+  const H = 'min(58vh,340px)';
+  const gauge = el('div', `position:relative;width:110px;height:${H}`);
+  gauge.append(el('div', 'position:absolute;left:76px;top:0;bottom:0;width:4px;border-radius:2px;background:rgba(255,255,255,.18)'));
+  const fill = el('div', 'position:absolute;left:76px;bottom:0;width:4px;border-radius:2px;background:#e9c46a');
+  gauge.append(fill);
+  const marks = LIFT_MARKS.map(([m, at]) => {
+    const e = el('div', `position:absolute;right:42px;bottom:calc(${(at / LIFT.top) * 100}% - 11px);display:flex;align-items:center;gap:4px;white-space:nowrap;font:600 12px system-ui,sans-serif;color:#b9c4d6;line-height:22px;opacity:.35;transition:opacity .4s,transform .4s;transform-origin:right center`);
+    e.append(el('span', 'font-size:18px', m), el('span', '', `${at} m`));
+    gauge.append(e);
+    return [e, at];
+  });
+  const car = el('div', 'position:absolute;left:70px;width:16px;height:16px;margin-bottom:-8px;border-radius:4px;background:#fff;box-shadow:0 0 12px #e9c46a');
+  gauge.append(car);
+  const right = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:6ch');
+  const floor = el('div', 'font:900 clamp(52px,12vw,84px)/1 system-ui,sans-serif;font-variant-numeric:tabular-nums');
+  const metres = el('div', 'font:700 22px system-ui,sans-serif;color:#b9c4d6;font-variant-numeric:tabular-nums');
+  const name = el('div', 'margin-top:10px;font:700 15px system-ui,sans-serif;letter-spacing:.2em;color:#e9c46a', `${up ? '▲' : '▼'} MODU SKY`);
+  right.append(floor, metres, name);
+  o.append(gauge, right);
   document.body.appendChild(o);
-  const t0 = performance.now(), LEN = 1700;
+  let done = false;
+  const end = () => { if (done) return; done = true; o.style.opacity = '0'; setTimeout(() => o.remove(), 600); };
+  o.addEventListener('pointerdown', end);
+  const t0 = performance.now();
   const tick = () => {
-    const k = Math.min(1, (performance.now() - t0) / LEN);
-    n.textContent = `${Math.max(1, Math.round(117 * k * k * (3 - 2 * k)))}F`;
+    if (done) return;
+    const k = (performance.now() - t0) / LEN, a = liftAlong(k), along = up ? a : 1 - a;
+    const m = Math.round(along * LIFT.top);
+    floor.textContent = `${liftFloor(along)}F`;
+    metres.textContent = `${m} m`;
+    fill.style.height = `${along * 100}%`;
+    car.style.bottom = `${along * 100}%`;
+    for (const [e, at] of marks) { const on = m >= at - 1; e.style.opacity = on ? '1' : '.35'; e.style.transform = on ? 'scale(1.15)' : 'none'; }
     if (k < 1) requestAnimationFrame(tick);
-    else { o.style.opacity = '0'; setTimeout(() => o.remove(), 600); }
+    else setTimeout(end, 500); // (a moment on the last floor)
   };
   tick();
 }
@@ -606,7 +649,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
 
   const animate = (dt) => {
     const t = performance.now(), now = Date.now();
-    if (t - lastFrame > 1500) { liftRide(); lastPaint = -1e9; } // just walked in: the ride up
+    if (t - lastFrame > 1500) { liftRide('up'); lastPaint = -1e9; } // just walked in: the ride up
     lastFrame = t;
     if (t - lastPaint > 500) { paintSky(now); lastPaint = t; }
     const show = showAt(now);
@@ -634,6 +677,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     stations: { visitors },
     animate,
     camBlocked: (x, z) => !insideDeck(x, z, 0.3),
+    onLeave: () => liftRide('down'), // (main.js leaveStore: the ride down)
     skyDeck: true,
   };
 }

@@ -24,6 +24,26 @@ const bowing = (t, every = 6, hold = 1.2) => {
   return k < 1 ? e(k) : k < 1 + hold ? 1 : k < 2 + hold ? e(2 + hold - k) : 0;
 };
 
+// The sign of the cross, as the right arm's [arm, forearm, head] at each point
+// (eased from one to the next): down, forehead, chest, left shoulder, right
+// shoulder, down.
+export const HOLY_SIGN = 3.2; // seconds
+const HOLY = {
+  font: [-1.1, 0, 0],
+  // [arm, forearm, head bow] (the chibi's hand can't reach over its big
+  // head, so the head bows down to meet it at the forehead)
+  path: [
+    [[0, 0, 0], [0, 0, 0], 0.2],
+    [[-2.0, 0, 0], [-2.4, 0, 0], 0.55], // forehead
+    [[-2.0, 0, 0], [-2.4, 0, 0], 0.55],
+    [[-0.4, 0, 0.4], [-2.2, 0, 0], 0.35], // chest
+    [[-0.7, 0, 1.1], [-2.3, 0, 0], 0.3], // left shoulder
+    [[-0.9, 0.4, 0], [-1.9, 0, 0], 0.3], // right shoulder
+    [[0, 0, 0], [0, 0, 0], 0.2],
+  ],
+};
+const holy = () => globalThis.__holy || HOLY; // (debug: globalThis.__holy = { font, path } tunes it live)
+
 export const STUDIO_MOVES = {
   // Praying (game/prayer.js): at a temple (합장, palms together at the chest,
   // and a deep bow every few seconds) and in the cathedral (hands folded,
@@ -35,6 +55,18 @@ export const STUDIO_MOVES = {
   prayc(t) {
     const b = breath(t);
     return { spine: [0.08 + 0.02 * b, 0, 0], head: [0.5, 0, 0], ...arms([0, 0, -1.3]) };
+  },
+  // Holy water at the cathedral's door (game/holy-water.js): the right
+  // hand's fingertips in the font ('holyreach'), then the sign of the cross
+  // ('holywater', one every HOLY_SIGN s): forehead, chest, left shoulder,
+  // right shoulder, and the hand down again.
+  holyreach() {
+    return { spine: [0.22, 0, 0], head: [0.35, 0, 0], armR: holy().font, foreR: [-0.4, 0, 0] };
+  },
+  holywater(t) {
+    const P = holy().path, k = (t % HOLY_SIGN) / HOLY_SIGN * (P.length - 1), i = Math.min(P.length - 2, Math.floor(k)), f = k - i;
+    const e = f * f * (3 - 2 * f), a = P[i], b = P[i + 1];
+    return { spine: [0.05, 0, 0], head: [a[2] + (b[2] - a[2]) * e, 0, 0], armR: mix(a[0], b[0], e), foreR: mix(a[1], b[1], e) };
   },
   // Standing tall, both arms up, rising a little with each breath.
   ymountain(t) {

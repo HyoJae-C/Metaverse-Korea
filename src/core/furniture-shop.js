@@ -16,12 +16,47 @@ export const SHOP_FURNITURE = [
     box(1.24, 0.06, 0.54, 0, 1.63, 0, '#141216');
     for (const x of [-0.45, 0.45]) for (const z of [-0.2, 0.2]) box(0.06, 0.1, 0.06, x, 0.05, z, '#141216'); // legs
     box(0.012, 1.4, 0.01, 0, 0.85, 0.252, '#8a6a3a'); // the doors meet
-    // Mother-of-pearl: a crane and flowers that catch the light.
-    const pearl = new THREE.MeshLambertMaterial({ color: '#e8f2f0', emissive: '#4a6a78', emissiveIntensity: 0.35 });
-    for (const [x, y, r] of [[-0.3, 1.25, 0.07], [-0.22, 1.1, 0.05], [-0.36, 1.05, 0.04], [0.28, 0.75, 0.08], [0.36, 0.6, 0.05], [0.2, 0.62, 0.04], [-0.25, 0.45, 0.06], [0.3, 1.3, 0.05]]) {
-      part(new THREE.CircleGeometry(r, 10), pearl, x, y, 0.252);
+    // Mother-of-pearl (Yozi 2026-11-16: cranes, like the old 자개장): two
+    // cranes flying toward each other across the doors, with clouds, a sun
+    // and a pine branch, inside an inlaid frame on each door.
+    const pearl = new THREE.MeshLambertMaterial({ color: '#eef6f4', emissive: '#4a6a78', emissiveIntensity: 0.35, side: THREE.DoubleSide });
+    const pearlPink = new THREE.MeshLambertMaterial({ color: '#f6e4ea', emissive: '#6a4a5a', emissiveIntensity: 0.3 });
+    const pearlGreen = new THREE.MeshLambertMaterial({ color: '#d8f0e0', emissive: '#3a6a50', emissiveIntensity: 0.3 });
+    const crown = new THREE.MeshLambertMaterial({ color: '#d8323c', side: THREE.DoubleSide });
+    const Z = 0.252;
+    const shape = (pts) => { const sh = new THREE.Shape(); sh.moveTo(...pts[0]); for (const q of pts.slice(1)) sh.lineTo(...q); return new THREE.ShapeGeometry(sh); };
+    // A crane in flight, head to the left (flip: to the right), about 0.45 m across.
+    const crane = (cx, cy, k, flip) => {
+      const c = new THREE.Group();
+      c.position.set(cx, cy, Z);
+      c.scale.set(flip ? -k : k, k, 1);
+      g.add(c);
+      const add = (geo, m, x = 0, y = 0) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, 0.001); c.add(o); return o; };
+      add(new THREE.CircleGeometry(1, 16).scale(0.075, 0.03, 1), pearl); // body
+      add(shape([[-0.05, 0.012], [-0.12, 0.03], [-0.19, 0.05], [-0.2, 0.034], [-0.12, 0.012], [-0.055, -0.006]]), pearl); // long neck
+      add(new THREE.CircleGeometry(0.018, 10), pearl, -0.2, 0.044); // head
+      add(shape([[-0.212, 0.05], [-0.27, 0.036], [-0.212, 0.036]]), pearl); // beak
+      add(new THREE.CircleGeometry(0.008, 8), crown, -0.198, 0.06); // the red crown
+      // Wings with feathered edges: the near one raised, the far one down.
+      add(shape([[-0.03, 0.02], [-0.05, 0.1], [-0.03, 0.17], [0, 0.15], [0.01, 0.21], [0.04, 0.18], [0.06, 0.22], [0.08, 0.16], [0.1, 0.17], [0.09, 0.08], [0.05, 0.02]]), pearl);
+      add(shape([[-0.02, -0.02], [-0.01, -0.09], [0.01, -0.08], [0.03, -0.14], [0.05, -0.11], [0.08, -0.15], [0.08, -0.06], [0.05, -0.02]]), pearl);
+      add(shape([[0.07, 0.005], [0.12, 0.02], [0.11, -0.01], [0.07, -0.015]]), pearl); // tail
+      for (const dy of [0, -0.014]) add(new THREE.PlaneGeometry(0.1, 0.006), pearl, 0.115, -0.02 + dy).rotation.z = -0.12; // legs trailing behind
+    };
+    crane(-0.27, 1.1, 1.2, false); // left door: flying up and in
+    crane(0.27, 0.78, 1.05, true); // right door: answering it
+    // Clouds: little rows of puffs.
+    for (const [x, y, n] of [[-0.42, 1.45, 3], [0.2, 1.22, 4], [-0.2, 0.62, 3], [0.38, 0.48, 3]]) {
+      for (let i = 0; i < n; i++) part(new THREE.CircleGeometry(i % 2 ? 0.026 : 0.034, 12), pearl, x + i * 0.045, y + (i % 2) * 0.012, Z + 0.001);
     }
-    part(new THREE.PlaneGeometry(0.3, 0.05), pearl, -0.15, 0.9, 0.252).rotation.z = 0.5; // the crane's wing
+    part(new THREE.CircleGeometry(0.06, 20), pearlPink, 0.36, 1.42, Z + 0.001); // the sun
+    // A pine branch along the bottom of the left door.
+    part(new THREE.PlaneGeometry(0.42, 0.018), '#b08a4a', -0.3, 0.32, Z + 0.001).rotation.z = 0.25;
+    for (const [x, y] of [[-0.46, 0.3], [-0.36, 0.34], [-0.26, 0.37], [-0.16, 0.4], [-0.31, 0.27]]) part(new THREE.CircleGeometry(0.038, 7), pearlGreen, x, y + 0.02, Z + 0.002);
+    // An inlaid frame round each door.
+    for (const dx of [-0.3, 0.3]) for (const [w, h, x, y] of [[0.5, 0.012, 0, 0.66], [0.5, 0.012, 0, -0.66], [0.012, 1.32, 0.25, 0], [0.012, 1.32, -0.25, 0]]) {
+      part(new THREE.PlaneGeometry(w, h), pearl, dx + x, 0.85 + y, Z + 0.001);
+    }
     for (const s of [-1, 1]) part(new THREE.TorusGeometry(0.035, 0.008, 4, 12), '#c9a227', 0.06 * s, 0.85, 0.27); // brass pulls
   }],
   ['f-bandaji', '🧰', [0.9, 0.45], false, { en: 'Bandaji chest', ko: '반닫이', ja: 'パンダジ（衣装箱）', zh: '半开柜' }, (g, part, box) => {

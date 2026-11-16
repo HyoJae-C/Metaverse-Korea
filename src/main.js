@@ -17,7 +17,7 @@ import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStar
 import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
-import { WallScreen, wallNear } from './core/wall-screen.js';
+import { WallScreen, wallNear, screenSpot } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { noticeBoardSpots } from './core/notice-board-spots.js';
@@ -33,6 +33,7 @@ import { yardY } from './core/cathedral-yard-ground.js';
 import { terraceY } from './core/temple-terrace.js';
 import { createBuddhaView } from './game/buddha-view.js';
 import { createPrayer } from './game/prayer.js';
+import { createHolyWater } from './game/holy-water.js';
 import { createMoktak } from './game/moktak.js';
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
@@ -863,7 +864,7 @@ const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
-  t, L, fmt, missionEvent: (k) => missionEvent(k), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  t, L, fmt, missionEvent: (k, id) => missionEvent(k, id), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 }, { landmarks: map.landmarks, low: storefronts.get('namsan-sky-cable')?.door, top: namsanWalk.station, topOut: namsanWalk.stationOut });
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
@@ -925,11 +926,9 @@ const farExtras = [];
 const wallScreens = [];
 for (const sc of region.screens || []) {
   const near = wallNear(map.buildings, sc.at[0], sc.at[1]);
-  if (!near) continue;
-  const along = sc.along || 0; // slide sideways along the wall
-  const wall = { ...near, x: near.x + near.ax * along, z: near.z + near.az * along };
-  const w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
-  const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
+  if (!near || near.d > 6) continue; // its building is gone: no screen in the air
+  const { x, z, w, h, y } = screenSpot(near, sc); // inside the wall's ends, under the roof
+  const wall = { ...near, x, z };
   const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
@@ -1494,7 +1493,7 @@ function watchWeatherSetting() {
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
 // ---------- Multiplayer ----------
-const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => sky.remote(q, all, dt) };
+const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => { sky.remote(q, all, dt); zooVisit.peer(q); } };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
@@ -3269,6 +3268,7 @@ function leaveStore(walkOut = false) {
   homeVisitsLoaded?.left();
   closeHatWorkshop(false);
   interior.confession?.reset();
+  interior.onLeave?.(); // (a room's own goodbye, e.g. Modu Sky's lift down)
   hideConfession();
   if (orderUi.open) orderUi.close();
   if (grillUi.open) grillUi.close();
@@ -4124,8 +4124,8 @@ onLanguageChange(() => updateZoneLine(currentZone));
 const decorGame = createDecor({
   get interior() { return interior; },
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
-  get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, $, STALE,
-  inventory, shop,
+  get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
+  inventory, shop, PLAYER_R,
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
 });
@@ -4332,6 +4332,10 @@ giftSync.then(() => { // (after it: a gift's receipt is in first)
     if (head) setTimeout(() => m.runHeadRefund(g).catch(() => {}), 8000); // the clinics' face size, paid back (040)
   }).catch(() => {});
 });
+// Personal notices: a popup for me alone, once (game/player-notices.js, 049).
+walletReady.then(() => setTimeout(() => {
+  if (wallet.server) import('./game/player-notices.js').then((m) => m.runPlayerNotices({ wallet, refreshWallet, t, lang: getLanguage })).catch(() => {});
+}, 6000));
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,
@@ -4752,7 +4756,7 @@ function guideToPlace(to) {
     const it = storefronts.get(to.store);
     if (!it) return false;
     if (interior) leaveStore();
-    setGuide({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+    setGuide({ kind: 'store', id: it.store.id, x: (it.go || it.door).x, z: (it.go || it.door).z, label: localName(it.store.name, getLanguage()) });
     return true;
   }
   const z = zones.items.find((i) => i.zone.id === to.zone);
@@ -4954,6 +4958,7 @@ let debugPose = null;
 function currentActivity() {
   if (debugPose) return debugPose; // (?debug: __mk.forcePose)
   if (prayer.pose) return prayer.pose; // praying at an altar (game/prayer.js)
+  if (holyWater.pose) return holyWater.pose; // the sign of the cross at the cathedral's font (game/holy-water.js)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
@@ -5168,6 +5173,7 @@ function palaceAct(p) {
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
 let anotherTower;
 const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { return interior; }, landmarks: map.landmarks, bubble: (text) => showBubble(myLabel, $('labels'), text, 2500) }); // (game/prayer.js: at the temples' altars and the cathedral's)
+const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
 const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
 const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min); // (game/tower-look.js: tilt up to Modu Tower's top)
@@ -5835,7 +5841,7 @@ function updateFireworks() {
 // machine (core/park.js), or null.
 // Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
 const hanParks = createHanParks({
-  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  scene, landmarks: map.landmarks, decks: map.decks, store: (id) => storeData.find((s) => s.id === id), collision,
   makeNpc: (name, look) => makeNpc($('labels'), name, look), clerkName: () => t('npc.clerk'), baitSeller: () => fishBait.seller(),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
@@ -6329,7 +6335,7 @@ function questPlace(q, ready) {
   if (q.kind === 'trip') return tripPlace(tripOf(q)[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
-  return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
+  return it ? { kind: 'store', id: it.store.id, x: (it.go || it.door).x, z: (it.go || it.door).z, label: localName(it.store.name, getLanguage()) } : null;
 }
 function refreshQuestChip() {
   if (!questChipReady) return; // (drawn once at the end of setting up, below)
@@ -6748,6 +6754,8 @@ function updateAction(p, tSec) {
       else if (!decorGame.decor.picked) closePiece();
     } else if (!seated && prayer.act(p)) { // at the cathedral's altar rail (game/prayer.js)
       next = prayer.act(p);
+    } else if (!seated && holyWater.act(p)) { // by its holy water fonts (game/holy-water.js)
+      next = holyWater.act(p);
     } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
@@ -6826,7 +6834,7 @@ function updateAction(p, tSec) {
     } else if (nearStation(p, 'academy', 1.8)) {
       next = { key: 'academy', label: '🏫 ' + L(ACADEMY_OPEN), run: () => academyUi.show() };
     } else if (interior.stations?.lift && Math.hypot(p.x - interior.stations.lift.x, p.z - interior.stations.lift.z) < 1.6) {
-      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : interior.store.workshop === 'photo-show' ? roomKit().photoFloors(getLanguage() === 'ko') : undefined) };
+      next = { key: 'lift', label: '🛗 ' + L(roomKit().MUSEUM_TEXT.lift), run: () => museumUi.showLift(roomKit().floorOf(interior.store), goMuseumFloor, interior.store.category === 'memorial' ? memorialFloors() : interior.store.workshop === 'photo-show' ? roomKit().photoFloors(getLanguage() === 'ko', interior.store) : undefined) };
     } else if (nearStation(p, 'flower', 1.3)) {
       next = { key: 'flower', label: '💐 ' + L(roomKit().MEMORIAL_TEXT.flower), run: () => layMemorialFlower() };
     } else if (roomKit().nearestPainting(interior.stations?.panels, p.x, p.z, 2)) {
@@ -6969,6 +6977,8 @@ function updateAction(p, tSec) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
       next = hi5Action(hi5Target(p));
+    } else if (decorGame.lampAct(p)) { // a lamp at home: switch it on or off (game/decor.js)
+      next = decorGame.lampAct(p);
     } else if (picnic.action(p)) {
       next = picnic.action(p);
     } else if (frisbee.action(p)) {
@@ -7184,6 +7194,7 @@ renderer.setAnimationLoop((now) => {
     for (const m of interior.stations.benchBar) m.visible = !lifting;
   }
   prayer.tick(p, mag);
+  holyWater.tick(p, mag);
   moktak.tick(p, dt, mode === 'street', inDharmaHall());
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
@@ -7400,6 +7411,7 @@ renderer.setAnimationLoop((now) => {
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     bumper.state(st); // in a bumper car, or in line for one
+    zooVisit.camels.state(st); // on a zoo camel: others seat us on its saddle
     seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
     const duckRide = duckBoats.ride;
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
@@ -7419,7 +7431,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
     // Flying (operators): nothing is sent, so others keep seeing us where we
     // took off and our spot isn't given away; carrying someone still sends.
     if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {

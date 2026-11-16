@@ -4,7 +4,7 @@
 // by the upper station onto the summit plaza (game/namsan-walk.js). The way
 // down starts at the upper station's door and is on the same ticket.
 //
-//   const cable = createNamsanCable(game, { landmarks, low, top, topOut });
+//   const cable = createNamsanCable(game, { landmarks, low, top, topOut, storeId });
 //   cable.act(p)    the button at a station door, or while riding
 //   cable.update()  every frame: carries me in the cabin
 //   cable.busy      riding (no walking)
@@ -16,8 +16,10 @@ const NEAR = 3; // m from a station's door: the cabin bay
 
 // game: me, mode, wallet, shop, t, L, fmt, missionEvent, resend, clearAction.
 // low: the lower station's door {x, z}; top: the upper station's door [x, z];
-// topOut: where you step out at the top {x, z, ry}.
-export function createNamsanCable(game, { landmarks = [], low = null, top = null, topOut = null }) {
+// topOut: where you step out at the top {x, z, ry}; storeId: the lower
+// station's store (its door is where you board), so getting in counts as
+// visiting it for a mission or a quest (there is no room to walk into).
+export function createNamsanCable(game, { landmarks = [], low = null, top = null, topOut = null, storeId = 'namsan-sky-cable' }) {
   const l = landmarks.find((q) => q.type === 'cablecar' && q.path?.length > 1);
   if (!l || !low || !top || !topOut) return { act: () => null, update() {}, stop() {}, busy: false };
   const line = cableLine(l);
@@ -43,6 +45,7 @@ export function createNamsanCable(game, { landmarks = [], low = null, top = null
     if (st === 'low' && !game.wallet.spend(CABLE.fare, { k: 'ledger.cable' })) { game.shop.toast(game.t('ride.noCoins', { n: CABLE.fare })); return; }
     ride = { cabin: i, from: st, dx: (Math.random() - 0.5) * 1.2, paid: st === 'low' ? game.wallet.lastOp : null };
     if (st === 'low') game.missionEvent('ride');
+    game.missionEvent('visit', storeId); // ('남산 하늘 케이블카 방문하기': boarding is the visit, up or down)
     game.resend();
     game.clearAction();
   }
