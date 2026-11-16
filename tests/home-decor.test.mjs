@@ -88,3 +88,14 @@ test('a piece set down right against you is refused, so you can always walk away
   assert.ok(pieceBlocked(stool, [], { x: 0.55, z: 0 }), 'touching the player');
   assert.ok(!pieceBlocked(stool, [], { x: 0.75, z: 0 }), 'a step away');
 });
+
+test('both places on a bed against a wall can be reached from one side', async () => {
+  const { furnitureSeats, furnitureById } = await import('../src/core/furniture.js');
+  for (const id of ['bed', 'f-fabric-bed']) {
+    const [w, d] = furnitureById(id).size;
+    const seats = furnitureSeats({ id, x: 0, z: 0, ry: 0 });
+    const side = { x: w / 2 + 0.5, z: 0.3 }; // standing beside it (the other side is the wall)
+    for (const s of seats) assert.ok(Math.hypot(side.x - s.x, side.z - s.z) - (s.reach || 0) < 1.3, id); // (main.js nearestSeat: 1.3 m)
+    for (const s of seats) assert.ok(s.stand[1] > d / 2, id + ': get up at the foot');
+  }
+});
