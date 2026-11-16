@@ -7711,7 +7711,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     giveFrisbee: (q) => bag.add({ ...newFrisbee(), ...(q != null ? { q } : {}) }),
     frisbee: () => [frisbee.phase, frisbee.streak, frisbee.lying, frisbee.face], frisbeePeers: () => frisbee.peerPhases(),
     givePet: (id) => { inventory.add(id); setPet(id); },
-    giveItem: (id) => inventory.add(id),
+    giveItem: (id) => { const r = inventory.add(id); labelDecor(); return r; },
     petShown: () => (petCare.pet ? petCare.pet.root.visible : null),
     face: (ry) => { me.root.rotation.y = ry; },
     bagTab: (tab) => bagUi.show(tab),

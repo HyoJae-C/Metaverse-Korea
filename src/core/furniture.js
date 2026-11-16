@@ -3,6 +3,7 @@
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
+import { SHOP_FURNITURE } from './furniture-shop.js';
 
 const mat = matCache();
 
@@ -130,79 +131,103 @@ const LAMPS = [
   }],
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
+export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
 
 export const FURNITURE = [
-  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], name: { en: 'Bed', ko: '침대', ja: 'ベッド', zh: '床' },
+  // The free basics every home starts with are worn hand-me-downs: faded,
+  // stained, patched and a little crooked, so the furniture shops on
+  // Euljiro have something to replace (Yozi 2026-11-16). Ids stay the same,
+  // so rooms already decorated keep their pieces.
+  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
     build(g) {
-      box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#c9a27a');
-      box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#ffffff');
-      box(g, 1.5, 0.05, 1.3, 0, 0.5, 0.33, '#9cc8e8'); // blanket
-      box(g, 0.6, 0.12, 0.35, -0.35, 0.56, -0.75, '#fff6e6');
-      box(g, 0.6, 0.12, 0.35, 0.35, 0.56, -0.75, '#fff6e6');
-      box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#a07850'); // headboard
+      box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#a99278');
+      box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#e8e2d4'); // yellowed mattress
+      box(g, 1.5, 0.05, 1.3, 0, 0.5, 0.33, '#9fb0b8'); // faded blanket
+      box(g, 0.32, 0.055, 0.3, 0.42, 0.5, 0.55, '#c9a46a'); // a patch sewn on
+      box(g, 0.6, 0.1, 0.35, -0.3, 0.55, -0.75, '#e6dcc6'); // flat pillow
+      box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#8a6e52'); // headboard
+      box(g, 0.5, 0.04, 0.11, 0.5, 0.62, -1.03, '#6e5640').rotation.z = 0.2; // a cracked board
     } },
-  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: true, name: { en: 'Sofa', ko: '소파', ja: 'ソファ', zh: '沙发' },
+  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: true, name: { en: 'Old sofa', ko: '낡은 소파', ja: '古いソファ', zh: '旧沙发' },
     build(g) {
-      box(g, 1.8, 0.38, 0.8, 0, 0.19, 0, '#e58f7a');
-      box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#e58f7a');
-      for (const s of [-1, 1]) box(g, 0.18, 0.5, 0.8, 0.81 * s, 0.33, 0, '#d97a65');
+      box(g, 1.8, 0.36, 0.8, 0, 0.18, 0, '#b3877a');
+      box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#b3877a');
+      for (const s of [-1, 1]) box(g, 0.18, 0.5, 0.8, 0.81 * s, 0.33, 0, '#9e766a');
+      box(g, 0.5, 0.03, 0.45, -0.4, 0.37, 0.05, '#8c9c7a'); // a mismatched patch
+      box(g, 0.08, 0.06, 0.08, 0.5, 0.39, 0.1, '#e8dcc0'); // stuffing poking out
+      box(g, 0.3, 0.012, 0.22, 0.35, 0.367, -0.05, '#8f6a5e'); // a stain
     } },
-  { id: 'chair', emoji: '🪑', size: [0.5, 0.5], seat: true, name: { en: 'Chair', ko: '의자', ja: '椅子', zh: '椅子' },
+  { id: 'chair', emoji: '🪑', size: [0.5, 0.5], seat: true, name: { en: 'Creaky chair', ko: '삐걱이는 의자', ja: 'きしむ椅子', zh: '吱呀作响的椅子' },
     build(g) {
-      box(g, 0.45, 0.06, 0.45, 0, 0.35, 0, '#e9b97a');
-      box(g, 0.45, 0.5, 0.06, 0, 0.62, -0.2, '#e9b97a');
-      for (const x of [-0.18, 0.18]) for (const z of [-0.18, 0.18]) box(g, 0.05, 0.33, 0.05, x, 0.16, z, '#8a5a3a');
+      box(g, 0.45, 0.06, 0.45, 0, 0.35, 0, '#c4a37e');
+      box(g, 0.45, 0.5, 0.06, 0, 0.62, -0.2, '#c4a37e').rotation.z = 0.05; // leans a little
+      for (const x of [-0.18, 0.18]) for (const z of [-0.18, 0.18]) box(g, 0.05, 0.33, 0.05, x, 0.16, z, '#7a5a40');
+      box(g, 0.07, 0.08, 0.07, 0.18, 0.12, 0.18, '#d8c8a0'); // taped-up leg
     } },
-  { id: 'table', emoji: '🍽️', size: [1.2, 0.8], name: { en: 'Table', ko: '테이블', ja: 'テーブル', zh: '桌子' },
+  { id: 'table', emoji: '🍽️', size: [1.2, 0.8], name: { en: 'Wobbly table', ko: '흔들리는 테이블', ja: 'ぐらつくテーブル', zh: '摇晃的桌子' },
     build(g) {
-      box(g, 1.2, 0.06, 0.8, 0, 0.62, 0, '#c98b4f');
-      for (const x of [-0.52, 0.52]) for (const z of [-0.32, 0.32]) box(g, 0.07, 0.6, 0.07, x, 0.3, z, '#8a5a3a');
+      box(g, 1.2, 0.06, 0.8, 0, 0.62, 0, '#a8866a');
+      for (const x of [-0.52, 0.52]) for (const z of [-0.32, 0.32]) box(g, 0.07, 0.6, 0.07, x, 0.3, z, '#7a5a40');
+      box(g, 0.12, 0.04, 0.1, 0.52, 0.02, 0.32, '#e8e0cc'); // folded paper under one leg
+      for (const [x, z] of [[-0.3, 0.1], [0.2, -0.15]]) box(g, 0.16, 0.004, 0.16, x, 0.652, z, '#8f6f55'); // cup rings
     } },
-  { id: 'desk', emoji: '💻', size: [1.2, 0.6], name: { en: 'Desk', ko: '책상', ja: '机', zh: '书桌' },
+  { id: 'desk', emoji: '💻', size: [1.2, 0.6], name: { en: 'Old desk', ko: '낡은 책상', ja: '古い机', zh: '旧书桌' },
     build(g) {
-      box(g, 1.2, 0.06, 0.6, 0, 0.68, 0, '#f2efe8');
-      for (const s of [-1, 1]) box(g, 0.06, 0.66, 0.58, 0.56 * s, 0.33, 0, '#d9d4c8');
-      box(g, 0.45, 0.03, 0.3, 0, 0.72, 0.05, '#4a4f5a'); // laptop
+      box(g, 1.2, 0.06, 0.6, 0, 0.68, 0, '#ddd6c6');
+      for (const s of [-1, 1]) box(g, 0.06, 0.66, 0.58, 0.56 * s, 0.33, 0, '#c4bcaa');
+      box(g, 0.45, 0.03, 0.3, 0, 0.72, 0.05, '#4a4f5a'); // an old laptop
       box(g, 0.45, 0.3, 0.02, 0, 0.87, -0.1, '#4a4f5a');
+      box(g, 0.22, 0.004, 0.1, -0.38, 0.712, 0.12, '#7aa0c8'); // stickers
+      box(g, 0.12, 0.004, 0.12, -0.42, 0.712, -0.08, '#e8a0a0');
     } },
-  { id: 'shelf', emoji: '📚', size: [1.0, 0.35], name: { en: 'Bookshelf', ko: '책장', ja: '本棚', zh: '书架' },
+  { id: 'shelf', emoji: '📚', size: [1.0, 0.35], name: { en: 'Old bookshelf', ko: '낡은 책장', ja: '古い本棚', zh: '旧书架' },
     build(g) {
-      box(g, 1.0, 1.6, 0.35, 0, 0.8, 0, '#a07850');
-      const colors = ['#e0604d', '#4f8fc0', '#f2c14e', '#6bb38a', '#9b7ad1'];
+      box(g, 1.0, 1.6, 0.35, 0, 0.8, 0, '#8a6e52');
+      const colors = ['#b87a6e', '#7d93a8', '#c9b07a', '#8aa08e', '#998aa8'];
       for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) {
-        box(g, 0.1, 0.32, 0.25, -0.33 + i * 0.13, 0.3 + r * 0.5, 0.06, colors[(i + r) % colors.length]);
+        if ((i + r * 2) % 5 === 4) continue; // a few gaps
+        const b = box(g, 0.1, 0.32, 0.25, -0.33 + i * 0.13, 0.3 + r * 0.5, 0.06, colors[(i + r) % colors.length]);
+        if ((i + r) % 4 === 3) b.rotation.z = 0.25; // a book leaning over
       }
     } },
-  { id: 'tv', emoji: '📺', size: [1.2, 0.45], name: { en: 'TV stand', ko: 'TV', ja: 'テレビ', zh: '电视' },
+  { id: 'tv', emoji: '📺', size: [1.2, 0.45], name: { en: 'Old TV', ko: '낡은 TV', ja: '古いテレビ', zh: '旧电视' },
     build(g) {
-      box(g, 1.2, 0.45, 0.45, 0, 0.23, 0, '#f2efe8');
-      box(g, 1.1, 0.62, 0.05, 0, 0.82, -0.05, '#22252b');
-      box(g, 1.02, 0.54, 0.01, 0, 0.82, -0.02, '#3d5a80');
+      box(g, 1.2, 0.45, 0.45, 0, 0.23, 0, '#ddd6c6');
+      box(g, 1.1, 0.62, 0.05, 0, 0.82, -0.05, '#2b2c30');
+      box(g, 1.02, 0.54, 0.01, 0, 0.82, -0.02, '#56606e'); // a dim screen
+      box(g, 0.5, 0.012, 0.004, 0.18, 0.95, -0.013, '#8a929e').rotation.z = -0.5; // a crack
     } },
-  { id: 'lamp', emoji: '💡', size: [0.4, 0.4], name: { en: 'Floor lamp', ko: '스탠드', ja: 'ランプ', zh: '落地灯' },
+  { id: 'lamp', emoji: '💡', size: [0.4, 0.4], name: { en: 'Old floor lamp', ko: '낡은 스탠드', ja: '古いフロアランプ', zh: '旧落地灯' },
     build(g) {
       box(g, 0.35, 0.04, 0.35, 0, 0.02, 0, '#4a3f35');
       box(g, 0.04, 1.4, 0.04, 0, 0.72, 0, '#4a3f35');
       const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.3, 14),
-        new THREE.MeshBasicMaterial({ color: '#ffe9b8' }));
-      shade.position.y = 1.5;
+        new THREE.MeshBasicMaterial({ color: '#e8d6a8' })); // a yellowed shade
+      shade.position.set(0.03, 1.5, 0);
+      shade.rotation.z = -0.18; // sits crooked
       g.add(shade);
     } },
-  { id: 'plant', emoji: '🪴', size: [0.5, 0.5], name: { en: 'Plant', ko: '화분', ja: '観葉植物', zh: '盆栽' },
+  { id: 'plant', emoji: '🪴', size: [0.5, 0.5], name: { en: 'Droopy plant', ko: '시든 화분', ja: 'しおれた鉢植え', zh: '蔫了的盆栽' },
     build(g) {
-      box(g, 0.4, 0.4, 0.4, 0, 0.2, 0, '#c98b4f');
-      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 1), mat('#8fcf7a'));
-      leaf.position.y = 0.85;
+      box(g, 0.4, 0.4, 0.4, 0, 0.2, 0, '#a8866a');
+      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), mat('#a8b86a'));
+      leaf.position.set(0.06, 0.74, 0);
+      leaf.scale.set(1, 0.75, 1); // drooping
       g.add(leaf);
+      box(g, 0.08, 0.02, 0.06, 0.24, 0.41, 0.12, '#b89a5a'); // a fallen leaf
     } },
-  { id: 'rug', emoji: '🟫', size: [2.0, 1.4], walkable: true, name: { en: 'Rug', ko: '러그', ja: 'ラグ', zh: '地毯' },
+  { id: 'rug', emoji: '🟫', size: [2.0, 1.4], walkable: true, name: { en: 'Worn rug', ko: '닳은 러그', ja: 'すり切れたラグ', zh: '磨旧的地毯' },
     build(g) {
-      box(g, 2.0, 0.02, 1.4, 0, 0.012, 0, '#e6c9a8');
-      box(g, 1.7, 0.022, 1.1, 0, 0.014, 0, '#d9a066');
+      box(g, 2.0, 0.02, 1.4, 0, 0.012, 0, '#cdb89e');
+      box(g, 1.7, 0.022, 1.1, 0, 0.014, 0, '#b89a78');
+      box(g, 0.5, 0.024, 0.35, 0.35, 0.015, 0.1, '#c8b49a'); // a bare patch
     } },
   // Lamps from the lighting shops on Cheonggyecheon-ro (stores.json
   // "furniture"): only once you've bought one. Shades glow (unlit material).
   ...LAMPS.map(([id, emoji, size, name, build]) => ({ id, emoji, item: id, size, name, build })),
+  // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
+  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...(seat ? { seat } : {}), name,
+    build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
