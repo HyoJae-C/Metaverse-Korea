@@ -71,7 +71,8 @@ test('you can float one only from the walkway by the water in the wish corner', 
 
 test('every lamp is furniture, an item and sold in exactly one lighting shop', () => {
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const sold = stores.flatMap((st) => (st.products || []).filter((p) => p.furniture).map((p) => [st, p]));
+  const lamp = new Set(LAMP_IDS.map(([id]) => id));
+  const sold = stores.flatMap((st) => (st.products || []).filter((p) => lamp.has(p.furniture)).map((p) => [st, p]));
   assert.equal(sold.length, LAMP_IDS.length);
   for (const [id] of LAMP_IDS) {
     assert.ok(FURNITURE.find((f) => f.id === id && f.item === id), id);
@@ -81,7 +82,7 @@ test('every lamp is furniture, an item and sold in exactly one lighting shop', (
   for (const [st, p] of sold) {
     assert.ok(usable(p), p.id);
     assert.ok(p.name?.en && p.name?.ko && p.desc?.en && p.price > 0, p.id);
-    assert.ok(st.products.every((q) => q.furniture), `${st.id} sells something that isn't a lamp`);
+    assert.ok(st.products.every((q) => lamp.has(q.furniture)), `${st.id} sells something that isn't a lamp`);
   }
 });
 
