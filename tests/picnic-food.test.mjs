@@ -57,3 +57,13 @@ test('every dish has a name', () => {
   for (const g of ['kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap']) assert.ok(EN['matFood.d.' + g]);
   for (const k of ['put', 'off', 'look', 'putDone', 'offDone', 'picnic']) assert.ok(EN['matFood.' + k]);
 });
+
+test('an upgraded dish shows its level on the mat (older clients read the first two parts)', async () => {
+  const d = matDish({ kind: 'gift', sips: 1, g: 'kimbap', q: 95, lv: 12 });
+  assert.deepEqual(d, { g: 'kimbap', m: 'g', lv: 12 });
+  assert.equal(encodeFood([d]), 'kimbap.g.12');
+  assert.deepEqual(parseFood('kimbap.g.12,kimchi.s,tteok.n.99'), [{ g: 'kimbap', m: 'g', lv: 12 }, { g: 'kimchi', m: 's' }, { g: 'tteok', m: 'n', lv: 30 }]);
+  const tier = await import('../src/core/dish-tier.js');
+  const g = makeFood([{ g: 'kimbap', m: 'g', lv: 12 }, { g: 'tteok', m: 'n' }], tier);
+  assert.ok(g.getObjectByName('dish-tier:dalin'));
+});

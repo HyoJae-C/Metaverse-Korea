@@ -8,7 +8,7 @@
 import { MAT_COLORS, makeMat, matSpots, encodeMat, parseMat, canSpread, matInFront, matsOverlap, keepsMat, matLost, MAT_NEAR, matDir, matAngle, lawnAngle } from '../core/picnic-mat.js';
 import { L } from '../ui/pocha-ui.js';
 import { t } from '../core/i18n.js';
-import { makeFood, encodeFood, parseFood, nextDish, foodInBag, MEDAL_ICON } from '../core/picnic-food.js';
+import { makeFood, encodeFood, parseFood, nextDish, foodInBag, needsTier, MEDAL_ICON } from '../core/picnic-food.js';
 
 export const MAT_TEXT = {
   spread: { en: 'Spread picnic mat', ko: '돗자리 펴기', ja: 'レジャーシートを広げる', zh: '铺野餐垫', es: 'Extender la manta', id: 'Gelar tikar piknik', vi: 'Trải thảm picnic', hi: 'पिकनिक चटाई बिछाएँ', fr: 'Étendre la nappe de pique-nique', th: 'ปูเสื่อปิกนิก', ar: 'افرش حصيرة النزهة' },
@@ -70,7 +70,16 @@ export function createPicnic(game, street = null) {
     return out;
   }
 
+  // How upgraded dishes look (+5 and up): downloaded the first time one is on a mat.
+  let tier = null, tierLoading = false;
+  function loadTier() {
+    if (tierLoading) return;
+    tierLoading = true;
+    import('../core/dish-tier.js').then((m) => { tier = m; tick(); }).catch(() => { tierLoading = false; });
+  }
+
   function tick() {
+    tier?.tickDishes(performance.now() / 1000); // (an upgraded dish's effects)
     const it = game.mode === 'store' ? (game.interior?.lawns ? game.interior : null) : game.mode === 'street' ? street : null;
     if (it !== room) { reset(); room = it; baseSeats = it ? it.seats.slice() : null; if (!it) return; }
     if (!room) return;
@@ -89,13 +98,14 @@ export function createPicnic(game, street = null) {
     const seen = new Set();
     for (const { id, m, f, name } of all) {
       seen.add(id);
-      const key = encodeMat(m) + '|' + encodeFood(f);
+      if (!tier && needsTier(f)) loadTier();
+      const key = encodeMat(m) + '|' + encodeFood(f) + (tier && needsTier(f) ? '|t' : '');
       const d = drawn.get(id);
       if (d) { d.food = f; d.name = name; }
       if (d?.key === key) continue;
       d?.mesh.removeFromParent();
       const mesh = makeMat(m.c);
-      if (f.length) mesh.add(makeFood(f)); // (in the mat's own space: it turns with it)
+      if (f.length) mesh.add(makeFood(f, tier)); // (in the mat's own space: it turns with it)
       mesh.position.set(m.x, 0, m.z);
       mesh.rotation.y = matAngle(m); // the way its owner faced (square with a lawn laid at an angle)
       room.scene.add(mesh);
@@ -189,7 +199,7 @@ export function createPicnic(game, street = null) {
     game.clearAction();
     tick();
   }
-  const dishName = (d) => t('matFood.d.' + d.g) + (MEDAL_ICON[d.m] ? ' ' + MEDAL_ICON[d.m] : '');
+  const dishName = (d) => t('matFood.d.' + d.g) + (d.lv ? ' +' + d.lv : '') + (MEDAL_ICON[d.m] ? ' ' + MEDAL_ICON[d.m] : '');
   const onMat = (p, m) => Math.hypot(p.x - m.x, p.z - m.z) < 2.4;
 
   // The extra choices by a mat with food: set out / take back dishes (my

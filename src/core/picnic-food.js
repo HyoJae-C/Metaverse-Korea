@@ -20,9 +20,12 @@ export const MEDAL_ICON = { g: '🥇', s: '🥈', b: '🥉', n: '' };
 // A bag entry as a dish for the mat ({ g, m }), or null if it isn't one.
 export function matDish(e) {
   const g = isKimchi(e) ? 'kimchi' : e?.kind === 'gift' && MAT_DISHES.includes(e.g) ? e.g : null;
-  return g ? { g, m: CODE[medalFor(kimchiScore(e))] || 'n' } : null;
+  if (!g) return null;
+  const lv = Math.max(0, Math.min(30, e.lv | 0));
+  return lv ? { g, m: CODE[medalFor(kimchiScore(e))] || 'n', lv } : { g, m: CODE[medalFor(kimchiScore(e))] || 'n' };
 }
-const key = (d) => d.g + '.' + d.m;
+// "kimbap.g", or "kimbap.g.12" for an upgraded one (older clients read the first two).
+const key = (d) => d.g + '.' + d.m + (d.lv ? '.' + d.lv : '');
 
 export const encodeFood = (list) => list.map(key).join(',');
 // Another player's "mf" back into dishes ([] if there's nothing valid).
@@ -30,8 +33,9 @@ export function parseFood(v) {
   if (typeof v !== 'string' || !v || v.length > 64) return [];
   const out = [];
   for (const s of v.split(',').slice(0, MAT_FOOD_MAX)) {
-    const [g, m] = s.split('.');
-    if (MAT_DISHES.includes(g) && Object.hasOwn(RANK, m)) out.push({ g, m });
+    const [g, m, l] = s.split('.');
+    const lv = Math.max(0, Math.min(30, parseInt(l, 10) || 0));
+    if (MAT_DISHES.includes(g) && Object.hasOwn(RANK, m)) out.push(lv ? { g, m, lv } : { g, m });
   }
   return out;
 }
@@ -55,9 +59,12 @@ function spare(bagList, shown) {
 export function nextDish(bagList, shown) {
   if (shown.length >= MAT_FOOD_MAX) return null;
   const has = new Set(shown.map((d) => d.g));
-  const pick = spare(bagList, shown).sort((a, b) => (has.has(a.g) - has.has(b.g)) || (RANK[b.m] - RANK[a.m]));
+  const pick = spare(bagList, shown).sort((a, b) => (has.has(a.g) - has.has(b.g)) || ((b.lv | 0) - (a.lv | 0)) || (RANK[b.m] - RANK[a.m]));
   return pick[0] || null;
 }
+
+// True if any dish needs core/dish-tier.js to show (+5 and up).
+export const needsTier = (list) => list.some((d) => d.lv >= 5);
 
 // The dishes still in the bag (one eaten, sold or given away leaves the mat).
 export function foodInBag(shown, bagList) {
@@ -74,12 +81,14 @@ export function foodSpots(n) {
 }
 
 // The dishes' 3D models: each dish as it looks in the hand, a little bigger,
-// on a white plate whose rim shows its medal.
+// on a white plate whose rim shows its medal. An upgraded one (+5 and up)
+// sits on its tier's dish or table with its effects (core/dish-tier.js,
+// passed in as `tier` once it has loaded; null shows it plain meanwhile).
 const RIM = { g: '#e8b923', s: '#9aa3ad', b: '#c27c3a', n: '#f6f1e6' };
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
 let plateGeo = null, rimGeo = null;
-export function makeFood(list) {
+export function makeFood(list, tier = null) {
   const g = new THREE.Group();
   g.name = 'mat-food';
   plateGeo ||= new THREE.CylinderGeometry(0.2, 0.17, 0.025, 20);
@@ -87,6 +96,15 @@ export function makeFood(list) {
   foodSpots(list.length).forEach(([x, z], i) => {
     const d = list[i], spot = new THREE.Group();
     spot.position.set(x, 0.035, z);
+    if (tier && d.lv >= 5) {
+      const dish = makeHeld('gift:' + d.g);
+      dish.scale.setScalar(2);
+      const fancy = tier.makeTierDish(dish, d.lv, { medal: d.m });
+      fancy.scale.setScalar(0.85);
+      spot.add(fancy);
+      g.add(spot);
+      return;
+    }
     const plate = new THREE.Mesh(plateGeo, mat('#ffffff'));
     plate.position.y = 0.012;
     spot.add(plate);

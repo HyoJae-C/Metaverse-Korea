@@ -177,6 +177,7 @@ import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { lipstickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { createFishBait } from './game/fish-bait.js';
+import { createDishUpgrade, UPGRADE_ROOMS } from './game/dish-upgrade.js';
 import { baitEntry } from './core/bait.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
@@ -2270,6 +2271,11 @@ const fishBait = createFishBait({
   root: $('bait-panel'), cloud, get wallet() { return wallet; }, bag, toast: (m) => shop.toast(m), refreshWallet: () => refreshWallet(),
   get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
 });
+// Upgrading cooked dishes at any cooking class (game/dish-upgrade.js): the teacher's ✨ button.
+const dishUpgrade = createDishUpgrade({
+  root: $('upgrade-panel'), cloud, bag, toast: (m) => shop.toast(m), get me() { return me; }, get sfx() { return sfx; },
+  myName: () => nickname, describe: (e) => describeEntry(e), onChange: () => { if (!$('bag-panel').hidden) bagUi.render(); },
+});
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
 // The errand chip needs places made further down (open parks, guides,
 // storefront doors); until it is set up, a cup restored from the save in
@@ -2398,6 +2404,7 @@ const bagUi = new BagUI({
     if (e) setHeld(e);
   },
   onDrop: (i) => bag.take(i),
+  seasoning: () => dishUpgrade.seasoning(), // 🧂 in the food tab
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
     useLabel: (e) => (e.kind === 'lipstick' ? '💄 ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
@@ -3286,7 +3293,7 @@ function leaveStore(walkOut = false) {
   tarotUi.close();
   leaveTarotLine(true);
   gymSpot = null; // (you leave by the door, not off the bench)
-  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui, dishUpgrade.ui]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
@@ -4072,7 +4079,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4101,6 +4108,7 @@ addEventListener('keydown', (e) => {
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
     else if (fishBait.ui.open) fishBait.ui.close();
+    else if (dishUpgrade.ui.open) dishUpgrade.ui.close();
     else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
@@ -4448,7 +4456,7 @@ function buyIngredient(product, coins) {
 const recipes = createRecipeBook({ $, bag, shop });
 const cookingClasses = createCookingClasses({
   get clerk() { return clerk; }, get me() { return me; }, get held() { return held; }, $, bag, missionEvent,
-  setHeld, shop, togetherBonus, wallet, onCooked: (e) => recipes.cooked(e),
+  setHeld, shop, togetherBonus, wallet, onCooked: (e) => { recipes.cooked(e); dishUpgrade.cooked(e); }, // (the recipe book; a seasoning for the kind, once a day)
 });
 const { museumUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi } = cookingClasses;
 
@@ -6461,6 +6469,7 @@ function missionEvent(type, target) {
   const r = daily?.record(type, target);
   if (!r) return;
   shop.toast(t('daily.complete', { n: r.coins }));
+  dishUpgrade.mission(); // 🧂 3 seasoning for the day's missions
 }
 daily.onChange(renderDaily);
 onLanguageChange(renderDaily);
@@ -6630,6 +6639,7 @@ function moreActions(p, door) {
   const pm = picnic.action(p); if (pm) out.push(pm);
   out.push(...picnic.foodActions(p)); // food on a picnic mat
   const fb = frisbee.action(p); if (fb) out.push(fb);
+  if (UPGRADE_ROOMS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) out.push(dishUpgrade.action(clerk)); // ✨ upgrade a dish (any dish, at any class)
   if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
   if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);

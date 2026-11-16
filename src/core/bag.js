@@ -46,6 +46,12 @@ export function giftEntry(e) {
   if (typeof e.g === 'string' && /^[a-z]{1,16}$/.test(e.g)) {
     out.g = e.g;
     if (Number.isFinite(e.q)) out.q = Math.max(0, Math.min(100, Math.round(e.q)));
+    // An upgraded dish (core/dish-upgrade.js): its level, the gauge saved up,
+    // its id on the server, and who made it.
+    if ((e.lv | 0) > 0) out.lv = Math.min(30, e.lv | 0);
+    if ((e.gz | 0) > 0) out.gz = Math.min(100, e.gz | 0);
+    if (typeof e.u === 'string' && /^[0-9a-f-]{36}$/.test(e.u)) out.u = e.u;
+    if (typeof e.by === 'string' && e.by) out.by = e.by.slice(0, 24);
   }
   return out;
 }

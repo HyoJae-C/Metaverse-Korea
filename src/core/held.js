@@ -20,7 +20,10 @@ export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'pe
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
 // (a frisbee also carries its colour: 'gift:frisbee.2')
-export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
+// (an upgraded dish carries its level from +5, when it looks bigger: 'gift:kimbap.12')
+export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : (e.lv | 0) >= 5 ? `gift:${e.g}.${Math.min(30, e.lv | 0)}` : 'gift:' + e.g);
+// How much bigger an upgraded dish is in the hand, every 5 levels (as core/dish-tier.js TIERS).
+const TIER_SCALE = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.7];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // Modu Land's food truck snacks (park-food.js): an ice cream cone, a
@@ -439,10 +442,10 @@ function giftLook(g, sub) {
     add(new THREE.BoxGeometry(0.032, 0.06, 0.07), '#ffd166', 0, 0.03, 0.02);
   } else if (sub === 'egg') { // one egg
     add(new THREE.SphereGeometry(0.03, 10, 8).scale(1, 1.3, 1), '#fff6e6', 0, 0.04);
-  } else if (sub === 'kimchi') { // a cut piece of cabbage kimchi
-    kimchiLook(g);
-  } else if (DISH_LOOKS[sub]) { // a cooking class's dish, as the food itself
-    dishParts(g, sub, DISH_LOOKS[sub]);
+  } else if (base === 'kimchi' || DISH_LOOKS[base]) { // a cooking class's dish, as the food itself (bigger once upgraded)
+    if (base === 'kimchi') kimchiLook(g); else dishParts(g, base, DISH_LOOKS[base]);
+    const k = TIER_SCALE[Math.floor(Math.min(30, +variant || 0) / 5)] || 1;
+    if (k !== 1) for (const m of g.children) { m.scale.multiplyScalar(k); m.position.multiplyScalar(k); }
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;

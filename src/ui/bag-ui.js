@@ -6,6 +6,7 @@ import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
 import { isDish, dishKind, DISH_CAP } from '../core/bag.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
+const TIER_IDS = ['plain', 'jeongseong', 'dalin', 'myeongin', 'myeongjang', 'sura', 'cheonha']; // (core/dish-tier.js TIERS, every 5 levels)
 import { kimchiScore } from '../core/kimchi-market.js';
 
 // A piece's icon in the wardrobe: one colour emoji per kind (all tops 👕,
@@ -87,8 +88,8 @@ export class BagUI {
   // own), or null to leave the tab out (only the basic bike).
   // vanity: the wardrobe's perfume and lipsticks (bag.vanityList()):
   // { useLabel(entry), onUse(i), onHold(i), onDrop(i) }.
-  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity }) {
-    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity });
+  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning }) {
+    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning });
     this.vanSel = -1;
     this.sel = -1;
     this.tab = 'bag';
@@ -143,7 +144,7 @@ export class BagUI {
     // The food bag stacks a kind in one slot: its entries, the best-made first.
     const stacks = new Map();
     if (food) for (const i of here) { const k = dishKind(items[i]); stacks.set(k, [...(stacks.get(k) || []), i]); }
-    for (const list of stacks.values()) list.sort((a, b) => kimchiScore(items[b]) - kimchiScore(items[a]));
+    for (const list of stacks.values()) list.sort((a, b) => ((items[b].lv | 0) - (items[a].lv | 0)) || (kimchiScore(items[b]) - kimchiScore(items[a]))); // (the highest level, then the best made)
     const slots = food ? [...stacks.values()] : here.map((i) => [i]);
     const selKind = food && this.sel >= 0 ? dishKind(items[this.sel]) : null;
     for (let k = 0; k < (food ? DISH_CAP : bag.cap); k++) {
@@ -155,6 +156,7 @@ export class BagUI {
         if (food) { // (its best medal, and how many)
           const m = medalFor(kimchiScore(e));
           if (m) b.append(el('span', 'bag-medal', medalIcon(m)));
+          if (e.lv > 0) b.append(el('span', 'bag-lv', '+' + e.lv)); // (upgraded: game/dish-upgrade.js)
           if (slots[k].length > 1) b.append(el('small', '', '×' + slots[k].length));
         }
         b.title = d.name;
@@ -167,7 +169,8 @@ export class BagUI {
     const info = el('div', 'bag-info');
     if (this.sel >= 0) {
       const e = items[this.sel], d = this.describe(e);
-      info.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc));
+      info.append(el('strong', '', `${d.emoji} ${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`), el('small', 'fine', d.desc));
+      if (food && (e.lv > 0 || e.by)) info.append(el('small', 'fine', [e.lv > 0 ? t('upgrade.tier.' + TIER_IDS[Math.floor(Math.min(30, e.lv) / 5)]) : '', e.by ? t('upgrade.made', { name: e.by }) : ''].filter(Boolean).join(' · ')));
       if (food) { // (how many of each medal; holding or throwing away takes the best one)
         const list = stacks.get(dishKind(e)) || [], by = new Map();
         for (const i of list) { const m = medalFor(kimchiScore(items[i])) || ''; by.set(m, (by.get(m) || 0) + 1); }
@@ -187,6 +190,12 @@ export class BagUI {
       row.append(t);
       info.append(row);
     } else info.append(el('small', 'fine', food ? t(here.length ? 'bag.foodPick' : 'bag.foodEmpty') : L(here.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
+    if (food && this.seasoning) { // 🧂 정성 양념: what upgrading a dish uses (game/dish-upgrade.js)
+      const n = this.seasoning();
+      const row = el('div', 'bag-seasoning');
+      row.append(el('b', '', `🧂 ${t('bag.seasoning')} ${n ?? '…'}`), el('small', 'fine', t('bag.seasoningNote')));
+      info.prepend(row);
+    }
     const more = this.extra ? this.extra() : []; // before replaceChildren detaches them
     root.replaceChildren(x, head, tabs, grid, info, el('p', 'fine bag-more', L(BAG_TEXT.more)), ...more);
   }
