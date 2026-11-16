@@ -7,6 +7,7 @@ import { CHANCE, LEVEL_OPEN, costFor, dishKindOf, dishLevel, gaugeStep, startLev
 import { newRequestId } from '../core/dish-upgrade-store.js';
 import { kimchiScore } from '../core/kimchi-market.js';
 import { DISH_CAP, dishSlot } from '../core/bag.js';
+import { dishIcon, dishIconId } from './dish-icon.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 
 const el = (tag, cls = '', text = '') => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
@@ -32,13 +33,14 @@ export function dishRows(items) {
 export class DishUpgradeUI {
   // store(): the upgrade store (core/dish-upgrade-store.js); bag: the game's Bag;
   // describe(entry) → { emoji, name }; myName(); onSeasoning(n); onResult(ok).
-  constructor({ root, store, bag, toast, describe, myName, onSeasoning, onResult }) {
-    Object.assign(this, { root, store, bag, toast, describe, myName, onSeasoning, onResult });
+  constructor({ root, store, bag, toast, describe, myName, onSeasoning, onResult, onStart }) {
+    Object.assign(this, { root, store, bag, toast, describe, myName, onSeasoning, onResult, onStart });
     this.info = null;
     this.busy = false;
     this.sel = null; // the picked row's key: kind|lv|medal|by|gz
     this.rid = null; // the try's request id, kept until it gets an answer
     this.odds = false;
+    this.suspenseMs = 2200; // how long the dish shakes before the result
     root.addEventListener('keydown', (e) => { if (e.key !== 'Escape') e.stopPropagation(); });
   }
   get open() { return !this.root.hidden; }
@@ -83,7 +85,7 @@ export class DishUpgradeUI {
 
     const items = this.bag.list(), rows = dishRows(items);
     const keyOf = (r) => [r.kind, r.lv, r.medal, r.by, r.gz].join('|');
-    if (!rows.some((r) => keyOf(r) === this.sel)) this.sel = rows[0] ? keyOf(rows[0]) : null;
+    if (!rows.some((r) => keyOf(r) === this.sel)) { const first = rows.find((r) => r.lv < (info?.open || LEVEL_OPEN)) || rows[0]; this.sel = first ? keyOf(first) : null; } // (the highest one that can still go up)
     if (!rows.length) parts.push(el('p', 'board-empty', t('upgrade.empty')));
     else parts.push(el('small', 'fine', t('upgrade.pick')));
     const list = el('div', 'bait-list upgrade-list');
@@ -93,8 +95,9 @@ export class DishUpgradeUI {
       row.type = 'button';
       row.disabled = this.busy;
       const txt = el('div', 'bait-text');
-      txt.append(el('b', null, `${d.emoji} ${d.name}${r.lv ? ' +' + r.lv : ''}${r.medal ? ' ' + medalIcon(r.medal) : ''}${r.n > 1 ? ' ×' + r.n : ''}`));
+      txt.append(el('b', null, `${dishIconId(items[r.i]) ? '' : d.emoji + ' '}${d.name}${r.lv ? ' +' + r.lv : ''}${r.medal ? ' ' + medalIcon(r.medal) : ''}${r.n > 1 ? ' ×' + r.n : ''}`));
       txt.append(el('small', null, [tierName(r.lv), r.by ? t('upgrade.made', { name: r.by }) : '', r.gz ? t('upgrade.gauge', { g: r.gz }) : ''].filter(Boolean).join(' · ')));
+      if (dishIconId(items[r.i])) txt.firstChild.prepend(dishIcon(dishIconId(items[r.i])), ' ');
       row.append(txt);
       row.onclick = () => { this.sel = keyOf(r); this.rid = null; this.render(); };
       list.append(row);
@@ -149,10 +152,18 @@ export class DishUpgradeUI {
     this.render();
     this.rid ||= newRequestId();
     const d = this.describe(e);
+    // 두근두근: the dish shakes and glows while the dice roll (at least ~2 s, whatever the server's speed).
+    const stage = this.stage(e, d, lv);
+    this.onStart?.();
     let r;
     try {
-      r = await this.store().upgrade({ requestId: this.rid, id: e.u, dish: row.kind, lv: dishLevel(e), gauge: e.gz | 0, start: startLevel(e), maker: e.by || this.myName() });
+      [r] = await Promise.all([
+        this.store().upgrade({ requestId: this.rid, id: e.u, dish: row.kind, lv: dishLevel(e), gauge: e.gz | 0, start: startLevel(e), maker: e.by || this.myName() }),
+        wait(this.suspenseMs),
+      ]);
     } catch { r = { error: 'network' }; }
+    if (!r.error) { await this.reveal(stage, r.ok, r.lv); } // (the burst, or the puff)
+    stage.remove();
     this.busy = false;
     if (r.error) {
       if (r.error !== 'network') this.rid = null; // (a dropped connection: the same try again)
@@ -175,4 +186,28 @@ export class DishUpgradeUI {
     this.onResult(r.ok);
     this.render();
   }
+
+  // The suspense over the panel: the dish in the middle, a heartbeat and a
+  // fuse that fills. → its element.
+  stage(e, d, lv) {
+    const st = el('div', 'upgrade-stage');
+    const pic = el('div', 'upgrade-stage-dish');
+    pic.append(dishIconId(e) ? dishIcon(dishIconId(e)) : el('span', null, d.emoji));
+    const fuse = el('i');
+    const bar = el('div', 'upgrade-stage-bar');
+    bar.append(fuse);
+    fuse.style.animationDuration = this.suspenseMs + 'ms';
+    st.append(el('div', 'upgrade-stage-rays'), pic, el('b', 'upgrade-stage-lv', `+${lv} → +${lv + 1}`), el('p', 'upgrade-stage-text', t('upgrade.wait')), bar);
+    this.root.append(st);
+    return st;
+  }
+  // Success: a golden burst and the new level; failure: a grey puff.
+  async reveal(st, ok, lv) {
+    st.classList.add(ok ? 'win' : 'lose');
+    st.querySelector('.upgrade-stage-lv').textContent = ok ? `+${lv}!` : '…';
+    st.querySelector('.upgrade-stage-text').textContent = ok ? '✨' : '💨';
+    await wait(ok ? 1400 : 1000);
+  }
 }
+
+const wait = (ms) => new Promise((res) => setTimeout(res, ms));

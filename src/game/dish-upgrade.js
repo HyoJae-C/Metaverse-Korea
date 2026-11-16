@@ -1,5 +1,6 @@
-// Upgrading cooked dishes (음식 강화, core/dish-upgrade.js): at any cooking
-// class, talk to the teacher and pick a dish from the food bag; a try uses
+// Making cooked dishes tastier (음식 강화 in the code, "더 맛있는 음식 만들기"
+// to players; core/dish-upgrade.js): at the little kitchen in any cooking
+// class (core/interior.js tastierKitchen), pick a dish from the food bag; a try uses
 // seasoning (정성 양념) and a daily try. Seasoning: 10 to start, 3 for the
 // day's missions, 1 a day for each kind of dish you cook. Not sold for now.
 // Small on purpose: this is in the first download; the rules, the store and
@@ -10,9 +11,6 @@
 // where they change.
 import { t } from '../core/i18n.js';
 import { lazyPanel } from '../core/lazy-panel.js';
-
-// The cooking classes' rooms (store.workshop): the teacher there upgrades.
-export const UPGRADE_ROOMS = ['kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
 
 export function createDishUpgrade(game) {
   let mod = null, store = null, n = null, asking = null;
@@ -48,13 +46,14 @@ export function createDishUpgrade(game) {
   const ui = lazyPanel(() => Promise.all([load(), import('../ui/dish-upgrade-ui.js')]).then(([, { DishUpgradeUI }]) => new DishUpgradeUI({
     root: game.root, store: pick, bag: game.bag, toast: game.toast, describe: game.describe, myName: game.myName,
     onSeasoning: setN,
+    onStart: () => game.me.play('clap'), // (in the shop too: hands together, waiting)
     onResult: (ok) => { game.me.play(ok ? 'cheer' : 'wave'); (ok ? game.sfx.cheer : game.sfx.tock)?.call(game.sfx); game.onChange?.(); },
   })), { busy: false });
 
   return {
     ui, seasoning, cooked,
     mission: () => claim('mission'),
-    // The action by a cooking class's teacher.
+    // The action at a cooking class's kitchen.
     action: (clerk) => ({ key: 'dish-upgrade', label: '✨ ' + t('upgrade.open'), run: () => { clerk?.ch.wave(); ui.show(); } }),
   };
 }
