@@ -3265,6 +3265,7 @@ function leaveStore(walkOut = false) {
   homeVisitsLoaded?.left();
   closeHatWorkshop(false);
   interior.confession?.reset();
+  interior.onLeave?.(); // (a room's own goodbye, e.g. Modu Sky's lift down)
   hideConfession();
   if (orderUi.open) orderUi.close();
   if (grillUi.open) grillUi.close();
