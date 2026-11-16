@@ -186,8 +186,12 @@ export class CathedralMass {
       // In a line, 1.3 m apart: the cross bearer first, the priest last.
       const path = st.k === 'in' ? this.inPath : this.outPath, s = (t - st.at) * WALK;
       [s1, s2, p].forEach((o, i) => {
-        const at = along(path, s - i * 1.3 + (st.k === 'in' ? 0 : 2.6));
+        const d = s - i * 1.3 + (st.k === 'in' ? 0 : 2.6), at = along(path, d);
         this._put(o, at.x, at.z, at.ry, !at.end);
+        // Through the door one by one: not yet in (coming in), or out of it
+        // (going out), you're not seen; nobody waits in a pile at the door
+        // (Yozi 2026-11-16: "세명이 문쪽으로 갈때 다 뭉쳐버려").
+        if (st.k === 'in' ? d < 0 : at.end) o.ch.root.visible = false;
       });
       // The servers stand beside the priest when they arrive (not in a pile).
       if (st.k === 'in') {
@@ -196,7 +200,7 @@ export class CathedralMass {
         if (a2.end) this._put(s2, 0.9, front, Math.PI, false);
       }
       const lead = s1.ch.root.position;
-      this.cross.visible = true;
+      this.cross.visible = s1.ch.root.visible;
       this.cross.position.set(lead.x + Math.sin(s1.ch.root.rotation.y) * 0.3, lead.y, lead.z + Math.cos(s1.ch.root.rotation.y) * 0.3);
       s1.pose = { armR: [-1.1, 0, 0], foreR: [-0.6, 0, 0] }; // holding the cross up
       if (st.k === 'out' && t - st.at > 23) for (const o of this.all) o.ch.root.visible = false; // (out of the door)

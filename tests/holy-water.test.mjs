@@ -77,3 +77,8 @@ test('the host: a thin wafer, lit like bread, no magic sparkle', () => {
   assert.match(src, /this\.host = new THREE\.Mesh\(new THREE\.CylinderGeometry\(0\.085, 0\.085, 0\.012/);
   assert.match(src, /MeshLambertMaterial\(\{ color: '#efe4c8' \}\)\);/);
 });
+
+test('the procession goes out of the door one by one, not in a pile', () => {
+  const src = readFileSync(new URL('../src/core/cathedral-mass.js', import.meta.url), 'utf8');
+  assert.match(src, /if \(st\.k === 'in' \? d < 0 : at\.end\) o\.ch\.root\.visible = false;/);
+});
