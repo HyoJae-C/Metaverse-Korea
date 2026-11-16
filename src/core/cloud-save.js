@@ -280,6 +280,17 @@ export class CloudSave {
     return out;
   }
 
+  // Any other server function (used by small features: game/home-visits.js):
+  // { data } or { error } ('offline' without an account, 'timeout').
+  async call(fn, args = {}, timeoutMs = 4000) {
+    if (!this.client || !this.user) return { error: 'offline' };
+    try {
+      const call = this.client.rpc(fn, args);
+      const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
+      return error ? { error } : { data };
+    } catch (e) { return { error: e }; }
+  }
+
   // Claim this page's player id for my account, so only I can chat with it
   // (019_chat_names.sql): 'ok', 'taken', or 'offline'.
   async claimChatId(id, timeoutMs = 4000) {

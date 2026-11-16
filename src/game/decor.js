@@ -13,18 +13,25 @@ export function createDecor(game) {
   const MAX_PIECES = 60;
   let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
   const homeKey = (id) => 'mk.home.' + id;
+  // A layout from storage or from another game: known pieces with real
+  // numbers, one of each, at most MAX_PIECES.
+  function cleanLayout(a) {
+    if (!Array.isArray(a)) return [];
+    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3] } : i));
+    return list.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && list.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
+      .map(({ id, x, z, ry }) => ({ id, x, z, ry }));
+  }
   function loadDecor(id, room) {
     foldHomes(localStorage); // (the old Sunny Villa layout moves into the one home)
     try {
       const raw = localStorage.getItem(homeKey(id));
       if (raw == null && room) return starterLayout(room.w, room.d); // never opened: not an empty floor
-      const a = JSON.parse(raw || '[]');
-      return Array.isArray(a)
-        ? a.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && a.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
-        : [];
+      return cleanLayout(JSON.parse(raw || '[]'));
     } catch { return []; }
   }
   function saveDecor() {
+    if (decor.guest) return; // (someone else's home: their game keeps it)
+    game.onLayout?.(); // (visitors see the change: game/home-visits.js)
     const r = (v) => Math.round(v * 100) / 100;
     try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry) })))); } catch { /* storage blocked */ }
   }
@@ -59,6 +66,21 @@ export function createDecor(game) {
     rebuildDecor();
     $('decor-btn').hidden = false;
   }
+  // Someone else's home (game/home-visits.js): their furniture, sent by their
+  // game, shown as it is; nothing to decorate and nothing saved here.
+  function openGuest(store, built) {
+    if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
+    decor = { home: store.id, built, items: [], group: built.decorGroup, editing: false, piece: null, carry: null, guest: true };
+    rebuildDecor();
+    $('decor-btn').hidden = true;
+  }
+  function showLayout(list) {
+    if (!decor?.guest) return;
+    decor.items = cleanLayout(list);
+    rebuildDecor();
+  }
+  // What this home looks like, to send to visitors.
+  const layout = () => (decor && !decor.guest ? decor.items.filter((i) => i !== decor.carry).map((i) => [i.id, i.x, i.z, i.ry]) : null);
   function closeHome() {
     if (!decor) return;
     setDecorating(false);
@@ -193,7 +215,22 @@ export function createDecor(game) {
     game.action = STALE;
   };
   $('piece-close').onclick = closePiece;
+  // Who may visit this home: everyone, friends (the default) or nobody.
+  // Kept in mk.homeVisit (it rides in the account save); game/home-visits.js
+  // opens or closes the home when it changes.
+  const VISITS = ['all', 'friends', 'none'];
+  const visit = () => { try { const v = localStorage.getItem('mk.homeVisit'); return VISITS.includes(v) ? v : 'friends'; } catch { return 'friends'; } };
+  const markVisit = () => { for (const b of $('visit-row').querySelectorAll('[data-visit]')) b.classList.toggle('on', b.dataset.visit === visit()); };
+  for (const b of $('visit-row').querySelectorAll('[data-visit]')) {
+    b.onclick = () => {
+      if (b.dataset.visit === visit()) return;
+      try { localStorage.setItem('mk.homeVisit', b.dataset.visit); } catch { /* storage blocked */ }
+      markVisit();
+      game.onVisit?.(visit());
+    };
+  }
+  markVisit();
 
-  return { labelDecor, openHome, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  return { visit, labelDecor, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry };
 }

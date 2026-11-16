@@ -1629,11 +1629,13 @@ async function joinRoom(room, roomScene, area = null) {
       checkTag(p.id);
       refreshOnline(); lastSent = null;
       kpop.onPeerJoin(); // catch them up on the song playing in the K-POP café
+      homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { liveStage.onLeave(id); sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); liveStage.onLeave(id); sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
+      if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
       if (liveStage.onMsg(id, e)) return; // the live café's voice set-up (game/live-stage.js)
       if (sky.onMsg(id, e)) return; // carrying someone in flight (game/sky-flight.js)
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
@@ -3065,8 +3067,9 @@ function enterStore(item, walkIn = null) {
   }
   npcs.setVisible(false);
   if (store.category === 'home') {
-    goSolo(built.scene); // your home is private for now
-    openHome(store, built);
+    goSolo(built.scene); // alone until game/home-visits.js opens the home to visitors
+    if (!store.visitHost) openHome(store, built);
+    homeVisits().then((hv) => { if (interior?.store === store) hv.entered(store, built); }, (e) => console.warn('visits', e));
   } else if (store.solo) goSolo(built.scene); // (the cathedral's confession room: you alone)
   else joinRoom(`${roomId}-${store.id}`, built.scene);
 }
@@ -3255,6 +3258,7 @@ function leaveStore(walkOut = false) {
   standUp();
   clearMeal();
   closeHome();
+  homeVisitsLoaded?.left();
   closeHatWorkshop(false);
   interior.confession?.reset();
   hideConfession();
@@ -4114,8 +4118,18 @@ const decorGame = createDecor({
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
   get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, $, STALE,
   inventory, shop,
+  onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
+  onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
 });
 const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, openPiece, updateCarry } = decorGame;
+// Visiting other players' homes, and opening mine to them. (game/home-visits.js)
+let homeVisitsLoaded = null, homeVisitsLoading = null;
+function homeVisits() {
+  return (homeVisitsLoading ||= import('./game/home-visits.js').then((m) => (homeVisitsLoaded = m.createHomeVisits({
+    $, t, shop, cloud, decor: decorGame, myId, joinRoom, goSolo, enterStore, leaveStore, claimChatId,
+    get roomId() { return roomId; }, get others() { return others; }, get net() { return net; },
+  }))).catch((e) => { homeVisitsLoading = null; throw e; }));
+}
 
 // Coins and the rewarded-ad slot. The balance is kept on the server once
 // supabase/015_wallet.sql is set up (see core/wallet.js).
@@ -6507,6 +6521,7 @@ function hi5Action(o) {
 // it, the guide among a crowd): built in one place so the chooser can list
 // them all, not only the one the button shows first.
 const storeAct = (it) => (warmInterior(), storeDescs.load(), { key: 'enter:' + it.store.id, label: '🚪 ' + t('shop.enter', { name: localName(it.store.name, getLanguage()) }), run: () => roomTips.enter(it) });
+const visitAct = (it) => ({ key: 'visit:' + it.store.id, label: '🏘️ ' + t('home.goVisit'), run: () => homeVisits().then((hv) => hv.openList(it), () => {}) });
 const boardAt = (p) => noticeBoards.find((q) => Math.hypot(p.x - q.x, p.z - q.z) < 1.8);
 const boardAct = (b) => (b.board === 'news'
   ? { key: 'board:news', label: '📢 ' + t('news.title'), run: () => openNews() }
@@ -6557,6 +6572,7 @@ function moreActions(p, door) {
   if (mode === 'street') {
     if (riding || busking.performing || seoulDal.busy || namsanCable.busy) return out;
     if (door) out.push(storeAct(door));
+    if (door?.store.category === 'home' && !door.store.movedTo) out.push(visitAct(door)); // (someone else's home: game/home-visits.js)
     hi5s();
     const g = guideAct(p); if (g) out.push(g);
     const b = boardAt(p); if (b) out.push(boardAct(b));
@@ -7590,6 +7606,14 @@ if (new URLSearchParams(location.search).has('debug')) {
     studio: () => ({ spots: interior?.stations?.studio?.map((s) => [s.x, s.z, s.kind, !!s.npc]) || null, instructor: instructor ? [instructor.ch.root.position.x, instructor.ch.root.position.z, instructor.ch.activityName] : null, npcs: interior?.studioNpcs?.all.map((o) => o.ch.activityName) || null, gym: interior?.stations?.gym?.map((s) => [s.x, s.z, s.kind]) || null, bar: interior?.stations?.benchBar?.[0]?.visible ?? null, spot: gymSpot && { ...gymSpot }, open: gymUi.open, kind: gymUi.kind, pose: gymUi.pose, ac: me.activityName, at: [+me.root.position.x.toFixed(2), +me.root.position.z.toFixed(2)] }),
     runwayRoom: () => enterRunwayRoom(), // (from DDP Hall)
     solo: () => net === SOLO, // out of multiplayer (your home, the confession room)
+    homeVisit: () => ({ me: myId, ...(homeVisitsLoaded?.state || {}) }),
+    // Tests stand in for the home visit server functions (047_home_visits.sql):
+    // open_homes answers `homes`, home_guest_ok answers `ok`, the rest 'ok'.
+    homeStub: (homes = [], ok = true) => {
+      const real = cloud.call.bind(cloud);
+      cloud.call = async (fn, args) => (fn === 'open_homes' ? { data: homes } : fn === 'home_guest_ok' ? { data: ok } : fn.startsWith('home_') ? { data: 'ok' } : real(fn, args));
+    },
+    openHomes: () => homeVisits().then((hv) => hv.openList(storefronts.get('forest-lane-apt'))),
     runwayFx: (tier, word) => runwayReact(me.root, tier, word),
     runwayLine: (on) => (on ? runwayUi.line.join() : runwayUi.line.leave()),
     runwayOpen: () => runwayUi.show(),
