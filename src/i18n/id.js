@@ -516,6 +516,8 @@ export const ID = {
   'welcome.tip2': "Pakai dengan bijak: kafe, makanan, dan belanja cepat menumpuk. Cek 📒 Buku kas di dompetmu kapan saja.",
   'welcome.tip3': "Kurang uang? Uang bantuan perjalanan harian, kerja paruh waktu, dan tugas membantu, tapi keseruan sebenarnya adalah menjelajah.",
   'welcome.go': "Ayo jelajahi!",
+  'notice.title': "Pesan untukmu",
+  'notice.ok': "OK",
   'pet.pat': 'Elus {name}',
   'npc.hi': 'Sapa {name}',
   'npc.clerk': 'Pegawai',

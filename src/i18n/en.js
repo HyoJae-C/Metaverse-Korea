@@ -513,6 +513,8 @@ export const EN = {
   'welcome.tip2': "Spend wisely: cafés, food and shopping add up. Check 📒 Budget book in your wallet anytime.",
   'welcome.tip3': "Short on money? Travel support money every day, part-time jobs and errands help, but exploring is the real fun.",
   'welcome.go': "Let's explore!",
+  'notice.title': "A note for you",
+  'notice.ok': "OK",
   'pet.pat': 'Pat {name}',
   'npc.hi': 'Say hi to {name}',
   'npc.clerk': 'Clerk',

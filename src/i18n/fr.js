@@ -514,6 +514,8 @@ export const FR = {
   'welcome.tip2': 'Dépense avec sagesse : cafés, repas et shopping, ça s\'accumule. Consulte 📒 Livre de comptes dans ton portefeuille à tout moment.',
   'welcome.tip3': 'À court d\'argent ? L\'aide au voyage quotidienne, les petits boulots et les courses aident, mais le vrai plaisir, c\'est d\'explorer.',
   'welcome.go': 'Partons explorer !',
+  'notice.title': "Un message pour vous",
+  'notice.ok': "OK",
   'pet.pat': 'Caresser {name}',
   'npc.hi': 'Dire bonjour à {name}',
   'npc.clerk': 'Vendeur',

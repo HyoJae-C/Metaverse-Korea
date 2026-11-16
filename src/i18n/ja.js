@@ -514,6 +514,8 @@ export const JA = {
   'welcome.tip2': "大切に使ってね。カフェや食事、買い物はすぐ積み重なるよ。財布の📒家計簿でいつでも確認できます。",
   'welcome.tip3': "お金が足りないときは毎日の旅行支援金やアルバイト、おつかいが役立つけど、本当の楽しみは探検だよ。",
   'welcome.go': "探検に出かけよう！",
+  'notice.title': "お知らせ",
+  'notice.ok': "OK",
   'pet.pat': '{name}をなでる',
   'npc.hi': '{name}にあいさつ',
   'npc.clerk': '店員',

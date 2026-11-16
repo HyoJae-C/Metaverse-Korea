@@ -4328,6 +4328,10 @@ giftSync.then(() => { // (after it: a gift's receipt is in first)
     if (head) setTimeout(() => m.runHeadRefund(g).catch(() => {}), 8000); // the clinics' face size, paid back (040)
   }).catch(() => {});
 });
+// Personal notices: a popup for me alone, once (game/player-notices.js, 049).
+walletReady.then(() => setTimeout(() => {
+  if (wallet.server) import('./game/player-notices.js').then((m) => m.runPlayerNotices({ wallet, refreshWallet, t, lang: getLanguage })).catch(() => {});
+}, 6000));
 const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI }) => new ResaleUI({
   root: $('resale-panel'),
   pct: () => wallet.resellPct,

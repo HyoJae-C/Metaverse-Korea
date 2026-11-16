@@ -516,6 +516,8 @@ export const VI = {
   'welcome.tip2': "Tiêu tiền khôn ngoan: cà phê, đồ ăn và mua sắm cộng lại rất nhanh. Xem 📒 Sổ chi tiêu trong ví bất cứ lúc nào.",
   'welcome.tip3': "Thiếu tiền? Tiền hỗ trợ du lịch mỗi ngày, việc làm thêm và việc vặt sẽ giúp, nhưng niềm vui thật sự là khám phá.",
   'welcome.go': "Đi khám phá thôi!",
+  'notice.title': "Thông báo cho bạn",
+  'notice.ok': "OK",
   'pet.pat': 'Vuốt ve {name}',
   'npc.hi': 'Chào {name}',
   'npc.clerk': 'Nhân viên',
