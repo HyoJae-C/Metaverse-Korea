@@ -862,7 +862,7 @@ const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
-  t, L, fmt, missionEvent: (k) => missionEvent(k), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+  t, L, fmt, missionEvent: (k, id) => missionEvent(k, id), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 }, { landmarks: map.landmarks, low: storefronts.get('namsan-sky-cable')?.door, top: namsanWalk.station, topOut: namsanWalk.stationOut });
 const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
