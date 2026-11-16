@@ -63,7 +63,7 @@ export const ROOM_SIZES = {
   station: HALL, // subway station hall (see subway.js)
   train: CAR, // inside a subway car
   museum: ROOM_MUSEUM, // the painting gallery (see museum.js)
-  photoshow: ROOM_PHOTO, // Seoul Forest's culture center: a photo show on three floors (see photo-show.js)
+  photoshow: ROOM_PHOTO, // a photo show on several floors, Galleries A and D (see photo-show.js)
   pool: POOL_ROOM, // Olympic Park Pool (see pool-hall.js)
   memorial: ROOM_MEMORIAL, // the War History Museum's exhibition floor (see war-memorial.js)
   dome: ROOM_DOME, // Modu Ballpark, the baseball stadium (see dome.js)
@@ -586,8 +586,8 @@ export function buildInterior(store) {
     clerk = hall.clerk;
     see = hall.see;
   } else if (store.workshop === 'photo-show') {
-    // Seoul Forest's culture center: a photo show on three floors (core/photo-show.js).
-    const show = buildPhotoShow(scene, ROOM, { box, block, mat }, store.floor || 1);
+    // A photo show on several floors: Galleries A and D (core/photo-show.js).
+    const show = buildPhotoShow(scene, ROOM, { box, block, mat }, store.floor || 1, store);
     stations.paintings = show.looks;
     stations.lift = show.lift;
     seats.push(...show.seats);
