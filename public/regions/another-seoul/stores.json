@@ -2914,7 +2914,7 @@
       "id": "eulji-somok",
       "category": "lifestyle",
       "size": "small",
-      "at": [-1262.5, -597],
+      "at": [-1262.5, -601],
       "district": "euljiro",
       "name": {"ko": "을지 소목방", "en": "Eulji Joinery", "ja": "乙支 指物房", "zh": "乙支木作坊"},
       "tagline": {"en": "Traditional Korean furniture: lacquer, brass and mother-of-pearl", "ko": "옻칠·놋쇠·자개, 우리 전통 가구", "ja": "漆・真鍮・螺鈿の韓国伝統家具", "zh": "漆器、黄铜与螺钿的韩国传统家具"},
@@ -2923,15 +2923,30 @@
       "products": [
         {"id": "buy-f-najeon", "model": "furniture", "furniture": "f-najeon", "color": "#f3e5c8", "name": {"en": "Mother-of-pearl wardrobe", "ko": "자개장", "ja": "螺鈿のたんす", "zh": "螺钿衣柜"}, "price": 350000, "desc": {"en": "Black lacquer inlaid with mother-of-pearl: a crane and flowers that shimmer.", "ko": "검은 옻칠에 자개로 학과 꽃을 새긴 장이에요."}},
         {"id": "buy-f-bandaji", "model": "furniture", "furniture": "f-bandaji", "color": "#f3e5c8", "name": {"en": "Bandaji chest", "ko": "반닫이", "ja": "パンダジ（衣装箱）", "zh": "半开柜"}, "price": 180000, "desc": {"en": "A persimmon-wood chest whose front flap opens halfway, with iron hinges and a brass lock.", "ko": "앞판이 반만 열리는 감나무 궤예요. 무쇠 경첩과 놋쇠 자물쇠가 달렸어요."}},
-        {"id": "buy-f-bangseok", "model": "furniture", "furniture": "f-bangseok", "color": "#f3e5c8", "name": {"en": "Floor cushions", "ko": "방석 두 개", "ja": "座布団ふたつ", "zh": "坐垫两个"}, "price": 30000, "desc": {"en": "Two silk floor cushions, red and blue, to sit on Korean-style.", "ko": "빨강·파랑 비단 방석 두 개예요. 바닥에 앉을 때 써요."}},
         {"id": "buy-f-byeongpung", "model": "furniture", "furniture": "f-byeongpung", "color": "#f3e5c8", "name": {"en": "Folding screen", "ko": "병풍", "ja": "屏風", "zh": "屏风"}, "price": 120000, "desc": {"en": "A four-panel folding screen painted with plum blossoms in ink.", "ko": "먹으로 매화를 그린 네 폭 병풍이에요."}}
+      ]
+    },
+    {
+      "id": "eulji-sarangbang",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1262.5, -593],
+      "district": "euljiro",
+      "name": {"ko": "사랑방 좌식가구", "en": "Sarangbang Floor Living", "ja": "サランバン座卓家具", "zh": "厢房坐式家具"},
+      "tagline": {"en": "Sit on the floor, Korean-style: tea tables, cushions and a dressing box", "ko": "바닥에 앉는 우리식 생활, 찻상·방석·경대", "ja": "床に座る韓国式の暮らし、茶台・座布団・鏡台", "zh": "韩式席地而坐：茶桌、坐垫与镜台"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#7a3b2e", "awning": "#d9c39a", "accent": "#fbf3e6"},
+      "products": [
+        {"id": "buy-f-tea-table", "model": "furniture", "furniture": "f-tea-table", "color": "#f3e5c8", "name": {"en": "Floor tea table", "ko": "좌식 찻상", "ja": "座卓の茶台", "zh": "矮茶桌"}, "price": 60000, "desc": {"en": "A low wooden tea table with a tea set, for sitting on the floor.", "ko": "바닥에 앉아 차를 마시는 낮은 나무 찻상이에요. 다기도 놓여 있어요."}},
+        {"id": "buy-f-bangseok", "model": "furniture", "furniture": "f-bangseok", "color": "#f3e5c8", "name": {"en": "Floor cushions", "ko": "방석 두 개", "ja": "座布団ふたつ", "zh": "坐垫两个"}, "price": 30000, "desc": {"en": "Two silk floor cushions, red and blue, to sit on Korean-style.", "ko": "빨강·파랑 비단 방석 두 개예요. 바닥에 앉을 때 써요."}},
+        {"id": "buy-f-gyeongdae", "model": "furniture", "furniture": "f-gyeongdae", "color": "#f3e5c8", "name": {"en": "Gyeongdae dressing box", "ko": "경대", "ja": "キョンデ（鏡台）", "zh": "镜台"}, "price": 85000, "desc": {"en": "A small wooden dressing box with a mirror that folds up from the lid.", "ko": "뚜껑에서 거울이 올라오는 작은 나무 화장대예요."}}
       ]
     },
     {
       "id": "eulji-retro",
       "category": "lifestyle",
       "size": "small",
-      "at": [-1261.5, -582],
+      "at": [-1261.5, -586],
       "district": "euljiro",
       "name": {"ko": "을지 레트로상회", "en": "Eulji Retro Store", "ja": "乙支レトロ商会", "zh": "乙支复古商会"},
       "tagline": {"en": "Furniture from Grandma's living room: check sofas and box TVs", "ko": "할머니댁 거실 그 가구, 체크 소파와 브라운관 TV", "ja": "おばあちゃんの家の居間の家具、チェックのソファとブラウン管", "zh": "奶奶家客厅的家具：格纹沙发和显像管电视"},
@@ -2940,15 +2955,30 @@
       "products": [
         {"id": "buy-f-retro-sofa", "model": "furniture", "furniture": "f-retro-sofa", "color": "#f3e5c8", "name": {"en": "Retro check sofa", "ko": "레트로 체크 소파", "ja": "レトロなチェックのソファ", "zh": "复古格纹沙发"}, "price": 150000, "desc": {"en": "An orange check sofa on wooden arms and splayed legs.", "ko": "나무 팔걸이에 다리가 벌어진 주황 체크 소파예요."}},
         {"id": "buy-f-steel-stool", "model": "furniture", "furniture": "f-steel-stool", "color": "#f3e5c8", "name": {"en": "Steel stool", "ko": "철제 원형 의자", "ja": "スチールの丸椅子", "zh": "铁艺圆凳"}, "price": 25000, "desc": {"en": "The red round stool from every old Korean eatery.", "ko": "옛날 식당마다 있던 빨간 철제 원형 의자예요."}},
-        {"id": "buy-f-crt-tv", "model": "furniture", "furniture": "f-crt-tv", "color": "#f3e5c8", "name": {"en": "Old-school box TV", "ko": "브라운관 TV", "ja": "ブラウン管テレビ", "zh": "显像管电视"}, "price": 90000, "desc": {"en": "A box TV on a wooden cabinet, rabbit ears and all.", "ko": "나무장 위에 올린 브라운관 TV예요. 안테나도 달렸어요."}},
-        {"id": "buy-f-record", "model": "furniture", "furniture": "f-record", "color": "#f3e5c8", "name": {"en": "Record player cabinet", "ko": "전축 장식장", "ja": "レコードプレーヤーのキャビネット", "zh": "唱机柜"}, "price": 200000, "desc": {"en": "A wooden record player cabinet with cloth speakers.", "ko": "천 스피커가 달린 나무 전축 장식장이에요."}}
+        {"id": "buy-f-crt-tv", "model": "furniture", "furniture": "f-crt-tv", "color": "#f3e5c8", "name": {"en": "Old-school box TV", "ko": "브라운관 TV", "ja": "ブラウン管テレビ", "zh": "显像管电视"}, "price": 90000, "desc": {"en": "A box TV on a wooden cabinet, rabbit ears and all.", "ko": "나무장 위에 올린 브라운관 TV예요. 안테나도 달렸어요."}}
+      ]
+    },
+    {
+      "id": "eulji-sound",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1261.5, -578],
+      "district": "euljiro",
+      "name": {"ko": "을지 음향사", "en": "Eulji Sound", "ja": "乙支音響社", "zh": "乙支音响社"},
+      "tagline": {"en": "Record players, tube radios and a jukebox that still glows", "ko": "전축·진공관 라디오, 아직 불 켜지는 주크박스", "ja": "レコードプレーヤー、真空管ラジオ、まだ光るジュークボックス", "zh": "唱机、电子管收音机和仍会发光的点唱机"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#2e3a5a", "awning": "#e0b04a", "accent": "#fff4dc"},
+      "products": [
+        {"id": "buy-f-record", "model": "furniture", "furniture": "f-record", "color": "#f3e5c8", "name": {"en": "Record player cabinet", "ko": "전축 장식장", "ja": "レコードプレーヤーのキャビネット", "zh": "唱机柜"}, "price": 200000, "desc": {"en": "A wooden record player cabinet with cloth speakers.", "ko": "천 스피커가 달린 나무 전축 장식장이에요."}},
+        {"id": "buy-f-radio", "model": "furniture", "furniture": "f-radio", "color": "#f3e5c8", "name": {"en": "Vintage radio", "ko": "진공관 라디오", "ja": "真空管ラジオ", "zh": "电子管收音机"}, "price": 65000, "desc": {"en": "A wooden tube radio with a glowing dial.", "ko": "다이얼에 불이 들어오는 나무 진공관 라디오예요."}},
+        {"id": "buy-f-jukebox", "model": "furniture", "furniture": "f-jukebox", "color": "#f3e5c8", "name": {"en": "Jukebox", "ko": "주크박스", "ja": "ジュークボックス", "zh": "点唱机"}, "price": 300000, "desc": {"en": "A glowing jukebox with neon tubes around its arch.", "ko": "아치 둘레에 네온이 빛나는 주크박스예요."}}
       ]
     },
     {
       "id": "saebyeok-living",
       "category": "lifestyle",
       "size": "small",
-      "at": [-1260.5, -565],
+      "at": [-1260.5, -568],
       "district": "euljiro",
       "name": {"ko": "새벽 리빙", "en": "Saebyeok Living", "ja": "セビョク・リビング", "zh": "晨光家居"},
       "tagline": {"en": "Soft, modern pieces for a calm room", "ko": "포근하고 차분한 요즘 가구", "ja": "やわらかく落ち着いたモダン家具", "zh": "柔软安静的现代家具"},
@@ -2957,25 +2987,39 @@
       "products": [
         {"id": "buy-f-modular", "model": "furniture", "furniture": "f-modular", "color": "#f3e5c8", "name": {"en": "Modular sofa", "ko": "모듈 소파", "ja": "モジュールソファ", "zh": "模块沙发"}, "price": 280000, "desc": {"en": "Three soft blocks you can sit on any way, with two cushions.", "ko": "어떻게 앉아도 편한 세 칸짜리 모듈 소파예요."}},
         {"id": "buy-f-beanbag", "model": "furniture", "furniture": "f-beanbag", "color": "#f3e5c8", "name": {"en": "Bean bag", "ko": "빈백", "ja": "ビーズクッション", "zh": "懒人沙发"}, "price": 70000, "desc": {"en": "A big yellow bean bag that hugs you back.", "ko": "몸을 폭 감싸 주는 노란 빈백이에요."}},
+        {"id": "buy-f-mirror", "model": "furniture", "furniture": "f-mirror", "color": "#f3e5c8", "name": {"en": "Round wavy mirror", "ko": "웨이브 원형 거울", "ja": "波形の丸い鏡", "zh": "波浪圆镜"}, "price": 55000, "desc": {"en": "A round standing mirror with a soft wavy frame.", "ko": "테두리가 물결치는 동그란 스탠드 거울이에요."}}
+      ]
+    },
+    {
+      "id": "saebyeok-bedroom",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1260.5, -561],
+      "district": "euljiro",
+      "name": {"ko": "새벽 침실", "en": "Saebyeok Bedroom", "ja": "セビョク・ベッドルーム", "zh": "晨光卧室"},
+      "tagline": {"en": "A soft bed and open shelves for a calm bedroom", "ko": "포근한 침대와 열린 선반, 차분한 침실", "ja": "やわらかいベッドとオープン棚の落ち着いた寝室", "zh": "柔软的床和开放式书架，安静的卧室"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#6a5a7a", "awning": "#ece4ee", "accent": "#faf7fb"},
+      "products": [
+        {"id": "buy-f-fabric-bed", "model": "furniture", "furniture": "f-fabric-bed", "color": "#f3e5c8", "name": {"en": "Upholstered bed", "ko": "패브릭 침대", "ja": "ファブリックベッド", "zh": "布艺床"}, "price": 260000, "desc": {"en": "A soft upholstered bed with a channel headboard and a sage duvet.", "ko": "골 패턴 헤드보드에 세이지색 이불을 덮은 패브릭 침대예요."}},
         {"id": "buy-f-cloud-shelf", "model": "furniture", "furniture": "f-cloud-shelf", "color": "#f3e5c8", "name": {"en": "Arch bookshelf", "ko": "아치 책장", "ja": "アーチ型の本棚", "zh": "拱形书架"}, "price": 110000, "desc": {"en": "An open bookshelf with an arched top.", "ko": "위가 아치 모양인 열린 책장이에요."}},
-        {"id": "buy-f-fabric-bed", "model": "furniture", "furniture": "f-fabric-bed", "color": "#f3e5c8", "name": {"en": "Upholstered bed", "ko": "패브릭 침대", "ja": "ファブリックベッド", "zh": "布艺床"}, "price": 260000, "desc": {"en": "A soft upholstered bed with a channel headboard and a sage duvet.", "ko": "골 패턴 헤드보드에 세이지색 이불을 덮은 패브릭 침대예요."}}
+        {"id": "buy-f-wood-shelf", "model": "furniture", "furniture": "f-wood-shelf", "color": "#f3e5c8", "name": {"en": "Ladder shelf", "ko": "원목 사다리 선반", "ja": "木のはしご棚", "zh": "实木梯形架"}, "price": 90000, "desc": {"en": "A ladder shelf that leans on the wall, with a plant and books.", "ko": "벽에 기대 세우는 사다리 선반이에요. 화분과 책이 올려져 있어요."}}
       ]
     },
     {
       "id": "gyeol-wood",
       "category": "lifestyle",
       "size": "small",
-      "at": [-1260.5, -552.5],
+      "at": [-1259.8, -552.5],
       "district": "euljiro",
       "name": {"ko": "결 원목공방", "en": "Gyeol Woodworks", "ja": "ギョル木工房", "zh": "纹理木作坊"},
       "tagline": {"en": "Solid wood, made by hand, the grain left to show", "ko": "손으로 만든 원목 가구, 나뭇결 그대로", "ja": "手づくりの無垢材家具、木目そのまま", "zh": "手工实木家具，保留木纹"},
-      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro (the fourth shop, Yozi 2026-11-16).",
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
       "colors": {"sign": "#8a5a30", "awning": "#e8d6b8", "accent": "#faf4ea"},
       "products": [
         {"id": "buy-f-wood-table", "model": "furniture", "furniture": "f-wood-table", "color": "#f3e5c8", "name": {"en": "Solid wood dining table", "ko": "원목 식탁", "ja": "無垢材のダイニングテーブル", "zh": "实木餐桌"}, "price": 240000, "desc": {"en": "A thick solid wood slab table for six.", "ko": "여섯 명이 앉는 두툼한 원목 통판 식탁이에요."}},
         {"id": "buy-f-wood-bench", "model": "furniture", "furniture": "f-wood-bench", "color": "#f3e5c8", "name": {"en": "Wooden bench", "ko": "원목 벤치", "ja": "木のベンチ", "zh": "木长凳"}, "price": 80000, "desc": {"en": "A plain wooden bench, to go with the table or by the door.", "ko": "식탁 옆에도, 현관에도 어울리는 원목 벤치예요."}},
-        {"id": "buy-f-rocking", "model": "furniture", "furniture": "f-rocking", "color": "#f3e5c8", "name": {"en": "Rocking chair", "ko": "흔들의자", "ja": "ロッキングチェア", "zh": "摇椅"}, "price": 160000, "desc": {"en": "A spindle-back rocking chair with a soft seat pad.", "ko": "살대 등받이에 방석을 깐 흔들의자예요."}},
-        {"id": "buy-f-wood-shelf", "model": "furniture", "furniture": "f-wood-shelf", "color": "#f3e5c8", "name": {"en": "Ladder shelf", "ko": "원목 사다리 선반", "ja": "木のはしご棚", "zh": "实木梯形架"}, "price": 90000, "desc": {"en": "A ladder shelf that leans on the wall, with a plant and books.", "ko": "벽에 기대 세우는 사다리 선반이에요. 화분과 책이 올려져 있어요."}}
+        {"id": "buy-f-rocking", "model": "furniture", "furniture": "f-rocking", "color": "#f3e5c8", "name": {"en": "Rocking chair", "ko": "흔들의자", "ja": "ロッキングチェア", "zh": "摇椅"}, "price": 160000, "desc": {"en": "A spindle-back rocking chair with a soft seat pad.", "ko": "살대 등받이에 방석을 깐 흔들의자예요."}}
       ]
     },
     {"id": "info-bukchon", "category": "info", "workshop": "info", "size": "small", "district": "bukchon", "front": "hanok", "at": [-1497.9, -927], "name": {"en": "Bukchon Information Center", "ko": "북촌 안내센터", "ja": "北村インフォメーションセンター", "zh": "北村信息中心"}, "tagline": {"en": "Two guides: how the game works, and Bukchon's alleys and manners", "ko": "게임 안내와 북촌 골목·방문 예절 안내, 두 명의 안내원", "ja": "ゲーム案内と北村の路地・マナー案内の2人がご案内", "zh": "两位向导：游戏玩法，以及北村的小巷和礼仪"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},

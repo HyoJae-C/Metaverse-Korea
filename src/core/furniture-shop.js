@@ -1,10 +1,9 @@
 // Furniture from the furniture shops on Euljiro (stores.json "furniture"
 // products): only once you've bought one, then placed with Decorate. Three
 // shops, three looks (Yozi 2026-11-16: new shapes, not recoloured basics):
-// traditional Korean pieces, retro Euljiro, modern, and a woodworking
-// studio (the fourth shop, Yozi 2026-11-16). Each shape comes in
-// one colour (the item rule allows at most two). Four pieces per shop at
-// most (Yozi 2026-11-16).
+// traditional Korean pieces, retro Euljiro, modern, and woodwork. Seven
+// shops of three pieces each (Yozi 2026-11-16: three kinds a shop, more shops). Each shape comes in
+// one colour (the item rule allows at most two).
 // [id, emoji, footprint [w, d], seat, name, build(g, part, box, glow)]
 import * as THREE from 'three';
 
@@ -31,6 +30,14 @@ export const SHOP_FURNITURE = [
     for (const x of [-0.3, 0.3]) box(0.16, 0.2, 0.01, x, 0.42, 0.229, '#2b2b31'); // iron hinges
     box(0.12, 0.14, 0.012, 0, 0.42, 0.23, '#c9a227'); // brass lock plate
     part(new THREE.CircleGeometry(0.035, 10), '#8a6a1a', 0, 0.42, 0.237);
+  }],
+  ['f-tea-table', '🍵', [0.8, 0.55], false, { en: 'Floor tea table', ko: '좌식 찻상', ja: '座卓の茶台', zh: '矮茶桌' }, (g, part, box) => {
+    box(0.8, 0.04, 0.55, 0, 0.3, 0, '#7a4a2a');
+    for (const x of [-0.34, 0.34]) for (const z of [-0.22, 0.22]) box(0.05, 0.28, 0.05, x, 0.14, z, '#5a3418');
+    box(0.7, 0.03, 0.03, 0, 0.08, 0.22, '#5a3418');
+    part(new THREE.CylinderGeometry(0.07, 0.06, 0.09, 12), '#e8efe6', -0.12, 0.365, 0); // a celadon teapot
+    part(new THREE.SphereGeometry(0.02, 6, 4), '#c8d8c4', -0.12, 0.42, 0);
+    for (const x of [0.1, 0.22]) part(new THREE.CylinderGeometry(0.035, 0.03, 0.05, 10), '#cfe0cc', x, 0.345, 0.06); // cups
   }],
   ['f-bangseok', '🟥', [1.0, 0.55], true, { en: 'Floor cushions', ko: '방석 두 개', ja: '座布団ふたつ', zh: '坐垫两个' }, (g, part, box) => {
     for (const [x, c] of [[-0.25, '#c8323c'], [0.25, '#2f5aa8']]) {
@@ -108,6 +115,17 @@ export const SHOP_FURNITURE = [
     const back = part(new THREE.SphereGeometry(0.3, 14, 10), '#f2c14e', 0, 0.45, -0.22);
     back.scale.set(1.2, 0.9, 0.6);
   }],
+  ['f-mirror', '🪞', [0.7, 0.3], false, { en: 'Round wavy mirror', ko: '웨이브 원형 거울', ja: '波形の丸い鏡', zh: '波浪圆镜' }, (g, part, box) => {
+    box(0.5, 0.04, 0.25, 0, 0.02, 0, '#e8e2d6');
+    box(0.05, 0.9, 0.05, 0, 0.47, -0.05, '#e8e2d6');
+    const wave = new THREE.Shape();
+    for (let i = 0; i <= 48; i++) {
+      const a = (i / 48) * Math.PI * 2, r = 0.33 + Math.sin(a * 6) * 0.025;
+      i ? wave.lineTo(Math.cos(a) * r, Math.sin(a) * r) : wave.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    part(new THREE.ExtrudeGeometry(wave, { depth: 0.03, bevelEnabled: false }), '#f2b8a0', 0, 1.15, -0.06);
+    part(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ color: '#cfe0e8' }), 0, 1.15, -0.025);
+  }],
   ['f-cloud-shelf', '☁️', [1.1, 0.3], false, { en: 'Arch bookshelf', ko: '아치 책장', ja: 'アーチ型の本棚', zh: '拱形书架' }, (g, part, box) => {
     box(1.1, 1.3, 0.04, 0, 0.65, -0.13, '#e8e2d6'); // back, open in front
     for (const s of [-1, 1]) box(0.04, 1.3, 0.3, 0.53 * s, 0.65, 0, '#e8e2d6');
@@ -163,5 +181,34 @@ export const SHOP_FURNITURE = [
     part(new THREE.SphereGeometry(0.11, 10, 8), '#7aaa6a', -0.3, 0.48, 0.1);
     for (let i = 0; i < 4; i++) box(0.06, 0.22, 0.16, 0.15 + i * 0.07, 0.83, 0.04, ['#c86a4a', '#4a6a5a', '#f2c14e', '#7a8aa8'][i]);
     part(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 10), '#b8a07a', 0.3, 1.22, -0.02); // a basket
+  }],
+  // --- More for the seven shops of three ---
+  ['f-gyeongdae', '🪞', [0.5, 0.4], false, { en: 'Gyeongdae dressing box', ko: '경대', ja: 'キョンデ（鏡台）', zh: '镜台' }, (g, part, box) => {
+    box(0.5, 0.18, 0.38, 0, 0.09, 0, '#7a3a22'); // a low lacquered box with drawers
+    for (const y of [0.05, 0.13]) box(0.44, 0.06, 0.01, 0, y, 0.191, '#6a3018');
+    for (const y of [0.05, 0.13]) part(new THREE.CircleGeometry(0.012, 8), '#c9a227', 0, y, 0.197);
+    for (const s of [-1, 1]) box(0.03, 0.4, 0.03, 0.17 * s, 0.38, -0.12, '#6a3018');
+    const glass = part(new THREE.CircleGeometry(0.14, 24), new THREE.MeshBasicMaterial({ color: '#d8e6ee' }), 0, 0.42, -0.1);
+    glass.rotation.x = -0.15;
+    part(new THREE.TorusGeometry(0.145, 0.015, 6, 24), '#6a3018', 0, 0.42, -0.1).rotation.x = -0.15;
+    part(new THREE.CylinderGeometry(0.025, 0.025, 0.06, 8), '#e8e0cc', 0.15, 0.21, 0.08); // a little jar
+  }],
+  ['f-radio', '📻', [0.45, 0.25], false, { en: 'Vintage radio', ko: '진공관 라디오', ja: '真空管ラジオ', zh: '电子管收音机' }, (g, part, box, glow) => {
+    box(0.45, 0.04, 0.25, 0, 0.02, 0, '#5a3418');
+    box(0.42, 0.3, 0.22, 0, 0.19, 0, '#8a5a30');
+    part(new THREE.CylinderGeometry(0.21, 0.21, 0.22, 20, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI / 2), '#8a5a30', 0, 0.34, 0); // rounded top
+    box(0.24, 0.18, 0.01, -0.05, 0.22, 0.111, '#d8c8a0'); // speaker cloth
+    box(0.12, 0.04, 0.01, 0.12, 0.27, 0.111, glow('#ffd27a')); // the dial glows
+    for (const y of [0.17, 0.11]) part(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 10).rotateX(Math.PI / 2), '#3a2a1a', 0.12, y, 0.115);
+  }],
+  ['f-jukebox', '🎵', [0.7, 0.5], false, { en: 'Jukebox', ko: '주크박스', ja: 'ジュークボックス', zh: '点唱机' }, (g, part, box, glow) => {
+    box(0.7, 0.9, 0.5, 0, 0.45, 0, '#8a3a2a');
+    part(new THREE.CylinderGeometry(0.35, 0.35, 0.5, 20, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI / 2), '#8a3a2a', 0, 0.9, 0); // arched top
+    part(new THREE.TorusGeometry(0.3, 0.03, 6, 20, Math.PI), glow('#ffb84a'), 0, 0.9, 0.26); // the glowing arch
+    for (const [x, c] of [[-0.28, '#ff6a8a'], [0.28, '#6ad0ff']]) box(0.04, 0.75, 0.02, x, 0.5, 0.255, glow(c)); // light tubes
+    box(0.4, 0.25, 0.01, 0, 0.82, 0.255, '#2a2228'); // the window
+    for (let i = 0; i < 5; i++) part(new THREE.CylinderGeometry(0.08, 0.08, 0.004, 16).rotateX(Math.PI / 2), '#1a1a1a', -0.12 + i * 0.06, 0.82, 0.262); // records inside
+    box(0.46, 0.2, 0.01, 0, 0.4, 0.255, '#c8b48a'); // speaker grille
+    box(0.3, 0.06, 0.06, 0, 0.6, 0.27, '#c0c4ca'); // buttons
   }],
 ];

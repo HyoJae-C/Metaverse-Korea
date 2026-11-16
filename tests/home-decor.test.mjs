@@ -41,8 +41,8 @@ test('the Euljiro furniture shops: every new piece is an item, sold in exactly o
   const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const shops = stores.filter((s) => ['eulji-somok', 'eulji-retro', 'saebyeok-living', 'gyeol-wood'].includes(s.id));
-  assert.equal(shops.length, 4);
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood'].includes(s.id));
+  assert.equal(shops.length, 7);
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
   for (const [id] of SHOP_FURNITURE_IDS) {
@@ -62,8 +62,8 @@ test('the free basics are the worn ones', () => {
   }
 });
 
-test('a furniture shop sells four pieces at most', async () => {
+test('each furniture shop sells three pieces', async () => {
   const { readFileSync } = await import('node:fs');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.ok(s.products.length <= 4, s.id);
+  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, 3, s.id);
 });
