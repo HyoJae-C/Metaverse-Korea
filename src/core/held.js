@@ -5,6 +5,7 @@ import { rodSkin } from './rod-skins.js';
 import { frisbeeColor } from './frisbee.js';
 import { shadeHex } from './lipstick.js';
 import { baitById } from './bait.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -273,6 +274,117 @@ export function makeHeld(kind) {
   return g;
 }
 
+// Many small parts as one mesh per colour (a dish's pieces), cached by kind.
+const dishGeos = {};
+function dishParts(g, key, build) {
+  const byColor = (dishGeos[key] ||= (() => {
+    const out = {};
+    for (const [geo, color] of build()) (out[color] ||= []).push(geo);
+    for (const c in out) out[c] = mergeGeometries(out[c]);
+    return out;
+  })());
+  for (const [c, geo] of Object.entries(byColor)) g.add(new THREE.Mesh(geo, mat(c)));
+}
+// Kimbap: two rows of slices lying face up, each showing its rings:
+// black seaweed, white rice, and a middle of yellow pickled radish, orange
+// carrot, green spinach and pink ham.
+function kimbapParts() {
+  const out = [];
+  const fill = [['#ffd23a', 0.0075, 0], ['#ff8a3d', -0.0065, 0.0045], ['#4caf50', -0.001, -0.0075], ['#f28fa6', 0.002, 0.0075]];
+  const slot = [];
+  for (let k = 0; k < 4; k++) slot.push([-0.051 + k * 0.034, -0.018]);
+  for (let k = 0; k < 3; k++) slot.push([-0.034 + k * 0.034, 0.02]);
+  slot.forEach(([x, z], k) => {
+    const y = 0.0085 + (k % 2) * 0.001;
+    out.push([new THREE.CylinderGeometry(0.0175, 0.0175, 0.017, 18).translate(x, y, z), '#1d2b1f']);
+    out.push([new THREE.CylinderGeometry(0.015, 0.015, 0.0172, 18).translate(x, y + 0.0001, z), '#fbfaf3']);
+    for (const [c, dx, dz] of fill) out.push([new THREE.CylinderGeometry(0.0048, 0.0048, 0.0174, 7).translate(x + dx, y + 0.0002, z + dz), c]);
+  });
+  return out;
+}
+// Kimchi: a heap of folded napa cabbage kimchi on its own: red leaves
+// with pale stems fanned round a mound, and a green onion on top.
+function kimchiParts() {
+  const out = [];
+  out.push([new THREE.SphereGeometry(0.04, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.15, 0.75, 1), '#b8261b']); // the mound
+  const ring = (n, r, y, s, a0) => {
+    for (let k = 0; k < n; k++) {
+      const a = a0 + (k / n) * Math.PI * 2, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      out.push([new THREE.SphereGeometry(0.021 * s, 10, 6).scale(1.7, 0.42, 0.9).rotateZ(0.35).rotateY(-a).translate(x, y, z), k % 2 ? '#d23122' : '#c4271d']);
+      out.push([new THREE.SphereGeometry(0.012 * s, 8, 5).scale(1.6, 0.5, 0.9).rotateZ(0.35).rotateY(-a).translate(x + Math.cos(a) * 0.022 * s, y - 0.006 * s, z + Math.sin(a) * 0.022 * s), '#f0dfa0']);
+    }
+  };
+  ring(6, 0.03, 0.012, 1, 0);
+  ring(4, 0.016, 0.026, 0.85, 0.6);
+  out.push([new THREE.SphereGeometry(0.018, 10, 7).scale(1.4, 0.7, 1.1).translate(0, 0.034, 0), '#d23122']); // the top
+  for (const [x, z, a] of [[-0.004, 0.003, 0.7], [0.006, -0.005, 2.1]]) {
+    out.push([new THREE.CylinderGeometry(0.0022, 0.0022, 0.04, 5).rotateZ(Math.PI / 2).rotateY(a).translate(x, 0.046, z), '#3f9a46']); // green onion
+  }
+  for (let k = 0; k < 10; k++) { // chilli flakes and sesame
+    const a = k * 2.39, r = 0.012 + (k % 4) * 0.008;
+    out.push([new THREE.SphereGeometry(0.0022, 4, 3).translate(Math.cos(a) * r, 0.03 + (k % 3) * 0.004, Math.sin(a) * r), k % 3 ? '#8f140c' : '#f4ead0']);
+  }
+  return out;
+}
+// Japchae: a glossy tangle of glass noodles with carrot, spinach, beef,
+// egg strips and onion through it, and sesame on top.
+function japchaeParts() {
+  const out = [];
+  out.push([new THREE.SphereGeometry(0.045, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.2, 0.5, 1), '#6a4528']); // the noodle mound
+  for (let k = 0; k < 26; k++) { // loose noodles curling over it
+    const a = k * 2.39, r = 0.012 + (k % 5) * 0.007;
+    const arc = new THREE.TorusGeometry(0.01 + (k % 3) * 0.004, 0.0012, 4, 12, Math.PI * 1.1).rotateX(Math.PI / 2 - 0.25 + (k % 4) * 0.12).rotateY(a);
+    out.push([arc.translate(Math.cos(a) * r, 0.014 + (k % 3) * 0.003, Math.sin(a) * r), k % 2 ? '#6e4a2c' : '#7d5634']);
+  }
+  let seed = 0;
+  const strip = (c, n, len, w, y0) => {
+    for (let k = 0; k < n; k++) {
+      const a = (seed += 2.39), r = 0.012 + (seed * 7 % 4) * 0.008;
+      out.push([new THREE.BoxGeometry(len, w, w).rotateY(a * 1.7).rotateZ(0.2).translate(Math.cos(a) * r, y0 + (k % 3) * 0.003, Math.sin(a) * r), c]);
+    }
+  };
+  strip('#ff8a3d', 5, 0.02, 0.003, 0.018); // carrot
+  strip('#3f9a46', 5, 0.02, 0.004, 0.018); // spinach
+  strip('#3d2416', 4, 0.018, 0.005, 0.017); // beef
+  strip('#ffd23a', 4, 0.02, 0.003, 0.019); // egg
+  strip('#f4ead0', 3, 0.018, 0.004, 0.017); // onion
+  for (let k = 0; k < 12; k++) { const a = k * 2.39, r = 0.004 + (k % 5) * 0.007; out.push([new THREE.SphereGeometry(0.0018, 4, 3).translate(Math.cos(a) * r, 0.028, Math.sin(a) * r), '#fff6dc']); }
+  return out;
+}
+// Songpyeon: little half-moon rice cakes (white, green mugwort, pink) on a
+// bed of pine needles.
+function songpyeonParts() {
+  const out = [];
+  for (let k = 0; k < 14; k++) { // pine needles
+    const a = k * 0.45;
+    out.push([new THREE.CylinderGeometry(0.0012, 0.0012, 0.07, 3).rotateZ(Math.PI / 2).rotateY(a).translate(0, 0.002, 0), k % 2 ? '#3f7a3a' : '#4f8f45']);
+  }
+  const cakes = [[-0.026, -0.016, 0.3, '#f8f4ea'], [0.004, -0.022, -0.2, '#9cc47a'], [0.032, -0.012, 0.5, '#f4bccb'], [-0.016, 0.016, -0.4, '#9cc47a'], [0.016, 0.018, 0.1, '#f8f4ea'], [0, 0, 0.9, '#f4bccb']];
+  cakes.forEach(([x, z, a, c], k) => {
+    const y = k === 5 ? 0.024 : 0.011;
+    const cake = new THREE.SphereGeometry(0.016, 12, 8).scale(1.5, 0.75, 0.85);
+    const pos = cake.attributes.position; // (flatten one long side: a half moon)
+    for (let i = 0; i < pos.count; i++) if (pos.getZ(i) < 0) pos.setZ(i, pos.getZ(i) * 0.35);
+    out.push([cake.rotateY(a).translate(x, y, z), c]);
+  });
+  return out;
+}
+// Bibimbap: a brass bowl of rice with the toppings set round in wedges,
+// gochujang and a fried egg in the middle.
+function bibimbapParts() {
+  const out = [];
+  const bowl = [[0.03, 0], [0.04, 0.004], [0.058, 0.026], [0.066, 0.046], [0.068, 0.05], [0.064, 0.05], [0.055, 0.03], [0.03, 0.01]].map(([x, y]) => new THREE.Vector2(x, y));
+  out.push([new THREE.LatheGeometry(bowl, 22), '#c9a227']);
+  const tops = ['#3f9a46', '#ff8a3d', '#f4ead0', '#7a4a2a', '#5a3220', '#e8c45a'];
+  tops.forEach((c, k) => out.push([new THREE.CylinderGeometry(0.06, 0.06, 0.008, 6, 1, false, (k / 6) * Math.PI * 2, Math.PI / 3).translate(0, 0.047, 0), c]));
+  out.push([new THREE.CylinderGeometry(0.024, 0.026, 0.006, 16).translate(0, 0.053, 0), '#ffffff']); // the egg white
+  out.push([new THREE.SphereGeometry(0.011, 10, 6).scale(1, 0.55, 1).translate(0.003, 0.057, 0.002), '#ffb31a']); // the yolk
+  out.push([new THREE.SphereGeometry(0.009, 8, 5).scale(1, 0.6, 1).translate(-0.016, 0.058, -0.008), '#c4271d']); // gochujang
+  return out;
+}
+
+const DISH_LOOKS = { kimchi: kimchiParts, kimbap: kimbapParts, japchae: japchaeParts, tteok: songpyeonParts, bibimbap: bibimbapParts };
+
 // Bag goods as themselves in the hand (GIFT_LOOKS).
 function giftLook(g, sub) {
   g.name = 'held:gift:' + sub;
@@ -289,20 +401,8 @@ function giftLook(g, sub) {
     add(new THREE.BoxGeometry(0.032, 0.06, 0.07), '#ffd166', 0, 0.03, 0.02);
   } else if (sub === 'egg') { // one egg
     add(new THREE.SphereGeometry(0.03, 10, 8).scale(1, 1.3, 1), '#fff6e6', 0, 0.04);
-  } else if (sub === 'kimchi') { // a glass jar of homemade kimchi with a lid
-    add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 14), '#c8392b', 0, 0.05);
-    add(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 14), '#2f6f4f', 0, 0.11);
-  } else if (sub === 'tteok') { // a little wooden box of songpyeon: white, green and pink half-moons
-    add(new THREE.BoxGeometry(0.11, 0.035, 0.11), '#b88a5a', 0, 0.018);
-    ['#f6f1e6', '#8fbf6a', '#f2b8c6'].forEach((c, k) => add(new THREE.SphereGeometry(0.022, 8, 6).scale(1.3, 0.7, 0.8), c, -0.03 + k * 0.03, 0.045));
-  } else if (sub === 'bibimbap') { // a brass bowl with coloured toppings and an egg on top
-    add(new THREE.CylinderGeometry(0.065, 0.045, 0.05, 16), '#c9a227', 0, 0.025);
-    add(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 16), '#d9402c', 0, 0.052);
-    add(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 12), '#ffd23a', 0, 0.058);
-  } else { // japchae, kimbap: a homemade lunch box (dosirak) with a cloth knot
-    add(new THREE.BoxGeometry(0.1, 0.06, 0.13), sub === 'kimbap' ? '#2b3a2b' : '#c98a3e', 0, 0.03);
-    add(new THREE.BoxGeometry(0.105, 0.012, 0.135), '#f4d35e', 0, 0.066);
-    add(new THREE.SphereGeometry(0.02, 8, 6), '#f4d35e', 0, 0.08);
+  } else if (DISH_LOOKS[sub]) { // a cooking class's dish, as the food itself
+    dishParts(g, sub, DISH_LOOKS[sub]);
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;
