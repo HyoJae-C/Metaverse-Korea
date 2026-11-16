@@ -6,6 +6,7 @@ import { t } from '../core/i18n.js';
 import { CHANCE, LEVEL_OPEN, costFor, dishKindOf, dishLevel, gaugeStep, startLevel } from '../core/dish-upgrade.js';
 import { newRequestId } from '../core/dish-upgrade-store.js';
 import { kimchiScore } from '../core/kimchi-market.js';
+import { DISH_CAP, dishSlot } from '../core/bag.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 
 const el = (tag, cls = '', text = '') => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
@@ -141,6 +142,9 @@ export class DishUpgradeUI {
     const lv = Math.max(dishLevel(e), startLevel(e)), cost = costFor(lv + 1);
     if (this.info.tries >= this.info.daily) { this.toast(t('upgrade.limit')); return; }
     if (this.info.n < cost) { this.toast(t('upgrade.noSeasoning')); return; }
+    // (a success moves it to the next level's slot in the food bag: needs one free if it isn't alone in its slot)
+    const counts = this.bag.dishCounts?.();
+    if (counts && counts.size >= DISH_CAP && (counts.get(dishSlot(e)) || 0) > 1 && !counts.has(dishSlot({ ...e, lv: lv + 1 }))) { this.toast(t('bag.foodFull', { cap: DISH_CAP })); return; }
     this.busy = true;
     this.render();
     this.rid ||= newRequestId();
