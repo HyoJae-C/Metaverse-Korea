@@ -62,22 +62,23 @@ export function makeDuckBoat(roof) {
 // The lucky and double spots' marks over a park's fishing spots (luckySpot,
 // doubleSpot in fishing.js), shared by this park and the Han River parks
 // on the street (han-park.js): each spot's board, a glowing ring and a gem
-// spinning over each special spot, and a flat arrow at your feet pointing
-// to the best spot while you walk the park (`me`: you in the park's metres).
+// spinning over each special spot. The double spot (rare, 3 minutes) is
+// marked big, to be seen from across the park: a wide pink ring and a tall
+// pillar of light. No arrow: not everyone in the park came to fish (Yozi
+// 2026-11-17). All from the clock, nothing from the server.
 // Each spot gets `lucky`, `double` and `boost` (0, LUCKY_BOOST or DOUBLE_BOOST).
 // meshes: added to `parent`, to keep out of a mergeStatic.
-const ARROW_FAR = 120, ARROW_NEAR = 2.5; // (m) the arrow shows between these from the spot
+const PILLAR_H = 8; // (m) the double spot's pillar of light
 export function spotMarks(parent, fishing, spotSigns, ringY = 0.1) {
-  const ring = (color) => new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
+  const ring = (color, r0, r1) => new THREE.Mesh(new THREE.RingGeometry(r0, r1, 40).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }));
-  const luckRing = ring('#ffd166'), dblRing = ring('#ff6b9a');
+  const luckRing = ring('#ffd166', 0.7, 0.9), dblRing = ring('#ff6b9a', 1.1, 1.5);
   const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
-  const dblGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.26), mat('#ff6b9a', { emissive: '#d6336c', emissiveIntensity: 0.8 }));
-  const head = new THREE.Shape([[0, 0.55], [0.32, 0.12], [0.11, 0.12], [0.11, -0.4], [-0.11, -0.4], [-0.11, 0.12], [-0.32, 0.12]].map(([x, y]) => new THREE.Vector2(x, y)));
-  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(head).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
-  dblRing.visible = dblGem.visible = arrow.visible = false;
-  const meshes = [luckRing, luckGem, dblRing, dblGem, arrow];
+  const dblGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.34), mat('#ff6b9a', { emissive: '#d6336c', emissiveIntensity: 0.9 }));
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.9, PILLAR_H, 20, 1, true).translate(0, PILLAR_H / 2, 0),
+    new THREE.MeshBasicMaterial({ color: '#ff8fb3', transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide }));
+  dblRing.visible = dblGem.visible = pillar.visible = false;
+  const meshes = [luckRing, luckGem, dblRing, dblGem, pillar];
   if (fishing.length) parent.add(...meshes);
   let signLang = null, lucky = -1, dbl = -1, t = 0;
   const draw = () => spotSigns.forEach((sign, i) => {
@@ -93,12 +94,12 @@ export function spotMarks(parent, fishing, spotSigns, ringY = 0.1) {
     if (i === lucky && d === dbl) return;
     lucky = i; dbl = d;
     luckRing.position.set(fishing[i].x, ringY, fishing[i].z);
-    dblRing.visible = dblGem.visible = d >= 0;
-    if (d >= 0) dblRing.position.set(fishing[d].x, ringY + 0.01, fishing[d].z);
+    dblRing.visible = dblGem.visible = pillar.visible = d >= 0;
+    if (d >= 0) { dblRing.position.set(fishing[d].x, ringY + 0.01, fishing[d].z); pillar.position.set(fishing[d].x, ringY, fishing[d].z); }
     luckRing.visible = luckGem.visible = d !== i; // (a park with one spot: it shows double only)
     draw();
   };
-  const tick = (dt, me = null) => {
+  const tick = (dt) => {
     if (!fishing.length) return;
     t = (t + dt) % 1e4;
     update();
@@ -108,19 +109,11 @@ export function spotMarks(parent, fishing, spotSigns, ringY = 0.1) {
     luckRing.material.opacity = 0.45 + Math.sin(t * 3) * 0.25;
     if (dbl >= 0) {
       const g = fishing[dbl];
-      dblGem.position.set(g.x, 2.1 + Math.sin(t * 3.2) * 0.16, g.z);
+      dblGem.position.set(g.x, 2.3 + Math.sin(t * 3.2) * 0.18, g.z);
       dblGem.rotation.y = t * 3;
-      dblRing.material.opacity = 0.5 + Math.sin(t * 6) * 0.3;
+      dblRing.material.opacity = 0.55 + Math.sin(t * 6) * 0.3;
+      pillar.material.opacity = 0.22 + Math.sin(t * 4) * 0.1;
     }
-    // The arrow: from you toward the double spot while it's on, else the lucky one.
-    const goal = fishing[dbl >= 0 ? dbl : lucky];
-    const dx = me ? goal.x - me[0] : 0, dz = me ? goal.z - me[1] : 0, dist = Math.hypot(dx, dz);
-    arrow.visible = !!me && dist > ARROW_NEAR && dist < ARROW_FAR;
-    if (!arrow.visible) return;
-    arrow.position.set(me[0] + dx / dist * 0.9, ringY + 0.05, me[1] + dz / dist * 0.9);
-    arrow.rotation.y = Math.atan2(-dx, -dz);
-    arrow.material.color.set(dbl >= 0 ? '#ff6b9a' : '#ffd166');
-    arrow.material.opacity = 0.65 + Math.sin(t * 5) * 0.2;
   };
   const setLang = (lang) => { signLang = lang; draw(); };
   update();

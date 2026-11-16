@@ -439,12 +439,10 @@ export function buildHanPark(store, L) {
   };
   setSignLang(null);
 
-  // Each frame (while near): the lucky and double spots move on now and
-  // then, their gems spin, and the arrow at your feet (me: [x, z] in the
-  // park's metres while you're in it, or null) points the way.
-  const tick = (dt, me = null) => {
+  // Each frame (while near): the lucky and double spots move on now and then, their gems spin.
+  const tick = (dt) => {
     if (show) tickShow(dt);
-    marks.tick(dt, me);
+    marks.tick(dt);
   };
   tick(0);
   // Dusk to night (0..1): the lamps and the kiosk's window light up.

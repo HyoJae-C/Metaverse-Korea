@@ -892,7 +892,7 @@ export const EN = {
   "bait.put": "🪱 {name} on the hook! {n} bites left.",
   "bait.on": "🪱 {name} on the hook · {n} left · ★3+ {p}%",
   "fish.double": "2× spot! For a few minutes ★2 and up bite {n}× as often here.",
-  "fish.doubleOn": "A 2× spot just opened in this park! Follow the pink arrow.",
+  "fish.doubleOn": "A 2× spot just opened in this park! Look for the pink pillar of light.",
   "fish.doubleNote": "Every {h} minutes, at a random moment, a pink 2× spot opens for {m} minutes: there ★2 and up bite {n}× as often.",
   "bait.plain": "🪱 Plain bait. Better bait at the bait stall by the fish buyer.",
   "bait.out": "🪱 Your {name} is used up. Back to plain bait.",

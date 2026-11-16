@@ -5839,7 +5839,7 @@ const hanParks = createHanParks({
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
-  onDouble: () => shop.toast('✨ ' + t('fish.doubleOn')), // (core/fishing.js doubleSpot)
+  onDouble: () => { if (rodOut) shop.toast('✨ ' + t('fish.doubleOn')); }, // (core/fishing.js doubleSpot; only to someone fishing: not everyone here came to fish)
   // What there is to do there (each made only when you're next to it).
   acts: {
     duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),

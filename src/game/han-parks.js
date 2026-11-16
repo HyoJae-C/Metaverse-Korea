@@ -148,10 +148,9 @@ export function createHanParks(game) {
       const lang = game.signLang();
       if (lang !== B.lang) { B.lang = lang; B.b.setSignLang(lang); }
       B.b.setNight(game.night());
-      const inside = inBounds(o, p.x, p.z);
-      B.b.tick(dt, inside ? toLocal(o, p.x, p.z) : null); // (the arrow to the lucky spot, while you're in it)
+      B.b.tick(dt);
       // The double spot coming on while you're here: say so, once each time.
-      const dbl = inside && B.b.double;
+      const dbl = inBounds(o, p.x, p.z) && B.b.double;
       if (dbl && !B.dbl) game.onDouble?.();
       B.dbl = dbl;
       if (d < STAFF_NEAR && B.vendorNpcs.length) game.greet(B.vendorNpcs, p);
