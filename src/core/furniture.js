@@ -304,15 +304,67 @@ export function furnitureSeats(it) {
   });
 }
 
-export function buildFurniture(id) {
+// Lamps can be switched off (Yozi 2026-11-16): their glowing parts dim.
+export const isLamp = (id) => id === 'lamp' || id.startsWith('lamp-');
+const dimmed = new Map();
+const dim = (m) => {
+  if (!dimmed.has(m)) { const d = m.clone(); d.color.multiplyScalar(0.32); dimmed.set(m, d); }
+  return dimmed.get(m);
+};
+export function buildFurniture(id, { off = false } = {}) {
   const def = furnitureById(id);
   const g = new THREE.Group();
   def?.build(g);
+  if (off && isLamp(id)) g.traverse((o) => { if (o.isMesh && o.material?.isMeshBasicMaterial) o.material = dim(o.material); });
   return g;
 }
 
-// Collision polygon for a placed piece, or null for walkable ones (rugs).
+// Small things can stand on a table, desk or chest (Yozi 2026-11-16): the
+// tops (height in metres) and the pieces small enough to go on them.
+export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7 };
+const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
+  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae']);
+export const isSmall = (id) => SMALL.has(id);
+// The piece's place in a surface's own frame (x right, z front).
+const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };
+// What a small piece at its x, z would stand on: { on, y } for the highest
+// top under its middle, or null (the floor).
+export function topUnder(item, items) {
+  if (!SMALL.has(item.id)) return null;
+  let best = null;
+  for (const o of items) {
+    if (o === item || o.y || !(o.id in TOPS)) continue;
+    const [w, d] = furnitureById(o.id).size, [lx, lz] = localTo(o, item.x, item.z);
+    if (Math.abs(lx) <= w / 2 - 0.08 && Math.abs(lz) <= d / 2 - 0.06 && (!best || TOPS[o.id] > best.y)) best = { on: o, y: TOPS[o.id] };
+  }
+  return best;
+}
+// The small pieces standing on a surface, in its own frame (they go with it
+// when it's carried or turned).
+export function ridersOf(surface, items) {
+  return items.filter((i) => i.y && topUnder(i, [surface])?.on === surface).map((it) => { const [lx, lz] = localTo(surface, it.x, it.z); return { it, lx, lz, dry: it.ry - surface.ry }; });
+}
+export function placeRiders(surface, riders) {
+  const c = Math.cos(surface.ry), s = Math.sin(surface.ry);
+  for (const r of riders) {
+    r.it.x = surface.x + r.lx * c + r.lz * s;
+    r.it.z = surface.z - r.lx * s + r.lz * c;
+    r.it.ry = surface.ry + r.dry;
+  }
+}
+
+// The footprint of a placed piece (null for walkable ones: rugs).
+function piecePoly(item) {
+  const def = furnitureById(item.id);
+  if (!def || def.walkable) return null;
+  const [w, d] = def.size;
+  const c = Math.cos(item.ry), s = Math.sin(item.ry);
+  return { p: [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]) };
+}
+// Collision polygon for a placed piece, or null for walkable ones (rugs) and
+// things standing on a table (the table blocks you already).
 export function furnitureCollider(item) {
+  if (item.y) return null;
   const def = furnitureById(item.id);
   if (!def || def.walkable) return null;
   const [w, d] = def.size;
@@ -341,10 +393,11 @@ function polysOverlap(a, b) {
 // Room kept round a player when a piece is placed, carried or turned.
 export const WHO_R = 0.45;
 export function pieceBlocked(item, others, who = null) {
-  const me = furnitureCollider(item);
+  const me = piecePoly(item), lvl = item.y || 0;
   if (!me) return false;
-  if (others.some((o) => o !== item && o.id !== item.id && furnitureCollider(o) && polysOverlap(me.p, furnitureCollider(o).p))) return true;
-  if (who) {
+  // Pieces only bump into pieces at the same height: the floor, or the same top.
+  if (others.some((o) => o !== item && o.id !== item.id && (o.y || 0) === lvl && piecePoly(o) && polysOverlap(me.p, piecePoly(o).p))) return true;
+  if (who && !lvl) {
     const r = WHO_R; // (a little more than a player's radius, 0.35: a piece set down against you mustn't overlap you)
     if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;
   }

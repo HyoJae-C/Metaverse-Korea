@@ -537,6 +537,8 @@ export const AR = {
   'zoo.leave': 'غادر حديقة الحيوان',
   'home.blocked': 'هناك شيء في الطريق. تحرّك قليلًا ثم ضعها مجددًا.',
   'home.lie': 'استلقِ',
+  'home.lampOn': 'أشعل الضوء',
+  'home.lampOff': 'أطفئ الضوء',
   'home.visit': 'من يمكنه الزيارة:',
   'home.visitAll': 'الجميع',
   'home.visitFriends': 'الأصدقاء',

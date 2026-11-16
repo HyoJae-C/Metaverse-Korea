@@ -6970,6 +6970,8 @@ function updateAction(p, tSec) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
       next = hi5Action(hi5Target(p));
+    } else if (decorGame.lampAct(p)) { // a lamp at home: switch it on or off (game/decor.js)
+      next = decorGame.lampAct(p);
     } else if (picnic.action(p)) {
       next = picnic.action(p);
     } else if (frisbee.action(p)) {

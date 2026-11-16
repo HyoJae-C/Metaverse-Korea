@@ -4,7 +4,7 @@
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, pieceBlocked, starterLayout } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, pieceBlocked, placeRiders, ridersOf, starterLayout, topUnder } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 
@@ -17,9 +17,9 @@ export function createDecor(game) {
   // numbers, one of each, at most MAX_PIECES.
   function cleanLayout(a) {
     if (!Array.isArray(a)) return [];
-    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3] } : i));
+    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5] } : i));
     return list.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && list.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
-      .map(({ id, x, z, ry }) => ({ id, x, z, ry }));
+      .map(({ id, x, z, ry, y, off }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}) })); // y: on a table (isSmall); off: a lamp switched off
   }
   function loadDecor(id, room) {
     foldHomes(localStorage); // (the old Sunny Villa layout moves into the one home)
@@ -33,13 +33,13 @@ export function createDecor(game) {
     if (decor.guest) return; // (someone else's home: their game keeps it)
     game.onLayout?.(); // (visitors see the change: game/home-visits.js)
     const r = (v) => Math.round(v * 100) / 100;
-    try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry) })))); } catch { /* storage blocked */ }
+    try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry), ...(i.y ? { y: i.y } : {}), ...(i.off ? { off: true } : {}) })))); } catch { /* storage blocked */ }
   }
   function rebuildDecor() {
     decor.group.clear();
     for (const it of decor.items) {
-      const g = buildFurniture(it.id);
-      g.position.set(it.x, 0, it.z);
+      const g = buildFurniture(it.id, { off: it.off });
+      g.position.set(it.x, it.y || 0, it.z);
       g.rotation.y = it.ry;
       decor.group.add(g);
       it.mesh = g;
@@ -92,7 +92,7 @@ export function createDecor(game) {
     rebuildDecor();
   }
   // What this home looks like, to send to visitors.
-  const layout = () => (decor && !decor.guest ? decor.items.filter((i) => i !== decor.carry).map((i) => [i.id, i.x, i.z, i.ry]) : null);
+  const layout = () => (decor && !decor.guest ? decor.items.filter((i) => i !== decor.carry).map((i) => [i.id, i.x, i.z, i.ry, i.y || 0, i.off ? 1 : 0]) : null);
   function closeHome() {
     if (!decor) return;
     setDecorating(false);
@@ -128,6 +128,8 @@ export function createDecor(game) {
     decor.items.push(it);
     rebuildDecor();
   }
+  // A small piece over a table stands on it; anything else on the floor.
+  function settle(it) { it.y = topUnder(it, decor.items)?.y || 0; }
   // Nudge a new piece to the nearest clear spot (rings round where it
   // landed, inside the room). False if the room has no clear spot near.
   function freeSpot(it) {
@@ -138,6 +140,7 @@ export function createDecor(game) {
         const a = (k / n) * Math.PI * 2;
         it.x = THREE.MathUtils.clamp(x0 + Math.cos(a) * r, -w / 2 + 0.8, w / 2 - 0.8);
         it.z = THREE.MathUtils.clamp(z0 + Math.sin(a) * r, -d / 2 + 0.8, d / 2 - 1.8);
+        settle(it);
         if (!pieceBlocked(it, decor.items, p)) return true;
       }
     }
@@ -163,6 +166,7 @@ export function createDecor(game) {
   function closePiece() {
     if (decor?.carry && !putDown()) { // blocked here: it goes back where it was
       Object.assign(decor.carry, decor.carryFrom);
+      if (decor.riders) placeRiders(decor.carry, decor.riders);
       putDown(true);
     }
     if (decor) { decor.piece = null; decor.picked = false; }
@@ -170,8 +174,10 @@ export function createDecor(game) {
   }
   // Carry a piece: it floats in front of you until you put it down.
   function putDown(force = false) {
+    if (decor.carry) settle(decor.carry);
     if (!force && decor.carry && pieceBlocked(decor.carry, decor.items, game.me.root.position)) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
+    decor.riders = null;
     $('decor-bar').hidden = !decor.editing;
     rebuildDecor();
     if (decor.piece) $('piece-move-label').textContent = t('home.carry');
@@ -181,7 +187,11 @@ export function createDecor(game) {
     const it = decor?.carry;
     if (!it?.mesh) return;
     [it.x, it.z] = spotInFront();
-    it.mesh.position.set(it.x, 0.08, it.z); // lifted a little while carried
+    it.mesh.position.set(it.x, (topUnder(it, decor.items)?.y || 0) + 0.08, it.z); // lifted a little while carried (over a table: above it)
+    if (decor.riders?.length) { // what stands on it comes along
+      placeRiders(it, decor.riders);
+      for (const r of decor.riders) { r.it.mesh?.position.set(r.it.x, r.it.y + 0.08, r.it.z); if (r.it.mesh) r.it.mesh.rotation.y = r.it.ry; }
+    }
   }
   $('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
   $('decor-grid').append(...FURNITURE.map((f) => {
@@ -204,15 +214,18 @@ export function createDecor(game) {
   $('piece-rotate').onclick = () => {
     const it = decor?.piece;
     if (!it) return;
+    const riders = it === decor.carry ? null : ridersOf(it, decor.items); // (carried: they follow in updateCarry)
     it.ry += Math.PI / 4;
     if (it !== decor.carry && pieceBlocked(it, decor.items, game.me.root.position)) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
+    if (riders) placeRiders(it, riders);
     rebuildDecor();
   };
   $('piece-move').onclick = () => {
     if (!decor?.piece) return;
     if (decor.carry) { if (putDown()) closePiece(); game.action = STALE; return; }
     decor.carry = decor.piece;
-    decor.carryFrom = { x: decor.piece.x, z: decor.piece.z, ry: decor.piece.ry };
+    decor.carryFrom = { x: decor.piece.x, z: decor.piece.z, ry: decor.piece.ry, y: decor.piece.y || 0 };
+    decor.riders = ridersOf(decor.piece, decor.items);
     decor.picked = true;
     $('decor-bar').hidden = true; // see where you're walking
     rebuildDecor();
@@ -221,6 +234,7 @@ export function createDecor(game) {
   $('piece-remove').onclick = () => {
     if (!decor?.piece) return;
     if (decor.carry === decor.piece) decor.carry = null;
+    for (const r of ridersOf(decor.piece, decor.items)) r.it.y = 0; // what stood on it goes to the floor
     decor.items.splice(decor.items.indexOf(decor.piece), 1);
     rebuildDecor();
     closePiece();
@@ -243,6 +257,20 @@ export function createDecor(game) {
   }
   markVisit();
 
-  return { visit, labelDecor, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  // Switch a lamp on or off by walking up to it (not while decorating; only
+  // in my own home). Saved with the room, and visitors see it.
+  function lampAct(p) {
+    if (!decor || decor.guest || decor.editing || decor.carry) return null;
+    let best = null, bd = 1.2;
+    for (const it of decor.items) {
+      if (!isLamp(it.id)) continue;
+      const d = Math.hypot(p.x - it.x, p.z - it.z);
+      if (d < bd) { bd = d; best = it; }
+    }
+    if (!best) return null;
+    return { key: 'lamp:' + best.id + (best.off ? ':off' : ''), label: (best.off ? '💡 ' + t('home.lampOn') : '🌙 ' + t('home.lampOff')),
+      run: () => { best.off = !best.off; rebuildDecor(); game.action = STALE; } };
+  }
+  return { visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry };
 }

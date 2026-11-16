@@ -99,3 +99,33 @@ test('both places on a bed against a wall can be reached from one side', async (
     for (const s of seats) assert.ok(s.stand[1] > d / 2, id + ': get up at the foot');
   }
 });
+
+test('small things stand on a table, go with it, and only bump into things on the same top', async () => {
+  const { topUnder, ridersOf, placeRiders, pieceBlocked, furnitureCollider, isSmall, TOPS } = await import('../src/core/furniture.js');
+  const table = { id: 'table', x: 2, z: 1, ry: 0 };
+  const lamp = { id: 'lamp-moon', x: 2.2, z: 1.1, ry: 0 };
+  assert.ok(isSmall('lamp-moon') && !isSmall('bed'));
+  assert.equal(topUnder(lamp, [table]).y, TOPS.table);
+  assert.equal(topUnder({ ...lamp, x: 4 }, [table]), null, 'off the table: the floor');
+  assert.equal(topUnder({ id: 'f-najeon', x: 2, z: 1, ry: 0 }, [table]), null, 'a wardrobe never goes on a table');
+  lamp.y = TOPS.table;
+  assert.ok(!pieceBlocked(lamp, [table]), 'on the table, not in its way');
+  assert.equal(furnitureCollider(lamp), null, 'the table blocks you, not the lamp on it');
+  const bear = { id: 'plush-bear-small', x: 2.25, z: 1.1, ry: 0, y: TOPS.table };
+  assert.ok(pieceBlocked(bear, [table, lamp]), 'two things in one spot on the table');
+  // Turn the table a quarter: the lamp turns with it.
+  const riders = ridersOf(table, [table, lamp]);
+  assert.equal(riders.length, 1);
+  table.ry = Math.PI / 2;
+  placeRiders(table, riders);
+  assert.ok(Math.abs(lamp.x - 2.1) < 1e-9 && Math.abs(lamp.z - 0.8) < 1e-9, `${lamp.x},${lamp.z}`);
+});
+
+test('a lamp switched off dims its glow', async () => {
+  const { buildFurniture } = await import('../src/core/furniture.js');
+  const colors = (g) => { const out = []; g.traverse((o) => { if (o.isMesh && o.material.isMeshBasicMaterial) out.push(o.material.color.getHex()); }); return out; };
+  const on = colors(buildFurniture('lamp-moon')), off = colors(buildFurniture('lamp-moon', { off: true }));
+  assert.ok(on.length && on.length === off.length);
+  assert.ok(off.every((c, i) => c < on[i]));
+  assert.deepEqual(colors(buildFurniture('lamp-moon')), on, 'the shared glow materials are untouched');
+});
