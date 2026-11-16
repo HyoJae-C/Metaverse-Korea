@@ -119,7 +119,7 @@ export class BagUI {
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishCounts().size}` : '')], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishCounts().size}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
@@ -182,12 +182,12 @@ export class BagUI {
         h.onclick = () => { const i = this.sel; this.sel = -1; this.onHold(i); };
         row.append(h);
       }
-      const t = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop));
-      t.onclick = () => {
+      const drop = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop)); // (not "t": that's the translator)
+      drop.onclick = () => {
         if (!confirm(fmt(L(BAG_TEXT.dropAsk), { name: d.name }))) return;
         const i = this.sel; this.sel = -1; this.onDrop(i);
       };
-      row.append(t);
+      row.append(drop);
       info.append(row);
     } else info.append(el('small', 'fine', food ? t(here.length ? 'bag.foodPick' : 'bag.foodEmpty') : L(here.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
     if (food && this.seasoning) { // 🧂 정성 양념: what upgrading a dish uses (game/dish-upgrade.js)
