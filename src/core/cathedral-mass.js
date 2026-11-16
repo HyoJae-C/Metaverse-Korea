@@ -100,7 +100,7 @@ const STEPS = [
   { at: 47, k: 'read', say: '📖' },
   { at: 66, k: 'toAltar' },
   { at: 71, k: 'pray', say: '🕯️' },
-  { at: 86, k: 'lift', say: '✨', bell: '🔔' },
+  { at: 86, k: 'lift', bell: '🔔' }, // (no bubble over the priest: just the host held up and the servers' bell)
   { at: 98, k: 'peace', say: '🕊️' },
   { at: 108, k: 'bless', say: '✝️' },
   { at: 120, k: 'out' }, // walking back down the aisle
@@ -126,8 +126,11 @@ export class CathedralMass {
     for (const o of this.all) this.scene.add(o.ch.root);
     this.cross = processionCross();
     this.scene.add(this.cross);
-    // The host: a small white disc lifted over the priest's head.
-    this.host = new THREE.Mesh(new THREE.CircleGeometry(0.13, 16), new THREE.MeshBasicMaterial({ color: '#fffdf2', side: THREE.DoubleSide }));
+    // The host (성체): a thin round wafer of bread, lifted in both hands over
+    // the priest's head for everyone to see. Lit like the bread it is (not a
+    // glowing ball: Yozi 2026-11-16, "looked like he was casting magic"),
+    // its flat face turned to the people.
+    this.host = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.012, 24).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#efe4c8' }));
     this.host.visible = false;
     this.scene.add(this.host);
     // The procession's way: up the middle aisle from the door to the altar
@@ -229,7 +232,7 @@ export class CathedralMass {
           p.pose = { armL: [-0.7 - 1.9 * up, -0.15, 0], armR: [-0.7 - 1.9 * up, 0.15, 0], foreL: [-0.4 * (1 - up), 0, 0], foreR: [-0.4 * (1 - up), 0, 0] };
           this.host.visible = up > 0.05;
           const r = p.ch.root.position;
-          this.host.position.set(r.x, r.y + 0.75 + 0.75 * up, r.z + 0.32 - 0.12 * up);
+          this.host.position.set(r.x, r.y + 0.75 + 0.66 * up, r.z + 0.32 - 0.12 * up); // (between his hands)
           for (const o of [s1, s2]) o.pose = { spine: [0.35 * up, 0, 0], head: [0.2 * up, 0, 0] }; // the servers bow their heads
         }
         if (st.k === 'bless') p.pose = { armR: [-2.4 * k, 0.2, 0], foreR: [-0.2 * k, 0, 0] }; // the right hand raised
