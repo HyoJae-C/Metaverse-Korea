@@ -352,7 +352,7 @@ function kimchiGeometry() {
     fl.setAttribute('color', new THREE.Float32BufferAttribute(Array(fl.attributes.position.count).fill([0.5, 0.02, 0.02]).flat(), 3));
     parts.push(fl);
   }
-  kimchiGeo = mergeGeometries(parts).rotateX(-1.48).rotateY(0.4);
+  kimchiGeo = mergeGeometries(parts).scale(1.4, 1.4, 1.4).rotateX(-1.48).rotateY(0.4); // (1.4: as big on a plate as the other dishes)
   kimchiGeo.computeBoundingBox();
   const bb = kimchiGeo.boundingBox;
   kimchiGeo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2); // (centred, resting on the plate)
