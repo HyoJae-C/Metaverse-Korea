@@ -85,8 +85,11 @@ export class GymUI {
   close() { this._stop(); this.root.hidden = true; }
   _stop() { cancelAnimationFrame(this.raf); clearInterval(this.timer); this.raf = this.timer = 0; this.run = null; }
 
-  _frame() {
+  // live: a set is running, so the panel shrinks to a slim bar at the bottom
+  // and your pose stays in view above it (style.css .gym-live).
+  _frame(live = false) {
     this._stop();
+    this.root.classList.toggle('gym-live', live);
     const ex = exOf(this.kind);
     const x = el('button', 'sheet-x', '✕');
     x.setAttribute('aria-label', tt('close'));
@@ -116,7 +119,7 @@ export class GymUI {
 
   // Yoga: one pose after another; each fills while you keep your balance.
   flow(ex) {
-    this._frame();
+    this._frame(true);
     const run = (this.run = { step: 0, held: 0, left: ex.seconds, bal: { x: 0.5, v: 0 }, last: performance.now() });
     const pips = el('p', 'karaoke-status');
     const title = el('p', 'order-hint yoga-pose');
@@ -173,7 +176,7 @@ export class GymUI {
 
   // Pilates reformer: hold PUSH on the out-breath, let go on the in-breath.
   breath(ex) {
-    this._frame();
+    this._frame(true);
     const run = (this.run = { t0: performance.now(), good: 0, cycle: 0, right: 0, total: 0, holding: false });
     const ring = el('div', 'breath-ring');
     const say = el('p', 'order-hint yoga-pose');
@@ -218,7 +221,7 @@ export class GymUI {
   }
 
   mash(ex) {
-    this._frame();
+    this._frame(true);
     const run = (this.run = { steps: 0, left: ex.seconds, last: null });
     const bar = el('div', 'sauna-meter gym');
     const fill = el('div', 'sauna-fill');
@@ -254,7 +257,7 @@ export class GymUI {
   }
 
   timing(ex) {
-    this._frame();
+    this._frame(true);
     const run = (this.run = { rep: 0, t0: performance.now(), left: ex.reps * 3 + 6 });
     const track = el('div', 'gym-track');
     const zone = el('div', 'gym-zone');
