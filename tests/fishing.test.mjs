@@ -163,6 +163,47 @@ test('the lucky spot moves around, boosts ★2 and up a little and halves the bo
   assert.equal(rollCatch(() => 0.999999, true).id, AVAILABLE_FISH.at(-1).id);
 });
 
+test('the double spot: once an hour for 3 minutes, never on the lucky spot, ★2+ bite more than at the lucky spot', async () => {
+  const F = await import('../src/core/fishing.js');
+  const { doubleSpot, doubleStart, luckySpot, luckyChance, baitedChance, DOUBLE_BOOST, DOUBLE_EVERY, DOUBLE_MINUTES, LUCKY_MINUTES } = F;
+  assert.equal(DOUBLE_BOOST, 2);
+  assert.equal(DOUBLE_MINUTES, 3);
+  const hour = DOUBLE_EVERY * 60000, min = 60000, seen = new Set();
+  for (let h = 0; h < 300; h++) {
+    const t0 = doubleStart(h * hour + 1);
+    assert.ok(t0 >= h * hour && t0 + DOUBLE_MINUTES * min <= (h + 1) * hour, 'inside its hour');
+    // Inside one lucky slot, so the lucky spot stays put for the whole window.
+    assert.equal(Math.floor(t0 / (LUCKY_MINUTES * min)), Math.floor((t0 + DOUBLE_MINUTES * min - 1) / (LUCKY_MINUTES * min)));
+    let on = 0;
+    for (let m = 0; m < DOUBLE_EVERY; m += 0.5) {
+      const now = h * hour + m * min, d = doubleSpot(4, now);
+      if (d < 0) continue;
+      on += 0.5;
+      assert.notEqual(d, luckySpot(4, now));
+      assert.equal(d, doubleSpot(4, t0)); // the same spot all window long
+      seen.add(d);
+    }
+    assert.equal(on, DOUBLE_MINUTES);
+    assert.equal(doubleSpot(1, t0), 0); // one spot: it turns double
+    assert.equal(doubleSpot(0, t0), -1);
+    assert.equal(doubleSpot(4, t0 - 1), -1);
+    assert.equal(doubleSpot(4, t0 + DOUBLE_MINUTES * min), -1);
+  }
+  assert.equal(seen.size, 4);
+  const sum = (l) => AVAILABLE_FISH.reduce((a, f) => a + luckyChance(f, null, l), 0);
+  assert.ok(Math.abs(sum(DOUBLE_BOOST) - 100) < 1e-9);
+  assert.equal(luckyChance(AVAILABLE_FISH[0], null, true), luckyChance(AVAILABLE_FISH[0]));
+  for (const f of AVAILABLE_FISH) {
+    if (f.rarity >= 2) assert.ok(luckyChance(f, null, DOUBLE_BOOST) > luckyChance(f) && luckyChance(f, null, DOUBLE_BOOST) < f.chance * DOUBLE_BOOST, f.id);
+    else assert.ok(luckyChance(f, null, DOUBLE_BOOST) < luckyChance(f), f.id);
+  }
+  // A bait at the double spot is never worse than at the lucky spot.
+  const bait = { rare: 4, legend: 0.1 };
+  const r3 = (l) => AVAILABLE_FISH.filter((f) => f.rarity >= 3).reduce((a, f) => a + baitedChance(f, null, l, bait), 0);
+  assert.ok(r3(DOUBLE_BOOST) > r3(true) && r3(true) > r3(false));
+  assert.notEqual(rollCatch(() => F.LUCKY_TRASH_CHANCE, DOUBLE_BOOST), TRASH);
+});
+
 test('fishing counters: casts, misses and escapes by rarity, saved as mk.fishstats', async () => {
   const { FishStats } = await import('../src/core/fishing.js');
   const m = memory();

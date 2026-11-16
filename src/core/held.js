@@ -203,9 +203,17 @@ export function makeHeld(kind) {
     line.position.set(0, tipY - 0.5, tipZ);
     const wrap = new THREE.Group();
     wrap.scale.setScalar(0.55); // the hand scales held things up 1.8x
+    // The end of the line: a dark sinker, or with a bait on the hook
+    // ('rod:<skin>:<bait>') a glowing lure in the bait's colour, so you and
+    // everyone around see it's on (Yozi 2026-11-17).
+    const bait = baitById(String(g.name).split(':')[3]);
+    const lure = new THREE.Mesh(new THREE.SphereGeometry(bait ? 0.035 : 0.018, 10, 8), bait ? glowMat(bait.color, 0.7) : mat('#4a4a52'));
+    lure.position.y = -0.5;
+    if (bait) lure.scale.y = 1.5;
+    line.add(lure);
     wrap.add(rod, line);
     g.add(wrap);
-    g.userData.rod = { pivot: rod, segs, tip, reel, line };
+    g.userData.rod = { pivot: rod, segs, tip, reel, line, bait: bait?.color || null };
   } else if (kind === 'book') {
     // A hardback held upright: cover, pages and a spine band.
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.12), mat('#3f6e8c'));

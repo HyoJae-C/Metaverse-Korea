@@ -1,5 +1,5 @@
 import { haptics, buzz, shake } from './core/haptics.js';
-import { RodSkins, rodKind, rodSkin } from './core/rod-skins.js';
+import { RodSkins, rodKind, baitedRod, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
 import {
   t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
@@ -2272,7 +2272,7 @@ const fishBait = createFishBait({
 // setHeld below must not draw it (a finished errand + a held drink broke the
 // load: "openParkHere is not a function", then every message from others).
 let questChipReady = false;
-const heldKind = () => (rodOut ? rodKind(rodSkins.equipped) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
+const heldKind = () => (rodOut ? baitedRod(rodKind(rodSkins.equipped), fishBait.fishing.bait?.id) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
@@ -4269,7 +4269,7 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
   onEscape: () => showBubble(myLabel, $('labels'), '💨'),
   park: () => (hanPark() || interior)?.store?.id || null, // which ★3+ kinds bite here (PARK_FISH in core/fishing.js)
   rod: () => rodSkins.equipped,
-  lucky: () => { const p = me.root.position; return !!hanPark()?.fishing?.some((f) => f.lucky && Math.hypot(p.x - f.x, p.z - f.z) < 1.8); },
+  lucky: () => { const p = me.root.position; return hanPark()?.fishing?.find((f) => f.boost && Math.hypot(p.x - f.x, p.z - f.z) < 1.8)?.boost || false; }, // (the spot's boost: LUCKY_BOOST, DOUBLE_BOOST)
   onClose: () => { if (fishCam && (mode === 'store' || hanPark()?.street)) Object.assign(cam, fishCam); fishCam = null; },
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
@@ -5839,6 +5839,7 @@ const hanParks = createHanParks({
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
+  onDouble: () => shop.toast('✨ ' + t('fish.doubleOn')), // (core/fishing.js doubleSpot)
   // What there is to do there (each made only when you're next to it).
   acts: {
     duck: (p) => duckBoats.boardAction(p), mart: () => martAct(),

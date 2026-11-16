@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
 import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
-import { luckySpot } from './fishing.js';
+import { luckySpot, doubleSpot, LUCKY_BOOST, DOUBLE_BOOST } from './fishing.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import * as droneShow from './drone-show.js';
@@ -23,7 +23,8 @@ export const RAMEN_SIGN = { ko: '한강 라면', en: 'Han River Ramen', ja: '漢
 export const FISH_SIGN = { ko: '물고기 삽니다', en: 'We buy fish', ja: '魚、買います', zh: '收购鲜鱼' };
 export const FISHING_OK = { ko: '낚시 가능', en: 'Fishing OK', ja: '釣りOK', zh: '可以钓鱼' };
 export const LUCKY_SIGN = { ko: '행운 포인트', en: 'Lucky spot', ja: 'ラッキースポット', zh: '幸运钓点' };
-export const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020';
+export const DOUBLE_SIGN = { ko: '2배 포인트', en: '2× spot', ja: '2倍スポット', zh: '双倍钓点' };
+export const SPOT_COLOR = '#2f78b0', LUCKY_COLOR = '#e0a020', DOUBLE_COLOR = '#d6336c';
 const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
 const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
 const DRONE_NOW = { ko: '지금 공연 중!', en: 'On now!', ja: '公演中！', zh: '正在演出！' };
@@ -56,6 +57,74 @@ export function makeDuckBoat(roof) {
   for (const [x, z] of [[-0.6, -0.35], [0.6, -0.35], [-0.6, 0.75], [0.6, 0.75]]) add(0.05, 1.45, 0.05, x, 0.9, z, '#d9dde2'); // posts (tall enough for a seated rider's head)
   add(1.35, 0.08, 1.3, 0, 1.64, 0.2, roof); // canopy
   return g;
+}
+
+// The lucky and double spots' marks over a park's fishing spots (luckySpot,
+// doubleSpot in fishing.js), shared by this park and the Han River parks
+// on the street (han-park.js): each spot's board, a glowing ring and a gem
+// spinning over each special spot, and a flat arrow at your feet pointing
+// to the best spot while you walk the park (`me`: you in the park's metres).
+// Each spot gets `lucky`, `double` and `boost` (0, LUCKY_BOOST or DOUBLE_BOOST).
+// meshes: added to `parent`, to keep out of a mergeStatic.
+const ARROW_FAR = 120, ARROW_NEAR = 2.5; // (m) the arrow shows between these from the spot
+export function spotMarks(parent, fishing, spotSigns, ringY = 0.1) {
+  const ring = (color) => new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }));
+  const luckRing = ring('#ffd166'), dblRing = ring('#ff6b9a');
+  const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
+  const dblGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.26), mat('#ff6b9a', { emissive: '#d6336c', emissiveIntensity: 0.8 }));
+  const head = new THREE.Shape([[0, 0.55], [0.32, 0.12], [0.11, 0.12], [0.11, -0.4], [-0.11, -0.4], [-0.11, 0.12], [-0.32, 0.12]].map(([x, y]) => new THREE.Vector2(x, y)));
+  const arrow = new THREE.Mesh(new THREE.ShapeGeometry(head).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
+  dblRing.visible = dblGem.visible = arrow.visible = false;
+  const meshes = [luckRing, luckGem, dblRing, dblGem, arrow];
+  if (fishing.length) parent.add(...meshes);
+  let signLang = null, lucky = -1, dbl = -1, t = 0;
+  const draw = () => spotSigns.forEach((sign, i) => {
+    const kind = i === dbl ? DOUBLE_SIGN : i === lucky ? LUCKY_SIGN : null;
+    const icon = i === dbl ? '✨ ' : '🍀 ', color = i === dbl ? DOUBLE_COLOR : i === lucky ? LUCKY_COLOR : SPOT_COLOR;
+    if (signLang) sign.draw('🎣 ' + localName(FISHING_OK, signLang), kind ? icon + localName(kind, signLang) : '', color);
+    else sign.draw('🎣 ' + FISHING_OK.ko, kind ? icon + kind.ko + ' · ' + kind.en : FISHING_OK.en, color);
+  });
+  const update = (now = Date.now()) => {
+    if (!fishing.length) return;
+    const i = luckySpot(fishing.length, now), d = doubleSpot(fishing.length, now);
+    fishing.forEach((f, k) => { f.lucky = k === i; f.double = k === d; f.boost = k === d ? DOUBLE_BOOST : k === i ? LUCKY_BOOST : 0; });
+    if (i === lucky && d === dbl) return;
+    lucky = i; dbl = d;
+    luckRing.position.set(fishing[i].x, ringY, fishing[i].z);
+    dblRing.visible = dblGem.visible = d >= 0;
+    if (d >= 0) dblRing.position.set(fishing[d].x, ringY + 0.01, fishing[d].z);
+    luckRing.visible = luckGem.visible = d !== i; // (a park with one spot: it shows double only)
+    draw();
+  };
+  const tick = (dt, me = null) => {
+    if (!fishing.length) return;
+    t = (t + dt) % 1e4;
+    update();
+    const f = fishing[lucky];
+    luckGem.position.set(f.x, 1.9 + Math.sin(t * 2.4) * 0.12, f.z);
+    luckGem.rotation.y = t * 1.8;
+    luckRing.material.opacity = 0.45 + Math.sin(t * 3) * 0.25;
+    if (dbl >= 0) {
+      const g = fishing[dbl];
+      dblGem.position.set(g.x, 2.1 + Math.sin(t * 3.2) * 0.16, g.z);
+      dblGem.rotation.y = t * 3;
+      dblRing.material.opacity = 0.5 + Math.sin(t * 6) * 0.3;
+    }
+    // The arrow: from you toward the double spot while it's on, else the lucky one.
+    const goal = fishing[dbl >= 0 ? dbl : lucky];
+    const dx = me ? goal.x - me[0] : 0, dz = me ? goal.z - me[1] : 0, dist = Math.hypot(dx, dz);
+    arrow.visible = !!me && dist > ARROW_NEAR && dist < ARROW_FAR;
+    if (!arrow.visible) return;
+    arrow.position.set(me[0] + dx / dist * 0.9, ringY + 0.05, me[1] + dz / dist * 0.9);
+    arrow.rotation.y = Math.atan2(-dx, -dz);
+    arrow.material.color.set(dbl >= 0 ? '#ff6b9a' : '#ffd166');
+    arrow.material.opacity = 0.65 + Math.sin(t * 5) * 0.2;
+  };
+  const setLang = (lang) => { signLang = lang; draw(); };
+  update();
+  return { meshes, update, tick, setLang, get double() { return dbl >= 0; } };
 }
 
 export function buildPark(store, ROOM, EXIT) {
@@ -291,37 +360,13 @@ export function buildPark(store, ROOM, EXIT) {
     scene.add(sign.mesh);
     return sign;
   });
-  // The lucky spot (행운 포인트, see luckySpot in fishing.js): a gold sign,
-  // a glowing ring on the ground and a clover spinning over it.
-  const luckRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.7, depthWrite: false }));
-  const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
-  scene.add(luckRing, luckGem);
-  let signLang = null, lucky = -1, luckT = 0;
-  const drawSpotSigns = () => spotSigns.forEach((sign, i) => {
-    const luck = i === lucky;
-    if (signLang) sign.draw('🎣 ' + localName(FISHING_OK, signLang), luck ? '🍀 ' + localName(LUCKY_SIGN, signLang) : '', luck ? LUCKY_COLOR : SPOT_COLOR);
-    else sign.draw('🎣 ' + FISHING_OK.ko, luck ? '🍀 ' + LUCKY_SIGN.ko + ' · ' + LUCKY_SIGN.en : FISHING_OK.en, luck ? LUCKY_COLOR : SPOT_COLOR);
-  });
-  const updateLucky = (now = Date.now()) => {
-    const i = luckySpot(fishing.length, now);
-    fishing.forEach((f, k) => { f.lucky = k === i; });
-    if (i === lucky) return;
-    lucky = i;
-    luckRing.position.set(fishing[i].x, 0.03, fishing[i].z);
-    drawSpotSigns();
-  };
-  updateLucky();
+  // The lucky and double spots (see spotMarks): gold and pink boards, rings and gems.
+  const marks = spotMarks(scene, fishing, spotSigns, 0.03);
+  let signLang = null;
   let tickShowRef = null; // (set below, once the boards are up)
   const tick = (dt) => {
     tickShowRef?.(dt);
-    luckT += dt;
-    if (luckT > 1e4) luckT = 0;
-    updateLucky();
-    const f = fishing[lucky];
-    luckGem.position.set(f.x, 1.9 + Math.sin(luckT * 2.4) * 0.12, f.z);
-    luckGem.rotation.y = luckT * 1.8;
-    luckRing.material.opacity = 0.45 + Math.sin(luckT * 3) * 0.25;
+    marks.tick(dt);
   };
   tick(0);
 
@@ -388,7 +433,7 @@ export function buildPark(store, ROOM, EXIT) {
   const market = buildMarket(scene, store, block, seats);
   const setSignLang = (lang) => {
     signLang = lang;
-    drawSpotSigns();
+    marks.setLang(lang);
     market.setSignLang(lang);
     martSign.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
@@ -445,7 +490,7 @@ export function buildPark(store, ROOM, EXIT) {
   };
   // Open to the street: its still boxes baked together (core/merge-static.js),
   // so the park costs a few draw calls on top of the city, not hundreds.
-  if (open) mergeStatic(scene, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
+  if (open) mergeStatic(scene, [...marks.meshes, ...ducks.map((d) => d.g)]);
   return {
     scene, products: [...products, ...market.products], colliders, seats, clerk, turntable: null, room: ROOM, exit: EXIT,
     lights: { hemi, sun, ambient }, // (an open park's follow the street's: main.js)

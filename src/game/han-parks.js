@@ -14,7 +14,8 @@
 // game: { scene, landmarks, decks (map.decks: the base map's bridges), store(id), collision, makeNpc(name, opts),
 // clerkName(), baitSeller(): { name, look } (the bait stall's old fisherman), me,
 // signLang(), night(), greet(npcs, p), acts: { duck, mart, fish, sell, bait,
-// ramen, look }, onVisit(store) } as getters where they change.
+// ramen, look }, onVisit(store), onDouble() (the double spot just came on
+// in the park you're in) } as getters where they change.
 
 import { pointInPoly } from '../core/collision.js';
 
@@ -92,7 +93,7 @@ export function createHanParks(game) {
       seats.push({ ...s, x, z, ry: s.ry + o.ry, stand: s.stand && toWorld(o, ...s.stand), street: true, hanpark: o.store.id });
     }
     const products = b.products.map((pr) => { const [x, z] = toWorld(o, pr.pos.x, pr.pos.z); return { ...pr, pos: pr.pos.clone().set(x, 0, z) }; });
-    const fishing = b.fishing.map((f) => { const [x, z] = toWorld(o, f.x, f.z); return { x, z, get lucky() { return !!f.lucky; } }; });
+    const fishing = b.fishing.map((f) => { const [x, z] = toWorld(o, f.x, f.z); return { x, z, get lucky() { return !!f.lucky; }, get double() { return !!f.double; }, get boost() { return f.boost || 0; } }; });
     const spot = (q) => { if (!q) return null; const [x, z] = toWorld(o, q.x, q.z); return { x, z }; };
     // The staff stand on the street itself (in its metres), like everyone else.
     const staff = (at, name, hideTag, look) => {
@@ -147,7 +148,12 @@ export function createHanParks(game) {
       const lang = game.signLang();
       if (lang !== B.lang) { B.lang = lang; B.b.setSignLang(lang); }
       B.b.setNight(game.night());
-      B.b.tick(dt);
+      const inside = inBounds(o, p.x, p.z);
+      B.b.tick(dt, inside ? toLocal(o, p.x, p.z) : null); // (the arrow to the lucky spot, while you're in it)
+      // The double spot coming on while you're here: say so, once each time.
+      const dbl = inside && B.b.double;
+      if (dbl && !B.dbl) game.onDouble?.();
+      B.dbl = dbl;
       if (d < STAFF_NEAR && B.vendorNpcs.length) game.greet(B.vendorNpcs, p);
     }
     // Walking into one counts as a visit (quests, the daily list), once each time.
