@@ -6198,7 +6198,7 @@ $('coin-btn').onclick = () => { $('wallet-panel').hidden = false; refreshWallet(
 const isClothes = (id) => !!(ITEMS[id]?.wear || ITEMS[id]?.tee);
 function refreshItems() {
   const list = inventory.list();
-  const own = list.filter((id) => !isClothes(id));
+  const own = list.filter((id) => !isClothes(id) && ITEMS[id]?.pet); // only the pets (Yozi 2026-11-17: nothing else needs looking at there)
   itemEl('wallet-items-title').hidden = !own.length;
   itemEl('wallet-items').replaceChildren(...own.map(itemRow));
 }
