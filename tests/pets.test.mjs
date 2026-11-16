@@ -88,3 +88,22 @@ test('pets keep out of the bumper car rink, even when their person drives in it'
   for (let t = 0; t < 10; t += 1 / 30) free.update(1 / 30, { x: RINK.x, z: RINK.z, ry: 0, y: 0 }, false, false);
   assert.ok(inside(free.root.position.x, free.root.position.z));
 });
+
+test('a pet poops about 3 times (2–4) per 3-hour game day of walking, never in bursts', () => {
+  assert.ok(POOP_EVERY[0] >= 45 * 60 && POOP_EVERY[1] <= 90 * 60);
+  const id = Object.keys(ITEMS).find((k) => isPet(k));
+  for (const r of [0, 0.5, 0.999]) {
+    const pet = new Companion(id, ITEMS[id].pet);
+    pet.poopAt = nextPoopAt(() => r);
+    pet.place(0, 0, 0);
+    // Walk in a big circle for 3 hours (big steps: dt 0.5 s).
+    let n = 0, last = -Infinity, gap = Infinity;
+    for (let t = 0; t < 3 * 3600; t += 0.5) {
+      if (pet.update(0.5, { x: Math.sin(t / 60) * 300, z: Math.cos(t / 60) * 300, ry: t / 60, y: 0 }, false, true)) {
+        n++; gap = Math.min(gap, t - last); last = t;
+      }
+    }
+    assert.ok(n >= 2 && n <= 4, `poops in 3 h: ${n}`);
+    assert.ok(gap >= POOP_EVERY[0] - 1, `poops too close: ${gap}s`);
+  }
+});
