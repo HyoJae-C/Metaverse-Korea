@@ -37,7 +37,7 @@ const LOOKS = {
   },
   pastel: {
     back: '#f9d9e4', left: '#cdeedf', right: '#d5e5fb', rear: '#e6ddf6', floor: '#f6efe4', centre: '#ffe2c8',
-    glow: '#fffaf3', frame: '#ffffff', matte: '#ffffff', lamp: '#f2e9dc', sign: '#fff4e6', ink: '#5a4a63', lit: true,
+    glow: null, frame: '#ffffff', matte: '#ffffff', lamp: '#f2e9dc', sign: '#fff4e6', ink: '#5a4a63', lit: true,
   },
 };
 const CENTRE_Y = 1.85;
@@ -96,9 +96,11 @@ function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark) {
   g.rotation.y = sl.ry;
   scene.add(g);
   const { W, H } = photoSize(p, max);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(W + 1.1, H + 1.3), new THREE.MeshBasicMaterial({ color: c.glow }));
-  glow.position.set(0, 0.15, 0.01);
-  g.add(glow);
+  if (c.glow) { // (the lit patch on a dark wall; bright walls need none)
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(W + 1.1, H + 1.3), new THREE.MeshBasicMaterial({ color: c.glow }));
+    glow.position.set(0, 0.15, 0.01);
+    g.add(glow);
+  }
   const frame = new THREE.Mesh(new THREE.BoxGeometry(W + 0.26, H + 0.26, 0.04), new THREE.MeshBasicMaterial({ color: c.frame }));
   frame.position.z = 0.04;
   g.add(frame);
