@@ -537,6 +537,8 @@ export const ID = {
   'zoo.leave': 'Keluar dari kebun binatang',
   'home.blocked': 'Ada yang menghalangi. Geser sedikit lalu taruh lagi.',
   'home.lie': 'Berbaring',
+  'home.lampOn': 'Nyalakan lampu',
+  'home.lampOff': 'Matikan lampu',
   'home.visit': 'Siapa yang boleh datang:',
   'home.visitAll': 'Semua',
   'home.visitFriends': 'Teman',

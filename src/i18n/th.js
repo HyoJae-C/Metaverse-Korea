@@ -535,6 +535,8 @@ export const TH = {
   'zoo.leave': 'ออกจากสวนสัตว์',
   'home.blocked': 'มีของขวางอยู่ ขยับนิดหนึ่งแล้ววางใหม่',
   'home.lie': 'นอนลง',
+  'home.lampOn': 'เปิดไฟ',
+  'home.lampOff': 'ปิดไฟ',
   'home.visit': 'ใครมาเที่ยวได้:',
   'home.visitAll': 'ทุกคน',
   'home.visitFriends': 'เพื่อน',

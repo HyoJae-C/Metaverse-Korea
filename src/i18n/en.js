@@ -534,6 +534,8 @@ export const EN = {
   'zoo.leave': 'Leave the zoo',
   'home.blocked': 'Something is in the way. Move a little and put it down again.',
   'home.lie': 'Lie down',
+  'home.lampOn': 'Turn on the light',
+  'home.lampOff': 'Turn off the light',
   'home.visit': 'Who can visit:',
   'home.visitAll': 'Everyone',
   'home.visitFriends': 'Friends',
