@@ -1153,12 +1153,23 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 a.setting-row { text-decoration: none; color: inherit; }
 .ride-options { display: grid; gap: 10px; }
 .ride-options .primary { margin: 0; }
-.train-panel { display: flex; flex-direction: column; max-height: min(52vh, 480px); }
+.train-panel { display: flex; flex-direction: column; max-height: min(62vh, 520px); }
 .train-panel #train-options { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px; gap: 8px; }
 .train-panel .chip { background: #fff; padding: 10px 14px; font-weight: 700; }
 @media (pointer: coarse) { .train-panel .chip { padding: 8px 12px; } }
+.train-panel .train-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; }
+.train-panel .train-stop { display: grid; gap: 0; margin: 0; padding: 6px 10px; text-align: left; border-radius: 12px; line-height: 1.2; }
+.train-panel .train-stop b { font-size: 14px; overflow-wrap: anywhere; }
+.train-panel .train-stop small { font-size: 11px; font-weight: 600; opacity: 0.7; }
+.train-recent { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; flex: 0 0 auto; }
+.train-recent > small { flex: 0 0 auto; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.train-recent .train-row { display: flex; gap: 6px; }
+.train-panel .train-recent-stop { flex: 0 0 auto; margin: 0; padding: 5px 12px; font-size: 13px; width: auto; border-radius: 999px; box-shadow: none; border: 1.5px solid var(--accent); }
+.train-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; flex: 0 0 auto; }
+.train-tab { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,0.7); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.train-tab.on { background: var(--ink); color: #fff; }
 .train-panel #train-off { width: 100%; margin-top: 10px; }
-.train-panel #train-status { margin: 4px 0 10px; }
+.train-panel #train-status { margin: 2px 0 8px; }
 
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
 .cloud-actions .chip { font-size: 13px; }

@@ -9,6 +9,7 @@ import {
   streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt, createReentry, stationName as withStationSuffix,
 } from '../core/subway.js';
 import { L, fmt } from '../ui/pocha-ui.js';
+import { SUBWAY_THEMES, STATION_THEMES } from '../data/subway-themes.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -136,6 +137,7 @@ export function createSubway(stations, game) {
     const from = stationIndex();
     if (from < 0 || stationStores.length < 2) return;
     const dir = METRO_TRACKS[t].dir;
+    metroTab = 'all';
     metro = { from, t, dir, leaveAt: Date.now() + left * 1000, dest: null, arriveAt: 0 };
     const front = exitFront(from, 0);
     game.enterStore({ ...front, store: TRAIN_STORE });
@@ -147,17 +149,57 @@ export function createSubway(stations, game) {
     renderMetro();
     $('train-panel').hidden = false;
   }
+  // The "where do you get off?" picker: recent stations on top, theme tabs,
+  // then the stations ahead in two columns (name, and how many stops).
+  let metroTab = 'all';
+  const RECENT_KEY = 'modu.metroRecent';
+  const stationId = (k) => stations[k].id || stations[k].name?.en || String(k);
+  function recentIds() {
+    try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; }
+  }
+  function rememberRecent(k) {
+    const id = stationId(k);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify([id, ...recentIds().filter((x) => x !== id)].slice(0, 3))); } catch { /* private window */ }
+  }
+  function stopChip(k) {
+    const b = document.createElement('button');
+    b.className = 'train-stop ' + (metro.dest === k ? 'primary' : 'chip');
+    const name = document.createElement('b'), stops = document.createElement('small');
+    name.textContent = stationName(k);
+    stops.textContent = fmt(L(METRO_TEXT.stops), { n: stopsBetween(metro.from, k, metro.dir, stationStores.length) });
+    b.append(name, stops);
+    b.onclick = () => pickStop(k);
+    return b;
+  }
   function renderMetro() {
     if (!metro) return;
     const n = stationStores.length;
     $('train-title').textContent = `🚇 ${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${L(METRO_TEXT.pick)}`;
-    $('train-options').replaceChildren(...lineAhead(metro.from, metro.dir, n).map((k) => {
+    const ahead = lineAhead(metro.from, metro.dir, n);
+    const recent = recentIds().map((id) => ahead.find((k) => stationId(k) === id)).filter((k) => k != null);
+    $('train-recent').hidden = !recent.length;
+    $('train-recent-label').textContent = t('metro.recent');
+    $('train-recent-list').replaceChildren(...recent.map((k) => {
       const b = document.createElement('button');
-      b.className = metro.dest === k ? 'primary' : 'chip';
-      b.textContent = `${stationName(k)} · ${fmt(L(METRO_TEXT.stops), { n: stopsBetween(metro.from, k, metro.dir, n) })}`;
+      b.className = 'train-recent-stop ' + (metro.dest === k ? 'primary' : 'chip');
+      b.textContent = stationName(k);
       b.onclick = () => pickStop(k);
       return b;
     }));
+    const tabs = [{ id: 'all', icon: '', key: 'metro.tab.all' }, ...SUBWAY_THEMES]
+      .filter((th) => th.id === 'all' || ahead.some((k) => STATION_THEMES[stationId(k)]?.includes(th.id)));
+    if (!tabs.some((th) => th.id === metroTab)) metroTab = 'all';
+    $('train-tabs').hidden = tabs.length < 2;
+    $('train-tabs').replaceChildren(...tabs.map((th) => {
+      const b = document.createElement('button');
+      b.className = 'train-tab' + (th.id === metroTab ? ' on' : '');
+      b.setAttribute('aria-pressed', th.id === metroTab);
+      b.textContent = (th.icon ? th.icon + ' ' : '') + t(th.key);
+      b.onclick = () => { metroTab = th.id; renderMetro(); $('train-options').scrollTop = 0; };
+      return b;
+    }));
+    const shown = metroTab === 'all' ? ahead : ahead.filter((k) => STATION_THEMES[stationId(k)]?.includes(metroTab));
+    $('train-options').replaceChildren(...shown.map(stopChip));
     $('train-off').hidden = Date.now() >= metro.leaveAt;
     $('train-off').textContent = '🚪 ' + L(METRO_TEXT.getOff);
   }
@@ -221,6 +263,7 @@ export function createSubway(stations, game) {
     if (metro.dest != null && now >= metro.arriveAt) {
       const { dest, t } = metro;
       endMetro();
+      rememberRecent(dest);
       arriveOnPlatform(dest, t);
       game.onArrive?.(dest); // rode to another station
     }
