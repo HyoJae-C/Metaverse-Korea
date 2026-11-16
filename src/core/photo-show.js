@@ -33,11 +33,12 @@ const DARK_WALL = '#1f1f23';
 const LOOKS = {
   dark: {
     back: DARK_WALL, left: DARK_WALL, right: DARK_WALL, rear: DARK_WALL, floor: '#2b2b2f', centre: DARK_WALL,
-    glow: '#36363c', frame: '#0d0d0f', matte: '#f3f1ec', lamp: '#141416', sign: '#1f1f23', ink: '#f4efe2',
+    glow: '#36363c', frames: ['#0d0d0f'], pad: 0.26, matte: '#f3f1ec', lamp: '#141416', sign: '#1f1f23', ink: '#f4efe2',
   },
   pastel: {
     back: '#f9d9e4', left: '#cdeedf', right: '#d5e5fb', rear: '#e6ddf6', floor: '#f6efe4', centre: '#ffe2c8',
-    glow: null, frame: '#ffffff', matte: '#ffffff', lamp: '#f2e9dc', sign: '#fff4e6', ink: '#5a4a63', lit: true,
+    // (the coloured frames of Gallery B's "colorful", core/culture.js, one colour after another)
+    glow: null, frames: ['#ff5d8f', '#ffb703', '#3ab0ff', '#57cc99', '#9b5de5'], pad: 0.34, matte: '#f6f4ef', lamp: '#f2e9dc', sign: '#fff4e6', ink: '#5a4a63', lit: true,
   },
 };
 const CENTRE_Y = 1.85;
@@ -90,7 +91,7 @@ function sign(scene, wd, ht, x, y, z, ry, top, bottom, { bg = '#2f2a26', fg = '#
 
 // One photo in a thin black frame with a white mat, a soft lit patch on the
 // dark wall behind it and a small lamp above.
-function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark) {
+function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark, k = 0) {
   const g = new THREE.Group();
   g.position.set(sl.x, sl.y ?? CENTRE_Y, sl.z);
   g.rotation.y = sl.ry;
@@ -101,10 +102,10 @@ function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark) {
     glow.position.set(0, 0.15, 0.01);
     g.add(glow);
   }
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(W + 0.26, H + 0.26, 0.04), new THREE.MeshBasicMaterial({ color: c.frame }));
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W + c.pad, H + c.pad, 0.04), new THREE.MeshBasicMaterial({ color: c.frames[k % c.frames.length] }));
   frame.position.z = 0.04;
   g.add(frame);
-  const matte = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.18, H + 0.18), new THREE.MeshBasicMaterial({ color: c.matte }));
+  const matte = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.14, H + 0.14), new THREE.MeshBasicMaterial({ color: c.matte }));
   matte.position.z = 0.062;
   g.add(matte);
   const art = new THREE.MeshBasicMaterial({ color: '#3a3a3e' }); // until the image arrives
@@ -176,7 +177,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   const ps = photosOn(show, floor);
   photoSlots(room).forEach((sl, i) => {
     if (!ps[i]) return;
-    hang(scene, ps[i], sl, loader, MAX_SIDE, c);
+    hang(scene, ps[i], sl, loader, MAX_SIDE, c, i);
     looks.push({ x: sl.look.x, z: sl.look.z, painting: ps[i] });
   });
 
