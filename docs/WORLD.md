@@ -620,7 +620,10 @@ Yunjung-ro (Yeouiseo-ro) with cherry trees that are only pink in spring
 in its blocks, Yeouido Park, the National Assembly at the west end, and the 63
 tower at the east end (a blocker and a landmark, not walkable; 7 m west of its
 real spot so Yeouidong-ro passes it). The island is about 850 x 440 m, as the
-real one is at 1/4. The park's ★5 legend is the blobfish. Run the script
+real one is at 1/4. The park's ★5 legend is the blobfish. Mapo and Wonhyo
+Bridges (base map decks) land on the park's shore: the park's railing is left
+open where a deck crosses it, and its lamps and benches are kept off the deck
+(`clearBridges` in `game/han-parks.js`, for every street park). Run the script
 again after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
