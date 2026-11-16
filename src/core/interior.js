@@ -378,9 +378,11 @@ export function buildInterior(store) {
     model.scale.setScalar(petKind ? 1 : hanging ? 1.4 : 1.8);
     model.position.y = petKind ? 1.01 : 0.95;
     stand.add(model);
-    // A second and third copy make the display look stocked.
-    if (!petKind) for (const s of [-1, 1]) {
-      const copy = productModel(product.model, product.color, product);
+    // A second and third copy make the display look stocked: clones, so
+    // they share the first one's geometry and materials (no extra memory).
+    // Furniture is big and made of many parts: one piece per stand.
+    if (!petKind && product.model !== 'furniture') for (const s of [-1, 1]) {
+      const copy = model.clone();
       copy.scale.setScalar(hanging ? 1.3 : 1.4);
       copy.position.set(0.5 * s, 0.95, hanging ? -0.05 : 0.1);
       stand.add(copy);

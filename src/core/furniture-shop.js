@@ -1,7 +1,8 @@
 // Furniture from the furniture shops on Euljiro (stores.json "furniture"
 // products): only once you've bought one, then placed with Decorate. Three
 // shops, three looks (Yozi 2026-11-16: new shapes, not recoloured basics):
-// traditional Korean pieces, retro Euljiro, and modern. Each shape comes in
+// traditional Korean pieces, retro Euljiro, modern, and a woodworking
+// studio (the fourth shop, Yozi 2026-11-16). Each shape comes in
 // one colour (the item rule allows at most two).
 // [id, emoji, footprint [w, d], seat, name, build(g, part, box, glow)]
 import * as THREE from 'three';
@@ -141,5 +142,44 @@ export const SHOP_FURNITURE = [
     box(1.62, 0.04, 0.3, 0, 0.6, -0.1, '#ffffff'); // folded back
     for (const x of [-0.4, 0.4]) box(0.6, 0.14, 0.38, x, 0.6, -0.75, '#f6f2ea');
     for (let i = 0; i < 4; i++) box(0.4, 0.9, 0.14, -0.6 + i * 0.4, 0.62, -1.06, '#a89c8c'); // a soft channel headboard
+  }],
+  // --- Woodwork: 원목 공방 ---
+  ['f-wood-table', '🪵', [1.6, 0.9], false, { en: 'Solid wood dining table', ko: '원목 식탁', ja: '無垢材のダイニングテーブル', zh: '实木餐桌' }, (g, part, box) => {
+    box(1.6, 0.07, 0.9, 0, 0.72, 0, '#b07a48'); // a thick slab
+    for (let i = 0; i < 4; i++) box(1.6, 0.003, 0.012, 0, 0.756, -0.33 + i * 0.22, '#9a6638'); // board joins
+    for (const s of [-1, 1]) {
+      box(0.08, 0.68, 0.7, 0.66 * s, 0.34, 0, '#9a6638'); // slab legs
+      box(0.08, 0.06, 0.8, 0.66 * s, 0.03, 0, '#8a5a30');
+    }
+    box(1.24, 0.06, 0.06, 0, 0.2, 0, '#9a6638'); // stretcher
+  }],
+  ['f-wood-bench', '🪑', [1.4, 0.4], true, { en: 'Wooden bench', ko: '원목 벤치', ja: '木のベンチ', zh: '木长凳' }, (g, part, box) => {
+    box(1.4, 0.06, 0.38, 0, 0.44, 0, '#c08a58');
+    for (const s of [-1, 1]) {
+      box(0.06, 0.41, 0.3, 0.6 * s, 0.205, 0, '#a87444');
+      box(0.06, 0.04, 0.38, 0.6 * s, 0.02, 0, '#a87444');
+    }
+  }],
+  ['f-rocking', '🪑', [0.7, 0.9], true, { en: 'Rocking chair', ko: '흔들의자', ja: 'ロッキングチェア', zh: '摇椅' }, (g, part, box) => {
+    for (const s of [-1, 1]) { // the curved rockers
+      const rocker = part(new THREE.TorusGeometry(1.2, 0.025, 4, 24, 0.75), '#8a5a30', 0.28 * s, 1.22, 0);
+      rocker.rotation.set(0, Math.PI / 2, Math.PI * 1.5 - 0.375);
+      box(0.04, 0.4, 0.04, 0.28 * s, 0.24, 0.22, '#9a6638');
+      box(0.04, 0.95, 0.04, 0.28 * s, 0.5, -0.24, '#9a6638').rotation.x = -0.15;
+      box(0.05, 0.04, 0.5, 0.3 * s, 0.62, 0, '#9a6638'); // arms
+    }
+    box(0.56, 0.05, 0.5, 0, 0.44, 0, '#b07a48');
+    for (let i = 0; i < 5; i++) box(0.05, 0.6, 0.02, -0.2 + i * 0.1, 0.78, -0.28, '#b07a48').rotation.x = -0.15; // spindle back
+    box(0.6, 0.06, 0.04, 0, 1.08, -0.33, '#9a6638').rotation.x = -0.15;
+    box(0.42, 0.04, 0.4, 0, 0.48, 0.02, '#e8dcc0'); // a seat pad
+  }],
+  ['f-wood-shelf', '🪵', [1.2, 0.35], false, { en: 'Ladder shelf', ko: '원목 사다리 선반', ja: '木のはしご棚', zh: '实木梯形架' }, (g, part, box) => {
+    for (const s of [-1, 1]) box(0.05, 1.7, 0.05, 0.55 * s, 0.85, -0.05, '#9a6638').rotation.x = 0.12; // leaning rails
+    const shelves = [[0.25, 0.35], [0.7, 0.29], [1.15, 0.23], [1.55, 0.18]];
+    for (const [y, d] of shelves) box(1.15, 0.035, d, 0, y, 0.12 - y * 0.12, '#c08a58');
+    part(new THREE.CylinderGeometry(0.08, 0.06, 0.14, 10), '#e8e2d6', -0.3, 0.34, 0.1); // a pot
+    part(new THREE.SphereGeometry(0.11, 10, 8), '#7aaa6a', -0.3, 0.48, 0.1);
+    for (let i = 0; i < 4; i++) box(0.06, 0.22, 0.16, 0.15 + i * 0.07, 0.83, 0.04, ['#c86a4a', '#4a6a5a', '#f2c14e', '#7a8aa8'][i]);
+    part(new THREE.CylinderGeometry(0.05, 0.05, 0.1, 10), '#b8a07a', 0.3, 1.22, -0.02); // a basket
   }],
 ];
