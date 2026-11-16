@@ -1,28 +1,42 @@
-// Seoul Forest's photo show (data/photo-show.js, core/photo-show.js): the
-// main photo plus 30 photos, 10 to a floor on three floors, every image in
-// public/, and every wall spot inside the room.
+// Photo shows on several floors (data/photo-show.js, core/photo-show.js):
+// Gallery A, Sai e's main photo plus 30 photos on three floors; Gallery D,
+// JH's main photo plus 20 photos on two floors; 10 to a floor, every image in
+// public/, every wall spot inside the room, and the galleries named A to D.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { PHOTO_SHOW, PHOTO_FLOORS, photosOn, mainPhoto } from '../src/data/photo-show.js';
-import { photoSlots, ROOM_PHOTO, PHOTO_LIFT } from '../src/core/photo-show.js';
+import { PHOTO_SHOWS, showOf, floorsOf, photosOn, mainPhoto } from '../src/data/photo-show.js';
+import { photoSlots, photoFloors, ROOM_PHOTO, PHOTO_LIFT } from '../src/core/photo-show.js';
+import { museumFloorStore } from '../src/core/museum.js';
 
-test('30 photos, 10 on each of three floors, no repeats', () => {
-  assert.equal(PHOTO_SHOW.photos.length, 30);
-  assert.deepEqual(PHOTO_FLOORS, [1, 2, 3]);
-  const all = PHOTO_FLOORS.flatMap((f) => photosOn(f).map((p) => p.id));
-  for (const f of PHOTO_FLOORS) assert.equal(photosOn(f).length, 10);
-  assert.equal(new Set(all).size, 30);
-  assert.ok(!all.includes(mainPhoto().id));
+const STORES = JSON.parse(readFileSync('public/regions/another-seoul/stores.json', 'utf8')).stores;
+const store = (id) => STORES.find((s) => s.id === id);
+
+test('Gallery A: 30 photos on three floors; Gallery D: 20 on two; 10 a floor, no repeats', () => {
+  for (const [id, n, floors] of [['seoul-forest-culture', 30, 3], ['forest-gallery-3', 20, 2]]) {
+    const show = PHOTO_SHOWS[id];
+    assert.equal(show.photos.length, n);
+    assert.deepEqual(floorsOf(show), Array.from({ length: floors }, (_, i) => i + 1));
+    assert.equal(show.photos.length, show.floors * show.perFloor);
+    const all = floorsOf(show).flatMap((f) => photosOn(show, f).map((p) => p.id));
+    for (const f of floorsOf(show)) assert.equal(photosOn(show, f).length, 10);
+    assert.equal(new Set(all).size, n);
+    assert.ok(!all.includes(mainPhoto(show).id));
+    assert.equal(photoFloors(true, store(id)).length, floors);
+  }
+  assert.equal(PHOTO_SHOWS['forest-gallery-3'].title.ko, '모두와 함께한 모두서울');
+  assert.equal(PHOTO_SHOWS['forest-gallery-3'].artist.en, 'JH');
 });
 
 test('every image is in public/', () => {
-  for (const p of [mainPhoto(), ...PHOTO_FLOORS.flatMap(photosOn)]) assert.ok(existsSync('public/' + p.file), p.file);
+  for (const show of Object.values(PHOTO_SHOWS)) {
+    for (const p of [mainPhoto(show), ...floorsOf(show).flatMap((f) => photosOn(show, f))]) assert.ok(existsSync('public/' + p.file), p.file);
+  }
 });
 
 test('10 wall spots on a floor, inside the room, the lift in the foyer', () => {
   const slots = photoSlots();
-  assert.equal(slots.length, PHOTO_SHOW.perFloor);
+  assert.equal(slots.length, 10);
   const { w, d } = ROOM_PHOTO;
   for (const s of slots) {
     assert.ok(Math.abs(s.x) <= w / 2 && Math.abs(s.z) <= d / 2);
@@ -31,10 +45,18 @@ test('10 wall spots on a floor, inside the room, the lift in the foyer', () => {
   assert.ok(PHOTO_LIFT.z > 0 && PHOTO_LIFT.z < d / 2);
 });
 
-test('the culture center is the photo show', () => {
-  const store = JSON.parse(readFileSync('public/regions/another-seoul/stores.json', 'utf8')).stores.find((s) => s.id === PHOTO_SHOW.store);
-  assert.equal(store.workshop, 'photo-show');
-  assert.equal(store.size, 'photoshow');
+test('Galleries A and D are photo shows, and an upper floor finds its own show', () => {
+  for (const id of Object.keys(PHOTO_SHOWS)) {
+    assert.equal(store(id).workshop, 'photo-show');
+    assert.equal(store(id).size, 'photoshow');
+    assert.equal(showOf(museumFloorStore(store(id), 2)), PHOTO_SHOWS[id]);
+  }
+});
+
+test('the galleries are named A to D', () => {
+  const names = ['seoul-forest-culture', 'forest-gallery-1', 'forest-gallery-2', 'forest-gallery-3'].map((id) => store(id).name);
+  assert.deepEqual(names.map((n) => n.ko), ['전시관 A', '전시관 B', '전시관 C', '전시관 D']);
+  assert.deepEqual(names.map((n) => n.en), ['Gallery A', 'Gallery B', 'Gallery C', 'Gallery D']);
 });
 
 test('forest galleries: ACIRE "colorful" and KimPD "Cinematic", 10 works each, 4 + 4 + 2 on the walls', async () => {

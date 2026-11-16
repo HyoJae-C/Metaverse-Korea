@@ -1,5 +1,6 @@
-// Seoul Forest's culture center as a photo gallery on three floors
-// (stores.json workshop "photo-show"; the photos in data/photo-show.js).
+// A photo gallery on several floors: Gallery A (Seoul Forest's culture
+// center, three floors) and Gallery D (forest gallery 3, two floors)
+// (stores.json workshop "photo-show"; the shows in data/photo-show.js).
 // Each floor, seen from the door:
 //
 //        ┌───────────────────────────────────┐
@@ -16,7 +17,7 @@
 // glow (unlit materials) under a lamp each. Every floor is its own interior
 // (core/museum.js museumFloorStore), and you change floors by the lift.
 import * as THREE from 'three';
-import { PHOTO_SHOW, PHOTO_FLOORS, photosOn, mainPhoto } from '../data/photo-show.js';
+import { showOf, floorsOf, photosOn, mainPhoto } from '../data/photo-show.js';
 import { canvasTex } from './three-kit.js';
 import { segmentsCross as crosses } from './collision.js';
 import { COUNTER_H } from './counter-face.js';
@@ -104,11 +105,11 @@ function hang(scene, p, sl, loader, max = MAX_SIDE) {
 // interior's helpers. Returns the look-at spots ({ x, z, painting }), the
 // bench seats, the guide at the desk (1F), the lift spot, and `see`, which
 // fades the partition when it stands between the camera and you.
-export function buildPhotoShow(scene, room, { box, block }, floor = 1) {
+export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   const { w, d, h } = room;
   const loader = new THREE.TextureLoader();
   const looks = [];
-  const show = PHOTO_SHOW;
+  const show = showOf(store);
 
   // The dark gallery: its floor and walls laid just inside the room's own.
   const gd = PART_Z + d / 2; // the gallery's depth
@@ -148,7 +149,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1) {
   way.signs.push(sign(scene, WAY * 2 - 0.2, 0.9, 0, 3.6, PART_Z + PART_T / 2 + 0.01, 0, `${show.title.ko} · ${floor}F`, `${show.title.en} · ${show.artist.en}`, { bg: '#1f1f23' }));
 
   // The photos on this floor.
-  const ps = photosOn(floor);
+  const ps = photosOn(show, floor);
   photoSlots(room).forEach((sl, i) => {
     if (!ps[i]) return;
     hang(scene, ps[i], sl, loader);
@@ -160,7 +161,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1) {
   if (floor === 1) {
     // The main photo on a freestanding dark wall in the middle, facing the
     // way in, with the show's title and the artist's name under it.
-    const mp = mainPhoto();
+    const mp = mainPhoto(show);
     box(4.6, 3.6, 0.3, 0, 1.8, cz, DARK_WALL);
     block(0, cz, 4.8, 0.5);
     const { H } = hang(scene, mp, { x: 0, z: cz + 0.15, ry: 0 }, loader, 3);
@@ -193,7 +194,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1) {
       c.fillStyle = '#f4efe2'; c.font = `800 32px ${FONT}`;
       c.fillText('층별 안내 · Floor guide', 24, 20);
       let y = 84;
-      for (const f of [...PHOTO_FLOORS].reverse()) {
+      for (const f of floorsOf(show).reverse()) {
         c.fillStyle = f === floor ? '#ffd36b' : '#d9c9a3';
         c.font = `800 30px ${FONT}`;
         c.fillText(`${f}F`, 24, y);
@@ -252,7 +253,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1) {
 }
 
 // The lift's floor list (ui/museum-ui.js showLift).
-export const photoFloors = (ko) => PHOTO_FLOORS.map((floor) => ({
+export const photoFloors = (ko, store) => floorsOf(showOf(store)).map((floor) => ({
   floor,
   lines: [floor === 1 ? (ko ? '대표작 · 사진 10점' : 'Main photo · 10 photos') : (ko ? '사진 10점' : '10 photos')],
 }));
