@@ -532,6 +532,7 @@ export const ZH = {
   'home.leave': '出门',
   'zoo.leave': '离开动物园',
   'home.blocked': '被别的家具挡住了。挪一挪再放下吧。',
+  'home.lie': '躺下',
   'home.visit': '谁可以来玩：',
   'home.visitAll': '所有人',
   'home.visitFriends': '仅好友',

@@ -6636,6 +6636,8 @@ const adoptAct = (pet) => ({ key: 'adopt:' + pet.adopt, label: '🏡 ' + fmt(L(A
 const petAct = (pet, p) => ({ key: 'pet:' + pet.name, label: '🐾 ' + t('pet.pat', { name: Pets.label(pet) }), run: () => { interior.pets.pet(pet, p.x, p.z); showBubble(myLabel, $('labels'), '😻'); missionEvent('pet'); } });
 const sitAct = (seat) => (seat.cushion // a dharma hall's cushion: sit on the floor facing the Buddhas (core/dharma-hall.js)
   ? { key: 'sit', label: '🪷 ' + t('shop.sit'), run: () => sitDown({ ...seat, lie: false }) }
+  : seat.bed // a bed at home (core/furniture.js furnitureSeats)
+  ? { key: 'lie-bed', label: '🛏️ ' + t('home.lie'), run: () => sitDown(seat) }
   : seat.mat
   ? { key: 'lie-mat', label: '🧺 ' + L(MAT_TEXT.lie), run: () => sitDown(seat) }
   : { key: 'sit', label: (seat.edge ? '🌊 ' : '🪑 ') + t('shop.sit'), run: () => sitDown(seat) }); // 🌊 the edge of a stream

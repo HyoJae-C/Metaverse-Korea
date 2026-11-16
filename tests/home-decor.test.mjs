@@ -67,3 +67,16 @@ test('each furniture shop sells three pieces', async () => {
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, 3, s.id);
 });
+
+test('long sofas and benches seat two, beds lie two, cushions sit on the floor', async () => {
+  const { furnitureSeats } = await import('../src/core/furniture.js');
+  const n = (id) => furnitureSeats({ id, x: 0, z: 0, ry: 0 });
+  for (const id of ['sofa', 'f-retro-sofa', 'f-modular', 'f-wood-bench']) assert.equal(n(id).length, 2, id);
+  for (const id of ['bed', 'f-fabric-bed']) { assert.equal(n(id).length, 2, id); assert.ok(n(id).every((s) => s.lie && s.bed), id); }
+  assert.ok(n('f-bangseok').length === 2 && n('f-bangseok').every((s) => s.mat && s.cushion));
+  for (const id of ['chair', 'f-steel-stool', 'f-beanbag', 'f-rocking']) assert.equal(n(id).length, 1, id);
+  for (const id of ['table', 'f-najeon']) assert.equal(n(id).length, 0, id);
+  // Turned a quarter: the two places stay side by side along the piece.
+  const [a, b] = furnitureSeats({ id: 'sofa', x: 5, z: 5, ry: Math.PI / 2 });
+  assert.ok(Math.abs(a.x - b.x) < 1e-9 && Math.abs(Math.abs(a.z - b.z) - 0.9) < 1e-9);
+});

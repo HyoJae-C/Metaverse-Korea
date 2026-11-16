@@ -5,6 +5,7 @@ import { buildCraftBench } from './craft-room.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
+import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
 import { RING, BOARD_ORDER } from './arcade.js';
 import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
@@ -329,6 +330,7 @@ export function buildInterior(store) {
   const shown = store.displays > store.products?.length
     ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
     : store.products;
+  const triedSeats = []; // seats on furniture for sale (below)
   (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
@@ -344,6 +346,26 @@ export function buildInterior(store) {
       return;
     }
     const [x, z, ry] = spots[i % spots.length];
+    // Euljiro furniture (shop pieces, not lamps): on the floor at its real
+    // size, back to the wall, as it would stand at home (Yozi 2026-11-16: on
+    // a table you can't tell how big it is). Sofas, beds and chairs can be
+    // tried: sit or lie on them.
+    const piece = product.model === 'furniture' && furnitureById(product.furniture)?.item ? furnitureById(product.furniture) : null;
+    if (piece) {
+      const [fw, fd] = piece.size;
+      const lz = -(ry === 0 ? bz + d / 2 : w / 2 - sx) + 0.25 + fd / 2; // (from the spot back to the wall: 1.3 m at the back, 0.8 m at the sides)
+      const g = buildFurniture(piece.id);
+      const c = new THREE.Vector3(0, 0, lz).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      g.position.copy(c);
+      g.rotation.y = ry;
+      scene.add(g);
+      const front = new THREE.Vector3(0, 0, lz + fd / 2 + 0.6).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      products.push({ product, mesh: g, pos: front });
+      const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [fd, fw] : [fw, fd];
+      block(c.x, c.z, cx, cz);
+      triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry }));
+      return;
+    }
     const stand = new THREE.Group();
     stand.position.set(x, 0, z);
     stand.rotation.y = ry;
@@ -434,7 +456,7 @@ export function buildInterior(store) {
   }
 
   // Category extras.
-  const seats = [];
+  const seats = [...triedSeats];
   let clerk = null; // where the shop clerk stands (behind the counter)
   let trainer = null; // the gym's personal trainer (an NPC to talk to)
   let barkeep = null; // a club's bartender (the clerk there is the DJ)

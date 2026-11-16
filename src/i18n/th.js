@@ -532,6 +532,7 @@ export const TH = {
   'home.leave': 'ออกไปข้างนอก',
   'zoo.leave': 'ออกจากสวนสัตว์',
   'home.blocked': 'มีของขวางอยู่ ขยับนิดหนึ่งแล้ววางใหม่',
+  'home.lie': 'นอนลง',
   'home.visit': 'ใครมาเที่ยวได้:',
   'home.visitAll': 'ทุกคน',
   'home.visitFriends': 'เพื่อน',

@@ -534,6 +534,7 @@ export const VI = {
   'home.leave': 'Ra ngoài',
   'zoo.leave': 'Rời sở thú',
   'home.blocked': 'Có đồ khác chắn đường. Dịch đi một chút rồi đặt lại nhé.',
+  'home.lie': 'Nằm xuống',
   'home.visit': 'Ai được ghé chơi:',
   'home.visitAll': 'Mọi người',
   'home.visitFriends': 'Bạn bè',
