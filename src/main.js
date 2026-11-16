@@ -244,6 +244,7 @@ import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createSaunaTowel } from './game/sauna-towel.js';
 import { createCookingClasses } from './game/cooking-classes.js';
+import { createRecipeBook } from './game/recipe-book.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
 import { parseSkyMsg } from './game/sky-codes.js';
@@ -1933,10 +1934,13 @@ function recordFood(store, product, quiet = false) {
   if (!isFood(store, product)) return false;
   const isNew = foodDex.add(store, product);
   const all = allFoods(storeData).length;
-  if (!quiet) shop.toast(isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
+  if (!quiet) shop.toast(!FOOD_DEX_OPEN ? t('shop.added') : isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
   refreshDexBtn();
   return true;
 }
+// The food dex is closed for now (Yozi 2026-11-17): it comes back as a
+// restaurant tour (맛집투어). Purchases are still recorded for it.
+const FOOD_DEX_OPEN = false;
 const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑に登録！', zh: '图鉴新登记！' };
 const shop = new ShopUI({
   cart,
@@ -4068,7 +4072,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4436,9 +4440,11 @@ function buyIngredient(product, coins) {
 }
 
 // Cooking classes (kimchi, japchae, kimbap, tteok, bibimbap), the market's kimchi stall and the museums. (game/cooking-classes.js)
+// The recipe book (요리비법서): a page for every dish the classes teach (game/recipe-book.js).
+const recipes = createRecipeBook({ $, bag, shop });
 const cookingClasses = createCookingClasses({
   get clerk() { return clerk; }, get me() { return me; }, get held() { return held; }, $, bag, missionEvent,
-  setHeld, shop, togetherBonus, wallet,
+  setHeld, shop, togetherBonus, wallet, onCooked: (e) => recipes.cooked(e),
 });
 const { museumUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi } = cookingClasses;
 
@@ -5464,6 +5470,7 @@ function pressStamp(it) {
 const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
 function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
 $('dex-btn').onclick = () => { $('notes-panel').hidden = true; dexUi.show(); };
+$('dex-btn').hidden = !FOOD_DEX_OPEN;
 refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
