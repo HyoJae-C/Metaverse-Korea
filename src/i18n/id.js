@@ -889,7 +889,7 @@ export const ID = {
   "bait.put": "🪱 {name} terpasang! Sisa {n} sambaran.",
   "bait.on": "🪱 {name} terpasang · sisa {n} · ★3+ {p}%",
   "fish.double": "Spot 2×! Selama beberapa menit, ikan ★2 ke atas menggigit {n}× lebih sering di sini.",
-  "fish.doubleOn": "Spot 2× baru muncul di taman ini! Ikuti panah merah muda.",
+  "fish.doubleOn": "Spot 2× baru muncul di taman ini! Cari pilar cahaya merah muda.",
   "fish.doubleNote": "Tiap {h} menit, pada waktu acak, spot 2× merah muda muncul selama {m} menit: di sana ikan ★2 ke atas menggigit {n}× lebih sering.",
   "bait.plain": "🪱 Umpan biasa. Umpan yang lebih bagus ada di kios umpan dekat pembeli ikan.",
   "bait.out": "🪱 {name} sudah habis. Kembali ke umpan biasa.",

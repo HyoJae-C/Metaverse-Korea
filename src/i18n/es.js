@@ -888,7 +888,7 @@ export const ES = {
   "bait.put": "🪱 ¡{name} en el anzuelo! Quedan {n} picadas.",
   "bait.on": "🪱 {name} en el anzuelo · quedan {n} · ★3+ {p}%",
   "fish.double": "¡Punto 2×! Durante unos minutos, aquí los ★2 o más pican {n}× más.",
-  "fish.doubleOn": "¡Se abrió un punto 2× en este parque! Sigue la flecha rosa.",
+  "fish.doubleOn": "¡Se abrió un punto 2× en este parque! Busca la columna de luz rosa.",
   "fish.doubleNote": "Cada {h} minutos, en un momento al azar, se abre un punto 2× rosa durante {m} minutos: allí los ★2 o más pican {n}× más.",
   "bait.plain": "🪱 Cebo normal. Hay mejor cebo en el puesto junto al comprador de pescado.",
   "bait.out": "🪱 Se acabó tu {name}. Vuelves al cebo normal.",
