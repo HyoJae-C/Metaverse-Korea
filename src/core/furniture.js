@@ -335,12 +335,14 @@ function polysOverlap(a, b) {
 
 // Is this piece blocked: by another solid piece, or by someone standing at
 // `who` ({ x, z }, about 0.6 m wide)? Rugs never block and are never blocked.
+// Room kept round a player when a piece is placed, carried or turned.
+export const WHO_R = 0.45;
 export function pieceBlocked(item, others, who = null) {
   const me = furnitureCollider(item);
   if (!me) return false;
   if (others.some((o) => o !== item && o.id !== item.id && furnitureCollider(o) && polysOverlap(me.p, furnitureCollider(o).p))) return true;
   if (who) {
-    const r = 0.3;
+    const r = WHO_R; // (a little more than a player's radius, 0.35: a piece set down against you mustn't overlap you)
     if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;
   }
   return false;

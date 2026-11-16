@@ -4120,8 +4120,8 @@ onLanguageChange(() => updateZoneLine(currentZone));
 const decorGame = createDecor({
   get interior() { return interior; },
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
-  get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, $, STALE,
-  inventory, shop,
+  get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
+  inventory, shop, PLAYER_R,
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
 });

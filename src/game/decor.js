@@ -48,8 +48,25 @@ export function createDecor(game) {
     const extra = decor.items.filter((it) => it !== decor.carry).map(furnitureCollider).filter(Boolean);
     game.interior.collision = game.activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
     game.interior.seats = decor.items.flatMap(furnitureSeats);
+    unstick();
     saveDecor();
     markPlaced();
+  }
+  // Never shut in by furniture (Yozi 2026-11-16: stuck between a desk and a
+  // stool): if a piece now overlaps where I stand, step to the nearest clear
+  // spot. (Not while sitting or lying on a piece: that's inside it.)
+  function unstick() {
+    const p = game.me?.root.position, col = game.interior.collision, r = (game.PLAYER_R || 0.35) + 0.05;
+    if (!p || game.seated || !col.blocked(p.x, p.z, r)) return;
+    const { w, d } = game.interior.room;
+    for (let k = 0.25; k <= 4; k += 0.25) {
+      for (let a = 0; a < 16; a++) {
+        const g = (a / 16) * Math.PI * 2;
+        const x = THREE.MathUtils.clamp(p.x + Math.cos(g) * k, -w / 2 + 0.5, w / 2 - 0.5);
+        const z = THREE.MathUtils.clamp(p.z + Math.sin(g) * k, -d / 2 + 0.5, d / 2 - 0.5);
+        if (!col.blocked(x, z, r)) { p.x = x; p.z = z; return; }
+      }
+    }
   }
   // Catalogue buttons show which pieces are already in the room.
   function markPlaced() {
@@ -153,7 +170,7 @@ export function createDecor(game) {
   }
   // Carry a piece: it floats in front of you until you put it down.
   function putDown(force = false) {
-    if (!force && decor.carry && pieceBlocked(decor.carry, decor.items)) { shop.toast(t('home.blocked')); return false; }
+    if (!force && decor.carry && pieceBlocked(decor.carry, decor.items, game.me.root.position)) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
     $('decor-bar').hidden = !decor.editing;
     rebuildDecor();
@@ -188,7 +205,7 @@ export function createDecor(game) {
     const it = decor?.piece;
     if (!it) return;
     it.ry += Math.PI / 4;
-    if (it !== decor.carry && pieceBlocked(it, decor.items)) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
+    if (it !== decor.carry && pieceBlocked(it, decor.items, game.me.root.position)) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
     rebuildDecor();
   };
   $('piece-move').onclick = () => {

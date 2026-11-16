@@ -80,3 +80,11 @@ test('long sofas and benches seat two, beds lie two, cushions sit on the floor',
   const [a, b] = furnitureSeats({ id: 'sofa', x: 5, z: 5, ry: Math.PI / 2 });
   assert.ok(Math.abs(a.x - b.x) < 1e-9 && Math.abs(Math.abs(a.z - b.z) - 0.9) < 1e-9);
 });
+
+test('a piece set down right against you is refused, so you can always walk away', async () => {
+  const { pieceBlocked, WHO_R } = await import('../src/core/furniture.js');
+  assert.ok(WHO_R > 0.35); // more than a player's radius
+  const stool = { id: 'f-steel-stool', x: 0, z: 0, ry: 0 }; // 0.4 × 0.4
+  assert.ok(pieceBlocked(stool, [], { x: 0.55, z: 0 }), 'touching the player');
+  assert.ok(!pieceBlocked(stool, [], { x: 0.75, z: 0 }), 'a step away');
+});
