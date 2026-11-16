@@ -177,6 +177,7 @@ import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { lipstickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { createFishBait } from './game/fish-bait.js';
+import { createDishUpgrade, UPGRADE_ROOMS } from './game/dish-upgrade.js';
 import { baitEntry } from './core/bait.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
@@ -245,6 +246,7 @@ import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createSaunaTowel } from './game/sauna-towel.js';
 import { createCookingClasses } from './game/cooking-classes.js';
+import { createRecipeBook } from './game/recipe-book.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
 import { parseSkyMsg } from './game/sky-codes.js';
@@ -1932,10 +1934,13 @@ function recordFood(store, product, quiet = false) {
   if (!isFood(store, product)) return false;
   const isNew = foodDex.add(store, product);
   const all = allFoods(storeData).length;
-  if (!quiet) shop.toast(isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
+  if (!quiet) shop.toast(!FOOD_DEX_OPEN ? t('shop.added') : isNew ? `📖 ${L(DEX_NEW)} ${localName(product.name, getLanguage())} (${foodDex.kinds}/${all})` : `${t('shop.added')} · 🍽️ ${foodDex.kinds}/${all}`);
   refreshDexBtn();
   return true;
 }
+// The food dex is closed for now (Yozi 2026-11-17): it comes back as a
+// restaurant tour (맛집투어). Purchases are still recorded for it.
+const FOOD_DEX_OPEN = false;
 const DEX_NEW = { en: 'New in your food dex!', ko: '도감 등록!', ja: '図鑑に登録！', zh: '图鉴新登记！' };
 const shop = new ShopUI({
   cart,
@@ -2266,6 +2271,11 @@ const fishBait = createFishBait({
   root: $('bait-panel'), cloud, get wallet() { return wallet; }, bag, toast: (m) => shop.toast(m), refreshWallet: () => refreshWallet(),
   get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
 });
+// Upgrading cooked dishes at any cooking class (game/dish-upgrade.js): the teacher's ✨ button.
+const dishUpgrade = createDishUpgrade({
+  root: $('upgrade-panel'), cloud, bag, toast: (m) => shop.toast(m), get me() { return me; }, get sfx() { return sfx; },
+  myName: () => nickname, describe: (e) => describeEntry(e), onChange: () => { if (!$('bag-panel').hidden) bagUi.render(); },
+});
 // (bag goods such as a frisbee or a picnic mat are held as themselves, not in a shopping bag)
 // The errand chip needs places made further down (open parks, guides,
 // storefront doors); until it is set up, a cup restored from the save in
@@ -2358,24 +2368,24 @@ function describeEntry(e) {
 }
 function stowHeld() {
   if (!held) return;
-  if (!bag.add(held)) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
-  const cosmetic = isCosmetic(held), name = describeEntry(held).name;
+  if (!bag.add(held)) { shop.toast(fmt(L(BAG_TEXT.full), bag.slotsFor(held))); return; }
+  const cosmetic = isCosmetic(held), name = describeEntry(held).name, slots = bag.slotsFor(held); // (a dish: the food bag)
   setHeld(null);
   sfx.pop?.();
-  shop.toast(cosmetic ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
+  shop.toast(cosmetic ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.stored), slots));
 }
 // Taking something new in your hand puts what you were holding into the bag
 // (it used to just vanish). Only when the bag is full do we ask first, since
 // then the old thing would be thrown away.
 function handReady() {
-  if (!held || !bag.full || isCosmetic(held)) return true; // (perfume and lipstick go to the wardrobe)
-  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.cap }));
+  if (!held || !bag.fullFor(held)) return true; // (perfume and lipstick go to the wardrobe, dishes to the food bag)
+  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.slotsFor(held).cap }));
 }
 function holdNew(h) {
   const old = held;
   if (old && bag.add(old)) {
     const name = describeEntry(old).name;
-    setTimeout(() => shop.toast(isCosmetic(old) ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.autoStow), { name, n: bag.size, cap: bag.cap })), 1800);
+    setTimeout(() => shop.toast(isCosmetic(old) ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.autoStow), { name, ...bag.slotsFor(old) })), 1800);
   }
   setHeld(h);
 }
@@ -2394,6 +2404,7 @@ const bagUi = new BagUI({
     if (e) setHeld(e);
   },
   onDrop: (i) => bag.take(i),
+  seasoning: () => dishUpgrade.seasoning(), // 🧂 in the food tab
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
     useLabel: (e) => (e.kind === 'lipstick' ? '💄 ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
@@ -3282,7 +3293,7 @@ function leaveStore(walkOut = false) {
   tarotUi.close();
   leaveTarotLine(true);
   gymSpot = null; // (you leave by the door, not off the bench)
-  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui, dishUpgrade.ui]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
@@ -4068,7 +4079,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4097,6 +4108,7 @@ addEventListener('keydown', (e) => {
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
     else if (fishBait.ui.open) fishBait.ui.close();
+    else if (dishUpgrade.ui.open) dishUpgrade.ui.close();
     else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
   }
@@ -4440,9 +4452,11 @@ function buyIngredient(product, coins) {
 }
 
 // Cooking classes (kimchi, japchae, kimbap, tteok, bibimbap), the market's kimchi stall and the museums. (game/cooking-classes.js)
+// The recipe book (요리비법서): a page for every dish the classes teach (game/recipe-book.js).
+const recipes = createRecipeBook({ $, bag, shop });
 const cookingClasses = createCookingClasses({
   get clerk() { return clerk; }, get me() { return me; }, get held() { return held; }, $, bag, missionEvent,
-  setHeld, shop, togetherBonus, wallet,
+  setHeld, shop, togetherBonus, wallet, onCooked: (e) => { recipes.cooked(e); dishUpgrade.cooked(e); }, // (the recipe book; a seasoning for the kind, once a day)
 });
 const { museumUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi } = cookingClasses;
 
@@ -5470,6 +5484,7 @@ function pressStamp(it) {
 const dexUi = new DexUI({ root: $('dex-panel'), dex: foodDex, stores: () => storeData, localName: (n) => localName(n, getLanguage()) });
 function refreshDexBtn() { $('dex-btn').querySelector('span').textContent = `${L(DEX_TEXT.title)} · ${foodDex.kinds}/${allFoods(storeData).length}`; }
 $('dex-btn').onclick = () => { $('notes-panel').hidden = true; dexUi.show(); };
+$('dex-btn').hidden = !FOOD_DEX_OPEN;
 refreshDexBtn();
 onLanguageChange(refreshDexBtn);
 // Amusement park rides: pay a ticket, get carried round, hop off at the end.
@@ -6455,6 +6470,7 @@ function missionEvent(type, target) {
   const r = daily?.record(type, target);
   if (!r) return;
   shop.toast(t('daily.complete', { n: r.coins }));
+  dishUpgrade.mission(); // 🧂 3 seasoning for the day's missions
 }
 daily.onChange(renderDaily);
 onLanguageChange(renderDaily);
@@ -6601,6 +6617,7 @@ function moreActions(p, door) {
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat && !bs.cushion) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
+    out.push(...picnic.foodActions(p)); // food on a picnic mat
     const fb = frisbee.action(p); if (fb) out.push(fb);
     if (!seated) out.push(...snowman.more(p)); // put a snowball on a bigger one: a snowman
     const ic = sculptureNear(map.landmarks, p.x, p.z); if (ic) out.push(sculptureAct(ic));
@@ -6621,7 +6638,9 @@ function moreActions(p, door) {
   if (seat) out.push(sitAct(seat));
   if (seat?.mat && !seat.cushion) out.push(matSitAct(seat));
   const pm = picnic.action(p); if (pm) out.push(pm);
+  out.push(...picnic.foodActions(p)); // food on a picnic mat
   const fb = frisbee.action(p); if (fb) out.push(fb);
+  if (UPGRADE_ROOMS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) out.push(dishUpgrade.action(clerk)); // ✨ upgrade a dish (any dish, at any class)
   if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
   if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
@@ -7415,6 +7434,7 @@ renderer.setAnimationLoop((now) => {
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
     if (sop) st.mp = sop.item.store.id; // which open park our mat and frisbee (in its metres) are in
     if (picnic.sync) st.mt = picnic.sync; // our picnic mat on the park lawn
+    if (picnic.foodSync) st.mf = picnic.foodSync; // dishes set out on it
     if (frisbee.sync) st.fb = frisbee.sync; // a frisbee throw on the lawn, played on everyone's screen
     if (snowman.sync && mode === 'street') st.sb = snowman.sync; // our snowballs and snowmen
     if (snowman.holdSync != null) st.sh = snowman.holdSync; // rolling one of them along
@@ -7422,7 +7442,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
     // Flying (operators): nothing is sent, so others keep seeing us where we
     // took off and our spot isn't given away; carrying someone still sends.
     if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {
