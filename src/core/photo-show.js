@@ -27,7 +27,19 @@ const PART_Z = 6; // the partition between the foyer (in front) and the gallery
 const WAY = 2.6; // half the way in through it
 const PART_T = 0.2;
 const DARK_WALL = '#1f1f23';
-const DARK_FLOOR = '#2b2b2f';
+// The gallery's colours, by the show's `look` (data/photo-show.js): 'dark' (the
+// default: Sai e asked for dark walls) or 'pastel' (bright pastel walls, one
+// colour each, for JH's screenshots of the game itself).
+const LOOKS = {
+  dark: {
+    back: DARK_WALL, left: DARK_WALL, right: DARK_WALL, rear: DARK_WALL, floor: '#2b2b2f', centre: DARK_WALL,
+    glow: '#36363c', frame: '#0d0d0f', matte: '#f3f1ec', lamp: '#141416', sign: '#1f1f23', ink: '#f4efe2',
+  },
+  pastel: {
+    back: '#f9d9e4', left: '#cdeedf', right: '#d5e5fb', rear: '#e6ddf6', floor: '#f6efe4', centre: '#ffe2c8',
+    glow: '#fffaf3', frame: '#ffffff', matte: '#ffffff', lamp: '#f2e9dc', sign: '#fff4e6', ink: '#5a4a63', lit: true,
+  },
+};
 const CENTRE_Y = 1.85;
 const MAX_SIDE = 2.1; // the longer side of a photo on the wall
 export const PHOTO_LIFT = { x: -8, z: PART_Z + 1.5 }; // where you stand to call the lift
@@ -70,19 +82,19 @@ function sign(scene, wd, ht, x, y, z, ry, top, bottom, { bg = '#2f2a26', fg = '#
 
 // One photo in a thin black frame with a white mat, a soft lit patch on the
 // dark wall behind it and a small lamp above.
-function hang(scene, p, sl, loader, max = MAX_SIDE) {
+function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark) {
   const g = new THREE.Group();
   g.position.set(sl.x, CENTRE_Y, sl.z);
   g.rotation.y = sl.ry;
   scene.add(g);
   const { W, H } = photoSize(p, max);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(W + 1.1, H + 1.3), new THREE.MeshBasicMaterial({ color: '#36363c' }));
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(W + 1.1, H + 1.3), new THREE.MeshBasicMaterial({ color: c.glow }));
   glow.position.set(0, 0.15, 0.01);
   g.add(glow);
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(W + 0.26, H + 0.26, 0.04), new THREE.MeshBasicMaterial({ color: '#0d0d0f' }));
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(W + 0.26, H + 0.26, 0.04), new THREE.MeshBasicMaterial({ color: c.frame }));
   frame.position.z = 0.04;
   g.add(frame);
-  const matte = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.18, H + 0.18), new THREE.MeshBasicMaterial({ color: '#f3f1ec' }));
+  const matte = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.18, H + 0.18), new THREE.MeshBasicMaterial({ color: c.matte }));
   matte.position.z = 0.062;
   g.add(matte);
   const art = new THREE.MeshBasicMaterial({ color: '#3a3a3e' }); // until the image arrives
@@ -95,7 +107,7 @@ function hang(scene, p, sl, loader, max = MAX_SIDE) {
     art.color.set('#ffffff');
     art.needsUpdate = true;
   });
-  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.34), new THREE.MeshLambertMaterial({ color: '#141416' }));
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.34), new THREE.MeshLambertMaterial({ color: c.lamp }));
   lamp.position.set(0, H / 2 + 0.7, 0.2);
   g.add(lamp);
   return { W, H };
@@ -110,18 +122,19 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   const loader = new THREE.TextureLoader();
   const looks = [];
   const show = showOf(store);
+  const c = LOOKS[show.look] || LOOKS.dark;
+  const Wall = c.lit ? THREE.MeshBasicMaterial : THREE.MeshLambertMaterial; // (pastel walls stay bright, day or night)
 
   // The dark gallery: its floor and walls laid just inside the room's own.
   const gd = PART_Z + d / 2; // the gallery's depth
-  const dark = new THREE.MeshLambertMaterial({ color: DARK_WALL });
-  const gFloor = new THREE.Mesh(new THREE.PlaneGeometry(w, gd).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: DARK_FLOOR }));
+  const gFloor = new THREE.Mesh(new THREE.PlaneGeometry(w, gd).rotateX(-Math.PI / 2), new Wall({ color: c.floor }));
   gFloor.position.set(0, 0.006, (PART_Z - d / 2) / 2);
   scene.add(gFloor);
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), dark);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new Wall({ color: c.back }));
   back.position.set(0, h / 2, -d / 2 + 0.02);
   scene.add(back);
   for (const s of [-1, 1]) {
-    const side = new THREE.Mesh(new THREE.PlaneGeometry(gd, h), dark);
+    const side = new THREE.Mesh(new THREE.PlaneGeometry(gd, h), new Wall({ color: s < 0 ? c.left : c.right }));
     side.position.set(s * (w / 2 - 0.02), h / 2, (PART_Z - d / 2) / 2);
     side.rotation.y = -s * Math.PI / 2;
     scene.add(side);
@@ -134,7 +147,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
     const x0 = s * WAY, x1 = s * w / 2, len = Math.abs(x1 - x0), cx = (x0 + x1) / 2;
     const front = new THREE.Mesh(new THREE.BoxGeometry(len, h, PART_T / 2), new THREE.MeshLambertMaterial({ color: '#ece6da', transparent: true }));
     front.position.set(cx, h / 2, PART_Z + PART_T / 4);
-    const rear = new THREE.Mesh(new THREE.BoxGeometry(len, h, PART_T / 2), new THREE.MeshLambertMaterial({ color: DARK_WALL, transparent: true }));
+    const rear = new THREE.Mesh(new THREE.BoxGeometry(len, h, PART_T / 2), new Wall({ color: c.rear, transparent: true }));
     rear.position.set(cx, h / 2, PART_Z - PART_T / 4);
     scene.add(front, rear);
     block(cx, PART_Z, len, PART_T);
@@ -146,13 +159,13 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   const way = { meshes: [lintel], a: [-WAY, PART_Z], b: [WAY, PART_Z], signs: [] };
   walls.push(way);
   // Over the way in: the show's title, on the foyer side.
-  way.signs.push(sign(scene, WAY * 2 - 0.2, 0.9, 0, 3.6, PART_Z + PART_T / 2 + 0.01, 0, `${show.title.ko} · ${floor}F`, `${show.title.en} · ${show.artist.en}`, { bg: '#1f1f23' }));
+  way.signs.push(sign(scene, WAY * 2 - 0.2, 0.9, 0, 3.6, PART_Z + PART_T / 2 + 0.01, 0, `${show.title.ko} · ${floor}F`, `${show.title.en} · ${show.artist.en}`, { bg: c.sign, fg: c.ink }));
 
   // The photos on this floor.
   const ps = photosOn(show, floor);
   photoSlots(room).forEach((sl, i) => {
     if (!ps[i]) return;
-    hang(scene, ps[i], sl, loader);
+    hang(scene, ps[i], sl, loader, MAX_SIDE, c);
     looks.push({ x: sl.look.x, z: sl.look.z, painting: ps[i] });
   });
 
@@ -162,11 +175,11 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
     // The main photo on a freestanding dark wall in the middle, facing the
     // way in, with the show's title and the artist's name under it.
     const mp = mainPhoto(show);
-    box(4.6, 3.6, 0.3, 0, 1.8, cz, DARK_WALL);
+    box(4.6, 3.6, 0.3, 0, 1.8, cz, c.centre);
     block(0, cz, 4.8, 0.5);
-    const { H } = hang(scene, mp, { x: 0, z: cz + 0.15, ry: 0 }, loader, 3);
+    const { H } = hang(scene, mp, { x: 0, z: cz + 0.15, ry: 0 }, loader, 3, c);
     looks.push({ x: 0, z: cz + 2, painting: mp });
-    sign(scene, 2.6, 0.5, 0, CENTRE_Y - H / 2 - 0.55, cz + 0.16, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} · ${show.artist.en}`, { bg: DARK_WALL });
+    sign(scene, 2.6, 0.5, 0, CENTRE_Y - H / 2 - 0.55, cz + 0.16, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} · ${show.artist.en}`, { bg: c.centre, fg: c.ink });
   } else {
     // Upstairs: two benches back to back in the middle, facing the side walls.
     for (const s of [-1, 1]) {
@@ -212,7 +225,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   let clerk = null;
   if (floor === 1) {
     // The exhibition's board and the information desk on the right.
-    walls[1].signs.push(sign(scene, 3.4, 1.5, 8, 2.2, lz + 0.02, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} ${show.artist.en}`, { bg: '#1f1f23' }));
+    walls[1].signs.push(sign(scene, 3.4, 1.5, 8, 2.2, lz + 0.02, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} ${show.artist.en}`, { bg: c.sign, fg: c.ink }));
     const dz = PART_Z + 3;
     box(2.4, COUNTER_H - 0.03, 0.7, 8, (COUNTER_H - 0.03) / 2, dz, '#f2efe8'); // (COUNTER_H: the guide's face shows, core/counter-face.js)
     box(2.5, 0.05, 0.8, 8, COUNTER_H, dz, '#2f6b3f');

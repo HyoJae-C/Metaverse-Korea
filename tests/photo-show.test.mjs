@@ -26,6 +26,7 @@ test('Gallery A: 30 photos on three floors; Gallery D: 20 on two; 10 a floor, no
   }
   assert.equal(PHOTO_SHOWS['forest-gallery-3'].title.ko, '모두와 함께한 모두서울');
   assert.equal(PHOTO_SHOWS['forest-gallery-3'].artist.en, 'JH');
+  assert.equal(PHOTO_SHOWS['forest-gallery-3'].look, 'pastel'); // (bright, like the game's own pictures)
 });
 
 test('every image is in public/', () => {

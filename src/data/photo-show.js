@@ -5,6 +5,7 @@
 // when you walk onto a floor. A store is a photo show when stores.json gives
 // it workshop "photo-show" and size "photoshow" and it has an entry here.
 //   floors: how many (photos.length / perFloor)
+//   look: the gallery's colours, 'dark' (default) or 'pastel' (core/photo-show.js)
 export const PHOTO_SHOWS = {
   // Gallery A, Seoul Forest's culture center: Sai e's "내가 본 서울" (Seoul As
   // I Saw It), 30 photos on three floors, shuffled once on the artist's wish
@@ -56,6 +57,7 @@ export const PHOTO_SHOWS = {
     title: { ko: '모두와 함께한 모두서울', en: 'Modu Seoul, Played Together', ja: 'みんなと遊んだモドゥソウル', zh: '和大家一起的摩都首尔' },
     artist: { ko: 'JH', en: 'JH' },
     dir: 'exhibitions/jh/',
+    look: 'pastel', // bright pastel walls for the game's own pictures (core/photo-show.js LOOKS)
     main: ['main', 888, 790],
     perFloor: 10,
     floors: 2,
