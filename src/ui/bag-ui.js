@@ -4,7 +4,7 @@
 import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
-import { isDish, DISH_CAP } from '../core/bag.js';
+import { isDish, dishKind, DISH_CAP } from '../core/bag.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 import { kimchiScore } from '../core/kimchi-market.js';
 
@@ -110,7 +110,7 @@ export class BagUI {
     x.onclick = () => this.hide();
     const head = el('div', 'bag-head');
     const food = this.tab === 'food'; // the food bag: dishes from the cooking classes (bag.js isDish)
-    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), food ? { n: bag.dishes, cap: DISH_CAP } : { n: bag.size, cap: bag.cap })));
+    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), food ? { n: bag.dishCounts().size, cap: DISH_CAP } : { n: bag.size, cap: bag.cap })));
     // Tabs: your things (the bag's slots), the wardrobe (clothes you own) and the rides
     // you own (to switch without going back to a ride shop).
     const closet = this.closet ? this.closet() : null;
@@ -118,7 +118,7 @@ export class BagUI {
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishes}` : '')], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishCounts().size}` : '')], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
@@ -140,13 +140,23 @@ export class BagUI {
     if (this.sel >= items.length || (this.sel >= 0 && isDish(items[this.sel]) !== food)) this.sel = -1;
     // This tab's things with their place in the bag (a slot index means the same everywhere).
     const here = items.map((e, i) => i).filter((i) => isDish(items[i]) === food);
+    // The food bag stacks a kind in one slot: its entries, the best-made first.
+    const stacks = new Map();
+    if (food) for (const i of here) { const k = dishKind(items[i]); stacks.set(k, [...(stacks.get(k) || []), i]); }
+    for (const list of stacks.values()) list.sort((a, b) => kimchiScore(items[b]) - kimchiScore(items[a]));
+    const slots = food ? [...stacks.values()] : here.map((i) => [i]);
+    const selKind = food && this.sel >= 0 ? dishKind(items[this.sel]) : null;
     for (let k = 0; k < (food ? DISH_CAP : bag.cap); k++) {
-      const i = here[k] ?? -1, e = items[i];
-      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && i === this.sel ? ' on' : ''));
+      const i = slots[k]?.[0] ?? -1, e = items[i];
+      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && (food ? dishKind(e) === selKind : i === this.sel) ? ' on' : ''));
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
-        if (food) { const m = medalFor(kimchiScore(e)); if (m) b.append(el('small', '', medalIcon(m))); } // (its medal)
+        if (food) { // (its best medal, and how many)
+          const m = medalFor(kimchiScore(e));
+          if (m) b.append(el('span', 'bag-medal', medalIcon(m)));
+          if (slots[k].length > 1) b.append(el('small', '', '×' + slots[k].length));
+        }
         b.title = d.name;
         b.setAttribute('aria-label', d.name);
         if (e.kind === 'coffee' || e.kind === 'glass') b.append(el('small', '', String(e.sips)));
@@ -158,6 +168,11 @@ export class BagUI {
     if (this.sel >= 0) {
       const e = items[this.sel], d = this.describe(e);
       info.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc));
+      if (food) { // (how many of each medal; holding or throwing away takes the best one)
+        const list = stacks.get(dishKind(e)) || [], by = new Map();
+        for (const i of list) { const m = medalFor(kimchiScore(items[i])) || ''; by.set(m, (by.get(m) || 0) + 1); }
+        info.append(el('small', 'fine', `×${list.length} · ` + ['gold', 'silver', 'bronze', ''].filter((m) => by.has(m)).map((m) => (m ? medalIcon(m) : '🍽️') + by.get(m)).join(' ')));
+      }
       const row = el('div', 'bag-actions');
       if (d.canHold) {
         const h = el('button', 'chip', '✋ ' + L(this.holding() ? BAG_TEXT.swap : BAG_TEXT.hold));

@@ -15,6 +15,7 @@
 import { lipstickEntry } from './lipstick.js';
 import { baitEntry } from './bait.js';
 import { recipeOf } from './recipe-book.js';
+import { isKimchi } from './kimchi-market.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
@@ -25,10 +26,17 @@ export const COSMETICS = ['perfume', 'lipstick'];
 export const VANITY_MAX = 60;
 export const isCosmetic = (e) => COSMETICS.includes(e?.kind);
 // Dishes from the cooking classes (core/recipe-book.js) have their own food
-// bag: up to DISH_CAP of them, not counted in the bag's slots. They stay in
-// `items` (so a slot index still means the same thing everywhere).
-export const DISH_CAP = 40;
+// bag, not counted in the bag's slots. One slot holds every dish of a kind
+// (all the kimbap, whatever the medal), up to STACK_MAX of it; DISH_CAP
+// kinds fit. They stay in `items` one entry each (so a slot index still
+// means the same thing everywhere); only the food bag's view stacks them.
+export const DISH_CAP = 20;
+export const STACK_MAX = 99;
 export const isDish = (e) => !!recipeOf(e);
+// The food-bag slot a dish goes in (bibim and mul naengmyeon are two).
+export const dishKind = (e) => (isKimchi(e) ? 'kimchi' : e.g);
+// Can one more of this dish go in a food bag whose kinds are counted in `n`?
+const roomFor = (n, e) => { const k = dishKind(e), c = n.get(k) || 0; return c ? c < STACK_MAX : n.size < DISH_CAP; };
 
 // A carried thing (kind 'gift'). Homemade goods also keep what they are
 // (g, e.g. 'kimchi') and how well they were made (q, 0-100), so they can be
@@ -77,7 +85,7 @@ export class Bag {
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
     this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter((e) => e && !isCosmetic(e))
       .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
-      .filter(((n, d) => (e) => (isDish(e) ? ++d <= DISH_CAP : ++n <= this.cap))(0, 0)); // (slots and food bag each up to their size)
+      .filter(((n, d) => (e) => (isDish(e) ? roomFor(d, e) && !!d.set(dishKind(e), (d.get(dishKind(e)) || 0) + 1) : ++n <= this.cap))(0, new Map())); // (slots and food bag each up to their size)
     // (old saves kept perfume in a slot: it moves to the wardrobe)
     const old = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic);
     this.vanity = [...old, ...(Array.isArray(raw?.vanity) ? raw.vanity : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic)].slice(0, VANITY_MAX);
@@ -88,11 +96,13 @@ export class Bag {
   get size() { return this.items.filter((e) => !isDish(e)).length; }
   get full() { return this.size >= this.cap; }
   get dishes() { return this.items.filter(isDish).length; }
-  get dishFull() { return this.dishes >= DISH_CAP; }
-  // Is there no room for this entry (a dish: the food bag; anything else: the slots)?
-  fullFor(e) { return isDish(e) ? this.dishFull : !isCosmetic(e) && this.full; }
+  // How many of each dish kind (the food bag's slots, in bag order).
+  dishCounts() { const n = new Map(); for (const e of this.items) if (isDish(e)) n.set(dishKind(e), (n.get(dishKind(e)) || 0) + 1); return n; }
+  get dishFull() { return this.dishCounts().size >= DISH_CAP; }
+  // Is there no room for this entry (a dish: its food-bag slot; anything else: the slots)?
+  fullFor(e) { return isDish(e) ? !roomFor(this.dishCounts(), e) : !isCosmetic(e) && this.full; }
   // { n, cap } of the part of the bag this entry goes in.
-  slotsFor(e) { return isDish(e) ? { n: this.dishes, cap: DISH_CAP } : { n: this.size, cap: this.cap }; }
+  slotsFor(e) { return isDish(e) ? { n: this.dishCounts().size, cap: DISH_CAP } : { n: this.size, cap: this.cap }; }
   list() { return this.items.slice(); }
   has(kind) { return this.items.some((e) => e.kind === kind); }
   onChange(fn) { this.listeners.push(fn); }
@@ -138,7 +148,7 @@ export class Bag {
       return this.take(i);
     }
     const old = this.items[i];
-    if (isDish(old) !== isDish(e)) { // (a dish for a thing, or the other way: only if its part of the bag has room)
+    if (isDish(old) || isDish(e)) { // (a dish in or out: only if its part of the bag has room once the old one is out)
       this.items.splice(i, 1);
       if (this.fullFor(e)) { this.items.splice(i, 0, old); return null; }
       this.items.splice(i, 0, e);

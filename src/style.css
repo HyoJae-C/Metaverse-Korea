@@ -1720,6 +1720,7 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .bag-slot.worn { background: #fff4e6; }
 .bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
+.bag-slot .bag-medal { position: absolute; left: 3px; top: 1px; font-size: 12px; }
 .closet-icon { position: relative; display: inline-grid; place-items: center; line-height: 1; }
 .closet-img { display: block; width: 1.15em; height: 1.15em; }
 .closet-dot { position: absolute; right: -0.28em; bottom: -0.18em; width: 0.42em; height: 0.42em; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.18); }
