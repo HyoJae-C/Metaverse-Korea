@@ -35,8 +35,11 @@ export const STACK_MAX = 99;
 export const isDish = (e) => !!recipeOf(e);
 // The food-bag slot a dish goes in (bibim and mul naengmyeon are two).
 export const dishKind = (e) => (isKimchi(e) ? 'kimchi' : e.g);
+// Its slot in the food bag: one per kind, and one per upgrade level (Yozi
+// 2026-11-17: a +12 kimbap doesn't stack with plain ones).
+export const dishSlot = (e) => dishKind(e) + ((e.lv | 0) > 0 ? '+' + Math.min(30, e.lv | 0) : '');
 // Can one more of this dish go in a food bag whose kinds are counted in `n`?
-const roomFor = (n, e) => { const k = dishKind(e), c = n.get(k) || 0; return c ? c < STACK_MAX : n.size < DISH_CAP; };
+const roomFor = (n, e) => { const k = dishSlot(e), c = n.get(k) || 0; return c ? c < STACK_MAX : n.size < DISH_CAP; };
 
 // A carried thing (kind 'gift'). Homemade goods also keep what they are
 // (g, e.g. 'kimchi') and how well they were made (q, 0-100), so they can be
@@ -91,7 +94,7 @@ export class Bag {
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
     this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter((e) => e && !isCosmetic(e))
       .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
-      .filter(((n, d) => (e) => (isDish(e) ? roomFor(d, e) && !!d.set(dishKind(e), (d.get(dishKind(e)) || 0) + 1) : ++n <= this.cap))(0, new Map())); // (slots and food bag each up to their size)
+      .filter(((n, d) => (e) => (isDish(e) ? roomFor(d, e) && !!d.set(dishSlot(e), (d.get(dishSlot(e)) || 0) + 1) : ++n <= this.cap))(0, new Map())); // (slots and food bag each up to their size)
     // (old saves kept perfume in a slot: it moves to the wardrobe)
     const old = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic);
     this.vanity = [...old, ...(Array.isArray(raw?.vanity) ? raw.vanity : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic)].slice(0, VANITY_MAX);
@@ -103,7 +106,7 @@ export class Bag {
   get full() { return this.size >= this.cap; }
   get dishes() { return this.items.filter(isDish).length; }
   // How many of each dish kind (the food bag's slots, in bag order).
-  dishCounts() { const n = new Map(); for (const e of this.items) if (isDish(e)) n.set(dishKind(e), (n.get(dishKind(e)) || 0) + 1); return n; }
+  dishCounts() { const n = new Map(); for (const e of this.items) if (isDish(e)) n.set(dishSlot(e), (n.get(dishSlot(e)) || 0) + 1); return n; }
   get dishFull() { return this.dishCounts().size >= DISH_CAP; }
   // Is there no room for this entry (a dish: its food-bag slot; anything else: the slots)?
   fullFor(e) { return isDish(e) ? !roomFor(this.dishCounts(), e) : !isCosmetic(e) && this.full; }

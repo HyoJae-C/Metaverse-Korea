@@ -4,7 +4,7 @@
 import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
-import { isDish, dishKind, DISH_CAP } from '../core/bag.js';
+import { isDish, dishSlot, DISH_CAP } from '../core/bag.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 const TIER_IDS = ['plain', 'jeongseong', 'dalin', 'myeongin', 'myeongjang', 'sura', 'cheonha']; // (core/dish-tier.js TIERS, every 5 levels)
 import { kimchiScore } from '../core/kimchi-market.js';
@@ -141,15 +141,15 @@ export class BagUI {
     if (this.sel >= items.length || (this.sel >= 0 && isDish(items[this.sel]) !== food)) this.sel = -1;
     // This tab's things with their place in the bag (a slot index means the same everywhere).
     const here = items.map((e, i) => i).filter((i) => isDish(items[i]) === food);
-    // The food bag stacks a kind in one slot: its entries, the best-made first.
+    // The food bag stacks a kind (at one upgrade level) in one slot: its entries, the best-made first.
     const stacks = new Map();
-    if (food) for (const i of here) { const k = dishKind(items[i]); stacks.set(k, [...(stacks.get(k) || []), i]); }
+    if (food) for (const i of here) { const k = dishSlot(items[i]); stacks.set(k, [...(stacks.get(k) || []), i]); }
     for (const list of stacks.values()) list.sort((a, b) => ((items[b].lv | 0) - (items[a].lv | 0)) || (kimchiScore(items[b]) - kimchiScore(items[a]))); // (the highest level, then the best made)
     const slots = food ? [...stacks.values()] : here.map((i) => [i]);
-    const selKind = food && this.sel >= 0 ? dishKind(items[this.sel]) : null;
+    const selKind = food && this.sel >= 0 ? dishSlot(items[this.sel]) : null;
     for (let k = 0; k < (food ? DISH_CAP : bag.cap); k++) {
       const i = slots[k]?.[0] ?? -1, e = items[i];
-      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && (food ? dishKind(e) === selKind : i === this.sel) ? ' on' : ''));
+      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && (food ? dishSlot(e) === selKind : i === this.sel) ? ' on' : ''));
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
@@ -172,7 +172,7 @@ export class BagUI {
       info.append(el('strong', '', `${d.emoji} ${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`), el('small', 'fine', d.desc));
       if (food && (e.lv > 0 || e.by)) info.append(el('small', 'fine', [e.lv > 0 ? t('upgrade.tier.' + TIER_IDS[Math.floor(Math.min(30, e.lv) / 5)]) : '', e.by ? t('upgrade.made', { name: e.by }) : ''].filter(Boolean).join(' · ')));
       if (food) { // (how many of each medal; holding or throwing away takes the best one)
-        const list = stacks.get(dishKind(e)) || [], by = new Map();
+        const list = stacks.get(dishSlot(e)) || [], by = new Map();
         for (const i of list) { const m = medalFor(kimchiScore(items[i])) || ''; by.set(m, (by.get(m) || 0) + 1); }
         info.append(el('small', 'fine', `×${list.length} · ` + ['gold', 'silver', 'bronze', ''].filter((m) => by.has(m)).map((m) => (m ? medalIcon(m) : '🍽️') + by.get(m)).join(' ')));
       }

@@ -117,3 +117,13 @@ test('the food bag fits DISH_CAP kinds', async () => {
   for (const g of ids) assert.ok(b.add({ kind: 'gift', name: g, icon: '🍽️', g, q: 50 }), g);
   assert.equal(b.dishCounts().size, ids.length);
 });
+
+test('an upgraded dish has its own slot in the food bag', async () => {
+  const { dishSlot } = await import('../src/core/bag.js');
+  const b = new Bag(mem());
+  const kb = (lv) => ({ kind: 'gift', sips: 1, name: 'Kimbap', icon: '🍙', g: 'kimbap', q: 50, ...(lv ? { lv } : {}) });
+  b.add(kb(0)); b.add(kb(0)); b.add(kb(12)); b.add(kb(12)); b.add(kb(5));
+  assert.equal(b.dishCounts().size, 3);
+  assert.equal(dishSlot(kb(12)), 'kimbap+12');
+  assert.equal(dishSlot(kb(0)), 'kimbap');
+});
