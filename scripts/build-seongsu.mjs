@@ -505,13 +505,13 @@ WALKS.push({ w: 3, p: [[-238, 54], [-238, 145], [-206, 145]] }); // Seoulsup-gil
 const GALLERIES = [
   { id: 'forest-gallery-1', x0: -336, z0: 180, face: 'e', to: [-318, 184.5] },
   { id: 'forest-gallery-2', x0: -336, z0: 200, face: 'e', to: [-318, 204.5] },
-  { id: 'forest-gallery-3', x0: -262, z0: 96, face: 'e', to: [-238, 100.5] },
+  { id: 'forest-gallery-3', x0: -262, z0: 96, face: 'e', to: [-238, 100.5], clear: 3 }, // (clear: no tree right of the door hides the sign, Yozi 2026-11-16)
 ];
 for (const gl of GALLERIES) {
   const [w, d] = [12, 9];
   EXTRA.push({ h: 5.5, p: [[gl.x0, gl.z0], [gl.x0 + w, gl.z0], [gl.x0 + w, gl.z0 + d], [gl.x0, gl.z0 + d]], tag: gl.id });
   const doorX = gl.face === 'e' ? gl.x0 + w : gl.x0, doorZ = gl.z0 + d / 2;
-  WALKS.push({ w: 2.5, p: [[doorX + (gl.face === 'e' ? 0.5 : -0.5), doorZ], gl.to] }); // door to the trail
+  WALKS.push({ w: 2.5, ...(gl.clear ? { clear: gl.clear } : {}), p: [[doorX + (gl.face === 'e' ? 0.5 : -0.5), doorZ], gl.to] }); // door to the trail
 }
 // Flower gardens: round beds of one kind of flower, a path across, a sign.
 const xz = (x, z) => { const [ox, oz] = oldF([x, z]); return { x: ox, z: oz }; }; // (from world metres)
