@@ -61,3 +61,9 @@ test('the free basics are the worn ones', () => {
     assert.match(f.name.ko, /낡은|삐걱|흔들|시든|닳은/, id);
   }
 });
+
+test('a furniture shop sells four pieces at most', async () => {
+  const { readFileSync } = await import('node:fs');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.ok(s.products.length <= 4, s.id);
+});

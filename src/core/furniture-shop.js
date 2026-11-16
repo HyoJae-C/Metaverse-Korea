@@ -3,7 +3,8 @@
 // shops, three looks (Yozi 2026-11-16: new shapes, not recoloured basics):
 // traditional Korean pieces, retro Euljiro, modern, and a woodworking
 // studio (the fourth shop, Yozi 2026-11-16). Each shape comes in
-// one colour (the item rule allows at most two).
+// one colour (the item rule allows at most two). Four pieces per shop at
+// most (Yozi 2026-11-16).
 // [id, emoji, footprint [w, d], seat, name, build(g, part, box, glow)]
 import * as THREE from 'three';
 
@@ -30,14 +31,6 @@ export const SHOP_FURNITURE = [
     for (const x of [-0.3, 0.3]) box(0.16, 0.2, 0.01, x, 0.42, 0.229, '#2b2b31'); // iron hinges
     box(0.12, 0.14, 0.012, 0, 0.42, 0.23, '#c9a227'); // brass lock plate
     part(new THREE.CircleGeometry(0.035, 10), '#8a6a1a', 0, 0.42, 0.237);
-  }],
-  ['f-tea-table', '🍵', [0.8, 0.55], false, { en: 'Floor tea table', ko: '좌식 찻상', ja: '座卓の茶台', zh: '矮茶桌' }, (g, part, box) => {
-    box(0.8, 0.04, 0.55, 0, 0.3, 0, '#7a4a2a');
-    for (const x of [-0.34, 0.34]) for (const z of [-0.22, 0.22]) box(0.05, 0.28, 0.05, x, 0.14, z, '#5a3418');
-    box(0.7, 0.03, 0.03, 0, 0.08, 0.22, '#5a3418');
-    part(new THREE.CylinderGeometry(0.07, 0.06, 0.09, 12), '#e8efe6', -0.12, 0.365, 0); // a celadon teapot
-    part(new THREE.SphereGeometry(0.02, 6, 4), '#c8d8c4', -0.12, 0.42, 0);
-    for (const x of [0.1, 0.22]) part(new THREE.CylinderGeometry(0.035, 0.03, 0.05, 10), '#cfe0cc', x, 0.345, 0.06); // cups
   }],
   ['f-bangseok', '🟥', [1.0, 0.55], true, { en: 'Floor cushions', ko: '방석 두 개', ja: '座布団ふたつ', zh: '坐垫两个' }, (g, part, box) => {
     for (const [x, c] of [[-0.25, '#c8323c'], [0.25, '#2f5aa8']]) {
@@ -114,17 +107,6 @@ export const SHOP_FURNITURE = [
     bag.scale.set(1, 0.62, 1);
     const back = part(new THREE.SphereGeometry(0.3, 14, 10), '#f2c14e', 0, 0.45, -0.22);
     back.scale.set(1.2, 0.9, 0.6);
-  }],
-  ['f-mirror', '🪞', [0.7, 0.3], false, { en: 'Round wavy mirror', ko: '웨이브 원형 거울', ja: '波形の丸い鏡', zh: '波浪圆镜' }, (g, part, box) => {
-    box(0.5, 0.04, 0.25, 0, 0.02, 0, '#e8e2d6');
-    box(0.05, 0.9, 0.05, 0, 0.47, -0.05, '#e8e2d6');
-    const wave = new THREE.Shape();
-    for (let i = 0; i <= 48; i++) {
-      const a = (i / 48) * Math.PI * 2, r = 0.33 + Math.sin(a * 6) * 0.025;
-      i ? wave.lineTo(Math.cos(a) * r, Math.sin(a) * r) : wave.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-    }
-    part(new THREE.ExtrudeGeometry(wave, { depth: 0.03, bevelEnabled: false }), '#f2b8a0', 0, 1.15, -0.06);
-    part(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ color: '#cfe0e8' }), 0, 1.15, -0.025);
   }],
   ['f-cloud-shelf', '☁️', [1.1, 0.3], false, { en: 'Arch bookshelf', ko: '아치 책장', ja: 'アーチ型の本棚', zh: '拱形书架' }, (g, part, box) => {
     box(1.1, 1.3, 0.04, 0, 0.65, -0.13, '#e8e2d6'); // back, open in front
