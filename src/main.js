@@ -4750,7 +4750,7 @@ function guideToPlace(to) {
     const it = storefronts.get(to.store);
     if (!it) return false;
     if (interior) leaveStore();
-    setGuide({ kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) });
+    setGuide({ kind: 'store', id: it.store.id, x: (it.go || it.door).x, z: (it.go || it.door).z, label: localName(it.store.name, getLanguage()) });
     return true;
   }
   const z = zones.items.find((i) => i.zone.id === to.zone);
@@ -6326,7 +6326,7 @@ function questPlace(q, ready) {
   if (q.kind === 'trip') return tripPlace(tripOf(q)[q.stage | 0]?.step);
   const target = q.target || (q.kind === 'coffee' ? 'meta-coffee' : null);
   const it = target && storefronts.get(target);
-  return it ? { kind: 'store', id: it.store.id, x: it.door.x, z: it.door.z, label: localName(it.store.name, getLanguage()) } : null;
+  return it ? { kind: 'store', id: it.store.id, x: (it.go || it.door).x, z: (it.go || it.door).z, label: localName(it.store.name, getLanguage()) } : null;
 }
 function refreshQuestChip() {
   if (!questChipReady) return; // (drawn once at the end of setting up, below)

@@ -947,7 +947,7 @@ export class MapView {
     for (const s of byDist) {
       row(storeIcon(s.store), '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
-          this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
+          this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
         });
     }
   }
@@ -1034,7 +1034,7 @@ export class MapView {
         this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
       } else if (hit.kind === 'store') {
         const s = hit.item;
-        this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
+        this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
       } else {
         const z = hit.item;
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
