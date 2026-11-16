@@ -2910,6 +2910,118 @@
         { "id": "buy-lamp-candle", "model": "furniture", "furniture": "lamp-candle", "color": "#ffe9b8", "name": { "en": "Candle lantern", "ko": "캔들 랜턴", "ja": "キャンドルランタン", "zh": "烛台灯笼" }, "price": 19000, "desc": { "en": "A black metal lantern with a candle inside.", "ko": "초가 들어 있는 검은 철제 랜턴이에요." } }
       ]
     },
+    {
+      "id": "eulji-somok",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1262.5, -601],
+      "district": "euljiro",
+      "name": {"ko": "을지 소목방", "en": "Eulji Joinery", "ja": "乙支 指物房", "zh": "乙支木作坊"},
+      "tagline": {"en": "Traditional Korean furniture: lacquer, brass and mother-of-pearl", "ko": "옻칠·놋쇠·자개, 우리 전통 가구", "ja": "漆・真鍮・螺鈿の韓国伝統家具", "zh": "漆器、黄铜与螺钿的韩国传统家具"},
+      "why": "Fictional shop on the real Euljiro furniture street (Changgyeonggung-ro between Euljiro 4-ga and Junggu Office), east side facing the road.",
+      "colors": {"sign": "#5a2e18", "awning": "#e8d6b0", "accent": "#fbf3e6"},
+      "products": [
+        {"id": "buy-f-najeon", "model": "furniture", "furniture": "f-najeon", "color": "#f3e5c8", "name": {"en": "Mother-of-pearl wardrobe", "ko": "자개장", "ja": "螺鈿のたんす", "zh": "螺钿衣柜"}, "price": 350000, "desc": {"en": "Black lacquer inlaid with mother-of-pearl: a crane and flowers that shimmer.", "ko": "검은 옻칠에 자개로 학과 꽃을 새긴 장이에요."}},
+        {"id": "buy-f-bandaji", "model": "furniture", "furniture": "f-bandaji", "color": "#f3e5c8", "name": {"en": "Bandaji chest", "ko": "반닫이", "ja": "パンダジ（衣装箱）", "zh": "半开柜"}, "price": 180000, "desc": {"en": "A persimmon-wood chest whose front flap opens halfway, with iron hinges and a brass lock.", "ko": "앞판이 반만 열리는 감나무 궤예요. 무쇠 경첩과 놋쇠 자물쇠가 달렸어요."}},
+        {"id": "buy-f-byeongpung", "model": "furniture", "furniture": "f-byeongpung", "color": "#f3e5c8", "name": {"en": "Folding screen", "ko": "병풍", "ja": "屏風", "zh": "屏风"}, "price": 120000, "desc": {"en": "A four-panel folding screen painted with plum blossoms in ink.", "ko": "먹으로 매화를 그린 네 폭 병풍이에요."}}
+      ]
+    },
+    {
+      "id": "eulji-sarangbang",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1262.5, -593],
+      "district": "euljiro",
+      "name": {"ko": "사랑방 좌식가구", "en": "Sarangbang Floor Living", "ja": "サランバン座卓家具", "zh": "厢房坐式家具"},
+      "tagline": {"en": "Sit on the floor, Korean-style: tea tables, cushions and a dressing box", "ko": "바닥에 앉는 우리식 생활, 찻상·방석·경대", "ja": "床に座る韓国式の暮らし、茶台・座布団・鏡台", "zh": "韩式席地而坐：茶桌、坐垫与镜台"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#7a3b2e", "awning": "#d9c39a", "accent": "#fbf3e6"},
+      "products": [
+        {"id": "buy-f-tea-table", "model": "furniture", "furniture": "f-tea-table", "color": "#f3e5c8", "name": {"en": "Floor tea table", "ko": "좌식 찻상", "ja": "座卓の茶台", "zh": "矮茶桌"}, "price": 60000, "desc": {"en": "A low wooden tea table with a tea set, for sitting on the floor.", "ko": "바닥에 앉아 차를 마시는 낮은 나무 찻상이에요. 다기도 놓여 있어요."}},
+        {"id": "buy-f-bangseok", "model": "furniture", "furniture": "f-bangseok", "color": "#f3e5c8", "name": {"en": "Floor cushions", "ko": "방석 두 개", "ja": "座布団ふたつ", "zh": "坐垫两个"}, "price": 30000, "desc": {"en": "Two silk floor cushions, red and blue, to sit on Korean-style.", "ko": "빨강·파랑 비단 방석 두 개예요. 바닥에 앉을 때 써요."}},
+        {"id": "buy-f-gyeongdae", "model": "furniture", "furniture": "f-gyeongdae", "color": "#f3e5c8", "name": {"en": "Gyeongdae dressing box", "ko": "경대", "ja": "キョンデ（鏡台）", "zh": "镜台"}, "price": 85000, "desc": {"en": "A small wooden dressing box with a mirror that folds up from the lid.", "ko": "뚜껑에서 거울이 올라오는 작은 나무 화장대예요."}}
+      ]
+    },
+    {
+      "id": "eulji-retro",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1261.5, -586],
+      "district": "euljiro",
+      "name": {"ko": "을지 레트로상회", "en": "Eulji Retro Store", "ja": "乙支レトロ商会", "zh": "乙支复古商会"},
+      "tagline": {"en": "Furniture from Grandma's living room: check sofas and box TVs", "ko": "할머니댁 거실 그 가구, 체크 소파와 브라운관 TV", "ja": "おばあちゃんの家の居間の家具、チェックのソファとブラウン管", "zh": "奶奶家客厅的家具：格纹沙发和显像管电视"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#c86a3a", "awning": "#f2c14e", "accent": "#fff6e0"},
+      "products": [
+        {"id": "buy-f-retro-sofa", "model": "furniture", "furniture": "f-retro-sofa", "color": "#f3e5c8", "name": {"en": "Retro check sofa", "ko": "레트로 체크 소파", "ja": "レトロなチェックのソファ", "zh": "复古格纹沙发"}, "price": 150000, "desc": {"en": "An orange check sofa on wooden arms and splayed legs.", "ko": "나무 팔걸이에 다리가 벌어진 주황 체크 소파예요."}},
+        {"id": "buy-f-steel-stool", "model": "furniture", "furniture": "f-steel-stool", "color": "#f3e5c8", "name": {"en": "Steel stool", "ko": "철제 원형 의자", "ja": "スチールの丸椅子", "zh": "铁艺圆凳"}, "price": 25000, "desc": {"en": "The red round stool from every old Korean eatery.", "ko": "옛날 식당마다 있던 빨간 철제 원형 의자예요."}},
+        {"id": "buy-f-crt-tv", "model": "furniture", "furniture": "f-crt-tv", "color": "#f3e5c8", "name": {"en": "Old-school box TV", "ko": "브라운관 TV", "ja": "ブラウン管テレビ", "zh": "显像管电视"}, "price": 90000, "desc": {"en": "A box TV on a wooden cabinet, rabbit ears and all.", "ko": "나무장 위에 올린 브라운관 TV예요. 안테나도 달렸어요."}}
+      ]
+    },
+    {
+      "id": "eulji-sound",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1261.5, -578],
+      "district": "euljiro",
+      "name": {"ko": "을지 음향사", "en": "Eulji Sound", "ja": "乙支音響社", "zh": "乙支音响社"},
+      "tagline": {"en": "Record players, tube radios and a jukebox that still glows", "ko": "전축·진공관 라디오, 아직 불 켜지는 주크박스", "ja": "レコードプレーヤー、真空管ラジオ、まだ光るジュークボックス", "zh": "唱机、电子管收音机和仍会发光的点唱机"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#2e3a5a", "awning": "#e0b04a", "accent": "#fff4dc"},
+      "products": [
+        {"id": "buy-f-record", "model": "furniture", "furniture": "f-record", "color": "#f3e5c8", "name": {"en": "Record player cabinet", "ko": "전축 장식장", "ja": "レコードプレーヤーのキャビネット", "zh": "唱机柜"}, "price": 200000, "desc": {"en": "A wooden record player cabinet with cloth speakers.", "ko": "천 스피커가 달린 나무 전축 장식장이에요."}},
+        {"id": "buy-f-radio", "model": "furniture", "furniture": "f-radio", "color": "#f3e5c8", "name": {"en": "Vintage radio", "ko": "진공관 라디오", "ja": "真空管ラジオ", "zh": "电子管收音机"}, "price": 65000, "desc": {"en": "A wooden tube radio with a glowing dial.", "ko": "다이얼에 불이 들어오는 나무 진공관 라디오예요."}},
+        {"id": "buy-f-jukebox", "model": "furniture", "furniture": "f-jukebox", "color": "#f3e5c8", "name": {"en": "Jukebox", "ko": "주크박스", "ja": "ジュークボックス", "zh": "点唱机"}, "price": 300000, "desc": {"en": "A glowing jukebox with neon tubes around its arch.", "ko": "아치 둘레에 네온이 빛나는 주크박스예요."}}
+      ]
+    },
+    {
+      "id": "saebyeok-living",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1260.5, -568],
+      "district": "euljiro",
+      "name": {"ko": "새벽 리빙", "en": "Saebyeok Living", "ja": "セビョク・リビング", "zh": "晨光家居"},
+      "tagline": {"en": "Soft, modern pieces for a calm room", "ko": "포근하고 차분한 요즘 가구", "ja": "やわらかく落ち着いたモダン家具", "zh": "柔软安静的现代家具"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#4a6a5a", "awning": "#e8e2d6", "accent": "#f8f6f0"},
+      "products": [
+        {"id": "buy-f-modular", "model": "furniture", "furniture": "f-modular", "color": "#f3e5c8", "name": {"en": "Modular sofa", "ko": "모듈 소파", "ja": "モジュールソファ", "zh": "模块沙发"}, "price": 280000, "desc": {"en": "Three soft blocks you can sit on any way, with two cushions.", "ko": "어떻게 앉아도 편한 세 칸짜리 모듈 소파예요."}},
+        {"id": "buy-f-beanbag", "model": "furniture", "furniture": "f-beanbag", "color": "#f3e5c8", "name": {"en": "Bean bag", "ko": "빈백", "ja": "ビーズクッション", "zh": "懒人沙发"}, "price": 70000, "desc": {"en": "A big yellow bean bag that hugs you back.", "ko": "몸을 폭 감싸 주는 노란 빈백이에요."}},
+        {"id": "buy-f-mirror", "model": "furniture", "furniture": "f-mirror", "color": "#f3e5c8", "name": {"en": "Round wavy mirror", "ko": "웨이브 원형 거울", "ja": "波形の丸い鏡", "zh": "波浪圆镜"}, "price": 55000, "desc": {"en": "A round standing mirror with a soft wavy frame.", "ko": "테두리가 물결치는 동그란 스탠드 거울이에요."}}
+      ]
+    },
+    {
+      "id": "saebyeok-bedroom",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1260.5, -561],
+      "district": "euljiro",
+      "name": {"ko": "새벽 침실", "en": "Saebyeok Bedroom", "ja": "セビョク・ベッドルーム", "zh": "晨光卧室"},
+      "tagline": {"en": "A soft bed and open shelves for a calm bedroom", "ko": "포근한 침대와 열린 선반, 차분한 침실", "ja": "やわらかいベッドとオープン棚の落ち着いた寝室", "zh": "柔软的床和开放式书架，安静的卧室"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#6a5a7a", "awning": "#ece4ee", "accent": "#faf7fb"},
+      "products": [
+        {"id": "buy-f-fabric-bed", "model": "furniture", "furniture": "f-fabric-bed", "color": "#f3e5c8", "name": {"en": "Upholstered bed", "ko": "패브릭 침대", "ja": "ファブリックベッド", "zh": "布艺床"}, "price": 260000, "desc": {"en": "A soft upholstered bed with a channel headboard and a sage duvet.", "ko": "골 패턴 헤드보드에 세이지색 이불을 덮은 패브릭 침대예요."}},
+        {"id": "buy-f-cloud-shelf", "model": "furniture", "furniture": "f-cloud-shelf", "color": "#f3e5c8", "name": {"en": "Arch bookshelf", "ko": "아치 책장", "ja": "アーチ型の本棚", "zh": "拱形书架"}, "price": 110000, "desc": {"en": "An open bookshelf with an arched top.", "ko": "위가 아치 모양인 열린 책장이에요."}},
+        {"id": "buy-f-wood-shelf", "model": "furniture", "furniture": "f-wood-shelf", "color": "#f3e5c8", "name": {"en": "Ladder shelf", "ko": "원목 사다리 선반", "ja": "木のはしご棚", "zh": "实木梯形架"}, "price": 90000, "desc": {"en": "A ladder shelf that leans on the wall, with a plant and books.", "ko": "벽에 기대 세우는 사다리 선반이에요. 화분과 책이 올려져 있어요."}}
+      ]
+    },
+    {
+      "id": "gyeol-wood",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1259.8, -552.5],
+      "district": "euljiro",
+      "name": {"ko": "결 원목공방", "en": "Gyeol Woodworks", "ja": "ギョル木工房", "zh": "纹理木作坊"},
+      "tagline": {"en": "Solid wood, made by hand, the grain left to show", "ko": "손으로 만든 원목 가구, 나뭇결 그대로", "ja": "手づくりの無垢材家具、木目そのまま", "zh": "手工实木家具，保留木纹"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro.",
+      "colors": {"sign": "#8a5a30", "awning": "#e8d6b8", "accent": "#faf4ea"},
+      "products": [
+        {"id": "buy-f-wood-table", "model": "furniture", "furniture": "f-wood-table", "color": "#f3e5c8", "name": {"en": "Solid wood dining table", "ko": "원목 식탁", "ja": "無垢材のダイニングテーブル", "zh": "实木餐桌"}, "price": 240000, "desc": {"en": "A thick solid wood slab table for six.", "ko": "여섯 명이 앉는 두툼한 원목 통판 식탁이에요."}},
+        {"id": "buy-f-wood-bench", "model": "furniture", "furniture": "f-wood-bench", "color": "#f3e5c8", "name": {"en": "Wooden bench", "ko": "원목 벤치", "ja": "木のベンチ", "zh": "木长凳"}, "price": 80000, "desc": {"en": "A plain wooden bench, to go with the table or by the door.", "ko": "식탁 옆에도, 현관에도 어울리는 원목 벤치예요."}},
+        {"id": "buy-f-rocking", "model": "furniture", "furniture": "f-rocking", "color": "#f3e5c8", "name": {"en": "Rocking chair", "ko": "흔들의자", "ja": "ロッキングチェア", "zh": "摇椅"}, "price": 160000, "desc": {"en": "A spindle-back rocking chair with a soft seat pad.", "ko": "살대 등받이에 방석을 깐 흔들의자예요."}}
+      ]
+    },
     {"id": "info-bukchon", "category": "info", "workshop": "info", "size": "small", "district": "bukchon", "front": "hanok", "at": [-1497.9, -927], "name": {"en": "Bukchon Information Center", "ko": "북촌 안내센터", "ja": "北村インフォメーションセンター", "zh": "北村信息中心"}, "tagline": {"en": "Two guides: how the game works, and Bukchon's alleys and manners", "ko": "게임 안내와 북촌 골목·방문 예절 안내, 두 명의 안내원", "ja": "ゲーム案内と北村の路地・マナー案内の2人がご案内", "zh": "两位向导：游戏玩法，以及北村的小巷和礼仪"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},
     {"id": "gahoe-hanbok", "category": "fashion", "size": "medium", "front": "hanok", "at": [-1481, -927], "name": {"en": "Gahoe Hanbok Rental", "ko": "가회 한복대여", "ja": "嘉会 韓服レンタル", "zh": "嘉会韩服租赁"}, "tagline": {"en": "Rent a hanbok for 2 hours and stroll the hanok alleys", "ko": "한복 2시간 대여하고 한옥 골목 산책", "ja": "韓服を2時間レンタルして韓屋の路地を散歩", "zh": "租韩服2小时，逛韩屋小巷"}, "colors": {"sign": "#7a3b6e", "awning": "#ead7e6", "accent": "#fbf3f8"}, "products": [{"id": "gahoe-hanbok-yellow-red", "rent": "yellow-red", "model": "skirt", "color": "#c8323f", "skirt": "chima-red", "price": 15000, "name": {"en": "Yellow jeogori & red chima", "ko": "노랑 저고리 · 다홍 치마", "ja": "黄色のチョゴリ · 紅のチマ", "zh": "黄色上衣 · 红色长裙", "es": "Jeogori amarilla y chima roja", "ar": "جيوغوري صفراء وتشيما حمراء", "vi": "Jeogori vàng & chima đỏ", "hi": "पीली जोगोरी और लाल चीमा", "fr": "Jeogori jaune et chima rouge", "th": "ชอโกรีเหลืองกับชิมาแดง", "id": "Jeogori kuning & chima merah"}, "desc": {"en": "A short jacket (jeogori) tied with a ribbon (goreum) over a full skirt (chima). Yellow over red is a classic festival pairing.", "ko": "고름을 매는 짧은 저고리에 풍성한 치마를 입어요. 노랑 저고리에 다홍 치마는 명절의 단골 조합이에요."}}, {"id": "gahoe-hanbok-pink-navy", "rent": "pink-navy", "model": "skirt", "color": "#2f3c66", "skirt": "chima-navy", "price": 15000, "name": {"en": "Pink jeogori & navy chima", "ko": "분홍 저고리 · 남색 치마", "ja": "ピンクのチョゴリ · 紺のチマ", "zh": "粉色上衣 · 藏青长裙", "es": "Jeogori rosa y chima azul marino", "ar": "جيوغوري وردية وتشيما كحلية", "vi": "Jeogori hồng & chima xanh navy", "hi": "गुलाबी जोगोरी और नेवी चीमा", "fr": "Jeogori rose et chima bleu marine", "th": "ชอโกรีชมพูกับชิมากรมท่า", "id": "Jeogori merah muda & chima biru tua"}, "desc": {"en": "Soft pink jeogori with navy cuffs and ribbon over a deep navy chima.", "ko": "남색 끝동과 고름을 단 연분홍 저고리에 남색 치마를 입어요."}}, {"id": "gahoe-hanbok-mint-pink", "rent": "mint-pink", "model": "skirt", "color": "#f29bb6", "skirt": "chima-pink", "price": 15000, "name": {"en": "Mint jeogori & pink chima", "ko": "민트 저고리 · 분홍 치마", "ja": "ミントのチョゴリ · ピンクのチマ", "zh": "薄荷色上衣 · 粉色长裙", "es": "Jeogori menta y chima rosa", "ar": "جيوغوري نعناعية وتشيما وردية", "vi": "Jeogori bạc hà & chima hồng", "hi": "मिंट जोगोरी और गुलाबी चीमा", "fr": "Jeogori menthe et chima rose", "th": "ชอโกรีมินต์กับชิมาชมพู", "id": "Jeogori mint & chima merah muda"}, "desc": {"en": "A mint jeogori with pink cuffs over a pink chima: bright for spring photos.", "ko": "분홍 끝동의 민트 저고리에 분홍 치마. 봄 사진에 잘 어울려요."}}, {"id": "gahoe-hanbok-baji-blue", "rent": "baji-blue", "model": "tee", "color": "#9cc3e6", "price": 15000, "name": {"en": "Sky jeogori & baji trousers", "ko": "하늘색 저고리 · 바지", "ja": "水色のチョゴリ · パジ", "zh": "天蓝上衣 · 韩服裤", "es": "Jeogori celeste y pantalón baji", "ar": "جيوغوري سماوية وسروال باجي", "vi": "Jeogori xanh trời & quần baji", "hi": "आसमानी जोगोरी और बाजी पतलून", "fr": "Jeogori bleu ciel et pantalon baji", "th": "ชอโกรีฟ้ากับกางเกงพาจี", "id": "Jeogori biru langit & celana baji"}, "desc": {"en": "A sky-blue jeogori over roomy baji trousers, tied at the ankles.", "ko": "하늘색 저고리에 넉넉한 바지를 입어요."}}, {"id": "gahoe-hanbok-durumagi-lilac", "rent": "durumagi-lilac", "model": "tee", "color": "#b9a6f0", "price": 18000, "name": {"en": "Lilac durumagi overcoat", "ko": "연보라 두루마기", "ja": "薄紫のトゥルマギ", "zh": "淡紫长袍", "es": "Abrigo durumagi lila", "ar": "معطف دوروماغي بنفسجي فاتح", "vi": "Áo khoác durumagi tím nhạt", "hi": "हल्का बैंगनी दुरुमागी कोट", "fr": "Manteau durumagi lilas", "th": "เสื้อคลุมทูรูมากีสีม่วงอ่อน", "id": "Mantel durumagi ungu muda"}, "desc": {"en": "A long overcoat (durumagi) worn over the jeogori and baji when going out.", "ko": "외출할 때 저고리와 바지 위에 입는 긴 두루마기예요."}}, {"id": "gahoe-hanbok-baji-navy", "rent": "baji-navy", "model": "tee", "color": "#2f3c66", "price": 15000, "name": {"en": "Navy jeogori & baji trousers", "ko": "남색 저고리 · 바지", "ja": "紺のチョゴリ · パジ", "zh": "藏青上衣 · 韩服裤", "es": "Jeogori azul marino y pantalón baji", "ar": "جيوغوري كحلية وسروال باجي", "vi": "Jeogori xanh navy & quần baji", "hi": "नेवी जोगोरी और बाजी पतलून", "fr": "Jeogori bleu marine et pantalon baji", "th": "ชอโกรีกรมท่ากับกางเกงพาจี", "id": "Jeogori biru tua & celana baji"}, "desc": {"en": "A deep navy jeogori with gold cuffs over light baji trousers.", "ko": "금빛 끝동을 단 남색 저고리에 밝은 바지를 입어요."}}, {"id": "gahoe-hanbok-baji-jade", "rent": "baji-jade", "model": "tee", "color": "#5fae8f", "price": 15000, "name": {"en": "Jade jeogori & baji trousers", "ko": "옥색 저고리 · 바지", "ja": "翡翠色のチョゴリ · パジ", "zh": "玉色上衣 · 韩服裤", "es": "Jeogori jade y pantalón baji", "ar": "جيوغوري يشمية وسروال باجي", "vi": "Jeogori xanh ngọc & quần baji", "hi": "जेड जोगोरी और बाजी पतलून", "fr": "Jeogori jade et pantalon baji", "th": "ชอโกรีสีหยกกับกางเกงพาจี", "id": "Jeogori hijau giok & celana baji"}, "desc": {"en": "A jade-green jeogori with navy cuffs: fresh for a palace walk.", "ko": "남색 끝동의 옥색 저고리. 궁궐 산책에 잘 어울려요."}}, {"id": "gahoe-hanbok-baji-ivory", "rent": "baji-ivory", "model": "tee", "color": "#f3ecdc", "price": 15000, "name": {"en": "Ivory jeogori & grey baji", "ko": "상아색 저고리 · 회색 바지", "ja": "アイボリーのチョゴリ · グレーのパジ", "zh": "象牙白上衣 · 灰色韩服裤", "es": "Jeogori marfil y baji gris", "ar": "جيوغوري عاجية وباجي رمادي", "vi": "Jeogori ngà & quần baji xám", "hi": "आइवरी जोगोरी और ग्रे बाजी", "fr": "Jeogori ivoire et baji gris", "th": "ชอโกรีงาช้างกับพาจีเทา", "id": "Jeogori gading & baji abu-abu"}, "desc": {"en": "A plain ivory jeogori over grey baji, the everyday scholar's look.", "ko": "상아색 저고리에 회색 바지. 선비의 평상복 느낌이에요."}}, {"id": "gahoe-hanbok-durumagi-navy", "rent": "durumagi-navy", "model": "tee", "color": "#34477a", "price": 18000, "name": {"en": "Navy durumagi overcoat", "ko": "남색 두루마기", "ja": "紺のトゥルマギ", "zh": "藏青长袍", "es": "Abrigo durumagi azul marino", "ar": "معطف دوروماغي كحلي", "vi": "Áo khoác durumagi xanh navy", "hi": "नेवी दुरुमागी कोट", "fr": "Manteau durumagi bleu marine", "th": "เสื้อคลุมทูรูมากีสีกรมท่า", "id": "Mantel durumagi biru tua"}, "desc": {"en": "A long navy overcoat (durumagi) worn over the jeogori and baji.", "ko": "저고리와 바지 위에 입는 남색 두루마기예요."}}, {"id": "gahoe-hanbok-durumagi-gray", "rent": "durumagi-gray", "model": "tee", "color": "#8f939a", "price": 18000, "name": {"en": "Grey durumagi overcoat", "ko": "회색 두루마기", "ja": "グレーのトゥルマギ", "zh": "灰色长袍", "es": "Abrigo durumagi gris", "ar": "معطف دوروماغي رمادي", "vi": "Áo khoác durumagi xám", "hi": "ग्रे दुरुमागी कोट", "fr": "Manteau durumagi gris", "th": "เสื้อคลุมทูรูมากีสีเทา", "id": "Mantel durumagi abu-abu"}, "desc": {"en": "A calm grey durumagi with charcoal ties.", "ko": "짙은 회색 고름을 단 차분한 회색 두루마기예요."}}]},
     {"id": "noeul-teahouse", "category": "cafe", "size": "small", "front": "hanok", "at": [-1457, -927], "name": {"en": "Noeul Teahouse", "ko": "노을찻집", "ja": "ノウル茶房", "zh": "晚霞茶馆"}, "tagline": {"en": "Traditional teas and sweets on floor cushions by the courtyard", "ko": "마당을 보며 방석에 앉아 마시는 전통차와 다과", "ja": "中庭を眺めて座布団でいただく伝統茶とお菓子", "zh": "坐在坐垫上看着院子，品传统茶和茶点"}, "colors": {"sign": "#8a4b2a", "awning": "#efd9bf", "accent": "#fbf4ea"}, "products": [{"id": "omija-tea", "model": "cup", "color": "#d8434f", "price": 7000, "name": {"en": "Omija tea", "ko": "오미자차", "ja": "五味子茶", "zh": "五味子茶"}, "desc": {"en": "A rosy tea of \"five-flavour berries\": sweet, sour, salty, bitter and spicy at once.", "ko": "단맛, 신맛, 짠맛, 쓴맛, 매운맛 다섯 가지 맛이 난다는 오미자로 만든 분홍빛 차예요."}}, {"id": "daechu-tea", "model": "cup", "color": "#7a3b22", "price": 7000, "name": {"en": "Jujube tea", "ko": "대추차", "ja": "なつめ茶", "zh": "大枣茶"}, "desc": {"en": "Thick, sweet tea of slow-boiled jujubes (Korean dates), topped with pine nuts.", "ko": "대추를 오래 달여 걸쭉하고 달콤한 차예요. 잣을 띄워 내요."}}, {"id": "noeul-sikhye", "model": "cup", "color": "#efe2c4", "price": 5000, "name": {"en": "Sikhye", "ko": "식혜", "ja": "シッケ", "zh": "甜米露"}, "desc": {"en": "A sweet, cold rice drink with grains of rice floating in it.", "ko": "밥알이 동동 뜬 달콤하고 시원한 음료예요."}}, {"id": "yakgwa", "model": "bread", "color": "#a8561e", "price": 4000, "name": {"en": "Yakgwa", "ko": "약과", "ja": "ヤックァ", "zh": "药果"}, "desc": {"en": "A flower-shaped honey cookie, fried and soaked in syrup with ginger.", "ko": "꿀과 생강 시럽을 머금은 꽃 모양 전통 과자예요."}}, {"id": "injeolmi-bingsu", "model": "bread", "color": "#e6cf8f", "price": 9000, "name": {"en": "Injeolmi bingsu", "ko": "인절미 빙수", "ja": "きなこ餅かき氷", "zh": "打糕刨冰"}, "desc": {"en": "Shaved milk ice with roasted soybean powder and little rice cakes on top.", "ko": "우유 얼음에 고소한 콩고물과 작은 인절미를 얹은 빙수예요."}}]},

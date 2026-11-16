@@ -35,3 +35,35 @@ test('the starter room fits the apartment, overlaps nothing and keeps the door c
     }
   }
 });
+
+test('the Euljiro furniture shops: every new piece is an item, sold in exactly one shop, with a receipt-ready price', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
+  const { ITEMS } = await import('../src/core/inventory.js');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood'].includes(s.id));
+  assert.equal(shops.length, 7);
+  const sold = shops.flatMap((s) => s.products);
+  assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
+  for (const [id] of SHOP_FURNITURE_IDS) {
+    assert.ok(FURNITURE.find((f) => f.id === id && f.item === id), id);
+    assert.ok(ITEMS[id]?.furniture, id);
+    const p = sold.filter((q) => q.furniture === id);
+    assert.equal(p.length, 1, id);
+    assert.ok(p[0].price > 0 && p[0].name.en && p[0].name.ko && p[0].desc.en, id);
+  }
+});
+
+test('the free basics are the worn ones', () => {
+  for (const id of ['bed', 'sofa', 'chair', 'table', 'desk', 'shelf', 'tv', 'lamp', 'plant', 'rug']) {
+    const f = furnitureById(id);
+    assert.ok(f && !f.item, id + ' stays free');
+    assert.match(f.name.ko, /낡은|삐걱|흔들|시든|닳은/, id);
+  }
+});
+
+test('each furniture shop sells three pieces', async () => {
+  const { readFileSync } = await import('node:fs');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, 3, s.id);
+});
