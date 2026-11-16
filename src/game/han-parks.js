@@ -11,16 +11,47 @@
 // keep-out boxes), except the duck boats, which sail in the park's own
 // metres (game/duck-boats.js uses `frame` to bring them out).
 //
-// game: { scene, landmarks, store(id), collision, makeNpc(name, opts),
+// game: { scene, landmarks, decks (map.decks: the base map's bridges), store(id), collision, makeNpc(name, opts),
 // clerkName(), baitSeller(): { name, look } (the bait stall's old fisherman), me,
 // signLang(), night(), greet(npcs, p), acts: { duck, mart, fish, sell, bait,
 // ramen, look }, onVisit(store) } as getters where they change.
+
+import { pointInPoly } from '../core/collision.js';
 
 // (distances to the park's edge, its bounds: a long one like Yeouido's
 // shore is drawn while you walk along it, not only near its middle)
 const BUILD_NEAR = 200; // built from this far off (m)
 const SHOW_NEAR = 260; // drawn within this many metres
 const STAFF_NEAR = 80; // its clerk and stall sellers (about 20 meshes each) from close by (each)
+const RAIL_V = 0.15; // the railing's line across the park (v, core/han-park.js)
+const GAP_PAD = 1; // (m) more railing left out each side of a bridge
+
+// A bridge of the base map (map.decks) that lands on the park's bank: leave
+// its width out of the railing and keep the lamps, benches, beds, trees and
+// bushes off its deck, or the railing walls the bridge off (Mapo and Wonhyo
+// Bridges onto Yeouido did, 2026-11-15/16). decks: polygons in the park's
+// own metres (u along the bank, v inland, 0 on it).
+export function clearBridges(layout, decks) {
+  const gaps = [];
+  const onDeck = [];
+  for (const d of decks) {
+    const us = [];
+    for (let i = 0; i < d.length; i++) {
+      const [ax, az] = d[i], [bx, bz] = d[(i + 1) % d.length];
+      if ((az - RAIL_V) * (bz - RAIL_V) <= 0 && az !== bz) us.push(ax + ((RAIL_V - az) / (bz - az)) * (bx - ax));
+    }
+    if (us.length < 2) continue;
+    const [r0, r1] = layout.rail || [-Infinity, Infinity];
+    if (Math.max(...us) < r0 || Math.min(...us) > r1) continue; // (a bridge farther along the line)
+    gaps.push([Math.min(...us) - GAP_PAD, Math.max(...us) + GAP_PAD]);
+    onDeck.push(d);
+  }
+  if (!gaps.length) return layout;
+  const off = (q) => onDeck.some((d) => pointInPoly(q[0], q[1], d));
+  const out = { ...layout, railGaps: [...(layout.railGaps || []), ...gaps] };
+  for (const k of ['lamps', 'benches', 'beds', 'trees', 'bushes']) if (layout[k]) out[k] = layout[k].filter((q) => !off(q));
+  return out;
+}
 
 export function createHanParks(game) {
   const parks = [];
@@ -47,7 +78,8 @@ export function createHanParks(game) {
   const near = (n, p, r) => Math.hypot(p.x - n.ch.root.position.x, p.z - n.ch.root.position.z) < r;
 
   function build(o, m) {
-    const b = m.buildHanPark(o.store, o.l.layout || {});
+    const decks = (game.decks || []).map((d) => d.map(([x, z]) => toLocal(o, x, z)));
+    const b = m.buildHanPark(o.store, clearBridges(o.l.layout || {}, decks));
     b.group.position.set(o.ox, 0, o.oz);
     b.group.rotation.y = o.ry;
     game.scene.add(b.group);

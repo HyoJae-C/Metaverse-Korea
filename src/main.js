@@ -5832,7 +5832,7 @@ function updateFireworks() {
 // machine (core/park.js), or null.
 // Han River parks laid on the street (game/han-parks.js): no door, you stay on the street.
 const hanParks = createHanParks({
-  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
+  scene, landmarks: map.landmarks, decks: map.decks, store: (id) => storeData.find((s) => s.id === id), collision,
   makeNpc: (name, look) => makeNpc($('labels'), name, look), clerkName: () => t('npc.clerk'), baitSeller: () => fishBait.seller(),
   get me() { return me; }, signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
