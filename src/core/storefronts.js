@@ -136,7 +136,11 @@ export class Storefronts {
       // A landmark's own door (store.front 'landmark', e.g. Myeongdong
       // Cathedral's: the building is drawn with its door): no sign, awning or
       // glass, only the glowing ring in front of it. "at" is the ring and
-      // "face" the way you face coming out.
+      // "face" the way you face coming out. "go" (optional, world metres):
+      // where the map, a taxi or a guide takes you instead of the ring, when
+      // the ring is deep inside a place you should walk into from its gate
+      // (a temple's main hall: you arrive at the temple's gate, not inside
+      // the hall). Guides use it.go || it.door.
       if (store.front === 'landmark') {
         const group = new THREE.Group();
         group.position.set(ax, store.y || 0, az); // (y: a door up on a hill, e.g. the cathedral's yard)
@@ -148,7 +152,8 @@ export class Storefronts {
         );
         ring.position.y = 0.09;
         group.add(ring);
-        this.items.push({ store, group, ring, bare: true, door: new THREE.Vector3(ax, store.y || 0, az) });
+        const go = Array.isArray(store.go) ? new THREE.Vector3(store.go[0], 0, store.go[1]) : null;
+        this.items.push({ store, group, ring, bare: true, door: new THREE.Vector3(ax, store.y || 0, az), ...(go && { go }) });
         continue;
       }
       const f = nearestFacade(map.buildings, ax, az, isBlocked);

@@ -31,3 +31,30 @@ test('guidance to a landmark ends on open ground, not inside a building or block
     assert.ok(!hit, `${p.key} ends inside ${JSON.stringify(hit?.why || hit?.k || 'a building')}`);
   }
 });
+
+// Yozi 2026-11-16: picking Bongeunsa or Jogyesa on the map led into the middle
+// of the main hall (its door ring is where the guide ended, and stepping on it
+// walks you into the hall). The map, a taxi and the search take you to the
+// temple's way in instead: inside its first gate, Iljumun.
+test('the temples are reached at their gate, not at the main hall', () => {
+  const stores = read('stores.json').stores;
+  const solid = [...(map.blockers || []), ...map.buildings].filter((b) => b.p);
+  const gate = {
+    'bongeunsa-daeungjeon': (() => { const l = map.landmarks.find((m) => m.type === 'bongeunsa'); return [l.x + l.iljumun[0], l.z + l.iljumun[1]]; })(),
+    'jogyesa-daeungjeon': [-1741 + 127.9, -871 + 57.3], // src/data/jogyesa.js iljumun, in the Gyeongbokgung district's offset
+  };
+  for (const [id, [gx, gz]] of Object.entries(gate)) {
+    const s = stores.find((x) => x.id === id);
+    assert.ok(Array.isArray(s.go), `${id} has no "go"`);
+    const [x, z] = s.go;
+    assert.ok(Math.hypot(x - gx, z - gz) < 6, `${id}: guidance ends ${Math.hypot(x - gx, z - gz).toFixed(1)} m from Iljumun`);
+    assert.ok(Math.hypot(x - s.at[0], z - s.at[1]) > 20, `${id}: still next to the hall`);
+    assert.ok(!solid.find((b) => inPoly(x, z, b.p)), `${id}: "go" is inside a building or blocker`);
+  }
+  for (const key of ['bongeunsa', 'jogyesa']) {
+    const p = places.find((q) => q.key === key), s = stores.find((x) => x.id === `${key}-daeungjeon`);
+    assert.ok(Math.hypot(p.x - s.go[0], p.z - s.go[1]) < 0.5, `${key}: the search and the map end in different places`);
+  }
+  assert.deepEqual(find('조계사'), ['jogyesa']);
+  assert.deepEqual(find('봉은사'), ['bongeunsa']);
+});
