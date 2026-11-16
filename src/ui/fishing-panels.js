@@ -4,14 +4,15 @@
 //   → reel: tap fast enough in REEL_SECONDS (rarer fish need more taps).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { ROD_SKINS, rodSkin } from '../core/rod-skins.js';
-import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, parkLegend, TIER_NAMES, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, chanceAt, baitedChance } from '../core/fishing.js';
+import { FISH, AVAILABLE_FISH, rollCatch, tapsFor, escapeChance, biteWait, BITE_WINDOW, REEL_SECONDS, BAG_MAX, isRare, drainFor, feelOf, fightsBack, MYSTERY_CHANCE, MYSTERY_LINES, parkLegend, TIER_NAMES, AUTO_SECONDS, rollAutoCatch, AUTO_FISH, TRASH_CHANCE, LUCKY_BOOST, DOUBLE_BOOST, DOUBLE_EVERY, DOUBLE_MINUTES, chanceAt, baitedChance } from '../core/fishing.js';
 import { el, pct, text, pctOf, fishName, holdText, biteLine, fishStampIcon, fishBook, stampPop } from './fishing-ui.js';
 
 export class FishingUI {
   // bag: FishBag; onRod(on): show or hide the rod; onCatch(fish): after a catch.
   // dex: FishDex, every catch is recorded there too.
   // onPhase(name, data): drives the 3D motion (core/fishing-rig.js).
-  // lucky(): true while standing at the lucky spot (better odds, see luckySpot).
+  // lucky(): the boost of the spot you stand at (LUCKY_BOOST at the lucky spot,
+  // DOUBLE_BOOST at the double spot, see luckySpot / doubleSpot), or false.
   // stats: FishStats (optional), counts what happens to each cast for balancing.
   // pity: FishPity (optional), bites toward each park's first legend.
   // park(): the park store's id; every park shares ★1-2, and each has its own
@@ -71,7 +72,9 @@ export class FishingUI {
     this.root.append(el('p', 'fish-rod-line', '🎣 ' + localName(this.rodInUse.name) + ' · ' + holdText(this.hold)));
     const b = this.bait?.bait;
     if (this.bait) this.root.append(el('p', 'fish-rod-line fish-bait-line', b ? t('bait.on', { name: this.bait.name(b), n: this.bait.left, p: b.rare }) : t('bait.plain')));
-    if (this.lucky?.()) this.root.append(el('p', 'fish-lucky', '🍀 ' + text('행운 포인트! 지금 여기서는 귀한 물고기가 더 잘 물어요.', 'Lucky spot! Rarer fish bite more often here right now.')));
+    const boost = this.lucky?.();
+    if (boost === DOUBLE_BOOST) this.root.append(el('p', 'fish-lucky fish-double', '✨ ' + t('fish.double', { n: DOUBLE_BOOST })));
+    else if (boost) this.root.append(el('p', 'fish-lucky', '🍀 ' + text('행운 포인트! 지금 여기서는 귀한 물고기가 더 잘 물어요.', 'Lucky spot! Rarer fish bite more often here right now.')));
     this.root.append(this._water(t('fish.ready'), 'calm'));
     const cast = el('button', 'primary', '🎣 ' + t('fish.cast'));
     cast.disabled = this.bag.full;
@@ -141,7 +144,7 @@ export class FishingUI {
     const boot = el('div', 'fish-odds-row trash');
     boot.append(el('span', 'fish-emoji', '🥾'), el('span', 'fish-name', text('고물장화 (쓰레기)', 'Old boot (litter)')), el('b', null, pct(TRASH_CHANCE * 100)), el('span', null, '—'), el('span', null, '0'));
     wrap.append(boot, el('p', 'fish-odds-note', '🍀 ' + text(`행운 포인트(금색 표지판)에서는 ★2 이상이 ${LUCKY_BOOST}배 잘 물고 장화는 절반으로 줄어요. 행운 포인트는 몇 분마다 바뀌어요.`,
-      `At the lucky spot (gold sign) ★2 and up bite ${LUCKY_BOOST}× as often and boots half as often. It moves every few minutes.`)), el('p', 'fish-odds-note', text(`자동낚시는 약 ${AUTO_SECONDS}초에 한 마리 · 공개된 ${AVAILABLE_FISH.length}종 기준`, `Auto fishing lands about one fish every ${AUTO_SECONDS} s · ${AVAILABLE_FISH.length} kinds available now`)));
+      `At the lucky spot (gold sign) ★2 and up bite ${LUCKY_BOOST}× as often and boots half as often. It moves every few minutes.`)), el('p', 'fish-odds-note', '✨ ' + t('fish.doubleNote', { n: DOUBLE_BOOST, m: DOUBLE_MINUTES, h: DOUBLE_EVERY })), el('p', 'fish-odds-note', text(`자동낚시는 약 ${AUTO_SECONDS}초에 한 마리 · 공개된 ${AVAILABLE_FISH.length}종 기준`, `Auto fishing lands about one fish every ${AUTO_SECONDS} s · ${AVAILABLE_FISH.length} kinds available now`)));
     const back = el('button', 'primary', '🎣 ' + t('fish.back'));
     back.onclick = () => this.renderIdle();
     const actions = el('div', 'order-actions');
@@ -165,15 +168,17 @@ export class FishingUI {
 
   bite(water, btn) {
     this.state = 'bite';
-    const lucky = !!this.lucky?.(), park = this.park?.() || null;
+    const lucky = this.lucky?.() || false, park = this.park?.() || null; // (the spot's boost)
     // Until this park's legend is in the book, every bite here counts toward its pity.
     const legend = parkLegend(park), chasing = !!(legend && this.pity && !this.dex?.count(legend.id));
     const bait = this.bait?.use() || null; // (one bait a bite, hooked or not)
+    if (bait && !this.bait.bait) this.onRod?.(true); // (the last one: the lure on the rod goes back to plain)
     this.fish = rollCatch(Math.random, lucky, park, chasing ? this.pity.count(park) : 0, bait);
     if (chasing) this.pity.bump(park);
     else if (legend) this.pity?.clear(park);
     this.stats?.add('bite', this.fish);
     if (lucky) this.stats?.add('lucky');
+    if (lucky === DOUBLE_BOOST) this.stats?.add('double');
     this.mystery = Math.random() < MYSTERY_CHANCE; // a bite that gives nothing away
     this.feel = this.mystery ? 'mystery' : feelOf(this.fish);
     this.onPhase?.('bite', this.mystery ? { ...this.fish, mystery: true } : this.fish);

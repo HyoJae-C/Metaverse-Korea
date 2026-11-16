@@ -14,8 +14,7 @@ import * as THREE from 'three';
 import { buildMarket, parasolTable, signBoard, PARASOLS } from './riverside-market.js';
 import { productModel } from './product-model.js';
 import { localName } from './i18n.js';
-import { luckySpot } from './fishing.js';
-import { makeDuckBoat, DUCK_BOATS, RAMEN_SIGN, FISH_SIGN, FISHING_OK, LUCKY_SIGN, SPOT_COLOR, LUCKY_COLOR } from './park.js';
+import { makeDuckBoat, DUCK_BOATS, RAMEN_SIGN, FISH_SIGN, SPOT_COLOR, spotMarks } from './park.js';
 import { BOAT_R } from './duck-boat.js';
 import { mergeStatic } from './merge-static.js';
 import { COUNTER_H, SIGN_ABOVE, KIOSK_GOODS_X, KIOSK_CLERK_X } from './counter-face.js';
@@ -241,9 +240,9 @@ export function buildHanPark(store, L) {
   }
   for (const [i, [tx, tz]] of (L.tables || []).entries()) parasolTable(group, block, seats, tx, tz, PARASOLS[(i + 1) % PARASOLS.length]);
 
-  // Fishing spots, each with a low "낚시 가능" board facing inland, and the
-  // lucky one (luckySpot in fishing.js): a gold board, a glowing ring on the
-  // ground and a clover spinning over it.
+  // Fishing spots, each with a low "낚시 가능" board facing inland; the
+  // lucky one and, now and then, a double one get a gold or pink board, a
+  // glowing ring and a gem spinning over it (spotMarks in park.js).
   const fishing = (L.fishing || []).map(([x, z]) => ({ x, z }));
   const spotSigns = fishing.map((f) => {
     box(0.06, 0.5, 0.06, f.x + 0.9, 0.25, f.z + 0.33, '#55504a');
@@ -252,26 +251,8 @@ export function buildHanPark(store, L) {
     group.add(sign.mesh);
     return sign;
   });
-  const luckRing = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.9, 32).rotateX(-Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.7, depthWrite: false }));
-  const luckGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), mat('#7ed957', { emissive: '#3fae2a', emissiveIntensity: 0.6 }));
-  if (fishing.length) group.add(luckRing, luckGem);
-  let signLang = null, lucky = -1, luckT = 0;
-  const drawSpotSigns = () => spotSigns.forEach((sign, i) => {
-    const luck = i === lucky;
-    if (signLang) sign.draw('🎣 ' + localName(FISHING_OK, signLang), luck ? '🍀 ' + localName(LUCKY_SIGN, signLang) : '', luck ? LUCKY_COLOR : SPOT_COLOR);
-    else sign.draw('🎣 ' + FISHING_OK.ko, luck ? '🍀 ' + LUCKY_SIGN.ko + ' · ' + LUCKY_SIGN.en : FISHING_OK.en, luck ? LUCKY_COLOR : SPOT_COLOR);
-  });
-  const updateLucky = (now = Date.now()) => {
-    if (!fishing.length) return;
-    const i = luckySpot(fishing.length, now);
-    fishing.forEach((f, k) => { f.lucky = k === i; });
-    if (i === lucky) return;
-    lucky = i;
-    luckRing.position.set(fishing[i].x, 0.1, fishing[i].z);
-    drawSpotSigns();
-  };
-  updateLucky();
+  const marks = spotMarks(group, fishing, spotSigns, 0.1);
+  let signLang = null;
 
   // The fish buyer: an ice-box stand where your catch sells at the fish
   // market's prices. Its front (+z) faces whoever comes to sell.
@@ -448,7 +429,7 @@ export function buildHanPark(store, L) {
 
   const setSignLang = (lang) => {
     signLang = lang;
-    drawSpotSigns();
+    marks.setLang(lang);
     market.setSignLang(lang);
     martSign?.draw(lang ? localName(mart.name, lang) : mart.name.ko || mart.name.en, lang ? '' : mart.name.ko ? mart.name.en : '');
     rSign?.draw(lang ? localName(RAMEN_SIGN, lang) : RAMEN_SIGN.ko);
@@ -458,16 +439,12 @@ export function buildHanPark(store, L) {
   };
   setSignLang(null);
 
-  // Each frame (while near): the lucky spot moves on now and then, its clover spins.
-  const tick = (dt) => {
+  // Each frame (while near): the lucky and double spots move on now and
+  // then, their gems spin, and the arrow at your feet (me: [x, z] in the
+  // park's metres while you're in it, or null) points the way.
+  const tick = (dt, me = null) => {
     if (show) tickShow(dt);
-    if (!fishing.length) return;
-    luckT = (luckT + dt) % 1e4;
-    updateLucky();
-    const f = fishing[lucky];
-    luckGem.position.set(f.x, 1.9 + Math.sin(luckT * 2.4) * 0.12, f.z);
-    luckGem.rotation.y = luckT * 1.8;
-    luckRing.material.opacity = 0.45 + Math.sin(luckT * 3) * 0.25;
+    marks.tick(dt, me);
   };
   tick(0);
   // Dusk to night (0..1): the lamps and the kiosk's window light up.
@@ -481,11 +458,12 @@ export function buildHanPark(store, L) {
   };
 
   // Its still boxes baked together: a few draw calls on top of the city.
-  mergeStatic(group, [luckRing, luckGem, ...ducks.map((d) => d.g)]);
+  mergeStatic(group, [...marks.meshes, ...ducks.map((d) => d.g)]);
   if (D) group.add(showG); // (the drones and their watchers come later: never baked)
   return {
     group, colliders, decks, seats, products: [...products, ...market.products], vendors: market.vendors, clerk,
     fishing, fishBuy, bait, baitSeller, ramen, ducks, duckArea, setSignLang, tick, setNight,
+    get double() { return marks.double; }, // (the double spot is on right now)
     show, // the drone show right now, or null: { now: droneShowAt(), night, photo, sky } (main.js: camera, notices, music)
   };
 }
