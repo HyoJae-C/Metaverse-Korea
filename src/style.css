@@ -2876,3 +2876,40 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .upgrade-table th, .upgrade-table td { padding: 3px 6px; text-align: center; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
 .bag-slot .bag-lv { position: absolute; right: 3px; top: 1px; font-size: 11px; font-weight: 800; color: #c98a00; }
 .bag-seasoning { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; margin: 6px 0; border-radius: 12px; background: rgba(232, 185, 35, 0.14); }
+/* The recipe book as a stamp book (ui/recipe-book-ui.js), in the fish book's red-ink stamps. */
+.recipe-panel { background: #f4efe4; }
+.recipe-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); margin-top: 10px; }
+.recipe-cell { padding: 10px 4px 8px; gap: 5px; }
+.recipe-cell .fish-stamp-fish { font-size: 30px; }
+.recipe-cell .fish-stamp-name { font-size: 11px; }
+.recipe-cell.fresh .recipe-stamp { animation: stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+/* A cooking-class dish's picture (ui/dish-icon.js) */
+.dish-icon { display: inline-block; width: 1.5em; aspect-ratio: 1; vertical-align: middle; background: url("/assets/food/dish-icons.webp?v=1") no-repeat; background-size: 500% 100%; }
+.bag-slot .dish-icon { width: 78%; }
+.fish-stamp .dish-icon { width: 40px; }
+/* 두근두근: the upgrade's suspense over the panel (ui/dish-upgrade-ui.js) */
+.upgrade-panel { position: relative; }
+.upgrade-stage { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: inherit; background: radial-gradient(circle at 50% 42%, #fff6d8, #f3e3c0 60%, #e8d2a6); overflow: hidden; }
+.upgrade-stage-dish { position: relative; z-index: 1; font-size: 64px; line-height: 1; animation: up-shake 0.5s ease-in-out infinite, up-glow 0.9s ease-in-out infinite; }
+.upgrade-stage-dish .dish-icon { width: 120px; display: block; }
+.upgrade-stage-lv { position: relative; z-index: 1; font-size: 26px; font-weight: 900; color: #8a5a10; }
+.upgrade-stage-text { position: relative; z-index: 1; margin: 0; font-weight: 800; color: #7a5a3a; animation: up-beat 0.9s ease-in-out infinite; }
+.upgrade-stage-bar { position: relative; z-index: 1; width: 60%; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.1); overflow: hidden; }
+.upgrade-stage-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f0b429, #e8590c); animation: up-fuse linear forwards; }
+.upgrade-stage-rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; margin: -260px 0 0 -260px; opacity: 0.25; background: repeating-conic-gradient(rgba(255, 200, 60, 0.55) 0 8deg, transparent 8deg 22deg); animation: up-spin 6s linear infinite; }
+.upgrade-stage.win .upgrade-stage-dish { animation: up-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both; filter: drop-shadow(0 0 18px #ffd34d); }
+.upgrade-stage.win .upgrade-stage-rays { opacity: 0.9; animation-duration: 2s; }
+.upgrade-stage.win .upgrade-stage-lv { font-size: 40px; color: #d97706; animation: up-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both; }
+.upgrade-stage.win { background: radial-gradient(circle at 50% 42%, #fffbe6, #ffe08a 55%, #f5b94a); }
+.upgrade-stage.lose .upgrade-stage-dish { animation: up-sag 0.8s ease-out both; filter: grayscale(0.7); }
+.upgrade-stage.lose .upgrade-stage-rays { opacity: 0; }
+.upgrade-stage.lose { background: radial-gradient(circle at 50% 42%, #f3f1ee, #ddd8d0 60%, #c9c2b8); }
+.upgrade-stage.win .upgrade-stage-bar, .upgrade-stage.lose .upgrade-stage-bar { visibility: hidden; }
+@keyframes up-shake { 0%, 100% { transform: rotate(0) translateX(0); } 25% { transform: rotate(-6deg) translateX(-3px); } 75% { transform: rotate(6deg) translateX(3px); } }
+@keyframes up-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 190, 60, 0.4)); } 50% { filter: drop-shadow(0 0 16px rgba(255, 190, 60, 0.95)); } }
+@keyframes up-beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } 30% { transform: scale(1); } 45% { transform: scale(1.1); } }
+@keyframes up-fuse { to { width: 100%; } }
+@keyframes up-spin { to { transform: rotate(360deg); } }
+@keyframes up-pop { from { transform: scale(0.4); } to { transform: scale(1.15); } }
+@keyframes up-sag { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(0.9) translateY(6px); opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) { .upgrade-stage * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }

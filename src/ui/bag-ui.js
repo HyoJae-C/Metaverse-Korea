@@ -5,6 +5,7 @@ import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
 import { isDish, dishSlot, DISH_CAP } from '../core/bag.js';
+import { dishIcon, dishIconId } from './dish-icon.js';
 import { medalFor, medalIcon } from '../core/grill-game.js';
 const TIER_IDS = ['plain', 'jeongseong', 'dalin', 'myeongin', 'myeongjang', 'sura', 'cheonha']; // (core/dish-tier.js TIERS, every 5 levels)
 import { kimchiScore } from '../core/kimchi-market.js';
@@ -153,6 +154,7 @@ export class BagUI {
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
+        if (food && dishIconId(e)) b.replaceChildren(dishIcon(dishIconId(e))); // (a picture of the dish, not an emoji)
         if (food) { // (its best medal, and how many)
           const m = medalFor(kimchiScore(e));
           if (m) b.append(el('span', 'bag-medal', medalIcon(m)));
@@ -169,7 +171,9 @@ export class BagUI {
     const info = el('div', 'bag-info');
     if (this.sel >= 0) {
       const e = items[this.sel], d = this.describe(e);
-      info.append(el('strong', '', `${d.emoji} ${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`), el('small', 'fine', d.desc));
+      const title = el('strong', '', `${food && dishIconId(e) ? '' : d.emoji + ' '}${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`);
+      if (food && dishIconId(e)) title.prepend(dishIcon(dishIconId(e)), ' ');
+      info.append(title, el('small', 'fine', d.desc));
       if (food && (e.lv > 0 || e.by)) info.append(el('small', 'fine', [e.lv > 0 ? t('upgrade.tier.' + TIER_IDS[Math.floor(Math.min(30, e.lv) / 5)]) : '', e.by ? t('upgrade.made', { name: e.by }) : ''].filter(Boolean).join(' · ')));
       if (food) { // (how many of each medal; holding or throwing away takes the best one)
         const list = stacks.get(dishSlot(e)) || [], by = new Map();

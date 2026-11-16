@@ -177,7 +177,7 @@ import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
 import { lipstickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { createFishBait } from './game/fish-bait.js';
-import { createDishUpgrade, UPGRADE_ROOMS } from './game/dish-upgrade.js';
+import { createDishUpgrade } from './game/dish-upgrade.js';
 import { baitEntry } from './core/bait.js';
 import { CloudSave } from './core/cloud-save.js';
 import { Inventory, ITEMS, isWorn, parseTandem, tandemMsg } from './core/inventory.js';
@@ -2271,7 +2271,7 @@ const fishBait = createFishBait({
   root: $('bait-panel'), cloud, get wallet() { return wallet; }, bag, toast: (m) => shop.toast(m), refreshWallet: () => refreshWallet(),
   get me() { return me; }, get sfx() { return sfx; }, showBubble: (text) => showBubble(myLabel, $('labels'), text, 2500),
 });
-// Upgrading cooked dishes at any cooking class (game/dish-upgrade.js): the teacher's ✨ button.
+// Making cooked dishes tastier (upgrades, game/dish-upgrade.js) in any cooking class's kitchen.
 const dishUpgrade = createDishUpgrade({
   root: $('upgrade-panel'), cloud, bag, toast: (m) => shop.toast(m), get me() { return me; }, get sfx() { return sfx; },
   myName: () => nickname, describe: (e) => describeEntry(e), onChange: () => { if (!$('bag-panel').hidden) bagUi.render(); },
@@ -6640,7 +6640,6 @@ function moreActions(p, door) {
   const pm = picnic.action(p); if (pm) out.push(pm);
   out.push(...picnic.foodActions(p)); // food on a picnic mat
   const fb = frisbee.action(p); if (fb) out.push(fb);
-  if (UPGRADE_ROOMS.includes(interior.store.workshop) && clerk && Math.hypot(p.x - clerk.ch.root.position.x, p.z - clerk.ch.root.position.z) < 2.6) out.push(dishUpgrade.action(clerk)); // ✨ upgrade a dish (any dish, at any class)
   if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
   if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
@@ -6910,6 +6909,8 @@ function updateAction(p, tSec) {
         : { key: 'kpop', label: '📺 ' + t('kpop.open'), run: () => kpop.open() };
     } else if (nearFishing(p)) {
       next = { key: 'fish', label: '🎣 ' + t('fish.open'), run: () => openFishing() };
+    } else if (nearStation(p, 'tastier', 1.9)) { // a cooking class's kitchen: make a dish tastier (any dish, at any class: game/dish-upgrade.js)
+      next = dishUpgrade.action(clerk);
     } else if (nearStation(p, 'tteok', 1.3)) {
       next = { key: 'tteok', label: '🍡 ' + L(TTEOK_TEXT.open), run: () => { clerk?.ch.wave(); tteokUi.show(); } };
     } else if (nearStation(p, 'bibimbap', 1.3)) {

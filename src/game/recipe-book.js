@@ -19,7 +19,10 @@ export function createRecipeBook({ $, bag, shop }) {
     cooked(e) {
       const r = recipeOf(e);
       if (!r) return;
-      if (book.cooked(r.id, r.score)) shop.toast(`📜 ${t('recipe.new', { dish: t('recipe.d.' + r.id), k: book.kinds, all: RECIPES.length })}`);
+      if (book.cooked(r.id, r.score)) {
+        shop.toast(`📜 ${t('recipe.new', { dish: t('recipe.d.' + r.id), k: book.kinds, all: RECIPES.length })}`);
+        ui.fresh = r.id; // (its stamp slams in when the book is next opened)
+      }
       refresh();
     },
   };

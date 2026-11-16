@@ -310,6 +310,55 @@ export function buildInterior(store) {
     p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]],
   });
 
+  // A cooking class's little kitchen in the back right corner, where dishes
+  // are made tastier (음식을 더 맛있게 만들기, game/dish-upgrade.js): a
+  // counter with a stove and a simmering pot, a chopping board, a shelf of
+  // seasoning jars and a sign. Returns where you stand to use it.
+  const tastierKitchen = () => {
+    const kx = w / 2 - 3.1, kz = -d / 2 + 0.45, cw = 3.2; // (clear of the potted plant in the corner)
+    box(cw, 0.86, 0.8, kx, 0.43, kz, '#f3ece0'); // the counter
+    box(cw + 0.04, 0.05, 0.84, kx, 0.885, kz, '#8a5a3a'); // its wooden top
+    box(0.7, 0.06, 0.5, kx - 0.7, 0.94, kz, '#2b2b2e'); // the stove
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.18, 0.24, 16), mat('#b0b4ba'));
+    pot.position.set(kx - 0.7, 1.09, kz);
+    scene.add(pot);
+    const soup = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.01, 16), mat('#d8642c'));
+    soup.position.set(kx - 0.7, 1.2, kz);
+    scene.add(soup);
+    for (let k = 0; k < 3; k++) { // a little steam
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.07 + k * 0.02, 8, 6), mat('#ffffff', { transparent: true, opacity: 0.45 - k * 0.1, depthWrite: false }));
+      puff.position.set(kx - 0.7 + (k - 1) * 0.06, 1.32 + k * 0.16, kz);
+      scene.add(puff);
+    }
+    box(0.5, 0.03, 0.34, kx + 0.25, 0.925, kz, '#d9b382'); // chopping board
+    box(0.3, 0.02, 0.05, kx + 0.25, 0.95, kz + 0.06, '#c0c4c8'); // knife
+    box(cw, 0.04, 0.3, kx, 1.75, -d / 2 + 0.17, '#8a5a3a'); // shelf
+    ['#c8321f', '#f0b429', '#3f8f3f', '#7a4a2a', '#f3e7c9'].forEach((c, k) => {
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.18, 10), mat(c));
+      jar.position.set(kx - 1.2 + k * 0.6, 1.86, -d / 2 + 0.17);
+      scene.add(jar);
+    });
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 220;
+    const g = c.getContext('2d');
+    g.fillStyle = '#b0282e'; g.fillRect(0, 0, 1024, 220);
+    g.fillStyle = '#fff6dc'; g.fillRect(10, 10, 1004, 200);
+    g.fillStyle = '#b0282e';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, '✨ 음식을 더 맛있게 만들기!', 100, 960, 900);
+    g.fillText('✨ 음식을 더 맛있게 만들기!', 512, 92);
+    g.fillStyle = '#7a5a3a';
+    fitText(g, 'Make your dishes tastier', 52, 900);
+    g.fillText('Make your dishes tastier', 512, 172);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.77), new THREE.MeshBasicMaterial({ map: tex }));
+    sign.position.set(kx, 2.5, -d / 2 + 0.03);
+    scene.add(sign);
+    block(kx, kz, cw, 0.8);
+    return { x: kx, z: kz + 1.05 };
+  };
+
   // Product displays along the back and side walls.
   const products = [];
   // Back wall first, then the side walls; scaled to the room.
@@ -1806,6 +1855,7 @@ export function buildInterior(store) {
       if (kind === 'japchae') stations.japchae = spots;
       else stations[kind] = rolls;
       stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      stations.tastier = [tastierKitchen()];
       if (kind === 'tteok') {
         // A wooden steamer (시루) on a stand, pine needles peeking out.
         const siru = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.5, 18), mat('#9a6a45'));
@@ -1866,6 +1916,7 @@ export function buildInterior(store) {
       }
       stations.kimchi = spots;
       stations.kimchiTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      stations.tastier = [tastierKitchen()];
       // Salt sack at the far end.
       const sack = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.55, 12), mat('#efe6d2'));
       sack.position.set(tw / 2 + 0.7, 0.28, tz - 0.4);

@@ -1,0 +1,28 @@
+<!-- Renders the cooking-class dishes (core/held.js) into public/assets/food/dish-icons.webp: run "npx vite", open /scripts/dish-icons.html, save window.png, convert to webp (5 cells of 128 px, in DISH_ICONS order). -->
+<!doctype html><html><body style="margin:0;background:transparent">
+<script type="module">
+import * as THREE from 'three';
+import { makeHeld } from '/src/core/held.js';
+const DISHES = ['kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
+const S = 128;
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setSize(S * DISHES.length, S); r.setPixelRatio(1);
+document.body.append(r.domElement);
+r.setScissorTest(true);
+r.setClearColor(0x000000, 0);
+DISHES.forEach((d, i) => {
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7a6a, 2.2));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(1, 2, 1.5); scene.add(sun);
+  const m = makeHeld('gift:' + d);
+  const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+  m.position.sub(c);
+  scene.add(m);
+  const R = Math.max(sz.x, sz.y, sz.z) * 0.62;
+  const cam = new THREE.OrthographicCamera(-R, R, R, -R, 0.001, 10);
+  cam.position.set(0, R * 1.5, R * 1.6); cam.lookAt(0, 0, 0);
+  r.setViewport(i * S, 0, S, S); r.setScissor(i * S, 0, S, S);
+  r.render(scene, cam);
+});
+window.png = r.domElement.toDataURL('image/png');
+</script></body></html>
