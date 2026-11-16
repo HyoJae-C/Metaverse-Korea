@@ -46,6 +46,14 @@ export const PHOTO_LIFT = { x: -8, z: PART_Z + 1.5 }; // where you stand to call
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
+// The main photo: at most 3 m wide and 2.3 m tall; its centre's height, so
+// its label (0.5 m tall, 0.55 m under the photo) stays on the wall.
+export const MAIN_WALL_H = 4.1; // (its lamp, 0.7 m over the photo, stays on it)
+export function mainSize(p) {
+  const s = photoSize(p, 3);
+  return s.H > 2.3 ? photoSize(p, 3 * 2.3 / s.H) : s;
+}
+export const mainY = (H) => Math.max(CENTRE_Y, 0.15 + 0.25 + 0.55 + H / 2);
 export const photoSize = (p, max = MAX_SIDE) => (p.w >= p.h ? { W: max, H: max * p.h / p.w } : { W: max * p.w / p.h, H: max });
 
 // Wall spots for the 10 photos on a floor: 4 on the back wall, 3 on each
@@ -84,7 +92,7 @@ function sign(scene, wd, ht, x, y, z, ry, top, bottom, { bg = '#2f2a26', fg = '#
 // dark wall behind it and a small lamp above.
 function hang(scene, p, sl, loader, max = MAX_SIDE, c = LOOKS.dark) {
   const g = new THREE.Group();
-  g.position.set(sl.x, CENTRE_Y, sl.z);
+  g.position.set(sl.x, sl.y ?? CENTRE_Y, sl.z);
   g.rotation.y = sl.ry;
   scene.add(g);
   const { W, H } = photoSize(p, max);
@@ -123,6 +131,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   const looks = [];
   const show = showOf(store);
   const c = LOOKS[show.look] || LOOKS.dark;
+  const artist = show.artist.ko === show.artist.en ? show.artist.en : `${show.artist.ko} · ${show.artist.en}`; // (JH once, not "JH · JH")
   const Wall = c.lit ? THREE.MeshBasicMaterial : THREE.MeshLambertMaterial; // (pastel walls stay bright, day or night)
 
   // The dark gallery: its floor and walls laid just inside the room's own.
@@ -175,11 +184,15 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
     // The main photo on a freestanding dark wall in the middle, facing the
     // way in, with the show's title and the artist's name under it.
     const mp = mainPhoto(show);
-    box(4.6, 3.6, 0.3, 0, 1.8, cz, c.centre);
+    box(4.6, MAIN_WALL_H, 0.3, 0, MAIN_WALL_H / 2, cz, c.centre);
     block(0, cz, 4.8, 0.5);
-    const { H } = hang(scene, mp, { x: 0, z: cz + 0.15, ry: 0 }, loader, 3, c);
+    // At most 3 m wide and 2.3 m tall, set high enough that the label fits
+    // under it on the wall (Gallery D's main photo is almost square).
+    const ms = mainSize(mp);
+    const my = mainY(ms.H);
+    hang(scene, mp, { x: 0, y: my, z: cz + 0.15, ry: 0 }, loader, Math.max(ms.W, ms.H), c);
     looks.push({ x: 0, z: cz + 2, painting: mp });
-    sign(scene, 2.6, 0.5, 0, CENTRE_Y - H / 2 - 0.55, cz + 0.16, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} · ${show.artist.en}`, { bg: c.centre, fg: c.ink });
+    sign(scene, 3.6, 0.5, 0, my - ms.H / 2 - 0.55, cz + 0.16, 0, show.title.ko, `${show.title.en} · ${artist}`, { bg: c.centre, fg: c.ink });
   } else {
     // Upstairs: two benches back to back in the middle, facing the side walls.
     for (const s of [-1, 1]) {
@@ -225,7 +238,7 @@ export function buildPhotoShow(scene, room, { box, block }, floor = 1, store) {
   let clerk = null;
   if (floor === 1) {
     // The exhibition's board and the information desk on the right.
-    walls[1].signs.push(sign(scene, 3.4, 1.5, 8, 2.2, lz + 0.02, 0, show.title.ko, `${show.title.en} · ${show.artist.ko} ${show.artist.en}`, { bg: c.sign, fg: c.ink }));
+    walls[1].signs.push(sign(scene, 3.4, 1.5, 8, 2.2, lz + 0.02, 0, show.title.ko, `${show.title.en} · ${artist}`, { bg: c.sign, fg: c.ink }));
     const dz = PART_Z + 3;
     box(2.4, COUNTER_H - 0.03, 0.7, 8, (COUNTER_H - 0.03) / 2, dz, '#f2efe8'); // (COUNTER_H: the guide's face shows, core/counter-face.js)
     box(2.5, 0.05, 0.8, 8, COUNTER_H, dz, '#2f6b3f');

@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { PHOTO_SHOWS, showOf, floorsOf, photosOn, mainPhoto } from '../src/data/photo-show.js';
-import { photoSlots, photoFloors, ROOM_PHOTO, PHOTO_LIFT } from '../src/core/photo-show.js';
+import { photoSlots, photoFloors, mainSize, mainY, MAIN_WALL_H, ROOM_PHOTO, PHOTO_LIFT } from '../src/core/photo-show.js';
 import { museumFloorStore } from '../src/core/museum.js';
 
 const STORES = JSON.parse(readFileSync('public/regions/another-seoul/stores.json', 'utf8')).stores;
@@ -27,6 +27,16 @@ test('Gallery A: 30 photos on three floors; Gallery D: 20 on two; 10 a floor, no
   assert.equal(PHOTO_SHOWS['forest-gallery-3'].title.ko, '모두와 함께한 모두서울');
   assert.equal(PHOTO_SHOWS['forest-gallery-3'].artist.en, 'JH');
   assert.equal(PHOTO_SHOWS['forest-gallery-3'].look, 'pastel'); // (bright, like the game's own pictures)
+});
+
+test('the main photo and its label fit on the middle wall, above the floor', () => {
+  for (const show of Object.values(PHOTO_SHOWS)) {
+    const { W, H } = mainSize(mainPhoto(show));
+    const y = mainY(H);
+    assert.ok(W <= 3.01 && H <= 2.31, `${show.dir} ${W} x ${H}`);
+    assert.ok(y - H / 2 - 0.55 - 0.25 >= 0.1, `${show.dir}: the label is under the floor`);
+    assert.ok(y + H / 2 + 0.75 <= MAIN_WALL_H, `${show.dir}: the lamp is over the wall`);
+  }
 });
 
 test('every image is in public/', () => {
