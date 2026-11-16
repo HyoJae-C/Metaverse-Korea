@@ -514,6 +514,8 @@ export const KO = {
   'welcome.tip2': "아껴 쓰세요. 카페, 음식, 쇼핑이 쌓이면 금방 줄어요. 지갑의 📒 가계부에서 언제든 확인할 수 있어요.",
   'welcome.tip3': "돈이 모자라면 매일 받는 여행지원금, 아르바이트, 심부름이 도움이 되지만, 진짜 재미는 탐험이에요.",
   'welcome.go': "탐험하러 가요!",
+  'notice.title': "안내",
+  'notice.ok': "확인",
   'pet.pat': '{name} 쓰다듬기',
   'npc.hi': '{name}에게 인사하기',
   'npc.clerk': '점원',

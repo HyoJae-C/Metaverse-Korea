@@ -515,6 +515,8 @@ export const ES = {
   'welcome.tip2': "Gasta con cabeza: cafés, comida y compras se suman. Mira el 📒 Libro de cuentas en tu cartera cuando quieras.",
   'welcome.tip3': "¿Te falta dinero? La ayuda de viaje diaria, los trabajos y los recados ayudan, pero lo divertido de verdad es explorar.",
   'welcome.go': "¡A explorar!",
+  'notice.title': "Un aviso para ti",
+  'notice.ok': "Aceptar",
   'pet.pat': 'Acariciar a {name}',
   'npc.hi': 'Saludar a {name}',
   'npc.clerk': 'Dependiente',
