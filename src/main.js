@@ -33,6 +33,7 @@ import { yardY } from './core/cathedral-yard-ground.js';
 import { terraceY } from './core/temple-terrace.js';
 import { createBuddhaView } from './game/buddha-view.js';
 import { createPrayer } from './game/prayer.js';
+import { createHolyWater } from './game/holy-water.js';
 import { createMoktak } from './game/moktak.js';
 import { splitInstances } from './core/split-instances.js';
 import { FarPeople } from './core/far-people.js';
@@ -4952,6 +4953,7 @@ let debugPose = null;
 function currentActivity() {
   if (debugPose) return debugPose; // (?debug: __mk.forcePose)
   if (prayer.pose) return prayer.pose; // praying at an altar (game/prayer.js)
+  if (holyWater.pose) return holyWater.pose; // the sign of the cross at the cathedral's font (game/holy-water.js)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
@@ -5166,6 +5168,7 @@ function palaceAct(p) {
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
 let anotherTower;
 const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { return interior; }, landmarks: map.landmarks, bubble: (text) => showBubble(myLabel, $('labels'), text, 2500) }); // (game/prayer.js: at the temples' altars and the cathedral's)
+const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
 const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
 const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min); // (game/tower-look.js: tilt up to Modu Tower's top)
@@ -6743,6 +6746,8 @@ function updateAction(p, tSec) {
       else if (!decorGame.decor.picked) closePiece();
     } else if (!seated && prayer.act(p)) { // at the cathedral's altar rail (game/prayer.js)
       next = prayer.act(p);
+    } else if (!seated && holyWater.act(p)) { // by its holy water fonts (game/holy-water.js)
+      next = holyWater.act(p);
     } else if (!seated && stampStands.nearest(p.x, p.z, interior.store.id)) {
       next = stampAct(stampStands.nearest(p.x, p.z, interior.store.id));
     } else if (ride?.kind === 'coaster') { // no getting off mid-air: the button switches the view
@@ -7179,6 +7184,7 @@ renderer.setAnimationLoop((now) => {
     for (const m of interior.stations.benchBar) m.visible = !lifting;
   }
   prayer.tick(p, mag);
+  holyWater.tick(p, mag);
   moktak.tick(p, dt, mode === 'street', inDharmaHall());
   if (busking.performing && (mag > 0.3 || mode !== 'street' || riding || !busking.stageAt(p.x, p.z))) stopBusking();
   me.activity(currentActivity());
