@@ -2581,11 +2581,15 @@ function talkToInstructor() {
 // A gym or studio spot you're using: where you stand (or lie, on a bench or
 // a reformer) and where you get off again.
 let gymSpot = null; // { x, z, back: [x, z] | null }
+let gymLow = 0; // how far the camera looks below the usual point while working out
 function useGymSpot(st, kind) {
   const at = st.lie || { x: st.x, z: st.z, ry: st.face ?? me.root.rotation.y };
   me.root.position.set(at.x, 0, at.z);
   me.root.rotation.y = at.ry;
   gymSpot = { x: at.x, z: at.z, back: st.lie ? [st.x, st.z] : null };
+  // A view from behind and to the side, so the pose shows (from straight
+  // behind, a lying pose was all machine; you can still drag the view).
+  cam.yaw = at.ry + Math.PI + (st.lie ? 1.3 : 0.8);
   gymUi.show(kind);
 }
 function leaveGymSpot() {
@@ -7271,8 +7275,11 @@ renderer.setAnimationLoop((now) => {
   let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
+  // Working out: look lower so your pose sits above the gym panel (more on a
+  // tall phone screen, where the panel takes more of the height).
+  gymLow += ((gymUi.open ? (innerHeight > innerWidth ? 1.7 : 1.1) : 0) - gymLow) * Math.min(1, dt * 6);
   if (beauty.beautyCam?.look) camera.lookAt(...beauty.beautyCam.look); // the mirror, or the face on the bed
-  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Modu Tower: tilted up
+  else camera.lookAt(p.x, p.y + (hatWorkshop.hatDraft || beauty.beautyCam ? 0.05 : 1.1 - gymLow + towerLook.lift(cam.pitch, camHoriz)), p.z); // workshop: character sits above the panel; Modu Tower: tilted up
   if (DEBUG_TOP) {
     camera.position.set(p.x, DEBUG_TOP, p.z + DEBUG_TOP * 0.35);
     camera.lookAt(p.x, 0, p.z);

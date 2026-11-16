@@ -1534,6 +1534,21 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .breath-ring { width: 120px; height: 120px; margin: 6px auto; border-radius: 50%; background: radial-gradient(circle, #e6dcf5 0%, #b9a6f0 70%, #7a5fb0 100%); transition: transform 0.08s linear; }
 .breath-ring.out { background: radial-gradient(circle, #dff3ee 0%, #8fd3c7 70%, #3f7f82 100%); }
 .gym-lift.held { filter: brightness(0.88); transform: scale(0.97); }
+/* During a set the panel is a slim bar so your pose stays visible above it
+   (the camera also looks lower: main.js gymLow). */
+.sheet.order-panel.gym-live { padding: 10px 14px 12px; gap: 6px; }
+.gym-live h3 { display: none; }
+.gym-live .karaoke-status { margin: 4px 40px 0; font-size: 14px; }
+.gym-live .order-hint { padding: 0 4px; background: none; text-align: center; font-size: 13px; }
+.gym-live .yoga-pose { font-size: 16px; }
+.gym-live .gym-flash { min-height: 1.1em; font-size: 13px; }
+.gym-live .gym-track { height: 22px; }
+.gym-live .sauna-meter { height: 14px; }
+.gym-live .breath-ring { width: 64px; height: 64px; margin: 0 auto; }
+.gym-live > .gym-track:nth-child(2), .gym-live > .sauna-meter:nth-child(2) { margin-right: 40px; } /* (clear of the ✕) */
+.gym-live .duck-pads { display: flex; gap: 10px; }
+.gym-live .duck-pad { flex: 1; min-width: 0; margin: 0; padding: 12px; }
+body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) { display: none; }
 
 /* Library books */
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
