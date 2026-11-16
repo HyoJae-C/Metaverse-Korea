@@ -5,6 +5,8 @@
 // shops of three pieces each (Yozi 2026-11-16: three kinds a shop, more shops). Each shape comes in
 // one colour (the item rule allows at most two).
 // [id, emoji, footprint [w, d], seat, name, build(g, part, box, glow)]
+// seat: false, true (one person), 2 (two side by side), 'floor' (two
+// floor cushions) or 'bed' (two lie down); see furnitureSeats in furniture.js.
 import * as THREE from 'three';
 
 export const SHOP_FURNITURE = [
@@ -39,7 +41,7 @@ export const SHOP_FURNITURE = [
     part(new THREE.SphereGeometry(0.02, 6, 4), '#c8d8c4', -0.12, 0.42, 0);
     for (const x of [0.1, 0.22]) part(new THREE.CylinderGeometry(0.035, 0.03, 0.05, 10), '#cfe0cc', x, 0.345, 0.06); // cups
   }],
-  ['f-bangseok', '🟥', [1.0, 0.55], true, { en: 'Floor cushions', ko: '방석 두 개', ja: '座布団ふたつ', zh: '坐垫两个' }, (g, part, box) => {
+  ['f-bangseok', '🟥', [1.0, 0.55], 'floor', { en: 'Floor cushions', ko: '방석 두 개', ja: '座布団ふたつ', zh: '坐垫两个' }, (g, part, box) => {
     for (const [x, c] of [[-0.25, '#c8323c'], [0.25, '#2f5aa8']]) {
       box(0.45, 0.08, 0.45, x, 0.04, 0, c);
       box(0.39, 0.085, 0.39, x, 0.042, 0, c === '#c8323c' ? '#d84a52' : '#4472c0');
@@ -59,7 +61,7 @@ export const SHOP_FURNITURE = [
     }
   }],
   // --- Retro Euljiro: 레트로 ---
-  ['f-retro-sofa', '🛋️', [1.7, 0.8], true, { en: 'Retro check sofa', ko: '레트로 체크 소파', ja: 'レトロなチェックのソファ', zh: '复古格纹沙发' }, (g, part, box) => {
+  ['f-retro-sofa', '🛋️', [1.7, 0.8], 2, { en: 'Retro check sofa', ko: '레트로 체크 소파', ja: 'レトロなチェックのソファ', zh: '复古格纹沙发' }, (g, part, box) => {
     const check = (() => {
       const c = document.createElement('canvas');
       c.width = c.height = 64;
@@ -101,7 +103,7 @@ export const SHOP_FURNITURE = [
     box(0.02, 0.02, 0.2, 0.18, 0.69, -0.02, '#c0c4ca').rotation.y = 0.4; // tone arm
   }],
   // --- Modern: 모던 ---
-  ['f-modular', '🛋️', [2.2, 0.9], true, { en: 'Modular sofa', ko: '모듈 소파', ja: 'モジュールソファ', zh: '模块沙发' }, (g, part, box) => {
+  ['f-modular', '🛋️', [2.2, 0.9], 2, { en: 'Modular sofa', ko: '모듈 소파', ja: 'モジュールソファ', zh: '模块沙发' }, (g, part, box) => {
     for (const x of [-0.73, 0, 0.73]) {
       box(0.72, 0.3, 0.9, x, 0.15, 0, '#e8e2d6'); // three soft blocks
       box(0.72, 0.36, 0.22, x, 0.48, -0.34, '#e8e2d6');
@@ -135,7 +137,7 @@ export const SHOP_FURNITURE = [
     for (let i = 0; i < 6; i++) box(0.08, 0.28, 0.2, -0.4 + i * 0.11, 0.51, 0.0, books[i % 4]);
     part(new THREE.SphereGeometry(0.12, 12, 8), '#8fbf7a', 0.25, 0.92, 0.03); // a little plant
   }],
-  ['f-fabric-bed', '🛏️', [1.7, 2.2], false, { en: 'Upholstered bed', ko: '패브릭 침대', ja: 'ファブリックベッド', zh: '布艺床' }, (g, part, box) => {
+  ['f-fabric-bed', '🛏️', [1.7, 2.2], 'bed', { en: 'Upholstered bed', ko: '패브릭 침대', ja: 'ファブリックベッド', zh: '布艺床' }, (g, part, box) => {
     box(1.7, 0.32, 2.2, 0, 0.16, 0, '#b8b0a4');
     box(1.6, 0.2, 2.05, 0, 0.42, 0.04, '#ffffff');
     box(1.62, 0.07, 1.25, 0, 0.55, 0.45, '#9cb8a8'); // a duvet
@@ -153,7 +155,7 @@ export const SHOP_FURNITURE = [
     }
     box(1.24, 0.06, 0.06, 0, 0.2, 0, '#9a6638'); // stretcher
   }],
-  ['f-wood-bench', '🪑', [1.4, 0.4], true, { en: 'Wooden bench', ko: '원목 벤치', ja: '木のベンチ', zh: '木长凳' }, (g, part, box) => {
+  ['f-wood-bench', '🪑', [1.4, 0.4], 2, { en: 'Wooden bench', ko: '원목 벤치', ja: '木のベンチ', zh: '木长凳' }, (g, part, box) => {
     box(1.4, 0.06, 0.38, 0, 0.44, 0, '#c08a58');
     for (const s of [-1, 1]) {
       box(0.06, 0.41, 0.3, 0.6 * s, 0.205, 0, '#a87444');

@@ -4,7 +4,7 @@
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, pieceBlocked, starterLayout } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, pieceBlocked, starterLayout } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 
@@ -47,12 +47,7 @@ export function createDecor(game) {
     // The piece being carried doesn't block you until it is put down.
     const extra = decor.items.filter((it) => it !== decor.carry).map(furnitureCollider).filter(Boolean);
     game.interior.collision = game.activeCollision = new CollisionMap(decor.built.colliders.concat(extra));
-    game.interior.seats = decor.items.filter((it) => furnitureById(it.id).seat).map((it) => {
-      const fx = Math.sin(it.ry), fz = Math.cos(it.ry);
-      const out = furnitureById(it.id).size[1] / 2 + 0.55;
-      return { x: it.x + fx * 0.05, z: it.z + fz * 0.05, ry: it.ry, stand: [it.x + fx * out,
-        it.z + fz * out] };
-    });
+    game.interior.seats = decor.items.flatMap(furnitureSeats);
     saveDecor();
     markPlaced();
   }

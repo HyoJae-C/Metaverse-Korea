@@ -534,6 +534,7 @@ export const ID = {
   'home.leave': 'Keluar rumah',
   'zoo.leave': 'Keluar dari kebun binatang',
   'home.blocked': 'Ada yang menghalangi. Geser sedikit lalu taruh lagi.',
+  'home.lie': 'Berbaring',
   'home.visit': 'Siapa yang boleh datang:',
   'home.visitAll': 'Semua',
   'home.visitFriends': 'Teman',

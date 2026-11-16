@@ -534,6 +534,7 @@ export const HI = {
   'home.leave': 'बाहर जाएँ',
   'zoo.leave': 'चिड़ियाघर से बाहर जाएँ',
   'home.blocked': 'कुछ रास्ते में है। थोड़ा हटकर फिर से रखें।',
+  'home.lie': 'लेट जाएँ',
   'home.visit': 'कौन आ सकता है:',
   'home.visitAll': 'सभी',
   'home.visitFriends': 'दोस्त',

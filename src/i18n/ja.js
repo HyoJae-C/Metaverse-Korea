@@ -532,6 +532,7 @@ export const JA = {
   'home.leave': '外に出る',
   'zoo.leave': '動物園を出る',
   'home.blocked': 'ほかの家具にぶつかります。少し動いてからもう一度置いてください。',
+  'home.lie': '横になる',
   'home.visit': '遊びに来られる人:',
   'home.visitAll': '全員',
   'home.visitFriends': 'フレンド',

@@ -533,6 +533,7 @@ export const ES = {
   'home.leave': 'Salir',
   'zoo.leave': 'Salir del zoo',
   'home.blocked': 'Hay algo en medio. Muévete un poco y vuelve a dejarlo.',
+  'home.lie': 'Acostarse',
   'home.visit': 'Quién puede visitar:',
   'home.visitAll': 'Todos',
   'home.visitFriends': 'Amigos',

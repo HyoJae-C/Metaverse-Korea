@@ -131,6 +131,8 @@ const LAMPS = [
   }],
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
+// The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
+const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 } };
 export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
 
 export const FURNITURE = [
@@ -138,7 +140,7 @@ export const FURNITURE = [
   // stained, patched and a little crooked, so the furniture shops on
   // Euljiro have something to replace (Yozi 2026-11-16). Ids stay the same,
   // so rooms already decorated keep their pieces.
-  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
+  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], lie: 2, name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
     build(g) {
       box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#a99278');
       box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#e8e2d4'); // yellowed mattress
@@ -148,7 +150,7 @@ export const FURNITURE = [
       box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#8a6e52'); // headboard
       box(g, 0.5, 0.04, 0.11, 0.5, 0.62, -1.03, '#6e5640').rotation.z = 0.2; // a cracked board
     } },
-  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: true, name: { en: 'Old sofa', ko: '낡은 소파', ja: '古いソファ', zh: '旧沙发' },
+  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: 2, name: { en: 'Old sofa', ko: '낡은 소파', ja: '古いソファ', zh: '旧沙发' },
     build(g) {
       box(g, 1.8, 0.36, 0.8, 0, 0.18, 0, '#b3877a');
       box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#b3877a');
@@ -226,7 +228,7 @@ export const FURNITURE = [
   // "furniture"): only once you've bought one. Shades glow (unlit material).
   ...LAMPS.map(([id, emoji, size, name, build]) => ({ id, emoji, item: id, size, name, build })),
   // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
-  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...(seat ? { seat } : {}), name,
+  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
     build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
@@ -278,6 +280,26 @@ export const FURNITURE = [
 ];
 
 export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);
+
+// Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
+// shape interiors use (main.js sitDown). Long sofas and benches seat two side
+// by side, a bed lies two (Yozi 2026-11-16), floor cushions sit on the floor.
+export function furnitureSeats(it) {
+  const f = furnitureById(it.id);
+  const n = f?.lie || f?.seat;
+  if (!n) return [];
+  const [w, d] = f.size, c = Math.cos(it.ry), s = Math.sin(it.ry);
+  const at = (lx, lz) => [it.x + lx * c + lz * s, it.z - lx * s + lz * c]; // the piece's own x (right) and z (front)
+  const xs = n === 2 ? [-w / 4, w / 4] : [0];
+  if (f.lie) return xs.map((lx) => { // head on the pillow at the back
+    const [x, z] = at(lx, 0.15);
+    return { x, z, ry: it.ry, lie: true, bed: true, stand: at(Math.sign(lx || 1) * (w / 2 + 0.5), 0.3) };
+  });
+  return xs.map((lx) => {
+    const [x, z] = at(lx, 0.05);
+    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}) };
+  });
+}
 
 export function buildFurniture(id) {
   const def = furnitureById(id);
