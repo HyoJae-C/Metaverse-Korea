@@ -1,11 +1,14 @@
 // Picnic mats (core/picnic-mat.js) in the Han River park and on the street's
 // park lawns (Seoul Forest): spread the mat from your bag on the grass, lie
 // down or sit on it, fold it up again. Everyone there sees the mats (the
-// owner's "mt" state) and can take a free spot.
+// owner's "mt" state) and can take a free spot. The owner can set out dishes
+// from the cooking classes on it (core/picnic-food.js, "mf") to show off.
 //
 // The game's live state comes in through `game` (getters), as in dining.js.
 import { MAT_COLORS, makeMat, matSpots, encodeMat, parseMat, canSpread, matInFront, matsOverlap, keepsMat, matLost, MAT_NEAR, matDir, matAngle, lawnAngle } from '../core/picnic-mat.js';
 import { L } from '../ui/pocha-ui.js';
+import { t } from '../core/i18n.js';
+import { makeFood, encodeFood, parseFood, nextDish, foodInBag, MEDAL_ICON } from '../core/picnic-food.js';
 
 export const MAT_TEXT = {
   spread: { en: 'Spread picnic mat', ko: '돗자리 펴기', ja: 'レジャーシートを広げる', zh: '铺野餐垫', es: 'Extender la manta', id: 'Gelar tikar piknik', vi: 'Trải thảm picnic', hi: 'पिकनिक चटाई बिछाएँ', fr: 'Étendre la nappe de pique-nique', th: 'ปูเสื่อปิกนิก', ar: 'افرش حصيرة النزهة' },
@@ -37,6 +40,7 @@ export const hasMat = (bag, held = null) => isMat(held) || bag.list().some(isMat
  */
 export function createPicnic(game, street = null) {
   let mine = null; // { x, z, c } while my mat is spread
+  let food = []; // dishes on my mat: [{ g, m }] (they stay in the bag)
   let lastUsed = 0; // when I was last by my mat (it goes if left alone, see matLost)
   let room = null; // the park interior the mats belong to
   let baseSeats = null; // the park's own seats (benches, tables)
@@ -48,6 +52,7 @@ export function createPicnic(game, street = null) {
     for (const d of drawn.values()) d.mesh.removeFromParent();
     drawn.clear();
     mine = null;
+    food = [];
     room = null;
     baseSeats = null;
   }
@@ -55,12 +60,12 @@ export function createPicnic(game, street = null) {
   // Mats in the park right now: mine and everyone else's.
   function mats() {
     const out = [];
-    if (mine) out.push({ id: game.myId, m: mine });
+    if (mine) out.push({ id: game.myId, m: mine, f: food, me: true });
     // (an open-air park's people are on the street's network: only the mats in this park, st.mp)
     const here = game.mode === 'store' && game.interior?.store?.open ? game.interior.store.id : null;
     for (const [id, p] of game.others.players) {
       const m = !p.hidden && (p.target?.mp || null) === here && parseMat(p.target?.mt, room?.lawns);
-      if (m) out.push({ id, m });
+      if (m) out.push({ id, m, f: parseFood(p.target?.mf), name: p.name });
     }
     return out;
   }
@@ -82,17 +87,19 @@ export function createPicnic(game, street = null) {
     }
     let changed = false;
     const seen = new Set();
-    for (const { id, m } of all) {
+    for (const { id, m, f, name } of all) {
       seen.add(id);
-      const key = encodeMat(m);
+      const key = encodeMat(m) + '|' + encodeFood(f);
       const d = drawn.get(id);
+      if (d) { d.food = f; d.name = name; }
       if (d?.key === key) continue;
       d?.mesh.removeFromParent();
       const mesh = makeMat(m.c);
+      if (f.length) mesh.add(makeFood(f)); // (in the mat's own space: it turns with it)
       mesh.position.set(m.x, 0, m.z);
       mesh.rotation.y = matAngle(m); // the way its owner faced (square with a lawn laid at an angle)
       room.scene.add(mesh);
-      drawn.set(id, { key, mesh, mat: m });
+      drawn.set(id, { key, mesh, mat: m, food: f, name, me: id === game.myId });
       changed = true;
     }
     for (const [id, d] of drawn) if (!seen.has(id)) { d.mesh.removeFromParent(); drawn.delete(id); changed = true; }
@@ -131,6 +138,7 @@ export function createPicnic(game, street = null) {
   function fold(bumped = false) {
     if (!mine) return;
     mine = null;
+    food = [];
     game.shop.toast(L(bumped ? MAT_TEXT.bumped : MAT_TEXT.folded));
     game.resendState();
     game.clearAction();
@@ -139,6 +147,7 @@ export function createPicnic(game, street = null) {
   // Left alone too long or far behind: folded up, back in the bag (it never left it).
   function lose() {
     mine = null;
+    food = [];
     const lines = MAT_TEXT.lost;
     game.shop.toast(L(lines[Math.floor(Math.random() * lines.length)]));
     game.resendState();
@@ -161,14 +170,65 @@ export function createPicnic(game, street = null) {
     return { key: 'mat-spread', label: '🧺 ' + L(MAT_TEXT.spread), run: () => spread() };
   }
 
+  // Set the next dish from the bag out on my mat, or take them all back.
+  function putFood() {
+    const d = mine && nextDish(game.bag.list(), food);
+    if (!d) return;
+    food = [...food, d];
+    game.me.play?.('cheer');
+    game.shop.toast(t('matFood.putDone', { dish: dishName(d) }));
+    game.resendState();
+    game.clearAction();
+    tick();
+  }
+  function takeFood() {
+    if (!food.length) return;
+    food = [];
+    game.shop.toast(t('matFood.offDone'));
+    game.resendState();
+    game.clearAction();
+    tick();
+  }
+  const dishName = (d) => t('matFood.d.' + d.g) + (MEDAL_ICON[d.m] ? ' ' + MEDAL_ICON[d.m] : '');
+  const onMat = (p, m) => Math.hypot(p.x - m.x, p.z - m.z) < 2.4;
+
+  // The extra choices by a mat with food: set out / take back dishes (my
+  // mat), or look at what's on someone else's.
+  function foodActions(p) {
+    if (!room) return [];
+    const out = [];
+    if (mine && onMat(p, mine)) {
+      if (nextDish(game.bag.list(), food)) out.push({ key: 'mat-food', label: '🍱 ' + t('matFood.put'), run: putFood });
+      if (food.length) out.push({ key: 'mat-food-off', label: '🧺 ' + t('matFood.off'), run: takeFood });
+    }
+    let best = null, bestD = 2.4;
+    for (const d of drawn.values()) {
+      if (d.me || !d.food?.length) continue;
+      const dd = Math.hypot(p.x - d.mat.x, p.z - d.mat.z);
+      if (dd < bestD) { best = d; bestD = dd; }
+    }
+    if (best) {
+      const list = best.food.map(dishName).join(', ');
+      out.push({ key: 'mat-food-look', label: '👀 ' + t('matFood.look'), run: () => game.shop.toast(best.name ? t('matFood.picnic', { name: best.name, list }) : list) });
+    }
+    return out;
+  }
+
   return {
-    tick, action, fold,
+    tick, action, fold, foodActions,
     // For our state: "x,z,c" while our mat is spread.
     get sync() { return mine && room ? encodeMat(mine) : null; },
+    // For our state: the dishes on our spread mat ("kimbap.g,kimchi.s").
+    get foodSync() { return mine && room && food.length ? encodeFood(food) : null; },
     get mine() { return mine; },
     // The picnic lawn we're on (Han River park, Seoul Forest), or null.
     get room() { return room; },
     // If the mat leaves the bag (sold, given away), it can't stay spread.
-    checkBag() { if (mine && !hasMat(game.bag, game.held)) fold(); },
+    // (and a dish eaten, sold or given away leaves the mat)
+    checkBag() {
+      if (mine && !hasMat(game.bag, game.held)) { fold(); return; }
+      const keep = foodInBag(food, game.bag.list());
+      if (keep.length !== food.length) { food = keep; game.resendState(); }
+    },
   };
 }
