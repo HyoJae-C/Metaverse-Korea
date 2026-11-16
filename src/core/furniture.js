@@ -291,9 +291,12 @@ export function furnitureSeats(it) {
   const [w, d] = f.size, c = Math.cos(it.ry), s = Math.sin(it.ry);
   const at = (lx, lz) => [it.x + lx * c + lz * s, it.z - lx * s + lz * c]; // the piece's own x (right) and z (front)
   const xs = n === 2 ? [-w / 4, w / 4] : [0];
-  if (f.lie) return xs.map((lx) => { // head on the pillow at the back
+  // Head on the pillow at the back. A bed often stands against a wall, so
+  // both places are offered from either side or the foot (reach), and you
+  // get up at the foot, never on the wall side.
+  if (f.lie) return xs.map((lx) => {
     const [x, z] = at(lx, 0.15);
-    return { x, z, ry: it.ry, lie: true, bed: true, stand: at(Math.sign(lx || 1) * (w / 2 + 0.5), 0.3) };
+    return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6, stand: at(lx, d / 2 + 0.55) };
   });
   return xs.map((lx) => {
     const [x, z] = at(lx, 0.05);

@@ -191,18 +191,18 @@ export class RemotePlayers {
   nearestFree(x, z, r) {
     let best = null, bd = r;
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
+      if (p.hidden || !p.target || p.target.bk || p.target.fl || p.target.sit) continue; // (riding, a flying operator: game/sky-flight.js, or sitting or lying down: the seat beside them comes first)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < bd) { bd = d; best = { id, name: p.name }; }
     }
     return best;
   }
 
-  // Everyone visible within r metres who is not riding, closest first.
+  // Everyone visible within r metres who is not riding or seated, closest first.
   nearbyFree(x, z, r) {
     const out = [];
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk || p.target.fl) continue; // (riding, or a flying operator: game/sky-flight.js)
+      if (p.hidden || !p.target || p.target.bk || p.target.fl || p.target.sit) continue; // (riding, a flying operator: game/sky-flight.js, or sitting or lying down: the seat beside them comes first)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < r) out.push({ id, name: p.name, d });
     }
