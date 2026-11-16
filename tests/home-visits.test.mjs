@@ -7,6 +7,8 @@ test('a layout goes over the room and comes back the same (rounded)', () => {
   const m = layoutMsg([['bed', -5.8, -4.25, 0], ['sofa', 0.123456, 1.987654, Math.PI]]);
   assert.deepEqual(parseVisitMsg(m).lay, [['bed', -5.8, -4.25, 0], ['sofa', 0.12, 1.99, 3.14]]);
   assert.ok(m.length < 120);
+  const on = parseVisitMsg(layoutMsg([['lamp-moon', 1, 2, 0, 0.65, 1]])).lay; // on a table, switched off
+  assert.deepEqual(on, [['lamp-moon', 1, 2, 0, 0.65, 1]]);
 });
 
 test('kicks, junk and other emotes', () => {
