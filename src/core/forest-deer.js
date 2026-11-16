@@ -3,8 +3,11 @@
 // wander about, stop to graze and look up. Downloaded the first time the
 // paddock's fence is on screen.
 //
-// Every deer shares three InstancedMeshes (bodies, heads, legs), so the whole
-// herd is three draw calls however many deer there are.
+// Every deer shares three InstancedMeshes (bodies, necks with their heads,
+// legs), so the whole herd is three draw calls however many deer there are.
+// The neck and head are one piece hinged at the shoulder, so when a deer
+// lowers its head to graze the neck bends down with it (they used to come
+// apart: the neck was part of the body and stayed upright).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -27,14 +30,13 @@ function baked(parts) {
 }
 const ball = (r, w = 10, h = 8) => new THREE.SphereGeometry(r, w, h);
 
-// The body (with neck, spots, rump and tail), from the ground; front is +z.
+// The body (with spots, rump and tail), from the ground; front is +z.
 function bodyGeo() {
   const parts = [
     [ball(0.3, 12, 10), BROWN, [0, 0.78, 0], [0.8, 0.82, 1.45]],
     [ball(0.24, 10, 8), CREAM, [0, 0.7, 0.02], [0.82, 0.6, 1.3]], // the pale belly
     [ball(0.14), WHITE, [0, 0.8, -0.38], [1, 1.1, 0.7]], // the white rump
     [ball(0.06, 6, 5), DARK, [0, 0.9, -0.45], [0.8, 1.4, 0.8]], // the tail
-    [new THREE.CylinderGeometry(0.08, 0.12, 0.42, 8), BROWN, [0, 1.0, 0.3], [1, 1, 1], [0.55, 0, 0]], // the neck
   ];
   // white spots, two rows of four along each side of the back. Each sits on
   // the body's ellipsoid (it narrows toward the chest and rump, so a spot
@@ -55,18 +57,26 @@ function bodyGeo() {
   }
   return baked(parts);
 }
-// The head, about its pivot at the top of the neck; it looks along +z.
+// The neck and head, about the hinge at the shoulder (SHOULDER, inside the
+// body); the neck runs up and forward to the head (at HEAD_AT), which looks
+// along +z.
+const SHOULDER = [0, 0.84, 0.22], HEAD_AT = [0, 0.31, 0.21];
 function headGeo() {
+  const [, hy, hz] = HEAD_AT, len = Math.hypot(hy, hz), tilt = Math.atan2(hz, hy);
+  const along = (k) => [0, (hy / len) * k, (hz / len) * k];
+  const at = ([x, y, z]) => [x, y + hy, z + hz];
   const parts = [
-    [ball(0.12), BROWN, [0, 0, 0.04], [0.85, 0.9, 1.25]],
-    [ball(0.07, 8, 6), CREAM, [0, -0.04, 0.17], [1, 0.85, 1]], // the muzzle
-    [ball(0.026, 6, 5), DARK, [0, -0.02, 0.235]], // the nose
+    // the neck, from a little inside the body up to under the head
+    [new THREE.CylinderGeometry(0.08, 0.11, len + 0.04, 8), BROWN, along((len - 0.04) / 2), [1, 1, 1], [tilt, 0, 0]],
+    [ball(0.12), BROWN, at([0, 0, 0.04]), [0.85, 0.9, 1.25]],
+    [ball(0.07, 8, 6), CREAM, at([0, -0.04, 0.17]), [1, 0.85, 1]], // the muzzle
+    [ball(0.026, 6, 5), DARK, at([0, -0.02, 0.235])], // the nose
   ];
   for (const s of [-1, 1]) {
-    parts.push([ball(0.06, 8, 6), BROWN, [0.12 * s, 0.07, -0.02], [1.5, 0.55, 0.75], [0, 0, 0.45 * s]]); // ears
-    parts.push([ball(0.04, 6, 5), '#f2b7a8', [0.125 * s, 0.072, 0.0], [1.3, 0.45, 0.3], [0, 0, 0.45 * s]]); // pink inside
-    parts.push([ball(0.024, 8, 6), DARK, [0.068 * s, 0.035, 0.12]]); // eyes
-    parts.push([ball(0.009, 5, 4), WHITE, [0.076 * s, 0.045, 0.138]]); // a glint
+    parts.push([ball(0.06, 8, 6), BROWN, at([0.12 * s, 0.07, -0.02]), [1.5, 0.55, 0.75], [0, 0, 0.45 * s]]); // ears
+    parts.push([ball(0.04, 6, 5), '#f2b7a8', at([0.125 * s, 0.072, 0.0]), [1.3, 0.45, 0.3], [0, 0, 0.45 * s]]); // pink inside
+    parts.push([ball(0.024, 8, 6), DARK, at([0.068 * s, 0.035, 0.12])]); // eyes
+    parts.push([ball(0.009, 5, 4), WHITE, at([0.076 * s, 0.045, 0.138])]); // a glint
   }
   return baked(parts);
 }
@@ -79,7 +89,7 @@ function legGeo() {
 }
 
 const HIPS = [[-0.11, 0.24], [0.11, 0.24], [-0.11, -0.22], [0.11, -0.22]];
-const HIP_Y = 0.72, NECK = [0, 1.15, 0.43];
+const HIP_Y = 0.72;
 
 function inside(x, z, p) {
   let ok = false;
@@ -156,10 +166,11 @@ export function addDeer(g, pen, n = 4) {
       const bob = moving ? Math.abs(Math.sin(ph)) * 0.025 : 0;
       base.compose(v.set(d.x, bob * d.s, d.z), q.setFromEuler(e.set(0, d.ry, 0)), sc.set(d.s, d.s, d.s));
       bodies.setMatrixAt(i, base);
-      // the head: down to the grass while grazing, nibbling; otherwise looking about
-      const pitch = d.look * 1.15 + Math.sin(t * 9 + d.phase) * 0.05 * d.look;
+      // neck and head together, bending at the shoulder: down to the grass
+      // while grazing, nibbling; otherwise looking about
+      const pitch = d.look * 1.3 + Math.sin(t * 9 + d.phase) * 0.05 * d.look;
       const yaw = (1 - d.look) * Math.sin(t * 0.5 + d.phase) * 0.45;
-      part.compose(v.set(NECK[0], NECK[1] - d.look * 0.22, NECK[2] + d.look * 0.08), q.setFromEuler(e.set(pitch, yaw, 0, 'YXZ')), one);
+      part.compose(v.set(...SHOULDER), q.setFromEuler(e.set(pitch, yaw, 0, 'YXZ')), one);
       heads.setMatrixAt(i, m4.multiplyMatrices(base, part));
       HIPS.forEach(([hx, hz], k) => {
         const swing = moving ? Math.sin(ph + (k === 0 || k === 3 ? 0 : Math.PI)) * 0.45 : 0;
