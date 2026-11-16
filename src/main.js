@@ -7764,7 +7764,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     baitOn: () => ({ bait: fishBait.fishing.bait?.id || null, left: fishBait.fishing.left }),
     music: () => ({ on: music.on, track: music.track.id }),
     pet: () => { const pet = petCare.pet; return pet && { id: pet.id, x: pet.root.position.x, y: +pet.root.position.y.toFixed(2), z: pet.root.position.z, visible: pet.root.visible }; },
-    petPoop: () => { const pet = petCare.pet; if (pet) pet.walked = pet.poopAt; },
+    petPoop: () => { const pet = petCare.pet; if (pet) pet.since = pet.poopAt; },
     poops: () => petCare.poopTimers.list.map((x) => ({ ...x, x: petCare.poops.get(x.id)?.x, z: petCare.poops.get(x.id)?.z })),
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins, undefined, { r: 'test' })),
