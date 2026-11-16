@@ -64,10 +64,10 @@ test('Galleries A and D are photo shows, and an upper floor finds its own show',
   }
 });
 
-test('the galleries are named A to D', () => {
+test('the galleries are named Forest Gallery A to D', () => {
   const names = ['seoul-forest-culture', 'forest-gallery-1', 'forest-gallery-2', 'forest-gallery-3'].map((id) => store(id).name);
-  assert.deepEqual(names.map((n) => n.ko), ['전시관 A', '전시관 B', '전시관 C', '전시관 D']);
-  assert.deepEqual(names.map((n) => n.en), ['Gallery A', 'Gallery B', 'Gallery C', 'Gallery D']);
+  assert.deepEqual(names.map((n) => n.ko), ['숲속 전시관 A', '숲속 전시관 B', '숲속 전시관 C', '숲속 전시관 D']);
+  assert.deepEqual(names.map((n) => n.en), ['Forest Gallery A', 'Forest Gallery B', 'Forest Gallery C', 'Forest Gallery D']);
 });
 
 test('forest galleries: ACIRE "colorful" and KimPD "Cinematic", 10 works each, 4 + 4 + 2 on the walls', async () => {

@@ -2805,7 +2805,7 @@
       "workshop": "photo-show",
       "size": "photoshow",
       "at": [-354, -36],
-      "name": { "ko": "전시관 A", "en": "Gallery A", "ja": "ギャラリーA", "zh": "展馆A" },
+      "name": { "ko": "숲속 전시관 A", "en": "Forest Gallery A", "ja": "森のギャラリーA", "zh": "林中展馆A" },
       "tagline": { "en": "Photo exhibition \"Seoul As I Saw It\" by Sai e: 31 photos on three floors", "ko": "사이에 작가 사진전 「내가 본 서울」: 3개 층에 사진 31점", "ja": "サイエ写真展「私が見たソウル」：3フロアに写真31点", "zh": "Sai e 摄影展《我眼中的首尔》：三层楼共31幅照片" },
       "colors": { "sign": "#2f6b3f", "awning": "#9fd8b4", "accent": "#f6f4ee" },
       "products": []
@@ -2815,7 +2815,7 @@
       "category": "culture",
       "size": "medium",
       "at": [-452, 30.5],
-      "name": { "ko": "전시관 B", "en": "Gallery B", "ja": "ギャラリーB", "zh": "展馆B" },
+      "name": { "ko": "숲속 전시관 B", "en": "Forest Gallery B", "ja": "森のギャラリーB", "zh": "林中展馆B" },
       "tagline": { "en": "ACIRE's exhibition \"colorful\": 10 works", "ko": "ACIRE 작가 「colorful」 전: 작품 10점", "ja": "ACIRE展「colorful」：作品10点", "zh": "ACIRE《colorful》展：10件作品" },
       "colors": { "sign": "#7a5a8c", "awning": "#e2cdee", "accent": "#f7f4f8" },
       "products": []
@@ -2825,7 +2825,7 @@
       "category": "culture",
       "size": "medium",
       "at": [-452, 50.5],
-      "name": { "ko": "전시관 C", "en": "Gallery C", "ja": "ギャラリーC", "zh": "展馆C" },
+      "name": { "ko": "숲속 전시관 C", "en": "Forest Gallery C", "ja": "森のギャラリーC", "zh": "林中展馆C" },
       "tagline": { "en": "KimPD's photo exhibition \"Cinematic\": 10 photos", "ko": "KimPD 작가 「시네마틱」 사진전: 사진 10점", "ja": "KimPD写真展「シネマティック」：写真10点", "zh": "KimPD摄影展《电影感》：10幅照片" },
       "colors": { "sign": "#3d6f9c", "awning": "#c9def2", "accent": "#f3f6f9" },
       "products": []
@@ -2836,7 +2836,7 @@
       "workshop": "photo-show",
       "size": "photoshow",
       "at": [-378, -53.5],
-      "name": { "ko": "전시관 D", "en": "Gallery D", "ja": "ギャラリーD", "zh": "展馆D" },
+      "name": { "ko": "숲속 전시관 D", "en": "Forest Gallery D", "ja": "森のギャラリーD", "zh": "林中展馆D" },
       "tagline": { "en": "JH's exhibition \"Modu Seoul, Played Together\": 21 photos on two floors", "ko": "JH 작가 「모두와 함께한 모두서울」 전: 2개 층에 사진 21점", "ja": "JH展「みんなと遊んだモドゥソウル」：2フロアに写真21点", "zh": "JH《和大家一起的摩都首尔》展：两层楼共21幅照片" },
       "colors": { "sign": "#b0643a", "awning": "#f5d9c4", "accent": "#faf6f2" },
       "products": []
