@@ -106,3 +106,23 @@ test('the shows show at the real shows\' times, in their real directions', () =>
   assert.equal(groundAt(-300, -400), 'water', 'Seokchon Lake, below to the south');
   assert.equal(groundAt(0, 4000), 'city');
 });
+
+test('the lift counts every floor, slowly, up and down', async () => {
+  const { LIFT, LIFT_MARKS, liftAlong, liftFloor } = await import('../src/core/sky-deck.js');
+  assert.ok(LIFT.up >= 6 && LIFT.down >= 4, 'slow enough to watch');
+  assert.equal(liftAlong(0), 0);
+  assert.equal(liftAlong(1), 1);
+  let prev = -1, prevFloor = 0;
+  const steps = LIFT.up * 60; // one step a frame
+  for (let i = 0; i <= steps; i++) {
+    const a = liftAlong(i / steps), f = liftFloor(a);
+    assert.ok(a >= prev - 1e-12, 'never goes back');
+    assert.ok(f - prevFloor <= 2, `no big jumps (${prevFloor} → ${f})`);
+    prev = a; prevFloor = f;
+  }
+  assert.equal(liftFloor(0), 1);
+  assert.equal(liftFloor(1), LIFT.floors);
+  for (const [, at] of LIFT_MARKS) assert.ok(at > 0 && at <= LIFT.top);
+  const room = roomOf(deck), d = buildSkyDeck(deck, room, exitOf(room));
+  assert.equal(typeof d.onLeave, 'function', 'the ride down when leaving');
+});
