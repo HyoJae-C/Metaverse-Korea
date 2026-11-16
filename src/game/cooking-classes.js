@@ -9,6 +9,7 @@
 import { BOSS_LINES } from '../ui/market-text.js';
 import { KimchiSellUI, ML as MARKET_L } from '../ui/kimchi-sell-ui.js';
 import { lazyPanel } from '../core/lazy-panel.js';
+import { DISH_CAP } from '../core/bag.js';
 import { kimchiJar } from '../core/kimchi-market.js';
 import { localName, t } from '../core/i18n.js';
 import { say } from '../core/npcs.js';
@@ -16,7 +17,7 @@ import { say } from '../core/npcs.js';
 export function createCookingClasses(game) {
   const { $, bag, missionEvent, setHeld, shop, togetherBonus, wallet } = game;
   // A dish from a class: into the bag, and written in the recipe book.
-  const dish = (e) => { bag.add(e); game.onCooked?.(e); };
+  const dish = (e) => { if (!bag.add(e)) shop.toast(t('bag.foodFull', { cap: DISH_CAP })); game.onCooked?.(e); }; // (cooked even if the food bag is full)
   const kimchiUi = lazyPanel(async () => {
     const [{ KimchiUI }, { KT: KIMCHI_TEXT }] = await Promise.all([import('../ui/kimchi-ui.js'), import('../ui/kimchi-text.js')]);
     return new KimchiUI({

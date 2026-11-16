@@ -927,4 +927,8 @@ export const KO = {
   "recipe.d.chicken": "치킨",
   "recipe.d.tteokbokki": "떡볶이",
   "recipe.d.naengmyeon": "냉면",
+  "bag.tabFood": "요리가방",
+  "bag.foodPick": "요리를 골라 손에 들거나 버릴 수 있어요. 요리는 가방 칸을 차지하지 않아요.",
+  "bag.foodEmpty": "요리체험에서 만든 요리는 다른 물건과 따로 여기에 들어가요.",
+  "bag.foodFull": "요리가방이 가득 찼어요 ({cap}칸). 먼저 요리를 먹거나 팔거나 버려 주세요.",
 };

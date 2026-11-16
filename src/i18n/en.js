@@ -926,4 +926,8 @@ export const EN = {
   "recipe.d.chicken": "Korean fried chicken",
   "recipe.d.tteokbokki": "Tteokbokki",
   "recipe.d.naengmyeon": "Naengmyeon (cold noodles)",
+  "bag.tabFood": "Food",
+  "bag.foodPick": "Pick a dish to hold it or throw it away. Dishes don't take up your bag's slots.",
+  "bag.foodEmpty": "Dishes you make at the cooking classes go here, apart from your other things.",
+  "bag.foodFull": "Your food bag is full ({cap}). Eat, sell or throw away a dish first.",
 };

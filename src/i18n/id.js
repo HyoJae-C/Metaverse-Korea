@@ -924,4 +924,8 @@ export const ID = {
   "recipe.d.chicken": "Ayam goreng Korea",
   "recipe.d.tteokbokki": "Tteokbokki",
   "recipe.d.naengmyeon": "Naengmyeon (mi dingin)",
+  "bag.tabFood": "Tas makanan",
+  "bag.foodPick": "Pilih hidangan untuk dipegang atau dibuang. Hidangan tidak memakai slot tasmu.",
+  "bag.foodEmpty": "Hidangan dari kelas memasak masuk ke sini, terpisah dari barang lain.",
+  "bag.foodFull": "Tas makananmu penuh ({cap}). Makan, jual, atau buang satu hidangan dulu.",
 };

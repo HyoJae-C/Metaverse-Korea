@@ -927,4 +927,8 @@ export const ZH = {
   "recipe.d.chicken": "韩式炸鸡",
   "recipe.d.tteokbokki": "炒年糕",
   "recipe.d.naengmyeon": "冷面",
+  "bag.tabFood": "料理包",
+  "bag.foodPick": "选一道菜可以拿在手上或丢掉。菜不占背包格子。",
+  "bag.foodEmpty": "在料理体验做的菜会和其他东西分开放在这里。",
+  "bag.foodFull": "料理包满了（{cap}格）。请先吃掉、卖掉或丢掉一道菜。",
 };

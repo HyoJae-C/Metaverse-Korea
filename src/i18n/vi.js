@@ -924,4 +924,8 @@ export const VI = {
   "recipe.d.chicken": "Gà rán Hàn Quốc",
   "recipe.d.tteokbokki": "Tteokbokki",
   "recipe.d.naengmyeon": "Naengmyeon (mì lạnh)",
+  "bag.tabFood": "Túi món ăn",
+  "bag.foodPick": "Chọn một món để cầm hoặc bỏ đi. Món ăn không chiếm ô trong túi.",
+  "bag.foodEmpty": "Món làm ở lớp nấu ăn được để riêng ở đây.",
+  "bag.foodFull": "Túi món ăn đã đầy ({cap}). Hãy ăn, bán hoặc bỏ một món trước.",
 };

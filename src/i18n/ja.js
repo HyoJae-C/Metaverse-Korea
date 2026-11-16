@@ -927,4 +927,8 @@ export const JA = {
   "recipe.d.chicken": "韓国フライドチキン",
   "recipe.d.tteokbokki": "トッポッキ",
   "recipe.d.naengmyeon": "冷麺",
+  "bag.tabFood": "料理バッグ",
+  "bag.foodPick": "料理を選ぶと、持ったり捨てたりできます。料理はバッグの枠を使いません。",
+  "bag.foodEmpty": "料理体験で作った料理は、ほかの物とは別にここに入ります。",
+  "bag.foodFull": "料理バッグがいっぱいです（{cap}枠）。先に料理を食べるか、売るか、捨ててください。",
 };

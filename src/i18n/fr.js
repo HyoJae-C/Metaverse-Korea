@@ -924,4 +924,8 @@ export const FR = {
   "recipe.d.chicken": "Poulet frit coréen",
   "recipe.d.tteokbokki": "Tteokbokki",
   "recipe.d.naengmyeon": "Naengmyeon (nouilles froides)",
+  "bag.tabFood": "Sac à plats",
+  "bag.foodPick": "Choisis un plat pour le tenir ou le jeter. Les plats ne prennent pas de place dans ton sac.",
+  "bag.foodEmpty": "Les plats faits aux cours de cuisine vont ici, à part de tes autres affaires.",
+  "bag.foodFull": "Ton sac à plats est plein ({cap}). Mange, vends ou jette d'abord un plat.",
 };

@@ -923,4 +923,8 @@ export const ES = {
   "recipe.d.chicken": "Pollo frito coreano",
   "recipe.d.tteokbokki": "Tteokbokki",
   "recipe.d.naengmyeon": "Naengmyeon (fideos fríos)",
+  "bag.tabFood": "Bolsa de comida",
+  "bag.foodPick": "Elige un plato para llevarlo en la mano o tirarlo. Los platos no ocupan huecos de tu bolsa.",
+  "bag.foodEmpty": "Los platos de las clases de cocina van aquí, aparte de tus otras cosas.",
+  "bag.foodFull": "Tu bolsa de comida está llena ({cap}). Come, vende o tira un plato primero.",
 };

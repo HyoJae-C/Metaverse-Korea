@@ -2363,24 +2363,24 @@ function describeEntry(e) {
 }
 function stowHeld() {
   if (!held) return;
-  if (!bag.add(held)) { shop.toast(fmt(L(BAG_TEXT.full), { cap: bag.cap })); return; }
-  const cosmetic = isCosmetic(held), name = describeEntry(held).name;
+  if (!bag.add(held)) { shop.toast(fmt(L(BAG_TEXT.full), bag.slotsFor(held))); return; }
+  const cosmetic = isCosmetic(held), name = describeEntry(held).name, slots = bag.slotsFor(held); // (a dish: the food bag)
   setHeld(null);
   sfx.pop?.();
-  shop.toast(cosmetic ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.stored), { n: bag.size, cap: bag.cap }));
+  shop.toast(cosmetic ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.stored), slots));
 }
 // Taking something new in your hand puts what you were holding into the bag
 // (it used to just vanish). Only when the bag is full do we ask first, since
 // then the old thing would be thrown away.
 function handReady() {
-  if (!held || !bag.full || isCosmetic(held)) return true; // (perfume and lipstick go to the wardrobe)
-  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.cap }));
+  if (!held || !bag.fullFor(held)) return true; // (perfume and lipstick go to the wardrobe, dishes to the food bag)
+  return confirm(fmt(L(BAG_TEXT.fullSwap), { name: describeEntry(held).name, cap: bag.slotsFor(held).cap }));
 }
 function holdNew(h) {
   const old = held;
   if (old && bag.add(old)) {
     const name = describeEntry(old).name;
-    setTimeout(() => shop.toast(isCosmetic(old) ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.autoStow), { name, n: bag.size, cap: bag.cap })), 1800);
+    setTimeout(() => shop.toast(isCosmetic(old) ? fmt(L(BAG_TEXT.toCloset), { name }) : fmt(L(BAG_TEXT.autoStow), { name, ...bag.slotsFor(old) })), 1800);
   }
   setHeld(h);
 }

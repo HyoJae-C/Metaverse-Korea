@@ -14,6 +14,7 @@
 
 import { lipstickEntry } from './lipstick.js';
 import { baitEntry } from './bait.js';
+import { recipeOf } from './recipe-book.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
@@ -23,6 +24,11 @@ export const MAX_CAP = 60;
 export const COSMETICS = ['perfume', 'lipstick'];
 export const VANITY_MAX = 60;
 export const isCosmetic = (e) => COSMETICS.includes(e?.kind);
+// Dishes from the cooking classes (core/recipe-book.js) have their own food
+// bag: up to DISH_CAP of them, not counted in the bag's slots. They stay in
+// `items` (so a slot index still means the same thing everywhere).
+export const DISH_CAP = 40;
+export const isDish = (e) => !!recipeOf(e);
 
 // A carried thing (kind 'gift'). Homemade goods also keep what they are
 // (g, e.g. 'kimchi') and how well they were made (q, 0-100), so they can be
@@ -71,15 +77,22 @@ export class Bag {
     this.cap = Math.max(BASE_CAP, Math.min(MAX_CAP, cap));
     this.items = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter((e) => e && !isCosmetic(e))
       .filter((e, i, all) => e.kind !== 'book' || all.findIndex((x) => x.kind === 'book') === i) // one library book at most (old saves had a pile)
-      .slice(0, this.cap);
+      .filter(((n, d) => (e) => (isDish(e) ? ++d <= DISH_CAP : ++n <= this.cap))(0, 0)); // (slots and food bag each up to their size)
     // (old saves kept perfume in a slot: it moves to the wardrobe)
     const old = (Array.isArray(raw?.items) ? raw.items : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic);
     this.vanity = [...old, ...(Array.isArray(raw?.vanity) ? raw.vanity : []).map((e) => cleanEntry(e, opts)).filter(isCosmetic)].slice(0, VANITY_MAX);
     this.listeners = [];
   }
 
-  get size() { return this.items.length; }
-  get full() { return this.items.length >= this.cap; }
+  // Things in the slots (dishes are in the food bag, not counted).
+  get size() { return this.items.filter((e) => !isDish(e)).length; }
+  get full() { return this.size >= this.cap; }
+  get dishes() { return this.items.filter(isDish).length; }
+  get dishFull() { return this.dishes >= DISH_CAP; }
+  // Is there no room for this entry (a dish: the food bag; anything else: the slots)?
+  fullFor(e) { return isDish(e) ? this.dishFull : !isCosmetic(e) && this.full; }
+  // { n, cap } of the part of the bag this entry goes in.
+  slotsFor(e) { return isDish(e) ? { n: this.dishes, cap: DISH_CAP } : { n: this.size, cap: this.cap }; }
   list() { return this.items.slice(); }
   has(kind) { return this.items.some((e) => e.kind === kind); }
   onChange(fn) { this.listeners.push(fn); }
@@ -89,7 +102,7 @@ export class Bag {
   add(entry) {
     const e = cleanEntry(entry, this.opts);
     if (e && isCosmetic(e)) return this.addVanity(e);
-    if (!e || this.full) return false;
+    if (!e || this.fullFor(e)) return false;
     if (e.kind === 'umbrella' && this.has('umbrella')) return false; // one is enough
     if (e.kind === 'book' && this.has('book')) return false; // one library book out at a time
     this.items.push(e);
@@ -125,6 +138,13 @@ export class Bag {
       return this.take(i);
     }
     const old = this.items[i];
+    if (isDish(old) !== isDish(e)) { // (a dish for a thing, or the other way: only if its part of the bag has room)
+      this.items.splice(i, 1);
+      if (this.fullFor(e)) { this.items.splice(i, 0, old); return null; }
+      this.items.splice(i, 0, e);
+      this._save();
+      return old;
+    }
     this.items[i] = e;
     this._save();
     return old;

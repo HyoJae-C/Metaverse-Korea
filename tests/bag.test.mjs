@@ -77,3 +77,28 @@ test('one library book at a time: a second is refused, removeKind returns them, 
   const pile = mem({ [BAG_KEY]: JSON.stringify({ items: [{ kind: 'book', book: 'a' }, { kind: 'umbrella' }, { kind: 'book', book: 'b' }, { kind: 'book', book: 'c' }] }) });
   assert.deepEqual(new Bag(pile).list(), [{ kind: 'book', book: 'a' }, { kind: 'umbrella' }]);
 });
+
+test('dishes go in their own food bag, apart from the 20 slots', async () => {
+  const { DISH_CAP } = await import('../src/core/bag.js');
+  const m = new Map(), s = { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) };
+  const b = new Bag(s);
+  for (let i = 0; i < b.cap; i++) assert.ok(b.add({ kind: 'umbrella' }) || b.add({ kind: 'gift', name: 'x' + i, icon: '🛍️' }));
+  assert.ok(b.full);
+  const kimbap = { kind: 'gift', name: 'Kimbap', icon: '🍙', g: 'kimbap', q: 90 };
+  assert.ok(b.add(kimbap), 'a dish still fits with the slots full');
+  assert.equal(b.size, b.cap);
+  assert.equal(b.dishes, 1);
+  assert.equal(b.fullFor(kimbap), false);
+  assert.equal(b.add({ kind: 'gift', name: 'y', icon: '🛍️' }), false);
+  for (let i = 1; i < DISH_CAP; i++) assert.ok(b.add(kimbap));
+  assert.ok(b.dishFull);
+  assert.equal(b.add(kimbap), false);
+  // swapping a thing into a dish's place needs a free slot
+  const di = b.list().findIndex((e) => e.g === 'kimbap');
+  assert.equal(b.swap(di, { kind: 'gift', name: 'z', icon: '🛍️' }), null);
+  assert.equal(b.dishes, DISH_CAP);
+  // saved and loaded back whole
+  const again = new Bag(s);
+  assert.equal(again.size, again.cap);
+  assert.equal(again.dishes, DISH_CAP);
+});

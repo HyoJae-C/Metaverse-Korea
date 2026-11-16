@@ -4,6 +4,9 @@
 import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
+import { isDish, DISH_CAP } from '../core/bag.js';
+import { medalFor, medalIcon } from '../core/grill-game.js';
+import { kimchiScore } from '../core/kimchi-market.js';
 
 // A piece's icon in the wardrobe: one colour emoji per kind (all tops 👕,
 // all bottoms 👖, skirts too), with a dot of the piece's own colour to tell
@@ -106,7 +109,8 @@ export class BagUI {
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.hide();
     const head = el('div', 'bag-head');
-    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), { n: bag.size, cap: bag.cap })));
+    const food = this.tab === 'food'; // the food bag: dishes from the cooking classes (bag.js isDish)
+    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), food ? { n: bag.dishes, cap: DISH_CAP } : { n: bag.size, cap: bag.cap })));
     // Tabs: your things (the bag's slots), the wardrobe (clothes you own) and the rides
     // you own (to switch without going back to a ride shop).
     const closet = this.closet ? this.closet() : null;
@@ -114,7 +118,7 @@ export class BagUI {
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishes}` : '')], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
@@ -133,13 +137,16 @@ export class BagUI {
     }
     const grid = el('div', 'bag-grid');
     const items = bag.list();
-    if (this.sel >= items.length) this.sel = -1;
-    for (let i = 0; i < bag.cap; i++) {
-      const e = items[i];
-      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (i === this.sel ? ' on' : ''));
+    if (this.sel >= items.length || (this.sel >= 0 && isDish(items[this.sel]) !== food)) this.sel = -1;
+    // This tab's things with their place in the bag (a slot index means the same everywhere).
+    const here = items.map((e, i) => i).filter((i) => isDish(items[i]) === food);
+    for (let k = 0; k < (food ? DISH_CAP : bag.cap); k++) {
+      const i = here[k] ?? -1, e = items[i];
+      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && i === this.sel ? ' on' : ''));
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
+        if (food) { const m = medalFor(kimchiScore(e)); if (m) b.append(el('small', '', medalIcon(m))); } // (its medal)
         b.title = d.name;
         b.setAttribute('aria-label', d.name);
         if (e.kind === 'coffee' || e.kind === 'glass') b.append(el('small', '', String(e.sips)));
@@ -164,7 +171,7 @@ export class BagUI {
       };
       row.append(t);
       info.append(row);
-    } else info.append(el('small', 'fine', L(items.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
+    } else info.append(el('small', 'fine', food ? t(here.length ? 'bag.foodPick' : 'bag.foodEmpty') : L(here.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
     const more = this.extra ? this.extra() : []; // before replaceChildren detaches them
     root.replaceChildren(x, head, tabs, grid, info, el('p', 'fine bag-more', L(BAG_TEXT.more)), ...more);
   }

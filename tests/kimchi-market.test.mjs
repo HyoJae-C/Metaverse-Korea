@@ -49,7 +49,7 @@ test('only a few jars a day, then the limit resets the next day', () => {
   assert.equal(coins, SELL_PER_DAY * KIMCHI_PRICE.gold);
   assert.equal(sales.left(), 0);
   assert.equal(sales.sell(bag, 0), 0); // limit reached: the jar stays in the bag
-  assert.equal(bag.size, 2);
+  assert.equal(bag.dishes, 2);
   assert.equal(new KimchiSales(store, () => now).left(), 0); // saved on the device
   now = new Date(2026, 10, 6, 9);
   assert.equal(sales.left(), SELL_PER_DAY);
@@ -122,7 +122,7 @@ test('japchae and kimbap sell too, sharing the daily limit with kimchi', async (
   for (let i = 0; i < SELL_PER_DAY; i++) coins += sales.sell(bag, 0);
   assert.equal(coins, DISHES.japchae.price.gold + DISHES.kimbap.price.bronze + KIMCHI_PRICE.silver);
   assert.equal(sales.sell(bag, 0), 0); // the fourth dish waits for tomorrow
-  assert.equal(bag.size, 1);
+  assert.equal(bag.dishes, 1);
   for (const d of Object.values(DISHES)) assert.ok(d.price.gold > d.price.silver && d.price.silver > d.price.bronze && d.price.bronze > d.price.none);
   for (const l of LANGS) { assert.ok(JT.canSell[l], `japchae canSell.${l}`); assert.ok(BT.canSell[l], `kimbap canSell.${l}`); }
 });
