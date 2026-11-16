@@ -17,7 +17,7 @@ import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStar
 import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
 import { Billboard } from './core/billboard.js';
-import { WallScreen, wallNear } from './core/wall-screen.js';
+import { WallScreen, wallNear, screenSpot } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
 import { noticeBoardSpots } from './core/notice-board-spots.js';
@@ -925,11 +925,9 @@ const farExtras = [];
 const wallScreens = [];
 for (const sc of region.screens || []) {
   const near = wallNear(map.buildings, sc.at[0], sc.at[1]);
-  if (!near) continue;
-  const along = sc.along || 0; // slide sideways along the wall
-  const wall = { ...near, x: near.x + near.ax * along, z: near.z + near.az * along };
-  const w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
-  const y = Math.min(sc.y ?? 10, Math.max(3, wall.h - h - 2));
+  if (!near || near.d > 6) continue; // its building is gone: no screen in the air
+  const { x, z, w, h, y } = screenSpot(near, sc); // inside the wall's ends, under the roof
+  const wall = { ...near, x, z };
   const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
   ws.mount(wall, y, h);
   scene.add(ws.root);
