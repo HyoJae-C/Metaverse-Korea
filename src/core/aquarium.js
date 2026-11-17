@@ -34,7 +34,7 @@ export const SEAFLOOR = { x0: 25, z0: 21, x1: HW, z1: 30 };
 // in a row on the right of the lobby, glass toward the path, each with a few
 // fish to show what it holds. Walk up to one to buy it.
 export const TANK_SHOP = { x: 14, tanks: [['tank-s', 22.4, ['clownfish', 'ricefish', 'shrimp', 'seahorse']], ['tank-m', 24.2, ['carp', 'puffer', 'crucian', 'octopus', 'kelp']],
-  ['tank-l', 26.6, ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']], ['tank-wall', 29.6, ['orca', 'beluga', 'manta', 'shark', 'kelp', 'starfish', 'crab']]] };
+  ['tank-l', 26.6, ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']], ['tank-wall', 29.8, ['whale', 'orca', 'beluga', 'manta', 'kelp', 'starfish', 'crab']]] };
 export const JELLIES = [[-7, 3], [-3.8, 7], [-7, 11], [7, 3], [3.8, 7], [7, 11]]; // either side of the path to the tunnel
 export const WHALE = { x: 13, z0: -4.5, len: 25, scale: 2 }; // the floor line is the real length; the model is half
 export const SQUID = { x: -12, z0: 1, len: 12 }; // a giant squid at its real size, tentacles and all

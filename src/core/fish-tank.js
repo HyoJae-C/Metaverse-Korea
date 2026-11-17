@@ -17,7 +17,7 @@ export const TANKS = [
   ['tank-s', '🐟', [0.7, 0.4], 0.72, 0.42, 4, 'S', 1, 30000, { en: 'Small fish tank', ko: '작은 어항', ja: '小さな水槽', zh: '小鱼缸' }],
   ['tank-m', '🐠', [1.1, 0.5], 0.66, 0.56, 10, 'M', 1, 80000, { en: 'Fish tank', ko: '중간 어항', ja: '中くらいの水槽', zh: '中型鱼缸' }],
   ['tank-l', '🐡', [1.7, 0.6], 0.6, 0.72, 20, 'L', 3, 250000, { en: 'Large fish tank', ko: '대형 어항', ja: '大きな水槽', zh: '大型鱼缸' }],
-  ['tank-wall', '🐋', [2.8, 0.7], 0.3, 1.6, 40, 'XL', 4, 600000, { en: 'Wall aquarium', ko: '벽 수조', ja: '壁一面の水槽', zh: '墙面水族箱' }],
+  ['tank-wall', '🐋', [3.6, 0.8], 0.3, 1.9, 40, 'XL', 4, 600000, { en: 'Wall aquarium', ko: '벽 수조', ja: '壁一面の水槽', zh: '墙面水族箱' }],
 ].map(([id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name]) => ({ id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name }));
 // The water inside a tank, in the piece's own frame: x and z half-widths,
 // and the floor (top of the sand) and surface heights.
@@ -50,8 +50,8 @@ export const spacesOf = (id) => SPACES[sizeClass(id)] || 0;
 // four times longer looks twice as long (Yozi 2026-11-17: in proportion,
 // but a whale can't be 800 ricefish), as big as the tanks allow (Yozi: the
 // tanks are big enough for bigger fish). A 3.5 cm ricefish is 8 cm, a carp
-// 33 cm, a salmon 36 cm, an orca 1.1 m, a 25 m whale 1.6 m (the most).
-export const shownLength = (id) => Math.min(1.6, 0.08 * Math.sqrt((REAL_LENGTH[id] || 0.1) / 0.035));
+// 33 cm, a salmon 36 cm, an orca 1.1 m, a 25 m whale 2.1 m (the most).
+export const shownLength = (id) => Math.min(2.1, 0.08 * Math.sqrt((REAL_LENGTH[id] || 0.1) / 0.035));
 
 // Where in the tank it lives: swimming, on the sand, or planted.
 const FLOOR = new Set(['flounder', 'crab', 'lobster', 'starfish', 'sea-urchin', 'sea-cucumber', 'scallop', 'octopus', 'seahorse']);
