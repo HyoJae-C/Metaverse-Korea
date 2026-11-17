@@ -36,16 +36,16 @@ await page.click('#brawl .bw-card .go');
 await page.waitForFunction(() => __mk.brawl()?.match?.phase === 'fight', null, { timeout: 15000 });
 await page.click('#brawl .bw-command-button');
 assert(await page.locator('#brawl dialog').isVisible(), 'command table opens as a large dialog');
-assert(await page.locator('#brawl dialog tr').count() === 7, 'command table lists basic attacks, strings and specials');
+assert(await page.locator('#brawl dialog tr').count() === 9, 'command table lists the shared keys');
 await page.keyboard.press('Escape');
 assert(await page.locator('#brawl').isVisible() && !await page.locator('#brawl dialog').isVisible(), 'Escape closes help without leaving the game');
 await shot('brawl-fight');
 // Walk in and hit: the rival's bar goes down.
 if (phone) {
-  for (let k = 0; k < 40; k++) { await page.locator('#brawl .bw-btns button').nth(k % 4).dispatchEvent('pointerdown'); await page.waitForTimeout(120); }
+  for (let k = 0; k < 40; k++) { await page.locator('#brawl .bw-btns button').nth([5, 5, 2, 5][k % 4]).dispatchEvent('pointerdown'); await page.waitForTimeout(120); }
 } else {
   await page.keyboard.down('KeyD');
-  for (let k = 0; k < 40; k++) { await page.keyboard.press(['KeyJ', 'KeyJ', 'KeyK', 'KeyU'][k % 4]); await page.waitForTimeout(110); if (k === 8) await shot('brawl-hit'); }
+  for (let k = 0; k < 40; k++) { await page.keyboard.press(['KeyJ', 'KeyJ', 'KeyJ', 'KeyI'][k % 4]); await page.waitForTimeout(110); if (k === 8) await shot('brawl-hit'); }
 assert(await page.evaluate(() => __mk.brawl().match.a.sp > 0 || __mk.brawl().match.round > 1), 'hitting fills the special bar');
   await page.keyboard.up('KeyD');
 }
@@ -59,7 +59,7 @@ for (let r = 0; r < 2; r++) {
   await page.waitForFunction(() => __mk.brawl()?.match?.phase === 'fight', null, { timeout: 20000 });
   await page.evaluate(() => { const m = __mk.brawl().match; m.b.hp = 1; m.b.x = m.a.x + 0.8; m.b.z = m.a.z; });
   for (let k = 0; k < 60 && await page.evaluate(() => __mk.brawl()?.match?.phase === 'fight'); k++) {
-    if (phone) await page.locator('#brawl .bw-btns button').nth(2).dispatchEvent('pointerdown'); else await page.keyboard.press('KeyJ');
+    if (phone) await page.locator('#brawl .bw-btns button').nth(5).dispatchEvent('pointerdown'); else await page.keyboard.press('KeyJ');
     await page.waitForTimeout(100);
   }
   if (r === 0) { await page.waitForTimeout(700); await shot('brawl-ko'); }
