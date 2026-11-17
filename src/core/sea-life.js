@@ -175,6 +175,10 @@ function pectorals(pts, color, x, y, z, spread = 0.7, opts = {}) {
 // A soft-edged band test: 1 inside (a, c), fading over `soft` at the edges.
 const inBand = (v, a, c, soft = 0.012) => smooth(a - soft, a + soft, v) * (1 - smooth(c - soft, c + soft, v));
 
+// For core/tank-species.js, which draws the rest of the fishing catalogue
+// the same way.
+export const parts = { lerp, clamp01, smooth, mix, finish, body, fin, flatFin, ball, rod, eyes, mouth, pectorals, inBand };
+
 // ---- the species ----
 // Each builds its parts; `mode` is how it swims (see BEND), `hz` how fast
 // its tail beats and `amp` how far. Drawn a little rounder than life, with
@@ -450,10 +454,26 @@ const BEND = {
   // a sunfish sculls with its tall dorsal and anal fins
   mola: (A) => `float s = max(abs(transformed.y) - 0.33, 0.0);
     transformed.z += sin(ph) * ${A} * s * 2.0;`,
+  // something on the sand (a crab, a starfish): only breathes a little
+  still: (A) => `transformed.y += sin(ph) * ${A} * 0.02;`,
+  // a water plant, standing up from y = 0: sways more toward the top
+  sway: (A) => `transformed.x += sin(ph + transformed.y * 3.0) * ${A} * transformed.y * transformed.y;`,
+  // a jellyfish's bell squeezes and its tentacles trail
+  jelly: (A) => `float top = smoothstep(-0.1, 0.1, transformed.y);
+    transformed.xz *= 1.0 + sin(ph) * ${A} * top;
+    transformed.x += sin(ph - transformed.y * 5.0) * ${A} * 0.3 * (1.0 - top);`,
+  // an octopus's arms (below y = 0) wave
+  octo: (A) => `float k = clamp(-transformed.y / 0.45, 0.0, 1.0);
+    transformed.x += sin(ph + transformed.z * 9.0 - transformed.y * 8.0) * ${A} * k;
+    transformed.z += cos(ph + transformed.x * 9.0 - transformed.y * 8.0) * ${A} * k;`,
 };
 
 // One clock for all the swimmers (seconds); the aquarium sets it each frame.
 export const SWIM_TIME = { value: 0 };
+
+// More kinds (core/tank-species.js, the fishing catalogue) join here.
+export function addSpecies(more) { Object.assign(SPECIES, more); }
+export const hasSpecies = (name) => !!SPECIES[name];
 
 const built = new Map();
 // The geometry and material for one species (built once, shared).

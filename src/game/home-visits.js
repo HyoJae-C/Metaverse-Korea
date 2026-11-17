@@ -16,9 +16,10 @@ const BEAT_MS = 60000; // the server forgets a home after 2 minutes without a be
 const HOST_WAIT_MS = 6000; // a visitor who finds nobody home goes back out
 
 // Room messages, sent as emotes: the layout from the host, or "out you go".
-export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x, z, ry, y = 0, off = 0]) => {
+export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x, z, ry, y = 0, off = 0, fish = null]) => {
   const a = [id, +x.toFixed(2), +z.toFixed(2), +ry.toFixed(2)];
-  if (y || off) a.push(+(+y).toFixed(3), off ? 1 : 0); // (only when it's on a table or a lamp is off: messages stay short)
+  if (y || off || fish) a.push(+(+y).toFixed(3), off ? 1 : 0); // (only when it's on a table or a lamp is off: messages stay short)
+  if (fish) a.push(fish); // the fish in a tank (core/fish-tank.js)
   return a;
 }));
 export const kickMsg = (id) => 'hv:kick:' + id;
