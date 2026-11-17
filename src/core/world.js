@@ -119,6 +119,17 @@ export function buildWorld(map, scene, opts = {}) {
   if (opts.collision) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
+    // Namsan and the streets up to it (Yozi 2026-11-17: as few trees as can
+    // be on the way to its trail): none within 40 m of the hill's foot.
+    for (const l of map.landmarks || []) {
+      if (l.type !== 'namsan' || !l.rad?.length || !Number.isFinite(l.x)) continue;
+      const tx = l.x + (l.px || 0), tz = l.z + (l.pz || 0), n = l.rad.length;
+      clear.push((x, z, r) => {
+        const a = ((Math.atan2(z - tz, x - tx) / (Math.PI * 2)) % 1 + 1) % 1 * n, i = Math.floor(a), f = a - i;
+        const foot = l.rad[i % n] * (1 - f) + l.rad[(i + 1) % n] * f;
+        return Math.hypot(x - tx, z - tz) < foot + 40 + r;
+      });
+    }
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
     const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
@@ -531,14 +542,14 @@ function makeRail(rails) {
 // Decorative round street trees along the edges of vehicle roads, and a
 // loose grove in parks marked "trees" (e.g. Seoul Forest): round trees big
 // and small, tall pointed ones, and bushes in between. These are scenery,
-// not map data: placed where nothing else is in the way (clear: [x, z, r]
+// not map data: placed where nothing else is in the way (clear: [x, z, r] or (x, z, r) => inside,
 // circles kept free, e.g. a rose garden).
 function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const spots = []; // [x, z, scale] round trees
   const pines = []; // [x, z, scale] pointed trees (parks)
   const bushes = []; // [x, z, scale] (parks)
   const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
-  const isClear = (x, z, r) => clear.every(([cx, cz, cr]) => (x - cx) ** 2 + (z - cz) ** 2 > (cr + r) ** 2);
+  const isClear = (x, z, r) => clear.every((c) => (typeof c === 'function' ? !c(x, z, r) : (x - c[0]) ** 2 + (z - c[1]) ** 2 > (c[2] + r) ** 2)); // (a function: inside an outline, e.g. Namsan's foot)
   // Wooded parks: a jittered grid, ~12 m apart, off the paths.
   const PARK = 12;
   // Round crowns in the parks: mostly green, some ginkgo yellow.

@@ -54,6 +54,7 @@ function loadModel(id) {
 function icecream(g, l) {
   if (!ICECREAM[l.model]) return;
   g.scale.setScalar(l.s || 1);
+  g.userData.farR = 2 * (l.s || 1); // (empty until the model loads: the far cull still knows its size, core/enclosure.js)
   loadModel(l.model).then((scene) => { if (scene) g.add(scene.clone()); });
 }
 

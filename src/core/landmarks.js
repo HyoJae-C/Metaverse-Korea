@@ -319,37 +319,10 @@ const OWN_BUILD = {
     }
     geo.computeVertexNormals();
     g.add(new THREE.Mesh(geo, mat('#86b56f')));
-    // (the trails, and the city wall's stretches: scripts/build-namsan-wall.mjs, game/namsan-wall.js)
-    const lines = [trail, ...(l.wtrail || []), ...(l.wall?.runs || [])];
-    const near = (x, z, m) => {
-      for (const p of lines) for (let i = 1; i < p.length; i++) {
-        const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
-        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
-        if (Math.hypot(x - ax - dx * t, z - az - dz * t) < m) return true;
-      }
-      return false;
-    };
     // (the trails are drawn near, with the city wall: game/namsan-wall.js)
     // (the city wall's trail is drawn with the wall, near: game/namsan-wall.js)
-    // Trees on the slopes (one instanced mesh), none on the summit or the trail.
-    const tree = new THREE.ConeGeometry(4, 11, 6);
-    tree.translate(0, 5, 0);
-    const N = l.trees || 160;
-    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), N);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
-    let n = 0, seed = 7, tries = 0;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    while (n < N && tries++ < N * 20) {
-      const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
-      const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
-      const s = 0.7 + rnd() * 0.7;
-      if (lines.some((p) => p.length) && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
-      if (l.wtrail && nearWtrail(x, z, 4 * s + (l.wpathW || 3) / 2 + 5)) continue; // (the wall's trail: a view out over the city)
-      if (sh.flat && Math.hypot(x - sh.px, z - sh.pz) < sh.flat + 16) continue; // the summit plaza and the way to the cable car's upper station
-      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
-    }
-    trees.count = n;
-    g.add(trees);
+    // (no trees on the slopes: nobody walks there, and they cost a frame's
+    // triangles from the trails. Yozi 2026-11-17)
     const tower = new THREE.Group();
     namsanTower(tower);
     tower.position.set(sh.px, sh.h - 1, sh.pz);

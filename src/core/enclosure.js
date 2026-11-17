@@ -85,10 +85,13 @@ export class FarCull {
     if (!o || this.seen.has(o) || o.userData.farKeep) return; // (farKeep: a landmark meant to be seen over the fog, e.g. Modu Tower)
     this.seen.add(o);
     const bb = new THREE.Box3().setFromObject(o);
-    if (bb.isEmpty()) return;
+    if (bb.isEmpty()) { // still empty: a model loading (an ice cream sculpture) can say its size
+      if (o.userData.farR) { const c = o.getWorldPosition(new THREE.Vector3()); this.items.push({ o, x: c.x, z: c.z, r: o.userData.farR }); }
+      return;
+    }
     const c = bb.getCenter(new THREE.Vector3());
     const r = bb.getSize(new THREE.Vector3()).length() / 2;
-    if (r < 150) { this.items.push({ o, x: c.x, z: c.z, r }); return; }
+    if (r < 150) { this.items.push({ o, x: c.x, z: c.z, r, max: o.userData.farMax }); return; } // (farMax: small things hidden sooner, e.g. the stream's lanterns)
     this.boxes.push({ o, x0: bb.min.x, x1: bb.max.x, z0: bb.min.z, z1: bb.max.z });
     if (depth < 3) for (const k of o.children) this.add(k, depth + 1); // too big: its parts one by one
   }
@@ -105,7 +108,7 @@ export class FarCull {
     if (this.later.length) this.later = this.later.filter((get) => { const g = get(); if (!g) return true; for (const k of g.children) this.add(k); return false; }); // (its parts, not the group: its own update shows and hides the whole)
     const far = this.far();
     for (const it of this.items) {
-      const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > far;
+      const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > (it.max ? Math.min(far, it.max) : far);
       if (hide !== !!it.o.userData.farHidden) { it.o.userData.farHidden = hide; show(it.o); }
     }
     for (const b of this.boxes) {

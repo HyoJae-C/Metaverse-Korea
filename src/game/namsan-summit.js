@@ -100,7 +100,7 @@ export function buildNamsanSummit({ scene, collision, tower, station, trailTop, 
     box(5, 0.5, 5, bx, Y + 0.25, bz, '#b9ad98');
     box(4.6, 0.1, 4.6, bx, Y + 0.52, bz, '#7fb06a');
     block(bx, bz, 5, 5);
-    for (let k = 0; k < 3; k++) {
+    for (let k = 1; k < 2; k++) { // (one pine a bed: Yozi 2026-11-17, a few left on the summit)
       const px = bx + (k - 1) * 1.5, pz = bz + ((k % 2) - 0.5) * 1.6;
       box(0.4, 1.6, 0.4, px, Y + 1.3, pz, '#7a5a3a');
       const cone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 4, 7), mat('#3f7f49'));
