@@ -10,7 +10,7 @@
 // its open side (Yozi 2026-11-17, from photos of the real trail).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { graniteTexture, earthTexture, smallGate, PARAPET, GRANITE } from './city-wall-parts.js';
+import { graniteTexture, earthTexture, slabTexture, smallGate, PARAPET, GRANITE } from './city-wall-parts.js';
 
 const HIDE = 700; // m: past this from the wall, it is not drawn
 const STEP = 2; // m: the wall follows the ground in pieces this long
@@ -252,7 +252,8 @@ function wallTrail({ l, y, lines }) {
           const a = side(q, h, 0), b = side(q, -h, 0), c = side(q + 1, -h, 0), d = side(q + 1, h, 0);
           for (const v of [a, b, c, d]) v[1] = ty;
           quad(tread, a, b, c, d);
-          tread.uv.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1);
+          const v0 = (s[q] - s[k]) / (s[m] - s[k] || 1), v1 = (s[q + 1] - s[k]) / (s[m] - s[k] || 1); // (one slab pattern per tread)
+          tread.uv.push(0, v0, 1, v0, 1, v1, 0, v0, 1, v1, 0, v1);
         }
         // the face between it and the one before (or the earth before the flight)
         const prev = n ? steps[n - 1][2] : gy[k] + 0.1;
@@ -309,9 +310,8 @@ function wallTrail({ l, y, lines }) {
   };
   const etex = earthTexture();
   g.add(mesh(earth, new THREE.MeshLambertMaterial({ color: etex ? 0xffffff : '#cdb48a', map: etex, side: THREE.DoubleSide }), true));
-  const ttex = graniteTexture();
-  if (ttex) ttex.repeat.set(1, 0.25);
-  g.add(mesh(tread, new THREE.MeshLambertMaterial({ color: ttex ? '#e4e3df' : GRANITE, map: ttex, side: THREE.DoubleSide }), true));
+  const ttex = slabTexture(); // (not the wall's blocks: Yozi 2026-11-17)
+  g.add(mesh(tread, new THREE.MeshLambertMaterial({ color: ttex ? 0xffffff : '#d9d6cd', map: ttex, side: THREE.DoubleSide }), true));
   g.add(mesh(verge, new THREE.MeshLambertMaterial({ color: '#86b56f', side: THREE.DoubleSide })));
   g.add(mesh({ pos: [...riser.pos, ...curb.pos] }, new THREE.MeshLambertMaterial({ color: '#a2a3a0', side: THREE.DoubleSide }))); // (the steps' fronts and the curb, one stone)
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p3 = new THREE.Vector3();

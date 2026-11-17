@@ -109,3 +109,27 @@ export function earthTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+
+// The trail's stone steps: wide flamed-granite slabs, paler than the wall,
+// speckled, with a thin joint across each and one along the middle (one
+// repeat per tread: u across the trail, v along it).
+export function slabTexture() {
+  const c = typeof document !== 'undefined' && document.createElement('canvas');
+  if (!c?.getContext) return null;
+  c.width = c.height = 64;
+  const x = c.getContext('2d');
+  x.fillStyle = '#c3c1ba'; x.fillRect(0, 0, 64, 64);
+  let seed = 17;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 420; i++) {
+    x.fillStyle = ['#b0aea7', '#d3d1ca', '#a19f99', '#bab8b0', '#8d8b86'][i % 5];
+    x.fillRect(Math.floor(rnd() * 64), Math.floor(rnd() * 64), 1, 1);
+  }
+  x.fillStyle = '#8f8c86';
+  x.fillRect(0, 0, 64, 2); // (the joint at the tread's front edge)
+  x.fillRect(31, 0, 1.5, 64); // (two slabs across)
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
