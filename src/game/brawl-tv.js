@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { L } from '../ui/pocha-ui.js';
 import { TICK, ROUNDS_TO_WIN } from '../core/brawl.js';
 import { createScreens } from '../core/brawl-tv.js';
-import { buildStage, makeFighter, placeFighter, RIVAL, STYLE, VS_SKY } from './brawl.js';
+import { buildStage, makeFighter, placeFighter, showShot, RIVAL, STYLE, VS_SKY } from './brawl.js';
 
 const STAGE_Y = [-150, -220]; // each screen's ring, under the room (and under the player's own ring)
 const PX = [512, 288], STRIP = [512, 48];
@@ -110,9 +110,7 @@ export function createBrawlTv(game) {
     s.time += dt;
     placeFighter(s.a, m.a, dt, s.time, 0); placeFighter(s.b, m.b, dt, s.time, 1);
     for (const [k, f] of [m.a, m.b].entries()) {
-      const sp = s.stage.shots[k];
-      sp.visible = !!f.shot;
-      if (f.shot) sp.position.set(f.shot.x, 0.78, f.shot.z);
+      showShot(s.stage, k, f, dt);
     }
     for (const sp of s.stage.sparks) {
       if (!sp.sp.visible) continue;

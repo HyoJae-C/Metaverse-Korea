@@ -372,6 +372,92 @@ function poseOf(f, time, out, body) {
   return body;
 }
 
+// ── Shots (U): each style throws its own thing ──────────────────────────
+// Drawn once on a small canvas and shown as a sprite (the 'ki' ball and a
+// signature's ball of light use the hit-spark glow instead).
+const SHOT_LOOK = {
+  ki: { glow: true, size: 0.75, spin: 9 },
+  orb: { glow: true, color: '#c58bff', size: 1.25, spin: 2 },
+  star: { size: 0.5, spin: 22 },
+  rock: { size: 0.95, spin: 4 },
+  wind: { size: 0.95, spin: 0 },
+  fist: { size: 0.8, spin: 0 },
+  can: { size: 0.55, spin: 10 },
+  ribbon: { size: 0.7, spin: 7 },
+};
+export const SHOT_NAME = {
+  ki: { en: 'Ki blast', ko: '장풍', ja: '気功弾', zh: '气功波' },
+  star: { en: 'Throwing star (fast, far)', ko: '수리검 (빠르고 멀리)', ja: '手裏剣（速く遠く）', zh: '手里剑（快又远）' },
+  rock: { en: 'Rock (slow, floors them)', ko: '바위 (느리지만 넘어뜨림)', ja: '岩（遅いがダウン）', zh: '石头（慢，但能击倒）' },
+  wind: { en: 'Wind kick', ko: '바람 발차기', ja: '風の蹴り', zh: '风之踢' },
+  fist: { en: 'Air punch (short, quick)', ko: '권풍 (짧고 빠름)', ja: '拳風（短く速い）', zh: '拳风（短而快）' },
+  can: { en: 'Can lob (arcs, floors them)', ko: '캔 던지기 (포물선, 넘어뜨림)', ja: '缶投げ（放物線、ダウン）', zh: '扔罐子（抛物线，击倒）' },
+  orb: { en: 'Big orb (slow, very far)', ko: '큰 구슬 (느리고 아주 멀리)', ja: '大きな玉（遅くとても遠く）', zh: '大光球（慢，非常远）' },
+  ribbon: { en: 'Ribbon (comes back)', ko: '리본 (돌아옴)', ja: 'リボン（戻ってくる）', zh: '丝带（会飞回来）' },
+};
+const shotMaps = {};
+function shotMap(kind) {
+  if (shotMaps[kind]) return shotMaps[kind];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.translate(64, 64);
+  g.lineJoin = 'round';
+  if (kind === 'star') { // a throwing star
+    g.fillStyle = '#cfd6e0'; g.strokeStyle = '#4a5260'; g.lineWidth = 5;
+    g.beginPath();
+    for (let i = 0; i < 8; i++) { const r = i % 2 ? 14 : 58, a = (i / 8) * Math.PI * 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#4a5260'; g.beginPath(); g.arc(0, 0, 8, 0, Math.PI * 2); g.fill();
+  } else if (kind === 'rock') {
+    g.fillStyle = '#8a7462'; g.strokeStyle = '#4e3f33'; g.lineWidth = 6;
+    g.beginPath();
+    [[-50, -10], [-30, -46], [12, -52], [48, -24], [54, 16], [26, 48], [-20, 50], [-52, 22]].forEach(([x, y]) => g.lineTo(x, y));
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#6b594b';
+    for (const [x, y, r] of [[-14, -14, 10], [18, 10, 8], [-8, 24, 6]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+  } else if (kind === 'wind') { // a crescent of wind from a kick
+    g.fillStyle = 'rgba(190,255,230,0.9)'; g.strokeStyle = 'rgba(80,200,160,0.9)'; g.lineWidth = 4;
+    g.beginPath(); g.arc(-20, 0, 56, -1.2, 1.2); g.arc(-44, 0, 50, 1.05, -1.05, true); g.closePath(); g.fill(); g.stroke();
+  } else if (kind === 'fist') { // a punch of air
+    for (const [r, a] of [[56, 0.25], [42, 0.45], [28, 0.8]]) { g.fillStyle = `rgba(255,170,80,${a})`; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = '#fff2d8'; g.beginPath(); g.ellipse(4, 0, 18, 22, 0, 0, Math.PI * 2); g.fill();
+  } else if (kind === 'can') { // a soda can
+    g.rotate(0.3);
+    g.fillStyle = '#e8473c'; g.fillRect(-24, -46, 48, 92);
+    g.fillStyle = '#d7dce2'; g.fillRect(-24, -52, 48, 10); g.fillRect(-24, 42, 48, 10);
+    g.fillStyle = '#fff'; g.fillRect(-24, -8, 48, 14);
+    g.strokeStyle = '#7a1f1a'; g.lineWidth = 4; g.strokeRect(-24, -52, 48, 104);
+  } else if (kind === 'ribbon') { // a ribbon bow
+    g.fillStyle = '#ff7eb6'; g.strokeStyle = '#c23c7c'; g.lineWidth = 5;
+    for (const k of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(k * 56, -34); g.lineTo(k * 56, 34); g.closePath(); g.fill(); g.stroke(); }
+    g.beginPath(); g.arc(0, 0, 13, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (shotMaps[kind] = tex);
+}
+// One fighter's shot on the stage (i: 0 left, 1 right), or none.
+export function showShot(stage, i, f, dt) {
+  const sp = stage.shots[i];
+  sp.visible = !!f.shot;
+  if (!f.shot) return;
+  const kind = f.shot.m === 'ranged' ? f.mv.ranged.shot.kind || 'ki' : 'orb';
+  const look = SHOT_LOOK[kind] || SHOT_LOOK.ki, mat = sp.material;
+  if (sp.userData.kind !== kind) {
+    sp.userData.kind = kind;
+    mat.map = look.glow ? stage.sparkMap : shotMap(kind);
+    mat.blending = look.glow ? THREE.AdditiveBlending : THREE.NormalBlending;
+    mat.color.set(look.glow ? look.color || (i ? '#ff9aa8' : '#7df0ff') : '#ffffff');
+    mat.rotation = 0;
+    mat.needsUpdate = true;
+  }
+  sp.position.set(f.shot.x, f.shot.y ?? 0.78, f.shot.z);
+  mat.rotation += dt * look.spin * (f.shot.dx < 0 ? 1 : -1);
+  if (kind === 'wind' || kind === 'fist') mat.rotation = f.shot.dx < 0 ? Math.PI : 0; // (facing the way it flies)
+  sp.scale.setScalar(look.size * (look.glow ? 1 + Math.sin(f.shot.t * 0.5) * 0.08 : 1));
+}
+
 // ── The stage ────────────────────────────────────────────────────────────
 function skyTexture([top, glow]) {
   const c = document.createElement('canvas');
@@ -480,7 +566,7 @@ export function buildStage(sky, y = STAGE_Y) {
     g.add(sp);
     return sp;
   });
-  return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
+  return { g, sparks, shots, sparkMap, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
 }
 
 // ── The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ──
@@ -701,6 +787,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
     }
     box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + BTN.s2 + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '') + '   ·   ⭐⭐ S + I'));
     box.append(el('p', 'seq', '🔗 ' + seqText(st.combos[0])));
+    box.append(el('p', 'seq', BTN.s1 + ': ' + L(SHOT_NAME[st.shot?.kind] || SHOT_NAME.ki)));
     box.append(el('p', 'dim', tt('moves')));
   }
   // The eight styles to pick from, and what the picked one does.
@@ -1063,9 +1150,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       place(on.me, mine, dt); place(on.rival, theirs, dt);
       // Balls of light in flight.
       for (const [i, f] of [m.a, m.b].entries()) {
-        const sp = on.stage.shots[i];
-        sp.visible = !!f.shot;
-        if (f.shot) { sp.position.set(f.shot.x, 0.78, f.shot.z); sp.material.rotation += dt * 9; sp.scale.setScalar(0.75 + Math.sin(on.time * 30) * 0.08); }
+        showShot(on.stage, i, f, dt);
       }
       // The bars, the clock, the rounds won.
       for (const [s, f] of [[h.a, mine], [h.b, theirs]]) {
