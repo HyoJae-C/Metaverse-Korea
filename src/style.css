@@ -2149,6 +2149,8 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .kimchi-dots i.on { background: #d8452f; }
 .kimchi-dots i.now { background: #f2a33a; }
 .kimchi-body { display: grid; gap: 8px; }
+.cook-check.on { background: #2f7a3a; color: #fff; border-color: #2f7a3a; } /* ticked (ui/cook-class-ui.js r_checks) */
+.check-mark { font-weight: 900; }
 .kimchi-verdict { display: grid; gap: 3px; padding: 10px 12px; border-radius: 14px; font-size: 14px; }
 .kimchi-verdict.good { background: #e3f4dd; color: #2f5d2a; }
 .kimchi-verdict.ok { background: #fff1c9; color: #6b5214; }
