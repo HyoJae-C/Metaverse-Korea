@@ -6423,8 +6423,11 @@ $('quest-chip').onclick = () => {
 questChipReady = true;
 refreshQuestChip();
 
-// On the square: near the guide and the big screen.
-const onSquare = () => mode === 'street' && squareNpc && Math.hypot(me.root.position.x - squareNpc.ch.root.position.x, me.root.position.z - squareNpc.ch.root.position.z) < 14;
+// On the square: near the guide, or in front of the big screen (the mission
+// says "in front of the billboard", and the screen stands ~18 m from the guide
+// at the square's far end, so its front was outside the guide's 14 m).
+const onSquare = () => mode === 'street' && [[squareNpc?.ch.root, 14], [billboard?.root, 12]]
+  .some(([o, r]) => o && Math.hypot(me.root.position.x - o.position.x, me.root.position.z - o.position.z) < r);
 
 // Doing something with another player close by pays a little extra.
 function togetherBonus(kind) {
@@ -7766,6 +7769,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     welcomeGuide: () => welcomeNpc && [welcomeNpc.ch.root.position.x, welcomeNpc.ch.root.position.z, welcomeNpc.ch.root.rotation.y],
     onboard: () => onboard,
     billboard: () => billboard && [billboard.root.position.x, billboard.root.position.z],
+    onSquare: () => !!onSquare(),
     hiring: () => hiringPlaces,
     delivery: () => deliveryGame.delivery && { ...deliveryGame.delivery, left: (deliveryGame.delivery.until - performance.now()) / 1000 },
     supportPosters: () => supportPlaces,
