@@ -291,6 +291,12 @@ function makeRibbons(roads, color, y) {
     pos.push(x, y, z);
     return pos.length / 3 - 1;
   };
+  // Push a triangle wound counter-clockwise seen from above (front face up).
+  const upTri = (a, b, c) => {
+    const ax = pos[a * 3], az = pos[a * 3 + 2];
+    const cross = (pos[b * 3 + 2] - az) * (pos[c * 3] - ax) - (pos[b * 3] - ax) * (pos[c * 3 + 2] - az);
+    if (cross > 0) idx.push(a, b, c); else if (cross < 0) idx.push(a, c, b);
+  };
   for (const r of roads) {
     const hw = r.w / 2;
     const p = r.p;
@@ -317,7 +323,10 @@ function makeRibbons(roads, color, y) {
         const [ax, az] = side(p[i - 1], p[i]), [bx, bz] = side(p[i], p[i + 1]);
         const c = pushV(x, z);
         const l1 = pushV(x + ax, z + az), l2 = pushV(x + bx, z + bz), r1 = pushV(x - ax, z - az), r2 = pushV(x - bx, z - bz);
-        idx.push(c, l2, l1, c, l1, l2, c, r2, r1, c, r1, r2); // (both windings: whichever side the bend opens on)
+        // Only the upward-facing winding of each wedge: drawing both (one up,
+        // one down) on the same vertices summed their normals to zero, and the
+        // bend showed as black streaks that shimmered with the camera.
+        upTri(c, l2, l1); upTri(c, r2, r1);
         continue;
       }
       const c = pushV(x, z);
@@ -334,7 +343,10 @@ function makeRibbons(roads, color, y) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setIndex(idx);
-  geo.computeVertexNormals();
+  // Roads are flat: every normal points straight up.
+  const up = new Float32Array(pos.length);
+  for (let i = 1; i < up.length; i += 3) up[i] = 1;
+  geo.setAttribute('normal', new THREE.BufferAttribute(up, 3));
   return new THREE.Mesh(
     geo,
     new THREE.MeshLambertMaterial({ color, polygonOffset: true, polygonOffsetFactor: -1 }),
