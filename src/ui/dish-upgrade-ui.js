@@ -3,7 +3,7 @@
 // dishes (one row for each kind, level and medal), the picked dish's chance
 // and cost, the button, and the odds table (shown in full, as the law asks).
 import { t } from '../core/i18n.js';
-import { CHANCE, LEVEL_OPEN, costFor, dishKindOf, dishLevel, gaugeStep, startLevel } from '../core/dish-upgrade.js';
+import { CHANCE, LEVEL_OPEN, NO_TRY_LIMIT, costFor, dishKindOf, dishLevel, gaugeStep, startLevel } from '../core/dish-upgrade.js';
 import { newRequestId } from '../core/dish-upgrade-store.js';
 import { kimchiScore } from '../core/kimchi-market.js';
 import { DISH_CAP, dishSlot } from '../core/bag.js';
@@ -81,7 +81,7 @@ export class DishUpgradeUI {
     if (!st.shared) parts.push(el('p', 'fine board-warn', t('upgrade.local')));
     if (!info) parts.push(el('p', 'fine', t('temple.loading')));
     else if (info.error) parts.push(el('p', 'lock-warn', t('upgrade.network')));
-    else parts.push(el('p', 'upgrade-have', `${t('upgrade.seasoning', { n: info.n })} · ${t('upgrade.tries', { n: Math.max(0, info.daily - info.tries), daily: info.daily })}`));
+    else parts.push(el('p', 'upgrade-have', t('upgrade.seasoning', { n: info.n }) + (info.daily < NO_TRY_LIMIT ? ' · ' + t('upgrade.tries', { n: Math.max(0, info.daily - info.tries), daily: info.daily }) : ''))); // (no try limit for now)
 
     const items = this.bag.list(), rows = dishRows(items);
     const keyOf = (r) => [r.kind, r.lv, r.medal, r.by, r.gz].join('|');

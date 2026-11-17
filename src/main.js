@@ -6482,9 +6482,13 @@ $('daily-btn').onclick = () => { renderDaily(); $('daily-panel').hidden = false;
 $('daily-close').onclick = () => { $('daily-panel').hidden = true; };
 // Once a day, open the check-in card shortly after arriving.
 if (daily.hasNews() && onboard >= 2) setTimeout(() => { renderDaily(); $('daily-panel').hidden = false; }, 1200); // not in a new player's first minute
+// Already checked in today (before the check-in gave seasoning, or on another device): today's 🧂 5 too.
+// (twice: the cloud sign-in may still be on its way the first time; the server gives it once a day)
+if (daily.checkedInToday()) for (const ms of [8000, 30000]) setTimeout(() => dishUpgrade.daily(), ms);
 $('checkin-btn').onclick = () => {
   const n = daily.checkIn();
   if (n) shop.toast(t('daily.checked', { n }));
+  if (n) dishUpgrade.daily(); // 🧂 5 seasoning with the check-in
 };
 
 // Hat workshop: shape, colour and patch. (game/hat-workshop.js)

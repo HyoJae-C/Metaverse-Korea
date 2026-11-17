@@ -7,7 +7,7 @@
 // level, so a changed save can't make a +20. A request id per try makes a
 // double tap (or a retry after a dropped connection) count once.
 // Without the server (local play, tests) it all stays in this browser.
-import { CHANCE, CLASS_SEASONING, DAILY_TRIES, LEVEL_OPEN, MISSION_SEASONING, START_SEASONING, costFor, rollUpgrade } from './dish-upgrade.js';
+import { CHANCE, CLASS_SEASONING, DAILY_SEASONING, DAILY_TRIES, LEVEL_OPEN, MISSION_SEASONING, START_SEASONING, costFor, rollUpgrade } from './dish-upgrade.js';
 import { kstDay } from './bait.js';
 
 export const newRequestId = () => (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`);
@@ -15,7 +15,7 @@ const LOCAL_KEY = 'mkupgrade.local'; // not "mk.": stays out of the cloud save
 
 // Every store:
 //   info() → { n, tries, daily, open, chance: [..], claimed: { mission, cls: [dish] }, dishes: { id: { lv, gauge } } } or { error }
-//   claim(kind, dish) → { granted, n } or { error }       kind: 'mission' | 'class'
+//   claim(kind, dish) → { granted, n } or { error }       kind: 'daily' | 'mission' | 'class'
 //   upgrade({ requestId, id, dish, lv, gauge, start, maker }) → { ok, id, lv, gauge, chance, cost, n, tries } or { error }
 //   error: 'seasoning' | 'limit' | 'max' | 'dish' | 'signin' | 'missing' | 'network'
 
@@ -30,7 +30,7 @@ export class LocalUpgradeStore {
     try { s = JSON.parse(this.storage.getItem(LOCAL_KEY) || 'null'); } catch { /* broken */ }
     s = s && typeof s === 'object' ? s : {};
     if (!s.started) { s.started = true; s.n = (s.n | 0) + START_SEASONING; }
-    if (s.day !== kstDay(now)) Object.assign(s, { day: kstDay(now), tries: 0, mission: false, cls: [] });
+    if (s.day !== kstDay(now)) Object.assign(s, { day: kstDay(now), tries: 0, daily: false, mission: false, cls: [] });
     s.ids ||= [];
     return s;
   }
@@ -43,6 +43,7 @@ export class LocalUpgradeStore {
   async claim(kind, dish, now = Date.now()) {
     const s = this._load(now);
     let granted = 0;
+    if (kind === 'daily' && !s.daily) { s.daily = true; granted = DAILY_SEASONING; }
     if (kind === 'mission' && !s.mission) { s.mission = true; granted = MISSION_SEASONING; }
     if (kind === 'class' && typeof dish === 'string' && !s.cls.includes(dish)) { s.cls.push(dish); granted = CLASS_SEASONING; }
     s.n = (s.n | 0) + granted;

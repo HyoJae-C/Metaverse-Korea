@@ -949,7 +949,7 @@ export const KO = {
   "upgrade.go": "더 맛있게!",
   "upgrade.ok": "성공! {name} +{lv}",
   "upgrade.fail": "아쉽게 실패했어요. 다음 시도는 {g}%p 더 잘 돼요.",
-  "upgrade.noSeasoning": "양념이 모자라요. 하루 미션을 끝내거나 요리체험을 하면 받을 수 있어요.",
+  "upgrade.noSeasoning": "양념이 모자라요. 출석체크(5개), 하루 미션(3개), 요리체험(종류마다 1개)으로 받을 수 있어요.",
   "upgrade.limit": "오늘 시도를 다 썼어요. 내일 다시 와 주세요.",
   "upgrade.max": "이 요리는 지금 가장 높은 단계예요.",
   "upgrade.missing": "아직 준비 중이에요. 조금 뒤에 다시 해 주세요.",
