@@ -30,20 +30,28 @@ const len = (p) => p.reduce((s, q, i) => (i ? s + Math.hypot(q[0] - p[i - 1][0],
 const collision = new CollisionMap(map.buildings.filter((b) => !b.visit).concat(map.blockers || []));
 createNamsanWalk({ landmarks: map.landmarks, collision });
 
-test('the wall is on its real OpenStreetMap line at 1/4, with its real gaps', () => {
+test('the wall is on its real OpenStreetMap line at 1/4, and beside the trail on the hill where OSM has none', () => {
   assert.match(osm.note, /OpenStreetMap contributors/);
   const real = osm.elements.filter((e) => e.tags?.barrier === 'city_wall' || e.tags?.historic === 'citywalls').map((e) => e.geometry.map((q) => toGame(q.lat, q.lon)));
+  const approx = new Set(hill.wall.approx || []);
   let worst = 0;
-  for (const p of runs) for (const [x, z] of p) worst = Math.max(worst, Math.min(...real.map((q) => lineDist(x, z, q))));
-  assert.ok(worst < 1, `every point within 1 m of the real line (worst ${worst.toFixed(2)} m)`);
+  for (const [i, p] of runs.entries()) if (!approx.has(i)) for (const [x, z] of p) worst = Math.max(worst, Math.min(...real.map((q) => lineDist(x, z, q))));
+  assert.ok(worst < 1, `every OSM stretch within 1 m of the real line (worst ${worst.toFixed(2)} m)`);
+  // The stretches drawn where OSM has none (Yozi 2026-11-17: the real wall
+  // runs right beside the trail up the hill) are on the hill, beside the trail.
+  const hillTrails = hill.wtrail.map(W);
+  for (const i of approx) for (const [x, z] of runs[i]) {
+    assert.ok(onNamsan(hill, x - hill.x, z - hill.z), `approximate wall at ${x.toFixed(1)}, ${z.toFixed(1)} is on the hill`);
+    assert.ok(Math.min(...hillTrails.map((t) => lineDist(x, z, t))) < 4, `approximate wall at ${x.toFixed(1)}, ${z.toFixed(1)} is beside the trail`);
+  }
   const total = runs.reduce((s, p) => s + len(p), 0);
-  assert.ok(total > 450 && total < 650, `${Math.round(total)} m of wall (about 2.3 km real)`);
+  assert.ok(total > 650 && total < 900, `${Math.round(total)} m of wall (about 3 km real)`);
   assert.ok(runs.length >= 6, `${runs.length} stretches`);
   // On the hill and off it: up the summit's ridge and through Jangchung-dong.
   assert.ok(runs.some((p) => p.some(([x, z]) => namsanGround(hill, x - hill.x, z - hill.z) > 50)), 'up by the summit');
   assert.ok(runs.some((p) => p.every(([x, z]) => !onNamsan(hill, x - hill.x, z - hill.z))), 'down in Jangchung-dong');
-  // 50% high (Yozi): about 3.5 m.
-  assert.ok(hill.wall.H > 3.2 && hill.wall.H < 4, `${hill.wall.H} m`);
+  // 25% high (Yozi 2026-11-17, like the photos of the real trail; it was 50%): about 1.8 m.
+  assert.ok(hill.wall.H > 1.5 && hill.wall.H < 2.1, `${hill.wall.H} m`);
 });
 
 test('the trail goes from Baekbeom Square over the summit plaza to Gwanghuimun, and you can walk all of it', () => {
