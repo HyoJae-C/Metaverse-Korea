@@ -1,7 +1,6 @@
 // How big a home is (Forest Lane Apartments): level 1 (the old Sunny Villa
-// size) is where a new player starts; players from before levels who had
-// opened their home or played that week keep the home they had, level 2
-// (Yozi 2026-11-17/18, supabase/054_home_level_old.sql). Saving up game money
+// size) is where a new player starts; players from before levels existed
+// keep the home they had, level 2 (Yozi 2026-11-17). Saving up game money
 // makes it bigger (game/home-grow.js).
 // The room grows to the back and both sides; the door wall stays where it is
 // (core/home-grow.js moves the furniture with the walls).
