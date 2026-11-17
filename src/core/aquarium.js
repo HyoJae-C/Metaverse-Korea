@@ -33,8 +33,10 @@ export const SEAFLOOR = { x0: 25, z0: 21, x1: HW, z1: 30 };
 // The tank shop (Yozi 2026-11-17): the four home fish tanks (core/fish-tank.js)
 // in a row on the right of the lobby, glass toward the path, each with a few
 // fish to show what it holds. Walk up to one to buy it.
-export const TANK_SHOP = { x: 14, tanks: [['tank-s', 22.4, ['clownfish', 'ricefish', 'shrimp', 'seahorse']], ['tank-m', 24.2, ['carp', 'puffer', 'crucian', 'octopus', 'kelp']],
-  ['tank-l', 26.6, ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']], ['tank-wall', 29.6, ['orca', 'beluga', 'manta', 'shark', 'kelp', 'starfish', 'crab']]] };
+export const TANK_SHOP = { x: 14, tanks: [ // [id, x, z, facing (glass toward), demo fish]
+  ['tank-mini', 14, 20.9, -Math.PI / 2, ['clownfish', 'shrimp']], ['tank-s', 14, 22.2, -Math.PI / 2, ['clownfish', 'ricefish', 'shrimp', 'seahorse']], ['tank-m', 14, 24.4, -Math.PI / 2, ['carp', 'puffer', 'crucian', 'octopus', 'kelp']],
+  ['tank-l', 14, 27.6, -Math.PI / 2, ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']],
+  ['tank-wall', 9.6, 31.25, Math.PI, ['orca', 'beluga', 'manta', 'shark', 'kelp', 'starfish', 'crab']]] }; // (the wall tank along the back wall)
 export const JELLIES = [[-7, 3], [-3.8, 7], [-7, 11], [7, 3], [3.8, 7], [7, 11]]; // either side of the path to the tunnel
 export const WHALE = { x: 13, z0: -4.5, len: 25, scale: 2 }; // the floor line is the real length; the model is half
 export const SQUID = { x: -12, z0: 1, len: 12 }; // a giant squid at its real size, tentacles and all
@@ -501,16 +503,18 @@ export function buildAquarium(store, ROOM = AQUA_ROOM, EXIT = { x: 0, z: ROOM.d 
   // ---- the tank shop ----
   const products = [];
   put(g, sign(4.4, 1.3, 'FISH TANKS FOR YOUR HOME', '우리 집 어항'), TANK_SHOP.x + 0.9, 3.4, 26, -Math.PI / 2);
-  for (const [id, z, demo] of TANK_SHOP.tanks) {
+  for (const [id, x, z, ry, demo] of TANK_SHOP.tanks) {
     const tank = tankById(id), piece = buildFurniture(id);
-    piece.position.set(TANK_SHOP.x, 0, z);
-    piece.rotation.y = -Math.PI / 2; // glass toward the path (-x)
+    piece.position.set(x, 0, z);
+    piece.rotation.y = ry; // glass toward the path
     g.add(piece);
     const fish = fillTank(piece, tank, demo);
     ticks.push((t) => fish.tick(t));
-    const [w, d] = tank.size;
-    colliders.push({ p: [[TANK_SHOP.x - d / 2, z - w / 2], [TANK_SHOP.x + d / 2, z - w / 2], [TANK_SHOP.x + d / 2, z + w / 2], [TANK_SHOP.x - d / 2, z + w / 2]] });
-    products.push({ product: store.products?.find((p) => p.furniture === id) || { id: 'buy-' + id, model: 'furniture', furniture: id, name: tank.name, price: tank.price }, mesh: piece, pos: new THREE.Vector3(TANK_SHOP.x - d / 2 - 0.7, 0, z) });
+    const [w, d] = tank.size, side = Math.abs(Math.sin(ry)) > 0.5; // (turned a quarter: width along z)
+    const hx = side ? d / 2 : w / 2, hz = side ? w / 2 : d / 2;
+    colliders.push({ p: [[x - hx, z - hz], [x + hx, z - hz], [x + hx, z + hz], [x - hx, z + hz]] });
+    const out = d / 2 + 0.7; // where you stand to buy: in front of the glass
+    products.push({ product: store.products?.find((p) => p.furniture === id) || { id: 'buy-' + id, model: 'furniture', furniture: id, name: tank.name, price: tank.price }, mesh: piece, pos: new THREE.Vector3(x + Math.sin(ry) * out, 0, z + Math.cos(ry) * out) });
   }
 
   // The dolphin note, by the tank.

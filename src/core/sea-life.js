@@ -49,7 +49,12 @@ let painting = null;
 // One skin texel's worth of colour: TEX_W along the body, TEX_H around it.
 const TEX_W = 256, TEX_H = 128;
 
-function body({ x0 = -0.3, x1 = 0.5, H, W, peak = 0.5, ped = 0.25, nose = 2, cy = () => 0, hf = () => 1, under = 1, color, rings = 48, seg = 32 }) {
+// Detail: 1 for the aquarium's big tanks, less for home tanks (many small
+// fish, Yozi 2026-11-18: up to 60 in a tank). Set while a species builds.
+let DETAIL = 1;
+const dl = (n, min = 4) => Math.max(min, Math.round(n * DETAIL));
+function body({ x0 = -0.3, x1 = 0.5, H, W, peak = 0.5, ped = 0.25, nose = 2, cy = () => 0, hf = () => 1, under = 1, color, rings: R = 48, seg: G = 32 }) {
+  const rings = dl(R, 10), seg = dl(G / 2, 5) * 2;
   const prof = (t) => { const e = envelope(t, peak, ped, nose) * hf(t); return [H * e / 2, W * e / 2, cy(t)]; };
   const at = (t, a) => { const x = lerp(x0, x1, t), [h, w, y0] = prof(t), u = Math.cos(a); return [x, y0 + h * u * (u < 0 ? under : 1), w * Math.sin(a), u]; };
   const pos = [], col = [], uv = [], idx = [], c = new THREE.Color();
@@ -106,7 +111,7 @@ function body({ x0 = -0.3, x1 = 0.5, H, W, peak = 0.5, ped = 0.25, nose = 2, cy 
 // Turned by (rx, ry, rz), then moved to `at`. `edge`: a darker rim.
 function fin(pts, color, { rx = 0, ry = 0, rz = 0, at = [0, 0, 0], edge = null, tip = null, sharp = false, rays = true, thick = 0.007, lift = 0 } = {}) {
   const outline = sharp ? pts.map(([x, y]) => new THREE.Vector2(x, y))
-    : new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal', 0.5).getPoints(Math.max(24, pts.length * 6)).map((p) => new THREE.Vector2(p.x, p.y));
+    : new THREE.CatmullRomCurve3(pts.map(([x, y]) => new THREE.Vector3(x, y, 0)), true, 'centripetal', 0.5).getPoints(dl(Math.max(24, pts.length * 6), 6)).map((p) => new THREE.Vector2(p.x, p.y));
   const geo = new THREE.ExtrudeGeometry(new THREE.Shape(outline), { depth: thick, bevelEnabled: false, curveSegments: 1 }).translate(0, 0, -thick / 2 + lift);
   const g = finish(geo);
   const [ax, ay] = pts[0], [bx, by] = pts[pts.length - 1], rx0 = (ax + bx) / 2, ry0 = (ay + by) / 2;
@@ -132,7 +137,7 @@ function flatFin(pts, color, at = [0, 0, 0], opts = {}) {
 }
 
 function ball(r, color, [x, y, z], s = [1, 1, 1], seg = 10) {
-  return finish(new THREE.SphereGeometry(r, seg, Math.ceil(seg * 0.7)).scale(...s).translate(x, y, z), color);
+  return finish(new THREE.SphereGeometry(r, dl(seg, 6), Math.ceil(dl(seg, 6) * 0.7)).scale(...s).translate(x, y, z), color);
 }
 
 function rod([ax, ay, az], [bx, by, bz], r0, r1, color) {
@@ -341,7 +346,7 @@ const SPECIES = {
   manta: { mode: 'ray', hz: 1.1, amp: 0.4, build() {
     // Grid over the disc: v across (-1 left tip .. 1 right tip), p from the
     // trailing edge (concave) to the leading edge (convex, the head in front).
-    const P = 20, V = 40, pos = [], col = [], idx = [], c = new THREE.Color();
+    const P = dl(20, 6), V = dl(20, 6) * 2, pos = [], col = [], idx = [], c = new THREE.Color();
     for (const top of [true, false]) {
       const o = pos.length / 3;
       for (let i = 0; i <= P; i++) {
@@ -477,13 +482,16 @@ export const hasSpecies = (name) => !!SPECIES[name];
 
 const built = new Map();
 // The geometry and material for one species (built once, shared).
-export function species(name) {
-  if (built.has(name)) return built.get(name);
+// lite: fewer triangles (about a sixth), for home tanks.
+export function species(name, lite = false) {
+  const key = lite ? name + ':lite' : name;
+  if (built.has(key)) return built.get(key);
   const sp = SPECIES[name];
   if (!sp) throw new Error('unknown species ' + name);
   const skins = painting = [];
   let parts;
-  try { parts = sp.build(); } finally { painting = null; }
+  DETAIL = lite ? 0.25 : 1;
+  try { parts = sp.build(); } finally { painting = null; DETAIL = 1; }
   // One texture for the skins, one row of TEX_H texels each, and a white
   // strip at the bottom that every other part (fins, eyes) reads, so they
   // keep their vertex colours.
@@ -520,6 +528,6 @@ export function species(name) {
   };
   mat.customProgramCacheKey = () => `swim:${sp.mode}:${w}:${A}`;
   const out = { geo, mat, mode: sp.mode };
-  built.set(name, out);
+  built.set(key, out);
   return out;
 }
