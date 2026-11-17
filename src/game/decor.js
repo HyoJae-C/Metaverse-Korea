@@ -7,6 +7,7 @@ import { foldHomes } from '../core/home-fold.js';
 import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, pieceBlocked, placeRiders, ridersOf, starterLayout, topUnder } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
+import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
 import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
 
 export function createDecor(game) {
@@ -157,6 +158,7 @@ export function createDecor(game) {
     if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
     const def = furnitureById(id);
     if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
+    if (!fitsHome(def, readHomeLevel())) return shop.toast(t('home.needLevel', { n: def.needsHomeLevel })); // (a big fish tank: a bigger home first)
     if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
     const [x, z, ry] = spotInFront();
     const it = { id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) };
@@ -243,6 +245,7 @@ export function createDecor(game) {
       const f = furnitureById(b.dataset.id);
       b.querySelector('small').textContent = localName(f.name, getLanguage());
       b.hidden = !!f.item && !inventory.has(f.item); // plushies: once you've won one
+      b.classList.toggle('locked', !fitsHome(f, readHomeLevel())); // needs a bigger home
     }
   }
   labelDecor();
@@ -335,6 +338,20 @@ export function createDecor(game) {
     const it = decor?.items.find((i) => i.id === tankPanel.tankId);
     if (!it || Math.hypot(p.x - it.x, p.z - it.z) > Math.max(...tankById(it.id).size) / 2 + 1.6) tankPanel.close();
   }
-  return { visit, labelDecor, lampAct, tankAct, tankAway, tick, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
-    closePiece, openPiece, updateCarry };
+  // A bigger home (core/home-stages.js): the buying sheet and the till load
+  // the first time you go into your home (game/home-grow.js).
+  let growing = null;
+  const grow = () => (growing ||= import('./home-grow.js').then((m) => m.createHomeGrow(game, api)).catch((e) => { growing = null; throw e; }));
+  // The home's door, sized for its level: mine (asking the server once a
+  // session, at most a few seconds) or the host's when visiting. A promise
+  // of the same item with store.roomDims (main.js enterStore builds that).
+  function sizeHome(item) {
+    const host = item.store.visitHost;
+    const level = host ? Promise.resolve(host.level || OLD_HOME_LEVEL) : grow().then((g) => g.syncLevel(), () => readHomeLevel());
+    return level.then((n) => ({ ...item, homeSized: true, store: { ...item.store, roomDims: homeRoom(n) } }));
+  }
+  $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
+  const api = { visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+    closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
+  return api;
 }
