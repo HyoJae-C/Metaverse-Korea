@@ -1,33 +1,46 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newFighter, stepFight, startMove, moveTicks, STYLE_IDS, copyMatch, newMatch, packMatch, unpackMatch } from '../src/core/brawl.js';
+import { newFighter, stepFight, startMove, moveTicks, STYLE_IDS, STYLES, copyMatch, newMatch, packMatch, unpackMatch } from '../src/core/brawl.js';
 import { createSoloCaster, createScreens, KEY_EVERY, TV } from '../src/core/brawl-tv.js';
 
 const pair = () => { const a = newFighter(0), b = newFighter(1); a.x = -0.4; b.x = 0.4; return [a, b]; };
-function command(button, delay = 0, meter = 100) {
-  const [a, b] = pair(); a.sp = meter;
-  stepFight(a, b, { mz: -1 });
-  for (let i = 0; i < delay; i++) stepFight(a, b);
-  stepFight(a, b, { mx: 1, [button]: true });
-  for (let i = 0; i < 18 && a.st !== 'atk'; i++) stepFight(a, b);
-  return a;
+// The first move a press starts (within 18 ticks), for a style.
+function first(style, inp, meter = 100, gap = 0.8) {
+  const a = newFighter(0, style), b = newFighter(1); a.x = -gap / 2; b.x = gap / 2; a.sp = meter;
+  const ev = stepFight(a, b, inp);
+  for (let i = 0; i < 18 && a.st === 'idle'; i++) ev.push(...stepFight(a, b));
+  return { a, ev };
 }
-test('simple down/toward commands select either special and spend the same bar', () => {
-  for (const [button, move] of [['p', 'palm'], ['k', 'fly']]) {
-    const a = command(button);
-    assert.equal(a.move, move); assert.equal(a.sp, 50);
+test('the same keys for every style: J string, K jump, L dodge, U shot, I special 1, S + I special 2, close toward + J grab', () => {
+  for (const style of STYLE_IDS) {
+    const slot = STYLES[style].slot;
+    assert.equal(first(style, { p: true }).a.move, 'lp', style + ' J');
+    assert.equal(first(style, { k: true }).a.st, 'jump', style + ' K');
+    assert.equal(first(style, { dash: -1 }).a.st, 'dodge', style + ' L');
+    assert.equal(first(style, { s1: true }, 0, 2.5).a.move, 'ranged', style + ' U');
+    const one = first(style, { s2: true });
+    assert.equal(one.a.move, slot, style + ' I'); assert.equal(one.a.sp, 50);
+    const two = first(style, { s2: true, mz: -1 });
+    assert.equal(two.a.move, 'super', style + ' S + I'); assert.equal(two.a.sp, 0);
+    assert.equal(first(style, { s2: true, mz: -1 }, 60).a.move, slot, style + ' S + I without a full bar: special 1');
+    assert.equal(first(style, { mx: 1, p: true }, 0, 0.75).a.move, 'grab', style + ' close toward + J');
+    assert.equal(first(style, { mx: 1, s1: true }, 0, 0.75).a.move, 'grab', style + ' close toward + U');
+    assert.equal(first(style, { mx: 1, p: true }, 0, 1.2).a.move, 'lp', style + ' toward + J from further: the jab');
   }
 });
-test('expired command and insufficient bar leave normal attacks available', () => {
-  assert.equal(command('p', 31).move, 'upper');
-  assert.equal(command('k', 0, 0).move, 'rk'); // (toward + kick without the bar: the roundhouse)
+test('without the bar, I does nothing; holding S guards and stands still', () => {
+  const { a } = first('brawler', { s2: true }, 0);
+  assert.equal(a.st, 'idle');
+  const [c, d] = pair(); const x = c.x;
+  for (let i = 0; i < 30; i++) stepFight(c, d, { mz: -1, mx: 1 });
+  assert.ok(c.guard); assert.equal(c.x, x);
 });
-test('command history survives transmission and copies never share mutable state', () => {
+test('copies never share mutable state', () => {
   const m = newMatch('brawler', 'ninja', true);
-  m.a.command.stage = 1; m.a.command.left = 20;
+  m.a.buf.p = 5;
   const c = copyMatch(m), u = unpackMatch(JSON.parse(JSON.stringify(packMatch(m))));
-  assert.deepEqual(u.a.command, m.a.command);
-  c.a.command.stage = 2; assert.equal(m.a.command.stage, 1);
+  assert.deepEqual(u.a.buf, m.a.buf);
+  c.a.buf.p = 1; assert.equal(m.a.buf.p, 5);
 });
 test('all styles normal hits lose 25 percent before rounding; specials keep their damage', () => {
   for (const style of STYLE_IDS) for (const id of ['lp', 'rp', 'lk', 'rk', 'upper', 'palm', 'fly']) {
