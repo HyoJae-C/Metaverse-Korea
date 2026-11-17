@@ -96,3 +96,15 @@ test('every catalogue fish has a drawing that builds', async () => {
     assert.ok(sp.geo.attributes.color && sp.geo.attributes.uv, f.id);
   }
 });
+
+test('home tanks use the light drawings: a full wall aquarium stays inside the triangle budget', async () => {
+  const { species } = await import('../src/core/sea-life.js');
+  const { drawingOf } = await import('../src/core/tank-species.js');
+  let full = 0, lite = 0;
+  for (const f of FISH) {
+    full += species(drawingOf(f.id)).geo.attributes.position.count / 3;
+    lite += species(drawingOf(f.id), true).geo.attributes.position.count / 3;
+  }
+  assert.ok(lite < full / 4, `${lite} vs ${full}`);
+  assert.ok((lite / FISH.length) * 150 < 150000, 'even 150 fish on average under 150k triangles');
+});

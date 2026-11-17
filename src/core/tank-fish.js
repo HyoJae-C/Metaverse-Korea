@@ -17,7 +17,7 @@ export function fillTank(g, tank, list) {
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
   for (const [id, idx] of groups) {
     let sp;
-    try { sp = species(drawingOf(id)); } catch { continue; } // (a kind with no drawing yet: left out, not a crash)
+    try { sp = species(drawingOf(id), true); } catch { continue; } // (a kind with no drawing yet: left out, not a crash)
     const mesh = new THREE.InstancedMesh(sp.geo, sp.mat, idx.length);
     mesh.frustumCulled = false;
     g.add(mesh);
