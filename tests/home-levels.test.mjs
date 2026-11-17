@@ -90,10 +90,13 @@ test('the local till: one level at a time, paid once a request', async () => {
   assert.equal((await till.buy({ requestId: 'c', level: 4, price: HOME_LEVELS[3].price })).error, 'coins');
 });
 
-test('the server keeps the same prices and gives old accounts level 2', () => {
+test('the server keeps the same prices; old accounts that opened their home or played this week keep level 2', () => {
   const sql = readFileSync(new URL('../supabase/053_home_levels.sql', import.meta.url), 'utf8');
   for (const l of HOME_LEVELS.filter((x) => x.price)) assert.match(sql, new RegExp(`\\(${l.level}, ${l.price}\\)`));
-  assert.match(sql, /u\.created_at < s\.at\) then 2/);
+  const old = readFileSync(new URL('../supabase/054_home_level_old.sql', import.meta.url), 'utf8');
+  assert.match(old, /mk\.home\.forest-lane-apt/); // opened their home…
+  assert.match(old, /interval '7 days'/); // …or played this week (Yozi 2026-11-18)
+  assert.match(old, /from public\.home_level_old o where o\.user_id = p_user\) then 2/);
   assert.match(sql, /returns table \(net_id text, name text, friend boolean, level int\)/);
   assert.match(sql, /'home:' \|\| p_level/);
 });
