@@ -897,6 +897,11 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .decor-item { position: relative; }
 .decor-item.placed { background: #eef6e8; }
 .decor-item.placed::after { content: '✓'; position: absolute; top: 3px; right: 6px; font-size: 12px; font-weight: 800; color: #4f8a3c; }
+.decor-item.locked { opacity: 0.5; }
+.decor-item.locked::after { content: '🔒'; position: absolute; top: 3px; right: 5px; font-size: 11px; }
+.grow-chip { align-self: flex-start; }
+.grow-panel .grow-now { font-weight: 700; }
+.grow-panel .grow-buy { width: 100%; margin-top: 6px; }
 .piece-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
   top: calc(max(12px, env(safe-area-inset-top)) + 140px);

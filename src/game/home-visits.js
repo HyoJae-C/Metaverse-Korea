@@ -88,7 +88,7 @@ export function createHomeVisits(game) {
     closeList();
     const name = cleanName(host.name) || '?';
     const label = t('home.ofName', { name });
-    guest = { host: { net: host.net_id, name } };
+    guest = { host: { net: host.net_id, name, level: host.level } }; // (level: the host's home size, 053_home_levels.sql)
     game.enterStore({ ...front, store: { ...front.store, visitHost: guest.host, name: { en: label, ko: label } } });
   }
   function openGuest(store, built) {
