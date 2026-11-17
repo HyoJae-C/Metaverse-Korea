@@ -948,7 +948,7 @@ export const EN = {
   "upgrade.go": "Make it tastier!",
   "upgrade.ok": "Success! {name} +{lv}",
   "upgrade.fail": "Not this time. The next try is {g}%p more likely.",
-  "upgrade.noSeasoning": "Not enough seasoning. Finish the day's missions or cook at a class to get more.",
+  "upgrade.noSeasoning": "Not enough seasoning. Get 5 with the daily check-in, 3 for the day's missions and 1 for each kind of dish you cook.",
   "upgrade.limit": "That's all the tries for today. Come back tomorrow.",
   "upgrade.max": "This dish is at the highest level for now.",
   "upgrade.missing": "The kitchen is being set up. Try again soon.",

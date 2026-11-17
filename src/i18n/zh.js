@@ -949,7 +949,7 @@ export const ZH = {
   "upgrade.go": "更好吃！",
   "upgrade.ok": "成功!{name} +{lv}",
   "upgrade.fail": "可惜失败了。下次成功率提高 {g}%p。",
-  "upgrade.noSeasoning": "调料不够。完成每日任务或参加料理体验就能获得。",
+  "upgrade.noSeasoning": "调料不够。每日签到得5个，完成每日任务得3个，料理体验每种菜得1个。",
   "upgrade.limit": "今天的次数用完了,明天再来吧。",
   "upgrade.max": "这道料理目前已是最高阶段。",
   "upgrade.missing": "厨房还在准备中，请稍后再试。",

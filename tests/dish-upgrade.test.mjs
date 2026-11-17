@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHANCE, LEVEL_OPEN, DAILY_TRIES, START_SEASONING, MISSION_SEASONING, CLASS_SEASONING, chanceFor, costFor, gaugeStep, rollUpgrade, dishKindOf, startLevel } from '../src/core/dish-upgrade.js';
+import { CHANCE, LEVEL_OPEN, DAILY_SEASONING, START_SEASONING, MISSION_SEASONING, CLASS_SEASONING, chanceFor, costFor, gaugeStep, rollUpgrade, dishKindOf, startLevel } from '../src/core/dish-upgrade.js';
 import { LocalUpgradeStore } from '../src/core/dish-upgrade-store.js';
 import { giftEntry } from '../src/core/bag.js';
 import { giftKind } from '../src/core/held.js';
@@ -57,9 +57,14 @@ test('local store: 10 seasoning to start, daily claims once, tries limited', asy
   assert.equal(r.lv, 1);
   assert.equal(r.n, info.n - 1);
   assert.equal((await s.upgrade({ requestId: 'a', lv: 0 }, now)).error, 'network'); // (the same try twice counts once)
-  for (let i = 0; i < DAILY_TRIES - 1; i++) await s.upgrade({ requestId: 'b' + i, lv: 1 }, now);
-  assert.equal((await s.upgrade({ requestId: 'z', lv: 1 }, now)).error, 'limit');
+  assert.equal((await s.claim('daily', null, now)).granted, DAILY_SEASONING); // the check-in's 5
+  assert.equal((await s.claim('daily', null, now)).granted, 0);
+  for (let i = 0; i < 14; i++) await s.upgrade({ requestId: 'b' + i, lv: 1 }, now);
+  info = await s.info(now);
+  assert.equal(info.tries, 15); // no daily limit on tries
+  assert.ok(info.daily >= 1000);
   assert.equal((await s.info(now + 86400000)).tries, 0); // a new day
+  assert.equal((await s.claim('daily', null, now + 86400000)).granted, DAILY_SEASONING);
 });
 
 test('local store: not enough seasoning, and the highest level', async () => {

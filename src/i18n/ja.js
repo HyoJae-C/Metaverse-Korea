@@ -949,7 +949,7 @@ export const JA = {
   "upgrade.go": "もっとおいしく！",
   "upgrade.ok": "成功!{name} +{lv}",
   "upgrade.fail": "残念、失敗。次は{g}%p成功しやすくなります。",
-  "upgrade.noSeasoning": "調味料が足りません。デイリーミッションを終えるか料理体験でもらえます。",
+  "upgrade.noSeasoning": "調味料が足りません。出席チェックで5個、毎日のミッションで3個、料理体験で種類ごとに1個もらえます。",
   "upgrade.limit": "今日の回数は使い切りました。また明日どうぞ。",
   "upgrade.max": "この料理は今いちばん高い段階です。",
   "upgrade.missing": "準備中です。少ししてからもう一度どうぞ。",

@@ -9,9 +9,10 @@
 //  - Each failure adds to the dish's gauge (정성 게이지), raising the next
 //    try's chance until it succeeds: +5%p up to +10, +2%p after.
 //  - Cost: 1 seasoning up to +10; from +11, as many as the level tried for.
-//  - Everyone gets DAILY_TRIES tries a day, whatever they have.
+//  - No daily limit on tries (Yozi 2026-11-17; DAILY_TRIES 1000 = none).
 //  - A gold-medal dish starts at +1.
-//  - Seasoning: 10 to start (everyone, once), 3 for finishing the day's
+//  - Seasoning: 10 to start (everyone, once), 5 with the day's check-in,
+//    3 for finishing the day's
 //    missions, 1 a day for each kind of dish you cook. Not sold for now.
 // Kept free of DOM code so it can be unit-tested.
 import { recipeOf } from './recipe-book.js';
@@ -19,7 +20,9 @@ import { isKimchi, kimchiScore } from './kimchi-market.js';
 import { medalFor } from './grill-game.js';
 
 export const LEVEL_OPEN = 20; // the highest level you can reach for now
-export const DAILY_TRIES = 10;
+export const DAILY_TRIES = 1000; // (no limit)
+export const NO_TRY_LIMIT = 1000;
+export const DAILY_SEASONING = 5; // with the day's check-in
 export const START_SEASONING = 10;
 export const MISSION_SEASONING = 3;
 export const CLASS_SEASONING = 1;
