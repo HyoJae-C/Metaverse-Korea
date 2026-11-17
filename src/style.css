@@ -875,8 +875,13 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   bottom: max(170px, calc(env(safe-area-inset-bottom) + 160px));
   width: min(560px, calc(100vw - 24px));
   background: var(--panel); border-radius: 22px; padding: 10px 12px; box-shadow: var(--shadow); z-index: 4;
+  /* Stops below the 꾸미기 button so it never covers it (short phones scroll). */
+  max-height: calc(100vh - max(170px, calc(env(safe-area-inset-bottom) + 160px)) - max(12px, env(safe-area-inset-top)) - 150px);
+  max-height: calc(100dvh - max(170px, calc(env(safe-area-inset-bottom) + 160px)) - max(12px, env(safe-area-inset-top)) - 150px);
+  overflow-y: auto;
 }
-.decor-bar .fine { margin: 0 0 8px; font-size: 12px; }
+.decor-bar > .sheet-x { position: sticky; top: 0; float: right; margin: 0 -4px 4px 8px; z-index: 3; box-shadow: 0 1px 6px rgba(74, 63, 53, 0.18); font-size: 16px; font-weight: 800; }
+.decor-bar .fine { margin: 0 0 8px; padding: 0 30px; font-size: 12px; }
 .visit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 .visit-row .chip { padding: 5px 10px; font-size: 12px; }
 .visit-row .chip.on { background: var(--accent); color: #fff; }

@@ -234,6 +234,7 @@ export function createDecor(game) {
     }
   }
   $('decor-btn').onclick = () => decor && setDecorating(!decor.editing);
+  $('decor-close').onclick = () => decor && setDecorating(false);
   $('decor-grid').append(...FURNITURE.map((f) => {
     const b = document.createElement('button');
     b.className = 'decor-item';
