@@ -26,7 +26,7 @@ test('every catalogue fish has a real length, a size class and a drawn length in
   assert.ok(Math.abs(shownLength('crab') / shownLength('ricefish') - Math.sqrt(0.15 / 0.035)) < 1e-9);
   const order = ['ricefish', 'clownfish', 'crucian', 'carp', 'shark', 'orca', 'whale'].map(shownLength);
   for (let i = 1; i < order.length; i++) assert.ok(order[i] > order[i - 1], 'longer in life, longer in the tank');
-  assert.ok(shownLength('whale') <= 0.95);
+  assert.ok(shownLength('whale') <= 1.6);
 });
 
 test('the biggest fish a tank takes fits inside its water', () => {

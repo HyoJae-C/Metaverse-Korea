@@ -48,9 +48,10 @@ export function sizeClass(id) {
 export const spacesOf = (id) => SPACES[sizeClass(id)] || 0;
 // Drawn length in the tank (metres): the square root of the real length, so
 // four times longer looks twice as long (Yozi 2026-11-17: in proportion,
-// but a whale can't be 800 ricefish). A 3.5 cm ricefish is 5 cm, a carp
-// 21 cm, an orca 71 cm, a 25 m whale 95 cm (the most).
-export const shownLength = (id) => Math.min(0.95, 0.05 * Math.sqrt((REAL_LENGTH[id] || 0.1) / 0.035));
+// but a whale can't be 800 ricefish), as big as the tanks allow (Yozi: the
+// tanks are big enough for bigger fish). A 3.5 cm ricefish is 8 cm, a carp
+// 33 cm, a salmon 36 cm, an orca 1.1 m, a 25 m whale 1.6 m (the most).
+export const shownLength = (id) => Math.min(1.6, 0.08 * Math.sqrt((REAL_LENGTH[id] || 0.1) / 0.035));
 
 // Where in the tank it lives: swimming, on the sand, or planted.
 const FLOOR = new Set(['flounder', 'crab', 'lobster', 'starfish', 'sea-urchin', 'sea-cucumber', 'scallop', 'octopus', 'seahorse']);
