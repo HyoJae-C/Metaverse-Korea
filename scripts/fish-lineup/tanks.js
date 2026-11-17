@@ -13,7 +13,7 @@ const s = new THREE.Scene(); s.background = new THREE.Color('#efe6d6');
 s.add(new THREE.HemisphereLight(0xffffff, 0xb8ad98, 1.6));
 const d = new THREE.DirectionalLight(0xffffff, 1.4); d.position.set(2, 4, 5); s.add(d);
 const cam = new THREE.PerspectiveCamera(30, 1800 / 800, 0.1, 50); cam.position.set(0, 1.9, 7.6); cam.lookAt(0, 1.0, 0);
-let x = -4.1; const ticks = [];
+let x = -4.0; const ticks = [];
 for (const [id, list] of FILL) {
   const t = tankById(id), g = buildFurniture(id); x += t.size[0] / 2; g.position.x = x; x += t.size[0] / 2 + 0.35; s.add(g);
   ticks.push(fillTank(g, t, list));
