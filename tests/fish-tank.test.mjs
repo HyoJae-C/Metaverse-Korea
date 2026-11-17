@@ -49,8 +49,10 @@ test('the four tanks: bought as furniture, the big ones need a bigger home', () 
 test('size and space: small fish go many to a tank, big ones only in big tanks', () => {
   const s = tankById('tank-s'), wall = tankById('tank-wall');
   assert.equal(blockedBy(s, [], 'carp'), 'size');
-  assert.equal(blockedBy(s, ['ricefish', 'ricefish', 'ricefish'], 'ricefish'), null);
-  assert.equal(blockedBy(s, ['ricefish', 'ricefish', 'ricefish', 'ricefish'], 'ricefish'), 'full');
+  assert.deepEqual(TANKS.map((t) => t.fish), [10, 25, 40, 60]);
+  assert.equal(blockedBy(s, Array(9).fill('ricefish'), 'ricefish'), null);
+  assert.equal(blockedBy(s, Array(10).fill('ricefish'), 'ricefish'), 'full', 'ten fish at most');
+  assert.equal(blockedBy(wall, Array(15).fill('orca'), 'orca'), 'full', 'big fish fill the spaces first');
   assert.equal(blockedBy(wall, [], 'orca'), null);
   assert.equal(blockedBy(wall, [], 'whale'), 'size', 'the blue whale stays in the aquarium');
   assert.equal(blockedBy(wall, [], 'giant-squid'), 'size');

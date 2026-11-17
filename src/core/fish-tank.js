@@ -13,12 +13,15 @@ import { BAG_MAX, fishById } from './fishing.js';
 // class, home level needed, price, name]. Bigger homes come from
 // core/home-stages.js (its own thread): level 2 is the home everyone has
 // now, 1 a new player's smaller first home.
+// At most so many fish a tank, whatever their size (Yozi 2026-11-18), on
+// top of the spaces (big fish take more, so a wall tank holds 15 orcas).
+const MAX_FISH = { 'tank-s': 10, 'tank-m': 25, 'tank-l': 40, 'tank-wall': 60 };
 export const TANKS = [
-  ['tank-s', '🐟', [0.8, 0.4], 0.7, 0.45, 4, 'S', 1, 30000, { en: 'Small fish tank', ko: '작은 어항', ja: '小さな水槽', zh: '小鱼缸' }],
-  ['tank-m', '🐠', [1.3, 0.5], 0.6, 0.7, 10, 'M', 1, 80000, { en: 'Fish tank', ko: '중간 어항', ja: '中くらいの水槽', zh: '中型鱼缸' }],
-  ['tank-l', '🐡', [2.1, 0.6], 0.5, 1.0, 20, 'L', 3, 250000, { en: 'Large fish tank', ko: '대형 어항', ja: '大きな水槽', zh: '大型鱼缸' }],
-  ['tank-wall', '🐋', [3.6, 0.8], 0.3, 1.9, 40, 'XL', 4, 600000, { en: 'Wall aquarium', ko: '벽 수조', ja: '壁一面の水槽', zh: '墙面水族箱' }],
-].map(([id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name]) => ({ id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name }));
+  ['tank-s', '🐟', [0.8, 0.4], 0.7, 0.45, 20, 'S', 1, 30000, { en: 'Small fish tank', ko: '작은 어항', ja: '小さな水槽', zh: '小鱼缸' }],
+  ['tank-m', '🐠', [1.3, 0.5], 0.6, 0.7, 50, 'M', 1, 80000, { en: 'Fish tank', ko: '중간 어항', ja: '中くらいの水槽', zh: '中型鱼缸' }],
+  ['tank-l', '🐡', [2.1, 0.6], 0.5, 1.0, 80, 'L', 3, 250000, { en: 'Large fish tank', ko: '대형 어항', ja: '大きな水槽', zh: '大型鱼缸' }],
+  ['tank-wall', '🐋', [3.6, 0.8], 0.3, 1.9, 120, 'XL', 4, 600000, { en: 'Wall aquarium', ko: '벽 수조', ja: '壁一面の水槽', zh: '墙面水族箱' }],
+].map(([id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name]) => ({ id, emoji, size, stand, h, spaces, max, needsHomeLevel, price, name, fish: MAX_FISH[id] }));
 // The water inside a tank, in the piece's own frame: x and z half-widths,
 // and the floor (top of the sand) and surface heights.
 export const waterOf = (t) => ({ hx: t.size[0] / 2 - 0.05, hz: t.size[1] / 2 - 0.05, y0: t.stand + 0.07, y1: t.stand + t.h - 0.06 });
@@ -70,7 +73,7 @@ export const used = (list) => list.reduce((a, id) => a + spacesOf(id), 0);
 // 'full' not enough spaces left.
 export function blockedBy(tank, list, id) {
   if (!fits(tank, id)) return 'size';
-  if (used(list) + spacesOf(id) > tank.spaces) return 'full';
+  if (list.length >= tank.fish || used(list) + spacesOf(id) > tank.spaces) return 'full';
   return null;
 }
 

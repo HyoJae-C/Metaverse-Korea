@@ -33,7 +33,7 @@ export function createTankPanel({ root, bag, toast, onChange }) {
     x.setAttribute('aria-label', t('order.close'));
     x.onclick = close;
     box.replaceChildren(x, el('h3', null, `${tank.emoji} ${localName(tank.name, getLanguage())}`),
-      el('p', 'tank-space', t('tank.space', { n: used(list), max: tank.spaces, size: tank.max })));
+      el('p', 'tank-space', `🐟 ${list.length} / ${tank.fish} · ` + t('tank.space', { n: used(list), max: tank.spaces, size: tank.max })));
     // In the tank, a row a kind.
     box.append(el('h4', null, t('tank.inTank')));
     if (!list.length) box.append(el('p', 'tank-empty', t('tank.empty')));
