@@ -551,6 +551,7 @@ export const ID = {
   'tank.tooBig': "Terlalu besar untuk akuarium ini",
   'tank.full': "Ruang di akuarium tidak cukup",
   'tank.bagFull': "Tas ikanmu penuh",
+  'tank.onlyOne': "Hanya satu untuk tiap jenis besar (XL) per akuarium",
   'tank.note': "Ikan di akuarium tetap ada di buku ikan. Keluarkan dulu untuk menjualnya.",
   'home.visit': 'Siapa yang boleh datang:',
   'home.visitAll': 'Semua',

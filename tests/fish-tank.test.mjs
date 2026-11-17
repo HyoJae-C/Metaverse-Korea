@@ -52,7 +52,9 @@ test('size and space: small fish go many to a tank, big ones only in big tanks',
   assert.deepEqual(TANKS.map((t) => t.fish), [10, 25, 40, 60]);
   assert.equal(blockedBy(s, Array(9).fill('ricefish'), 'ricefish'), null);
   assert.equal(blockedBy(s, Array(10).fill('ricefish'), 'ricefish'), 'full', 'ten fish at most');
-  assert.equal(blockedBy(wall, Array(15).fill('orca'), 'orca'), 'full', 'big fish fill the spaces first');
+  assert.equal(blockedBy(wall, ['orca'], 'orca'), 'one', 'one of each big kind');
+  assert.equal(blockedBy(wall, ['orca', 'beluga', 'manta', 'shark', 'dolphin'], 'tuna'), null);
+  assert.equal(blockedBy(wall, Array(15).fill('carp').concat(['orca', 'beluga', 'manta', 'shark', 'dolphin', 'tuna', 'marlin', 'sunfish', 'dugong', 'electric-eel', 'sea-turtle']), 'carp'), null);
   assert.equal(blockedBy(wall, [], 'orca'), null);
   assert.equal(blockedBy(wall, [], 'whale'), 'size', 'the blue whale stays in the aquarium');
   assert.equal(blockedBy(wall, [], 'giant-squid'), 'size');

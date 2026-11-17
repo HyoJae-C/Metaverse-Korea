@@ -549,6 +549,7 @@ export const JA = {
   'tank.tooBig': "この水槽には大きすぎます",
   'tank.full': "水槽のスペースが足りません",
   'tank.bagFull': "魚袋がいっぱいです",
+  'tank.onlyOne': "大きな魚（XL）は種類ごとに1匹までです",
   'tank.note': "水槽の魚も図鑑に残ります。売るときは出してから売ってね。",
   'home.visit': '遊びに来られる人:',
   'home.visitAll': '全員',

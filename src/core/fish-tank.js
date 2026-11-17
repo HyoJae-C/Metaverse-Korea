@@ -70,9 +70,10 @@ export const zoneOf = (id) => (PLANT.has(id) ? 'plant' : FLOOR.has(id) ? 'floor'
 export const fits = (tank, id) => !!tank && !!sizeClass(id) && !NO_TANK.has(id) && CLASSES.indexOf(sizeClass(id)) <= CLASSES.indexOf(tank.max);
 export const used = (list) => list.reduce((a, id) => a + spacesOf(id), 0);
 // Why a fish can't go in (null: it can): 'size' too big for the tank,
-// 'full' not enough spaces left.
+// 'one' that big (XL) kind is in already, 'full' no room left.
 export function blockedBy(tank, list, id) {
   if (!fits(tank, id)) return 'size';
+  if (sizeClass(id) === 'XL' && list.includes(id)) return 'one'; // one of each big kind a tank (Yozi 2026-11-18)
   if (list.length >= tank.fish || used(list) + spacesOf(id) > tank.spaces) return 'full';
   return null;
 }
@@ -83,7 +84,11 @@ export function cleanList(tankId, a) {
   const tank = tankById(tankId);
   if (!tank || !Array.isArray(a)) return [];
   const out = [];
-  for (const id of a) if (typeof id === 'string' && fishById(id) && !blockedBy(tank, out, id)) out.push(id);
+  for (const id of a) {
+    if (typeof id !== 'string' || !fishById(id)) continue;
+    const why = blockedBy(tank, out, id);
+    if (!why || why === 'one') out.push(id); // (two of a big kind put in before that rule stay)
+  }
   return out;
 }
 

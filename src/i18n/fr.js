@@ -549,6 +549,7 @@ export const FR = {
   'tank.tooBig': "Trop grand pour cet aquarium",
   'tank.full': "Pas assez de place dans l'aquarium",
   'tank.bagFull': "Ton sac à poissons est plein",
+  'tank.onlyOne': "Un seul de chaque grande espèce (XL) par aquarium",
   'tank.note': "Les poissons de l'aquarium restent dans ton livre des poissons. Sors-les pour les vendre.",
   'home.visit': 'Qui peut venir :',
   'home.visitAll': 'Tout le monde',

@@ -549,6 +549,7 @@ export const KO = {
   'tank.tooBig': "이 어항엔 너무 커요",
   'tank.full': "어항에 자리가 모자라요",
   'tank.bagFull': "물고기 가방이 꽉 찼어요",
+  'tank.onlyOne': "큰 물고기(XL)는 종류마다 한 마리씩만 넣을 수 있어요",
   'tank.note': "어항 속 물고기도 도감에 그대로 있어요. 팔려면 꺼내서 파세요.",
   'home.visit': '누가 놀러 올 수 있나요:',
   'home.visitAll': '모두',

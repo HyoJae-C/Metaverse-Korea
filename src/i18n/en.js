@@ -548,6 +548,7 @@ export const EN = {
   'tank.tooBig': "Too big for this tank",
   'tank.full': "Not enough space in the tank",
   'tank.bagFull': "Your fish bag is full",
+  'tank.onlyOne': "Only one of each big (XL) kind per tank",
   'tank.note': "Fish in the tank stay in your fish book. Take them out to sell them.",
   'home.visit': 'Who can visit:',
   'home.visitAll': 'Everyone',

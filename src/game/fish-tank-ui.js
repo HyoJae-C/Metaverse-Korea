@@ -14,7 +14,7 @@ export function createTankPanel({ root, bag, toast, onChange }) {
   root.append(box);
   let tankId = null;
   const name = (f) => (getLanguage() === 'ko' ? f.ko : localName(f.name, getLanguage()));
-  const why = (k) => t({ size: 'tank.tooBig', full: 'tank.full', bagFull: 'tank.bagFull' }[k] || 'tank.full');
+  const why = (k) => t({ size: 'tank.tooBig', full: 'tank.full', bagFull: 'tank.bagFull', one: 'tank.onlyOne' }[k] || 'tank.full');
 
   function row(f, n, button, onClick, note) {
     const r = el('div', 'tank-row');

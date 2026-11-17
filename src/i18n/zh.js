@@ -549,6 +549,7 @@ export const ZH = {
   'tank.tooBig': "对这个鱼缸来说太大了",
   'tank.full': "鱼缸空间不够",
   'tank.bagFull': "鱼袋满了",
+  'tank.onlyOne': "大型鱼（XL）每种只能放一条",
   'tank.note': "鱼缸里的鱼仍记在图鉴里。要卖的话先取出来。",
   'home.visit': '谁可以来玩：',
   'home.visitAll': '所有人',

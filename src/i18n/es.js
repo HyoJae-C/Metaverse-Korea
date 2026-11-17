@@ -550,6 +550,7 @@ export const ES = {
   'tank.tooBig': "Demasiado grande para esta pecera",
   'tank.full': "No hay espacio en la pecera",
   'tank.bagFull': "Tu bolsa de peces está llena",
+  'tank.onlyOne': "Solo uno de cada especie grande (XL) por pecera",
   'tank.note': "Los peces de la pecera siguen en tu libro de peces. Sácalos para venderlos.",
   'home.visit': 'Quién puede visitar:',
   'home.visitAll': 'Todos',

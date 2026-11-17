@@ -551,6 +551,7 @@ export const VI = {
   'tank.tooBig': "Quá to cho bể này",
   'tank.full': "Bể không đủ chỗ",
   'tank.bagFull': "Túi cá đã đầy",
+  'tank.onlyOne': "Mỗi loài cá lớn (XL) chỉ một con mỗi bể",
   'tank.note': "Cá trong bể vẫn có trong sổ cá. Lấy ra để bán.",
   'home.visit': 'Ai được ghé chơi:',
   'home.visitAll': 'Mọi người',
