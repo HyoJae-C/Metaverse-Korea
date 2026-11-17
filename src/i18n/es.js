@@ -540,7 +540,7 @@ export const ES = {
   'home.lampOff': 'Apagar la luz',
   'tank.open': "Ver la pecera",
   'tank.space': "Espacio: {n} / {max} (peces hasta talla {size})",
-  'tank.spaces': "{n} espacios",
+  'tank.spaces': "ocupa {n}",
   'tank.inTank': "En la pecera",
   'tank.fromBag': "De tu bolsa de peces ({n}/{max})",
   'tank.take': "Sacar",

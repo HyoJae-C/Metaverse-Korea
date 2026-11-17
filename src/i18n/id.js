@@ -541,7 +541,7 @@ export const ID = {
   'home.lampOff': 'Matikan lampu',
   'tank.open': "Lihat akuarium",
   'tank.space': "Ruang: {n} / {max} (ikan sampai ukuran {size})",
-  'tank.spaces': "{n} ruang",
+  'tank.spaces': "butuh {n}",
   'tank.inTank': "Di akuarium",
   'tank.fromBag': "Dari tas ikanmu ({n}/{max})",
   'tank.take': "Keluarkan",

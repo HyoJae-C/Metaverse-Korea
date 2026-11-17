@@ -16,13 +16,14 @@ export function createTankPanel({ root, bag, toast, onChange }) {
   const name = (f) => (getLanguage() === 'ko' ? f.ko : localName(f.name, getLanguage()));
   const why = (k) => t({ size: 'tank.tooBig', full: 'tank.full', bagFull: 'tank.bagFull' }[k] || 'tank.full');
 
-  function row(f, n, label, onClick, note) {
+  function row(f, n, button, onClick, note) {
     const r = el('div', 'tank-row');
-    const b = el('button', 'chip', label);
+    const b = el('button', 'chip', button);
     b.disabled = !onClick;
     if (onClick) b.onclick = onClick;
-    r.append(fishStampIcon(f, 'tank-fish-icon'), el('span', 'tank-name', `${name(f)}${n > 1 ? ' ×' + n : ''}`),
-      el('small', 'tank-size', `${sizeClass(f.id)} · ${t('tank.spaces', { n: spacesOf(f.id) })}`), note ? el('small', 'tank-note', note) : b);
+    const label = el('span', 'tank-name', `${name(f)}${n > 1 ? ' ×' + n : ''} `);
+    label.append(el('small', 'tank-size', `${sizeClass(f.id)} · ${t('tank.spaces', { n: spacesOf(f.id) })}`));
+    r.append(fishStampIcon(f, 'fish-emoji'), label, note ? el('small', 'tank-note', note) : b);
     return r;
   }
   function render() {

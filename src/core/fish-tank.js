@@ -34,7 +34,7 @@ export const REAL_LENGTH = {
   flounder: 0.5, 'softshell-turtle': 0.3, 'red-lionfish': 0.35, octopus: 0.6, 'sea-cucumber': 0.25, 'sea-urchin': 0.08,
   starfish: 0.2, yellowtail: 1.0, cutlassfish: 1.2, sunfish: 2.5, clownfish: 0.09, puffer: 0.3, cuttlefish: 0.35,
   lobster: 0.5, 'blue-tang': 0.25, seahorse: 0.12, butterflyfish: 0.2, 'electric-eel': 2.0, moray: 1.5, dolphin: 2.6,
-  tuna: 2.0, shark: 1.6, marlin: 3.5, axolotl: 0.23, 'sea-turtle': 1.0, anglerfish: 0.6, beluga: 4.5, orca: 7,
+  tuna: 2.0, shark: 4.5, marlin: 3.5, axolotl: 0.23, 'sea-turtle': 1.0, anglerfish: 0.6, beluga: 4.5, orca: 7,
   dugong: 3, 'giant-squid': 10, blobfish: 0.3, manta: 5, whale: 25,
 };
 export const CLASSES = ['S', 'M', 'L', 'XL'];

@@ -538,7 +538,7 @@ export const EN = {
   'home.lampOff': 'Turn off the light',
   'tank.open': "Look at the fish tank",
   'tank.space': "Space: {n} / {max} (fish up to size {size})",
-  'tank.spaces': "{n} spaces",
+  'tank.spaces': "takes {n}",
   'tank.inTank': "In the tank",
   'tank.fromBag': "From your fish bag ({n}/{max})",
   'tank.take': "Take out",

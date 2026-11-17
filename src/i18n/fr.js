@@ -539,7 +539,7 @@ export const FR = {
   'home.lampOff': 'Éteindre la lumière',
   'tank.open': "Voir l'aquarium",
   'tank.space': "Place : {n} / {max} (poissons jusqu'à la taille {size})",
-  'tank.spaces': "{n} places",
+  'tank.spaces': "prend {n}",
   'tank.inTank': "Dans l'aquarium",
   'tank.fromBag': "De ton sac à poissons ({n}/{max})",
   'tank.take': "Sortir",
