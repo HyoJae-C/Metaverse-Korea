@@ -233,7 +233,7 @@ export const FURNITURE = [
   ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
     build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
   // Fish tanks from the KONEXT Aquarium shop (core/fish-tank.js): only once
-  // bought; the big ones only in a bigger home (needsHomeLevel, core/home-stages.js).
+  // bought; any home takes any tank that fits the room (Yozi 2026-11-18).
   ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[

@@ -36,9 +36,9 @@ test('the biggest fish a tank takes fits inside its water', () => {
   }
 });
 
-test('the four tanks: bought as furniture, the big ones need a bigger home', () => {
+test('the four tanks: bought as furniture, any home takes any tank that fits the room', () => {
   assert.deepEqual(TANKS.map((t) => t.id), ['tank-s', 'tank-m', 'tank-l', 'tank-wall']);
-  assert.deepEqual(TANKS.map((t) => t.needsHomeLevel), [1, 1, 3, 4]);
+  assert.deepEqual(TANKS.map((t) => t.needsHomeLevel), [1, 1, 1, 1]); // (Yozi 2026-11-18: no home level lock)
   for (const t of TANKS) {
     assert.ok(furnitureById(t.id)?.item === t.id, t.id);
     assert.equal(furnitureById(t.id).needsHomeLevel, t.needsHomeLevel);
