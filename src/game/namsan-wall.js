@@ -124,46 +124,7 @@ export function buildNamsanWall({ scene, l, y, roads = [], buildings = [] }) {
     group.add(g);
   }
 
-  { // Woods along the trail where it is off the hill (Jangchung-dong, below
-    // the Shilla's grounds), clear of the trail, the wall, the streets and
-    // the buildings.
-    const trail = roads.filter((r) => r.hw);
-    const streets = roads.filter((r) => !r.hw);
-    const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
-    const lineD = (x, z, p) => { let b = Infinity; for (let i = 1; i < p.length; i++) b = Math.min(b, segD(x, z, p[i - 1], p[i])); return b; };
-    const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
-    const near = buildings.filter((b) => b.p.some(([x, z]) => trail.some((r) => lineD(x, z, r.p) < 40)));
-    let seed = 23;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    const spots = [];
-    for (const r of trail) for (let i = 1; i < r.p.length; i++) {
-      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az);
-      for (let s = 0; s < len; s += 3.2) {
-        const t = s / len, cx = ax + (bx - ax) * t, cz = az + (bz - az) * t;
-        if (y(cx, cz) > 0.05) continue; // (on the hill, the hill's own trees)
-        for (const side of [-1, 1]) {
-          const d = 3 + rnd() * 9, x = cx + (-(bz - az) / len) * d * side + (rnd() - 0.5) * 2, z = cz + ((bx - ax) / len) * d * side + (rnd() - 0.5) * 2;
-          if (lineD(x, z, r.p) < 2.6 || trail.some((q) => lineD(x, z, q.p) < 2.6) || lines.some((p) => lineD(x, z, p) < T / 2 + 1.4)) continue;
-          if (streets.some((q) => lineD(x, z, q.p) < q.w / 2 + 2) || near.some((b) => inPoly(x, z, b.p))) continue;
-          if (Math.hypot(x - l.x - gate.x, z - l.z - gate.z) < 9) continue; // (Gwanghuimun in view)
-          spots.push([x, z, 0.8 + rnd() * 0.6]);
-        }
-      }
-    }
-    const trunk = new THREE.CylinderGeometry(0.14, 0.2, 2.2, 4, 1, true).translate(0, 1.1, 0);
-    const crown = new THREE.IcosahedronGeometry(1.7, 0).translate(0, 3.1, 0);
-    const trunks = new THREE.InstancedMesh(trunk, new THREE.MeshLambertMaterial({ color: '#6b5440' }), spots.length);
-    const crowns = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), spots.length);
-    const greens = ['#5f9a4a', '#6fae55', '#4f8a43', '#7bb463'].map((c) => new THREE.Color(c));
-    const m4 = new THREE.Matrix4(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), q = new THREE.Quaternion();
-    spots.forEach(([x, z, sc], i) => {
-      m4.compose(p3.set(x, -0.1, z), q, s3.set(sc, sc, sc));
-      trunks.setMatrixAt(i, m4);
-      crowns.setMatrixAt(i, m4);
-      crowns.setColorAt(i, greens[i % greens.length]);
-    });
-    group.add(trunks, crowns);
-  }
+  // (no woods along the trail: Yozi 2026-11-17, Namsan without trees is fine and lighter)
   scene.add(group);
 
   const pts = lines.flat();
