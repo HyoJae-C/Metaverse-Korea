@@ -96,14 +96,14 @@ test('brawl: S + I with a full bar is special 2: stronger than special 1, no gua
     assert.ok((mv.super.shot || mv.super).dmg > (sig.shot || sig).dmg, id + ': special 2 hurts more');
   }
 });
-test('brawl: L dodges back out of a punch; K jumps, J in the air is a jump kick', () => {
+test('brawl: L dodges back out of a punch; W jumps, J in the air is a jump kick', () => {
   const [a, b] = pair(0.95);
   go(a, 'rp');
   const ev = run(a, b, [], [{ dash: -1 }], 40);
   assert.ok(!ev.some((e) => e.k === 'hit'), 'the straight misses');
   assert.ok(ev.some((e) => e.k === 'dash' && e.who === 1));
   const [c, d] = pair(2.0);
-  const ic = [{ k: true, mx: 1 }]; ic.hold = { mx: 1 }; ic[14] = { p: true, mx: 1 };
+  const ic = [{ mz: 1, mx: 1 }]; ic.hold = { mx: 1 }; ic[14] = { p: true, mx: 1 };
   const ev2 = run(c, d, ic, [], 60);
   assert.ok(ev2.some((e) => e.k === 'jump' && e.who === 0));
   assert.ok(ev2.some((e) => e.k === 'hit' && e.move === 'jk'), 'the jump kick lands');
@@ -127,7 +127,7 @@ test('brawl: U throws a shot (one at a time); its speed, power and reach are the
 
 test('brawl: hit in the air, they fall and get up; the two never pass each other', () => {
   const [a, b] = pair();
-  run(a, b, [], [{ k: true }], 6);
+  run(a, b, [], [{ mz: 1 }], 6);
   assert.ok(b.y > 0.2, 'up in a jump');
   go(a, 'lp');
   const ev = run(a, b, [], [], 120);
@@ -135,9 +135,29 @@ test('brawl: hit in the air, they fall and get up; the two never pass each other
   run(a, b, [], [], 200);
   assert.equal(b.st, 'idle'); assert.equal(b.y, 0);
   const [c, d] = pair(0.7);
-  run(c, d, { hold: { mx: 1, k: true } }, { hold: { mx: 1 } }, 300);
+  run(c, d, { hold: { mx: 1, mz: 1 } }, { hold: { mx: 1 } }, 300);
   assert.ok(c.x < d.x, 'jumping at them all the time, still on the left');
   assert.equal(c.z, 0); assert.equal(d.z, 0);
+});
+test('brawl: K is a kick: slower than J but reaches further and hurts more, with its own string', () => {
+  const m = movesFor('brawler');
+  const [j, k] = [m[STYLES.brawler.combos[0][0]], m[STYLES.brawler.combos[1][0]]];
+  assert.ok(k.startup > j.startup && k.range > j.range && k.dmg > j.dmg);
+  const [a, b] = pair();
+  const ia = []; for (let t = 0; t < 120; t += 6) ia[t] = { k: true };
+  const ev = run(a, b, ia, [], 120).filter((e) => e.k === 'hit');
+  assert.deepEqual(ev.slice(0, STYLES.brawler.combos[1].length).map((e) => e.move), STYLES.brawler.combos[1]);
+});
+test('brawl: D + L dashes in and stops in front of them; L alone hops back', () => {
+  const [a, b] = pair(2.5); const x = a.x;
+  run(a, b, [{ dash: 1 }], [], 20);
+  assert.ok(a.x > x + 0.5 && a.x < b.x - 0.6, 'in, but not through');
+  const [c, d] = pair(1.5); const y = c.x;
+  run(c, d, [{ dash: -1 }], [], 20);
+  assert.ok(c.x < y - 0.5);
+  const [e, f] = pair(0.75);
+  run(e, f, [{ dash: 1 }], [], 20);
+  assert.ok(e.x < f.x - 0.6, 'never past them');
 });
 test('brawl: the punch button again and again is a string; a miss chains into nothing', () => {
   const [a, b] = pair();

@@ -5,10 +5,12 @@
 // each other (z stays 0; nobody walks round the other). The same keys for
 // every style (Yozi 2026-11-17):
 //   A D     walk toward / away
+//   W       jump (W + A / D: along the line; J or K in the air: a jump kick)
 //   S held  guard (S + I: the second special)
-//   J  p    attack: pressed again and again it plays the style's string
-//   K  k    jump (J in the air: a jump kick)
-//   L       dodge: a quick hop back, untouchable for a moment (input dash -1)
+//   J  p    punch: pressed again and again it plays the style's punch string
+//   K  k    kick: slower and harder, its own string (Yozi 2026-11-17)
+//   L       dodge: a quick dash the way the stick points (back when it
+//           points nowhere), untouchable for a moment (input dash -1 / +1)
 //   U  s1   a ranged shot (one in flight at a time)
 //   I  s2   special 1: the style's signature, spends half the special bar;
 //           S + I with a full bar: special 2, stronger and unguardable
@@ -18,12 +20,13 @@
 // rounds. A special still hurts through a guard (CHIP).
 //
 // Each fighter has a style (STYLES): its own health, speed, punch and kick
-// strength, shot, one signature move, and a string from the attack button
-// ending in a harder finisher.
+// strength, shot, one signature move, and a string from each of the punch
+// and kick buttons ending in a harder finisher.
 //
 // Units: metres, ticks (1/60 s), radians. Stick input: mx +1 toward the other
-// fighter, -1 away; mz -1 is S held (guard), +1 (W) does nothing. On the
-// wire a dodge is dash -1 (core/brawl-net.js packs these as they are).
+// fighter, -1 away; mz -1 is S held (guard), +1 is W held (jump). On the
+// wire a dodge is dash -1 (back) or +1 (forward; core/brawl-net.js packs
+// these as they are).
 
 export const TICK = 1 / 60;
 export const RING_R = 4.2;
@@ -33,7 +36,7 @@ export const ROUNDS_TO_WIN = 2;
 export const BODY_R = 0.34; // fighters never stand closer than two of these
 const RAGE_HP = 25, RAGE_MULT = 1.2, COUNTER_MULT = 1.25;
 const WALK = 2.3 * TICK, BACK = 1.1 * TICK;
-const DODGE_TICKS = 16, DODGE_DIST = 1.1, DODGE_SAFE = 11, DODGE_REST = 12; // a dodge: how long, how far back, untouchable for, then a pause
+const DODGE_TICKS = 16, DODGE_DIST = 1.1, DODGE_SAFE = 11, DODGE_REST = 12; // a dodge: how long, how far, untouchable for, then a pause
 const JUMP_V = 0.1, JUMP_X = 0.035, JUMP_REST = 4; // up, and along the line while the stick is held
 const GRAB_R = 0.9; // close enough for toward + J to grab
 const SUPER_DMG = 1.8; // special 2 against special 1
@@ -97,17 +100,17 @@ export const STYLES = {
     combos: [['lp', 'lp', 'lp', 'rk'], ['lk', 'lk', 'rk']],
   },
   tank: {
-    hp: 104, walk: 0.8, dash: 0.8, punch: [1.35, 1.0], kick: [1.3, 1.05], shot: { kind: 'rock', speed: 0.6, dmg: 1.2, reach: 0.55, r: 0.6, startup: 20, knock: true }, slot: 'palm',
+    hp: 100, walk: 0.8, dash: 0.8, punch: [1.35, 1.0], kick: [1.35, 1.0], shot: { kind: 'rock', speed: 0.6, dmg: 1.2, reach: 0.55, r: 0.6, startup: 20, knock: true }, slot: 'palm',
     sig: { startup: 20, active: 5, recover: 30, dmg: 15, range: 1.0, arc: 0.5, block: 14, push: 1.1, lunge: 1.3, level: 9, knock: true, armor: true, pose: 'charge' },
     combos: [['lp', 'rp', 'rp'], ['lk', 'rk']],
   },
   kicker: {
-    hp: 100, walk: 1.1, dash: 1.1, punch: [1.0, 0.9], kick: [0.8, 1.1], shot: { kind: 'wind', speed: 1.4, dmg: 0.9, reach: 0.8, r: 0.55 }, slot: 'fly',
+    hp: 100, walk: 1.1, dash: 1.1, punch: [1.0, 0.9], kick: [0.95, 1.0], shot: { kind: 'wind', speed: 1.4, dmg: 0.9, reach: 0.8, r: 0.55 }, slot: 'fly',
     sig: { startup: 14, active: 22, recover: 24, dmg: 8, hits: 3, gap: 7, range: 1.3, arc: 3.2, stun: 14, block: 8, push: 0.3, lunge: 0.5, level: 9, knockLast: true, spin: 2, pose: 'rk' },
     combos: [['lp', 'lk', 'lk', 'rk'], ['lk', 'rk', 'rk']],
   },
   boxer: {
-    hp: 95, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], shot: { kind: 'fist', speed: 2.2, dmg: 1.2, reach: 0.42, startup: 8 }, slot: 'palm',
+    hp: 102, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.0, 0.95], shot: { kind: 'fist', speed: 2.2, dmg: 1.2, reach: 0.42, startup: 8 }, slot: 'palm',
     sig: { startup: 15, active: 4, recover: 24, dmg: 20, range: 1.05, arc: 0.9, block: 14, push: 0.8, lunge: 0.5, level: 9, knock: true, pose: 'hook' },
     combos: [['lp', 'lp', 'rp', 'rp'], ['lk', 'lp', 'rp']],
   },
@@ -117,12 +120,12 @@ export const STYLES = {
     combos: [['lp', 'rp', 'rp'], ['lk', 'rp']],
   },
   mystic: {
-    hp: 90, walk: 1, dash: 1, punch: [1, 0.95], kick: [1, 0.95], shot: { kind: 'orb', speed: 0.55, dmg: 1.1, reach: 1.5, r: 0.65 }, slot: 'palm',
+    hp: 95, walk: 1, dash: 1, punch: [1, 1], kick: [1, 1.05], shot: { kind: 'orb', speed: 0.55, dmg: 1.1, reach: 1.5, r: 0.65 }, slot: 'palm',
     sig: { startup: 20, active: 1, recover: 22, dmg: 0, range: 0, arc: 0, push: 0, lunge: 0, level: 9, pose: 'palm', shot: { speed: 5.5 / 60, dmg: 10, stun: 18, block: 10, push: 0.3, ttl: 80 } },
     combos: [['lp', 'rp', 'lk'], ['lk', 'lk', 'rp']],
   },
   dancer: {
-    hp: 86, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: { kind: 'ribbon', speed: 1.25, dmg: 0.8, reach: 0.6, back: true }, slot: 'fly',
+    hp: 90, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: { kind: 'ribbon', speed: 1.25, dmg: 0.8, reach: 0.6, back: true }, slot: 'fly',
     sig: { startup: 14, active: 20, recover: 30, dmg: 5, hits: 3, gap: 7, range: 1.1, arc: 3.2, stun: 12, block: 7, push: 0.2, lunge: 0.2, glide: 0.9, level: 9, knockLast: true, spin: 3, pose: 'mill' },
     combos: [['lp', 'lk', 'rk'], ['lk', 'lp', 'rk']],
   },
@@ -165,7 +168,7 @@ export function seeded(seed = 1) {
 export function newFighter(side, style = 'brawler') {
   const st = STYLES[style] ? style : 'brawler';
   return {
-    style: st, mv: movesFor(st), maxHp: STYLES[st].hp, seq: [], fin: false, armored: false, hits: 0, hitAt: 0, shot: null,
+    dd: -1, style: st, mv: movesFor(st), maxHp: STYLES[st].hp, seq: [], fin: false, armored: false, hits: 0, hitAt: 0, shot: null,
     side, x: side ? 1.1 : -1.1, z: 0, y: 0, vy: 0, vx: 0, vz: 0, jx: 0,
     face: side ? Math.PI : 0, // 0 looks along +x
     hp: STYLES[st].hp, st: 'idle', t: 0, move: null, hit: false, landed: false,
@@ -186,10 +189,11 @@ function wanted(f, inp, level = 0, near = false) {
   }
   const grab = level === 0 && near && inp.mx > 0.5;
   if (b.s1 && level === 0) return grab ? 'grab' : f.shot ? null : 'ranged';
-  if (!b.p) return null;
-  if (level === 0) return grab ? 'grab' : STYLES[f.style].combos[0][0];
-  // The button again: the string goes on.
-  const c = STYLES[f.style].combos[0];
+  if (!b.p && !b.k) return null;
+  if (level === 0 && b.p && grab) return 'grab';
+  // J plays the punch string, K the kick string; the same button again: the string goes on.
+  const c = STYLES[f.style].combos[b.p ? 0 : 1];
+  if (level === 0) return c[0];
   return c.length > f.seq.length && f.seq.every((k, i) => c[i] === k) ? c[f.seq.length] : null;
 }
 // A move from standing (or a dash): a special is announced.
@@ -260,9 +264,9 @@ function act(f, o, inp, ev) {
     f.guard = inp.mz < -0.5 || f.keep > 0;
     const id = wanted(f, inp, 0, near);
     if (id) { begin(f, id, ev); return; }
-    if (inp.dash < 0 && !f.rest) { f.st = 'dodge'; f.t = 0; f.guard = false; ev.push({ k: 'dash', who: f.side }); return; }
-    if (f.buf.k && !f.rest) {
-      f.buf.k = 0; f.st = 'jump'; f.t = 0; f.guard = false; f.vy = JUMP_V;
+    if (inp.dash && !f.rest) { f.st = 'dodge'; f.dd = inp.dash > 0 ? 1 : -1; f.t = 0; f.guard = false; ev.push({ k: 'dash', who: f.side }); return; }
+    if (inp.mz > 0.5 && !f.rest) {
+      f.st = 'jump'; f.t = 0; f.guard = false; f.vy = JUMP_V;
       f.jx = (inp.mx > 0.3 ? 1 : inp.mx < -0.3 ? -1 : 0) * dir * JUMP_X * STYLES[f.style].walk;
       ev.push({ k: 'jump', who: f.side });
       return;
@@ -274,15 +278,16 @@ function act(f, o, inp, ev) {
   } else if (f.st === 'jump') {
     f.face = toward;
     f.y += f.vy; f.vy -= GRAVITY; f.x += f.jx;
-    if (f.buf.p && f.y > 0.15) { // J in the air: a jump kick
+    if ((f.buf.p || f.buf.k) && f.y > 0.15) { // J or K in the air: a jump kick
       f.seq = ['jk']; startMove(f, 'jk');
       return;
     }
     if (f.y <= 0 && f.vy < 0) { f.y = 0; f.vy = 0; f.jx = 0; f.st = 'idle'; f.t = 0; f.rest = JUMP_REST; }
   } else if (f.st === 'dodge') {
-    // A hop back, untouchable for the first part of it.
+    // A quick dash (back, or toward them, stopping in front of them), untouchable for the first part of it.
     f.face = toward;
-    f.x -= dir * DODGE_DIST * STYLES[f.style].dash / DODGE_TICKS;
+    const d = DODGE_DIST * STYLES[f.style].dash / DODGE_TICKS;
+    f.x += f.dd > 0 ? dir * Math.min(d, Math.max(0, dist - BODY_R * 2 - 0.02)) : -dir * d;
     f.y = Math.sin(Math.min(1, f.t / DODGE_TICKS) * Math.PI) * 0.12;
     if (f.t >= DODGE_TICKS) { f.st = 'idle'; f.t = 0; f.y = 0; f.rest = DODGE_REST; }
   } else if (f.st === 'atk') {
@@ -455,7 +460,7 @@ export function createAi(level, rand = Math.random) {
     const out = { mx: plan.mx, mz: plan.mz };
     const dist = Math.abs(foe.x - me.x);
     for (const q of queue) q[0]--;
-    while (queue.length && queue[0][0] <= 0) { const b = queue.shift()[1]; if (b === 'super') { out.mz = -1; out.s2 = true; } else if (b === 'dodge') out.dash = -1; else out[b] = true; }
+    while (queue.length && queue[0][0] <= 0) { const b = queue.shift()[1]; if (b === 'super') { out.mz = -1; out.s2 = true; } else if (b === 'dodge') out.dash = -1; else if (b === 'in') out.dash = 1; else out[b] = true; }
     // See a swing (or a shot) coming: guard it, or dodge it.
     const swing = foe.st === 'atk' && foe.move !== seen && foe.t < foe.mv[foe.move].startup;
     if (swing) {
@@ -471,9 +476,8 @@ export function createAi(level, rand = Math.random) {
     // A chain: after a hit lands, maybe the next button.
     if (me.st === 'atk' && me.landed && !queue.length && me.chained !== me.move) {
       me.chained = me.move;
-      const c = STYLES[me.style].combos[0];
-      const more = c.length > me.seq.length && me.seq.every((q, i) => c[i] === q);
-      if (more && rand() < L.chain) queue.push([2, 'p']);
+      const n = STYLES[me.style].combos.findIndex((c) => c.length > me.seq.length && me.seq.every((q, i) => c[i] === q));
+      if (n >= 0 && rand() < L.chain) queue.push([2, n ? 'k' : 'p']);
     }
     if (me.st !== 'atk') me.chained = null;
     if (me.st === 'jump' && me.vy < 0.04 && dist < 1.4 && !queue.length && rand() < 0.5) queue.push([1, 'p']); // a jump kick on the way down
@@ -494,7 +498,8 @@ export function createAi(level, rand = Math.random) {
       if (me.sp >= SP_MAX && reach && dist < 3.2 && rand() < L.special) queue.push([1, 'super']);
       else if (me.sp >= SP_COST && reach && dist < 3.2 && rand() < L.special * 1.2) queue.push([1, 's2']);
       else if (!me.shot && dist > 2 && rand() < 0.15 + L.special) queue.push([1, 's1']); // the shot
-      else if (dist < 2.6 && rand() < 0.08 + L.step) { out.k = true; plan.mx = 1; wait = 8; } // jump in
+      else if (dist < 2.6 && rand() < 0.08 + L.step) { plan = { mx: 1, mz: 1 }; wait = 4; } // jump in
+      else if (dist < 2.6 && rand() < L.step) queue.push([1, 'in']); // dash in
       else plan.mx = 1;
       return out;
     }
@@ -503,7 +508,7 @@ export function createAi(level, rand = Math.random) {
       if (me.sp >= SP_MAX && r < L.special * 0.4) queue.push([1, 'super']);
       else if (me.sp >= SP_COST && r < L.special * 0.6) queue.push([1, 's2']);
       else if (r < L.special && dist < GRAB_R) { plan.mx = 1; queue.push([1, 'p']); wait = 6; } // toward + J up close: a grab
-      else queue.push([1, 'p']);
+      else queue.push([1, rand() < 0.4 ? 'k' : 'p']); // (a kick reaches further and hurts more, but is slower)
     } else if (rand() < 0.4) { plan = { mx: 0, mz: -1 }; wait = 10 + Math.floor(rand() * 14); } // wait behind a guard
     else if (rand() < L.step * 2) queue.push([1, 'dodge']);
     else plan.mx = -1;

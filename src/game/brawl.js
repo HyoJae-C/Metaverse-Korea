@@ -14,17 +14,17 @@ import { createCaster, createSoloCaster } from '../core/brawl-tv.js';
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
   how: {
-    en: 'You fight as your own character, side on. Keep pressing J and a string of hits comes out. K jumps (J in the air is a jump kick), L hops back out of reach, U throws a shot. Hold S to guard. Hitting, guarding and being hit fill the special bar: I spends half of it on your special, S + I a full bar on a stronger one no guard stops. Two rounds out of three.',
-    ko: '내 캐릭터 그대로, 옆에서 보며 싸워요. J를 계속 누르면 연속기가 나가요. K는 점프(공중에서 J는 점프 킥), L은 뒤로 피하기, U는 원거리 공격이에요. S를 누르고 있으면 막기. 때리고, 막고, 맞으면 필살 게이지가 차요. I는 반 칸으로 필살기, S + I는 꽉 찬 게이지로 막을 수 없는 2단 필살기. 3판 2선승.',
-    ja: '自分のキャラクターのまま、横から見て戦います。Jを押し続けると連続技。Kでジャンプ（空中でJはジャンプキック）、Lで後ろに回避、Uで飛び道具。Sを押している間はガード。当てる・ガードする・食らうと必殺ゲージがたまり、Iで半分使って必殺技、S + Iで満タンを使うガード不能の2段必殺技。2本先取。',
-    zh: '用你自己的角色，从侧面对战。连按J打出连招。K跳跃（空中按J是跳踢），L向后闪避，U发射远程攻击。按住S防御。击中、防御、挨打都会积攒必杀槽：I消耗一半放必杀技，S + I消耗满槽放无法防御的二段必杀。三局两胜。',
-    es: 'Peleas con tu propio personaje, de lado. Sigue pulsando J y sale un combo. K salta (J en el aire es una patada aérea), L esquiva hacia atrás, U lanza un disparo. Mantén S para cubrirte. Golpear, cubrirte y recibir golpes llenan la barra: I gasta la mitad en tu especial, S + I la barra llena en uno más fuerte que no se puede bloquear. Al mejor de tres.',
-    id: 'Kamu bertarung dengan karaktermu sendiri, dari samping. Tekan terus J dan kombo keluar. K melompat (J di udara tendangan lompat), L menghindar ke belakang, U menembak. Tahan S untuk bertahan. Memukul, bertahan, dan terkena pukulan mengisi bar spesial: I memakai setengahnya untuk jurus spesial, S + I bar penuh untuk jurus lebih kuat yang tak bisa ditahan. Dua dari tiga ronde.',
-    vi: 'Bạn chiến đấu bằng chính nhân vật của mình, nhìn từ bên cạnh. Cứ bấm J là ra chuỗi đòn. K để nhảy (J trên không là đá bay), L lùi né, U bắn từ xa. Giữ S để đỡ. Đánh trúng, đỡ đòn và bị đánh đều làm đầy thanh tuyệt chiêu: I dùng nửa thanh, S + I dùng cả thanh cho đòn mạnh hơn không thể đỡ. Thắng hai trong ba hiệp.',
-    hi: 'आप अपने ही किरदार से, बगल से देखते हुए लड़ते हैं। J दबाते रहें तो कॉम्बो निकलता है। K से कूदें (हवा में J से जंप किक), L से पीछे बचें, U से दूर से वार। S दबाकर रखें तो बचाव। मारने, बचाने और मार खाने से स्पेशल बार भरता है: I आधा बार लेकर स्पेशल, S + I पूरा बार लेकर ऐसा ज़ोरदार वार जिसे रोका नहीं जा सकता। तीन में से दो राउंड।',
-    fr: "Tu te bats avec ton propre personnage, vu de côté. Continue d'appuyer sur J et un enchaînement sort. K saute (J en l'air : coup de pied sauté), L esquive en arrière, U lance un tir. Maintiens S pour te protéger. Frapper, te protéger et encaisser remplissent la barre : I en dépense la moitié pour ton spécial, S + I la barre pleine pour un coup plus fort impossible à parer. En deux manches gagnantes.",
-    th: 'สู้ด้วยตัวละครของคุณเอง มองจากด้านข้าง กด J รัว ๆ คอมโบก็ออก K กระโดด (กด J กลางอากาศคือเตะกระโดด) L ถอยหลบ U ยิงระยะไกล กด S ค้างไว้เพื่อป้องกัน การตี การป้องกัน และการโดนตีจะเติมเกจท่าไม้ตาย: I ใช้ครึ่งเกจ S + I ใช้เกจเต็มสำหรับท่าที่แรงกว่าและป้องกันไม่ได้ ชนะ 2 ใน 3 ยก',
-    ar: 'تقاتل بشخصيتك كما هي، من الجانب. واصل الضغط على J فتخرج سلسلة ضربات. K للقفز (J في الهواء ركلة قفز)، L للتراجع والمراوغة، U لضربة عن بعد. اضغط S باستمرار للصد. الضرب والصد وتلقي الضربات تملأ شريط الضربة الخاصة: I تستهلك نصفه، وS + I الشريط كاملًا لضربة أقوى لا يمكن صدها. الفوز بجولتين من ثلاث.',
+    en: 'You fight as your own character, side on. Keep pressing J for a string of punches, K for a string of kicks (slower, but further and harder). W jumps (J or K in the air is a jump kick), L dashes the way you hold (back on its own) and nothing hits you for a moment, U throws a shot. Hold S to guard. Hitting, guarding and being hit fill the special bar: I spends half of it on your special, S + I a full bar on a stronger one no guard stops. Two rounds out of three.',
+    ko: '내 캐릭터 그대로, 옆에서 보며 싸워요. J를 계속 누르면 주먹 연속기, K를 계속 누르면 발차기 연속기(느리지만 멀리 닿고 더 아파요). W는 점프(공중에서 J나 K는 점프 킥), L은 누른 방향으로 대시(그냥 누르면 뒤로)하고 잠깐 안 맞아요, U는 원거리 공격. S를 누르고 있으면 막기. 때리고, 막고, 맞으면 필살 게이지가 차요. I는 반 칸으로 필살기, S + I는 꽉 찬 게이지로 막을 수 없는 2단 필살기. 3판 2선승.',
+    ja: '自分のキャラクターのまま、横から見て戦います。Jを押し続けるとパンチの連続技、Kでキックの連続技（遅いが遠くまで届き、強い）。Wでジャンプ（空中でJかKはジャンプキック）、Lで押した方向にダッシュ（単押しで後ろ）し一瞬無敵、Uで飛び道具。Sを押している間はガード。当てる・ガードする・食らうと必殺ゲージがたまり、Iで半分使って必殺技、S + Iで満タンを使うガード不能の2段必殺技。2本先取。',
+    zh: '用你自己的角色，从侧面对战。连按J打出拳连招，连按K打出踢连招（慢一些，但更远更痛）。W跳跃（空中按J或K是跳踢），L朝按住的方向冲刺（单按向后），短暂无敌，U发射远程攻击。按住S防御。击中、防御、挨打都会积攒必杀槽：I消耗一半放必杀技，S + I消耗满槽放无法防御的二段必杀。三局两胜。',
+    es: 'Peleas con tu propio personaje, de lado. Sigue pulsando J para un combo de puñetazos y K para uno de patadas (más lentas, pero llegan más lejos y duelen más). W salta (J o K en el aire es una patada aérea), L hace un dash hacia donde apuntas (atrás si no) y por un momento nada te golpea, U lanza un disparo. Mantén S para cubrirte. Golpear, cubrirte y recibir golpes llenan la barra: I gasta la mitad en tu especial, S + I la barra llena en uno más fuerte que no se puede bloquear. Al mejor de tres.',
+    id: 'Kamu bertarung dengan karaktermu sendiri, dari samping. Tekan terus J untuk kombo pukulan, K untuk kombo tendangan (lebih lambat, tapi lebih jauh dan lebih sakit). W melompat (J atau K di udara tendangan lompat), L melesat ke arah yang ditahan (ke belakang jika tidak) dan sesaat kebal, U menembak. Tahan S untuk bertahan. Memukul, bertahan, dan terkena pukulan mengisi bar spesial: I memakai setengahnya untuk jurus spesial, S + I bar penuh untuk jurus lebih kuat yang tak bisa ditahan. Dua dari tiga ronde.',
+    vi: 'Bạn chiến đấu bằng chính nhân vật của mình, nhìn từ bên cạnh. Cứ bấm J là ra chuỗi đấm, bấm K là chuỗi đá (chậm hơn nhưng xa hơn và đau hơn). W để nhảy (J hoặc K trên không là đá bay), L lướt theo hướng đang giữ (không giữ thì lùi) và miễn đòn trong chốc lát, U bắn từ xa. Giữ S để đỡ. Đánh trúng, đỡ đòn và bị đánh đều làm đầy thanh tuyệt chiêu: I dùng nửa thanh, S + I dùng cả thanh cho đòn mạnh hơn không thể đỡ. Thắng hai trong ba hiệp.',
+    hi: 'आप अपने ही किरदार से, बगल से देखते हुए लड़ते हैं। J दबाते रहें तो मुक्कों का कॉम्बो, K दबाते रहें तो किक का कॉम्बो (धीमा, पर दूर तक और ज़्यादा ज़ोर से)। W से कूदें (हवा में J या K से जंप किक), L से दबाई दिशा में डैश (अकेले दबाएँ तो पीछे), थोड़ी देर कोई वार नहीं लगता, U से दूर से वार। S दबाकर रखें तो बचाव। मारने, बचाने और मार खाने से स्पेशल बार भरता है: I आधा बार लेकर स्पेशल, S + I पूरा बार लेकर ऐसा ज़ोरदार वार जिसे रोका नहीं जा सकता। तीन में से दो राउंड।',
+    fr: "Tu te bats avec ton propre personnage, vu de côté. Continue d'appuyer sur J pour un enchaînement de poings, sur K pour un enchaînement de coups de pied (plus lents, mais plus loin et plus forts). W saute (J ou K en l'air : coup de pied sauté), L fonce dans la direction tenue (en arrière sinon) et rien ne te touche un instant, U lance un tir. Maintiens S pour te protéger. Frapper, te protéger et encaisser remplissent la barre : I en dépense la moitié pour ton spécial, S + I la barre pleine pour un coup plus fort impossible à parer. En deux manches gagnantes.",
+    th: 'สู้ด้วยตัวละครของคุณเอง มองจากด้านข้าง กด J รัว ๆ เป็นคอมโบหมัด กด K รัว ๆ เป็นคอมโบเตะ (ช้ากว่า แต่ไกลและแรงกว่า) W กระโดด (กด J หรือ K กลางอากาศคือเตะกระโดด) L พุ่งไปทางที่กดค้าง (กดเฉย ๆ คือถอย) และโดนไม่ได้ชั่วครู่ U ยิงระยะไกล กด S ค้างไว้เพื่อป้องกัน การตี การป้องกัน และการโดนตีจะเติมเกจท่าไม้ตาย: I ใช้ครึ่งเกจ S + I ใช้เกจเต็มสำหรับท่าที่แรงกว่าและป้องกันไม่ได้ ชนะ 2 ใน 3 ยก',
+    ar: 'تقاتل بشخصيتك كما هي، من الجانب. واصل الضغط على J لسلسلة لكمات، وK لسلسلة ركلات (أبطأ، لكنها أبعد وأقوى). W للقفز (J أو K في الهواء ركلة قفز)، L اندفاع في الاتجاه الذي تضغطه (للخلف وحدها) ولا يصيبك شيء للحظة، U لضربة عن بعد. اضغط S باستمرار للصد. الضرب والصد وتلقي الضربات تملأ شريط الضربة الخاصة: I تستهلك نصفه، وS + I الشريط كاملًا لضربة أقوى لا يمكن صدها. الفوز بجولتين من ثلاث.',
   },
 
   moves: {
@@ -42,17 +42,17 @@ const T = {
   },
 
   keys: {
-    en: 'A D move · S guard · J attack · K jump · L dodge · U shot · I special · S + I special 2',
-    ko: 'A D 이동 · S 막기 · J 공격 · K 점프 · L 회피 · U 원거리 · I 필살기 · S + I 2단 필살',
-    ja: 'A D 移動 · S ガード · J 攻撃 · K ジャンプ · L 回避 · U 飛び道具 · I 必殺技 · S + I 2段必殺',
-    zh: 'A D 移动 · S 防御 · J 攻击 · K 跳跃 · L 闪避 · U 远程 · I 必杀技 · S + I 二段必杀',
-    es: 'A D mover · S cubrirse · J atacar · K saltar · L esquivar · U disparo · I especial · S + I especial 2',
-    id: 'A D gerak · S bertahan · J serang · K lompat · L hindar · U tembak · I spesial · S + I spesial 2',
-    vi: 'A D di chuyển · S đỡ · J đánh · K nhảy · L né · U bắn · I tuyệt chiêu · S + I tuyệt chiêu 2',
-    hi: 'A D चलें · S बचाव · J वार · K कूदें · L बचें · U दूर वार · I स्पेशल · S + I स्पेशल 2',
-    fr: 'A D bouger · S garde · J attaque · K saut · L esquive · U tir · I spécial · S + I spécial 2',
-    th: 'A D เดิน · S ป้องกัน · J โจมตี · K กระโดด · L หลบ · U ยิง · I ท่าไม้ตาย · S + I ท่าไม้ตาย 2',
-    ar: 'A D تحرّك · S صد · J هجوم · K قفز · L مراوغة · U رمية · I ضربة خاصة · S + I ضربة خاصة 2',
+    en: 'A D move · W jump · S guard · J punch · K kick · L dash · U shot · I special · S + I special 2',
+    ko: 'A D 이동 · W 점프 · S 막기 · J 주먹 · K 발차기 · L 대시 · U 원거리 · I 필살기 · S + I 2단 필살',
+    ja: 'A D 移動 · W ジャンプ · S ガード · J パンチ · K キック · L ダッシュ · U 飛び道具 · I 必殺技 · S + I 2段必殺',
+    zh: 'A D 移动 · W 跳跃 · S 防御 · J 拳 · K 踢 · L 冲刺 · U 远程 · I 必杀技 · S + I 二段必杀',
+    es: 'A D mover · W saltar · S cubrirse · J puño · K patada · L dash · U disparo · I especial · S + I especial 2',
+    id: 'A D gerak · W lompat · S bertahan · J pukul · K tendang · L melesat · U tembak · I spesial · S + I spesial 2',
+    vi: 'A D di chuyển · W nhảy · S đỡ · J đấm · K đá · L lướt · U bắn · I tuyệt chiêu · S + I tuyệt chiêu 2',
+    hi: 'A D चलें · W कूदें · S बचाव · J मुक्का · K किक · L डैश · U दूर वार · I स्पेशल · S + I स्पेशल 2',
+    fr: 'A D bouger · W saut · S garde · J poing · K pied · L élan · U tir · I spécial · S + I spécial 2',
+    th: 'A D เดิน · W กระโดด · S ป้องกัน · J หมัด · K เตะ · L พุ่ง · U ยิง · I ท่าไม้ตาย · S + I ท่าไม้ตาย 2',
+    ar: 'A D تحرّك · W قفز · S صد · J لكمة · K ركلة · L اندفاع · U رمية · I ضربة خاصة · S + I ضربة خاصة 2',
   },
 
   start: { en: 'Fight {name}', ko: '{name}와 대결', ja: '{name}と対戦', zh: '挑战{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: 'Đấu với {name}', hi: '{name} से लड़ें', fr: 'Affronter {name}', th: 'สู้กับ {name}', ar: 'قاتل {name}' },
@@ -68,17 +68,17 @@ const T = {
   hits: { en: '{n} HITS', ko: '{n} 연타', ja: '{n} HITS', zh: '{n} 连击', es: '{n} GOLPES', id: '{n} HIT', vi: '{n} ĐÒN', hi: '{n} हिट', fr: '{n} COUPS', th: '{n} ฮิต', ar: '{n} ضربات' },
   pick: { en: 'Pick your style', ko: '스타일을 골라요', ja: 'スタイルを選ぼう', zh: '选择你的流派', es: 'Elige tu estilo', id: 'Pilih gayamu', vi: 'Chọn phong cách', hi: 'अपनी शैली चुनें', fr: 'Choisis ton style', th: 'เลือกสไตล์ของคุณ', ar: 'اختر أسلوبك' },
   dash: {
-    en: 'On a phone: the stick moves you (down guards), and the buttons are J 👊, K ⬆️, L 💨, U 🔵, I ⭐ and ✊ grab.',
-    ko: '폰에서는: 스틱으로 이동(아래로 당기면 막기), 버튼은 J 👊, K ⬆️, L 💨, U 🔵, I ⭐, ✊ 잡기예요.',
-    ja: 'スマホでは：スティックで移動（下でガード）、ボタンは J 👊、K ⬆️、L 💨、U 🔵、I ⭐、✊ つかみ。',
-    zh: '手机上：摇杆移动（向下防御），按键是 J 👊、K ⬆️、L 💨、U 🔵、I ⭐、✊ 抓取。',
-    es: 'En el móvil: el stick te mueve (abajo para cubrirte) y los botones son J 👊, K ⬆️, L 💨, U 🔵, I ⭐ y ✊ agarre.',
-    id: 'Di ponsel: stik untuk bergerak (bawah untuk bertahan), tombolnya J 👊, K ⬆️, L 💨, U 🔵, I ⭐ dan ✊ bantingan.',
-    vi: 'Trên điện thoại: cần gạt để di chuyển (kéo xuống để đỡ), các nút là J 👊, K ⬆️, L 💨, U 🔵, I ⭐ và ✊ vật.',
-    hi: 'फ़ोन पर: स्टिक से चलें (नीचे से बचाव), बटन हैं J 👊, K ⬆️, L 💨, U 🔵, I ⭐ और ✊ पकड़।',
-    fr: 'Sur téléphone : le stick te déplace (bas pour la garde), les boutons sont J 👊, K ⬆️, L 💨, U 🔵, I ⭐ et ✊ saisie.',
-    th: 'บนมือถือ: ใช้สติ๊กเดิน (ดึงลงเพื่อป้องกัน) ปุ่มคือ J 👊, K ⬆️, L 💨, U 🔵, I ⭐ และ ✊ จับทุ่ม',
-    ar: 'على الهاتف: العصا للتحرك (للأسفل للصد)، والأزرار J 👊 وK ⬆️ وL 💨 وU 🔵 وI ⭐ و✊ للمسك.',
+    en: 'On a phone: the stick moves you (up jumps, down guards), and the buttons are J 👊, K 🦵, L 💨, U 🔵, I ⭐ and ✊ grab.',
+    ko: '폰에서는: 스틱으로 이동(위로 밀면 점프, 아래로 당기면 막기), 버튼은 J 👊, K 🦵, L 💨, U 🔵, I ⭐, ✊ 잡기예요.',
+    ja: 'スマホでは：スティックで移動（上でジャンプ、下でガード）、ボタンは J 👊、K 🦵、L 💨、U 🔵、I ⭐、✊ つかみ。',
+    zh: '手机上：摇杆移动（向上跳跃，向下防御），按键是 J 👊、K 🦵、L 💨、U 🔵、I ⭐、✊ 抓取。',
+    es: 'En el móvil: el stick te mueve (arriba salta, abajo te cubre) y los botones son J 👊, K 🦵, L 💨, U 🔵, I ⭐ y ✊ agarre.',
+    id: 'Di ponsel: stik untuk bergerak (atas lompat, bawah bertahan), tombolnya J 👊, K 🦵, L 💨, U 🔵, I ⭐ dan ✊ bantingan.',
+    vi: 'Trên điện thoại: cần gạt để di chuyển (đẩy lên để nhảy, kéo xuống để đỡ), các nút là J 👊, K 🦵, L 💨, U 🔵, I ⭐ và ✊ vật.',
+    hi: 'फ़ोन पर: स्टिक से चलें (ऊपर से कूदें, नीचे से बचाव), बटन हैं J 👊, K 🦵, L 💨, U 🔵, I ⭐ और ✊ पकड़।',
+    fr: 'Sur téléphone : le stick te déplace (haut pour sauter, bas pour la garde), les boutons sont J 👊, K 🦵, L 💨, U 🔵, I ⭐ et ✊ saisie.',
+    th: 'บนมือถือ: ใช้สติ๊กเดิน (ดันขึ้นเพื่อกระโดด ดึงลงเพื่อป้องกัน) ปุ่มคือ J 👊, K 🦵, L 💨, U 🔵, I ⭐ และ ✊ จับทุ่ม',
+    ar: 'على الهاتف: العصا للتحرك (للأعلى للقفز، للأسفل للصد)، والأزرار J 👊 وK 🦵 وL 💨 وU 🔵 وI ⭐ و✊ للمسك.',
   },
 
   you: { en: 'You', ko: '나', ja: '自分', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
@@ -169,7 +169,7 @@ export const STYLE = {
     stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
   },
 };
-const BTN = { p: '👊 J', k: '⬆️ K', s1: '🔵 U', s2: '⭐ I' };
+const BTN = { p: '👊 J', k: '🦵 K', s1: '🔵 U', s2: '⭐ I' };
 
 export const RIVAL = [
   { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
@@ -336,9 +336,9 @@ function poseOf(f, time, out, body) {
     if (key === 'charge') body.pitch = 0.25 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 12) : 1);
     if (f.move === 'upper') body.lift += 0.16 * Math.sin(smooth((t - m.startup * 0.6) / (m.active + m.recover * 0.5)) * Math.PI);
     if (f.move === 'fly' && !m.pose) body.pitch = -0.35 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 14) : 1);
-  } else if (f.st === 'dodge') { // a hop back
+  } else if (f.st === 'dodge') { // a quick dash: leaning back, or forward into it
     mix(out, S, DASH, Math.sin(Math.min(1, f.t / 16) * Math.PI));
-    out.spine[0] = -0.25;
+    out.spine[0] = f.dd > 0 ? 0.3 : -0.25;
   } else if (f.st === 'jump') { // knees tucked at the top
     mix(out, S, DASH, Math.min(1, f.t / 6));
     out.kneeL[0] += 0.6; out.kneeR[0] += 0.6; out.legL[0] -= 0.5; out.legR[0] -= 0.3;
@@ -652,9 +652,9 @@ export function createBrawl(game, { versusFull = null } = {}) {
   };
   function readInput() {
     // (the left and right keys say toward and away for whoever is on the left: the guest is shown on the left too)
-    const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: held.has('down') || stick.mz < 0 ? -1 : 0 };
+    const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: held.has('down') || stick.mz < 0 ? -1 : held.has('up') || stick.mz > 0 ? 1 : 0 };
     for (const b of ['p', 'k', 's1', 's2']) if (pressed.has(b)) inp[b] = true;
-    if (pressed.has('dodge')) inp.dash = -1; // (L: on the wire a dodge is a back dash)
+    if (pressed.has('dodge')) inp.dash = inp.mx > 0.3 ? 1 : -1; // (L: a dash the way the stick points, back when it points nowhere)
     if (pressed.has('grab')) { inp.mx = 1; inp.p = true; } // (the phone's grab button: toward + J)
     pressed.clear();
     return inp;
@@ -697,10 +697,12 @@ export function createBrawl(game, { versusFull = null } = {}) {
     const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
     for (const [label, input] of [
       [L({ en: 'Move', ko: '이동' }), touch ? '🕹️ ← →' : 'A / D'],
+      [L({ en: 'Jump (J or K in the air: jump kick)', ko: '점프 (공중에서 J나 K: 점프 킥)' }), touch ? '🕹️ ↑' : 'W'],
       [L({ en: 'Guard', ko: '막기' }), touch ? '🕹️ ↓' : 'S'],
-      [L({ en: 'Attack (press again: combo)', ko: '공격 (계속 누르면 연속기)' }), touch ? '👊' : 'J'],
-      [L({ en: 'Jump (J in the air: jump kick)', ko: '점프 (공중에서 J: 점프 킥)' }), touch ? '⬆️' : 'K'],
-      [L({ en: 'Dodge', ko: '회피' }), touch ? '💨' : 'L'],
+      [L({ en: 'Punch (press again: combo)', ko: '주먹 (계속 누르면 연속기)' }), touch ? '👊' : 'J'],
+      [L({ en: 'Kick (slower, longer, harder; press again: combo)', ko: '발차기 (느리지만 멀리·세게, 계속 누르면 연속기)' }), touch ? '🦵' : 'K'],
+      [L({ en: 'Dash back, unhittable for a moment', ko: '뒤로 대시, 잠깐 안 맞음' }), touch ? '💨' : 'L'],
+      [L({ en: 'Dash in, unhittable for a moment', ko: '앞으로 대시, 잠깐 안 맞음' }), touch ? '🕹️ → + 💨' : 'D + L'],
       [L({ en: 'Shot', ko: '원거리' }), touch ? '🔵' : 'U'],
       [L({ en: 'Special (half gauge)', ko: '필살기 (게이지 반)' }), touch ? '⭐' : 'I'],
       [L({ en: 'Special 2 (full gauge, unguardable)', ko: '2단 필살기 (게이지 꽉, 못 막음)' }), touch ? '🕹️ ↓ + ⭐' : 'S + I'],
@@ -738,7 +740,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       zone.onpointermove = (e) => { if (e.pointerId === id) move(e); };
       zone.onpointerup = zone.onpointercancel = (e) => { if (e.pointerId !== id) return; id = null; stick.mx = stick.mz = 0; knob.style.transform = ''; };
       const btns = el('div', 'bw-btns');
-      for (const [k, icon, col] of [['s2', '⭐', '#d9982a'], ['s1', '🔵', '#8a5ad6'], ['grab', '✊', '#2f9e6e'], ['k', '⬆️', '#e0483f'], ['dodge', '💨', '#6a5acd'], ['p', '👊', '#3f7fe0']]) {
+      for (const [k, icon, col] of [['s2', '⭐', '#d9982a'], ['s1', '🔵', '#8a5ad6'], ['grab', '✊', '#2f9e6e'], ['k', '🦵', '#e0483f'], ['dodge', '💨', '#6a5acd'], ['p', '👊', '#3f7fe0']]) {
         const b = el('button', k === 's2' ? 'sp' : null, icon);
         b.style.background = col;
         b.onpointerdown = (e) => { e.preventDefault(); pressed.add(k); b.classList.add('on'); };
@@ -773,7 +775,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
     c.append(row);
   }
   const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
-  const seqText = (seq) => Array(seq.length).fill('👊').join(' '); // (the same button, once a hit)
+  const seqText = (seq, icon) => Array(seq.length).fill(icon).join(' '); // (the same button, once a hit)
   function styleInfo(box, id) {
     const st = STYLES[id], mv = movesFor(id);
     box.replaceChildren();
@@ -788,7 +790,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       box.append(row);
     }
     box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + BTN.s2 + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '') + '   ·   ⭐⭐ S + I'));
-    box.append(el('p', 'seq', '🔗 ' + seqText(st.combos[0])));
+    box.append(el('p', 'seq', '🔗 ' + seqText(st.combos[0], '👊') + '   ·   ' + seqText(st.combos[1], '🦵')));
     box.append(el('p', 'seq', BTN.s1 + ': ' + L(SHOT_NAME[st.shot?.kind] || SHOT_NAME.ki)));
     box.append(el('p', 'dim', tt('moves')));
   }

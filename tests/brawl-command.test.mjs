@@ -11,12 +11,14 @@ function first(style, inp, meter = 100, gap = 0.8) {
   for (let i = 0; i < 18 && a.st === 'idle'; i++) ev.push(...stepFight(a, b));
   return { a, ev };
 }
-test('the same keys for every style: J string, K jump, L dodge, U shot, I special 1, S + I special 2, close toward + J grab', () => {
+test('the same keys for every style: J punch string, K kick string, W jump, L dodge either way, U shot, I special 1, S + I special 2, close toward + J grab', () => {
   for (const style of STYLE_IDS) {
     const slot = STYLES[style].slot;
     assert.equal(first(style, { p: true }).a.move, 'lp', style + ' J');
-    assert.equal(first(style, { k: true }).a.st, 'jump', style + ' K');
+    assert.equal(first(style, { k: true }).a.move, STYLES[style].combos[1][0], style + ' K');
+    assert.equal(first(style, { mz: 1 }).a.st, 'jump', style + ' W');
     assert.equal(first(style, { dash: -1 }).a.st, 'dodge', style + ' L');
+    assert.equal(first(style, { dash: 1 }).a.dd, 1, style + ' D + L');
     assert.equal(first(style, { s1: true }, 0, 2.5).a.move, 'ranged', style + ' U');
     const one = first(style, { s2: true });
     assert.equal(one.a.move, slot, style + ' I'); assert.equal(one.a.sp, 50);
