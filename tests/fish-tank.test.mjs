@@ -26,7 +26,6 @@ test('every catalogue fish has a real length, a size class and a drawn length in
   assert.ok(Math.abs(shownLength('crab') / shownLength('ricefish') - Math.sqrt(0.15 / 0.035)) < 1e-9);
   const order = ['ricefish', 'clownfish', 'crucian', 'carp', 'shark', 'orca', 'whale'].map(shownLength);
   for (let i = 1; i < order.length; i++) assert.ok(order[i] > order[i - 1], 'longer in life, longer in the tank');
-  assert.ok(shownLength('whale') <= 2.8);
 });
 
 test('the biggest fish a tank takes fits inside its water', () => {
@@ -52,8 +51,10 @@ test('size and space: small fish go many to a tank, big ones only in big tanks',
   assert.equal(blockedBy(s, [], 'carp'), 'size');
   assert.equal(blockedBy(s, ['ricefish', 'ricefish', 'ricefish'], 'ricefish'), null);
   assert.equal(blockedBy(s, ['ricefish', 'ricefish', 'ricefish', 'ricefish'], 'ricefish'), 'full');
-  assert.equal(blockedBy(wall, [], 'whale'), null);
-  assert.equal(used(['whale', 'carp', 'ricefish']), 11);
+  assert.equal(blockedBy(wall, [], 'orca'), null);
+  assert.equal(blockedBy(wall, [], 'whale'), 'size', 'the blue whale stays in the aquarium');
+  assert.equal(blockedBy(wall, [], 'giant-squid'), 'size');
+  assert.equal(used(['orca', 'carp', 'ricefish']), 11);
   assert.deepEqual(cleanList('tank-s', ['carp', 'ricefish', 'nope', 7, 'clownfish']), ['ricefish', 'clownfish']);
   assert.deepEqual(cleanList('tank-nope', ['ricefish']), []);
 });

@@ -5,7 +5,7 @@ import { buildFurniture } from '../../src/core/furniture.js';
 import { tankById } from '../../src/core/fish-tank.js';
 import { fillTank } from '../../src/core/tank-fish.js';
 const FILL = [['tank-s', ['clownfish', 'ricefish', 'shrimp', 'seahorse']], ['tank-m', ['carp', 'puffer', 'crucian', 'octopus', 'kelp']],
-  ['tank-l', ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']], ['tank-wall', ['whale', 'orca', 'beluga', 'manta', 'kelp', 'starfish', 'crab']]];
+  ['tank-l', ['salmon', 'red-lionfish', 'sea-turtle', 'seabream', 'wakame']], ['tank-wall', ['orca', 'beluga', 'manta', 'shark', 'kelp', 'starfish', 'crab']]];
 const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 r.setPixelRatio(1); r.outputColorSpace = THREE.SRGBColorSpace; r.setSize(1800, 800);
 document.body.appendChild(r.domElement);

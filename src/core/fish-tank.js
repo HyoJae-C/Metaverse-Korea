@@ -52,15 +52,19 @@ export const spacesOf = (id) => SPACES[sizeClass(id)] || 0;
 // tanks are big enough for bigger fish). The XL ones (only in the wall
 // aquarium) a third bigger again (Yozi: leave the small ones, grow orcas and
 // the like). A 3.5 cm ricefish is 8 cm, a carp 33 cm, a salmon 36 cm, an
-// orca 1.5 m, a 25 m whale 2.8 m.
+// orca 1.5 m. (Yozi 2026-11-18 tried a quarter of the real length, like the
+// map: too small to see in the aquarium, and the home tanks looked empty.)
 export const shownLength = (id) => Math.min(2.8, (sizeClass(id) === 'XL' ? 1.3 : 1) * 0.08 * Math.sqrt((REAL_LENGTH[id] || 0.1) / 0.035));
+// Too big for any home tank (Yozi 2026-11-18): the blue whale and the giant
+// squid stay in the aquarium and the fish book.
+export const NO_TANK = new Set(['whale', 'giant-squid']);
 
 // Where in the tank it lives: swimming, on the sand, or planted.
 const FLOOR = new Set(['flounder', 'crab', 'lobster', 'starfish', 'sea-urchin', 'sea-cucumber', 'scallop', 'octopus', 'seahorse']);
 const PLANT = new Set(['wakame', 'kelp']);
 export const zoneOf = (id) => (PLANT.has(id) ? 'plant' : FLOOR.has(id) ? 'floor' : 'swim');
 
-export const fits = (tank, id) => !!tank && !!sizeClass(id) && CLASSES.indexOf(sizeClass(id)) <= CLASSES.indexOf(tank.max);
+export const fits = (tank, id) => !!tank && !!sizeClass(id) && !NO_TANK.has(id) && CLASSES.indexOf(sizeClass(id)) <= CLASSES.indexOf(tank.max);
 export const used = (list) => list.reduce((a, id) => a + spacesOf(id), 0);
 // Why a fish can't go in (null: it can): 'size' too big for the tank,
 // 'full' not enough spaces left.
