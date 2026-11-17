@@ -83,42 +83,46 @@ export const moveTicks = (m) => m.startup + m.active + m.recover;
 //   ground  cannot catch someone in the air (a grab)
 //   shot    throws a slow ball of light instead of hitting
 //   spin    whole turns of the body (for the picture)
-// shot: [speed ×, damage ×, reach ×] of the ranged shot (U).
+// shot: the ranged shot (U), each style its own: kind (what it looks like),
+// speed ×, dmg ×, reach × (how far it goes), r (how wide it hits), startup
+// (ticks to throw it), and how it flies: lob (an arc over a guard's head
+// height, landing at its reach), back (out and back like a boomerang, it
+// can hit on the way back), knock (floors them).
 // combos: [the punch button's string (from lp), the kick button's (from lk)].
 export const STYLES = {
-  brawler: { hp: 100, walk: 1, dash: 1, shot: [1, 1, 1], punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'rp', 'lk', 'rk'], ['lk', 'rp', 'rk']] },
+  brawler: { hp: 96, walk: 1, dash: 1, shot: { kind: 'ki', speed: 1, dmg: 1, reach: 1 }, punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'rp', 'lk', 'rk'], ['lk', 'rp', 'rk']] },
   ninja: {
-    hp: 85, walk: 1.25, dash: 1.3, punch: [0.85, 0.85], kick: [0.9, 0.9], shot: [1.25, 0.85, 1.1], slot: 'fly',
+    hp: 94, walk: 1.25, dash: 1.3, punch: [0.85, 0.9], kick: [0.9, 0.9], shot: { kind: 'star', speed: 1.8, dmg: 0.7, reach: 1.3, r: 0.35, startup: 9 }, slot: 'fly',
     sig: { startup: 16, active: 4, recover: 22, dmg: 15, range: 1.15, arc: 1.2, block: 10, push: 0.5, lunge: 0, level: 9, knock: true, blink: true, pose: 'rk' },
     combos: [['lp', 'lp', 'lp', 'rk'], ['lk', 'lk', 'rk']],
   },
   tank: {
-    hp: 110, walk: 0.8, dash: 0.8, punch: [1.3, 1.1], kick: [1.3, 1.1], shot: [0.75, 1.3, 0.8], slot: 'palm',
+    hp: 104, walk: 0.8, dash: 0.8, punch: [1.35, 1.0], kick: [1.3, 1.05], shot: { kind: 'rock', speed: 0.6, dmg: 1.2, reach: 0.55, r: 0.6, startup: 20, knock: true }, slot: 'palm',
     sig: { startup: 20, active: 5, recover: 30, dmg: 15, range: 1.0, arc: 0.5, block: 14, push: 1.1, lunge: 1.3, level: 9, knock: true, armor: true, pose: 'charge' },
     combos: [['lp', 'rp', 'rp'], ['lk', 'rk']],
   },
   kicker: {
-    hp: 95, walk: 1.1, dash: 1.1, punch: [1.1, 0.8], kick: [0.8, 1.1], shot: [1.1, 0.9, 0.9], slot: 'fly',
+    hp: 100, walk: 1.1, dash: 1.1, punch: [1.0, 0.9], kick: [0.8, 1.1], shot: { kind: 'wind', speed: 1.4, dmg: 0.9, reach: 0.8, r: 0.55 }, slot: 'fly',
     sig: { startup: 14, active: 22, recover: 24, dmg: 8, hits: 3, gap: 7, range: 1.3, arc: 3.2, stun: 14, block: 8, push: 0.3, lunge: 0.5, level: 9, knockLast: true, spin: 2, pose: 'rk' },
     combos: [['lp', 'lk', 'lk', 'rk'], ['lk', 'rk', 'rk']],
   },
   boxer: {
-    hp: 100, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], shot: [1, 1.1, 0.7], slot: 'palm',
+    hp: 95, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], shot: { kind: 'fist', speed: 2.2, dmg: 1.2, reach: 0.42, startup: 8 }, slot: 'palm',
     sig: { startup: 15, active: 4, recover: 24, dmg: 20, range: 1.05, arc: 0.9, block: 14, push: 0.8, lunge: 0.5, level: 9, knock: true, pose: 'hook' },
     combos: [['lp', 'lp', 'rp', 'rp'], ['lk', 'lp', 'rp']],
   },
   grappler: {
-    hp: 115, walk: 0.9, dash: 0.9, punch: [1.05, 1.05], kick: [1.1, 1], shot: [0.8, 1.2, 0.7], slot: 'palm',
+    hp: 115, walk: 0.9, dash: 0.9, punch: [1.05, 1.05], kick: [1.1, 1], shot: { kind: 'can', speed: 0.85, dmg: 1.3, reach: 0.65, lob: true, knock: true }, slot: 'palm',
     sig: { startup: 15, active: 4, recover: 30, dmg: 24, range: 0.9, arc: 0.6, push: 0.3, lunge: 0.25, level: 9, knock: true, unblockable: true, ground: true, pose: 'grab' },
     combos: [['lp', 'rp', 'rp'], ['lk', 'rp']],
   },
   mystic: {
-    hp: 90, walk: 1, dash: 1, punch: [1, 0.95], kick: [1, 0.95], shot: [1, 1, 1.4], slot: 'palm',
+    hp: 90, walk: 1, dash: 1, punch: [1, 0.95], kick: [1, 0.95], shot: { kind: 'orb', speed: 0.55, dmg: 1.1, reach: 1.5, r: 0.65 }, slot: 'palm',
     sig: { startup: 20, active: 1, recover: 22, dmg: 0, range: 0, arc: 0, push: 0, lunge: 0, level: 9, pose: 'palm', shot: { speed: 5.5 / 60, dmg: 10, stun: 18, block: 10, push: 0.3, ttl: 80 } },
     combos: [['lp', 'rp', 'lk'], ['lk', 'lk', 'rp']],
   },
   dancer: {
-    hp: 92, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: [1.15, 0.9, 1], slot: 'fly',
+    hp: 86, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: { kind: 'ribbon', speed: 1.25, dmg: 0.8, reach: 0.6, back: true }, slot: 'fly',
     sig: { startup: 14, active: 20, recover: 30, dmg: 5, hits: 3, gap: 7, range: 1.1, arc: 3.2, stun: 12, block: 7, push: 0.2, lunge: 0.2, glide: 0.9, level: 9, knockLast: true, spin: 3, pose: 'mill' },
     combos: [['lp', 'lk', 'rk'], ['lk', 'lp', 'rk']],
   },
@@ -132,8 +136,12 @@ export function movesFor(styleId) {
     out[id] = { ...m, startup: Math.max(4, Math.round(m.startup * time)), recover: Math.round(m.recover * time), dmg: Math.round(m.dmg * dmg) };
   }
   if (st.sig) out[st.slot] = { ...st.sig };
-  const [sv, sd, sr] = st.shot || [1, 1, 1], base = MOVES.ranged.shot;
-  out.ranged.shot = { ...base, speed: base.speed * sv, dmg: Math.round(base.dmg * sd), ttl: Math.round(base.ttl * sr / sv) };
+  const sh = st.shot || {}, base = MOVES.ranged.shot, sv = sh.speed || 1;
+  out.ranged.shot = {
+    ...base, kind: sh.kind || 'ki', speed: base.speed * sv, dmg: Math.round(base.dmg * (sh.dmg || 1)),
+    ttl: Math.round(base.ttl * (sh.reach || 1) / sv * (sh.back ? 2 : 1)), r: sh.r || 0.5, lob: !!sh.lob, back: !!sh.back, knock: !!sh.knock,
+  };
+  if (sh.startup) out.ranged.startup = sh.startup;
   // Special 2: the signature again, stronger, and no guard stops it.
   const sig = out[st.slot];
   out.super = { ...sig, unblockable: true, knock: !sig.hits, knockLast: !!sig.hits, pose: sig.pose || st.slot, shot: sig.shot ? { ...sig.shot } : undefined };
@@ -302,7 +310,7 @@ function act(f, o, inp, ev) {
       ev.push({ k: 'blink', who: f.side, from, x: f.x, z: f.z });
     }
     if (m.shot && f.t === m.startup && !f.shot) {
-      f.shot = { x: f.x + Math.cos(f.face) * 0.5, z: 0, dx: Math.sign(Math.cos(f.face)) || 1, dz: 0, t: 0, m: f.move };
+      f.shot = { x: f.x + Math.cos(f.face) * 0.5, z: 0, dx: Math.sign(Math.cos(f.face)) || 1, dz: 0, t: 0, m: f.move, y: 0.78 };
       ev.push({ k: 'shot', who: f.side });
     }
     if (m.glide && f.t > m.startup && f.t <= m.startup + m.active) {
@@ -378,9 +386,13 @@ function land(a, d, id, face, ev) {
 function fly(a, d, ev) {
   const s = a.shot, m = s && a.mv[s.m || STYLES[a.style].slot]?.shot;
   if (!s || !m) { a.shot = null; return; }
-  s.t++; s.x += s.dx * m.speed; s.z += s.dz * m.speed;
-  if (s.t > m.ttl || Math.abs(s.x) > RING_R + 0.6) { a.shot = null; return; }
-  if (!canBeHit(d) || d.y > 1 || Math.hypot(d.x - s.x, d.z - s.z) > 0.5) return;
+  s.t++;
+  // A boomerang turns at half its time and comes home; a lob flies in an arc.
+  const out = !m.back || s.t <= m.ttl / 2;
+  s.x += s.dx * m.speed * (out ? 1 : -1);
+  if (m.lob) s.y = 0.78 + Math.sin(Math.min(1, s.t / m.ttl) * Math.PI) * 1.1;
+  if (s.t > m.ttl || Math.abs(s.x) > RING_R + 0.6 || (m.back && !out && Math.abs(s.x - a.x) < 0.3)) { a.shot = null; return; }
+  if (!canBeHit(d) || d.y > 1 || (s.y || 0.78) > 1.35 || Math.abs(d.x - s.x) > (m.r || 0.5)) return;
   a.shot = null;
   const face = Math.atan2(s.dz, s.dx);
   if (d.guard && (d.st === 'idle' || d.st === 'block')) {

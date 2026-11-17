@@ -20,7 +20,7 @@ test('brawl: every move reaches a fighter standing close, and the heavier the sl
     go(a, id);
     const ev = run(a, b, [], [], moveTicks(m) + 80);
     assert.ok(ev.some((e) => e.k === 'hit' && e.move === id), id + ' hits');
-    assert.ok(b.hp < MAX_HP, id + ' hurts');
+    assert.ok(b.hp < b.maxHp, id + ' hurts');
     assert.equal(a.st, 'idle', id + ' ends');
   }
   assert.ok(MOVES.lp.startup < MOVES.rp.startup && MOVES.rp.startup < MOVES.lk.startup && MOVES.lk.startup < MOVES.rk.startup);
@@ -31,7 +31,7 @@ test('brawl: a punch from too far away misses', () => {
   const [a, b] = pair(2.4);
   const ev = run(a, b, [{ p: true }]);
   assert.ok(!ev.some((e) => e.k === 'hit'));
-  assert.equal(b.hp, MAX_HP);
+  assert.equal(b.hp, b.maxHp);
 });
 
 test('brawl: holding S guards everything but specials 1 (some) and 2, and the grab', () => {
@@ -40,19 +40,19 @@ test('brawl: holding S guards everything but specials 1 (some) and 2, and the gr
     b.guard = true; go(a, id);
     const ev = run(a, b, [], GUARD, 30);
     assert.ok(ev.some((e) => e.k === 'block'), id + ' is guarded');
-    assert.equal(b.hp, MAX_HP);
+    assert.equal(b.hp, b.maxHp);
   }
   const [a, b] = pair();
   a.sp = SP_COST;
   run(a, b, [{ s2: true }], GUARD, 60);
-  assert.ok(b.hp < MAX_HP, 'the push goes through a guard');
+  assert.ok(b.hp < b.maxHp, 'the push goes through a guard');
   assert.equal(a.sp, 0, 'and spends half the bar');
   const [c, d] = pair(0.75);
   run(c, d, [{ mx: 1, p: true }], GUARD, 60);
-  assert.ok(d.hp < MAX_HP && ['air', 'down'].includes(d.st), 'close + toward + J: the grab floors them through a guard');
+  assert.ok(d.hp < d.maxHp && ['air', 'down'].includes(d.st), 'close + toward + J: the grab floors them through a guard');
   const [e, f] = pair(0.75);
   run(e, f, [{ mx: 1, s1: true }], GUARD, 60);
-  assert.ok(f.hp < MAX_HP, 'toward + U up close grabs too');
+  assert.ok(f.hp < f.maxHp, 'toward + U up close grabs too');
   const [g, h] = pair(0.75);
   const evg = run(g, h, [{ p: true }], GUARD, 40);
   assert.ok(evg.some((q) => q.k === 'block' && q.move === 'lp'), 'J alone up close is a jab');
@@ -116,10 +116,10 @@ test('brawl: U throws a shot (one at a time); its speed, power and reach are the
   const ev = run(a, b, [{ s1: true }, {}, {}, { s1: true }], [], 20);
   assert.equal(ev.filter((e) => e.k === 'shot').length, 1);
   run(a, b, [{ s1: true }], [], 60);
-  assert.ok(b.hp < MAX_HP, 'it arrives');
+  assert.ok(b.hp < b.maxHp, 'it arrives');
   const [c, d] = pair(3.2);
   run(c, d, [{ s1: true }], GUARD, 80);
-  assert.ok(d.hp < MAX_HP && d.hp >= MAX_HP - 4, 'a guard takes only a chip');
+  assert.ok(d.hp < d.maxHp && d.hp >= d.maxHp - 4, 'a guard takes only a chip');
   const far = (id) => { const s = movesFor(id).ranged.shot; return s.speed * s.ttl; };
   assert.ok(far('mystic') > far('brawler') && far('brawler') > far('boxer'), 'reach differs by style');
   assert.ok(movesFor('tank').ranged.shot.dmg > movesFor('ninja').ranged.shot.dmg, 'and power');
@@ -233,7 +233,7 @@ test('brawl styles: eight, each with its own health, moves and two strings', () 
     assert.equal(st.combos.length, 2);
     for (const c of st.combos) assert.ok(c.length >= 2 && c.every((k) => ['lp', 'rp', 'lk', 'rk'].includes(k)), id + ' string');
     assert.equal(st.combos[0][0], 'lp', id + ': the attack button starts the string');
-    assert.equal(st.shot.length, 3, id + ': its own shot');
+    assert.ok(st.shot.kind, id + ': its own shot');
     for (const m of Object.values(movesFor(id))) assert.ok(m.startup >= 4 && m.recover > 0 && m.dmg >= 0);
   }
   for (const k of ['lp', 'rp', 'lk', 'rk', 'upper']) assert.deepEqual(movesFor('brawler')[k], MOVES[k], 'the brawler is the plain move list');
@@ -377,4 +377,27 @@ test('brawl: a special announces itself and chips through a guard, never the las
   e.sp = SP_COST; f.hp = 3;
   run(e, f, [{ s2: true }], GUARD, 80);
   assert.ok(f.hp >= 1, 'a chip never takes the last point');
+});
+
+test('every style throws its own kind of shot: the ninja far and fast, the boxer short, the tank floors, the dancer\'s comes back, the grappler\'s arcs', () => {
+  const kinds = new Set(STYLE_IDS.map((id) => STYLES[id].shot.kind));
+  assert.equal(kinds.size, STYLE_IDS.length, 'eight different shots');
+  const throwAt = (style, gap, ticks = 160, guard = false) => {
+    const a = newFighter(0, style), b = newFighter(1); a.x = -gap / 2; b.x = gap / 2;
+    const ev = run(a, b, [{ s1: true }], guard ? GUARD : [], ticks);
+    return { a, b, ev, hit: ev.find((e) => e.k === 'hit' && e.move === 'shot') };
+  };
+  assert.ok(throwAt('ninja', 5).hit, 'the throwing star reaches 5 m');
+  assert.ok(!throwAt('boxer', 3).hit && throwAt('boxer', 1.6).hit, 'the air punch is short');
+  const rock = throwAt('tank', 2.2);
+  assert.ok(rock.hit && rock.ev.some((e) => e.k === 'down' && e.who === 1), 'the rock floors them');
+  const can = throwAt('grappler', 2.6);
+  assert.ok(can.hit && can.ev.some((e) => e.k === 'down' && e.who === 1), 'the can lands on them');
+  // The ribbon misses someone too far, turns, and comes back to the dancer.
+  const rib = throwAt('dancer', 4, 120);
+  assert.ok(!rib.hit && !rib.a.shot, 'out and back home');
+  const a = newFighter(0, 'dancer'), b = newFighter(1); a.x = -1.2; b.x = 1.2;
+  const ia = [{ s1: true }]; const ib = []; ib[30] = { dash: -1 };
+  const ev = run(a, b, ia, ib, 120);
+  assert.ok(ev.filter((e) => e.k === 'shot').length === 1);
 });
