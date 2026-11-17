@@ -778,8 +778,10 @@ export function createBrawl(game, { versusFull = null } = {}) {
     const st = STYLES[id], mv = movesFor(id);
     box.replaceChildren();
     box.append(el('p', 'big', styleTag(id)), el('p', null, L(STYLE[id].line)));
-    const power = (st.punch[1] + st.kick[1]) / 2;
-    for (const [icon, k] of [['❤️', st.hp / 120], ['⚡', st.walk / 1.25], ['💪', (power - 0.7) / 0.5]]) {
+    // 💪 how fast the J string deals damage; 🎯 how far the shot (U) goes.
+    const str = st.combos[0], ticks = str.reduce((n, id) => n + mv[id].startup + mv[id].active, 0);
+    const power = str.reduce((n, id) => n + mv[id].dmg, 0) / ticks, reach = mv.ranged.shot.speed * mv.ranged.shot.ttl / (mv.ranged.shot.back ? 2 : 1);
+    for (const [icon, k] of [['❤️', (st.hp - 70) / 45], ['⚡', st.walk / 1.25], ['💪', (power - 0.45) / 0.55], ['🎯', reach / 7]]) {
       const row = el('div', 'bw-stat'), bar = el('i'), fill = el('u');
       fill.style.width = Math.round(Math.max(0.12, Math.min(1, k)) * 100) + '%';
       bar.append(fill); row.append(el('span', null, icon), bar);

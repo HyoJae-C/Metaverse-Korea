@@ -90,24 +90,24 @@ export const moveTicks = (m) => m.startup + m.active + m.recover;
 // can hit on the way back), knock (floors them).
 // combos: [the punch button's string (from lp), the kick button's (from lk)].
 export const STYLES = {
-  brawler: { hp: 100, walk: 1, dash: 1, shot: { kind: 'ki', speed: 1, dmg: 1, reach: 1 }, punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'rp', 'lk', 'rk'], ['lk', 'rp', 'rk']] },
+  brawler: { hp: 96, walk: 1, dash: 1, shot: { kind: 'ki', speed: 1, dmg: 1, reach: 1 }, punch: [1, 1], kick: [1, 1], sig: null, slot: 'palm', combos: [['lp', 'rp', 'lk', 'rk'], ['lk', 'rp', 'rk']] },
   ninja: {
-    hp: 85, walk: 1.25, dash: 1.3, punch: [0.85, 0.85], kick: [0.9, 0.9], shot: { kind: 'star', speed: 1.8, dmg: 0.7, reach: 1.3, r: 0.35, startup: 9 }, slot: 'fly',
+    hp: 94, walk: 1.25, dash: 1.3, punch: [0.85, 0.9], kick: [0.9, 0.9], shot: { kind: 'star', speed: 1.8, dmg: 0.7, reach: 1.3, r: 0.35, startup: 9 }, slot: 'fly',
     sig: { startup: 16, active: 4, recover: 22, dmg: 15, range: 1.15, arc: 1.2, block: 10, push: 0.5, lunge: 0, level: 9, knock: true, blink: true, pose: 'rk' },
     combos: [['lp', 'lp', 'lp', 'rk'], ['lk', 'lk', 'rk']],
   },
   tank: {
-    hp: 110, walk: 0.8, dash: 0.8, punch: [1.3, 1.1], kick: [1.3, 1.1], shot: { kind: 'rock', speed: 0.6, dmg: 1.2, reach: 0.55, r: 0.6, startup: 20, knock: true }, slot: 'palm',
+    hp: 104, walk: 0.8, dash: 0.8, punch: [1.35, 1.0], kick: [1.3, 1.05], shot: { kind: 'rock', speed: 0.6, dmg: 1.2, reach: 0.55, r: 0.6, startup: 20, knock: true }, slot: 'palm',
     sig: { startup: 20, active: 5, recover: 30, dmg: 15, range: 1.0, arc: 0.5, block: 14, push: 1.1, lunge: 1.3, level: 9, knock: true, armor: true, pose: 'charge' },
     combos: [['lp', 'rp', 'rp'], ['lk', 'rk']],
   },
   kicker: {
-    hp: 95, walk: 1.1, dash: 1.1, punch: [1.1, 0.8], kick: [0.8, 1.1], shot: { kind: 'wind', speed: 1.4, dmg: 0.9, reach: 0.8, r: 0.55 }, slot: 'fly',
+    hp: 100, walk: 1.1, dash: 1.1, punch: [1.0, 0.9], kick: [0.8, 1.1], shot: { kind: 'wind', speed: 1.4, dmg: 0.9, reach: 0.8, r: 0.55 }, slot: 'fly',
     sig: { startup: 14, active: 22, recover: 24, dmg: 8, hits: 3, gap: 7, range: 1.3, arc: 3.2, stun: 14, block: 8, push: 0.3, lunge: 0.5, level: 9, knockLast: true, spin: 2, pose: 'rk' },
     combos: [['lp', 'lk', 'lk', 'rk'], ['lk', 'rk', 'rk']],
   },
   boxer: {
-    hp: 100, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], shot: { kind: 'fist', speed: 2.2, dmg: 1.2, reach: 0.42, startup: 8 }, slot: 'palm',
+    hp: 95, walk: 1.1, dash: 1.25, punch: [0.8, 1.2], kick: [1.15, 0.8], shot: { kind: 'fist', speed: 2.2, dmg: 1.2, reach: 0.42, startup: 8 }, slot: 'palm',
     sig: { startup: 15, active: 4, recover: 24, dmg: 20, range: 1.05, arc: 0.9, block: 14, push: 0.8, lunge: 0.5, level: 9, knock: true, pose: 'hook' },
     combos: [['lp', 'lp', 'rp', 'rp'], ['lk', 'lp', 'rp']],
   },
@@ -122,7 +122,7 @@ export const STYLES = {
     combos: [['lp', 'rp', 'lk'], ['lk', 'lk', 'rp']],
   },
   dancer: {
-    hp: 92, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: { kind: 'ribbon', speed: 1.25, dmg: 0.8, reach: 0.6, back: true }, slot: 'fly',
+    hp: 86, walk: 1.15, dash: 1.2, punch: [1, 0.9], kick: [0.95, 1], shot: { kind: 'ribbon', speed: 1.25, dmg: 0.8, reach: 0.6, back: true }, slot: 'fly',
     sig: { startup: 14, active: 20, recover: 30, dmg: 5, hits: 3, gap: 7, range: 1.1, arc: 3.2, stun: 12, block: 7, push: 0.2, lunge: 0.2, glide: 0.9, level: 9, knockLast: true, spin: 3, pose: 'mill' },
     combos: [['lp', 'lk', 'rk'], ['lk', 'lp', 'rk']],
   },
