@@ -66,3 +66,12 @@ test('solo broadcast sends status only, keeps late viewers informed, and clears 
   cast.end(); assert.equal(tv.views[0].from, null);
   const count = messages.length; cast.step(); cast.end(); assert.equal(messages.length, count);
 });
+test('the grab breaks a guard but is a beat slower: a jab thrown at the same time wins', async () => {
+  const { MOVES } = await import('../src/core/brawl.js');
+  assert.ok(MOVES.grab.startup >= MOVES.lp.startup + 3, 'slower to come out than a jab');
+  const a = newFighter(0), b = newFighter(1); a.x = -0.37; b.x = 0.37;
+  const ev = stepFight(a, b, { mx: 1, p: true }, { p: true });
+  for (let i = 0; i < 40; i++) ev.push(...stepFight(a, b));
+  assert.ok(ev.some((e) => e.k === 'hit' && e.by === 1 && e.move === 'lp'), 'the jab lands first');
+  assert.ok(!ev.some((e) => e.k === 'hit' && e.move === 'grab'), 'and stops the grab');
+});

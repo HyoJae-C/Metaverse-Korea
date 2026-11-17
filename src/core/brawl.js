@@ -65,7 +65,7 @@ export const MOVES = {
   heavy: { startup: 15, active: 4, recover: 20, dmg: 15, range: 1.1, arc: 0.45, stun: 26, block: 12, push: 0.55, lunge: 0.25, level: 9, pose: 'rp' },
   sweep: { startup: 14, active: 4, recover: 22, dmg: 11, range: 1.2, arc: 0.8, block: 12, push: 0.25, lunge: 0.15, level: 9, knock: true, pose: 'sweep' },
   jk: { startup: 5, active: 9, recover: 6, dmg: 9, range: 1.1, arc: 0.7, stun: 16, block: 9, push: 0.3, lunge: 0, level: 9, air: true, pose: 'fly' },
-  grab: { startup: 6, active: 3, recover: 24, dmg: 12, range: GRAB_R + 0.05, arc: 0.7, push: 0.55, lunge: 0.1, level: 9, knock: true, unblockable: true, ground: true, pose: 'grab' },
+  grab: { startup: 11, active: 3, recover: 26, dmg: 12, range: GRAB_R + 0.05, arc: 0.7, push: 0.55, lunge: 0.1, level: 9, knock: true, unblockable: true, ground: true, pose: 'grab' },
   ranged: { startup: 13, active: 1, recover: 18, dmg: 0, range: 0, arc: 0, push: 0, lunge: 0, level: 9, pose: 'palm', shot: { speed: 6 / 60, dmg: 7, stun: 16, block: 9, push: 0.3, ttl: 45 } },
   rush: { startup: 8, active: 4, recover: 18, dmg: 12, range: 1.1, arc: 0.5, stun: 22, block: 10, push: 0.6, lunge: 0.7, level: 9, pose: 'rp' },
 };
