@@ -10,8 +10,8 @@
 // the summit plaza, none across Jangchungdan-ro by the National Theater and
 // little between Jangchung-dong and Gwanghuimun. The short stretch at
 // Baekbeom Square is left out (the game's Sowol-ro runs on it). Sizes
-// (Yozi, 2026-11-13): the route at 1/4; the wall 50% high (about 3.5 m;
-// the trail here is mostly at its foot, so you look up at it); Gwanghuimun
+// (Yozi, 2026-11-13): the route at 1/4; the wall 25% high since 2026-11-17 (about 1.8 m; it was 50%,
+// Yozi, from photos of the real trail: you see over it); Gwanghuimun
 // 43.75% like Hyehwamun, so you walk through its arch (OSM has no outline
 // of it: its real size is taken as Hyehwamun's, an approximation).
 //
@@ -48,7 +48,7 @@ const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 
 export const NAMSAN_WALL = {
   thick: 1.4, // m: the wall's thickness (its blocker off the hill)
-  H: 3.5, // m: the wall's height above the ground (50%)
+  H: 1.8, // m: the wall's height above the ground, with its parapet (25% of about 7 m; Yozi 2026-11-17, from photos of the real trail: it was 3.5, 50%)
   pathW: 3, // m: the trail you see (earth, or stone steps where it climbs)
   deckW: 3.8, // m: where you can walk on the hill (the trail and a little grass either side)
   fillMin: 6, // m: a stretch of wall drawn beside the trail where OSM has none, at least this long

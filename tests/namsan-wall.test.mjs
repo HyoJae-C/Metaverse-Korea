@@ -50,8 +50,8 @@ test('the wall is on its real OpenStreetMap line at 1/4, and beside the trail on
   // On the hill and off it: up the summit's ridge and through Jangchung-dong.
   assert.ok(runs.some((p) => p.some(([x, z]) => namsanGround(hill, x - hill.x, z - hill.z) > 50)), 'up by the summit');
   assert.ok(runs.some((p) => p.every(([x, z]) => !onNamsan(hill, x - hill.x, z - hill.z))), 'down in Jangchung-dong');
-  // 50% high (Yozi): about 3.5 m.
-  assert.ok(hill.wall.H > 3.2 && hill.wall.H < 4, `${hill.wall.H} m`);
+  // 25% high (Yozi 2026-11-17, like the photos of the real trail; it was 50%): about 1.8 m.
+  assert.ok(hill.wall.H > 1.5 && hill.wall.H < 2.1, `${hill.wall.H} m`);
 });
 
 test('the trail goes from Baekbeom Square over the summit plaza to Gwanghuimun, and you can walk all of it', () => {

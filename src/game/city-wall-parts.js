@@ -62,7 +62,7 @@ export function smallGate({ W, D, H: Hb, A, S }, name) {
 // climbs. Namsan first; the other stretches follow if it is liked.
 export const GRANITE = '#a9aaa6';
 // The parapet (여장): blocks set close, each with a cap stone (지붕돌).
-export const PARAPET = { len: 1.6, gap: 0.12, h: 0.62, t: 0.62, cap: 0.13, over: 0.07 };
+export const PARAPET = { len: 1.6, gap: 0.12, h: 0.45, t: 0.6, cap: 0.1, over: 0.06 };
 
 // Big dressed granite blocks, irregular lengths, grey with a little warmth.
 // Scale it 1/3.2 along and 1/1.6 up: courses 0.4 m high, blocks 0.5-1 m long.
