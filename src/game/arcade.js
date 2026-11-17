@@ -17,7 +17,7 @@ const DARTS_PLACE = [
 ];
 // Rooftop Rumble is closed for now (server load, Yozi 2026-11-15): the
 // cabinets say so instead of opening. false opens them again.
-export const FIGHT_PAUSED = true;
+export const FIGHT_PAUSED = false;
 const FIGHT_PAUSED_TEXT = { en: '🥊 Rooftop Rumble is paused for a while due to server issues. Back soon!', ko: '🥊 옥상 격투왕은 서버 운영 문제로 당분간 쉬어요. 곧 다시 열게요!', ja: '🥊 格闘ゲームはサーバーの都合でしばらく休止します。まもなく再開！', zh: '🥊 格斗游戏因服务器问题暂停，很快恢复！', es: '🥊 Rooftop Rumble está en pausa por problemas del servidor. ¡Vuelve pronto!', id: '🥊 Rooftop Rumble dihentikan sementara karena masalah server. Segera kembali!', vi: '🥊 Rooftop Rumble tạm dừng do sự cố máy chủ. Sẽ sớm trở lại!', hi: '🥊 सर्वर की समस्या के कारण रूफ़टॉप रंबल कुछ समय के लिए बंद है। जल्द वापस!', fr: '🥊 Rooftop Rumble est en pause pour un problème de serveur. De retour bientôt !', th: '🥊 ศึกดาดฟ้าปิดชั่วคราวเพราะปัญหาเซิร์ฟเวอร์ เร็ว ๆ นี้จะกลับมา!', ar: '🥊 نزال السطح متوقف مؤقتًا بسبب مشكلة في الخادم. سيعود قريبًا!' };
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
