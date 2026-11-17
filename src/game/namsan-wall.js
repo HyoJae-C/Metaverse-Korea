@@ -154,7 +154,7 @@ function wallTrail({ l, y, lines }) {
   const wallD = (x, z) => { let b = Infinity; for (const p of lines) for (let i = 1; i < p.length; i++) b = Math.min(b, segD(x, z, p[i - 1], p[i])); return b; };
   const tri = (o, a, b, c) => o.pos.push(...a, ...b, ...c);
   const quad = (o, a, b, c, d) => { tri(o, a, b, c); tri(o, a, c, d); };
-  const lamps = [], tufts = [], shrubs = [];
+  const lamps = [], shrubs = [];
   let seed = 31;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const allRuns = [...l.wtrail, ...(l.trail?.length > 1 ? [l.trail] : [])].map((r) => r.map(([x, z]) => [l.x + x, l.z + z]));
@@ -248,16 +248,14 @@ function wallTrail({ l, y, lines }) {
       const o0 = sg * (h + cw), o1 = sg * (h + cw + 3), q1 = Math.min(q + 2, pts.length - 1);
       quad(verge, side(q, o0, 0.05), side(q1, o0, 0.05), side(q1, o1, -0.45), side(q, o1, -0.45));
     }
-    // The open side (away from the wall): lamps, dry grass, shrubs.
+    // The open side (away from the wall): lamps and shrubs.
     let next = T.lamp / 2;
     for (let q = 0; q < pts.length; q++) {
       const [x, z] = pts[q], o = h + 0.6;
       const open = wallD(x + nrm[q][0] * o, z + nrm[q][1] * o) > wallD(x - nrm[q][0] * o, z - nrm[q][1] * o) ? 1 : -1;
       const at = (d) => { const px = x + nrm[q][0] * d * open, pz = z + nrm[q][1] * d * open; return [px, y(px, pz), pz]; };
       if (s[q] >= next) { lamps.push(at(h + cw + 0.35)); next += T.lamp; }
-      if (q % 2 === 0) for (let n = 0; n < 1; n++) { const p = at(h + cw + 0.3 + rnd() * 4.5); p[0] += (rnd() - 0.5) * 0.4; tufts.push([...p, 0.7 + rnd() * 0.7]); }
       if (q % 7 === 3 && rnd() < 0.6) shrubs.push([...at(h + cw + 1.6 + rnd() * 3), 0.7 + rnd() * 0.6]);
-      if (q % 3 === 1 && rnd() < 0.5) { const p = at(-(h + cw + 0.25 + rnd() * 0.4)); if (wallD(p[0], p[2]) > (l.wall?.thick || 1.4) / 2 + 0.2) tufts.push([...p, 0.5 + rnd() * 0.4]); } // (a few by the wall's foot)
     }
   }
   const mesh = (o, mat, uv) => {
@@ -283,14 +281,11 @@ function wallTrail({ l, y, lines }) {
     const lamp = mergeGeometries([paint(new THREE.CylinderGeometry(0.06, 0.07, 0.8, 6, 1, true).translate(0, 0.4, 0), '#4a4c4f'), paint(new THREE.CylinderGeometry(0.09, 0.09, 0.16, 6).translate(0, 0.88, 0), '#fff6dc')]);
     inst(lamp, new THREE.MeshLambertMaterial({ vertexColors: true }), lamps, ([x, yy, z]) => { p3.set(x, yy - 0.05, z); sc.set(1, 1, 1); });
   }
-  // Dry grass, in tufts of straw and faded green.
-  const tuft = inst(new THREE.ConeGeometry(0.28, 0.34, 5, 1, true).translate(0, 0.12, 0), new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), tufts, ([x, yy, z, k]) => { p3.set(x, yy, z); sc.set(k, k * (0.8 + (x * 7 % 1 + 1) % 1 * 0.6), k); });
-  const straw = ['#c9b273', '#b9a466', '#a8a564', '#d3bf86'].map((c) => new THREE.Color(c));
-  tufts.forEach((_, i) => tuft.setColorAt(i, straw[i % straw.length]));
+  // (no dry grass tufts: Yozi 2026-11-17, the little yellow cones looked like stray stones)
   // Low shrubs.
   const bush = inst(new THREE.IcosahedronGeometry(0.75, 0).scale(1, 0.62, 1).translate(0, 0.3, 0), new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), shrubs, ([x, yy, z, k]) => { p3.set(x, yy, z); sc.set(k, k, k); });
   const greens = ['#5c8a45', '#6c9a50', '#4e7c3e'].map((c) => new THREE.Color(c));
   shrubs.forEach((_, i) => bush.setColorAt(i, greens[i % greens.length]));
-  g.userData.counts = { lamps: lamps.length, tufts: tufts.length, shrubs: shrubs.length, stepsTris: tread.pos.length / 9 };
+  g.userData.counts = { lamps: lamps.length, shrubs: shrubs.length, stepsTris: tread.pos.length / 9 };
   return g;
 }

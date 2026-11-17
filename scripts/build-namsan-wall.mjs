@@ -224,7 +224,23 @@ function offWall(p, keep = false) { // (keep: move the points only, no new ones:
   const cuts = (a, b) => dense([a, b], 0.5).some(([x, z]) => !free(x, z) && wallSegs.some(([c, d]) => segDist(x, z, c, d) < CLEAR - 0.2));
   return (keep ? out : simplify(out, 0.3, cuts)).map(([x, z]) => [r1(x), r1(z)]);
 }
-const westP = offWall(west), eastP = offWall(east), summitP = offWall(summit, true);
+// Pushed off the wall in its corners, a trail can fold back on itself in
+// a knot of 1 m legs (east slope, 2026-11-17: steps and curbs drawn in a
+// tangle). Take out points the way doubles back at over short legs.
+function unzig(p) {
+  const q = [...p];
+  for (let done = false; !done;) {
+    done = true;
+    for (let i = 1; i < q.length - 1; i++) {
+      const [a, b, c] = [q[i - 1], q[i], q[i + 1]];
+      const l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      const cos = ((b[0] - a[0]) * (c[0] - b[0]) + (b[1] - a[1]) * (c[1] - b[1])) / (l1 * l2 || 1);
+      if (l1 < 0.4 || l2 < 0.4 || (cos < -0.5 && Math.min(l1, l2) < 3)) { q.splice(i, 1); done = false; break; }
+    }
+  }
+  return q;
+}
+const westP = unzig(offWall(west)), eastP = unzig(offWall(east)), summitP = offWall(summit, true);
 
 // ---------- The wall where OSM has none, beside the trail ----------
 // The real wall runs all the way up the west slope from Baekbeom Square and
