@@ -3,7 +3,7 @@
 // the developer master code (typed in chat) adds every item.
 
 import { WEARABLES } from '../data/wearables.js';
-import { LAMP_IDS, SHOP_FURNITURE_IDS } from './furniture.js';
+import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS } from './furniture.js';
 
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
@@ -53,6 +53,13 @@ const FURNITURE_DESC = {
   zh: '在乙支路家具街买的家具。在家里点“装饰”就能摆放。',
 };
 const homeFurniture = () => Object.fromEntries(SHOP_FURNITURE_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: FURNITURE_DESC, furniture: true }]));
+const TANK_DESC = {
+  en: 'A fish tank from the KONEXT Aquarium shop. Put it in your home with Decorate, then walk up to it to put in fish from your fish bag.',
+  ko: '코넥스트 아쿠아리움 가게에서 산 어항이에요. 내 집에서 "꾸미기"로 놓고, 다가가서 물고기 가방의 물고기를 넣어 보세요.',
+  ja: 'コネクスト アクアリウムの店で買った水槽。家の「模様替え」で置いて、近づくと魚袋の魚を入れられます。',
+  zh: '在KONEXT水族馆商店买的鱼缸。在家里点“装饰”摆好，走近就能放入鱼袋里的鱼。',
+};
+const tanks = () => Object.fromEntries(TANK_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: TANK_DESC, furniture: true }]));
 const lamps = () => Object.fromEntries(LAMP_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: LAMP_DESC, lamp: true }]));
 function plushies(defs) {
   const out = {};
@@ -149,6 +156,7 @@ export const ITEMS = {
   ...lamps(),
   // Furniture from the furniture shops on Euljiro (furniture-shop.js).
   ...homeFurniture(),
+  ...tanks(),
   // Pets: adopted for money (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the

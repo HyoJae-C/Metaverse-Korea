@@ -8,6 +8,7 @@ import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureS
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
+import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
 
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
@@ -18,9 +19,10 @@ export function createDecor(game) {
   // numbers, one of each, at most MAX_PIECES.
   function cleanLayout(a) {
     if (!Array.isArray(a)) return [];
-    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5] } : i));
+    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5], fish: i[6] } : i));
     return list.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && list.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
-      .map(({ id, x, z, ry, y, off }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}) })); // y: on a table (isSmall); off: a lamp switched off
+      .map(({ id, x, z, ry, y, off, fish }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}), // y: on a table (isSmall); off: a lamp switched off
+        ...(isTank(id) && Array.isArray(fish) ? { fish: cleanList(id, fish) } : {}) })); // fish: in someone else's tank (my own come from mk.tanks)
   }
   function loadDecor(id, room) {
     foldHomes(localStorage); // (the old Sunny Villa layout moves into the one home)
@@ -52,6 +54,29 @@ export function createDecor(game) {
     unstick();
     saveDecor();
     markPlaced();
+    fillTanks();
+  }
+  // The fish in this room's tanks (core/tank-fish.js, loaded with the first
+  // tank): mine from mk.tanks, a host's from the layout they sent.
+  let tankFish = null, swimming = [], swimT = 0;
+  function fillTanks() {
+    for (const f of swimming) f.dispose();
+    swimming = [];
+    const tanks = decor?.items.filter((it) => isTank(it.id) && it.mesh);
+    if (!tanks?.length) return;
+    const store = decor.guest ? null : new TankStore();
+    (tankFish ||= import('../core/tank-fish.js')).then((m) => {
+      for (const it of tanks) {
+        if (!decor || it.mesh.parent !== decor.group || swimming.some((f) => f.it === it)) continue; // (rebuilt or gone meanwhile)
+        const list = store ? store.list(it.id) : it.fish || [];
+        if (list.length) swimming.push({ it, ...m.fillTank(it.mesh, tankById(it.id), list) });
+      }
+    }).catch(() => { tankFish = null; });
+  }
+  function tick(dt) {
+    if (!swimming.length) return;
+    swimT += dt;
+    for (const f of swimming) f.tick(swimT);
   }
   // Never shut in by furniture (Yozi 2026-11-16: stuck between a desk and a
   // stool): if a piece now overlaps where I stand, step to the nearest clear
@@ -93,9 +118,20 @@ export function createDecor(game) {
     rebuildDecor();
   }
   // What this home looks like, to send to visitors.
-  const layout = () => (decor && !decor.guest ? decor.items.filter((i) => i !== decor.carry).map((i) => [i.id, i.x, i.z, i.ry, i.y || 0, i.off ? 1 : 0]) : null);
+  const layout = () => {
+    if (!decor || decor.guest) return null;
+    const store = new TankStore();
+    return decor.items.filter((i) => i !== decor.carry).map((i) => {
+      const a = [i.id, i.x, i.z, i.ry, i.y || 0, i.off ? 1 : 0];
+      if (isTank(i.id) && store.list(i.id).length) a.push(store.list(i.id)); // (visitors see the fish too)
+      return a;
+    });
+  };
   function closeHome() {
     if (!decor) return;
+    for (const f of swimming) f.dispose();
+    swimming = [];
+    tankPanel?.close();
     setDecorating(false);
     $('decor-btn').hidden = true;
     decor = null;
@@ -274,6 +310,34 @@ export function createDecor(game) {
     return { key: 'lamp:' + best.id + (best.off ? ':off' : ''), label: (best.off ? '💡 ' + t('home.lampOn') : '🌙 ' + t('home.lampOff')),
       run: () => { best.off = !best.off; rebuildDecor(); game.action = STALE; } };
   }
+  // Walk up to a tank in my home to put fish in or take them out
+  // (game/fish-tank-ui.js, loaded the first time).
+  let tankPanel = null, tankPanelLoading = null;
+  function tankAct(p) {
+    if (!decor || decor.guest || decor.editing || decor.carry) return null;
+    let best = null, bd = Infinity;
+    for (const it of decor.items) {
+      if (!isTank(it.id)) continue;
+      const d = Math.hypot(p.x - it.x, p.z - it.z), reach = Math.max(...tankById(it.id).size) / 2 + 0.9;
+      if (d < reach && d < bd) { bd = d; best = it; }
+    }
+    if (!best) return null;
+    return { key: 'tank:' + best.id, label: '🐟 ' + t('tank.open'), run: () => openTank(best.id) };
+  }
+  async function openTank(id) {
+    tankPanelLoading ||= import('./fish-tank-ui.js').then((m) => (tankPanel = m.createTankPanel({
+      root: $('wallet-panel').parentElement, bag: game.fishBag, toast: (s) => shop.toast(s),
+      onChange: () => { fillTanks(); game.onLayout?.(); }, // (visitors see the fish move)
+    }))).catch((e) => { tankPanelLoading = null; throw e; });
+    await tankPanelLoading;
+    if (decor && !decor.guest) tankPanel.open(id);
+  }
+  // Walked away from the tank: close its panel.
+  function tankAway(p) {
+    if (!tankPanel?.isOpen) return;
+    const it = decor?.items.find((i) => i.id === tankPanel.tankId);
+    if (!it || Math.hypot(p.x - it.x, p.z - it.z) > Math.max(...tankById(it.id).size) / 2 + 1.6) tankPanel.close();
+  }
   // A bigger home (core/home-stages.js): the buying sheet and the till load
   // the first time you go into your home (game/home-grow.js).
   let growing = null;
@@ -288,6 +352,6 @@ export function createDecor(game) {
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
   const api = { visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
-    closePiece, openPiece, updateCarry, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
+    closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }

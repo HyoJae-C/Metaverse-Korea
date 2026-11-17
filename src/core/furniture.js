@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE } from './furniture-shop.js';
+import { TANKS, buildTank } from './fish-tank-pieces.js';
 
 const mat = matCache();
 
@@ -134,6 +135,7 @@ export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
 // The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
 const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 } };
 export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
+export const TANK_IDS = TANKS.map((t) => [t.id, t.emoji, t.name]);
 
 export const FURNITURE = [
   // The free basics every home starts with are worn hand-me-downs: faded,
@@ -230,6 +232,9 @@ export const FURNITURE = [
   // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
   ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
     build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
+  // Fish tanks from the KONEXT Aquarium shop (core/fish-tank.js): only once
+  // bought; the big ones only in a bigger home (needsHomeLevel, core/home-stages.js).
+  ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],

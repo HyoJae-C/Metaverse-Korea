@@ -4140,7 +4140,7 @@ const decorGame = createDecor({
   get interior() { return interior; },
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
   get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
-  inventory, shop, PLAYER_R,
+  inventory, shop, PLAYER_R, get fishBag() { return fishBag; }, // (fish tanks: core/fish-tank.js)
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
   cloud, get wallet() { return wallet; }, refreshWallet: () => refreshWallet(),
@@ -7007,6 +7007,8 @@ function updateAction(p, tSec) {
       next = hi5Action(hi5Target(p));
     } else if (decorGame.lampAct(p)) { // a lamp at home: switch it on or off (game/decor.js)
       next = decorGame.lampAct(p);
+    } else if (decorGame.tankAct(p)) { // a fish tank at home: put fish in or take them out
+      next = decorGame.tankAct(p);
     } else if (picnic.action(p)) {
       next = picnic.action(p);
     } else if (frisbee.action(p)) {
@@ -7363,6 +7365,8 @@ renderer.setAnimationLoop((now) => {
   }
   routeLine.update(dt);
   updateCarry();
+  decorGame.tick(dt); // (fish in a tank at home)
+  decorGame.tankAway(p);
   updatePet(dt, p);
   if (fishingUi.open && !nearFishing(p)) fishingUi.close(); // walked away from the water
   if (loveLockUi.open && !loveLockUi.busy && (mode !== 'street' || namsanWalk.awayFromHeart(p))) loveLockUi.close();
