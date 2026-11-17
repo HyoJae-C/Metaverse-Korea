@@ -88,9 +88,11 @@ try {
   const hostId = (await state(h)).me;
   const pieces = await h.evaluate(() => __mk.decor());
   if (pieces < 6) throw new Error('no starter room: ' + pieces);
+  const hostSize = await h.evaluate(() => __mk.roomSize()); // a new player's home: level 1 (core/home-stages.js)
+  if (String(hostSize) !== '9,8') throw new Error('a new home is not 9×8: ' + hostSize);
 
   step = 'guest picks it at the door';
-  await g.evaluate((id) => __mk.homeStub([{ net_id: id, name: 'Host H', friend: false }]), hostId);
+  await g.evaluate((id) => __mk.homeStub([{ net_id: id, name: 'Host H', friend: false, level: 1 }]), hostId);
   await g.evaluate(() => __mk.openHomes());
   await g.waitForSelector('#visit-panel .visit-list button', { timeout: 10000 });
   if (shotDir) await g.screenshot({ path: shotDir + '/visit-list.png' });
@@ -99,6 +101,7 @@ try {
   step = 'guest sees the furniture';
   await g.waitForFunction((n) => __mk.decor() === n, pieces, { timeout: 20000 });
   if (await g.isVisible('#decor-btn')) throw new Error('a guest can decorate');
+  if (String(await g.evaluate(() => __mk.roomSize())) !== String(hostSize)) throw new Error('the guest\'s room is not the host\'s size');
   if (shotDir) { await g.waitForTimeout(1500); await g.screenshot({ path: shotDir + '/visit-inside.png' }); }
 
   step = 'host removes a piece, the guest sees it';

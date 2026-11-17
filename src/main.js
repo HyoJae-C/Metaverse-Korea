@@ -2811,6 +2811,13 @@ function enterStore(item, walkIn = null) {
   // Sunny Villa's door after the homes were joined (homes.json movedTo): a
   // notice that your home is now at Forest Lane Apartments.
   if (item.store.movedTo) { shop.toast(t('home.moved'), 7000); return; }
+  // A home is the size of its level (core/home-stages.js): mine, or the
+  // host's when visiting. A room built at another size is built again.
+  if (item.store.category === 'home' && !item.homeSized) return decorGame.sizeHome(item).then((it) => {
+    const old = interiorCache.get(it.store.id), dims = it.store.roomDims;
+    if (old && (old.room.w !== dims.w || old.room.d !== dims.d) && interior?.store?.id !== it.store.id) interiorCache.drop(it.store.id);
+    return enterStore(it, walkIn);
+  });
   // Every room's code (core/interior.js) and the shops' product descriptions
   // (game/store-descs.js) come with the first one walked into; the returned
   // promise keeps the tip cover up meanwhile (game/tips.js).
@@ -4136,6 +4143,8 @@ const decorGame = createDecor({
   inventory, shop, PLAYER_R, get fishBag() { return fishBag; }, // (fish tanks: core/fish-tank.js)
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
+  cloud, get wallet() { return wallet; }, refreshWallet: () => refreshWallet(),
+  reenterHome: () => { const f = interior?.front; if (f) { leaveStore(); enterStore({ ...f, homeSized: false }); } }, // (a bigger home: game/home-grow.js)
 });
 const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, openPiece, updateCarry } = decorGame;
 // Visiting other players' homes, and opening mine to them. (game/home-visits.js)
@@ -7708,6 +7717,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
+    roomSize: () => (interior?.room ? [interior.room.w, interior.room.d] : null), // (a home's size by its level)
     riding: () => riding,
     sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },

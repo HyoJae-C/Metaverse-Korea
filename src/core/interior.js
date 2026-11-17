@@ -75,7 +75,7 @@ export const ROOM_SIZES = {
   dharmahall: ROOM_DHARMA, // inside Jogyesa's and Bongeunsa's Daeungjeon: the silent hall (see dharma-hall.js)
   skydeck: ROOM_SKYDECK, // Modu Sky, the deck at the top of Modu Tower (see sky-deck.js)
 };
-export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
+export const roomOf = (store) => store.roomDims || ROOM_SIZES[store.size] || ROOM_SIZES.medium; // (roomDims: a home's size by its level, core/home-stages.js)
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
 // A room's walkable box (most rooms are centred on 0).
 export const roomBox = (room) => ({ x0: room.x0 ?? -room.w / 2, x1: room.x1 ?? room.w / 2, z0: room.z0 ?? -room.d / 2, z1: room.z1 ?? room.d / 2 });
