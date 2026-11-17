@@ -190,15 +190,15 @@ const MORE = {
       ...flatFin([[-0.28, 0], [-0.42, 0.18], [-0.48, 0.18], [-0.44, 0], [-0.48, -0.18], [-0.42, -0.18]], '#8a7a78', [0, -0.01, 0], { thick: 0.016 }),
       ...pectorals([[0, 0], [-0.03, -0.11], [-0.09, -0.11], [-0.06, 0]], '#9a8a88', 0.24, -0.08, 0.1, 0.9, { rays: false, thick: 0.012 })];
   }),
-  whale: def('whale', 0.9, 0.05, () => { // blue whale: long, slate blue with pale mottling, throat grooves, a tiny dorsal fin
+  whale: def('whale', 0.9, 0.05, () => { // like the 🐋 stamp: bright blue back, a clean white belly with pale blue throat grooves, a tiny dorsal fin
     const b = body({ x0: -0.36, H: 0.15, W: 0.17, peak: 0.5, ped: 0.12, nose: 1.6, under: 1.9, rings: 60, color: (x, y, z, u) => {
-      const c = mix('#a8b8c8', '#4a6a8a', smooth(-0.6, 0.3, u)).multiplyScalar(1 + 0.07 * spots(x, u, 90, 0.4));
-      return u < -0.4 && x > 0.15 ? c.lerp(col('#2a3a50'), 0.5 * smooth(0.5, 0.9, Math.sin(u * 60))) : c;
+      const c = mix('#f4f8fc', '#3d8fe0', smooth(-0.55, -0.3, u)).lerp(col('#2f78c8'), smooth(0.3, 1, u));
+      return u < -0.45 && x > 0.12 ? c.lerp(col('#a8c8e8'), 0.6 * smooth(0.5, 0.9, Math.sin(u * 60))) : c;
     } });
-    return [b.geo, ...eyes(b, 0.36, -0.05, 0.016, '#2a3a4a'), ...mouth(b, 0.46, -0.2, 0.08, '#2a3a50'),
-      ...fin([[-0.2, b.surf(-0.2, 1)[1] - 0.005], [-0.24, b.surf(-0.2, 1)[1] + 0.03], [-0.25, b.surf(-0.25, 1)[1] - 0.005]], '#4a6a8a', { rays: false, thick: 0.01 }),
-      ...flatFin([[-0.34, 0], [-0.44, 0.13], [-0.5, 0.13], [-0.46, 0.03], [-0.47, 0], [-0.46, -0.03], [-0.5, -0.13], [-0.44, -0.13]], '#4a6a8a', [0, 0, 0], { thick: 0.012 }),
-      ...pectorals([[0, 0], [-0.04, -0.14], [-0.08, -0.14], [-0.04, 0]], '#7a90a8', 0.2, -0.08, 0.075, 0.9, { rays: false, thick: 0.01 })];
+    return [b.geo, ...eyes(b, 0.36, -0.05, 0.018, '#1a2a3a'), ...mouth(b, 0.46, -0.2, 0.08, '#2a5a90'),
+      ...fin([[-0.2, b.surf(-0.2, 1)[1] - 0.005], [-0.24, b.surf(-0.2, 1)[1] + 0.03], [-0.25, b.surf(-0.25, 1)[1] - 0.005]], '#2f78c8', { rays: false, thick: 0.01 }),
+      ...flatFin([[-0.34, 0], [-0.44, 0.13], [-0.5, 0.13], [-0.46, 0.03], [-0.47, 0], [-0.46, -0.03], [-0.5, -0.13], [-0.44, -0.13]], '#2f78c8', [0, 0, 0], { thick: 0.012 }),
+      ...pectorals([[0, 0], [-0.04, -0.14], [-0.08, -0.14], [-0.04, 0]], '#3d8fe0', 0.2, -0.08, 0.075, 0.9, { rays: false, thick: 0.01 })];
   }),
   // ---- not fish: shellfish, squid, plants ----
   shrimp: def('fish', 5, 0.03, () => {
