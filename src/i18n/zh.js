@@ -534,6 +534,7 @@ export const ZH = {
   'home.leave': '出门',
   'zoo.leave': '离开动物园',
   'home.blocked': '被别的家具挡住了。挪一挪再放下吧。',
+  'home.noRoom': "这里空间不够",
   'home.lie': '躺下',
   'home.lampOn': '开灯',
   'home.lampOff': '关灯',

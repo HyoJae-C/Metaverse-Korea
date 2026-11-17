@@ -22,8 +22,9 @@ test('every catalogue fish has a real length, a size class and a drawn length in
   assert.equal(sizeClass('salmon'), 'L');
   assert.equal(sizeClass('whale'), 'XL');
   assert.deepEqual(['ricefish', 'clownfish', 'carp', 'salmon', 'orca', 'whale'].map(spacesOf), [1, 1, 2, 4, 8, 8]);
-  // the square root of the real length: four times longer, twice as long
-  assert.ok(Math.abs(shownLength('crab') / shownLength('ricefish') - Math.sqrt(0.15 / 0.035)) < 1e-9);
+  // in proportion to the real length (Yozi 2026-11-18: 0.4 of it)
+  assert.ok(Math.abs(shownLength('orca') - 2.8) < 1e-9);
+  assert.ok(Math.abs(shownLength('crab') / shownLength('ricefish') - 0.15 / 0.035) < 1e-9);
   const order = ['ricefish', 'clownfish', 'crucian', 'carp', 'shark', 'orca', 'whale'].map(shownLength);
   for (let i = 1; i < order.length; i++) assert.ok(order[i] > order[i - 1], 'longer in life, longer in the tank');
 });
@@ -36,9 +37,9 @@ test('the biggest fish a tank takes fits inside its water', () => {
   }
 });
 
-test('the four tanks: bought as furniture, any home takes any tank that fits the room', () => {
-  assert.deepEqual(TANKS.map((t) => t.id), ['tank-s', 'tank-m', 'tank-l', 'tank-wall']);
-  assert.deepEqual(TANKS.map((t) => t.needsHomeLevel), [1, 1, 1, 1]); // (Yozi 2026-11-18: no home level lock)
+test('the five tanks: bought as furniture, any home takes any tank that fits the room', () => {
+  assert.deepEqual(TANKS.map((t) => t.id), ['tank-mini', 'tank-s', 'tank-m', 'tank-l', 'tank-wall']);
+  assert.deepEqual(TANKS.map((t) => t.needsHomeLevel), [1, 1, 1, 1, 1]); // (Yozi 2026-11-18: no home level lock)
   for (const t of TANKS) {
     assert.ok(furnitureById(t.id)?.item === t.id, t.id);
     assert.equal(furnitureById(t.id).needsHomeLevel, t.needsHomeLevel);
@@ -49,7 +50,7 @@ test('the four tanks: bought as furniture, any home takes any tank that fits the
 test('size and space: small fish go many to a tank, big ones only in big tanks', () => {
   const s = tankById('tank-s'), wall = tankById('tank-wall');
   assert.equal(blockedBy(s, [], 'carp'), 'size');
-  assert.deepEqual(TANKS.map((t) => t.fish), [10, 25, 40, 60]);
+  assert.deepEqual(TANKS.map((t) => t.fish), [3, 10, 25, 40, 60]);
   assert.equal(blockedBy(s, Array(9).fill('ricefish'), 'ricefish'), null);
   assert.equal(blockedBy(s, Array(10).fill('ricefish'), 'ricefish'), 'full', 'ten fish at most');
   assert.equal(blockedBy(wall, ['orca'], 'orca'), 'one', 'one of each big kind');

@@ -536,6 +536,7 @@ export const AR = {
   'home.leave': 'اخرج',
   'zoo.leave': 'غادر حديقة الحيوان',
   'home.blocked': 'هناك شيء في الطريق. تحرّك قليلًا ثم ضعها مجددًا.',
+  'home.noRoom': "لا توجد مساحة كافية هنا",
   'home.lie': 'استلقِ',
   'home.lampOn': 'أشعل الضوء',
   'home.lampOff': 'أطفئ الضوء',

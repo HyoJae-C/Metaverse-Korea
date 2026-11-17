@@ -534,6 +534,7 @@ export const KO = {
   'home.leave': '밖으로 나가기',
   'zoo.leave': '동물원에서 나가기',
   'home.blocked': '다른 가구에 걸려요. 조금 옮겨서 다시 내려놓아요.',
+  'home.noRoom': "여기엔 놓을 공간이 부족해요",
   'home.lie': '눕기',
   'home.lampOn': '불 켜기',
   'home.lampOff': '불 끄기',

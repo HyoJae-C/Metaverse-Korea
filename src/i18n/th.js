@@ -534,6 +534,7 @@ export const TH = {
   'home.leave': 'ออกไปข้างนอก',
   'zoo.leave': 'ออกจากสวนสัตว์',
   'home.blocked': 'มีของขวางอยู่ ขยับนิดหนึ่งแล้ววางใหม่',
+  'home.noRoom': "ที่นี่มีพื้นที่ไม่พอ",
   'home.lie': 'นอนลง',
   'home.lampOn': 'เปิดไฟ',
   'home.lampOff': 'ปิดไฟ',

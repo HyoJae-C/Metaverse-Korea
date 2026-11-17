@@ -4,7 +4,7 @@
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, pieceBlocked, placeRiders, ridersOf, starterLayout, topUnder } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, placeRiders, ridersOf, starterLayout, topUnder } from '../core/furniture.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
@@ -162,6 +162,8 @@ export function createDecor(game) {
     if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
     const [x, z, ry] = spotInFront();
     const it = { id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) };
+    const { w: rw, d: rd } = game.interior.room;
+    if (Math.min(...def.size) > Math.min(rw, rd) - 1 || Math.max(...def.size) > Math.max(rw, rd) - 1) return shop.toast(t('home.noRoom')); // (bigger than the room)
     if (!freeSpot(it)) return shop.toast(t('home.blocked'));
     decor.items.push(it);
     rebuildDecor();
@@ -179,7 +181,7 @@ export function createDecor(game) {
         it.x = THREE.MathUtils.clamp(x0 + Math.cos(a) * r, -w / 2 + 0.8, w / 2 - 0.8);
         it.z = THREE.MathUtils.clamp(z0 + Math.sin(a) * r, -d / 2 + 0.8, d / 2 - 1.8);
         settle(it);
-        if (!pieceBlocked(it, decor.items, p)) return true;
+        if (!pieceBlocked(it, decor.items, p) && !outsideRoom(it, w, d)) return true;
       }
     }
     it.x = x0; it.z = z0;
@@ -213,7 +215,7 @@ export function createDecor(game) {
   // Carry a piece: it floats in front of you until you put it down.
   function putDown(force = false) {
     if (decor.carry) settle(decor.carry);
-    if (!force && decor.carry && pieceBlocked(decor.carry, decor.items, game.me.root.position)) { shop.toast(t('home.blocked')); return false; }
+    if (!force && decor.carry && (pieceBlocked(decor.carry, decor.items, game.me.root.position) || outsideRoom(decor.carry, game.interior.room.w, game.interior.room.d))) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
     decor.riders = null;
     $('decor-bar').hidden = !decor.editing;
@@ -255,7 +257,7 @@ export function createDecor(game) {
     if (!it) return;
     const riders = it === decor.carry ? null : ridersOf(it, decor.items); // (carried: they follow in updateCarry)
     it.ry += Math.PI / 4;
-    if (it !== decor.carry && pieceBlocked(it, decor.items, game.me.root.position)) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
+    if (it !== decor.carry && (pieceBlocked(it, decor.items, game.me.root.position) || outsideRoom(it, game.interior.room.w, game.interior.room.d))) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
     if (riders) placeRiders(it, riders);
     rebuildDecor();
   };

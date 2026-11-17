@@ -366,6 +366,12 @@ function piecePoly(item) {
   const c = Math.cos(item.ry), s = Math.sin(item.ry);
   return { p: [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]) };
 }
+// True when a piece pokes through a wall of a w × d room (Yozi 2026-11-18:
+// any tank goes in any home it fits).
+export function outsideRoom(item, w, d) {
+  const me = piecePoly(item);
+  return !!me && me.p.some(([x, z]) => Math.abs(x) > w / 2 - 0.02 || Math.abs(z) > d / 2 - 0.02);
+}
 // Collision polygon for a placed piece, or null for walkable ones (rugs) and
 // things standing on a table (the table blocks you already).
 export function furnitureCollider(item) {

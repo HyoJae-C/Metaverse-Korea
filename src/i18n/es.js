@@ -535,6 +535,7 @@ export const ES = {
   'home.leave': 'Salir',
   'zoo.leave': 'Salir del zoo',
   'home.blocked': 'Hay algo en medio. Muévete un poco y vuelve a dejarlo.',
+  'home.noRoom': "Aquí no hay espacio suficiente",
   'home.lie': 'Acostarse',
   'home.lampOn': 'Encender la luz',
   'home.lampOff': 'Apagar la luz',

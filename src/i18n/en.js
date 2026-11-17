@@ -533,6 +533,7 @@ export const EN = {
   'home.leave': 'Go outside',
   'zoo.leave': 'Leave the zoo',
   'home.blocked': 'Something is in the way. Move a little and put it down again.',
+  'home.noRoom': "Not enough room for this here",
   'home.lie': 'Lie down',
   'home.lampOn': 'Turn on the light',
   'home.lampOff': 'Turn off the light',
