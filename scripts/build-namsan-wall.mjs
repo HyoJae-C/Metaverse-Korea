@@ -49,7 +49,9 @@ const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 export const NAMSAN_WALL = {
   thick: 1.4, // m: the wall's thickness (its blocker off the hill)
   H: 3.5, // m: the wall's height above the ground (50%)
-  pathW: 2.5,
+  pathW: 3, // m: the trail you see (earth, or stone steps where it climbs)
+  deckW: 3.8, // m: where you can walk on the hill (the trail and a little grass either side)
+  fillMin: 6, // m: a stretch of wall drawn beside the trail where OSM has none, at least this long
   park: 9, // m either side of the trail through Jangchung-dong: a strip of park
   plaza: 29, // m round the tower: no wall (the summit plaza, 26 m, and its railing)
   open: 3, // m either side of where a trail goes through the wall
@@ -67,7 +69,7 @@ const C = NAMSAN_WALL;
 for (const k of ['roads', 'blockers', 'pois', 'areas']) for (const m of [itaewon, euljiro]) m[k] = (m[k] || []).filter((it) => !it.hw);
 euljiro.meta.parts = euljiro.meta.parts.filter((p) => !p.hw);
 const hill = itaewon.landmarks.find((l) => l.type === 'namsan');
-delete hill.wall; delete hill.wtrail; delete hill.wtrailW;
+delete hill.wall; delete hill.wtrail; delete hill.wtrailW; delete hill.wpathW;
 const HX = ox + hill.x, HZ = oz + hill.z; // the hill's origin, world metres
 const onHill = (x, z, m = 0) => onNamsan(hill, x - HX, z - HZ, m);
 const tower = [HX + hill.px, HZ + hill.pz];
@@ -198,7 +200,7 @@ const cross = (a, b, c, d) => { // segments ab, cd: the crossing point or null
   return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? [a[0] + r[0] * t, a[1] + r[1] * t] : null;
 };
 const throughs = []; // where a trail goes through the wall
-const CLEAR = C.thick / 2 + C.pathW / 2 + 0.6;
+const CLEAR = C.thick / 2 + C.deckW / 2 + 0.2; // (the trail's middle from the wall's: its grass edge just short of the wall's face)
 function offWall(p, keep = false) { // (keep: move the points only, no new ones: the summit trail stays as it is where it is clear)
   const hits = [];
   for (let i = 1; i < p.length; i++) for (const [a, b] of wallSegs) { const q = cross(p[i - 1], p[i], a, b); if (q) hits.push(q); }
@@ -224,9 +226,49 @@ function offWall(p, keep = false) { // (keep: move the points only, no new ones:
 }
 const westP = offWall(west), eastP = offWall(east), summitP = offWall(summit, true);
 
+// ---------- The wall where OSM has none, beside the trail ----------
+// The real wall runs all the way up the west slope from Baekbeom Square and
+// down the east side past Palgakjeong, right beside the course (photos;
+// Yozi 2026-11-17), but OSM draws only pieces of it. Where the trail is on
+// the hill and no OSM wall is beside it, the wall is drawn along the trail
+// at the trail's side that the nearest OSM pieces are on. An approximation
+// (its line is the trail's, offset): the stretches are listed in `approx`.
+const realSegs = wallSegs;
+const fills = [];
+for (const P of [westP, eastP]) {
+  const d = dense(P, 1);
+  const dir = (i) => { const a = d[Math.max(0, i - 2)], b = d[Math.min(d.length - 1, i + 2)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
+  const near = d.map(([x, z], i) => {
+    let best = Infinity, px = 0, pz = 0;
+    for (const [a, b] of realSegs) {
+      const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1)));
+      const dd = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
+      if (dd < best) { best = dd; px = a[0] + dx * t; pz = a[1] + dz * t; }
+    }
+    const [ux, uz] = dir(i);
+    return { best, side: Math.sign(ux * (pz - z) - uz * (px - x)) };
+  });
+  const known = near.map((q, i) => (q.best < 10 ? i : -1)).filter((i) => i >= 0);
+  if (!known.length) continue;
+  const sideAt = (i) => near[known.reduce((b, k) => (Math.abs(k - i) < Math.abs(b - i) ? k : b))].side;
+  const off = CLEAR + 0.1;
+  let run = [];
+  const flush = () => { if (run.length > 1 && length(run) >= C.fillMin) fills.push(run); run = []; };
+  d.forEach(([x, z], i) => {
+    const s = sideAt(i), [ux, uz] = dir(i), q = [x - uz * off * s, z + ux * off * s];
+    const ok = near[i].best > CLEAR + 3 && onHill(q[0], q[1], -2) && onHill(x, z, -2) && !inPlaza(q, C.plaza - 26 + 2) && !onStreet(q[0], q[1], 4)
+      && [westP, eastP, summitP].every((t) => lineDist(q[0], q[1], t) > CLEAR - 0.2);
+    if (ok) run.push(q); else flush();
+  });
+  flush();
+}
+const approxFrom = full.length;
+full.push(...fills.map((p) => simplify(p, 0.3)));
+
 // ---------- The wall's stretches: the gaps ----------
-const runs = [];
-for (const p of full) {
+const runs = [], approx = [];
+for (const [fi, p] of full.entries()) {
+  const before = runs.length;
   let run = [];
   const flush = () => { if (run.length > 1 && length(run) >= 3) runs.push(simplify(run, 0.25).map(([x, z]) => [r1(x), r1(z)])); run = []; };
   for (const q of dense(p, 0.5)) {
@@ -236,6 +278,7 @@ for (const p of full) {
     if (gap) flush(); else run.push(q);
   }
   flush();
+  if (fi >= approxFrom) for (let k = before; k < runs.length; k++) approx.push(k);
 }
 
 // ---------- Room for the gate and the trail ----------
@@ -326,11 +369,12 @@ hill.h = C.hillH;
     if (i === cable.path.length - 1) { q[2] = r1(g + 7.5); q[3] = g; } else q[3] = g;
   });
 }
-hill.wtrailW = C.pathW;
+hill.wtrailW = C.deckW;
+hill.wpathW = C.pathW;
 hill.trail = summitP.map(local);
 const summitRoad = itaewon.roads.find((r) => r.nw);
 if (summitRoad) summitRoad.p = summitP.map(dist);
-hill.wall = { thick: C.thick, H: C.H, runs: runs.map((r) => r.map(local)), gate: { ...gate, ...Object.fromEntries([['x', r1(gate.x - HX)], ['z', r1(gate.z - HZ)]]) } };
+hill.wall = { thick: C.thick, H: C.H, runs: runs.map((r) => r.map(local)), approx, gate: { ...gate, ...Object.fromEntries([['x', r1(gate.x - HX)], ['z', r1(gate.z - HZ)]]) } };
 delete hill.wall.gate.moved;
 
 const name = N('남산 성곽길', 'Namsan City Wall Trail', '南山城郭道', '南山城郭路');
@@ -385,4 +429,4 @@ for (const st of moved) {
 }
 
 const wallLen = runs.reduce((s, r) => s + length(r), 0);
-console.log(`namsan wall: ${Math.round(wallLen)} m of wall in ${runs.length} stretches (OSM ${Math.round(full.reduce((s, r) => s + length(r), 0))} m), ${throughs.length} trail openings; trail ${Math.round(length(westP))} + ${Math.round(length(eastP))} m (${hill.wtrail.length} runs on the hill); Gwanghuimun ${gate.W} x ${gate.D} m, moved ${gate.moved} m off Toegye-ro; ${narrowed} buildings narrowed, ${removed} taken away`);
+console.log(`namsan wall: ${Math.round(wallLen)} m of wall in ${runs.length} stretches (${approx.length} beside the trail where OSM has none: ${Math.round(approx.reduce((s, k) => s + length(runs[k]), 0))} m) (OSM ${Math.round(full.reduce((s, r) => s + length(r), 0))} m), ${throughs.length} trail openings; trail ${Math.round(length(westP))} + ${Math.round(length(eastP))} m (${hill.wtrail.length} runs on the hill); Gwanghuimun ${gate.W} x ${gate.D} m, moved ${gate.moved} m off Toegye-ro; ${narrowed} buildings narrowed, ${removed} taken away`);
