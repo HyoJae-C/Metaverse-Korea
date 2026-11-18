@@ -20,7 +20,7 @@ import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear, screenSpot } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
-import { noticeBoardSpots } from './core/notice-board-spots.js';
+import { noticeBoardSpots, boardRowSpots } from './core/notice-board-spots.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -1038,14 +1038,20 @@ if (square) {
 // Notice boards at one end of the square, facing it: free board, inquiries,
 // and the update board (with a NEW tag while unread). They stand either side
 // of the middle, clear of the walkway to Café Street and of the buildings
-// (core/notice-board-spots.js).
+// (core/notice-board-spots.js). The same three stand in a row at the other
+// big meeting places (zones.json "boards").
 const noticeBoards = [];
-let newsTag = null;
-if (square) {
-  for (const { board, x, z, ry, ux, uz } of noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))) {
+const newsTags = [];
+{
+  const sets = [
+    ...(square ? [noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))] : []),
+    ...zones.items.filter((i) => i.zone.boards).map((i) => boardRowSpots(i.zone.boards)),
+  ];
+  const titles = { news: '📢 업데이트 소식', free: BOARD_TEXT.free.ko, ask: BOARD_TEXT.ask.ko }; // signs in Korean, like the shop signs
+  for (const { board, x, z, ry, ux, uz } of sets.flat()) {
     const color = { news: '#e0a020', free: '#2f6fd6', ask: '#d8452f' }[board];
-    const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
-    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }
+    const m = makeNoticeBoard(titles[board], color);
+    if (board === 'news') { const tag = makeNewTag(); tag.position.set(0, 3.75, 0.1); tag.visible = false; m.add(tag); newsTags.push(tag); }
     m.position.set(x, 0, z);
     m.rotation.y = ry;
     scene.add(m);
@@ -1310,7 +1316,7 @@ const refreshNewsDot = () => {
   $('news-dot').hidden = !on; // a pulsing NEW badge on the row
   $('settings-dot').hidden = !on;
   $('settings-btn').classList.toggle('has-news', on);
-  if (newsTag) newsTag.visible = on; // over the board on the square
+  for (const tag of newsTags) tag.visible = on; // over the update boards
 };
 const renderNews = () => {
   const lang = getLanguage();
@@ -1883,7 +1889,7 @@ const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlig
   buildings: solidBuildings, myId, get net() { return net; }, get others() { return others; },
   isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
   places: () => [
-    ...zones.items.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
+    ...zones.signs.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
     ...storefronts.items.map((i) => ({ name: localName(i.store.name, getLanguage()) || '', x: i.door.x, z: i.door.z, icon: '🏬' })),
   ],
 })), {
@@ -3699,7 +3705,7 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
   root: $('map-panel'),
   map,
   seoul: await seoulPromise,
-  zones: zones.items,
+  zones: zones.signs,
   stores: storefronts.items,
   marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
@@ -5168,7 +5174,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -7522,7 +7528,7 @@ renderer.setAnimationLoop((now) => {
     else for (const el of [g.tag, g.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
-  if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
+  if (newsTags[0]?.visible) { const ts = performance.now() / 1000; for (const tag of newsTags) { if (!tag.parent?.visible) continue; tag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; tag.userData.tick(ts); } }
   for (const ws of wallScreens) { // only the ones you can see are drawn; far ones let their canvas go (WallScreen.sleep)
     const d = Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z);
     if (mode === 'street' && d < 300) ws.update(dt);

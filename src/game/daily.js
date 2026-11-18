@@ -17,7 +17,10 @@ export function createDaily(game) {
     if (m.type === 'talk') {
       // Say where they hang out (their meeting zone), so it's clear which part of town to go to.
       const lang = getLanguage(), o = npcs.list.find((n) => n.name === m.target);
-      const zone = o && zones.items.find((z) => z.zone.id === o.zone)?.zone;
+      // (a zone without a signpost: the nearest one with a sign, which you can find)
+      const home = o && zones.items.find((z) => z.zone.id === o.zone);
+      const near = home && (home.quiet ? zones.signs.reduce((b, z) => (!b || Math.hypot(z.x - home.x, z.z - home.z) < Math.hypot(b.x - home.x, b.z - home.z) ? z : b), null) : home);
+      const zone = near?.zone;
       const where = zone ? localName(zone.name, lang) : '';
       const extra = [lang === 'ko' ? '' : NAME_ROMAN[m.target], where].filter(Boolean).join(', ');
       return t('mission.talk', { name: extra ? `${m.target} (${extra})` : m.target });

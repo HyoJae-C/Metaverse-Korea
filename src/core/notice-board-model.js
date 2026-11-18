@@ -16,7 +16,12 @@ function titleTexture(text, color) {
   return t;
 }
 
+// One title texture per sign, shared by every board that carries it (the
+// same three boards stand at several meeting places).
+const titles = new Map();
 export function makeNoticeBoard(title, color) {
+  const key = title + color;
+  if (!titles.has(key)) titles.set(key, titleTexture(title, color));
   const root = new THREE.Group();
   const wood = new THREE.MeshLambertMaterial({ color: 0x8a5a3a });
   for (const s of [-1, 1]) {
@@ -34,7 +39,7 @@ export function makeNoticeBoard(title, color) {
     n.rotation.z = (x * 7 % 1) * 0.2 - 0.1;
     root.add(n);
   }
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.5), new THREE.MeshBasicMaterial({ map: titleTexture(title, color) }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.5), new THREE.MeshBasicMaterial({ map: titles.get(key) }));
   sign.position.set(0, 2.5, 0.05);
   root.add(sign);
   const roof = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.12, 0.7), new THREE.MeshLambertMaterial({ color }));
