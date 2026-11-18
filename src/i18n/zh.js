@@ -573,6 +573,7 @@ export const ZH = {
   "home.grow": "扩建房间",
   "finish.wall": "壁纸",
   "finish.floor": "地板",
+  "finish.door": "门",
   "finish.basic": "基本",
   "finish.where": "壁纸和地板可以在乙支路家具街的壁纸店购买。",
   "home.size": "{w}×{d} 米",

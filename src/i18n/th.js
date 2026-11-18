@@ -573,6 +573,7 @@ export const TH = {
   "home.grow": "ขยายบ้าน",
   "finish.wall": "วอลเปเปอร์",
   "finish.floor": "พื้น",
+  "finish.door": "ประตู",
   "finish.basic": "พื้นฐาน",
   "finish.where": "ซื้อวอลเปเปอร์และพื้นได้ที่ร้านวอลเปเปอร์บนถนนเฟอร์นิเจอร์อึลจีโร",
   "home.size": "{w}×{d} ม.",

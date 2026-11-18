@@ -575,6 +575,7 @@ export const VI = {
   "home.grow": "Mở rộng nhà",
   "finish.wall": "Giấy dán tường",
   "finish.floor": "Sàn nhà",
+  "finish.door": "Cửa",
   "finish.basic": "Cơ bản",
   "finish.where": "Mua giấy dán tường và sàn ở các cửa hàng giấy dán tường trên phố nội thất Euljiro.",
   "home.size": "{w}×{d} m",

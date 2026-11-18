@@ -575,6 +575,7 @@ export const AR = {
   "home.grow": "توسيع البيت",
   "finish.wall": "ورق الجدران",
   "finish.floor": "الأرضية",
+  "finish.door": "الباب",
   "finish.basic": "أساسي",
   "finish.where": "اشترِ ورق الجدران والأرضيات من متاجر ورق الجدران في شارع الأثاث في أولجيرو.",
   "home.size": "{w}×{d} م",
