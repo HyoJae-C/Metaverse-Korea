@@ -41,8 +41,8 @@ test('the Euljiro furniture shops: every new piece is an item, sold in exactly o
   const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood'].includes(s.id));
-  assert.equal(shops.length, 7);
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds'].includes(s.id));
+  assert.equal(shops.length, 8);
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
   for (const [id] of SHOP_FURNITURE_IDS) {
@@ -72,7 +72,7 @@ test('long sofas and benches seat two, beds lie two, cushions sit on the floor',
   const { furnitureSeats } = await import('../src/core/furniture.js');
   const n = (id) => furnitureSeats({ id, x: 0, z: 0, ry: 0 });
   for (const id of ['sofa', 'f-retro-sofa', 'f-modular', 'f-wood-bench']) assert.equal(n(id).length, 2, id);
-  for (const id of ['bed', 'f-fabric-bed']) { assert.equal(n(id).length, 2, id); assert.ok(n(id).every((s) => s.lie && s.bed), id); }
+  for (const id of ['bed', 'f-fabric-bed', 'f-flower-bed', 'f-cloud-bed', 'f-bear-bed']) { assert.equal(n(id).length, 2, id); assert.ok(n(id).every((s) => s.lie && s.bed), id); }
   assert.ok(n('f-bangseok').length === 2 && n('f-bangseok').every((s) => s.mat && s.cushion));
   for (const id of ['chair', 'f-steel-stool', 'f-beanbag', 'f-rocking']) assert.equal(n(id).length, 1, id);
   for (const id of ['table', 'f-najeon']) assert.equal(n(id).length, 0, id);
@@ -91,7 +91,7 @@ test('a piece set down right against you is refused, so you can always walk away
 
 test('both places on a bed against a wall can be reached from one side', async () => {
   const { furnitureSeats, furnitureById } = await import('../src/core/furniture.js');
-  for (const id of ['bed', 'f-fabric-bed']) {
+  for (const id of ['bed', 'f-fabric-bed', 'f-flower-bed', 'f-cloud-bed', 'f-bear-bed']) {
     const [w, d] = furnitureById(id).size;
     const seats = furnitureSeats({ id, x: 0, z: 0, ry: 0 });
     const side = { x: w / 2 + 0.5, z: 0.3 }; // standing beside it (the other side is the wall)

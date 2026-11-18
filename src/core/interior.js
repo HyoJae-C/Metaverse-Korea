@@ -384,7 +384,12 @@ export function buildInterior(store) {
     ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
     : store.products;
   const triedSeats = []; // seats on furniture for sale (below)
-  let doorSlot = 0; // (wallpaper shops: door samples on the front wall)
+  // Wallpaper shops: the two door samples hang on the back wall, in its two
+  // corners, where you look as you come in (Yozi 2026-11-18: by the way out
+  // they were behind you and nobody saw them). The other samples keep their
+  // own count of spots, so a floor after the doors doesn't land on a wall.
+  const finishShop = (store.products || []).some((p) => p.model === 'finish');
+  let doorSlot = 0, spotSlot = 0;
   (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
@@ -399,19 +404,19 @@ export function buildInterior(store) {
       products.push({ product, mesh: spot, pos: front });
       return;
     }
-    const [x, z, ry] = spots[i % spots.length];
+    const isDoor = product.model === 'finish' && finishById(product.furniture)?.kind === 'door';
+    const [x, z, ry] = spots[(finishShop ? (isDoor ? 0 : spotSlot++) : i) % spots.length];
     // Euljiro furniture (shop pieces, not lamps): on the floor at its real
     // size, back to the wall, as it would stand at home (Yozi 2026-11-16: on
     // a table you can't tell how big it is). Sofas, beds and chairs can be
     // tried: sit or lie on them.
     // Wallpaper shops: a wall panel or a patch of floor for each, back to
     // the wall (core/home-finish-art.js).
-    if (product.model === 'finish' && finishById(product.furniture)?.kind === 'door') { // doors hang on the front wall, beside the way out
-      const g = finishSample(product.furniture), dx = -(doorSlot++ % 2 ? Math.min(w / 2 - 0.85, 3.65) : 1.95); // (both on the side away from the counter)
-      g.position.set(EXIT.x + dx, 0, d / 2 - 0.04);
-      g.rotation.y = Math.PI;
+    if (isDoor) { // on the back wall, one in each corner (the corner plants make way)
+      const g = finishSample(product.furniture), dx = (doorSlot++ % 2 ? 1 : -1) * (w / 2 - 1.05);
+      g.position.set(dx, 0, -d / 2 + 0.04);
       scene.add(g);
-      products.push({ product, mesh: g, pos: new THREE.Vector3(EXIT.x + dx, 0, d / 2 - 1.2) });
+      products.push({ product, mesh: g, pos: new THREE.Vector3(dx, 0, -d / 2 + 1.2) });
       return;
     }
     if (product.model === 'finish') {
@@ -2119,7 +2124,7 @@ export function buildInterior(store) {
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], ...(store.category === 'culture' ? [] : [[-w / 2 + 0.7, d / 2 - 0.9]])]) { // (a gallery's show board is by the door)
+  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [...(finishShop ? [] : [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7]]), ...(store.category === 'culture' ? [] : [[-w / 2 + 0.7, d / 2 - 0.9]])]) { // (a gallery's show board is by the door; a wallpaper shop's back corners hold its doors)
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);
