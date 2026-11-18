@@ -575,6 +575,7 @@ export const ID = {
   "home.grow": "Perbesar rumah",
   "finish.wall": "Wallpaper",
   "finish.floor": "Lantai",
+  "finish.door": "Pintu",
   "finish.basic": "Dasar",
   "finish.where": "Beli wallpaper dan lantai di toko wallpaper jalan mebel Euljiro.",
   "home.size": "{w}×{d} m",

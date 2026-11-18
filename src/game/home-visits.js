@@ -24,8 +24,8 @@ export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x
   if (fish) a.push(fish); // the fish in a tank (core/fish-tank.js)
   return a;
 }));
-// The host's wallpaper and floor (game/home-finish.js): [wall, floor] ids or null.
-export const finishMsg = (sel) => 'hv:fin:' + JSON.stringify([sel?.wall || null, sel?.floor || null]);
+// The host's wallpaper, floor and door (game/home-finish.js): [wall, floor, door] ids or null.
+export const finishMsg = (sel) => 'hv:fin:' + JSON.stringify([sel?.wall || null, sel?.floor || null, sel?.door || null]);
 export const kickMsg = (id) => 'hv:kick:' + id;
 // A ride photo in a frame (core/ride-photos.js): its picture, sent once to
 // the people in the room (the layout only names it).
@@ -34,7 +34,7 @@ export function parseVisitMsg(e) {
   if (typeof e !== 'string' || !e.startsWith('hv:')) return null;
   if (e.startsWith('hv:kick:')) return { kick: e.slice(8) };
   if (e.startsWith('hv:ph:')) { const id = e.slice(6, 42), src = e.slice(43); return isPhotoId(id) && e[42] === ':' && okSrc(src) ? { ph: { id, src } } : null; }
-  if (e.startsWith('hv:fin:')) { try { const [wall, floor] = JSON.parse(e.slice(7)); return { fin: { wall, floor } }; } catch { return null; } }
+  if (e.startsWith('hv:fin:')) { try { const [wall, floor, door] = JSON.parse(e.slice(7)); return { fin: { wall, floor, door } }; } catch { return null; } }
   if (e.startsWith('hv:lay:')) { try { const a = JSON.parse(e.slice(7)); return Array.isArray(a) ? { lay: a.slice(0, 80) } : null; } catch { return null; } }
   return null;
 }

@@ -575,6 +575,7 @@ export const HI = {
   "home.grow": "घर बड़ा करें",
   "finish.wall": "वॉलपेपर",
   "finish.floor": "फ़र्श",
+  "finish.door": "दरवाज़ा",
   "finish.basic": "बेसिक",
   "finish.where": "यूलजिरो फ़र्नीचर स्ट्रीट की वॉलपेपर दुकानों से वॉलपेपर और फ़र्श ख़रीदें।",
   "home.size": "{w}×{d} मी",

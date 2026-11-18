@@ -573,6 +573,7 @@ export const FR = {
   "home.grow": "Agrandir la maison",
   "finish.wall": "Papier peint",
   "finish.floor": "Sol",
+  "finish.door": "Porte",
   "finish.basic": "De base",
   "finish.where": "Achète du papier peint et des sols dans les boutiques de papier peint de la rue des meubles d'Euljiro.",
   "home.size": "{w}×{d} m",

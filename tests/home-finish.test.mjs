@@ -13,13 +13,13 @@ import { finishMsg, parseVisitMsg } from '../src/game/home-visits.js';
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 const SHOPS = ['hanok-jimulpo', 'eulji-retro-wall', 'saebyeok-interior'];
 
-test('three shops, three wallpapers and three floors each, every finish sold once with a price', () => {
+test('three shops, three wallpapers, three floors and two doors each, every finish sold once with a price', () => {
   const shops = stores.filter((s) => SHOPS.includes(s.id));
   assert.equal(shops.length, 3);
   for (const s of shops) {
     assert.equal(s.district, 'euljiro', s.id);
     const kinds = s.products.map((p) => FINISHES.find((f) => f.id === p.furniture)?.kind);
-    assert.deepEqual(kinds.sort(), ['floor', 'floor', 'floor', 'wall', 'wall', 'wall'], s.id);
+    assert.deepEqual(kinds.sort(), ['door', 'door', 'floor', 'floor', 'floor', 'wall', 'wall', 'wall'], s.id);
   }
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, FINISHES.length);
@@ -45,21 +45,24 @@ test('every finish has a pattern', () => {
 });
 
 test('the choice only takes a finish of the right kind that you own', () => {
-  const owns = (id) => id === 'wall-sage' || id === 'floor-maru';
-  assert.deepEqual(cleanFinish({ wall: 'wall-sage', floor: 'floor-maru' }, owns), { wall: 'wall-sage', floor: 'floor-maru' });
-  assert.deepEqual(cleanFinish({ wall: 'floor-maru', floor: 'wall-sage' }, owns), { wall: null, floor: null }, 'wrong kind');
-  assert.deepEqual(cleanFinish({ wall: 'wall-white', floor: 'nope' }, owns), { wall: null, floor: null }, 'not owned, unknown');
-  assert.deepEqual(cleanFinish(null), { wall: null, floor: null });
+  const owns = (id) => id === 'wall-sage' || id === 'floor-maru' || id === 'door-arch';
+  assert.deepEqual(cleanFinish({ door: 'door-arch' }, owns).door, 'door-arch');
+  assert.equal(cleanFinish({ door: 'wall-sage' }, owns).door, null, 'a wallpaper is not a door');
+  assert.deepEqual(cleanFinish({ wall: 'wall-sage', floor: 'floor-maru' }, owns), { wall: 'wall-sage', floor: 'floor-maru', door: null });
+  assert.deepEqual(cleanFinish({ wall: 'floor-maru', floor: 'wall-sage' }, owns), { wall: null, floor: null, door: null }, 'wrong kind');
+  assert.deepEqual(cleanFinish({ wall: 'wall-white', floor: 'nope' }, owns), { wall: null, floor: null, door: null }, 'not owned, unknown');
+  assert.deepEqual(cleanFinish(null), { wall: null, floor: null, door: null });
   const store = new Map(), storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
   writeFinish({ wall: 'wall-sage', floor: 'junk' }, storage);
   assert.ok(FINISH_KEY.startsWith('mk.'), 'rides in the account save');
-  assert.deepEqual(readFinish(owns, storage), { wall: 'wall-sage', floor: null });
-  assert.deepEqual(readFinish(() => false, storage), { wall: null, floor: null }, 'sold or lost: back to Basic');
+  assert.deepEqual(readFinish(owns, storage), { wall: 'wall-sage', floor: null, door: null });
+  assert.deepEqual(readFinish(() => false, storage), { wall: null, floor: null, door: null }, 'sold or lost: back to Basic');
 });
 
 test('visitors get the host\'s wallpaper and floor', () => {
-  const m = parseVisitMsg(finishMsg({ wall: 'wall-hanji', floor: null }));
-  assert.deepEqual(m, { fin: { wall: 'wall-hanji', floor: null } });
-  assert.deepEqual(cleanFinish(parseVisitMsg('hv:fin:["<b>",5]').fin), { wall: null, floor: null }, 'junk is Basic');
+  const m = parseVisitMsg(finishMsg({ wall: 'wall-hanji', floor: null, door: 'door-panmun' }));
+  assert.deepEqual(m, { fin: { wall: 'wall-hanji', floor: null, door: 'door-panmun' } });
+  assert.deepEqual(cleanFinish(parseVisitMsg('hv:fin:["wall-hanji",null]').fin), { wall: 'wall-hanji', floor: null, door: null }, 'from a game before doors');
+  assert.deepEqual(cleanFinish(parseVisitMsg('hv:fin:["<b>",5]').fin), { wall: null, floor: null, door: null }, 'junk is Basic');
   assert.equal(parseVisitMsg('hv:fin:{oops'), null);
 });

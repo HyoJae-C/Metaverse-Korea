@@ -191,6 +191,55 @@ const ART = {
     }
     g.fillStyle = '#d8d6d2'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); g.fillRect(0, 127, w, 2); g.fillRect(127, 0, 2, h); // four tiles a square
   }],
+  // --- doors (one canvas is the whole door, 1.6 × 2.4 m) ---
+  'door-changho': [1.6, 128, 192, (g, w, h) => {
+    g.fillStyle = '#7a5434'; g.fillRect(0, 0, w, h); // the frame
+    g.fillStyle = '#f6efdc'; g.fillRect(10, 10, w - 20, h - 20); // hanji
+    g.fillStyle = '#8a6440';
+    for (let x = 16; x < w - 12; x += 9) g.fillRect(x, 10, 3, h - 20); // 띠살: close slats
+    for (const y of [34, 92, 150]) for (let k = 0; k < 3; k++) g.fillRect(10, y + k * 7, w - 20, 3); // three bands of three
+    g.fillStyle = '#6e4c2e'; g.fillRect(w / 2 - 2, 10, 4, h - 20); // two leaves meet
+    g.strokeStyle = '#3a3a40'; g.lineWidth = 3; g.beginPath(); g.arc(w / 2 - 10, 104, 6, 0, Math.PI * 2); g.stroke(); // 문고리 rings
+    g.beginPath(); g.arc(w / 2 + 10, 104, 6, 0, Math.PI * 2); g.stroke();
+  }],
+  'door-panmun': [1.6, 128, 192, (g, w, h) => {
+    for (let x = 0, k = 0; x < w; x += 21, k++) { g.fillStyle = k % 2 ? '#8a5a32' : '#94643a'; g.fillRect(x, 0, 21, h); g.fillStyle = 'rgba(40,20,10,0.6)'; g.fillRect(x, 0, 2, h); } // planks
+    g.fillStyle = '#2b2b31';
+    for (const y of [26, 96, 164]) { g.fillRect(4, y, w - 8, 8); for (let x = 12; x < w; x += 24) { g.beginPath(); g.arc(x, y + 4, 3, 0, Math.PI * 2); g.fillStyle = '#4a4a52'; g.fill(); g.fillStyle = '#2b2b31'; } } // iron straps, studs
+    g.strokeStyle = '#2b2b31'; g.lineWidth = 4; g.beginPath(); g.arc(w - 26, 110, 9, 0, Math.PI * 2); g.stroke(); // a ring pull
+  }],
+  'door-steel': [1.6, 128, 192, (g, w, h) => {
+    g.fillStyle = '#3f7a5a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#d8e2e6'; g.fillRect(22, 18, w - 44, 62); // frosted glass
+    g.fillStyle = 'rgba(255,255,255,0.5)'; for (let y = 22; y < 78; y += 6) for (let x = 26 + (y % 12); x < w - 24; x += 12) g.fillRect(x, y, 3, 3); // its pattern
+    g.strokeStyle = '#2f6048'; g.lineWidth = 4; g.strokeRect(22, 18, w - 44, 62); g.strokeRect(22, 100, w - 44, 76); // raised panels
+    g.fillStyle = '#c0c4ca'; g.fillRect(w - 30, 90, 18, 5); g.fillRect(w - 26, 86, 6, 14); // lever handle
+  }],
+  'door-diamond': [1.6, 128, 192, (g, w, h) => {
+    g.fillStyle = '#a8743e'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(90,55,25,0.25)'; for (let x = 6; x < w; x += 10) g.fillRect(x, 0, 1, h); // grain
+    g.fillStyle = '#7a4e26'; g.beginPath(); g.moveTo(w / 2, 10); g.lineTo(w - 22, 52); g.lineTo(w / 2, 94); g.lineTo(22, 52); g.fill(); // the frame round the glass
+    g.fillStyle = '#d8e4e8'; g.beginPath(); g.moveTo(w / 2, 18); g.lineTo(w - 32, 52); g.lineTo(w / 2, 86); g.lineTo(32, 52); g.fill(); // diamond of frosted glass
+    g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 1; for (let k = -40; k < 40; k += 8) { g.beginPath(); g.moveTo(w / 2 + k, 30); g.lineTo(w / 2 + k + 12, 74); g.stroke(); }
+    g.strokeStyle = '#7a4e26'; g.lineWidth = 4; g.strokeRect(20, 110, w - 40, 66); // panel below
+    g.fillStyle = '#c9a227'; g.beginPath(); g.arc(w - 22, 104, 6, 0, Math.PI * 2); g.fill(); // brass knob
+  }],
+  'door-white': [1.6, 128, 192, (g, w, h) => {
+    g.fillStyle = '#f6f5f1'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(0,0,0,0.08)'; g.lineWidth = 2; g.strokeRect(14, 14, w - 28, h - 28); // a faint shadow line
+    g.fillStyle = '#2a2a2e'; g.fillRect(w - 24, 50, 5, 96); // the long black handle
+  }],
+  'door-arch': [1.6, 128, 192, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.save(); g.beginPath(); g.moveTo(0, h); g.lineTo(0, w / 2); g.arc(w / 2, w / 2, w / 2, Math.PI, 0); g.lineTo(w, h); g.closePath(); g.clip(); // round top: the corners stay clear
+    g.fillStyle = '#c89a66'; g.fillRect(0, 0, w, h);
+    for (let x = 0, k = 0; x < w; x += 16, k++) { g.fillStyle = k % 2 ? 'rgba(120,80,40,0.18)' : 'rgba(255,240,220,0.12)'; g.fillRect(x, 0, 16, h); } // oak boards
+    g.strokeStyle = '#8a6440'; g.lineWidth = 6; g.beginPath(); g.moveTo(3, h); g.lineTo(3, w / 2); g.arc(w / 2, w / 2, w / 2 - 3, Math.PI, 0); g.lineTo(w - 3, h); g.stroke(); // the frame
+    g.fillStyle = '#d8e8ee'; g.beginPath(); g.arc(w / 2, 44, 14, 0, Math.PI * 2); g.fill(); // a little round window
+    g.strokeStyle = '#8a6440'; g.lineWidth = 3; g.stroke();
+    g.restore();
+    g.fillStyle = '#c9a227'; g.beginPath(); g.arc(w - 22, 112, 6, 0, Math.PI * 2); g.fill(); // brass knob
+  }],
 };
 export const FINISH_ART_IDS = Object.keys(ART);
 
@@ -217,18 +266,23 @@ export function finishTexture(id, w, h) {
   const art = ART[id], f = finishById(id);
   if (!art || !f) return null;
   const t = baseTexture(id).clone();
-  if (f.kind === 'wall') t.repeat.set(w / art[0], 1);
+  if (f.kind === 'door') t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; // (one door, not a pattern)
+  else if (f.kind === 'wall') t.repeat.set(w / art[0], 1);
   else t.repeat.set(w / art[0], h / art[0]);
   if (id === 'floor-herringbone') t.rotation = Math.PI / 4; // planks at 45°, like a real herringbone floor
   return t;
 }
 
-// Put a choice ({ wall, floor }, ids or null) on a home built by
-// core/interior.js (built.homeWalls, built.homeFloor). Null: the room's own look.
+// A door's material: an arched door's corners show the wall behind it.
+const doorMaterial = (id) => new THREE.MeshLambertMaterial({ map: finishTexture(id, 1.6, 2.4), alphaTest: 0.5 });
+
+// Put a choice ({ wall, floor, door }, ids or null) on a home built by
+// core/interior.js (built.homeWalls, built.homeFloor, built.homeDoor). Null:
+// the room's own look.
 export function applyFinish(built, sel) {
   const walls = built.homeWalls, floor = built.homeFloor;
   if (!walls || !floor) return;
-  const base = (built.finishBase ||= { wall: walls[0].mesh.material, trim: walls[0].trim?.material, floor: floor.material, now: {} });
+  const base = (built.finishBase ||= { wall: walls[0].mesh.material, trim: walls[0].trim?.material, floor: floor.material, door: built.homeDoor?.material, now: {} });
   if (base.now.wall !== sel.wall) {
     for (const wl of walls) {
       const old = wl.mesh.material;
@@ -245,13 +299,27 @@ export function applyFinish(built, sel) {
     floor.material = sel.floor ? new THREE.MeshLambertMaterial({ map: finishTexture(sel.floor, w, d) }) : base.floor;
     base.now.floor = sel.floor;
   }
+  const door = built.homeDoor;
+  if (door && base.now.door !== sel.door) { // (the doormat and the clear spot in front stay as they are)
+    const old = door.material;
+    if (old !== base.door) { old.map?.dispose(); old.dispose(); }
+    door.material = sel.door ? doorMaterial(sel.door) : base.door;
+    base.now.door = sel.door;
+  }
 }
 
-// A sample in the wallpaper shop: a wall panel standing up, or a patch of
-// floor with a low edge. Returns a group, about 1.5 m across, facing +z.
+// A sample in the wallpaper shop: a wall panel standing up, a patch of
+// floor with a low edge, or a door hung on the wall. Returns a group, about
+// 1.5 m across, facing +z.
 export function finishSample(id) {
   const f = finishById(id), g = new THREE.Group();
   if (!f) return g;
+  if (f.kind === 'door') {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.4), doorMaterial(id));
+    m.position.y = 1.2;
+    g.add(m);
+    return g;
+  }
   const frame = new THREE.MeshLambertMaterial({ color: '#6a5a4a' });
   const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); g.add(o); return o; };
   if (f.kind === 'wall') {

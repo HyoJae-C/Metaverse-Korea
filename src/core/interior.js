@@ -384,6 +384,7 @@ export function buildInterior(store) {
     ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
     : store.products;
   const triedSeats = []; // seats on furniture for sale (below)
+  let doorSlot = 0; // (wallpaper shops: door samples on the front wall)
   (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
@@ -405,6 +406,14 @@ export function buildInterior(store) {
     // tried: sit or lie on them.
     // Wallpaper shops: a wall panel or a patch of floor for each, back to
     // the wall (core/home-finish-art.js).
+    if (product.model === 'finish' && finishById(product.furniture)?.kind === 'door') { // doors hang on the front wall, beside the way out
+      const g = finishSample(product.furniture), dx = -(doorSlot++ % 2 ? Math.min(w / 2 - 0.85, 3.65) : 1.95); // (both on the side away from the counter)
+      g.position.set(EXIT.x + dx, 0, d / 2 - 0.04);
+      g.rotation.y = Math.PI;
+      scene.add(g);
+      products.push({ product, mesh: g, pos: new THREE.Vector3(EXIT.x + dx, 0, d / 2 - 1.2) });
+      return;
+    }
     if (product.model === 'finish') {
       const g = finishSample(product.furniture);
       const lz = -(ry === 0 ? bz + d / 2 : w / 2 - sx) + 0.35 + (finishById(product.furniture)?.kind === 'wall' ? 0 : 0.6);
@@ -2216,6 +2225,6 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  const home = store.category === 'home' ? { homeWalls, homeFloor: floor } : null; // (wallpaper and flooring: core/home-finish-art.js)
+  const home = store.category === 'home' ? { homeWalls, homeFloor: floor, homeDoor: door } : null; // (wallpaper and flooring: core/home-finish-art.js)
   return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit, ...home };
 }

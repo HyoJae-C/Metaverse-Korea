@@ -573,6 +573,7 @@ export const JA = {
   "home.grow": "お部屋を広げる",
   "finish.wall": "壁紙",
   "finish.floor": "床",
+  "finish.door": "ドア",
   "finish.basic": "ベーシック",
   "finish.where": "壁紙と床材は乙支路の家具通りの壁紙店で買えます。",
   "home.size": "{w}×{d} m",
