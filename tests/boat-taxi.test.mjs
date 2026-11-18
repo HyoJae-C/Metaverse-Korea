@@ -131,16 +131,17 @@ test('the line is the real route, on the water all the way, through each berth',
   for (const p of data.piers) { const d = pointAt(data.route, lens, p.s); assert.ok(Math.hypot(d.x - p.berth[0], d.z - p.berth[1]) < 0.2, `${p.id} berth on the line`); }
 });
 
-test('the timetable: a boat every 4 minutes each way at every pier (Yozi 2026-11-18), stopping at each', () => {
+test('the timetable: a boat every 2 minutes each way at every pier (Yozi 2026-11-18), stopping at each', () => {
   const { piers } = data, tt = timetable(piers);
-  assert.equal(BOAT_TAXI.every, 240);
-  assert.ok(tt.boats >= 3 && tt.boats <= 6, `${tt.boats} boats`);
+  const E = BOAT_TAXI.every;
+  assert.equal(E, 120);
+  assert.ok(tt.boats >= 2 && tt.boats <= 6, `${tt.boats} boats`);
   assert.ok(tt.end >= BOAT_TAXI.minEnd, 'a wait at each end');
   assert.ok(Math.abs(tt.legs.at(-1).t1 - tt.round) < 1e-6);
   for (let i = 0; i < piers.length; i++) {
     for (const dir of [1, -1]) {
       if ((i === piers.length - 1 && dir === 1) || (i === 0 && dir === -1)) continue;
-      // Over an hour, a boat that way calls here every 240 s.
+      // Over an hour, a boat that way calls here every E s.
       const calls = [];
       let was = true;
       for (let t = 0; t < 3600; t += 1) {
@@ -148,13 +149,13 @@ test('the timetable: a boat every 4 minutes each way at every pier (Yozi 2026-11
         if (here && !was) calls.push(t); // a boat comes in
         was = here;
       }
-      assert.ok(calls.length >= 14, `pier ${i} dir ${dir}: ${calls.length} calls an hour`);
-      for (let k = 1; k < calls.length; k++) assert.ok(Math.abs(calls[k] - calls[k - 1] - 240) <= 1, `pier ${i} dir ${dir}: ${calls[k] - calls[k - 1]}`);
-      for (let t = 0; t < 600; t += 37) { const nb = nextBoat(tt, i, dir, 1e6 + t); assert.ok(nb.wait <= 240 && nb.leaves > nb.wait, 'never more than 4 minutes'); }
+      assert.ok(calls.length >= 3600 / E - 2, `pier ${i} dir ${dir}: ${calls.length} calls an hour`);
+      for (let k = 1; k < calls.length; k++) assert.ok(Math.abs(calls[k] - calls[k - 1] - E) <= 1, `pier ${i} dir ${dir}: ${calls[k] - calls[k - 1]}`);
+      for (let t = 0; t < 600; t += 37) { const nb = nextBoat(tt, i, dir, 1e6 + t); assert.ok(nb.wait <= E && nb.leaves > nb.wait, 'never more than one headway'); }
     }
   }
   const whole = rideTime(tt, 0, piers.length - 1);
-  assert.ok(whole > 240 && whole < 360, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
+  assert.ok(whole > 150 && whole < 240, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
   assert.ok(Math.abs(rideTime(tt, 2, 3) - rideTime(tt, 3, 2)) < 1e-6);
 });
 
@@ -172,5 +173,26 @@ test('the boats glide (no jumps), keep apart, and stay on the water all round', 
     });
     for (let a = 0; a < ps.length; a++) for (let b = a + 1; b < ps.length; b++) assert.ok(Math.hypot(ps[a].x - ps[b].x, ps[a].z - ps[b].z) > 4, `boats ${a} and ${b} touch at ${t} (${ps[a].x.toFixed(0)}, ${ps[a].z.toFixed(0)})`);
     prev.splice(0, prev.length, ...ps);
+  }
+});
+
+test('on the way the boats keep facing along the river, and lie clear of every deck (Yozi 2026-11-18)', async () => {
+  const { boatPoseOnRiver } = await import('../src/core/boat-taxi.js');
+  const { piers, route } = data, lens = lineLengths(route), last = piers.length - 1;
+  const B = { l: 12, w: 4 };
+  for (const dir of [1, -1]) {
+    let prev = null;
+    for (let s = 0; s <= lens.at(-1); s += 1) {
+      const q = boatPoseOnRiver(route, lens, piers, s, dir, B), fx = Math.sin(q.ry), fz = Math.cos(q.ry);
+      for (const [u, v] of [[6, 2], [6, -2], [-6, 2], [-6, -2], [0, 2], [0, -2], [3, 2], [3, -2], [-3, 2], [-3, -2], [6, 0], [-6, 0]]) {
+        const x = q.x + fx * u + fz * v, z = q.z + fz * u - fx * v;
+        for (const p of piers) assert.ok(!pointInPoly(x, z, p.dock), `boat (dir ${dir}) on ${p.id}'s deck at s ${s}`);
+        assert.ok(inWater(x, z), `boat (dir ${dir}) on the water at s ${s}`);
+      }
+      // No swinging round at a pier on the way: under 12° a metre.
+      const away = piers.every((p, i) => (i !== 0 && i !== last) || Math.abs(s - p.s) > 90);
+      if (prev != null && away) { let d = q.ry - prev; d = Math.atan2(Math.sin(d), Math.cos(d)); assert.ok(Math.abs(d) < 0.21, `turns ${(d * 57.3).toFixed(0)}° at s ${s} (dir ${dir})`); }
+      prev = q.ry;
+    }
   }
 });
