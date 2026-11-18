@@ -376,13 +376,23 @@ export function createDecor(game) {
   // action button's list; a carried piece is put down with the same button.
   function pieceActs(p) {
     if (!decor || decor.guest || decor.editing || decor.carry) return [];
-    const it = nearestPiece(p, 1.1);
-    if (!it) return [];
-    const k = decor.items.indexOf(it), f = furnitureById(it.id), name = f.emoji + ' ' + localName(f.name, getLanguage());
-    return [
-      { key: 'piece-carry:' + k, label: '✋ ' + t('home.carry') + ' · ' + name, run: () => { openPiece(it, true); startCarry(); } },
-      { key: 'piece-away:' + k, label: '🗑️ ' + t('home.remove') + ' · ' + name, run: () => { openPiece(it); removePiece(); } },
-    ];
+    // Two pieces at most: the one whose edge is nearest (a rug underfoot
+    // counts last) and the one whose middle is nearest, so a little teddy
+    // on a table or a lamp by the sofa gets its own buttons too.
+    let byEdge = null, be = 1.1, byMid = null, bm = 0.9;
+    for (const it of decor.items) {
+      const f = furnitureById(it.id), mid = Math.hypot(p.x - it.x, p.z - it.z);
+      const edge = mid - Math.max(...f.size) / 2 + (f.walkable ? 1 : 0);
+      if (edge < be) { be = edge; byEdge = it; }
+      if (mid < bm) { bm = mid; byMid = it; }
+    }
+    return [...new Set([byMid, byEdge].filter(Boolean))].flatMap((it) => {
+      const k = decor.items.indexOf(it), f = furnitureById(it.id), name = f.emoji + ' ' + localName(f.name, getLanguage());
+      return [
+        { key: 'piece-carry:' + k, label: '✋ ' + t('home.carry') + ' · ' + name, run: () => { openPiece(it, true); startCarry(); } },
+        { key: 'piece-away:' + k, label: '🗑️ ' + t('home.remove') + ' · ' + name, run: () => { openPiece(it); removePiece(); } },
+      ];
+    });
   }
   // Who may visit this home: everyone, friends (the default) or nobody.
   // Kept in mk.homeVisit (it rides in the account save); game/home-visits.js
