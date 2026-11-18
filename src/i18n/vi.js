@@ -657,6 +657,7 @@ export const VI = {
   'lang.choose': 'Chọn ngôn ngữ',
   'lang.change': 'Ngôn ngữ',
   'start.region': 'Điểm đến đầu tiên: {region}, {city}',
+  'start.survey': '🎨 Đăng ký cùng trang trí Modu Seoul',
   'start.where': 'Bạn muốn làm gì trước?',
   'start.tour': 'Tham quan · Bukchon',
   'start.shop': 'Mua sắm & làm đẹp · Seongsu',

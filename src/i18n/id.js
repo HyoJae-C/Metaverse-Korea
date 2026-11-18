@@ -657,6 +657,7 @@ export const ID = {
   'lang.choose': 'Pilih bahasamu',
   'lang.change': 'Bahasa',
   'start.region': 'Pemberhentian pertama: {region}, {city}',
+  'start.survey': '🎨 Daftar untuk menghias Modu Seoul bersama kami',
   'start.where': 'Mau ngapain dulu?',
   'start.tour': 'Wisata · Bukchon',
   'start.shop': 'Belanja & gaya · Seongsu',

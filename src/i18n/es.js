@@ -656,6 +656,7 @@ export const ES = {
   'lang.choose': 'Elige tu idioma',
   'lang.change': 'Idioma',
   'start.region': 'Primera parada: {region}, {city}',
+  'start.survey': '🎨 Solicita decorar Modu Seoul con nosotros',
   'start.where': '¿Qué quieres hacer primero?',
   'start.tour': 'Turismo · Bukchon',
   'start.shop': 'Compras y estilo · Seongsu',

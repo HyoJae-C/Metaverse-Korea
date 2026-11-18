@@ -657,6 +657,7 @@ export const HI = {
   'lang.choose': 'अपनी भाषा चुनें',
   'lang.change': 'भाषा',
   'start.region': 'पहला पड़ाव: {region}, {city}',
+  'start.survey': '🎨 हमारे साथ Modu Seoul सजाने के लिए आवेदन करें',
   'start.where': 'पहले क्या करना चाहेंगे?',
   'start.tour': 'घूमना · बुकचोन',
   'start.shop': 'शॉपिंग और स्टाइल · सोंगसू',
