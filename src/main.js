@@ -1502,7 +1502,7 @@ function watchWeatherSetting() {
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
 // ---------- Multiplayer ----------
-const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => { sky.remote(q, all, dt); zooVisit.peer(q); } };
+const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => { sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q); } };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you.
@@ -6103,7 +6103,7 @@ const seoulDal = createSeoulDalNear({
 // The Han River Boat Taxi between the real Han River Bus piers (game/boat-taxi-near.js
 // loads game/boat-taxi.js near a pier).
 const boatTaxi = createBoatTaxiNear({
-  data: map.boatTaxi, scene, cam, get me() { return me; }, get mode() { return mode; }, get riding() { return riding; },
+  data: map.boatTaxi, scene, cam, myId, get me() { return me; }, get mode() { return mode; }, get riding() { return riding; },
   others, wallet, shop, hud: $('hud'), missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 });
 

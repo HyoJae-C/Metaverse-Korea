@@ -2,7 +2,7 @@
 // you to sail by on one), then loads the piers, the boats and the ride
 // (game/boat-taxi.js). Small on purpose: this is in the first download, the
 // boats are not. The piers come from the map (map.boatTaxi, core/districts.js).
-import { BOAT_TAXI, nearestPier } from '../core/boat-taxi.js';
+import { BOAT_TAXI, nearestPier, skewClock } from '../core/boat-taxi.js';
 
 // game: what createBoatTaxi needs (see game/boat-taxi.js), with `data` the map's boatTaxi.
 export function createBoatTaxiNear(game) {
@@ -25,6 +25,10 @@ export function createBoatTaxiNear(game) {
     act: (p) => boats?.act(p) || null,
     state: (st) => boats?.state(st),
     stop: () => boats?.stop(),
+    peer: (o) => boats?.peer(o), // (someone on a boat: on it on my screen too)
+    skewClock, // (tests only)
+    get loaded() { return !!boats; },
+    get ticket() { return boats?.ticket || null; },
     get busy() { return !!boats?.busy; },
     get openView() { return !!boats?.openView; }, // (on a boat or a pier: the river behind doesn't pull the camera in)
   };

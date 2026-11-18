@@ -10,7 +10,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { loadRegionMap } = await import('../src/core/districts.js');
 const { CollisionMap, pointInPoly } = await import('../src/core/collision.js');
 const { toGame } = await import('../src/core/seoul-grid.js');
-const { BOAT_TAXI, lineLengths, pointAt, planTrip, tripAt, pierAt } = await import('../src/core/boat-taxi.js');
+const { BOAT_TAXI, lineLengths, pointAt, timetable, boatAt, boatPose, nextBoat, rideTime, pierAt } = await import('../src/core/boat-taxi.js');
 const { buildBoatTaxi, PIERS, BOAT: BUILD_BOAT } = await import('../scripts/build-boat-taxi.mjs');
 const { buildHanPark } = await import('../src/core/han-park.js');
 const { clearBridges } = await import('../src/game/han-parks.js');
@@ -131,21 +131,46 @@ test('the line is the real route, on the water all the way, through each berth',
   for (const p of data.piers) { const d = pointAt(data.route, lens, p.s); assert.ok(Math.hypot(d.x - p.berth[0], d.z - p.berth[1]) < 0.2, `${p.id} berth on the line`); }
 });
 
-test('a trip: speeds up, cruises, slows into the other pier; both ways', () => {
-  const { piers } = data;
-  for (const [i, j] of [[0, 5], [5, 0], [2, 3], [3, 2]]) {
-    const trip = planTrip(piers, i, j);
-    assert.ok(trip.time > 0 && trip.len === Math.abs(piers[j].s - piers[i].s));
-    let last = -1;
-    for (let t = 0; t <= trip.time + 0.5; t += 0.25) {
-      const a = tripAt(trip, t);
-      assert.ok(a.d >= last - 1e-9 && a.d <= trip.len + 1e-9 && a.v <= BOAT_TAXI.speed + 1e-9);
-      last = a.d;
+test('the timetable: a boat every 4 minutes each way at every pier (Yozi 2026-11-18), stopping at each', () => {
+  const { piers } = data, tt = timetable(piers);
+  assert.equal(BOAT_TAXI.every, 240);
+  assert.ok(tt.boats >= 4 && tt.boats <= 6, `${tt.boats} boats`);
+  assert.ok(tt.end >= BOAT_TAXI.minEnd, 'a wait at each end');
+  assert.ok(Math.abs(tt.legs.at(-1).t1 - tt.round) < 1e-6);
+  for (let i = 0; i < piers.length; i++) {
+    for (const dir of [1, -1]) {
+      if ((i === piers.length - 1 && dir === 1) || (i === 0 && dir === -1)) continue;
+      // Over an hour, a boat that way calls here every 240 s.
+      const calls = [];
+      let was = true;
+      for (let t = 0; t < 3600; t += 1) {
+        const here = [...Array(tt.boats).keys()].some((b) => { const st = boatAt(tt, piers, b, 1e6 + t); return st.at === i && st.dir === dir; });
+        if (here && !was) calls.push(t); // a boat comes in
+        was = here;
+      }
+      assert.ok(calls.length >= 14, `pier ${i} dir ${dir}: ${calls.length} calls an hour`);
+      for (let k = 1; k < calls.length; k++) assert.ok(Math.abs(calls[k] - calls[k - 1] - 240) <= 1, `pier ${i} dir ${dir}: ${calls[k] - calls[k - 1]}`);
+      for (let t = 0; t < 600; t += 37) { const nb = nextBoat(tt, i, dir, 1e6 + t); assert.ok(nb.wait <= 240 && nb.leaves > nb.wait, 'never more than 4 minutes'); }
     }
-    assert.ok(tripAt(trip, trip.time).done && Math.abs(tripAt(trip, trip.time - 1e-6).d - trip.len) < 0.01, 'ends at the pier');
   }
-  const whole = planTrip(piers, 0, 5);
-  assert.ok(whole.time > 300 && whole.time < 420, `end to end in ${Math.round(whole.time)} s`);
-  assert.ok(whole.time / BOAT_TAXI.fast < 180, 'under 3 minutes with ⏩');
-  assert.ok(BOAT_TAXI.speed * BOAT_TAXI.fast < 40, 'slow enough for others to see you glide (core/players.js)');
+  const whole = rideTime(tt, 0, piers.length - 1);
+  assert.ok(whole > 420 && whole < 600, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
+  assert.ok(Math.abs(rideTime(tt, 2, 3) - rideTime(tt, 3, 2)) < 1e-6);
+});
+
+test('the boats glide (no jumps), keep apart, and stay on the water all round', () => {
+  const { piers, route } = data, tt = timetable(piers), lens = lineLengths(route);
+  const pose = (b, now) => { const st = boatAt(tt, piers, b, now); return { ...st, ...boatPose(route, lens, piers, st.s, st.dir) }; };
+  const prev = [];
+  for (let t = 0; t < tt.round; t += 0.5) {
+    const ps = [...Array(tt.boats).keys()].map((b) => pose(b, 5e5 + t));
+    ps.forEach((p, b) => {
+      assert.ok(inWater(p.x, p.z), `boat ${b} on the water at ${t}`);
+      for (const pr of piers) assert.ok(!pointInPoly(p.x, p.z, pr.dock), `boat ${b} not on ${pr.id}'s deck`);
+      const q = prev[b];
+      if (q && q.dir === p.dir) assert.ok(Math.hypot(p.x - q.x, p.z - q.z) < BOAT_TAXI.speed * 0.5 * 1.5, `boat ${b} jumps at ${t}`); // (outside a bend, 7 m off the line, a boat goes a little faster)
+    });
+    for (let a = 0; a < ps.length; a++) for (let b = a + 1; b < ps.length; b++) assert.ok(Math.hypot(ps[a].x - ps[b].x, ps[a].z - ps[b].z) > 4, `boats ${a} and ${b} touch at ${t} (${ps[a].x.toFixed(0)}, ${ps[a].z.toFixed(0)})`);
+    prev.splice(0, prev.length, ...ps);
+  }
 });

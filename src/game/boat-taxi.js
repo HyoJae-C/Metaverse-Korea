@@ -10,22 +10,25 @@
 //              hulls with a navy waterline and a teal band, a glass cabin
 //              in front and an open deck at the back where you stand
 //
-// The ride: on a pier's deck, tap ⛴, pick a pier and pay; the waiting boat
-// leaves with you at once and goes straight there along the real route.
-// ⏩ makes it faster. Others see you sail: "bt" in your state (your spot on
-// the deck, 1 or 2) puts a boat under you on their screens.
+// The ride: on a pier's deck, tap ⛴, pick a pier and buy a ticket. The
+// boats run to a timetable (core/boat-taxi.js: one every 4 minutes each way,
+// stopping at every pier), the same on every screen; wait on the deck and
+// you get on when the boat going your way ties up, and off at your pier.
+// Everyone who bought a ticket rides the same boat. "bt" in your state (the
+// boat + 1) puts you on that boat on others' screens, at your spot on the
+// back deck (from your id).
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex } from '../core/three-kit.js';
 import { bakeColors } from '../core/merge-static.js';
-import { BOAT_TAXI, lineLengths, pointAt, planTrip, tripAt, tripMinutes, pierAt } from '../core/boat-taxi.js';
+import { BOAT_TAXI, clock, lineLengths, timetable, boatAt, boatPose, nextBoat, rideTime, pierAt } from '../core/boat-taxi.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
 
 const mat = matCache();
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 export const BOAT = { l: 12, w: 4 }; // (scripts/build-boat-taxi.mjs berths it by this size)
 export const DECK_Y = 0.85; // the boat's back deck, where your feet are
-const SEATS = [[-0.75, -3.6], [0.75, -3.6]]; // spots on the back deck (x across, z along: + is the bow)
-const PEERS = 8; // boats for others riding near me
+// Spots on the back deck (x across, z along: + is the bow), two rows of four.
+const SEATS = [[-1.2, -3.0], [-0.4, -3.0], [0.4, -3.0], [1.2, -3.0], [-1.2, -4.4], [-0.4, -4.4], [0.4, -4.4], [1.2, -4.4]];
 const DOCK_Y = 0.09; // the pier's deck (you walk on it at the street's height)
 const SIGN_NEAR = 140; // m: the pier signs are drawn from this close
 
@@ -109,7 +112,7 @@ function buildPier(p, g) {
   g.add(gw);
 }
 
-// game: { scene, cam ({ yaw, pitch, dist }), me, mode, riding, wallet, shop, others, hud, missionEvent(k), resend(), clearAction() }
+// game: { scene, cam ({ yaw, pitch, dist }), me, myId, mode, riding, wallet, shop, others, hud, missionEvent(k), resend(), clearAction() }
 // data: map.boatTaxi (piers, route)
 export function createBoatTaxi(game, data) {
   const piers = data.piers, route = data.route, lens = lineLengths(route);
@@ -129,27 +132,49 @@ export function createBoatTaxi(game, data) {
     return m;
   });
 
-  // The boats: one waiting at each pier, mine, and others'.
+  // The boats: all of them on the timetable, one InstancedMesh.
+  const tt = timetable(piers);
   const { geo, mat: boatMat } = buildBoat();
-  const N = piers.length + 1 + PEERS;
-  const boats = new THREE.InstancedMesh(geo, boatMat, N);
+  const boats = new THREE.InstancedMesh(geo, boatMat, tt.boats);
   boats.name = 'boat-taxi-boats';
   boats.castShadow = true;
   boats.frustumCulled = false; // (they spread over 5 km: the sphere would always hold the camera anyway)
   game.scene.add(boats);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), none = new THREE.Vector3(0, 0, 0);
-  const put = (i, x, z, ry, bob = 0, roll = 0) => {
-    e.set(0, ry, roll, 'YXZ');
-    boats.setMatrixAt(i, m4.compose(pos.set(x, bob, z), q.setFromEuler(e), one));
-  };
-  const hide = (i) => boats.setMatrixAt(i, m4.compose(pos.set(0, -50, 0), q.identity(), none));
-  // Each pier's boat lies alongside its deck, bow east (bry, scripts/build-boat-taxi.mjs).
-  const berthRy = piers.map((p) => p.bry);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pos = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1);
+  const last = piers.length - 1;
 
-  let ride = null; // { trip, t, seat, fast, ry, paid }
+  // Boat b now: where it is on the water ({ x, z, ry }) and what it is doing (boatAt).
+  // Its heading follows the line over ±6 m (no snap at the line's corners);
+  // at an end pier it turns round in its first TURN seconds there.
+  const TURN = 15;
+  const poseAt = (s, dir) => {
+    const a = boatPose(route, lens, piers, s - 6, dir, BOAT.w), b = boatPose(route, lens, piers, s + 6, dir, BOAT.w), c = boatPose(route, lens, piers, s, dir, BOAT.w);
+    return { x: c.x, z: c.z, ry: Math.atan2((b.x - a.x) * dir, (b.z - a.z) * dir) };
+  };
+  function boatNow(b, now) {
+    const st = boatAt(tt, piers, b, now);
+    let ps = poseAt(st.s, st.dir);
+    if ((st.at === 0 || st.at === last) && st.into < TURN) {
+      const from = poseAt(st.s, -st.dir), k = st.into / TURN, f = k * k * (3 - 2 * k);
+      let d = ps.ry - from.ry;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      ps = { x: from.x + (ps.x - from.x) * f, z: from.z + (ps.z - from.z) * f, ry: from.ry + d * f };
+    }
+    return { ...st, ...ps };
+  }
+
+  let ticket = null; // { from, to, dir }: bought, waiting on the pier
+  let aboard = null; // { boat, at: [x, z] (where I was put last frame) }
   let panel = null;
   const pierName = (p) => t('boat.pier', { pier: localName(p.name, getLanguage()) });
-  const clock = () => performance.now() / 1000;
+  const mmss = (sec) => { const n = Math.max(0, Math.ceil(sec)); return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
+  // My spot on the back deck (the same on every screen: from my id).
+  const seatOf = (id) => { let h = 7; for (const ch of String(id || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h % SEATS.length; };
+  const mySeat = () => seatOf(game.myId);
+  const seatAt = (bx, bz, ry, k) => {
+    const [sx, sz] = SEATS[k] || SEATS[0], c = Math.cos(ry), s = Math.sin(ry);
+    return [bx + sx * c + sz * s, bz - sx * s + sz * c];
+  };
 
   function closePanel() { if (panel) panel.hidden = true; }
   function openPanel(i) {
@@ -162,7 +187,8 @@ export function createBoatTaxi(game, data) {
     }
     panel.hidden = false;
     panel.querySelector('strong').textContent = '⛴ ' + t('boat.name') + ' · ' + pierName(piers[i]);
-    panel.querySelector('p').textContent = t('boat.pick', { fare: BOAT_TAXI.fare.toLocaleString() });
+    panel.querySelector('p').textContent = t('boat.pick', { fare: BOAT_TAXI.fare.toLocaleString(), n: Math.round(BOAT_TAXI.every / 60) });
+    const now = clock();
     const list = panel.querySelector('.visit-list');
     list.replaceChildren(...piers.map((p, j) => {
       if (j === i) return null;
@@ -170,136 +196,120 @@ export function createBoatTaxi(game, data) {
       const n = document.createElement('span');
       n.textContent = (j < i ? '⬅️ ' : '➡️ ') + pierName(p);
       const m = document.createElement('small');
-      m.textContent = t('boat.min', { n: tripMinutes(planTrip(piers, i, j)) });
+      const nb = nextBoat(tt, i, j > i ? 1 : -1, now);
+      m.textContent = t('boat.next', { t: mmss(nb?.wait || 0), n: Math.max(1, Math.round(rideTime(tt, i, j) / 60)) });
       b.append(n, m);
-      b.onclick = () => board(i, j);
+      b.onclick = () => buy(i, j);
       return b;
     }).filter(Boolean));
   }
 
-  function board(i, j) {
+  function buy(i, j) {
     closePanel();
-    if (ride || game.mode !== 'street') return;
+    if (aboard || game.mode !== 'street') return;
     if (!game.wallet.spend(BOAT_TAXI.fare, { k: 'ledger.boatTaxi' })) { game.shop.toast(t('ride.noCoins', { n: BOAT_TAXI.fare.toLocaleString() })); return; }
-    const trip = planTrip(piers, i, j);
-    ride = { trip, t: 0, seat: Math.random() < 0.5 ? 0 : 1, fast: false, ry: trip.dir > 0 ? berthRy[i] : berthRy[i] + Math.PI, paid: game.wallet.lastOp };
+    ticket = { from: i, to: j, dir: j > i ? 1 : -1 };
+    game.missionEvent('ride');
+    const nb = nextBoat(tt, i, ticket.dir, clock());
+    game.shop.toast(t('boat.ticket', { pier: pierName(piers[j]), t: mmss(nb?.wait || 0) }));
+    game.clearAction();
+  }
+
+  function board(b, ry) {
+    aboard = { boat: b, at: null };
     // The camera behind the boat, a little above, to see the river ahead.
     const cam = game.cam;
-    if (cam) { cam.yaw = ride.ry + Math.PI; cam.pitch = 0.3; cam.dist = Math.max(cam.dist, 11); }
-    game.missionEvent('ride');
-    game.shop.toast(t('boat.leaving', { pier: pierName(piers[j]) }));
+    if (cam) { cam.yaw = ry + Math.PI; cam.pitch = 0.3; cam.dist = Math.max(cam.dist, 11); }
+    game.shop.toast(t('boat.aboard', { pier: pierName(piers[ticket.to]) }));
     game.resend();
     game.clearAction();
   }
 
-  function arrive() {
-    const p = piers[ride.trip.to];
-    ride = null;
+  function getOff() {
+    const p = piers[ticket.to];
+    aboard = null;
+    ticket = null;
     const me = game.me, c = Math.cos(p.ry), s = Math.sin(p.ry);
-    const [bx, bz] = p.board;
-    me.root.position.set(bx, 0, bz);
+    const k = mySeat(), u = ((k % 4) - 1.5) * 0.9; // (riders step off side by side)
+    me.root.position.set(p.board[0] + s * u, 0, p.board[1] + c * u);
     me.root.rotation.y = Math.atan2(-c, s); // facing the bank
     game.shop.toast(t('boat.arrived', { pier: pierName(p) }));
     game.resend();
     game.clearAction();
   }
 
-  // Where a boat stands for a rider at (x, z) facing ry in seat k: the boat's middle.
-  const boatFor = (x, z, ry, k) => {
-    const [sx, sz] = SEATS[k] || SEATS[0], c = Math.cos(ry), s = Math.sin(ry);
-    return [x - (sx * c + sz * s), z - (-sx * s + sz * c)];
-  };
-  const seatAt = (bx, bz, ry, k) => {
-    const [sx, sz] = SEATS[k] || SEATS[0], c = Math.cos(ry), s = Math.sin(ry);
-    return [bx + sx * c + sz * s, bz - sx * s + sz * c];
-  };
-
-  let shown = 0, onPier = false;
-  function draw(p, now) {
-    const busyBerth = new Set();
-    // Mine.
-    const me = piers.length;
-    if (ride) {
-      const r = game.me.root.position;
-      const [bx, bz] = boatFor(r.x, r.z, ride.ry, ride.seat);
-      put(me, bx, bz, ride.ry, Math.sin(now * 1.7) * 0.04, Math.sin(now * 1.1) * 0.012);
-      piers.forEach((q, i) => { if (Math.hypot(bx - q.berth[0], bz - q.berth[1]) < 14) busyBerth.add(i); });
-    } else hide(me);
-    // Others on a boat, nearest first.
-    const riders = [];
-    for (const [, o] of game.others.players) {
-      const k = o.target?.bt | 0;
-      if (k < 1 || k > 2 || o.hidden) continue;
-      const r = o.ch.root.position;
-      riders.push({ r, ry: o.ch.root.rotation.y, k: k - 1, d: Math.hypot(r.x - p.x, r.z - p.z) });
-    }
-    riders.sort((a, b) => a.d - b.d);
-    for (let i = 0; i < PEERS; i++) {
-      const o = riders[i];
-      if (!o || o.d > 600) { hide(me + 1 + i); continue; }
-      const [bx, bz] = boatFor(o.r.x, o.r.z, o.ry, o.k);
-      put(me + 1 + i, bx, bz, o.ry, Math.sin(now * 1.7 + i) * 0.04);
-      piers.forEach((q, j) => { if (Math.hypot(bx - q.berth[0], bz - q.berth[1]) < 14) busyBerth.add(j); });
-    }
-    // The waiting boats (not while one is pulling out of or into that berth).
-    piers.forEach((q, i) => {
-      if (busyBerth.has(i)) hide(i);
-      else put(i, q.berth[0], q.berth[1], berthRy[i], Math.sin(now * 1.3 + i * 2) * 0.03);
-    });
-    boats.instanceMatrix.needsUpdate = true;
-    shown = riders.length;
-    for (const [i, s] of signs.entries()) s.visible = Math.hypot(piers[i].at[0] - p.x, piers[i].at[1] - p.z) < SIGN_NEAR;
+  // Seconds until my boat is at my pier.
+  function arrivesIn(st) {
+    if (st.at === ticket.to) return 0;
+    if (st.at >= 0) return st.left + rideTime(tt, st.at, ticket.to);
+    return st.left + (st.next === ticket.to ? 0 : BOAT_TAXI.dwell + rideTime(tt, st.next, ticket.to));
   }
 
-  const mmss = (sec) => { const n = Math.max(0, Math.ceil(sec)); return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0'); };
+  let onPier = false;
+  const poses = [];
   return {
-    get busy() { return !!ride; },
-    get riders() { return shown; },
-    get openView() { return !!ride || onPier; },
+    get busy() { return !!aboard; },
+    get openView() { return !!aboard || onPier; },
+    get ticket() { return ticket && { ...ticket }; }, // (for tests)
     // The button: on a pier's deck, or on the boat.
     act(p) {
-      if (ride) {
-        const left = (ride.trip.time - ride.t) / (ride.fast ? BOAT_TAXI.fast : 1);
-        const n = mmss(left);
-        return ride.fast
-          ? { key: 'boat-slow:' + n, label: '🐢 ' + t('boat.normal', { t: n }), run: () => { if (ride) ride.fast = false; } }
-          : { key: 'boat-fast:' + n, label: '⏩ ' + t('boat.faster', { t: n }), run: () => { if (ride) ride.fast = true; } };
+      if (aboard) {
+        const st = poses[aboard.boat];
+        const n = st ? mmss(arrivesIn(st)) : '';
+        return { key: 'boat-ride:' + n, label: '⛴ ' + t('boat.toward', { pier: pierName(piers[ticket.to]), t: n }), run: () => {} };
       }
       if (game.mode !== 'street' || game.riding) return null;
       const i = pierAt(piers, p.x, p.z);
       if (i < 0) { if (panel && !panel.hidden) closePanel(); return null; }
+      if (ticket && ticket.from === i) {
+        const nb = nextBoat(tt, i, ticket.dir, clock()), n = mmss(nb?.wait || 0);
+        return { key: 'boat-wait:' + n, label: '⛴ ' + t('boat.wait', { pier: pierName(piers[ticket.to]), t: n }), run: () => {} };
+      }
       return { key: 'boat-taxi:' + i, label: '⛴ ' + t('boat.name'), run: () => openPanel(i) };
     },
-    // Every frame (after walking): carries me along on the boat, places the boats.
+    // Every frame (after walking): the boats on the timetable; carries me on mine.
     update(dt, p) {
       const now = clock();
-      if (ride) {
-        const me = game.me.root;
-        if (game.mode !== 'street' || (ride.at && Math.hypot(me.position.x - ride.at[0], me.position.z - ride.at[1]) > 20)) ride = null; // (into a shop, or taken off by the map, a taxi, a warp)
+      for (let b = 0; b < tt.boats; b++) {
+        const st = (poses[b] = boatNow(b, now));
+        e.set(0, st.ry, Math.sin(now * 1.1 + b) * 0.012, 'YXZ');
+        boats.setMatrixAt(b, m4.compose(pos.set(st.x, Math.sin(now * 1.6 + b * 2) * 0.04, st.z), q.setFromEuler(e), one));
+      }
+      boats.instanceMatrix.needsUpdate = true;
+      const me = game.me.root;
+      if (aboard) {
+        if (game.mode !== 'street' || (aboard.at && Math.hypot(me.position.x - aboard.at[0], me.position.z - aboard.at[1]) > 20)) { aboard = null; ticket = null; } // (into a shop, or taken off by the map, a taxi, a warp)
         else {
-          ride.t += dt * (ride.fast ? BOAT_TAXI.fast : 1);
-          const at = tripAt(ride.trip, ride.t);
-          if (at.done) arrive();
+          const st = poses[aboard.boat];
+          if (st.at === ticket.to) getOff();
           else {
-            const s = ride.trip.s0 + ride.trip.dir * at.d;
-            const w = pointAt(route, lens, s);
-            const want = Math.atan2(w.dx * ride.trip.dir, w.dz * ride.trip.dir);
-            let d = want - ride.ry;
-            d = Math.atan2(Math.sin(d), Math.cos(d));
-            const turn = d * Math.min(1, dt * 2.5 * (ride.fast ? 2 : 1)); // the bow swings round smoothly
-            ride.ry += turn;
-            if (game.cam) game.cam.yaw += turn; // (the view turns with the boat)
-            const [x, z] = seatAt(w.x, w.z, ride.ry, ride.seat);
-            me.position.set(x, DECK_Y + Math.sin(now * 1.7) * 0.04, z);
-            me.rotation.y = ride.ry;
-            ride.at = [x, z];
+            const [x, z] = seatAt(st.x, st.z, st.ry, mySeat());
+            if (game.cam && aboard.ry != null) { let d = st.ry - aboard.ry; d = Math.atan2(Math.sin(d), Math.cos(d)); game.cam.yaw += d; } // (the view turns with the boat)
+            aboard.ry = st.ry;
+            me.position.set(x, DECK_Y + Math.sin(now * 1.6 + aboard.boat * 2) * 0.04, z);
+            me.rotation.y = st.ry;
+            aboard.at = [x, z];
           }
         }
+      } else if (ticket && game.mode === 'street' && pierAt(piers, p.x, p.z) === ticket.from) {
+        // On the deck with a ticket: the boat going my way is here.
+        const b = poses.findIndex((st) => st.at === ticket.from && st.dir === ticket.dir && st.left > 1);
+        if (b >= 0) board(b, poses[b].ry);
       }
-      onPier = !ride && game.mode === 'street' && pierAt(piers, p.x, p.z, 0.3) >= 0;
-      draw(game.me.root.position, now);
+      onPier = !aboard && game.mode === 'street' && pierAt(piers, p.x, p.z, 0.3) >= 0;
+      for (const [i, s] of signs.entries()) s.visible = Math.hypot(piers[i].at[0] - p.x, piers[i].at[1] - p.z) < SIGN_NEAR;
     },
-    state(st) { if (ride) st.bt = ride.seat + 1; },
-    stop() { ride = null; closePanel(); }, // (a teleport, the map, a taxi)
+    // Someone else on a boat ("bt": the boat + 1): on my screen they stand
+    // on the same boat, at their spot (players.js calls this after moving them).
+    peer(o) {
+      const b = (o.target?.bt | 0) - 1;
+      if (b < 0 || b >= tt.boats || !poses[b]) return;
+      const st = poses[b], r = o.ch.root;
+      const [x, z] = seatAt(st.x, st.z, st.ry, seatOf(o.id));
+      r.position.set(x, DECK_Y, z);
+      r.rotation.y = st.ry;
+    },
+    state(st) { if (aboard) st.bt = aboard.boat + 1; },
+    stop() { aboard = null; closePanel(); }, // (a teleport, the map, a taxi: the ticket stays, unless I was aboard)
   };
 }
