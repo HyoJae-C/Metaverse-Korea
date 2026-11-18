@@ -4,7 +4,8 @@
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, placeRiders, ridersOf, starterLayout, topUnder } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, placeRiders, ridersOf, setPhotoSrc, starterLayout, topUnder } from '../core/furniture.js';
+import { frameId, photoOfFrame } from '../core/ride-photos.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
@@ -29,7 +30,7 @@ export function createDecor(game) {
     try {
       const raw = localStorage.getItem(homeKey(id));
       if (raw == null && room) return starterLayout(room.w, room.d); // never opened: not an empty floor
-      return cleanLayout(JSON.parse(raw || '[]'));
+      return cleanLayout(JSON.parse(raw || '[]')).filter((i) => !photoOfFrame(i.id) || game.photos?.get(photoOfFrame(i.id))); // (a photo thrown away: its frame goes too)
     } catch { return []; }
   }
   function saveDecor() {
@@ -99,6 +100,7 @@ export function createDecor(game) {
     for (const b of $('decor-grid').children) b.classList.toggle('placed', !!decor?.items.some((i) => i.id === b.dataset.id));
   }
   function openHome(store, built) {
+    for (const p of game.photos?.all() || []) setPhotoSrc(p.id, p.src); // (my photos in their frames)
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
     decor = { home: store.id, built, items: loadDecor(store.id, game.interior?.room), group: built.decorGroup, editing: false, piece: null, carry: null };
     rebuildDecor();
@@ -243,7 +245,26 @@ export function createDecor(game) {
     b.onclick = () => placePiece(f.id);
     return b;
   }));
+  // My ride photos (core/ride-photos.js), each a framed print for the room,
+  // after the catalogue's pieces; the picture is the button.
+  function photoButtons() {
+    const grid = $('decor-grid'), have = game.photos?.all() || [];
+    for (const b of [...grid.querySelectorAll('[data-photo]')]) if (!have.some((p) => p.id === b.dataset.photo)) b.remove();
+    for (const p of have) {
+      if (grid.querySelector(`[data-photo="${p.id}"]`)) continue;
+      setPhotoSrc(p.id, p.src);
+      const b = document.createElement('button');
+      b.className = 'decor-item decor-photo';
+      b.innerHTML = '<img alt=""><small></small>';
+      b.querySelector('img').src = p.src;
+      b.dataset.id = frameId(p.id);
+      b.dataset.photo = p.id;
+      b.onclick = () => placePiece(b.dataset.id);
+      grid.append(b);
+    }
+  }
   function labelDecor() {
+    photoButtons();
     for (const b of $('decor-grid').children) {
       const f = furnitureById(b.dataset.id);
       b.querySelector('small').textContent = localName(f.name, getLanguage());

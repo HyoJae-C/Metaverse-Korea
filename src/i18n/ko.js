@@ -1003,4 +1003,10 @@ export const KO = {
   "upgrade.tier.myeongjang": "명장",
   "upgrade.tier.sura": "수라",
   "upgrade.tier.cheonha": "천하일미",
+  "photo.snap": "📸 찰칵! 놀이기구 카메라가 사진을 찍었어요.",
+  "photo.kept": "사진이 가방에 들어갔어요. 집에서 🛋️ 꾸미기로 전시해 보세요.",
+  "photo.bagFull": "가방이 꽉 차서 사진을 넣지 못했어요.",
+  "photo.tooMany": "사진을 이미 {n}장 가지고 있어요. 하나를 버리면 새 사진을 넣을 수 있어요.",
+  "photo.name": "젤리 후룸라이드 사진",
+  "photo.desc": "{date} 큰 낙하에서 찍은 사진. 집에서 🛋️ 꾸미기로 전시할 수 있어요.",
 };

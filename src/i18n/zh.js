@@ -1003,4 +1003,10 @@ export const ZH = {
   "upgrade.tier.myeongjang": "名匠",
   "upgrade.tier.sura": "御膳",
   "upgrade.tier.cheonha": "天下第一味",
+  "photo.snap": "📸 咔嚓！游乐设施的相机给你拍了照片。",
+  "photo.kept": "照片放进包里了。可以在家里用🛋️ 装饰摆出来。",
+  "photo.bagFull": "包满了，照片没能放进去。",
+  "photo.tooMany": "你已经有{n}张照片了。扔掉一张才能放新照片。",
+  "photo.name": "果冻激流勇进照片",
+  "photo.desc": "{date}在大俯冲时拍的照片。可以在家里用🛋️ 装饰摆出来。",
 };

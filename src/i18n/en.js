@@ -1002,4 +1002,10 @@ export const EN = {
   "upgrade.tier.myeongjang": "Grandmaster",
   "upgrade.tier.sura": "Royal",
   "upgrade.tier.cheonha": "Finest under heaven",
+  "photo.snap": "📸 Click! The ride camera took your photo.",
+  "photo.kept": "Your photo is in your bag. Display it at home: 🛋️ Decorate.",
+  "photo.bagFull": "Your bag is full, so the photo couldn't be kept.",
+  "photo.tooMany": "You keep {n} photos already. Throw one away to keep new ones.",
+  "photo.name": "Jelly Flume photo",
+  "photo.desc": "Taken on the big drop, {date}. Display it at home: 🛋️ Decorate.",
 };

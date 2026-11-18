@@ -999,4 +999,10 @@ export const ES = {
   "upgrade.tier.myeongjang": "Gran maestro",
   "upgrade.tier.sura": "Real",
   "upgrade.tier.cheonha": "El mejor sabor del mundo",
+  "photo.snap": "📸 ¡Clic! La cámara de la atracción te hizo una foto.",
+  "photo.kept": "Tu foto está en la bolsa. Ponla en casa: 🛋️ Decorar.",
+  "photo.bagFull": "Tu bolsa está llena y no se pudo guardar la foto.",
+  "photo.tooMany": "Ya tienes {n} fotos. Tira una para guardar nuevas.",
+  "photo.name": "Foto de los Troncos de Gelatina",
+  "photo.desc": "Tomada en la gran bajada, {date}. Ponla en casa: 🛋️ Decorar.",
 };

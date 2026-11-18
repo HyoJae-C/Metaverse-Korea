@@ -127,6 +127,7 @@ import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first 
 import { KIMCHI_LABELS as KIMCHI_TEXT, JAPCHAE_LABELS as JAPCHAE_TEXT, KIMBAP_LABELS as KIMBAP_TEXT, TTEOK_LABELS as TTEOK_TEXT, BIBIMBAP_LABELS as BIBIMBAP_TEXT } from './ui/cooking-labels.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag, giftEntry, isCosmetic } from './core/bag.js';
+import { PhotoStore } from './core/ride-photos.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
@@ -2250,6 +2251,8 @@ const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
 // hold in your hand. 20 slots for now.
 const bag = new Bag(localStorage, { isBook: (id) => !!bookById(id), maxSips: COFFEE_SIPS, isPerfume: (id) => perfumes.has(id), maxSprays: SPRAYS });
+const photos = new PhotoStore(); // ride photos, the pictures the bag's photo entries point at (core/ride-photos.js)
+photos.follow(bag);
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
@@ -2360,6 +2363,7 @@ function describeEntry(e) {
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
   if (e.kind === 'lipstick') return lipstick.describe(e);
   if (e.kind === 'bait') return fishBait.describe(e);
+  if (e.kind === 'photo') { const p = photos.get(e.ph); return { emoji: '🎞️', name: t('photo.name'), desc: t('photo.desc', { date: p ? new Date(p.at).toLocaleDateString() : '' }), canHold: false, img: p?.src }; } // (a ride photo: game/ride-photo.js)
   if (e.kind === 'perfume') {
     const pf = perfumes.get(e.p);
     return { emoji: '🧴', name: pf ? localName(pf.product.name, getLanguage()) : e.name, desc: fmt(L(PERFUME_TEXT.desc), { style: L(STYLES[pf?.style] || STYLES.simple), n: e.sips }), canHold: true };
@@ -4141,6 +4145,7 @@ const decorGame = createDecor({
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
   get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
   inventory, shop, PLAYER_R, get fishBag() { return fishBag; }, // (fish tanks: core/fish-tank.js)
+  photos, // (ride photos in frames: core/ride-photos.js)
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
   cloud, get wallet() { return wallet; }, refreshWallet: () => refreshWallet(),
@@ -4151,7 +4156,7 @@ const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, open
 let homeVisitsLoaded = null, homeVisitsLoading = null;
 function homeVisits() {
   return (homeVisitsLoading ||= import('./game/home-visits.js').then((m) => (homeVisitsLoaded = m.createHomeVisits({
-    $, t, shop, cloud, decor: decorGame, myId, joinRoom, goSolo, enterStore, leaveStore, claimChatId,
+    $, t, shop, cloud, decor: decorGame, myId, joinRoom, goSolo, enterStore, leaveStore, claimChatId, photos,
     get roomId() { return roomId; }, get others() { return others; }, get net() { return net; },
   }))).catch((e) => { homeVisitsLoading = null; throw e; }));
 }
@@ -5508,8 +5513,11 @@ function useRideTicket(kind) {
   if (id && id !== 'pass') { const n = rideTickets.left(id), name = t('tix.' + id); shop.toast('🎟️ ' + (n ? t('tix.used', { name, n }) : t('tix.done', { name }))); }
   return !!id;
 }
+let rideOp = null; // the last ride's payment on the coin ledger (a ride photo's receipt names it)
 function payRide(kind) {
-  if (useRideTicket(kind) || wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) return true;
+  rideOp = null;
+  if (useRideTicket(kind)) return true;
+  if (wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) { rideOp = wallet.lastOp; return true; }
   shop.toast(t('ride.noCoins', { n: RIDE_PRICE[kind] }));
   return false;
 }
@@ -5528,6 +5536,7 @@ function buyRidePass() {
 // wheel: step into the gondola at the bottom, ride one turn.
 const rideClock = () => Date.now() / 1000;
 const rideCam = createRideCam({ camera });
+let ridePhoto = null; // the Jelly Flume's ride photo (game/ride-photo.js), loaded on the first ride
 const parkRiders = createParkRiders($('labels'));
 // Seconds until a wheel gondola is next at the deck (0: one is there now).
 function wheelWait(now) {
@@ -5549,7 +5558,8 @@ function boardRide(st) {
   if (cabin >= 0 && !wheelDoorOpen(cabin, now)) return;
   if (!payRide(st.kind)) return;
   const seat = cabin >= 0 ? parkRiders.freeSeat('wheel', 2, cabin * 2) : parkRiders.freeSeat(st.kind, PARK_RIDES[st.kind].seats);
-  ride = { kind: st.kind, seat, t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third', locked: false };
+  ride = { kind: st.kind, seat, t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third', locked: false, op: rideOp };
+  if (st.kind === 'flume' && !ridePhoto) import('./game/ride-photo.js').then((m) => { ridePhoto ||= m.createRidePhoto({ renderer, camera, renderScenes, get me() { return me; }, bag, photos, cloud, t, toast: (s) => shop.toast(s), sfx, hud: $('hud'), newId: newOpId, onPhoto: () => labelDecor() }); ridePhoto.sendReceipts(); }).catch(() => {}); // (the flume's free photo on the drop)
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   rideCam.reset();
@@ -5569,6 +5579,7 @@ function endRide() {
     me.root.visible = true;
     rideCam.off();
     rideThrill.stop();
+    ridePhoto?.rideEnded(); // (the flume's photo, as at a real ride's exit)
   }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
@@ -5586,6 +5597,7 @@ function updateRide(dt) {
   me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship, or nose up the train's and the flume's slopes)
   me.root.rotation.set(s.pitch || 0, s.ry, s.roll);
   ride.pose = s;
+  ridePhoto?.update(ride, s); // (the flume's camera on the drop)
   const locked = rideLocked(ride.kind, ride.seat, now);
   if (locked !== ride.locked) { // the bar comes down (or the gondola's bar shuts), or goes up again
     ride.locked = locked;
@@ -7568,6 +7580,7 @@ renderer.setAnimationLoop((now) => {
     snapReq = null;
   }
   if (frameReq) { const f = frameReq; frameReq = null; f(renderer.domElement); } // (screenshot button)
+  ridePhoto?.afterRender(); // (the flume's photo: drawn off screen, after this frame)
   updateDelivery();
   // The K-POP café's video, on the wall screen.
   placeKpopVideo(kpop.song && interior?.tv);
@@ -7650,6 +7663,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     openBeauty: (kind) => openBeauty(kind), // (the mirror panel without walking to the chair)
     seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),
     usedRack, // the second-hand rack (game/used-rack.js), for tests
+    photos: () => photos.all().map((p) => ({ id: p.id, src: p.src, op: p.op, sent: p.sent })), // ride photos (core/ride-photos.js)
     potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
     tandemRent, // Seoul Forest's tandem rental (game/tandem-rental-near.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)

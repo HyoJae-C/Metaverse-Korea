@@ -1000,4 +1000,10 @@ export const ID = {
   "upgrade.tier.myeongjang": "Grandmaster",
   "upgrade.tier.sura": "Kerajaan",
   "upgrade.tier.cheonha": "Terlezat di dunia",
+  "photo.snap": "📸 Cekrek! Kamera wahana memotretmu.",
+  "photo.kept": "Fotomu ada di tas. Pajang di rumah: 🛋️ Hias.",
+  "photo.bagFull": "Tasmu penuh, jadi fotonya tidak bisa disimpan.",
+  "photo.tooMany": "Kamu sudah punya {n} foto. Buang satu untuk menyimpan yang baru.",
+  "photo.name": "Foto Arung Jeram Jeli",
+  "photo.desc": "Diambil saat turunan besar, {date}. Pajang di rumah: 🛋️ Hias.",
 };

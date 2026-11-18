@@ -9,6 +9,8 @@
 // The host's game sends its furniture to the visitors over the room, checks
 // each visitor with the server, and keeps the room to MAX_PEOPLE. Only the
 // host can move furniture. When the host goes out, visitors go out too.
+import { isPhotoId, okSrc, photoOfFrame } from '../core/ride-photos.js';
+import { setPhotoSrc } from '../core/furniture.js';
 import { cleanName } from '../core/identity.js';
 
 export const MAX_PEOPLE = 4; // host included (realtime messages grow with the square)
@@ -23,9 +25,13 @@ export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x
   return a;
 }));
 export const kickMsg = (id) => 'hv:kick:' + id;
+// A ride photo in a frame (core/ride-photos.js): its picture, sent once to
+// the people in the room (the layout only names it).
+export const photoMsg = (id, src) => 'hv:ph:' + id + ':' + src;
 export function parseVisitMsg(e) {
   if (typeof e !== 'string' || !e.startsWith('hv:')) return null;
   if (e.startsWith('hv:kick:')) return { kick: e.slice(8) };
+  if (e.startsWith('hv:ph:')) { const id = e.slice(6, 42), src = e.slice(43); return isPhotoId(id) && e[42] === ':' && okSrc(src) ? { ph: { id, src } } : null; }
   if (e.startsWith('hv:lay:')) { try { const a = JSON.parse(e.slice(7)); return Array.isArray(a) ? { lay: a.slice(0, 80) } : null; } catch { return null; } }
   return null;
 }
@@ -61,14 +67,21 @@ export function createHomeVisits(game) {
     const r = await cloud.call('home_guest_ok', { p_guest_net: id });
     if (!hosting) return;
     if (r.data === false) { game.net.sendEmote(kickMsg(id)); return; }
+    sentPhotos.clear(); // (a newcomer needs the pictures too)
     sendLayout();
   }
   let layoutTimer = 0;
+  const sentPhotos = new Set();
   function sendLayout() {
     clearTimeout(layoutTimer);
     layoutTimer = setTimeout(() => {
       const items = decor.layout();
-      if (hosting && items && game.others.players.size) game.net.sendEmote(layoutMsg(items));
+      if (!hosting || !items || !game.others.players.size) return;
+      game.net.sendEmote(layoutMsg(items));
+      for (const [id] of items) { // the pictures in the frames, once each
+        const p = game.photos?.get(photoOfFrame(id));
+        if (p && !sentPhotos.has(p.id)) { sentPhotos.add(p.id); game.net.sendEmote(photoMsg(p.id, p.src)); }
+      }
     }, 300);
   }
   // The visit setting changed while I'm home.
@@ -148,6 +161,7 @@ export function createHomeVisits(game) {
       token++;
       clearTimeout(guest?.timer);
       clearTimeout(layoutTimer);
+      sentPhotos.clear();
       guest = null;
       closeMine();
     },
@@ -161,6 +175,7 @@ export function createHomeVisits(game) {
       if (!m) return false;
       if (!guest || id !== guest.host.net) return true; // only the host's game speaks for the home
       if (m.lay) decor.showLayout(m.lay);
+      if (m.ph && setPhotoSrc(m.ph.id, m.ph.src)) decor.rebuildDecor();
       if (m.kick === game.myId || m.kick === '*') { shop.toast(t('home.kicked', { name: guest.host.name })); game.leaveStore(); }
       return true;
     },
