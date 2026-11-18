@@ -6768,7 +6768,7 @@ function updateAction(p, tSec) {
     } else if (!interior.noExit && interior.front?.parkFront && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) {
       next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : interior.confession ? roomKit().CONFESSION_TEXT.back : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
-      next = { key: 'exit', label: '🚪 ' + t(interior.store.category === 'home' ? 'home.leave' : interior.zooPark ? 'zoo.leave' : 'shop.leave'), run: () => leaveStore() };
+      next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
       next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
