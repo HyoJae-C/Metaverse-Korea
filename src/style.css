@@ -885,6 +885,11 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .visit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 .visit-row .chip { padding: 5px 10px; font-size: 12px; }
 .visit-row .chip.on { background: var(--accent); color: #fff; }
+/* Wallpaper and floors (game/home-finish.js): one row each, scroll sideways if many. */
+.finish-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+.finish-row > span { flex: none; }
+.finish-chip { flex: none; display: inline-flex; align-items: center; gap: 5px; }
+.finish-swatch { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
 .visit-list { display: grid; gap: 8px; margin-top: 10px; max-height: 50vh; overflow-y: auto; }
 .visit-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #fff; font-weight: 800; text-align: left; }
 .visit-list small { font-weight: 700; color: var(--ink-soft); }

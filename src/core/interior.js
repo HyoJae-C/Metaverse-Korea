@@ -6,6 +6,8 @@ import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
 import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
+import { finishSample } from './home-finish-art.js';
+import { finishById } from './home-finish.js';
 import { RING, BOARD_ORDER } from './arcade.js';
 import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
@@ -253,6 +255,7 @@ export function buildInterior(store) {
   // Walls face inward (single-sided, so the camera can see in from outside).
   const wallMat = new THREE.MeshLambertMaterial({ color: store.colors.accent, side: THREE.FrontSide });
   const trimMat = mat(store.colors.awning);
+  const homeWalls = []; // (a home's wallpaper goes on these: core/home-finish-art.js)
   const wall = (len, x, z, ry) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(len, h), wallMat);
     m.position.set(x, h / 2, z);
@@ -263,6 +266,7 @@ export function buildInterior(store) {
     trim.rotation.y = ry;
     trim.position.add(new THREE.Vector3(Math.sin(ry) * 0.01, 0, Math.cos(ry) * 0.01));
     scene.add(trim);
+    homeWalls.push({ mesh: m, len, trim });
   };
   wall(w, 0, -d / 2, 0);
   wall(d, -w / 2, 0, Math.PI / 2);
@@ -399,6 +403,20 @@ export function buildInterior(store) {
     // size, back to the wall, as it would stand at home (Yozi 2026-11-16: on
     // a table you can't tell how big it is). Sofas, beds and chairs can be
     // tried: sit or lie on them.
+    // Wallpaper shops: a wall panel or a patch of floor for each, back to
+    // the wall (core/home-finish-art.js).
+    if (product.model === 'finish') {
+      const g = finishSample(product.furniture);
+      const lz = -(ry === 0 ? bz + d / 2 : w / 2 - sx) + 0.35 + (finishById(product.furniture)?.kind === 'wall' ? 0 : 0.6);
+      const c = new THREE.Vector3(0, 0, lz).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      g.position.copy(c);
+      g.rotation.y = ry;
+      scene.add(g);
+      const front = new THREE.Vector3(0, 0, lz + 1.3).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      products.push({ product, mesh: g, pos: front });
+      if (finishById(product.furniture)?.kind === 'wall') { const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.5, 1.7] : [1.7, 0.5]; block(c.x, c.z, cx, cz); } // (a floor sample can be walked on)
+      return;
+    }
     const piece = product.model === 'furniture' && furnitureById(product.furniture)?.item ? furnitureById(product.furniture) : null;
     if (piece) {
       const [fw, fd] = piece.size;
@@ -2198,5 +2216,6 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit };
+  const home = store.category === 'home' ? { homeWalls, homeFloor: floor } : null; // (wallpaper and flooring: core/home-finish-art.js)
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit, ...home };
 }

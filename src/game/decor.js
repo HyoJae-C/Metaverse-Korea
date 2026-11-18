@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
 import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
+import { createHomeFinish } from './home-finish.js';
 
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
@@ -104,6 +105,7 @@ export function createDecor(game) {
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
     decor = { home: store.id, built, items: loadDecor(store.id, game.interior?.room), group: built.decorGroup, editing: false, piece: null, carry: null };
     rebuildDecor();
+    finish.open(built, false);
     $('decor-btn').hidden = false;
   }
   // Someone else's home (game/home-visits.js): their furniture, sent by their
@@ -112,6 +114,7 @@ export function createDecor(game) {
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
     decor = { home: store.id, built, items: [], group: built.decorGroup, editing: false, piece: null, carry: null, guest: true };
     rebuildDecor();
+    finish.open(built, true);
     $('decor-btn').hidden = true;
   }
   function showLayout(list) {
@@ -135,6 +138,7 @@ export function createDecor(game) {
     swimming = [];
     tankPanel?.close();
     setDecorating(false);
+    finish.close();
     $('decor-btn').hidden = true;
     decor = null;
   }
@@ -264,6 +268,7 @@ export function createDecor(game) {
     }
   }
   function labelDecor() {
+    finish.label(); // (wallpaper and floors bought since)
     photoButtons();
     for (const b of $('decor-grid').children) {
       const f = furnitureById(b.dataset.id);
@@ -272,6 +277,7 @@ export function createDecor(game) {
       b.classList.toggle('locked', !fitsHome(f, readHomeLevel())); // needs a bigger home
     }
   }
+  const finish = createHomeFinish(game); // wallpaper and flooring (game/home-finish.js)
   labelDecor();
   onLanguageChange(labelDecor);
   $('piece-rotate').onclick = () => {
@@ -375,7 +381,7 @@ export function createDecor(game) {
     return level.then((n) => ({ ...item, homeSized: true, store: { ...item.store, roomDims: homeRoom(n) } }));
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
-  const api = { visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  const api = { finish, visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }
