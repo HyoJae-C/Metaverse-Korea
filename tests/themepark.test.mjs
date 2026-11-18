@@ -69,6 +69,20 @@ test('the drop tower: load, the harness comes down, a slow climb, a hold, then a
   for (let s = 0; s < c.run; s += 0.05) assert.ok(dropY(run + s) >= R.low - 1e-9, 'never below the floor');
   assert.equal(rideSpeed('drop', run + 9).phase, 'hold');
   assert.ok(rideSpeed('drop', run + DROP_T.hold + DROP_T.fall - 0.05).k > 0.9, 'top speed at the end of the fall');
+  // The underground rides get the speed too: the ship fastest at the bottom,
+  // the flume's drop fastest of all, the gentle ones only a breeze.
+  const { RIDE_CYCLE: RC, vikingAngle } = await import('../src/core/park-rides.js');
+  const sweep = (kind) => { const c = RC[kind], out = []; for (let s = 0; s < c.run; s += 0.05) out.push({ s, ...rideSpeed(kind, c.load + s) }); return out; };
+  const ship = sweep('viking'), fastShip = ship.reduce((a, b) => (b.k > a.k ? b : a));
+  assert.ok(fastShip.k > 0.9 && Math.abs(vikingAngle(RC.viking.load + fastShip.s)) < 0.3, 'the ship is fastest through the bottom');
+  assert.ok(ship.some((x) => x.phase === 'hold'), 'and floats at the ends');
+  const log = sweep('flume'), phases = [...new Set(log.map((x) => x.phase))];
+  assert.deepEqual(phases.filter((p) => p !== 'run'), ['lift', 'hold', 'drop'], 'belt, edge, drop in order');
+  assert.ok(Math.max(...log.filter((x) => x.phase === 'drop' || x.phase === 'run').map((x) => x.k)) > 0.9);
+  for (const kind of ['train', 'carousel', 'teacups']) {
+    const top = Math.max(...sweep(kind).map((x) => x.k));
+    assert.ok(top > 0.4 && top <= 0.6 + 1e-9, `${kind}: a breeze (${top.toFixed(2)})`);
+  }
   assert.ok(Math.abs(seatAt('drop', 0, run + 9).y - R.top - 0.12) < 1e-9);
   assert.equal(dropY(run + c.run + 0.5), R.low);
   assert.equal(rideUntil('drop', t0 + 2), run + c.run + 0.6);
