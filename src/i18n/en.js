@@ -545,6 +545,7 @@ export const EN = {
   'tank.empty': "No fish in the tank yet. Put in fish you caught!",
   'tank.noFish': "No fish in your fish bag. Go fishing at a Han River park!",
   'tank.tooBig': "Too big for this tank",
+  'tank.noHuge': "The blue whale and the giant squid are too big for any home tank (they stay in your fish book).",
   'tank.full': "Not enough space in the tank",
   'tank.bagFull': "Your fish bag is full",
   'tank.onlyOne': "Only one of each big (XL) kind per tank",

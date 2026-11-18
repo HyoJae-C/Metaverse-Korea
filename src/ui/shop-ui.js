@@ -1,5 +1,6 @@
 // Shopping UI: store banner, product card, cart. Prices are virtual.
 import { ITEMS } from '../core/inventory.js';
+import { isTank } from '../core/fish-tank.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
 import { STYLES, SPRAYS, onSale } from '../core/perfume.js';
 import { hanbokById, RENT_HOURS } from '../data/hanbok.js';
@@ -173,6 +174,7 @@ export class ShopUI {
     this.$('product-name-ko').textContent = lang === 'ko' ? '' : product.name.ko;
     this.$('product-price').textContent = formatPrice(product.price);
     this.$('product-desc').textContent = localName(product.desc, lang) || '';
+    if (isTank(product.furniture)) this.$('product-desc').textContent += '\n' + t('tank.noHuge'); // (told before you buy, Yozi 2026-11-18)
     if (product.perfume) { // which style, and how a bottle works
       const st = STYLES[product.perfume];
       const lim = product.limited ? '\n' + fmt(L(LIMITED.on), product.limited) : '';

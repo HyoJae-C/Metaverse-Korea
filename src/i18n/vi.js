@@ -548,6 +548,7 @@ export const VI = {
   'tank.empty': "Bể vẫn trống. Hãy thả cá bạn câu được vào!",
   'tank.noFish': "Túi cá trống. Hãy đi câu ở công viên sông Hàn!",
   'tank.tooBig': "Quá to cho bể này",
+  'tank.noHuge': "Cá voi xanh và mực khổng lồ quá to cho mọi bể cá ở nhà (vẫn còn trong sổ cá của bạn).",
   'tank.full': "Bể không đủ chỗ",
   'tank.bagFull': "Túi cá đã đầy",
   'tank.onlyOne': "Mỗi loài cá lớn (XL) chỉ một con mỗi bể",

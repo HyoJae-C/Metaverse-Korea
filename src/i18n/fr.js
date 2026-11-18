@@ -546,6 +546,7 @@ export const FR = {
   'tank.empty': "L'aquarium est encore vide. Mets-y les poissons que tu as pêchés !",
   'tank.noFish': "Ton sac à poissons est vide. Va pêcher dans un parc du fleuve Han !",
   'tank.tooBig': "Trop grand pour cet aquarium",
+  'tank.noHuge': "La baleine bleue et le calmar géant sont trop grands pour un aquarium à la maison (ils restent dans ton carnet de poissons).",
   'tank.full': "Pas assez de place dans l'aquarium",
   'tank.bagFull': "Ton sac à poissons est plein",
   'tank.onlyOne': "Un seul de chaque grande espèce (XL) par aquarium",
