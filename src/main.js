@@ -6662,7 +6662,7 @@ function moreActions(p, door) {
     return out;
   }
   if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss, 📊 Scoreboard)
-  if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing) return out;
+  if (!interior || seated || beauty.surgery || ride || decorGame.decor?.editing || decorGame.decor?.carry) return out;
   if (interior.pool) { out.push(...poolMore(p)); if (pool.mode) return out; } // (racing or diving: only the pool's buttons)
   hi5s();
   if (interior.dome) { const sb = ballparkCams.scoreAct(); if (sb) out.push(sb); } // Modu Ballpark: 📊 Scoreboard up close
@@ -6678,6 +6678,7 @@ function moreActions(p, door) {
   if (interior.zooPark) out.push(...zooVisit.more(p));
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
+  out.push(...decorGame.pieceActs(p)); // my home: carry or put away the piece in front (game/decor.js)
   return out;
 }
 // Animal cafés: puppies and kittens waiting for a family roam with the
@@ -6790,8 +6791,9 @@ function updateAction(p, tSec) {
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
       next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
-    } else if (decorGame.decor?.editing) {
+    } else if (decorGame.decor?.editing || decorGame.decor?.carry) {
       // decorate mode: walk up to a piece to rotate, move or remove it
+      // (or carrying one picked up straight from the room: put it down)
       const it = nearestPiece(p);
       if (decorGame.decor.carry) next = { key: 'put-down', label: '📍 ' + t('home.putDown'), run: () => { if (putDown()) closePiece(); } };
       else if (it) next = { key: 'piece:' + decorGame.decor.items.indexOf(it), label: '✋ ' + localName(furnitureById(it.id).name, getLanguage()), run: () => openPiece(it) };
@@ -7737,6 +7739,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
+    carrySpot: () => ({ footprint: decorGame.footprint(), grid: decorGame.grid() }), // (carrying at home: green or red under the piece, squares on the floor)
+    decorAt: () => decorGame.decor?.items.map((i) => [i.id, +i.x.toFixed(2), +i.z.toFixed(2), i === decorGame.decor.carry]) ?? null,
     roomSize: () => (interior?.room ? [interior.room.w, interior.room.d] : null), // (a home's size by its level)
     riding: () => riding,
     sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)
