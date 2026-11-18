@@ -657,6 +657,7 @@ export const AR = {
   'lang.choose': 'اختر لغتك',
   'lang.change': 'اللغة',
   'start.region': 'المحطة الأولى: {region}، {city}',
+  'start.survey': '🎨 قدّم طلبًا لتزيين Modu Seoul معنا',
   'start.where': 'ماذا تريد أن تفعل أولًا؟',
   'start.tour': 'معالم · بوكتشون',
   'start.shop': 'تسوق وأناقة · سونغسو',

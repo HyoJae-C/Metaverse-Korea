@@ -657,6 +657,7 @@ export const TH = {
   'lang.choose': 'เลือกภาษาของคุณ',
   'lang.change': 'ภาษา',
   'start.region': 'จุดแรก: {region}, {city}',
+  'start.survey': '🎨 สมัครมาตกแต่ง Modu Seoul ด้วยกัน',
   'start.where': 'อยากทำอะไรก่อน?',
   'start.tour': 'เที่ยวชม · บุกชอน',
   'start.shop': 'ช้อปปิ้งและแต่งตัว · ซองซู',

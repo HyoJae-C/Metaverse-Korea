@@ -661,6 +661,7 @@ export const KO = {
   'lang.choose': '언어를 선택하세요',
   'lang.change': '언어',
   'start.region': '첫 번째 여행지: {city} {region}',
+  'start.survey': '🎨 모두서울 같이 꾸미기 신청',
   'start.where': '처음엔 뭘 하고 싶어요?',
   'start.tour': '관광 · 북촌',
   'start.shop': '쇼핑·꾸미기 · 성수',

@@ -661,6 +661,7 @@ export const JA = {
   'lang.choose': '言語を選択してください',
   'lang.change': '言語',
   'start.region': '最初の目的地：{city}・{region}',
+  'start.survey': '🎨 一緒にModu Seoulを飾ろう（応募）',
   'start.where': '最初に何をしたい？',
   'start.tour': '観光 · 北村',
   'start.shop': 'ショッピング・おしゃれ · 聖水',

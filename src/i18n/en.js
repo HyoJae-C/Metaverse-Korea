@@ -660,6 +660,7 @@ export const EN = {
   'lang.choose': 'Choose your language',
   'lang.change': 'Language',
   'start.region': 'First stop: {region}, {city}',
+  'start.survey': '🎨 Apply to decorate Modu Seoul with us',
   'start.where': 'What would you like to do first?', // the start screen: where new players start (region.json spawn.starts)
   'start.tour': 'Sights · Bukchon',
   'start.shop': 'Shopping & style · Seongsu',

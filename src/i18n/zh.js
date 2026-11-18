@@ -661,6 +661,7 @@ export const ZH = {
   'lang.choose': '请选择语言',
   'lang.change': '语言',
   'start.region': '第一站：{city}{region}',
+  'start.survey': '🎨 申请一起装饰 Modu Seoul',
   'start.where': '你想先做什么？',
   'start.tour': '观光 · 北村',
   'start.shop': '购物·打扮 · 圣水',
