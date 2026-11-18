@@ -158,6 +158,22 @@ export function createDecor(game) {
       ry + Math.PI, // facing you
     ];
   }
+  // Where a carried piece goes: just in front of you (its near edge a step
+  // ahead, however big it is, so it never swallows you), on a 25 cm step,
+  // then kept inside the room so it can go right up against a wall.
+  function carrySpot(it) {
+    const p = game.me.root.position, ry = game.me.root.rotation.y, sx = Math.sin(ry), sz = Math.cos(ry);
+    const [w, d] = furnitureById(it.id).size, c = Math.cos(it.ry), s = Math.sin(it.ry);
+    const ex = (Math.abs(w * c) + Math.abs(d * s)) / 2, ez = (Math.abs(w * s) + Math.abs(d * c)) / 2; // half the room it takes along x and z
+    const ahead = Math.abs(sx) * ex + Math.abs(sz) * ez + 0.6; // (0.6: a little more than you)
+    const { w: rw, d: rd } = game.interior.room, gap = 0.03;
+    const step = (v) => Math.round(v / SNAP) * SNAP;
+    const fit = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : THREE.MathUtils.clamp(v, lo, hi));
+    return [
+      fit(step(p.x + sx * ahead), -rw / 2 + ex + gap, rw / 2 - ex - gap),
+      fit(step(p.z + sz * ahead), -rd / 2 + ez + gap, rd / 2 - ez - gap - 1), // (a metre clear in front of the door)
+    ];
+  }
   function placePiece(id) {
     const placed = decor.items.find((i) => i.id === id);
     if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
@@ -206,7 +222,7 @@ export function createDecor(game) {
     footprint.scale.set(w + 0.1, 1, d + 0.1); // (a little wider than the piece, so it shows round it)
     footprint.position.set(it.x, (it.y || 0) + 0.02, it.z);
     footprint.rotation.y = it.ry;
-    const bad = pieceBlocked(it, decor.items, game.me.root.position) || outsideRoom(it, rw, rd);
+    const bad = pieceBlocked(it, decor.items) || outsideRoom(it, rw, rd); // (not you: put down on your toes, you step out of it)
     footprint.material.color.copy(bad ? no : ok);
     footprint.userData.bad = bad;
   }
@@ -259,7 +275,7 @@ export function createDecor(game) {
   // Carry a piece: it floats in front of you until you put it down.
   function putDown(force = false) {
     if (decor.carry) settle(decor.carry);
-    if (!force && decor.carry && (pieceBlocked(decor.carry, decor.items, game.me.root.position) || outsideRoom(decor.carry, game.interior.room.w, game.interior.room.d))) { shop.toast(t('home.blocked')); return false; }
+    if (!force && decor.carry && (pieceBlocked(decor.carry, decor.items) || outsideRoom(decor.carry, game.interior.room.w, game.interior.room.d))) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
     decor.riders = null;
     hideFootprint();
@@ -272,7 +288,7 @@ export function createDecor(game) {
   function updateCarry() {
     const it = decor?.carry;
     if (!it?.mesh) return;
-    [it.x, it.z] = spotInFront().map((v, i) => (i < 2 ? Math.round(v / SNAP) * SNAP : v)); // on a 25 cm step: easy to line up with the floor's squares
+    [it.x, it.z] = carrySpot(it);
     settle(it);
     it.mesh.position.set(it.x, it.y + 0.08, it.z); // lifted a little while carried (over a table: above it)
     showFootprint(it);
