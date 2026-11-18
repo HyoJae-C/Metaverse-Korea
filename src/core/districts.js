@@ -67,8 +67,15 @@ export function mergeDistricts(parts, links = [], water = [], closed = [], base 
 // Loads a region's map: a single file, or its districts joined together.
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
-  const [base, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, ...region.districts.map((d) => fetchJson(d.map))]);
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base));
+  const [base, boats, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, region.boatTaxi ? fetchJson(region.boatTaxi) : null, ...region.districts.map((d) => fetchJson(d.map))]);
+  const out = mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base);
+  // The Han River Boat Taxi (region.json "boatTaxi", scripts/build-boat-taxi.mjs):
+  // its piers and gangways are decks you walk on over the river.
+  if (boats) {
+    out.boatTaxi = boats;
+    for (const p of boats.piers) out.decks.push(p.dock, p.gang);
+  }
+  return liftStations(out);
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as
