@@ -128,6 +128,13 @@ try {
   await h.evaluate(() => { const [w] = __mk.roomSize(); __mk.goto(w / 2 - 0.6, 0, Math.PI / 2); }); // facing the east wall, close to it
   await h.waitForFunction(() => { const [w] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return Math.abs(p[1] - (w / 2 - 0.28)) < 0.02 && __mk.carrySpot().footprint === 'green'; }, null, { timeout: 10000 })
     .catch(async () => { throw new Error('not flush with the wall: ' + JSON.stringify(await h.evaluate(() => [__mk.roomSize(), __mk.decorAt().find((i) => i[0] === 'plant'), __mk.carrySpot()]))); });
+  step = 'flush with the door wall too, but not in front of the door';
+  await h.evaluate(() => { const [w, d] = __mk.roomSize(); __mk.goto(w / 2 - 1, d / 2 - 0.6, 0); }); // facing the door wall, away from the door
+  await h.waitForFunction(() => { const [, d] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return Math.abs(p[2] - (d / 2 - 0.28)) < 0.02 && __mk.carrySpot().footprint === 'green'; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('not flush with the door wall: ' + JSON.stringify(await h.evaluate(() => [__mk.roomSize(), __mk.decorAt().find((i) => i[0] === 'plant')]))); });
+  await h.evaluate(() => { const [, d] = __mk.roomSize(); __mk.goto(0, d / 2 - 0.6, 0); }); // at the door
+  await h.waitForFunction(() => { const [, d] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return p[2] < d / 2 - 1.6; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('in front of the door: ' + JSON.stringify(await h.evaluate(() => __mk.decorAt().find((i) => i[0] === 'plant')))); });
   await h.evaluate(([x, z]) => __mk.goto(x + 0.9, z + 1.2, -Math.PI / 2), plantAt);
   await h.waitForFunction(() => __mk.action()?.startsWith('📍'), null, { timeout: 5000 });
   await h.waitForFunction(() => __mk.carrySpot().footprint === 'green', null, { timeout: 10000 });

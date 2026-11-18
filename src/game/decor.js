@@ -173,10 +173,9 @@ export function createDecor(game) {
     const { w: rw, d: rd } = game.interior.room, gap = 0.03;
     const step = (v) => Math.round(v / SNAP) * SNAP;
     const fit = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : THREE.MathUtils.clamp(v, lo, hi));
-    return [
-      fit(step(p.x + sx * ahead), -rw / 2 + ex + gap, rw / 2 - ex - gap),
-      fit(step(p.z + sz * ahead), -rd / 2 + ez + gap, rd / 2 - ez - gap - 1), // (a metre clear in front of the door)
-    ];
+    const x = fit(step(p.x + sx * ahead), -rw / 2 + ex + gap, rw / 2 - ex - gap);
+    const byDoor = Math.abs(x) - ex < DOOR_HALF; // (the door is in the middle of the front wall, +z)
+    return [x, fit(step(p.z + sz * ahead), -rd / 2 + ez + gap, rd / 2 - ez - (byDoor ? DOOR_CLEAR : gap))];
   }
   function placePiece(id) {
     const placed = decor.items.find((i) => i.id === id);
@@ -198,6 +197,7 @@ export function createDecor(game) {
   // While decorating or carrying: squares on the floor (50 cm), and under a
   // carried piece its footprint, green where it can go down, red where not.
   const SNAP = 0.25, CELL = 0.5;
+  const DOOR_HALF = 0.9, DOOR_CLEAR = 1.6; // keep the way in clear: the door's width and a step and a half in front of it
   let floorGrid = null, footprint = null;
   const ok = new THREE.Color(0x3fbf5f), no = new THREE.Color(0xe0453a);
   function showGrid(on) {
