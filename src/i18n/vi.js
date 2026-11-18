@@ -1000,4 +1000,10 @@ export const VI = {
   "upgrade.tier.myeongjang": "Đại sư",
   "upgrade.tier.sura": "Ngự thiện",
   "upgrade.tier.cheonha": "Thiên hạ đệ nhất vị",
+  "photo.snap": "📸 Tách! Máy ảnh của trò chơi đã chụp bạn.",
+  "photo.kept": "Ảnh đã vào túi. Trưng bày ở nhà: 🛋️ Trang trí.",
+  "photo.bagFull": "Túi đầy nên không giữ được ảnh.",
+  "photo.tooMany": "Bạn đã có {n} ảnh. Bỏ một tấm để giữ ảnh mới.",
+  "photo.name": "Ảnh Thuyền Gỗ Thạch",
+  "photo.desc": "Chụp ở cú lao dốc lớn, {date}. Trưng bày ở nhà: 🛋️ Trang trí.",
 };

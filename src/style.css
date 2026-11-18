@@ -898,6 +898,7 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   display: grid; place-items: center; gap: 2px; padding: 6px 2px;
 }
 .decor-item span { font-size: 26px; line-height: 1; }
+.decor-photo img { width: 40px; aspect-ratio: 4 / 3; object-fit: cover; border: 2px solid #fbf8f1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
 .decor-item small { font-size: 11px; font-weight: 700; color: var(--ink-soft); text-align: center; line-height: 1.15; overflow-wrap: anywhere; }
 .decor-item { position: relative; }
 .decor-item.placed { background: #eef6e8; }
@@ -1721,6 +1722,13 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 10px; }
 .bag-slot { position: relative; aspect-ratio: 1; border-radius: 12px; background: #fff; font-size: 24px; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px #eadfd2; }
 .bag-slot.empty { background: #f6f0e8; box-shadow: inset 0 0 0 1.5px #efe6da; }
+.bag-thumb { width: 86%; aspect-ratio: 4 / 3; object-fit: cover; border: 2px solid #fbf8f1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); border-radius: 2px; }
+.bag-photo { display: block; width: min(100%, 300px); margin: 8px auto 4px; border: 8px solid #fbf8f1; border-bottom-width: 22px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transform: rotate(-1.2deg); }
+.ride-photo-card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-2deg); z-index: 40; background: #fbf8f1; padding: 10px 10px 12px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); border-radius: 3px; width: min(78vw, 340px); animation: ride-photo-in 0.5s ease-out; pointer-events: auto; }
+.ride-photo-card img { display: block; width: 100%; }
+.ride-photo-card p { margin: 10px 2px 0; font: 600 13px/1.3 system-ui, sans-serif; color: #5a4a3a; text-align: center; }
+.ride-photo-card .sheet-x { top: -12px; right: -12px; }
+@keyframes ride-photo-in { from { opacity: 0; transform: translate(-50%, -40%) rotate(-8deg) scale(0.8); } }
 .bag-slot.on { box-shadow: inset 0 0 0 3px var(--accent-dark, #e0694e); }
 .closet-bar { display: flex; gap: 6px; align-items: flex-start; margin-top: 10px; }
 .closet-kinds { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }

@@ -1000,4 +1000,10 @@ export const FR = {
   "upgrade.tier.myeongjang": "Grand maître",
   "upgrade.tier.sura": "Royal",
   "upgrade.tier.cheonha": "Saveur suprême",
+  "photo.snap": "📸 Clic ! L'appareil du manège a pris ta photo.",
+  "photo.kept": "Ta photo est dans ton sac. Expose-la chez toi : 🛋️ Décorer.",
+  "photo.bagFull": "Ton sac est plein, la photo n'a pas pu être gardée.",
+  "photo.tooMany": "Tu as déjà {n} photos. Jettes-en une pour en garder de nouvelles.",
+  "photo.name": "Photo des Bûches Gelée",
+  "photo.desc": "Prise dans la grande descente, {date}. Expose-la chez toi : 🛋️ Décorer.",
 };

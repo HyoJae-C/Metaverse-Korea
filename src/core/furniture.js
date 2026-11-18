@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE } from './furniture-shop.js';
 import { TANKS, buildTank } from './fish-tank-pieces.js';
+import { photoOfFrame } from './ride-photos.js';
 
 const mat = matCache();
 
@@ -284,7 +285,51 @@ export const FURNITURE = [
     } },
 ];
 
-export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);
+// A ride photo in a frame (core/ride-photos.js): 'ph:<photo id>', made on
+// demand. Its picture comes from setPhotoSrc (my own photos, or the ones a
+// host sends to visitors); until then the print is blank.
+const PHOTO_NAME = { en: 'Jelly Flume photo', ko: '젤리 후룸라이드 사진', ja: 'ゼリー・フルームの写真', zh: '果冻激流勇进照片' };
+const photoSrcs = new Map(), photoTex = new Map(), photoDefs = new Map();
+export function setPhotoSrc(id, src) {
+  if (!id || !src || photoSrcs.get(id) === src) return false;
+  photoSrcs.set(id, src);
+  photoTex.get(id)?.dispose();
+  photoTex.delete(id);
+  return true;
+}
+export const hasPhotoSrc = (id) => photoSrcs.has(id);
+function photoMat(id) {
+  const src = photoSrcs.get(id);
+  if (!src) return mat('#efe9dc');
+  if (!photoTex.has(id)) {
+    const tex = new THREE.TextureLoader().load(src);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    photoTex.set(id, new THREE.MeshBasicMaterial({ map: tex }));
+  }
+  return photoTex.get(id);
+}
+function photoFrame(fid) {
+  const pid = photoOfFrame(fid);
+  if (!pid) return null;
+  if (!photoDefs.has(fid)) photoDefs.set(fid, { id: fid, emoji: '🖼️', size: [0.42, 0.24], name: PHOTO_NAME, photo: pid,
+    // A wooden frame on a little stand, the print with a white film border, leaning back a little.
+    build(g) {
+      const f = new THREE.Group();
+      f.position.set(0, 0.2, 0.02);
+      f.rotation.x = -0.14;
+      g.add(f);
+      box(f, 0.4, 0.32, 0.03, 0, 0, 0, '#7a4f2e');
+      box(f, 0.35, 0.27, 0.005, 0, 0, 0.017, '#fbf8f1'); // the print's white border
+      const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.2325), photoMat(pid));
+      pic.position.set(0, 0.008, 0.021);
+      f.add(pic);
+      box(g, 0.04, 0.3, 0.03, 0, 0.15, -0.09, '#7a4f2e').rotation.x = 0.35; // the stand at the back
+      box(g, 0.34, 0.02, 0.07, 0, 0.01, 0.02, '#6a4226'); // the foot
+    } });
+  return photoDefs.get(fid);
+}
+
+export const furnitureById = (id) => FURNITURE.find((f) => f.id === id) || photoFrame(id);
 
 // Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
 // shape interiors use (main.js sitDown). Long sofas and benches seat two side
@@ -329,13 +374,13 @@ export function buildFurniture(id, { off = false } = {}) {
 export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7 };
 const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
   'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae']);
-export const isSmall = (id) => SMALL.has(id);
+export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);
 // The piece's place in a surface's own frame (x right, z front).
 const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };
 // What a small piece at its x, z would stand on: { on, y } for the highest
 // top under its middle, or null (the floor).
 export function topUnder(item, items) {
-  if (!SMALL.has(item.id)) return null;
+  if (!isSmall(item.id)) return null;
   let best = null;
   for (const o of items) {
     if (o === item || o.y || !(o.id in TOPS)) continue;

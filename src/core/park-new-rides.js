@@ -12,6 +12,7 @@
 // `keep`. Repeated parts (the swing's chairs, the rails) are instanced.
 import * as THREE from 'three';
 import { bakeColors, mergeStatic } from './merge-static.js';
+import { PHOTO_CAM, SNAP_Z } from './ride-photos.js';
 import { RIDES, FLUME_TRACK, FLUME_POOL, TRAIN_TRACK, flumeDist, swingAngle, swingTilt, teacupSpin, teacupSpot, trainDist, MAZE } from './park-rides.js';
 
 const ICING = '#fffaf3', HOT = '#ff5f9e', PINK = '#ff8fb8', GOLD = '#e8b84a', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', CHOC = '#6b3f2a', BISCUIT = '#f2c6a0', AMBER = '#ffc93c';
@@ -226,6 +227,19 @@ export function buildFlume(scene, block, mat) {
   rim.rotation.x = Math.PI / 2;
   rim.scale.y = P.sz;
   block(P.x, P.z, P.r * 1.9, P.r * P.sz * 1.9);
+  // The ride camera by the pool, on a pole, looking back up the drop: it
+  // takes everyone's photo on the way down (game/ride-photo.js).
+  const C = PHOTO_CAM;
+  cyl(root, 0.05, 0.06, C.y - 0.12, C.x, 0, C.z, '#4a4a52', 8);
+  block(C.x, C.z, 0.3, 0.3);
+  const cam = new THREE.Group();
+  cam.position.set(C.x, C.y, C.z);
+  cam.lookAt(58, 3.4, SNAP_Z);
+  root.add(cam);
+  box(cam, 0.3, 0.22, 0.24, 0, 0, 0, '#2d2d34');
+  part(cam, new THREE.CylinderGeometry(0.08, 0.08, 0.14, 12), '#1a1a1f', 0, 0, 0.18).rotation.x = Math.PI / 2;
+  part(cam, new THREE.CircleGeometry(0.06, 12), '#6fa8ff', 0, 0, 0.252);
+  box(cam, 0.36, 0.04, 0.3, 0, 0.14, 0.02, HOT); // a little pink hood
   // The boarding platform on the station's south side, under an awning.
   box(root, 6.6, 0.1, 1.4, 53.4, 0.05, -14.5, BISCUIT);
   for (let i = 0; i < 6; i++) box(root, 1.1, 0.1, 1.8, 50.65 + i * 1.1, 2.7, -14.6, i % 2 ? ICING : MINT); // awning
