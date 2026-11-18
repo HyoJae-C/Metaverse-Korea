@@ -22,7 +22,10 @@ const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c
 
 export function seogang(g, l) {
   const len = l.len || 200, w = l.w || 12, half = w / 2;
-  for (const s of [-1, 1]) {
+  // l.lift: the bridge is up off the water (core/han-bridges.js draws its
+  // deck, railings and piers): only the arch, up on the deck.
+  const lift = l.lift || 0;
+  for (const s of lift ? [] : [-1, 1]) {
     const x = s * (half + 0.3);
     box(g, 0.6, 0.35, len, x, 0.175, 0, '#c9cdd2'); // kerb
     box(g, 0.08, 0.08, len, x, 1.2, 0, '#5a6470'); // hand rail
@@ -37,19 +40,21 @@ export function seogang(g, l) {
     }
   }
   // The deck's edge beams and the piers standing in the water.
-  for (const s of [-1, 1]) box(g, 0.5, 1.1, len, s * (half + 0.6), -0.45, 0, '#b8bec6');
-  for (let z = -len / 2 + 25; z < len / 2 - 10; z += 40) box(g, w * 0.7, 3, 3, 0, -1.6, z, '#a9afb7');
+  if (!lift) {
+    for (const s of [-1, 1]) box(g, 0.5, 1.1, len, s * (half + 0.6), -0.45, 0, '#b8bec6');
+    for (let z = -len / 2 + 25; z < len / 2 - 10; z += 40) box(g, w * 0.7, 3, 3, 0, -1.6, z, '#a9afb7');
+  }
   // A tied arch over the middle: two red ribs leaning in, with hangers down
   // to the deck and braces across the top.
   const span = Math.min(110, len * 0.55), rise = 22, n = 14;
-  const at = (t) => [(t - 0.5) * span, Math.sin(Math.PI * t) * rise];
+  const at = (t) => [(t - 0.5) * span, Math.sin(Math.PI * t) * rise + lift];
   for (const s of [-1, 1]) {
     for (let i = 0; i < n; i++) {
       const [z0, y0] = at(i / n), [z1, y1] = at((i + 1) / n);
       const seg = box(g, 0.9, 0.9, Math.hypot(z1 - z0, y1 - y0) + 0.3, s * (half + 0.6) * (1 - 0.18 * Math.sin((Math.PI * (i + 0.5)) / n)), (y0 + y1) / 2 + 1, (z0 + z1) / 2, '#d4553a');
       seg.rotation.x = -Math.atan2(y1 - y0, z1 - z0);
       const [hz, hy] = at((i + 1) / n);
-      if (i < n - 1) box(g, 0.1, hy, 0.1, s * (half + 0.4), hy / 2 + 1, hz, '#e9e6df'); // hanger
+      if (i < n - 1) box(g, 0.1, hy - lift, 0.1, s * (half + 0.4), lift + (hy - lift) / 2 + 1, hz, '#e9e6df'); // hanger
     }
   }
   for (const t of [0.3, 0.5, 0.7]) { const [z, y] = at(t); box(g, w * 0.95, 0.5, 0.5, 0, y + 1, z, '#d4553a'); }

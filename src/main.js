@@ -253,6 +253,7 @@ import { createDaily } from './game/daily.js';
 import { parseSkyMsg } from './game/sky-codes.js';
 import { createLedger } from './ui/ledger-ui.js';
 import { hillGround } from './core/hill-ground.js';
+import { createHanBridges } from './game/han-bridges.js';
 import { createNamsanWalk } from './game/namsan-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createNaksanNear } from './game/naksan-near.js';
@@ -863,13 +864,14 @@ const northY = northGround(map.landmarks);
 const northWall = createNorthWallNear({ landmarks: map.landmarks, scene, y: northY });
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
+const hanBridges = createHanBridges({ scene, bridges: map.bridges }); // the Han's bridges, up off the water (core/han-bridges.js)
 const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings });
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
   t, L, fmt, missionEvent: (k, id) => missionEvent(k, id), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 }, { landmarks: map.landmarks, low: storefronts.get('namsan-sky-cable')?.door, top: namsanWalk.station, topOut: namsanWalk.stationOut });
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) });
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) || hanBridges.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
@@ -3382,7 +3384,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || terraceY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, Bongeunsa's Buddha terrace, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan or Bugaksan/Inwangsan
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || terraceY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z) || hanBridges.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, Bongeunsa's Buddha terrace, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan, Bugaksan/Inwangsan or a Han bridge
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
@@ -6103,7 +6105,7 @@ const seoulDal = createSeoulDalNear({
 // The Han River Boat Taxi between the real Han River Bus piers (game/boat-taxi-near.js
 // loads game/boat-taxi.js near a pier).
 const boatTaxi = createBoatTaxiNear({
-  data: map.boatTaxi, scene, cam, myId, get me() { return me; }, get mode() { return mode; }, get riding() { return riding; },
+  data: map.boatTaxi, scene, cam, camera, fx: coasterFx, myId, get me() { return me; }, get mode() { return mode; }, get riding() { return riding; },
   others, wallet, shop, hud: $('hud'), missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 });
 
@@ -7294,6 +7296,11 @@ renderer.setAnimationLoop((now) => {
     me.root.rotation.y += d * Math.min(1, dt * 12);
     const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
     speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
+  } else if (mag > 0.05 && boatTaxi.busy) { // walking round the boat taxi's deck (it carries you along)
+    const speed = STORE_WALK * Math.min(1, mag);
+    const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw), rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw);
+    boatTaxi.walk((fx * my + rx * mx) * speed * dt, (fz * my + rz * mx) * speed * dt);
+    speed01 = THREE.MathUtils.lerp(speed01, Math.min(1, speed / STORE_RUN), Math.min(1, dt * 10));
   } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && !seoulDal.busy && !boatTaxi.busy && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
@@ -7494,7 +7501,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
     // Flying (operators): nothing is sent, so others keep seeing us where we
     // took off and our spot isn't given away; carrying someone still sends.
     if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {

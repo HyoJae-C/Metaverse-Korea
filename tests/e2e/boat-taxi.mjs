@@ -57,7 +57,16 @@ for (let i = 0; i < 30 && !(await page.evaluate(() => __mk.boatTaxi.busy)); i++)
 assert(await page.evaluate(() => __mk.boatTaxi.busy), 'got on the boat when it came');
 await page.waitForTimeout(3000);
 await shot('3-aboard');
-await page.waitForTimeout(25000);
+// Walk on the deck: carried along, but never off the boat.
+const w0 = await page.evaluate(() => __mk.seoulDal().at);
+await page.keyboard.down('KeyA'); await page.waitForTimeout(1500); await page.keyboard.up('KeyA');
+await page.keyboard.down('KeyS'); await page.waitForTimeout(1500); await page.keyboard.up('KeyS');
+assert(await page.evaluate(() => __mk.boatTaxi.busy), 'still aboard after walking round');
+const w1 = await page.evaluate(() => __mk.seoulDal().at);
+console.log('walked', w0, '->', w1);
+await page.waitForTimeout(22000);
+await page.evaluate(() => __mk.cam({ yaw: 0.9, pitch: 0.45, dist: 22 }));
+await page.waitForTimeout(1500);
 await shot('4-on-the-river');
 for (let i = 0; i < 400 && (await page.evaluate(() => __mk.boatTaxi.busy)); i++) await page.waitForTimeout(1000);
 assert(!(await page.evaluate(() => __mk.boatTaxi.busy)), 'arrived');

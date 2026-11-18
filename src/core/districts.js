@@ -25,6 +25,8 @@
 // water on (collision lets you walk a deck over a river's blocker).
 import { closedRects } from './closed-grid.js';
 import { inPoly } from './geom.js';
+import { raiseHanBridges } from './han-bridges.js';
+import { boatPose, lineLengths } from './boat-taxi.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
@@ -74,6 +76,10 @@ export async function loadRegionMap(region, fetchJson) {
   if (boats) {
     out.boatTaxi = boats;
     for (const p of boats.piers) out.decks.push(p.dock, p.gang);
+    // The Han's bridges, up off the water so the boats pass under (core/han-bridges.js).
+    const lens = lineLengths(boats.route), west = [];
+    for (let s = 0; s <= lens.at(-1); s += 3) { const q = boatPose(boats.route, lens, boats.piers, s, -1); west.push([q.x, q.z]); }
+    out.bridges = raiseHanBridges(out, boats.route, [boats.route, west]);
   }
   return liftStations(out);
 }

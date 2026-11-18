@@ -1021,4 +1021,5 @@ export const TH = {
   "boat.wait": "เรือไป{pier} อีก {t}",
   "boat.aboard": "ขึ้นเรือแล้ว! ลงที่{pier} ⛴",
   "boat.toward": "ไป{pier} · {t}",
+  "boat.getOff": "ลงที่นี่ · {pier}",
 };

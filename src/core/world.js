@@ -87,11 +87,12 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
+  const drawn = map.roads.filter((r) => !r.bridge); // (a Han bridge's stretch over the river is its deck: game/han-bridges.js)
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
-    bike: map.roads.filter((r) => r.bike),
-    minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
-    major: map.roads.filter((r) => majors.has(r.k) && !r.base),
+    walk: drawn.filter((r) => r.k === 'walk' && !r.bike),
+    bike: drawn.filter((r) => r.bike),
+    minor: drawn.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
+    major: drawn.filter((r) => majors.has(r.k) && !r.base),
   };
   const roadMesh = (list, color, y) => {
     const m = makeRibbons(list, color, y);
@@ -106,7 +107,7 @@ export function buildWorld(map, scene, opts = {}) {
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
   // The base map's big roads, all over the city: in tiles, with plain joints.
-  for (const list of tiles(map.roads.filter((r) => majors.has(r.k) && r.base), (r) => r.p[r.p.length >> 1])) roadMesh(list, COLORS.roadMajor, ROAD_Y.default + 0.005);
+  for (const list of tiles(drawn.filter((r) => majors.has(r.k) && r.base), (r) => r.p[r.p.length >> 1])) roadMesh(list, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
   const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
@@ -131,7 +132,7 @@ export function buildWorld(map, scene, opts = {}) {
       });
     }
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
-    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base && !r.bridge), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
     if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
   }
 

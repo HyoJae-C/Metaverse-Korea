@@ -27,7 +27,7 @@ test('the base map is in the region, credited, and small enough to fetch at the 
 });
 
 test('base roads are big streets inside Seoul, in the joined map as base roads', () => {
-  const joined = map.roads.filter((r) => r.base);
+  const joined = map.roads.filter((r) => r.base && !r.split); // (a Han bridge cuts its road in three: core/han-bridges.js)
   assert.equal(joined.length, base.roads.length);
   assert.ok(joined.every((r) => r.d === 'base'));
   for (const r of base.roads) {
