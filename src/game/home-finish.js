@@ -1,5 +1,5 @@
-// Wallpaper and flooring in Decorate (core/home-finish.js): a row of the
-// wallpapers I own and a row of the floors, each with "Basic" (the room's own
+// Wallpaper, flooring and doors in Decorate (core/home-finish.js): a row of
+// the wallpapers I own, a row of the floors and a row of the doors, each with "Basic" (the room's own
 // look) first. The choice is saved in mk.homeFinish and sent to visitors
 // (game/home-visits.js). The patterns load with the rooms
 // (core/home-finish-art.js).
@@ -38,13 +38,13 @@ export function createHomeFinish(game) {
   }
   function label() {
     const rows = [];
-    for (const [kind, icon] of [['wall', '🧱'], ['floor', '🪵']]) {
+    for (const [kind, icon] of [['wall', '🧱'], ['floor', '🪵'], ['door', '🚪']]) {
       const have = FINISHES.filter((f) => f.kind === kind && owns(f.id));
       if (!have.length) continue;
       const row = document.createElement('div');
       row.className = 'visit-row finish-row';
       const head = document.createElement('span');
-      head.textContent = icon + ' ' + t(kind === 'wall' ? 'finish.wall' : 'finish.floor');
+      head.textContent = icon + ' ' + t('finish.' + kind);
       row.append(head, chip(kind, null), ...have.map((f) => chip(kind, f)));
       rows.push(row);
     }

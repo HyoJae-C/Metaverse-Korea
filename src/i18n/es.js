@@ -574,6 +574,7 @@ export const ES = {
   "home.grow": "Casa más grande",
   "finish.wall": "Papel pintado",
   "finish.floor": "Suelo",
+  "finish.door": "Puerta",
   "finish.basic": "Básico",
   "finish.where": "Compra papel pintado y suelos en las tiendas de papel pintado de la calle de muebles de Euljiro.",
   "home.size": "{w}×{d} m",
