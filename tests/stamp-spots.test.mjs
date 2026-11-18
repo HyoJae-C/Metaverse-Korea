@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
-import { noticeBoardSpots } from '../src/core/notice-board-spots.js';
+import { noticeBoardSpots, boardRowSpots } from '../src/core/notice-board-spots.js';
 
 // Stamp stands, the square's notice boards and meeting spots must stay on
 // open ground. When a district or building moves to its real place (DDP,
@@ -51,6 +51,25 @@ test('the notice boards on the main square stand clear of the buildings', () => 
     // still on the square
     assert.ok(Math.hypot(b.x - sq.at[0], b.z - sq.at[1]) < sq.pave.l / 2, `${b.board} board off the square`);
   }
+});
+
+test('the notice boards at the other meeting places stand clear of walls and car roads', () => {
+  const segD = (x, z, r) => { let d = Infinity; for (let i = 0; i < r.p.length - 1; i++) { const [x1, z1] = r.p[i], [x2, z2] = r.p[i + 1]; const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz || 1; const t = Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2)); d = Math.min(d, Math.hypot(x1 + dx * t - x, z1 + dz * t - z)); } return d; };
+  // a car road, or a footpath too narrow to stand three boards in
+  const onRoad = (x, z) => map.roads.some((r) => (r.k !== 'walk' || r.w < 10) && segD(x, z, r) < r.w / 2 + 0.5);
+  const rows = zones.filter((z) => z.boards);
+  assert.ok(rows.length >= 5, 'boards at the big meeting places');
+  const bad = [];
+  for (const z of rows) for (const b of boardRowSpots(z.boards)) {
+    if (blocked(b.x, b.z, 0.6) || onRoad(b.x, b.z)) bad.push(`${z.id} ${b.board} board at ${r1(b.x)}, ${r1(b.z)}`);
+    if (blocked(b.ux, b.uz, 0.6) || onRoad(b.ux, b.uz)) bad.push(`${z.id} in front of the ${b.board} board`);
+  }
+  assert.deepEqual(bad, []);
+});
+
+test('Seongsu keeps only two meeting signposts (Yozi 2026-11-18)', () => {
+  const seongsu = zones.filter((z) => z.id.startsWith('A-') && z.sign !== false).map((z) => z.id);
+  assert.deepEqual(seongsu, ['A-1', 'A-7']);
 });
 
 test('meeting spots that stand exactly where they say are not inside a building', () => {
