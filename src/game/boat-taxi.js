@@ -62,16 +62,19 @@ function buildBoat() {
 
 // The sign over a pier: 한강보트택시 / Han River Boat Taxi and the pier's name.
 function signTexture(p) {
-  return canvasTex(512, 160, (g, w, h) => {
+  return canvasTex(1024, 320, (g, w, h) => {
     g.fillStyle = '#123a6b'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#19a7a0'; g.fillRect(0, h - 14, w, 14);
+    g.fillStyle = '#19a7a0'; g.fillRect(0, h - 28, w, 28);
     g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '800 46px sans-serif'; g.fillText('⛴ 한강보트택시', w / 2, 40);
-    g.font = '700 26px sans-serif'; g.fillText('Han River Boat Taxi', w / 2, 82);
-    g.font = '800 30px sans-serif'; g.fillStyle = '#ffd34d';
-    g.fillText(`${p.name.ko} 선착장 · ${p.name.en}`, w / 2, 122);
+    g.font = '800 92px sans-serif'; g.fillText('⛴ 한강보트택시', w / 2, 80);
+    g.font = '700 52px sans-serif'; g.fillText('Han River Boat Taxi', w / 2, 164);
+    g.font = '800 60px sans-serif'; g.fillStyle = '#ffd34d';
+    g.fillText(`${p.name.ko} 선착장 · ${p.name.en}`, w / 2, 244, w - 40);
   });
 }
+// The sign on the canopy (Yozi 2026-11-18: bigger, and the right way round
+// from both sides): a board with the same face on its front and its back.
+const SIGN = { w: 5.2, h: 1.62 };
 
 // One pier: the floating deck, its gangway, a canopy and railings, in world metres.
 const WAKE = { w: 15, l: 40 }; // m: the V behind a boat
@@ -189,13 +192,21 @@ export function createBoatTaxi(game, data) {
   for (const p of piers) buildPier(p, group);
   bakeColors(group);
   game.scene.add(group);
-  // The signs, each on a post at the gangway's foot and on the canopy.
+  // The signs, up on each canopy, facing the bank and the river.
   const signs = piers.map((p) => {
-    const tex = signTexture(p);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.81), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
-    m.position.set(p.at[0], DOCK_Y + 3.15, p.at[1]);
-    m.rotation.y = p.ry + Math.PI / 2; // facing the bank
-    m.userData.noShadow = true;
+    const face = new THREE.MeshBasicMaterial({ map: signTexture(p) });
+    const m = new THREE.Group();
+    const board = new THREE.Mesh(new THREE.BoxGeometry(SIGN.w + 0.16, SIGN.h + 0.16, 0.1), new THREE.MeshBasicMaterial({ color: '#0d2b52' }));
+    m.add(board);
+    for (const side of [0, Math.PI]) { // (a plane is mirrored from behind: one each way)
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(SIGN.w, SIGN.h), face);
+      f.rotation.y = side;
+      f.position.z = side ? -0.06 : 0.06;
+      m.add(f);
+    }
+    m.position.set(p.at[0], DOCK_Y + 2.73 + SIGN.h / 2 + 0.12, p.at[1]); // (on the canopy's roof)
+    m.rotation.y = p.ry + Math.PI / 2; // (its front faces the bank)
+    m.traverse((o) => { o.userData.noShadow = true; });
     game.scene.add(m);
     return m;
   });
