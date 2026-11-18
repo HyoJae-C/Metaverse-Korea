@@ -7719,6 +7719,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     outside: () => { const q = myPlace(); return { out: outdoors(), x: +q.x.toFixed(2), z: +q.z.toFixed(2) }; }, // (the map and the operators' live view)
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
+    carrySpot: () => ({ footprint: decorGame.footprint(), grid: decorGame.grid() }), // (carrying at home: green or red under the piece, squares on the floor)
     decorAt: () => decorGame.decor?.items.map((i) => [i.id, +i.x.toFixed(2), +i.z.toFixed(2), i === decorGame.decor.carry]) ?? null,
     roomSize: () => (interior?.room ? [interior.room.w, interior.room.d] : null), // (a home's size by its level)
     riding: () => riding,

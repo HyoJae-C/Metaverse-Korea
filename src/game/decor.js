@@ -133,6 +133,8 @@ export function createDecor(game) {
     swimming = [];
     tankPanel?.close();
     setDecorating(false);
+    hideFootprint();
+    showGrid(false);
     $('decor-btn').hidden = true;
     decor = null;
   }
@@ -141,6 +143,7 @@ export function createDecor(game) {
     $('decor-bar').hidden = !on;
     $('decor-btn').classList.toggle('on', on);
     if (!on) closePiece();
+    showGrid(on || !!decor.carry);
     game.action = STALE; // refresh the action button
   }
   // A spot about 1.6 m in front of the player, inside the room.
@@ -170,6 +173,45 @@ export function createDecor(game) {
   }
   // A small piece over a table stands on it; anything else on the floor.
   function settle(it) { it.y = topUnder(it, decor.items)?.y || 0; }
+  // While decorating or carrying: squares on the floor (50 cm), and under a
+  // carried piece its footprint, green where it can go down, red where not.
+  const SNAP = 0.25, CELL = 0.5;
+  let floorGrid = null, footprint = null;
+  const ok = new THREE.Color(0x3fbf5f), no = new THREE.Color(0xe0453a);
+  function showGrid(on) {
+    if (on && !floorGrid && decor && game.interior?.room) {
+      const { w, d } = game.interior.room, pts = [];
+      for (let x = -w / 2; x <= w / 2 + 1e-6; x += CELL) pts.push(x, 0, -d / 2, x, 0, d / 2);
+      for (let z = -d / 2; z <= d / 2 + 1e-6; z += CELL) pts.push(-w / 2, 0, z, w / 2, 0, z);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      floorGrid = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false }));
+      floorGrid.position.y = 0.015;
+      floorGrid.renderOrder = 1;
+      decor.built.scene.add(floorGrid);
+    } else if (!on && floorGrid) {
+      floorGrid.removeFromParent(); floorGrid.geometry.dispose(); floorGrid.material.dispose(); floorGrid = null;
+    }
+  }
+  function showFootprint(it) {
+    if (!footprint) {
+      const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+      footprint = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false, depthTest: false })); // (seen through what it's over: red under a sofa shows)
+      footprint.renderOrder = 2;
+      decor.built.scene.add(footprint);
+    }
+    const [w, d] = furnitureById(it.id).size, { w: rw, d: rd } = game.interior.room;
+    footprint.scale.set(w + 0.1, 1, d + 0.1); // (a little wider than the piece, so it shows round it)
+    footprint.position.set(it.x, (it.y || 0) + 0.02, it.z);
+    footprint.rotation.y = it.ry;
+    const bad = pieceBlocked(it, decor.items, game.me.root.position) || outsideRoom(it, rw, rd);
+    footprint.material.color.copy(bad ? no : ok);
+    footprint.userData.bad = bad;
+  }
+  function hideFootprint() {
+    if (!footprint) return;
+    footprint.removeFromParent(); footprint.geometry.dispose(); footprint.material.dispose(); footprint = null;
+  }
   // Nudge a new piece to the nearest clear spot (rings round where it
   // landed, inside the room). False if the room has no clear spot near.
   function freeSpot(it) {
@@ -218,6 +260,8 @@ export function createDecor(game) {
     if (!force && decor.carry && (pieceBlocked(decor.carry, decor.items, game.me.root.position) || outsideRoom(decor.carry, game.interior.room.w, game.interior.room.d))) { shop.toast(t('home.blocked')); return false; }
     decor.carry = null;
     decor.riders = null;
+    hideFootprint();
+    showGrid(decor.editing);
     $('decor-bar').hidden = !decor.editing;
     rebuildDecor();
     if (decor.piece) $('piece-move-label').textContent = t('home.carry');
@@ -226,8 +270,10 @@ export function createDecor(game) {
   function updateCarry() {
     const it = decor?.carry;
     if (!it?.mesh) return;
-    [it.x, it.z] = spotInFront();
-    it.mesh.position.set(it.x, (topUnder(it, decor.items)?.y || 0) + 0.08, it.z); // lifted a little while carried (over a table: above it)
+    [it.x, it.z] = spotInFront().map((v, i) => (i < 2 ? Math.round(v / SNAP) * SNAP : v)); // on a 25 cm step: easy to line up with the floor's squares
+    settle(it);
+    it.mesh.position.set(it.x, it.y + 0.08, it.z); // lifted a little while carried (over a table: above it)
+    showFootprint(it);
     if (decor.riders?.length) { // what stands on it comes along
       placeRiders(it, decor.riders);
       for (const r of decor.riders) { r.it.mesh?.position.set(r.it.x, r.it.y + 0.08, r.it.z); if (r.it.mesh) r.it.mesh.rotation.y = r.it.ry; }
@@ -271,6 +317,7 @@ export function createDecor(game) {
     decor.carryFrom = { x: decor.piece.x, z: decor.piece.z, ry: decor.piece.ry, y: decor.piece.y || 0 };
     decor.riders = ridersOf(decor.piece, decor.items);
     decor.picked = true;
+    showGrid(true);
     $('decor-bar').hidden = true; // see where you're walking
     rebuildDecor();
     $('piece-move-label').textContent = t('home.putDown');
@@ -279,7 +326,7 @@ export function createDecor(game) {
   $('piece-remove').onclick = () => removePiece();
   function removePiece() {
     if (!decor?.piece) return;
-    if (decor.carry === decor.piece) decor.carry = null;
+    if (decor.carry === decor.piece) { decor.carry = null; hideFootprint(); showGrid(decor.editing); }
     for (const r of ridersOf(decor.piece, decor.items)) r.it.y = 0; // what stood on it goes to the floor
     decor.items.splice(decor.items.indexOf(decor.piece), 1);
     rebuildDecor();
@@ -371,7 +418,7 @@ export function createDecor(game) {
     return level.then((n) => ({ ...item, homeSized: true, store: { ...item.store, roomDims: homeRoom(n) } }));
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
-  const api = { visit, labelDecor, lampAct, pieceActs, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  const api = { visit, labelDecor, lampAct, pieceActs, footprint: () => (footprint ? (footprint.userData.bad ? 'red' : 'green') : null), grid: () => !!floorGrid, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }

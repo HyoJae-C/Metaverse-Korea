@@ -118,12 +118,22 @@ try {
   await pick(h, '✋');
   if (!(await h.evaluate(() => __mk.decorAt().some((i) => i[0] === 'plant' && i[3])))) throw new Error('not carrying the plant');
   if (await h.isVisible('#decor-bar')) throw new Error('the catalogue opened while carrying');
+  step = 'carried piece: squares on the floor, green where it fits, red over the sofa';
+  await h.waitForFunction(() => __mk.carrySpot().footprint, null, { timeout: 10000 });
+  if (!(await h.evaluate(() => __mk.carrySpot().grid))) throw new Error('no floor squares while carrying');
+  await h.evaluate(() => { const s = __mk.decorAt().find((i) => i[0] === 'sofa'); __mk.goto(s[1], s[2] - 1.6, 0); });
+  await h.waitForFunction(() => __mk.carrySpot().footprint === 'red', null, { timeout: 10000 });
+  if (shotDir) { await h.evaluate(() => __mk.cam({ dist: 6, pitch: 0.9, yaw: __mk.camYaw() + 0.9 })); await h.waitForTimeout(600); await h.screenshot({ path: shotDir + '/carry-red.png' }); }
   await h.evaluate(([x, z]) => __mk.goto(x + 0.9, z + 1.2, -Math.PI / 2), plantAt);
   await h.waitForFunction(() => __mk.action()?.startsWith('📍'), null, { timeout: 5000 });
+  await h.waitForFunction(() => __mk.carrySpot().footprint === 'green', null, { timeout: 10000 });
+  if (shotDir) { await h.evaluate(() => __mk.cam({ dist: 6, pitch: 0.9, yaw: __mk.camYaw() + 0.9 })); await h.waitForTimeout(600); await h.screenshot({ path: shotDir + '/carry-green.png' }); }
   await h.evaluate(() => __mk.act());
   const moved = await h.evaluate(() => __mk.decorAt().find((i) => i[0] === 'plant'));
   if (moved[3] || Math.hypot(moved[1] - plantAt[0], moved[2] - plantAt[1]) < 0.5) throw new Error('plant not put down somewhere new: ' + moved + ' was ' + plantAt);
   if (await h.isVisible('#piece-bar')) throw new Error('piece bar still open after putting down');
+  if (Object.values(await h.evaluate(() => __mk.carrySpot())).some(Boolean)) throw new Error('squares or footprint left after putting down');
+  if ([moved[1], moved[2]].some((v) => Math.abs(v * 4 - Math.round(v * 4)) > 0.01)) throw new Error('not on the 25 cm step: ' + moved);
   if (shotDir) await h.screenshot({ path: shotDir + '/piece-moved.png' });
 
   step = 'host removes a piece from the room, the guest sees it';
