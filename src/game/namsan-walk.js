@@ -90,7 +90,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
       if (summit || loading || !scene || Math.hypot(p.x - tower[0], p.z - tower[1]) > W.near) return;
       loading = true;
       import('./namsan-summit.js')
-        .then(({ buildNamsanSummit }) => { summit = buildNamsanSummit({ scene, collision, l, tower, station, trailTop: line.at(-1), y: y(...tower), groundY: y }); })
+        .then(({ buildNamsanSummit }) => { summit = buildNamsanSummit({ scene, collision, l, tower, station, trails: [line, ...(l.wtrail || []).map((r) => r.map(([x, z]) => [l.x + x, l.z + z]))], y: y(...tower), groundY: y }); })
         .catch((e) => { loading = false; console.warn('namsan summit', e); });
     },
     get wallGroup() { return wall?.group || null; }, // (main.js FarCull)

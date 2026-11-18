@@ -13,8 +13,9 @@ const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatSh
 const LOCK_COLS = ['#ff5d8f', '#ffd23f', '#5dade2', '#58d68d', '#af7ac5', '#f5b041', '#ec7063', '#ffffff'];
 
 // scene, collision; l the namsan landmark; tower [x, z]; station (the upper
-// station's door) and trailTop [x, z] or null; y the plaza's height.
-export function buildNamsanSummit({ scene, collision, tower, station, trailTop, y, groundY }) {
+// station's door) or null; trails: the lines [[x, z]...] that come up to the
+// plaza (the railing opens where each crosses it); y the plaza's height.
+export function buildNamsanSummit({ scene, collision, tower, station, trails = [], y, groundY }) {
   const W = NAMSAN_WALK, [tx, tz] = tower, Y = y + 0.06;
   const g = new THREE.Group();
   g.name = 'namsan-summit';
@@ -35,9 +36,16 @@ export function buildNamsanSummit({ scene, collision, tower, station, trailTop, 
 
   // The railing round the edge, with gaps for the trail and the station.
   const R = W.plazaR - 0.6;
-  const gaps = [trailTop, station].filter(Boolean).map(([x, z]) => Math.atan2(z - tz, x - tx));
+  // The railing opens where a trail runs through it (within 3.2 m of its
+  // line: a trail can cross the ring at a slant), and towards the station.
+  // (The Sowol-ro trail and the city wall's west trail came up against it:
+  // only the Sowol-ro trail's last point used to count. Yozi 2026-11-18)
+  const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t); };
+  const trailD = (x, z) => { let d = Infinity; for (const p of trails) for (let i = 1; i < p.length; i++) d = Math.min(d, segD(x, z, p[i - 1], p[i])); return d; };
+  const onTrail = (a, m) => trailD(tx + Math.cos(a) * R, tz + Math.sin(a) * R) < m;
+  const gaps = [station].filter(Boolean).map(([x, z]) => Math.atan2(z - tz, x - tx));
   const GAP = 2.6 / R; // half a gap's angle (5 m wide)
-  const inGap = (a) => gaps.some((b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))) < GAP);
+  const inGap = (a) => gaps.some((b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))) < GAP) || onTrail(a, 3.2);
   const STEP = 2.5 / R, N = Math.ceil((Math.PI * 2) / STEP);
   const locks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.14, 0.18, 0.06), new THREE.MeshLambertMaterial({ color: '#ffffff' }), 1400);
   const lockCols = LOCK_COLS.map((c) => new THREE.Color(c));
@@ -96,6 +104,7 @@ export function buildNamsanSummit({ scene, collision, tower, station, trailTop, 
   for (const a of [0.9, 2.5, 3.9, 5.3]) {
     if (inGap(a)) continue;
     const bx = Math.cos(a) * 16, bz = Math.sin(a) * 16;
+    if (trailD(tx + bx, tz + bz) < 5.5) continue; // (not on a trail's way across the plaza)
     if (Math.hypot(bx - W.heart[0], bz - W.heart[1]) < 6) continue;
     box(5, 0.5, 5, bx, Y + 0.25, bz, '#b9ad98');
     box(4.6, 0.1, 4.6, bx, Y + 0.52, bz, '#7fb06a');

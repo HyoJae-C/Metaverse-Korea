@@ -9,7 +9,7 @@ import { haneulStore, haneulTower } from './haneul.js';
 import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
 import { banpoBridge } from './banpo-bridge.js';
-import { namsanPoint } from './namsan-shape.js';
+import { namsanPoint, namsanGround } from './namsan-shape.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { farFree } from './far-textures.js';
@@ -305,6 +305,25 @@ const OWN_BUILD = {
       }
       return false;
     };
+    // The trails every metre with their heights; for a vertex: [its distance
+    // to the nearest, the lowest trail height within a little more than
+    // that] (on a steep trail, the low side decides).
+    const samples = [];
+    for (const p of [trail, ...(l.wtrail || [])]) for (let k = 1; k < p.length; k++) {
+      const [ax, az] = p[k - 1], [bx, bz] = p[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
+      for (let j = 0; j <= n; j++) { const x = ax + (bx - ax) * j / n, z = az + (bz - az) * j / n; samples.push([x, z, namsanGround(sh, x, z)]); }
+    }
+    const C = TRAIL_CAP.band + 4, cells = new Map(), key = (i, j) => i * 100003 + j; // (in cells of C m: only the 3×3 round a vertex are looked at)
+    for (const q of samples) { const k = key(Math.floor(q[0] / C), Math.floor(q[1] / C)); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(q); }
+    const nearest = (x, z) => {
+      let d0 = Infinity;
+      const near = [], ci = Math.floor(x / C), cj = Math.floor(z / C);
+      for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const q of cells.get(key(i, j)) || []) { const d = Math.hypot(q[0] - x, q[1] - z); if (d > C) continue; near.push([d, q[2]]); if (d < d0) d0 = d; }
+      if (d0 >= TRAIL_CAP.band) return null;
+      let y = Infinity;
+      for (const [d, qy] of near) if (d < d0 + 4 && qy < y) y = qy;
+      return [d0, y];
+    };
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const [hx, hy, hz] = namsanPoint(sh, x, z);
@@ -315,7 +334,14 @@ const OWN_BUILD = {
       // (and a little under the city wall's trail and its verges, so the
       // slope's big triangles never poke up through them: game/namsan-wall.js)
       const sink = l.wtrail && hy > 0.5 && nearWtrail(hx, hz, (l.wpathW || 3) / 2 + 6, true) ? 0.5 : 0;
-      pos.setXYZ(i, hx, hy + bump - sink, hz);
+      // Near a trail, never above it: a vertex is kept under the trail's
+      // height at its nearest point, rising only gently away from it, so a
+      // big triangle spanning the trail can't bury it (the Sowol-ro trail
+      // was up to 3 m under the slope: Yozi 2026-11-18).
+      let y1 = hy + bump - sink;
+      const q = hy > 0 && nearest(hx, hz);
+      if (q && q[0] < TRAIL_CAP.band) y1 = Math.min(y1, q[1] - TRAIL_CAP.under + TRAIL_CAP.rise * Math.max(0, q[0] - TRAIL_CAP.flat));
+      pos.setXYZ(i, hx, y1, hz);
     }
     geo.computeVertexNormals();
     g.add(new THREE.Mesh(geo, mat('#86b56f')));
@@ -334,6 +360,11 @@ const OWN_BUILD = {
 
 // The look-out tower on Namsan: a white shaft, a round deck with windows,
 // a red and white mast, and a ring of lights.
+// How the slope is kept under the trails (core/landmarks.js namsan): within
+// band m of a trail a vertex is at most `under` m below the trail's height,
+// plus `rise` m for each metre past `flat` m from the trail's middle.
+export const TRAIL_CAP = { band: 18, flat: 2.5, under: 0.35, rise: 0.08 };
+
 export function namsanTower(g, y0 = 0) {
   const cyl = (rt, rb, ht, y, c) => {
     const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, ht, 16), mat(c));
