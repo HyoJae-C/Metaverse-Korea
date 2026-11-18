@@ -63,13 +63,13 @@ test('Yeouido is an island in the Han River, in Yeongdeungpo-gu', () => {
 });
 
 test('Seogang Bridge crosses the main channel from the Han River Bike Path at Hongdae', () => {
-  const bridge = joined.roads.find((r) => r.n?.en === 'Seogang Bridge'); // (in world metres)
-  const north = bridge.p[0];
+  const bridge = joined.roads.find((r) => r.n?.en === 'Seogang Bridge' && r.bridge); // (in world metres; its stretch over the river, up off the water: core/han-bridges.js)
+  const north = joined.roads.find((r) => r.n?.en === 'Seogang Bridge' && !r.split).p[0]; // (where the road starts, on the north bank)
   const bike = region.links.find((l) => l.n?.en === 'Han River Bike Path');
   const down = region.links.find((l) => l.n?.en === 'To the Han River');
   assert.ok(bike.p.some(([x, z]) => x === north[0] && z === north[1]), 'it starts on the bike path');
   assert.deepEqual(down.p.at(-1), north, 'where the lane from Hongdae comes down');
-  const [a, b] = bridge.p;
+  const [a, b] = [bridge.p[0], bridge.p.at(-1)];
   let overWater = 0;
   for (let t = 0; t <= 1; t += 0.01) {
     const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;

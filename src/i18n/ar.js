@@ -1022,4 +1022,5 @@ export const AR = {
   "boat.wait": "قارب إلى {pier} خلال {t}",
   "boat.aboard": "على متن القارب! انزل في {pier} ⛴",
   "boat.toward": "إلى {pier} · {t}",
+  "boat.getOff": "انزل هنا · {pier}",
 };

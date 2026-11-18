@@ -1025,4 +1025,5 @@ export const JA = {
   "boat.wait": "{pier}行きの船 あと{t}",
   "boat.aboard": "乗船！{pier}で降ります ⛴",
   "boat.toward": "{pier}まで · {t}",
+  "boat.getOff": "ここで降りる · {pier}",
 };

@@ -1022,4 +1022,5 @@ export const VI = {
   "boat.wait": "Thuyền đến {pier} sau {t}",
   "boat.aboard": "Lên thuyền! Xuống ở {pier} ⛴",
   "boat.toward": "Đến {pier} · {t}",
+  "boat.getOff": "Xuống ở đây · {pier}",
 };

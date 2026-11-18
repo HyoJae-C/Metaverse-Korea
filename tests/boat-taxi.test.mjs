@@ -134,7 +134,7 @@ test('the line is the real route, on the water all the way, through each berth',
 test('the timetable: a boat every 4 minutes each way at every pier (Yozi 2026-11-18), stopping at each', () => {
   const { piers } = data, tt = timetable(piers);
   assert.equal(BOAT_TAXI.every, 240);
-  assert.ok(tt.boats >= 4 && tt.boats <= 6, `${tt.boats} boats`);
+  assert.ok(tt.boats >= 3 && tt.boats <= 6, `${tt.boats} boats`);
   assert.ok(tt.end >= BOAT_TAXI.minEnd, 'a wait at each end');
   assert.ok(Math.abs(tt.legs.at(-1).t1 - tt.round) < 1e-6);
   for (let i = 0; i < piers.length; i++) {
@@ -154,7 +154,7 @@ test('the timetable: a boat every 4 minutes each way at every pier (Yozi 2026-11
     }
   }
   const whole = rideTime(tt, 0, piers.length - 1);
-  assert.ok(whole > 420 && whole < 600, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
+  assert.ok(whole > 240 && whole < 360, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
   assert.ok(Math.abs(rideTime(tt, 2, 3) - rideTime(tt, 3, 2)) < 1e-6);
 });
 

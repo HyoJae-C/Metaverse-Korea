@@ -1021,4 +1021,5 @@ export const ES = {
   "boat.wait": "Barco a {pier} en {t}",
   "boat.aboard": "¡A bordo! Bajas en {pier} ⛴",
   "boat.toward": "A {pier} · {t}",
+  "boat.getOff": "Bajar aquí · {pier}",
 };

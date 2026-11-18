@@ -2,7 +2,7 @@
 // you to sail by on one), then loads the piers, the boats and the ride
 // (game/boat-taxi.js). Small on purpose: this is in the first download, the
 // boats are not. The piers come from the map (map.boatTaxi, core/districts.js).
-import { BOAT_TAXI, nearestPier, skewClock } from '../core/boat-taxi.js';
+import { BOAT_TAXI, nearestPier, skewClock, syncClock } from '../core/boat-taxi.js';
 
 // game: what createBoatTaxi needs (see game/boat-taxi.js), with `data` the map's boatTaxi.
 export function createBoatTaxiNear(game) {
@@ -18,13 +18,14 @@ export function createBoatTaxiNear(game) {
       look = 0.5;
       if (nearestPier(data.piers, p.x, p.z) > BOAT_TAXI.load && !someoneAboard()) return;
       loading = true;
-      import('./boat-taxi.js')
+      Promise.all([import('./boat-taxi.js'), syncClock().catch(() => null)]).then(([mod]) => mod)
         .then(({ createBoatTaxi }) => { boats = createBoatTaxi(game, data); })
         .catch((e) => { loading = false; console.warn('boat-taxi', e); });
     },
     act: (p) => boats?.act(p) || null,
     state: (st) => boats?.state(st),
     stop: () => boats?.stop(),
+    walk: (dx, dz) => boats?.walk(dx, dz), // (walking round the deck)
     peer: (o) => boats?.peer(o), // (someone on a boat: on it on my screen too)
     skewClock, // (tests only)
     get loaded() { return !!boats; },

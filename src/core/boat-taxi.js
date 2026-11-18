@@ -18,8 +18,8 @@
 export const BOAT_TAXI = {
   fare: 3000, // won a ticket, any distance (the real Han River Bus fare)
   every: 240, // s between boats at a pier, each way (Yozi 2026-11-18: 4 minutes)
-  speed: 15, // m/s cruising
-  accel: 1.5, // m/s² leaving and coming in
+  speed: 30, // m/s cruising (Yozi 2026-11-18: twice the first 15)
+  accel: 3, // m/s² leaving and coming in
   dwell: 20, // s at each pier on the way
   minEnd: 30, // s at least at each end before turning back
   pass: 7, // m: boats heading west keep this far to the side of the line, so two boats pass each other
@@ -30,6 +30,27 @@ export const BOAT_TAXI = {
 let skew = 0;
 export const clock = () => Date.now() / 1000 + skew;
 export const skewClock = (s) => { skew += s; }; // (tests only: bring the next boat nearer)
+
+// A phone whose clock is off by seconds would sail its own boats ahead of or
+// behind everyone else's (Yozi 2026-11-18: some riders got off and arrived
+// early). So set the clock by the web server's (its Date header): the
+// quickest of three asks, put right only when it is off by more than 2 s
+// (the header has whole seconds; a good clock stays as it is).
+export async function syncClock(url = location.href) {
+  let best = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const t0 = Date.now();
+      const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      const t1 = Date.now(), d = Date.parse(r.headers.get('date') || '');
+      if (!Number.isFinite(d)) continue;
+      const off = (d + 500 + (t1 - t0) / 2 - t1) / 1000;
+      if (!best || t1 - t0 < best.rtt) best = { rtt: t1 - t0, off };
+    } catch { /* offline: keep this clock */ }
+  }
+  if (best && Math.abs(best.off) > 2) skew += best.off;
+  return best?.off ?? null;
+}
 
 // The line's metres: s[i] along it at each point.
 export function lineLengths(route) {

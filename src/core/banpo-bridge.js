@@ -40,7 +40,7 @@ export function banpoBridge(g, l) {
   const { out, len } = sample(l.pts);
   // The deck's height s metres along: up the north ramp, level, down the south one.
   const smoothstep = (k) => k * k * (3 - 2 * k);
-  const y = (s) => top * Math.min(smoothstep(Math.min(1, s / rampN)), smoothstep(Math.min(1, (len - s) / rampS)));
+  const y = l.y || ((s) => top * Math.min(smoothstep(Math.min(1, s / rampN)), smoothstep(Math.min(1, (len - s) / rampS)))); // (l.y(s): a deck of its own shape, core/han-bridges.js)
   const parts = { deck: [], parapet: [], pipe: [], arch: [], mid: [] };
   const box = new THREE.BoxGeometry(1, 1, 1);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sc = new THREE.Vector3();
@@ -87,7 +87,7 @@ export function banpoBridge(g, l) {
       }
     }
   }
-  const colors = { deck: '#d9dde2', parapet: '#b8bec6', pipe: '#6f7a86', arch: l.archColor || '#5d8fb5', mid: '#7d7466' };
+  const colors = { deck: l.deckColor || '#d9dde2', parapet: '#b8bec6', pipe: '#6f7a86', arch: l.archColor || '#5d8fb5', mid: '#7d7466' };
   for (const [k, list] of Object.entries(parts)) if (list.length) g.add(new THREE.Mesh(mergeGeometries(list), mat(colors[k])));
   // Piers in pairs, where the deck is high enough to need them.
   const piers = [];

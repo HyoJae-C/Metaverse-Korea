@@ -1022,4 +1022,5 @@ export const HI = {
   "boat.wait": "{pier} की नाव {t} में",
   "boat.aboard": "सवार हो गए! {pier} पर उतरें ⛴",
   "boat.toward": "{pier} तक · {t}",
+  "boat.getOff": "यहाँ उतरें · {pier}",
 };
