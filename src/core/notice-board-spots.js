@@ -32,3 +32,16 @@ export function noticeBoardSpots(square, blocked) {
   }
   return at(far); // nowhere clear: where it always was
 }
+
+// The same three boards elsewhere (zones.json "boards": [x, z, ry], Yozi
+// 2026-11-18): in a row, 3.3 m apart, facing ry (towards the zone's
+// signpost). Spots are picked off the car roads and clear of walls, and
+// tests/stamp-spots.test.mjs keeps them so.
+export const ROW_SIDES = [['news', -3.3], ['free', 0], ['ask', 3.3]];
+export function boardRowSpots([cx, cz, ry]) {
+  const ax = Math.sin(ry), az = Math.cos(ry), nx = az, nz = -ax; // facing / across
+  return ROW_SIDES.map(([board, side]) => {
+    const x = cx - nx * side, z = cz - nz * side; // (news on your right as you face it, as on the square)
+    return { board, x, z, ry, ux: x + ax * READ, uz: z + az * READ };
+  });
+}

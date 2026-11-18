@@ -79,7 +79,7 @@ export const BAG_TEXT = {
 };
 
 export class BagUI {
-  // describe(entry) → { emoji, name, desc, canHold }
+  // describe(entry) → { emoji, name, desc, canHold, img? (a picture: a ride photo) }
   // extra() → nodes shown under the bag slots (the collection);
   // closet() → { ids (in the order bought), describe(id) → { emoji, name,
   // desc, worn, kind, price },
@@ -154,6 +154,7 @@ export class BagUI {
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
+        if (d.img) { const im = el('img', 'bag-thumb'); im.src = d.img; im.alt = ''; b.replaceChildren(im); } // (a ride photo: the picture itself)
         if (food && dishIconId(e)) b.replaceChildren(dishIcon(dishIconId(e))); // (a picture of the dish, not an emoji)
         if (food) { // (its best medal, and how many)
           const m = medalFor(kimchiScore(e));
@@ -174,6 +175,7 @@ export class BagUI {
       const title = el('strong', '', `${food && dishIconId(e) ? '' : d.emoji + ' '}${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`);
       if (food && dishIconId(e)) title.prepend(dishIcon(dishIconId(e)), ' ');
       info.append(title, el('small', 'fine', d.desc));
+      if (d.img) { const im = el('img', 'bag-photo'); im.src = d.img; im.alt = d.name; info.append(im); } // (a ride photo, as a print)
       if (food && (e.lv > 0 || e.by)) info.append(el('small', 'fine', [e.lv > 0 ? t('upgrade.tier.' + TIER_IDS[Math.floor(Math.min(30, e.lv) / 5)]) : '', e.by ? t('upgrade.made', { name: e.by }) : ''].filter(Boolean).join(' · ')));
       if (food) { // (how many of each medal; holding or throwing away takes the best one)
         const list = stacks.get(dishSlot(e)) || [], by = new Map();

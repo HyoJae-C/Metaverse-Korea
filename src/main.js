@@ -20,7 +20,7 @@ import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear, screenSpot } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
 import { makeNoticeBoard, makeNewTag } from './core/notice-board-model.js';
-import { noticeBoardSpots } from './core/notice-board-spots.js';
+import { noticeBoardSpots, boardRowSpots } from './core/notice-board-spots.js';
 import { useGoldCoins } from './ui/gold-coin.js';
 useGoldCoins(); // 🪙 shows as a gold coin everywhere
 import { BoardUI, BOARD_TEXT } from './ui/board-ui.js';
@@ -127,6 +127,7 @@ import { lazyPanel } from './core/lazy-panel.js'; // panels downloaded on first 
 import { KIMCHI_LABELS as KIMCHI_TEXT, JAPCHAE_LABELS as JAPCHAE_TEXT, KIMBAP_LABELS as KIMBAP_TEXT, TTEOK_LABELS as TTEOK_TEXT, BIBIMBAP_LABELS as BIBIMBAP_TEXT } from './ui/cooking-labels.js';
 import { PochaUI, L, fmt } from './ui/pocha-ui.js';
 import { Bag, giftEntry, isCosmetic } from './core/bag.js';
+import { PhotoStore } from './core/ride-photos.js';
 import { perfumeIndex, Scent, SPRAYS, STYLES, PUFF_NEAR, nextPuff, onSale } from './core/perfume.js';
 import { ScentFx } from './core/scent-fx.js';
 import { BagUI, BAG_TEXT } from './ui/bag-ui.js';
@@ -1038,14 +1039,20 @@ if (square) {
 // Notice boards at one end of the square, facing it: free board, inquiries,
 // and the update board (with a NEW tag while unread). They stand either side
 // of the middle, clear of the walkway to Café Street and of the buildings
-// (core/notice-board-spots.js).
+// (core/notice-board-spots.js). The same three stand in a row at the other
+// big meeting places (zones.json "boards").
 const noticeBoards = [];
-let newsTag = null;
-if (square) {
-  for (const { board, x, z, ry, ux, uz } of noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))) {
+const newsTags = [];
+{
+  const sets = [
+    ...(square ? [noticeBoardSpots(square, (x, z, r) => collision.blocked(x, z, r))] : []),
+    ...zones.items.filter((i) => i.zone.boards).map((i) => boardRowSpots(i.zone.boards)),
+  ];
+  const titles = { news: '📢 업데이트 소식', free: BOARD_TEXT.free.ko, ask: BOARD_TEXT.ask.ko }; // signs in Korean, like the shop signs
+  for (const { board, x, z, ry, ux, uz } of sets.flat()) {
     const color = { news: '#e0a020', free: '#2f6fd6', ask: '#d8452f' }[board];
-    const m = makeNoticeBoard(board === 'news' ? '📢 업데이트 소식' : BOARD_TEXT[board].ko, color); // signs in Korean, like the shop signs
-    if (board === 'news') { newsTag = makeNewTag(); newsTag.position.set(0, 3.75, 0.1); newsTag.visible = false; m.add(newsTag); }
+    const m = makeNoticeBoard(titles[board], color);
+    if (board === 'news') { const tag = makeNewTag(); tag.position.set(0, 3.75, 0.1); tag.visible = false; m.add(tag); newsTags.push(tag); }
     m.position.set(x, 0, z);
     m.rotation.y = ry;
     scene.add(m);
@@ -1310,7 +1317,7 @@ const refreshNewsDot = () => {
   $('news-dot').hidden = !on; // a pulsing NEW badge on the row
   $('settings-dot').hidden = !on;
   $('settings-btn').classList.toggle('has-news', on);
-  if (newsTag) newsTag.visible = on; // over the board on the square
+  for (const tag of newsTags) tag.visible = on; // over the update boards
 };
 const renderNews = () => {
   const lang = getLanguage();
@@ -1883,7 +1890,7 @@ const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlig
   buildings: solidBuildings, myId, get net() { return net; }, get others() { return others; },
   isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
   places: () => [
-    ...zones.items.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
+    ...zones.signs.map((i) => ({ name: localName(i.zone.name, getLanguage()) || '', x: i.x, z: i.z, icon: '📍' })),
     ...storefronts.items.map((i) => ({ name: localName(i.store.name, getLanguage()) || '', x: i.door.x, z: i.door.z, icon: '🏬' })),
   ],
 })), {
@@ -2250,6 +2257,8 @@ const HELD_KEY = 'mk.held';
 // The bag (core/bag.js): books, drinks and the umbrella you carry but don't
 // hold in your hand. 20 slots for now.
 const bag = new Bag(localStorage, { isBook: (id) => !!bookById(id), maxSips: COFFEE_SIPS, isPerfume: (id) => perfumes.has(id), maxSprays: SPRAYS });
+const photos = new PhotoStore(); // ride photos, the pictures the bag's photo entries point at (core/ride-photos.js)
+photos.follow(bag);
 let held = (() => {
   try {
     const h = JSON.parse(localStorage.getItem(HELD_KEY) || 'null');
@@ -2360,6 +2369,7 @@ function describeEntry(e) {
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
   if (e.kind === 'lipstick') return lipstick.describe(e);
   if (e.kind === 'bait') return fishBait.describe(e);
+  if (e.kind === 'photo') { const p = photos.get(e.ph); return { emoji: '🎞️', name: t('photo.name'), desc: t('photo.desc', { date: p ? new Date(p.at).toLocaleDateString() : '' }), canHold: false, img: p?.src }; } // (a ride photo: game/ride-photo.js)
   if (e.kind === 'perfume') {
     const pf = perfumes.get(e.p);
     return { emoji: '🧴', name: pf ? localName(pf.product.name, getLanguage()) : e.name, desc: fmt(L(PERFUME_TEXT.desc), { style: L(STYLES[pf?.style] || STYLES.simple), n: e.sips }), canHold: true };
@@ -3699,7 +3709,7 @@ const mapView = lazyPanel(async () => new (await import('./ui/map-view.js')).Map
   root: $('map-panel'),
   map,
   seoul: await seoulPromise,
-  zones: zones.items,
+  zones: zones.signs,
   stores: storefronts.items,
   marks: subwayStations.flatMap((sub, s) => sub.exits.map((ex, i) => {
     const [x, z] = toWorld(ex, 0, -PIT.l / 2);
@@ -4141,6 +4151,7 @@ const decorGame = createDecor({
   get activeCollision() { return activeCollision; }, set activeCollision(v) { activeCollision = v; },
   get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
   inventory, shop, PLAYER_R, get fishBag() { return fishBag; }, // (fish tanks: core/fish-tank.js)
+  photos, // (ride photos in frames: core/ride-photos.js)
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
   cloud, get wallet() { return wallet; }, refreshWallet: () => refreshWallet(),
@@ -4151,7 +4162,7 @@ const { labelDecor, openHome, closeHome, nearestPiece, putDown, closePiece, open
 let homeVisitsLoaded = null, homeVisitsLoading = null;
 function homeVisits() {
   return (homeVisitsLoading ||= import('./game/home-visits.js').then((m) => (homeVisitsLoaded = m.createHomeVisits({
-    $, t, shop, cloud, decor: decorGame, myId, joinRoom, goSolo, enterStore, leaveStore, claimChatId,
+    $, t, shop, cloud, decor: decorGame, myId, joinRoom, goSolo, enterStore, leaveStore, claimChatId, photos,
     get roomId() { return roomId; }, get others() { return others; }, get net() { return net; },
   }))).catch((e) => { homeVisitsLoading = null; throw e; }));
 }
@@ -5168,7 +5179,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.items.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -5508,8 +5519,11 @@ function useRideTicket(kind) {
   if (id && id !== 'pass') { const n = rideTickets.left(id), name = t('tix.' + id); shop.toast('🎟️ ' + (n ? t('tix.used', { name, n }) : t('tix.done', { name }))); }
   return !!id;
 }
+let rideOp = null; // the last ride's payment on the coin ledger (a ride photo's receipt names it)
 function payRide(kind) {
-  if (useRideTicket(kind) || wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) return true;
+  rideOp = null;
+  if (useRideTicket(kind)) return true;
+  if (wallet.spend(RIDE_PRICE[kind], { k: 'ledger.ride' })) { rideOp = wallet.lastOp; return true; }
   shop.toast(t('ride.noCoins', { n: RIDE_PRICE[kind] }));
   return false;
 }
@@ -5528,6 +5542,7 @@ function buyRidePass() {
 // wheel: step into the gondola at the bottom, ride one turn.
 const rideClock = () => Date.now() / 1000;
 const rideCam = createRideCam({ camera });
+let ridePhoto = null; // the Jelly Flume's ride photo (game/ride-photo.js), loaded on the first ride
 const parkRiders = createParkRiders($('labels'));
 // Seconds until a wheel gondola is next at the deck (0: one is there now).
 function wheelWait(now) {
@@ -5549,7 +5564,8 @@ function boardRide(st) {
   if (cabin >= 0 && !wheelDoorOpen(cabin, now)) return;
   if (!payRide(st.kind)) return;
   const seat = cabin >= 0 ? parkRiders.freeSeat('wheel', 2, cabin * 2) : parkRiders.freeSeat(st.kind, PARK_RIDES[st.kind].seats);
-  ride = { kind: st.kind, seat, t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third', locked: false };
+  ride = { kind: st.kind, seat, t0: now, until: rideUntil(st.kind, now), back: [st.x, st.z], shout: 0, phase: '', view: 'third', locked: false, op: rideOp };
+  if (st.kind === 'flume' && !ridePhoto) import('./game/ride-photo.js').then((m) => { ridePhoto ||= m.createRidePhoto({ renderer, camera, renderScenes, get me() { return me; }, bag, photos, cloud, t, toast: (s) => shop.toast(s), sfx, hud: $('hud'), newId: newOpId, onPhoto: () => labelDecor() }); ridePhoto.sendReceipts(); }).catch(() => {}); // (the flume's free photo on the drop)
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   rideCam.reset();
@@ -5569,6 +5585,7 @@ function endRide() {
     me.root.visible = true;
     rideCam.off();
     rideThrill.stop();
+    ridePhoto?.rideEnded(); // (the flume's photo, as at a real ride's exit)
   }
   me.root.position.set(ride.back[0], 0, ride.back[1]);
   ride = null;
@@ -5586,6 +5603,7 @@ function updateRide(dt) {
   me.root.rotation.order = 'ZYX'; // (face along the seat, then tip with the ship, or nose up the train's and the flume's slopes)
   me.root.rotation.set(s.pitch || 0, s.ry, s.roll);
   ride.pose = s;
+  ridePhoto?.update(ride, s); // (the flume's camera on the drop)
   const locked = rideLocked(ride.kind, ride.seat, now);
   if (locked !== ride.locked) { // the bar comes down (or the gondola's bar shuts), or goes up again
     ride.locked = locked;
@@ -7524,7 +7542,7 @@ renderer.setAnimationLoop((now) => {
     else for (const el of [g.tag, g.bubble]) if (el) el.style.display = 'none';
   }
   billboard?.update(dt);
-  if (newsTag?.visible) { const ts = performance.now() / 1000; newsTag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; newsTag.userData.tick(ts); }
+  if (newsTags[0]?.visible) { const ts = performance.now() / 1000; for (const tag of newsTags) { if (!tag.parent?.visible) continue; tag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; tag.userData.tick(ts); } }
   for (const ws of wallScreens) { // only the ones you can see are drawn; far ones let their canvas go (WallScreen.sleep)
     const d = Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z);
     if (mode === 'street' && d < 300) ws.update(dt);
@@ -7570,6 +7588,7 @@ renderer.setAnimationLoop((now) => {
     snapReq = null;
   }
   if (frameReq) { const f = frameReq; frameReq = null; f(renderer.domElement); } // (screenshot button)
+  ridePhoto?.afterRender(); // (the flume's photo: drawn off screen, after this frame)
   updateDelivery();
   // The K-POP café's video, on the wall screen.
   placeKpopVideo(kpop.song && interior?.tv);
@@ -7652,6 +7671,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     openBeauty: (kind) => openBeauty(kind), // (the mirror panel without walking to the chair)
     seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),
     usedRack, // the second-hand rack (game/used-rack.js), for tests
+    photos: () => photos.all().map((p) => ({ id: p.id, src: p.src, op: p.op, sent: p.sent })), // ride photos (core/ride-photos.js)
     potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
     tandemRent, // Seoul Forest's tandem rental (game/tandem-rental-near.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)

@@ -1003,4 +1003,10 @@ export const JA = {
   "upgrade.tier.myeongjang": "名匠",
   "upgrade.tier.sura": "水剌",
   "upgrade.tier.cheonha": "天下一味",
+  "photo.snap": "📸 パシャ！アトラクションのカメラが写真を撮りました。",
+  "photo.kept": "写真をバッグに入れました。おうちの🛋️ 模様替えで飾れます。",
+  "photo.bagFull": "バッグがいっぱいで写真を入れられませんでした。",
+  "photo.tooMany": "写真はもう{n}枚あります。1枚捨てると新しい写真を入れられます。",
+  "photo.name": "ゼリー・フルームの写真",
+  "photo.desc": "{date}、大きな落下で撮った写真。おうちの🛋️ 模様替えで飾れます。",
 };
