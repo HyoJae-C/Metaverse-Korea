@@ -1008,4 +1008,13 @@ export const EN = {
   "photo.tooMany": "You keep {n} photos already. Throw one away to keep new ones.",
   "photo.name": "Jelly Flume photo",
   "photo.desc": "Taken on the big drop, {date}. Display it at home: 🛋️ Decorate.",
+  "boat.name": "Han River Boat Taxi",
+  "boat.pier": "{pier} Pier",
+  "boat.pick": "Where to? ₩{fare} to any pier, leaves right away.",
+  "boat.min": "about {n} min",
+  "boat.faster": "Faster · {t}",
+  "boat.normal": "Normal speed · {t}",
+  "boat.leaving": "Off to {pier}! Enjoy the river view ⛴",
+  "boat.arrived": "Arrived at {pier}. Thanks for riding! ⛴",
+  "ledger.boatTaxi": "Han River Boat Taxi",
 };

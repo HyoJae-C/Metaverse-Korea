@@ -403,8 +403,8 @@ export const PARK = {
       tables: [[70.6, 3.6], [78.4, 4.6]],
       board: [79.6, 8.2, Math.PI],
     },
-    dock: 104,
-    duckWater: { minX: 86, maxX: 126, minZ: -38 },
+    dock: 128, // (moved east from 104 to keep its boats off the Han River Boat Taxi's Mangwon pier, real, at X 90)
+    duckWater: { minX: 110, maxX: 150, minZ: -38 },
     ships: [[PARK_U - SHIP_U, -13, 40]], // Seoul Battleship Park (서울함 공원)
     lamps: [[-40, 2.6], [-4, 2.6], [28, 2.6], [56, 2.6], [88, 2.6], [120, 2.6], [148, 2.6]],
     benches: [[118, 3.4], [138, 3.4], [146, 3.4]],

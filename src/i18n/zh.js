@@ -1009,4 +1009,13 @@ export const ZH = {
   "photo.tooMany": "你已经有{n}张照片了。扔掉一张才能放新照片。",
   "photo.name": "果冻激流勇进照片",
   "photo.desc": "{date}在大俯冲时拍的照片。可以在家里用🛋️ 装饰摆出来。",
+  "boat.name": "汉江船出租",
+  "boat.pier": "{pier}码头",
+  "boat.pick": "去哪里？到任何码头都是 ₩{fare}，马上出发。",
+  "boat.min": "约{n}分钟",
+  "boat.faster": "加速 · {t}",
+  "boat.normal": "正常速度 · {t}",
+  "boat.leaving": "出发去{pier}！欣赏汉江风景吧 ⛴",
+  "boat.arrived": "到达{pier}。谢谢乘坐！⛴",
+  "ledger.boatTaxi": "汉江船出租",
 };

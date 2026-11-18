@@ -1009,4 +1009,13 @@ export const KO = {
   "photo.tooMany": "사진을 이미 {n}장 가지고 있어요. 하나를 버리면 새 사진을 넣을 수 있어요.",
   "photo.name": "젤리 후룸라이드 사진",
   "photo.desc": "{date} 큰 낙하에서 찍은 사진. 집에서 🛋️ 꾸미기로 전시할 수 있어요.",
+  "boat.name": "한강보트택시",
+  "boat.pier": "{pier} 선착장",
+  "boat.pick": "어디로 갈까요? 어느 선착장이든 ₩{fare}, 바로 출발해요.",
+  "boat.min": "약 {n}분",
+  "boat.faster": "빨리 가기 · {t}",
+  "boat.normal": "보통 속도 · {t}",
+  "boat.leaving": "{pier}(으)로 출발! 한강 경치를 즐겨요 ⛴",
+  "boat.arrived": "{pier}에 도착했어요. 타 줘서 고마워요! ⛴",
+  "ledger.boatTaxi": "한강보트택시",
 };

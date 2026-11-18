@@ -1006,4 +1006,13 @@ export const FR = {
   "photo.tooMany": "Tu as déjà {n} photos. Jettes-en une pour en garder de nouvelles.",
   "photo.name": "Photo des Bûches Gelée",
   "photo.desc": "Prise dans la grande descente, {date}. Expose-la chez toi : 🛋️ Décorer.",
+  "boat.name": "Bateau-taxi du fleuve Han",
+  "boat.pier": "Embarcadère {pier}",
+  "boat.pick": "Où aller ? ₩{fare} pour n'importe quel embarcadère, départ immédiat.",
+  "boat.min": "environ {n} min",
+  "boat.faster": "Plus vite · {t}",
+  "boat.normal": "Vitesse normale · {t}",
+  "boat.leaving": "En route pour {pier} ! Profite de la vue ⛴",
+  "boat.arrived": "Arrivé à {pier}. Merci d'avoir voyagé ! ⛴",
+  "ledger.boatTaxi": "Bateau-taxi du fleuve Han",
 };

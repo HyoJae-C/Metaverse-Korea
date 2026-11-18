@@ -1009,4 +1009,13 @@ export const JA = {
   "photo.tooMany": "写真はもう{n}枚あります。1枚捨てると新しい写真を入れられます。",
   "photo.name": "ゼリー・フルームの写真",
   "photo.desc": "{date}、大きな落下で撮った写真。おうちの🛋️ 模様替えで飾れます。",
+  "boat.name": "漢江ボートタクシー",
+  "boat.pier": "{pier}船着場",
+  "boat.pick": "どこへ行きますか？どの船着場でも ₩{fare}、すぐ出発します。",
+  "boat.min": "約{n}分",
+  "boat.faster": "速く進む · {t}",
+  "boat.normal": "ふつうの速さ · {t}",
+  "boat.leaving": "{pier}へ出発！漢江の景色を楽しんで ⛴",
+  "boat.arrived": "{pier}に着きました。ご乗船ありがとう！⛴",
+  "ledger.boatTaxi": "漢江ボートタクシー",
 };

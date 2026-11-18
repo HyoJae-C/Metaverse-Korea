@@ -1006,4 +1006,13 @@ export const VI = {
   "photo.tooMany": "Bạn đã có {n} ảnh. Bỏ một tấm để giữ ảnh mới.",
   "photo.name": "Ảnh Thuyền Gỗ Thạch",
   "photo.desc": "Chụp ở cú lao dốc lớn, {date}. Trưng bày ở nhà: 🛋️ Trang trí.",
+  "boat.name": "Taxi thuyền sông Hàn",
+  "boat.pier": "Bến {pier}",
+  "boat.pick": "Đi đâu? ₩{fare} đến bến nào cũng được, khởi hành ngay.",
+  "boat.min": "khoảng {n} phút",
+  "boat.faster": "Đi nhanh hơn · {t}",
+  "boat.normal": "Tốc độ thường · {t}",
+  "boat.leaving": "Khởi hành đến {pier}! Ngắm cảnh sông nhé ⛴",
+  "boat.arrived": "Đã đến {pier}. Cảm ơn bạn đã đi thuyền! ⛴",
+  "ledger.boatTaxi": "Taxi thuyền sông Hàn",
 };

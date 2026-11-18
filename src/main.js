@@ -260,6 +260,7 @@ import { createNorthWallNear } from './game/north-wall-near.js';
 import { northGround } from './core/north-ground.js';
 import { ridgeGround } from './core/ridge-ground.js';
 import { createSeoulDalNear } from './game/seoul-dal-near.js';
+import { createBoatTaxiNear } from './game/boat-taxi-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { createTandemRentalNear } from './game/tandem-rental-near.js';
 import { createLanternParadeNear } from './game/lantern-parade-near.js';
@@ -1882,7 +1883,7 @@ const { closeWheel } = emoteWheel;
 // offers to carry us; until then nobody is flying.
 const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlight }) => createSkyFlight({
   get me() { return me; }, get mode() { return mode; }, get currentLook() { return currentLook; }, setLook,
-  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || namsanCable.busy); },
+  get shop() { return shop; }, get busy() { return !!(riding || seated || ride || namsanCable.busy || boatTaxi.busy); },
   // (on an open-air park's lawn, Modu Land's island or a Han River park:
   // step back onto the street where you stand, then take off from there)
   leaveOpenPark: () => { if (mode === 'store' && interior?.store?.open && seated == null && !ride) leaveStore(true); },
@@ -2648,7 +2649,7 @@ function setRiding(on) {
   const kind = on === true ? 1 : on || 0;
   if (riding === kind) return;
   if (kind && mode !== 'street' && !(interior?.zooPark && (kind === CART || kind === 3))) return; // (in the zoo: its carts, and a seat in a friend's)
-  if (kind && seoulDal.busy) return; // (not in Seoul Dal's gondola)
+  if (kind && (seoulDal.busy || boatTaxi.busy)) return; // (not in Seoul Dal's gondola or on a boat)
   // Leaving a shared vehicle tells the others.
   for (const id of passengers.values()) net.sendEmote(tandemMsg('end', id));
   passengers.clear();
@@ -3286,6 +3287,7 @@ function leaveStore(walkOut = false) {
   setRiding(false); // (the zoo's carts stay in the zoo)
   zooVisit.hideLabels();
   namsanCable.stop();
+  boatTaxi.stop();
   standUp();
   clearMeal();
   closeHome();
@@ -6098,6 +6100,12 @@ const seoulDal = createSeoulDalNear({
   // The stamp tour's Seoul Dal stamp, pressed in the gondola at the top.
   stamp: () => { const s = tourStamps.find((q) => q.id === 'seoul-dal'); return s && { got: stampBook.has(s.id), name: L(s.name), press: () => pressStamp({ stamp: s }) }; },
 });
+// The Han River Boat Taxi between the real Han River Bus piers (game/boat-taxi-near.js
+// loads game/boat-taxi.js near a pier).
+const boatTaxi = createBoatTaxiNear({
+  data: map.boatTaxi, scene, cam, get me() { return me; }, get mode() { return mode; }, get riding() { return riding; },
+  others, wallet, shop, hud: $('hud'), missionEvent, resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
+});
 
 // Banpo Bridge's rainbow fountain show (game/rainbow-fountain.js).
 const rainbowFountain = createRainbowFountain({
@@ -6631,7 +6639,7 @@ function moreActions(p, door) {
   const out = [];
   const hi5s = () => { for (const o of others.nearbyFree(p.x, p.z, 2)) out.push(hi5Action(o)); };
   if (mode === 'street') {
-    if (riding || busking.performing || seoulDal.busy || namsanCable.busy) return out;
+    if (riding || busking.performing || seoulDal.busy || namsanCable.busy || boatTaxi.busy) return out;
     if (door) out.push(storeAct(door));
     if (door?.store.category === 'home' && !door.store.movedTo) out.push(visitAct(door)); // (someone else's home: game/home-visits.js)
     hi5s();
@@ -6715,6 +6723,7 @@ function updateAction(p, tSec) {
     if (basketball.basketShot) next = null; // mid-shot
     else if (seoulDal.busy || seoulDal.act(p)) next = seoulDal.act(p); // aboard Seoul Dal, or at its gate
     else if (!riding && namsanCable.act(p)) next = namsanCable.act(p); // in the Namsan cable car, or at a station's door
+    else if (boatTaxi.busy || (!riding && boatTaxi.act(p))) next = boatTaxi.act(p); // on a Han River Boat Taxi, or on its pier
     else if (poop) next = { key: 'poop:' + poop.id, label: '🧻 ' + t('pet.clean'), run: () => cleanPoop(poop) };
     else if (seated?.duck != null) next = duckBoats.seatedAction(); // in a duck boat (a Han River park on the street)
     else if (it) next = storeAct(it);
@@ -7140,7 +7149,7 @@ let snowCoverAt = 0;
 // First-person view (game/first-person.js): V or Settings only.
 const firstPerson = createFirstPerson({
   camera, canvas, cam, me, t, toast: (s) => shop.toast(s),
-  canUse: () => !arcadeGame.camOn() && !ride && !namsanCable.busy && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
+  canUse: () => !arcadeGame.camOn() && !ride && !namsanCable.busy && !boatTaxi.busy && !sky.busy && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !DEBUG_TOP,
 });
 // Phones: the stick turns the view as you walk (game/touch-steer.js).
 const touchSteer = createTouchSteer({ input, cam, t, toast: (s) => shop.toast(s) });
@@ -7188,7 +7197,7 @@ renderer.setAnimationLoop((now) => {
     }
   } else moveRef.stick = null;
   if (manualCamT > 0) moveRef.yaw = cam.yaw; // the player is steering the view
-  const canSteer = !seated && !arcadeGame.camOn() && !ride && !namsanCable.busy && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
+  const canSteer = !seated && !arcadeGame.camOn() && !ride && !namsanCable.busy && !boatTaxi.busy && !sky.busy && riding !== 3 && !firstPerson.active() && !beauty.beautyCam && !hatWorkshop.hatDraft && !fishCam && !runwayCam && !(runwayUi.walking && mode === 'store');
   const stickTurning = touchSteer.turn(dt, mx, my, canSteer);
   if (stickTurning) moveRef.yaw = cam.yaw; // (walk where the turning view faces)
   firstPerson.steer(moveRef); // (first person: always where you look)
@@ -7224,6 +7233,7 @@ renderer.setAnimationLoop((now) => {
   if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
+  boatTaxi.update(p, dt); // (carries me down the river on the boat)
   tandemRent.update(p, dt); // (the rented tandem's meter; given back on getting off)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
@@ -7257,7 +7267,7 @@ renderer.setAnimationLoop((now) => {
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
-  else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
+  else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && !boatTaxi.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
@@ -7282,7 +7292,7 @@ renderer.setAnimationLoop((now) => {
     me.root.rotation.y += d * Math.min(1, dt * 12);
     const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
     speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
-  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && !seoulDal.busy && riding !== 3) {
+  } else if (autoWalk && routePoly?.length > 1 && mode === 'street' && !seated && !seoulDal.busy && !boatTaxi.busy && riding !== 3) {
     // Head for the route point about 2.5 m ahead (pure pursuit), on foot or by bike.
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
@@ -7320,7 +7330,7 @@ renderer.setAnimationLoop((now) => {
   // just before the first wall.
   let horiz = Math.cos(cam.pitch) * cam.dist;
   const sy = Math.sin(cam.yaw), cy0 = Math.cos(cam.yaw);
-  const wall = mode === 'street' && !sky.busy ? (d) => (byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)
+  const wall = mode === 'street' && !sky.busy && !boatTaxi.openView ? (d) => (byStream?.low ? streamCollision : collision).blocked(p.x + sy * d, p.z + cy0 * d, 0.3, true)
     : interior?.camBlocked ? (d) => interior.camBlocked(p.x + sy * d, p.z + cy0 * d) // the Namsan summit: stop short of the tower; the Curve Runway: short of the back wall
       : null;
   if (wall) {
@@ -7395,7 +7405,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'store') interior?.dartPins?.update(); // old darts come out of the wall boards
   basketTick(dt, p); // a basketball move places you
   skateTick(dt, p);
-  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy && !namsanCable.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon or the cable car)
+  if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy && !namsanCable.busy && !boatTaxi.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon or the cable car)
   sky.update(dt);
   if (mode === 'store' && interior?.floorAt && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
@@ -7463,6 +7473,7 @@ renderer.setAnimationLoop((now) => {
     bumper.state(st); // in a bumper car, or in line for one
     zooVisit.camels.state(st); // on a zoo camel: others seat us on its saddle
     seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
+    boatTaxi.state(st); // on a boat taxi: others put a boat under us
     const duckRide = duckBoats.ride;
     if (duckRide) st.dr = duckRide.returning ? 1 : Math.ceil(duckRide.left) + 1; // steering it: seconds left + 1 (1 = heading back)
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
@@ -7672,6 +7683,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     photos: () => photos.all().map((p) => ({ id: p.id, src: p.src, op: p.op, sent: p.sent })), // ride photos (core/ride-photos.js)
     potatoMarket, // Potato Market by Dongmyo (game/potato-market-near.js), for tests
     tandemRent, // Seoul Forest's tandem rental (game/tandem-rental-near.js)
+    boatTaxi, // the Han River Boat Taxi (game/boat-taxi-near.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)

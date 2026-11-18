@@ -1006,4 +1006,13 @@ export const ID = {
   "photo.tooMany": "Kamu sudah punya {n} foto. Buang satu untuk menyimpan yang baru.",
   "photo.name": "Foto Arung Jeram Jeli",
   "photo.desc": "Diambil saat turunan besar, {date}. Pajang di rumah: 🛋️ Hias.",
+  "boat.name": "Taksi Perahu Sungai Han",
+  "boat.pier": "Dermaga {pier}",
+  "boat.pick": "Mau ke mana? ₩{fare} ke dermaga mana pun, langsung berangkat.",
+  "boat.min": "sekitar {n} mnt",
+  "boat.faster": "Lebih cepat · {t}",
+  "boat.normal": "Kecepatan normal · {t}",
+  "boat.leaving": "Berangkat ke {pier}! Nikmati pemandangan sungai ⛴",
+  "boat.arrived": "Sampai di {pier}. Terima kasih sudah naik! ⛴",
+  "ledger.boatTaxi": "Taksi Perahu Sungai Han",
 };

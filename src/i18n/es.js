@@ -1005,4 +1005,13 @@ export const ES = {
   "photo.tooMany": "Ya tienes {n} fotos. Tira una para guardar nuevas.",
   "photo.name": "Foto de los Troncos de Gelatina",
   "photo.desc": "Tomada en la gran bajada, {date}. Ponla en casa: 🛋️ Decorar.",
+  "boat.name": "Barco taxi del río Han",
+  "boat.pier": "Muelle {pier}",
+  "boat.pick": "¿A dónde? ₩{fare} a cualquier muelle, sale enseguida.",
+  "boat.min": "unos {n} min",
+  "boat.faster": "Más rápido · {t}",
+  "boat.normal": "Velocidad normal · {t}",
+  "boat.leaving": "¡Rumbo a {pier}! Disfruta del río ⛴",
+  "boat.arrived": "Llegaste a {pier}. ¡Gracias por viajar! ⛴",
+  "ledger.boatTaxi": "Barco taxi del río Han",
 };
