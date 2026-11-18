@@ -135,7 +135,8 @@ const ART = {
     g.fillStyle = '#5a6a3a'; g.fillRect(0, 0, w, 10); g.fillRect(0, 0, 10, h); // the mat's border
     g.fillStyle = '#b8a468'; g.fillRect(0, 10, w, 3); g.fillRect(10, 0, 3, h);
   }],
-  'floor-checker': [0.8, 128, 128, (g, w, h) => {
+  // Checkerboard: 0.8 m squares (Yozi 2026-11-18: 0.4 m was hard on the eyes).
+  'floor-checker': [1.6, 128, 128, (g, w, h) => {
     for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) { g.fillStyle = (x + y) % 2 ? '#2a2a2e' : '#f2ede2'; g.fillRect(x * 64, y * 64, 64, 64); }
     g.strokeStyle = 'rgba(120,120,120,0.4)'; g.lineWidth = 2; g.strokeRect(0, 0, 64, 64); g.strokeRect(64, 64, 64, 64);
   }],
