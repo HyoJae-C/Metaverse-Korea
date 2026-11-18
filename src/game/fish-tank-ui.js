@@ -3,7 +3,7 @@
 // out to sell. Loaded with import() the first time it opens.
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { fishById, BAG_MAX } from '../core/fishing.js';
-import { TankStore, tankById, used, blockedBy, sizeClass, spacesOf } from '../core/fish-tank.js';
+import { TankStore, tankById, used, blockedBy, sizeClass, spacesOf, NO_TANK } from '../core/fish-tank.js';
 import { el, fishStampIcon } from '../ui/fishing-ui.js';
 
 // root: where the panel goes; bag: the FishBag; toast(text); onChange(tankId)
@@ -58,7 +58,7 @@ export function createTankPanel({ root, bag, toast, onChange }) {
         if (e) { toast(why(e)); return; }
         onChange?.(tankId);
         render();
-      }, err === 'size' ? t('tank.tooBig') : null));
+      }, err === 'size' ? t(NO_TANK.has(f.id) ? 'tank.noHuge' : 'tank.tooBig') : null));
     }
     box.append(el('p', 'tank-hint', t('tank.note')));
   }

@@ -546,6 +546,7 @@ export const ZH = {
   'tank.empty': "鱼缸还是空的。把钓到的鱼放进来吧！",
   'tank.noFish': "鱼袋是空的。去汉江公园钓鱼吧！",
   'tank.tooBig': "对这个鱼缸来说太大了",
+  'tank.noHuge': "蓝鲸和大王乌贼太大了，放不进家里的鱼缸（图鉴里还会保留）。",
   'tank.full': "鱼缸空间不够",
   'tank.bagFull': "鱼袋满了",
   'tank.onlyOne': "大型鱼（XL）每种只能放一条",

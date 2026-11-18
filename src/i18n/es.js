@@ -547,6 +547,7 @@ export const ES = {
   'tank.empty': "La pecera está vacía. ¡Mete los peces que pescaste!",
   'tank.noFish': "Tu bolsa de peces está vacía. ¡Ve a pescar a un parque del río Han!",
   'tank.tooBig': "Demasiado grande para esta pecera",
+  'tank.noHuge': "La ballena azul y el calamar gigante son demasiado grandes para cualquier pecera de casa (siguen en tu libro de peces).",
   'tank.full': "No hay espacio en la pecera",
   'tank.bagFull': "Tu bolsa de peces está llena",
   'tank.onlyOne': "Solo uno de cada especie grande (XL) por pecera",
