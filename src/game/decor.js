@@ -187,8 +187,8 @@ export function createDecor(game) {
     it.x = x0; it.z = z0;
     return false;
   }
-  function nearestPiece(p) {
-    let best = null, bd = 1.6;
+  function nearestPiece(p, reach = 1.6) {
+    let best = null, bd = reach;
     for (const it of decor.items) {
       const d = Math.hypot(p.x - it.x, p.z - it.z) - Math.max(...furnitureById(it.id).size) / 2;
       if (d < bd) { bd = d; best = it; }
@@ -262,7 +262,9 @@ export function createDecor(game) {
     if (riders) placeRiders(it, riders);
     rebuildDecor();
   };
-  $('piece-move').onclick = () => {
+  $('piece-move').onclick = () => startCarry();
+  // Pick up the open piece (decorating, or straight from the room: pieceActs).
+  function startCarry() {
     if (!decor?.piece) return;
     if (decor.carry) { if (putDown()) closePiece(); game.action = STALE; return; }
     decor.carry = decor.piece;
@@ -272,8 +274,10 @@ export function createDecor(game) {
     $('decor-bar').hidden = true; // see where you're walking
     rebuildDecor();
     $('piece-move-label').textContent = t('home.putDown');
-  };
-  $('piece-remove').onclick = () => {
+    game.action = STALE;
+  }
+  $('piece-remove').onclick = () => removePiece();
+  function removePiece() {
     if (!decor?.piece) return;
     if (decor.carry === decor.piece) decor.carry = null;
     for (const r of ridersOf(decor.piece, decor.items)) r.it.y = 0; // what stood on it goes to the floor
@@ -281,8 +285,21 @@ export function createDecor(game) {
     rebuildDecor();
     closePiece();
     game.action = STALE;
-  };
+  }
   $('piece-close').onclick = closePiece;
+  // Standing by a piece in my own home (not decorating): carry it or put it
+  // away right there, without opening Decorate first. Two choices on the
+  // action button's list; a carried piece is put down with the same button.
+  function pieceActs(p) {
+    if (!decor || decor.guest || decor.editing || decor.carry) return [];
+    const it = nearestPiece(p, 1.1);
+    if (!it) return [];
+    const k = decor.items.indexOf(it), f = furnitureById(it.id), name = f.emoji + ' ' + localName(f.name, getLanguage());
+    return [
+      { key: 'piece-carry:' + k, label: '✋ ' + t('home.carry') + ' · ' + name, run: () => { openPiece(it, true); startCarry(); } },
+      { key: 'piece-away:' + k, label: '🗑️ ' + t('home.remove') + ' · ' + name, run: () => { openPiece(it); removePiece(); } },
+    ];
+  }
   // Who may visit this home: everyone, friends (the default) or nobody.
   // Kept in mk.homeVisit (it rides in the account save); game/home-visits.js
   // opens or closes the home when it changes.
@@ -354,7 +371,7 @@ export function createDecor(game) {
     return level.then((n) => ({ ...item, homeSized: true, store: { ...item.store, roomDims: homeRoom(n) } }));
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
-  const api = { visit, labelDecor, lampAct, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  const api = { visit, labelDecor, lampAct, pieceActs, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }
