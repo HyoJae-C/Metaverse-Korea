@@ -22,9 +22,7 @@ export function buildTank(g, t) {
     const s = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), mat(STONES[i % 3]));
     s.position.set(x, t.stand + 0.05 + r * 0.4, z); s.scale.y = 0.6; g.add(s);
   }
-  // a deep blue back panel, so the fish stand out against it
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.03, t.h - 0.05), mat('#2f6f96'));
-  back.position.set(0, t.stand + t.h / 2, -d / 2 + 0.016); g.add(back);
+  // (no back panel: you see the room through the glass, Yozi 2026-11-18)
   const wv = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, W.y1 - t.stand - 0.05, d - 0.02), water);
   wv.position.y = (W.y1 + t.stand + 0.05) / 2; wv.renderOrder = 2; g.add(wv);
   // the frame: corner posts and rims
