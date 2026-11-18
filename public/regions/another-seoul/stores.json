@@ -3024,6 +3024,22 @@
       ]
     },
     {
+      "id": "kkotjam-beds",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1260.1, -542],
+      "district": "euljiro",
+      "name": {"ko": "꽃잠 침대", "en": "Kkotjam Beds", "ja": "コッチャム・ベッド", "zh": "花眠床铺"},
+      "tagline": {"en": "Cute beds for sweet dreams: big flowers, clouds and a teddy bear", "ko": "꿀잠 자는 귀여운 침대, 큰 꽃무늬·구름·곰돌이", "ja": "ぐっすり眠れるかわいいベッド、大きな花柄・雲・くま", "zh": "睡个好觉的可爱床：大花、云朵和小熊"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro (Yozi 2026-11-18: cute beds, like a big flower quilt). 꽃잠 is an old word for a sweet, deep sleep.",
+      "colors": {"sign": "#d8577a", "awning": "#ffe4ec", "accent": "#fff7f9"},
+      "products": [
+        {"id": "buy-f-flower-bed", "model": "furniture", "furniture": "f-flower-bed", "color": "#f3e5c8", "name": {"en": "Big flower quilt bed", "ko": "큰 꽃무늬 이불 침대", "ja": "大きな花柄布団のベッド", "zh": "大花被子床"}, "price": 180000, "desc": {"en": "A puffy quilt of big pink and red peonies, like the one at grandma's, on a bed with a scalloped headboard.", "ko": "할머니 댁 그 이불처럼 큰 분홍·빨강 모란꽃이 가득한 폭신한 이불, 물결 모양 헤드보드 침대예요."}},
+        {"id": "buy-f-cloud-bed", "model": "furniture", "furniture": "f-cloud-bed", "color": "#f3e5c8", "name": {"en": "Cloud bed", "ko": "구름 침대", "ja": "雲のベッド", "zh": "云朵床"}, "price": 220000, "desc": {"en": "A sleepy cloud for a headboard and a sky blue duvet with little stars.", "ko": "졸린 얼굴의 구름 헤드보드에 작은 별이 뜬 하늘색 이불이에요."}},
+        {"id": "buy-f-bear-bed", "model": "furniture", "furniture": "f-bear-bed", "color": "#f3e5c8", "name": {"en": "Teddy bear bed", "ko": "곰돌이 침대", "ja": "くまのベッド", "zh": "小熊床"}, "price": 240000, "desc": {"en": "A teddy bear face for a headboard, with a honey yellow duvet and paw prints.", "ko": "곰돌이 얼굴 헤드보드에 발자국이 찍힌 꿀색 이불이에요."}}
+      ]
+    },
+    {
       "id": "hanok-jimulpo",
       "category": "lifestyle",
       "size": "small",

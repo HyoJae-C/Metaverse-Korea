@@ -180,6 +180,56 @@ export const SHOP_FURNITURE = [
     for (const x of [-0.4, 0.4]) box(0.6, 0.14, 0.38, x, 0.6, -0.75, '#f6f2ea');
     for (let i = 0; i < 4; i++) box(0.4, 0.9, 0.14, -0.6 + i * 0.4, 0.62, -1.06, '#a89c8c'); // a soft channel headboard
   }],
+  // --- Cute beds: 꽃잠 침대 (Yozi 2026-11-18: cute beds, like a big flower quilt) ---
+  ['f-flower-bed', '🌺', [1.6, 2.1], 'bed', { en: 'Big flower quilt bed', ko: '큰 꽃무늬 이불 침대', ja: '大きな花柄布団のベッド', zh: '大花被子床' }, (g, part, box) => {
+    box(1.6, 0.3, 2.1, 0, 0.15, 0, '#f6efe4'); // a cream wooden frame
+    box(1.5, 0.18, 1.95, 0, 0.39, 0.03, '#ffffff');
+    const quilt = new THREE.MeshLambertMaterial({ map: flowerQuilt() });
+    part(new THREE.BoxGeometry(1.58, 0.12, 1.5), quilt, 0, 0.53, 0.28); // the big flower quilt, puffy
+    part(new THREE.BoxGeometry(1.58, 0.36, 0.05), quilt, 0, 0.36, 1.04); // hanging over the foot
+    for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.05, 0.36, 1.5), quilt, 0.8 * s, 0.36, 0.28); // and the sides
+    for (const x of [-0.38, 0.38]) {
+      box(0.6, 0.15, 0.36, x, 0.56, -0.74, '#ffd6e2'); // pink pillows
+      box(0.66, 0.03, 0.42, x, 0.5, -0.74, '#ffffff'); // with a frill
+    }
+    // A scalloped headboard: three round tops.
+    box(1.6, 0.7, 0.08, 0, 0.55, -1.03, '#f6efe4');
+    for (const [x, r] of [[-0.55, 0.26], [0, 0.34], [0.55, 0.26]]) part(new THREE.CylinderGeometry(r, r, 0.08, 20).rotateX(Math.PI / 2), '#f6efe4', x, 0.9, -1.03);
+    part(new THREE.CircleGeometry(0.12, 5), '#f07a9a', 0, 1.02, -0.985); // a flower on it
+    part(new THREE.CircleGeometry(0.05, 12), '#ffd34a', 0, 1.02, -0.98);
+  }],
+  ['f-cloud-bed', '☁️', [1.6, 2.1], 'bed', { en: 'Cloud bed', ko: '구름 침대', ja: '雲のベッド', zh: '云朵床' }, (g, part, box) => {
+    box(1.6, 0.28, 2.1, 0, 0.14, 0, '#ffffff'); // a soft white base
+    box(1.5, 0.18, 1.95, 0, 0.37, 0.03, '#ffffff');
+    box(1.56, 0.1, 1.45, 0, 0.5, 0.3, '#a8d4f4'); // a sky blue duvet
+    box(1.56, 0.04, 0.26, 0, 0.56, -0.38, '#ffffff'); // folded back
+    for (let i = 0; i < 9; i++) part(new THREE.CircleGeometry(i % 3 ? 0.035 : 0.05, 5), '#ffe066', -0.6 + (i % 3) * 0.6 + (i % 2) * 0.2, 0.552, -0.1 + Math.floor(i / 3) * 0.45).rotation.x = -Math.PI / 2; // little stars
+    for (const x of [-0.38, 0.38]) part(new THREE.SphereGeometry(0.3, 14, 10), '#ffffff', x, 0.56, -0.74).scale.set(1, 0.32, 0.6); // round pillows
+    // The headboard is a cloud: white puffs, the big one in the middle.
+    for (const [x, y, r] of [[-0.62, 0.62, 0.26], [-0.3, 0.86, 0.34], [0.12, 0.98, 0.4], [0.5, 0.8, 0.32], [0.72, 0.58, 0.22], [-0.1, 0.6, 0.3], [0.35, 0.56, 0.26]]) {
+      part(new THREE.SphereGeometry(r, 16, 12), '#ffffff', x, y, -1.0).scale.z = 0.35;
+    }
+    for (const s of [-1, 1]) part(new THREE.CircleGeometry(0.04, 12), '#ffb0c0', 0.25 * s + 0.12, 0.9, -0.85); // rosy cheeks
+    for (const s of [-1, 1]) part(new THREE.CircleGeometry(0.025, 10), '#4a4a5a', 0.12 * s + 0.12, 0.98, -0.855); // and two sleepy eyes
+  }],
+  ['f-bear-bed', '🧸', [1.6, 2.1], 'bed', { en: 'Teddy bear bed', ko: '곰돌이 침대', ja: 'くまのベッド', zh: '小熊床' }, (g, part, box) => {
+    box(1.6, 0.3, 2.1, 0, 0.15, 0, '#c98b4f'); // honey wood
+    box(1.5, 0.18, 1.95, 0, 0.39, 0.03, '#ffffff');
+    box(1.56, 0.1, 1.45, 0, 0.52, 0.3, '#ffe2a8'); // a honey yellow duvet
+    box(1.56, 0.04, 0.26, 0, 0.58, -0.38, '#ffffff');
+    for (let i = 0; i < 3; i++) part(new THREE.CircleGeometry(0.09, 16), '#c98b4f', -0.45 + i * 0.45, 0.572, 0.1 + (i % 2) * 0.45).rotation.x = -Math.PI / 2; // paw prints
+    for (const x of [-0.38, 0.38]) box(0.6, 0.15, 0.36, x, 0.58, -0.74, '#fff6e6');
+    // The headboard is a bear's face: a round head, two ears, a muzzle.
+    part(new THREE.CylinderGeometry(0.62, 0.62, 0.1, 28).rotateX(Math.PI / 2), '#c98b4f', 0, 0.85, -1.0);
+    for (const s of [-1, 1]) {
+      part(new THREE.CylinderGeometry(0.22, 0.22, 0.1, 20).rotateX(Math.PI / 2), '#c98b4f', 0.5 * s, 1.36, -1.0); // ears
+      part(new THREE.CircleGeometry(0.12, 16), '#f3d9b8', 0.5 * s, 1.36, -0.945);
+      part(new THREE.CircleGeometry(0.05, 12), '#2b2630', 0.2 * s, 0.98, -0.945); // eyes
+      part(new THREE.CircleGeometry(0.07, 12), '#ffaaa0', 0.36 * s, 0.78, -0.945); // cheeks
+    }
+    part(new THREE.CircleGeometry(0.2, 20), '#f3d9b8', 0, 0.74, -0.944).scale.y = 0.75; // muzzle
+    part(new THREE.CircleGeometry(0.06, 12), '#2b2630', 0, 0.8, -0.94).scale.y = 0.7; // nose
+  }],
   // --- Woodwork: 원목 공방 ---
   ['f-wood-table', '🪵', [1.6, 0.9], false, { en: 'Solid wood dining table', ko: '원목 식탁', ja: '無垢材のダイニングテーブル', zh: '实木餐桌' }, (g, part, box) => {
     box(1.6, 0.07, 0.9, 0, 0.72, 0, '#b07a48'); // a thick slab
@@ -249,3 +299,29 @@ export const SHOP_FURNITURE = [
     box(0.3, 0.06, 0.06, 0, 0.6, 0.27, '#c0c4ca'); // buttons
   }],
 ];
+
+// The big flower quilt (꽃무늬 이불): big pink and red peonies with green
+// leaves on cream, drawn once and shared.
+let quiltTex = null;
+function flowerQuilt() {
+  if (quiltTex) return quiltTex;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff4e2'; g.fillRect(0, 0, 256, 256);
+  const flower = (x, y, r, petal, heart) => {
+    g.fillStyle = '#5aa86a';
+    for (const a of [0.6, 2.4, 4.2]) { g.beginPath(); g.ellipse(x + Math.cos(a) * r * 1.1, y + Math.sin(a) * r * 1.1, r * 0.55, r * 0.25, a, 0, Math.PI * 2); g.fill(); } // leaves
+    g.fillStyle = petal;
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; g.beginPath(); g.arc(x + Math.cos(a) * r * 0.55, y + Math.sin(a) * r * 0.55, r * 0.5, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = heart; g.beginPath(); g.arc(x, y, r * 0.38, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffd34a'; g.beginPath(); g.arc(x, y, r * 0.14, 0, Math.PI * 2); g.fill();
+  };
+  // Each flower again one canvas over, so the pattern runs on.
+  for (const [x, y, r, p, h] of [[64, 70, 46, '#ff7aa0', '#e84a78'], [190, 180, 50, '#e8443a', '#b82a2a'], [196, 48, 28, '#ffb0c8', '#ff7aa0'], [60, 200, 30, '#ffb0c8', '#ff7aa0']]) {
+    for (const dx of [-256, 0, 256]) for (const dy of [-256, 0, 256]) flower(x + dx, y + dy, r, p, h);
+  }
+  quiltTex = new THREE.CanvasTexture(c);
+  quiltTex.colorSpace = THREE.SRGBColorSpace;
+  return quiltTex;
+}
