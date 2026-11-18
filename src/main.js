@@ -5553,7 +5553,7 @@ function boardRide(st) {
   const staff = interior.rideStaff?.[st.kind];
   if (staff) showBubble(staff, $('labels'), t('ride.enjoy'), 2600, 'chat npc-say');
   rideCam.reset();
-  if (THRILL_RIDES.has(st.kind)) rideThrill.start(interior.scene); // (the coaster's speed lines, wind and sounds)
+  if (THRILL_RIDES.has(st.kind)) rideThrill.start(interior.scene, st.kind); // (the coaster's speed lines, wind and sounds)
   shop.toast(t(st.kind === 'wheel' ? 'ride.wheelOn' : 'ride.seated'));
   sendTimer = 0;
   missionEvent('ride');

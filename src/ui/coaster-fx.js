@@ -41,7 +41,12 @@ export class CoasterFx {
   }
   _ctx() { return this.sfx.on && this.sfx.ctx?.state === 'running' ? this.sfx.ctx : (this.sfx.on ? this.sfx._ctx() : null); }
 
-  start(scene) {
+  // A whoosh or a few screams now (the pirate ship's swing calls these).
+  whoosh() { const c = this._ctx(); if (this.on && c?.state === 'running') this._whoosh(c); }
+  scream() { const c = this._ctx(); if (this.on && c?.state === 'running') this._scream(c); }
+
+  // color: the bits flying past (pink cotton candy; the flume's spray is pale blue).
+  start(scene, color = '#ffc2dd') {
     this.on = true;
     this.el.hidden = false;
     this.lastPhase = '';
@@ -51,7 +56,7 @@ export class CoasterFx {
     for (let i = 0; i < n; i++) this._bit(pos, i, true);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.points = new THREE.Points(geo, new THREE.PointsMaterial({ color: '#ffc2dd', size: 0.09, transparent: true, opacity: 0.9, depthWrite: false }));
+    this.points = new THREE.Points(geo, new THREE.PointsMaterial({ color, size: 0.09, transparent: true, opacity: 0.9, depthWrite: false }));
     this.points.frustumCulled = false;
     scene.add(this.points);
   }

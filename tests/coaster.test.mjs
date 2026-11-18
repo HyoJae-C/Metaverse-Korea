@@ -190,6 +190,18 @@ test('ride effects follow the speed, gentler when asked', () => {
   assert.ok(a.y > C.heightAt(100 - 0.9));
 });
 
+test('coming home: the bank rolls out before the station, so the train pulls in level', () => {
+  let worst = 0;
+  for (let d = 0; d <= 10; d += 0.25) worst = Math.max(worst, Math.abs(C.frameAt(C.S_STOP - d).bank));
+  assert.ok(worst < 0.03, `level for the last 10 m (${worst.toFixed(3)} rad)`);
+  assert.ok(Math.abs(C.frameAt(C.S_STOP - 16).bank) < 0.25, 'only a little bank 16 m out');
+  let big = 0; // (the curve before it still leans in)
+  for (let d = 30; d <= 60; d += 1) big = Math.max(big, Math.abs(C.frameAt(C.S_STOP - d).bank));
+  assert.ok(big > 0.35, 'still banked further back');
+  // Every car of a stopped train sits level.
+  for (let i = 0; i < C.SEATS; i++) assert.ok(Math.abs(C.seatPose(C.S_STOP, i).bank) < 0.01);
+});
+
 test('the old square: every ride has a fenced yard you reach by its gate, with its attendant there', async () => {
   const { RIDE_GATES, RIDE_NAME } = await import('../src/core/park-rides.js');
   const gate = { x: exitOf(room).x, z: exitOf(room).z - 1.4 };

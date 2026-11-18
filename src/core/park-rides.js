@@ -167,8 +167,28 @@ export function rideSpeed(kind, t) {
     const k = Math.sqrt(swingTilt(t) / RIDES.swing.tilt), S = RIDES.swing;
     return { k, v: k * S.speed * (S.arm + S.chain * Math.sin(S.tilt)), phase: 'run' };
   }
+  if (kind === 'viking') { // (fastest through the bottom; floating at each end of the swing)
+    const V = RIDES.viking, a = vikingAngle(t), v = Math.abs(vikingAngle(t + 0.05) - vikingAngle(t - 0.05)) * 10 * V.arm;
+    return { k: Math.min(1, v / (V.max * V.omega * V.arm)), v, phase: Math.abs(a) > V.max * 0.9 ? 'hold' : 'run' };
+  }
+  if (kind === 'flume') { // up the belt, creeping to the edge, the big drop, the splash
+    const d = flumeDist(t), R = FLUME_RUN, i = Math.max(0, Math.min(R.v.length - 1, Math.round((d - FLUME_START) / R.ds)));
+    const v = (R.v[i] * R.lap) / RIDE_CYCLE.flume.run, seg = FLUME_TRACK.at(d).seg;
+    return { k: R.v[i] / R.top, v, phase: seg >= 5 && seg <= 7 ? 'lift' : seg === 11 ? 'hold' : seg === 12 ? 'drop' : 'run' };
+  }
+  // The gentle ones (the train, the carousel, the teacups) only get a breeze:
+  // their k tops out at GENTLE_K, so a few speed lines and a soft wind.
+  if (kind === 'train') {
+    const v = Math.abs(trainDist(t + 0.05) - trainDist(t - 0.05)) * 10, top = TRAIN_TRACK.len / (0.88 * RIDE_CYCLE.train.run);
+    return { k: GENTLE_K * Math.min(1, v / top), v, phase: 'run' };
+  }
+  if (kind === 'carousel' || kind === 'teacups') {
+    const c = RIDE_CYCLE[kind], pace = Math.max(0, Math.min(1, r.s / UP, (c.run - r.s) / DOWN)), R = RIDES[kind];
+    return { k: GENTLE_K * pace, v: pace * (kind === 'carousel' ? R.speed * R.r : R.spin * R.cupR), phase: 'run' };
+  }
   return { k: 0, v: 0, phase: 'run' };
 }
+const GENTLE_K = 0.6;
 // The Ferris wheel turns all the time, on the shared clock; gondola i's angle
 // from the bottom. You get on at the bottom and ride one full turn.
 export const wheelAngle = (i, t) => (i / RIDES.wheel.cabins) * Math.PI * 2 + t * RIDES.wheel.speed;
@@ -329,7 +349,7 @@ const FLUME_RUN = (() => {
     v.push(Math.max(0.15, Math.min(sp, easeIn, stopping ? easeOut : 99)));
     if (k) time.push(time[k - 1] + (2 * ds) / (v[k - 1] + v[k]));
   }
-  return { ds, v, time, lap: time[n] };
+  return { ds, v, time, lap: time[n], top: Math.max(...v) };
 })();
 // Where the boat (its middle) is along the channel at t: at the station
 // while it loads, then one lap, scaled to the run.
