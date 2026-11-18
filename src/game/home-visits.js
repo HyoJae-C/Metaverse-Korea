@@ -24,6 +24,8 @@ export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x
   if (fish) a.push(fish); // the fish in a tank (core/fish-tank.js)
   return a;
 }));
+// The host's wallpaper and floor (game/home-finish.js): [wall, floor] ids or null.
+export const finishMsg = (sel) => 'hv:fin:' + JSON.stringify([sel?.wall || null, sel?.floor || null]);
 export const kickMsg = (id) => 'hv:kick:' + id;
 // A ride photo in a frame (core/ride-photos.js): its picture, sent once to
 // the people in the room (the layout only names it).
@@ -32,6 +34,7 @@ export function parseVisitMsg(e) {
   if (typeof e !== 'string' || !e.startsWith('hv:')) return null;
   if (e.startsWith('hv:kick:')) return { kick: e.slice(8) };
   if (e.startsWith('hv:ph:')) { const id = e.slice(6, 42), src = e.slice(43); return isPhotoId(id) && e[42] === ':' && okSrc(src) ? { ph: { id, src } } : null; }
+  if (e.startsWith('hv:fin:')) { try { const [wall, floor] = JSON.parse(e.slice(7)); return { fin: { wall, floor } }; } catch { return null; } }
   if (e.startsWith('hv:lay:')) { try { const a = JSON.parse(e.slice(7)); return Array.isArray(a) ? { lay: a.slice(0, 80) } : null; } catch { return null; } }
   return null;
 }
@@ -78,6 +81,7 @@ export function createHomeVisits(game) {
       const items = decor.layout();
       if (!hosting || !items || !game.others.players.size) return;
       game.net.sendEmote(layoutMsg(items));
+      game.net.sendEmote(finishMsg(decor.finish?.current()));
       for (const [id] of items) { // the pictures in the frames, once each
         const p = game.photos?.get(photoOfFrame(id));
         if (p && !sentPhotos.has(p.id)) { sentPhotos.add(p.id); game.net.sendEmote(photoMsg(p.id, p.src)); }
@@ -175,6 +179,7 @@ export function createHomeVisits(game) {
       if (!m) return false;
       if (!guest || id !== guest.host.net) return true; // only the host's game speaks for the home
       if (m.lay) decor.showLayout(m.lay);
+      if (m.fin) decor.finish?.show(m.fin);
       if (m.ph && setPhotoSrc(m.ph.id, m.ph.src)) decor.rebuildDecor();
       if (m.kick === game.myId || m.kick === '*') { shop.toast(t('home.kicked', { name: guest.host.name })); game.leaveStore(); }
       return true;
