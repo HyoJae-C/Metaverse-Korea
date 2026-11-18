@@ -121,9 +121,13 @@ try {
   step = 'carried piece: squares on the floor, green where it fits, red over the sofa';
   await h.waitForFunction(() => __mk.carrySpot().footprint, null, { timeout: 10000 });
   if (!(await h.evaluate(() => __mk.carrySpot().grid))) throw new Error('no floor squares while carrying');
-  await h.evaluate(() => { const s = __mk.decorAt().find((i) => i[0] === 'sofa'); __mk.goto(s[1], s[2] - 1.6, 0); });
+  await h.evaluate(() => { const s = __mk.decorAt().find((i) => i[0] === 'sofa'); __mk.goto(s[1], s[2] - 0.85, 0); }); // (the plant goes 0.85 m ahead: its half plus a step)
   await h.waitForFunction(() => __mk.carrySpot().footprint === 'red', null, { timeout: 10000 });
   if (shotDir) { await h.evaluate(() => __mk.cam({ dist: 6, pitch: 0.9, yaw: __mk.camYaw() + 0.9 })); await h.waitForTimeout(600); await h.screenshot({ path: shotDir + '/carry-red.png' }); }
+  step = 'carried piece goes right up against a wall, green';
+  await h.evaluate(() => { const [w] = __mk.roomSize(); __mk.goto(w / 2 - 0.6, 0, Math.PI / 2); }); // facing the east wall, close to it
+  await h.waitForFunction(() => { const [w] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return Math.abs(p[1] - (w / 2 - 0.28)) < 0.02 && __mk.carrySpot().footprint === 'green'; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('not flush with the wall: ' + JSON.stringify(await h.evaluate(() => [__mk.roomSize(), __mk.decorAt().find((i) => i[0] === 'plant'), __mk.carrySpot()]))); });
   await h.evaluate(([x, z]) => __mk.goto(x + 0.9, z + 1.2, -Math.PI / 2), plantAt);
   await h.waitForFunction(() => __mk.action()?.startsWith('📍'), null, { timeout: 5000 });
   await h.waitForFunction(() => __mk.carrySpot().footprint === 'green', null, { timeout: 10000 });
