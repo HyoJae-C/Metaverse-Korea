@@ -17,10 +17,10 @@
 
 export const BOAT_TAXI = {
   fare: 3000, // won a ticket, any distance (the real Han River Bus fare)
-  every: 240, // s between boats at a pier, each way (Yozi 2026-11-18: 4 minutes)
-  speed: 30, // m/s cruising (Yozi 2026-11-18: twice the first 15)
-  accel: 3, // m/s² leaving and coming in
-  dwell: 20, // s at each pier on the way
+  every: 120, // s between boats at a pier, each way (Yozi 2026-11-18: 4 minutes, then 2 when they went twice as fast)
+  speed: 60, // m/s cruising (Yozi 2026-11-18: twice, then twice again, the first 15)
+  accel: 6, // m/s² leaving and coming in
+  dwell: 12, // s at each pier on the way (long enough to step on or off)
   minEnd: 30, // s at least at each end before turning back
   pass: 7, // m: boats heading west keep this far to the side of the line, so two boats pass each other
   near: 2.2, // m round the pier's deck: where you wait for the boat
@@ -192,4 +192,27 @@ export function boatPose(route, lens, piers, s, dir, boatW = 4, o = BOAT_TAXI) {
     x += ox; z += oz;
   }
   return { x, z, ry: Math.atan2(w.dx * dir, w.dz * dir) };
+}
+
+// A boat's whole pose on the water: boatPose's spot, but facing along the
+// river (the line over ±look m) rather than the line's bend into each berth
+// (Yozi 2026-11-18: no turning at the piers on the way, only at the ends).
+// So at a pier on the way it may lie at an angle to the deck: it waits that
+// much further out, clear of it. At the two ends it lies alongside, to turn.
+export function boatPoseOnRiver(route, lens, piers, s, dir, boat = { l: 12, w: 4 }, o = BOAT_TAXI) {
+  const end = lens[lens.length - 1], smooth = (k) => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
+  const look = 6 + 24 * smooth(Math.min(s, end - s) / 80); // (6 m at the ends: the berth's own line)
+  const a = pointAt(route, lens, s - look), b = pointAt(route, lens, s + look);
+  const ry = Math.atan2((b.x - a.x) * dir, (b.z - a.z) * dir);
+  const c = boatPose(route, lens, piers, s, dir, boat.w, o);
+  let x = c.x, z = c.z;
+  for (const p of piers) {
+    const d = Math.abs(s - p.s);
+    if (d >= 50) continue;
+    const k = d <= 12 ? 1 : 1 - (d - 12) / 38, f = k * k * (3 - 2 * k);
+    const ang = ry - p.ry, sn = Math.abs(Math.sin(ang)), cs = Math.abs(Math.cos(ang)); // (the deck runs along (sin p.ry, cos p.ry))
+    const extra = Math.max(0, (boat.l / 2) * sn + (boat.w / 2) * cs - boat.w / 2) + (sn > 0.05 ? 0.4 : 0);
+    x += Math.cos(p.ry) * extra * f; z -= Math.sin(p.ry) * extra * f; // (out to the river)
+  }
+  return { x, z, ry };
 }

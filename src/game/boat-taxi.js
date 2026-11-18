@@ -20,7 +20,7 @@
 import * as THREE from 'three';
 import { matCache, addBox, canvasTex } from '../core/three-kit.js';
 import { bakeColors } from '../core/merge-static.js';
-import { BOAT_TAXI, clock, lineLengths, timetable, boatAt, boatPose, nextBoat, rideTime, pierAt } from '../core/boat-taxi.js';
+import { BOAT_TAXI, clock, lineLengths, timetable, boatAt, boatPoseOnRiver, nextBoat, rideTime, pierAt } from '../core/boat-taxi.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
 
 const mat = matCache();
@@ -231,13 +231,11 @@ export function createBoatTaxi(game, data) {
   const last = piers.length - 1;
 
   // Boat b now: where it is on the water ({ x, z, ry }) and what it is doing (boatAt).
-  // Its heading follows the line over ±6 m (no snap at the line's corners);
-  // at an end pier it turns round in its first TURN seconds there.
+  // Its heading follows the river, not the line's bend into each berth
+  // (core/boat-taxi.js boatPoseOnRiver); at an end pier it turns round in its
+  // first TURN seconds there.
   const TURN = 15;
-  const poseAt = (s, dir) => {
-    const a = boatPose(route, lens, piers, s - 6, dir, BOAT.w), b = boatPose(route, lens, piers, s + 6, dir, BOAT.w), c = boatPose(route, lens, piers, s, dir, BOAT.w);
-    return { x: c.x, z: c.z, ry: Math.atan2((b.x - a.x) * dir, (b.z - a.z) * dir) };
-  };
+  const poseAt = (s, dir) => boatPoseOnRiver(route, lens, piers, s, dir, BOAT);
   function boatNow(b, now) {
     const st = boatAt(tt, piers, b, now);
     let ps = poseAt(st.s, st.dir);
