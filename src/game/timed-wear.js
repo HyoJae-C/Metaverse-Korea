@@ -12,6 +12,15 @@ export function createTimedWear(game) {
   function tick(now = Date.now()) {
     const r = dueTimed(map, inventory.list(), ITEMS, now);
     if (r.map !== map) { map = r.map; saveTimed(map); }
+    // Worn but not in the closet any more (the server took it out of the
+    // account's save, supabase/058_timed_clothes.sql): take it off.
+    for (const [id, it] of Object.entries(ITEMS)) {
+      if (it.secs && it.off && !inventory.has(id) && isWorn(it, game.myLook)) {
+        game.myLook = { ...game.myLook, ...it.off };
+        saveLook(game.myLook);
+        setLook(game.myLook);
+      }
+    }
     for (const id of r.gone) {
       const it = ITEMS[id];
       if (isWorn(it, game.myLook) && it.off) {

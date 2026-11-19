@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { startTimed, dueTimed, daysLeft, loadTimed, saveTimed } from '../src/core/timed-wear.js';
 import { ITEMS } from '../src/core/inventory.js';
@@ -51,4 +52,11 @@ test('limited items can\'t be sold back or put on a Potato Market mat', () => {
   const owned = ['outfit-onesie-bear', 'outfit-knit-grey'];
   assert.deepEqual(sellable(owned, ITEMS, receipts).map((r) => r.id), ['outfit-knit-grey']);
   assert.deepEqual(listable(owned, ITEMS, receipts).map((r) => r.id), ['outfit-knit-grey']);
+});
+
+test('the server knows every limited item and its time (supabase/058)', () => {
+  const sql = readFileSync(new URL('../supabase/058_timed_clothes.sql', import.meta.url), 'utf8');
+  const rows = Object.fromEntries([...sql.matchAll(/\('([a-z0-9-]+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
+  const timed = Object.fromEntries(Object.entries(ITEMS).filter(([, it]) => it.secs).map(([id, it]) => [id, it.secs]));
+  assert.deepEqual(rows, timed);
 });
