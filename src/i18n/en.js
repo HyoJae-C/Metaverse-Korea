@@ -1025,4 +1025,5 @@ export const EN = {
   "boat.aboard": "All aboard! Off at {pier} ⛴",
   "boat.toward": "To {pier} · {t}",
   "boat.getOff": "Get off here · {pier}",
+  "spend.ask": "Spend {n}?",
 };

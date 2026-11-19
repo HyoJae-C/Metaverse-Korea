@@ -1023,4 +1023,5 @@ export const AR = {
   "boat.aboard": "على متن القارب! انزل في {pier} ⛴",
   "boat.toward": "إلى {pier} · {t}",
   "boat.getOff": "انزل هنا · {pier}",
+  "spend.ask": "هل تدفع {n}؟",
 };

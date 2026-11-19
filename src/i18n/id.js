@@ -1023,4 +1023,5 @@ export const ID = {
   "boat.aboard": "Naik! Turun di {pier} ⛴",
   "boat.toward": "Ke {pier} · {t}",
   "boat.getOff": "Turun di sini · {pier}",
+  "spend.ask": "Bayar {n}?",
 };

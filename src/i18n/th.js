@@ -1023,4 +1023,5 @@ export const TH = {
   "boat.aboard": "ขึ้นเรือแล้ว! ลงที่{pier} ⛴",
   "boat.toward": "ไป{pier} · {t}",
   "boat.getOff": "ลงที่นี่ · {pier}",
+  "spend.ask": "จ่าย {n} ไหม?",
 };

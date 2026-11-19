@@ -1026,4 +1026,5 @@ export const ZH = {
   "boat.aboard": "上船啦！在{pier}下船 ⛴",
   "boat.toward": "到{pier} · {t}",
   "boat.getOff": "在这里下船 · {pier}",
+  "spend.ask": "要花{n}吗？",
 };

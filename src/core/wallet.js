@@ -142,6 +142,8 @@ export class Wallet {
     this.s = readState(); // set: the server wallet (maybe not reached yet this visit)
     this.log = readLog();
     this.listeners = [];
+    this.askSpend = null; // f(n, note) → true to pay (game/spend-ask.js)
+    this.declinedAt = 0;
     this.spendListeners = []; // f(paid, n): every spend() call, paid or not (shop sounds)
     this.client = null;
     this.welcomed = 0; // welcome money the server gave on opening
@@ -327,12 +329,21 @@ export class Wallet {
     return id;
   }
   // Pay n coins if there are enough; returns true when paid (lastOp: its id).
-  spend(n, note) {
+  // askSpend(n, note) (game/spend-ask.js) asks the player first; a "no"
+  // returns false like being short, and justDeclined tells the two apart.
+  // opts.ask = false: no question (a payment the player already agreed to).
+  spend(n, note, opts = {}) {
+    if (n > 0 && n <= this.coins && opts.ask !== false && this.askSpend && !this.askSpend(n, note)) {
+      this.declinedAt = Date.now();
+      return false;
+    }
     const paid = n <= this.coins;
     if (paid) this.add(-n, note, { kind: 'spend' });
     this.spendListeners.forEach((f) => f(paid, n));
     return paid;
   }
+  // The player just said no to a payment (so it isn't "not enough money").
+  get justDeclined() { return Date.now() - this.declinedAt < 500; }
   // Take up to n coins (a fine never makes the balance negative); returns what was taken.
   take(n, note) {
     const k = Math.min(n, this.coins);
