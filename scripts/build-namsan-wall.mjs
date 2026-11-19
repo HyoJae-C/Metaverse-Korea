@@ -23,7 +23,7 @@
 // summit trail is kept and this one joins it. Both are kept off the wall,
 // and the wall opens where a trail goes through it.
 //
-//   node scripts/build-namsan-wall.mjs   (after build-namsan-real.mjs --trail)
+//   node scripts/build-namsan-wall.mjs   (after build-namsan-real.mjs --trail; then build-namsan-terrain.mjs and build-namsan-cable.mjs, which redo the ways up and the cable on the real ground)
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

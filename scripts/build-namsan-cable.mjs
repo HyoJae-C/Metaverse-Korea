@@ -20,8 +20,8 @@
 //     along the line off it. How far each moved is printed and kept in
 //     the landmark's `why`.
 //
-// Run after build-namsan.mjs, build-namsan-real.mjs, build-itaewon.mjs and
-// build-namsan-wall.mjs (they draw the hill and the trails; this only
+// Run after build-namsan.mjs, build-namsan-real.mjs, build-itaewon.mjs,
+// build-namsan-wall.mjs and build-namsan-terrain.mjs (they draw the hill and the trails; this only
 // rewrites the cable car's landmark, the lower station building, its door in
 // stores.json and its map pin).
 //
