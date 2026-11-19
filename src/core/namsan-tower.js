@@ -24,6 +24,14 @@ export const NAMSAN_TOWER = {
   top: 38, // the deck's cap (the real 112 m is 37.3)
   tip: 79, // the antenna's top (the real 236.7 m is 78.9)
   deckR: 3.95, // the deck's radius (the real 23.5 m across / 2 / 3)
+  // The terrace (radius 13 at its foot, 12 on top, 2 high) stands 0.5 m over
+  // the plaza (the tower is set 1 m into it: core/landmarks.js); a step ring
+  // halfway up lets you walk onto it (Yozi 2026-11-19: "턱 올라갈 수 있게").
+  // game/namsan-walk.js NAMSAN_WALK.terrace is the same in metres.
+  step: { r: 13.6, h: 5 / 3 },
+  // The way in, on the foot building's east side (the deck's door, stores.json
+  // namsan-deck, is in front of it): its width and height.
+  door: { w: 3.2, h: 3.6 },
 };
 
 let mats = null;
@@ -54,7 +62,16 @@ export function namsanTower(g, y0 = 0) {
   const cyl = (k, rt, rb, h, y, seg = 20) => put(k, new THREE.CylinderGeometry(rt, rb, h, seg).translate(0, y0 + y + h / 2, 0));
 
   cyl('stone', 12, 13, 2, 0, 24); // the terrace on the summit
+  cyl('stone', T.step.r, T.step.r + 0.2, T.step.h, 0, 24); // a step up onto it
   cyl('white', 7, 8, 7, 2, 24); // the foot building
+  // Its door, facing east (+x): a stone frame, glass doors with a bar down
+  // the middle, and a little canopy over them.
+  const box = (k, sx, sy, sz, x, y) => put(k, new THREE.BoxGeometry(sx, sy, sz).translate(x, y0 + y, 0));
+  const D = T.door, sx = (y) => 8 - (y - 2) / 7; // (the foot building's radius at y)
+  box('stone', 0.6, D.h + 0.5, D.w + 0.8, sx(2 + D.h / 2) + 0.05, 2 + (D.h + 0.5) / 2);
+  box('glass', 0.5, D.h, D.w, sx(2 + D.h / 2) + 0.25, 2 + D.h / 2);
+  box('stone', 0.12, D.h, 0.16, sx(2 + D.h / 2) + 0.52, 2 + D.h / 2);
+  box('white', 2, 0.35, D.w + 1.4, sx(2 + D.h) + 0.9, 2 + D.h + 0.6);
   // The lower pylon, with three bands that glow green at night.
   cyl('white', 2.3, 2.7, T.pylon - T.foot, T.foot);
   for (const y of [10.2, 12.2, 14.2]) cyl('green', 3, 3, 0.55, y);

@@ -17,13 +17,14 @@
 // the trail from Sowol-ro) then follow the new ground along them, smoothed
 // and kept under MAX_DEG, instead of an even climb.
 //
-// Run after build-namsan-wall.mjs, before build-namsan-cable.mjs:
+// Run after build-namsan-plaza.mjs (the level top's edge, namsanFlat), before
+// build-namsan-cable.mjs:
 //   node scripts/build-namsan-terrain.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toLatLon } from '../src/core/seoul-grid.js';
-import { namsanRadius, namsanShapeY, namsanGround, onNamsan } from '../src/core/namsan-shape.js';
+import { namsanRadius, namsanShapeY, namsanGround, onNamsan, namsanFlat } from '../src/core/namsan-shape.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -54,8 +55,9 @@ function elev(x, z) {
 
 const hill = itaewon.landmarks.find((l) => l.type === 'namsan');
 const HX = hill.x + ox, HZ = hill.z + oz, TX = HX + hill.px, TZ = HZ + hill.pz; // the foot's centre and the top, world metres
-const N = hill.rad.length, n = C.rings, f = hill.flat || 0;
-const at = (i, j) => { const a = (2 * Math.PI * i) / N, d = f + (j / n) * (namsanRadius(hill, a) - f); return [TX + Math.cos(a) * d, TZ + Math.sin(a) * d]; };
+const N = hill.rad.length, n = C.rings;
+const fA = (a) => namsanFlat(hill, a); // (the level top's edge along angle a: scripts/build-namsan-plaza.mjs)
+const at = (i, j) => { const a = (2 * Math.PI * i) / N, f = fA(a), d = f + (j / n) * (namsanRadius(hill, a) - f); return [TX + Math.cos(a) * d, TZ + Math.sin(a) * d]; };
 const raw = Array.from({ length: N }, (_, i) => Array.from({ length: n + 1 }, (_, j) => elev(...at(i, j))));
 const avg = (col) => Array.from({ length: N }, (_, i) => { let s = 0; for (let k = -C.smoothA; k <= C.smoothA; k++) s += raw[(i + k + N) % N][col]; return s / (2 * C.smoothA + 1); });
 const foot = avg(n), edge = avg(0), eTop = elev(TX, TZ); // (heights scaled between this angle's foot and the real top)
@@ -67,7 +69,7 @@ for (let i = 0; i < N; i++) for (let j = 0; j <= n; j++) {
 // No slope steeper than steepDeg (or than this angle's side needs, plus 3°:
 // the west side is short), ring to ring, the top's edge held at 1 and the foot at 0.
 for (let i = 0; i < N; i++) {
-  const a = (2 * Math.PI * i) / N, dr = (namsanRadius(hill, a) - f) / n;
+  const a = (2 * Math.PI * i) / N, dr = (namsanRadius(hill, a) - fA(a)) / n;
   const need = Math.atan(hill.h / (dr * n)) + (3 * Math.PI) / 180;
   const cap = (Math.tan(Math.max((C.steepDeg * Math.PI) / 180, need)) * dr * 1000) / hill.h; // (in thousandths, per ring)
   const v = (j) => i * (n + 1) + j;
@@ -85,7 +87,7 @@ delete hill.e; // (the dome's shape: unused with dem)
 // ---------- The trails' ways up, on the new ground ----------
 const bare = { ...hill, spur: null }; // the hill without them
 const groundBare = (lx, lz) => { // (the hill's metres)
-  const dx = lx - hill.px, dz = lz - hill.pz, a = Math.atan2(dz, dx), Rr = namsanRadius(hill, a);
+  const dx = lx - hill.px, dz = lz - hill.pz, a = Math.atan2(dz, dx), Rr = namsanRadius(hill, a), f = fA(a);
   const r = Math.max(0, Math.hypot(dx, dz) - f) / (Rr - f);
   return r < 1 ? namsanShapeY(bare, r, a) : 0;
 };
@@ -101,7 +103,7 @@ function fit(line, y0, y1) { // y0, y1: its height at each end (y0 null: 0 or lo
   }
   const ds = pts.map((p, i) => (i ? Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) : 0));
   const off = pts.map((p) => !onNamsan(hill, p[0], p[1]));
-  const top = pts.map((p) => Math.hypot(p[0] - hill.px, p[1] - hill.pz) <= f); // (on the level plaza: h)
+  const top = pts.map((p) => Math.hypot(p[0] - hill.px, p[1] - hill.pz) <= fA(Math.atan2(p[1] - hill.pz, p[0] - hill.px))); // (on the level plaza: h)
   let y = pts.map((p, i) => (off[i] ? 0 : groundBare(...p)));
   for (let i = 1; i < y.length; i++) if (ds[i] > 0.3) steepBefore = Math.max(steepBefore, Math.abs(y[i] - y[i - 1]) / ds[i]);
   y = y.map((_, i) => { let a = 0, c = 0; for (let q = Math.max(0, i - 4); q <= Math.min(y.length - 1, i + 4); q++) { a += y[q]; c++; } return a / c; });
@@ -133,7 +135,7 @@ function fit(line, y0, y1) { // y0, y1: its height at each end (y0 null: 0 or lo
 // trail's runs): the ones that reach the summit plaza first, from the foot to
 // its edge; then the others, between the heights at their two ends.
 {
-  const toPlaza = (run) => Math.hypot(run.at(-1)[0] - hill.px, run.at(-1)[1] - hill.pz) <= f + 1;
+  const toPlaza = (run) => { const dx = run.at(-1)[0] - hill.px, dz = run.at(-1)[1] - hill.pz; return Math.hypot(dx, dz) <= fA(Math.atan2(dz, dx)) + 1; };
   const runs = [hill.trail, ...hill.wtrail];
   hill.spur.lines = runs.filter(toPlaza).map((run) => fit(run, null, hill.h));
   const G = (p) => namsanGround(hill, p[0], p[1]);

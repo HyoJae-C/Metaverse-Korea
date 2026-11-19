@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { countLines, cleanNote, preview, LocalLoveLocks, LOVE_LOCK, LOCK_SHAPES } from '../src/core/love-locks.js';
-import { NAMSAN_WALK } from '../src/game/namsan-walk.js';
+import { readFileSync } from 'node:fs';
+import { NAMSAN_WALK, plazaEdge } from '../src/game/namsan-walk.js';
 
 const mem = () => { const d = {}; return { getItem: (k) => d[k] ?? null, setItem: (k, v) => { d[k] = String(v); } }; };
 const wallet = (coins) => ({ coins, spend(n) { if (n > this.coins) return false; this.coins -= n; return true; }, add(n) { this.coins += n; } });
@@ -61,6 +62,7 @@ test('the list is newest first, a page at a time', async () => {
 test('the love-lock spot is on the summit plaza, clear of the tower', () => {
   const W = NAMSAN_WALK, [x, z] = W.heartSpot;
   assert.ok(Math.hypot(x, z) > W.towerR + 2, 'off the tower\'s terrace');
-  assert.ok(Math.hypot(x, z) < W.plazaR - 2, 'inside the railing');
+  const hill = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/districts/itaewon.json', import.meta.url), 'utf8')).landmarks.find((l) => l.type === 'namsan');
+  for (const [px, pz] of [W.heart, W.heartSpot]) assert.ok(Math.hypot(px, pz) < plazaEdge(hill, Math.atan2(pz, px)) - W.rail - 1.5, 'inside the railing');
   assert.ok(Math.hypot(x - W.heart[0], z - W.heart[1]) < 3.5, 'in front of the heart');
 });

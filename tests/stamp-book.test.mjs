@@ -53,7 +53,9 @@ test('the Namsan stamp stands on the summit plaza, outdoors on the hilltop', asy
   const s = STAMPS.find((q) => q.id === 'namsan');
   const [x, z] = s.place.at, tower = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
   const d = Math.hypot(x - tower[0], z - tower[1]);
-  assert.ok(d > NAMSAN_WALK.towerR + 1 && d < NAMSAN_WALK.plazaR - 2, `on the plaza (${d.toFixed(1)} m from the tower)`);
+  const { plazaEdge } = await import('../src/game/namsan-walk.js');
+  const edge = plazaEdge(hill, Math.atan2(z - tower[1], x - tower[0]));
+  assert.ok(d > NAMSAN_WALK.towerR + 1 && d < edge - NAMSAN_WALK.rail - 2, `on the plaza (${d.toFixed(1)} m from the tower, its edge ${edge.toFixed(1)} m)`);
   assert.ok(Math.abs(s.place.y - namsanGround(hill, x - ox - hill.x, z - oz - hill.z)) < 0.2, 'at the plaza\'s height');
 });
 

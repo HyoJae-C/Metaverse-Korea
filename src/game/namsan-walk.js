@@ -18,14 +18,19 @@
 //
 // The city wall's trail over the hill (l.wtrail, scripts/build-namsan-wall.mjs)
 // is decks too; the wall itself (game/namsan-wall.js) loads when you come near.
-import { namsanGround, onNamsan, namsanReach } from '../core/namsan-shape.js';
+import { namsanGround, onNamsan, namsanReach, namsanFlat } from '../core/namsan-shape.js';
 
 export const NAMSAN_WALK = {
   w: 3, // m: the trail's width (the landmark's trailW wins)
-  plazaR: 26, // m round the tower: the summit plaza (inside the hill's level top, l.flat)
-  towerR: 9.5, // m: the tower's terrace (12 m × its 0.75 scale), with a little room
-  heart: [-20, 0], // m from the tower: the love-lock heart, facing east into the plaza
-  heartSpot: [-17.2, 0], // where you stand to hang a lock
+  plazaR: 26, // m round the tower: the summit plaza, where the hill has no real outline for it (l.flatRad: core/namsan-shape.js namsanFlat)
+  rail: 0.6, // m inside the level top's edge: the plaza's railing
+  towerR: 10.4, // m: the tower's terrace and its step (core/namsan-tower.js: 13.8 units × its 0.75 scale), with a little room
+  footR: 6.2, // m: the tower's foot building (8 units × 0.75), the wall you bump into
+  // The terrace you step up onto (core/namsan-tower.js NAMSAN_TOWER.step):
+  // [its outer radius, its top over the plaza] m, the step then the terrace.
+  terrace: [[10.2, 0.25], [9.25, 0.5]],
+  heart: [-17.5, 0], // m from the tower: the love-lock heart, facing east into the plaza
+  heartSpot: [-14.7, 0], // where you stand to hang a lock
   near: 480, // m: the plaza's models load this close (past the fog's 420 m)
   // Namsan Palgakjeong, the octagonal pavilion north-west of the tower (OSM
   // way 1555991263, scripts/data/namsan-osm.json palgakjeong): m from the
@@ -49,7 +54,16 @@ export function palgakStep(dx, dz) {
   return y;
 }
 
-const ring = (cx, cz, r, n = 24) => Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; });
+// How high the tower's terrace is at (dx, dz) m from the tower (0 off it).
+export function terraceStep(dx, dz) {
+  const d = Math.hypot(dx, dz);
+  let y = 0;
+  for (const [r, top] of NAMSAN_WALK.terrace) if (d < r) y = top;
+  return y;
+}
+
+// The plaza's edge (the hill's level top) along angle a, m from the tower.
+export const plazaEdge = (l, a) => (l.flatRad ? namsanFlat(l, a) : NAMSAN_WALK.plazaR);
 
 export function createNamsanWalk({ landmarks = [], collision, scene = null, roads = [], buildings = [], seats = null }) {
   const l = landmarks.find((q) => q.type === 'namsan' && q.rad);
@@ -73,7 +87,8 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
   // The city wall's trail.
   for (const run of l.wtrail || []) for (let i = 1; i < run.length; i++) deck([l.x + run[i - 1][0], l.z + run[i - 1][1]], [l.x + run[i][0], l.z + run[i][1]], l.wtrailW || W.w);
   // The plaza, and a path from its edge to the upper station.
-  collision?.addDeck(ring(...tower, W.plazaR + 0.5, 32));
+  const edge = (a) => plazaEdge(l, a);
+  collision?.addDeck(Array.from({ length: 96 }, (_, i) => { const a = (i / 96) * Math.PI * 2, r = edge(a) + 0.5; return [tower[0] + Math.cos(a) * r, tower[1] + Math.sin(a) * r]; }));
   const cable = landmarks.find((q) => q.type === 'cablecar');
   let station = null, stationOut = null;
   if (cable?.path?.length) {
@@ -83,7 +98,8 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
     const ux = (station[0] - tower[0]) / d, uz = (station[1] - tower[1]) / d;
     // its door, at the station's end towards the tower (scripts/build-namsan-cable.mjs)
     const door = cable.door ? [cable.x + cable.door[0], cable.z + cable.door[1]] : [station[0] - ux * 7.5, station[1] - uz * 7.5];
-    deck([tower[0] + ux * (W.plazaR - 2), tower[1] + uz * (W.plazaR - 2)], door, 4);
+    const e0 = edge(Math.atan2(uz, ux)) - 2;
+    deck([tower[0] + ux * e0, tower[1] + uz * e0], door, 4);
     station = door;
     stationOut = { x: door[0] - ux * 1.5, z: door[1] - uz * 1.5, ry: Math.atan2(-ux, -uz) }; // facing the tower
   }
@@ -91,7 +107,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
   const heartSpot = at(W.heartSpot);
   const reach = namsanReach(l), x0 = l.x - reach, x1 = l.x + reach, z0 = l.z - reach, z1 = l.z + reach;
   const palgak = at(W.palgak);
-  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z) + palgakStep(x - palgak[0], z - palgak[1]));
+  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z) + palgakStep(x - palgak[0], z - palgak[1]) + terraceStep(x - tower[0], z - tower[1]));
   let summit = null, loading = false;
   // The wall: its box, and when it has loaded.
   const wallPts = (l.wall?.runs || []).flat().map(([x, z]) => [l.x + x, l.z + z]);
@@ -114,7 +130,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
       loading = true;
       import('./namsan-summit.js')
         .then(({ buildNamsanSummit }) => {
-          summit = buildNamsanSummit({ scene, collision, l, tower, station, trails: [line, ...(l.wtrail || []).map((r) => r.map(([x, z]) => [l.x + x, l.z + z]))], y: y(...tower), groundY: y });
+          summit = buildNamsanSummit({ scene, collision, l, edge, tower, station, trails: [line, ...(l.wtrail || []).map((r) => r.map(([x, z]) => [l.x + x, l.z + z]))], y: y(...tower), groundY: y });
           if (seats) seats.push(...summit.seats); // (Palgakjeong's floor edge: main.js streetSeats)
         })
         .catch((e) => { loading = false; console.warn('namsan summit', e); });
