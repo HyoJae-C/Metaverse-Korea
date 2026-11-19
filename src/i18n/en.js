@@ -1026,4 +1026,6 @@ export const EN = {
   "boat.toward": "To {pier} · {t}",
   "boat.getOff": "Get off here · {pier}",
   "spend.ask": "Spend {n}?",
+  "spend.yes": "OK",
+  "spend.no": "Cancel",
 };

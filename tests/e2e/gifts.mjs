@@ -113,6 +113,8 @@ try {
     await a.click('#product-gift');
     if (shotDir && check === 'bag') await a.screenshot({ path: shotDir + '/gift-picker.png' });
     await a.click('.gift-person');
+    // "Spend ₩…?" (game/spend-ask.js): OK plays the tap again and pays.
+    await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 });
     step = `${shop}: B waits for the gift card`;
     await b.waitForSelector('.gift-card', { timeout: 10000 });
     if (shotDir && check === 'bag') { await b.waitForTimeout(800); await b.screenshot({ path: shotDir + '/gift-card.png' }); }
@@ -137,7 +139,7 @@ try {
   // by A for a while (the next offer is turned down on its own).
   await bothIn('salam-halal');
   const before = await a.evaluate(() => __mk.coins());
-  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); };
+  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 }); };
   step = 'decline: A sends a gift';
   await sendOne();
   step = 'decline: B waits for the gift card';

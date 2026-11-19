@@ -241,6 +241,7 @@ import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listenin
 import { createLiveStage } from './game/live-stage.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
+import { createMissionSpot } from './game/mission-spot.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
 import { GiftReceipts } from './core/gift-receipts.js';
@@ -248,6 +249,7 @@ import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createSaunaTowel } from './game/sauna-towel.js';
 import { createCookingClasses } from './game/cooking-classes.js';
+import { createHelpBook } from './game/help-book.js';
 import { createRecipeBook } from './game/recipe-book.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
@@ -866,7 +868,7 @@ const northWall = createNorthWallNear({ landmarks: map.landmarks, scene, y: nort
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
 const hanBridges = createHanBridges({ scene, bridges: map.bridges }); // the Han's bridges, up off the water (core/han-bridges.js)
-const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings });
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings, seats: streetSeats });
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
@@ -4102,7 +4104,7 @@ onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
 const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
-  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
+  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden || helpBook.open; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
   if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
@@ -4126,6 +4128,7 @@ addEventListener('keydown', (e) => {
     else if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
+    else if (helpBook.open) helpBook.close();
     else if (loveLockUi.open) loveLockUi.close();
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
@@ -5211,7 +5214,7 @@ const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { 
 const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
 const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
-const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min); // (game/tower-look.js: tilt up to Modu Tower's top)
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min, () => namsanWalk.lookUp); // (game/tower-look.js: tilt up to Modu Tower's top, and Namsan's: game/namsan-walk.js lookUp)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
@@ -6300,6 +6303,8 @@ $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 // HUD button so people find them (they used to hide inside the wallet).
 $('notes-btn').onclick = () => { const p = $('notes-panel'); p.hidden = !p.hidden; if (!p.hidden) $('wallet-panel').hidden = true; };
 $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
+// The game guide (❓ next to ⚙️). (game/help-book.js)
+const helpBook = createHelpBook({ $ });
 // Budget book. (ui/ledger-ui.js)
 createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
@@ -6462,6 +6467,7 @@ $('quest-chip').onclick = () => {
 };
 questChipReady = true;
 refreshQuestChip();
+createMissionSpot(); // (the mission bar sits under the pinned notices)
 
 // On the square: near the guide, or in front of the big screen (the mission
 // says "in front of the billboard", and the screen stands ~18 m from the guide

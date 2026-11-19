@@ -27,11 +27,31 @@ export const NAMSAN_WALK = {
   heart: [-20, 0], // m from the tower: the love-lock heart, facing east into the plaza
   heartSpot: [-17.2, 0], // where you stand to hang a lock
   near: 480, // m: the plaza's models load this close (past the fog's 420 m)
+  // Namsan Palgakjeong, the octagonal pavilion north-west of the tower (OSM
+  // way 1555991263, scripts/data/namsan-osm.json palgakjeong): m from the
+  // tower. The whole place at 50% (Yozi 2026-11-19): the pavilion ~3 m across
+  // (real ~6 m), its stepped stone base ~9 m (real ~18 m, Naver map).
+  palgak: [-12.6, -13.7],
+  // Looking up at the tower (game/tower-look.js): within `range` m of it,
+  // dragging the view up tilts up to its deck and antenna (Yozi 2026-11-19).
+  lookUp: { range: 150, gain: 8 },
 };
+// The pavilion's base: three steps (outer radius of each octagon, its top),
+// the columns' radius and height, the roof's eaves.
+export const PALGAK = { steps: [[4.6, 0.15], [4.2, 0.3], [3.8, 0.45]], colR: 1.6, colH: 1.55, eave: 2.6 };
+// How high the base is at (dx, dz) m from the pavilion's centre (0 off it):
+// the octagons have flat faces at angles π/8 + kπ/4 (three.js cylinders).
+export function palgakStep(dx, dz) {
+  let ap = 0;
+  for (let k = 0; k < 8; k++) { const a = Math.PI / 8 + (k * Math.PI) / 4; ap = Math.max(ap, dx * Math.sin(a) + dz * Math.cos(a)); }
+  let y = 0;
+  for (const [r, top] of PALGAK.steps) if (ap < r * Math.cos(Math.PI / 8)) y = top;
+  return y;
+}
 
 const ring = (cx, cz, r, n = 24) => Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r]; });
 
-export function createNamsanWalk({ landmarks = [], collision, scene = null, roads = [], buildings = [] }) {
+export function createNamsanWalk({ landmarks = [], collision, scene = null, roads = [], buildings = [], seats = null }) {
   const l = landmarks.find((q) => q.type === 'namsan' && q.rad);
   const none = { y: () => 0, update() {}, nearHeart: () => false, station: null, stationOut: null, tower: null };
   if (!l) return none;
@@ -70,7 +90,8 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
   const at = ([dx, dz]) => [tower[0] + dx, tower[1] + dz];
   const heartSpot = at(W.heartSpot);
   const reach = namsanReach(l), x0 = l.x - reach, x1 = l.x + reach, z0 = l.z - reach, z1 = l.z + reach;
-  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z));
+  const palgak = at(W.palgak);
+  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z) + palgakStep(x - palgak[0], z - palgak[1]));
   let summit = null, loading = false;
   // The wall: its box, and when it has loaded.
   const wallPts = (l.wall?.runs || []).flat().map(([x, z]) => [l.x + x, l.z + z]);
@@ -78,6 +99,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
   let wall = null, wallLoading = false;
   return {
     line, tower, station, stationOut,
+    lookUp: [{ x: tower[0], z: tower[1], ...W.lookUp }],
     y: walkY,
     // Every frame on the street: the plaza's models when you come near.
     update(p) {
@@ -91,7 +113,10 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
       if (summit || loading || !scene || Math.hypot(p.x - tower[0], p.z - tower[1]) > W.near) return;
       loading = true;
       import('./namsan-summit.js')
-        .then(({ buildNamsanSummit }) => { summit = buildNamsanSummit({ scene, collision, l, tower, station, trails: [line, ...(l.wtrail || []).map((r) => r.map(([x, z]) => [l.x + x, l.z + z]))], y: y(...tower), groundY: y }); })
+        .then(({ buildNamsanSummit }) => {
+          summit = buildNamsanSummit({ scene, collision, l, tower, station, trails: [line, ...(l.wtrail || []).map((r) => r.map(([x, z]) => [l.x + x, l.z + z]))], y: y(...tower), groundY: y });
+          if (seats) seats.push(...summit.seats); // (Palgakjeong's floor edge: main.js streetSeats)
+        })
         .catch((e) => { loading = false; console.warn('namsan summit', e); });
     },
     get wallGroup() { return wall?.group || null; }, // (main.js FarCull)

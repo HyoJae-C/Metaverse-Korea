@@ -118,3 +118,31 @@ test('the Namsan trail runs from Sowol-ro up to beside the tower', () => {
   const sowol = itaewon.roads.find((r) => r.n?.en === 'Sowol-ro');
   assert.ok(segDist(road.p[0], sowol.p) <= sowol.w / 2 + 1, 'it starts on Sowol-ro');
 });
+
+test('Palgakjeong stands on its real spot on the summit, the whole place at 50% (Yozi 2026-11-19), and you walk up onto it', async () => {
+  const { NAMSAN_WALK, PALGAK, palgakStep } = await import('../src/game/namsan-walk.js');
+  const top = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const real = mid(osm.palgakjeong);
+  const at = [top[0] + NAMSAN_WALK.palgak[0], top[1] + NAMSAN_WALK.palgak[1]];
+  assert.ok(dist(at, real) < 1, `${dist(at, real).toFixed(2)} m from the real one (OSM way 1555991263)`);
+  // 50%: the pavilion ~6 m real → ~3 m; the base ~18 m real → ~9 m.
+  assert.ok(Math.abs(PALGAK.colR * 2 - 3.2) < 0.3 && Math.abs(PALGAK.steps[0][0] * 2 - 9.2) < 0.5);
+  // On the plaza: clear of the tower's terrace and inside the railing.
+  const d = Math.hypot(...NAMSAN_WALK.palgak);
+  assert.ok(d - PALGAK.steps[0][0] > NAMSAN_WALK.towerR + 2 && d + PALGAK.steps[0][0] < NAMSAN_WALK.plazaR - 1);
+  // Steps of at most 0.15 m from the plaza up to the floor.
+  let prev = 0;
+  for (let r = 6; r >= 0; r -= 0.05) { const y = palgakStep(r, 0); assert.ok(y - prev <= 0.151, `step at ${r.toFixed(2)}`); prev = y; }
+  assert.equal(palgakStep(0, 0), PALGAK.steps.at(-1)[1]);
+  assert.equal(palgakStep(5, 0), 0);
+});
+
+test('the tower is a quarter of the real one\'s OSM heights: the deck 88–112 m, the antenna to 236.7 m', async () => {
+  const { NAMSAN_TOWER: T } = await import('../src/core/namsan-tower.js');
+  // (units of T.unit real metres: drawn at 0.75 game metres each, a quarter)
+  const P = osm.towerParts, real = (u) => u * T.unit;
+  assert.ok(Math.abs(real(T.head) - P.deck[0]) < 4, `the deck starts ${real(T.head)} m up`);
+  assert.ok(Math.abs(real(T.top) - P.upper[1]) < 4, `the deck's top ${real(T.top)} m`);
+  assert.ok(Math.abs(real(T.tip) - P.top) < 2, `the tip ${real(T.tip)} m`);
+  assert.ok(Math.abs(real(T.deckR * 2) - P.deckD) < 1.5);
+});

@@ -1061,6 +1061,22 @@
       "products": []
     },
     {
+      "id": "namsan-deck",
+      "category": "play",
+      "workshop": "skydeck",
+      "size": "skydeck",
+      "deck": "namsan",
+      "front": "landmark",
+      "face": 1.5708,
+      "at": [-1478.4, -182.8],
+      "y": 56.06,
+      "district": "itaewon",
+      "name": {"en": "Namsan Tower Deck", "ko": "남산타워 전망대", "ja": "南山タワー展望台", "zh": "南山塔观景台"},
+      "tagline": {"en": "Up the tower on Namsan: all of Seoul round you, the Han to the south, the palaces to the north, and the shows over the river at night (a game deck: the view is a drawing)", "ko": "남산 위 타워 전망대: 서울이 한 바퀴, 남쪽엔 한강, 북쪽엔 궁궐, 밤엔 강 위의 쇼까지 (게임 속 전망대예요. 창밖은 그림이에요)", "ja": "南山の上のタワー展望台：ソウルをぐるり、南に漢江、北に王宮、夜は川の上のショーも（ゲームの展望台です。景色は絵です）", "zh": "南山上的塔顶观景台：环视首尔，南边是汉江，北边是宫殿，晚上还有江上的表演（游戏里的观景台：窗外是画）"},
+      "colors": {"sign": "#3b2a4a", "awning": "#f2d6e6", "accent": "#fbeef5"},
+      "products": []
+    },
+    {
       "id": "namsan-sky-cable",
       "category": "play",
       "workshop": "cablecar",

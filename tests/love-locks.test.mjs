@@ -13,7 +13,8 @@ test('lines are counted from line breaks, 20 at most', () => {
   assert.equal(cleanNote(Array(20).fill('x').join('\n')).body.split('\n').length, 20);
   assert.equal(cleanNote(Array(21).fill('x').join('\n')).error, 'lines');
   assert.equal(cleanNote(' \n \n').error, 'empty');
-  assert.equal(cleanNote('가'.repeat(1001)).error, 'chars');
+  assert.equal(cleanNote('가'.repeat(201)).error, 'chars');
+  assert.equal(cleanNote('가'.repeat(200)).body.length, 200);
 });
 
 test('a note keeps its line breaks and spaces, HTML stays plain text', () => {
