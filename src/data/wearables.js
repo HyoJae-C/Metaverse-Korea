@@ -31,7 +31,8 @@ export const RETIRED = new Set([
 ]);
 
 // secs: limited-time clothes, gone that many seconds after buying
-// (game/timed-wear.js). 7 days (Yozi 2026-11-20).
+// (game/timed-wear.js). 7 days (Yozi 2026-11-20). The server drops them
+// from the account save too: change timed_items there (supabase/058) with it.
 export const TIMED_SECS = 7 * 24 * 3600;
 
 // price: listed in ₩1,000s (70 = ₩70,000).
