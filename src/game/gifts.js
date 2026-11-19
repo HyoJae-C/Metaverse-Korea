@@ -28,6 +28,7 @@ export function createGifts(game) {
     const name = product.name;
     const itemId = product.item || product.outfit;
     const it = itemId && ITEMS[itemId];
+    if (it?.secs) return null; // limited-time clothes: not a gift (they'd run out)
     if (it?.wear) return it.price > 0 ? { coins: it.price, icon: it.emoji || '👕', name, item: itemId } : null;
     const how = howToGet(store);
     if (how === 'counter') {

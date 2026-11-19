@@ -936,6 +936,8 @@ export const VI = {
   "bait.desc": "Còn {n}. Cầm trên tay rồi gắn vào lưỡi câu: cá ★3+ cắn {p}% số lần.",
   "bait.hi1": "Mồi ngon thì cá cắn mạnh!",
   "bait.hi2": "Hôm nay con nước tốt lắm!",
+  "timed.gone": "⌛ {name} là đồ có thời hạn: đã hết hạn nên biến khỏi tủ đồ.",
+  "timed.left": "⌛ Còn {d} ngày",
   "sauna.towelBack": "🐑 Đã qua một ngày nên jjimjilbang đã thu lại khăn cừu.",
   "matFood.put": "Bày đồ ăn lên thảm",
   "matFood.off": "Cất đồ ăn lại",

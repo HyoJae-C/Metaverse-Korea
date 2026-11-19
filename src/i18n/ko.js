@@ -114,6 +114,8 @@ export const KO = {
   "gym.talk": "{name}와 이야기하기",
   "sauna.hot": "불가마 들어가기",
   "sauna.ice": "얼음방 들어가기",
+  "timed.gone": "⌛ 기간제 옷 {name}의 기간이 끝나서 옷장에서 사라졌어요.",
+  "timed.left": "⌛ {d}일 남음",
   "sauna.towelBack": "🐑 하루가 지나서 양머리 수건이 찜질방에 회수되었어요.",
   "emblem.open": "이름표 꾸미기",
   "info.open": "안내 듣기",

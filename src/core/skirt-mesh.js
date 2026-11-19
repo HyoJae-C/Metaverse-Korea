@@ -208,6 +208,21 @@ export function skirtMaterial(id) {
   return m;
 }
 
+// The same print for a printed top (core/outfit-mesh.js o.print), whose
+// texture coordinates already count the repeats.
+const prints = new Map();
+export function printMaterial(id) {
+  if (prints.has(id)) return prints.get(id);
+  const base = skirtMaterial(id);
+  if (!base) return null;
+  const tex = base.map.clone();
+  tex.repeat.set(1, 1);
+  tex.needsUpdate = true;
+  const m = new THREE.MeshLambertMaterial({ map: tex });
+  prints.set(id, m);
+  return m;
+}
+
 // Puts the skirt on a character model (a fresh clone, still in its rest
 // pose, already scaled). o: the outfit's shape options. Returns the mesh.
 const rigs = new Map();

@@ -30,6 +30,10 @@ export const RETIRED = new Set([
   ...['green', 'yellow', 'purple'].flatMap((c) => ['butterfly', 'chrysanthemum', 'double-coin'].map((k) => `acc-knot-${c}-${k}`)),
 ]);
 
+// secs: limited-time clothes, gone that many seconds after buying
+// (game/timed-wear.js). 7 days (Yozi 2026-11-20).
+export const TIMED_SECS = 7 * 24 * 3600;
+
 // price: listed in ₩1,000s (70 = ₩70,000).
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
 // Trousers also take a skirt off (look.skirt), so a pair can be put back on.
@@ -74,6 +78,15 @@ export const WEARABLES = {
   'outfit-turtle-camel': item('👕', 50, { model: 'turtle-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel turtleneck', ko: '카멜 터틀넥', ja: 'キャメルのタートルネック', zh: '驼色高领衫' }, { outfit: 'turtle-camel' }),
   'outfit-windbreaker-yellow': item('🧥', 75, { model: 'windbreaker-yellow' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow windbreaker', ko: '옐로 바람막이', ja: 'イエローのウィンドブレーカー', zh: '黄色防风夹克' }, { outfit: 'windbreaker-yellow' }),
   'outfit-vest-padded': item('🦺', 80, { model: 'vest-padded' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Sky blue padded vest', ko: '하늘색 패딩 조끼', ja: '水色のダウンベスト', zh: '天蓝色羽绒背心' }, { outfit: 'vest-padded' }),
+  // Floral dresses (Bomnal Dresses): the dress has its own skirt, so a skirt comes off.
+  'outfit-dress-floral-navy': item('👗', 75, { model: 'dress-floral-navy', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy floral dress', ko: '네이비 꽃무늬 원피스', ja: 'ネイビーの花柄ワンピース', zh: '藏青色碎花连衣裙' }, { outfit: 'dress-floral-navy' }),
+  'outfit-dress-floral-yellow': item('👗', 75, { model: 'dress-floral-yellow', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow floral dress', ko: '옐로 꽃무늬 원피스', ja: 'イエローの花柄ワンピース', zh: '黄色碎花连衣裙' }, { outfit: 'dress-floral-yellow' }),
+  // Animal onesies (Pogeun Onesies): hood with ears, a tummy and a tail.
+  // Limited-time (a test for seasonal sales): gone TIMED_SECS after you buy
+  // one (game/timed-wear.js), so cheaper, and never resold or gifted.
+  'outfit-onesie-bear': item('🐻', 50, { model: 'onesie-bear', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bear onesie', ko: '곰돌이 잠옷', ja: 'くまの着ぐるみパジャマ', zh: '小熊连体睡衣' }, { outfit: 'onesie-bear', secs: TIMED_SECS }),
+  'outfit-onesie-bunny': item('🐰', 50, { model: 'onesie-bunny', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bunny onesie', ko: '토끼 잠옷', ja: 'うさぎの着ぐるみパジャマ', zh: '兔子连体睡衣' }, { outfit: 'onesie-bunny', secs: TIMED_SECS }),
+  'outfit-onesie-dino': item('🦖', 50, { model: 'onesie-dino', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Dinosaur onesie', ko: '공룡 잠옷', ja: '恐竜の着ぐるみパジャマ', zh: '恐龙连体睡衣' }, { outfit: 'onesie-dino', secs: TIMED_SECS }),
   // Trousers (a colour of look.pants).
   'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
   'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
