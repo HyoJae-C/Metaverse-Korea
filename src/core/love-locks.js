@@ -19,7 +19,7 @@ export const LOVE_LOCK = {
   price: 15000, // won (₩15,000, about what a padlock costs at Namsan)
   pageSize: 10, // notes per page in the list
   maxLines: 20,
-  maxChars: 1000,
+  maxChars: 200, // was 1000 until 2026-11-19; older locks stay as written
   maxName: 16,
 };
 const TABLE = 'love_locks';
