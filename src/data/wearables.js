@@ -31,9 +31,8 @@ export const RETIRED = new Set([
 ]);
 
 // secs: limited-time clothes, gone that many seconds after buying
-// (game/timed-wear.js). TEST (Yozi 2026-11-20): 10 seconds, to see them go;
-// for real it is 7 days: 7 * 24 * 3600.
-export const TIMED_SECS = 10;
+// (game/timed-wear.js). 7 days (Yozi 2026-11-20).
+export const TIMED_SECS = 7 * 24 * 3600;
 
 // price: listed in ₩1,000s (70 = ₩70,000).
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
