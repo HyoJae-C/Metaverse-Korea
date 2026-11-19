@@ -34,6 +34,14 @@ function outfits(defs) {
 }
 // Is this item on (every part of its wear matches the look)? A null part
 // doesn't count, except a skirt: trousers are only on when no skirt is.
+// Bags, hats, glasses and the like worn but not in the closet (no button to
+// take them off there): ids whose wear the look has, but which aren't
+// owned. Only items whose `off` empties accessory slots (a look's free hats,
+// e.g. the sauna towel, aren't items and are never matched).
+const ACC_SLOTS = new Set(['head', 'neck', 'face', 'ear', 'back', 'hand']);
+export const unownedWorn = (look, items, has) => Object.entries(items).filter(([id, it]) => it.wear && it.off
+  && Object.keys(it.wear).length && Object.keys(it.wear).every((k) => ACC_SLOTS.has(k))
+  && Object.values(it.off).every((v) => v == null) && !has(id) && isWorn(it, look)).map(([id]) => id);
 export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => (v == null ? k !== 'skirt' || !look?.skirt : look?.[k] === v));
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',

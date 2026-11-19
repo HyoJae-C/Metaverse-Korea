@@ -60,3 +60,11 @@ test('the server knows every limited item and its time (supabase/058)', () => {
   const timed = Object.fromEntries(Object.entries(ITEMS).filter(([, it]) => it.secs).map(([id, it]) => [id, it.secs]));
   assert.deepEqual(rows, timed);
 });
+
+test('a bag worn but not in the closet is found; owned ones and free looks are not', async () => {
+  const { unownedWorn } = await import('../src/core/inventory.js');
+  const look = { model: 'basic', back: 'tote-forest', head: 'towel' };
+  assert.deepEqual(unownedWorn(look, ITEMS, () => false), ['acc-tote-forest']);
+  assert.deepEqual(unownedWorn(look, ITEMS, (id) => id === 'acc-tote-forest'), []);
+  assert.deepEqual(unownedWorn({ model: 'basic' }, ITEMS, () => false), []);
+});
