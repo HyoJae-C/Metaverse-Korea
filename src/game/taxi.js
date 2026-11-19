@@ -313,7 +313,8 @@ export function createTaxi(game) {
         const g = guest;
         endGuest();
         let pays = Math.max(0, m.a | 0);
-        if (pays && !game.wallet.spend(pays, { k: 'ledger.taxi' })) { send('short', from, g.trip, pays); pays = 0; }
+        // (No question: they already said yes to the shared ride.)
+        if (pays && !game.wallet.spend(pays, { k: 'ledger.taxi' }, { ask: false })) { send('short', from, g.trip, pays); pays = 0; }
         if (!pays) shop.toast(st('treated', { name }));
         refreshWallet();
         const [rx, rz] = taxiDropOff(g.x, g.z);

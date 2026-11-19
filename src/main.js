@@ -67,6 +67,7 @@ import { BosingakShow } from './core/bosingak-show.js';
 import { RIDES as PARK_RIDES, DROP_T, RIDE_PRICE, RIDE_PASS, RIDE_CYCLE, canBoard, ridePhase, rideLocked, rideUntil, seatAt, wheelBottom, wheelDoorOpen, COASTER_NAME, RIDE_NAME, RIDE_EMOJI, PARK_UNIFORM } from './core/park-rides.js';
 import { createRideCam, rideNear } from './game/ride-cam.js';
 import { createFirstPerson } from './game/first-person.js';
+import { createSpendAsk } from './game/spend-ask.js';
 import { createTouchSteer } from './game/touch-steer.js';
 import { createFollowCam } from './game/follow-cam.js';
 import { createParkRiders } from './game/park-riders.js';
@@ -2067,7 +2068,7 @@ const counterUi = new CounterUI({
   onBuy: (store, product, coins) => {
     if (product.ingredient) { buyIngredient(product, coins); counterUi.render(shopToastText); return false; } // (stays open to buy more)
     if (itemSoon(store, product) || !handReady()) return false;
-    if (!wallet.spend(coins, { name: product.name, at: store?.name })) { counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
+    if (!wallet.spend(coins, { name: product.name, at: store?.name })) { if (!wallet.justDeclined) counterUi.render(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
     holdNew({ kind: heldFor(product, store), sips: COFFEE_SIPS, name: localName(product.name, 'en') });
     recordFood(store, product, true);
     const who = store.category === 'club' ? barkeep : clerk;
@@ -4178,6 +4179,8 @@ wallet.onSpend((paid, n) => { if (n > 0) soundFiles.play(paid ? 'pay' : 'short',
 const walletReady = wallet.connect(cloud);
 // Budget-book note for coins earned or spent without one: the shop you are in.
 wallet.context = () => (interior?.store?.name ? { at: interior.store.name } : null);
+// "Pay ₩…?" before every payment (game/spend-ask.js).
+createSpendAsk({ wallet, shop });
 // Anonymous session reports for the operator's retention numbers
 // (core/sessions.js, supabase/011_play_sessions.sql): once a minute while
 // the tab is visible. Not in test rooms or while another tab owns the game.

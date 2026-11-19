@@ -162,7 +162,7 @@ export class PhotoUI {
 
   async shoot() {
     const mode = this.mode, n = mode.shots;
-    if (!this.wallet.spend(mode.cost)) { this.render(tt('noCoins', { n: mode.cost })); return; }
+    if (!this.wallet.spend(mode.cost)) { if (!this.wallet.justDeclined) this.render(tt('noCoins', { n: mode.cost })); return; }
     this.busy = true;
     this.root.hidden = true;
     this.onShoot?.(true, this.kind);

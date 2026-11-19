@@ -30,6 +30,9 @@ export function createBank(game) {
         const name = String(to).trim();
         const why = checkSend({ to: name, n, balance: game.wallet.coins, min: st.min, max: st.max, me: game.nickname });
         if (why) return whyText(why, st);
+        // Asked like any payment (it goes to the server, not wallet.spend()).
+        // A no keeps the form open (a blank, non-empty answer).
+        if (game.wallet.askSpend && !game.wallet.askSpend(n, { k: 'ledger.bankOut', v: { name } })) return ' ';
         const r = await cloud.bankSend({ op: newOpId(), to: name, n, memo });
         if (r.status !== 'ok') return whyText(r.status, st);
         const shown = r.name || name;

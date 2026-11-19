@@ -1026,4 +1026,5 @@ export const KO = {
   "boat.aboard": "탑승! {pier}에서 내려요 ⛴",
   "boat.toward": "{pier}까지 · {t}",
   "boat.getOff": "여기서 내리기 · {pier}",
+  "spend.ask": "{n} 결제할까요?",
 };

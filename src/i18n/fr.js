@@ -1023,4 +1023,5 @@ export const FR = {
   "boat.aboard": "Tous à bord ! Descente à {pier} ⛴",
   "boat.toward": "Vers {pier} · {t}",
   "boat.getOff": "Descendre ici · {pier}",
+  "spend.ask": "Dépenser {n} ?",
 };
