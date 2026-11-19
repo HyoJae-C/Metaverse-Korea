@@ -4509,7 +4509,7 @@ const jobUi = lazyPanel(() => import('./ui/job-ui.js').then(({ JobUI }) => new J
   wallet,
   shifts,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } },
+  onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } missionEvent('job'); }, // (a shift counts for the "work shifts" mission)
 })));
 function openJob(job) {
   if (job === 'delivery') startDelivery();

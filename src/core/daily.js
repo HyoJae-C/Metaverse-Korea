@@ -1,7 +1,10 @@
-// Daily check-in and three daily missions, so there is a reason to come back
-// each day (a stamp tour would end once it is complete).
+// Daily check-in and five daily missions, so there is a reason to come back
+// each day (a stamp tour would end once it is complete): three easy ones and
+// two challenge missions that take real effort (about 10-15 minutes). Every
+// mission pays ₩30,000 whatever it is, and a visit to a place with a fare
+// (the cable car) pays the fare on top (Yozi 2026-11-19). No all-done bonus.
 //
-// Missions are picked from today's date, so everyone gets the same three on
+// Missions are picked from today's date, so everyone gets the same five on
 // the same day. Progress lives in this browser for now (like the wallet);
 // before rewards are worth anything, move it to the server.
 import { seededRandom } from './geom.js';
@@ -11,7 +14,19 @@ const KEY = 'mk.daily';
 // it grows with the streak, day 1 to day 7, then starts over.
 export const CHECK_IN = [10000, 20000, 30000, 40000, 50000, 60000, 70000];
 export const checkInPay = (day) => CHECK_IN[(Math.max(1, day) - 1) % CHECK_IN.length];
-export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 10000, allDone: 50000 };
+export const REWARD = { checkIn: CHECK_IN[0], week: CHECK_IN[6], mission: 30000 };
+// Challenge missions: [type, how many]. Two different ones a day.
+//   fish    catch fish (any kind)
+//   job     part-time shifts (convenience store, serving, delivery runs)
+//   cook    finish cooking classes
+//   square  finish square missions (guide quests)
+export const HARD_MISSIONS = [['fish', 30], ['job', 3], ['cook', 2], ['square', 3]]; // (10 fish took 4 minutes: too easy)
+export const HARD_PER_DAY = 2;
+// Events that count for another mission type: a delivery run is a shift too.
+const ALIAS = { delivery: 'job' };
+// Places a visit costs money at: the mission pays the fare on top, so going
+// there is never a loss (core/cablecar.js CABLE.fare; a test keeps them equal).
+export const VISIT_FARE = { 'namsan-sky-cable': 15000 };
 
 // Local calendar date, YYYY-MM-DD.
 export function dayKey(d = new Date()) {
@@ -36,7 +51,9 @@ export function missionsFor(day, pool) {
   if (pool.stores.length) list.push({ type: 'visit', target: pick(pool.stores).id, need: 1 });
   const extra = ['sit', 'bike', 'emote', 'square', 'square']; // square: finish a square mission
   if (pool.stores.some((s) => s.pets)) extra.push('pet', 'pet'); // the pet cafés are popular
-  list.push({ type: pick(extra), need: 1 });
+  const third = pick(extra);
+  list.push({ type: third, need: 1 });
+  list.push(...hardFor(day, third));
   for (const m of list) {
     if (m.type === 'emote') m.need = 3;
     m.id = m.type + ':' + (m.target || '');
@@ -44,6 +61,21 @@ export function missionsFor(day, pool) {
   }
   return list;
 }
+
+// Today's challenge missions; never the same kind as the easy third mission
+// (a square mission), so one action doesn't tick two of them.
+export function hardFor(day, easyType) {
+  const r = rng('mk-hard-' + day);
+  const left = HARD_MISSIONS.filter(([type]) => type !== easyType);
+  const out = [];
+  while (out.length < HARD_PER_DAY && left.length) {
+    const [type, need] = left.splice(Math.floor(r() * left.length), 1)[0];
+    out.push({ type, need, hard: true });
+  }
+  return out;
+}
+// What finishing this mission pays: ₩30,000, plus the fare of a paid place.
+export const missionPay = (m) => REWARD.mission + ((m.type === 'visit' && VISIT_FARE[m.target]) || 0);
 
 function read() {
   try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch { return {}; }
@@ -71,9 +103,19 @@ export class Daily {
       this.s.missions = missionsFor(today, this.pool);
       this.s.bonus = false;
       write(this.s);
-    } else if (!this._checked) this._repair(today);
+    } else if (!this._checked) { this._addHard(today); this._repair(today); }
     this._checked = true;
     return today;
+  }
+
+  // Today's missions were saved before there were challenge missions: add
+  // today's two at the end (their op ids use the list position, 3 and 4).
+  _addHard(today) {
+    if (this.s.missions.some((m) => m.hard)) return;
+    const fresh = missionsFor(today, this.pool).filter((m) => m.hard && !this.s.missions.some((x) => x.type === m.type));
+    if (!fresh.length) return;
+    this.s.missions.push(...fresh);
+    write(this.s);
   }
 
   // Today's missions were saved before the map changed: a person or shop
@@ -122,15 +164,15 @@ export class Daily {
   }
 
   // Report something the player did; returns { mission, coins, bonus } when
-  // that finished a mission, else null. type: talk|visit|pet|sit|bike|emote
+  // that finished a mission, else null. type: talk|visit|pet|sit|bike|emote|square|fish|job|delivery|cook
   record(type, target = '') {
     this._roll();
-    const m = this.s.missions.find((x) => x.type === type && x.n < x.need && (!x.target || x.target === target));
+    const types = ALIAS[type] ? [type, ALIAS[type]] : [type];
+    const m = this.s.missions.find((x) => types.includes(x.type) && x.n < x.need && (!x.target || x.target === target));
     if (!m) return null;
     m.n += 1;
     if (m.n < m.need) { write(this.s); this._emit(); return null; }
-    let coins = REWARD.mission, bonus = false;
-    if (!this.s.bonus && this.allDone()) { this.s.bonus = bonus = true; coins += REWARD.allDone; }
+    const coins = missionPay(m), bonus = false; // (no all-done bonus since 2026-11-19)
     write(this.s);
     this.wallet.add(coins, { k: 'ledger.mission' }, { r: 'mission', once: 'mission:' + this.s.day + ':' + this.s.missions.indexOf(m) });
     this._emit();

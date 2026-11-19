@@ -1,10 +1,10 @@
-// Daily check-in and three daily missions (see core/daily.js).
-import { Daily, REWARD, checkInPay } from '../core/daily.js';
+// Daily check-in and five daily missions (see core/daily.js).
+import { Daily, REWARD, checkInPay, missionPay } from '../core/daily.js';
 import { NAME_ROMAN } from '../core/npcs.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
 
 // A small picture for each kind of mission, so the list reads at a glance.
-const MISSION_ICON = { talk: '👋', visit: '🛍️', pet: '🐾', sit: '☕', bike: '🚲', emote: '😊' };
+const MISSION_ICON = { talk: '👋', visit: '🛍️', pet: '🐾', sit: '☕', bike: '🚲', emote: '😊', square: '📜', fish: '🎣', job: '🧑‍🍳', cook: '🍳' };
 
 export function createDaily(game) {
   const { $, leaveStore, npcs, setGuide, storefronts, wallet, zones } = game;
@@ -26,7 +26,7 @@ export function createDaily(game) {
       return t('mission.talk', { name: extra ? `${m.target} (${extra})` : m.target });
     }
     if (m.type === 'visit') return t('mission.visit', { store: localName(storeById(m.target)?.store.name, getLanguage()) || m.target });
-    return t('mission.' + m.type, { n: m.need });
+    return t('mission.' + m.type + (m.type === 'square' && m.need > 1 ? 'N' : ''), { n: m.need });
   }
   function renderDaily() {
     const wd = game.daily.weekDay(), done = game.daily.checkedInToday();
@@ -55,6 +55,13 @@ export function createDaily(game) {
       text.className = 'm-text';
       text.textContent = missionText(m);
       li.append(tick, text);
+      // A paid place says the fare is paid back on top.
+      if (missionPay(m) > REWARD.mission && !finished) {
+        const pay = document.createElement('span');
+        pay.className = 'm-prog';
+        pay.textContent = t('daily.farePay', { n: missionPay(m).toLocaleString() });
+        li.append(pay);
+      }
       if (m.need > 1 && !finished) {
         const prog = document.createElement('span');
         prog.className = 'm-prog';
@@ -79,7 +86,7 @@ export function createDaily(game) {
     }));
     const missions = game.daily.missions;
     $('daily-count').textContent = `${missions.filter((m) => m.n >= m.need).length}/${missions.length}`;
-    $('daily-bonus').textContent = game.daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.allDone });
+    $('daily-bonus').textContent = game.daily.allDone() ? t('daily.bonusDone') : t('daily.bonus', { n: REWARD.mission.toLocaleString() });
     $('daily-dot').hidden = !game.daily.hasNews();
   }
   return { renderDaily };
