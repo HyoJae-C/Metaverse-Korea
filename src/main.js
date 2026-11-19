@@ -249,6 +249,7 @@ import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
 import { createSaunaTowel } from './game/sauna-towel.js';
 import { createCookingClasses } from './game/cooking-classes.js';
+import { createHelpBook } from './game/help-book.js';
 import { createRecipeBook } from './game/recipe-book.js';
 import { createEmoteWheel } from './ui/emote-wheel.js';
 import { createDaily } from './game/daily.js';
@@ -4103,7 +4104,7 @@ onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
 const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
-  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden; } catch { return true; } };
+  || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden || helpBook.open; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
   if (e.code === 'Space' && !e.repeat && action && !spaceBusy()) {
@@ -4127,6 +4128,7 @@ addEventListener('keydown', (e) => {
     else if (!$('map-panel').hidden) mapView.hide();
     else if (!$('settings-panel').hidden) $('settings-panel').hidden = true;
     else if (!$('notes-panel').hidden) $('notes-panel').hidden = true;
+    else if (helpBook.open) helpBook.close();
     else if (loveLockUi.open) loveLockUi.close();
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
@@ -6301,6 +6303,8 @@ $('wallet-close').onclick = () => { $('wallet-panel').hidden = true; };
 // HUD button so people find them (they used to hide inside the wallet).
 $('notes-btn').onclick = () => { const p = $('notes-panel'); p.hidden = !p.hidden; if (!p.hidden) $('wallet-panel').hidden = true; };
 $('notes-close').onclick = () => { $('notes-panel').hidden = true; };
+// The game guide (❓ next to ⚙️). (game/help-book.js)
+const helpBook = createHelpBook({ $ });
 // Budget book. (ui/ledger-ui.js)
 createLedger({ $, wallet });
 // Travel money, once: enough to explore without working part-time first,
