@@ -25,6 +25,10 @@ const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: h
 const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
+// The open umbrella against the left hand: dx/dy/dz from the hand to the pole's
+// foot (the hand grips the pole partway up), tilt leans the canopy over the head.
+// x/y/z: where it stands before the model has loaded.
+const UMB_AT = { dx: 0.055, dy: -0.25, dz: 0, tilt: 0.22, x: 0.4, y: 0.6, z: 0.05 };
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
   const o = {
@@ -173,6 +177,7 @@ export function createCharacter(rawLook) {
       return;
     }
     model = m; blob.visible = true;
+    if (umbrella) m.setUmbrella?.(true);
     for (const f of footProps.splice(0)) f(m);
     addGloves(look, m);
     m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
@@ -281,6 +286,14 @@ export function createCharacter(rawLook) {
             skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
+        if (umbrella && model.hands?.[0]) {
+          // The pole's grip follows the left hand; the umbrella stays upright, leaning a little over the head.
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hands[0].getWorldPosition(_fv));
+          const U = globalThis.__umbAt || UMB_AT; // debug: tune live
+          umbrella.position.set(_fv.x + U.dx, _fv.y + U.dy, _fv.z + U.dz);
+          umbrella.rotation.z = U.tilt;
+        }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
           rig.updateWorldMatrix(true, true);
@@ -342,12 +355,15 @@ export function createCharacter(rawLook) {
       }
     },
     // An open umbrella over the head (rainy days), or none.
+    // Held in the left hand, raised beside the head (the right hand stays
+    // free for a cup); the pole stays clear of the face.
     setUmbrella(on) {
       if (!!umbrella === !!on) return;
+      model?.setUmbrella?.(!!on);
       if (on) {
         umbrella = makeUmbrella();
-        umbrella.position.set(0.16, 0.62, 0.05);
-        umbrella.rotation.z = -0.08;
+        umbrella.position.set(UMB_AT.x, UMB_AT.y, UMB_AT.z);
+        umbrella.rotation.z = UMB_AT.tilt;
         rig.add(umbrella);
       } else { umbrella.removeFromParent(); umbrella = null; }
     },
