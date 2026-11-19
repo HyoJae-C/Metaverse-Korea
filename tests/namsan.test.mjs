@@ -145,6 +145,20 @@ test('Palgakjeong stands on its real spot on the summit, the whole place at 50% 
   assert.equal(palgakStep(5, 0), 0);
 });
 
+test('the tower\'s terrace can be walked onto: a step, then the terrace, the foot building the only wall', async () => {
+  const { NAMSAN_TOWER: T } = await import('../src/core/namsan-tower.js');
+  const { NAMSAN_WALK: W, terraceStep } = await import('../src/game/namsan-walk.js');
+  const S = 0.75, sunk = 1; // (the tower is drawn at 0.75, set 1 m into the plaza: core/landmarks.js)
+  const [[rStep, yStep], [rTop, yTop]] = W.terrace;
+  assert.ok(Math.abs(2 * S - sunk - yTop) < 0.01, 'the terrace\'s top');
+  assert.ok(Math.abs(T.step.h * S - sunk - yStep) < 0.01, 'the step\'s top');
+  assert.ok(Math.abs(T.step.r * S - rStep) < 0.05, 'the step\'s edge');
+  assert.ok(rTop <= (13 - (sunk / S) / 2) * S + 0.05 && rTop >= 12 * S, 'the terrace\'s edge at the plaza');
+  let prev = 0;
+  for (let r = 12; r >= 0; r -= 0.05) { const y = terraceStep(r, 0); assert.ok(y - prev <= 0.26, `step at ${r.toFixed(2)}`); prev = y; }
+  assert.ok(W.footR >= 8 * S && W.footR < rTop - 2, 'room to walk round the foot building');
+});
+
 test('the tower is a quarter of the real one\'s OSM heights: the deck 88–112 m, the antenna to 236.7 m', async () => {
   const { NAMSAN_TOWER: T } = await import('../src/core/namsan-tower.js');
   // (units of T.unit real metres: drawn at 0.75 game metres each, a quarter)

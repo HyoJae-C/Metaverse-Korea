@@ -141,8 +141,11 @@ test('Namsan Tower\'s deck is the same room at the foot of the tower on the summ
   for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(nDeck.name[k] && nDeck.tagline[k], k);
   // The door: on the summit plaza beside the tower (itaewon.json namsan: the tower at -1488.8, -182.8, the plaza 56 m up).
   const d = Math.hypot(nDeck.at[0] + 1488.8, nDeck.at[1] + 182.8);
-  assert.ok(d > 9.5 && d < 13, `the door ${d.toFixed(1)} m from the tower, off its terrace`);
-  assert.ok(Math.abs(nDeck.y - 56.06) < 0.2);
+  // (on the terrace, in front of the foot building's door: core/namsan-tower.js, game/namsan-walk.js)
+  const { NAMSAN_WALK: W } = await import('../src/game/namsan-walk.js');
+  assert.ok(d > W.footR + 0.5 && d < W.terrace.at(-1)[0] - 0.5, `the door ${d.toFixed(1)} m from the tower, on its terrace in front of the door`);
+  assert.ok(nDeck.at[0] > -1488.8 && Math.abs(nDeck.at[1] + 182.8) < 0.5, 'east of the tower, where its door is');
+  assert.ok(Math.abs(nDeck.y - 56 - W.terrace.at(-1)[1]) < 0.1, 'at the terrace\'s height');
   // What's out there, in its real directions from Namsan.
   const S = SITES.namsan;
   assert.equal(groundAt(0, -3800, S), 'water', 'the Han, south');

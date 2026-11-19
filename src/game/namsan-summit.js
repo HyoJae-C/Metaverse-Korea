@@ -34,7 +34,7 @@ export function buildNamsanSummit({ scene, collision, tower, station, trails = [
   const edge = new THREE.Mesh(new THREE.RingGeometry(W.plazaR - 1.2, W.plazaR, 48).rotateX(-Math.PI / 2), mat('#b9ad98'));
   edge.position.y = Y + 0.01;
   g.add(edge);
-  blocks.push({ p: Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2; return [tx + Math.cos(a) * W.towerR, tz + Math.sin(a) * W.towerR]; }) }); // the tower's terrace
+  blocks.push({ p: Array.from({ length: 20 }, (_, i) => { const a = (i / 20) * Math.PI * 2; return [tx + Math.cos(a) * W.footR, tz + Math.sin(a) * W.footR]; }) }); // the tower's foot building (its terrace you walk onto: namsan-walk.js terraceStep)
 
   // The railing round the edge, with gaps for the trail and the station.
   const R = W.plazaR - 0.6;

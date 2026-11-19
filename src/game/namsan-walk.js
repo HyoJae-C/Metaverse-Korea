@@ -23,7 +23,11 @@ import { namsanGround, onNamsan, namsanReach } from '../core/namsan-shape.js';
 export const NAMSAN_WALK = {
   w: 3, // m: the trail's width (the landmark's trailW wins)
   plazaR: 26, // m round the tower: the summit plaza (inside the hill's level top, l.flat)
-  towerR: 9.5, // m: the tower's terrace (12 m × its 0.75 scale), with a little room
+  towerR: 10.4, // m: the tower's terrace and its step (core/namsan-tower.js: 13.8 units × its 0.75 scale), with a little room
+  footR: 6.2, // m: the tower's foot building (8 units × 0.75), the wall you bump into
+  // The terrace you step up onto (core/namsan-tower.js NAMSAN_TOWER.step):
+  // [its outer radius, its top over the plaza] m, the step then the terrace.
+  terrace: [[10.2, 0.25], [9.25, 0.5]],
   heart: [-20, 0], // m from the tower: the love-lock heart, facing east into the plaza
   heartSpot: [-17.2, 0], // where you stand to hang a lock
   near: 480, // m: the plaza's models load this close (past the fog's 420 m)
@@ -46,6 +50,14 @@ export function palgakStep(dx, dz) {
   for (let k = 0; k < 8; k++) { const a = Math.PI / 8 + (k * Math.PI) / 4; ap = Math.max(ap, dx * Math.sin(a) + dz * Math.cos(a)); }
   let y = 0;
   for (const [r, top] of PALGAK.steps) if (ap < r * Math.cos(Math.PI / 8)) y = top;
+  return y;
+}
+
+// How high the tower's terrace is at (dx, dz) m from the tower (0 off it).
+export function terraceStep(dx, dz) {
+  const d = Math.hypot(dx, dz);
+  let y = 0;
+  for (const [r, top] of NAMSAN_WALK.terrace) if (d < r) y = top;
   return y;
 }
 
@@ -91,7 +103,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
   const heartSpot = at(W.heartSpot);
   const reach = namsanReach(l), x0 = l.x - reach, x1 = l.x + reach, z0 = l.z - reach, z1 = l.z + reach;
   const palgak = at(W.palgak);
-  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z) + palgakStep(x - palgak[0], z - palgak[1]));
+  const walkY = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 || !onNamsan(l, x - l.x, z - l.z) ? 0 : y(x, z) + palgakStep(x - palgak[0], z - palgak[1]) + terraceStep(x - tower[0], z - tower[1]));
   let summit = null, loading = false;
   // The wall: its box, and when it has loaded.
   const wallPts = (l.wall?.runs || []).flat().map(([x, z]) => [l.x + x, l.z + z]);
