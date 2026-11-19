@@ -241,6 +241,7 @@ import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listenin
 import { createLiveStage } from './game/live-stage.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
+import { createMissionSpot } from './game/mission-spot.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
 import { GiftReceipts } from './core/gift-receipts.js';
@@ -6462,6 +6463,7 @@ $('quest-chip').onclick = () => {
 };
 questChipReady = true;
 refreshQuestChip();
+createMissionSpot(); // (the mission bar sits under the pinned notices)
 
 // On the square: near the guide, or in front of the big screen (the mission
 // says "in front of the billboard", and the screen stands ~18 m from the guide

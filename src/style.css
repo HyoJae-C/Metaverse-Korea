@@ -1375,8 +1375,10 @@ body.beauty-mode #store-banner, body.beauty-mode #action-btn, body.beauty-mode #
 }
 .in-store .quest-chip { display: none; }
 /* The square errand: the chip plus a 🧭 "show the way" button beside it. */
+/* Top of the screen, under the pinned notices: game/mission-spot.js sets its
+   top, left and width from the notices box (these are only the first guess). */
 .quest-bar {
-  position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 62px);
   display: flex; gap: 6px; align-items: center; max-width: min(92vw, 460px); z-index: 4;
 }
 .quest-bar .quest-chip { position: static; transform: none; min-width: 0; max-width: none; flex: 0 1 auto; }
@@ -1468,7 +1470,7 @@ body.lane-cam #store-banner, body.lane-cam .nametag.me { display: none; } /* bow
 .photo-count { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 20; padding: 10px 24px; border-radius: 999px; background: rgba(27, 27, 32, 0.6); color: #fff; font-size: 44px; font-weight: 900; pointer-events: none; }
 .photo-count[hidden] { display: none; }
 body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibility: hidden; }
-.delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 196px); bottom: auto; background: #ffefe0; }
+.delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 106px); bottom: auto; left: max(12px, env(safe-area-inset-left, 0px)); transform: none; background: #ffefe0; } /* (under the mission bar: game/mission-spot.js) */
 /* Hanbok rental: the time left, beside the coins. */
 .rent-chip { background: #fde4ea; color: #7a1f33; font-weight: 800; }
 .rent-chip[hidden] { display: none; }
@@ -1529,7 +1531,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .info-row p { margin: 2px 0 0; font-size: 13px; }
 .info-row .chip { flex: none; }
 .info-hint {
-  position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px));
+  position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px), calc(var(--top-notes-bottom, 0px) + 8px)); /* (below the notices and mission bar: game/mission-spot.js) */
   transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
   background: var(--panel); border-radius: var(--radius); padding: 12px 14px;
   box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 3; /* under the action button and sheets */
@@ -2829,12 +2831,11 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   html.android .tools .tool[aria-pressed='true'] { background: var(--mint); }
   html.android .tools .badge { top: 2px; right: calc(50% - 24px); }
   html.android #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 1; pointer-events: auto; }
-  html.android :is(.notice-pin, .install-nudge) { translate: none; }
+  html.android .install-nudge { translate: none; } /* (the notices still step under the map button, which stays at the top) */
   html.android :is(.joystick, .emote-wheel, .emotes, .action, .action-menu, .help, .revert, .honk-btn, .boost-btn,
-    .stamina, .chat-log, .chat-fold, .quest-bar, .quest-chip, .kpop-tv, .decor-bar, .person-menu) {
+    .stamina, .chat-log, .chat-fold, .kpop-tv, .decor-bar, .person-menu) {
     translate: 0 calc(-1 * var(--tool-bar));
   }
-  html.android .quest-bar .quest-chip { translate: none; } /* (the bar moves; its chips go with it) */
   @media (max-width: 360px) { html.android :is(.action, .action-menu) { left: 50%; } }
 }
 .online .on-short { display: none; }
@@ -2862,7 +2863,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
    notices) steps aside instead of showing through it, and the chat log moves
    right under the bar, where the keyboard can't cover it. */
 @media (pointer: coarse) {
-  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
+  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .quest-bar, .delivery-chip, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
   html:not(.android) body:has(#hud.chat-open) .tools .tool:not(#chat-btn, #bike-btn) { visibility: hidden; }
   #hud.chat-open .chat-log {
     top: calc(env(safe-area-inset-top, 0px) + 12px + var(--chat-bar-h, 52px) + 8px); bottom: auto;
