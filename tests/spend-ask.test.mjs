@@ -82,3 +82,27 @@ test('the question and what the money is for', async () => {
     assert.doesNotMatch(s['spend.ask'], /결제/, 'not worded like a real payment');
   }
 });
+
+test('confirm(): asks, pays nothing until OK, then runs yes() (a taxi picked on the map, which closes)', () => {
+  const { wallet, gate, shown, ok, no } = setup();
+  wallet.confirmSpend = (n, note, yes) => gate.confirm(n, note, yes);
+  const pay = () => wallet.spend(11800, { k: 'ledger.taxi' }, { ask: false });
+  let paid = 0;
+  wallet.confirm(11800, { k: 'ledger.taxi' }, () => { paid += pay() ? 1 : 0; });
+  assert.equal(paid, 0);
+  assert.deepEqual(shown, [[11800, { k: 'ledger.taxi' }]]);
+  ok();
+  assert.equal(paid, 1);
+  assert.equal(wallet.coins, WELCOME_COINS - 11800);
+  // a second ride in the same visit asks again; "no" keeps the money
+  wallet.confirm(11800, { k: 'ledger.taxi' }, () => { paid++; });
+  no();
+  assert.equal(paid, 1);
+  assert.equal(shown.length, 2);
+  // short of money, or no question set up: straight through (the caller shows "not enough")
+  let ran = 0;
+  wallet.confirm(wallet.coins + 1, null, () => { ran++; });
+  wallet.confirmSpend = null;
+  wallet.confirm(1000, null, () => { ran++; });
+  assert.equal(ran, 2);
+});

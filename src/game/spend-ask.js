@@ -46,6 +46,16 @@ export function createSpendGate({ input, show, replay }) {
       });
       return false;
     },
+    // Ask, then run yes() on OK (no tap to play again). For a payment whose
+    // tap hides or redraws what was tapped (the map closes when you pick a
+    // taxi's destination), where playing the tap again would do nothing.
+    // false: another question is already open.
+    confirm(n, note, yes) {
+      if (open) return false;
+      open = true;
+      show(n, note, () => { open = false; yes(); });
+      return true;
+    },
   };
 }
 
@@ -117,6 +127,7 @@ export function createSpendAsk({ wallet, shop }) {
   }, true);
 
   wallet.askSpend = (n, note) => gate.ask(n, note);
+  wallet.confirmSpend = (n, note, yes) => gate.confirm(n, note, yes);
   if (shop?.toast) {
     const toast = shop.toast.bind(shop);
     shop.toast = (...a) => (wallet.justDeclined ? undefined : toast(...a));
