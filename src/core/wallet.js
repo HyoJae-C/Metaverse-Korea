@@ -143,6 +143,7 @@ export class Wallet {
     this.log = readLog();
     this.listeners = [];
     this.askSpend = null; // f(n, note) → true to pay (game/spend-ask.js)
+    this.confirmSpend = null; // f(n, note, yes): ask, yes() on OK (game/spend-ask.js)
     this.declinedAt = 0;
     this.spendListeners = []; // f(paid, n): every spend() call, paid or not (shop sounds)
     this.client = null;
@@ -341,6 +342,13 @@ export class Wallet {
     if (paid) this.add(-n, note, { kind: 'spend' });
     this.spendListeners.forEach((f) => f(paid, n));
     return paid;
+  }
+  // Ask first, then yes() pays itself with spend(n, note, { ask: false }).
+  // For a tap that closes what was tapped (so askSpend's replay can't work).
+  // With no question set up (tests), or short of money, yes() runs at once.
+  confirm(n, note, yes) {
+    if (n > 0 && n <= this.coins && this.confirmSpend) this.confirmSpend(n, note, yes);
+    else yes();
   }
   // The player just said no to a payment (so it isn't "not enough money").
   get justDeclined() { return Date.now() - this.declinedAt < 500; }
