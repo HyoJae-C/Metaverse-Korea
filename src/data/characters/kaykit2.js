@@ -77,22 +77,14 @@ const TOPS = {
   // A padded vest over a long-sleeved T-shirt.
   'vest-padded': { outfit: { hem: 0.54, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', quilt: true, zip: 'accent', collar: 'top', bulk: 0.035 }, colors: { top: 0x8cc4ec, accent: 0x6aa6d4, stitch: 0x6c9fc8, accent2: W } },
 };
-// Dresses (원피스, Nalgae): a top in the dress's colour over its own skirt
-// (the model's "skirt", data/skirts.js DRESS_SKIRTS), a belt between.
-// A shirt dress: collar, buttons down the front, short sleeves, to below the knee.
-const SHIRT_DRESS = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', points: 'top', placket: 'accent', belt: 'accent', buttons: { role: 'stitch', n: 3, x: 0, top: 1.0, gap: 0.08 } } };
-// A floral dress: plain bodice, cap sleeves, a long flowered skirt.
-const FLORAL_DRESS = { outfit: { hem: 0.6, sleeve: 0.3, cuff: 'top', collar: 'top', belt: 'accent' } };
+// Floral dresses (원피스, Bomnal Dresses): a bodice with cap sleeves over
+// its own long skirt (the model's "skirt", data/skirts.js DRESS_SKIRTS),
+// the bodice in the skirt's print (print) and a cream belt between.
+const FLORAL_DRESS = { outfit: { hem: 0.6, sleeve: 0.3, cuff: 'top', collar: 'top', belt: 'accent', print: true } };
 const DRESSES = {
-  'dress-shirt-sky': { def: SHIRT_DRESS, colors: { top: 0x8fb6e0, accent: 0x6f96c4, stitch: 0xf4f1ea } },
-  'dress-shirt-khaki': { def: SHIRT_DRESS, colors: { top: 0xbfa77c, accent: 0x9a8459, stitch: 0x5a4a32 } },
-  'dress-floral-navy': { def: FLORAL_DRESS, colors: { top: 0x6a7fc0, accent: 0xf6f1e7 } },
+  'dress-floral-navy': { def: FLORAL_DRESS, colors: { top: 0x2f3c66, accent: 0xf6f1e7 } },
+  'dress-floral-yellow': { def: FLORAL_DRESS, colors: { top: 0xf2cf5b, accent: 0xf6f1e7 } },
 };
-// Overalls (멜빵바지, Seongsu Denim Lab): denim with a bib and straps over
-// the T-shirt colour picked at the start (look.shirt); long jeans or shorts
-// with white socks. accent2: the metal buttons, accent3: the bib pocket.
-const OVERALLS = { outfit: { hem: 0.6, sleeve: 0.42, collar: 'top', bib: 'bottom', cut: 'jeans' } };
-const OVERALL_SHORTS = { outfit: { hem: 0.6, sleeve: 0.42, collar: 'top', bib: 'bottom', shorts: 0.34, socks: 'accent' } };
 // Animal onesies (동물 잠옷, Nyang Meong To Pan): one colour from the hood to
 // the ankles, wide legs over the shoes, the animal's ears on the hood
 // (the model's "ears", core/animal-wear.js), a tummy patch and a tail.
@@ -185,8 +177,6 @@ export default {
     ...Object.fromEntries(Object.entries(TOPS).map(([id, def]) => [id, { url: 'models/kaykit2/rogue.glb', emoji: '👕', wear: wear(def) }])),
     ...Object.fromEntries(Object.entries(DRESSES).map(([id, { def, colors }]) => [id,
       { url: 'models/kaykit2/rogue.glb', emoji: '👗', skirt: id, wear: wear({ ...def, colors }) }])),
-    'overalls-denim': { url: 'models/kaykit2/rogue.glb', emoji: '👖', wear: wear({ ...OVERALLS, colors: { bottom: 0x7090c8, accent2: 0xd9b24a, accent3: 0x5a7ab2 } }) },
-    'overalls-shorts': { url: 'models/kaykit2/rogue.glb', emoji: '🩳', wear: wear({ ...OVERALL_SHORTS, colors: { bottom: 0x9db4d2, accent: 0xf4f1ea, accent2: 0xd9b24a, accent3: 0x869ebd } }) },
     ...Object.fromEntries(Object.entries(ONESIES).map(([id, { ears, outfit, colors }]) => [id,
       { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧸', ears, hood: true, wear: wear({ outfit, colors, rules: [['Head', '1,1', 'top']] }) }])),
     'windbreaker-yellow': { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧥', wear: wear(WINDBREAKER), hood: true },

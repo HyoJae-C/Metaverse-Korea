@@ -15,7 +15,7 @@ import { PACK } from '../data/characters/index.js';
 import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
 import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
-import { addSkirt } from './skirt-mesh.js';
+import { addSkirt, printMaterial } from './skirt-mesh.js';
 import { makeEars } from './animal-wear.js';
 import { skirtById } from '../data/skirts.js';
 
@@ -491,7 +491,7 @@ const TUBE_SIT = { y: 0.3, z: 0.05 };
 // (the knee up through the front, the heel kicked up through the back), so
 // their leg bones keep only this much of the clip's turn away from rest:
 // shorter, closer steps, the narrower the skirt's hem the more.
-const SKIRT_STRIDE = { mini: 0.4, midi: 0.35, long: 0.3, chima: 0.3 };
+const SKIRT_STRIDE = { mini: 0.4, long: 0.3, chima: 0.3 };
 const SKIRT_LEGS = ['upperlegl', 'upperlegr', 'lowerlegl', 'lowerlegr'];
 // ...away from standing still: each leg bone's turn in the idle clip's first
 // frame (the rig's bind pose has the legs apart, so not that).
@@ -728,8 +728,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
   // straight legs under a skirt; a suit's own shoes are leather.
   const wearDef = PACK.models[id].wear;
-  // A dress's own skirt (the model's "skirt") is worn like one; overalls
-  // and onesies pick their own cut (outfit.cut).
+  // A dress's own skirt (the model's "skirt") is worn like one; onesies
+  // pick their own cut (outfit.cut).
   const skirtId = look.skirt || PACK.models[id].skirt || null;
   const cut = skirtId || wearDef?.outfit?.dress ? 'slacks' : wearDef?.outfit?.cut || (wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans');
   const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
@@ -748,6 +748,11 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
   });
+  // A printed dress: its top in the skirt's print (core/outfit-mesh.js o.print).
+  if (wearDef?.outfit?.print && PACK.models[id].skirt) {
+    const pm = printMaterial(PACK.models[id].skirt);
+    if (pm) m.traverse((o) => { if (o.isMesh && /^Outfit_Print/.test(o.name)) o.material = pm; });
+  }
   // A skirt over the everyday clothes (its own mesh and patterned material).
   const outfit = PACK.models[id].wear?.outfit;
   const skirtMesh = outfit && skirtId ? addSkirt(m, skirtId, outfit) : null;

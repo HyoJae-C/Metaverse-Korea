@@ -9,12 +9,11 @@ import { skirtById, SKIRTS } from '../src/data/skirts.js';
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
 // Each kind in a shop of its own (Yozi 2026-11-20: "가게는 구분했으면").
 const SHOPS = {
-  'bomnal-dress': ['dress-shirt-sky', 'dress-shirt-khaki', 'dress-floral-navy'],
-  'melppang-overalls': ['overalls-denim', 'overalls-shorts'],
+  'bomnal-dress': ['dress-floral-navy', 'dress-floral-yellow'],
   'pogeun-onesies': ['onesie-bear', 'onesie-bunny', 'onesie-dino'],
 };
 
-test('dresses, overalls and onesies: each kind sold in its own shop, at a clothes price', () => {
+test('floral dresses and onesies: each kind sold in its own shop, at a clothes price', () => {
   for (const [sid, models] of Object.entries(SHOPS)) {
     const s = stores.find((x) => x.id === sid);
     assert.ok(s && s.category === 'fashion', sid);
@@ -31,22 +30,18 @@ test('dresses, overalls and onesies: each kind sold in its own shop, at a clothe
   for (const models of Object.values(SHOPS)) for (const m of models) assert.equal(sold.filter((x) => x === m).length, 1, `${m} in one shop only`);
 });
 
-test('a dress wears its own skirt; it is never a skirt you buy or put on alone', () => {
+test('a floral dress wears its own skirt, the top in the same print; never a skirt you buy alone', () => {
   for (const id of SHOPS['bomnal-dress']) {
     assert.equal(PACK.models[id].skirt, id);
+    assert.equal(PACK.models[id].wear.outfit.print, true);
+    assert.equal(skirtById(id).pattern, 'floral');
     assert.ok(skirtById(id), id);
     assert.ok(!Object.hasOwn(SKIRTS, id));
     assert.equal(PACK.models[id].url, PACK.models.basic.url, 'keeps your face');
   }
 });
 
-test('overalls: a bib over your own T-shirt colour; onesies: a hood with ears and one colour top to bottom', () => {
-  for (const id of SHOPS['melppang-overalls']) {
-    const w = PACK.models[id].wear;
-    assert.equal(w.outfit.bib, 'bottom');
-    assert.equal(w.colors.top, undefined, 'the T-shirt is the look\'s');
-    assert.ok(w.colors.bottom != null);
-  }
+test('onesies: a hood with ears and one colour top to bottom', () => {
   for (const id of SHOPS['pogeun-onesies']) {
     const m = PACK.models[id];
     assert.ok(m.hood && m.ears && m.url.endsWith('rogue_hooded.glb'), id);

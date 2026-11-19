@@ -149,13 +149,8 @@ function torso(out, o) {
   add(0.46, 0.285, 0.215, 'bottom');
   add(o.hem, 0.29, 0.22, 'bottom');
   // The top: a little wider at the hem so it reads as a shirt over trousers.
-  let hemY = o.hem;
-  if (o.bib) { // overalls: the trousers' waistband over the T-shirt, which goes on above it
-    add(o.hem, 0.304 + bulk, 0.232 + bulk, 'bottom');
-    add(o.hem + 0.04, 0.304 + bulk, 0.232 + bulk, 'bottom');
-    hemY = o.hem + 0.04;
-    add(hemY, 0.292 + bulk, 0.222 + bulk, 'top');
-  } else if (o.coat) { // a long coat: from the knees up, legs walk underneath
+  const hemY = o.hem;
+  if (o.coat) { // a long coat: from the knees up, legs walk underneath
     rings.length = 0;
     add(o.coat, 0.31 + bulk, 0.27 + bulk, 'top', 0.0);
     for (let y = o.coat + 0.09; y < 0.62; y += 0.09) add(y, 0.3 + bulk - (y - o.coat) * 0.05, 0.25 + bulk, 'top', 0.0);
@@ -217,22 +212,6 @@ function torso(out, o) {
   if (o.strings) for (const sx of [-1, 1]) { // a hoodie's drawstrings
     box(out, [sx * 0.055, 1.07, front(0.006)], [0.016, 0.16, 0.014], o.strings, [['chest', 1]]);
     box(out, [sx * 0.055, 0.985, front(0.01)], [0.026, 0.026, 0.02], o.strings, [['chest', 1]]);
-  }
-  // Overalls: a bib from the waistband up the chest with a pocket on it,
-  // two buttons at its corners and a strap up from each over the shoulder
-  // and down the back to the waist.
-  if (o.bib) {
-    const waist = o.hem + 0.03, bibTop = 0.96, bw = [['spine', 0.5], ['chest', 0.5]];
-    plate(out, [[-0.13, waist], [0.13, waist], [0.12, bibTop], [-0.12, bibTop]], { z: front(-0.014), depth: 0.018, role: o.bib, w: bw, lean: 0.03, pivot: waist });
-    plate(out, [[-0.07, 0.79], [0.07, 0.79], [0.07, 0.88], [-0.07, 0.88]], { z: front(0.004), depth: 0.006, role: 'accent3', w: bw, lean: 0.03, pivot: waist });
-    for (const sx of [-1, 1]) {
-      const pts = [[0.075, bibTop - 0.03], [0.12, bibTop - 0.03], [0.135, 1.18], [0.09, 1.18]];
-      plate(out, sx > 0 ? pts : mirror(pts), { z: front(-0.016), depth: 0.014, role: o.bib, w: [['chest', 1]], lean: 0.16, pivot: 0.95 });
-      plate(out, sx > 0 ? [[0.07, waist + 0.02], [0.11, waist + 0.02], [0.135, 1.18], [0.09, 1.18]] : mirror([[0.07, waist + 0.02], [0.11, waist + 0.02], [0.135, 1.18], [0.09, 1.18]]),
-        { z: -front(-0.016) - 0.014, depth: 0.014, role: o.bib, w: bw, lean: -0.16, pivot: 0.95 });
-      box(out, [sx * 0.112, 1.19, -0.005], [0.045, 0.022, 0.31], o.bib, [['chest', 1]]);
-      box(out, [sx * 0.097, bibTop - 0.035, front(0.006)], [0.034, 0.034, 0.014], 'accent2', [['chest', 1]]);
-    }
   }
   // A onesie's tummy patch, a lighter oval on the front.
   if (o.belly) {
@@ -410,15 +389,23 @@ export function buildOutfit(gltf, o, cellUv) {
   const bones = [];
   scene.traverse((b) => { if (b.isBone) bones.push(b); });
   const index = new Map(bones.map((b, i) => [b.name, i]));
-  const part = (draw) => {
+  // keep: which roles go in this mesh; uvAt: real texture coordinates (a
+  // printed top) instead of the role's atlas cell.
+  const part = (draw, keep = () => true, uvAt = null) => {
     const pos = [], nor = [], uv = [], si = [], sw = [];
     draw({
       tri(ps, ns, ws, role) {
-        const [u, v] = cellUv(role);
+        if (!keep(role)) return;
+        const cell = uvAt ? null : cellUv(role);
+        const uvs = uvAt ? ps.map(uvAt) : null;
+        if (uvs) { // a triangle across the wrap-round seam: its low side goes up by whole repeats
+          const top = Math.max(...uvs.map((q) => q[0]));
+          for (const q of uvs) if (top - q[0] > 0.5) q[0] += Math.round(top - q[0]);
+        }
         for (let k = 0; k < 3; k++) {
           pos.push(ps[k].x, ps[k].y, ps[k].z);
           nor.push(ns[k].x, ns[k].y, ns[k].z);
-          uv.push(u, v);
+          uv.push(...(cell || uvs[k]));
           const w = ws[k].slice(0, 4);
           for (let j = 0; j < 4; j++) { si.push(w[j] ? index.get(w[j][0]) ?? 0 : 0); sw.push(w[j] ? w[j][1] : 0); }
         }
@@ -433,10 +420,22 @@ export function buildOutfit(gltf, o, cellUv) {
     return geo;
   };
   // The torso is its own mesh ("Body": bags and scarves are sized from it).
+  // A printed top (o.print, a floral dress): the top's cloth is a mesh of
+  // its own with texture coordinates wrapped round the body and the arms,
+  // painted with the print (core/model-pack.js); the rest stays on the atlas.
+  const plain = o.print ? (r) => r !== 'top' : undefined;
+  const drawArms = (out) => { arm(out, o, 1); arm(out, o, -1); };
   const geos = {
-    Outfit_Body: part((out) => torso(out, o)),
-    Outfit_Limbs: part((out) => { arm(out, o, 1); arm(out, o, -1); }),
+    Outfit_Body: part((out) => torso(out, o), plain),
+    Outfit_Limbs: part(drawArms, plain),
   };
+  if (o.print) {
+    // Round the body and round each arm, a whole number of repeats (no
+    // seam), about as big as on the dress's skirt (core/skirt-mesh.js).
+    const round = (a, b, turns) => (Math.atan2(a, b) / (Math.PI * 2) + 0.5) * turns;
+    geos.Outfit_Print = part((out) => torso(out, o), (r) => r === 'top', (p) => [round(p.x, p.z - 0.01, 3), p.y * 3]);
+    geos.Outfit_Print_Sleeves = part(drawArms, (r) => r === 'top', (p) => [round(p.y - 1.107, p.z, 1), Math.abs(p.x) * 3]);
+  }
   // One mesh per trouser cut and per shoe kind: each character shows only
   // the ones its look picks (core/model-pack.js, attachModel).
   for (const cut of o.shorts ? ['jeans'] : LEG_CUTS) geos['Outfit_Legs_' + cut] = part((out) => { leg(out, o, 1, cut); leg(out, o, -1, cut); });

@@ -7,6 +7,14 @@ export const WEAR_DESC = {
     zh: '买来的衣服。点“穿上”换上，点“脱下”换回T恤。',
     es: 'Ropa que compraste. Toca Poner para vestirla y Quitar para volver a tu camiseta.', ar: 'ملابس اشتريتها. اضغط ارتدِ لتلبسها، واخلع لتعود إلى قميصك.', vi: 'Quần áo bạn đã mua. Chạm Mặc để mặc vào, Cởi ra để trở lại áo phông.', hi: 'आपके ख़रीदे कपड़े। पहनने के लिए पहनें टैप करें, टी-शर्ट पर लौटने के लिए उतारें।', fr: 'Des vêtements que tu as achetés. Touche Porter pour les mettre, Enlever pour revenir à ton t-shirt.', th: 'เสื้อผ้าที่คุณซื้อ แตะ สวมใส่ เพื่อใส่ หรือ ถอด เพื่อกลับไปใส่เสื้อยืด', id: 'Baju yang kamu beli. Ketuk Pakai untuk memakainya, Lepas untuk kembali ke kaosmu.',
   },
+  // Limited-time clothes (data/wearables.js `secs`; the days left are added after it).
+  timed: {
+    en: 'Limited-time clothes: gone 7 days after you buy them. They can\'t be sold or given.',
+    ko: '기간제 옷이에요. 산 뒤 7일이 지나면 사라져요. 팔거나 선물할 수 없어요.',
+    ja: '期間限定の服。買ってから7日たつと消えます。売ったり贈ったりできません。',
+    zh: '限时服装：购买7天后消失，不能出售或赠送。',
+    es: 'Ropa por tiempo limitado: desaparece 7 días después de comprarla. No se puede vender ni regalar.', ar: 'ملابس لفترة محدودة: تختفي بعد 7 أيام من شرائها. لا يمكن بيعها أو إهداؤها.', vi: 'Quần áo có thời hạn: biến mất 7 ngày sau khi mua. Không thể bán hay tặng.', hi: 'सीमित समय के कपड़े: ख़रीदने के 7 दिन बाद गायब हो जाते हैं। बेचे या तोहफ़े में नहीं दिए जा सकते।', fr: 'Vêtements à durée limitée : ils disparaissent 7 jours après l\'achat. Impossible de les vendre ou de les offrir.', th: 'เสื้อผ้าแบบจำกัดเวลา: หายไปหลังซื้อ 7 วัน ขายหรือให้เป็นของขวัญไม่ได้', id: 'Baju waktu terbatas: hilang 7 hari setelah dibeli. Tidak bisa dijual atau dihadiahkan.',
+  },
   swap: {
     en: 'Trousers you bought. Tap Wear to change into them.',
     ko: '산 바지예요. "입기"를 누르면 갈아입어요.',

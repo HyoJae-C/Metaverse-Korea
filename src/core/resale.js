@@ -86,7 +86,7 @@ export function scanLedger(log, owned, items, isGift = () => false) {
 // What I can sell here: owned clothes with a receipt, as
 // [{ id, paid, coins }] (coins: what the shop pays).
 export function sellable(owned, items, receipts, pct = RESALE_PCT) {
-  return owned.filter((id) => items[id]?.wear && receipts.paid(id) > 0)
+  return owned.filter((id) => items[id]?.wear && !items[id].secs && receipts.paid(id) > 0)
     .map((id) => ({ id, paid: receipts.paid(id), coins: resaleCoins(receipts.paid(id), pct) }))
     .filter((r) => r.coins > 0);
 }

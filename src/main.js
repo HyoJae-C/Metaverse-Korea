@@ -80,6 +80,7 @@ import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralS
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
 import { BukchonUI, BK_TEXT, craftEntry, craftWear, CRAFT } from './ui/bukchon-ui.js';
 import { braceletsFromCharms } from './game/knot-bracelets.js';
+import { createTimedWear } from './game/timed-wear.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
 import { buildBukchonHill } from './core/bukchon-models.js';
@@ -2443,7 +2444,7 @@ const bagUi = new BagUI({
     ids: inventory.list().filter(isClothes),
     describe: (id) => {
       const it = ITEMS[id];
-      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
+      return { emoji: it.emoji, name: localName(it.name, getLanguage()), desc: localName(it.desc, getLanguage()) + (it.secs ? ' ' + t('timed.left', { d: timedWear.left(id) }) : ''), worn: it.wear ? isWorn(it, myLook) : myLook.tee === it.tee, kind: closetKind(it), price: it.price, color: closetColor(it), retired: RETIRED.has(id) };
     },
     actions: (id, redraw) => {
       const it = ITEMS[id];
@@ -2734,6 +2735,7 @@ function outfitAction(itemId) {
     if (!wallet.spend(it.price, note)) { shop.toast(t('pet.noCoins', { n: it.price - wallet.coins })); return; }
     inventory.add(itemId);
     receipts.record(itemId, it.price, wallet.lastOp, note);
+    timedWear.bought(itemId);
     refreshWallet();
     sfx.pop?.();
     myLook = { ...myLook, ...it.wear };
@@ -2760,6 +2762,11 @@ const { rentHanbok } = hanbokRental;
 const saunaTowel = createSaunaTowel({
   get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get mode() { return mode; }, get interior() { return interior; },
   setLook, shop,
+});
+// Limited-time clothes leave the closet when their days are up. (game/timed-wear.js)
+const timedWear = createTimedWear({
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; },
+  inventory, receipts, setLook, shop, refreshItems: () => refreshItems(),
 });
 // Gifts for friends in the same shop, friends only. (game/gifts.js)
 giftsGame = createGifts({
