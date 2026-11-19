@@ -61,7 +61,8 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
     station = [cable.x + e[0], cable.z + e[1]];
     const d = Math.hypot(station[0] - tower[0], station[1] - tower[1]) || 1;
     const ux = (station[0] - tower[0]) / d, uz = (station[1] - tower[1]) / d;
-    const door = [station[0] - ux * 7.5, station[1] - uz * 7.5]; // in front of the station (10 × 8 m), on the plaza side
+    // its door, at the station's end towards the tower (scripts/build-namsan-cable.mjs)
+    const door = cable.door ? [cable.x + cable.door[0], cable.z + cable.door[1]] : [station[0] - ux * 7.5, station[1] - uz * 7.5];
     deck([tower[0] + ux * (W.plazaR - 2), tower[1] + uz * (W.plazaR - 2)], door, 4);
     station = door;
     stationOut = { x: door[0] - ux * 1.5, z: door[1] - uz * 1.5, ry: Math.atan2(-ux, -uz) }; // facing the tower

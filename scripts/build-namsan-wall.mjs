@@ -31,6 +31,7 @@ import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
 import { onNamsan, namsanGround } from '../src/core/namsan-shape.js';
 import { mergeDistricts } from '../src/core/districts.js';
+import { CABLE_TOP_Y } from '../src/core/cablecar.js'; // (the cable over the upper station's floor: scripts/build-namsan-cable.mjs)
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -382,7 +383,7 @@ hill.h = C.hillH;
   const cable = itaewon.landmarks.find((l) => l.type === 'cablecar');
   cable.path.forEach((q, i) => {
     const g = r1(namsanGround(hill, cable.x + q[0] - hill.x, cable.z + q[1] - hill.z));
-    if (i === cable.path.length - 1) { q[2] = r1(g + 7.5); q[3] = g; } else q[3] = g;
+    if (i === cable.path.length - 1) { q[2] = r1(g + CABLE_TOP_Y); q[3] = g; } else q[3] = g;
   });
 }
 hill.wtrailW = C.deckW;

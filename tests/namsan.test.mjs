@@ -44,7 +44,9 @@ test('the cable car\'s lower station is on the real one by Sopa-ro, and you can 
   assert.ok(station.p.every(([x, z]) => !onNamsan(hill, x - hill.x, z - hill.z)), 'the station is off the hill');
   const sopa = region.links.find((l) => l.n?.en === 'Sopa-ro');
   assert.ok(sopa, 'Sopa-ro leads there');
-  assert.ok(segDist(store.at, sopa.p) < 15, 'the door is by Sopa-ro');
+  assert.ok(segDist(store.at, sopa.p) < 20, 'the door is by Sopa-ro');
+  const path = itaewon.roads.find((r) => r.cc); // (scripts/build-namsan-cable.mjs: a footpath from the road round the bay)
+  assert.ok(path && dist([path.p[0][0] + ox, path.p[0][1] + oz], store.at) < 0.5 && segDist([path.p.at(-1)[0] + ox, path.p.at(-1)[1] + oz], sopa.p) < 0.5, 'a footpath leads from Sopa-ro to the door');
   for (const [x, z] of station.p) assert.ok(segDist([x + ox, z + oz], sopa.p) > sopa.w / 2, 'the station is off the road');
   // Sopa-ro joins Toegye-ro and Sowol-ro.
   for (const n of ['Toegye-ro', 'Sowol-ro']) {
@@ -61,6 +63,33 @@ test('the cable runs up to the real upper station, over the trees', () => {
     const [x, z, y] = cable.path[i];
     assert.ok(y - namsanGround(hill, cable.x + x - hill.x, cable.z + z - hill.z) >= 8, `pylon ${i} high enough`);
   }
+});
+
+test('the cable car keeps off the city wall trail: its stations at 1/4, two pylons on OSM\'s line', () => {
+  // (scripts/build-namsan-cable.mjs; Yozi 2026-11-19: the old upper station stood on the trail)
+  const L = (p) => [cable.x + ox + p[0], cable.z + oz + p[1]];
+  const H = (p) => [hill.x + ox + p[0], hill.z + oz + p[1]];
+  const trails = [...hill.wtrail.map((r) => ({ p: r.map(H), w: hill.wtrailW })), { p: hill.trail.map(H), w: hill.trailW }];
+  const gap = (q) => Math.min(...trails.map((t) => segDist(q, t.p) - t.w / 2));
+  const top = L(cable.path.at(-1)), low = L(cable.path[0]), a = Math.atan2(top[0] - low[0], top[1] - low[1]);
+  const f = [Math.sin(a), Math.cos(a)], s = [Math.cos(a), -Math.sin(a)];
+  // The upper station (8.4 m across for two cabins, 4.4 m bay and a 1.2 m booth) and its cabins clear every trail.
+  for (const [u, v] of [[-2.2, -4.2], [3.4, -4.2], [3.4, 4.2], [-2.2, 4.2], [0.6, -4.2], [0.6, 4.2]]) {
+    assert.ok(gap([top[0] + f[0] * u + s[0] * v, top[1] + f[1] * u + s[1] * v]) > 0.5, 'the upper station is off the trail');
+  }
+  assert.ok(dist(top, mid(osm.upperStation.slice(0, -1))) < 5, 'the upper station is on the real one');
+  // Two pylons, near OSM's two middle points of the line, each off the trail.
+  const real = osm.cable.map((p) => toGame(...p)).slice(1, -1);
+  assert.equal(cable.path.length, 4);
+  cable.path.slice(1, -1).forEach((p, i) => {
+    const q = L(p);
+    assert.ok(Math.min(...real.map((r) => dist(q, r))) < 5, `pylon ${i + 1} on OSM's line`);
+    assert.ok(gap(q) > 2, `pylon ${i + 1} off the trail`);
+  });
+  assert.ok(Array.isArray(cable.door) && cable.why, 'the upper door, and why it moved');
+  // The lower station is about the real one's size at 1/4, not a big building.
+  const xs = station.p.map((q) => q[0]), zs = station.p.map((q) => q[1]);
+  assert.ok((Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs)) < 150, 'the ticket hall is small');
 });
 
 test('the hill\'s foot follows the real Namsan outline at 1/4 and keeps off the roads', () => {

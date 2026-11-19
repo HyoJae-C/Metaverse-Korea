@@ -70,7 +70,7 @@ try {
   // The cable car's upper station: ride down from here.
   const cable = itaewon.landmarks.find((l) => l.type === 'cablecar');
   const e = cable.path.at(-1), st = [cable.x + ox + e[0], cable.z + oz + e[1]];
-  const d = Math.hypot(st[0] - tower[0], st[1] - tower[1]), door = [st[0] - ((st[0] - tower[0]) / d) * 7.5, st[1] - ((st[1] - tower[1]) / d) * 7.5];
+  const door = [cable.x + ox + cable.door[0], cable.z + oz + cable.door[1]]; // (scripts/build-namsan-cable.mjs)
   await mk('place', ...door);
   await until(async () => (await label()).includes('🚡'), 15000, 'ride down button');
   console.log('station:', await label());
