@@ -2,11 +2,13 @@
 // loads this when you come near): paving round the look-out tower, the
 // railing hung with love locks (open where the trail comes up and towards
 // the cable car's upper station), the love-lock heart, binoculars and beds
-// of pines. The tower is the namsan landmark's (core/landmarks.js); the
+// of pines, and Palgakjeong, the octagonal pavilion (seats on its floor
+// edge, returned as `seats`). The tower is the namsan landmark's (core/landmarks.js); the
 // Namsan stamp's stand is data/stamps.js's.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { loveLockHeart } from '../core/cablecar.js';
-import { NAMSAN_WALK } from './namsan-walk.js';
+import { NAMSAN_WALK, PALGAK } from './namsan-walk.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -100,10 +102,14 @@ export function buildNamsanSummit({ scene, collision, tower, station, trails = [
     block(bx, bz, 0.6, 0.6);
   }
 
-  // Beds of pines round the tower, clear of the ways in and the heart.
+  // Palgakjeong (north-west, on its real spot).
+  const seats = palgakjeong(g, block, Y, W.palgak).map((q) => ({ ...q, x: tx + q.x, z: tz + q.z, y: q.y, stand: [tx + q.stand[0], tz + q.stand[1]], street: true }));
+
+  // Beds of pines round the tower, clear of the ways in, the heart and Palgakjeong.
   for (const a of [0.9, 2.5, 3.9, 5.3]) {
     if (inGap(a)) continue;
     const bx = Math.cos(a) * 16, bz = Math.sin(a) * 16;
+    if (Math.hypot(bx - W.palgak[0], bz - W.palgak[1]) < PALGAK.steps[0][0] + 4) continue;
     if (trailD(tx + bx, tz + bz) < 5.5) continue; // (not on a trail's way across the plaza)
     if (Math.hypot(bx - W.heart[0], bz - W.heart[1]) < 6) continue;
     box(5, 0.5, 5, bx, Y + 0.25, bz, '#b9ad98');
@@ -119,5 +125,58 @@ export function buildNamsanSummit({ scene, collision, tower, station, trails = [
   }
 
   collision?.add(blocks); // (all in world metres)
-  return { group: g };
+  return { group: g, seats };
+}
+
+// Palgakjeong after Yozi's photo (2026-11-19): a stepped granite base, eight
+// red columns, beams painted in dancheong (green and teal with a red line),
+// a grey tiled octagonal roof with upturned corners and a dark finial. Open
+// between the columns: you walk in. g: the summit group (tower-relative);
+// block(x, z, sx, sz): a collider; Y: the plaza's height; [px, pz]: where.
+// Returns seats on the floor edge between the columns, facing out.
+const PAL_MAT = {};
+const palMat = (c) => (PAL_MAT[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
+function palgakjeong(g, block, Y, [px, pz]) {
+  const P = PALGAK, top = P.steps.at(-1)[1], fy = Y + top;
+  const parts = {};
+  const put = (c, geo) => (parts[c] ||= []).push(geo.index ? geo.toNonIndexed() : geo);
+  const oct = (c, rt, rb, h, y, x = px, z = pz) => put(c, new THREE.CylinderGeometry(rt, rb, h, 8).translate(x, y + h / 2, z));
+  // The base: three octagonal steps of granite.
+  let y0 = Y;
+  for (const [r, t] of P.steps) { oct('#cfcac0', r, r, Y + t - y0, y0); y0 = Y + t; }
+  // Eight red columns at the corners (stand at the octagon's corners, θ = kπ/4).
+  for (let k = 0; k < 8; k++) {
+    const a = (k * Math.PI) / 4, cx = px + Math.sin(a) * P.colR, cz = pz + Math.cos(a) * P.colR;
+    put('#b8322c', new THREE.CylinderGeometry(0.1, 0.11, P.colH, 8).translate(cx, fy + P.colH / 2, cz));
+    block(cx, cz, 0.26, 0.26);
+  }
+  // The beams over them, painted: green, a red line, teal.
+  const by = fy + P.colH;
+  oct('#2f8a6a', P.colR + 0.12, P.colR + 0.12, 0.16, by - 0.16);
+  oct('#c0392b', P.colR + 0.14, P.colR + 0.14, 0.05, by);
+  oct('#3aa3a0', P.colR + 0.2, P.colR + 0.14, 0.18, by + 0.05);
+  // The roof: the eaves' underside, the tiled roof, a ridge at each corner
+  // with its end turned up, the finial.
+  const ry = by + 0.23;
+  oct('#365c52', P.eave, P.colR + 0.2, 0.18, ry); // the painted rafters under the eaves
+  oct('#6e7176', P.eave * 0.32, P.eave + 0.05, 0.85, ry + 0.18); // the tiles
+  oct('#5d6066', 0.22, P.eave * 0.32, 0.3, ry + 1.03);
+  for (let k = 0; k < 8; k++) {
+    const a = (k * Math.PI) / 4, s = Math.sin(a), c = Math.cos(a);
+    const ridge = new THREE.BoxGeometry(0.12, 0.12, P.eave * 0.75).translate(0, 0, P.eave * 0.62).rotateX(0.42).rotateY(a);
+    put('#e6e2da', ridge.translate(px, ry + 1.2, pz)); // the white-mortared ridge down each corner
+    const tip = new THREE.BoxGeometry(0.14, 0.14, 0.45).rotateX(-0.55).rotateY(a);
+    put('#5d6066', tip.translate(px + s * (P.eave + 0.08), ry + 0.33, pz + c * (P.eave + 0.08))); // its end, turned up
+  }
+  put('#3b2f2a', new THREE.CylinderGeometry(0.12, 0.16, 0.35, 8).translate(px, ry + 1.48, pz));
+  put('#3b2f2a', new THREE.SphereGeometry(0.15, 8, 6).translate(px, ry + 1.75, pz)); // the finial (jeolbyeongtong)
+  for (const [c, list] of Object.entries(parts)) g.add(new THREE.Mesh(mergeGeometries(list), palMat(c)));
+  // Seats: on the floor's edge between the columns, legs over the top step, facing out.
+  const seats = [];
+  const er = P.steps.at(-1)[0] * Math.cos(Math.PI / 8) - 0.15;
+  for (const k of [1, 3, 5, 7]) {
+    const a = Math.PI / 8 + (k * Math.PI) / 4, s = Math.sin(a), c = Math.cos(a);
+    seats.push({ x: px + s * er, z: pz + c * er, y: fy, ry: a, stand: [px + s * (er - 0.9), pz + c * (er - 0.9)] });
+  }
+  return seats;
 }

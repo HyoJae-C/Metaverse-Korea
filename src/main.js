@@ -866,7 +866,7 @@ const northWall = createNorthWallNear({ landmarks: map.landmarks, scene, y: nort
 // Passers-by: two strolling around each meeting zone.
 // The Namsan trail: a way up through the hill's blocker, at its height (game/namsan-walk.js).
 const hanBridges = createHanBridges({ scene, bridges: map.bridges }); // the Han's bridges, up off the water (core/han-bridges.js)
-const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings });
+const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings, seats: streetSeats });
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
@@ -5211,7 +5211,7 @@ const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { 
 const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
 const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
-const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min); // (game/tower-look.js: tilt up to Modu Tower's top)
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min, () => namsanWalk.lookUp); // (game/tower-look.js: tilt up to Modu Tower's top, and Namsan's: game/namsan-walk.js lookUp)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
