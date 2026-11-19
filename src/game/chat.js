@@ -500,8 +500,10 @@ export function createChat(game) {
   // remembered on this device.
   const pinBox = $('notice-pin');
   const FOLD_KEY = 'noticePinFolded';
-  let pinFolded = false;
-  try { pinFolded = localStorage.getItem(FOLD_KEY) === '1'; } catch { /* no storage */ }
+  // A first visit starts folded: the first minute already has the welcome,
+  // the guide and the first mission on screen (UI check 2026-11-19).
+  let pinFolded = !!game.firstVisit;
+  try { const v = localStorage.getItem(FOLD_KEY); if (v != null) pinFolded = v === '1'; } catch { /* no storage */ }
   const setFolded = (v) => { pinFolded = v; try { localStorage.setItem(FOLD_KEY, v ? '1' : '0'); } catch { /* no storage */ } };
   // A pinned notice opens them again, but only one this device hasn't seen
   // (the ones still up come again on every start).

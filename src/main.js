@@ -1484,15 +1484,9 @@ function nearestStreet(x, z) {
 }
 
 // ---------- Weather ----------
-const weather = new WeatherSystem({
-  scene, sun, hemi, ambient, region,
-  onUpdate: ({ icon }) => {
-    const el = $('weather');
-    el.hidden = false;
-    el.replaceChildren(icon); // (the clock is off for now)
-    el.title = t('credit.weather');
-  },
-});
+// No weather chip in the HUD: the rain or snow on screen already says it
+// (Yozi 2026-11-19; it also crowded the top-right chips on narrow phones).
+const weather = new WeatherSystem({ scene, sun, hemi, ambient, region });
 
 // The operators' season and held weather (admin.html → Weather,
 // supabase/023_weather.sql), the same for everyone. A little after
@@ -1914,7 +1908,7 @@ const chat = createChat({
   get CODE_TEXT() { return CODE_TEXT; }, get wallet() { return wallet; },
   get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get inventory() { return inventory; },
   get nickname() { return nickname; }, get net() { return net; }, get sfx() { return sfx; }, $, OPERATOR_TEXT,
-  cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook,
+  cloud, input, myId, myLabel, recentLines, refreshItems, refreshWallet, safety, setLook, firstVisit,
   onChatSent: () => playCounts.chat(), // retention counts (core/sessions.js)
   get whisper() { return inLibrary(); },
   get silent() { return inDharmaHall(); }, // (a temple's silent dharma hall: 🙏 only)
