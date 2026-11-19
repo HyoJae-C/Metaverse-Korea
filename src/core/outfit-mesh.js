@@ -140,6 +140,26 @@ function striped(rings, st, axis, from, to) {
 
 // ---- the garments ---------------------------------------------------------
 // o: the outfit's shape options (see OUTFITS in data/characters/kaykit2.js).
+// A onesie's tail and spikes: a mesh of their own (Outfit_Tail), so bags
+// and scarves, sized from the Body mesh, don't count them.
+function tails(out, o) {
+  const bulk = o.bulk || 0;
+  // A round pompom (a bear, a bunny) or a dinosaur's long tail on the
+  // seat, and the dinosaur's spikes down its back.
+  const back = (y) => -(y > 1.1 ? 0.2 : 0.215) - bulk + 0.01;
+  if (o.tail === 'pom') {
+    const r = (z, rr) => ({ c: [0, 0.5, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.03, 0.05), r(back(0.5) - 0.02, 0.08), r(back(0.5) - 0.07, 0.085), r(back(0.5) - 0.12, 0.06), r(back(0.5) - 0.145, 0.02)], { power: 2 });
+  } else if (o.tail === 'dino') {
+    const r = (z, y, rr) => ({ c: [0, y, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr * 0.9, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.04, 0.5, 0.13), r(back(0.5) - 0.1, 0.46, 0.11), r(back(0.5) - 0.26, 0.38, 0.08), r(back(0.5) - 0.42, 0.27, 0.05), r(back(0.5) - 0.55, 0.17, 0.012)], { power: 2 });
+  }
+  if (o.spikes) for (const [y, k] of [[0.62, 0.8], [0.76, 1], [0.9, 1.05], [1.04, 1], [1.16, 0.75]]) {
+    const r = (dz, ru, rv) => ({ c: [0, y, back(y) + dz], u: [1, 0, 0], v: [0, 1, 0], ru, rv, role: o.spikes, w: chain(TORSO, y) });
+    sweep(out, [r(0.03, 0.016, 0.06 * k), r(-0.02, 0.014, 0.05 * k), r(-0.08 * k, 0.004, 0.008)], { power: 2 });
+  }
+}
+
 function torso(out, o) {
   const rings = [];
   const add = (y, rx, rz, role, z = 0.01) => rings.push({ c: [0, y, z], u: [1, 0, 0], v: [0, 0, 1], ru: rx, rv: rz, role, w: chain(TORSO, y) });
@@ -224,20 +244,6 @@ function torso(out, o) {
     { c: [0, 0.6, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.6) },
     { c: [0, 0.66, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.66) },
   ], { power: 2.5 });
-  // A onesie's tail on the seat: a round pompom (a bear, a bunny) or a
-  // dinosaur's long tail, and the dinosaur's spikes down its back.
-  const back = (y) => -(y > 1.1 ? 0.2 : 0.215) - bulk + 0.01;
-  if (o.tail === 'pom') {
-    const r = (z, rr) => ({ c: [0, 0.5, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr, role: 'top', w: [['hips', 1]] });
-    sweep(out, [r(back(0.5) + 0.03, 0.05), r(back(0.5) - 0.02, 0.08), r(back(0.5) - 0.07, 0.085), r(back(0.5) - 0.12, 0.06), r(back(0.5) - 0.145, 0.02)], { power: 2 });
-  } else if (o.tail === 'dino') {
-    const r = (z, y, rr) => ({ c: [0, y, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr * 0.9, role: 'top', w: [['hips', 1]] });
-    sweep(out, [r(back(0.5) + 0.04, 0.5, 0.13), r(back(0.5) - 0.1, 0.46, 0.11), r(back(0.5) - 0.26, 0.38, 0.08), r(back(0.5) - 0.42, 0.27, 0.05), r(back(0.5) - 0.55, 0.17, 0.012)], { power: 2 });
-  }
-  if (o.spikes) for (const [y, k] of [[0.62, 0.8], [0.76, 1], [0.9, 1.05], [1.04, 1], [1.16, 0.75]]) {
-    const r = (dz, ru, rv) => ({ c: [0, y, back(y) + dz], u: [1, 0, 0], v: [0, 1, 0], ru, rv, role: o.spikes, w: chain(TORSO, y) });
-    sweep(out, [r(0.03, 0.016, 0.06 * k), r(-0.02, 0.014, 0.05 * k), r(-0.08 * k, 0.004, 0.008)], { power: 2 });
-  }
   if (o.pocket) plate(out, [[-0.15, 0.64], [0.15, 0.64], [0.15, 0.7], [0.1, 0.79], [-0.1, 0.79], [-0.15, 0.7]], { z: front(-0.012), depth: 0.024, role: o.pocket, w: [['spine', 1]] });
   if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
@@ -429,6 +435,7 @@ export function buildOutfit(gltf, o, cellUv) {
     Outfit_Body: part((out) => torso(out, o), plain),
     Outfit_Limbs: part(drawArms, plain),
   };
+  if (o.tail || o.spikes) geos.Outfit_Tail = part((out) => tails(out, o));
   if (o.print) {
     // Round the body and round each arm, a whole number of repeats (no
     // seam), about as big as on the dress's skirt (core/skirt-mesh.js).

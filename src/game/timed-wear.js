@@ -2,7 +2,7 @@
 // one; when its days are up it leaves the closet (taken off first if worn),
 // with a note. Checked now and every 5 seconds.
 import { loadTimed, saveTimed, startTimed, dueTimed, daysLeft } from '../core/timed-wear.js';
-import { ITEMS, isWorn } from '../core/inventory.js';
+import { ITEMS, isWorn, unownedWorn } from '../core/inventory.js';
 import { saveLook } from '../core/look-editor.js';
 import { t, getLanguage, localName } from '../core/i18n.js';
 
@@ -36,6 +36,15 @@ export function createTimedWear(game) {
     }
   }
   setTimeout(() => tick(), 0);
+  // Once, after the save and any returned clothes have come in: a bag or a
+  // hat worn but not in the closet comes off (it had no Take off button).
+  setTimeout(() => {
+    const ids = unownedWorn(game.myLook, ITEMS, (id) => inventory.has(id));
+    if (!ids.length) return;
+    game.myLook = ids.reduce((look, id) => ({ ...look, ...ITEMS[id].off }), game.myLook);
+    saveLook(game.myLook);
+    setLook(game.myLook);
+  }, 15000);
   setInterval(() => tick(), 5000);
   return {
     // (main.js: a limited item was just bought)
