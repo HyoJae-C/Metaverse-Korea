@@ -25,6 +25,10 @@ const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: h
 const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
+// A floating balloon's knot, in the rig's metres: up by the head on the
+// right (-x), just behind the shoulder line (the dog rises ~0.4 m above it).
+const FLOAT_AT = new THREE.Vector3(-0.5, 1.12, -0.05);
+const STRING_MAT = new THREE.LineBasicMaterial({ color: 0xd9d4ca });
 // The open umbrella against the left hand: dx/dy/dz from the hand to the pole's
 // foot (the hand grips the pole partway up), tilt leans the canopy over the head.
 // x/y/z: where it stands before the model has loaded.
@@ -136,6 +140,8 @@ export function createCharacter(rawLook) {
   let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
+  let string = null; // the line from the hand up to a floating balloon
+  let floatT = Math.random() * 10; // (floating balloons don't all bob together)
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
   let tube = null; // a swim ring (the pool)
@@ -146,6 +152,19 @@ export function createCharacter(rawLook) {
     if (held.userData.onHead) { // (a balloon crown: worn, not held)
       held.scale.setScalar(1);
       headAcc.add(held);
+      return;
+    }
+    if (held.userData.floats) { // (a balloon dog: up by the head, on a string from the hand)
+      held.scale.setScalar(1);
+      held.position.set(FLOAT_AT.x, FLOAT_AT.y, FLOAT_AT.z);
+      held.rotation.set(0, 0, 0);
+      rig.add(held);
+      if (!string) {
+        string = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(6, 3)), STRING_MAT);
+        string.frustumCulled = false;
+        rig.add(string);
+      }
+      string.visible = !!model?.hand;
       return;
     }
     if (model?.hand) {
@@ -300,6 +319,23 @@ export function createCharacter(rawLook) {
           model.hand.getWorldQuaternion(qHand);
           rig.getWorldQuaternion(qRoot);
           held.quaternion.copy(qHand.invert().multiply(qRoot));
+        } else if (held?.parent === rig && held.userData.floats && model.hand) {
+          // A floating balloon bobs and sways, trails back a little while
+          // walking, and its string runs from the hand up to the knot.
+          floatT += dt;
+          const k = Math.min(1, dt * 4);
+          held.position.x = FLOAT_AT.x + Math.sin(floatT * 1.1) * 0.03;
+          held.position.y = FLOAT_AT.y + Math.sin(floatT * 1.7) * 0.035;
+          held.position.z += (FLOAT_AT.z - speed01 * 0.18 - held.position.z) * k;
+          held.rotation.z = Math.sin(floatT * 1.3) * 0.08;
+          held.rotation.x += (-speed01 * 0.2 - held.rotation.x) * k;
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hand.getWorldPosition(_fv));
+          const a = string.geometry.attributes.position;
+          a.setXYZ(0, _fv.x, _fv.y, _fv.z);
+          a.setXYZ(1, held.position.x, held.position.y, held.position.z);
+          a.needsUpdate = true;
+          string.visible = held.visible;
         }
         return;
       }
@@ -372,6 +408,7 @@ export function createCharacter(rawLook) {
       if ((held?.name || null) === (kind ? 'held:' + kind : null)) return;
       held?.removeFromParent();
       held = kind ? makeHeld(kind) : null;
+      if (string) string.visible = false;
       attachHeld();
     },
     // The held thing's 3D object (the fishing rig moves the rod's parts).

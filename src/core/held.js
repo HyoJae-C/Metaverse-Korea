@@ -48,10 +48,15 @@ export function snackModel(id) {
   return g;
 }
 
-// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword or
-// a dog in the hand, a crown worn on the head ('balloon:crown'). Twisted
-// glossy sausages of latex, in metres (the crown in the head's own units).
+// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword in
+// the hand, a dog floating on a string beside the head, a crown worn on the
+// head ('balloon:crown'). Twisted glossy sausages of latex, in metres (the
+// crown in the head's own units). In the hand at the side, the arm and the
+// shoulder hid them from the camera behind; so the sword leans out away
+// from the body, and the dog flies up where its shape shows.
 export const BALLOONS = ['sword', 'dog', 'crown'];
+export const SWORD_LEAN = 0.45; // radians out from upright
+const FLOAT_SCALE = 1.8; // the dog as big as it was in the hand (hands scale held things 1.8x)
 const glossy = (c) => (mats['b' + c] ||= new THREE.MeshPhongMaterial({ color: c, shininess: 90, specular: 0x666666 }));
 function sausage(g, c, len, r, x, y, z, rx = 0, rz = 0) {
   const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), glossy(c));
@@ -62,18 +67,31 @@ function sausage(g, c, len, r, x, y, z, rx = 0, rz = 0) {
 }
 function balloonLook(g, sub) {
   if (sub === 'sword') {
-    sausage(g, '#8fd0ff', 0.42, 0.018, 0, 0.3, 0); // the blade
-    sausage(g, '#ffe27a', 0.1, 0.02, 0, 0.06, 0, 0, Math.PI / 2); // the guard
-    sausage(g, '#ffe27a', 0.05, 0.02, 0, 0.02, 0); // the grip
+    // Leaning out from the right hand (held things stay upright in the
+    // body's frame, so +x is the character's left: lean towards -x).
+    const s = new THREE.Group();
+    s.rotation.z = SWORD_LEAN;
+    sausage(s, '#8fd0ff', 0.42, 0.018, 0, 0.3, 0); // the blade
+    sausage(s, '#ffe27a', 0.1, 0.02, 0, 0.06, 0, 0, Math.PI / 2); // the guard
+    sausage(s, '#ffe27a', 0.05, 0.02, 0, 0.02, 0); // the grip
+    g.add(s);
   } else if (sub === 'dog') {
+    // Floats on a string (core/character.js ties it to the hand): the
+    // group's origin is the knot, the dog above it, side on to the camera
+    // behind (nose to the character's right).
     const c = '#ff8fb8';
-    sausage(g, c, 0.08, 0.026, 0, 0.12, 0, Math.PI / 2); // body
-    for (const z of [-0.05, 0.05]) for (const x of [-0.025, 0.025]) sausage(g, c, 0.04, 0.02, x, 0.08, z); // legs
-    sausage(g, c, 0.03, 0.026, 0, 0.18, 0.07); // neck
-    sausage(g, c, 0.03, 0.024, 0, 0.21, 0.1, Math.PI / 2); // snout
-    for (const x of [-0.03, 0.03]) sausage(g, c, 0.035, 0.018, x, 0.24, 0.07, 0, x * 8); // ears
-    sausage(g, c, 0.035, 0.016, 0, 0.17, -0.08, -0.6); // tail
-    g.position.y = 0.0;
+    const d = new THREE.Group();
+    d.scale.setScalar(FLOAT_SCALE);
+    d.rotation.y = -Math.PI / 2;
+    d.position.y = -0.05 * FLOAT_SCALE; // the legs' feet at the knot
+    sausage(d, c, 0.08, 0.026, 0, 0.12, 0, Math.PI / 2); // body
+    for (const z of [-0.05, 0.05]) for (const x of [-0.025, 0.025]) sausage(d, c, 0.04, 0.02, x, 0.08, z); // legs
+    sausage(d, c, 0.03, 0.026, 0, 0.18, 0.07); // neck
+    sausage(d, c, 0.03, 0.024, 0, 0.21, 0.1, Math.PI / 2); // snout
+    for (const x of [-0.03, 0.03]) sausage(d, c, 0.035, 0.018, x, 0.24, 0.07, 0, x * 8); // ears
+    sausage(d, c, 0.035, 0.016, 0, 0.17, -0.08, -0.6); // tail
+    g.add(d);
+    g.userData.floats = true;
   } else {
     // The crown: a band round the head and five upright loops, a ball on each.
     const cols = ['#ff5f9e', '#ffe27a', '#8fe3c7', '#c9a8ff', '#8fd0ff'];
