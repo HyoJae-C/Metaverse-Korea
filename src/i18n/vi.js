@@ -1023,5 +1023,7 @@ export const VI = {
   "boat.aboard": "Lên thuyền! Xuống ở {pier} ⛴",
   "boat.toward": "Đến {pier} · {t}",
   "boat.getOff": "Xuống ở đây · {pier}",
-  "spend.ask": "Trả {n}?",
+  "spend.ask": "Dùng {n}?",
+  "spend.yes": "OK",
+  "spend.no": "Hủy",
 };

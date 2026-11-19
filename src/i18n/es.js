@@ -1023,4 +1023,6 @@ export const ES = {
   "boat.toward": "A {pier} · {t}",
   "boat.getOff": "Bajar aquí · {pier}",
   "spend.ask": "¿Gastar {n}?",
+  "spend.yes": "Aceptar",
+  "spend.no": "Cancelar",
 };

@@ -1027,4 +1027,6 @@ export const JA = {
   "boat.toward": "{pier}まで · {t}",
   "boat.getOff": "ここで降りる · {pier}",
   "spend.ask": "{n}を使いますか？",
+  "spend.yes": "OK",
+  "spend.no": "やめる",
 };

@@ -1024,4 +1024,6 @@ export const HI = {
   "boat.toward": "{pier} तक · {t}",
   "boat.getOff": "यहाँ उतरें · {pier}",
   "spend.ask": "{n} खर्च करें?",
+  "spend.yes": "ठीक है",
+  "spend.no": "रद्द करें",
 };

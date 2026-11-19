@@ -1024,4 +1024,6 @@ export const FR = {
   "boat.toward": "Vers {pier} · {t}",
   "boat.getOff": "Descendre ici · {pier}",
   "spend.ask": "Dépenser {n} ?",
+  "spend.yes": "OK",
+  "spend.no": "Annuler",
 };
