@@ -248,6 +248,8 @@ function makeBarbell() {
   return g;
 }
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
+// The left arm holding an open umbrella (bone rotations, set over the clip).
+const UMB_ARM = { arm: [-1.0, 0, 0], fore: [0, 0, -1.2] };
 // Hairdresser's scissors, held in the right hand while snipping.
 function makeScissors() {
   const g = new THREE.Group();
@@ -841,6 +843,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
+  let umbrellaUp = false; // left hand up by the head, holding the umbrella's pole
   let pullT = 0;
   let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
@@ -860,6 +863,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
     setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    // Raise the left hand beside the head to hold an open umbrella.
+    setUmbrella(on) { umbrellaUp = !!on; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     // Wind in the hair, 0..1 (the roller coaster).
@@ -1069,6 +1074,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [side, c] of [['L', Math.max(0, ph)], ['R', Math.max(0, -ph)]]) {
           const f = dBones['fore' + side], r = C['fore' + side], amt = 0.15 + 0.85 * c;
           if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
+        }
+      }
+      if (umbrellaUp && !moves) { // the umbrella: upper arm out and forward, forearm up, the hand beside the head
+        const U = globalThis.__umb || UMB_ARM; // debug: tune live
+        const a = dBones.armL, f = dBones.foreL;
+        for (const [b, r] of [[a, U.arm], [f, U.fore]]) {
+          if (!b) continue;
+          if (lRest.has(b)) b.quaternion.copy(lRest.get(b)); // from rest: steady while walking
+          b.rotation.set(b.rotation.x + r[0], b.rotation.y + r[1], b.rotation.z + r[2]);
         }
       }
       if (extMoves) moves = extMoves() || moves; // basketball shots and other scripted moves
