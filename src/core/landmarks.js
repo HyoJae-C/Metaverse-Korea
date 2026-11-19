@@ -10,6 +10,7 @@ import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
 import { banpoBridge } from './banpo-bridge.js';
 import { namsanPoint, namsanGround } from './namsan-shape.js';
+import { namsanTower } from './namsan-tower.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { farFree } from './far-textures.js';
@@ -358,34 +359,12 @@ const OWN_BUILD = {
 };
 
 
-// The look-out tower on Namsan: a white shaft, a round deck with windows,
-// a red and white mast, and a ring of lights.
 // How the slope is kept under the trails (core/landmarks.js namsan): within
 // band m of a trail a vertex is at most `under` m below the trail's height,
 // plus `rise` m for each metre past `flat` m from the trail's middle.
 export const TRAIL_CAP = { band: 18, flat: 2.5, under: 0.35, rise: 0.08 };
 
-export function namsanTower(g, y0 = 0) {
-  const cyl = (rt, rb, ht, y, c) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, ht, 16), mat(c));
-    m.position.y = y + ht / 2;
-    g.add(m);
-    return m;
-  };
-  cyl(12, 13, 2, y0, C.stone); // terrace on the summit
-  cyl(7, 8, 7, y0 + 2, C.white); // base building
-  cyl(2.2, 3.4, 42, y0 + 9, '#e9e6df'); // shaft
-  cyl(7.5, 6, 3, y0 + 49, C.white);
-  cyl(7.2, 7.2, 5, y0 + 52, '#3f5470'); // windows
-  cyl(6, 7.5, 2.5, y0 + 57, C.white);
-  for (let i = 0; i < 6; i++) cyl(0.9 - i * 0.08, 1 - i * 0.08, 3.5, y0 + 59.5 + i * 3.5, i % 2 ? '#f3eee4' : '#d0463b'); // mast
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffe08a' }));
-    bulb.position.set(Math.cos(a) * 7.6, y0 + 55.5, Math.sin(a) * 7.6);
-    g.add(bulb);
-  }
-}
+// (The look-out tower itself: core/namsan-tower.js.)
 
 // The busking zone on Hongdae Walking Street (layout in core/busking-layout.js):
 // long low stone steps for the audience on the west side, the words BUSKING
