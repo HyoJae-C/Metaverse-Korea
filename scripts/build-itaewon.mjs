@@ -40,6 +40,7 @@ import { hillHeightRel } from '../src/core/hill-ground.js';
 import { namsanGround } from '../src/core/namsan-shape.js';
 import { outsideOf } from '../src/core/subway.js';
 import { r1, name, inPoly, sideOf, clip, nearestOn, pointAt, lengthOf, facing, lineDist, simplify, town, rng, overlap, segDist } from './street-rows.mjs';
+import { CABLE_TOP_Y } from '../src/core/cablecar.js'; // (the cable over the upper station's floor: scripts/build-namsan-cable.mjs)
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const R = path.join(root, 'public', 'regions', 'another-seoul');
@@ -221,7 +222,7 @@ const NAMSAN = itaewon.landmarks.find((l) => l.type === 'namsan');
     const cable = itaewon.landmarks.find((l) => l.type === 'cablecar');
     cable.path.forEach((q, i) => {
       const g = r1(namsanGround(NAMSAN, cable.x + q[0] - NAMSAN.x, cable.z + q[1] - NAMSAN.z));
-      if (i === cable.path.length - 1) { q[2] = r1(g + 7.5); q[3] = g; } else if (i) q[3] = g;
+      if (i === cable.path.length - 1) { q[2] = r1(g + CABLE_TOP_Y); q[3] = g; } else if (i) q[3] = g;
     });
     console.log(`  Namsan's foot pulled ${d} m north on its south side to clear Sowol-ro`);
   }

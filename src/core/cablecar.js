@@ -190,6 +190,17 @@ export function loveLockHeart(scene, block, TOP, at, ry = Math.PI / 2) {
 // cabin i's floor is at progress k (0 the bottom, 1 the top), at an even
 // pace along the cable.
 export const CABIN_S = 1.2, CABIN_ROPE = 3.6; // a cabin's scale, and its cable above the floor
+// The stations' size in metres (scripts/build-namsan-cable.mjs): 8.4 m across
+// the line holds the two cabins side by side; the lower one is a ticket hall
+// (a building on the map) and a bay, the upper one a bay and a small booth.
+export const CABLE_STATION = {
+  across: 8.4,
+  low: { hall: 5.2, bay: 4, h: 5 }, // (a wall under 5 m gets no shop door: core/storefronts.js)
+  top: { bay: 4.4, booth: 1.2 },
+  roof: 5.6, // the canopy over a bay, above its floor
+};
+// The cable over a bay's floor: the cabins stop just above it.
+export const CABLE_TOP_Y = CABIN_ROPE * CABIN_S + 0.25;
 export function cableLine(l) {
   const path = l.path.map(([x, z, y, gy]) => [l.x + x, l.z + z, y, gy]);
   const [x0, z0] = path[0], [x1, z1] = path[path.length - 1];
@@ -209,28 +220,65 @@ export function cableLine(l) {
   return { path, heading, lines, cabin };
 }
 
-// The same line seen from the street: a bull-wheel house on the lower
-// station's roof, the upper station by the tower, the two cables with a
-// pylon at each point in between (so the line clears the hill), and the two
-// cabins on the shared clock. Drawn in the landmark's group (at l.x, l.z).
+// The same line seen from the street, at 1/4 of the real one
+// (scripts/build-namsan-cable.mjs): the two cables with a pylon at each point
+// in between, the two cabins on the shared clock, and the stations' bays,
+// where the cabins pull in at the ground under a canopy. The lower
+// station's ticket hall is a building on the map (it carries the door); the
+// upper station is the bay and a small booth, its door towards the tower.
+// Drawn in the landmark's group (at l.x, l.z).
+const SKY_RED = '#c0392b';
+function stationBay(g, x, y, z, heading, back, front, { booth = 0, signAt = null, end = 1 } = {}) { // end: +1 the closed end is up the line (the top), -1 down it
+  const S = new THREE.Group();
+  S.position.set(x, y, z);
+  S.rotation.y = heading; // +z up the line, +x across it
+  g.add(S);
+  const { across: W, roof: H } = CABLE_STATION;
+  const box = (sx, sy, sz, px, py, pz, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(c)); m.position.set(px, py, pz); S.add(m); return m; };
+  const L = back + front, mz = (front - back) / 2;
+  box(W, 3.2, L + booth, 0, -1.5, mz + booth / 2, '#cfc8bb'); // the floor, its skirt down into the slope
+  box(W - 0.6, 0.06, 1.1, 0, 0.13, mz, '#f2c94c'); // the boarding line, between the two cabins' bays
+  for (const px of [-W / 2 + 0.2, W / 2 - 0.2]) for (const pz of [-back + 0.2, front - 0.2]) box(0.28, H, 0.28, px, H / 2, pz, '#e9ecef'); // posts
+  box(W + 0.8, 0.35, L + booth + 0.8, 0, H + 0.17, mz + booth / 2, SKY_RED); // the canopy
+  box(W - 0.4, 0.12, L + booth - 0.2, 0, H - 0.05, mz + booth / 2, '#f4f1ea'); // its ceiling
+  const closed = end > 0 ? front + booth : -back; // the end the cabins don't come in at
+  box(2.6, 1.2, 1.8, 0, H + 0.95, closed - end * 1.2, '#8f2a20'); // the bull wheel's house
+  box(W - 0.4, H - 2.4, 0.15, 0, 2.4 + (H - 2.4) / 2, closed - end * 0.1, '#bfe3ff'); // glass over the closed end
+  if (booth) {
+    box(W - 0.4, 2.3, booth, 0, 1.15, front + booth / 2, '#efe9df');
+    box(1.4, 2.1, 0.06, 0, 1.05, front + booth + 0.01, '#5d6670'); // its door
+  }
+  if (signAt) { // the name over the open (downhill) end, both faces
+    for (const [pz, ry] of [[-back - 0.42, Math.PI], [front + booth + 0.42, 0]]) { // (both ends)
+      const m = signMesh('남산 하늘 케이블카', 'NAMSAN SKY CABLE', 5.2, SKY_RED);
+      m.position.set(0, H + 0.95, pz);
+      m.rotation.y = ry;
+      S.add(m);
+    }
+  }
+  return S;
+}
 export function cableCarLandmark(g, l) {
   const add = (geo, c, x, y, z) => { const m = new THREE.Mesh(geo, mat(c)); m.position.set(x, y, z); g.add(m); return m; };
   const line = cableLine({ ...l, x: 0, z: 0 }), { path, heading } = line;
-  const [x0, z0, y0] = path[0];
-  const [x1, z1, y1, g1] = path[path.length - 1];
-  const house = add(new THREE.BoxGeometry(8, 3, 6), '#c0392b', x0, y0 - 1.5, z0);
-  house.rotation.y = heading;
-  const top = add(new THREE.BoxGeometry(10, y1 - g1 + 1, 8), '#efe9df', x1, (y1 + g1) / 2, z1);
-  top.rotation.y = heading;
-  const roof = add(new THREE.BoxGeometry(11, 0.5, 9), '#5d6670', x1, y1 + 1, z1);
-  roof.rotation.y = heading;
+  const [x0, z0] = path[0];
+  const [x1, z1, , g1] = path[path.length - 1];
+  const { low: LS, top: TS } = CABLE_STATION;
+  stationBay(g, x0, 0, z0, heading, LS.bay / 2, LS.bay / 2, { signAt: true, end: -1 });
+  stationBay(g, x1, g1, z1, heading, TS.bay / 2, TS.bay / 2, { booth: TS.booth, signAt: true });
   for (const pts of line.lines) g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(([x, y, z]) => new THREE.Vector3(x, y, z))), new THREE.LineBasicMaterial({ color: '#2b2f36' })));
-  for (let i = 1; i < path.length - 1; i++) { // pylons
-    const [x, z, y, gy] = path[i];
-    const leg = add(new THREE.BoxGeometry(0.8, y - gy + 4, 0.8), '#c9ced6', x, (y + gy - 4) / 2, z);
-    leg.rotation.y = heading;
-    const arm = add(new THREE.BoxGeometry(6, 0.5, 0.6), '#c9ced6', x, y + 0.3, z);
+  for (let i = 1; i < path.length - 1; i++) { // pylons: a tapered mast, its arm, a sheave train under each cable
+    const [x, z, y, gy] = path[i], h = y - gy;
+    const leg = add(new THREE.CylinderGeometry(0.45, 1.1, h, 4), '#c9ced6', x, gy + h / 2 - 0.3, z);
+    leg.rotation.y = heading + Math.PI / 4;
+    const arm = add(new THREE.BoxGeometry(5.6, 0.45, 0.6), '#c9ced6', x, y - 0.25, z);
     arm.rotation.y = heading;
+    for (const s of [-2, 2]) {
+      const sheave = add(new THREE.BoxGeometry(0.35, 0.3, 2.4), '#3a3f46', x + Math.cos(heading) * s, y - 0.05, z - Math.sin(heading) * s);
+      sheave.rotation.y = heading;
+    }
+    const cap = add(new THREE.BoxGeometry(1.0, 0.5, 1.0), SKY_RED, x, y + 0.2, z); // a red cap, seen from afar
+    cap.rotation.y = heading;
   }
   const cabins = [0, 1].map((i) => { const c = makeCabin(CABIN_COLORS[i], CABIN_ROPE); c.scale.setScalar(CABIN_S); c.rotation.y = heading + Math.PI; g.add(c); return c; });
   return () => {
