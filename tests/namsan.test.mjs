@@ -65,6 +65,14 @@ test('the cable runs up to the real upper station, over the trees', () => {
   }
 });
 
+test('the hill follows the real ground (scripts/build-namsan-terrain.mjs): level top, foot at the street', () => {
+  const dem = JSON.parse(readFileSync(new URL('../scripts/data/namsan-dem.json', import.meta.url), 'utf8'));
+  assert.match(dem.source, /SRTM/);
+  const { n, k } = hill.dem;
+  assert.equal(k.length, hill.rad.length * (n + 1));
+  for (let i = 0; i < hill.rad.length; i++) { assert.equal(k[i * (n + 1)], 1000); assert.equal(k[i * (n + 1) + n], 0); }
+});
+
 test('the cable car keeps off the city wall trail: its stations at 1/4, two pylons on OSM\'s line', () => {
   // (scripts/build-namsan-cable.mjs; Yozi 2026-11-19: the old upper station stood on the trail)
   const L = (p) => [cable.x + ox + p[0], cable.z + oz + p[1]];

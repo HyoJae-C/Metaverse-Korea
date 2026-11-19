@@ -99,7 +99,7 @@ try {
   await wait(600);
   const [qx, qy, qz] = await me();
   console.log('rode up: out', Math.hypot(qx - door[0], qz - door[1]).toFixed(1), 'm from the upper station door, height', qy.toFixed(1));
-  if (qy < hill.h - 2) throw new Error('not up on the plaza: y ' + qy);
+  if (qy < cable.path.at(-1)[3] - 1) throw new Error('not up by the upper station: y ' + qy); // (on the real ground it is about 2 m under the plaza: scripts/build-namsan-terrain.mjs)
   if (errors.length) throw new Error(errors.join('\n'));
   ok = true;
 } catch (e) {

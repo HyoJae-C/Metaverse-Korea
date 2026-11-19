@@ -30,7 +30,8 @@ function spurY(l, x, z, y) {
     if (d < best) { best = d; h = h1 + (h2 - h1) * t; }
   }
   if (best >= sp.w) return y;
-  const t = Math.max(best / sp.w, 1 - top / 6), k = t >= 1 ? 1 : t * t * (3 - 2 * t);
+  // (with the real ground, l.dem, the ways up already end level with the plaza)
+  const t = l.dem ? best / sp.w : Math.max(best / sp.w, 1 - top / 6), k = t >= 1 ? 1 : t * t * (3 - 2 * t);
   return h + (y - h) * k;
 }
 
@@ -42,6 +43,19 @@ export function namsanRadius(l, a) {
   const N = l.rad.length, t = ((((a / (2 * Math.PI)) % 1) + 1) % 1) * N, i = Math.floor(t) % N, f = t - Math.floor(t);
   return l.rad[i] * (1 - f) + l.rad[(i + 1) % N] * f;
 }
+// Or the real ground (l.dem, scripts/build-namsan-terrain.mjs): { n, k } on
+// the same angles as l.rad and n + 1 rings (0 at the level top's edge, n at
+// the foot); k[i * (n + 1) + j] is the height there in thousandths of l.h.
+function demK(l, r, a) {
+  const { n, k } = l.dem, N = l.rad.length;
+  const t = ((((a / (2 * Math.PI)) % 1) + 1) % 1) * N, i0 = Math.floor(t) % N, i1 = (i0 + 1) % N, f = t - Math.floor(t);
+  const s = Math.min(1, Math.max(0, r)) * n, j0 = Math.min(n - 1, Math.floor(s)), g = s - j0;
+  const v = (i, j) => k[i * (n + 1) + j];
+  return ((v(i0, j0) * (1 - g) + v(i0, j0 + 1) * g) * (1 - f) + (v(i1, j0) * (1 - g) + v(i1, j0 + 1) * g) * f) / 1000;
+}
+// The hill's own height at r (0 the level top's edge, 1 the foot) along angle a, before the trails' ways up.
+export const namsanShapeY = (l, r, a) => (l.dem && l.rad ? l.h * demK(l, r, a) : l.h * lift(l, 1 - r * r));
+
 // (x, z) from the foot's centre -> how far out from the top, 0..1 (1 at the foot)
 // (l.flat: metres round the top kept level, for the summit plaza.)
 const radial = (l, x, z) => {
@@ -54,7 +68,7 @@ export function namsanPoint(l, u, v) {
     const r = Math.hypot(u, v), R = r ? namsanRadius(l, Math.atan2(v, u)) : 0, f = l.flat || 0;
     const d = f + r * (R - f), k = r ? d / r : 0; // (the level top stretches the inner rings out)
     const x = (l.px || 0) + u * k, z = (l.pz || 0) + v * k;
-    return [x, r < 1 ? spurY(l, x, z, l.h * lift(l, 1 - r * r)) : 0, z];
+    return [x, r < 1 ? spurY(l, x, z, namsanShapeY(l, r, Math.atan2(v, u))) : 0, z];
   }
   const k = lift(l, 1 - u * u - v * v);
   return [l.rx * u + (l.px || 0) * k, l.h * k, l.rz * v + (l.pz || 0) * k];
@@ -62,7 +76,7 @@ export function namsanPoint(l, u, v) {
 
 // The ground height of the hill at (x, z) from its foot's centre (0 off the hill).
 export function namsanGround(l, x, z) {
-  if (l.rad) { const r = radial(l, x, z); return r < 1 ? spurY(l, x, z, l.h * lift(l, 1 - r * r)) : 0; }
+  if (l.rad) { const r = radial(l, x, z); return r < 1 ? spurY(l, x, z, namsanShapeY(l, r, Math.atan2(z - (l.pz || 0), x - (l.px || 0)))) : 0; }
   let k = 0;
   for (let i = 0; i < 40; i++) {
     const u = (x - (l.px || 0) * k) / l.rx, v = (z - (l.pz || 0) * k) / l.rz;
