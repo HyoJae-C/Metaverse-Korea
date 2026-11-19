@@ -149,8 +149,13 @@ function torso(out, o) {
   add(0.46, 0.285, 0.215, 'bottom');
   add(o.hem, 0.29, 0.22, 'bottom');
   // The top: a little wider at the hem so it reads as a shirt over trousers.
-  const hemY = o.hem;
-  if (o.coat) { // a long coat: from the knees up, legs walk underneath
+  let hemY = o.hem;
+  if (o.bib) { // overalls: the trousers' waistband over the T-shirt, which goes on above it
+    add(o.hem, 0.304 + bulk, 0.232 + bulk, 'bottom');
+    add(o.hem + 0.04, 0.304 + bulk, 0.232 + bulk, 'bottom');
+    hemY = o.hem + 0.04;
+    add(hemY, 0.292 + bulk, 0.222 + bulk, 'top');
+  } else if (o.coat) { // a long coat: from the knees up, legs walk underneath
     rings.length = 0;
     add(o.coat, 0.31 + bulk, 0.27 + bulk, 'top', 0.0);
     for (let y = o.coat + 0.09; y < 0.62; y += 0.09) add(y, 0.3 + bulk - (y - o.coat) * 0.05, 0.25 + bulk, 'top', 0.0);
@@ -212,6 +217,47 @@ function torso(out, o) {
   if (o.strings) for (const sx of [-1, 1]) { // a hoodie's drawstrings
     box(out, [sx * 0.055, 1.07, front(0.006)], [0.016, 0.16, 0.014], o.strings, [['chest', 1]]);
     box(out, [sx * 0.055, 0.985, front(0.01)], [0.026, 0.026, 0.02], o.strings, [['chest', 1]]);
+  }
+  // Overalls: a bib from the waistband up the chest with a pocket on it,
+  // two buttons at its corners and a strap up from each over the shoulder
+  // and down the back to the waist.
+  if (o.bib) {
+    const waist = o.hem + 0.03, bibTop = 0.96, bw = [['spine', 0.5], ['chest', 0.5]];
+    plate(out, [[-0.13, waist], [0.13, waist], [0.12, bibTop], [-0.12, bibTop]], { z: front(-0.014), depth: 0.018, role: o.bib, w: bw, lean: 0.03, pivot: waist });
+    plate(out, [[-0.07, 0.79], [0.07, 0.79], [0.07, 0.88], [-0.07, 0.88]], { z: front(0.004), depth: 0.006, role: 'accent3', w: bw, lean: 0.03, pivot: waist });
+    for (const sx of [-1, 1]) {
+      const pts = [[0.075, bibTop - 0.03], [0.12, bibTop - 0.03], [0.135, 1.18], [0.09, 1.18]];
+      plate(out, sx > 0 ? pts : mirror(pts), { z: front(-0.016), depth: 0.014, role: o.bib, w: [['chest', 1]], lean: 0.16, pivot: 0.95 });
+      plate(out, sx > 0 ? [[0.07, waist + 0.02], [0.11, waist + 0.02], [0.135, 1.18], [0.09, 1.18]] : mirror([[0.07, waist + 0.02], [0.11, waist + 0.02], [0.135, 1.18], [0.09, 1.18]]),
+        { z: -front(-0.016) - 0.014, depth: 0.014, role: o.bib, w: bw, lean: -0.16, pivot: 0.95 });
+      box(out, [sx * 0.112, 1.19, -0.005], [0.045, 0.022, 0.31], o.bib, [['chest', 1]]);
+      box(out, [sx * 0.097, bibTop - 0.035, front(0.006)], [0.034, 0.034, 0.014], 'accent2', [['chest', 1]]);
+    }
+  }
+  // A onesie's tummy patch, a lighter oval on the front.
+  if (o.belly) {
+    const pts = [];
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2; pts.push([Math.cos(a) * 0.14, 0.82 + Math.sin(a) * 0.17]); }
+    plate(out, pts, { z: front(-0.02), depth: 0.016, role: o.belly, w: [['spine', 0.6], ['chest', 0.4]], lean: 0.05, pivot: 0.8 });
+  }
+  // A belt round the waist (a dress: the skirt is tucked under it).
+  if (o.belt) sweep(out, [
+    { c: [0, 0.6, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.6) },
+    { c: [0, 0.66, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.66) },
+  ], { power: 2.5 });
+  // A onesie's tail on the seat: a round pompom (a bear, a bunny) or a
+  // dinosaur's long tail, and the dinosaur's spikes down its back.
+  const back = (y) => -(y > 1.1 ? 0.2 : 0.215) - bulk + 0.01;
+  if (o.tail === 'pom') {
+    const r = (z, rr) => ({ c: [0, 0.5, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.03, 0.05), r(back(0.5) - 0.02, 0.08), r(back(0.5) - 0.07, 0.085), r(back(0.5) - 0.12, 0.06), r(back(0.5) - 0.145, 0.02)], { power: 2 });
+  } else if (o.tail === 'dino') {
+    const r = (z, y, rr) => ({ c: [0, y, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr * 0.9, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.04, 0.5, 0.13), r(back(0.5) - 0.1, 0.46, 0.11), r(back(0.5) - 0.26, 0.38, 0.08), r(back(0.5) - 0.42, 0.27, 0.05), r(back(0.5) - 0.55, 0.17, 0.012)], { power: 2 });
+  }
+  if (o.spikes) for (const [y, k] of [[0.62, 0.8], [0.76, 1], [0.9, 1.05], [1.04, 1], [1.16, 0.75]]) {
+    const r = (dz, ru, rv) => ({ c: [0, y, back(y) + dz], u: [1, 0, 0], v: [0, 1, 0], ru, rv, role: o.spikes, w: chain(TORSO, y) });
+    sweep(out, [r(0.03, 0.016, 0.06 * k), r(-0.02, 0.014, 0.05 * k), r(-0.08 * k, 0.004, 0.008)], { power: 2 });
   }
   if (o.pocket) plate(out, [[-0.15, 0.64], [0.15, 0.64], [0.15, 0.7], [0.1, 0.79], [-0.1, 0.79], [-0.15, 0.7]], { z: front(-0.012), depth: 0.024, role: o.pocket, w: [['spine', 1]] });
   if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number

@@ -10,6 +10,8 @@ import { skirtById } from '../data/skirts.js';
 const WAIST_Y = 0.62; // tucked just under the top's hem
 const SHAPE = {
   mini: { hem: 0.3, rings: 7, waist: [0.293, 0.224], flare: [0.37, 0.31], repeat: [6, 1] },
+  // A dress's skirt (data/skirts.js DRESS_SKIRTS): just below the knee.
+  midi: { hem: 0.21, rings: 9, waist: [0.293, 0.224], flare: [0.4, 0.335], repeat: [5, 1.2] },
   long: { hem: 0.13, rings: 11, waist: [0.293, 0.224], flare: [0.43, 0.36], repeat: [4, 1.5] },
   // A hanbok chima: tied high under the short jeogori, full, to the floor.
   chima: { top: 0.88, hem: 0.07, rings: 14, waist: [0.312, 0.242], flare: [0.5, 0.44], repeat: [6, 1.5] },

@@ -16,6 +16,7 @@ import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appear
 import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt } from './skirt-mesh.js';
+import { makeEars } from './animal-wear.js';
 import { skirtById } from '../data/skirts.js';
 
 // Kick scooter and inline skate strokes, added to the idle clip per bone
@@ -300,7 +301,8 @@ function dyedMaterial(id, src, look) {
     }
   }
   // Under a skirt the legs are bare: the trousers cells take the skin's.
-  const bareLegs = !!(wear?.outfit && skirtById(look.skirt));
+  // (A dress has its own skirt: the model's "skirt".)
+  const bareLegs = !!(wear?.outfit && skirtById(look.skirt || PACK.models[id]?.skirt));
   if (!paint.length && shirt == null) return null;
   const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : '', bareLegs ? 'legs' : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
@@ -489,7 +491,7 @@ const TUBE_SIT = { y: 0.3, z: 0.05 };
 // (the knee up through the front, the heel kicked up through the back), so
 // their leg bones keep only this much of the clip's turn away from rest:
 // shorter, closer steps, the narrower the skirt's hem the more.
-const SKIRT_STRIDE = { mini: 0.4, long: 0.3, chima: 0.3 };
+const SKIRT_STRIDE = { mini: 0.4, midi: 0.35, long: 0.3, chima: 0.3 };
 const SKIRT_LEGS = ['upperlegl', 'upperlegr', 'lowerlegl', 'lowerlegr'];
 // ...away from standing still: each leg bone's turn in the idle clip's first
 // frame (the rig's bind pose has the legs apart, so not that).
@@ -726,7 +728,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
   // straight legs under a skirt; a suit's own shoes are leather.
   const wearDef = PACK.models[id].wear;
-  const cut = look.skirt || wearDef?.outfit?.dress || wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans';
+  // A dress's own skirt (the model's "skirt") is worn like one; overalls
+  // and onesies pick their own cut (outfit.cut).
+  const skirtId = look.skirt || PACK.models[id].skirt || null;
+  const cut = skirtId || wearDef?.outfit?.dress ? 'slacks' : wearDef?.outfit?.cut || (wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans');
   const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
   const picked = (name) => {
     const [, part, kind] = /^Outfit_(Legs|Shoes)_(\w+)$/.exec(name) || [];
@@ -745,9 +750,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   });
   // A skirt over the everyday clothes (its own mesh and patterned material).
   const outfit = PACK.models[id].wear?.outfit;
-  const skirtMesh = outfit && look.skirt ? addSkirt(m, look.skirt, outfit) : null;
+  const skirtMesh = outfit && skirtId ? addSkirt(m, skirtId, outfit) : null;
   // Under a skirt the walk and run clips take smaller steps (SKIRT_STRIDE).
-  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(look.skirt).length] ?? 1 : 1;
+  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(skirtId).length] ?? 1 : 1;
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
@@ -774,6 +779,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       cap.rotation.x = -0.3;
       cap.scale.set(1.04, 0.98, 1.06);
       headAcc.add(cap);
+    }
+    // An animal onesie's hood: the animal's ears (or a dinosaur's spikes)
+    // on top, in the onesie's colours (core/animal-wear.js). A hat goes
+    // over the hood instead.
+    const ears = PACK.models[id].ears;
+    if (ears && !look.head) {
+      const c = PACK.models[id].wear?.colors || {};
+      const g = makeEars({ animal: ears, color: c.top, inner: c.accent ?? c.top, hood: true });
+      g.name = 'hoodEars';
+      headAcc.add(g);
     }
     if (chestBone && bodyMesh) {
       // Chibi torso: ~0.42 m wide, 0.36 m deep, scarf sits at ~0.6 m.
