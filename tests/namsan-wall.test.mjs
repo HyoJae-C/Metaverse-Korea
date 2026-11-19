@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { toGame } from '../src/core/seoul-grid.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { CollisionMap } from '../src/core/collision.js';
-import { onNamsan, namsanGround } from '../src/core/namsan-shape.js';
+import { onNamsan, namsanGround, namsanFlat } from '../src/core/namsan-shape.js';
 import { createNamsanWalk } from '../src/game/namsan-walk.js';
 
 // The Seoul City Wall on Namsan, Baekbeom Square to Gwanghuimun
@@ -124,5 +124,6 @@ test('the trails go up Namsan at a walkable grade: nowhere steeper than 22°, an
     }
   }
   assert.equal(hill.h, 56);
-  for (let a = 0; a < 6.28; a += 0.5) assert.ok(Math.abs(namsanGround(hill, hill.px + Math.cos(a) * 25, hill.pz + Math.sin(a) * 25) - hill.h) < 0.05, 'the plaza is level');
+  // (level out to just inside its edge: the real plaza's outline, core/namsan-shape.js namsanFlat)
+  for (let a = 0; a < 6.28; a += 0.25) { const r = namsanFlat(hill, a) - 0.5; assert.ok(Math.abs(namsanGround(hill, hill.px + Math.cos(a) * r, hill.pz + Math.sin(a) * r) - hill.h) < 0.05, 'the plaza is level'); }
 });

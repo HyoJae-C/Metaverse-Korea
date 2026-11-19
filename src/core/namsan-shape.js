@@ -11,6 +11,16 @@
 // can start up it gently (scripts/build-namsan-real.mjs).
 const lift = (l, s) => (s > 0 ? s ** (l.e || 0.5) : 0);
 
+// The level top round the tower (the summit plaza): l.flat metres all round,
+// or the real plaza's outline (l.flatRad: N radii at angles 2πi/N from the
+// top, like l.rad; scripts/build-namsan-plaza.mjs).
+export function namsanFlat(l, a) {
+  const F = l.flatRad;
+  if (!F) return l.flat || 0;
+  const N = F.length, t = ((((a / (2 * Math.PI)) % 1) + 1) % 1) * N, i = Math.floor(t) % N, f = t - Math.floor(t);
+  return F[i] * (1 - f) + F[(i + 1) % N] * f;
+}
+
 // The trails' ways up (l.spur, scripts/build-namsan-wall.mjs): { lines:
 // [[[x, z, h], ...], ...] from the foot's centre, w }: the city wall
 // trail from Baekbeom Square and the trail from Sowol-ro. Within w m of one the ground is eased from the hill's to the trail's
@@ -20,7 +30,7 @@ const lift = (l, s) => (s > 0 ? s ** (l.e || 0.5) : 0);
 function spurY(l, x, z, y) {
   const sp = l.spur;
   if (!sp) return y;
-  const top = Math.hypot(x - (l.px || 0), z - (l.pz || 0)) - (l.flat || 0); // (the summit plaza stays level)
+  const top = Math.hypot(x - (l.px || 0), z - (l.pz || 0)) - namsanFlat(l, Math.atan2(z - (l.pz || 0), x - (l.px || 0))); // (the summit plaza stays level)
   if (top <= 0) return y;
   let best = Infinity, h = 0;
   for (const L of sp.lines) for (let i = 1; i < L.length; i++) {
@@ -57,15 +67,15 @@ function demK(l, r, a) {
 export const namsanShapeY = (l, r, a) => (l.dem && l.rad ? l.h * demK(l, r, a) : l.h * lift(l, 1 - r * r));
 
 // (x, z) from the foot's centre -> how far out from the top, 0..1 (1 at the foot)
-// (l.flat: metres round the top kept level, for the summit plaza.)
+// (namsanFlat: the level top round it, for the summit plaza.)
 const radial = (l, x, z) => {
-  const dx = x - (l.px || 0), dz = z - (l.pz || 0), f = l.flat || 0;
-  return Math.max(0, Math.hypot(dx, dz) - f) / (namsanRadius(l, Math.atan2(dz, dx)) - f);
+  const dx = x - (l.px || 0), dz = z - (l.pz || 0), a = Math.atan2(dz, dx), f = namsanFlat(l, a);
+  return Math.max(0, Math.hypot(dx, dz) - f) / (namsanRadius(l, a) - f);
 };
 
 export function namsanPoint(l, u, v) {
   if (l.rad) {
-    const r = Math.hypot(u, v), R = r ? namsanRadius(l, Math.atan2(v, u)) : 0, f = l.flat || 0;
+    const r = Math.hypot(u, v), R = r ? namsanRadius(l, Math.atan2(v, u)) : 0, f = namsanFlat(l, Math.atan2(v, u));
     const d = f + r * (R - f), k = r ? d / r : 0; // (the level top stretches the inner rings out)
     const x = (l.px || 0) + u * k, z = (l.pz || 0) + v * k;
     return [x, r < 1 ? spurY(l, x, z, namsanShapeY(l, r, Math.atan2(v, u))) : 0, z];

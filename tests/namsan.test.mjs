@@ -168,3 +168,36 @@ test('the tower is a quarter of the real one\'s OSM heights: the deck 88–112 m
   assert.ok(Math.abs(real(T.tip) - P.top) < 2, `the tip ${real(T.tip)} m`);
   assert.ok(Math.abs(real(T.deckR * 2) - P.deckD) < 1.5);
 });
+
+// The summit plaza on its real outline (Yozi 2026-11-19: "원 모양이 아닌데"):
+// scripts/build-namsan-plaza.mjs.
+test('the summit plaza\'s level top follows the real plaza (OSM), not a disc', async () => {
+  const { namsanFlat } = await import('../src/core/namsan-shape.js');
+  const { NAMSAN_WALK: W, PALGAK, plazaEdge } = await import('../src/game/namsan-walk.js');
+  const P = { min: 12 }; // (scripts/build-namsan-plaza.mjs NAMSAN_PLAZA.min)
+  assert.equal(hill.flatRad.length, hill.rad.length, 'on the angles of the outline');
+  const T = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const edgeAt = (x, z) => namsanFlat(hill, Math.atan2(z - T[1], x - T[0]));
+  // every corner of the real plaza's paved and decked areas is on the level top
+  for (const w of Object.values(osm.summit.areas)) for (const p of w) {
+    const [x, z] = toGame(...p);
+    assert.ok(Math.hypot(x - T[0], z - T[1]) <= edgeAt(x, z) - W.rail, `OSM plaza corner ${p} inside the railing`);
+  }
+  // not much bigger than it: south of the tower the real plaza ends ~7 m out
+  assert.ok(namsanFlat(hill, Math.PI / 2) <= P.min + 0.5, 'south: the tower\'s terrace only');
+  assert.ok(Math.min(...hill.flatRad) >= W.terrace[0][0] + 1.5, 'room round the terrace');
+  assert.ok(Math.max(...hill.flatRad) - Math.min(...hill.flatRad) > 15, 'not a disc');
+  // the approximated angles (no OSM area there) are listed, with why
+  assert.ok(Array.isArray(hill.plazaApprox) && hill.plazaWhy);
+  // what stands on the plaza is inside its railing
+  const tw = (dx, dz) => [T[0] + dx, T[1] + dz];
+  const inside = ([x, z], m, what) => assert.ok(Math.hypot(x - T[0], z - T[1]) < plazaEdge(hill, Math.atan2(z - T[1], x - T[0])) - W.rail - m, what);
+  inside(tw(...W.palgak), PALGAK.steps[0][0], 'Palgakjeong\'s base');
+  inside(tw(...W.heart), 1.5, 'the love-lock heart');
+  // the trails that come up to it end on it, and reach the plaza's edge level
+  for (const run of [hill.trail, ...hill.wtrail.filter((r) => r.length)]) {
+    const e = run.at(-1), d = Math.hypot(e[0] - hill.px, e[1] - hill.pz);
+    if (d > hill.flat + 1) continue;
+    assert.ok(d <= namsanFlat(hill, Math.atan2(e[1] - hill.pz, e[0] - hill.px)), 'a trail ends on the plaza');
+  }
+});
