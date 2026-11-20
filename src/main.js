@@ -246,6 +246,8 @@ import { createDelivery } from './game/delivery.js';
 import { createMissionSpot } from './game/mission-spot.js';
 import { createChat } from './game/chat.js';
 import { createGifts } from './game/gifts.js';
+import { createWrapGifts } from './game/wrap-gifts.js';
+import { parseWrap } from './core/wrap.js';
 import { GiftReceipts } from './core/gift-receipts.js';
 import { createBank } from './game/bank.js';
 import { createHanbokRental } from './game/hanbok-rental.js';
@@ -1574,6 +1576,7 @@ const giftUi = new GiftUI({ onAnswer: (gid, ok) => answerGift(gid, ok) });
 // Gifts (game/gifts.js) are set up further down, but joining the first room
 // (just below) already calls off any waiting gifts.
 let giftsGame = null;
+let wrapGifts = null; // gift-wrapped boxes handed to a friend next to you (game/wrap-gifts.js)
 function dropGifts() { giftsGame?.dropGifts(); }
 // "Friends only on the street" (net/area.js shows): when on, only friends
 // see each other there and send each other their movement; inside a shop or
@@ -1652,6 +1655,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
+      if (parseWrap(e)) { wrapGifts?.onMsg(id, parseWrap(e)); return; }
       if (parseTaxi(e)) {
         const m = parseTaxi(e);
         const heard = (tx) => { if (tx.onMsg(id, others.nameOf(id) || '?', m)) action = STALE; };
@@ -1919,6 +1923,7 @@ const chat = createChat({
   get confession() { return mode === 'store' && interior?.confession ? { hear: (s) => interior.confession.hear(s), placeholder: L(roomKit().CONFESSION_TEXT.placeholder) } : null; },
   get me() { return me; }, get camera() { return streetCam(); }, // where a friend request's sender is (core/friends.js whereIs)
   streetPos: () => myPlace(),
+  onFriendLetter: (name, body) => wrapGifts?.onLetter(name, body), // a wrapped gift's letter (game/wrap-gifts.js)
 });
 const { cleanChat, addChatLine } = chat;
 streetFriend = (name) => chat.friendStatus(name) === 'friend';
@@ -2005,11 +2010,14 @@ const shop = new ShopUI({
   canGift: (product) => canGift(product),
   onGift: (product) => startGift(interior?.store, product),
   giftLabel: () => L(GIFT_TEXT.button),
+  canWrap: (product) => !!wrapGifts?.canWrap(product),
+  onWrap: (product) => wrapGifts?.wrap(interior?.store, product),
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
     if (!onSale(product) || itemSoon(shop.store, product)) return false; // a limited edition outside its dates, or not sold yet
     if (product.ingredient) return buyIngredient(product, coins);
+    if (product.letter) return wrapGifts.buyLetter(product, coins); // letter paper: sheets in the bag
     const perfume = product.perfume && perfumes.has(product.id); // (perfume goes to the wardrobe, not the hand)
     if (!perfume && !handReady()) return false;
     if (!wallet.spend(coins, { name: product.name, at: interior?.store.name })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return false; }
@@ -2375,6 +2383,7 @@ function describeEntry(e) {
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
   if (e.kind === 'lipstick') return lipstick.describe(e);
   if (e.kind === 'bait') return fishBait.describe(e);
+  if (e.kind === 'wrap' || e.kind === 'letter') return wrapGifts.describe(e); // (a wrapped gift, letter paper)
   if (e.kind === 'photo') { const p = photos.get(e.ph); return { emoji: '🎞️', name: t('photo.name'), desc: t('photo.desc', { date: p ? new Date(p.at).toLocaleDateString() : '' }), canHold: false, img: p?.src }; } // (a ride photo: game/ride-photo.js)
   if (e.kind === 'perfume') {
     const pf = perfumes.get(e.p);
@@ -2420,6 +2429,7 @@ const bagUi = new BagUI({
     if (e) setHeld(e);
   },
   onDrop: (i) => bag.take(i),
+  more: (e, done, redraw) => wrapGifts?.actions(e, done, redraw) || [], // a wrapped gift: hand it over, add a letter, open it
   seasoning: () => dishUpgrade.seasoning(), // 🧂 in the food tab
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
@@ -2780,6 +2790,11 @@ giftsGame = createGifts({
   refreshItems, refreshWallet, safety, shop, storeData, giftReceipts, receipts, chat,
 });
 const { answerGift, onGiftMsg, canGift, startGift, peopleHere } = giftsGame;
+wrapGifts = createWrapGifts({
+  get interior() { return interior; }, get subway() { return subway; }, get me() { return me; },
+  get others() { return others; }, get wallet() { return wallet; }, get net() { return net; }, get sfx() { return sfx; },
+  bag, chat, gifts: giftsGame, inventory, receipts, giftReceipts, myId, safety, shop, storeData, refreshItems, refreshWallet,
+});
 // Seoul Bank: transfers to other players, operators only for now. (game/bank.js)
 const bankGame = createBank({
   get interior() { return interior; }, get wallet() { return wallet; }, get sfx() { return sfx; },
@@ -7890,6 +7905,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     poopTime: (s) => petCare.poopTimers.list.forEach((x) => { x.left = s; }),
     coins: (n) => (n == null ? wallet.coins : wallet.add(n - wallet.coins, undefined, { r: 'test' })),
     bagList: () => bag.list(),
+    bagAdd: (e) => bag.add(e), // e2e: letter paper without a shop trip
     items: () => inventory.list(),
     toClerk: () => { const c = clerk.ch.root.position; me.root.position.set(c.x, 0, c.z - 1.2); },
     owns: (id) => inventory.has(id),

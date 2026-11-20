@@ -52,7 +52,7 @@ export const goodsKind = (product) => (product?.goods ? 'gift' : FOOD_MODELS.inc
 // walk (pets), spray (perfume), cook with (ingredients), sit on (picnic
 // mat), keep dry (umbrella). A thing you could only carry around is not
 // sold: players felt they had wasted their coins.
-export const usable = (product) => !!product && !!(product.outfit || product.item || product.furniture || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || goodsKind(product) !== 'gift');
+export const usable = (product) => !!product && !!(product.outfit || product.item || product.furniture || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || product.letter || goodsKind(product) !== 'gift');
 // Clothes, shoes and accessories are bought with coins and worn on the
 // spot. A fashion shop or pop-up with nothing to wear yet is coming soon,
 // and so is any shop whose goods could only be carried around (candles,
@@ -130,8 +130,8 @@ export class ShopUI {
   // onGift(product): pick a friend and send it (see ui/gift-ui.js).
   // onRent(product): rent a hanbok, or give it back; rentLeft(product): ms
   // left on this hanbok's rental (0: not renting it).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -273,6 +273,11 @@ export class ShopUI {
     gift.hidden = itemSoon(this.store, product) || !this.canGift?.(product);
     gift.textContent = this.giftLabel?.() || '🎁';
     gift.onclick = () => this.onGift?.(product);
+    // Or gift-wrapped, to carry in the bag and hand over later (game/wrap-gifts.js).
+    const wrap = this.$('product-wrap');
+    wrap.hidden = itemSoon(this.store, product) || !this.canWrap?.(product);
+    wrap.textContent = '🎀 ' + t('wrap.button');
+    wrap.onclick = () => this.onWrap?.(product);
     this.$('product-note').textContent = L(HOW.note);
   }
 

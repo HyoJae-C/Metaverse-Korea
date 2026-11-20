@@ -374,6 +374,7 @@ export function createChat(game) {
     const name = friendName(m.from) || m.name || '?';
     if (safety.isBlocked(null, name)) return;
     if (!friendInbox.add({ ...m, name }).length) return;
+    game.onFriendLetter?.(name, m.body); // a wrapped gift's letter opens on screen (game/wrap-gifts.js)
     const key = convKey(m, friendBackend.uid);
     const reading = friendsUi.open && friendsUi.view === key;
     if (!reading) {
@@ -576,5 +577,12 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  // A wrapped gift's letter (game/wrap-gifts.js) goes as a friend message, so
+  // the server keeps it like any chat (admins can read it, a chat ban stops it).
+  const friendUid = (name) => friendList.friends.find((f) => f.name === name)?.uid || null;
+  const sendLetter = (uid, text) => {
+    const body = filterText(cleanFriendBody(text));
+    return body && !mustSignInToChat() ? sendFriend(uid, body) : false;
+  };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, friendUid, sendLetter, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

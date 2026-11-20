@@ -13,12 +13,15 @@
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
 //   { kind: 'bait', b: '<bait id>', sips: 1-5 (left) } (fishing bait, core/bait.js)
 //   { kind: 'photo', ph: '<photo id>' } (a ride photo, core/ride-photos.js)
+//   { kind: 'wrap', w, s, p, c, op, lt? } (a gift-wrapped box, core/wrap.js)
+//   { kind: 'letter', sips: sheets } (letter paper, core/wrap.js)
 
 import { lipstickEntry } from './lipstick.js';
 import { baitEntry } from './bait.js';
 import { recipeOf } from './recipe-book.js';
 import { isKimchi } from './kimchi-market.js';
 import { photoEntry } from './ride-photos.js';
+import { letterEntry, wrapEntry } from './wrap.js';
 
 export const BAG_KEY = 'mk.bag';
 export const BASE_CAP = 20;
@@ -77,6 +80,8 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
   if (e.kind === 'lipstick') return lipstickEntry(e);
   if (e.kind === 'bait') return baitEntry(e);
   if (e.kind === 'photo') return photoEntry(e);
+  if (e.kind === 'wrap') return wrapEntry(e);
+  if (e.kind === 'letter') return letterEntry(e);
   if (e.kind === 'gift') return giftEntry(e); // a shop purchase, or homemade goods
   if (e.kind === 'coffee' || e.kind === 'food' || e.kind === 'glass') {
     const sips = Math.min(maxSips, e.sips | 0);

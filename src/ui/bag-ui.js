@@ -89,8 +89,10 @@ export class BagUI {
   // own), or null to leave the tab out (only the basic bike).
   // vanity: the wardrobe's perfume and lipsticks (bag.vanityList()):
   // { useLabel(entry), onUse(i), onHold(i), onDrop(i) }.
-  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning }) {
-    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning });
+  // more(entry, done, redraw) → extra buttons for a slot (a wrapped gift's);
+  // describe(e).keep: no throw-away button (it was paid for, game/wrap-gifts.js).
+  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning, more }) {
+    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning, more });
     this.vanSel = -1;
     this.sel = -1;
     this.tab = 'bag';
@@ -188,12 +190,13 @@ export class BagUI {
         h.onclick = () => { const i = this.sel; this.sel = -1; this.onHold(i); };
         row.append(h);
       }
+      if (this.more) row.append(...this.more(e, () => { this.sel = -1; this.hide(); }, () => { this.sel = -1; this.render(); }));
       const drop = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop)); // (not "t": that's the translator)
       drop.onclick = () => {
         if (!confirm(fmt(L(BAG_TEXT.dropAsk), { name: d.name }))) return;
         const i = this.sel; this.sel = -1; this.onDrop(i);
       };
-      row.append(drop);
+      if (!d.keep) row.append(drop);
       info.append(row);
     } else info.append(el('small', 'fine', food ? t(here.length ? 'bag.foodPick' : 'bag.foodEmpty') : L(here.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
     if (food && this.seasoning) { // 🧂 정성 양념: what upgrading a dish uses (game/dish-upgrade.js)
