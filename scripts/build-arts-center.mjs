@@ -177,6 +177,20 @@ const before = [ocx + fx * (operaR + LAWN.from + LAWN.depth + 2.2), ocz + fz * (
 way([plazaMid, before, od], { ko: '오페라하우스 가는 길', en: 'To the Opera House' });
 way([plazaMid, md], { ko: '음악당 가는 길', en: 'To the Music Hall' });
 
+// --- The Information Center: a small kiosk beside the way in (made up) -------------
+const info = (() => {
+  const a = gate, b = [18, 31], len = Math.hypot(b[0] - a[0], b[1] - a[1]), d = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+  for (const side of [-1, 1]) for (const along of [16, 13, 19, 10]) {
+    const n = [-d[1] * side, d[0] * side], c = [a[0] + d[0] * along + n[0] * 6.4, a[1] + d[1] * along + n[1] * 6.4];
+    const corner = (u, v) => [c[0] + d[0] * u + n[0] * v, c[1] + d[1] * u + n[1] * v];
+    const p = [corner(-3.5, -2.5), corner(3.5, -2.5), corner(3.5, 2.5), corner(-3.5, 2.5)];
+    if (p.every(([x, z]) => inPoly(x, z, site) && ringDist(x, z, site) > 3 && !solid(x, z, 4)) && walks.every((w) => p.every(([x, z]) => lineDist(x, z, w.p) > w.w / 2 + 0.8)))
+      return { p: R1(p), door: R1([[c[0] - n[0] * 2.8, c[1] - n[1] * 2.8]])[0] }; // (the side on the walk)
+  }
+  throw new Error('no room for the Information Center');
+})();
+buildings.push({ n: 'info', h: 3.6, p: info.p });
+
 // --- Trees: along the site's hill side and round the lawn ---------------------------
 const trees = [];
 {
@@ -221,6 +235,7 @@ const map = {
       { what: 'the lawn before the Opera House', why: 'Placed from photos and the Naver map (between the round hall and the fountain), not in OSM.' },
       { what: 'the ways from the gate to the halls\' doors', why: 'Made up (roads marked approx): the real way in is steps and terraces.' },
       { what: 'trees', why: 'Made up, along the hill side and round the lawn.' },
+      { what: 'the Information Center', why: 'Made up: a kiosk beside the way in (every district has one).' },
       { what: 'doors', why: 'The Opera House\'s faces the lawn and fountain, the Music Hall\'s the plaza, as in the photos; their exact spots are not in OSM.' },
     ],
     parts: [{ box: [Math.floor(Math.min(...site.map((p) => p[0])) - 2), Math.floor(Math.min(...site.map((p) => p[1])) - 2), Math.ceil(Math.max(...site.map((p) => p[0])) + 2), Math.ceil(Math.max(...site.map((p) => p[1])) + 2)] }],
@@ -260,7 +275,7 @@ const map = {
         zh: '1988年开馆的韩国代表性演出与展览空间，坐落在牛眠山脚下。歌剧院的屋顶形似韩国传统纱帽“笠”，音乐堂则像一把折扇。歌剧院上演歌剧和芭蕾，音乐堂有管弦乐演出。',
       } },
   ],
-  doors: { opera: R1([operaDoor])[0], music: R1([musicDoor])[0], gate: R1([gate])[0], plaza: R1([plazaMid])[0] },
+  doors: { opera: R1([operaDoor])[0], music: R1([musicDoor])[0], gate: R1([gate])[0], plaza: R1([plazaMid])[0], info: info.door },
 };
 
 // --- Checks --------------------------------------------------------------------

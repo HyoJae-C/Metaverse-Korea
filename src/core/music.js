@@ -121,6 +121,7 @@ export class Music {
 
   _playStep(s, t) {
     const tr = this.track, BEAT = 60 / tr.bpm;
+    if (tr.silent) return; // (the Opera Theater: core/concert-player.js plays instead)
     const bar = Math.floor(s / 8) % tr.chords.length;
     const e = s % 8;
     const chord = tr.chords[bar], root = tr.bass[bar];

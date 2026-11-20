@@ -3058,6 +3058,9 @@ function enterStore(item, walkIn = null) {
   // (core/cathedral-mass.js, with the room).
   if (built.stations?.mass && !built.massNpcs) built.massNpcs = new (roomKit().CathedralMass)(built, $('labels'), L);
   interior.massNpcs = built.massNpcs || null;
+  // The Arts Center's Opera Theater: the orchestra, conductor and dancers (core/stage-show.js, with the room).
+  if (built.stations?.stage && !built.stageShow) built.stageShow = new (roomKit().StageShow)(built, $('labels'), L, { music, toast: (s) => shop.toast(s) });
+  interior.stageShow = built.stageShow || null;
   // Its confession room: the priest behind the lattice (core/confession-room.js).
   if (built.stations?.confession && !built.confession) built.confession = new (roomKit().ConfessionPriest)(built, $('labels'), L, (s) => seatFit(built.scene, s));
   interior.confession = built.confession || null;
@@ -3123,6 +3126,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (built.massNpcs) { enterMusicCafe('organ'); shop.toast(L(roomKit().CATHEDRAL_TEXT.welcome)); } // the cathedral: its organ, softly
+  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); } // the Opera Theater: only the orchestra plays
   if (store.genre) enterClub(store.genre);
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
@@ -3355,13 +3359,14 @@ function leaveStore(walkOut = false) {
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
+  interior.stageShow?.leave();
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
   // Every name tag and bubble this room put on screen goes with it (Another
   // Land's ride attendants and guests, the bar regulars, the yoga class),
   // or they'd hang over the street where they last stood.
-  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || []), ...(interior.massNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || []), ...(interior.massNpcs?.all || []), ...(interior.stageShow?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   balloonClown.hideLabels();
   parkTickets.hideLabels();
   clerk = null;
@@ -7350,8 +7355,9 @@ renderer.setAnimationLoop((now) => {
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const steady = steadyWalk && !riding;
   // Walking only in the Quiet Zone (Bukchon) and in the cathedral.
-  const inCathedral = mode === 'store' && !!interior?.massNpcs;
-  if (inCathedral && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
+  const inCathedral = mode === 'store' && !!(interior?.massNpcs || interior?.stageShow); // (and in the Opera Theater)
+  if (interior?.stageShow && mode === 'store' && input.run && mag > 0.05 && interior.stageShow.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().STAGE_TEXT.shh)); }
+  if (inCathedral && interior.massNpcs && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
@@ -7626,6 +7632,7 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     interior?.massNpcs?.update(dt, camera, w, h); // (the cathedral's Mass)
+    interior?.stageShow?.update(dt, camera, w, h); // (the Opera Theater's show)
     interior?.confession?.update(dt, camera, w, h); // (its confession room's priest)
     for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
     for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
@@ -7783,6 +7790,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
+    stage: () => interior?.stageShow?.state ?? null, // the Opera Theater's show (core/stage-show.js)
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),

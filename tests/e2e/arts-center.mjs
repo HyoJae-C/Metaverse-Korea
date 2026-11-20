@@ -57,3 +57,48 @@ if (blocked != null) assert(blocked, 'the Opera House is solid');
 const info = await page.evaluate(() => __mk.renderInfo?.());
 console.log('street render', JSON.stringify(info));
 if (process.env.OUTSIDE) { assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`); await browser.close(); process.exit(); }
+
+// Inside the Opera Theater.
+await page.evaluate(() => __mk.enter('arts-opera-theater'));
+await page.waitForFunction(() => __mk.stage?.(), null, { timeout: 30000 });
+await page.waitForTimeout(1500);
+const waitPart = (part, t = 0) => page.waitForFunction(([p, t]) => { const s = __mk.stage(); return s && s.part === p && s.t >= t; }, [part, t], { timeout: 120000 });
+const view = async (o, wait = 400) => { await page.evaluate((o) => __mk.cam(o), o); await page.waitForTimeout(wait); };
+const seat = await page.evaluate(() => __mk.sitNear(0, 6));
+assert(seat, 'a free seat in the stalls');
+await view({ yaw: 0, pitch: 0.12, dist: 5 }); // (yaw 0 looks at the stage)
+await waitPart('walkIn', 3.4);
+await shot('5-conductor-bows');
+await waitPart('play', 6);
+await shot('6-the-show-from-a-seat');
+const s1 = await page.evaluate(() => __mk.stage());
+assert(s1.part === 'play' && s1.notes > 10, `the orchestra is playing (${s1.piece}, ${s1.notes} notes)`);
+await view({ yaw: 0, pitch: 0.5, dist: 16 });
+await shot('7-the-house');
+// Each note is played once: the count over 8 seconds is the score's.
+{
+  const { OPERA_PROGRAM } = await import('../../src/data/opera-scores.js');
+  const a = await page.evaluate(() => __mk.stage());
+  await page.waitForTimeout(8000);
+  const b = await page.evaluate(() => __mk.stage());
+  const sc = OPERA_PROGRAM.find((p) => p.id === a.piece), beat = 60 / sc.bpm;
+  const due = (t0, t1) => sc.voices.reduce((n, v) => n + v.n.filter(([x]) => x * beat >= t0 && x * beat < t1).length, 0);
+  const lo = due(a.t + 0.6, b.t), hi = due(a.t, b.t + 0.6);
+  assert(b.piece === a.piece && b.notes - a.notes >= lo && b.notes - a.notes <= hi, `8 s of ${a.piece}: ${b.notes - a.notes} notes played, the score has ${lo} to ${hi}`);
+}
+await page.keyboard.press('e');
+await page.waitForTimeout(600);
+await page.evaluate(() => __mk.goto(0, -4.6, 0));
+await waitPart('play', 14);
+await view({ yaw: 0, pitch: 0.42, dist: 3.2 }, 800);
+await shot('8-the-pit-and-the-dance');
+await waitPart('play', 30);
+await view({ yaw: 0.5, pitch: 0.3, dist: 2.4 }, 800);
+await shot('8b-the-dance');
+await page.evaluate(() => __mk.goto(0, -3, 0));
+await view({ yaw: Math.PI, pitch: 0.2, dist: 6 }, 800);
+await shot('9-the-balconies');
+console.log('room render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
+if (!process.env.QUICK) { await waitPart('clap', 3); await page.evaluate(() => __mk.goto(0, -4.6, 0)); await view({ yaw: 0, pitch: 0.3, dist: 3 }); await shot('10-curtain-call'); }
+assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`);
+await browser.close();
