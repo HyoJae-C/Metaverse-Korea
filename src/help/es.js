@@ -16,7 +16,7 @@ export const HELP = {
       '⛴️ El barco taxi del río Han entre los parques del río, y 🚡 el teleférico que sube a Namsan.',
     ] },
     { icon: '🪙', title: 'Ganar dinero', lines: [
-      '📅 Registra tu visita cada día y completa las tres misiones del día para un extra.',
+      '📅 Registra tu visita cada día y haz las cinco misiones del día: ₩30,000 por cada una.',
       'Los guías de las plazas y de los centros de información dan pequeñas misiones. Hazlas y vuelve a informar.',
       'Trabajos: repartos de comida para tiendas, un turno en el puesto pocha, minijuegos con medallas, clases de cocina.',
       'Pesca en el río Han y vende los peces en el mercado de pescado.',

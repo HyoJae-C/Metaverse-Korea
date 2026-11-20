@@ -10,10 +10,10 @@ export const STAMP_NEAR = 1.6; // metres from the stand to use it
 // start, with Yeongdeungpo, Seocho and Gangnam at the back. A stamp not
 // listed here goes at the end, in data/stamps.js order: place it here.
 export const STAMP_ORDER = [
-  'bukchon', 'seongsu', 'gyeongbokgung', 'suragan', // 북촌 · 성수 팝업 · 경복궁 · 수라간
+  'bukchon', 'seongsu', 'gyeongbokgung', 'suragan', // 북촌 · 성수 팝업 · 경복궁 · 김치만들기체험
   'jongmyo', 'hongdae', 'ddp', 'hangang', // 종묘 · 홍대 버스킹 · DDP · 뚝섬 한강공원
   'namsan', 'mangwon-market', 'heunginjimun', 'another-dome', // 남산타워 · 망원시장 · 흥인지문 · 모두야구장
-  'museum', 'hyojae', 'sungnyemun', 'grand-park', // 국립중앙미술관 · 효재대학교 · 숭례문 · 어린이대공원
+  'museum', 'hyojae', 'sungnyemun', 'grand-park', // 국립중앙미술관 · 효재대학교 · 숭례문 · 서울어른도대공원
   'seoul-forest', 'mangwon-pier', 'igansumun', 'yeonnam', // 서울숲 · 망원 한강공원 · 이간수문 · 경의선숲길
   'war-memorial', 'dongmyo-market', 'seokchon', 'yeouido', // 전쟁역사박물관 · 동묘 감자마켓 · 석촌호수 · 여의도 한강공원
   'drone-show', 'banpo-jamwon', 'konext', 'bongeunsa', // 드론쇼 · 반포 한강공원 · 코넥스트 · 봉은사
