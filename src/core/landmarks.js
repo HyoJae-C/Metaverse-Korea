@@ -130,6 +130,16 @@ const OWN_BUILD = {
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
   },
+  artscenter(g, l) {
+    // Seoul Arts Center: the Opera House under its hat, the Music Hall, the
+    // museums and the fountain (core/arts-center-model.js, loaded when the
+    // city is built). The Opera House's foot goes in now, so the far
+    // culling knows where the place stands; the fountain's jets move.
+    box(g, 6, 0.3, 6, l.opera.at[0], 0.15, l.opera.at[1], C.plinth);
+    let tick = null;
+    import('./arts-center-model.js').then(({ buildArtsCenter }) => { tick = buildArtsCenter(g, l); });
+    return (t) => tick?.(t);
+  },
   bongeunsa(g, l) {
     // Bongeunsa's halls, Beopwangru, its lanterns, pagoda, Haesu Gwaneum,
     // bell pavilion and Iljumun (core/bongeunsa-model.js, loaded when the
