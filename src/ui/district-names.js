@@ -6,6 +6,7 @@ export const DISTRICT_NAME = {
   seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', ar: 'سونغسو', vi: 'Seongsu', hi: 'सोंगसू', fr: 'Seongsu', th: 'ซองซู' },
   gyeongbokgung: { en: 'Gyeongbokgung', ko: '경복궁', ja: '景福宮', zh: '景福宫', es: 'Gyeongbokgung', id: 'Gyeongbokgung', ar: 'قصر غيونغبوكغونغ', vi: 'Gyeongbokgung', hi: 'ग्योंगबोकगुंग', fr: 'Gyeongbokgung', th: 'เคียงบกกุง' },
   jongmyo: { en: 'Jongmyo', ko: '종묘', ja: '宗廟', zh: '宗庙', es: 'Jongmyo', id: 'Jongmyo', ar: 'جونغميو', vi: 'Jongmyo', hi: 'जोंगम्यो', fr: 'Jongmyo', th: 'ชงมโย' },
+  changdeokgung: { en: 'Changdeokgung', ko: '창덕궁', ja: '昌徳宮', zh: '昌德宫', es: 'Changdeokgung', id: 'Changdeokgung', ar: 'قصر تشانغدوكغونغ', vi: 'Changdeokgung', hi: 'चांगदेओकगुंग', fr: 'Changdeokgung', th: 'ชางด็อกกุง' },
   euljiro: { en: 'Euljiro', ko: '을지로', ja: '乙支路', zh: '乙支路', es: 'Euljiro', id: 'Euljiro', ar: 'أولجيرو', vi: 'Euljiro', hi: 'उलजीरो', fr: 'Euljiro', th: 'อึลจีโร' },
   myeongdong: { en: 'Myeongdong', ko: '명동', ja: '明洞', zh: '明洞', es: 'Myeongdong', id: 'Myeongdong', ar: 'ميونغدونغ', vi: 'Myeongdong', hi: 'म्योंगदोंग', fr: 'Myeongdong', th: 'มย็องดง' },
   'seoul-station': { en: 'Seoul Station', ko: '서울역', ja: 'ソウル駅', zh: '首尔站', es: 'Estación de Seúl', id: 'Stasiun Seoul', ar: 'محطة سيول', vi: 'Ga Seoul', hi: 'सियोल स्टेशन', fr: 'Gare de Séoul', th: 'สถานีโซล' },

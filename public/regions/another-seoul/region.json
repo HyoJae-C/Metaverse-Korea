@@ -62,6 +62,15 @@
       "anchor": { "place": "Oedaemun, Jongmyo's main gate (on Jongno)", "lat": 37.5713, "lon": 126.994, "local": [0, 0], "nudge": [0, -6], "why": "6 m north of its spot, so Jongno runs on straight from Gwanghwamun's Jong-ro (z -725, 6-12 m south of the real line, as Cheonggyecheon at game width needs the room); the gate stands behind Jongmyo Square on Jongno's north side." }
     },
     {
+      "id": "changdeokgung",
+      "map": "districts/changdeokgung.json",
+      "offset": [
+        -1451,
+        -926
+      ],
+      "anchor": { "place": "Donhwamun, Changdeokgung's main gate", "lat": 37.577861, "lon": 126.989962, "local": [0, 0], "why": "No nudge: the gate on its real spot and the palace on its real ground (scripts/build-changdeokgung.mjs)." }
+    },
+    {
       "id": "itaewon",
       "map": "districts/itaewon.json",
       "offset": [

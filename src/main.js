@@ -5229,7 +5229,7 @@ for (const d of map.meta?.districts || []) {
 // walk in.
 const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
-  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
+  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz], poly: d.enclosure.poly?.map(([x, z]) => [x + ox, z + oz]) });
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
   const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
   if (hanoks.length || inner.length) e.onFirstEnter = () => {
@@ -5296,7 +5296,7 @@ function updateEnclosures(p, dt = 0) {
   // Coming up to the pungmul troupe: what it is (once each time you come up).
   if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
   else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
-  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || DISTRICT_NAME[e.id] || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
   wasInBukchon = inBk;
