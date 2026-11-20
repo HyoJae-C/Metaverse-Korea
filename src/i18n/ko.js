@@ -1036,4 +1036,13 @@ export const KO = {
   "spend.ask": "{n} 쓸까요?",
   "spend.yes": "확인",
   "spend.no": "취소",
+  "ginkgo.shake": "은행나무 흔들기",
+  "ginkgo.leaves": "나뭇잎만 떨어졌어요. 🍂",
+  "ginkgo.nut": "은행 열매가 손에 떨어졌어요. 아무 효과 없고 냄새만 고약해요. 🤢",
+  "ginkgo.nutFull": "은행 열매가 떨어졌는데 가방이 꽉 찼어요.",
+  "ginkgo.name": "은행 열매",
+  "ginkgo.desc": "은행 열매 {n}개. 아무 효과 없고 냄새가 고약해요.",
+  "ginkgo.stepped": "은행을 밟았어요! 몇 분 동안 냄새가 나요. 🤢",
+  "ginkgo.smell": "은행 냄새",
+  "ginkgo.gone": "은행 냄새가 빠졌어요.",
 };

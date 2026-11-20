@@ -1036,4 +1036,13 @@ export const ZH = {
   "spend.ask": "要花{n}吗？",
   "spend.yes": "确定",
   "spend.no": "取消",
+  "ginkgo.shake": "摇银杏树",
+  "ginkgo.leaves": "只掉下了叶子。🍂",
+  "ginkgo.nut": "一颗银杏果掉进了你手里。没有任何效果，只是很臭。🤢",
+  "ginkgo.nutFull": "银杏果掉下来了，可是包满了。",
+  "ginkgo.name": "银杏果",
+  "ginkgo.desc": "银杏果{n}颗。没有任何效果，味道很臭。",
+  "ginkgo.stepped": "你踩到银杏果了！几分钟内都会有臭味。🤢",
+  "ginkgo.smell": "银杏臭味",
+  "ginkgo.gone": "银杏的臭味散了。",
 };

@@ -206,6 +206,7 @@ import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, d
 import { customPetName, setPetName, PET_NAME_MAX } from './core/pet-names.js';
 import { createPetCare, PET_NAME_TEXT, petName } from './game/pet-care.js';
 import { createFrisbee, FRISBEE_TEXT, hasFrisbee } from './game/frisbee.js';
+import { createGinkgo, describeNuts, STINK_ID, STINK_MS, STINK_FX } from './game/ginkgo.js';
 import { newFrisbee } from './core/frisbee.js';
 import { createSubway } from './game/subway.js';
 import { createNoBikeStairs } from './game/no-bike-stairs.js';
@@ -802,7 +803,7 @@ const collision = new CollisionMap(solidBuildings.concat(map.blockers || [], all
 for (const d of map.decks || []) collision.addDeck(d);
 const treeCollision = allExits.length || streams.length ? new CollisionMap(solidBuildings.concat(map.blockers || [], allExits.map((e) => footprintOf(e)), streamWalls)) : collision;
 const streamCollision = new CollisionMap(streams.flatMap(streamLowBlockers));
-const { bounds, obstacles: lawnObstacles, treeSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
+const { bounds, obstacles: lawnObstacles, treeSpots, ginkgoSpots } = buildWorld(map, scene, { lowSpec: lowSpec || !!softwareGL, collision: treeCollision, stairHoles: allExits.map(holeOf), holes: allExits.map(holeOf).concat(streams.flatMap(streamHoles), lakeHoles(map.landmarks)) }); // (a lake set below the ground: core/lakeshore.js)
 // The city's parks and woods are painted a moment later: not part of the wait. (game/base-green.js)
 setTimeout(() => import('./game/base-green.js').then(({ createBaseGreen }) => createBaseGreen({ region, fetchJson: fetchMapFile, map, scene, lowSpec: lowSpec || !!softwareGL })).catch(() => {}), 2500);
 const streamModels = buildStreams(streams, scene);
@@ -834,6 +835,7 @@ const storeData = [...((await storesPromise)?.stores || []), ...((await homesPro
 const storeDescs = createStoreDescs({ url: `${BASE}regions/${regionId}/store-descs.json`, stores: () => storeData });
 const zoneData = (await zonesPromise)?.zones || [];
 const perfumes = perfumeIndex(storeData); // perfume shops' bottles, by product id
+perfumes.set(STINK_ID, { product: { id: STINK_ID, name: { get en() { return t('ginkgo.smell'); } } }, fx: STINK_FX, style: 'funny', icon: '🤢' }); // a squashed ginkgo nut's smell (game/ginkgo.js), worn like a scent
 const storefronts = new Storefronts(scene, shownStores(storeData), map, region.center, collision);
 // Empty shop lots get ad posters (region.json "adPosters" books a spot).
 const adPosters = new AdPosters(scene, map.buildings, storeData, region.center, llToLocal, region.adPosters || {}, import.meta.env.BASE_URL || '/', region.storePosters || {});
@@ -2178,7 +2180,7 @@ const scentSeen = new Map(); // remote id -> { sc, puffIn }
 function updateScents(dt) {
   scentFx.attach(activeScene);
   const now = Date.now();
-  if (myScent && !scent.active(now)) { myScent = null; lastSent = null; shop.toast(L(PERFUME_TEXT.gone)); }
+  if (myScent && !scent.active(now)) { shop.toast(myScent === STINK_ID ? t('ginkgo.gone') : L(PERFUME_TEXT.gone)); myScent = null; lastSent = null; }
   if (myScent && (myPuffIn -= dt) <= 0) {
     myPuffIn = nextPuff();
     const p = me.root.position;
@@ -2195,7 +2197,7 @@ function updateScents(dt) {
       scentSeen.set(id, seen);
       if (near) {
         scentFx.puff(r.x, r.y, r.z, perfumes.get(sc).fx, true);
-        showBubble(o, $('labels'), '🧴 ' + localName(perfumes.get(sc).product.name, getLanguage()), 2500);
+        showBubble(o, $('labels'), (perfumes.get(sc).icon || '🧴') + ' ' + localName(perfumes.get(sc).product.name, getLanguage()), 2500);
       }
       continue;
     }
@@ -2364,6 +2366,7 @@ const DRINK_DESC = { en: '{n} sips left.', ko: '{n}모금 남았어요.', ja: '�
 function describeEntry(e) {
   if (e.kind === 'umbrella') return { emoji: '☂️', name: L(UMB_NAME), desc: L(UMB_DESC), canHold: false };
   if (e.kind === 'duckmold') return { emoji: '🦆', name: L(SNOW_LABELS.moldName), desc: L(SNOW_LABELS.moldDesc), canHold: true };
+  if (e.kind === 'ginkgo') return describeNuts(e, t);
   if (e.kind === 'book') {
     const b = bookById(e.book);
     return { emoji: b?.icon || '📖', name: b ? localName(b.title, getLanguage()) : e.book, desc: L(BOOK_DESC), canHold: true };
@@ -3560,6 +3563,22 @@ const frisbee = createFrisbee({
   get seated() { return seated; }, get riding() { return riding; }, get bag() { return bag; }, get held() { return held; }, get shop() { return shop; },
   get sfx() { return sfx; }, toStreet: (x, z) => peerSpot(x, z), petName, clearAction: () => { action = STALE; },
   handEmpty: (empty) => me.setHeld(empty ? null : heldKind()), // the frisbee in hand is out being thrown
+});
+// Ginkgo trees: shake one for a stinky nut; step on a fallen nut and you
+// smell for a while, worn like a perfume so others see it (src/game/ginkgo.js).
+const ginkgo = createGinkgo({
+  scene, trees: ginkgoSpots, get bag() { return bag; }, get me() { return me; }, t, get sfx() { return sfx; },
+  toast: (m) => shop.toast(m),
+  puff: (x, y, z, fx, big) => { scentFx.attach(activeScene); scentFx.puff(x, y, z, fx, big); },
+  stink: () => {
+    const fresh = myScent !== STINK_ID;
+    scent.spray(STINK_ID, Date.now(), STINK_MS);
+    myScent = STINK_ID; lastSent = null; // others see it at once
+    const p = me.root.position;
+    scentFx.attach(activeScene); scentFx.puff(p.x, p.y, p.z, STINK_FX, true);
+    sfx.pop?.();
+    if (fresh) { shop.toast(t('ginkgo.stepped')); showBubble(myLabel, $('labels'), '🤢', 2500); }
+  },
 });
 // Snowballs and snowmen once the snow has settled (src/game/snowman.js,
 // downloaded when it starts snowing: see the idle tick below).
@@ -6769,6 +6788,7 @@ function updateAction(p, tSec) {
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
     else if (!riding && frisbee.action(p)) next = frisbee.action(p); // fetch with your pet on the lawn
+    else if (!riding && !seated && ginkgo.act(p)) next = ginkgo.act(p); // shake a ginkgo (game/ginkgo.js)
     else if (!riding && sculptureNear(map.landmarks, p.x, p.z)) next = sculptureAct(sculptureNear(map.landmarks, p.x, p.z));
     else if (!riding && muralSpot(p)) next = muralAct();
     else if (!riding && wishSpot(p)) next = wishAct();
@@ -7584,6 +7604,7 @@ renderer.setAnimationLoop((now) => {
   const lx = (tmp.x * 0.5 + 0.5) * w, ly = (-tmp.y * 0.5 + 0.5) * h;
   myTag.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly}px)`;
   if (myLabel.bubble) myLabel.bubble.style.transform = `translate(-50%, -100%) translate(${lx}px, ${ly - 24}px)`;
+  ginkgo.update(dt, p, mode === 'street' && !seated); // fallen ginkgo nuts, and the one under your foot
   updateScents(dt);
 
   // The full map covers the screen, so there is nothing to see behind it:
@@ -7823,6 +7844,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     product: (i) => shop.openProduct(interior.products[i].product),
     held: () => held && { ...held },
     perfumeIds: () => [...perfumes.keys()],
+    ginkgo: () => ginkgo, scentNow: () => myScent, // (tests/e2e/ginkgo.mjs)
     holdNew: (h) => holdNew(h),
     takeout: (i = 0) => orderFood(interior.store.products[i], true),
     giveCoins: (n) => { wallet.add(n, { k: 'ledger.gift' }, { r: 'test' }); refreshWallet(); },

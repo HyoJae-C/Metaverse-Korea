@@ -2,7 +2,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowAtNight } from './weather.js';
-import { SEASON, MIX, leafColor, leafHash } from './season.js';
+import { SEASON, MIX, leafColor, leafHash, ginkgoColor } from './season.js';
+
+const GINKGO_STREET = 0.55, GINKGO_PARK = 0.12; // shares of the street and park round trees that are ginkgos
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -61,7 +63,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  let obstacles = [], treeSpots = [];
+  let obstacles = [], treeSpots = [], ginkgoSpots = [];
   group.add(makeGround(bounds, opts.holes));
   // Land not built yet: one flat grey mesh just over the ground, under
   // everything else (core/districts.js closed).
@@ -134,7 +136,7 @@ export function buildWorld(map, scene, opts = {}) {
     }
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
     const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base && !r.bridge), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
-    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; ginkgoSpots = trees.ginkgos; }
   }
 
   // Snow settles on whatever faces the sky (core/snow-cover.js); not on
@@ -151,7 +153,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds, obstacles, treeSpots };
+  return { group, bounds, obstacles, treeSpots, ginkgoSpots };
 }
 
 export function computeBounds(map) {
@@ -667,7 +669,14 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const bushGreens = [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h));
   // The season's colours (core/season.js): street trees and bushes take
   // theirs here; the parks' round trees picked theirs above.
-  spots.forEach((t, i) => { if (!t[3]) t[3] = leafColor(greens[i % greens.length], leafHash(t[0], t[1]), MIX.street); });
+  // Ginkgos (은행나무), the most common street tree in Seoul: a taller,
+  // slimmer crown of their own, bright yellow in autumn. About half the
+  // street trees, and a few in the parks.
+  spots.forEach((t, i) => {
+    t[4] = leafHash(t[0] * 1.7, t[1] * 0.3) < (i < parkRound ? GINKGO_PARK : GINKGO_STREET);
+    if (t[4]) t[3] = ginkgoColor(greens[i % greens.length], leafHash(t[0], t[1]));
+    else if (!t[3]) t[3] = leafColor(greens[i % greens.length], leafHash(t[0], t[1]), MIX.street);
+  });
   bushes.forEach((b, i) => { b[3] = leafColor(bushGreens[i % bushGreens.length], leafHash(b[0], b[1]), MIX.bush); });
   const out = [];
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
@@ -685,9 +694,14 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     mesh.castShadow = true;
     out.push(mesh);
   };
-  if (spots.length) {
-    instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
-    instanced(spots, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  const round = spots.filter((t) => !t[4]), ginkgos = spots.filter((t) => t[4]);
+  if (round.length) {
+    instanced(round, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
+    instanced(round, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  }
+  if (ginkgos.length) { // (same triangles as a round tree: a tall trunk and an upright oval crown)
+    instanced(ginkgos, new THREE.CylinderGeometry(0.15, 0.22, 2.4, 6).translate(0, 1.2, 0), trunkMat);
+    instanced(ginkgos, new THREE.IcosahedronGeometry(1.25, 1).scale(0.7, 1.45, 0.7).translate(0, 3.6, 0), tint, greens);
   }
   if (pines.length) {
     const pine = mergeGeometries([
@@ -702,6 +716,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   // What stands on the park lawns, for things put down on the grass (picnic
   // mats): [x, z, r] trunks and bushes.
   out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters
+  out.ginkgos = ginkgos.map(([x, z, sz]) => [x, z, sz]); // for shaking and their fallen nuts (game/ginkgo.js)
   out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
   return out;
 }

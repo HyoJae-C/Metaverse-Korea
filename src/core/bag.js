@@ -7,6 +7,7 @@
 //   { kind: 'coffee' | 'glass' | 'food', sips: 1-5, name: '<drink name>' }
 //   { kind: 'umbrella' }
 //   { kind: 'duckmold' } (the snow duck maker, given when it first snows)
+//   { kind: 'ginkgo', n } (ginkgo nuts from shaking a ginkgo: they only stink)
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
 //   { kind: 'lipstick', c: '<lip shade>', sips: 1-5 (uses left) } (core/lipstick.js)
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
@@ -67,6 +68,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
   if (!e || typeof e !== 'object') return null;
   if (e.kind === 'umbrella') return { kind: 'umbrella' };
   if (e.kind === 'duckmold') return { kind: 'duckmold' };
+  if (e.kind === 'ginkgo') return { kind: 'ginkgo', n: Math.max(1, Math.min(99, e.n | 0)) }; // ginkgo nuts (game/ginkgo.js), one slot for them all
   if (e.kind === 'book') return typeof e.book === 'string' && isBook(e.book) ? { kind: 'book', book: e.book } : null;
   if (e.kind === 'perfume') {
     const sips = Math.min(maxSprays, e.sips | 0);

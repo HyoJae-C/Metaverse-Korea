@@ -1033,4 +1033,13 @@ export const ID = {
   "spend.ask": "Pakai {n}?",
   "spend.yes": "OK",
   "spend.no": "Batal",
+  "ginkgo.shake": "Goyang pohon ginkgo",
+  "ginkgo.leaves": "Cuma daun yang jatuh. 🍂",
+  "ginkgo.nut": "Sebutir biji ginkgo jatuh ke tanganmu. Tidak ada gunanya dan baunya busuk. 🤢",
+  "ginkgo.nutFull": "Biji ginkgo jatuh, tapi tasmu penuh.",
+  "ginkgo.name": "Biji ginkgo",
+  "ginkgo.desc": "{n} biji ginkgo. Tidak ada gunanya dan baunya busuk.",
+  "ginkgo.stepped": "Kamu menginjak biji ginkgo! Kamu akan bau selama beberapa menit. 🤢",
+  "ginkgo.smell": "Bau ginkgo",
+  "ginkgo.gone": "Bau ginkgonya sudah hilang.",
 };

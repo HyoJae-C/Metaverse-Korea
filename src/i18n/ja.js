@@ -1036,4 +1036,13 @@ export const JA = {
   "spend.ask": "{n}を使いますか？",
   "spend.yes": "OK",
   "spend.no": "やめる",
+  "ginkgo.shake": "イチョウを揺らす",
+  "ginkgo.leaves": "葉っぱだけ落ちてきた。🍂",
+  "ginkgo.nut": "ぎんなんが手に落ちてきた。効果はなく、においだけがひどい。🤢",
+  "ginkgo.nutFull": "ぎんなんが落ちたけど、バッグがいっぱい。",
+  "ginkgo.name": "ぎんなん",
+  "ginkgo.desc": "ぎんなん{n}個。効果はなく、においがひどい。",
+  "ginkgo.stepped": "ぎんなんを踏んだ！数分間におうよ。🤢",
+  "ginkgo.smell": "ぎんなんのにおい",
+  "ginkgo.gone": "ぎんなんのにおいが消えた。",
 };
