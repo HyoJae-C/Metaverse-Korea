@@ -105,11 +105,26 @@ const width = (r) => {
 };
 const { BUKCHON } = await import('../src/data/bukchon.js?' + Date.now());
 const QUIET_ZONE = BUKCHON.quiet;
+// Changdeokgung is the east neighbour (districts/changdeokgung.json, built by
+// scripts/build-changdeokgung.mjs: run that first). Its wall bulges west of
+// Changdeokgung-gil's line and Donhwamun's forecourt lies at the foot of
+// Changdeokgung-gil: Bukchon's streets stop at them and no hanok stands there.
+const region = readJson('region.json');
+const [ox, oz] = region.districts.find((d) => d.id === 'bukchon').offset;
+const PALACE = (() => {
+  const d = region.districts.find((x) => x.id === 'changdeokgung');
+  if (!d) return [];
+  const m = readJson(d.map), sh = (P) => P.map(([x, z]) => [x + d.offset[0] - ox, z + d.offset[1] - oz]);
+  return [sh(m.meta.enclosure.poly), ...m.areas.filter((a) => a.k === 'plaza').map((a) => sh(a.p))];
+})();
+const PALACE_GAP = 2.5; // room for the wall's roof and a walk along it
+const polyNear = (q, P) => { for (let i = 0; i < P.length; i++) if (segSegDist(q, q, P[i], P[(i + 1) % P.length]) < PALACE_GAP) return true; return false; };
+const inPalace = (q) => PALACE.some((P) => inPoly(q[0], q[1], P) || polyNear(q, P));
 const roads = [];
 for (const r of OSM.roads) {
   if (r.n === '율곡로' || r.n === '삼청로' || r.k === 'primary' || /link$/.test(r.k)) continue; // (Samcheong-ro: its pavements; the road is Gyeongbokgung's map) // (the game's own Yulgok-ro runs along the south edge)
   if (r.n === '북촌로' && r.k !== 'tertiary' && r.k !== 'pedestrian') continue; // (its pavements)
-  let p = clip(r.p, (q) => inArea(q, 0.5));
+  let p = clip(r.p, (q) => inArea(q, 0.5) && !inPalace(q));
   if (p.length < 2 || lengthOf(p) < 8) continue;
   p = simplify(p, 0.4);
   // Detail where it counts (Yozi 2026-11-09: the signature places in full,
@@ -156,8 +171,6 @@ for (const r of roads) delete r.ko;
 // The neighbours' streets that cross Bukchon's ground (Gyeongbokgung's
 // Yulgok-ro along the south edge, its Samcheong-ro in the north-west corner):
 // nothing is built on them.
-const region = readJson('region.json');
-const [ox, oz] = region.districts.find((d) => d.id === 'bukchon').offset;
 const outside = [];
 for (const d of region.districts) {
   if (d.id === 'bukchon') continue;
@@ -186,7 +199,7 @@ const bigs = [];
 let dropped = 0;
 for (const b of OSM.big) {
   const p = convex(b.p);
-  if (!p.every((q) => inArea(q, 1))) continue;
+  if (!p.every((q) => inArea(q, 1) && !inPalace(q))) continue;
   // (streets are drawn wider than 1/4, so a big building beside one shrinks
   // round its middle until it clears it; one a street runs through is left out)
   let k = 1;
@@ -237,7 +250,7 @@ const open = [{ p: openP }, { p: yardP }, ...bigs.map((b) => ({ p: b.p })), ...v
 // (town() keeps every house 1.2 m off a street's edge; Bukchon's walls
 // stand right at the alley, so it is given the streets 2 m narrower)
 const fitRoads = [...roads.map((r) => ({ ...r, w: r.w - 2 })), ...outside];
-const t = town(9, { inside: (q) => inArea(q, 0.8), roads: fitRoads, open });
+const t = town(9, { inside: (q) => inArea(q, 0.8) && !inPalace(q), roads: fitRoads, open });
 // The shops: at the foot of the hill (Bukchon-ro 2-gil, lower Gyedong-gil and
 // lower Bukchon-ro), hanok shop fronts.
 const SHOP_Z = -130;
@@ -257,21 +270,32 @@ for (const r of [twoGil, GYEDONG, BUKCHON_RO, ...['Yunboseon-gil', 'Bukchon-ro 5
     for (let i = before; i < t.buildings.length; i++) shopLots.push({ b: t.buildings[i], road: r });
   }
 }
-// Homes: every street, the wide ones first (their rows are the long, even ones).
-for (const r of order) for (const side of [1, -1]) {
-  t.row(`home:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 8, w: [7.5, 11], h: [5, 5], spot: 1.6, gap: 0.3 });
+// Homes. Bukchon is a sea of roofs: the blocks are filled as full as the
+// current Bukchon (Yozi 2026-11-21: "지금 북촌처럼 밀집"), with big hanok like
+// its ones. Along every street (the wide ones first: their rows are the
+// long, even ones) the biggest hanok that fits, then smaller ones in the
+// gaps; then the same again in rows behind, further and further from the
+// street, until the inside of each block is full.
+const SIZES = [[12, [11, 14]], [10, [9, 12]], [8, [7.5, 11]], [6, [6, 8]], [4.2, [4.5, 6.5]]]; // depth, width
+for (const [depth, w] of SIZES) for (const r of order) for (const side of [1, -1]) {
+  t.row(`home:${depth}:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth, w, h: [5, 5], spot: 1.6, gap: 0.3 });
 }
-// Then small hanok in the gaps left (the alleys of Gahoe-dong are close
-// together: real lots there are tiny), only on the quiet alleys and the
-// small streets.
-for (const r of order) for (const side of [1, -1]) {
-  t.row(`small:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
+for (const back of [4.6, 6.4, 8.4, 10.4, 12.4, 14.6, 17, 20, 23, 26, 30]) for (const [depth, w] of SIZES) for (const r of order) for (const side of [1, -1]) {
+  t.row(`back:${back}:${depth}:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + back, depth, w, h: [5, 5], spot: 1.6, gap: 0.3 });
 }
-// And a row behind (the blocks of Bukchon are full of hanok: from the alleys
-// and the hill you see a sea of roofs, not empty yards).
-for (const r of order) for (const side of [1, -1]) {
-  t.row(`back:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 8.6, depth: 7, w: [6.5, 10], h: [5, 5], spot: 1.6, gap: 0.3 });
-  t.row(`back2:${roads.indexOf(r)}:${side}`, simplify(r.p, 1.5), side, { off: r.w / 2 + 0.3 + 4.8, depth: 4.2, w: [4.5, 6.5], h: [5, 5], spot: 1.6, gap: 0.3 });
+// And the pockets no row reached (short bends, the middles of blocks): a
+// hanok wherever one still fits, turned to face the nearest street.
+for (const [depth] of SIZES) {
+  const w = depth * 1.15;
+  for (let x = AX0 + 2; x < AX1 - 2; x += 1.5) for (let z = AZ1 + 2; z < AZ0 - 2; z += 1.5) {
+    let best = null;
+    for (const r of roads) { const n = nearestOn([x, z], r.p); if (!best || n.d < best.d) best = n; }
+    if (!best || best.d < depth / 2 + 1 || best.d > 60) continue;
+    const f = [(best.at[0] - x) / best.d, (best.at[1] - z) / best.d], u = [-f[1], f[0]]; // f: towards the street; u: along the front
+    const q = (a, b) => [r1(x + u[0] * a + f[0] * b), r1(z + u[1] * a + f[1] * b)];
+    const p = [q(-w / 2, depth / 2), q(w / 2, depth / 2), q(w / 2, -depth / 2), q(-w / 2, -depth / 2)];
+    if (t.fits(p)) t.buildings.push({ h: 5, p });
+  }
 }
 const hanok = t.buildings;
 // Which way each hanok faces (fr, a unit step on the map, front to the street:
