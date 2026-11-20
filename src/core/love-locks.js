@@ -49,6 +49,40 @@ export function preview(body, n = 40) {
   return one.length > n ? one.slice(0, n - 1) + '…' : one;
 }
 
+// A lock for two (supabase/061_pair_locks.sql): two friends side by side,
+// both names on it, each pays half (an odd won goes to the host).
+export const halves = (price) => { const friend = Math.floor(price / 2); return { host: price - friend, friend }; };
+export const PAIR_RADIUS = 6; // m: the friend stands next to you at the heart
+export const PAIR_WAIT = 60 * 1000; // ms either side waits for the other's answer
+
+// Messages between the two games, on the emote channel (JSON, so the note can
+// hold any character). Only the host's ask carries the note; the server
+// checks the friend said yes to exactly that note.
+//   { v: 'ask', to, rid, shape, body }  host → friend
+//   { v: 'ok', to, rid }                friend said yes (the server has it)
+//   { v: 'no', to, rid, why }           friend said no, or it failed
+//   { v: 'done', to, rid }              host: the lock is up (both paid)
+//   { v: 'fail', to, rid, why }         host: it didn't go up (nobody paid)
+const PAIR_VERBS = ['ask', 'ok', 'no', 'done', 'fail'];
+export const pairMsg = (o) => 'll:' + JSON.stringify(o);
+export function parsePair(e) {
+  const s = String(e);
+  if (!s.startsWith('ll:') || s.length > 1200) return null;
+  let o;
+  try { o = JSON.parse(s.slice(3)); } catch { return null; }
+  if (!o || typeof o !== 'object' || !PAIR_VERBS.includes(o.v)) return null;
+  const id = (x) => typeof x === 'string' && /^[\w-]{1,64}$/.test(x);
+  if (!id(o.to) || !id(o.rid)) return null;
+  const m = { v: o.v, to: o.to, rid: o.rid };
+  if (o.v === 'ask') {
+    const c = cleanNote(o.body);
+    if (c.error || !LOCK_SHAPES.includes(o.shape)) return null;
+    Object.assign(m, { shape: o.shape, body: c.body });
+  }
+  if (o.v === 'no' || o.v === 'fail') m.why = typeof o.why === 'string' ? o.why.slice(0, 20) : 'no';
+  return m;
+}
+
 export const newRequestId = () => (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`);
 
 // What the game hands a backend to take the coins locally.
@@ -62,6 +96,7 @@ export class LocalLoveLocks {
   constructor(wallet, storage = globalThis.localStorage, uid = 'me') {
     Object.assign(this, { wallet, storage, uid });
     this.shared = false;
+    this.pairs = false; // a lock for two needs the server
   }
   _all() {
     try { const a = JSON.parse(this.storage.getItem(LOCAL_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; }
@@ -97,6 +132,7 @@ export class SupabaseLoveLocks {
     this.applied = new Set(); // request ids already taken from the local wallet
     this.shared = true;
     this.missing = false; // the SQL isn't set up yet
+    this.pairs = true; // locks for two (061_pair_locks.sql), until the server says it doesn't know them
   }
   get client() { return this.cloud.client; }
   // Won per server unit: 1 (018_won.sql) or 1000 on a server still in coins.
@@ -134,10 +170,60 @@ export class SupabaseLoveLocks {
     }
     return { lock: data.lock, charged: !!data.charged };
   }
+  // The friend says yes to the host's note (nothing is paid yet), or, once
+  // the host has hung it, learns what they paid: { status: 'ok', half } |
+  // { status: 'hung', paid, lock } | { error }. note: the budget book's line.
+  async pairOk({ requestId, host, shape, text }, note) {
+    if (!this.wallet.server) return { error: 'network' };
+    if (!(await this.wallet.flush())) return { error: 'network' };
+    const { data, error } = await this.client.rpc('love_lock_pair_ok', { p_request_id: requestId, p_host: host, p_shape: shape, p_body: text });
+    if (error && this._pairGone(error)) return { error: 'nopair' };
+    const e = this._err(error);
+    if (e) return { error: e };
+    if (!data || (data.status !== 'ok' && data.status !== 'hung')) return { error: data?.status || 'network' };
+    if (data.status === 'ok') return { status: 'ok', half: Number(data.half) * this._sf() };
+    const paid = Number(data.paid) * this._sf() || 0;
+    if (!this.applied.has(requestId)) {
+      this.applied.add(requestId);
+      this.wallet.charged(paid, data, note);
+    }
+    return { status: 'hung', paid, lock: data.lock };
+  }
+  // The host hangs it for both: { lock, charged, paid } or { error } (also
+  // 'waiting': no yes from the friend for this note; 'partner_coins').
+  async hangPair({ requestId, partner, shape, name, text, price }, note) {
+    const c = cleanNote(text);
+    if (c.error) return { error: c.error };
+    if (!LOCK_SHAPES.includes(shape)) return { error: 'shape' };
+    if (!this.wallet.server) return { error: 'network' };
+    if (!(await this.wallet.flush())) return { error: 'network' };
+    const { data, error } = await this.client.rpc('hang_love_lock_pair', { p_request_id: requestId, p_partner: partner, p_shape: shape,
+      p_name: String(name || '?').slice(0, LOVE_LOCK.maxName), p_body: c.body, p_price: Math.round(price / this._sf()) });
+    if (error && this._pairGone(error)) return { error: 'nopair' };
+    const e = this._err(error);
+    if (e) return { error: e };
+    if (!data || data.status !== 'ok') return { error: data?.status || 'network', price: data?.price != null ? data.price * this._sf() : undefined };
+    const paid = Number(data.paid) * this._sf() || 0;
+    if (!this.applied.has(requestId)) {
+      this.applied.add(requestId);
+      if (data.charged) this.wallet.charged(paid, data, note); else this.wallet.charged(0, data);
+    }
+    return { lock: data.lock, charged: !!data.charged, paid };
+  }
+  // The server has no locks for two yet (061 not run): only the one-person lock.
+  _pairGone(error) {
+    const gone = error.code === 'PGRST202' || error.code === '42883' || /could not find the function|does not exist/i.test(error.message || '');
+    if (gone) this.pairs = false;
+    return gone;
+  }
   async page(before = null, n = LOVE_LOCK.pageSize) {
-    let q = this.client.from(TABLE).select('id, shape, name, body, created_at').order('id', { ascending: false }).limit(n + 1);
-    if (before != null) q = q.lt('id', before);
-    const { data, error } = await q;
+    const ask = (cols) => {
+      let q = this.client.from(TABLE).select(cols).order('id', { ascending: false }).limit(n + 1);
+      if (before != null) q = q.lt('id', before);
+      return q;
+    };
+    let { data, error } = await ask('id, shape, name, name2, body, created_at');
+    if (error && (error.code === '42703' || /name2/.test(error.message || ''))) ({ data, error } = await ask('id, shape, name, body, created_at')); // (before 061_pair_locks.sql)
     const e = this._err(error);
     if (e) return { error: e };
     return { rows: data.slice(0, n), more: data.length > n };

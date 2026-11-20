@@ -1041,3 +1041,36 @@ checks the track is on the island, the only way off is the bridge, every
 ride's gate is a walk from it and nothing that moves comes within 2 m of
 the track; `tests/themepark.test.mjs` checks the island lies on the map's
 island.
+
+## Haneul Park and the Nanji Campground (Mapo-gu)
+
+`scripts/build-nanji.mjs` writes `districts/nanji.json`, west of Mangwon,
+from OpenStreetMap (`scripts/data/nanji-osm.json`) and the real ground
+(SRTM, `scripts/data/nanji-dem.json`), all at the real 1/4.
+
+- **The hill** (하늘공원, the old Nanji landfill): its foot is the park's
+  OSM outline (about 280 × 310 m), less the bands of Gangbyeon-buk-ro and
+  Haneulgongwon-ro. Its height is its relief above the riverside at 1/4
+  (17.1 m), and the top is level. The shape comes from the DEM, in a 6 m
+  grid on the `skypark` landmark (`core/skypark-ground.js`).
+- **Ways up**: 하늘길 (north and south, under 20°), the south-east stairs and
+  the west steps (about 35°). All are on their OSM lines. The hill is a
+  blocker, and the top and the ways up are decks through it
+  (`game/nanji-walk.js`, in the first download, because it is how you walk).
+- **On the top** (`game/nanji-park.js`, loaded within 480 m): silver grass
+  (억새) over most of it, the pink muhly (핑크뮬리) field in the north-west
+  corner by the kochia (댑싸리) row, five wind turbines along the south, and
+  the bowl look-out. The fields change with `SEASON` (`FIELD_COLORS`:
+  green in summer, pink, silver and red in autumn, straw in winter).
+- **Bigger on purpose**: only the muhly field, about 3× the real one
+  (1,188 m²). The hill and the campground stay 1/4 (Yozi 2026-11-21).
+- **The campground** (난지캠핑장), inside its OSM outline: 18 tents, 2 fire
+  pits with 6 camp chairs each (sit with friends), the office (난지
+  안내센터, the info desk) and showers. The layout is made up.
+- **Made up**, listed in `meta.approx`: the muhly's size, the walk from
+  Gangbyeon-buk-ro, the top of the stairs (OSM ends them on the lower loop
+  road, not built), the turbines and the bowl (placed from the park's map),
+  and the campground's layout.
+- `tests/nanji.test.mjs` checks the real places, the slopes, that every way
+  up is walkable, and the made-up list. `tests/e2e/nanji.mjs` walks up
+  하늘길 and sits by a fire (`DAY=1` for daytime pictures).

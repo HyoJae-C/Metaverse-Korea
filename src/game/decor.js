@@ -11,6 +11,7 @@ import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
 import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
 import { createHomeFinish } from './home-finish.js';
+import { freeSpot as walkableSpot } from '../core/free-spot.js';
 
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
@@ -82,19 +83,17 @@ export function createDecor(game) {
   }
   // Never shut in by furniture (Yozi 2026-11-16: stuck between a desk and a
   // stool): if a piece now overlaps where I stand, step to the nearest clear
-  // spot. (Not while sitting or lying on a piece: that's inside it.)
-  function unstick() {
-    const p = game.me?.root.position, col = game.interior.collision, r = (game.PLAYER_R || 0.35) + 0.05;
-    if (!p || game.seated || !col.blocked(p.x, p.z, r)) return;
-    const { w, d } = game.interior.room;
-    for (let k = 0.25; k <= 4; k += 0.25) {
-      for (let a = 0; a < 16; a++) {
-        const g = (a / 16) * Math.PI * 2;
-        const x = THREE.MathUtils.clamp(p.x + Math.cos(g) * k, -w / 2 + 0.5, w / 2 - 0.5);
-        const z = THREE.MathUtils.clamp(p.z + Math.sin(g) * k, -d / 2 + 0.5, d / 2 - 0.5);
-        if (!col.blocked(x, z, r)) { p.x = x; p.z = z; return; }
-      }
-    }
+  // spot I can walk to the door from (core/free-spot.js). (Not while sitting
+  // or lying on a piece: that's inside it.) Getting up from a seat (main.js
+  // standUp, `always`): the same, even when the spot is clear but walled in
+  // by other pieces (Yozi 2026-11-20: up from a friend's sofa, stuck).
+  function unstick(always = false) {
+    const p = game.me?.root.position, col = game.interior?.collision, r = (game.PLAYER_R || 0.35) + 0.05;
+    if (!decor || !p || !col || game.seated || (!always && !col.blocked(p.x, p.z, r))) return;
+    const { room, exit } = game.interior;
+    const door = exit ? [exit.x, exit.z - 1.4] : [0, room.d / 2 - 1]; // (where you come in: main.js enterStore)
+    const [x, z] = walkableSpot(col, [p.x, p.z], door, room, r);
+    p.x = x; p.z = z;
   }
   // Catalogue buttons show which pieces are already in the room.
   function markPlaced() {
@@ -472,6 +471,6 @@ export function createDecor(game) {
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
   const api = { finish, visit, labelDecor, lampAct, pieceActs, footprint: () => (footprint ? (footprint.userData.bad ? 'red' : 'green') : null), grid: () => !!floorGrid, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
-    closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
+    closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, unstick, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }

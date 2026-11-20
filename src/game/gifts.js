@@ -24,7 +24,7 @@ export function createGifts(game) {
   const { $, SHOP_ICON, bag, chat, counterUi, giftUi, gifts, inventory, myId, perfumes, refreshItems,
     refreshWallet, safety, shop, storeData } = game;
   function giftFor(store, product) {
-    if (!store || !product || product.adopt || product.umbrella || product.rent || !onSale(product) || itemSoon(store, product)) return null;
+    if (!store || !product || product.adopt || product.umbrella || product.rent || product.letter || !onSale(product) || itemSoon(store, product)) return null;
     const name = product.name;
     const itemId = product.item || product.outfit;
     const it = itemId && ITEMS[itemId];
@@ -151,5 +151,5 @@ export function createGifts(game) {
     if (stale.length) showGiftCards();
     if (giftUi.open && !game.interior) giftUi.close();
   }, 1000);
-  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere };
+  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById };
 }

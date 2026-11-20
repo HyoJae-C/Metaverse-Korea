@@ -1,13 +1,16 @@
 // End-to-end check: bowling with somebody else in the alley. One player bowls
 // alone and the other, on the benches, sees the ball on that lane and the
 // score on its screen; then they play a game together on one lane and both
-// screens keep the same score.
+// screens keep the same score. Before the game, both put the panel away and
+// walk round (on a phone that is how you move): the group stays; walking far
+// from the lanes ends it.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/bowling-mp.mjs http://localhost:4173/ [screenshot dir]
 // (With a build made with VITE_NET_PROVIDER=local, set LOCAL_RELAY=1: the
 // local provider talks over BroadcastChannel, which this script then carries
 // between the two browsers.)
 import { chromium } from 'playwright';
+import { useFakeRealtime } from './fake-realtime.mjs';
 
 const url = process.argv[2] || 'http://localhost:4173/';
 const S = process.argv[3] || null;
@@ -20,7 +23,9 @@ const pages = [];
 async function join(name) {
   const browser = await launch();
   browsers.push(browser);
-  const page = await (await browser.newContext({ viewport: { width: 900, height: 640 } })).newPage();
+  const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
+  if (!process.env.LOCAL_RELAY) await useFakeRealtime(ctx, name); // (no live realtime messages: tests/e2e/fake-realtime.mjs)
+  const page = await ctx.newPage();
   if (process.env.LOCAL_RELAY) {
     await page.exposeFunction('__relay', (name, data) => { for (const q of pages) if (q !== page) q.evaluate(([n, d]) => window.__relayIn?.(n, d), [name, data]).catch(() => {}); });
     await page.addInitScript(() => {
@@ -54,6 +59,7 @@ const act = async (p) => {
   if (await pick.count()) await pick.first().click();
 };
 const until = async (p, fn, arg, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(250); } return false; };
+const group = (p) => p.evaluate(() => { const lb = __mk.arcade().bowling?.lobby; return lb ? { joined: lb.joined.length, host: !!lb.host } : null; });
 const bowl = async (p) => { for (let k = 0; k < 2; k++) { await p.click('#bowling-panel .karaoke-pad', { force: true }); await p.waitForTimeout(450); } };
 
 const a = await join('Alice'), b = await join('Bobby');
@@ -92,6 +98,11 @@ await a.waitForSelector('#bowling-panel:not([hidden])', { timeout: 90000 });
 const invite = a.locator('#bowling-panel .order-actions button', { hasText: 'Bobby' });
 await invite.waitFor({ timeout: 30000 });
 await invite.click();
+// Alice puts the panel away and walks along the lanes: still inviting.
+await a.click('#bowling-panel .sheet-x');
+await a.evaluate(([x, z]) => __mk.place(x - 3, z + 1), [lane.x, lane.z]);
+await a.waitForTimeout(1200);
+assert(await a.isHidden('#bowling-panel') && (await group(a))?.joined === 0, 'Alice walks off with the panel put away: her group stays');
 await until(b, () => /Bowl/.test(__mk.action() || ''));
 await act(b);
 await b.waitForSelector('#bowling-panel:not([hidden])', { timeout: 90000 });
@@ -99,9 +110,14 @@ const joinBtn = b.locator('#bowling-panel .order-actions button', { hasText: 'Jo
 assert(await joinBtn.waitFor({ timeout: 30000 }).then(() => true, () => false), 'Bobby is invited: "Join Alice\'s game" on his panel');
 await joinBtn.click();
 const start = a.locator('#bowling-panel .order-actions .primary', { hasText: '2' });
-await start.waitFor({ timeout: 30000 });
+assert(await start.waitFor({ timeout: 30000 }).then(() => true, () => false), 'Bobby joins: Alice\'s panel comes back up with Start');
+// Bobby waits for her walking round too.
+await b.click('#bowling-panel .sheet-x');
+await b.evaluate(([x, z]) => __mk.place(x + 3, z + 2), [lane.x, lane.z]);
+await b.waitForTimeout(1200);
+assert((await group(b))?.host && (await group(a))?.joined === 1, 'Bobby walks round with the panel put away: still in Alice\'s group');
 await start.click();
-await b.waitForSelector('#bowling-panel .karaoke-pad', { timeout: 30000 });
+assert(await b.waitForSelector('#bowling-panel .karaoke-pad', { timeout: 30000 }).then(() => true, () => false), 'Alice starts: the game comes up on Bobby\'s panel too');
 // Six turns: whoever has the ball bowls.
 for (let k = 0; k < 6; k++) {
   const who = await Promise.all([a, b].map((p) => p.evaluate(() => /^Your turn/.test(document.querySelector('#bowling-panel .karaoke-status')?.textContent || ''))));
@@ -117,6 +133,21 @@ assert(ra[0].rolls.length > 0 && ra[1].rolls.length > 0, 'both have bowled');
 assert(JSON.stringify(ra) === JSON.stringify(rb), `the same score on both screens ${JSON.stringify(ra)} / ${JSON.stringify(rb)}`);
 await shot(a, 'match-alice');
 await shot(b, 'match-bobby');
+// Walking far from the lanes ends a group: Alice leaves the game, invites
+// Bobby again and walks to the far end of the alley.
+await a.click('#bowling-panel .sheet-x');
+await a.evaluate(([x, z]) => __mk.place(x, z), [lane.x, lane.z]);
+await a.waitForTimeout(800);
+await until(a, () => /Bowl/.test(__mk.action() || ''));
+await act(a);
+await a.waitForSelector('#bowling-panel:not([hidden])', { timeout: 30000 });
+const again = a.locator('#bowling-panel .order-actions button', { hasText: 'Bobby' });
+await again.waitFor({ timeout: 30000 });
+await again.click();
+assert(!!(await group(a)), 'Alice invites Bobby again');
+await a.click('#bowling-panel .sheet-x');
+await a.evaluate(([x, z]) => __mk.place(x - 14, z + 8), [lane.x, lane.z]);
+assert(await until(a, () => !__mk.arcade().bowling.lobby, null, 5000), 'walking far from the lanes ends her group');
 console.log('errors:', errors);
 assert(!errors.length, 'no page errors');
 for (const br of browsers) await br.close();
