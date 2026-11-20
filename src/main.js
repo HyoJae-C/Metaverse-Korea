@@ -3588,6 +3588,7 @@ const snowman = lazyPanel(() => import('./game/snowman.js').then(({ createSnowma
   get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
   get onFoot() { return !riding && !seated; }, get look() { return myLook; },
   get heldKind() { return heldKind(); },
+  groundY: (x, z) => hillY(map.landmarks, x, z) || yardY(map.landmarks, x, z) || terraceY(map.landmarks, x, z) || buskingGroundY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) || hanBridges.y(x, z), // snowballs sit on the hills too (Namsan, Naksan, Bugaksan...)
   snowNews: () => { // the snow has settled: a snow duck maker for the bag (once), and the news
     const got = !bag.has('duckmold') && held?.kind !== 'duckmold' && bag.add({ kind: 'duckmold' });
     shop.toast(L(got ? SNOW_LABELS.snowNewsGot : SNOW_LABELS.snowNews));

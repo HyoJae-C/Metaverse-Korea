@@ -197,6 +197,7 @@ export function createSnowman(game) {
   let holding = null, glued = null, acc = 0, prevP = null, prevRy = 0;
   // The snow duck maker in my hand, and my snow ducks: { x, z, ry }.
   let duckAt = 0, snowNews = false;
+  const ground = (x, z) => game.groundY?.(x, z) || 0; // up Namsan and the other hills: on the slope, not under it
   const mold = () => game.heldKind === 'duckmold'; // (from the bag: core/bag.js)
   const ducks = [];
   const duckDrawn = new Map(); // owner -> { s (their state), groups }
@@ -466,7 +467,7 @@ export function createSnowman(game) {
       const d = duckDrawn.get(id);
       if (d && d.s === s) continue;
       for (const g of d?.groups || []) g.removeFromParent();
-      const groups = parseDucks(s).map((k) => { const g = makeDuck(); g.position.set(k.x, 0, k.z); g.rotation.y = k.ry; game.scene.add(g); return g; });
+      const groups = parseDucks(s).map((k) => { const g = makeDuck(); g.position.set(k.x, ground(k.x, k.z), k.z); g.rotation.y = k.ry; game.scene.add(g); return g; });
       duckDrawn.set(id, { s, groups });
     }
     for (const [id, d] of duckDrawn) if (!now.has(id)) { for (const g of d.groups) g.removeFromParent(); duckDrawn.delete(id); }
@@ -626,7 +627,7 @@ export function createSnowman(game) {
       let d = drawn.get(id);
       if (!d) {
         d = { m: makeBallModel(), x: b.x, z: b.z, n: 0, h: 0, ry: 0 };
-        d.m.group.position.set(b.x, 0, b.z);
+        d.m.group.position.set(b.x, ground(b.x, b.z), b.z);
         game.scene.add(d.m.group);
         drawn.set(id, d);
       }
@@ -641,7 +642,7 @@ export function createSnowman(game) {
         _q.setFromAxisAngle(_axis, step / (D / 2));
         d.m.spin.quaternion.premultiply(_q);
       }
-      d.m.group.position.set(d.x, 0, d.z);
+      d.m.group.position.set(d.x, ground(d.x, d.z), d.z);
       d.m.spin.position.y = D / 2;
       d.m.body.scale.setScalar(D);
       if (d.n !== b.n || d.h !== (b.h || 0) || d.ry !== (b.ry || 0) || d.t !== (b.t || null)) {
