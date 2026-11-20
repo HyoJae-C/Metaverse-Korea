@@ -260,7 +260,10 @@ export function mangwon() {
   ];
   return {
     map: {
-      meta: { district: 'mangwon', source: 'scripts/build-mangwon.mjs, at 1/4 on the real place: streets, Mangwon Market\'s alley and Mangwon Station from OpenStreetMap (© OpenStreetMap contributors, ODbL; scripts/data/mangwon-osm.json); the bank drawn straight (within 3 m of the real one). Gangbyeon-buk-ro is drawn as one road. Every building, stall and shop is fictional.' },
+      meta: { district: 'mangwon', source: 'scripts/build-mangwon.mjs, at 1/4 on the real place: streets, Mangwon Market\'s alley and Mangwon Station from OpenStreetMap (© OpenStreetMap contributors, ODbL; scripts/data/mangwon-osm.json); the bank drawn straight (within 3 m of the real one). Gangbyeon-buk-ro is drawn as one road. Every building, stall and shop is fictional.',
+        // (two boxes, so Nanji's Haneul Park and riverside, north-west of the
+        // corner, stay out of Mangwon's one big box: scripts/build-nanji.mjs)
+        parts: [{ box: [-155, -423, 205, 339] }, { box: [-250, -216, -155, 170] }] },
       roads, buildings, rail: [], areas, blockers, pois, landmarks,
     },
     lots,
@@ -395,6 +398,7 @@ export const PARK = {
     rail: [-188, 150],
     pier: { x: -20, len: 9 },
     fishBuy: [-12, 4.2, 0],
+    bait: [-15.2, 4.2, 0], // the bait stall grandpa (PR #663)
     fishing: [[-46, 0.75], [-26, 0.75], [-20, -8.2], [-60, 0.75]],
     kiosk: [42, 6.6, Math.PI], // MANGWON 24, facing the river
     tables: [[33.6, 3.4], [49.6, 3.4]],
