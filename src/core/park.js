@@ -14,6 +14,7 @@ import * as droneShow from './drone-show.js';
 import { darkness } from './weather.js';
 import { mergeStatic } from './merge-static.js';
 import { COUNTER_H, KIOSK_GOODS_X, KIOSK_CLERK_X } from './counter-face.js';
+import { MIX, leafHex, leafHash } from './season.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 
 const mats = {};
@@ -272,7 +273,7 @@ export function buildPark(store, ROOM, EXIT) {
   // Trees on the grass (the left corner is the market's).
   for (const [x, z] of [[-4, 12.2], [9, 12], [24.6, 12], [-15, -1], [4, 9]]) {
     box(0.4, 1.6, 0.4, x, 0.8, z, '#8a5a3a');
-    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 1), mat('#5fae5a'));
+    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(1.4, 1), mat(leafHex('#5fae5a', leafHash(x, z), MIX.street))); // (the season's colours, core/season.js)
     leaf.position.set(x, 2.6, z);
     scene.add(leaf);
     block(x, z, 0.8, 0.8);

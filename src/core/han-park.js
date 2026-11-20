@@ -21,6 +21,7 @@ import { COUNTER_H, SIGN_ABOVE, KIOSK_GOODS_X, KIOSK_CLERK_X } from './counter-f
 import * as droneShow from './drone-show.js';
 import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
+import { MIX, leafHex, leafHash } from './season.js';
 const { droneShowAt, nextDroneShow, BARGE, LIFT_SECONDS } = droneShow;
 const DRONE_SIGN = { ko: '드론 라이트쇼', en: 'Drone Light Show', ja: 'ドローンライトショー', zh: '无人机灯光秀' };
 const DRONE_NEXT = { ko: '다음 공연', en: 'Next show', ja: '次の公演', zh: '下一场' };
@@ -122,7 +123,7 @@ export function buildHanPark(store, L) {
   const crown = new THREE.IcosahedronGeometry(1.4, 1);
   for (const [x, z] of L.trees || []) {
     box(0.4, 1.6, 0.4, x, 0.8, z, '#8a5a3a');
-    const leaf = new THREE.Mesh(crown, mat('#5fae5a'));
+    const leaf = new THREE.Mesh(crown, mat(leafHex('#5fae5a', leafHash(x, z), MIX.street))); // (the season's colours, core/season.js)
     leaf.position.set(x, 2.6, z);
     group.add(leaf);
     block(x, z, 0.8, 0.8);

@@ -11,6 +11,7 @@ import { addSnowCover } from './snow-cover.js';
 import { addBrickPattern } from './brick-pattern.js';
 import { yardFrame, yardHeightAt } from './cathedral-yard-ground.js';
 import { pointInPoly } from './collision.js';
+import { MIX, leafHex, leafHash } from './season.js';
 
 const mats = {};
 const mat = (c, snow) => (mats[c + (snow ? 's' : '')] ||= snow ? addSnowCover(new THREE.MeshLambertMaterial({ color: c })) : bricks(c, new THREE.MeshLambertMaterial({ color: c, flatShading: true })));
@@ -216,7 +217,7 @@ export function buildYard(g, l) {
     if (!pointInPoly(p[0], p[1], base)) continue;
     const y = Y(p);
     box([0.4 * sc, 0.4 * sc], 3 * sc, p[0], y + 1.5 * sc, p[1], C.trunk);
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1 * sc, 0), mat(C.leaf));
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1 * sc, 0), mat(leafHex(C.leaf, leafHash(a, s), MIX.park))); // (the season's colours, core/season.js)
     crown.position.set(p[0], y + 3.9 * sc, p[1]);
     g.add(crown);
   }

@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { stoneTexture, smallGate, MERLON, WALL_STONE } from './city-wall-parts.js';
 import { addSnowCover } from '../core/snow-cover.js';
 import { northBox } from '../core/north-ground.js';
+import { MIX, leafColor, leafHash } from '../core/season.js';
 
 const CELL = 8; // m: the hills' ground grid
 const SINK = 0.15; // the grid is drawn this much lower (you walk on the true height)
@@ -156,7 +157,7 @@ export function buildNorthWall({ scene, l, y }) {
       const crowns = new THREE.InstancedMesh(crown, mat, spots.length);
       spots.forEach(([x, h, z, sc], i) => {
         crowns.setMatrixAt(i, m4.compose(p3.set(x, h - 0.5, z), q, s3.set(sc, sc * (0.9 + (n % 5) * 0.08), sc)));
-        crowns.setColorAt(i, greens[n++ % greens.length]);
+        crowns.setColorAt(i, leafColor(greens[n % greens.length], leafHash(n++), MIX.wood)); // (the season's colours, core/season.js)
       });
       crowns.computeBoundingSphere();
       crowns.name = 'woods-north';
