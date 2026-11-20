@@ -11,6 +11,7 @@
 // chat in someone else's name.
 import { createClient } from '@supabase/supabase-js';
 import { count } from '../meter.js';
+import { createPresenceThrottle } from '../rate.js';
 
 // One client (one websocket) shared by every room we are in. cfg.accessToken
 // (optional) returns the player's sign-in token, so private channels and the
@@ -60,6 +61,9 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
   const early = new Map(); // id -> latest state
   const EARLY_MAX = 64;
   let gone = false; // disconnect() was called
+  // Look changes reach presence at most every 3 s (net/rate.js: too many
+  // presence updates and the server cuts us off, so others see us vanish).
+  const presence = createPresenceThrottle((p) => channel?.track(p)?.catch?.(() => {}));
 
   return {
     async connect({ room, self: me, listenOnly = false }) {
@@ -140,7 +144,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
           if (status === 'SUBSCRIBED') {
             // Also after the client rejoined by itself (a network blip): the
             // server forgot our presence then, so announce ourselves again.
-            if (!listening) await ch.track({ name: self.name, look: self.look });
+            if (!listening) { presence.clear(); await ch.track({ name: self.name, look: self.look }); }
             if (!settled) {
               settled = true;
               clearTimeout(timeout);
@@ -182,19 +186,20 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
       self = { ...self, look };
       if (channel) count('em');
       channel?.send({ type: 'broadcast', event: 'l', payload: { id: self.id, look } });
-      if (!listening) channel?.track({ name: self.name, look }); // so newcomers see it too
+      if (!listening && channel) presence.track({ name: self.name, look }); // so newcomers see it too (throttled)
     },
     setListenOnly(on) {
       if (on === listening) return;
       listening = on;
-      if (on) channel?.untrack();
-      else channel?.track({ name: self.name, look: self.look });
+      if (on) { presence.clear(); channel?.untrack(); }
+      else if (channel) presence.now({ name: self.name, look: self.look });
     },
     updateSelf(me) {
       self = me;
     },
     disconnect() {
       gone = true;
+      presence.clear();
       if (channel) client.removeChannel(channel);
       channel = null;
       early.clear();
