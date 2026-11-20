@@ -2086,6 +2086,7 @@ const petCare = createPetCare({
   get me() { return me; }, get scene() { return scene; }, get activeScene() { return activeScene; },
   get mode() { return mode; }, get riding() { return riding; }, get seated() { return seated; },
   get indoors() { return petIndoors(); },
+  get aboard() { return !!(seoulDal.busy || boatTaxi.busy || namsanCable.busy || ride); }, // (Seoul Dal, a boat taxi, the cable car, a park ride)
   get fences() { return petFences(); },
   get clerk() { return clerk; }, get inventory() { return inventory; }, get wallet() { return wallet; },
   get shop() { return shop; }, get sfx() { return sfx; },
