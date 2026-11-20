@@ -17,14 +17,17 @@ const ORANGE = C(['#ec8a28', '#dd7424', '#f0a03a']); // zelkova, cherry
 const BROWN = C(['#b8803a', '#a8743a']); // oak, late plane trees
 
 // How each kind of planting mixes its colours in autumn (weights, any sum).
-//   street: Seoul's avenues are ginkgo and zelkova, so mostly yellow.
-//   park:   a big wood (Seoul Forest), maples among the ginkgo: the richest.
+// Every round (broadleaf) tree turns; the green left in the city is the
+// pointed trees, which are conifers (Yozi 2026-11-20: tell the kinds apart
+// by shape). Ginkgos have their own shape and are always yellow (ginkgoColor).
+//   street: the round trees on the avenues, zelkova and plane trees.
+//   park:   a big wood (Seoul Forest), maples among them: the most red.
 //   wood:   a hillside wood seen from afar (Bugaksan, Naksan, Jongmyo).
 //   bush:   shrubs stay mostly green, a few going red.
 export const MIX = {
-  street: { green: 0.14, yellow: 0.56, orange: 0.16, red: 0.1, brown: 0.04 },
-  park: { green: 0.12, yellow: 0.36, orange: 0.18, red: 0.3, brown: 0.04 },
-  wood: { green: 0.26, yellow: 0.24, orange: 0.2, red: 0.22, brown: 0.08 },
+  street: { green: 0, yellow: 0.3, orange: 0.34, red: 0.2, brown: 0.16 },
+  park: { green: 0, yellow: 0.3, orange: 0.24, red: 0.38, brown: 0.08 },
+  wood: { green: 0, yellow: 0.3, orange: 0.28, red: 0.3, brown: 0.12 },
   bush: { green: 0.55, yellow: 0.05, orange: 0.12, red: 0.28, brown: 0 },
 };
 
@@ -54,4 +57,9 @@ export function leafHex(greenHex, h, mix = MIX.street, season = SEASON) {
   if (season !== 'autumn') return greenHex;
   if (!greenCache.has(greenHex)) greenCache.set(greenHex, new THREE.Color(greenHex));
   return '#' + leafColor(greenCache.get(greenHex), h, mix, season).getHexString();
+}
+
+// A ginkgo (은행나무): bright yellow in autumn, its green otherwise.
+export function ginkgoColor(green, h, season = SEASON) {
+  return season === 'autumn' ? YELLOW[Math.floor(leafHash(h * 1000) * YELLOW.length) % YELLOW.length] : green;
 }
