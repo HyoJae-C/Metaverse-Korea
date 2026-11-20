@@ -16,7 +16,7 @@ export const HELP = {
       '⛴️ Le bateau-taxi du fleuve Han entre les parcs du fleuve, et 🚡 le téléphérique qui monte à Namsan.',
     ] },
     { icon: '🪙', title: 'Gagner de l\'argent', lines: [
-      '📅 Pointe chaque jour, et termine les trois missions du jour pour un bonus.',
+      '📅 Pointe chaque jour, et fais les cinq missions du jour : 30 000 ₩ chacune.',
       'Les guides des places et des centres d\'information donnent de petites missions. Fais-les puis reviens au rapport.',
       'Petits boulots : livraisons de repas pour les boutiques, un service au stand pocha, mini-jeux avec médailles, cours de cuisine.',
       'Pêche au fleuve Han et vends tes poissons au marché aux poissons.',

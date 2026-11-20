@@ -16,7 +16,7 @@ export const HELP = {
       '⛴️ Taksi perahu Sungai Han antar taman sungai, dan 🚡 kereta gantung ke Namsan.',
     ] },
     { icon: '🪙', title: 'Cara dapat uang', lines: [
-      '📅 Absen setiap hari, dan selesaikan tiga misi hari ini untuk bonus.',
+      '📅 Absen setiap hari, dan kerjakan lima misi hari ini: ₩30.000 untuk tiap misi.',
       'Pemandu di alun-alun dan Pusat Informasi memberi misi kecil. Kerjakan lalu kembali melapor.',
       'Kerja: antar makanan untuk toko, jaga warung pocha, minigame dengan medali, kelas memasak.',
       'Pancing ikan di Sungai Han dan jual di pasar ikan.',

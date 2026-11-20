@@ -20,7 +20,7 @@ export const STAMPS = [
   },
   {
     id: 'museum', place: { store: 'national-museum' }, color: '#2b4c8c', shape: 'square',
-    name: { ko: '국립중앙미술관', en: 'National Art Museum', ja: '国立中央美術館', zh: '国立中央美术馆' },
+    name: { ko: '국립중앙미술관', en: 'National Central Art Museum', ja: '国立中央美術館', zh: '国立中央美术馆' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<rect x="66" y="62" width="68" height="56" rx="2"/><rect x="73" y="69" width="54" height="42"/><path d="M76 106 l15 -18 l10 11 l8 -8 l15 15" /><circle cx="114" cy="80" r="4"/>',
   },
@@ -131,8 +131,11 @@ export const STAMPS = [
     icon: '<path d="M44 124 q-4 -30 26 -38 q30 -8 60 -4 q30 4 28 30 q-2 12 -14 12 h-88 q-10 0 -12 0 z"/><path d="M62 96 q38 -10 76 -2"/><path d="M60 110 q40 -8 84 0"/><path d="M90 124 v-12 h20 v12"/><path d="M36 138 h128"/>',
   },
   {
+    // at the kimchi class in Bukchon; the id is from the shop's old name (수라간),
+    // kept so stamps already collected still count. A stamp at a shop goes by
+    // the shop's name (tests/place-names.test.mjs).
     id: 'suragan', place: { store: 'sonmat-kimchi' }, color: '#1f7a5c', shape: 'square',
-    name: { ko: '수라간', en: 'Suragan Kitchen', ja: '水刺間', zh: '水剌间' },
+    name: { ko: '김치만들기체험', en: 'Kimchi Making Class', ja: 'キムチ作り体験', zh: '泡菜制作体验' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M64 98 h72 q-4 26 -36 26 q-32 0 -36 -26 z M60 98 h80"/><path d="M84 88 q-6 -8 0 -16 q6 -8 0 -16 M100 88 q-6 -8 0 -16 q6 -8 0 -16 M116 88 q-6 -8 0 -16 q6 -8 0 -16"/>',
   },
@@ -145,7 +148,7 @@ export const STAMPS = [
   },
   {
     id: 'hyojae', place: { store: 'hyojae-academy' }, color: '#3d3a8a', shape: 'square',
-    name: { ko: '효재대학교', en: 'Hyojae University', ja: 'ヒョジェ大学', zh: '孝才大学' },
+    name: { ko: '효재대학교', en: 'Hyojae University', ja: 'ヒョジェ大学', zh: '孝在大学' },
     gu: { ko: '서대문구', en: 'Seodaemun-gu', ja: '西大門区', zh: '西大门区' },
     icon: '<path d="M100 60 l42 16 l-42 16 l-42 -16 z M76 84 v18 q24 14 48 0 v-18 M138 78 v22"/><path d="M70 120 h28 q2 0 2 3 q0 -3 2 -3 h28 v10 h-28 q-2 0 -2 3 q0 -3 -2 -3 h-28 z"/>',
   },

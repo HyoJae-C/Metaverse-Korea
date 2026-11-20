@@ -19,7 +19,7 @@ export const HELP = {
       '⛴️ Han River boat taxi between the river parks, and 🚡 the cable car up Namsan.',
     ] },
     { icon: '🪙', title: 'Earning money', lines: [
-      '📅 Check in every day, and finish today\'s three missions for a bonus.',
+      '📅 Check in every day, and do today\'s five missions: ₩30,000 for each one.',
       'Guides on the squares and at Information Centers hand out small missions. Do them and report back.',
       'Work: food deliveries for shops, a shift at the pocha stall, minigames with medals, cooking classes.',
       'Catch fish at the Han River and sell them at the fish market.',

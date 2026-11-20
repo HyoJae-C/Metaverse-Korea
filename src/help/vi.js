@@ -16,7 +16,7 @@ export const HELP = {
       '⛴️ Taxi thuyền sông Hàn nối các công viên ven sông, và 🚡 cáp treo lên Namsan.',
     ] },
     { icon: '🪙', title: 'Cách kiếm tiền', lines: [
-      '📅 Điểm danh mỗi ngày, và hoàn thành ba nhiệm vụ hôm nay để nhận thưởng.',
+      '📅 Điểm danh mỗi ngày, và làm năm nhiệm vụ hôm nay: mỗi nhiệm vụ ₩30.000.',
       'Hướng dẫn viên ở quảng trường và Trung tâm thông tin giao nhiệm vụ nhỏ. Làm xong rồi quay lại báo cáo.',
       'Làm việc: giao đồ ăn cho cửa hàng, làm ở quán pocha, minigame có huy chương, lớp nấu ăn.',
       'Câu cá ở sông Hàn rồi bán ở chợ cá.',
