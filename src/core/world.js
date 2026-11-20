@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowAtNight } from './weather.js';
+import { SEASON, MIX, leafColor, leafHash } from './season.js';
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -556,7 +557,10 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   // Round crowns in the parks: mostly green, some ginkgo yellow.
   const parkGreens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d, 0x6fb85f].map((h) => new THREE.Color(h));
   const yellows = [0xf2c94c, 0xe8b730, 0xf5d76e].map((h) => new THREE.Color(h));
-  const crownColor = (h) => (h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
+  // (In autumn, core/season.js: the parks are the most colourful. h is
+  // hashed again, as callers pass the same h that picked pine or not.)
+  const crownColor = (h) => (SEASON === 'autumn' ? leafColor(parkGreens[Math.floor(h * 1000) % parkGreens.length], leafHash(h * 7.13), MIX.park)
+    : h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
@@ -660,6 +664,11 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const pos = new THREE.Vector3();
   const up = new THREE.Vector3(0, 1, 0);
   const greens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d].map((h) => new THREE.Color(h));
+  const bushGreens = [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h));
+  // The season's colours (core/season.js): street trees and bushes take
+  // theirs here; the parks' round trees picked theirs above.
+  spots.forEach((t, i) => { if (!t[3]) t[3] = leafColor(greens[i % greens.length], leafHash(t[0], t[1]), MIX.street); });
+  bushes.forEach((b, i) => { b[3] = leafColor(bushGreens[i % bushGreens.length], leafHash(b[0], b[1]), MIX.bush); });
   const out = [];
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
   const tint = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -689,7 +698,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     instanced(pines, new THREE.CylinderGeometry(0.14, 0.2, 1.2, 6).translate(0, 0.6, 0), trunkMat);
     instanced(pines, pine, tint, [0x5f9e5a, 0x6fae62, 0x4f8f4f].map((h) => new THREE.Color(h)), 1.1);
   }
-  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
+  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, bushGreens, 0.8);
   // What stands on the park lawns, for things put down on the grass (picnic
   // mats): [x, z, r] trunks and bushes.
   out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters

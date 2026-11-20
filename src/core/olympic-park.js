@@ -6,6 +6,7 @@
 // (PEACE_GATE_PILLARS), so these are only visual.
 import * as THREE from 'three';
 import { matCache } from './three-kit.js';
+import { SEASON } from './season.js';
 
 const mat = matCache();
 
@@ -42,7 +43,7 @@ export function loneTree(g) {
   trunk.position.y = 3.2;
   g.add(trunk);
   for (const [x, y, z, r] of [[0, 7.5, 0, 3.6], [2.2, 6.6, 0.6, 2.4], [-2.1, 6.8, -0.4, 2.5], [0.4, 6.4, 2.2, 2.2], [-0.5, 6.5, -2.2, 2.3]]) {
-    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), new THREE.MeshLambertMaterial({ color: '#4f9a45', flatShading: true }));
+    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), new THREE.MeshLambertMaterial({ color: SEASON === 'autumn' ? '#e3b23c' : '#4f9a45', flatShading: true })); // (autumn: the old willow goes gold, core/season.js)
     c.position.set(x, y, z);
     g.add(c);
   }

@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
+import { SEASON } from './season.js';
 import { statueFace } from './statue-face.js';
 import { heavenlyKing } from './heavenly-kings.js';
 import { JOGYESA as J, canopySlots, canopySpan, canopyPoles, wallRuns, WALL } from '../data/jogyesa.js';
@@ -89,7 +90,8 @@ function pagodaTree(T) {
     limb.rotation.set(Math.sin(a) * lean, 0, -Math.cos(a) * lean);
   }
   const r = T.r;
-  for (const [x, y, z, s, c] of [[0, T.h - 2.5, 0, 1, C.leaf], [r * 0.55, T.h - 3.8, 0.8, 0.8, C.leafDark], [-r * 0.5, T.h - 3.5, -0.6, 0.85, C.leaf], [0.6, T.h - 4, -r * 0.5, 0.75, C.leafDark], [-0.4, T.h - 4.2, r * 0.5, 0.75, C.leaf], [0, T.h - 1, 0, 0.6, C.leafDark]]) blob(g, r * 0.55 * s, x, y, z, c, 0.6);
+  const L = SEASON === 'autumn' ? '#e6b83a' : C.leaf, D = SEASON === 'autumn' ? '#cf9a2c' : C.leafDark; // (autumn, core/season.js: the old pagoda tree goes yellow)
+  for (const [x, y, z, s, c] of [[0, T.h - 2.5, 0, 1, L], [r * 0.55, T.h - 3.8, 0.8, 0.8, D], [-r * 0.5, T.h - 3.5, -0.6, 0.85, L], [0.6, T.h - 4, -r * 0.5, 0.75, D], [-0.4, T.h - 4.2, r * 0.5, 0.75, L], [0, T.h - 1, 0, 0.6, D]]) blob(g, r * 0.55 * s, x, y, z, c, 0.6);
   g.position.set(T.x, 0, T.z);
   return g;
 }

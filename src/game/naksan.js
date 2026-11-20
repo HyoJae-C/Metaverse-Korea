@@ -12,6 +12,7 @@ import { StreetNpcs, PHRASES } from '../core/npcs.js';
 import { ridgeHeightSide, ridgeNear, ridgeBox } from '../core/ridge-ground.js';
 import { stoneTexture, smallGate, MERLON, WALL_STONE as STONE } from './city-wall-parts.js';
 import { addSnowCover } from '../core/snow-cover.js';
+import { MIX, leafColor, leafHash } from '../core/season.js';
 
 const CELL = 5; // m: the ground grid
 const FINE = 4; // cells on the wall are cut into FINE x FINE (1.25 m), so none ramps up its face
@@ -231,7 +232,7 @@ export function createNaksan(game) {
       m4.compose(p3.set(x, y - 0.1, z), q, s3.set(sc, sc, sc));
       trunks.setMatrixAt(i, m4);
       crowns.setMatrixAt(i, m4);
-      crowns.setColorAt(i, greens[i % greens.length]);
+      crowns.setColorAt(i, leafColor(greens[i % greens.length], leafHash(i, 3), MIX.wood)); // (the season's colours, core/season.js)
     });
     group.add(trunks, crowns); // (no shadows: 340 trees would double their triangles)
   }
