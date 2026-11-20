@@ -9,13 +9,18 @@ import { listable } from '../src/core/market.js';
 
 const DAY = 24 * 3600 * 1000;
 const ONESIES = ['outfit-onesie-bear', 'outfit-onesie-bunny', 'outfit-onesie-dino'];
+const XMAS = { 'acc-santa-hat': 20000, 'acc-santa-beard': 15000, 'acc-rudolph-nose': 10000, 'acc-antlers': 20000 };
 
 test('animal onesies are limited-time (one number for all), cheaper than other clothes', () => {
   for (const id of ONESIES) {
     assert.equal(ITEMS[id].secs, TIMED_SECS, id);
     assert.equal(ITEMS[id].price, 50000, id);
   }
-  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id)), 'only the onesies for now');
+  for (const [id, price] of Object.entries(XMAS)) {
+    assert.equal(ITEMS[id].secs, TIMED_SECS, id);
+    assert.equal(ITEMS[id].price, price, id);
+  }
+  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id) || XMAS[id]), 'only the onesies and the Christmas line');
 });
 
 test('a limited item is gone 7 days after buying; days left count down', () => {
@@ -55,7 +60,7 @@ test('limited items can\'t be sold back or put on a Potato Market mat', () => {
 });
 
 test('the server knows every limited item and its time (supabase/058)', () => {
-  const sql = readFileSync(new URL('../supabase/058_timed_clothes.sql', import.meta.url), 'utf8');
+  const sql = ['058_timed_clothes.sql', '059_christmas_timed.sql'].map((f) => readFileSync(new URL('../supabase/' + f, import.meta.url), 'utf8')).join('\n');
   const rows = Object.fromEntries([...sql.matchAll(/\('([a-z0-9-]+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
   const timed = Object.fromEntries(Object.entries(ITEMS).filter(([, it]) => it.secs).map(([id, it]) => [id, it.secs]));
   assert.deepEqual(rows, timed);

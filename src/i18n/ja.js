@@ -114,7 +114,7 @@ export const JA = {
   "gym.talk": "{name}と話す",
   "sauna.hot": "汗蒸幕に入る",
   "sauna.ice": "氷の部屋に入る",
-  "timed.gone": "⌛ 期間限定の{name}は期限が切れたので、クローゼットから消えました。",
+  "timed.gone": "⌛ 期間限定の{name}は期限が切れたので、消えました。",
   "timed.left": "⌛ 残り{d}日",
   "sauna.towelBack": "🐑 一日たったので、羊巻きタオルはチムジルバンに回収されました。",
   "emblem.open": "名札を飾る",

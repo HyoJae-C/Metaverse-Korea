@@ -114,7 +114,7 @@ export const ZH = {
   "gym.talk": "和{name}聊天",
   "sauna.hot": "进火窑",
   "sauna.ice": "进冰屋",
-  "timed.gone": "⌛ 限时服装{name}已到期，从衣柜中消失了。",
+  "timed.gone": "⌛ 限时物品{name}已到期，消失了。",
   "timed.left": "⌛ 剩余{d}天",
   "sauna.towelBack": "🐑 过了一天，羊角毛巾已被汗蒸房收回。",
   "emblem.open": "装饰名牌",

@@ -114,7 +114,8 @@ function wheel(g, r, w, x, y, z, m) {
 // Bike: tier 0 is the familiar shop bike with a basket; tier 1 drops the
 // basket for a bottle and coloured rims; tier 2 has deep dark rims with a
 // colour stripe, a racing saddle and a small red tail light.
-function makeBikeRide({ tier, color, pattern }) {
+function makeBikeRide({ tier, color, pattern, body }) {
+  if (body === 'sleigh') return makeSleigh({ color, pattern });
   const g = new THREE.Group();
   const frame = skinMaterial(color, pattern);
   const box = boxer(g);
@@ -138,6 +139,84 @@ function makeBikeRide({ tier, color, pattern }) {
   if (tier >= 1) box(0.05, 0.14, 0.05, 0, 0.47, 0.12, mat(tier === 2 ? '#e9eef2' : '#5fd0ff')); // water bottle
   if (tier >= 1) for (const s of [-1, 1]) box(0.05, 0.05, 0.09, s * 0.25, 0.86, 0.54, mat(shade(color, 0.7))); // grips
   if (tier === 2) box(0.07, 0.05, 0.03, 0, 0.58, -0.42, glow('#ff4040')); // tail light
+  g.userData.pose = 'bike';
+  return g;
+}
+
+// The Christmas sleigh skin (bike-garage.js BODY_SKINS): a bike drawn as
+// Santa's sleigh. The rider sits where a bike's rider sits (pose 'bike',
+// hands on a gold rail where the handlebar is), deep in a red tub with a
+// scrolled back and front, on two gold runners curling up at the front,
+// with a gift sack behind and bells on the front.
+const GOLD = '#e2b33c';
+function makeSleigh({ color, pattern }) {
+  const g = new THREE.Group();
+  const shell = skinMaterial(color, pattern);
+  const gold = mat(GOLD);
+  // The tub: a side profile (z forward, y up) extruded across.
+  const W = 0.56;
+  const sh = new THREE.Shape();
+  const P = [[-0.5, 0.2], [-0.62, 0.5], [-0.66, 0.84], [-0.56, 0.92], [-0.46, 0.8], [-0.42, 0.56], [0.12, 0.5], [0.34, 0.58], [0.48, 0.76], [0.6, 0.8], [0.64, 0.7], [0.54, 0.42], [0.36, 0.2]];
+  sh.moveTo(P[0][0], P[0][1]);
+  for (const [z, y] of P.slice(1)) sh.lineTo(z, y);
+  sh.closePath();
+  const tubGeo = new THREE.ExtrudeGeometry(sh, { depth: W - 0.08, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2 });
+  tubGeo.translate(0, 0, -(W - 0.08) / 2);
+  tubGeo.rotateY(-Math.PI / 2);
+  if (shell.map) { // pattern tiles in metres, on the sides
+    const pos = tubGeo.attributes.position, uv = tubGeo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getZ(i) + pos.getX(i)) / TILE, pos.getY(i) / TILE); // (the back wall runs across x)
+  }
+  const tub = new THREE.Mesh(tubGeo, shell);
+  g.add(tub);
+  // Gold trim along the top edge on each side.
+  const rim = new THREE.CatmullRomCurve3([[-0.56, 0.92], [-0.46, 0.8], [-0.42, 0.56], [0.12, 0.5], [0.34, 0.58], [0.48, 0.76], [0.6, 0.8]].map(([z, y]) => new THREE.Vector3(0, y, z)));
+  const rimGeo = new THREE.TubeGeometry(rim, 24, 0.018, 5, false);
+  for (const s of [-1, 1]) {
+    const r = new THREE.Mesh(rimGeo, gold);
+    r.position.x = s * (W / 2 + 0.015);
+    g.add(r);
+  }
+  // Runners: flat along the ground, curling up and back at the front.
+  const run = new THREE.CatmullRomCurve3([[-0.62, 0.06], [-0.2, 0.04], [0.4, 0.04], [0.68, 0.1], [0.82, 0.26], [0.78, 0.42], [0.66, 0.42], [0.66, 0.32]].map(([z, y]) => new THREE.Vector3(0, y, z)));
+  const runGeo = new THREE.TubeGeometry(run, 40, 0.025, 6, false);
+  for (const s of [-1, 1]) {
+    const r = new THREE.Mesh(runGeo, gold);
+    r.position.x = s * 0.24;
+    g.add(r);
+    for (const z of [-0.35, 0.25]) { // struts up to the tub
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 6), gold);
+      st.position.set(s * 0.24, 0.13, z);
+      g.add(st);
+    }
+  }
+  // A gold rail to hold, where the handlebar is, and a dark seat.
+  const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.55, 8).rotateZ(Math.PI / 2), gold);
+  rail.position.set(0, 0.86, 0.5);
+  g.add(rail);
+  for (const s of [-1, 1]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 6), gold);
+    post.position.set(s * 0.24, 0.8, 0.5);
+    g.add(post);
+  }
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, 0.08, 0.34), mat('#1f5c3a'));
+  seat.position.set(0, 0.6, -0.24);
+  g.add(seat);
+  // Bells on the front scroll and a gift sack tied behind the seat.
+  for (const s of [-1, 1]) {
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), gold);
+    bell.position.set(s * 0.18, 0.66, 0.66);
+    g.add(bell);
+  }
+  const sack = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), mat('#b08a5a'));
+  sack.scale.set(1, 1.1, 0.8);
+  sack.position.set(0, 1.0, -0.68);
+  const tie = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.12, 10), mat('#b08a5a'));
+  tie.position.set(0, 1.26, -0.68);
+  const knot = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.015, 6, 12).rotateX(Math.PI / 2), mat('#c8102e'));
+  knot.position.set(0, 1.2, -0.68);
+  g.add(sack, tie, knot);
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
   g.userData.pose = 'bike';
   return g;
 }

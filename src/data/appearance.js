@@ -207,6 +207,9 @@ export const ACCESSORIES = {
     // Animal-ear headbands from Nyang Meong To Pan (core/animal-wear.js):
     // color the ears and band, inner the inside of the ears.
     ...ANIMAL_LOOKS.map((a) => ({ id: 'ears-' + a.id, shape: 'ears', animal: a.animal, emoji: a.emoji, color: a.color, inner: a.inner, band: a.band ?? a.color })),
+    // Santa Pop-up (Seongsu), limited-time for Christmas (core/xmas-wear.js).
+    { id: 'santa-hat', shape: 'santa', emoji: '🎅', color: 0xd7262e },
+    { id: 'antlers', shape: 'antlers', emoji: '🦌', color: 0x8a5a35, band: 0x5a3a22, ear: 0xa8774c },
   ],
   face: [
     { id: 'glasses', emoji: '👓', color: 0x4a3f35 },
@@ -218,6 +221,9 @@ export const ACCESSORIES = {
     { id: 'sunglasses-brown', shape: 'sunglasses', emoji: '🕶️', color: 0x6b4a2f, lens: 0x8a5a32, tint: 0.85 },
     { id: 'sunglasses-pink', shape: 'sunglasses', emoji: '🕶️', color: 0xf6f1e7, lens: 0xff6fa8, tint: 0.8 },
     { id: 'sunglasses-blue', shape: 'sunglasses', emoji: '🕶️', color: 0xd9dde2, lens: 0x3f7fd6, tint: 0.8 },
+    // Santa Pop-up (Seongsu), limited-time for Christmas (core/xmas-wear.js).
+    { id: 'santa-beard', shape: 'beard', emoji: '🧔', color: 0xfbfaf6 },
+    { id: 'rudolph-nose', shape: 'nose', emoji: '🔴', color: 0xe0202a },
   ],
   // Earrings (the earring shops): a pair, one on each ear.
   ear: [

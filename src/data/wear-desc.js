@@ -15,6 +15,14 @@ export const WEAR_DESC = {
     zh: '限时服装：购买7天后消失，不能出售或赠送。',
     es: 'Ropa por tiempo limitado: desaparece 7 días después de comprarla. No se puede vender ni regalar.', ar: 'ملابس لفترة محدودة: تختفي بعد 7 أيام من شرائها. لا يمكن بيعها أو إهداؤها.', vi: 'Quần áo có thời hạn: biến mất 7 ngày sau khi mua. Không thể bán hay tặng.', hi: 'सीमित समय के कपड़े: ख़रीदने के 7 दिन बाद गायब हो जाते हैं। बेचे या तोहफ़े में नहीं दिए जा सकते।', fr: 'Vêtements à durée limitée : ils disparaissent 7 jours après l\'achat. Impossible de les vendre ou de les offrir.', th: 'เสื้อผ้าแบบจำกัดเวลา: หายไปหลังซื้อ 7 วัน ขายหรือให้เป็นของขวัญไม่ได้', id: 'Baju waktu terbatas: hilang 7 hari setelah dibeli. Tidak bisa dijual atau dihadiahkan.',
   },
+  // Limited-time accessories (Santa Pop-up's Christmas line).
+  timedAcc: {
+    en: 'A limited-time accessory: gone 7 days after you buy it. Tap Wear to put it on, Take off to remove it. It can\'t be sold or given.',
+    ko: '기간제 액세서리예요. 산 뒤 7일이 지나면 사라져요. "입기"로 쓰고 "벗기"로 벗어요. 팔거나 선물할 수 없어요.',
+    ja: '期間限定のアクセサリー。買ってから7日たつと消えます。「着る」で着け、「脱ぐ」で外します。売ったり贈ったりできません。',
+    zh: '限时配饰：购买7天后消失。点“穿上”戴上，点“脱下”取下。不能出售或赠送。',
+    es: 'Un accesorio por tiempo limitado: desaparece 7 días después de comprarlo. Toca Poner para usarlo y Quitar para sacártelo. No se puede vender ni regalar.', ar: 'إكسسوار لفترة محدودة: يختفي بعد 7 أيام من شرائه. اضغط ارتدِ لتلبسه، واخلع لتنزعه. لا يمكن بيعه أو إهداؤه.', vi: 'Phụ kiện có thời hạn: biến mất 7 ngày sau khi mua. Chạm Mặc để đeo, Cởi ra để tháo. Không thể bán hay tặng.', hi: 'सीमित समय की एक्सेसरी: ख़रीदने के 7 दिन बाद गायब हो जाती है। पहनने के लिए पहनें, हटाने के लिए उतारें टैप करें। बेची या तोहफ़े में नहीं दी जा सकती।', fr: 'Un accessoire à durée limitée : il disparaît 7 jours après l\'achat. Touche Porter pour le mettre, Enlever pour l\'ôter. Impossible de le vendre ou de l\'offrir.', th: 'เครื่องประดับแบบจำกัดเวลา: หายไปหลังซื้อ 7 วัน แตะ สวมใส่ เพื่อใส่ หรือ ถอด เพื่อเอาออก ขายหรือให้เป็นของขวัญไม่ได้', id: 'Aksesori waktu terbatas: hilang 7 hari setelah dibeli. Ketuk Pakai untuk memakainya, Lepas untuk melepasnya. Tidak bisa dijual atau dihadiahkan.',
+  },
   swap: {
     en: 'Trousers you bought. Tap Wear to change into them.',
     ko: '산 바지예요. "입기"를 누르면 갈아입어요.',

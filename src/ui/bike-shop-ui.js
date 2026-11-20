@@ -5,7 +5,7 @@
 // Lab speed tune-ups and street-art skins, RIDE WITH ME long-ride kits (less
 // wear) and night skins, Hangeul Mihak a limited Hunminjeongeum skin line
 // sold only by the palace (core/bike-garage.js).
-import { BIKE_MODELS, KIT_WEAR, RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS, TUNE_STEP, UPGRADE_MAX, RIDE_ICON as VEHICLE_ICON, repairCost, skinPrice } from '../core/bike-garage.js';
+import { BODY_SKINS, BIKE_MODELS, KIT_WEAR, RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS, TUNE_STEP, UPGRADE_MAX, RIDE_ICON as VEHICLE_ICON, repairCost, skinPrice } from '../core/bike-garage.js';
 import { L, fmt } from './pocha-ui.js';
 import { skinCanvas } from '../core/rides.js';
 
@@ -43,6 +43,9 @@ export function createBikeShop(game) {
     skins: { en: 'Skins', ko: '스킨', ja: 'スキン', zh: '皮肤', es: 'Aspectos' },
     tune: { en: 'Tune-up', ko: '튜닝', ja: 'チューン', zh: '改装', es: 'Puesta a punto' },
     kit: { en: 'Long-ride kit', ko: '롱라이드 키트', ja: 'ロングライド', zh: '长途套件', es: 'Kit de ruta' },
+    xmas: { en: 'Christmas (limited time, bikes only)', ko: '크리스마스 (기간제, 자전거만)', ja: 'クリスマス（期間限定・自転車のみ）', zh: '圣诞（限时，仅自行车）', es: 'Navidad (tiempo limitado, solo bicis)' },
+    xmasNote: { en: 'Turns your bike into Santa\'s sleigh for 7 days after you buy it. A colour or pattern skin goes on the sleigh too.', ko: '산 뒤 7일 동안 자전거가 산타 썰매로 바뀌어요. 색상·패턴 스킨도 썰매에 입혀져요.', ja: '買ってから7日間、自転車がサンタのそりになります。カラーや柄のスキンもそりに付きます。', zh: '购买后7天内，自行车变成圣诞老人的雪橇。颜色和图案皮肤也会用在雪橇上。', es: 'Convierte tu bici en el trineo de Papá Noel durante 7 días. Los colores y estampados también se aplican al trineo.' },
+    daysLeft: { en: '{d} days left', ko: '{d}일 남음', ja: '残り{d}日', zh: '剩{d}天', es: 'Quedan {d} días' },
     limited: { en: 'Hunminjeongeum (limited)', ko: '훈민정음 한정판', ja: '訓民正音（限定）', zh: '训民正音（限定）', es: 'Hunminjeongeum (limitado)' },
   };
   // Each shop's title and its own tab (the skins tab of Hangeul Mihak is the
@@ -165,6 +168,30 @@ export function createBikeShop(game) {
       const none2 = el('button', 'chip skin-pat' + (!skin.pattern ? ' on' : ''), L(BIKE_TEXT.none));
       none2.onclick = () => pickSkin('pattern', null);
       pg.append(none2, ...conf.patterns.map(patternChip));
+      // Pedal Lab's Christmas sleigh (BODY_SKINS), and wherever it was bought,
+      // the sleigh you have can be put on or off at any ride shop.
+      const bodies = Object.keys(BODY_SKINS).filter((id) => sid === 'pedal' || garage.hasBody(id));
+      if (bodies.length) {
+        const bg = section('🎄 ' + L(BIKE_TEXT.xmas));
+        const off = el('button', 'chip skin-pat' + (!skin.body ? ' on' : ''), L(BIKE_TEXT.none));
+        off.onclick = () => { garage.setBody(null); applyRide(); openBikeShop(); };
+        bg.append(off);
+        for (const id of bodies) {
+          const B = BODY_SKINS[id], has = garage.hasBody(id);
+          const days = has ? Math.max(1, Math.ceil((garage.bodyEnd(id) - Date.now()) / 86400000)) : 0;
+          const b = el('button', 'chip skin-pat' + (has && skin.body === id ? ' on' : ''), `${B.icon} ${L(B.name)} · ` + (has ? fmt(L(BIKE_TEXT.daysLeft), { d: days }) : `🪙${B.price}`));
+          b.onclick = () => {
+            if (has) { garage.setBody(id); applyRide(); openBikeShop(); return; }
+            const r = garage.buyBody(id, game.wallet);
+            refreshWallet();
+            shop.toast(L(r === 'bought' ? BIKE_TEXT.skinOn : BIKE_TEXT.poor));
+            if (r === 'bought') applyRide();
+            openBikeShop();
+          };
+          bg.append(b);
+        }
+        bg.append(el('small', 'fine', L(BIKE_TEXT.xmasNote)));
+      }
       // Skins bought at the other shops can be put on here too.
       const otherC = garage.s.colors.filter((c) => !conf.colors.includes(c));
       const otherP = garage.s.patterns.filter((q) => !conf.patterns.includes(q));
