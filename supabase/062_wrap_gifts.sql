@@ -18,6 +18,7 @@ declare
   v_to uuid;
   l public.coin_ledger;
   g public.gift_binds;
+  v_keep interval;
 begin
   if uid is null then return jsonb_build_object('status', 'signin'); end if;
   if p_op is null or coalesce(p_item, '') !~ '^[A-Za-z0-9_-]{1,64}$' then return jsonb_build_object('status', 'bad'); end if;
@@ -28,8 +29,9 @@ begin
   select * into l from public.coin_ledger
     where user_id = uid and op_id = p_op and kind = 'spend' and status = 'ok' and n < 0;
   if not found then return jsonb_build_object('status', 'wait'); end if;
-  if coalesce(l.note, '') not like '%🎁%'
-     or l.at < now() - case when l.note like '%🎀%' then interval '60 days' else interval '3 days' end then
+  -- (worked out first: inside an IF, plpgsql would stop at a CASE's THEN)
+  v_keep := case when coalesce(l.note, '') like '%🎀%' then interval '60 days' else interval '3 days' end;
+  if coalesce(l.note, '') not like '%🎁%' or l.at < now() - v_keep then
     return jsonb_build_object('status', 'bad');
   end if;
   if exists (select 1 from public.coin_ledger r where r.user_id = uid and r.ref = p_op and r.kind in ('refund', 'resell')) then
