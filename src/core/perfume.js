@@ -79,9 +79,9 @@ export class Scent {
     } catch { /* broken save */ }
   }
 
-  spray(id, now = Date.now()) {
+  spray(id, now = Date.now(), ms = SCENT_MS) { // (ms: a smell that isn't a spray, e.g. a squashed ginkgo nut, game/ginkgo.js)
     this.id = id;
-    this.until = now + SCENT_MS;
+    this.until = now + Math.min(ms, SCENT_MS);
     this._save();
   }
 

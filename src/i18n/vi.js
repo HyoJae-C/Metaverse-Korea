@@ -1033,4 +1033,13 @@ export const VI = {
   "spend.ask": "Dùng {n}?",
   "spend.yes": "OK",
   "spend.no": "Hủy",
+  "ginkgo.shake": "Rung cây bạch quả",
+  "ginkgo.leaves": "Chỉ có lá rơi xuống. 🍂",
+  "ginkgo.nut": "Một hạt bạch quả rơi vào tay bạn. Chẳng có tác dụng gì mà còn hôi kinh khủng. 🤢",
+  "ginkgo.nutFull": "Một hạt bạch quả rơi xuống nhưng túi đã đầy.",
+  "ginkgo.name": "Hạt bạch quả",
+  "ginkgo.desc": "{n} hạt bạch quả. Chẳng có tác dụng gì và rất hôi.",
+  "ginkgo.stepped": "Bạn giẫm phải hạt bạch quả! Bạn sẽ bốc mùi vài phút. 🤢",
+  "ginkgo.smell": "Mùi bạch quả",
+  "ginkgo.gone": "Mùi bạch quả đã hết.",
 };

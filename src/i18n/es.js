@@ -1032,4 +1032,13 @@ export const ES = {
   "spend.ask": "¿Gastar {n}?",
   "spend.yes": "Aceptar",
   "spend.no": "Cancelar",
+  "ginkgo.shake": "Sacudir el ginkgo",
+  "ginkgo.leaves": "Solo cayeron hojas. 🍂",
+  "ginkgo.nut": "Te cayó una semilla de ginkgo en la mano. No hace nada y huele fatal. 🤢",
+  "ginkgo.nutFull": "Cayó una semilla de ginkgo, pero tu bolsa está llena.",
+  "ginkgo.name": "Semillas de ginkgo",
+  "ginkgo.desc": "{n} semillas de ginkgo. No hacen nada y huelen fatal.",
+  "ginkgo.stepped": "¡Pisaste una semilla de ginkgo! Olerás mal unos minutos. 🤢",
+  "ginkgo.smell": "Olor a ginkgo",
+  "ginkgo.gone": "Se fue el olor a ginkgo.",
 };

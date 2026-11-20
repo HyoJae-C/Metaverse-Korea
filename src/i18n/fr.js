@@ -1033,4 +1033,13 @@ export const FR = {
   "spend.ask": "Dépenser {n} ?",
   "spend.yes": "OK",
   "spend.no": "Annuler",
+  "ginkgo.shake": "Secouer le ginkgo",
+  "ginkgo.leaves": "Seules des feuilles sont tombées. 🍂",
+  "ginkgo.nut": "Une noix de ginkgo vous est tombée dans la main. Elle ne sert à rien et sent très mauvais. 🤢",
+  "ginkgo.nutFull": "Une noix de ginkgo est tombée, mais votre sac est plein.",
+  "ginkgo.name": "Noix de ginkgo",
+  "ginkgo.desc": "{n} noix de ginkgo. Elles ne servent à rien et sentent très mauvais.",
+  "ginkgo.stepped": "Vous avez marché sur une noix de ginkgo ! Vous allez sentir mauvais quelques minutes. 🤢",
+  "ginkgo.smell": "Odeur de ginkgo",
+  "ginkgo.gone": "L'odeur de ginkgo est partie.",
 };

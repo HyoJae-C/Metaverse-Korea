@@ -1035,4 +1035,13 @@ export const EN = {
   "spend.ask": "Spend {n}?",
   "spend.yes": "OK",
   "spend.no": "Cancel",
+  "ginkgo.shake": "Shake the ginkgo tree",
+  "ginkgo.leaves": "Only leaves fell. 🍂",
+  "ginkgo.nut": "A ginkgo nut fell into your hand. It does nothing and smells awful. 🤢",
+  "ginkgo.nutFull": "A ginkgo nut fell, but your bag is full.",
+  "ginkgo.name": "Ginkgo nuts",
+  "ginkgo.desc": "{n} ginkgo nuts. They do nothing and smell terrible.",
+  "ginkgo.stepped": "You stepped on a ginkgo nut! You'll smell for a few minutes. 🤢",
+  "ginkgo.smell": "Ginkgo smell",
+  "ginkgo.gone": "The ginkgo smell is gone.",
 };
