@@ -86,7 +86,8 @@ export function better(a, b, rule = DEFAULT_RULE) {
 // Who wins: 'me' | 'them' | 'tie'. Each side: { cm, fish, by } (its best
 // catch and how many of each ★).
 //   sum: the ★ added up; the same, more ★5, then ★4 … (Yozi); then the longer fish.
-//   rare / long: the best fish (better()); then more fish.
+//   rare / long: the best fish (better()); the same one is a draw.
+// Nothing left to tell them apart (or no fish on either side): 'tie', a draw.
 export function winner(me, them, rule = DEFAULT_RULE) {
   const pick = (x) => (x > 0 ? 'me' : x < 0 ? 'them' : null);
   if (rule === 'sum') {
@@ -95,7 +96,7 @@ export function winner(me, them, rule = DEFAULT_RULE) {
   }
   if (better(me, them, rule)) return 'me';
   if (better(them, me, rule)) return 'them';
-  return pick(countOf(me.by) - countOf(them.by)) || 'tie';
+  return 'tie'; // the same best fish: a draw (Yozi 2026-11-20)
 }
 // Could this fish really be that long? (a made-up line is ignored)
 export function sizeOk(id, cm) {

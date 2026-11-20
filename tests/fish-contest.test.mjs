@@ -90,15 +90,15 @@ test('an ask runs out, a wrong cid or a stranger is ignored, quitting ends it', 
   void b;
 });
 
-test('the same longest fish: more fish wins, else a tie', () => {
+test('the same best fish is a draw, more fish or not (Yozi)', () => {
   const { a, b, step } = pair();
   a.ask('B', 'c'); b.heard('A', { verb: 'ask', to: 'B', cid: 'c' }); b.accept('A'); a.heard('B', { verb: 'ok', to: 'A', cid: 'c' });
   step(COUNTDOWN_MS);
   a.caught('carp', () => 0.5); a.caught('minnow', () => 0.5);
   step(CONTEST_MS);
   a.final();
-  a.heard('B', { verb: 'end', to: 'A', cid: 'c', cm: 60, fish: 'carp', by: [0, 0, 1, 0, 0, 0] });
-  assert.equal(a.result().win, 'me');
+  a.heard('B', { verb: 'end', to: 'A', cid: 'c', cm: a.c.me.cm, fish: 'carp', by: [0, 1, 1, 0, 0, 0] });
+  assert.equal(a.result().win, 'tie');
 });
 
 test('rarer beats longer: a short ★ fish wins over a long common one (Yozi)', async () => {
@@ -107,7 +107,8 @@ test('rarer beats longer: a short ★ fish wins over a long common one (Yozi)', 
   assert.ok(fishById('axolotl').rarity > fishById('cutlassfish').rarity);
   assert.ok(better({ fish: 'axolotl', cm: 20 }, { fish: 'cutlassfish', cm: 140 }));
   assert.ok(better({ fish: 'carp', cm: 70 }, { fish: 'carp', cm: 50 }));
-  assert.equal(winner({ fish: 'carp', cm: 60, by: [0, 3] }, { fish: 'carp', cm: 60, by: [0, 2] }), 'me');
+  assert.equal(winner({ fish: 'carp', cm: 60, by: [0, 3] }, { fish: 'carp', cm: 60, by: [0, 2] }), 'tie'); // the same best fish: a draw (Yozi)
+  assert.equal(winner({ fish: 'carp', cm: 50, by: [0, 0, 3] }, { fish: 'carp', cm: 50, by: [0, 0, 3] }, 'sum'), 'tie');
   assert.equal(winner({ fish: null, cm: 0, by: [] }, { fish: null, cm: 0, by: [] }), 'tie');
 });
 

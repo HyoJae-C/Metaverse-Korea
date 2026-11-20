@@ -1057,7 +1057,7 @@ export const VI = {
   "fc.win": "🏆 Bạn thắng! Con {fish} ({me} cm) của bạn hơn {them} cm của {name}.",
   "fc.lose": "🏆 {name} thắng với con {theirs} ({them} cm). Tốt nhất của bạn: {me} cm.",
   "fc.tie": "🤝 Hòa với {name}: mỗi người {me} cm!",
-  "fc.none": "🎣 Lần này cả bạn và {name} đều không câu được. Thử lại nhé!",
+  "fc.none": "🤝 Hòa: lần này cả bạn và {name} đều không câu được.",
   "fc.quitThem": "{name} đã rời cuộc thi câu cá.",
   "fc.quitMe": "Bạn đã rời cuộc thi câu cá.",
   "fc.pick": "🎣 Thi câu cá với {name}: chọn luật",

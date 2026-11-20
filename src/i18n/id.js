@@ -1057,7 +1057,7 @@ export const ID = {
   "fc.win": "🏆 Kamu menang! {fish} kamu ({me} cm) mengalahkan {them} cm milik {name}.",
   "fc.lose": "🏆 {name} menang dengan {theirs} ({them} cm). Terbaikmu: {me} cm.",
   "fc.tie": "🤝 Seri dengan {name}: masing-masing {me} cm!",
-  "fc.none": "🎣 Kali ini kamu dan {name} tidak dapat ikan. Coba lagi!",
+  "fc.none": "🤝 Seri: kali ini kamu dan {name} tidak dapat ikan.",
   "fc.quitThem": "{name} keluar dari lomba mancing.",
   "fc.quitMe": "Kamu keluar dari lomba mancing.",
   "fc.pick": "🎣 Lomba mancing dengan {name}: pilih aturan",

@@ -1056,7 +1056,7 @@ export const ES = {
   "fc.win": "🏆 ¡Ganaste! Tu {fish} ({me} cm) superó los {them} cm de {name}.",
   "fc.lose": "🏆 {name} gana con un {theirs} ({them} cm). Tu mejor: {me} cm.",
   "fc.tie": "🤝 Empate con {name}: ¡{me} cm cada uno!",
-  "fc.none": "🎣 Esta vez ni tú ni {name} pescaron nada. ¡Otra vez!",
+  "fc.none": "🤝 Empate: esta vez ni tú ni {name} pescaron nada.",
   "fc.quitThem": "{name} dejó el concurso de pesca.",
   "fc.quitMe": "Dejaste el concurso de pesca.",
   "fc.pick": "🎣 Concurso de pesca con {name}: elige la regla",

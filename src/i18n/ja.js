@@ -1060,7 +1060,7 @@ export const JA = {
   "fc.win": "🏆 勝ち！あなたの{fish}（{me} cm）が{name}さんの{them} cmに勝ちました。",
   "fc.lose": "🏆 {name}さんが{theirs}（{them} cm）で勝ちました。あなたの最高：{me} cm。",
   "fc.tie": "🤝 {name}さんと引き分け：どちらも{me} cm！",
-  "fc.none": "🎣 今回はあなたも{name}さんも釣れませんでした。もう一度！",
+  "fc.none": "🤝 引き分け：今回はあなたも{name}さんも釣れませんでした。",
   "fc.quitThem": "{name}さんが釣り勝負をやめました。",
   "fc.quitMe": "釣り勝負をやめました。",
   "fc.pick": "🎣 {name}さんと釣り勝負：ルールを選ぶ",
