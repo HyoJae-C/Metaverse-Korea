@@ -424,7 +424,20 @@ export function createArcade(game) {
     fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
+  // A bowling group (invited, or waiting to start) lasts while you are in
+  // the alley: walking round with the panel put away keeps it; leaving the
+  // alley or walking this far from your lane ends it (ui/activity-ui.js).
+  const BOWL_GROUP_AWAY = 12; // m
+  let bowlCheckAt = 0;
+  function checkBowlGroup() {
+    const ui = arcade.bowling;
+    if (!ui?.lobby || performance.now() - bowlCheckAt < 500) return;
+    bowlCheckAt = performance.now();
+    const p = game.me.root.position;
+    const away = !game.interior?.stations?.bowling || (bowlLane && Math.hypot(p.x - bowlLane.x, p.z - bowlLane.z) > BOWL_GROUP_AWAY);
+    ui.checkLobby(!!away);
+  }
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); checkBowlGroup(); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }
