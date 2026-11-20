@@ -1,6 +1,6 @@
 // Snowballs and snowmen in the street, once the snow has settled
 // (core/snow-cover.js). Gather snow into a ball, roll it bigger, push it
-// with friends, put a smaller ball on a bigger one for a snowman. The rules
+// with friends, put a ball on one as big or bigger for a snowman. The rules
 // are in core/snowballs.js; this file is the game and the models.
 //
 // Each ball belongs to the player who started it and travels in their state
@@ -571,7 +571,7 @@ export function createSnowman(game) {
     const head = nearest(p, (q) => q.owner === game.myId && !q.b.h);
     if (!head) return out;
     for (const body of balls()) {
-      if (body.b === head.b || body.b.h || body.b.n <= head.b.n) continue;
+      if (body.b === head.b || body.b.h || !canTop(head.b.n, body.b.n)) continue;
       const gap = Math.hypot(body.b.x - head.b.x, body.b.z - head.b.z) - (diameterOf(body.b.n) + diameterOf(head.b.n)) / 2;
       if (gap > 2.2 || Math.hypot(body.b.x - p.x, body.b.z - p.z) - diameterOf(body.b.n) / 2 > 2.4) continue;
       out.push({ key: `sb-top:${body.owner}:${body.b.k}`, label: '⛄ ' + L(SNOW_TEXT.top), run: () => topOn(head, body) });
