@@ -83,9 +83,10 @@ export const sat = (A, B) => { // two convex polygons overlap
 // local: its pts -> the district's metres; inPalace(x, z); OUTLINE: the wall.
 // OWN: names drawn by their own model (returned in own, not as halls).
 // KEEP: names kept first, then the biggest, up to COUNT halls and gates.
+// HALLS: names of small halls with wings, drawn as one hall.
 // keepClear: polygons no hall may grow into; ponds: polygons no block stands on.
-export function planPalace({ elements, local, inPalace, OUTLINE, OWN = {}, NO_RIDGE = new Set(), BOARDS = {}, KEEP = [], COUNT = 30, modern = new Set(), FOOT = 2, FOOT_MIN = 1.2, WALK = 1.3, DOOR = 2.6, BLOCK_GAP = 3, keepClear = [], ponds = [], skipBlock = () => false }) {
-  const thin = (r) => { const s = Math.min(r.w, r.d), L = Math.max(r.w, r.d); return s <= 2.8 && L / s >= 2.4; };
+export function planPalace({ elements, local, inPalace, OUTLINE, OWN = {}, NO_RIDGE = new Set(), BOARDS = {}, KEEP = [], COUNT = 30, modern = new Set(), FOOT = 2, FOOT_MIN = 1.2, WALK = 1.3, DOOR = 2.6, BLOCK_GAP = 3, keepClear = [], ponds = [], skipBlock = () => false, HALLS = new Set() }) {
+  const thin = (r) => { if (r.hall) return false; const s = Math.min(r.w, r.d), L = Math.max(r.w, r.d); return s <= 2.8 && L / s >= 2.4; };
   const units = [];
   for (const e of elements) {
     if (e.kind !== 'building' || modern.has(e.id)) continue;
@@ -94,7 +95,9 @@ export function planPalace({ elements, local, inPalace, OUTLINE, OWN = {}, NO_RI
     if (!inPalace(o.x, o.z) && !OWN[e.name] && !/문$/.test(e.name || "")) continue; // (gates stand on the wall line)
     const gate = !!e.gate || /문$/.test(e.name || '');
     const fill = area(P) / o.A;
-    const parts = fill > 0.9 ? [{ x: o.x, z: o.z, w: o.w, d: o.d, a: o.a, cx: o.x, cz: o.z }] : rectangles(P, o);
+    let parts = fill > 0.9 ? [{ x: o.x, z: o.z, w: o.w, d: o.d, a: o.a, cx: o.x, cz: o.z }] : rectangles(P, o);
+    // HALLS: a small hall with wings that reads as a corridor (long and under 2.8 m deep on the 1/4 map): its main part is the hall, the wings are dropped.
+    if (HALLS.has(e.name) && parts.length) { parts = [{ ...parts[0], d: Math.max(parts[0].d, 1.6), hall: true }]; }
     const thinA = parts.filter((r) => !gate && thin(r)).reduce((a, r) => a + r.w * r.d, 0), allA = parts.reduce((a, r) => a + r.w * r.d, 0);
     units.push({ e, P, o, gate, fill, parts, corridor: thinA > 0.6 * allA, size: area(P) });
   }

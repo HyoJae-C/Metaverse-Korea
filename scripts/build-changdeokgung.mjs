@@ -84,8 +84,100 @@ export const COUNT = Number(process.env.COUNT) || 30;
 const KEEP = [ // the way in and the throne hall's line first, then the king's and queen's halls, Nakseonjae, the offices
   '진선문', '숙장문', '선정전', '희정당', '대조전', '성정각', '낙선재', '석복헌', '수강재', '구선원전', '규장각', '경훈각', '관물헌',
   '승화루', '내의원', '신선원전', '의효전', '선정문', '금호문', '단봉문', '옥당(홍문관)', '검서청', '한정당', '상량정', '취운정', '예문관', '정청', '내병조'];
-const plan = planPalace({ elements: front, local, inPalace, OUTLINE: RAW, OWN, NO_RIDGE: new Set(['대조전']), BOARDS, KEEP, COUNT, FOOT });
+const plan = planPalace({ elements: front, local, inPalace, OUTLINE: RAW, OWN, NO_RIDGE: new Set(['대조전']), BOARDS, KEEP, COUNT, FOOT, HALLS: new Set(['낙선재', '석복헌', '수강재']) });
 const { own, halls, runs, blockers, yards, sides, corridorP } = plan;
+
+// ---------- Doors ----------
+// Changdeokgung's quarters are small rings inside rings (Nakseonjae, the
+// queen's kitchens), and OSM draws their little gates as part of the
+// corridors, so the planner's doors on each ring's middle line leave some
+// yards shut. From just inside Donhwamun, every hall and yard that cannot be
+// walked to gets a door (GAP wide) where the way to it crosses the fewest
+// corridors. A hall with no free ground at any side (jammed between
+// corridors) is left out. Recorded in meta.doors: the doors are made up.
+export const doors = [];
+{
+  const GAP = 1.8, R = 0.4, xs = RAW.map((q) => q[0]), zs = RAW.map((q) => q[1]);
+  const X0 = Math.min(...xs) - 1, Z0 = Math.min(...zs) - 1, nx = Math.ceil((Math.max(...xs) - X0 + 1) / R), nz = Math.ceil((Math.max(...zs) - Z0 + 1) / R);
+  const cell = (x, z) => Math.floor((z - Z0) / R) * nx + Math.floor((x - X0) / R);
+  const HARD = 65535;
+  let grid;
+  const paint = () => { // 0 free; n + 1: corridor run n; HARD: a hall, a block, outside the wall
+    grid = new Uint16Array(nx * nz);
+    blockers.forEach((b, n) => {
+      const bx = b.p.map((q) => q[0]), bz = b.p.map((q) => q[1]);
+      for (let i = Math.max(0, Math.floor((Math.min(...bx) - 0.4 - X0) / R)); i <= Math.min(nx - 1, Math.ceil((Math.max(...bx) + 0.4 - X0) / R)); i++)
+        for (let j = Math.max(0, Math.floor((Math.min(...bz) - 0.4 - Z0) / R)); j <= Math.min(nz - 1, Math.ceil((Math.max(...bz) + 0.4 - Z0) / R)); j++) {
+          const x = X0 + (i + 0.5) * R, z = Z0 + (j + 0.5) * R, k = j * nx + i;
+          if (grid[k] === HARD) continue;
+          if (inside(b.p, x, z) || [[0.3, 0], [-0.3, 0], [0, 0.3], [0, -0.3]].some(([dx, dz]) => inside(b.p, x + dx, z + dz))) grid[k] = n < runs.length ? n + 1 : HARD;
+        }
+    });
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const x = X0 + (i + 0.5) * R, z = Z0 + (j + 0.5) * R; if (!inPalace(x, z)) grid[j * nx + i] = HARD; }
+  };
+  const flood = () => { // cost[k]: corridor cells crossed on the way from the gate; from[k]: the cell before
+    const cost = new Float32Array(nx * nz).fill(1e9), from = new Int32Array(nx * nz).fill(-1), dq = [cell(0, -6)];
+    cost[dq[0]] = 0;
+    while (dq.length) {
+      const c = dq.shift(), i = c % nx, j = (c - i) / nx;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const ii = i + di, jj = j + dj, k = jj * nx + ii;
+        if (ii < 0 || jj < 0 || ii >= nx || jj >= nz || grid[k] === HARD) continue;
+        const w = grid[k] ? 1 : 0;
+        if (cost[c] + w < cost[k]) { cost[k] = cost[c] + w; from[k] = c; if (w) dq.push(k); else dq.unshift(k); }
+      }
+    }
+    return { cost, from };
+  };
+  const near = (x, z, far) => { const out = []; for (let r = 0; r <= far; r += 0.4) for (let a = 0; a < 8; a++) { const k = cell(x + Math.cos(a * 0.785) * r, z + Math.sin(a * 0.785) * r); if (grid[k] === 0) out.push(k); } return out; };
+  const goals = () => { // each hall and yard: the free cells that count as "at it"
+    const out = [];
+    for (const h of halls) if (h.kind === 'h' || h.kind === 'n') {
+      const cs = Math.cos(-h.ry), sn = Math.sin(-h.ry), at = (u, v) => [h.x + u * cs - v * sn, h.z + u * sn + v * cs];
+      out.push({ h, cells: [at(0, h.d / 2 + 1.2), at(0, -h.d / 2 - 1.2), at(h.w / 2 + 1.2, 0), at(-h.w / 2 - 1.2, 0)].flatMap(([x, z]) => near(x, z, 1.2)) });
+    }
+    for (const y of yards) {
+      const cs = Math.cos(y.a), sn = Math.sin(y.a), cells = [];
+      for (let u = -y.w / 2 + 1.5; u < y.w / 2 - 1.5; u += 0.8) for (let v = -y.d / 2 + 1.5; v < y.d / 2 - 1.5; v += 0.8) { const k = cell(y.x + u * cs - v * sn, y.z + u * sn + v * cs); if (grid[k] === 0) cells.push(k); }
+      out.push({ y, cells });
+    }
+    return out;
+  };
+  const cut = (n, x, z) => { // a GAP in run n at the point nearest (x, z)
+    const [x0, z0, x1, z1, side, D] = runs[n], L = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / L, uz = (z1 - z0) / L;
+    const t = Math.max(GAP / 2, Math.min(L - GAP / 2, (x - x0) * ux + (z - z0) * uz)), pieces = [];
+    for (const [a, b] of [[0, t - GAP / 2], [t + GAP / 2, L]]) if (b - a > 0.8) pieces.push([r1(x0 + ux * a), r1(z0 + uz * a), r1(x0 + ux * b), r1(z0 + uz * b), side, D]);
+    runs.splice(n, 1, ...pieces);
+    const P = pieces.map(([a, b, c, d]) => ({ p: rect((a + c) / 2, (b + d) / 2, Math.hypot(c - a, d - b), D, Math.atan2(d - b, c - a)) }));
+    blockers.splice(n, 1, ...P);
+    corridorP.splice(n, 1, ...P.map((b) => b.p));
+    doors.push([r1(x0 + ux * t), r1(z0 + uz * t)]);
+  };
+  for (let turn = 0; turn < 60; turn++) {
+    paint();
+    const { cost, from } = flood();
+    const shut = goals().filter((g) => g.cells.length && !g.cells.some((k) => cost[k] === 0)).map((g) => g.cells.reduce((a, k) => (cost[k] < cost[a] ? k : a))).filter((k) => cost[k] < 1e9);
+    if (!shut.length) break;
+    let k = shut.reduce((a, b) => (cost[b] < cost[a] ? b : a)), first = -1; // the nearest shut place: the first corridor on the way to it
+    for (; k >= 0; k = from[k]) if (grid[k]) first = k;
+    const i = first % nx, j = (first - i) / nx;
+    cut(grid[first] - 1, X0 + (i + 0.5) * R, Z0 + (j + 0.5) * R);
+  }
+  paint();
+  const { cost } = flood();
+  for (let n = halls.length - 1; n >= 0; n--) { // a hall with no free ground beside it, or still shut in: left out
+    const h = halls[n];
+    if (h.kind !== 'h' && h.kind !== 'n') continue;
+    const g = goals().find((q) => q.h === h);
+    if (g.cells.some((k) => cost[k] === 0)) continue;
+    const bi = blockers.findIndex((b, m) => m >= runs.length && Math.abs((b.p[0][0] + b.p[2][0]) / 2 - h.x) < 0.02 && Math.abs((b.p[0][1] + b.p[2][1]) / 2 - h.z) < 0.02);
+    console.log('left out (no way to it):', h.name || `hall at ${r1(h.x)},${r1(h.z)}`);
+    halls.splice(n, 1);
+    if (bi >= 0) blockers.splice(bi, 1);
+  }
+  for (let n = yards.length - 1; n >= 0; n--) { const g = goals().find((q) => q.y === yards[n]); if (!g.cells.some((k) => cost[k] === 0)) yards.splice(n, 1); } // (a yard with no free ground: no paving)
+  console.log('doors cut:', doors.length);
+}
 const O = Object.fromEntries(own.map((o) => [o.name, o]));
 const lm = [], pois = [], areas = [], roads = [];
 
@@ -282,7 +374,8 @@ const paths = osm.elements.filter((e) => e.kind === 'path').map((e) => ({ e, p: 
       }
       run = [];
     };
-    for (const q of dense) { if (!inPalace(q[0], q[1])) { flush(); continue; } const w = warp(q); if (blocked(w)) flush(); else run.push(w); }
+    for (const q of dense) { if (!inPalace(q[0], q[1])) { flush(); continue; } const w = warp(q); if (blocked(w) || !inPalace(w[0], w[1]) || polyDist(w[0], w[1], RAW) < 1.2) flush(); // (a path the gardens' move would push through the wall stops there)
+       else run.push(w); }
     flush();
   }
 }
@@ -303,6 +396,23 @@ const clipZ = (P, zMax, zMin) => { // the part of a polygon between two east-wes
 }
 for (const e of osm.elements) if (e.kind === 'sand') { const p = e.pts.slice(0, -1).map(local); if (p.every(([x, z]) => !inHuwon(x, z))) areas.push({ k: 'sand', p: p.map(([x, z]) => [r1(x), r1(z)]) }); }
 for (const y of yards) areas.push({ k: 'stone', p: rect(y.x, y.z, y.w, y.d, y.a) });
+
+// ---------- In front of the gate ----------
+// Donhwamun's forecourt, down to Yulgok-ro. The game's Yulgok-ro runs 20 to
+// 26 m south of the real one here (it joins Gyeongbokgung's frame), so the
+// forecourt is that much deeper than in Seoul; the road is carried on east
+// from where Gyeongbokgung's map ends it to the top of Donhwamun-ro (the
+// base map). The Information Center is a hanok on the forecourt's east
+// side, its door on Yulgok-ro's pavement (stores.json stands it there).
+export const FORECOURT = { z: 28, road: { z: 35, x0: -30, x1: 24, w: 14 }, info: { id: 'info-changdeokgung', box: [12, 26.5, 23, 16.5] } };
+const buildings = [];
+{
+  const F = FORECOURT, wall = OUTLINE.filter(([x, z], i) => i < 5 && x < 24 && z > -3); // (the wall east of the gate, to Danbongmun)
+  areas.push({ k: 'plaza', why: 'Donhwamun\'s forecourt (deeper than the real one: the game\'s Yulgok-ro is 20-26 m south of its real line)', p: [[-12, 2.6], OUTLINE.at(-1), ...wall, [24, 4], [24, F.z], [-12, F.z]].map(([x, z]) => [r1(x), r1(z)]) });
+  roads.push({ k: 'primary', w: F.road.w, p: [[F.road.x0, F.road.z], [F.road.x1, F.road.z]], n: N('율곡로', 'Yulgok-ro', '栗谷路', '栗谷路'), why: 'carried on from Gyeongbokgung\'s map to Donhwamun-ro; 20-26 m south of the real road, like the stretch west of it' });
+  const [x0, z0, x1, z1] = F.info.box;
+  buildings.push({ h: 6, hanok: 1, fr: [0, 1], p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] });
+}
 
 // ---------- The wall ----------
 const wallPts = OUTLINE.map(([x, z]) => [r1(x), r1(z)]);
@@ -364,13 +474,17 @@ const map = {
     district: 'changdeokgung',
     parts: [
       { why: 'the palace: Donhwamun to Daejojeon and Nakseonjae', box: [-14, 8, Math.ceil(Math.max(...xs)), HUWON_Z] },
-      { why: 'Huwon, the garden behind it', box: [Math.floor(Math.min(...xs.filter((_, i) => zs[i] < HUWON_Z))), HUWON_Z, Math.ceil(Math.max(...xs)), Math.floor(Math.min(...zs))] },
+      { why: 'the forecourt and Yulgok-ro in front of the gate', box: [-12, FORECOURT.road.z + FORECOURT.road.w / 2, 24, 8] },
+      { why: 'Huwon, the garden behind it', box: [-20, HUWON_Z, Math.ceil(Math.max(...xs)), Math.floor(Math.min(...zs.filter((_, i) => xs[i] > -20)))] },
+      { why: 'Seonwonjeon\'s yards, in the garden\'s north-west corner', box: [Math.floor(Math.min(...xs)), Math.ceil(Math.max(...zs.filter((_, i) => xs[i] < -22))), -20, Math.floor(Math.min(...zs.filter((_, i) => xs[i] < -22)))] },
     ],
     enclosure: { why: 'inside the palace wall: the halls, the garden and its woods are drawn once you walk in through Donhwamun (core/enclosure.js)', box, poly: RAW.map(([x, z]) => [r1(x), r1(z)]) },
     gardens: GARDENS.map((g) => ({ id: g.id, real: g.c.map(r1), at: g.to.map(r1), scale: GARDEN, moved: r1(g.moved), why: 'a garden at 50% is twice the 1/4 map: moved along the valley so the four stand clear of each other and of the wall, in their real order' })),
+    doors, // made up: gaps cut in corridors so every yard can be walked into (OSM draws the small gates as corridor)
+    halls: { foot: FOOT / 4, sizes: Object.fromEntries(sides), why: 'halls at 50% where they fit between the corridors (kept at 1/4, they are the yards\' edges); in these tight yards most stay at 30%' },
     source: 'OpenStreetMap © OpenStreetMap contributors, ODbL (the wall, buildings, ponds and paths), at 1/4. Built by scripts/build-changdeokgung.mjs',
   },
-  roads, buildings: [], rail: [], areas, blockers, pois, landmarks: lm,
+  roads, buildings, rail: [], areas, blockers, pois, landmarks: lm,
 };
 const pretty = (o) => JSON.stringify(o, null, 1).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']');
 const dry = process.argv.includes('--dry');
@@ -386,6 +500,16 @@ if (!dry) writeFileSync(MAP, pretty(map) + '\n');
   if (old) text = text.replace(old[0], block);
   else { const at = text.indexOf('    {\n      "id": "itaewon"'); text = text.slice(0, at) + block + text.slice(at); }
   if (!dry && process.argv.includes('--region')) writeFileSync(REGION, text);
+  // stores.json is hand-formatted too: only the Information Center's "at" is rewritten.
+  const STORES = path.join(root, 'public', 'regions', 'another-seoul', 'stores.json');
+  let stores = readFileSync(STORES, 'utf8');
+  const [x0, z0, x1] = FORECOURT.info.box, at = stores.indexOf(`"id": "${FORECOURT.info.id}"`);
+  if (at < 0) console.log(FORECOURT.info.id + ': not in stores.json');
+  else {
+    const end = stores.indexOf('\n', at);
+    stores = stores.slice(0, at) + stores.slice(at, end).replace(/"at": \[[^\]]*\]/, `"at": [${(x0 + x1) / 2 + entry.offset[0]}, ${z0 + 2 + entry.offset[1]}]`) + stores.slice(end);
+    if (!dry && process.argv.includes('--region')) writeFileSync(STORES, stores);
+  }
   console.log('offset', entry.offset);
 }
 console.log(`halls ${halls.length} (Huwon ${huwonHalls.length}), pavilions ${jeongja.length}, corridor runs ${runs.length}, blockers ${blockers.length}, paths ${roads.length}, trees ${trees.length}, water ${water.length}`);
@@ -435,7 +559,7 @@ for (const g of GARDENS) console.log(`garden ${g.id}: real (${g.c.map(r1)}) -> (
     if (!ok) shut.push(`yard at ${r1(y.x)},${r1(y.z)}`);
   }
   let cut = 0;
-  for (const r of roads) for (const [x, z] of r.p) if (!reach(x, z, 1.6)) cut++;
+  for (const r of roads) if (r.k === 'walk') for (const [x, z] of r.p) if (!reach(x, z, 1.6)) { cut++; if (process.env.DBG) console.log('shut path point', x, z, r.k); }
   console.log(shut.length ? 'cannot walk to: ' + shut.join('; ') : 'every hall, yard, pavilion and garden can be walked to', cut ? `; ${cut} path points are shut in` : '');
   if (process.argv.includes('--check') && (shut.length || cut)) process.exitCode = 1;
   const ri = process.argv.indexOf('--reach');
