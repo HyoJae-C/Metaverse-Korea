@@ -32,6 +32,8 @@ jobs:
           node tests/e2e/multiplayer.mjs http://localhost:4173/
           # Gifts between two players (buy, accept, decline).
           node tests/e2e/gifts.mjs http://localhost:4173/
+          # A fishing contest between two friends (ask, rule, accept, a catch, leaving).
+          node tests/e2e/fish-contest.mjs http://localhost:4173/
           # Memory budget: iPhone Safari closes the page past its canvas limit.
           node tests/e2e/memory.mjs http://localhost:4173/
           # Returning players' saves (a drink in hand, an errand done…) still load.

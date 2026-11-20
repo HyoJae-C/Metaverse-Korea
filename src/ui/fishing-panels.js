@@ -20,8 +20,11 @@ export class FishingUI {
   // rod(): the rod skin id in use; a better rod cuts the escape chance.
   // bait: the bait on the hook (game/fish-bait.js): { bait, left, use(),
   // name(bait) }; each bite uses one (none: the plain bait).
-  constructor({ root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod, bait }) {
-    Object.assign(this, { root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod, bait });
+  // contest(): buttons for a fishing contest with a friend nearby
+  // (game/fish-contest.js): [{ key, label, run }]; noAuto(): true while one
+  // runs (auto fishing is off then).
+  constructor({ root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod, bait, contest, noAuto }) {
+    Object.assign(this, { root, bag, dex, stats, pity, onRod, onCatch, onEscape, onClose, onStamp, onPhase, lucky, park, rod, bait, contest, noAuto });
     this.timer = 0;
     this.state = 'idle';
   }
@@ -81,9 +84,15 @@ export class FishingUI {
     cast.onclick = () => this.cast();
     const actions = el('div', 'order-actions');
     const auto = el('button', 'chip', '🤖 ' + t('fish.auto'));
-    auto.disabled = this.bag.full;
+    auto.disabled = this.bag.full || !!this.noAuto?.();
     auto.onclick = () => this.autoFish();
     actions.append(cast, auto);
+    if (this.noAuto?.()) this.root.append(el('p', 'order-hint', t('fc.noAuto')));
+    for (const a of this.contest?.() || []) {
+      const b = el('button', 'chip fish-contest-btn', a.label);
+      b.onclick = () => a.run();
+      actions.append(b);
+    }
     if (this.dex) {
       const book = el('button', 'chip', `📖 ${t('fish.book')} · ${this.dex.kinds}/${FISH.length} · 🐟 ${this.dex.total}`);
       book.onclick = () => this.renderBook();
@@ -247,6 +256,7 @@ export class FishingUI {
   // AUTO_SECONDS while you stay here with the game open (a hidden tab
   // doesn't count). Rare fish only bite for hands-on fishing.
   autoFish() {
+    if (this.noAuto?.()) return;
     this.state = 'auto';
     this._frame();
     let got = 0, waited = 0, last = performance.now();

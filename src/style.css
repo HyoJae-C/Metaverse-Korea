@@ -1478,6 +1478,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .rent-chip[hidden] { display: none; }
 /* Seoul Forest's tandem rental: the meter (game/tandem-rental.js). */
 .tandem-chip { background: #dff3e5; color: #1f5c38; }
+.contest-chip { background: #dcefff; color: #13406b; font-variant-numeric: tabular-nums; }
 /* Narrow phones: below the chip row, not in it (the row is full). In a shop
    the banner is there, and the product card shows the time instead. */
 @media (max-width: 480px) {
@@ -1786,6 +1787,9 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .lock-shape { display: grid; justify-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; }
 .lock-shape small { font-size: 12px; }
 .lock-shape.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.lock-who { display: flex; flex-wrap: wrap; gap: 6px; }
+.lock-who .chip.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; color: #7a1f33; }
+.lock-names { font-size: 15px; color: #c23b66; }
 /* Cheonggyecheon wish lanterns (ui/wish-ui.js) */
 .wish-colors { display: flex; flex-wrap: wrap; gap: 8px; }
 .wish-color { width: 36px; height: 36px; border-radius: 10px; background: var(--c); box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .12); }
@@ -2956,3 +2960,6 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .spend-ask-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 10px; align-items: center; }
 .spend-ask-btns .chip { padding: 12px 14px; }
 .spend-ask-btns .primary { padding: 12px; font-size: 17px; }
+.fc-rule-list { flex-direction: column; align-items: stretch; }
+.fc-rule-list .chip { text-align: start; white-space: normal; line-height: 1.3; padding: 8px 12px; }
+.fc-rule-list small { font-weight: 400; opacity: .8; }

@@ -16,6 +16,8 @@ import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/st
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { keepPending, retryPending } from './game/referral-retry.js';
 import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
+import { parseContest } from './core/fish-contest.js';
+import { createFishContest } from './game/fish-contest.js';
 import { Billboard } from './core/billboard.js';
 import { WallScreen, wallNear, screenSpot } from './core/wall-screen.js';
 import { LocalBoard, SupabaseBoard } from './core/board.js';
@@ -74,7 +76,7 @@ import { createParkRiders } from './game/park-riders.js';
 import { boarding, frameAt, rideEnds, rideFx, seatPose, trainAt, LENGTH, TRAINS, OFF as COASTER_OFF, SEATS as COASTER_SEATS, S_AIR, S_LOOP, S_LOOP_TOP, S_TUNNEL } from './core/coaster.js';
 import { CoasterFx } from './ui/coaster-fx.js';
 import { createNamsanCable } from './game/namsan-cable.js';
-import { LocalLoveLocks, SupabaseLoveLocks } from './core/love-locks.js';
+import { LocalLoveLocks, SupabaseLoveLocks, parsePair, pairMsg, PAIR_RADIUS } from './core/love-locks.js';
 import { LOCK_LABELS } from './ui/love-lock-labels.js';
 import { WISH, WISHES, canFloat, encodeLantern, decodeLantern, lanternAt, muralSign, wishFrom, wishTo } from './core/lanterns.js';
 import { WishUI, WISH_TEXT } from './ui/wish-ui.js';
@@ -1707,6 +1709,14 @@ async function joinRoom(room, roomScene, area = null) {
         return;
       }
       if (typeof e === 'string' && e.startsWith('bp:')) { ballparkCams.onMsg(id, e); return; } // (game/ballpark-cams.js)
+      if (typeof e === 'string' && e.startsWith('ll:')) { // a love lock for two (ui/love-lock-ui.js): only from a friend, only while I'm at the heart
+        const m = parsePair(e), name = others.nameOf(id);
+        if (!m || m.to !== myId || !name || safety.isBlocked(id, name)) return;
+        if (m.v === 'ask' && (chat?.friendStatus?.(name) !== 'friend' || mode !== 'street' || namsanWalk.awayFromHeart(me.root.position))) { net.sendEmote(pairMsg({ v: 'no', to: id, rid: m.rid, why: 'far' })); return; }
+        loveLockUi.onPair(id, name, m);
+        return;
+      }
+      if (typeof e === 'string' && e.startsWith('fc:')) { const fcm = parseContest(e); if (fcm) fishContest.onMsg(id, fcm); return; } // a fishing contest with a friend (game/fish-contest.js)
       if (parseHi5(e)) { if (parseHi5(e) === myId && !safety.isBlocked(id, others.nameOf(id))) onHi5(id); return; }
       const em = getEmote(e);
       if (em && !safety.isBlocked(id, others.nameOf(id))) others.emote(id, em.anim, em.emoji); // ignore unknown emotes
@@ -4318,6 +4328,8 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
   stats: new FishStats(), // mk.fishstats: casts, misses and escapes, for balancing
   pity: new FishPity(), // mk.fishpity: bites toward each park's first legend
   bait: fishBait.fishing, // the bait on the hook: one a bite (game/fish-bait.js)
+  contest: () => fishContest.acts(me.root.position), // a fishing contest with a friend nearby (game/fish-contest.js)
+  noAuto: () => fishContest.noAuto,
   onRod: (on) => { rodOut = on; me.setHeld(heldKind()); lastSent = null; },
   onPhase: (ph, data) => {
     fishRig.phase(ph, data);
@@ -4339,6 +4351,8 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
     sfx.pop?.();
     refreshFishBookBtn();
     showBubbleEl(myLabel, $('labels'), catchBubble(f), showMs(f));
+    const cm = fishingUi.state === 'auto' ? null : fishContest.caught(f); // (a contest counts fish caught by hand)
+    if (cm != null) shop.toast(t('fc.caught', { fish: getLanguage() === 'ko' ? f.ko : localName(f.name, getLanguage()), cm }));
     if (f.rarity >= 3) me.play('cheer'); // a rare one!
     // ★3–★5: a trophy over my head, for everyone nearby. I always see my
     // own; during show time others don't (onPeerTrophy, Yozi).
@@ -4357,6 +4371,17 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
   // The stamp slamming down on a first catch: a deep double thud.
   onStamp: () => { sfx.tock(1, 260); setTimeout(() => sfx.tock(0.7, 180), 70); buzz(40); },
 })), { state: 'idle' });
+// A three-minute fishing contest with a friend in the same Han River park (game/fish-contest.js).
+const fishContest = createFishContest({
+  myId, others: () => others, send: (m) => net.sendEmote(m), isFriend: (name) => chat?.friendStatus?.(name) === 'friend',
+  blocked: (id, name) => safety.isBlocked(id, name), park: () => hanPark(), toast: (m) => shop.toast(m), sfx, chip: $('contest-chip'),
+  cheer: () => me.play('cheer'), bubble: (text) => showBubble(myLabel, $('labels'), text), peerBubble: (id, text) => others.chat(id, text, 4000),
+  refreshFishing: () => {
+    if (!fishingUi.open) { action = null; return; }
+    if (fishingUi.state === 'auto' && fishContest.noAuto) { fishingUi.onPhase?.('retrieve'); fishingUi.renderIdle(); }
+    else if (fishingUi.state === 'idle') fishingUi.renderIdle();
+  },
+});
 // Second-hand shops: sell clothes I bought back (core/resale.js), paid by
 // the server wallet from its own ledger. Clothes bought before receipts
 // existed are found once in the budget book.
@@ -5100,6 +5125,10 @@ function loveLockStore() {
 const loveLockUi = lazyPanel(() => import('./ui/love-lock-ui.js').then(({ LoveLockUI }) => new LoveLockUI({
   root: $('love-lock-panel'), store: loveLockStore, wallet, name: () => nickname, toast: (m) => shop.toast(m),
   onHung: () => { refreshWallet(); me.play('cheer'); },
+  // A lock for two: friends standing next to me at the heart.
+  friends: () => (namsanWalk.awayFromHeart(me.root.position) ? [] : others.nearbyFree(me.root.position.x, me.root.position.z, PAIR_RADIUS)
+    .filter((o) => chat?.friendStatus?.(o.name) === 'friend' && !safety.isBlocked(o.id, o.name))),
+  send: (m) => net.sendEmote(m), myId,
 })), { busy: false });
 // My lantern on Jogyesa's canopy (game/temple-lanterns-near.js).
 const templeMonks = createTempleMonksNear({ scene, offsets: Object.fromEntries((region.districts || []).map((d) => [d.id, d.offset])) }); // monks at Jogyesa and Bongeunsa
@@ -6708,6 +6737,7 @@ function moreActions(p, door) {
     if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
     out.push(...templeLanterns.acts(p));
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
+    if (!seated) out.push(...fishContest.acts(p)); // a fishing contest with a friend in the park
     if (!seated) out.push(...nightCarts.actions(p)); // a night food cart's counter
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat && !bs.cushion) out.push(matSitAct(bs));
@@ -6737,6 +6767,7 @@ function moreActions(p, door) {
   const fb = frisbee.action(p); if (fb) out.push(fb);
   if (interior.themepark) out.push(...balloonClown.actions(p), ...parkTickets.actions(p));
   if (interior.zooPark) out.push(...zooVisit.more(p));
+  if (interior.hanRiver) out.push(...fishContest.acts(p)); // a fishing contest with a friend in the park
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
   out.push(...decorGame.pieceActs(p)); // my home: carry or put away the piece in front (game/decor.js)
@@ -6792,6 +6823,7 @@ function updateAction(p, tSec) {
       next = { key: 'tandem-hop:' + inv.from, label: (isCar(others.kindOf(inv.from)) ? '🚗 ' : '🚲 ') + t('tandem.hopOn', { name: inv.name }), run: () => hopOn(inv) };
     }
     else if (sb && sb.key !== 'sb-make') next = sb; // working on a snowball
+    else if (!riding && !seated && fishContest.act(p)) next = fishContest.act(p); // a friend asked me to a fishing contest (before the high five)
     else if (hi5Target(p)) next = hi5Action(hi5Target(p));
     else if (!riding && boardAt(p)) next = boardAct(boardAt(p));
     else if (!riding && !seated && prayer.act(p)) next = prayer.act(p); // in front of a temple's Buddha (game/prayer.js)
@@ -7900,6 +7932,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
     spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    contest: () => fishContest.state, // (a fishing contest with a friend: game/fish-contest.js)
+    contestCatch: (id) => fishContest.caught({ id }), // (as if I landed that fish by hand)
     ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
     fishBuySpot: () => hanPark()?.fishBuy && [hanPark().fishBuy.x, hanPark().fishBuy.z],
     baitSpot: () => hanPark()?.bait && [hanPark().bait.x, hanPark().bait.z],
@@ -7943,5 +7977,6 @@ if (new URLSearchParams(location.search).has('debug')) {
     mission: (type, target) => missionEvent(type, target),
     arcade: () => arcade, brawl: () => arcadeGame.brawl(), strike: () => arcadeGame.strike(), watching: () => arcadeGame.watching(), brawlTv: () => arcadeGame.brawlTv()?.state ?? null, ballpark: () => (ballparkCams.loaded ? ballparkCams.state() : null), ballparkHit: (team) => ballparkCams.teamHit(team), ballparkSnap: () => (ballparkCams.loaded ? ballparkCams.snap() : null),
     loveLock: (view) => loveLockUi.show(view),
+    lockPair: (from, name, m) => loveLockUi.onPair(from, name, m), // (e2e: a friend's message about a lock for two)
   };
 }
