@@ -52,7 +52,8 @@ export function createGinkgo(game) {
   const cool = new Map(); // tree index -> when it can be shaken again
   let dropped = []; // { x, z, until, t (s since it fell), key }
   let near = []; // indices of trees close by
-  let lastLook = -1e9, lastX = 1e9, lastZ = 1e9;
+  let lastLook = -1e9, lastX = 1e9, lastZ = 1e9, lastSlot = -1;
+  let nuts = [], dirty = true, drawn = false; // (the nuts near you, worked out again only when something changes)
 
   const geo = new THREE.IcosahedronGeometry(0.1, 1).scale(1, 0.8, 1);
   const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: '#e7b43c' }), MAX);
@@ -91,6 +92,7 @@ export function createGinkgo(game) {
       dropped.push({ x: x + Math.cos(a) * r, z: z + Math.sin(a) * r, until: now + DROPPED_MS, t: -j * 0.15, key: 'd' + now + ':' + j });
     }
     if (dropped.length > 60) dropped = dropped.slice(-60);
+    dirty = true;
     return got ? 'nut' : 'full';
   }
 
@@ -116,31 +118,41 @@ export function createGinkgo(game) {
       mesh.visible = street && SEASON === 'autumn';
       if (!mesh.visible || !trees.length) return;
       const now = Date.now();
+      // Once a second (or after a long walk or a ride): which trees are near.
       if (now - lastLook > 1000 || Math.hypot(p.x - lastX, p.z - lastZ) > 10) {
         lastLook = now; lastX = p.x; lastZ = p.z;
+        const was = near.join(','), slot = Math.floor(now / SLOT_MS);
         near = [];
         for (let i = 0; i < trees.length; i++) if (Math.abs(trees[i][0] - p.x) < NEAR && Math.abs(trees[i][1] - p.z) < NEAR) near.push(i);
+        const n = dropped.length;
         dropped = dropped.filter((d) => d.until > now);
+        if (near.join(',') !== was || slot !== lastSlot || dropped.length !== n) { lastSlot = slot; dirty = true; }
       }
-      for (const d of dropped) d.t += dt;
-      const nuts = lying(now);
-      let c = 0;
+      let falling = false;
+      for (const d of dropped) { if (d.t < 0.6) falling = true; d.t += dt; }
+      if (dirty || falling) { nuts = lying(now); dirty = false; drawn = false; }
+      // The nut under your foot (only nuts on the ground).
       for (const [x, z, key, y] of nuts) {
-        if (y === 0 && !p.air && Math.hypot(x - p.x, z - p.z) < STEP) { // squash
-          if (key[0] === 'd') dropped = dropped.filter((d) => d.key !== key); else squashed.add(key);
-          game.stink?.();
-          continue;
-        }
-        if (c >= MAX) continue;
+        if (y > 0 || Math.abs(x - p.x) > STEP || Math.abs(z - p.z) > STEP || Math.hypot(x - p.x, z - p.z) >= STEP) continue;
+        if (key[0] === 'd') dropped = dropped.filter((d) => d.key !== key); else squashed.add(key);
+        nuts = lying(now); drawn = false;
+        game.stink?.();
+        break;
+      }
+      if (drawn) return; // (nothing moved: no upload this frame)
+      let c = 0;
+      for (const [x, z, , y] of nuts) {
+        if (c >= MAX) break;
         q.setFromAxisAngle(v.set(0, 1, 0), (x * 7 + z * 3) % 6.3);
         mesh.setMatrixAt(c++, m4.compose(v.set(x, 0.08 + y, z), q, one));
       }
       mesh.count = c;
       mesh.instanceMatrix.needsUpdate = true;
+      drawn = true;
     },
     get nuts() { return lying(Date.now()).map(([x, z, key, y]) => [+x.toFixed(2), +z.toFixed(2), key, +y.toFixed(2)]); }, // (tests)
     get near() { return near.slice(); },
     get trees() { return trees; },
-    dropAt(x, z) { dropped.push({ x, z, until: Date.now() + DROPPED_MS, t: 1, key: 'd' + Date.now() + ':t' }); }, // (tests)
+    dropAt(x, z) { dropped.push({ x, z, until: Date.now() + DROPPED_MS, t: 1, key: 'd' + Date.now() + ':t' }); dirty = true; }, // (tests)
   };
 }
