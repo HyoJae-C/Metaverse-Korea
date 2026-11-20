@@ -579,7 +579,7 @@ if (si > 0) {
   const X0 = -75, Z0 = -265, K = 6, W = 180 * K, Hh = 280 * K, P = ([x, z]) => `${r1((x - X0) * K)},${r1((z - Z0) * K)}`;
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Hh}"><rect width="100%" height="100%" fill="#f4f1ea"/>`;
   s += `<polygon points="${RAW.map(P).join(' ')}" fill="#e3ecd6" stroke="none"/>`;
-  for (const a of areas) s += `<polygon points="${a.p.map(P).join(' ')}" fill="${{ park: '#cfe6c0', sand: '#eadfbd', stone: '#d9d0bd', water: a.approx ? '#c9a3e8' : '#8cc0ea' }[a.k]}"/>`;
+  for (const a of areas) s += `<polygon points="${a.p.map(P).join(' ')}" fill="${{ park: '#cfe6c0', sand: '#eadfbd', stone: '#d9d0bd', plaza: '#e3dccb', water: a.approx ? '#c9a3e8' : '#8cc0ea' }[a.k]}"/>`;
   for (const r of roads) s += `<polyline points="${r.p.map(P).join(' ')}" fill="none" stroke="#fff" stroke-width="${r.w * K}" stroke-linejoin="round" stroke-linecap="round"/>`;
   for (const t of trees) s += `<circle cx="${(t[0] - X0) * K}" cy="${(t[1] - Z0) * K}" r="${1.6 * K}" fill="#6fa35c" fill-opacity=".45"/>`;
   if (process.argv.includes('--real')) for (const e of osm.elements) if (e.kind === 'building' || e.kind === 'water') s += `<polygon points="${e.pts.map(local).map(P).join(' ')}" fill="none" stroke="${e.kind === 'water' ? '#1f6fbf' : '#b5562f'}" stroke-width="1.2"/>`;
