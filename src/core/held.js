@@ -169,6 +169,13 @@ export function makeHeld(kind) {
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 6).rotateX(Math.PI / 2), o);
     beak.position.set(0, 0.268, 0.085);
     g.add(hinge, beak);
+  } else if (kind === 'baton') {
+    // A conductor's baton (core/stage-show.js).
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.007, 0.34, 6), mat('#fbfaf6'));
+    stick.position.y = 0.2;
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), mat('#b98a55'));
+    grip.position.y = 0.03; grip.scale.set(1, 1.6, 1);
+    g.add(stick, grip);
   } else if (kind === 'spear') {
     // A gate guard's spear (창) with a red tassel, held upright.
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.95, 8), mat('#6b4426'));

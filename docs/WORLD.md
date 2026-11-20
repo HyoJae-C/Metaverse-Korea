@@ -1105,3 +1105,46 @@ middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
   means a longer jump: a double from a standstill, a quad only at full speed.
   Points are a personal best on this device (no coins). Other skaters' jumps
   are sent as a short code (`st.ik`) and played back.
+
+## Seoul Arts Center (Seocho-gu)
+
+`scripts/build-arts-center.mjs` builds `districts/arts-center.json` from
+OpenStreetMap (`scripts/data/arts-center-osm.json`, cut from the Geofabrik
+extract on 2026-11-21). Its anchor is the crossing of Banpo-daero and
+Nambusunhwan-ro in front of the gate.
+
+- **Size**: the whole place (site, buildings, plaza, the gaps between them) at
+  50% of the real one, not 1/4 (Yozi 2026-11-21: Seocho is mostly offices
+  otherwise). Every OSM point is doubled about the anchor, so the layout keeps
+  its proportions (map rule 11: one scale for a whole place). The two roads in
+  front stay 1/4; the site grows south towards Umyeonsan, over real neighbours
+  that are not built. `meta.scale` says so.
+- **Estimated or made up** (`meta.approx`, roads with `approx: true`): the
+  heights (photos, not OSM), the flat ground (the real site climbs in
+  terraces), the doors' exact spots, and the walks from the gate to the plaza
+  and to the two doors. Buildings, fountain and footways are OSM's.
+- **Outside** (`src/core/arts-center-model.js`, landmark `artscenter`, loaded
+  with `import()` when the city is built): the Opera House as a round hall
+  under a roof like a gat (a brim and a crown) with its stage house behind,
+  the fan-shaped Music Hall, the museums as plain blocks, the music fountain
+  with moving jets, the lawn before the Opera House.
+- **Opera Theater** (stores.json `arts-opera-theater`, `front: "landmark"`,
+  room `opera`: `src/core/opera-hall.js`, loaded with the rooms): the stage
+  behind a red curtain, the orchestra pit with the conductor's podium, the
+  stalls and three horseshoe balconies. Some seats have people; the rest are
+  free. Walking only, like the cathedral.
+- **The show** (`src/core/stage-show.js`) runs on the real clock, so everyone
+  in the hall sees and hears the same bar. Each piece's turn is a short real
+  evening: the orchestra tunes to the oboe's A, the conductor walks in to
+  applause and bows, the lights go down and the curtain opens, the piece is
+  played and danced, applause and bows, the curtain closes. Then the next.
+- **The music** is not a recording. `src/data/opera-scores.js` holds the notes
+  (written by hand from the published scores; all four pieces are from before
+  1900 and out of copyright) and `src/core/concert-player.js` plays them live
+  with Web Audio as a small orchestra, into the game's music output. The
+  game's own track is the silent hidden track `concert` while inside. Nobody
+  sings: an instrument takes the singer's line. To add a piece, write a score
+  object there and put it in `OPERA_PROGRAM`.
+- The Music Hall's Concert Hall (orchestra on the stage, classical pieces
+  only) is a separate room, still to come; its door has no ring yet.
+

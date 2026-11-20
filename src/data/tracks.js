@@ -150,6 +150,14 @@ export const TRACKS = [
     scale: [72, 74, 76, 79, 81, 84], melodyFrom: 0, melody: 0.55, lead: 'bell',
   },
   {
+    // The Arts Center's halls: nothing from here; the orchestra is
+    // core/concert-player.js, playing written scores (data/opera-scores.js).
+    id: 'concert', hidden: true, silent: true, icon: '🎻', color: '#7a1f2b',
+    name: { en: 'Orchestra', ko: '오케스트라', ja: 'オーケストラ', zh: '管弦乐团' },
+    desc: { en: 'The orchestra in the hall.', ko: '홀의 오케스트라.', ja: 'ホールのオーケストラ。', zh: '音乐厅里的乐团。' },
+    bpm: 60, swing: 1, chords: [[60], [60], [60], [60]], bass: [48, 48, 48, 48], kick: [], snare: [], scale: [60], melodyFrom: 0, melody: 0, // (never played: silent)
+  },
+  {
     // Myeongdong Cathedral's organ (not in the record list; core/cathedral-mass.js):
     // a slow, quiet chorale on a pipe organ with a long echo, 16 bars (about
     // 70 s) and no words. An original tune, played live like the rest.
