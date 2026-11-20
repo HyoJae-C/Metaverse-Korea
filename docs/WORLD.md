@@ -1074,3 +1074,34 @@ from OpenStreetMap (`scripts/data/nanji-osm.json`) and the real ground
 - `tests/nanji.test.mjs` checks the real places, the slopes, that every way
   up is walkable, and the made-up list. `tests/e2e/nanji.mjs` walks up
   하늘길 and sits by a fire (`DAY=1` for daytime pictures).
+
+## Mokdong Ice Rink (Yangcheon-gu)
+
+`scripts/build-mokdong.mjs` writes `districts/mokdong.json` from
+OpenStreetMap (`scripts/data/mokdong-osm.json`), all at the real 1/4. The
+middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
+
+- **Real, within 1 m:** the rink's outline (the ice hall about 17 × 25 m, the
+  lobby in front), the baseball stadium and the main stadium next to it.
+  Gukhoe-daero and Mokdongdong-ro are within 10 m.
+- **Made up** (`meta.approx`): Gukhoe-daero as one road for its three
+  carriageways, the paved ground as one plaza, a small lawn, the Information
+  Center, and the stadiums' stands (you cannot go into the stadiums).
+- **An island for now:** the land between Mokdong and Yeouido is closed, so
+  you get here by taxi, the subway picker or the map.
+- **Outside** is drawn by `src/game/mokdong-site.js`, loaded when you come
+  near (`mokdong-near.js` is the small part in the first download).
+- **Inside** is a game room, bigger than the building on purpose
+  (`src/core/ice-rink-hall.js`, 56 × 40 m: a 46 × 25 m sheet of ice, stands,
+  the skate counter). Entry is free and the skates go on at the gate.
+- **Skating** (`src/core/ice-skate.js` the rules, `src/game/ice-rink.js` the
+  play, both loaded on the way in): you glide and carve, the action button
+  jumps, and arrows pressed in the air are the tricks. ← and → in turn
+  spin (← single 100, ← → double 300, ← → ← triple 700, ← → ← → quad 1,500;
+  begin with → to turn the other way; the same key twice is two singles); ↑↓ butterfly, ↓↑
+  backflip, ↑↑ cartwheel, ↓↓ death drop. A trick still turning when you land
+  is shaky (half) or a fall; landing just after it finishes is perfect
+  (×1.5). Clean landings in a row raise a combo up to ×3. A faster run-up
+  means a longer jump: a double from a standstill, a quad only at full speed.
+  Points are a personal best on this device (no coins). Other skaters' jumps
+  are sent as a short code (`st.ik`) and played back.

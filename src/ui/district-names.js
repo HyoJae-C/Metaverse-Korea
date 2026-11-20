@@ -22,4 +22,5 @@ export const DISTRICT_NAME = {
   'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
   mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },
   nanji: { en: 'Haneul Park & Nanji', ko: '하늘공원·난지', ja: '空公園・蘭芝', zh: '天空公园·兰芝', es: 'Parque Haneul y Nanji', id: 'Taman Haneul & Nanji', ar: 'حديقة هانول ونانجي', vi: 'Công viên Haneul & Nanji', hi: 'हानुल पार्क और नानजी', fr: 'Parc Haneul et Nanji', th: 'สวนฮานึลและนันจี' },
+  mokdong: { en: 'Mokdong', ko: '목동', ja: '木洞', zh: '木洞', es: 'Mokdong', id: 'Mokdong', ar: 'موكدونغ', vi: 'Mokdong', hi: 'मोकदोंग', fr: 'Mokdong', th: 'มกดง' },
 };

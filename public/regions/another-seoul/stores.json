@@ -3271,6 +3271,8 @@
       "at": [-2933.7, -116.2],
       "colors": { "sign": "#2e8b57", "awning": "#ffcf4a", "accent": "#f2f0ea" },
       "products": []
-    }
+    },
+    {"id": "mokdong-ice-rink", "category": "play", "workshop": "icerink", "size": "icerink", "district": "mokdong", "front": "landmark", "face": -0.179, "at": [-3897.6, 405.2], "name": {"en": "Mokdong Ice Rink", "ko": "목동아이스링크", "ja": "木洞アイスリンク", "zh": "木洞滑冰场", "es": "Pista de hielo de Mokdong", "id": "Arena Es Mokdong", "vi": "Sân băng Mokdong", "hi": "मोकदोंग आइस रिंक", "fr": "Patinoire de Mokdong", "th": "ลานสเกตน้ำแข็งมกดง", "ar": "حلبة التزلج موكدونغ"}, "tagline": {"en": "Skate, jump and do tricks with the arrow keys in the air: triples, backflips and combos (a game rink, not the real hall)", "ko": "스케이트를 타고 점프한 뒤 공중에서 방향키로 기술: 트리플, 백플립, 콤보 (게임 속 링크예요)", "ja": "滑ってジャンプ、空中で矢印キーの技：トリプル、バックフリップ、コンボ（ゲームのリンクです）", "zh": "滑冰、起跳，在空中用方向键做动作：三周跳、后空翻、连跳（游戏里的冰场）"}, "colors": {"sign": "#2f6fb5", "awning": "#dfeefa", "accent": "#f4f9fc"}, "products": []},
+    {"id": "info-mokdong", "category": "info", "workshop": "info", "size": "small", "name": {"en": "Mokdong Information Center", "ko": "목동 안내센터", "ja": "木洞インフォメーションセンター", "zh": "木洞信息中心"}, "tagline": {"en": "Two guides: how the game works, and Mokdong Ice Rink", "ko": "게임 안내와 목동아이스링크 안내, 두 명의 안내원", "ja": "ゲーム案内と木洞アイスリンク案内の2人がご案内", "zh": "两位向导：游戏玩法，以及木洞滑冰场"}, "at": [-3882, 410.75], "district": "mokdong", "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []}
   ]
 }
