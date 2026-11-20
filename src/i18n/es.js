@@ -935,7 +935,7 @@ export const ES = {
   "bait.desc": "Quedan {n}. Sostenlo y ponlo en el anzuelo: los ★3+ pican el {p}% de las veces.",
   "bait.hi1": "¡Buen cebo, buena picada!",
   "bait.hi2": "¡Hoy la marea está buena!",
-  "timed.gone": "⌛ {name} era por tiempo limitado: se acabó su plazo y salió de tu armario.",
+  "timed.gone": "⌛ {name} era por tiempo limitado: se acabó su plazo y desapareció.",
   "timed.left": "⌛ Quedan {d} días",
   "sauna.towelBack": "🐑 Pasó un día, así que el jjimjilbang recuperó su toalla de oveja.",
   "matFood.put": "Poner comida en la manta",

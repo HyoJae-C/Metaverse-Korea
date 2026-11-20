@@ -168,6 +168,12 @@ export const WEARABLES = {
         { en: `${n.en} paw gloves`, ko: `${n.ko} 발바닥 장갑`, ja: `${n.ja}の肉球手袋`, zh: `${n.zh}爪爪手套` })],
     ];
   })),
+  // Santa Pop-up (Seongsu): Christmas accessories, limited-time like the
+  // onesies (gone TIMED_SECS after buying, never resold or gifted).
+  'acc-santa-hat': item('🎅', 20, { head: 'santa-hat', hatPatch: null }, { head: null }, WEAR_DESC.timedAcc, { en: 'Santa hat', ko: '산타 모자', ja: 'サンタ帽', zh: '圣诞帽' }, { secs: TIMED_SECS }),
+  'acc-santa-beard': item('🧔', 15, { face: 'santa-beard' }, { face: null }, WEAR_DESC.timedAcc, { en: 'Santa beard', ko: '산타 수염', ja: 'サンタのひげ', zh: '圣诞老人胡子' }, { secs: TIMED_SECS }),
+  'acc-rudolph-nose': item('🔴', 10, { face: 'rudolph-nose' }, { face: null }, WEAR_DESC.timedAcc, { en: 'Rudolph nose', ko: '루돌프 코', ja: 'ルドルフの鼻', zh: '鲁道夫红鼻子' }, { secs: TIMED_SECS }),
+  'acc-antlers': item('🦌', 20, { head: 'antlers', hatPatch: null }, { head: null }, WEAR_DESC.timedAcc, { en: 'Rudolph antlers headband', ko: '루돌프 머리띠', ja: 'ルドルフのツノカチューシャ', zh: '鲁道夫鹿角发箍' }, { secs: TIMED_SECS }),
   // Maeum Knot Studio (Bukchon): maedeup bracelets, worn like gloves (look.hand).
   // Made in the studio for ₩8,000, never sold in a shop.
   ...Object.fromEntries(Object.entries(KNOT_COLORS).flatMap(([c, { name: C }]) => Object.entries(KNOTS).map(([k, K]) => [`acc-knot-${c}-${k}`,

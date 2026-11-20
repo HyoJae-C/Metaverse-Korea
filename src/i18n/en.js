@@ -113,7 +113,7 @@ export const EN = {
   "gym.talk": "Talk to {name}",
   "sauna.hot": "Go into the hot kiln",
   "sauna.ice": "Go into the ice room",
-  "timed.gone": "⌛ {name} was limited-time: its days are up, so it left your closet.",
+  "timed.gone": "⌛ {name} was limited-time: its days are up, so it's gone.",
   "timed.left": "⌛ {d} days left",
   "sauna.towelBack": "🐑 A day has passed, so the jjimjilbang took back its sheep towel.",
   "emblem.open": "Decorate my name tag",

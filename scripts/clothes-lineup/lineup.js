@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createCharacter } from '../../src/core/character.js';
+import { parseRide } from '../../src/core/bike-garage.js';
 const q = new URLSearchParams(location.search);
 const ids = (q.get('m') || 'basic,rogue,hooded,knight,suit-navy,coat-camel,varsity-navy,cardigan-brown').split(',');
 const yaw = +(q.get('yaw') || 0.45);
@@ -17,8 +18,11 @@ r.setSize(W, H);
 const cam = new THREE.OrthographicCamera(-n * sp / 2, n * sp / 2, fy + fh, fy, 0.1, 50);
 cam.position.set(0, 0, 10); cam.lookAt(0, 0, 0);
 const chars = ids.map((id, i) => {
-  const [model, shirt = 'cream', pants = 'denim', shoes = null, hairStyle = null, hair = 'espresso', back = null] = id.split(':');
-  const c = createCharacter({ model, shirt, pants, shoes: shoes || null, hairStyle: hairStyle || null, hair, skin: 'fair', back: back || null });
+  const [model, shirt = 'cream', pants = 'denim', shoes = null, hairStyle = null, hair = 'espresso', back = null, head = null, face = null] = id.split(':');
+  const c = createCharacter({ model, shirt, pants, shoes: shoes || null, hairStyle: hairStyle || null, hair, skin: 'fair', back: back || null, head: head || null, face: face || null });
+  // bike=sleigh (or a rideCode, e.g. bike.0.-.-.sleigh): everyone on that ride.
+  const bk = q.get('bike');
+  if (bk) c.setBike(1, bk.includes('.') ? parseRide(bk) : { type: 'bike', tier: 0, color: '#c8102e', pattern: null, body: bk === 'plain' ? null : bk });
   c.root.position.x = (i - (n - 1) / 2) * sp; c.root.rotation.y = yaw;
   s.add(c.root); return c;
 });

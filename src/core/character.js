@@ -16,6 +16,7 @@ import { PALETTES, PATCHES, sanitizeLook, accessory, shapeOf } from '../data/app
 import { skirtById } from '../data/skirts.js';
 import { TEE_PRINTS, drawTeePrint } from './tee-prints.js';
 import { makeEars, makePaw } from './animal-wear.js';
+import { makeXmas } from './xmas-wear.js';
 
 const geoCache = {};
 const geo = (key, make) => (geoCache[key] ||= make());
@@ -705,6 +706,8 @@ function addHat(look, head) {
       }
     } else if (hat === 'ears') {
       head.add(makeEars(head1));
+    } else if (hat === 'santa' || hat === 'antlers') {
+      head.add(makeXmas(hat, head1));
     } else if (hat === 'beanie') {
       const cap = new THREE.Mesh(
         geo('beanie', () => new THREE.SphereGeometry(0.34, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.45)), m);
@@ -824,7 +827,9 @@ function addAccessories(look, head, torso, body) {
   addHat(look, head);
 
   const face = accessory('face', look.face);
-  if (face) {
+  const faceShape = shapeOf(face);
+  if (faceShape === 'beard' || faceShape === 'nose') head.add(makeXmas(faceShape, face));
+  else if (face) {
     const frame = mat(face.color);
     const sun = shapeOf(face) === 'sunglasses';
     const lens = sun && face.lens != null
