@@ -6609,6 +6609,7 @@ function standUp() {
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
   if (seated.bumper != null) bumper.onStandUp();
   seated = null;
+  decorGame.unstick(true); // (a home: never up into a gap between other pieces, game/decor.js)
   sendTimer = 0;
 }
 
