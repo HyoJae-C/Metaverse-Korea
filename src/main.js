@@ -1526,11 +1526,14 @@ setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }
 const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => { sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q); } };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
-// can count, the people around you.
+// can count, the people around you. Only operators see the badge (Yozi
+// 2026-11-21: a small number puts new players off); everyone still counts,
+// since the send rate uses it.
 let onlineAll = 0;
+let onlineOp = !!import.meta.env?.DEV, onlineOpFor = null;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
-  $('online').hidden = n < 2;
+  $('online').hidden = !onlineOp;
   // Phones show just "🟢 5" (style.css hides .on-long); the full words stay
   // in the tooltip and for screen readers.
   const full = t('hud.online', { n });
@@ -1544,6 +1547,18 @@ let stopOnline = null;
 // stay unseen until it is claimed for chat (claimChatId below).
 watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
+// Is this account an operator? (am_operator, supabase/009_admin.sql) Asked
+// again only when the signed-in account changes.
+setTimeout(() => {
+  const ask = async () => {
+    const who = cloud.user?.id || null;
+    if (!cloud.client || who === onlineOpFor) return;
+    onlineOpFor = who;
+    try { const { data, error } = await cloud.client.rpc('am_operator'); onlineOp = !error && data === true; } catch { onlineOp = false; }
+    refreshOnline();
+  };
+  cloud.onChange(ask); ask();
+}, 4000);
 // A newer build deployed while we play: ask for a refresh (core/update-check.js).
 {
   const deployed = { current: __BUILD_ID__, fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v) };
