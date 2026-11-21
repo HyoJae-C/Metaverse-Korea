@@ -191,7 +191,7 @@ class Kit {
 function wing(k, L, D, o, { doors = true, tall = 0 } = {}) {
   const B = o.base, W = o.wall + tall, top = B + W;
   k.box(o.baseC, L + 0.7, B, D + 0.7, 0, B / 2, 0);
-  k.box(o.wallC, L, W, D, 0, B + W / 2, 0);
+  k.box(o.wallC, L, W - 0.06, D, 0, B + (W - 0.06) / 2, 0); // (stops under the beam's top: two tops at one height flicker)
   // The lower wall: squared stones (사괴석) or brick, all round; brick houses
   // are brick up to the eaves at the back and the ends.
   k.faces(o.band, L, 1.1, D, 0, B + 0.55, 0);
