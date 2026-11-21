@@ -7,7 +7,7 @@
 // burst point, direction, colour and start time once; after that the
 // graphics card moves them (drag, gravity, fading), so each frame only one
 // number changes (the show clock) and the whole sky is one draw call.
-// Phones get fewer slots and fewer stars per burst. Each star is a short
+// Phones get fewer slots and fewer stars per burst. Each star is a
 // trail of points (TRAIL), and the lead one draws the climbing shell.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -21,7 +21,10 @@ const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
 // burst leaves lines of light instead of dots, and the climbing shell a
 // tail (Yozi: "터지기전 방향, 터진후의 잔상효과 같은게 불꽃놀이의 재미도
 // 핵심"). TRAIL: [seconds behind, brightness] for each point of a star.
-const TRAIL = [[0, 1], [0.07, 0.6], [0.15, 0.36], [0.25, 0.2]];
+// Six points reaching 0.62 s back: the streak a star leaves as it falls is
+// about 2.5 times as long as it was (0.25 s), and it fades out after the
+// star itself (Yozi 2026-11-21: "아래로 떨어지는 잔상이 더 길면 좋겠어").
+const TRAIL = [[0, 1], [0.08, 0.72], [0.18, 0.5], [0.3, 0.34], [0.45, 0.21], [0.62, 0.12]];
 const VERT = /* glsl */`
   uniform float uTime, uScale;
   attribute vec3 aCenter, aDir, aCol, aCol2; // aCol2: the colour its stars turn into
@@ -155,7 +158,7 @@ function makeSkyline() {
 }
 
 export function createFireworksSky(scene, { phone = false } = {}) {
-  const SLOTS = phone ? 80 : 128, STARS = phone ? 26 : 44, PER = STARS * TRAIL.length, N = SLOTS * PER;
+  const SLOTS = phone ? 84 : 132, STARS = phone ? 26 : 44, PER = STARS * TRAIL.length, N = SLOTS * PER;
   const g = new THREE.BufferGeometry();
   const attr = (k, size) => { const a = new THREE.BufferAttribute(new Float32Array(N * size), size); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(k, a); return a; };
   const position = attr('position', 3); // (unused by the shader, but three.js wants it)
