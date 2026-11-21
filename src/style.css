@@ -996,6 +996,7 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 
 /* Daily check-in and missions */
 .daily-chip { position: relative; }
+.tools .tool.daily-chip { font-size: 21px; }
 .daily-chip .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
 /* Calm and easy to read: it's information, so soft colours, one accent
    (coral) for what to press, mint for what's done. */

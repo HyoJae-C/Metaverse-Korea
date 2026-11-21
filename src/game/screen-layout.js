@@ -3,7 +3,8 @@
 //   quest bars go away for a clean view; the joystick, the action button and
 //   whatever is open stay, so you can still walk and go into shops. The eye
 //   button in the top-left corner (or the U key) hides and shows them; the
-//   map button sits beside it and stays; the 📷 shows under it then.
+//   map button sits beside it and stays; the 📷 shows under it then. On
+//   iPhones held upright the 📅 check-in joins the bag's row.
 // - Minimap: shown while you are being guided somewhere (its route line is
 //   what the guide arrow lacks), or always with a switch here.
 // - Joystick (phones): "Fixed" (bottom left, as before), "Under your thumb"
@@ -60,6 +61,20 @@ export function createScreenLayout(game) {
   // the right (Yozi). Either way it stays when the rest is hidden.
   const corner = $('map-btn');
   if (corner && game.isTouch) { corner.classList.add('corner-map'); game.hud.append(corner); }
+  // iPhones held upright (tools at the top, 📒 beside the map): the 📅
+  // check-in moves from the top chips to the second row, left of the bag, so
+  // a long wallet or a narrow phone can't push it under the 📒 (Yozi
+  // 2026-11-21). Back with the chips when the phone turns.
+  const daily = $('daily-btn'), chips = $('coin-btn')?.parentElement;
+  const upright = typeof matchMedia === 'function' ? matchMedia('(max-width: 700px) and (orientation: portrait)') : null;
+  const placeDaily = () => {
+    if (!daily || !chips || !game.isTouch) return;
+    const row = upright?.matches && !root.classList.contains('android');
+    if (row && daily.parentElement !== $('bag-btn')?.parentElement) { daily.className = 'tool daily-chip'; $('bag-btn').before(daily); }
+    else if (!row && daily.parentElement !== chips) { daily.className = 'online coin-chip daily-chip'; $('coin-btn').before(daily); }
+  };
+  placeDaily();
+  upright?.addEventListener?.('change', placeDaily);
   const mapBtn = $('minimap-btn');
   const setMinimap = (on) => {
     mapBtn?.setAttribute('aria-pressed', String(on));
