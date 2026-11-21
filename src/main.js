@@ -5237,19 +5237,27 @@ const inEnclosure = (d, b) => {
 for (const d of map.meta?.districts || []) {
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
   if (!hanoks.length) continue;
-  // In blocks of 96 m, so the ones behind you or far off aren't drawn
-  // (Bukchon has ~250 hanok at ~700 triangles each).
+  // In blocks of 64 m, so the ones behind you aren't drawn, and a block more
+  // than 90 m away shows its plain version (Bukchon has ~300 hanok at ~900
+  // triangles each: all of them in full was 260k triangles a frame).
   const cells = new Map();
   for (const b of hanoks) {
-    const k = Math.floor(b.p[0][0] / 96) + ',' + Math.floor(b.p[0][1] / 96);
+    const k = Math.floor(b.p[0][0] / 64) + ',' + Math.floor(b.p[0][1] / 64);
     if (!cells.has(k)) cells.set(k, []);
     cells.get(k).push(b);
   }
   for (const list of cells.values()) {
-    const g = buildHanoks(list);
-    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    scene.add(g);
-    openHanok.push(g);
+    const cx = list.reduce((s, b) => s + b.p[0][0], 0) / list.length, cz = list.reduce((s, b) => s + b.p[0][1], 0) / list.length;
+    const lod = new THREE.LOD();
+    lod.position.set(cx, 0, cz);
+    for (const [far, from] of [[false, 0], [true, 90]]) {
+      const g = buildHanoks(list, { far });
+      g.position.set(-cx, 0, -cz);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = !far; o.receiveShadow = true; } });
+      lod.addLevel(g, from);
+    }
+    scene.add(lod);
+    openHanok.push(lod);
   }
   if (d.id === BUKCHON.district) { // the hill and its alleys
     const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);

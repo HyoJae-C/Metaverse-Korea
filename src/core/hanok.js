@@ -351,15 +351,24 @@ function house(k, b, i) {
   o.visit = !!b.visit;
   k.at(cx, 0, cz, ry, () => {
     if (lv > 0.05) { k.box(o.stoneC, L, lv, D, 0, lv / 2, 0); k.faces('stone', L, lv, D, 0, lv / 2, 0); } // the stone terrace (축대) up the hill
+    if (k.far) { // seen from far off: its walls as one box under one plain roof, in its own colours
+      const hgt = o.base + o.wall;
+      k.box(o.wallC, L - 0.6, hgt, D - 0.6, 0, lv + hgt / 2, 0);
+      k.at(0, lv, 0, 0, () => k.roofAt(hgt, L + 2 * o.eave, D + 2 * o.eave, o.roofH, { hip: o.hip, lift: o.lift, color: o.roofC, end: o.wallC, seg: 2, rows: 1, ridgeEnds: false }));
+      return;
+    }
     k.at(0, lv, 0, 0, () => (b.h >= 6 ? shop(k, L, D, o, r) : home(k, L, D, o, r)));
   });
 }
 
-export function buildHanoks(buildings) {
+// far: the plain version shown from a distance (about a tenth of the
+// triangles): main.js swaps the two by distance, block by block.
+export function buildHanoks(buildings, { far = false } = {}) {
   const group = new THREE.Group();
   group.name = 'hanok';
   if (!buildings.length) return group;
   const k = new Kit();
+  k.far = far;
   buildings.forEach((b, i) => { if (b.p && b.p.length >= 4) house(k, b, i); });
   for (const [name, list, side] of [['walls', k.body, THREE.FrontSide], ['walls', k.roof, THREE.DoubleSide]]) {
     if (!list.length) continue;

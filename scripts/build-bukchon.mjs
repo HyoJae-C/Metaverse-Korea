@@ -302,6 +302,36 @@ for (const [depth] of SIZES) {
     if (t.fits(p)) t.buildings.push({ h: 5, p });
   }
 }
+// Then every home grows: back and sideways, half a metre at a time and in
+// turns, until it meets a street, a neighbour or its cap. This is what makes
+// Bukchon a sea of big roofs like the old hand-made one (Yozi 2026-11-21:
+// denser by the hanok's size, never by a smaller site). Fronts stay where
+// they are; the shops keep their width (their doors are set on it).
+{
+  const MAX_D = 15, MAX_W = 17, STEP = 0.5, GAP = 0.3;
+  const shops = new Set(shopLots.map((l) => l.b));
+  let grew = true;
+  for (let turn = 0; turn < 40 && grew; turn++) {
+    grew = false;
+    for (let i = 0; i < t.buildings.length; i++) {
+      const b = t.buildings[i], [a, c, d, e] = b.p; // a-c: the front; d behind c, e behind a
+      const W = Math.hypot(c[0] - a[0], c[1] - a[1]), D = Math.hypot(e[0] - a[0], e[1] - a[1]);
+      const u = [(c[0] - a[0]) / W, (c[1] - a[1]) / W], n = [(e[0] - a[0]) / D, (e[1] - a[1]) / D];
+      const mv = (q, v, k) => [r1(q[0] + v[0] * k), r1(q[1] + v[1] * k)];
+      const tries = [];
+      const side = (k) => [[a, c, mv(d, n, k), mv(e, n, k)], [mv(a, u, -k), c, d, mv(e, u, -k)], [a, mv(c, u, k), mv(d, u, k), e]];
+      const to = side(STEP), probe = side(STEP + GAP); // (GAP: the eaves' room left to the neighbour)
+      if (D + STEP <= MAX_D) tries.push([to[0], probe[0]]);
+      if (!shops.has(b) && W + STEP <= MAX_W) tries.push([to[1], probe[1]], [to[2], probe[2]]);
+      for (const [p, test] of tries) {
+        t.buildings.splice(i, 1);
+        const ok = t.fits(test);
+        t.buildings.splice(i, 0, b);
+        if (ok) { b.p = p; grew = true; break; }
+      }
+    }
+  }
+}
 if (process.env.DIAG) { // why the empty ground is empty: a 4.5 m hanok tried on every free 2 m cell
   const { whyNot } = await import('./street-rows.mjs');
   const tally = {}, ctx = { inside: (q) => inArea(q, 0.8) && !inPalace(q), roads: fitRoads, open, buildings: t.buildings };
