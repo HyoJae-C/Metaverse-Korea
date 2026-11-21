@@ -4,6 +4,7 @@
 // model's material: every vertex samples one cell of the colour atlas, so the
 // hair takes the model's own hair colour or the salon's dye for free.
 import * as THREE from 'three';
+import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js';
 
 
 // Which faces of the model's own head are hair on the scalp (hidden when you
@@ -420,6 +421,46 @@ export const EYE_TRANSFORM = {
   cat: { sx: 1.35, sy: 1.0, tilt: 0.16, dz: 0.015 },
   puppy: { sx: 1.2, sy: 1.3, tilt: -0.22, dz: 0.015 },
 };
+
+// Blush: coloured straight onto the face. Each cheek gets a decal (the
+// head's own surface there, copied) painted with a soft round gradient, so
+// the colour lies on the skin and fades out at the edges instead of a patch
+// sitting on top. Head-mesh units; geo is the head as it is drawn.
+let blushTex = null;
+function blushGradient() {
+  if (blushTex) return blushTex;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.55, 'rgba(255,255,255,0.9)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  blushTex = new THREE.CanvasTexture(c);
+  blushTex.colorSpace = THREE.SRGBColorSpace;
+  return blushTex;
+}
+const blushMats = new Map();
+const _id = new THREE.Matrix4();
+const blushGeos = new WeakMap(); // head geometry -> its two cheek decals
+export function buildBlush(color, cheeks, geo) {
+  const g = new THREE.Group();
+  g.name = 'blush';
+  if (!blushMats.has(color)) {
+    blushMats.set(color, new THREE.MeshLambertMaterial({
+      color, map: blushGradient(), transparent: true, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
+    }));
+  }
+  if (!blushGeos.has(geo)) { // (one pair per head shape, shared by every character with it)
+    const head = { geometry: geo, matrixWorld: _id };
+    blushGeos.set(geo, cheeks.map((at) => new DecalGeometry(head, at, new THREE.Euler(0, Math.sign(at.x) * 0.45, 0), new THREE.Vector3(0.3, 0.22, 0.4))));
+  }
+  for (const d of blushGeos.get(geo)) if (d.attributes.position.count) g.add(new THREE.Mesh(d, blushMats.get(color)));
+  return g;
+}
 
 // Petal Lip tints: a soft upper and lower lip, a little wider than the
 // model's own small mouth so the colour reads from the street.

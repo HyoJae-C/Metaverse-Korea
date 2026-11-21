@@ -180,6 +180,7 @@ export const VI = {
   'beauty.eyes': 'Kính áp tròng màu',
   'beauty.tone': 'Tông da',
   'beauty.own': 'Của tôi',
+  'beauty.blush': 'Má hồng',
   'beauty.cancel': 'Hủy',
   'beauty.save': 'Lưu',
   'beauty.pay': 'Lưu · 🪙 {coins}',

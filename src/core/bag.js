@@ -9,14 +9,14 @@
 //   { kind: 'duckmold' } (the snow duck maker, given when it first snows)
 //   { kind: 'ginkgo', n } (ginkgo nuts from shaking a ginkgo: they only stink)
 //   { kind: 'perfume', p: '<perfume id>', sips: 1-5 (sprays left), name }
-//   { kind: 'lipstick', c: '<lip shade>', sips: 1-5 (uses left) } (core/lipstick.js)
+//   { kind: 'lipstick' | 'blush', c: '<shade>', sips: 1-5 (uses left) } (core/lipstick.js)
 //   { kind: 'gift', name, icon, g?: 'kimchi', q?: 0-100 } (a shop bag, or homemade kimchi)
 //   { kind: 'bait', b: '<bait id>', sips: 1-5 (left) } (fishing bait, core/bait.js)
 //   { kind: 'photo', ph: '<photo id>' } (a ride photo, core/ride-photos.js)
 //   { kind: 'wrap', w, s, p, c, op, lt? } (a gift-wrapped box, core/wrap.js)
 //   { kind: 'letter', sips: sheets } (letter paper, core/wrap.js)
 
-import { lipstickEntry } from './lipstick.js';
+import { isStick, stickEntry } from './lipstick.js';
 import { baitEntry } from './bait.js';
 import { recipeOf } from './recipe-book.js';
 import { isKimchi } from './kimchi-market.js';
@@ -28,7 +28,7 @@ export const BASE_CAP = 20;
 export const MAX_CAP = 60;
 // Perfume and lipstick live in the wardrobe, not in the bag's slots: kept
 // apart in `vanity` (up to VANITY_MAX), saved with the bag.
-export const COSMETICS = ['perfume', 'lipstick'];
+export const COSMETICS = ['perfume', 'lipstick', 'blush'];
 export const VANITY_MAX = 60;
 export const isCosmetic = (e) => COSMETICS.includes(e?.kind);
 // Dishes from the cooking classes (core/recipe-book.js) have their own food
@@ -77,7 +77,7 @@ export function cleanEntry(e, { isBook = () => true, maxSips = 5, isPerfume = ()
     const sips = Math.min(maxSprays, e.sips | 0);
     return sips > 0 && typeof e.p === 'string' && isPerfume(e.p) ? { kind: 'perfume', p: e.p, sips, name: String(e.name || '').slice(0, 60) } : null;
   }
-  if (e.kind === 'lipstick') return lipstickEntry(e);
+  if (isStick(e.kind)) return stickEntry(e); // lipstick, blush
   if (e.kind === 'bait') return baitEntry(e);
   if (e.kind === 'photo') return photoEntry(e);
   if (e.kind === 'wrap') return wrapEntry(e);

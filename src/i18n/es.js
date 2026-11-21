@@ -179,6 +179,7 @@ export const ES = {
   'beauty.eyes': 'Lentillas de color',
   'beauty.tone': 'Tono de piel',
   'beauty.own': 'El mío',
+  'beauty.blush': 'Rubor',
   'beauty.cancel': 'Cancelar',
   'beauty.save': 'Guardar',
   'beauty.pay': 'Guardar · 🪙 {coins}',

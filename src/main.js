@@ -180,7 +180,7 @@ const fishPanels = () => import('./ui/fishing-panels.js'); // (the rod, market a
 import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
-import { lipstickEntry } from './core/lipstick.js';
+import { isStick, stickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { createFishBait } from './game/fish-bait.js';
 import { createDishUpgrade } from './game/dish-upgrade.js';
@@ -2296,7 +2296,7 @@ let held = (() => {
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
     if (h?.kind === 'balloon') return restoreBalloon(h); // (Modu Land's clown; gone once its air is out)
-    if (h?.kind === 'lipstick') return lipstickEntry(h);
+    if (isStick(h?.kind)) return stickEntry(h);
     if (h?.kind === 'bait') return baitEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
@@ -2321,15 +2321,15 @@ const dishUpgrade = createDishUpgrade({
 // setHeld below must not draw it (a finished errand + a held drink broke the
 // load: "openParkHere is not a function", then every message from others).
 let questChipReady = false;
-const heldKind = () => (rodOut ? baitedRod(rodKind(rodSkins.equipped), fishBait.fishing.bait?.id) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
+const heldKind = () => (rodOut ? baitedRod(rodKind(rodSkins.equipped), fishBait.fishing.bait?.id) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : isStick(held?.kind) ? held.kind + ':' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
   $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : h?.kind === 'lipstick' ? '💄' : h?.kind === 'bait' ? '🪱' : '☕';
-  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : h?.kind === 'lipstick' ? lipstick.label() : h?.kind === 'bait' ? fishBait.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : isStick(h?.kind) ? lipstick.icon(h.kind) : h?.kind === 'bait' ? '🪱' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : isStick(h?.kind) ? lipstick.label() : h?.kind === 'bait' ? fishBait.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -2341,7 +2341,7 @@ function drink() {
     return;
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
-  if (held.kind === 'lipstick') { setHeld(lipstick.apply(held)); return; }
+  if (isStick(held.kind)) { setHeld(lipstick.apply(held)); return; }
   if (held.kind === 'bait') { setHeld(fishBait.apply(held)); return; }
   if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
@@ -2399,7 +2399,7 @@ function describeEntry(e) {
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
-  if (e.kind === 'lipstick') return lipstick.describe(e);
+  if (isStick(e.kind)) return lipstick.describe(e);
   if (e.kind === 'bait') return fishBait.describe(e);
   if (e.kind === 'wrap' || e.kind === 'letter') return wrapGifts.describe(e); // (a wrapped gift, letter paper)
   if (e.kind === 'photo') { const p = photos.get(e.ph); return { emoji: '🎞️', name: t('photo.name'), desc: t('photo.desc', { date: p ? new Date(p.at).toLocaleDateString() : '' }), canHold: false, img: p?.src }; } // (a ride photo: game/ride-photo.js)
@@ -2451,10 +2451,10 @@ const bagUi = new BagUI({
   seasoning: () => dishUpgrade.seasoning(), // 🧂 in the food tab
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
-    useLabel: (e) => (e.kind === 'lipstick' ? '💄 ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
+    useLabel: (e) => (isStick(e.kind) ? lipstick.icon(e.kind) + ' ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
     onUse: (i) => {
       const e = bag.vanityList()[i];
-      if (e?.kind === 'lipstick') bag.setVanity(i, lipstick.apply(e));
+      if (isStick(e?.kind)) bag.setVanity(i, lipstick.apply(e));
       else if (e) { bagUi.hide(); sprayPerfume(i); }
     },
     onHold: (i) => {
@@ -6280,7 +6280,7 @@ const beautyUi = new BeautyUI({
     return true;
   },
   onCancel: () => { setLook(myLook); endBeautyCam(); },
-  onBuyStick: (shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(shade, coins),
+  onBuyStick: (kind, shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(kind, shade, coins),
 });
 // Beauty shops: mirror close-up, haircut, surgery (src/game/beauty.js).
 const beauty = createBeauty({
