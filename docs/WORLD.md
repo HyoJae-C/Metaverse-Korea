@@ -1262,7 +1262,11 @@ night (`core/gimpo-flights.js`; Yozi 2026-11-21). The domestic terminal's
 roof deck (OSM has the real one) is a balcony along its airside edge, a walk
 across the roof and a stair down beside the front door (`game/gimpo-walk.js`:
 decks through the terminal and the fence); a board there counts down to the
-next flight. The terminals, runways and planes load near
+next flight. The international terminal (where visitors from abroad
+arrive) has lighter glass, its own sign and a door canopy on a kerb road off
+the access road, and two more MODU AIR planes parked at its jet bridges
+(they don't fly). Both terminals have window frames. The big sign on the
+domestic terminal reads 김포국제공항. The terminals, runways and planes load near
 (`game/gimpo-site.js`). Gimpo Airport Station (Line 5) has its four exits
 where OSM has them. What is made up is listed in the district's
 `meta.approx`. The Seoul Botanic Park (Magok) is a separate district east of

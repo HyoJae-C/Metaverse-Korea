@@ -14,7 +14,7 @@ import { deckParts } from './gimpo-walk.js';
 
 // MODU AIR's colours (Yozi 2026-11-21: the made-up airline): white body, one colour each.
 export const LIVERIES = ['#2f8fe0', '#ff6f5e', '#2bb39a', '#f2b632', '#8a63d2'];
-const C = { glass: '#6f97b8', roof: '#c9ced4', frame: '#d4dae0', runway: '#4a4d52', mark: '#f4f4f0', taxi: '#f0c419', bridge: '#9fb3a8', deck: '#a89683', apron: '#b9bcc0', mast: '#8c949c', lamp: '#fff3c4', bench: '#7a5a3c' };
+const C = { glass: '#6f97b8', glassIntl: '#9fd0ee', mullion: '#eef2f5', door: '#46657f', roof: '#c9ced4', frame: '#d4dae0', runway: '#4a4d52', mark: '#f4f4f0', taxi: '#f0c419', bridge: '#9fb3a8', deck: '#a89683', apron: '#b9bcc0', mast: '#8c949c', lamp: '#fff3c4', bench: '#7a5a3c' };
 
 const shapeOf = (p) => new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
 function slab(p, y0, y1) {
@@ -91,10 +91,33 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
   };
 
   // --- The terminals: glass walls under a pale roof with a white rim ----------
-  for (const p of [l.domestic, l.intl]) {
-    add(C.glass, slab(p, 0, l.h - 0.6));
+  // The international terminal's glass is lighter, so it reads as a glass
+  // hall from the road (Yozi 2026-11-21); both get window frames: white
+  // mullions every 3 m and a transom at each floor.
+  const intlStands = l.intlStands || [];
+  for (const [p, glassColor] of [[l.domestic, C.glass], [l.intl, C.glassIntl]]) {
+    add(glassColor, slab(p, 0, l.h - 0.6));
     add(C.frame, slab(p, l.h - 0.6, l.h - 0.15));
     add(C.roof, slab(p, l.h - 0.15, l.h));
+    for (let i = 0; i < p.length; i++) {
+      const [x0, z0] = p[i], [x1, z1] = p[(i + 1) % p.length], len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 1) continue;
+      const yaw = Math.atan2(x1 - x0, z1 - z0);
+      const n = Math.max(1, Math.round(len / 3));
+      for (let k = 0; k < n; k++) { // mullions (the corner one too)
+        const f = k / n, g = new THREE.BoxGeometry(0.22, l.h - 0.6, 0.22);
+        g.translate(x0 + (x1 - x0) * f, (l.h - 0.6) / 2, z0 + (z1 - z0) * f); add(C.mullion, g.toNonIndexed());
+      }
+      for (const y of [2.1, 4.2]) { // a transom at each floor
+        const g = new THREE.BoxGeometry(0.18, 0.18, len); g.rotateY(yaw); g.translate((x0 + x1) / 2, y, (z0 + z1) / 2); add(C.mullion, g.toNonIndexed());
+      }
+    }
+  }
+  if (l.intlDoor) { // the international terminal's front door: glass doors under a canopy on posts
+    const { u, v0, v1 } = l.intlDoor;
+    for (let v = v0 + 2; v < v1 - 1; v += 4) boxAt(C.door, u - 0.1, v, 1.3, 0.3, 2.6, 2.8, yawV);
+    boxAt(C.frame, u - 3.2, (v0 + v1) / 2, 3.45, 6.4, 0.3, v1 - v0, yawV); // the canopy (w across u, d along v)
+    for (let v = v0 + 1; v <= v1 - 1; v += (v1 - v0 - 2) / 4) boxAt(C.mast, u - 6, v, 1.65, 0.25, 3.3, 0.25);
   }
 
   // --- The roof deck: floors, the stair, glass railings, benches -------------------
@@ -145,6 +168,7 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
   taxiLine([[fly.holdU - 30, fly.taxiV], [fly.holdU - 30, l.runways[fly.depart.runway].v]]);
   taxiLine([[fly.exitU, fly.taxiV], [fly.exitU, l.runways[fly.land.runway].v]]);
   for (const s of l.stands) taxiLine([[s.u, fly.taxiV], [s.u, s.v + l.plane.len / 2]]);
+  for (const s of intlStands) taxiLine([[s.u - l.plane.len / 2, s.v], [s.u + l.plane.len / 2 + 30, s.v]]);
 
   // --- Jet bridges and light masts --------------------------------------------------
   for (const s of l.stands) {
@@ -152,6 +176,11 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
     const noseV = s.v + l.plane.len / 2;
     boxAt(C.bridge, s.u - 2.6, (noseV - 6) / 2 - 0.2, 2.6, 2.2, 2.0, Math.abs(-6 - noseV) + 0.6, yawV);
     boxAt(C.mast, s.u - 2.6, noseV + 0.6, 0.8, 0.3, 1.6, 0.3);
+  }
+  for (const s of intlStands) { // from the wall (s.wall) out to the plane's nose, along u
+    const noseU = s.u - l.plane.len / 2;
+    boxAt(C.bridge, (s.wall + noseU) / 2 + 0.2, s.v - 2.6, 2.6, 2.2, 2.0, noseU - s.wall + 0.6, yawU);
+    boxAt(C.mast, noseU - 0.6, s.v - 2.6, 0.8, 0.3, 1.6, 0.3);
   }
   const lamps = [];
   for (let u = -110; u <= 110; u += 55) {
@@ -167,16 +196,22 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
     group.add(m);
   }
 
-  // --- The name on the kerb side --------------------------------------------------
-  const nameTex = canvasTex(1024, 192, (g) => {
-    g.fillStyle = '#1f3c5a'; g.fillRect(0, 0, 1024, 192);
-    g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = '800 92px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif'; g.fillText('김포공항  국내선', 512, 70);
-    g.font = '700 46px system-ui, sans-serif'; g.fillText('GIMPO AIRPORT · DOMESTIC', 512, 152);
-  });
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(16, 3), new THREE.MeshBasicMaterial({ map: nameTex }));
-  { const [x, z] = W(-5, 13.4); sign.position.set(x, l.h - 1.7, z); sign.rotation.y = yawV; }
-  group.add(sign);
+  // --- The names on the kerb side -----------------------------------------------------
+  // The airport's name on the domestic terminal (where the deck is), and the
+  // international terminal's over its door.
+  const nameSign = (top, bottom, w, at, yaw) => {
+    const tex = canvasTex(1024, 192, (g) => {
+      g.fillStyle = '#1f3c5a'; g.fillRect(0, 0, 1024, 192);
+      g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '800 92px "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif'; g.fillText(top, 512, 70);
+      g.font = '700 44px system-ui, sans-serif'; g.fillText(bottom, 512, 152);
+    });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, (w * 3) / 16), new THREE.MeshBasicMaterial({ map: tex }));
+    m.position.set(at[0], l.h - 1.7, at[1]); m.rotation.y = yaw;
+    group.add(m);
+  };
+  nameSign('김포국제공항', 'GIMPO INTERNATIONAL AIRPORT', 16, W(-5, 13.4), yawV);
+  if (l.intlDoor) nameSign('국제선', 'INTERNATIONAL', 12, W(l.intlDoor.u - 0.3, (l.intlDoor.v0 + l.intlDoor.v1) / 2), yawU + Math.PI);
 
   // --- The departures board on the deck -----------------------------------------------
   const board = document.createElement('canvas'); board.width = 512; board.height = 256;
@@ -211,7 +246,7 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
 
   // --- The planes ------------------------------------------------------------------
   const geo = planeGeometry(l.plane);
-  const n = l.stands.length + 1; // the parked ones and the one flying
+  const n = l.stands.length + intlStands.length + 1; // the parked ones (domestic, then international) and the one flying
   const mats = {
     white: new THREE.MeshLambertMaterial({ color: '#f7f8fa' }),
     color: new THREE.MeshLambertMaterial({ color: '#ffffff' }),
@@ -225,7 +260,7 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
     new THREE.InstancedMesh(titleGeometry(l.plane, geo.axisY), new THREE.MeshBasicMaterial({ map: title, transparent: true, side: THREE.DoubleSide }), n),
   ];
   const col = new THREE.Color();
-  for (let i = 0; i < n; i++) meshes[1].setColorAt(i, col.set(LIVERIES[i % l.stands.length]));
+  for (let i = 0; i < n; i++) meshes[1].setColorAt(i, col.set(LIVERIES[i % LIVERIES.length]));
   for (const m of meshes) { m.castShadow = !lowSpec; m.frustumCulled = false; group.add(m); }
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(0, 0, 0, 'YXZ'), S = new THREE.Vector3(1, 1, 1), Pv = new THREE.Vector3(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
   const place = (i, x, y, z, yaw, pitch) => {
@@ -234,6 +269,7 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
     for (const m of meshes) m.setMatrixAt(i, M);
   };
   const hide = (i) => { for (const m of meshes) m.setMatrixAt(i, ZERO); };
+  intlStands.forEach((s, j) => { const [x, z] = W(s.u, s.v); place(l.stands.length + j, x + l.x, 0, z + l.z, s.ry, 0); }); // (always parked)
   const flights = gimpoFlights(l);
   let lastEmpty = null, t = 0;
   const update = (p, dt) => {
@@ -253,5 +289,6 @@ export function buildGimpoSite({ scene, l, lowSpec = false }) {
   drawBoard(flights.next(Date.now()), Date.now());
   update({ x: l.x, z: l.z }, 0);
   scene.add(group);
+  group.updateMatrixWorld(true); // (main.js FarCull measures its parts' boxes in the world at once: before the first frame they would sit at the origin, far away, and stay hidden)
   return { group, update, flights };
 }

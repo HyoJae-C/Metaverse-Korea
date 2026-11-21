@@ -111,6 +111,12 @@ export const DECK = {
 export const PLANE = { len: 22.3, span: 17.9, h: 5.9 }; // an A321-sized jet at 50%
 const STAND_V = -6 - 3.5 - PLANE.len / 2; // plane's middle: the wall, 3.5 m of jet bridge, half the plane
 const stands = [-98, -74, -50, 32, 54].map((u, i) => ({ n: i + 1, at: UV([[u, STAND_V]])[0], u, v: r1(STAND_V), bridge: u - 2.6 > domU[0] + 1 && u - 2.6 < domU[1] - 1, ry: r3(Math.atan2(V[0], V[1])) })); // facing +v (the terminal)
+// Two more on the international terminal's airside (it faces +u, the
+// apron north-west of it), nose-in with a jet bridge each, where its wall
+// is straight. They stay parked: flights use the domestic stands.
+const intlUV = intl.map(toUV);
+const wallAt = (v) => Math.max(...intlUV.filter((q) => Math.abs(q[1] - v) < 10).map((q) => q[0])); // the airside wall near v
+const intlStands = [52, 168].map((v, i) => { const wall = wallAt(v), u = wall + 3.5 + PLANE.len / 2; return { n: stands.length + i + 1, at: UV([[u, v]])[0], u: r1(u), v, wall: r1(wall), bridge: true, ry: r3(Math.atan2(-U[0], -U[1])) }; }); // facing -u (the terminal)
 const TAXI_V = -62; // the taxilane along the apron
 const HOLD_U = runwayL.u0 + 12; // departures line up near the south-east end of runway 32R (OSM 14L/32R)
 const EXIT_U = 262; // landings leave runway 32L here and taxi back across 32R
@@ -132,6 +138,17 @@ const front = UV([[domU[0] - 12, FRONT_V], [domU[1] - 8, FRONT_V]]);
 const JUNCTION = L([37.561848, 126.807056]); // (the base map's Gonghang-daero ends there: scripts/build-base.mjs)
 const access = R1([fromUV([toUV(JUNCTION)[0], FRONT_V]), JUNCTION]);
 const forecourt = rect(domU[0] - 16, domV[1] - 1, domU[1] + 70, FRONT_V + 40);
+// The international terminal's kerb: its front door is the middle of the
+// landside wall (u 163, v 88-128 in OSM); a road runs on from 하늘길 along
+// its front (made up), with a canopy over the door (game/gimpo-site.js).
+const intlU0 = Math.min(...intlUV.map((q) => q[0]));
+const intlV = [Math.min(...intlUV.map((q) => q[1])), Math.max(...intlUV.map((q) => q[1]))];
+const INTL_KERB_U = intlU0 - 11;
+const INTL_LINK_V = 100; // off the access road, clear of the station's exits (1-4 are on the domestic forecourt)
+const intlFront = UV([[toUV(JUNCTION)[0], INTL_LINK_V], [INTL_KERB_U, INTL_LINK_V], [INTL_KERB_U, intlV[1]]]);
+const intlFrontS = UV([[INTL_KERB_U, INTL_LINK_V], [INTL_KERB_U, intlV[0]]]);
+const intlKerb = rect(INTL_KERB_U + 4, intlV[0] - 1, intlU0 + 0.5, intlV[1]);
+const intlDoor = { u: r1(intlU0), v0: 92, v1: 124 }; // the canopy over the front door
 
 // --- The airfield -------------------------------------------------------------------
 // OSM's fence is the blocker; the terminals sit across it (half in, half
@@ -147,8 +164,8 @@ const map = {
     approx: [
       { what: 'runway width', why: 'Half the real width (22.5 and 30 m, not 11 and 15 m at 1/4) so the half-size planes fit (Yozi 2026-11-21). Centre lines and lengths are OSM at 1/4.' },
       { what: 'the roof deck', why: 'OSM has the real deck (8 x 1.5 m at 1/4) on the domestic terminal; drawn as a 34 x 7 m balcony around that spot, a walk across the roof and a stair down the front so people fit and can get up.' },
-      { what: 'the stands and jet bridges', why: 'Five nose-in stands on the domestic terminal airside, left open in front of the deck; OSM has no stand positions here.' },
-      { what: 'the kerbside road and forecourt', why: 'One road and one paved forecourt along the domestic terminal, and one road straight out to the Gonghang-daero junction; the real kerbside is a two-level road with ramps.' },
+      { what: 'the stands and jet bridges', why: 'Five nose-in stands on the domestic terminal airside, left open in front of the deck, and two (always parked) on the international terminal airside; OSM has no stand positions here.' },
+      { what: 'the kerbside road and forecourt', why: 'One road and one paved forecourt along the domestic terminal, one road on along the international terminal front with a kerb and a door canopy, and one road straight out to the Gonghang-daero junction; the real kerbside is a two-level road with ramps.' },
       { what: 'taxi paths', why: 'Planes taxi along a made-up lane 62 m out from the terminal and cross to the runways on made-up links; OSM taxiways are not drawn.' },
       { what: 'airline', why: 'MODU AIR is made up (Yozi 2026-11-21); no real airline is drawn.' },
     ],
@@ -156,10 +173,12 @@ const map = {
   roads: [
     { k: 'tertiary', w: 8, p: front, n: { ko: '하늘길', en: 'Haneul-gil', ja: 'ハヌル路', zh: '天空路' } },
     { k: 'tertiary', w: 8, p: access },
+    { k: 'tertiary', w: 8, p: intlFront },
+    { k: 'tertiary', w: 8, p: intlFrontS },
   ],
   buildings: [
-    { h: TERMINAL_H, p: R1(domestic), n: { ko: '김포공항 국내선', en: 'Gimpo Airport Domestic Terminal' }, custom: true },
-    { h: TERMINAL_H, p: R1(intl), n: { ko: '김포공항 국제선', en: 'Gimpo Airport International Terminal' }, custom: true },
+    { h: TERMINAL_H, p: R1(domestic), n: { ko: '김포국제공항 국내선', en: 'Gimpo International Airport Domestic Terminal' }, custom: true },
+    { h: TERMINAL_H, p: R1(intl), n: { ko: '김포국제공항 국제선', en: 'Gimpo International Airport International Terminal' }, custom: true },
     { h: 5, p: R1(cargo) },
     { h: 6, p: R1(kac) },
     { h: 8, p: R1(hangarCargo) },
@@ -169,6 +188,7 @@ const map = {
     { k: 'grass', p: R1(fence), holes: aprons.map(R1) }, // (the aprons are paving)
     ...aprons.map((p) => ({ k: 'plaza', p: R1(p) })),
     { k: 'plaza', p: forecourt, n: nameOf },
+    { k: 'plaza', p: intlKerb },
   ],
   blockers: [{ p: R1(fence) }],
   pois: [
@@ -179,7 +199,7 @@ const map = {
       type: 'gimpoairport', x: 0, z: 0, u: [r3(U[0]), r3(U[1])], v: [r3(V[0]), r3(V[1])],
       runways: { L: runwayL, R: runwayR },
       domestic: R1(domestic), intl: R1(intl), h: TERMINAL_H,
-      deck: DECK, stands, fly: FLY, plane: PLANE,
+      deck: DECK, stands, intlStands, intlDoor, fly: FLY, plane: PLANE,
       forecourt, aprons: aprons.map(R1),
     },
   ],
@@ -201,6 +221,7 @@ console.log({
   OFFSET, ANCHOR, runwayHeadingDeg: r1(((ang * 180) / Math.PI + 360) % 360), fence: span(fence), fencePts: fence.length,
   runwayL: [runwayL.len, runwayL.w, runwayL.v], runwayR: [runwayR.len, runwayR.w, runwayR.v],
   domesticUV: [domU.map(r1), domV.map(r1)], domesticPts: domestic.length, intlPts: intl.length, deckU: r1(deckU), stands: stands.map((s) => s.u),
+  intlStands: intlStands.map((s) => [s.u, s.v, s.wall]), intlU0: r1(intlU0), intlV: intlV.map(r1),
 });
 if (!process.argv.includes('--check')) {
   writeFileSync(path.join(R, 'districts', 'gimpo.json'), JSON.stringify(map) + '\n');
