@@ -23,6 +23,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeNpc } from './npcs.js';
 import { randomLook } from '../data/appearance.js';
 import { ConcertPlayer } from './concert-player.js';
+import { faceParts } from './opera-hall.js';
 
 // Seconds of each part of a piece's turn, before and after the music.
 export const TURN = { tune: 4, walkIn: 5, open: 3, clap: 8, close: 4, rest: 4 };
@@ -121,6 +122,7 @@ function pitPlayers(scene, players) {
     add(new THREE.CylinderGeometry(0.15, 0.2, 0.44, 7).translate(0, y0 + 0.2, 0), '#17161b');
     add(new THREE.SphereGeometry(0.2, 8, 6).translate(0, y0 + 0.62, 0), SKIN[i % SKIN.length]);
     add(new THREE.SphereGeometry(0.215, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, y0 + 0.635, -0.02), HAIR[i % HAIR.length]);
+    for (const [geo, color] of faceParts(y0 + 0.62)) add(geo, color); // a face, like the house's
     if (p.k === 'violin' || p.k === 'viola') {
       const s = p.k === 'viola' ? 1.15 : 1;
       add(new THREE.BoxGeometry(0.12 * s, 0.04, 0.26 * s).rotateY(0.5).translate(-0.17, y0 + 0.42, 0.14), '#a8632c');
@@ -152,15 +154,24 @@ function pitPlayers(scene, players) {
   return groups;
 }
 
-// The dances: where each dancer is (stage metres: x across, z from the front
-// towards the back, 0..1 of the stage's depth) and how she holds herself, by
-// the beat. Formations change every 8 beats.
-const FORMS = [
-  (i, n) => [(i - (n - 1) / 2) * 2.3, 0.45], // a line across
-  (i, n, ph) => { const a = (i / n) * Math.PI * 2 + ph * 0.5; return [Math.cos(a) * 3.2, 0.5 + Math.sin(a) * 0.26]; }, // a ring, turning
-  (i, n) => (i === 0 ? [0, 0.3] : [((i - 1) - (n - 2) / 2) * 3, 0.72]), // the swan queen before a row
-  (i, n) => { const k = i - (n - 1) / 2; return [k * 2.1, 0.32 + Math.abs(k) * 0.16]; }, // a V
-];
+// The dances. Each piece has its own (DANCES, by the score's id): a list of
+// figures, each `len` bars long, danced in turn. A figure is where the
+// dancers stand (a formation: stage metres across, and 0..1 of the stage's
+// depth from the front) and what they do there (a step: the pose, which way
+// they face, how high off the floor), by the beat.
+const FORMS = {
+  line: (i, n) => [(i - (n - 1) / 2) * 2.3, 0.45], // a line across
+  tight: (i, n) => [(i - (n - 1) / 2) * 1.15, 0.38], // shoulder to shoulder
+  ring: (i, n, ph) => { const a = (i / n) * Math.PI * 2 + ph * 0.5; return [Math.cos(a) * 3.2, 0.5 + Math.sin(a) * 0.26]; }, // a ring, turning
+  queen: (i, n) => (i === 0 ? [0, 0.3] : [((i - 1) - (n - 2) / 2) * 3, 0.72]), // one before a row
+  vee: (i, n) => { const k = i - (n - 1) / 2; return [k * 2.1, 0.32 + Math.abs(k) * 0.16]; },
+  diagonal: (i, n) => { const k = i - (n - 1) / 2; return [k * 2, 0.5 + k * 0.14]; },
+  columns: (i, n) => (i === n - 1 && n % 2 ? [0, 0.3] : [(i % 2 ? 1 : -1) * 2.6, 0.3 + Math.floor(i / 2) * 0.32]), // two files, an odd one out in front
+  sweep: (i, n, ph) => [Math.sin(ph * 1.6 + i * 1.25) * 5.2, 0.25 + (i / Math.max(1, n - 1)) * 0.55], // crossing the stage, each on her own track
+  advance: (i, n, ph) => [(i - (n - 1) / 2) * 1.5, 0.45 + 0.25 * Math.sin(ph * 1.6)], // a line coming forward and going back
+  wedge: (i, n) => { const k = i - (n - 1) / 2; return [k * 1.9, 0.7 - Math.abs(k) * 0.2]; }, // a point towards the house
+};
+const up = (v) => Math.max(0, v);
 const POSES = {
   // arms rounded overhead
   high: (b) => ({ spine: [-0.05, 0, 0], head: [-0.15, 0, 0], armL: [-2.0, -1.3 + 0.1 * Math.sin(b), 0], armR: mir([-2.0, -1.3 + 0.1 * Math.sin(b), 0]) }),
@@ -168,10 +179,67 @@ const POSES = {
   wings: (b) => { const w = Math.sin(b * Math.PI); return { head: [0.1 - 0.1 * w, 0, 0], armL: [0, 0, 1.25 + 0.55 * w], armR: mir([0, 0, 1.25 + 0.55 * w]), foreL: [0, 0, -0.35 * w], foreR: mir([0, 0, -0.35 * w]) }; },
   // an arabesque: one leg lifted behind, leaning forward, one arm ahead
   arabesque: () => ({ spine: [0.32, 0, 0], head: [-0.25, 0, 0], legR: [1.05, 0, 0], armL: [-1.5, 0, 0], armR: mir([0.4, 0, 1.2]) }),
+  // a pirouette's shape: one foot drawn up to the knee, arms rounded before her
+  passe: () => ({ legR: [-0.95, 0, 0], kneeR: [1.7, 0, 0], armL: [-1.15, -0.55, 0], armR: mir([-1.15, -0.55, 0]), foreL: [0, 0, -0.5], foreR: mir([0, 0, -0.5]) }),
+  // a leap: legs split, one arm ahead (k: 0 on the floor, 1 at the top)
+  jete: (k) => ({ spine: [-0.1 * k, 0, 0], legL: [-1.15 * k, 0, 0], legR: [1.0 * k, 0, 0], armL: [-1.6 * k - 0.2, 0, 0.2], armR: mir([0, 0, 1.3]) }),
+  // a high kick, arms overhead or out (k: 0..1; left: which leg)
+  kick: (k, left, arms = 1.2) => ({ spine: [-0.12 * k, 0, 0], armL: [0, 0, arms], armR: mir([0, 0, arms]), [left ? 'legL' : 'legR']: [-1.5 * k, 0, 0] }),
+  // a waltz: the body leaning from side to side, the arms following
+  sway: (b) => { const w = Math.sin(b * Math.PI); return { spine: [0, 0, 0.16 * w], head: [0, 0.25 * w, 0.1 * w], armL: [0, 0, 0.9 + 0.5 * w], armR: mir([0, 0, 0.9 - 0.5 * w]), foreL: [0, 0, -0.3], foreR: mir([0, 0, -0.3]) }; },
+  // the little swans: hands crossed low and linked, heads turning together
+  linked: (b) => ({ head: [0.05, 0.55 * Math.sign(Math.sin(b * Math.PI)), 0], armL: [-0.45, 0, -0.35], armR: mir([-0.45, 0, -0.35]), [Math.floor(b * 2) % 2 ? 'legL' : 'legR']: [-0.55 * up(Math.sin(b * Math.PI * 2 * 2)), 0, 0] }),
+  // a swan folding down over her front leg
+  fold: (k = 1) => ({ spine: [0.75 * k, 0, 0], head: [0.3 * k, 0, 0], legL: [-0.5 * k, 0, 0], kneeR: [0.7 * k, 0, 0], armL: [-0.9 * k, 0, 0.5], armR: mir([-0.9 * k, 0, 0.5]) }),
+  // a Valkyrie: one arm thrust high (her spear), a deep lunge, the other hand on her hip
+  spear: (k = 1) => ({ spine: [-0.1, 0, 0], head: [-0.2, 0, 0], armL: [-2.75 * k, 0, 0.1], armR: mir([0, 0, 0.7]), foreR: mir([0, 0, -1.3]), legL: [-0.55 * k, 0, 0], kneeL: [0.7 * k, 0, 0], legR: [0.45 * k, 0, 0] }),
+  // riding: both hands on the reins, knees lifting in turn
+  gallop: (b) => { const left = Math.floor(b * 2) % 2 === 0, k = up(Math.sin(b * Math.PI * 2 * 2)); return { spine: [0.12, 0, 0], armL: [-1.1, 0, 0], armR: mir([-1.1, 0, 0]), foreL: [-0.6, 0, 0], foreR: mir([-0.6, 0, 0]), [left ? 'legL' : 'legR']: [-0.9 * k, 0, 0], [left ? 'kneeL' : 'kneeR']: [1.0 * k, 0, 0] }; },
   // a curtsey
   bow: (b, k = 1) => ({ spine: [0.55 * k, 0, 0], head: [0.25 * k, 0, 0], kneeL: [0.5 * k, 0, 0], legL: [-0.25 * k, 0, 0], armL: [0, 0, 0.9 * k], armR: mir([0, 0, 0.9 * k]) }),
   rest: () => ({ armL: [-0.35, 0, 0.25], armR: mir([-0.35, 0, 0.25]) }),
 };
+// The steps: ({ b: beats, k: which dancer, n: how many, into: 0..1 of the figure }) => { pose, face, lift }.
+const hop = (b, h) => Math.abs(Math.sin(b * Math.PI)) * h;
+const STEPS = {
+  wings: ({ b }) => ({ pose: POSES.wings(b / 2), lift: hop(b, 0.05) }),
+  ripple: ({ b, k }) => ({ pose: POSES.wings(b / 2 + k * 0.25) }), // the wings, one after another
+  highTurn: ({ b, k, n }) => ({ pose: POSES.high(b), face: Math.atan2(-Math.sin((k / n) * Math.PI * 2 + b / 8), 1) * 0.6, lift: hop(b, 0.07) }),
+  // the first dancer turns on the spot; the others frame her
+  solo: ({ b, k }) => (k === 0 ? { pose: Math.floor(b / 2) % 2 ? POSES.passe() : POSES.high(b), face: b * Math.PI, lift: 0.06 } : { pose: POSES.wings(b / 2 + k * 0.25) }),
+  arabesque: ({ b, k, n, into }) => ({ pose: into > 0.3 ? POSES.arabesque() : POSES.wings(b), face: (k - (n - 1) / 2) * -0.25 }),
+  // arabesques taken in turn down the line, the rest waiting with open arms
+  canon: ({ b, k, n }) => ({ pose: Math.floor(b / 2) % n === k || Math.floor(b / 2 + 2) % n === k ? POSES.arabesque() : POSES.wings(0.5), face: -0.5 }),
+  cygnets: ({ b }) => ({ pose: POSES.linked(b), lift: Math.abs(Math.sin(b * Math.PI * 2)) * 0.04 }),
+  pirouette: ({ b, k }) => { const t = (b + k * 0.5) % 4; return t < 2 ? { pose: POSES.passe(), face: t * Math.PI * 2, lift: 0.06 } : { pose: POSES.high(b) }; }, // two turns, then a breath
+  jete: ({ b, k }) => { const a = up(Math.sin((b + k * 0.5) * Math.PI)); return { pose: POSES.jete(a), face: Math.cos(b * 1.6 + k * 1.25) > 0 ? 1.2 : -1.2, lift: a * 0.5 }; }, // leaping the way she travels
+  fold: ({ b, k, into }) => ({ pose: k === 0 ? POSES.high(b) : POSES.fold(smooth((into - 0.15) / 0.3)), face: k === 0 ? 0 : Math.sign(k - 2.5) * -0.5 }), // the swans sink round their queen
+  waltz: ({ b }) => ({ pose: POSES.sway(b), face: Math.sin(b * Math.PI * 0.5) * 0.5, lift: hop(b, 0.04) }),
+  waltzTurn: ({ b, k }) => ({ pose: POSES.sway(b), face: b * Math.PI * 0.5 + k, lift: hop(b, 0.05) }), // turning as the ring turns
+  battement: ({ b, k }) => ({ pose: POSES.kick(up(Math.sin(b * Math.PI)), (Math.floor(b) + k) % 2 === 0, 2.0), lift: 0.02 }), // slow high kicks, arms up, neighbours on opposite legs
+  kicks: ({ b }) => ({ pose: POSES.kick(up(Math.sin(b * Math.PI * 2)), Math.floor(b) % 2 === 0), lift: Math.abs(Math.sin(b * Math.PI * 2)) * 0.04 }), // the can-can's line
+  kickWave: ({ b, k }) => { const t = b - k * 0.2; return { pose: POSES.kick(up(Math.sin(t * Math.PI * 2)), Math.floor(t) % 2 === 0), lift: 0.03 }; }, // the kick running down the line
+  skirts: ({ b }) => ({ pose: { spine: [0.2, 0, 0], armL: [-0.7, 0, 0.5 + 0.5 * Math.sin(b * Math.PI * 4)], armR: mir([-0.7, 0, 0.5 - 0.5 * Math.sin(b * Math.PI * 4)]), [Math.floor(b * 2) % 2 ? 'legL' : 'legR']: [-0.7, 0, 0] }, face: b * Math.PI * 0.5, lift: Math.abs(Math.sin(b * Math.PI * 2)) * 0.1 }), // running round, skirts shaken
+  cartwheel: ({ b, k }) => { const t = (b + k * 0.4) % 2; return t < 1 ? { pose: POSES.kick(1, true, 2.2), face: t * Math.PI * 2, lift: Math.sin(t * Math.PI) * 0.35 } : { pose: POSES.kick(up(Math.sin(b * Math.PI * 2)), Math.floor(b) % 2 === 0) }; }, // a spinning jump, then kicks again
+  ride: ({ b, k }) => ({ pose: POSES.gallop(b), face: Math.cos(b * 1.6 + k * 1.25) > 0 ? 1.3 : -1.3, lift: Math.abs(Math.sin(b * Math.PI * 2)) * 0.14 }),
+  spears: ({ b, k, into }) => ({ pose: POSES.spear(smooth((into - 0.1) / 0.2) * (0.9 + 0.1 * Math.sin(b * Math.PI))), face: (k - 2) * -0.2 }),
+  whirl: ({ b, k }) => ({ pose: { armL: [0, 0, 1.45], armR: mir([0, 0, 1.45]), head: [-0.2, 0, 0] }, face: b * Math.PI + k, lift: hop(b, 0.06) }), // arms flung wide, spinning
+  charge: ({ b, k }) => ({ pose: (Math.floor(b) + k) % 2 ? POSES.spear(1) : POSES.jete(up(Math.sin(b * Math.PI))), lift: (Math.floor(b) + k) % 2 ? 0 : up(Math.sin(b * Math.PI)) * 0.45 }), // lunge and leap by turns
+  hail: ({ b, k }) => (k === 0 ? { pose: POSES.spear(1), lift: 0.04 } : { pose: POSES.high(b), face: Math.sign(k - 2.5) * -0.6, lift: hop(b, 0.05) }), // the leader's spear up, the rest saluting her
+};
+// Each piece's dance: [formation, step] by turns, `len` bars each (the last one holds to the end).
+export const DANCES = {
+  'swan-lake': { len: 8, figs: [['line', 'wings'], ['ring', 'highTurn'], ['queen', 'solo'], ['vee', 'arabesque'], ['tight', 'cygnets'], ['diagonal', 'canon'], ['sweep', 'jete'], ['queen', 'fold'], ['line', 'ripple']] },
+  'la-donna-e-mobile': { len: 4, figs: [['line', 'waltz'], ['ring', 'waltzTurn'], ['columns', 'battement'], ['vee', 'pirouette'], ['sweep', 'jete'], ['wedge', 'waltz'], ['ring', 'highTurn']] },
+  'can-can': { len: 4, figs: [['tight', 'kicks'], ['advance', 'kickWave'], ['ring', 'skirts'], ['tight', 'cartwheel'], ['columns', 'battement'], ['advance', 'kicks'], ['ring', 'skirts'], ['tight', 'kickWave'], ['tight', 'kicks']] },
+  'ride-of-the-valkyries': { len: 4, figs: [['sweep', 'ride'], ['wedge', 'spears'], ['ring', 'whirl'], ['diagonal', 'charge'], ['sweep', 'ride'], ['line', 'spears'], ['ring', 'whirl'], ['queen', 'hail'], ['wedge', 'spears']] },
+};
+const DEFAULT_DANCE = DANCES['swan-lake'];
+// Where the show is in a piece's dance at beat b: the figure, the one before, and how far in.
+export function figureAt(score, b) {
+  const d = DANCES[score.id] || DEFAULT_DANCE, i = Math.min(d.figs.length - 1, Math.floor(Math.max(0, b) / d.len));
+  return { cur: d.figs[i], prev: d.figs[Math.max(0, i - 1)], into: i === d.figs.length - 1 && b >= d.len * d.figs.length ? 1 : (Math.max(0, b) - i * d.len) / d.len, i };
+}
 
 export class StageShow {
   constructor(built, layer, L, { music, toast = null, program = null, now = () => Date.now() / 1000 } = {}) {
@@ -333,28 +401,22 @@ export class StageShow {
 
     // The dancers.
     const n = this.dancers.length, depth = S.stage.front - S.stage.back - 2.5;
-    const form = Math.floor(b / 8) % FORMS.length, into = (b % 8) / 8, show = part.k === 'play' || part.k === 'clap' || part.k === 'open' || part.k === 'close';
+    const show = part.k === 'play' || part.k === 'clap' || part.k === 'open' || part.k === 'close';
+    const fig = figureAt(score, b), step = STEPS[fig.cur[1]];
+    this.state.figure = fig.cur.join(':');
     this.dancers.forEach((o, k) => {
       o.ch.root.visible = show;
       if (!show) return;
-      const line = score.kind === 'cancan'; // (the can-can: one line, shoulder to shoulder)
-      const prev = line ? [(k - (n - 1) / 2) * 1.5, 0.35] : FORMS[(form + FORMS.length - 1) % FORMS.length](k, n, b / 4), cur = line ? prev : FORMS[form](k, n, b / 4);
-      const mix = playing && b >= 8 ? smooth(into / 0.22) : 1; // glide into each new formation
-      const fx = playing ? prev[0] + (cur[0] - prev[0]) * mix : FORMS[0](k, n)[0], fz = playing ? prev[1] + (cur[1] - prev[1]) * mix : FORMS[0](k, n)[1];
+      const prev = FORMS[fig.prev[0]](k, n, b / 4), cur = FORMS[fig.cur[0]](k, n, b / 4), home = FORMS.line(k, n);
+      const mix = playing && fig.i > 0 ? smooth(fig.into / 0.22) : 1; // glide into each new formation
+      const fx = playing ? prev[0] + (cur[0] - prev[0]) * mix : home[0], fz = playing ? prev[1] + (cur[1] - prev[1]) * mix : home[1];
       const moved = Math.hypot(fx - o.at[0], (fz - o.at[1]) * depth) / Math.max(dt, 0.001);
       o.at = [fx, fz];
       const x = fx, z = S.stage.front - 1 - fz * depth;
       let face = 0, pose = POSES.rest(), lift = 0;
-      if (playing && score.kind === 'cancan') { // a line of high kicks, one leg and then the other
-        const kick = Math.max(0, Math.sin(b * Math.PI * 2)), left = Math.floor(b) % 2 === 0;
-        pose = { spine: [-0.12 * kick, 0, 0], armL: [0, 0, 1.2], armR: mir([0, 0, 1.2]), [left ? 'legL' : 'legR']: [-1.5 * kick, 0, 0] };
-        lift = Math.abs(Math.sin(b * Math.PI * 2)) * 0.04;
-      } else if (playing) {
-        if (mix < 1) pose = POSES.wings(b);
-        else if (form === 0) { pose = POSES.wings(b / 2); lift = Math.abs(Math.sin(b * Math.PI)) * 0.05; }
-        else if (form === 1) { pose = POSES.high(b); face = Math.atan2(-Math.sin((k / n) * Math.PI * 2 + b / 8), 1) * 0.6; lift = Math.abs(Math.sin(b * Math.PI)) * 0.07; }
-        else if (form === 2) { if (k === 0) { pose = POSES.high(b); face = b * Math.PI * 0.5; lift = 0.06; } else pose = POSES.wings(b / 2 + k * 0.25); }
-        else { pose = into > 0.3 ? POSES.arabesque() : POSES.wings(b); face = (k - (n - 1) / 2) * -0.25; }
+      if (playing) {
+        const d = step({ b, k, n, into: fig.into });
+        pose = d.pose; face = d.face || 0; lift = d.lift || 0;
       } else if (part.k === 'clap') {
         const d = Math.max(0, Math.sin(((part.t - 0.8) / 2.8) * Math.PI)) * (part.t < 6.4 ? 1 : 0);
         pose = POSES.bow(0, d);

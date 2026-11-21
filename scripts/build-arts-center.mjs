@@ -133,13 +133,23 @@ const lawns = [-1, 1].map((s) => { const px = -fz, pz = fx, d0 = operaR + LAWN.f
 const lawn = R1([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => { const d = operaR + LAWN.from + LAWN.depth / 2 + a * LAWN.depth / 2, w = b * LAWN.half; return [ocx + fx * d - fz * w, ocz + fz * d + fx * w]; })); // (both halves and the path: trees keep off it)
 // The Music Hall's door: the middle of its curved front, which faces the plaza (east).
 const [mcx, mcz] = centroid(music);
+let musicWall = null;
 const musicDoor = (() => {
   // the point of the outline nearest the fountain, pushed 1.6 m out
   let best = null, bd = Infinity;
-  for (let i = 0; i < music.length; i++) { const a = music[i], b = music[(i + 1) % music.length]; for (let t = 0; t <= 1; t += 0.1) { const q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], d = Math.hypot(q[0] - fcx, q[1] - fcz); if (d < bd) { bd = d; best = q; } } }
-  const d = Math.hypot(best[0] - mcx, best[1] - mcz);
-  return [best[0] + ((best[0] - mcx) / d) * 1.6, best[1] + ((best[1] - mcz) / d) * 1.6];
+  for (let i = 0; i < music.length; i++) { const a = music[i], b = music[(i + 1) % music.length]; for (let t = 0; t <= 1; t += 0.1) { const q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], d = Math.hypot(q[0] - fcx, q[1] - fcz); if (d < bd) { bd = d; best = { q, a, b }; } } }
+  // It faces straight out of the wall it is in (not away from the hall's
+  // middle: on the fan's slanting front that left the doors standing at an
+  // angle, out on the plaza).
+  let [nx, nz] = [-(best.b[1] - best.a[1]), best.b[0] - best.a[0]];
+  const nl = Math.hypot(nx, nz);
+  nx /= nl; nz /= nl;
+  if (nx * (best.q[0] - mcx) + nz * (best.q[1] - mcz) < 0) { nx = -nx; nz = -nz; }
+  musicWall = { at: best.q, n: [nx, nz] };
+  return [best.q[0] + nx * 1.6, best.q[1] + nz * 1.6];
 })();
+// The porches are solid too: the door fronts stand a little out of the walls.
+const porch = (at, [nx, nz], d0, d1, half) => R1([[d0, -half], [d1, -half], [d1, half], [d0, half]].map(([d, w]) => [at[0] + nx * d - nz * w, at[1] + nz * d + nx * w]));
 
 const buildings = [
   { n: 'opera-house', custom: true, h: ARTS.opera.top, p: R1(circle(ocx, ocz, operaR)) },
@@ -149,6 +159,8 @@ const buildings = [
   { n: 'hangaram-design', custom: true, h: ARTS.design, p: design },
   { n: 'calligraphy', custom: true, h: ARTS.calligraphy, p: calligraphy },
   { n: 'practice-hall', custom: true, h: ARTS.practice, p: practice },
+  { n: 'opera-porch', custom: true, h: 3.6, p: porch([ocx, ocz], [fx, fz], operaR - 1.5, operaR + 0.65, 4.7) },
+  { n: 'music-porch', custom: true, h: 3, p: porch(musicWall.at, musicWall.n, -0.6, 0.4, 3.3) },
 ];
 
 // --- Walks: OSM's footways inside the site, grown with it ------------------------
@@ -257,7 +269,7 @@ const map = {
     {
       type: 'artscenter', x: 0, z: 0,
       opera: { at: [r1(ocx), r1(ocz)], r: r1(operaR), eave: ARTS.opera.eave, top: ARTS.opera.top, face: doorRy(fx, fz), back: operaBack, backH: ARTS.operaBack },
-      music: { p: music, wall: ARTS.music.wall, top: ARTS.music.top, door: R1([musicDoor])[0], face: doorRy(musicDoor[0] - mcx, musicDoor[1] - mcz) },
+      music: { p: music, wall: ARTS.music.wall, top: ARTS.music.top, door: R1([musicDoor])[0], face: doorRy(musicWall.n[0], musicWall.n[1]) },
       halls: [
         { n: 'hangaram-art', p: hangaram, h: ARTS.hangaram },
         { n: 'hangaram-design', p: design, h: ARTS.design },
