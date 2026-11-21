@@ -24,4 +24,5 @@ export const DISTRICT_NAME = {
   'arts-center': { en: 'Seoul Arts Center', ko: '예술의전당', ja: '芸術の殿堂', zh: '艺术殿堂', es: 'Centro de Artes de Seúl', id: 'Pusat Seni Seoul', ar: 'مركز سيول للفنون', vi: 'Trung tâm Nghệ thuật Seoul', hi: 'सियोल आर्ट्स सेंटर', fr: 'Centre des arts de Séoul', th: 'ศูนย์ศิลปะโซล' },
   nanji: { en: 'Haneul Park & Nanji', ko: '하늘공원·난지', ja: '空公園・蘭芝', zh: '天空公园·兰芝', es: 'Parque Haneul y Nanji', id: 'Taman Haneul & Nanji', ar: 'حديقة هانول ونانجي', vi: 'Công viên Haneul & Nanji', hi: 'हानुल पार्क और नानजी', fr: 'Parc Haneul et Nanji', th: 'สวนฮานึลและนันจี' },
   mokdong: { en: 'Mokdong', ko: '목동', ja: '木洞', zh: '木洞', es: 'Mokdong', id: 'Mokdong', ar: 'موكدونغ', vi: 'Mokdong', hi: 'मोकदोंग', fr: 'Mokdong', th: 'มกดง' },
+  magok: { en: 'Magok', ko: '마곡', ja: '麻谷', zh: '麻谷', es: 'Magok', id: 'Magok', ar: 'ماغوك', vi: 'Magok', hi: 'मागोक', fr: 'Magok', th: 'มาก๊ก' },
 };

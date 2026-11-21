@@ -266,6 +266,7 @@ import { createHanBridges } from './game/han-bridges.js';
 import { createNamsanWalk } from './game/namsan-walk.js';
 import { createNanjiWalk } from './game/nanji-walk.js';
 import { createMokdongNear } from './game/mokdong-near.js';
+import { createBotanicNear } from './game/botanic-near.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createNaksanNear } from './game/naksan-near.js';
 import { createNorthWallNear } from './game/north-wall-near.js';
@@ -2011,7 +2012,7 @@ const shop = new ShopUI({
   onFurniture: (product) => {
     const id = product.furniture;
     if (!ITEMS[id] || inventory.has(id)) return;
-    const coins = coinsFor(product.price), note = { name: product.name, at: interior?.store.name };
+    const coins = coinsFor(product.price), note = { name: product.name, at: (interior?.store || shop.store)?.name }; // (shop.store: a stand on the street, the greenhouse's pot plants)
     if (!wallet.spend(coins, note)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
     inventory.add(id);
     receipts.record(id, coins, wallet.lastOp, note); // (every item keeps its server receipt)
@@ -2059,14 +2060,14 @@ const shop = new ShopUI({
 // Market sellers call out to you as you walk past their stall (now and then).
 const STALL_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], ['맛보고 가세요!', 'matbogo gaseyo!', 'Come have a taste!'], ['방금 만들었어요!', 'banggeum mandeureosseoyo!', 'Freshly made!'], ['구경하고 가세요!', 'gugyeonghago gaseyo!', 'Take a look!']];
 let stallHiAt = 0;
-function greetAtStalls(p, list = interior.vendorNpcs) {
+function greetAtStalls(p, list = interior.vendorNpcs, lines = STALL_HI) {
   const now = performance.now();
   if (now - stallHiAt < 12000) return;
   const o = list.find((v) => Math.hypot(p.x - v.ch.root.position.x, p.z - v.ch.root.position.z) < 2.4 && now - (v.hiAt || 0) > 40000);
   if (!o) return;
   stallHiAt = o.hiAt = now;
   o.ch.wave();
-  say(o, $('labels'), STALL_HI[Math.floor(Math.random() * STALL_HI.length)]);
+  say(o, $('labels'), lines[Math.floor(Math.random() * lines.length)]);
 }
 // At the park's market, the stall's own seller thanks you (not the kiosk clerk).
 function sellerOf(product) {
@@ -5278,7 +5279,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group, () => botanic.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -5997,6 +5998,13 @@ const nightCarts = createNightCarts({
   scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision,
   makeNpc: (name) => makeNpc($('labels'), name), signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
+  look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+});
+// Seoul Botanic Park's greenhouse (game/botanic-near.js): an open building on
+// the street, with pot plants for your home sold from stands inside.
+const botanic = createBotanicNear({
+  scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision, seats: streetSeats,
+  makeNpc: (name) => makeNpc($('labels'), name), greet: (list, p, lines) => greetAtStalls(p, list, lines),
   look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
 });
 const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Modu Land is `themepark`, no shared `park` flag)
@@ -6758,6 +6766,7 @@ function moreActions(p, door) {
     if (!seated) out.push(...hanParks.actions(p)); // a Han River park's kiosk, fishing spots, boats and stalls
     if (!seated) out.push(...fishContest.acts(p)); // a fishing contest with a friend in the park
     if (!seated) out.push(...nightCarts.actions(p)); // a night food cart's counter
+    if (!seated) out.push(...botanic.actions(p)); // a pot stand in Seoul Botanic Park's greenhouse
     const bs = !seated && nearestSeat(p); if (bs) out.push(sitAct(bs));
     if (bs?.mat && !bs.cushion) out.push(matSitAct(bs));
     const pm = !seated && picnic.action(p); if (pm) out.push(pm);
@@ -6855,6 +6864,7 @@ function updateAction(p, tSec) {
     else if (!riding && templeLanterns.acts(p).length) next = templeLanterns.acts(p)[0]; // my lantern on Jogyesa's canopy
     else if (!riding && !seated && hanParks.actions(p).length) next = hanParks.actions(p)[0]; // a Han River park: the kiosk, fishing, the boats
     else if (!riding && !seated && nightCarts.actions(p).length) next = nightCarts.actions(p)[0]; // a night food cart
+    else if (!riding && !seated && botanic.actions(p).length) next = botanic.actions(p)[0]; // a pot stand in the greenhouse
     else if (seated?.street) next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() }; // a park bench
     else if (!riding && nearestSeat(p)) next = sitAct(nearestSeat(p));
     else if (!riding && picnic.action(p)) next = picnic.action(p); // a picnic mat on the park lawn
@@ -7347,6 +7357,7 @@ renderer.setAnimationLoop((now) => {
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
+  if (mode === 'street') botanic.update(p, dt); // Seoul Botanic Park: the greenhouse and its gardeners
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
   if (!iceRink.loaded && mode === 'store' && interior?.iceRink) iceRink.ready().catch(() => {});
@@ -7640,6 +7651,7 @@ renderer.setAnimationLoop((now) => {
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
+  if (mode === 'street') for (const o of botanic.staffNear()) placeLabels(o, camera, w, h); // (the greenhouse's gardeners)
   if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
@@ -7908,6 +7920,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     bumper: () => bumper.debug(),
     iceRink, // Mokdong Ice Rink (game/ice-rink.js), for tests
     mokdong, // its outside (game/mokdong-near.js)
+    botanic, // Seoul Botanic Park's greenhouse (game/botanic-near.js)
     bumperBoard: () => bumper.board(),
     duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
     duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
