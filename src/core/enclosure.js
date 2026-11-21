@@ -7,25 +7,32 @@
 //   e.collect([landmarks, scene], skip);   // objects that sit wholly inside
 //   e.update(player.position);             // each frame: 'enter' | 'leave' | null
 import * as THREE from 'three';
+import { inPoly } from './geom.js';
 
 // An object is drawn unless an enclosure hides it (you are outside its wall)
 // or it is past the fog (FarCull below).
 const show = (o) => { o.visible = !o.userData.encHidden && !o.userData.farHidden; };
 
 export class Enclosure {
-  constructor({ id, box, inset = 1, onFirstEnter = null }) {
+  // poly: the wall's own line ([[x, z], ...]) when the place is not a
+  // rectangle (Changdeokgung): inside means inside the box and the line.
+  constructor({ id, box, poly = null, inset = 1, onFirstEnter = null }) {
     this.id = id;
     const [ax, az, bx, bz] = box;
     this.box = { x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz) };
+    this.poly = poly;
     this.inset = inset;
     this.onFirstEnter = onFirstEnter;
     this.objects = new Set();
     this.inside = null; // unknown until the first update
     this.loaded = false;
   }
+  // m: a margin in from the box's edge (under 0: out from it, and then the
+  // wall's line is not asked: a landmark may stand on it, like a gate).
   contains(x, z, m = 0) {
     const b = this.box;
-    return x > b.x0 + m && x < b.x1 - m && z > b.z0 + m && z < b.z1 - m;
+    if (!(x > b.x0 + m && x < b.x1 - m && z > b.z0 + m && z < b.z1 - m)) return false;
+    return !this.poly || m < 0 || inPoly(x, z, this.poly);
   }
   adopt(list) {
     for (const o of list) if (o) { this.objects.add(o); o.userData.encHidden = !this.inside; show(o); }
@@ -39,7 +46,7 @@ export class Enclosure {
       if (skip.has(o) || this.objects.has(o) || !o.visible) continue;
       bb.setFromObject(o);
       if (bb.isEmpty()) continue;
-      if (this.contains(bb.min.x, bb.min.z, this.inset) && this.contains(bb.max.x, bb.max.z, this.inset)) found.push(o);
+      if (this.contains(bb.min.x, bb.min.z, this.inset) && this.contains(bb.max.x, bb.max.z, this.inset) && (!this.poly || (this.contains(bb.min.x, bb.max.z) && this.contains(bb.max.x, bb.min.z)))) found.push(o);
     }
     this.adopt(found);
     return found.length;

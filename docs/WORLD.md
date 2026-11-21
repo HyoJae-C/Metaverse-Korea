@@ -941,6 +941,36 @@ like Bukchon; to bring it back, start from commit e4ebd13. Run the script
 again after moving the district: it also sets the Information Center's `at` in
 stores.json.
 
+## Changdeokgung and Huwon (Jongno-gu)
+
+`districts/changdeokgung.json`, built by `scripts/build-changdeokgung.mjs`
+from OpenStreetMap (`scripts/data/changdeokgung-osm.json`, made by
+`scripts/extract-changdeokgung-osm.mjs`). Donhwamun, the main gate, is the
+district's (0, 0) on its real spot, east of Bukchon and north of Jongmyo. Run
+it before `scripts/build-bukchon.mjs` (Bukchon keeps its streets and hanok off
+the palace and the forecourt), then `build-north-wall.mjs` and
+`build-closed.mjs`.
+
+Sizes (Yozi 2026-11-21): the site, the wall and the paths at 1/4; gates at
+50%; halls at 50% where they fit between the corridors, which stay at 1/4
+(most yards are tight, so most halls come out at 30%: `meta.halls`); each of
+Huwon's four gardens whole at 50% (pond, pavilions and halls together, twice
+the 1/4 map), moved along the valley so they stand clear of each other and of
+the wall in their real order (`meta.gardens`: Aeryeonji 17 m, Gwallamji 38 m).
+
+Made up or approximate, and marked so: Buyongji (not in OSM: drawn from the
+path round it and its recorded size, `approx` on its water); the doors cut in
+corridors so every yard can be walked into (`meta.doors`); the forecourt in
+front of Donhwamun, deeper than the real one because the game's Yulgok-ro is
+south of its real line. Left out: Uiduhap (no room by the wall at 50%), the
+hills (the garden is flat) and the yard walls inside the garden.
+
+The palace shares its planner with Gyeongbokgung (`scripts/lib/palace-plan.mjs`).
+The pavilions (`jeongja`) and Buyongji's island (`pondisle`) are drawn by
+`src/core/huwon-model.js`, loaded when you first walk in.
+`node scripts/build-changdeokgung.mjs --check` fails if any hall, yard,
+pavilion or garden cannot be walked to from the gate.
+
 ## Stamp courses
 
 `src/data/trails.js` groups tour stamps into courses (the Seoul City Wall

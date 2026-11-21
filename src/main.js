@@ -85,7 +85,7 @@ import { braceletsFromCharms } from './game/knot-bracelets.js';
 import { createTimedWear } from './game/timed-wear.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
-import { buildBukchonHill } from './core/bukchon-models.js';
+import { buildBukchonHill, LANE_UP } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
@@ -3838,9 +3838,9 @@ $('map-btn').onclick = () => {
   const pos = myPlace();
   mapView.show(pos.x, pos.z);
 };
-// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// Bukchon Hanok Village's information centre (a step of the new player's trip, below), and
 // the cards that trip shows. "Back to the guide" puts you beside the square guide.
-const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+const FIRST_TAXI = { x: -1522.5, z: -916.3 }; // Bukchon's information centre on Gyedong-gil, up from Anguk Station (stores.json info-bukchon)
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3937,7 +3937,7 @@ function onTripStep() {
     sfx.pop?.();
     me.play('cheer');
     const route = quests.active?.route;
-    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's Information Center: a guide is right here
       firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
     } else tripTaxiCard();
     return;
@@ -5209,10 +5209,24 @@ const viewBook = new ViewBook(), partBook = new PartBook();
 // Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
 // In the yard of a home open to visitors, the ground is its flat terrace.
 const visitYards = map.buildings.filter((b) => b.visit).map((b) => ({ x0: Math.min(...b.p.map((q) => q[0])), x1: Math.max(...b.p.map((q) => q[0])), z0: Math.min(...b.p.map((q) => q[1])), z1: Math.max(...b.p.map((q) => q[1])), y: b.lv || 0 }));
+const bukchonLanes = map.roads.filter((r) => r.d === BUKCHON.district && r.k === 'walk').map((r) => ({ p: r.p, w: r.w, x0: Math.min(...r.p.map((q) => q[0])) - r.w, x1: Math.max(...r.p.map((q) => q[0])) + r.w, z0: Math.min(...r.p.map((q) => q[1])) - r.w, z1: Math.max(...r.p.map((q) => q[1])) + r.w }));
 function bukchonY(x, z) {
   if (!bukchonAt) return 0;
   for (const v of visitYards) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1) return v.y;
-  return bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  const y = bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  // On an alley you stand on its paving, which is drawn LANE_UP over the hill
+  // (core/bukchon-models.js); feet used to sink into it on the way up.
+  if (y <= 0.001 || !bukchonLanes.length) return y;
+  let near = 1;
+  for (const r of bukchonLanes) {
+    if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+    for (let i = 1; i < r.p.length && near > 0; i++) {
+      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+      const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
+      near = Math.min(near, Math.max(0, (Math.hypot(x - ax - dx * t, z - az - dz * t) - r.w / 2) / 0.4)); // (0 on the paving, 1 from 40 cm off it)
+    }
+  }
+  return y + 0.02 + (LANE_UP - 0.02) * (1 - near);
 }
 // Villagers in hanbok, men and women, strolling the alleys inside the wall.
 const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
@@ -5243,18 +5257,41 @@ const inEnclosure = (d, b) => {
 for (const d of map.meta?.districts || []) {
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
   if (!hanoks.length) continue;
-  const g = buildHanoks(hanoks);
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
-  scene.add(g);
-  openHanok.push(g);
+  // In blocks of 64 m, so the ones behind you aren't drawn, and a block more
+  // than 90 m away shows its plain version (Bukchon has ~300 hanok at ~900
+  // triangles each: all of them in full was 260k triangles a frame).
+  const cells = new Map();
+  for (const b of hanoks) {
+    const k = Math.floor(b.p[0][0] / 64) + ',' + Math.floor(b.p[0][1] / 64);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k).push(b);
+  }
+  for (const list of cells.values()) {
+    const cx = list.reduce((s, b) => s + b.p[0][0], 0) / list.length, cz = list.reduce((s, b) => s + b.p[0][1], 0) / list.length;
+    const lod = new THREE.LOD();
+    lod.position.set(cx, 0, cz);
+    for (const [far, from] of [[false, 0], [true, 90]]) {
+      const g = buildHanoks(list, { far });
+      g.position.set(-cx, 0, -cz);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = !far; o.receiveShadow = true; } });
+      lod.addLevel(g, from);
+    }
+    scene.add(lod);
+    openHanok.push(lod);
+  }
+  if (d.id === BUKCHON.district) { // the hill and its alleys
+    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);
+    hill.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    scene.add(hill);
+    openHanok.push(hill);
+  }
 }
 // Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
 // shows its wall and gates from the street; what is inside is drawn once you
 // walk in.
 const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
-  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
+  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz], poly: d.enclosure.poly?.map(([x, z]) => [x + ox, z + oz]) });
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
   const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
   if (hanoks.length || inner.length) e.onFirstEnter = () => {
@@ -5321,7 +5358,7 @@ function updateEnclosures(p, dt = 0) {
   // Coming up to the pungmul troupe: what it is (once each time you come up).
   if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
   else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
-  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || DISTRICT_NAME[e.id] || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
   wasInBukchon = inBk;
