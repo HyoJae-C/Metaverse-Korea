@@ -2810,14 +2810,15 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   .tools #bike-btn, .tools #chat-btn { position: fixed; right: 21px; z-index: 4; }
   .tools #chat-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 72px); }
   .tools #bike-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 126px); }
-  /* Something taken out of the bag (Yozi 2026-11-21): its ☕ / 🥡 / 📖 button
-     takes the free spot right of the map button; 📥 stays by the bag. While
-     the minimap shows (no map button, the eye moves there) it goes back to the row. */
-  html:not(.android) body:not(:has(.minimap:not([hidden]))) .tools #drink-btn {
+  /* The 📒 notes button takes the free spot right of the map button (Yozi
+     2026-11-21); the bag (and ☕ / 📥 while you hold something) stays in the
+     row. While the minimap shows (no map button, the eye moves there) it goes
+     back to the row. */
+  html:not(.android) body:not(:has(.minimap:not([hidden]))) .tools #notes-btn {
     position: fixed; z-index: 5; top: max(10px, calc(env(safe-area-inset-top) - 2px));
     left: calc(max(12px, env(safe-area-inset-left, 0px)) + 106px);
   }
-  html:not(.android) body.in-store:not(:has(.minimap:not([hidden]))) .tools #drink-btn { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); }
+  html:not(.android) body.in-store:not(:has(.minimap:not([hidden]))) .tools #notes-btn { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); }
   /* The open emote wheel fans up over them. */
   #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 0; pointer-events: none; }
   /* Small phones (iPhone SE): the action button leans left, clear of ride. */

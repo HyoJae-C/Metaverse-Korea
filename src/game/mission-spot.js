@@ -23,7 +23,7 @@ export function missionSpot(pin, w, fallbackTop) {
 
 // Phones: the bars under the lowest of the top-left corner buttons
 // (DOMRects, null or empty when not shown), on a `w`-wide screen.
-// `tools`: the round buttons in the top-right row (bag, notes, and ☕ / 📥
+// `tools`: the round buttons in the top-right row (the bag, and ☕ / 📥
 // while you hold something), as DOMRects; when they leave the bar too little
 // room, it goes under them instead.
 export function cornerSpot(rects, w, fallbackTop, tools = []) {
@@ -77,7 +77,7 @@ export function createMissionSpot() {
     if (dock.matches) dockPin();
     else if (pin.style.left || lastLift) { pin.style.left = ''; lastLift = 0; root.style.setProperty('--pin-lift', '0px'); }
     const map = $('map-btn');
-    const cornerEls = [document.querySelector('.ui-eye'), map?.classList.contains('corner-map') ? map : null, document.querySelector('.minimap'), $('drink-btn') && getComputedStyle($('drink-btn')).position === 'fixed' ? $('drink-btn') : null];
+    const cornerEls = [document.querySelector('.ui-eye'), map?.classList.contains('corner-map') ? map : null, document.querySelector('.minimap'), $('notes-btn') && getComputedStyle($('notes-btn')).position === 'fixed' ? $('notes-btn') : null];
     const s = dock.matches ? cornerSpot(cornerEls.map(shownRect), window.innerWidth, EDGE + 52, [...document.querySelectorAll('.tools > .tool:not(.corner-map)')].map(shownRect)) : missionSpot(pinRect(), window.innerWidth, EDGE + 62);
     const dTop = s.top + (bar.hidden ? 0 : bar.offsetHeight + GAP);
     const showDelivery = delivery && !delivery.hidden;
