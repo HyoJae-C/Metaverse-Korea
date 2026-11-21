@@ -173,7 +173,7 @@ function makeDuck() {
 }
 
 /**
- * game: getters { mode, me, others, myId, shop, scene, depth (0-1 snow on
+ * game: getters { mode, me, others, myId, shop, scene, covered (under a roof: no snow to gather), depth (0-1 snow on
  * the ground), snowing, onFoot (not riding or seated), look (ours) }, plus
  * send(msg), blocked(x, z, r), bubble(text), resendState(), clearAction(),
  * sfx(), snowNews() (the snow has settled: announce the duck maker),
@@ -541,7 +541,7 @@ export function createSnowman(game) {
       const o = balls().find((q) => q.owner === glued.owner && q.b.k === glued.k);
       return { key: `sb-let:${glued.owner}:${glued.k}:${o?.b.n}`, label: `✋ ${L(SNOW_TEXT.letGo)}${o ? stepTxt(o.b.n) : ''}`, run: () => letGo() };
     }
-    if (mold() && game.depth >= MIN_SNOW) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
+    if (mold() && game.depth >= MIN_SNOW && !game.covered) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
     const o = nearest(p, (q) => !q.b.h);
     if (o) {
       const step = stepTxt(o.b.n);
@@ -555,7 +555,7 @@ export function createSnowman(game) {
       const icon = stageOf(o.b.n) >= CREW_STAGE ? '🤝' : '☃️'; // (they're not holding it: push it for them)
       return { key: `sb-r:${o.owner}:${o.b.k}:${o.b.n}`, label: `${icon} ${fill(L(SNOW_TEXT.help), { name })}${step}`, run: () => push(o) };
     }
-    if (game.depth >= MIN_SNOW && !balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5)) return { key: 'sb-make', label: '❄️ ' + L(SNOW_TEXT.make), run: () => make() };
+    if (game.depth >= MIN_SNOW && !game.covered && !balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5)) return { key: 'sb-make', label: '❄️ ' + L(SNOW_TEXT.make), run: () => make() };
     return null;
   }
 
