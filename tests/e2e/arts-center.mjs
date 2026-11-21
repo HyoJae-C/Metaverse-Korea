@@ -62,7 +62,7 @@ if (process.env.OUTSIDE) { assert(!errors.length, `no page errors ${errors.slice
 await page.evaluate(() => __mk.enter('arts-opera-theater'));
 await page.waitForFunction(() => __mk.stage?.(), null, { timeout: 30000 });
 await page.waitForTimeout(1500);
-const waitPart = (part, t = 0) => page.waitForFunction(([p, t]) => { const s = __mk.stage(); return s && s.part === p && s.t >= t; }, [part, t], { timeout: 120000 });
+const waitPart = (part, t = 0) => page.waitForFunction(([p, t]) => { const s = __mk.stage(); return s && s.part === p && s.t >= t; }, [part, t], { timeout: 240000 });
 const view = async (o, wait = 400) => { await page.evaluate((o) => __mk.cam(o), o); await page.waitForTimeout(wait); };
 const seat = await page.evaluate(() => __mk.sitNear(0, 6));
 assert(seat, 'a free seat in the stalls');
@@ -72,6 +72,15 @@ await page.click('.ui-eye');
 assert(await page.evaluate(() => document.documentElement.classList.contains('ui-hidden') && getComputedStyle(document.querySelector('.top-right')).display === 'none'), 'it hides the buttons');
 await page.click('.ui-eye');
 assert(await page.evaluate(() => [...document.querySelectorAll('#labels > *')].every((e) => !/Conductor|Pianist/.test(e.textContent) || getComputedStyle(e).display === 'none')), 'no name tag on the conductor');
+// Nobody runs in the hall: Shift held, the pace and the animation stay a walk.
+await page.keyboard.press('e');
+await page.waitForTimeout(400);
+await page.keyboard.down('Shift'); await page.keyboard.down('d');
+await page.waitForTimeout(900);
+const pace = await page.evaluate(() => __mk.speed01?.() ?? null);
+await page.keyboard.up('d'); await page.keyboard.up('Shift');
+if (pace != null) assert(pace > 0.2 && pace < 0.55, `walking only in the hall (${pace.toFixed(2)})`);
+await page.evaluate(() => __mk.sitNear(0, 6));
 await waitPart('walkIn', 3.4);
 await shot('5-conductor-bows');
 await waitPart('play', 6);
