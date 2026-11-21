@@ -117,3 +117,23 @@ test('Gimpo Airport Station: Line 5, exits outside the airfield', () => {
   const fence = gm.blockers[0].p;
   for (const e of st.exits) assert.ok(!inPoly(e.at[0] - ox, e.at[1] - oz, fence), `exit ${e.n}`);
 });
+
+test('the international terminal: two parked planes nose-in at its airside, a kerb and a door outside the fence', () => {
+  const fence = gm.blockers[0].p, P = l0.plane;
+  assert.equal(l0.intlStands.length, 2);
+  for (const s of l0.intlStands) {
+    // the plane's box: its length along u (facing the terminal), its span along v
+    for (const a of [-1, 1]) for (const b of [-1, 1]) {
+      const [x, z] = UV(s.u + (a * P.len) / 2, s.v + (b * P.span) / 2);
+      assert.ok(inPoly(x, z, fence), `intl stand ${s.n} inside the fence`);
+      assert.ok(!inPoly(x, z, l0.intl), `intl stand ${s.n} clear of the terminal`);
+    }
+    assert.ok(s.u - P.len / 2 - s.wall > 2 && s.u - P.len / 2 - s.wall < 5, 'a short jet bridge from the wall to the nose');
+    assert.ok(s.v - P.span / 2 > l0.fly.taxiV + 20, 'clear of the taxilane the flights use');
+  }
+  assert.ok(Math.abs(l0.intlStands[1].v - l0.intlStands[0].v) > P.span + 3, 'wingtips apart');
+  const { u, v0, v1 } = l0.intlDoor;
+  for (const v of [v0, (v0 + v1) / 2, v1]) assert.ok(!inPoly(...UV(u - 3, v), fence), 'the door opens outside the fence');
+  const signs = JSON.stringify(gm.buildings.map((b) => b.n));
+  assert.ok(signs.includes('김포국제공항 국제선') && signs.includes('김포국제공항 국내선'));
+});

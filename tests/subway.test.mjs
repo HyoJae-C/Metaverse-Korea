@@ -105,6 +105,19 @@ test('station exits are clear of roads and buildings', () => {
   }
 });
 
+test('Anguk (Line 3, 328): exits 2 and 3 within 15 m of the real ones, either side of Bukchon-ro', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 2: [37.577107, 126.986126], 3: [37.577014, 126.986385] }; // OSM 3403538920, 3403538921
+  const st = stations.find((s) => s.id === 'anguk-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [2, 3]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    const off = Math.hypot(e.at[0] - x, e.at[1] - z);
+    assert.ok(off <= 15, `exit ${e.n} is ${off.toFixed(1)} m off`);
+    if (off > 3) assert.ok(e.why, `exit ${e.n}: say why it is off`);
+  }
+});
+
 test('Dongmyo (Line 1, 127): exits within 15 m of the real 3 and 4, by the market and the shrine', async () => {
   const { toGame } = await import('../src/core/seoul-grid.js');
   const real = { 3: [37.5732778, 127.017254], 4: [37.5729272, 127.015949] }; // OSM 3401297193, 3401296590

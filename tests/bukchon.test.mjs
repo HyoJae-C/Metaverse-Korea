@@ -286,6 +286,37 @@ test('the hill you see is the hill you walk on (the shadow lands at your feet)',
   assert.ok(xs.size > 20);
 });
 
+test("Anguk Station's exit 2 is a hole in the hill's paving, so you see its steps", async () => {
+  await import('../src/core/landmarks.js');
+  const { buildBukchonHill } = await import('../src/core/bukchon-models.js');
+  const { holeOf } = await import('../src/core/subway.js');
+  const d = region.districts.find((x) => x.id === 'bukchon');
+  const exits = region.subway.stations.flatMap((s) => s.exits);
+  const holes = exits.map(holeOf);
+  const roads = map.roads.map((r) => ({ ...r, p: r.p.map(([x, z]) => [x + d.offset[0], z + d.offset[1]]) }));
+  const hill = buildBukchonHill(roads, d.offset, holes);
+  // every triangle the hill draws, flat on the map
+  const tris = [];
+  hill.traverse((o) => {
+    if (!o.isMesh) return;
+    const pos = o.geometry.attributes.position, idx = o.geometry.index;
+    const n = idx ? idx.count : pos.count, at = (k) => (idx ? idx.getX(k) : k);
+    for (let k = 0; k < n; k += 3) tris.push([0, 1, 2].map((q) => [pos.getX(at(k + q)), pos.getZ(at(k + q))]));
+  });
+  const inTri = (x, z, [a, b, c]) => { const s = (p, q) => (q[0] - p[0]) * (z - p[1]) - (q[1] - p[1]) * (x - p[0]); const s1 = s(a, b), s2 = s(b, c), s3 = s(c, a); return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0); };
+  const onHill = holes.filter((h) => h.every(([x, z]) => inside(x - d.offset[0], z - d.offset[1], [[BUKCHON.area[0], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[1]], [BUKCHON.area[2], BUKCHON.area[3]], [BUKCHON.area[0], BUKCHON.area[3]]])));
+  assert.ok(onHill.length >= 1, 'exit 2 is on the hill');
+  for (const h of onHill) {
+    const cx = h.reduce((s, p) => s + p[0], 0) / 4, cz = h.reduce((s, p) => s + p[1], 0) / 4;
+    for (let a = 0.1; a < 1; a += 0.2) for (let b = 0.1; b < 1; b += 0.2) { // points over the stairwell
+      const x = h[0][0] + (h[1][0] - h[0][0]) * a + (h[3][0] - h[0][0]) * b, z = h[0][1] + (h[1][1] - h[0][1]) * a + (h[3][1] - h[0][1]) * b;
+      assert.ok(!tris.some((t) => inTri(x, z, t)), `paving over the stairwell at ${(x - cx).toFixed(1)}, ${(z - cz).toFixed(1)}`);
+    }
+    // and just outside it the paving is still there (no gap round the hole)
+    for (const [x, z] of h) { const ox = x + Math.sign(x - cx) * 0.3, oz = z + Math.sign(z - cz) * 0.3; assert.ok(tris.some((t) => inTri(ox, oz, t)), 'paving round the hole'); }
+  }
+});
+
 test('hanok shops get a hanok sign under the eaves, not a street board through the roof', async () => {
   const { hanokSignStyle, addHanokSign, HANOK_SIGNS } = await import('../src/core/hanok-signs.js');
   const THREE = await import('three');

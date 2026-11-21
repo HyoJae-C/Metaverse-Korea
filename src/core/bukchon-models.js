@@ -240,8 +240,48 @@ function segGap(a, b, c, d) {
   if (side(a, b, c) !== side(a, b, d) && side(c, d, a) !== side(c, d, b)) return 0;
   return Math.min(pt(a, c, d), pt(b, c, d), pt(c, a, b), pt(d, a, b));
 }
+// Takes the grid cells under each hole out of the hill (geo: its PlaneGeometry,
+// nx by nz cells over area) and returns, for each, a patch the size of those
+// cells with the hole cut in it, on the hill's ground (points every cell
+// along its edge, so it meets the grid without cracks). Exported for tests.
+export function cutHoles(geo, holes, [x0, z0, x1, z1], [nx, nz], [ox, oz]) {
+  const sx = (x1 - x0) / nx, sz = (z0 - z1) / nz;
+  const drop = new Set(), patches = [];
+  for (const h of holes) {
+    const xs = h.map((p) => p[0] - ox), zs = h.map((p) => p[1] - oz);
+    const ia = Math.max(0, Math.floor((Math.min(...xs) - x0) / sx)), ib = Math.min(nx, Math.ceil((Math.max(...xs) - x0) / sx));
+    const ja = Math.max(0, Math.floor((Math.min(...zs) - z1) / sz)), jb = Math.min(nz, Math.ceil((Math.max(...zs) - z1) / sz));
+    if (ia >= ib || ja >= jb) continue; // (not on the hill)
+    for (let j = ja; j < jb; j++) for (let i = ia; i < ib; i++) drop.add(j * nx + i);
+    const ring = []; // the cells' outline, a point at every grid line (x, -z: shape space)
+    for (let i = ia; i < ib; i++) ring.push([x0 + i * sx, z1 + ja * sz]);
+    for (let j = ja; j < jb; j++) ring.push([x0 + ib * sx, z1 + j * sz]);
+    for (let i = ib; i > ia; i--) ring.push([x0 + i * sx, z1 + jb * sz]);
+    for (let j = jb; j > ja; j--) ring.push([x0 + ia * sx, z1 + j * sz]);
+    const shape = new THREE.Shape(ring.map(([x, z]) => new THREE.Vector2(x, -z)));
+    shape.holes.push(new THREE.Path(xs.map((x, k) => new THREE.Vector2(x, -zs[k]))));
+    const pg = new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2);
+    const pos = pg.attributes.position, uv = pg.attributes.uv;
+    for (let k = 0; k < pos.count; k++) {
+      const x = pos.getX(k), z = pos.getZ(k);
+      pos.setXYZ(k, x + ox, ground(x, z) + 0.02, z + oz);
+      uv.setXY(k, (x + ox) / 2.4, (z + oz) / 2.4);
+    }
+    pg.computeVertexNormals();
+    patches.push(pg);
+  }
+  if (drop.size) { // (PlaneGeometry: six indices per cell, row by row from the north edge)
+    const idx = geo.index.array, keep = [];
+    for (let c = 0; c < nx * nz; c++) if (!drop.has(c)) for (let k = 0; k < 6; k++) keep.push(idx[c * 6 + k]);
+    geo.setIndex(keep);
+  }
+  return patches;
+}
 export const LANE_UP = 0.12; // the alleys' paving over the hill's ground (main.js stands you on it)
-export function buildBukchonHill(roads, [ox, oz]) {
+// holes: subway stairwells (world polygons, core/subway.js holeOf) cut out of
+// the hill's paving, as world.js cuts them out of the plain ground; without
+// this the paving lies over Anguk Station's exit 2 and hides its steps.
+export function buildBukchonHill(roads, [ox, oz], holes = []) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
   const [x0, z0, x1, z1] = BUKCHON.area; // (z0: the south edge)
@@ -259,7 +299,9 @@ export function buildBukchonHill(roads, [ox, oz]) {
     const uv = geo.attributes.uv;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 2.4, pos.getZ(i) / 2.4);
   }
-  const earth = new THREE.Mesh(geo, new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' }));
+  const earthMat = new THREE.MeshLambertMaterial(pavingTexture('yard') ? { map: pavingTexture('yard') } : { color: '#d8d0c0' });
+  for (const patch of cutHoles(geo, holes, [x0, z0, x1, z1], [nx, nz], [ox, oz])) g.add(new THREE.Mesh(patch, earthMat));
+  const earth = new THREE.Mesh(geo, earthMat);
   earth.receiveShadow = true;
   g.add(earth);
   // Alleys: ribbons along each footpath, on the slope. Bukchon-ro (the one
