@@ -239,6 +239,13 @@ html.android.ui-hidden #hud .tools { display: none !important; } /* (its bar; th
 }
 .ui-eye[aria-pressed='true'] { background: var(--mint); }
 html:not(.ui-hidden) .in-store .ui-eye, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-eye { display: none; }
+/* A hall with a show (the Opera Theater, the Concert Hall): the eye is there
+   too, under the hall's name, to watch with a clean screen. */
+html:not(.ui-hidden) body.in-store.in-show .ui-eye { display: grid; }
+body.in-show .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 64px); }
+body.in-store.in-show .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 50px); top: calc(max(12px, env(safe-area-inset-top)) + 62px); } /* (off the hall's name) */
+body.in-store.in-show .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 52px); top: calc(max(12px, env(safe-area-inset-top)) + 64px); }
+body.in-store.in-show:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 104px); }
 /* (Buttons hidden: the minimap hides too, so the eye stays put and the map button shows.) */
 html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 128px); }
 /* The map button beside the eye (moved out of the tool row by

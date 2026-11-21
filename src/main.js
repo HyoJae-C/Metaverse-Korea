@@ -3129,7 +3129,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (built.massNpcs) { enterMusicCafe('organ'); shop.toast(L(roomKit().CATHEDRAL_TEXT.welcome)); } // the cathedral: its organ, softly
-  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); } // the Opera Theater: only the orchestra plays
+  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); document.body.classList.add('in-show'); } // the Opera Theater: only the orchestra plays
   if (store.genre) enterClub(store.genre);
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
@@ -3401,7 +3401,7 @@ function leaveStore(walkOut = false) {
     if (doorCam) { cam.pitch = doorCam.pitch; cam.dist = doorCam.dist; }
   }
   doorCam = null;
-  document.body.classList.remove('in-store');
+  document.body.classList.remove('in-store', 'in-show');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;

@@ -67,6 +67,11 @@ const view = async (o, wait = 400) => { await page.evaluate((o) => __mk.cam(o), 
 const seat = await page.evaluate(() => __mk.sitNear(0, 6));
 assert(seat, 'a free seat in the stalls');
 await view({ yaw: 0, pitch: 0.12, dist: 5 }); // (yaw 0 looks at the stage)
+assert(await page.isVisible('.ui-eye'), 'the eye button is there in the Opera Theater');
+await page.click('.ui-eye');
+assert(await page.evaluate(() => document.documentElement.classList.contains('ui-hidden') && getComputedStyle(document.querySelector('.top-right')).display === 'none'), 'it hides the buttons');
+await page.click('.ui-eye');
+assert(await page.evaluate(() => [...document.querySelectorAll('#labels > *')].every((e) => !/Conductor|Pianist/.test(e.textContent) || getComputedStyle(e).display === 'none')), 'no name tag on the conductor');
 await waitPart('walkIn', 3.4);
 await shot('5-conductor-bows');
 await waitPart('play', 6);

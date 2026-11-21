@@ -101,6 +101,17 @@ test('the Concert Hall: the orchestra on the stage, seats all round it', async (
   assert.ok(!program.some((p) => OPERA_PROGRAM.includes(p)), 'no opera here');
 });
 
+test('watching the show: no name tags on the stage, and the eye button hides the buttons', () => {
+  const show = readFileSync(new URL('../src/core/stage-show.js', import.meta.url), 'utf8');
+  assert.ok(!/STAGE_TEXT\.(conductor|pianist)/.test(show), 'the conductor and the pianist have no name tag');
+  assert.match(show, /model: 'suit'/, 'and wear a long-sleeved coat');
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.match(css, /html:not\(\.ui-hidden\) body\.in-store\.in-show \.ui-eye \{ display: grid; \}/, 'the eye shows in a hall with a show');
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.match(main, /classList\.add\('in-show'\)/);
+  assert.match(main, /classList\.remove\('in-store', 'in-show'\)/);
+});
+
 test('the scores: written notes, in order, inside their length', () => {
   assert.equal(midiOf('A4'), 69);
   assert.equal(midiOf('C4'), 60);

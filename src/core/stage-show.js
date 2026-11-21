@@ -20,7 +20,7 @@
 //   show.all                        // the people with name tags
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeNpc, placeLabels } from './npcs.js';
+import { makeNpc } from './npcs.js';
 import { randomLook } from '../data/appearance.js';
 import { ConcertPlayer } from './concert-player.js';
 
@@ -30,7 +30,6 @@ export const lead = TURN.tune + TURN.walkIn + TURN.open; // from the turn's star
 export const turnLength = (score) => lead + (score.beats * 60) / score.bpm + TURN.clap + TURN.close + TURN.rest;
 
 export const STAGE_TEXT = {
-  conductor: { en: 'Conductor', ko: '지휘자', ja: '指揮者', zh: '指挥' },
   welcome: {
     en: '🎭 Tonight: opera and ballet. Take any free seat and enjoy. Walking only in the hall.',
     ko: '🎭 오늘의 공연: 오페라와 발레. 빈자리에 앉아 감상하세요. 극장 안에서는 걸어서만 다녀요.',
@@ -45,7 +44,6 @@ export const STAGE_TEXT = {
     ja: '🎻 本日の公演：オーケストラで聴くクラシック名曲。空いている席に座ってお楽しみください。ホール内は歩いてね。',
     zh: '🎻 今日演出：管弦乐团演奏古典名曲。请随意入座欣赏。音乐厅内请慢慢走。',
   },
-  pianist: { en: 'Pianist', ko: '피아니스트', ja: 'ピアニスト', zh: '钢琴家' },
   shh: { en: 'Shh! 🤫 No running in the theater, please.', ko: '쉿! 🤫 극장에서는 뛰지 말아 주세요.', ja: 'しーっ！🤫 劇場では走らないでね。', zh: '嘘！🤫 剧场里请不要奔跑。' },
 };
 
@@ -89,21 +87,19 @@ function crown() { // a small feathered headpiece
   g.add(band);
   return g;
 }
-// The conductor's tail coat.
+// The conductor's tail coat: a long-sleeved suit jacket (model suit)
+// with tails behind and a white bow tie.
 function tailcoat() {
   const g = new THREE.Group();
-  const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.3, 14), mat('#17161b'));
-  coat.position.y = 0.47;
-  const tails = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.03), mat('#17161b'));
+  const tails = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.03), mat('#2a2e38'));
   tails.position.set(0, 0.24, -0.2);
   tails.rotation.x = -0.12;
-  const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.02), mat('#fbfaf6'));
-  shirt.position.set(0, 0.5, 0.225);
   const tie = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.035, 0.02), mat('#fbfaf6'));
   tie.position.set(0, 0.6, 0.24);
-  g.add(coat, tails, shirt, tie);
+  g.add(tails, tie);
   return g;
 }
+const COAT_LOOK = { model: 'suit', hair: 'black', dye: 'black', pants: 'charcoal', shirt: 'charcoal', skin: 'fair', shoes: 'black' };
 
 // The players in the pit, as one crowd: a seated body, a head, hair, and the
 // instrument, merged per colour. Each sways a little in time (a group each).
@@ -194,13 +190,13 @@ export class StageShow {
     this.scene = built.scene;
     this.inside = false;
     // The conductor.
-    const c = (this.conductor = makeNpc(layer, '🎼 ' + L(STAGE_TEXT.conductor), { ...randomLook(), model: 'basic', tee: null, hair: 'black', dye: 'black', pants: 'charcoal', shirt: 'charcoal', skin: 'fair' }));
+    const c = (this.conductor = makeNpc(layer, '', { ...randomLook(), ...COAT_LOOK }));
     c.ch.addProp('body', tailcoat());
     c.ch.setHeld?.('baton');
     c.labelY = S.podium.y + 1.6;
     // The pianist, for the piano pieces (a hall with a piano).
     if (S.piano) {
-      const o = (this.pianist = makeNpc(layer, '🎹 ' + L(STAGE_TEXT.pianist), { ...randomLook(), model: 'basic', tee: null, hair: 'black', dye: 'black', pants: 'charcoal', shirt: 'charcoal', skin: 'fair' }));
+      const o = (this.pianist = makeNpc(layer, '', { ...randomLook(), ...COAT_LOOK }));
       o.ch.addProp('body', tailcoat());
       o.labelY = S.stage.y + 1.5;
     }
@@ -325,7 +321,7 @@ export class StageShow {
     lead$.ch.animate(dt, walking ? 0.3 : 0);
     for (const o of this.all) { // (the one whose piece it is not waits out of sight)
       o.ch.root.visible = o === lead$;
-      if (o === lead$) { o.tag.style.display = ''; placeLabels(o, camera, w, h); } else o.tag.style.display = 'none';
+      o.tag.style.display = 'none'; // (no name tags on the stage: Yozi)
     }
 
     // The pit: everyone leans into the beat a little while playing.
