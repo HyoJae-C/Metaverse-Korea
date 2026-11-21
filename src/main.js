@@ -5283,7 +5283,7 @@ for (const d of map.meta?.districts || []) {
     openHanok.push(lod);
   }
   if (d.id === BUKCHON.district) { // the hill and its alleys
-    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);
+    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset, allExits.map(holeOf)); // (stairwells cut out of its paving)
     hill.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
     scene.add(hill);
     openHanok.push(hill);
