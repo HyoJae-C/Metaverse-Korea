@@ -257,6 +257,16 @@ test('★1-2 bite everywhere; from ★3 each park has its own three ★3, two �
   for (const r of [3, 4, 5]) assert.equal(new Set(FISH.filter(f => f.rarity === r).map(f => f.price)).size, 1, `★${r}`);
 });
 
+test('rare fish prices (Yozi 2026-11-21): ★3 3,000, ★4 15,000, ★5 200,000; baits still lose money on average', async () => {
+  const { BAITS } = await import('../src/core/bait.js');
+  const { baitedChance, luckyChance, ESCAPE } = await import('../src/core/fishing.js');
+  for (const [r, p] of [[3, 3000], [4, 15000], [5, 200000]]) assert.ok(FISH.filter(f => f.rarity === r).every(f => f.price === p), `★${r}`);
+  for (const park of Object.keys(PARK_FISH)) {
+    const ev = (bait) => AVAILABLE_FISH.reduce((a, f) => a + (bait ? baitedChance(f, park, true, bait) : luckyChance(f, park, true)) / 100 * (1 - ESCAPE[f.rarity] * 0.5) * f.price, 0);
+    for (const b of BAITS) assert.ok((ev(b) - ev(null)) * 5 < b.price, `${park} ${b.id}: a pack earns back less than it costs`);
+  }
+});
+
 test('better rods cut the escape chance a little but never change which fish bite', async () => {
   const { ROD_SKINS, rodSkin } = await import('../src/core/rod-skins.js');
   assert.equal(rodSkin('basic').hold, 0);
