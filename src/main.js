@@ -2031,10 +2031,10 @@ const shop = new ShopUI({
   rentLeft: (product) => (isRenting(hanbokRental.rental, product.rent) ? timeLeft(hanbokRental.rental) : 0),
   wearing: (id) => isWorn(ITEMS[id], myLook),
   canGift: (product) => canGift(product),
-  onGift: (product) => startGift(interior?.store, product),
+  onGift: (product) => startGift(interior?.store || shop.store, product), // (shop.store: a stand on the street)
   giftLabel: () => L(GIFT_TEXT.button),
   canWrap: (product) => !!wrapGifts?.canWrap(product),
-  onWrap: (product) => wrapGifts?.wrap(interior?.store, product),
+  onWrap: (product) => wrapGifts?.wrap(interior?.store || shop.store, product),
   // Shops that sell things to take home: pay coins, carry it in your hand
   // (food as a takeout box, drinks as a cup, anything else in a shopping bag).
   onBuy: (product, coins) => {
@@ -7199,10 +7199,14 @@ function updateAction(p, tSec) {
       next = petAct(interior.pets.nearest(p.x, p.z), p);
     } else if (hi5Target(p)) {
       next = hi5Action(hi5Target(p));
+    } else if (decorGame.plantAct(p)) { // a pot plant at home: water it (game/decor.js)
+      next = decorGame.plantAct(p);
     } else if (decorGame.lampAct(p)) { // a lamp at home: switch it on or off (game/decor.js)
       next = decorGame.lampAct(p);
     } else if (decorGame.tankAct(p)) { // a fish tank at home: put fish in or take them out
       next = decorGame.tankAct(p);
+    } else if (decorGame.plantAct(p, false)) { // (a plant that has had its water today)
+      next = decorGame.plantAct(p, false);
     } else if (picnic.action(p)) {
       next = picnic.action(p);
     } else if (frisbee.action(p)) {
@@ -7225,7 +7229,8 @@ function updateAction(p, tSec) {
   if (next || mode === 'street' || interior) {
     const seen = new Set(), opts = [];
     for (const o of [next, ...moreActions(p, door)]) if (o && !seen.has(o.key) && opts.length < MAX_CHOICES) { seen.add(o.key); opts.push(o); }
-    if (opts.length > 1) next = { key: 'pick:' + opts.map((o) => o.key).join('|'), label: opts[0].label, opts, run: () => toggleChooser() };
+    if (next?.now) next = opts[0]; // (watering a plant: at once, no list to pick from. Yozi 2026-11-21)
+    else if (opts.length > 1) next = { key: 'pick:' + opts.map((o) => o.key).join('|'), label: opts[0].label, opts, run: () => toggleChooser() };
     else next = opts[0] || null;
   }
   if (next?.key !== action?.key) {
@@ -7936,7 +7941,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     dartPins: () => [...(interior?.dartPins?.byWho.values() || [])].map((e) => [e.board, e.color, e.pins.length]),
     decor: () => decorGame.decor?.items.length ?? -1,
     carrySpot: () => ({ footprint: decorGame.footprint(), grid: decorGame.grid() }), // (carrying at home: green or red under the piece, squares on the floor)
-    decorAt: () => decorGame.decor?.items.map((i) => [i.id, +i.x.toFixed(2), +i.z.toFixed(2), i === decorGame.decor.carry]) ?? null,
+    decorAt: () => decorGame.decor?.items.map((i) => [i.id, +i.x.toFixed(2), +i.z.toFixed(2), i === decorGame.decor.carry, +(i.mesh?.scale.y ?? 1).toFixed(3)]) ?? null,
     roomSize: () => (interior?.room ? [interior.room.w, interior.room.d] : null), // (a home's size by its level)
     riding: () => riding,
     sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)

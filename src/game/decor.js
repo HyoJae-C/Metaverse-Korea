@@ -4,7 +4,8 @@
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, placeRiders, ridersOf, setPhotoSrc, starterLayout, topUnder } from '../core/furniture.js';
+import { PlantCare, growScale, isPlant } from '../core/plant-growth.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, isSmall, placeRiders, ridersOf, setPhotoSrc, starterLayout, topUnder } from '../core/furniture.js';
 import { frameId, photoOfFrame } from '../core/ride-photos.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
@@ -22,9 +23,10 @@ export function createDecor(game) {
   // numbers, one of each, at most MAX_PIECES.
   function cleanLayout(a) {
     if (!Array.isArray(a)) return [];
-    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5], fish: i[6] } : i));
+    const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5], fish: i[6], g: i[7] } : i));
     return list.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && list.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
-      .map(({ id, x, z, ry, y, off, fish }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}), // y: on a table (isSmall); off: a lamp switched off
+      .map(({ id, x, z, ry, y, off, fish, g }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}), // y: on a table (isSmall); off: a lamp switched off
+        ...(isPlant(id) && g > 0 && g <= 100 ? { g: g | 0 } : {}), // g: watered days that show, on someone else's plant (mine: mk.plants)
         ...(isTank(id) && Array.isArray(fish) ? { fish: cleanList(id, fish) } : {}) })); // fish: in someone else's tank (my own come from mk.tanks)
   }
   function loadDecor(id, room) {
@@ -41,10 +43,22 @@ export function createDecor(game) {
     const r = (v) => Math.round(v * 100) / 100;
     try { localStorage.setItem(homeKey(decor.home), JSON.stringify(decor.items.map((i) => ({ id: i.id, x: r(i.x), z: r(i.z), ry: r(i.ry), ...(i.y ? { y: i.y } : {}), ...(i.off ? { off: true } : {}) })))); } catch { /* storage blocked */ }
   }
+  // Pot plants grow with watering (core/plant-growth.js): mine by the days in
+  // mk.plants, a host's by what their game sent. Never through the ceiling.
+  let care = null;
+  const plantCare = () => (care ||= new PlantCare());
+  const plantH = {};
+  function plantScale(it, g) {
+    const grown = decor.guest ? it.g || 0 : plantCare().grown(it.id);
+    if (!grown) return 1;
+    const height = plantH[it.id] ||= new THREE.Box3().setFromObject(g).max.y;
+    return growScale(grown, { small: isSmall(it.id), height, room: (game.interior?.room?.h || 3.6) - 0.12 - (it.y || 0) });
+  }
   function rebuildDecor() {
     decor.group.clear();
     for (const it of decor.items) {
       const g = buildFurniture(it.id, { off: it.off });
+      if (isPlant(it.id)) g.scale.setScalar(plantScale(it, g));
       g.position.set(it.x, it.y || 0, it.z);
       g.rotation.y = it.ry;
       decor.group.add(g);
@@ -128,6 +142,8 @@ export function createDecor(game) {
     return decor.items.filter((i) => i !== decor.carry).map((i) => {
       const a = [i.id, i.x, i.z, i.ry, i.y || 0, i.off ? 1 : 0];
       if (isTank(i.id) && store.list(i.id).length) a.push(store.list(i.id)); // (visitors see the fish too)
+      const grown = isPlant(i.id) ? Math.min(100, plantCare().grown(i.id)) : 0;
+      if (grown) a[7] = grown; // (and how far a plant has grown)
       return a;
     });
   };
@@ -429,6 +445,33 @@ export function createDecor(game) {
     return { key: 'lamp:' + best.id + (best.off ? ':off' : ''), label: (best.off ? '💡 ' + t('home.lampOn') : '🌙 ' + t('home.lampOff')),
       run: () => { best.off = !best.off; rebuildDecor(); game.action = STALE; } };
   }
+  // Water a pot plant by walking up to it: at once, once a day for each
+  // plant, and it shows tomorrow (core/plant-growth.js). Only in my own home.
+  // want: true for a plant still to water today, false for one that has had
+  // its water (the button then only says so).
+  let drops = null;
+  function plantAct(p, want = true) {
+    if (!decor || decor.guest || decor.editing || decor.carry) return null;
+    const c = plantCare();
+    let best = null, bd = 1.3;
+    for (const it of decor.items) {
+      if (!isPlant(it.id) || c.wateredToday(it.id) === want) continue;
+      const d = Math.hypot(p.x - it.x, p.z - it.z);
+      if (d < bd) { bd = d; best = it; }
+    }
+    if (!best) return null;
+    const f = furnitureById(best.id), name = f.emoji + ' ' + localName(f.name, getLanguage());
+    if (!want) return { key: 'plant-done:' + best.id, label: '💧 ' + t('plant.done', { n: c.days(best.id) }) + ' · ' + name, run: () => shop.toast(t('plant.tomorrow')) };
+    return { key: 'plant:' + best.id, now: true, label: '💧 ' + t('plant.water') + ' · ' + name, run: () => {
+      if (!c.water(best.id)) return;
+      const n = c.days(best.id), full = growScale(n - 1, { small: isSmall(best.id) }) === growScale(n, { small: isSmall(best.id) });
+      shop.toast(t(full ? 'plant.wateredFull' : 'plant.watered', { n }));
+      game.sfx?.pop?.();
+      const mesh = best.mesh, top = mesh ? new THREE.Box3().setFromObject(mesh).max.y : 1;
+      (drops ||= import('./plant-water.js')).then((m) => { if (decor && mesh?.parent === decor.group) m.waterDrops(decor.group, best.x, top, best.z, Math.max(...f.size) * 0.3); }).catch(() => { drops = null; });
+      game.action = STALE;
+    } };
+  }
   // Walk up to a tank in my home to put fish in or take them out
   // (game/fish-tank-ui.js, loaded the first time).
   let tankPanel = null, tankPanelLoading = null;
@@ -470,7 +513,7 @@ export function createDecor(game) {
     return level.then((n) => ({ ...item, homeSized: true, store: { ...item.store, roomDims: homeRoom(n) } }));
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
-  const api = { finish, visit, labelDecor, lampAct, pieceActs, footprint: () => (footprint ? (footprint.userData.bad ? 'red' : 'green') : null), grid: () => !!floorGrid, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
+  const api = { finish, visit, labelDecor, lampAct, plantAct, pieceActs, footprint: () => (footprint ? (footprint.userData.bad ? 'red' : 'green') : null), grid: () => !!floorGrid, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
     closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, unstick, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }

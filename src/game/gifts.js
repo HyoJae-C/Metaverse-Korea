@@ -29,6 +29,10 @@ export function createGifts(game) {
     const itemId = product.item || product.outfit;
     const it = itemId && ITEMS[itemId];
     if (it?.secs) return null; // limited-time clothes: not a gift (they'd run out)
+    // A lamp, a pot plant or other furniture: the friend gets the piece itself
+    // for their home (not a souvenir in the bag), with a receipt like clothes.
+    const home = product.furniture && ITEMS[product.furniture]?.furniture ? product.furniture : null;
+    if (home) return howToGet(store) === 'soon' ? null : { coins: coinsFor(product.price), icon: ITEMS[home].emoji || '🪴', name, item: home };
     if (it?.wear) return it.price > 0 ? { coins: it.price, icon: it.emoji || '👕', name, item: itemId } : null;
     const how = howToGet(store);
     if (how === 'counter') {
@@ -46,26 +50,35 @@ export function createGifts(game) {
       sips: kind === 'food' ? FOOD_BITES : COFFEE_SIPS, name: localName(name, 'en') } };
   }
   // Everyone I can see in this shop, closest first.
+  // (At a stand on the street, the greenhouse's pot plants: those standing
+  // close by, since the street has no room to share.)
+  const STREET_RANGE = 12;
+  const atStand = () => !game.interior && !!shop.store && !$('product-panel').hidden;
+  const storeNow = () => game.interior?.store || (atStand() ? shop.store : null);
   function peopleHere() {
-    if (!game.interior || game.subway.metro) return [];
+    if ((!game.interior && !atStand()) || game.subway.metro) return [];
     const p = game.me.root.position, out = [];
     for (const [id, o] of game.others.players) {
       if (o.hidden) continue;
-      const at = o.ch.root.position;
-      out.push({ id, name: o.name || '?', d: Math.hypot(at.x - p.x, at.z - p.z) });
+      const at = o.ch.root.position, d = Math.hypot(at.x - p.x, at.z - p.z);
+      if (!game.interior && d > STREET_RANGE) continue;
+      out.push({ id, name: o.name || '?', d });
     }
     return out.sort((a, b) => a.d - b.d).slice(0, 12);
   }
   const isFriend = (name) => chat?.friendStatus?.(name) === 'friend';
+  let street = false; // the picker was opened at a street stand
   // The button shows with anyone here, so a player learns gifts are for friends.
-  const canGift = (product) => !!giftFor(game.interior?.store, product) && peopleHere().length > 0;
+  const canGift = (product) => !!giftFor(storeNow(), product) && peopleHere().length > 0;
   function startGift(store, product) {
     const g = giftFor(store, product);
     if (!g) return;
     const name = localName(g.name, getLanguage());
+    const here0 = peopleHere(); // (before the card closes: a street stand counts people only while it is open)
+    street = !game.interior;
     shop.closeProduct();
     counterUi.close();
-    const here = peopleHere().map((p) => ({ ...p, status: chat?.friendStatus?.(p.name) || null }));
+    const here = here0.map((p) => ({ ...p, status: chat?.friendStatus?.(p.name) || null }));
     const onAdd = (p) => chat?.addFriend?.(p.name);
     giftUi.pick({ icon: g.icon, name, coins: g.coins }, here.filter((p) => p.status === 'friend'), here.filter((p) => p.status !== 'friend'), onAdd, (to) => {
       if (!isFriend(to.name)) { shop.toast(fmt(L(GIFT_TEXT.notFriend), { name: to.name })); return; }
@@ -129,7 +142,7 @@ export function createGifts(game) {
       // The receipt: once the giver's game has told the server (a few tries).
       for (const ms of [8000, 30000, 90000]) setTimeout(() => game.giftReceipts?.sync(inventory, game.receipts, ITEMS).catch(() => {}), ms);
       if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
-      shop.toast(fmt(L(GIFT_TEXT.gotItem), { item, name: c.name }));
+      shop.toast(fmt(L(ITEMS[g.item]?.furniture ? GIFT_TEXT.gotHome : GIFT_TEXT.gotItem), { item, name: c.name }));
     } else {
       if (!bag.add(g.entry)) { game.net.sendEmote(giftMsg('no', c.from, gid, 'full')); shop.toast(fmt(L(GIFT_TEXT.mineFull), { name: c.name })); return; }
       shop.toast(fmt(L(GIFT_TEXT.gotBag), { item, name: c.name }));
@@ -149,7 +162,7 @@ export function createGifts(game) {
     const stale = gifts.stale(gone);
     for (const c of stale) if (!gone(c.from)) game.net.sendEmote(giftMsg('no', c.from, c.gid, 'late'));
     if (stale.length) showGiftCards();
-    if (giftUi.open && !game.interior) giftUi.close();
+    if (giftUi.open && !game.interior && !street) giftUi.close();
   }, 1000);
-  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById };
+  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById, storeNow };
 }
