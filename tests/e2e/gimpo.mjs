@@ -51,6 +51,30 @@ await page.evaluate((y) => __mk.cam({ yaw: y, pitch: 0.18, dist: 30 }), yawV);
 await wait(1500);
 await shot('1-front');
 
+// The international terminal's front: its kerb, the glass wall and the door canopy.
+if (l.intlDoor) {
+  const [ix, iz] = W(l.intlDoor.u - 9, (l.intlDoor.v0 + l.intlDoor.v1) / 2);
+  await page.evaluate(([x, z, r]) => __mk.goto(x, z, r), [ix, iz, yawU]);
+  await wait(1500);
+  assert(await page.evaluate(() => __mk.seoulDal().y) < 0.3, 'standing on the international kerb');
+  await page.evaluate((y) => __mk.cam({ yaw: y + 0.35, pitch: 0.16, dist: 28 }), yawU + Math.PI);
+  await wait(1500);
+  await shot('4-intl-front');
+  await page.evaluate((y) => __mk.cam({ yaw: y - 0.9, pitch: 0.35, dist: 28 }), yawU + Math.PI);
+  await wait(1200);
+  await shot('5-intl-planes');
+  if (S) { // (a picture only: from the apron, the parked planes at its airside)
+    const [ax, az] = W(300, 110);
+    await page.evaluate(([x, z, r]) => __mk.goto(x, z, r), [ax, az, yawU + Math.PI]);
+    await page.evaluate((y) => __mk.cam({ yaw: y, pitch: 0.3, dist: 28 }), yawU);
+    await wait(1500);
+    await shot('6-intl-airside');
+  }
+  await page.evaluate(([x, z, r]) => __mk.goto(x, z, r), [fx, fz, yawV + Math.PI]); // (back as it was: walking goes the camera's way)
+  await page.evaluate((y) => __mk.cam({ yaw: y, pitch: 0.18, dist: 30 }), yawV);
+  await wait(500);
+}
+
 // Up the stair: its foot, then walk along +u.
 const st = l.deck.stair;
 const [sx, sz] = W(st[0] - 1.5, (st[1] + st[3]) / 2);
