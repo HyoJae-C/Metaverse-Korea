@@ -104,7 +104,7 @@ assert(second.chain === 2 && second.saved.pts > after.saved.pts + 600, `backflip
 await page.evaluate(() => { const s = __mk.iceRink.skater; s.vx = 0; s.vz = 0; });
 await wait(100);
 await page.keyboard.press('Space');
-await wait(250);
+await wait(400);
 for (const k of ['ArrowRight', 'ArrowLeft', 'ArrowRight', 'ArrowLeft']) { await page.keyboard.press(k); await wait(20); }
 await page.waitForFunction(() => __mk.iceRink.debug().down > 0, null, { timeout: 4000 });
 assert(true, 'a late quad from a standstill falls');

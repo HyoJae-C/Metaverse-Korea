@@ -44,6 +44,24 @@ test('arrows in the air: left and right in turn raise the turn, pairs of up and 
   assert.ok(j.tricks[1].at >= j.tricks[0].at + j.tricks[0].dur);
 });
 
+test('a new trick that could only fall is not started; raising a turn is always taken', () => {
+  const end = 0.75;
+  const j = { tricks: [], half: null };
+  assert.equal(addPress(j, 'L', end - 0.05, end), null, 'a tap just before the ice does nothing');
+  addPress(j, 'U', end - 0.2, end);
+  assert.equal(addPress(j, 'D', end - 0.2, end), null, 'nor a butterfly that cannot be turned');
+  assert.equal(j.tricks.length, 0); assert.equal(j.half, null);
+  assert.equal(judge(j.tricks, end).kind, 'land');
+  assert.ok(addPress(j, 'L', end - 0.2, end), 'a single still fits');
+  assert.equal(addPress(j, 'R', end - 0.15, end).turns, 2, 'and raising it is your own risk');
+  addPress(j, 'L', end - 0.1, end);
+  assert.equal(judge(j.tricks, end).kind, 'fall');
+  // A trick waiting for one that ends after the landing never starts: no harm.
+  const q = { tricks: [], half: null };
+  addPress(q, 'L', 0.3, end); addPress(q, 'R', 0.3, end); addPress(q, 'U', 0.35, end);
+  assert.ok(addPress(q, 'D', 0.35, end) === null || judge(q.tricks, end).kind === 'land');
+});
+
 test('each trick starts when the one before ends', () => {
   const t = press('LRDU');
   assert.equal(t[0].at, 0.05);
@@ -80,15 +98,15 @@ test('landing: done is clean, nearly done is shaky (half points), still turning 
   assert.equal(judge(two, 5).pts, TURN_PTS[1] + MOVES.DU.pts + 100);
 });
 
-test('how much fits in a jump: a double from a standstill, a triple at a glide, a quad only at full speed', () => {
+test('how much fits in a jump: a triple from a standstill, a quad with a little speed, and room to spare at a glide', () => {
   const react = 0.12; // s to the first key
-  assert.ok(airTime(0) > react + TURN_TIME(2), 'standing: a double');
-  assert.ok(airTime(0) < react + TURN_TIME(3), 'standing: a triple is not clean');
-  assert.ok(airTime(0) < react + TURN_TIME(4) * (1 - SKATE.stepOut), 'standing: a quad falls');
-  assert.ok(airTime(5) > react + TURN_TIME(3), 'gliding: a triple');
-  assert.ok(airTime(SKATE.max) > react + TURN_TIME(4), 'full speed: a quad');
-  assert.ok(airTime(6) < react + TURN_TIME(4), 'not a quad at a glide');
-  assert.ok(airTime(SKATE.max) < 1, 'never a second in the air');
+  assert.ok(airTime(0) > react + TURN_TIME(3), 'standing: a triple');
+  assert.ok(airTime(0) < react + TURN_TIME(4), 'standing: a quad is not clean');
+  assert.ok(airTime(0) > react + TURN_TIME(4) * (1 - SKATE.stepOut), 'standing: a quad at once is shaky, not a fall');
+  assert.ok(airTime(0) < 0.4 + TURN_TIME(4) * (1 - SKATE.stepOut), 'standing: a quad begun late falls');
+  assert.ok(airTime(3) > react + TURN_TIME(4), 'a little speed: a quad');
+  assert.ok(airTime(5) > 0.3 + TURN_TIME(3), 'gliding: a triple with a slow start');
+  assert.ok(airTime(SKATE.max) < 1.2, 'never long in the air');
 });
 
 test('the skater: pushes up to top speed, glides on, carves, jumps and lands a triple into a combo', () => {
@@ -99,11 +117,11 @@ test('the skater: pushes up to top speed, glides on, carves, jumps and lands a t
   assert.ok(s.speed > SKATE.max * 0.6, 'a second later, still gliding');
   for (let i = 0; i < 90; i++) s.step(1 / 60, 0, 1); // lean the other way
   assert.ok(Math.abs(s.vx) < 2 && s.vz > 4, 'the glide came round');
-  const fly = (keys) => {
+  const fly = (keys, at = 5) => {
     assert.equal(s.jump().kind, 'jump');
     let ev = [];
     for (let i = 0; i < 120 && s.air; i++) {
-      if (i === 5) for (const k of keys) s.press(k);
+      if (i === at) for (const k of keys) s.press(k);
       ev = s.step(1 / 60).events;
     }
     assert.ok(!s.air);
@@ -115,9 +133,9 @@ test('the skater: pushes up to top speed, glides on, carves, jumps and lands a t
   for (let i = 0; i < 60; i++) s.step(1 / 60, 0, 1);
   const b = fly('DU');
   assert.equal(b.mult, 1.5); assert.equal(b.total, MOVES.DU.pts * 1.5); assert.equal(s.chain, 2);
-  // A quad from nearly nothing: a fall, on the ice for a moment, the combo gone.
+  // A quad from nearly nothing, begun late: a fall, on the ice for a moment, the combo gone.
   s.vx = 0; s.vz = 0.5;
-  const c = fly('RLRL');
+  const c = fly('RLRL', 24);
   assert.equal(c.kind, 'fall'); assert.ok(s.down > 0); assert.equal(s.chain, 0);
   assert.equal(s.jump(), null, 'no jumping while down');
   assert.match(s.code(), /^\d+:!$/);
