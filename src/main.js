@@ -280,6 +280,7 @@ import { createBoatTaxiNear } from './game/boat-taxi-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { createTandemRentalNear } from './game/tandem-rental-near.js';
 import { createFarmNear } from './game/farm-near.js';
+import { FarmJournal } from './core/farm-journal.js';
 import { createLanternParadeNear } from './game/lantern-parade-near.js';
 import { createTempleLanterns } from './game/temple-lanterns-near.js';
 import { createTempleMonksNear } from './game/temple-monks-near.js';
@@ -4169,7 +4170,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, farm.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, farm.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, farmLogUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden || helpBook.open; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4429,7 +4430,15 @@ const tandemRent = createTandemRentalNear({ spot: map.landmarks.find((l) => l.ty
   scene, collision, areas: map.areas, wallet, refreshWallet, sfx, chip: $('tandem-chip'), toast: (m) => shop.toast(m),
   riding: () => riding, setRiding, mode: () => mode, passengers: () => passengers.size, driverKind: () => (riding === 3 ? others.kindOf(tandemDriver) : 0) });
 // The weekend farm at Yongsan Family Park (game/farm-near.js).
-const farm = createFarmNear({ spot: map.landmarks.find((l) => l.type === 'farm'), scene, collision, root: $('farm-panel'), cloud, wallet, refreshWallet, toast: (m) => shop.toast(m),
+// The farmer's journal in the notebook: a stamp for each crop you harvested.
+const farmJournal = new FarmJournal();
+const FARM_KINDS = 10; // (core/farm.js CROPS; a test keeps them the same)
+const farmLogUi = lazyPanel(() => import('./ui/farm-journal-ui.js').then(({ FarmJournalUI }) => new FarmJournalUI({ root: $('farmlog-panel'), journal: farmJournal })));
+function refreshFarmLogBtn() { $('farmlog-btn').querySelector('span').textContent = `${t('farm.log')} · ${farmJournal.kinds}/${FARM_KINDS}`; }
+$('farmlog-btn').onclick = () => { $('notes-panel').hidden = true; farmLogUi.show(); };
+refreshFarmLogBtn();
+onLanguageChange(refreshFarmLogBtn);
+const farm = createFarmNear({ journal: farmJournal, onJournal: () => refreshFarmLogBtn(), spot: map.landmarks.find((l) => l.type === 'farm'), scene, collision, root: $('farm-panel'), cloud, wallet, refreshWallet, toast: (m) => shop.toast(m),
   get sfx() { return sfx; }, get me() { return me; }, mode: () => mode, makeNpc: (name, look) => makeNpc($('labels'), name, look), say: (o, phrase) => say(o, $('labels'), phrase) });
 // Gift receipts: binds still waiting (I gave clothes), receipts for clothes
 // given to me.

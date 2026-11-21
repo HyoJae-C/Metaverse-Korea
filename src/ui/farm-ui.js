@@ -39,7 +39,7 @@ export class FarmUI {
       for (const c of v.crops()) {
         const row = el('div', 'bait-row farm-row');
         const txt = el('div', 'bait-text');
-        txt.append(el('b', null, `${c.emoji} ${v.name(c)} · ${v.time(c.grow * 60e3)}`), el('small', null, t('farm.row', { sell: won(c.sell), fresh: won(Math.round(c.sell * v.fresh)) })));
+        txt.append(el('b', null, `${c.emoji} ${v.name(c)} · ${t('farm.days', { n: v.days(c) })}`), el('small', null, t('farm.row', { sell: won(c.sell), fresh: won(c.fresh), n: v.days(c) })));
         const one = el('button', 'primary', won(c.seed));
         one.type = 'button';
         one.disabled = v.busy || !v.known;
@@ -63,7 +63,7 @@ export class FarmUI {
         if (!c) continue;
         const row = el('div', 'bait-row');
         const txt = el('div', 'bait-text');
-        const each = Math.round(c.sell * (fresh ? v.fresh : 1));
+        const each = fresh ? c.fresh : c.sell;
         txt.append(el('b', null, `${c.emoji} ${v.name(c)}${fresh ? ' ✨ ' + t('farm.fresh') : ''} × ${n}`), el('small', null, t('farm.each', { n: won(each) })));
         row.append(txt, el('span', 'bait-free', won(each * n)));
         list.append(row);

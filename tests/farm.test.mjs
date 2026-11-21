@@ -1,91 +1,124 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CROPS, FARM_BEDS, FRESH, barnCount, barnKey, barnWorth, bedAct, bedState, cropById, hourly, sellPrice, timeLeft } from '../src/core/farm.js';
+import { CROPS, FARM_BEDS, barnCount, barnKey, barnWorth, bedAct, bedState, cropById, cropDays, daily, kstDayNo, sellPrice, timeLeft, waterings } from '../src/core/farm.js';
+import { FarmJournal } from '../src/core/farm-journal.js';
 
-const MIN = 60e3;
+const MIN = 60e3, H = 3600e3, DAY = 86400e3;
+const T0 = Date.UTC(2026, 10, 21, 1, 0, 0); // 10:00 in Korea
 
-test('five crops, all open, twelve beds (Yozi 2026-11-21)', () => {
-  assert.deepEqual(CROPS.map((c) => [c.id, c.grow, c.seed, c.sell]), [
-    ['lettuce', 20, 200, 500], ['tomato', 60, 400, 1200], ['potato', 180, 600, 2000], ['chili', 360, 800, 3000], ['cabbage', 720, 1000, 3400],
+test('ten crops by the day, all open, twelve beds (Yozi 2026-11-21)', () => {
+  assert.deepEqual(CROPS.map((c) => [c.id, c.days, c.seed, c.sell, c.fresh]), [
+    ['lettuce', 1, 500, 3500, 4500], ['spinach', 1, 700, 3700, 4800], ['tomato', 2, 1000, 7000, 10000], ['cucumber', 2, 1200, 7200, 10300],
+    ['strawberry', 4, 2000, 14000, 22000], ['carrot', 5, 2500, 17500, 30000], ['chili', 7, 3500, 24500, 45500], ['corn', 10, 5000, 35000, 75000],
+    ['cabbage', 15, 7500, 52500, 127500], ['ginseng', 30, 15000, 105000, 285000],
   ]);
   assert.equal(FARM_BEDS, 12);
-  assert.equal(FRESH, 1.5);
   assert.equal(new Set(CROPS.map((c) => c.emoji)).size, CROPS.length, 'each crop has its own emoji');
+  for (const c of CROPS) assert.equal(c.grow, c.days * 1440);
 });
 
-test('a longer crop earns more a visit and less an hour', () => {
+test('a crop wants water every day; ten days or more forgive one day in ten', () => {
+  assert.deepEqual(CROPS.map((c) => [cropDays(c), waterings(c)]), [[1, 1], [1, 1], [2, 2], [2, 2], [4, 4], [5, 5], [7, 7], [10, 9], [15, 14], [30, 27]]);
+});
+
+test('plain, every crop earns the same a day; fresh, a longer crop earns more a day', () => {
+  for (const c of CROPS) assert.equal(daily(c, false), 3000, c.id);
   for (let i = 1; i < CROPS.length; i++) {
     const a = CROPS[i - 1], b = CROPS[i];
-    assert.ok(b.grow > a.grow);
-    assert.ok(sellPrice(b, true) - b.seed > sellPrice(a, true) - a.seed, `${b.id} earns more a harvest than ${a.id}`);
-    assert.ok(hourly(b, true) < hourly(a, true), `${b.id} earns less an hour than ${a.id}`);
+    assert.ok(b.grow >= a.grow);
+    assert.ok(daily(b, true) >= daily(a, true), `${b.id} earns no less a day than ${a.id}`);
+    if (b.grow > a.grow) assert.ok(daily(b, true) > daily(a, true), `${b.id} earns more a day than ${a.id}`);
   }
+  assert.ok(daily(cropById('ginseng'), false) < daily(cropById('lettuce'), true), 'a long crop left dry is worse than lettuce watered');
 });
 
-test('every crop pays for its seed even unwatered', () => {
-  for (const c of CROPS) assert.ok(sellPrice(c, false) > c.seed, c.id);
+test('twelve beds earn 36,000 to 108,000 a day: under the daily missions (150,000)', () => {
+  const day = (c, f) => daily(c, f) * FARM_BEDS;
+  assert.equal(day(cropById('lettuce'), true), 48000);
+  assert.equal(day(cropById('strawberry'), true), 60000);
+  assert.equal(Math.max(...CROPS.map((c) => day(c, true))), 108000);
+  assert.equal(Math.min(...CROPS.map((c) => day(c, false))), 36000);
 });
 
-test('tending all twelve beds non-stop stays under the daily missions an hour (about 100,000) and near fishing (10,000-50,000)', () => {
-  const best = Math.max(...CROPS.map((c) => hourly(c, true))) * FARM_BEDS;
-  assert.ok(best <= 30000, `best hour is ${best}`);
-  assert.ok(best >= 10000, `best hour is ${best}`);
-});
-
-test('a bed: sprout, thirsty at half time, growing once watered, ripe at the end', () => {
-  const at = 1e12, c = cropById('tomato'), span = c.grow * MIN;
+test('a bed: thirsty once each Korean day, growing once watered, ripe at the end', () => {
+  const at = T0;
   assert.equal(bedState(null).stage, 'empty');
   assert.equal(bedState({ crop: 'nope', at }).stage, 'empty');
-  assert.equal(bedState({ crop: 'tomato', at }, at + span * 0.2).stage, 'sprout');
-  assert.equal(bedState({ crop: 'tomato', at }, at + span * 0.6).stage, 'thirsty');
-  const wet = at + span * 0.6;
-  const g = bedState({ crop: 'tomato', at, wet }, at + span * 0.7);
-  assert.equal(g.stage, 'growing');
-  assert.equal(g.fresh, true);
-  assert.equal(g.left, span * 0.3);
-  const r = bedState({ crop: 'tomato', at, wet }, at + span + 5);
+  assert.equal(bedState({ crop: 'potato', at }).stage, 'empty', 'a crop that is gone');
+  assert.equal(bedState({ crop: 'tomato', at }, at + 1).stage, 'thirsty');
+  const g = bedState({ crop: 'tomato', at, wet: at + H, n: 1 }, at + 2 * H);
+  assert.deepEqual([g.stage, g.n, g.need, g.fresh, g.left], ['growing', 1, 2, false, 2 * DAY - 2 * H]);
+  assert.equal(bedState({ crop: 'tomato', at, wet: at + H, n: 1 }, at + 13 * H).stage, 'growing', '23:00 in Korea: still today');
+  assert.equal(bedState({ crop: 'tomato', at, wet: at + H, n: 1 }, at + 14 * H + 1).stage, 'thirsty', 'past midnight in Korea');
+  const full = bedState({ crop: 'tomato', at, wet: at + DAY, n: 2 }, at + DAY + H);
+  assert.deepEqual([full.stage, full.fresh], ['growing', true]);
+  const r = bedState({ crop: 'tomato', at, wet: at + DAY, n: 2 }, at + 2 * DAY + 5);
   assert.deepEqual([r.stage, r.fresh, r.t, r.left], ['ripe', true, 1, 0]);
-  assert.equal(bedState({ crop: 'tomato', at }, at + span * 3).fresh, false, 'never watered: plain');
+  assert.equal(bedState({ crop: 'tomato', at, wet: at + H, n: 1 }, at + 9 * DAY).fresh, false, 'a day missed: plain');
+  assert.equal(kstDayNo(Date.UTC(2026, 10, 21, 14, 59, 59)) + 1, kstDayNo(Date.UTC(2026, 10, 21, 15, 0, 0)), 'the day turns at 00:00 KST');
 });
 
-test('water counts only in the second half', () => {
-  const at = 1e12, span = cropById('potato').grow * MIN;
-  assert.equal(bedState({ crop: 'potato', at, wet: at + span * 0.1 }, at + span).fresh, false, 'too early');
-  assert.equal(bedState({ crop: 'potato', at, wet: at + span * 1.2 }, at + span * 2).fresh, false, 'too late');
-  assert.equal(bedState({ crop: 'potato', at, wet: at + span * 0.5 }, at + span).fresh, true);
+test('long crops forgive missed days: corn 9 of 10, ginseng 27 of 30', () => {
+  const at = T0;
+  assert.equal(bedState({ crop: 'corn', at, n: 9 }, at + 10 * DAY).fresh, true);
+  assert.equal(bedState({ crop: 'corn', at, n: 8 }, at + 10 * DAY).fresh, false);
+  assert.equal(bedState({ crop: 'ginseng', at, n: 27 }, at + 30 * DAY).fresh, true);
+  assert.equal(bedState({ crop: 'ginseng', at, n: 26 }, at + 30 * DAY).fresh, false);
+  assert.equal(bedState({ crop: 'chili', at, n: 6 }, at + 7 * DAY).fresh, false, 'a week or less forgives nothing');
 });
 
 test('what to do at a bed', () => {
-  const at = 1e12, span = cropById('lettuce').grow * MIN;
+  const at = T0;
   assert.equal(bedAct(null), 'plant');
-  assert.equal(bedAct({ crop: 'lettuce', at }, at + 1), null);
-  assert.equal(bedAct({ crop: 'lettuce', at }, at + span * 0.5), 'water');
-  assert.equal(bedAct({ crop: 'lettuce', at, wet: at + span * 0.5 }, at + span * 0.6), null);
-  assert.equal(bedAct({ crop: 'lettuce', at }, at + span), 'pick');
+  assert.equal(bedAct({ crop: 'lettuce', at }, at + 1), 'water');
+  assert.equal(bedAct({ crop: 'lettuce', at, wet: at + 5, n: 1 }, at + H), null);
+  assert.equal(bedAct({ crop: 'lettuce', at, wet: at + 5, n: 1 }, at + 20 * H), null, 'it has had all its water');
+  assert.equal(bedAct({ crop: 'lettuce', at }, at + DAY), 'pick');
 });
 
 test('the barn', () => {
   const barn = { lettuce: 2, 'lettuce+': 1, 'cabbage+': 3, nope: 9, tomato: 0 };
   assert.equal(barnKey('chili', true), 'chili+');
-  assert.equal(barnWorth(barn), 2 * 500 + 750 + 3 * 5100);
+  assert.equal(barnWorth(barn), 2 * 3500 + 4500 + 3 * 127500);
   assert.equal(barnCount(barn), 15);
   assert.equal(barnWorth(null), 0);
+  assert.equal(sellPrice(null, true), 0);
 });
 
-test('time left rounds up to the minute', () => {
-  assert.deepEqual(timeLeft(1), { h: 0, m: 1 });
-  assert.deepEqual(timeLeft(80 * MIN), { h: 1, m: 20 });
-  assert.deepEqual(timeLeft(-5), { h: 0, m: 0 });
+test('time left rounds up to the minute and counts days', () => {
+  assert.deepEqual(timeLeft(1), { d: 0, h: 0, m: 1 });
+  assert.deepEqual(timeLeft(80 * MIN), { d: 0, h: 1, m: 20 });
+  assert.deepEqual(timeLeft(2 * DAY + 3 * H), { d: 2, h: 3, m: 0 });
+  assert.deepEqual(timeLeft(-5), { d: 0, h: 0, m: 0 });
 });
 
-test('the server has the same crops and prices (supabase/064_farm.sql)', () => {
-  const sql = readFileSync(new URL('../supabase/064_farm.sql', import.meta.url), 'utf8');
+test('the server has the same crops, prices and watering rule (supabase/066_farm_days.sql)', () => {
+  const sql = readFileSync(new URL('../supabase/066_farm_days.sql', import.meta.url), 'utf8');
   for (const c of CROPS) {
-    assert.ok(sql.includes(`('${c.id}', ${c.grow}, ${c.seed}, ${c.sell})`), `${c.id} row`);
+    assert.ok(sql.includes(`('${c.id}', ${c.grow}, ${c.seed}, ${c.sell}, ${c.fresh})`), `${c.id} row`);
   }
-  assert.ok(sql.includes(`beds int not null default ${FARM_BEDS}`));
-  assert.ok(sql.includes(`fresh numeric not null default ${FRESH}`));
+  assert.ok(sql.includes('select d - d / 10 from'), 'one missed day in ten');
+  assert.ok(sql.includes("at time zone 'Asia/Seoul'"), 'Korean days');
+  assert.ok(readFileSync(new URL('../supabase/064_farm.sql', import.meta.url), 'utf8').includes(`beds int not null default ${FARM_BEDS}`));
+});
+
+test("the farmer's journal: a stamp the first time each crop is harvested", () => {
+  const data = {};
+  const storage = { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = v; } };
+  const j = new FarmJournal(storage);
+  assert.equal(j.kinds, 0);
+  assert.equal(j.add('lettuce', false), true);
+  assert.equal(j.add('lettuce', true), false);
+  assert.equal(j.add('ginseng', true), true);
+  assert.equal(j.add('<b>'), false);
+  assert.deepEqual([j.kinds, j.total, j.count('lettuce'), j.fresh('lettuce'), j.has('corn')], [2, 3, 2, 1, false]);
+  const again = new FarmJournal(storage);
+  assert.deepEqual([again.kinds, again.count('ginseng'), again.fresh('ginseng')], [2, 1, 1], 'kept on this device (and in the cloud save: "mk.")');
+  assert.ok(Object.keys(data)[0].startsWith('mk.'));
+  assert.equal(new FarmJournal({ getItem: () => '{bad' }).kinds, 0);
+  const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(main.includes(`const FARM_KINDS = ${CROPS.length};`), "the notebook's count matches the crops");
 });
 
 // ---------- The keeper in this browser (core/farm-till.js) ----------
@@ -94,39 +127,41 @@ import { BED, BED_SPOTS, FARM_HOUSE, STALL, STALL_STAND, bedNear, farmToLocal, f
 import { toGame } from '../src/core/seoul-grid.js';
 import { inPoly } from '../src/core/geom.js';
 
-function localFarm(coins = 10000) {
+function localFarm(coins = 100000) {
   const data = {};
   const storage = { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = v; } };
   const wallet = { coins, log: [], spend(n, note, opts) { if (n > this.coins) return false; this.coins -= n; this.log.push([-n, note?.k, opts?.ask]); return true; }, add(n, note) { this.coins += n; this.log.push([n, note?.k]); } };
   return { farm: new LocalFarm(wallet, storage), wallet };
 }
 
-test('the local keeper: plant, water, pick, sell', async () => {
+test('the local keeper: plant, water once a day, pick, sell', async () => {
   const { farm, wallet } = localFarm();
-  const t0 = 1e12, span = 20 * MIN;
+  const t0 = T0;
   assert.equal((await farm.info(t0)).beds.length, FARM_BEDS);
-  assert.deepEqual(await farm.plant({ requestId: 'a', bed: 0, crop: 'lettuce', price: 999 }, null, t0), { error: 'price', price: 200 });
-  assert.equal((await farm.plant({ requestId: 'a', bed: 0, crop: 'lettuce', price: 200 }, { k: 'ledger.farmSeed' }, t0)).bed.crop, 'lettuce');
-  assert.deepEqual(wallet.log.at(-1), [-200, 'ledger.farmSeed', false], 'the game already asked: the till does not ask again');
-  assert.equal((await farm.plant({ requestId: 'a', bed: 0, crop: 'lettuce', price: 200 }, null, t0)).bed.crop, 'lettuce', 'the same request again');
-  assert.equal(wallet.coins, 9800, 'charged once');
-  assert.equal((await farm.plant({ requestId: 'b', bed: 0, crop: 'tomato', price: 400 }, null, t0)).error, 'busy');
-  assert.equal((await farm.plant({ requestId: 'c', bed: 12, crop: 'tomato', price: 400 }, null, t0)).error, 'bed');
-  await farm.plant({ requestId: 'd', bed: 1, crop: 'lettuce', price: 200 }, null, t0);
-  assert.equal((await farm.water(0, t0 + 1)).error, 'early');
-  assert.equal((await farm.pick(0, t0 + span / 2)).error, 'unripe');
-  assert.equal((await farm.water(0, t0 + span / 2)).wet, t0 + span / 2);
-  assert.equal((await farm.water(0, t0 + span * 0.6)).error, 'wet');
-  assert.equal((await farm.water(1, t0 + span + 1)).error, 'late');
-  assert.deepEqual(await farm.pick(0, t0 + span), { crop: 'lettuce', fresh: true, barn: { 'lettuce+': 1 } });
-  assert.deepEqual((await farm.pick(1, t0 + span)).barn, { 'lettuce+': 1, lettuce: 1 });
-  assert.equal((await farm.pick(1, t0 + span)).error, 'empty');
-  assert.deepEqual(await farm.sell({ requestId: 's' }, { k: 'ledger.farmSell' }), { paid: 1250, sold: 2 });
+  assert.deepEqual(await farm.plant({ requestId: 'a', bed: 0, crop: 'tomato', price: 999 }, null, t0), { error: 'price', price: 1000 });
+  assert.equal((await farm.plant({ requestId: 'a', bed: 0, crop: 'tomato', price: 1000 }, { k: 'ledger.farmSeed' }, t0)).bed.crop, 'tomato');
+  assert.deepEqual(wallet.log.at(-1), [-1000, 'ledger.farmSeed', false], 'the game already asked: the till does not ask again');
+  assert.equal((await farm.plant({ requestId: 'a', bed: 0, crop: 'tomato', price: 1000 }, null, t0)).bed.crop, 'tomato', 'the same request again');
+  assert.equal(wallet.coins, 99000, 'charged once');
+  assert.equal((await farm.plant({ requestId: 'b', bed: 0, crop: 'lettuce', price: 500 }, null, t0)).error, 'busy');
+  assert.equal((await farm.plant({ requestId: 'c', bed: 12, crop: 'lettuce', price: 500 }, null, t0)).error, 'bed');
+  assert.equal((await farm.plant({ requestId: 'c2', bed: 2, crop: 'potato', price: 600 }, null, t0)).error, 'crop');
+  await farm.plant({ requestId: 'd', bed: 1, crop: 'tomato', price: 1000 }, null, t0);
+  assert.deepEqual(await farm.water(0, t0 + 1), { wet: t0 + 1, n: 1 });
+  assert.equal((await farm.water(0, t0 + H)).error, 'wet', 'once a Korean day');
+  assert.equal((await farm.pick(0, t0 + DAY)).error, 'unripe');
+  assert.deepEqual(await farm.water(0, t0 + DAY), { wet: t0 + DAY, n: 2 });
+  assert.equal((await farm.water(1, t0 + DAY)).n, 1, 'bed 1 missed the first day');
+  assert.equal((await farm.water(1, t0 + 2 * DAY + 1)).error, 'late');
+  assert.deepEqual(await farm.pick(0, t0 + 2 * DAY), { crop: 'tomato', fresh: true, barn: { 'tomato+': 1 } });
+  assert.deepEqual((await farm.pick(1, t0 + 2 * DAY)).barn, { 'tomato+': 1, tomato: 1 });
+  assert.equal((await farm.pick(1, t0 + 2 * DAY)).error, 'empty');
+  assert.deepEqual(await farm.sell({ requestId: 's' }, { k: 'ledger.farmSell' }), { paid: 17000, sold: 2 });
   assert.deepEqual(await farm.sell({ requestId: 's' }, null), { paid: 0, sold: 0 }, 'the same request again pays nothing');
   assert.equal((await farm.sell({ requestId: 's2' }, null)).error, 'none');
-  assert.equal(wallet.coins, 10000 - 400 + 1250);
+  assert.equal(wallet.coins, 100000 - 2000 + 17000);
   const { farm: poor } = localFarm(100);
-  assert.equal((await poor.plant({ requestId: 'p', bed: 0, crop: 'lettuce', price: 200 }, null, t0)).error, 'coins');
+  assert.equal((await poor.plant({ requestId: 'p', bed: 0, crop: 'lettuce', price: 500 }, null, t0)).error, 'coins');
 });
 
 // ---------- The place (scripts/build-farm.mjs) ----------
