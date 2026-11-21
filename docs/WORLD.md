@@ -1225,6 +1225,8 @@ the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
   furniture). Five everyday ones by the main door (₩12,000–45,000), five rare
   ones at the far end of the main walk, each in front of the big one of the
   same plant (₩100,000–600,000, Yozi 2026-11-21: rare ones may cost more). The orchid and the flytrap can stand on a table.
+- **The streams** are shut like the lake (Yozi 2026-11-21: no walking through
+  the water): open only where a path crosses.
 - **The garden's planting** (Yozi 2026-11-21: too bare for its size): about
   350 trees, round flower beds and benches beside the paths, reeds by the
   wetland, and a **flower field** in the theme garden between the pond and

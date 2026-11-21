@@ -235,3 +235,47 @@ test('the Cactus & Succulent House: a made-up shop on the forest school\'s real 
   }
   for (const p of s.products) assert.ok(p.model === 'furniture' && p.price >= 5000 && p.price <= 40000 && p.name.ko && p.desc.ko, p.id);
 });
+
+test('the streams are shut too, open only where a path crosses, and nothing in the garden is cut off by water', () => {
+  const streams = mg.blockers.filter((b) => b.stream);
+  assert.ok(streams.length >= 4, `stream pieces: ${streams.length}`);
+  const col = new CollisionMap([...mg.blockers, ...mg.buildings.map((b) => ({ p: b.p }))]);
+  // In the middle of each stream piece you are in the water.
+  const waters = mg.areas.filter((a) => a.k === 'water');
+  for (const s of streams) assert.ok(s.p.some(([x, z]) => waters.some((w) => inPoly(x, z, w.p) || ringDist(x, z, w.p) < 0.3)), 'a stream piece lies on a stream');
+  // Flood fill on a 0.5 m grid from outside the main door, inside the garden.
+  const S = 0.5, key = (i, k) => i + ',' + k, main = gh.doors.find((d) => d.main);
+  const start = [Math.round(main.out[0] / S), Math.round(main.out[1] / S)], seen = new Set([key(...start)]), todo = [start];
+  while (todo.length) {
+    const [i, k] = todo.pop();
+    for (const [di, dk] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const a = i + di, b = k + dk, x = a * S, z = b * S;
+      if (seen.has(key(a, b)) || !inPoly(x, z, garden.p) || col.blocked(x, z, 0.3)) continue;
+      seen.add(key(a, b)); todo.push([a, b]);
+    }
+  }
+  const reach = (x, z) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1], [2, 0], [-2, 0], [0, 2], [0, -2]].some(([di, dk]) => seen.has(key(Math.round(x / S) + di, Math.round(z / S) + dk)));
+  for (const r of mg.roads.filter((q) => q.k === 'walk')) for (const [x, z] of r.p) if (inPoly(x, z, garden.p) && ringDist(x, z, garden.p) > 1.5) assert.ok(reach(x, z), `the path at ${x}, ${z} can be walked to`);
+  for (const [x, z, ry] of gh.benches) assert.ok(reach(x + gh.x + Math.sin(ry) * 0.9, z + gh.z + Math.cos(ry) * 0.9), `the bench at ${x}, ${z} can be walked to`);
+  const cactus = stores.find((x) => x.id === 'botanic-cactus-house'), st = region.subway.stations.find((s) => s.id === 'magongnaru-station');
+  assert.ok(reach(cactus.at[0] - ox, cactus.at[1] - oz), 'the cactus house door');
+  for (const e of st.exits) assert.ok([-3, 3].some((d) => reach(e.at[0] - ox + Math.sin(e.ry) * d, e.at[1] - oz + Math.cos(e.ry) * d)), `station exit ${e.n}`);
+  // Every piece of the flower field can be walked into (the photo frame is in the biggest).
+  for (const f of gh.fields) assert.ok(f.some(([x, z]) => reach(x + gh.x, z + gh.z)), 'a flower field piece');
+});
+
+test('the four small pot plants stand on a table or a desk at home; the big ones stay on the floor (Yozi 2026-11-21)', async () => {
+  const { topUnder, pieceBlocked, TOPS } = await import('../src/core/furniture.js');
+  const { THEME_PLANTS } = await import('../src/core/house-plants.js');
+  const small = ['plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel'];
+  for (const top of ['table', 'desk']) {
+    const t = { id: top, x: 2, z: 1, ry: 0 };
+    for (const [id] of [...PLANTS, ...THEME_PLANTS]) {
+      const on = topUnder({ id, x: 2.1, z: 1.05, ry: 0 }, [t]);
+      if (small.includes(id)) {
+        assert.ok(isSmall(id) && on && on.y === TOPS[top], `${id} goes on the ${top}`);
+        assert.ok(!pieceBlocked({ id, x: 2.1, z: 1.05, ry: 0, y: TOPS[top] }, [t]), `${id} is not in the ${top}'s way`);
+      } else assert.ok(!isSmall(id) && on === null, `${id} stays on the floor`);
+    }
+  }
+});

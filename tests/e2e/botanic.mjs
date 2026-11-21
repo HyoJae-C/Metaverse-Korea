@@ -126,6 +126,30 @@ await page.keyboard.down('w'); await wait(2500); await page.keyboard.up('w');
 const stopped = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
 assert(Math.hypot(stopped[0] - da[0], stopped[1] - da[1]) < Math.hypot(db[0] - da[0], db[1] - da[1]) + 1.2, 'the deck ends at its rail: no walking on into the water');
 
+// The streams: no walking through the water (only where a path crosses).
+{
+  const mgd = read('districts/magok.json');
+  const st = mgd.blockers.filter((b) => b.stream).sort((a, b) => b.p.length - a.p.length)[0];
+  const inP = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  // a spot in the water, and a dry spot 4 m from it
+  let wet = null, dry = null;
+  for (let i = 0; i < st.p.length && !dry; i++) {
+    const a = st.p[i], b = st.p[(i + Math.floor(st.p.length / 2)) % st.p.length], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    if (!inP(m[0], m[1], st.p)) continue;
+    for (let t = 0; t < 12 && !dry; t++) { const q = [m[0] + Math.cos(t * 0.52) * 4, m[1] + Math.sin(t * 0.52) * 4]; if (!mgd.blockers.some((k) => inP(q[0], q[1], k.p)) && !mgd.buildings.some((k) => inP(q[0], q[1], k.p))) { wet = m; dry = q; } }
+  }
+  assert(!!dry, 'found a stream bank to try');
+  const [dox, doz] = read('region.json').districts.find((d) => d.id === 'magok').offset;
+  await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [dry[0] + dox, dry[1] + doz]);
+  const ry = Math.atan2(wet[0] - dry[0], wet[1] - dry[1]);
+  await page.evaluate((r) => { __mk.cam({ yaw: r + Math.PI, pitch: 0.35, dist: 9 }); __mk.face(r); }, ry);
+  await wait(600);
+  await page.keyboard.down('w'); await wait(2500); await page.keyboard.up('w');
+  const q = await page.evaluate(() => { const o = __mk.outside(); return [o.x, o.z]; });
+  assert(!inP(q[0] - dox, q[1] - doz, st.p), `the stream stops me (${Math.hypot(q[0] - dox - wet[0], q[1] - doz - wet[1]).toFixed(1)} m from the middle of the water)`);
+  await shot('16-stream-bank');
+}
+
 // The Cactus & Succulent House: a door on the forest school, four pot plants inside.
 const cactus = read('stores.json').stores.find((q) => q.id === 'botanic-cactus-house');
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), cactus.at);
