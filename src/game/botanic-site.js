@@ -265,6 +265,7 @@ export function buildBotanicSite(l, store) {
   for (const [color, list] of parts) {
     const m = new THREE.Mesh(mergeGeometries(list), new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide }));
     m.matrixAutoUpdate = false;
+    m.userData.noSnow = true; // (under glass: no snow settles on the floor, the beds or the plants. core/snow-cover.js; Yozi 2026-11-21)
     group.add(m);
   }
 

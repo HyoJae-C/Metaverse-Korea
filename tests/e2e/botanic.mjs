@@ -187,6 +187,24 @@ assert(went, 'walked down exit 3 into Magongnaru Station');
 console.log('room:', JSON.stringify(await page.evaluate(() => { const r = __mk.room(); return { mode: r.mode, store: r.store?.id || r.id || null }; })));
 await wait(1500);
 await shot('12-in-the-station');
+// A snowy day (Yozi 2026-11-21): the snow settles on the park but not under the glass, and there is no snow to gather inside.
+await page.evaluate(() => __mk.leave?.());
+await wait(1500);
+await page.evaluate(([x, z]) => { __mk.snow(1); __mk.goto(x + 6, z + 3, 0); }, [gx, gz]);
+await page.waitForFunction(() => !!__mk.botanic?.group, null, { timeout: 30000 });
+await wait(12000); // (the cover pass runs every 10 s while there is snow)
+const snowy = await page.evaluate(() => { let dry = 0, wet = 0, white = 0; __mk.botanic.group.traverse((o) => { if (!o.isMesh) return; if (o.userData.noSnow) { dry++; if (o.material.userData.snowCover) wet++; } else if (o.material.userData.snowCover) white++; }); return { dry, wet, white }; });
+assert(snowy.dry > 10 && snowy.wet === 0, `nothing under the glass takes snow (${JSON.stringify(snowy)})`);
+assert(snowy.white > 3, 'the park outside does');
+await page.evaluate(([x, z]) => __mk.goto(x + 6, z + 3, 0), [gx, gz]);
+await wait(1200);
+const here = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
+assert(Math.hypot(here[0] - gx, here[1] - gz) < 10, 'standing in the greenhouse');
+assert(!(await label()).includes('❄️'), `no snowball to make inside: "${await label()}"`);
+await page.evaluate(([x, z]) => __mk.goto(x + 40, z + 30, 0), [gx, gz]);
+await page.waitForFunction(() => (document.getElementById('action-btn')?.textContent || '').includes('❄️'), null, { timeout: 8000 }).catch(() => {});
+assert((await label()).includes('❄️'), `outside there is: "${await label()}"`);
+await page.evaluate(() => __mk.snow(0));
 assert(errors.length === 0, 'no page errors at the end' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();
 console.log(process.exitCode ? 'FAILED' : 'OK');

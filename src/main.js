@@ -3632,6 +3632,7 @@ const snowman = lazyPanel(() => import('./game/snowman.js').then(({ createSnowma
   get mode() { return mode; }, get me() { return me; }, get others() { return others; }, get myId() { return myId; },
   get shop() { return shop; }, get scene() { return scene; },
   get depth() { return snowUniform.value; }, get snowing() { return weather.kind === 'snow'; },
+  get covered() { return botanic.inside(me.root.position); }, // (under glass: the greenhouse in Seoul Botanic Park. No snow to gather there)
   get onFoot() { return !riding && !seated; }, get look() { return myLook; },
   get heldKind() { return heldKind(); },
   groundY: (x, z) => hillY(map.landmarks, x, z) || yardY(map.landmarks, x, z) || terraceY(map.landmarks, x, z) || buskingGroundY(map.landmarks, x, z) || bukchonY(x, z) || slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) || gimpo.y(x, z) || hanBridges.y(x, z), // snowballs sit on the hills too (Namsan, Naksan, Bugaksan...)
@@ -7581,6 +7582,7 @@ renderer.setAnimationLoop((now) => {
   else if (snowUniform.value > 0 && tSec > snowCoverAt) { coverScene(scene); snowCoverAt = tSec + 10; }
   if (mode === 'street') {
     weather.update(dt, p.x, p.z);
+    if (weather.particles) weather.particles.visible = !botanic.inside(p); // (no rain or snow falls inside the greenhouse)
     sun.position.copy(p).setY(0).add(weather.sunset.offset); // (low in the west at sunset: core/sunset-sky.js)
     sun.target.position.set(p.x, 0, p.z);
     const z = zones.update(camera, p.x, p.z, tSec);
