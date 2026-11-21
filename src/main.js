@@ -85,7 +85,7 @@ import { braceletsFromCharms } from './game/knot-bracelets.js';
 import { createTimedWear } from './game/timed-wear.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
-import { buildBukchonHill } from './core/bukchon-models.js';
+import { buildBukchonHill, LANE_UP } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
@@ -5203,10 +5203,24 @@ const viewBook = new ViewBook(), partBook = new PartBook();
 // Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
 // In the yard of a home open to visitors, the ground is its flat terrace.
 const visitYards = map.buildings.filter((b) => b.visit).map((b) => ({ x0: Math.min(...b.p.map((q) => q[0])), x1: Math.max(...b.p.map((q) => q[0])), z0: Math.min(...b.p.map((q) => q[1])), z1: Math.max(...b.p.map((q) => q[1])), y: b.lv || 0 }));
+const bukchonLanes = map.roads.filter((r) => r.d === BUKCHON.district && r.k === 'walk').map((r) => ({ p: r.p, w: r.w, x0: Math.min(...r.p.map((q) => q[0])) - r.w, x1: Math.max(...r.p.map((q) => q[0])) + r.w, z0: Math.min(...r.p.map((q) => q[1])) - r.w, z1: Math.max(...r.p.map((q) => q[1])) + r.w }));
 function bukchonY(x, z) {
   if (!bukchonAt) return 0;
   for (const v of visitYards) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1) return v.y;
-  return bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  const y = bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  // On an alley you stand on its paving, which is drawn LANE_UP over the hill
+  // (core/bukchon-models.js); feet used to sink into it on the way up.
+  if (y <= 0.001 || !bukchonLanes.length) return y;
+  let near = 1;
+  for (const r of bukchonLanes) {
+    if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+    for (let i = 1; i < r.p.length && near > 0; i++) {
+      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+      const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
+      near = Math.min(near, Math.max(0, (Math.hypot(x - ax - dx * t, z - az - dz * t) - r.w / 2) / 0.4)); // (0 on the paving, 1 from 40 cm off it)
+    }
+  }
+  return y + 0.02 + (LANE_UP - 0.02) * (1 - near);
 }
 // Villagers in hanbok, men and women, strolling the alleys inside the wall.
 const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];

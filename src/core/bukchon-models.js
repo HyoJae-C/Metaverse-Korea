@@ -232,6 +232,7 @@ function pavingTexture(kind) {
   return (paveCache[kind] = t);
 }
 
+export const LANE_UP = 0.12; // the alleys' paving over the hill's ground (main.js stands you on it)
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
   g.name = 'bukchon-hill';
@@ -265,8 +266,9 @@ export function buildBukchonHill(roads, [ox, oz]) {
         const along = kind === 'setts' ? r.w / 1.6 : 2; // (setts: about 30 cm stones whatever the width)
         for (let k = 0; k < n; k++) {
           const quad = [k / n, (k + 1) / n].map((t) => {
-            const x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ground(x - ox, z - oz) + 0.12; // (well above the plain footpath world.js draws at 0.06 on the flat)
-            return [[x - px, y, z - pz], [x + px, y, z + pz]];
+            const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
+            // (each edge at its own height, so a lane across a slope lies on it; LANE_UP is well above the plain footpath world.js draws at 0.06 on the flat)
+            return [[x - px, ground(x - px - ox, z - pz - oz) + LANE_UP, z - pz], [x + px, ground(x + px - ox, z + pz - oz) + LANE_UP, z + pz]];
           });
           const [[a, b], [c, d]] = quad;
           pts.push(...a, ...b, ...d, ...a, ...d, ...c);
