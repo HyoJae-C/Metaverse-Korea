@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lipPrice, LIPSTICK_USES, LIPSTICK_PRICE, LIPSTICK_TEXT, applyLipstick, lipstickEntry, shadeName } from '../src/core/lipstick.js';
+import { blushPrice, stickEntry, lipPrice, LIPSTICK_USES, LIPSTICK_PRICE, LIPSTICK_TEXT, applyLipstick, lipstickEntry, shadeName } from '../src/core/lipstick.js';
 import { LIPS, menuFor } from '../src/core/beauty.js';
 import { Bag } from '../src/core/bag.js';
 import { HELD_KINDS } from '../src/core/held.js';
@@ -14,7 +14,8 @@ test('a lipstick: five uses at road-shop prices, each lip shop its own', () => {
   assert.equal(lipPrice({}), 15000);
   assert.equal(menuFor('lips', { lipFamily: 'green', lipPrice: 11000 })[0].price, 11000);
   assert.equal(LIPS[0].price, LIPSTICK_PRICE);
-  assert.ok(LIPS[0].stick);
+  assert.equal(LIPS[0].stick, 'lipstick');
+  assert.equal(LIPS[1].stick, 'blush');
   assert.ok(HELD_KINDS.includes('lipstick'));
 });
 
@@ -57,4 +58,20 @@ test('lipstick text: English and Korean, same placeholders everywhere', () => {
     assert.ok(p.en && p.ko, k);
     for (const [lang, x] of Object.entries(p)) assert.equal(vars(x), vars(p.en), `${k} ${lang}`);
   }
+});
+
+test('blush: the lip shops\' second tab, five uses, the colour stays on the cheeks', () => {
+  assert.equal(blushPrice({}), 12000);
+  const [lip, blush] = menuFor('lips', { lipFamily: 'blue', lipPrice: 11000, blushPrice: 8000 });
+  assert.equal(lip.price, 11000);
+  assert.equal(blush.price, 8000);
+  assert.equal(blush.key, 'blush');
+  assert.ok(HELD_KINDS.includes('blush'));
+  assert.equal(stickEntry({ kind: 'blush', c: 'scarlet', sips: 5 }), null); // a lip shade isn't a blush
+  let held = stickEntry({ kind: 'blush', c: 'peach', sips: 2 });
+  let look = { lip: 'mint' };
+  ({ held, look } = applyLipstick(held, look));
+  ({ held, look } = applyLipstick(held, look));
+  assert.equal(held, null);
+  assert.deepEqual(look, { lip: 'mint', blush: 'peach' });
 });

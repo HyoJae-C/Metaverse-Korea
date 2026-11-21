@@ -180,6 +180,7 @@ export const FR = {
   'beauty.eyes': 'Lentilles de couleur',
   'beauty.tone': 'Teint',
   'beauty.own': 'Le mien',
+  'beauty.blush': 'Blush',
   'beauty.cancel': 'Annuler',
   'beauty.save': 'Enregistrer',
   'beauty.pay': 'Enregistrer · 🪙 {coins}',

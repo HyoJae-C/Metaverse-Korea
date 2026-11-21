@@ -180,6 +180,7 @@ export const TH = {
   'beauty.eyes': 'คอนแทกต์เลนส์สี',
   'beauty.tone': 'สีผิว',
   'beauty.own': 'ของฉันเอง',
+  'beauty.blush': 'บลัชออน',
   'beauty.cancel': 'ยกเลิก',
   'beauty.save': 'บันทึก',
   'beauty.pay': 'บันทึก · 🪙 {coins}',
