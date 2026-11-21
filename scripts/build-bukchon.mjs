@@ -101,7 +101,7 @@ const width = (r) => {
   // (still four people abreast: a person is 0.7 m across).
   const mid = r.p[Math.floor(r.p.length / 2)];
   if (inPoly(mid[0], mid[1], QUIET_ZONE) || /^북촌로(11|5나|15)/.test(r.n)) return 3;
-  return r.n ? 4.4 : 4.2; // (six people abreast)
+  return 3.4; // (four or five people abreast; narrower than before so more hanok fit)
 };
 const { BUKCHON } = await import('../src/data/bukchon.js?' + Date.now());
 const QUIET_ZONE = BUKCHON.quiet;
@@ -120,6 +120,7 @@ const PALACE = (() => {
 const PALACE_GAP = 2.5; // room for the wall's roof and a walk along it
 const polyNear = (q, P) => { for (let i = 0; i < P.length; i++) if (segSegDist(q, q, P[i], P[(i + 1) % P.length]) < PALACE_GAP) return true; return false; };
 const inPalace = (q) => PALACE.some((P) => inPoly(q[0], q[1], P) || polyNear(q, P));
+const KEEP_STREET = /^(북촌로|계동길|창덕궁길|윤보선길|북촌로2길|북촌로11.*|북촌로5길|창덕궁1길)$/;
 const roads = [];
 for (const r of OSM.roads) {
   if (r.n === '율곡로' || r.n === '삼청로' || r.k === 'primary' || /link$/.test(r.k)) continue; // (Samcheong-ro: its pavements; the road is Gyeongbokgung's map) // (the game's own Yulgok-ro runs along the south edge)
@@ -127,11 +128,15 @@ for (const r of OSM.roads) {
   let p = clip(r.p, (q) => inArea(q, 0.5) && !inPalace(q));
   if (p.length < 2 || lengthOf(p) < 8) continue;
   p = simplify(p, 0.4);
-  // Detail where it counts (Yozi 2026-11-09: the signature places in full,
-  // the rest simple): every named street, and the small unnamed paths only
-  // round Gahoe-dong 31 (the Quiet Zone) or when they are long.
-  const mid = p[Math.floor(p.length / 2)];
-  if (!r.n && !inPoly(mid[0], mid[1], QUIET_ZONE) && lengthOf(p) < 40) continue;
+  // Fewer alleys, so the blocks are bigger and fuller (Yozi 2026-11-21, after
+  // trying it three ways: hanok cover 33% -> 39%): the unnamed paths go, and
+  // so does every piece of a small named alley under 45 m (Gyedong 2-gil and
+  // 4-gil, Bukchon-ro 1, 4, 6, 7, 8 and 15-gil and a few stubs). The main
+  // streets, the shop streets and the Bukchon-ro 11-gil alleys all stay.
+  // (a way that leads to one of the Bukchon 8 Views stays whatever its size)
+  const toView = BUKCHON.views.some((v) => lineDist(v.at, p) < 6);
+  if (!toView && !r.n) continue;
+  if (!toView && !KEEP_STREET.test(r.n) && lengthOf(p) < 45) continue;
   roads.push({ k: 'walk', w: width({ ...r, p }), p, ...(r.n && streetName(r.n) ? { n: streetName(r.n) } : {}), ko: r.n });
 }
 // (OSM also draws pavements and squares as unnamed ways beside a street:
@@ -296,6 +301,19 @@ for (const [depth] of SIZES) {
     const p = [q(-w / 2, depth / 2), q(w / 2, depth / 2), q(w / 2, -depth / 2), q(-w / 2, -depth / 2)];
     if (t.fits(p)) t.buildings.push({ h: 5, p });
   }
+}
+if (process.env.DIAG) { // why the empty ground is empty: a 4.5 m hanok tried on every free 2 m cell
+  const { whyNot } = await import('./street-rows.mjs');
+  const tally = {}, ctx = { inside: (q) => inArea(q, 0.8) && !inPalace(q), roads: fitRoads, open, buildings: t.buildings };
+  for (let x = AX0 + 3; x < AX1 - 3; x += 2) for (let z = AZ1 + 3; z < AZ0 - 3; z += 2) {
+    if (inPalace([x, z]) || t.buildings.some((b) => inPoly(x, z, b.p)) || roads.some((r) => lineDist([x, z], r.p) < r.w / 2)) continue;
+    const p = rect(x - 2.25, z + 2.1, x + 2.25, z - 2.1);
+    let w = whyNot(p, ctx).replace(/ at .*/, '');
+    if (w === 'fits' && !t.fits(p)) w = 'edge/other';
+    if (w.startsWith('on ')) w = outside.some((o) => lineDist([x, z], o.p) < o.w / 2 + 4) ? 'by a neighbour road' : 'by a street';
+    tally[w] = (tally[w] || 0) + 4;
+  }
+  console.log('DIAG m2', tally);
 }
 const hanok = t.buildings;
 // Which way each hanok faces (fr, a unit step on the map, front to the street:
