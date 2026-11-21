@@ -57,6 +57,22 @@ test('its doors are on walks, not in walls or water', () => {
   assert.ok(Math.hypot(store.at[0] - entry.offset[0] - ac.doors.opera[0], store.at[1] - entry.offset[1] - ac.doors.opera[1]) < 0.5, 'the Opera Theater is entered at the Opera House door');
 });
 
+test('the halls doors: solid porches, and the Music Hall door faces out of its wall', () => {
+  const walls = ac.buildings.map((b) => b.p || b.points || b);
+  for (const n of ['opera-porch', 'music-porch']) assert.ok(ac.buildings.some((b) => b.n === n), `${n} is a wall`);
+  // Walking from each door straight in: stopped by a wall within 1.7 m.
+  for (const [name, face] of [['opera', L.opera.face], ['music', L.music.face]]) {
+    const d = ac.doors[name], inX = -Math.sin(face), inZ = -Math.cos(face);
+    assert.ok(!walls.some((p) => inside(p, d)), `${name}: the door ring is outside`);
+    assert.ok(walls.some((p) => inside(p, [d[0] + inX * 1.7, d[1] + inZ * 1.7])), `${name}: nobody walks through the doors`);
+  }
+  // The Music Hall's door front lies along its wall: the nearest wall point is straight behind the door.
+  const m = L.music, back = [m.door[0] - Math.sin(m.face) * 1.6, m.door[1] - Math.cos(m.face) * 1.6];
+  let gap = Infinity;
+  for (let i = 0; i < m.p.length; i++) { const a = m.p[i], b = m.p[(i + 1) % m.p.length], t = Math.max(0, Math.min(1, ((back[0] - a[0]) * (b[0] - a[0]) + (back[1] - a[1]) * (b[1] - a[1])) / ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))); gap = Math.min(gap, Math.hypot(back[0] - a[0] - (b[0] - a[0]) * t, back[1] - a[1] - (b[1] - a[1]) * t)); }
+  assert.ok(gap < 0.2, `the door is 1.6 m straight out of the wall (${gap.toFixed(2)})`);
+});
+
 test('the Opera Theater: a stage, a pit, stalls and three balconies', () => {
   assert.equal(ROOM_SIZES.opera, ROOM_OPERA);
   const room = roomOf(store), built = buildOperaHall(store, room, exitOf(room));
