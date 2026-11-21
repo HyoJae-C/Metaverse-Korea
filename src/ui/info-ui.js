@@ -6,6 +6,7 @@
 import { L, fmt } from './pocha-ui.js';
 import { INFO_TEXT as T, AREA, el } from './info-labels.js';
 import { storeIcon } from '../core/store-icons.js';
+import { t } from '../core/i18n.js';
 
 // Game help (the game guide): how things work, anywhere.
 export const GAME_TOPICS = [
@@ -117,14 +118,22 @@ export class InfoUI {
   // if the place isn't on this map.
   // places: { districtOf(to) -> district id of a { store } / { zone },
   //   storesIn(id) -> [store] in a district, nearest(workshop) -> store id }.
-  constructor({ root, guide, places }) {
-    Object.assign(this, { root, guide, places });
+  // career: game/career.js (the game guide also picks your job); toast(msg).
+  constructor({ root, guide, places, career, toast }) {
+    Object.assign(this, { root, guide, places, career, toast });
   }
   get open() { return !this.root.hidden; }
   close() { this.root.hidden = true; }
   // The game guide: how things work.
   showGame() {
-    this.render('🎮 ' + L(T.gameTitle), L(T.gameIntro), [{ rows: GAME_TOPICS }]);
+    const jobs = this.career ? [{ icon: '💼', title: { en: t('career.title') }, text: { en: t('career.intro') },
+      act: { label: t('career.pick'), run: () => this.showJobs() } }] : [];
+    this.render('🎮 ' + L(T.gameTitle), L(T.gameIntro), [{ rows: [...jobs, ...GAME_TOPICS] }]);
+  }
+  // Jobs (ui/career-ui.js): pick one, see my skill.
+  async showJobs() {
+    const { showCareer } = await import('./career-ui.js');
+    showCareer({ root: this.root, career: this.career, toast: this.toast });
   }
   // The area guide: what there is in this district, then the others.
   showArea(district) {
@@ -159,6 +168,11 @@ export class InfoUI {
         const body = el('div');
         body.append(el('strong', null, `${tp.icon} ${L(tp.title)}`), el('p', null, L(tp.text)));
         row.append(body);
+        if (tp.act) {
+          const b = el('button', 'chip', tp.act.label);
+          b.onclick = () => tp.act.run();
+          row.append(b);
+        }
         const to = tp.to?.workshop ? (this.places?.nearest(tp.to.workshop) ? { store: this.places.nearest(tp.to.workshop) } : null) : tp.to;
         if (to) {
           const go = el('button', 'chip', L(T.go));

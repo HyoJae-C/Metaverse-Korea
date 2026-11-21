@@ -1,12 +1,15 @@
 // Part-time job panel (rules in core/jobs.js): the convenience store counter
-// and the restaurant hall. Each shift uses one of the day's shifts and pays
-// by how many answers were right.
+// and the restaurant hall. Shifts have no daily limit; the server times each
+// one and pays by the time and how many answers were right, more when it is
+// your job (game/career.js, core/career.js).
 import {
-  JOB_TEXT, SHIFTS_PER_DAY, shiftPay, won,
+  JOB_TEXT, won,
   MART_CUSTOMERS, MART_PATIENCE, MART_ASKS, MART_LINES, makeMartCustomer,
   SERVE_TURNS, SERVE_PATIENCE, TABLES, SERVE_DISHES, SERVE_ASKS, makeServeTurn, serveRight,
 } from '../core/jobs.js';
 import { L, fmt } from './pocha-ui.js';
+import { t } from '../core/i18n.js';
+import { bonusPct } from '../core/career.js';
 
 const tt = (k, v) => fmt(L(JOB_TEXT[k]), v);
 // A Korean answer button with a short meaning under it.
@@ -24,10 +27,10 @@ const el = (tag, cls, text) => {
 const FACES = ['🧑', '👩', '👨‍🦱', '👧', '🧓', '👩‍🦰', '🧔', '👱'];
 
 export class JobUI {
-  // wallet: { add(n, note) }; shifts: { left(), take() } (take() false when
-  // none are left); onSay(line); onPaid(coins).
-  constructor({ root, wallet, shifts, onSay, onPaid, rand = Math.random }) {
-    Object.assign(this, { root, wallet, shifts, onSay, onPaid, rand });
+  // career: game/career.js (begin/end a shift, my job and skill); onSay(line);
+  // onPaid(coins, result).
+  constructor({ root, career, onSay, onPaid, rand = Math.random }) {
+    Object.assign(this, { root, career, onSay, onPaid, rand });
     this.timer = 0;
   }
 
@@ -45,23 +48,35 @@ export class JobUI {
     this.root.replaceChildren(x, el('h3', null, this._title()));
   }
 
-  renderStart() {
+  // My job and skill for this kind of shift, or the base pay.
+  _status() {
+    const c = this.career;
+    if (!c?.mine(this.kind)) return t('career.base');
+    const sk = c.skill(this.kind);
+    return t('career.status', { lv: sk.lv, p: bonusPct(sk.mult) });
+  }
+
+  renderStart(msg) {
     this._frame();
-    const left = this.shifts.left();
     const go = el('button', 'primary', '💼 ' + tt('start'));
-    go.disabled = !left;
     go.onclick = () => this.start();
     const actions = el('div', 'order-actions');
     actions.append(go);
     this.root.append(
       el('p', 'order-hint', tt(this.kind === 'mart' ? 'martHow' : 'serveHow')),
-      el('p', 'grill-best', left ? tt('shiftsLeft', { n: left, all: SHIFTS_PER_DAY }) : tt('noShifts', { all: SHIFTS_PER_DAY })),
+      el('p', 'grill-best', msg || this._status()),
       actions,
     );
   }
 
-  start() {
-    if (!this.shifts.take()) { this.renderStart(); return; }
+  async start() {
+    if (this._starting) return;
+    this._starting = true;
+    const r = await this.career.begin(this.kind, this.store?.name?.en || this.store?.id);
+    this._starting = false;
+    if (this.root.hidden) return;
+    if (r.error) { this.renderStart(t(r.error === 'busy' ? 'career.busy' : 'career.offline')); return; }
+    this.run = r.run;
     this.round = { i: 0, ok: 0, all: this.kind === 'mart' ? MART_CUSTOMERS * 2 : SERVE_TURNS };
     if (this.kind === 'mart') this.onSay?.([MART_LINES.hello[0], MART_LINES.hello[1], L(MART_LINES.hello[2])]);
     this.next();
@@ -214,25 +229,27 @@ export class JobUI {
     step.append(tables);
   }
 
-  finish() {
+  async finish() {
+    const r = this.round, run = this.run;
+    this.round = null; this.run = null;
     this._frame();
-    const r = this.round;
-    const coins = shiftPay(r.ok, r.all);
-    if (coins) this.wallet.add(coins, { name: JOB_TEXT.ledger, at: this.store?.name }, { r: 'job' });
+    this.root.append(el('p', 'order-hint', '…'));
+    const got = await this.career.end(run, r.all ? r.ok / r.all : 0, { name: JOB_TEXT.ledger, at: this.store?.name });
+    if (this.root.hidden) { this.onPaid?.(got.paid || 0, got); return; }
+    this._frame();
+    const coins = got.paid || 0;
     const res = el('div', 'grill-result');
     res.append(
       el('span', 'grill-medal', this.kind === 'mart' ? '🏪' : '🍽️'),
-      el('strong', null, tt('paid', { n: coins })),
+      el('strong', null, got.error ? t(got.error === 'fast' ? 'career.fast' : 'career.offline') : tt('paid', { n: coins })),
       el('p', null, tt('result', { ok: r.ok, all: r.all })),
     );
-    const left = this.shifts.left();
+    if (got.up) res.append(el('p', 'grill-best', t('career.levelUp', { job: L(JOB_TEXT.role[this.kind]), lv: got.lv })));
     const again = el('button', 'primary', tt('again'));
-    again.disabled = !left;
     again.onclick = () => this.start();
     const actions = el('div', 'order-actions');
     actions.append(again);
-    this.root.append(res, el('p', 'order-hint', left ? tt('shiftsLeft', { n: left, all: SHIFTS_PER_DAY }) : tt('noShifts', { all: SHIFTS_PER_DAY })), actions);
-    this.round = null;
-    this.onPaid?.(coins);
+    this.root.append(res, el('p', 'order-hint', this._status()), actions);
+    this.onPaid?.(coins, got);
   }
 }
