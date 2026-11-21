@@ -76,7 +76,7 @@ export function rideCode({ type, tier, color, pattern }) {
 export function parseRide(code) {
   const [type, tier, color, pattern] = String(code || '').split('.');
   if (!RIDE_TYPES.includes(type)) return null;
-  const tr = Math.max(0, Math.min(2, Number(tier) | 0));
+  const tr = Math.max(0, Math.min(type === 'inline' ? 3 : 2, Number(tier) | 0)); // (inline 3: the ice rink's skates, core/rides.js)
   return {
     type, tier: tr,
     color: /^#[0-9a-f]{6}$/i.test(color || '') ? color : null,

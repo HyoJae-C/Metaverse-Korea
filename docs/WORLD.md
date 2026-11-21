@@ -1104,3 +1104,91 @@ from OpenStreetMap (`scripts/data/nanji-osm.json`) and the real ground
 - `tests/nanji.test.mjs` checks the real places, the slopes, that every way
   up is walkable, and the made-up list. `tests/e2e/nanji.mjs` walks up
   하늘길 and sits by a fire (`DAY=1` for daytime pictures).
+
+## Mokdong Ice Rink (Yangcheon-gu)
+
+`scripts/build-mokdong.mjs` writes `districts/mokdong.json` from
+OpenStreetMap (`scripts/data/mokdong-osm.json`), all at the real 1/4. The
+middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
+
+- **Real, within 1 m:** the rink's outline (the ice hall about 17 × 25 m, the
+  lobby in front), the baseball stadium and the main stadium next to it.
+  Gukhoe-daero and Mokdongdong-ro are within 10 m.
+- **Made up** (`meta.approx`): Gukhoe-daero as one road for its three
+  carriageways, the paved ground as one plaza, a small lawn, the Information
+  Center, and the stadiums' stands (you cannot go into the stadiums).
+- **An island for now:** the land between Mokdong and Yeouido is closed, so
+  you get here by taxi, the subway picker or the map.
+- **Outside** is drawn by `src/game/mokdong-site.js`, loaded when you come
+  near (`mokdong-near.js` is the small part in the first download).
+- **Inside** is a game room, bigger than the building on purpose
+  (`src/core/ice-rink-hall.js`, 56 × 40 m: a 46 × 25 m sheet of ice, stands,
+  the skate counter). Entry is free and the skates go on at the gate.
+- **Skating** (`src/core/ice-skate.js` the rules, `src/game/ice-rink.js` the
+  play, both loaded on the way in): you glide and carve, the action button
+  jumps, and arrows pressed in the air are the tricks. ← and → in turn
+  spin (← single 100, ← → double 300, ← → ← triple 700, ← → ← → quad 1,500;
+  begin with → to turn the other way; the same key twice is two singles); ↑↓ butterfly, ↓↑
+  backflip, ↑↑ cartwheel, ↓↓ death drop. A trick still turning when you land
+  is shaky (half) or a fall; landing just after it finishes is perfect
+  (×1.5). Clean landings in a row raise a combo up to ×3. A faster run-up
+  means a longer jump (0.75 s from a standstill, 1.1 s at full speed): a
+  triple from a standstill, a quad with a little speed. A new trick tapped
+  too late to do anything but fall is not started; raising a turn always is.
+  Points are a personal best on this device (no coins). Other skaters' jumps
+  are sent as a short code (`st.ik`) and played back.
+
+## Seoul Arts Center (Seocho-gu)
+
+`scripts/build-arts-center.mjs` builds `districts/arts-center.json` from
+OpenStreetMap (`scripts/data/arts-center-osm.json`, cut from the Geofabrik
+extract on 2026-11-21). Its anchor is the crossing of Banpo-daero and
+Nambusunhwan-ro in front of the gate.
+
+- **Size**: the whole place (site, buildings, plaza, the gaps between them) at
+  50% of the real one, not 1/4 (Yozi 2026-11-21: Seocho is mostly offices
+  otherwise). Every OSM point is doubled about the anchor, so the layout keeps
+  its proportions (map rule 11: one scale for a whole place). The two roads in
+  front stay 1/4; the site grows south towards Umyeonsan, over real neighbours
+  that are not built. `meta.scale` says so.
+- **Estimated or made up** (`meta.approx`, roads with `approx: true`): the
+  heights (photos, not OSM), the flat ground (the real site climbs in
+  terraces), the doors' exact spots, and the walks from the gate to the plaza
+  and to the two doors. Buildings, fountain and footways are OSM's.
+- **Outside** (`src/core/arts-center-model.js`, landmark `artscenter`, loaded
+  with `import()` when the city is built): the Opera House as a round hall
+  under a roof like a gat (a brim and a crown) with its stage house behind,
+  the fan-shaped Music Hall, the museums as plain blocks, the music fountain
+  with moving jets, the lawn before the Opera House.
+- **Opera Theater** (stores.json `arts-opera-theater`, `front: "landmark"`,
+  room `opera`: `src/core/opera-hall.js`, loaded with the rooms): the stage
+  behind a red curtain, the orchestra pit with the conductor's podium, the
+  stalls and three horseshoe balconies. Some seats have people; the rest are
+  free. Walking only, like the cathedral.
+- **The show** (`src/core/stage-show.js`) runs on the real clock, so everyone
+  in the hall sees and hears the same bar. Each piece's turn is a short real
+  evening: the orchestra tunes to the oboe's A, the conductor walks in to
+  applause and bows, the lights go down and the curtain opens, the piece is
+  played and danced, applause and bows, the curtain closes. Then the next.
+- **The music** is not a recording. `src/data/opera-scores.js` holds the notes
+  (written by hand from the published scores; all four pieces are from before
+  1900 and out of copyright) and `src/core/concert-player.js` plays them live
+  with Web Audio as a small orchestra, into the game's music output. The
+  game's own track is the silent hidden track `concert` while inside. Nobody
+  sings: an instrument takes the singer's line. To add a piece, write a score
+  object there and put it in `OPERA_PROGRAM`.
+- **The Concert Hall** (`src/core/concert-hall.js`, room `concert`, store
+  `arts-concert-hall` at the Music Hall's door) is for classical music only:
+  a wooden hall with the orchestra on the platform (winds and brass on
+  risers), a grand piano, and seats all round, behind the stage too. No
+  curtain and no dancers. The same show runs it; for a piano piece
+  (`kind: 'piano'`) the pianist walks on instead of the conductor and the
+  orchestra sits still.
+- Its programme is `CONCERT_PROGRAM` in `src/data/concert-scores.js`, a
+  generated file: `node scripts/build-concert-scores.mjs` cuts the excerpts
+  out of the MIDI in `scripts/data/scores/`, which LilyPond made from
+  public-domain and CC BY editions (sources and thanks in
+  `docs/CREDITS-MUSIC.md`). To add a piece, add its MIDI and a row in that
+  script's `PIECES`. Each hall fetches its own programme when you walk in
+  (`stations.stage.load`).
+

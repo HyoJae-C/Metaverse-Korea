@@ -265,6 +265,7 @@ import { hillGround } from './core/hill-ground.js';
 import { createHanBridges } from './game/han-bridges.js';
 import { createNamsanWalk } from './game/namsan-walk.js';
 import { createNanjiWalk } from './game/nanji-walk.js';
+import { createMokdongNear } from './game/mokdong-near.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createNaksanNear } from './game/naksan-near.js';
 import { createNorthWallNear } from './game/north-wall-near.js';
@@ -879,6 +880,8 @@ const hanBridges = createHanBridges({ scene, bridges: map.bridges }); // the Han
 const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings, seats: streetSeats });
 // Haneul Park's hill and the Nanji Campground (game/nanji-walk.js): the ways up are decks, the fields and tents load near.
 const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec });
+// Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
+const mokdong = createMokdongNear({ landmarks: map.landmarks, scene });
 // The Namsan cable car, ridden outdoors from the lower station's door up to the summit plaza (game/namsan-cable.js).
 const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
@@ -3058,6 +3061,9 @@ function enterStore(item, walkIn = null) {
   // (core/cathedral-mass.js, with the room).
   if (built.stations?.mass && !built.massNpcs) built.massNpcs = new (roomKit().CathedralMass)(built, $('labels'), L);
   interior.massNpcs = built.massNpcs || null;
+  // The Arts Center's Opera Theater: the orchestra, conductor and dancers (core/stage-show.js, with the room).
+  if (built.stations?.stage && !built.stageShow) built.stageShow = new (roomKit().StageShow)(built, $('labels'), L, { music, toast: (s) => shop.toast(s) });
+  interior.stageShow = built.stageShow || null;
   // Its confession room: the priest behind the lattice (core/confession-room.js).
   if (built.stations?.confession && !built.confession) built.confession = new (roomKit().ConfessionPriest)(built, $('labels'), L, (s) => seatFit(built.scene, s));
   interior.confession = built.confession || null;
@@ -3123,6 +3129,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (built.massNpcs) { enterMusicCafe('organ'); shop.toast(L(roomKit().CATHEDRAL_TEXT.welcome)); } // the cathedral: its organ, softly
+  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); document.body.classList.add('in-show'); } // the Opera Theater: only the orchestra plays
   if (store.genre) enterClub(store.genre);
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
@@ -3355,13 +3362,14 @@ function leaveStore(walkOut = false) {
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
+  interior.stageShow?.leave();
   leaveMusicCafe();
   leaveKpopCafe();
   leaveClub();
   // Every name tag and bubble this room put on screen goes with it (Another
   // Land's ride attendants and guests, the bar regulars, the yoga class),
   // or they'd hang over the street where they last stood.
-  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || []), ...(interior.massNpcs?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
+  for (const o of [clerk, trainer, barkeep, areaGuide, instructor, ...(interior.readerNpcs || []), ...(interior.vendorNpcs || []), ...(interior.patronNpcs || []), ...Object.values(interior.rideStaff || {}), ...(interior.riderNpcs || []), ...(interior.coasterStaff || []), ...(interior.studioNpcs?.all || []), ...(interior.massNpcs?.all || []), ...(interior.stageShow?.all || [])]) if (o) { o.tag.style.display = 'none'; o.bubble?.remove(); o.bubble = null; }
   balloonClown.hideLabels();
   parkTickets.hideLabels();
   clerk = null;
@@ -3393,7 +3401,7 @@ function leaveStore(walkOut = false) {
     if (doorCam) { cam.pitch = doorCam.pitch; cam.dist = doorCam.dist; }
   }
   doorCam = null;
-  document.body.classList.remove('in-store');
+  document.body.classList.remove('in-store', 'in-show');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
@@ -4373,7 +4381,7 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
 })), { state: 'idle' });
 // A three-minute fishing contest with a friend in the same Han River park (game/fish-contest.js).
 const fishContest = createFishContest({
-  myId, others: () => others, send: (m) => net.sendEmote(m), isFriend: (name) => chat?.friendStatus?.(name) === 'friend',
+  myId, myName: () => nickname, others: () => others, send: (m) => net.sendEmote(m), isFriend: (name) => chat?.friendStatus?.(name) === 'friend',
   blocked: (id, name) => safety.isBlocked(id, name), park: () => hanPark(), toast: (m) => shop.toast(m), sfx, chip: $('contest-chip'),
   cheer: () => me.play('cheer'), bubble: (text) => showBubble(myLabel, $('labels'), text), peerBubble: (id, text) => others.chat(id, text, 4000),
   refreshFishing: () => {
@@ -4770,6 +4778,17 @@ const bumper = lazyPanel(() => import('./game/bumper.js').then(({ createBumper }
   $, STALE, myId, shop, sfx, wallet, input, moveRef, cam, sitDown, standUp, missionEvent: (...a) => missionEvent(...a),
   ridePass: () => rideTickets.covers('bumper'), useRideTicket: () => useRideTicket('bumper'),
 })), { tick: () => {}, action: () => null, state: () => {}, onStandUp: () => {}, driving: false, inCar: false });
+// Mokdong Ice Rink: skating, jumps and tricks typed in the air. (game/ice-rink.js)
+// Downloaded the first time you are inside the rink (iceRink.ready() in the frame loop).
+const iceRink = lazyPanel(() => import('./game/ice-rink.js').then(({ createIceRink }) => createIceRink({
+  get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
+  get me() { return me; }, get others() { return others; },
+  get action() { return action; }, set action(v) { action = v; },
+  get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
+  get speed01() { return speed01; }, set speed01(v) { speed01 = v; },
+  $, STALE, input, moveRef, shop, sfx, skatePop: (...a) => skatePop(...a), missionEvent: (...a) => missionEvent(...a),
+  collide: (x, z, dx, dz) => activeCollision.move(x, z, dx, dz, PLAYER_R),
+})), { tick: () => {}, action: () => null, state: () => {}, skating: false });
 // Mini basketball on Olympic Park's Peace Plaza. (game/basketball.js)
 const basketball = createBasketball({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
@@ -5274,7 +5293,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -6898,6 +6917,8 @@ function updateAction(p, tSec) {
       next = { key: 'haunt-out', label: '🚪 ' + L(interior.store.workshop === 'runway' ? roomKit().RUNWAY_TEXT.toHall : interior.confession ? roomKit().CONFESSION_TEXT.back : HAUNT_TEXT.back), run: () => backToPark() };
     } else if (!interior.noExit && !interior.store.open && Math.hypot(p.x - ex.x, p.z - ex.z) < 1.6) { // (an open park: walk off the lawn)
       next = { key: 'exit', label: '🚪 ' + t('shop.leave'), run: () => leaveStore() };
+    } else if (interior.iceRink && iceRink.action()) {
+      next = iceRink.action(); // on the ice: jump, and call the landing
     } else if (!seated && nearPeerMeal(p)) {
       const pm = nearPeerMeal(p);
       next = { key: 'bite:' + pm.owner, label: '😋 ' + fmt(L(DINE_TEXT.share), { name: others.nameOf(pm.owner) || '?' }), run: () => stealBite(pm) };
@@ -7343,6 +7364,8 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
+  if (!iceRink.loaded && mode === 'store' && interior?.iceRink) iceRink.ready().catch(() => {});
+  iceRink.tick(dt, p, mx, my); // (on the ice it does the moving: no walking below)
   updateSurgery(dt);
   updateHaircut(dt);
   if (dancing && (mag > 0.3 || !clubs.clubState)) { dancing = false; action = STALE; }
@@ -7365,12 +7388,13 @@ renderer.setAnimationLoop((now) => {
   if (autoWalk && mag > 0.05) setAutoWalk(false); // the player took over
   const steady = steadyWalk && !riding;
   // Walking only in the Quiet Zone (Bukchon) and in the cathedral.
-  const inCathedral = mode === 'store' && !!interior?.massNpcs;
-  if (inCathedral && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
+  const inCathedral = mode === 'store' && !!(interior?.massNpcs || interior?.stageShow); // (and in the Opera Theater)
+  if (interior?.stageShow && mode === 'store' && input.run && mag > 0.05 && interior.stageShow.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().STAGE_TEXT.shh)); }
+  if (inCathedral && interior.massNpcs && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
-  else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && !boatTaxi.busy && riding !== 3 && !(runwayUi.walking && mode === 'store')) {
+  else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && !boatTaxi.busy && riding !== 3 && !(runwayUi.walking && mode === 'store') && !iceRink.skating) {
     walkedFor += dt;
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
@@ -7393,7 +7417,7 @@ renderer.setAnimationLoop((now) => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
+    const anim = steady || (quiet && inStore && !riding) ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN)); // (a hall with a show, the cathedral: the walk never looks like a run)
     speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
   } else if (mag > 0.05 && boatTaxi.busy) { // walking round the boat taxi's deck (it carries you along)
     const speed = STORE_WALK * Math.min(1, mag);
@@ -7579,6 +7603,7 @@ renderer.setAnimationLoop((now) => {
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     bumper.state(st); // in a bumper car, or in line for one
+    iceRink.state(st); // on the ice: the skates, and a jump's tricks
     zooVisit.camels.state(st); // on a zoo camel: others seat us on its saddle
     seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
     boatTaxi.state(st); // on a boat taxi: others put a boat under us
@@ -7600,7 +7625,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik;
     // Flying (operators): nothing is sent, so others keep seeing us where we
     // took off and our spot isn't given away; carrying someone still sends.
     if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {
@@ -7630,7 +7655,7 @@ renderer.setAnimationLoop((now) => {
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -7641,6 +7666,7 @@ renderer.setAnimationLoop((now) => {
     for (const o of interior?.visitorNpcs || []) o.ch.animate(dt, 0); // (DDP Hall's visitors, standing)
     for (const o of interior?.patronNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); }
     interior?.massNpcs?.update(dt, camera, w, h); // (the cathedral's Mass)
+    interior?.stageShow?.update(dt, camera, w, h); // (the Opera Theater's show)
     interior?.confession?.update(dt, camera, w, h); // (its confession room's priest)
     for (const o of Object.values(interior?.rideStaff || {})) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (each ride's attendant)
     for (const o of interior?.riderNpcs || []) { o.ch.animate(dt, 0); placeLabels(o, camera, w, h); } // (guests on the rides)
@@ -7798,6 +7824,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
+    stage: () => interior?.stageShow?.state ?? null, // the Opera Theater's show (core/stage-show.js)
+    speed01: () => speed01, // 0 idle, about 0.5 walking, over 0.55 the run animation
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),
@@ -7893,6 +7921,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     duckBoard: (i) => boardDuck(i),
     duckGo: () => startDuckRide(),
     bumper: () => bumper.debug(),
+    iceRink, // Mokdong Ice Rink (game/ice-rink.js), for tests
+    mokdong, // its outside (game/mokdong-near.js)
     bumperBoard: () => bumper.board(),
     duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
     duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
@@ -7947,6 +7977,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
     spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    contestVs: () => fishContest.vs, // (the VS banner's names, or null)
     contest: () => fishContest.state, // (a fishing contest with a friend: game/fish-contest.js)
     contestCatch: (id) => fishContest.caught({ id }), // (as if I landed that fish by hand)
     ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],

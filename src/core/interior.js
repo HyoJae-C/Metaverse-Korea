@@ -19,8 +19,11 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildCathedralHall, ROOM_CATHEDRAL } from './cathedral-hall.js';
+import { buildOperaHall, ROOM_OPERA } from './opera-hall.js';
+import { buildConcertHall, ROOM_CONCERT } from './concert-hall.js';
 import { buildConfessionRoom, ROOM_CONFESSION } from './confession-room.js';
 import { buildDharmaHall, ROOM_DHARMA } from './dharma-hall.js';
+import { buildIceRinkHall, ROOM_RINK } from './ice-rink-hall.js';
 import { buildSkyDeck, ROOM_SKYDECK } from './sky-deck.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
 import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
@@ -73,8 +76,10 @@ export const ROOM_SIZES = {
   zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
   zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
   cathedral: ROOM_CATHEDRAL, // inside Myeongdong Cathedral (see cathedral-hall.js)
+  opera: ROOM_OPERA, concert: ROOM_CONCERT, // the Opera Theater in Seoul Arts Center's Opera House (see opera-hall.js)
   confession: ROOM_CONFESSION, // its confession room, alone (see confession-room.js)
   dharmahall: ROOM_DHARMA, // inside Jogyesa's and Bongeunsa's Daeungjeon: the silent hall (see dharma-hall.js)
+  icerink: ROOM_RINK, // Mokdong Ice Rink: the ice, the boards and the stands (see ice-rink-hall.js)
   skydeck: ROOM_SKYDECK, // Modu Sky, the deck at the top of Modu Tower (see sky-deck.js)
 };
 export const roomOf = (store) => store.roomDims || ROOM_SIZES[store.size] || ROOM_SIZES.medium; // (roomDims: a home's size by its level, core/home-stages.js)
@@ -224,8 +229,11 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cathedral') return buildCathedralHall(store, ROOM, EXIT);
+  if (store.workshop === 'opera') return buildOperaHall(store, ROOM, EXIT);
+  if (store.workshop === 'concert') return buildConcertHall(store, ROOM, EXIT);
   if (store.workshop === 'confession') return buildConfessionRoom(store, ROOM, EXIT);
   if (store.workshop === 'dharmahall') return buildDharmaHall(store, ROOM, EXIT);
+  if (store.workshop === 'icerink') return buildIceRinkHall(store, ROOM, EXIT);
   if (store.workshop === 'skydeck') return buildSkyDeck(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
   if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
