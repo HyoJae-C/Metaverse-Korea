@@ -20,6 +20,7 @@ const LOOK_NEAR = 1.6; // close enough to its counter to look at the food
 const OUT_FROM = 16.5, OUT_UNTIL = 5.3;
 export const cartsOut = (now = Date.now()) => { const h = gameHour(now); return h >= OUT_FROM || h < OUT_UNTIL; };
 
+const VISIT_NEAR = 6; // m from a cart: that close counts as having been there
 export function createNightCarts(game) {
   const sites = [];
   for (const l of game.landmarks || []) {
@@ -70,6 +71,10 @@ export function createNightCarts(game) {
         n.ch.root.visible = close;
         if (close) n.ch.animate(dt, 0); else n.tag.style.display = 'none';
       }
+      // Coming up to a cart that is out is the visit (a daily "visit …"
+      // mission or a guide's errand: there is no door to go through).
+      const at = o.shown && o.spots.some(([x, z]) => Math.hypot(p.x - x, p.z - z) < VISIT_NEAR);
+      if (at !== o.at) { o.at = at; if (at) game.onVisit?.(o.store); }
       if (!o.shown) continue;
       const lang = game.signLang();
       if (lang !== B.lang) { B.lang = lang; B.b.setSignLang(lang); }

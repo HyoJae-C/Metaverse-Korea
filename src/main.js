@@ -6082,6 +6082,7 @@ const nightCarts = createNightCarts({
   makeNpc: (name) => makeNpc($('labels'), name), signLang: () => (signsTranslated ? getLanguage() : null),
   night: () => 1 - (1 - darkness()) * (1 - (weather.nightMix || 0)), greet: (list, p) => greetAtStalls(p, list),
   look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+  onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
 });
 // Seoul Botanic Park's greenhouse (game/botanic-near.js): an open building on
 // the street, with pot plants for your home sold from stands inside.
