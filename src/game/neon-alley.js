@@ -32,7 +32,7 @@ const SIGNS = [
   { text: '모두맥옥', color: '#ff5fa2', bg: '#141018', frame: '#ffd23f', small: '별관', smallColor: '#ffd23f', below: true }, // the hero (photo 1)
   { text: '삼가집', color: '#39ff6a', bg: '#3a0d0d', frame: '#ff3b2f', small: '한식전문', smallColor: '#ff6a4a' },
   { text: '파도', color: '#5fb8ff', bg: '#0b1530', frame: '#ff5a4a', small: 'dining pub', smallColor: '#ffffff', waves: true },
-  { text: '을지모두', color: '#ff4a3a', bg: '#0b1033', frame: '#39ff8a', shape: 'oval', small: 'Korean pub', smallColor: '#5fb8ff' },
+  { text: '을지모두', color: '#ff4a3a', bg: '#0b1033', frame: '#39ff8a', small: 'Korean pub', smallColor: '#5fb8ff' }, // square, not oval (Yozi 2026-11-21)
   { text: '을지', color: '#6ff4ff', bg: '#071a2a', frame: '#6ff4ff', ring: '#ff3030' },
   { text: '삼가집', color: '#ffffff', bg: '#17a34a', frame: '#9dff9d', arrow: true },
   { text: '노가리', color: '#ff9a2e', bg: '#1a0f08', frame: '#ff9a2e' },
