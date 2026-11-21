@@ -3,7 +3,7 @@
 //   quest bars go away for a clean view; the joystick, the action button and
 //   whatever is open stay, so you can still walk and go into shops. The eye
 //   button in the top-left corner (or the U key) hides and shows them; the
-//   map button sits beside it and stays.
+//   map button sits beside it and stays; the 📷 shows under it then.
 // - Minimap: shown while you are being guided somewhere (its route line is
 //   what the guide arrow lacks), or always with a switch here.
 // - Joystick (phones): "Fixed" (bottom left, as before), "Under your thumb"

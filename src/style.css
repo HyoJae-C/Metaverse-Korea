@@ -252,7 +252,7 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12
 .tool.corner-map span { font-size: 22px; }
 .corner-map small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .corner-map { display: none; }
-.in-store .corner-map { left: max(12px, env(safe-area-inset-left, 0px)); }
+html:not(.ui-hidden) .in-store .corner-map { left: max(12px, env(safe-area-inset-left, 0px)); } /* (no eye there then) */
 @media (max-width: 700px), (max-height: 500px) {
   html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
 }
@@ -264,17 +264,10 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.she
   width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
   background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
 }
-/* Touch screens (Yozi): 📷 beside the eye, the map button under it. */
-body:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); top: max(12px, env(safe-area-inset-top)); }
-body:not(.in-store) .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) - 2px); top: calc(max(12px, env(safe-area-inset-top)) + 50px); }
-html:not(.ui-hidden) .in-store .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
-html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
-@media (max-height: 500px) {
-  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
-}
-@media (max-width: 700px) { /* (phones: the pinned notice sits under the minimap; the eye's spot is back when it goes) */
-  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { display: none; }
-}
+/* The 📷 shows only while the eye has hidden the buttons (Yozi 2026-11-21:
+   a clean view is when you take one); on touch screens the map button takes
+   its old spot beside the eye. */
+html:not(.ui-hidden) .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
 .shot-flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
 .shot-flash.on { animation: shot-flash 0.45s ease-out; }
 @keyframes shot-flash { from { opacity: 0.85; } to { opacity: 0; } }
@@ -785,6 +778,22 @@ body:has(.sheet:not([hidden]):not(.person-menu)) .notice-pin, body:has(#map-pane
   /* Phones: under the top-right chips, left of the tool buttons. */
   .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 62px); right: 80px; width: auto; min-width: 0; font-size: 12px; }
   .notice-pin.folded { right: auto; }
+}
+/* Phones (Yozi 2026-11-21): the notices fold down by the chat tab in the
+   bottom left (game/mission-spot.js puts them right of it), so the top-left
+   corner is free for the mission bar. Open, they sit just above the tab and
+   the chat lines step up over them (--pin-lift). */
+@media (max-width: 760px) and (pointer: coarse) {
+  #notice-pin {
+    top: auto; right: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 172px);
+    left: calc(max(12px, env(safe-area-inset-left, 0px)) + 60px);
+    width: auto; max-width: calc(100vw - 150px); translate: none;
+  }
+  /* Open: right above the chat tab, clear of the action button below. */
+  #notice-pin:not(.folded) { bottom: calc(env(safe-area-inset-bottom, 0px) + 202px); left: max(12px, env(safe-area-inset-left, 0px)); max-width: calc(100vw - 96px); z-index: 3; } /* (under the action button, z 4: its tap always wins) */
+  #notice-pin.folded .notice-pin-fold { height: 24px; padding: 0 9px; font-size: 12px; line-height: 20px; }
+  .chat-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px + var(--pin-lift, 0px)); }
+  html.android #notice-pin { translate: 0 calc(-1 * var(--tool-bar, 0px)); }
 }
 .chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
 .chat-bar {
