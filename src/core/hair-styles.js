@@ -383,8 +383,8 @@ function blushGradient() {
   c.width = c.height = 64;
   const g = c.getContext('2d');
   const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  grad.addColorStop(0, 'rgba(255,255,255,0.75)');
-  grad.addColorStop(0.45, 'rgba(255,255,255,0.45)');
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0.7)');
   grad.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = grad;
   g.fillRect(0, 0, 64, 64);
@@ -406,7 +406,7 @@ export function buildBlush(color, cheeks, geo) {
   }
   if (!blushGeos.has(geo)) { // (one pair per head shape, shared by every character with it)
     const head = { geometry: geo, matrixWorld: _id };
-    blushGeos.set(geo, cheeks.map((at) => new DecalGeometry(head, at, new THREE.Euler(0, Math.sign(at.x) * 0.45, 0), new THREE.Vector3(0.26, 0.2, 0.4))));
+    blushGeos.set(geo, cheeks.map((at) => new DecalGeometry(head, at, new THREE.Euler(0, Math.sign(at.x) * 0.45, 0), new THREE.Vector3(0.3, 0.22, 0.4))));
   }
   for (const d of blushGeos.get(geo)) if (d.attributes.position.count) g.add(new THREE.Mesh(d, blushMats.get(color)));
   return g;
