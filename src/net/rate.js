@@ -18,31 +18,41 @@ export function sendRate({ peers = 0, base, budget, min }) {
 // presence, several times a second (Yozi 2026-11-20: "other players suddenly
 // vanish"). The look itself still goes out at once as a broadcast; only the
 // presence copy waits, and the latest one is sent when the gap is over.
-// send(payload) does the track; now() and timers are injectable for tests.
+// Stepping into the next street cell also counts: the old cell's presence is
+// dropped and the new one's added, and walking back and forth on a cell
+// border did that several times a second in the same channel (still 13 cut
+// offs on 2026-11-20 after the look fix). So untracking goes through here too:
+// a null payload means "not in this room's presence", and only the latest
+// wish is sent once the gap is over.
+// send(payload) does the track (or the untrack, for null); now() and timers
+// are injectable for tests.
 export function createPresenceThrottle(send, { gap = 3000, now = () => Date.now(), later = setTimeout, cancel = clearTimeout } = {}) {
-  let last = -Infinity, pending = null, timer = null;
+  let last = -Infinity, pending = null, waiting = false, timer = null;
   const flush = () => {
     timer = null;
-    if (!pending) return;
+    if (!waiting) return;
     const p = pending;
     pending = null;
+    waiting = false;
     last = now();
     send(p);
   };
   return {
     track(payload) {
       pending = payload;
+      waiting = true;
       if (timer) return;
       const wait = last + gap - now();
       if (wait <= 0) flush();
       else timer = later(flush, wait);
     },
-    // A fresh join (or leaving listen-only) tracks at once: the server has no
+    // A fresh join tracks at once: the server has no
     // presence for us yet. Clears anything waiting.
     now(payload) {
       if (timer) cancel(timer);
       timer = null;
       pending = null;
+      waiting = false;
       last = now();
       send(payload);
     },
@@ -51,6 +61,7 @@ export function createPresenceThrottle(send, { gap = 3000, now = () => Date.now(
       if (timer) cancel(timer);
       timer = null;
       pending = null;
+      waiting = false;
     },
   };
 }

@@ -61,9 +61,10 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
   const early = new Map(); // id -> latest state
   const EARLY_MAX = 64;
   let gone = false; // disconnect() was called
-  // Look changes reach presence at most every 3 s (net/rate.js: too many
-  // presence updates and the server cuts us off, so others see us vanish).
-  const presence = createPresenceThrottle((p) => channel?.track(p)?.catch?.(() => {}));
+  // Presence changes (a new look, or appearing / disappearing as we walk
+  // between street cells) reach the server at most every 3 s (net/rate.js:
+  // too many and the server closes the channel, so others see us vanish).
+  const presence = createPresenceThrottle((p) => (p ? channel?.track(p) : channel?.untrack())?.catch?.(() => {}));
 
   return {
     async connect({ room, self: me, listenOnly = false }) {
@@ -144,7 +145,7 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
           if (status === 'SUBSCRIBED') {
             // Also after the client rejoined by itself (a network blip): the
             // server forgot our presence then, so announce ourselves again.
-            if (!listening) { presence.clear(); await ch.track({ name: self.name, look: self.look }); }
+            if (!listening) presence.now({ name: self.name, look: self.look });
             if (!settled) {
               settled = true;
               clearTimeout(timeout);
@@ -191,8 +192,8 @@ export function createSupabaseAdapter({ onJoin, onLeave, onState, onEmote, onLoo
     setListenOnly(on) {
       if (on === listening) return;
       listening = on;
-      if (on) { presence.clear(); channel?.untrack(); }
-      else if (channel) presence.now({ name: self.name, look: self.look });
+      // Throttled too: walking along a cell border flips this back and forth.
+      if (channel) presence.track(on ? null : { name: self.name, look: self.look });
     },
     updateSelf(me) {
       self = me;
