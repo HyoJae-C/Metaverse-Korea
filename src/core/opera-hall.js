@@ -12,6 +12,7 @@
 // characters. Sizes are for the chibi characters (about 1.1 m tall).
 // Static parts are merged per colour: about 45k triangles, 20 draw calls.
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from './cathedral-hall.js';
 
 const SEAT_H = 0.38; // the same seat height as every chair in the game
@@ -53,6 +54,14 @@ export function addSeats(scene, places, pitch, color, dark) {
 // clothes, skin and hair colours vary). crowd: [{ x, y, z, ry, k }], k a
 // steady 0-1 number. Returns clap(k) (0 still … 1 a full ovation: the heads
 // bob) and animate(dt).
+// A face for the hall's simple people (the house, the orchestra): two eyes
+// and a mouth on the front (+z) of a head of radius 0.2 centred at height y.
+// Returns [geometry, colour] pairs, to merge into whatever draws the head.
+export function faceParts(y) {
+  const eye = (x) => new THREE.SphereGeometry(0.034, 6, 5).scale(0.85, 1.25, 0.5).translate(x, y + 0.015, 0.186);
+  return [[eye(-0.075), '#231d1b'], [eye(0.075), '#231d1b'], [new THREE.BoxGeometry(0.06, 0.016, 0.012).translate(0, y - 0.075, 0.186), '#7d3f3a']];
+}
+
 export function addCrowd(scene, crowd) {
   const CLOTHES = ['#2b2f45', '#4a2f3a', '#3a4a5c', '#6b2f38', '#2f4a3c', '#544a6e', '#1f2024', '#7a5a3a', '#8a8fa0', '#b0453f'];
   const SKIN = ['#f3d2b3', '#e8bf9b', '#d9a67e', '#c58f68', '#f6dcc4'];
@@ -61,19 +70,21 @@ export function addCrowd(scene, crowd) {
   const body = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.15, 0.2, 0.42, 7).translate(0, SEAT_H + 0.2, 0), new THREE.MeshLambertMaterial(), n);
   const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 8, 6).translate(0, SEAT_H + 0.6, 0), new THREE.MeshLambertMaterial(), n);
   const hair = new THREE.InstancedMesh(new THREE.SphereGeometry(0.215, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, SEAT_H + 0.615, 0.02), new THREE.MeshLambertMaterial(), n);
+  const faceGeo = mergeGeometries(faceParts(SEAT_H + 0.6).map(([q]) => { const t = q.index ? q.toNonIndexed() : q; for (const k of Object.keys(t.attributes)) if (k !== 'position' && k !== 'normal') t.deleteAttribute(k); return t; }));
+  const face = new THREE.InstancedMesh(faceGeo, new THREE.MeshBasicMaterial({ color: '#2a201d' }), n); // (one more draw for the whole house)
   const place = (c, up) => { dm.position.set(c.x, c.y + up, c.z); dm.rotation.y = c.ry; const s = 0.92 + c.k * 0.16; dm.scale.set(s, s, s); dm.updateMatrix(); };
   crowd.forEach((c, i) => {
     place(c, 0);
-    for (const m of [body, head, hair]) m.setMatrixAt(i, dm.matrix);
+    for (const m of [body, head, hair, face]) m.setMatrixAt(i, dm.matrix);
     body.setColorAt(i, col.set(CLOTHES[Math.floor(c.k * 97) % CLOTHES.length]));
     head.setColorAt(i, col.set(SKIN[Math.floor(c.k * 53) % SKIN.length]));
     hair.setColorAt(i, col.set(HAIR[Math.floor(c.k * 31) % HAIR.length]));
   });
-  scene.add(body, head, hair);
+  scene.add(body, head, hair, face);
   let clapK = 0, time = 0, wasClapping = false;
   const bob = (t) => {
-    crowd.forEach((c, i) => { place(c, clapK ? Math.abs(Math.sin(t * (7 + c.k * 3) + c.k * 40)) * 0.035 * clapK : 0); head.setMatrixAt(i, dm.matrix); hair.setMatrixAt(i, dm.matrix); });
-    head.instanceMatrix.needsUpdate = hair.instanceMatrix.needsUpdate = true;
+    crowd.forEach((c, i) => { place(c, clapK ? Math.abs(Math.sin(t * (7 + c.k * 3) + c.k * 40)) * 0.035 * clapK : 0); head.setMatrixAt(i, dm.matrix); hair.setMatrixAt(i, dm.matrix); face.setMatrixAt(i, dm.matrix); });
+    head.instanceMatrix.needsUpdate = hair.instanceMatrix.needsUpdate = face.instanceMatrix.needsUpdate = true;
   };
   return {
     clap: (k) => { clapK = k; },

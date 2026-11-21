@@ -129,6 +129,28 @@ test('watching the show: no name tags on the stage, and the eye button hides the
   assert.match(main, /classList\.remove\('in-store', 'in-show'\)/);
 });
 
+test('each piece has its own dance, long enough for the piece', async () => {
+  const { DANCES, figureAt } = await import('../src/core/stage-show.js');
+  const src = readFileSync(new URL('../src/core/stage-show.js', import.meta.url), 'utf8');
+  const forms = src.slice(src.indexOf('const FORMS = {'), src.indexOf('const up =')), steps = src.slice(src.indexOf('const STEPS = {'), src.indexOf('export const DANCES'));
+  const seen = new Set();
+  for (const p of OPERA_PROGRAM) {
+    const d = DANCES[p.id];
+    assert.ok(d, `${p.id} has a dance`);
+    for (const [form, step] of d.figs) { assert.ok(forms.includes(`  ${form}: `), `${p.id}: formation ${form}`); assert.ok(steps.includes(`  ${step}: `), `${p.id}: step ${step}`); }
+    const bars = p.beats / (p.pulse || 1), used = Math.ceil(bars / d.len);
+    assert.ok(used >= 6 && Math.abs(used - d.figs.length) <= 1, `${p.id}: ${d.figs.length} figures for ${bars.toFixed(0)} bars`);
+    assert.ok(new Set(d.figs.map((f) => f.join(':'))).size >= 6, `${p.id}: at least six different figures`);
+    const sig = d.figs.map((f) => f[1]).join(',');
+    assert.ok(!seen.has(sig), `${p.id}: not another piece's dance`);
+    seen.add(sig);
+    assert.equal(figureAt(p, 0).i, 0);
+    assert.equal(figureAt(p, bars + 50).i, d.figs.length - 1, 'the last figure holds');
+  }
+  // The pieces share few steps: each has at least three of its own.
+  for (const p of OPERA_PROGRAM) { const mine = new Set(DANCES[p.id].figs.map((f) => f[1])); for (const q of OPERA_PROGRAM) if (q !== p) for (const f of DANCES[q.id].figs) mine.delete(f[1]); assert.ok(mine.size >= 3, `${p.id}: ${mine.size} steps of its own`); }
+});
+
 test('the scores: written notes, in order, inside their length', () => {
   assert.equal(midiOf('A4'), 69);
   assert.equal(midiOf('C4'), 60);
