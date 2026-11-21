@@ -909,3 +909,9 @@ export function paintPicture(name, n) {
 }
 
 export const PICTURE_NAMES = Object.keys(PICTURES);
+// More pictures from another file (drone-events.js: the event shows), drawn
+// with the same helpers.
+export const BRUSH = { path, fill, line, circle, oval, seg, grad, radial, heartPath, starPath, sparkle, head };
+export function addPictures(more) {
+  for (const [name, def] of Object.entries(more)) { if (!PICTURES[name]) PICTURE_NAMES.push(name); PICTURES[name] = def; }
+}
