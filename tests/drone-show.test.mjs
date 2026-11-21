@@ -160,3 +160,40 @@ test('every show gets its own number', () => {
   const n = [0, 1, 2].map((k) => show.showNumber(DRONE(k)));
   assert.deepEqual([n[1] - n[0], n[2] - n[1]], [1, 1]);
 });
+
+test('event patterns: Christmas, the year\'s end, New Year and Chuseok on their days only, photo time unchanged', async () => {
+  const { eventOf, EVENTS, EVENT_MOVES, MID_SECONDS, midOf } = await import('../src/core/drone-events.js');
+  useShow(show);
+  const kst = (y, m, d) => Date.UTC(y, m - 1, d, 14, 10); // 23:10 KST
+  const key = (y, m, d) => eventOf(kst(y, m, d))?.key ?? null;
+  assert.deepEqual([key(2026, 12, 19), key(2026, 12, 20), key(2026, 12, 25)], [null, 'christmas', 'christmas']);
+  assert.deepEqual([key(2026, 12, 26), key(2026, 12, 31), key(2027, 1, 1), key(2027, 1, 5), key(2027, 1, 6)], ['goodbye', 'goodbye', 'newyear', 'newyear', null]);
+  assert.deepEqual([key(2027, 9, 13), key(2027, 9, 14), key(2027, 9, 15), key(2027, 9, 16), key(2027, 9, 17)], [null, 'chuseok', 'chuseok', 'chuseok', null]);
+  assert.equal(key(2028, 10, 3), 'chuseok');
+  assert.equal(key(2026, 11, 22), null, 'an ordinary day');
+  // each event has drone shows in its days (the shows come every other day)
+  const showsIn = (from, to) => { let k = 0; for (let t = from; t <= to; t += 86400e3) if (showOf(cycleNumber(t)) === DRONES) k++; return k; };
+  assert.equal(showsIn(kst(2026, 12, 20), kst(2026, 12, 25)), 3);
+  assert.equal(showsIn(kst(2026, 12, 26), kst(2026, 12, 31)), 3);
+  assert.equal(showsIn(kst(2027, 1, 1), kst(2027, 1, 5)), 3);
+  assert.equal(showsIn(kst(2027, 9, 14), kst(2027, 9, 16)), 2);
+  const W = (lines, o) => ({ lines, ...o }), P = (shape, o) => ({ shape, ...o });
+  for (const k of Object.keys(EVENTS)) {
+    const event = { key: k, year: 2026 };
+    assert.equal(midOf(event, { W, P, C: {} }).reduce((a, [d]) => a + d, 0), MID_SECONDS, k);
+    const steps = program(DRONE(), 1, event);
+    assert.equal(steps.find((s) => s.photo).at, PHOTO_TIME[0], `${k}: the photo time`);
+    assert.equal(steps.at(-2).at, program(DRONE(), 1, null).at(-2).at, `${k}: the last line`);
+    const shown = steps.filter((s) => s.at >= 0);
+    for (let i = 1; i < shown.length; i++) assert.ok(shown[i].at - shown[i - 1].at <= 60, `${k}: no scene over a minute`);
+    for (const s of steps) if (s.shape) { assert.ok(SHAPE_NAMES.includes(s.shape), s.shape); assert.equal(typeof s.move === 'function' || s.move === undefined, true); }
+    for (const s of steps) if (s.lines) for (const l of s.lines) for (const seg of [].concat(l)) assert.ok(String(seg).length <= 10, `${k}: "${seg}" fits the sky`);
+  }
+  for (const name of Object.keys(EVENT_MOVES)) assert.ok(SHAPE_NAMES.includes(name), name);
+  // the year is the show's own
+  const words = (y, m, d) => program(kst(y, m, d)).filter((s) => s.lines).map((s) => [].concat(...s.lines).join(''));
+  assert.ok(words(2026, 12, 30).includes('GOODBYE2026'));
+  assert.ok(words(2027, 1, 1).includes('HAPPYNEW YEAR') && words(2027, 1, 1).includes('2027'));
+  assert.ok(words(2026, 12, 24).includes('MERRYCHRISTMAS'));
+  assert.ok(!words(2026, 11, 22).includes('MERRYCHRISTMAS'));
+});

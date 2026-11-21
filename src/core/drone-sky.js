@@ -9,6 +9,7 @@
 // the same picture as everyone else.
 import * as THREE from 'three';
 import { paintPicture, coasterY, PICTURE_NAMES } from './drone-pictures.js';
+import { eventOf, midOf, EVENTS, EVENT_MOVES } from './drone-events.js';
 // The schedule and places (drone-show.js) are handed in by the park instead
 // of imported, so this file pulls in nothing the game hasn't loaded already
 // (an import here would split drone-show.js out of the main download).
@@ -180,9 +181,15 @@ const MOVES = {
 // to the end (20 minutes). Each picture or line stays about half as long as
 // in the first shows (2026-11-11), with more of them.
 const SHOW_LEN = 1200;
-function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
+// event: { key, year } of drone-events.js on its days (its own middle part
+// and good-night line; the rest as routine 1), else null.
+function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
   const W = (lines, opts) => ({ lines, morph: 2, ...opts });
-  const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape], ...opts });
+  const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape] || EVENT_MOVES[shape], ...opts });
+  const ev = event && EVENTS[event.key];
+  const HEART = { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) };
+  const C = { PINK, GOLD, SKYBLUE, WHITE, MINT, VIOLET, RED, HEART };
+  const bye = ev && (typeof ev.bye === 'function' ? ev.bye(event.year) : ev.bye);
   return [
     // Opening (Yozi): the name, then hello in Korean, English, Japanese and
     // Chinese (most visitors to Korea), then in one more language, a
@@ -197,7 +204,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [10, W(['你好'], { color: [RED, GOLD] })],
     [10, W([hello], { color: [GOLD, RED], hello: true })],
     [18, P('waver')],
-    ...(routine === 2 ? [
+    ...(ev ? midOf(event, { W, P, C }) : routine === 2 ? [
     // Act 1: Korea
     [26, P('taegukgi')],
     [12, W(['대한민국'], { color: [RED, SKYBLUE] })],
@@ -295,7 +302,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [14, W(act3[2], { color: [SKYBLUE, VIOLET] })],
     [18, P('lightstick')],
     [34, { wave: true, morph: 4 }],
-    ...(routine === 2 ? [
+    ...(routine === 2 && !ev ? [
     // The night sky
     [18, P('moonrabbit')],
     [8, W(['방아 쿵쿵'], { color: [GOLD, WHITE] })],
@@ -329,7 +336,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1) {
     [18, P('blossom')],
     [17, P('rainbow')],
     [24, P('firework')],
-    [18, W(['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
+    [18, W(bye || ['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
     [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
     ]),
     // Finale
@@ -344,7 +351,8 @@ function timed(list) {
   return list.map(([d, s]) => { const step = { at, ...s }; at += d; return step; });
 }
 
-export function program(start, routine = routineOf(start)) {
+// event: the event pattern of that day (drone-events.js), if any.
+export function program(start, routine = routineOf(start), event = eventOf(start)) {
   const act3 = ACT3[((showNumber(start) % ACT3.length) + ACT3.length) % ACT3.length];
   const next = new Date(nextDroneShow(start + 1000));
   let nextText = '';
@@ -352,7 +360,7 @@ export function program(start, routine = routineOf(start)) {
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText, helloOf(start), routine)),
+    ...timed(scenes(act3, nextText, helloOf(start), routine, event)),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }
