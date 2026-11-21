@@ -530,7 +530,7 @@ function faceExtras(id, headMesh, headBone, look) {
   if (look.lip && PALETTES.lip[look.lip] != null) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
-  if (look.blush && PALETTES.blush[look.blush] != null) extras.add(buildBlush(PALETTES.blush[look.blush], facts.cheeks));
+  if (look.blush && PALETTES.blush[look.blush] != null) extras.add(buildBlush(PALETTES.blush[look.blush], facts.cheeks, geo));
   headBone.add(extras);
   return hair;
 }
