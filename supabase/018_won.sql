@@ -1,6 +1,6 @@
 -- Money becomes Korean won: ₩1 in the game is ₩1, priced like Seoul.
 -- Run once in the Supabase dashboard: SQL Editor → New query → paste → Run.
--- Needs 015_wallet.sql and 017_resale.sql (and 007_love_locks.sql). Safe to
+-- Needs 015_wallet.sql and 017_resale.sql (and 007b_love_locks.sql). Safe to
 -- run again: balances are changed only the first time.
 --
 -- What it does:

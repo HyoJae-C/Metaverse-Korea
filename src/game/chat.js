@@ -31,7 +31,7 @@ const SHOW_NOW_TEXT = {
   fireworks: { en: 'Fireworks: Yeouido\'s sky is darkening now. The first shells go up in 3 minutes.', ko: '불꽃놀이: 여의도 하늘이 지금 어두워져. 3분 뒤 첫 발.' },
   off: { en: 'Show called off.', ko: '쇼 취소했어.' },
   operator: { en: 'Operators only.', ko: '운영자만 쓸 수 있어.' },
-  setup: { en: 'Run supabase/061_fireworks_now.sql first.', ko: '061_fireworks_now.sql 먼저 실행해 줘.' },
+  setup: { en: 'Run supabase/061b_fireworks_now.sql first.', ko: '061b_fireworks_now.sql 먼저 실행해 줘.' },
   failed: { en: 'Could not start the show.', ko: '쇼를 시작하지 못했어.' },
 };
 const NOTICE_TEXT = {
