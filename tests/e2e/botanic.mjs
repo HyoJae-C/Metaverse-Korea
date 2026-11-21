@@ -23,6 +23,11 @@ if (process.env.DAY) await ctx.addInitScript(() => {
   class FD extends RD { constructor(...a) { if (a.length) super(...a); else super(RD.now() + off); } static now() { return RD.now() + off; } }
   window.Date = FD;
 });
+// Today's first mission is "visit the greenhouse": walking in under the glass must count (there is no door).
+await ctx.addInitScript(() => {
+  const d = new Date(), p = (n) => String(n).padStart(2, '0'), day = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  if (!localStorage.getItem('mk.daily')) localStorage.setItem('mk.daily', JSON.stringify({ day, missions: [{ type: 'visit', target: 'seoul-botanic-greenhouse', need: 1, id: 'visit:seoul-botanic-greenhouse', n: 0 }], bonus: false, streak: 1, last: day, total: 0 }));
+});
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&weather=clear&room=e2ebot' + Math.random().toString(36).slice(2, 8));
@@ -59,6 +64,8 @@ await page.keyboard.down('w'); await wait(5500); await page.keyboard.up('w');
 const walked = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
 assert(Math.hypot(walked[0] - gx, walked[1] - gz) < l.r - 4, `walked in through the door (${walked.map((v) => v.toFixed(1))}, ${(Math.hypot(walked[0] - gx, walked[1] - gz)).toFixed(1)} m from the middle)`);
 assert(await page.evaluate(() => __mk.room().mode === 'street'), 'inside the greenhouse is still the street');
+const visit = await page.evaluate(() => __mk.missions().find((m) => m.target === 'seoul-botanic-greenhouse'));
+assert(visit && visit.n === 1, `walking in counts as the visit for a daily mission (${JSON.stringify(visit)})`);
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), out(l.r - 6));
 await page.evaluate((yaw) => __mk.cam({ yaw, pitch: 0.2, dist: 7 }), Math.atan2(Math.cos(main.a), Math.sin(main.a)));
 await wait(1500);

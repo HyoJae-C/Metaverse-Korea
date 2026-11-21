@@ -6089,6 +6089,7 @@ const botanic = createBotanicNear({
   scene, landmarks: map.landmarks, store: (id) => storeData.find((s) => s.id === id), collision, seats: streetSeats,
   makeNpc: (name) => makeNpc($('labels'), name), greet: (list, p, lines) => greetAtStalls(p, list, lines),
   look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
+  onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
 });
 const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Modu Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
