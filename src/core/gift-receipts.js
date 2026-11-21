@@ -1,4 +1,4 @@
-// Receipts for clothes received as gifts (supabase/036_gift_receipts.sql),
+// Receipts for clothes and furniture received as gifts (supabase/036_gift_receipts.sql),
 // so a friend can sell them like clothes they bought (Yozi, 2026-11-11:
 // every way to get clothes keeps a record).
 //
@@ -72,7 +72,7 @@ export class GiftReceipts {
     if (!Array.isArray(rows)) return 0;
     let n = 0;
     for (const r of rows) {
-      if (!items[r?.item]?.wear || !inventory.has(r.item) || receipts.paid(r.item) > 0 || !(Number(r.price) > 0)) continue;
+      if (!(items[r?.item]?.wear || items[r?.item]?.furniture) || !inventory.has(r.item) || receipts.paid(r.item) > 0 || !(Number(r.price) > 0)) continue;
       receipts.record(r.item, Number(r.price), String(r.op), null);
       n++;
     }

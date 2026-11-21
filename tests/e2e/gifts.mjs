@@ -103,7 +103,7 @@ try {
   await a.waitForTimeout(1500);
   await a.evaluate(() => __mk.giftFriends(['Gift B']));
   await b.evaluate(() => __mk.giftFriends(['Gift A']));
-  for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item']]) {
+  for (const [shop, idx, check] of [['salam-halal', 1, 'bag'], ['denim-lab', 0, 'item'], ['botanic-cactus-house', 3, 'item']]) { // (the last: a pot plant, furniture for the friend's home)
     await bothIn(shop);
     step = `${shop}: A sends a gift`;
     const before = await a.evaluate(() => __mk.coins());
@@ -127,14 +127,53 @@ try {
     if (check === 'bag' && (await b.evaluate(() => __mk.bagList().length)) !== bagBefore + 1) throw new Error('gift not in B\'s bag');
     if (check === 'item') {
       const res = await fetch(new URL('regions/another-seoul/stores.json', url));
-      const p0 = (await res.json()).stores.find((s) => s.id === 'denim-lab').products[idx];
-      const itemId = p0.item || p0.outfit;
-      if (!(await b.evaluate((x) => __mk.owns(x), itemId))) throw new Error('clothes not in B\'s items');
+      const p0 = (await res.json()).stores.find((s) => s.id === shop).products[idx];
+      const itemId = p0.item || p0.outfit || p0.furniture;
+      if (!(await b.evaluate((x) => __mk.owns(x), itemId))) throw new Error(`${itemId} not in B's items`);
+      if (p0.furniture && (await b.evaluate(() => __mk.bagList().length)) !== bagBefore) throw new Error('furniture came as a souvenir in the bag too');
     }
     await a.evaluate(() => __mk.leave());
     await b.evaluate(() => __mk.leave());
     await a.waitForTimeout(1500);
   }
+  // At a stand on the street (the greenhouse's pot plants, no room): a
+  // friend standing close by can be given the plant; nobody near, no button.
+  step = 'street stand: A opens a rare plant alone';
+  await a.evaluate(() => __mk.coins(500000));
+  const goStand = async (page, off = 0) => { // (off: metres along the walk from the stand, so the two don't stand in one spot)
+    await page.evaluate(() => __mk.goto(-4898.4, -662.8, 0)); // (by the greenhouse: stores.json "seoul-botanic-greenhouse")
+    await page.waitForFunction(() => !!__mk.botanic?.site?.products, null, { timeout: 60000 });
+    await page.evaluate((d) => { const p = __mk.botanic.site.products.find((q) => q.product.furniture === 'plant-orchid'), n = Math.hypot(p.pos.x - p.at[0], p.pos.z - p.at[1]) || 1; __mk.goto(p.pos.x + ((p.pos.x - p.at[0]) / n) * d, p.pos.z + ((p.pos.z - p.at[1]) / n) * d, 0); }, off);
+  };
+  const look = async (page) => { // the "Look at …" action, on its own or in the list
+    await page.waitForFunction(() => (__mk.choices() || [document.getElementById('action-btn')?.textContent || '']).some((l) => l.includes('👀')), null, { timeout: 15000 });
+    await page.evaluate(() => { const c = __mk.choices(); __mk.pick(c ? c.findIndex((l) => l.includes('👀')) : 0); });
+    await page.waitForSelector('#product-panel:not([hidden])', { timeout: 10000 });
+  };
+  await goStand(a);
+  await look(a);
+  if (await a.isVisible('#product-gift')) throw new Error('a gift button with nobody near the stand');
+  await a.keyboard.press('Escape');
+  step = 'street stand: B comes, A sends the orchid';
+  await goStand(b, 2.5);
+  for (const page of [a, b]) await page.waitForFunction(() => __mk.near() >= 1, null, { timeout: 30000 });
+  await a.waitForTimeout(1500);
+  const before2 = await a.evaluate(() => __mk.coins());
+  await look(a);
+  await a.waitForSelector('#product-gift:not([hidden])', { timeout: 10000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/gift-greenhouse.png' });
+  await a.click('#product-gift');
+  await a.click('.gift-person');
+  await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 });
+  await b.waitForSelector('.gift-card', { timeout: 10000 });
+  await b.click('.gift-card .primary');
+  await a.waitForFunction(() => __mk.gifts().out === 0, null, { timeout: 10000 });
+  if (!(await b.evaluate(() => __mk.owns('plant-orchid')))) throw new Error('the orchid is not in B\'s items');
+  if ((await a.evaluate(() => __mk.coins())) !== before2 - 100000) throw new Error('A did not pay ₩100,000 for the orchid: ' + (before2 - await a.evaluate(() => __mk.coins())));
+  if (await a.evaluate(() => __mk.owns('plant-orchid'))) throw new Error('the giver kept the orchid');
+  await a.evaluate(() => __mk.goto(0, 0, 0)); await b.evaluate(() => __mk.goto(3, 0, 0));
+  await a.waitForTimeout(2500);
+
   // Gift-wrapped with a letter: A buys it wrapped in the shop, carries the
   // box out in the bag, and hands it to B on the street from the bag.
   await bothIn('denim-lab');

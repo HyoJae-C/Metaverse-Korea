@@ -48,7 +48,7 @@ export function createWrapGifts(game) {
   const sheets = () => bag.list()[letterAt()]?.sips || 0;
 
   // ---- In the shop ----
-  const canWrap = (product) => !!game.gifts.giftFor(game.interior?.store, product);
+  const canWrap = (product) => !!game.gifts.giftFor(game.gifts.storeNow(), product);
   function wrap(store, product) {
     const g = game.gifts.giftFor(store, product);
     if (!g) return;
