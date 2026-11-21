@@ -142,8 +142,8 @@ const ringRuns = [];
 }
 
 // Water you can't walk into: the lake, the wetland and the pond, with the
-// paths that cross them (the real footbridges) cut out. The thin streams are
-// drawn only: you step over them.
+// paths that cross them (the real footbridges) cut out. The streams are shut
+// the same way, further down.
 // A made-up lookout deck: from the lakeside path nearest the water straight
 // out over the lake (DECK_OUT m past the bank).
 export const DECK_W = 3.2, DECK_OUT = 9;
@@ -174,6 +174,13 @@ for (const w of [lake, wetland, pond]) {
   const left = cuts.length ? polygonClipping.difference([close(w)], ...cuts) : [[close(w)]];
   for (const poly of left) { const p = open(poly[0]); if (area(p) > 12) blockers.push({ p: R1(p), low: true }); }
 }
+// The streams too (Yozi 2026-11-21: no walking through the water): shut, and
+// open only where a path crosses. Their crossings get footbridge rails as well.
+const streamCuts = cuts.concat(ringRuns.map((p) => [close(strip(p, PATH_W + 1.2))]), paths.flatMap((q) => [q.p[0], q.p[q.p.length - 1]]).map(([x, z]) => [close(Array.from({ length: 10 }, (_, i) => [x + Math.cos(i / 10 * Math.PI * 2) * (PATH_W / 2 + 0.7), z + Math.sin(i / 10 * Math.PI * 2) * (PATH_W / 2 + 0.7)]))])); // (round at each path's end)
+for (const w of streams) {
+  for (const poly of polygonClipping.difference([close(w)], ...streamCuts)) { const p = open(poly[0]); if (area(p) > 1.5) blockers.push({ p: R1(p), low: true, stream: true }); }
+}
+for (const q of paths.map((o) => o.p)) { let run = []; const flush = () => { if (run.length > 1 && lineLen(run) >= 1.2) bridges.push(simplify(run, 0.2)); run = []; }; for (const a of resample(q, 0.5)) { if (streams.some((w) => inPoly(a[0], a[1], w)) && ![lake, wetland].some((w) => inPoly(a[0], a[1], w))) run.push(a); else flush(); } flush(); }
 
 // --- Buildings -----------------------------------------------------------------
 // The visitor centre by Magongnaru Station (OSM's information point): the
