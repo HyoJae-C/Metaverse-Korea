@@ -669,7 +669,7 @@ export const VI = {
   'start.region': 'Điểm đến đầu tiên: {region}, {city}',
   'start.survey': '🎨 Đăng ký cùng trang trí Modu Seoul',
   'start.where': 'Bạn muốn làm gì trước?',
-  'start.tour': 'Tham quan · Bukchon',
+  'start.tour': 'Tham quan · Gwanghwamun',
   'start.shop': 'Mua sắm & làm đẹp · Seongsu',
   'start.activity': 'Vui chơi ngoài trời · sông Hàn',
   'start.heal': 'Thư giãn · Rừng Seoul',

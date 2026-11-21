@@ -669,7 +669,7 @@ export const ID = {
   'start.region': 'Pemberhentian pertama: {region}, {city}',
   'start.survey': '🎨 Daftar untuk menghias Modu Seoul bersama kami',
   'start.where': 'Mau ngapain dulu?',
-  'start.tour': 'Wisata · Bukchon',
+  'start.tour': 'Wisata · Gwanghwamun',
   'start.shop': 'Belanja & gaya · Seongsu',
   'start.activity': 'Aktivitas · Sungai Han',
   'start.heal': 'Santai · Hutan Seoul',

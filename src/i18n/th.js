@@ -669,7 +669,7 @@ export const TH = {
   'start.region': 'จุดแรก: {region}, {city}',
   'start.survey': '🎨 สมัครมาตกแต่ง Modu Seoul ด้วยกัน',
   'start.where': 'อยากทำอะไรก่อน?',
-  'start.tour': 'เที่ยวชม · บุกชอน',
+  'start.tour': 'เที่ยวชม · ควังฮวามุน',
   'start.shop': 'ช้อปปิ้งและแต่งตัว · ซองซู',
   'start.activity': 'กิจกรรม · แม่น้ำฮัน',
   'start.heal': 'พักผ่อน · ป่าโซล',

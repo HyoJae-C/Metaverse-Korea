@@ -669,7 +669,7 @@ export const AR = {
   'start.region': 'المحطة الأولى: {region}، {city}',
   'start.survey': '🎨 قدّم طلبًا لتزيين Modu Seoul معنا',
   'start.where': 'ماذا تريد أن تفعل أولًا؟',
-  'start.tour': 'معالم · بوكتشون',
+  'start.tour': 'معالم · غوانغهوامون',
   'start.shop': 'تسوق وأناقة · سونغسو',
   'start.activity': 'نشاطات · نهر هان',
   'start.heal': 'استرخاء · غابة سيول',

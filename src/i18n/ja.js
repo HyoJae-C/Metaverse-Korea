@@ -675,7 +675,7 @@ export const JA = {
   'start.region': '最初の目的地：{city}・{region}',
   'start.survey': '🎨 一緒にModu Seoulを飾ろう（応募）',
   'start.where': '最初に何をしたい？',
-  'start.tour': '観光 · 北村',
+  'start.tour': '観光 · 光化門',
   'start.shop': 'ショッピング・おしゃれ · 聖水',
   'start.activity': 'アクティビティ · 漢江',
   'start.heal': 'いやし · ソウルの森',

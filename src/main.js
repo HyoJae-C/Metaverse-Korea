@@ -422,7 +422,7 @@ function refreshStartText() {
   const lang = getLanguage();
   const lastName = lastPlace && (localName(DISTRICT_NAME[lastPlace], lang) || lastPlace.charAt(0).toUpperCase() + lastPlace.slice(1));
   $('start-region').textContent = lastName ? t('start.last', { place: lastName }) : t('start.region', {
-    region: localName(DISTRICT_NAME[firstStopSpot(region)?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start in Bukchon unless they pick another start (region.json spawn.starts)
+    region: localName(DISTRICT_NAME[firstStopSpot(region)?.district], lang) || localName(REGION_NAMES[regionId], lang) || localName(region.name, lang), // new players start on Gwanghwamun Square unless they pick another start (region.json spawn.starts)
     city: localName(REGION_NAMES.seoul, lang),
   });
   const input = $('nickname');
@@ -941,8 +941,8 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 const quests = new SquareQuests();
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
-// New players start where they picked (region.json spawn.starts; Bukchon's
-// gate unless they picked another), next to a welcome guide in the same
+// New players start where they picked (region.json spawn.starts; Gwanghwamun Square
+// unless they picked another), next to a welcome guide in the same
 // costume: the first thing they see is what they came for. The welcome high
 // five and the first errand (a trip that fits the start) happen there; the
 // guide hands out errands like any other after. Shopping starts beside the
@@ -1171,7 +1171,7 @@ let onboard = (() => {
     return loadLastSpot() ? 2 : 0; // players from before this: skip it
   } catch { return 2; }
 })();
-// New players start in Bukchon, facing the welcome guide with the village
+// New players start where they picked (Gwanghwamun Square if not), facing the welcome guide with the sights
 // behind them (until the welcome is done: a refresh in the middle of it too).
 // Everyone else without a saved spot to come back to starts on the main
 // square, next to the guide, not in front of the subway exit and the café:

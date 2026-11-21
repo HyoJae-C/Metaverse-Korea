@@ -668,7 +668,7 @@ export const ES = {
   'start.region': 'Primera parada: {region}, {city}',
   'start.survey': '🎨 Solicita decorar Modu Seoul con nosotros',
   'start.where': '¿Qué quieres hacer primero?',
-  'start.tour': 'Turismo · Bukchon',
+  'start.tour': 'Turismo · Gwanghwamun',
   'start.shop': 'Compras y estilo · Seongsu',
   'start.activity': 'Aire libre · río Han',
   'start.heal': 'Relax · Bosque de Seúl',

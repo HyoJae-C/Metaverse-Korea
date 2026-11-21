@@ -1,5 +1,5 @@
 // Where new players start. On the start screen they pick what they came for
-// (region.json spawn.starts): sights (Bukchon), shopping and dressing up
+// (region.json spawn.starts): sights (Gwanghwamun Square), shopping and dressing up
 // (Seongsu Square), an outing (Ttukseom Han River Park), a quiet walk (Seoul
 // Forest), or "anywhere": wherever most people are right now.
 //
@@ -32,7 +32,7 @@ export function startSpot(region, k) {
   return { k, district: f.district || null, x, z, ry: Math.PI - ((f.heading ?? 0) * Math.PI) / 180, trip: f.trip || null };
 }
 
-// The first start (sights in Bukchon): where everyone lands who didn't pick.
+// The first start (sights on Gwanghwamun Square): where everyone lands who didn't pick.
 export function firstStopSpot(region) {
   const first = startList(region)[0];
   return first ? startSpot(region, first.k) : null;
