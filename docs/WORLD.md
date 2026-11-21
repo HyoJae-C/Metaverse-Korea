@@ -1141,6 +1141,14 @@ middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
   sides) and in a list on the screen that its button opens and closes.
   Points are a personal best on this device (no coins). Other skaters' jumps
   are sent as a short code (`st.ik`) and played back.
+- **Skating as a pair** (`src/game/ice-pair.js`, friends only): next to a
+  friend on the ice a button offers "hold hands" or "push from behind"; the
+  friend says yes or no, as with the tandem bike. The one who asked leads
+  and steers; the other is carried at their right hand, or crouched just in
+  front on their own skates (there is no sled). Either can let go with the
+  action button; jumping is off while you are a pair, and stepping off the
+  ice or leaving ends it (within 4 s if the news is lost). The asking goes over emotes
+  (`ice:ask|yes|no|end:<to>`), and everyone else sees it from `st.ip`.
 
 ## Seoul Arts Center (Seocho-gu)
 

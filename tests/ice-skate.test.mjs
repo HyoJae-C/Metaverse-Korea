@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ICE, GATES, SKATE, MOVES, TURN_PTS, TURN_TIME, IceSkater, addPress, bankJump, comboMult, iceDepth, judge, jumpPose, onIce,
-  peerJump, syncPeerTricks, trickCode, trickFromCode, GLIDE, glideKind, glidePose, mixPose, glideStride } from '../src/core/ice-skate.js';
+  peerJump, syncPeerTricks, trickCode, trickFromCode, GLIDE, glideKind, glidePose, mixPose, glideStride,
+  PAIR, pairMsg, parsePairMsg, pairCode, parsePairCode, pairSpot, isPairPose } from '../src/core/ice-skate.js';
 
 // Mokdong Ice Rink's skating (Yozi 2026-11-21): jump, then arrows in the air
 // make tricks; clean landings in a row make a combo.
@@ -204,4 +205,43 @@ test('the glide is eased over the stride, and gives the stride back when it ends
   kind = '';
   for (let i = 0; i < 120; i++) p = f(stroke, 1 / 60);
   assert.equal(p, null);
+});
+
+// Skating as a pair with a friend (Yozi 2026-11-21): hand in hand, or one
+// crouched in front while the other pushes. No sled.
+test('pair messages and codes survive the trip and refuse anything else', () => {
+  assert.deepEqual(parsePairMsg(pairMsg('ask', 'abc-1', 'push')), { verb: 'ask', to: 'abc-1', kind: 'push' });
+  assert.deepEqual(parsePairMsg(pairMsg('end', 'abc-1')), { verb: 'end', to: 'abc-1', kind: null });
+  for (const bad of ['ice:ask', 'ice:ask:a:sled', 'ice:steal:a', 'wave', 'ice:ask:a b:hand', null]) assert.equal(parsePairMsg(bad), null, String(bad));
+  assert.deepEqual(parsePairCode(pairCode('hand', 'L', 'b2')), { kind: 'hand', role: 'L', other: 'b2', pose: 'hL' });
+  assert.deepEqual(parsePairCode(pairCode('push', 'F', 'b2')), { kind: 'push', role: 'F', other: 'b2', pose: 'pF' });
+  for (const bad of ['', undefined, 'g1', 'hX:a', 'pL:', '2:L3']) assert.equal(parsePairCode(bad), null, String(bad));
+});
+
+test('the follower is at the leader\'s right hand, or just in front to be pushed', () => {
+  // Facing +z (ry 0): right is -x, front is +z.
+  const lead = { x: 5, z: 2, ry: 0 };
+  const hand = pairSpot('hand', lead), push = pairSpot('push', lead);
+  assert.ok(Math.abs(hand.x - (5 - PAIR.hand)) < 1e-9 && Math.abs(hand.z - 2) < 1e-9);
+  assert.ok(Math.abs(push.x - 5) < 1e-9 && Math.abs(push.z - (2 + PAIR.push)) < 1e-9);
+  // Whichever way the leader turns, the distance and the heading hold.
+  for (const ry of [0.7, 2, -2.4]) for (const kind of ['hand', 'push']) {
+    const s = pairSpot(kind, { x: 1, z: -3, ry });
+    assert.ok(Math.abs(Math.hypot(s.x - 1, s.z + 3) - PAIR[kind]) < 1e-9);
+    assert.equal(s.ry, ry);
+  }
+  assert.ok(PAIR.hand < 1.2 && PAIR.push < 1.2, 'close enough to touch');
+});
+
+test('pair poses: arms to each other, the pushed one crouches, the others keep skating', () => {
+  for (const k of ['hL', 'hF', 'pL', 'pF']) assert.ok(isPairPose(k) && glidePose(k, 0), k);
+  assert.ok(!isPairPose('g1') && !isPairPose(''));
+  const hL = glidePose('hL', 0), hF = glidePose('hF', 0), pL = glidePose('pL', 0), pF = glidePose('pF', 0);
+  assert.ok(hL.over && hF.over && pL.over, 'laid over the stride');
+  assert.ok(hL.bones.upperarmr[1] > 1 && hF.bones.upperarml[1] < -1, 'the inner arms reach for each other');
+  assert.ok(pL.bones.upperarml[0] < -1 && pL.bones.upperarmr[0] < -1, 'both arms forward on the shoulders');
+  assert.ok(!pF.over && pF.y < -0.2 && pF.lowerlegl[0] > 2, 'a full crouch, no sled');
+  const f = glideStride(() => 'hL');
+  let p; for (let i = 0; i < 120; i++) p = f({ upperlegl: [0.4, 0, 0], spine: [0.35, 0, 0] }, 1 / 60);
+  assert.ok(Math.abs(p.upperlegl[0] - 0.4) < 0.02 && p.upperarmr[1] > 1.2, 'the legs still stride');
 });
