@@ -27,4 +27,5 @@ export const STATION_THEMES = {
   'jamsil-station': ['park', 'shop'], // the lake, Another Land, the tower
   'mongchontoseong-station': ['park', 'culture'], // Olympic Park
   'childrens-grand-park-station': ['park'],
+  'ichon-station': ['culture', 'park'], // the art museum, Yongsan Family Park's weekend farm
 };

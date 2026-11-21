@@ -172,7 +172,8 @@ test('the loop follows the map: every station once, starting at Seongsu, clockwi
   assert.ok(f === 1 || f === loop.length - 1);
   // A new station is placed by where it is: one near Gyeongbokgung lands next to it.
   const g = list.find((s) => s.id === 'gyeongbokgung-station');
-  const extra = { id: 'test-station', exits: [{ at: [stationAt(g)[0] + 60, stationAt(g)[1] + 120] }] };
+  // (north-west of it, away from Gwanghwamun Station: 60 m east and 120 m south is nearer to that one, and lands by it since Ichon joined the loop)
+  const extra = { id: 'test-station', exits: [{ at: [stationAt(g)[0] - 60, stationAt(g)[1] - 40] }] };
   const loop2 = loopOrder([...list, extra]);
   const k = loop2.indexOf(extra), n = loop2.length;
   assert.ok([loop2[(k + 1) % n].id, loop2[(k - 1 + n) % n].id].includes('gyeongbokgung-station'));
@@ -232,4 +233,19 @@ test('Yeouinaru (Line 5, 527): exits within 15 m of the real 2 and 3, on the riv
     const v = toUV(e.at)[1];
     assert.ok(v > PATH + 4 && v < PATH + 8, `exit ${e.n} on the pavement`);
   }
+});
+
+test('Ichon (Line 4, 430): exits within 15 m of the real 2 and 3, either side of Seobinggo-ro by the art museum, a short walk from the weekend farm', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 2: [37.52215, 126.975636], 3: [37.52191, 126.975449] }; // OSM 3403175975, 3403175976
+  const st = stations.find((s) => s.id === 'ichon-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [2, 3]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
+  const d = region.districts.find((q) => q.id === 'itaewon');
+  const farm = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url))).landmarks.find((l) => l.type === 'farm');
+  const far = Math.hypot(farm.x + d.offset[0] - st.exits[0].at[0], farm.z + d.offset[1] - st.exits[0].at[1]);
+  assert.ok(far > 150 && far < 260, `the farm is ${far} m from exit 2`);
 });
