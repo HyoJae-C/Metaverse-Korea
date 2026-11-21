@@ -795,8 +795,10 @@ Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, n
 // Resolution, shadows and a 60 fps cap, lowered when the frame rate drops or
 // with Battery saver in Settings (core/graphics-quality.js).
 const SAVER_KEY = 'mk.batterySaver';
-const gfx = createGraphicsQuality({ renderer, sun, capable: !lowSpec && !softwareGL, saver: (() => { try { return localStorage.getItem(SAVER_KEY) === '1'; } catch { return false; } })() });
+const gfx = createGraphicsQuality({ renderer, sun, capable: !lowSpec && !softwareGL, phone: matchMedia('(pointer: coarse)').matches, saver: (() => { try { return localStorage.getItem(SAVER_KEY) === '1'; } catch { return false; } })() });
 sun.shadow.bias = -0.0005;
+// Phones: 30 frames while standing still, 60 from the first touch or key.
+for (const ev of ['pointerdown', 'pointermove', 'keydown', 'wheel']) addEventListener(ev, () => gfx.active(), { passive: true, capture: true });
 scene.add(sun, sun.target);
 
 // Subway stations (region.json "subway.stations"): stair exits cut into the ground.
@@ -7741,6 +7743,7 @@ renderer.setAnimationLoop((now) => {
   mapPause += dt;
   const mapUp = mapView.open;
   camera.updateMatrixWorld(); // (this frame's camera for the name tags: set above, but three.js only rebuilds its matrix when drawing)
+  gfx.watch(camera.matrixWorld.elements, now); gfx.setStill(weather.nightMix <= 0.05); // (phones: a moving view, or a show in the sky, keeps 60)
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   if (iceRink.loaded) iceRink.after(); // (a skater led by a friend stays at their side)
   updateBuskMusic(p);
