@@ -23,7 +23,6 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeNpc, placeLabels } from './npcs.js';
 import { randomLook } from '../data/appearance.js';
 import { ConcertPlayer } from './concert-player.js';
-import { OPERA_PROGRAM } from '../data/opera-scores.js';
 
 // Seconds of each part of a piece's turn, before and after the music.
 export const TURN = { tune: 4, walkIn: 5, open: 3, clap: 8, close: 4, rest: 4 };
@@ -40,16 +39,24 @@ export const STAGE_TEXT = {
   },
   now: { en: '🎼 Now: {title} · {by} ({year})', ko: '🎼 지금 연주: {title} · {by} ({year})', ja: '🎼 ただいまの曲：{title} · {by}（{year}）', zh: '🎼 正在演奏：{title} · {by}（{year}）' },
   next: { en: '🎻 Next: {title} · {by}. The orchestra is tuning.', ko: '🎻 다음 곡: {title} · {by}. 오케스트라가 조율 중이에요.', ja: '🎻 次の曲：{title} · {by}。オーケストラが音合わせ中です。', zh: '🎻 下一首：{title} · {by}。乐团正在调音。' },
+  welcomeConcert: {
+    en: '🎻 Tonight: classical favourites with the orchestra. Take any free seat and enjoy. Walking only in the hall.',
+    ko: '🎻 오늘의 공연: 오케스트라와 함께하는 클래식 명곡. 빈자리에 앉아 감상하세요. 홀 안에서는 걸어서만 다녀요.',
+    ja: '🎻 本日の公演：オーケストラで聴くクラシック名曲。空いている席に座ってお楽しみください。ホール内は歩いてね。',
+    zh: '🎻 今日演出：管弦乐团演奏古典名曲。请随意入座欣赏。音乐厅内请慢慢走。',
+  },
+  pianist: { en: 'Pianist', ko: '피아니스트', ja: 'ピアニスト', zh: '钢琴家' },
   shh: { en: 'Shh! 🤫 No running in the theater, please.', ko: '쉿! 🤫 극장에서는 뛰지 말아 주세요.', ja: 'しーっ！🤫 劇場では走らないでね。', zh: '嘘！🤫 剧场里请不要奔跑。' },
 };
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
+const PLAYER_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
 const smooth = (k) => { k = Math.min(1, Math.max(0, k)); return k * k * (3 - 2 * k); };
 const mir = ([x, y, z]) => [x, -y, -z]; // the right arm mirrors the left (core/studio-moves.js)
 
 // Where the show is at time t (seconds): which piece, and how far into its turn.
-export function showAt(t, program = OPERA_PROGRAM) {
+export function showAt(t, program) {
   const total = program.reduce((s, p) => s + turnLength(p), 0);
   let u = ((t % total) + total) % total;
   for (let i = 0; i < program.length; i++) { const len = turnLength(program[i]); if (u < len) return { i, score: program[i], u, len }; u -= len; }
@@ -104,8 +111,16 @@ function pitPlayers(scene, players) {
   const SKIN = ['#f3d2b3', '#e8bf9b', '#d9a67e'], HAIR = ['#1c1a1d', '#2e2320', '#4a3324', '#8a8580'];
   const groups = players.map((p, i) => {
     const g = new THREE.Group();
-    const parts = new Map();
-    const add = (geo, color) => { const q = geo.index ? geo.toNonIndexed() : geo; for (const k of Object.keys(q.attributes)) if (k !== 'position' && k !== 'normal') q.deleteAttribute(k); if (!parts.has(color)) parts.set(color, []); parts.get(color).push(q); };
+    const parts = [], tint = new THREE.Color();
+    const add = (geo, color) => { // one mesh a player: the colour goes on the corners
+      const q = geo.index ? geo.toNonIndexed() : geo;
+      for (const k of Object.keys(q.attributes)) if (k !== 'position' && k !== 'normal') q.deleteAttribute(k);
+      tint.set(color);
+      const n = q.attributes.position.count, col = new Float32Array(n * 3);
+      for (let j = 0; j < n; j++) col.set([tint.r, tint.g, tint.b], j * 3);
+      q.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      parts.push(q);
+    };
     const stand = p.k === 'bass' || p.k === 'timpani', y0 = stand ? 0.3 : 0.38;
     add(new THREE.CylinderGeometry(0.15, 0.2, 0.44, 7).translate(0, y0 + 0.2, 0), '#17161b');
     add(new THREE.SphereGeometry(0.2, 8, 6).translate(0, y0 + 0.62, 0), SKIN[i % SKIN.length]);
@@ -131,8 +146,8 @@ function pitPlayers(scene, players) {
         add(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 12).translate(dx, 0.67, 0.52), '#f1ead8');
       }
     }
-    for (const [color, geos] of parts) g.add(new THREE.Mesh(mergeGeometries(geos), mat(color)));
-    g.position.set(p.x, 0, p.z);
+    g.add(new THREE.Mesh(mergeGeometries(parts), PLAYER_MAT));
+    g.position.set(p.x, p.y || 0, p.z);
     g.rotation.y = p.ry;
     g.userData.k = p.k;
     scene.add(g);
@@ -163,14 +178,17 @@ const POSES = {
 };
 
 export class StageShow {
-  constructor(built, layer, L, { music, toast = null, program = OPERA_PROGRAM, now = () => Date.now() / 1000 } = {}) {
+  constructor(built, layer, L, { music, toast = null, program = null, now = () => Date.now() / 1000 } = {}) {
     const S = built.stations.stage;
     this.S = S;
     this.built = built;
     this.layer = layer;
     this.L = L;
     this.toast = toast;
+    // The programme comes with the hall (stations.stage.load), when you walk in.
     this.program = program;
+    this.concert = S.mode === 'concert'; // the Concert Hall: the orchestra on the stage, no curtain, no dancers
+    if (!program) (S.load ? S.load() : import('../data/opera-scores.js').then((m) => m.OPERA_PROGRAM)).then((p) => { this.program = p; }).catch((e) => console.warn('scores', e));
     this.now = now;
     this.player = new ConcertPlayer(music);
     this.scene = built.scene;
@@ -180,8 +198,14 @@ export class StageShow {
     c.ch.addProp('body', tailcoat());
     c.ch.setHeld?.('baton');
     c.labelY = S.podium.y + 1.6;
+    // The pianist, for the piano pieces (a hall with a piano).
+    if (S.piano) {
+      const o = (this.pianist = makeNpc(layer, '🎹 ' + L(STAGE_TEXT.pianist), { ...randomLook(), model: 'basic', tee: null, hair: 'black', dye: 'black', pants: 'charcoal', shirt: 'charcoal', skin: 'fair' }));
+      o.ch.addProp('body', tailcoat());
+      o.labelY = S.stage.y + 1.5;
+    }
     // The dancers.
-    this.dancers = Array.from({ length: 5 }, (_, i) => {
+    this.dancers = Array.from({ length: this.concert ? 0 : 5 }, (_, i) => {
       const o = makeNpc(layer, '', { ...randomLook(), model: 'basic', tee: null, pants: 'cream', shirt: 'cream', hair: 'black', dye: i === 0 ? 'black' : undefined });
       o.tag.style.visibility = 'hidden';
       o.ch.addProp('body', tutu());
@@ -189,8 +213,8 @@ export class StageShow {
       o.at = [0, 0.5];
       return o;
     });
-    this.all = [c];
-    for (const o of [c, ...this.dancers]) { this.scene.add(o.ch.root); o.ch.setMoves(() => o.pose || null); }
+    this.all = [c, ...(this.pianist ? [this.pianist] : [])];
+    for (const o of [...this.all, ...this.dancers]) { this.scene.add(o.ch.root); o.ch.setMoves(() => o.pose || null); }
     this.pit = pitPlayers(this.scene, S.players);
     this.key = '';
     this.shhT = 0;
@@ -199,7 +223,7 @@ export class StageShow {
   enter() {
     this.inside = true;
     this.key = '';
-    this.toast?.(this.L(STAGE_TEXT.welcome));
+    this.toast?.(this.L(this.concert ? STAGE_TEXT.welcomeConcert : STAGE_TEXT.welcome));
   }
 
   leave() {
@@ -221,6 +245,7 @@ export class StageShow {
   }
 
   update(dt, camera, w, h) {
+    if (!this.program?.length) { for (const o of this.all) { o.ch.root.visible = false; o.tag.style.display = 'none'; } return; } // (the scores are still on their way)
     const S = this.S, T = this.now(), { i, score, u } = showAt(T, this.program), part = partAt(score, u);
     const beat = 60 / score.bpm, c = this.conductor;
     this.state = { piece: score.id, part: part.k, t: part.t, notes: this.player.count };
@@ -250,47 +275,64 @@ export class StageShow {
 
     // The conductor: walks in from the pit's side, bows to the house, turns
     // to the stage and beats time; turns and bows again at the end.
-    const P = S.podium, side = [S.pit.half - 0.6, S.pit.z1 - 0.7];
+    // (In the Concert Hall they walk on the stage; a piano piece is the
+    // pianist's: the conductor stays in the wings and the pianist comes on.)
+    const solo = score.kind === 'piano' && this.pianist ? this.pianist : null, lead$ = solo || c;
+    const P = solo ? { x: S.piano.bench[0], z: S.piano.bench[1], y: S.stage.y } : S.podium, side = S.wing || [S.pit.half - 0.6, S.pit.z1 - 0.7], y0 = S.wing ? S.stage.y : 0;
     let cx = P.x, cz = P.z, cy = P.y, ry = Math.PI, walking = false;
-    c.pose = null;
-    if (part.k === 'tune') { cx = side[0]; cz = side[1]; cy = 0; ry = -Math.PI / 2; }
+    const toP = Math.atan2(P.x - side[0], P.z - side[1]), bow = (d) => ({ spine: [0.6 * d, 0, 0], head: [0.2 * d, 0, 0] });
+    // The pianist on the bench: knees bent, hands on the keys.
+    const SEATED = { legL: [-1.45, 0, 0.08], legR: [-1.45, 0, -0.08], kneeL: [1.45, 0, 0], kneeR: [1.45, 0, 0] };
+    const atKeys = (lift, k = 0) => ({ ...SEATED, spine: [0.1 + 0.05 * Math.sin(k * 0.7), 0, 0], armL: [-0.75 - lift * 0.25 * Math.max(0, Math.sin(k * Math.PI)), -0.12, 0], armR: mir([-0.75 - lift * 0.25 * Math.max(0, Math.sin(k * Math.PI + 1.7)), -0.12, 0]), foreL: [-0.85, 0, 0], foreR: [-0.85, 0, 0] });
+    const seat = solo ? Math.PI / 2 : Math.PI; // at the place: the pianist faces the keys (+x), the conductor the orchestra
+    let pose = null;
+    if (part.k === 'tune') { cx = side[0]; cz = side[1]; cy = y0; ry = toP; }
     else if (part.k === 'walkIn') {
       const k = smooth(part.t / 2.6);
-      cx = side[0] + (P.x - side[0]) * k; cz = side[1] + (P.z - side[1]) * k; cy = P.y * smooth((k - 0.8) / 0.2);
+      cx = side[0] + (P.x - side[0]) * k; cz = side[1] + (P.z - side[1]) * k; cy = y0 + (P.y - y0) * smooth((k - 0.8) / 0.2);
       walking = k < 1;
-      ry = k < 1 ? -Math.PI / 2 : part.t < 4.2 ? 0 : Math.PI; // then faces the house, then the stage
-      if (k >= 1 && part.t < 4.2) { const d = Math.sin(Math.min(1, (part.t - 2.6) / 1.6) * Math.PI); c.pose = { spine: [0.6 * d, 0, 0], head: [0.2 * d, 0, 0] }; }
+      ry = k < 1 ? toP : part.t < 4.2 ? 0 : seat; // then faces the house, then the stage
+      if (k >= 1 && part.t < 4.2) pose = bow(Math.sin(Math.min(1, (part.t - 2.6) / 1.6) * Math.PI));
+      else if (k >= 1 && solo) pose = atKeys(0);
     } else if (part.k === 'open') {
+      ry = seat;
       const up = smooth(part.t / TURN.open); // arms raised, ready
-      c.pose = { armL: [-1.5 * up, -0.25, 0], armR: mir([-1.5 * up, -0.25, 0]), foreL: [-0.5 * up, 0, 0], foreR: [-0.5 * up, 0, 0] };
+      pose = solo ? atKeys(0) : { armL: [-1.5 * up, -0.25, 0], armR: mir([-1.5 * up, -0.25, 0]), foreL: [-0.5 * up, 0, 0], foreR: [-0.5 * up, 0, 0] };
+    } else if (playing && solo) {
+      ry = seat;
+      pose = atKeys(1, b * 2);
     } else if (playing) {
       // A four-beat pattern: down, in, out, up, the left hand shaping the phrase.
       const ph = (b % 1), bi = Math.floor(b) % 4, drop = Math.sin(ph * Math.PI);
       const across = [0, 0.45, -0.45, 0][bi], lift = [0.5, 0.15, 0.15, 0.6][bi];
-      c.pose = {
+      pose = {
         spine: [0.06 + 0.04 * drop, 0, 0.03 * Math.sin(b * Math.PI / 2)],
         armR: mir([-1.25 - lift * (1 - drop) * 0.7, -0.2 + across * (1 - ph), 0]), foreR: [-0.75 + 0.35 * drop, 0, 0],
         armL: [-1.05 - 0.3 * Math.sin(b * Math.PI / 4), -0.35, 0], foreL: [-0.6 - 0.2 * Math.sin(b * Math.PI / 8), 0, 0],
       };
     } else if (part.k === 'clap') {
-      ry = part.t > 1.2 ? 0 : Math.PI; // turns to the house and bows, twice
-      const d = part.t > 1.8 ? Math.max(0, Math.sin(((part.t - 1.8) / 2.6) * Math.PI)) : 0;
-      c.pose = { spine: [0.6 * d, 0, 0], head: [0.2 * d, 0, 0] };
+      ry = part.t > 1.2 ? 0 : seat; // turns to the house and bows
+      pose = part.t > 1.2 ? bow(part.t > 1.8 ? Math.max(0, Math.sin(((part.t - 1.8) / 2.6) * Math.PI)) : 0) : solo ? atKeys(0) : null;
     } else if (part.k === 'close' || part.k === 'rest') {
       const k = part.k === 'close' ? smooth(part.t / 2.6) : 1; // walks off to the side
-      cx = P.x + (side[0] - P.x) * k; cz = P.z + (side[1] - P.z) * k; cy = P.y * (1 - smooth(k / 0.2));
-      walking = k < 1; ry = Math.PI / 2;
+      cx = P.x + (side[0] - P.x) * k; cz = P.z + (side[1] - P.z) * k; cy = P.y + (y0 - P.y) * smooth(k / 0.2);
+      walking = k < 1; ry = toP + Math.PI;
     }
-    c.ch.root.position.set(cx, cy, cz);
-    c.ch.root.rotation.y = ry;
-    c.ch.animate(dt, walking ? 0.3 : 0);
-    placeLabels(c, camera, w, h);
+    const seated = !!pose?.kneeL;
+    lead$.pose = pose;
+    lead$.ch.root.position.set(cx, cy - (seated ? 0.14 : 0), cz);
+    lead$.ch.root.rotation.y = ry;
+    lead$.ch.animate(dt, walking ? 0.3 : 0);
+    for (const o of this.all) { // (the one whose piece it is not waits out of sight)
+      o.ch.root.visible = o === lead$;
+      if (o === lead$) { o.tag.style.display = ''; placeLabels(o, camera, w, h); } else o.tag.style.display = 'none';
+    }
 
     // The pit: everyone leans into the beat a little while playing.
     for (let k = 0; k < this.pit.length; k++) {
       const g = this.pit[k];
-      g.rotation.z = playing ? Math.sin(b * Math.PI + k * 0.9) * 0.05 : 0;
-      g.rotation.x = playing && g.userData.k !== 'timpani' ? Math.sin(b * Math.PI * 0.5 + k) * 0.03 : 0;
+      g.rotation.z = playing && !solo ? Math.sin(b * Math.PI + k * 0.9) * 0.05 : 0;
+      g.rotation.x = playing && !solo && g.userData.k !== 'timpani' ? Math.sin(b * Math.PI * 0.5 + k) * 0.03 : 0;
     }
 
     // The dancers.

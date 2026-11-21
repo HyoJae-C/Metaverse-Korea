@@ -74,6 +74,33 @@ test('the Opera Theater: a stage, a pit, stalls and three balconies', () => {
   for (const f of ['curtain', 'clap', 'lights']) assert.equal(typeof S[f], 'function');
 });
 
+test('the Concert Hall: the orchestra on the stage, seats all round it', async () => {
+  const { buildConcertHall, ROOM_CONCERT, CONCERT_LAYOUT } = await import('../src/core/concert-hall.js');
+  const hall = stores.find((s) => s.id === 'arts-concert-hall');
+  assert.ok(hall, 'arts-concert-hall is in stores.json');
+  assert.equal(hall.front, 'landmark');
+  assert.equal(hall.district, 'arts-center');
+  assert.ok(Math.hypot(hall.at[0] - entry.offset[0] - ac.doors.music[0], hall.at[1] - entry.offset[1] - ac.doors.music[1]) < 0.5, 'the Concert Hall is entered at the Music Hall door');
+  assert.equal(ROOM_SIZES.concert, ROOM_CONCERT);
+  const room = roomOf(hall), built = buildConcertHall(hall, room, exitOf(room));
+  const S = built.stations.stage, P = CONCERT_LAYOUT.stage;
+  assert.equal(S.mode, 'concert');
+  assert.ok(S.players.length >= 30, `an orchestra on the stage (${S.players.length})`);
+  for (const p of S.players) assert.ok(p.y >= P.y && p.z < P.front && p.z > P.back && Math.abs(p.x) < P.half, `a ${p.k} sits on the platform`);
+  assert.ok(S.piano && S.wing, 'a grand piano and a way on');
+  assert.ok(built.seats.length >= 40, `free seats for players (${built.seats.length})`);
+  assert.ok(built.seats.some((s) => s.z < P.back), 'some of them behind the stage');
+  assert.ok(S.crowd >= 150, `a full house (${S.crowd})`);
+  let meshes = 0;
+  built.scene.traverse((o) => { if (o.isMesh) meshes++; });
+  assert.ok(meshes < 80, `the hall is few meshes (${meshes})`);
+  // Its programme is the classical one, fetched when you walk in.
+  const program = await S.load();
+  assert.ok(program.length >= 9);
+  assert.ok(program.some((p) => p.id === 'clair-de-lune') && program.some((p) => p.kind === 'piano'));
+  assert.ok(!program.some((p) => OPERA_PROGRAM.includes(p)), 'no opera here');
+});
+
 test('the scores: written notes, in order, inside their length', () => {
   assert.equal(midiOf('A4'), 69);
   assert.equal(midiOf('C4'), 60);
@@ -111,10 +138,10 @@ test('the show: tuning, the conductor, the piece, applause, the next piece', asy
   const total = OPERA_PROGRAM.reduce((s, p) => s + turnLength(p), 0);
   assert.ok(total > 180 && total < 600, `the whole programme takes ${Math.round(total)} s`);
   // Everyone sees the same moment: it depends on the clock alone.
-  assert.deepEqual(showAt(1000), showAt(1000));
-  assert.equal(showAt(0).score, OPERA_PROGRAM[0]);
-  assert.equal(showAt(turnLength(OPERA_PROGRAM[0]) + 1).score, OPERA_PROGRAM[1]);
-  assert.equal(showAt(total + 1).score, OPERA_PROGRAM[0], 'and round again');
+  assert.deepEqual(showAt(1000, OPERA_PROGRAM), showAt(1000, OPERA_PROGRAM));
+  assert.equal(showAt(0, OPERA_PROGRAM).score, OPERA_PROGRAM[0]);
+  assert.equal(showAt(turnLength(OPERA_PROGRAM[0]) + 1, OPERA_PROGRAM).score, OPERA_PROGRAM[1]);
+  assert.equal(showAt(total + 1, OPERA_PROGRAM).score, OPERA_PROGRAM[0], 'and round again');
   const p = OPERA_PROGRAM[0], order = [];
   for (let u = 0; u < turnLength(p); u += 0.5) { const k = partAt(p, u).k; if (order.at(-1) !== k) order.push(k); }
   assert.deepEqual(order, ['tune', 'walkIn', 'open', 'play', 'clap', 'close', 'rest']);

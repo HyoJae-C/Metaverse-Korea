@@ -36,7 +36,50 @@ export const C = {
 };
 
 // A steady 0-1 number for a place (the same seat always has the same person).
-const hash = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+export const hash = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+
+// Every seat of a hall: a cushion, a back, dark arms (three instanced meshes).
+// places: [x, z, y = 0, ry = 0] (ry 0: facing -z, the stage).
+export function addSeats(scene, places, pitch, color, dark) {
+  const n = places.length, dm = new THREE.Object3D();
+  const cushion = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch - 0.14, 0.1, 0.42).translate(0, SEAT_H - 0.05, 0), new THREE.MeshLambertMaterial({ color }), n);
+  const back = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch - 0.1, 0.62, 0.09).translate(0, SEAT_H + 0.27, 0.25), new THREE.MeshLambertMaterial({ color }), n);
+  const frame = new THREE.InstancedMesh(new THREE.BoxGeometry(pitch - 0.02, SEAT_H - 0.1, 0.4).translate(0, (SEAT_H - 0.1) / 2, 0.02), new THREE.MeshLambertMaterial({ color: dark }), n);
+  places.forEach(([x, z, y = 0, ry = 0], i) => { dm.position.set(x, y, z); dm.rotation.y = ry; dm.updateMatrix(); cushion.setMatrixAt(i, dm.matrix); back.setMatrixAt(i, dm.matrix); frame.setMatrixAt(i, dm.matrix); });
+  scene.add(cushion, back, frame);
+}
+
+// The house: everyone seated, as one crowd (a body, a head and hair each;
+// clothes, skin and hair colours vary). crowd: [{ x, y, z, ry, k }], k a
+// steady 0-1 number. Returns clap(k) (0 still … 1 a full ovation: the heads
+// bob) and animate(dt).
+export function addCrowd(scene, crowd) {
+  const CLOTHES = ['#2b2f45', '#4a2f3a', '#3a4a5c', '#6b2f38', '#2f4a3c', '#544a6e', '#1f2024', '#7a5a3a', '#8a8fa0', '#b0453f'];
+  const SKIN = ['#f3d2b3', '#e8bf9b', '#d9a67e', '#c58f68', '#f6dcc4'];
+  const HAIR = ['#1c1a1d', '#2e2320', '#4a3324', '#6b4a2e', '#8a8580', '#c9a25a'];
+  const n = crowd.length, dm = new THREE.Object3D(), col = new THREE.Color();
+  const body = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.15, 0.2, 0.42, 7).translate(0, SEAT_H + 0.2, 0), new THREE.MeshLambertMaterial(), n);
+  const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 8, 6).translate(0, SEAT_H + 0.6, 0), new THREE.MeshLambertMaterial(), n);
+  const hair = new THREE.InstancedMesh(new THREE.SphereGeometry(0.215, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, SEAT_H + 0.615, 0.02), new THREE.MeshLambertMaterial(), n);
+  const place = (c, up) => { dm.position.set(c.x, c.y + up, c.z); dm.rotation.y = c.ry; const s = 0.92 + c.k * 0.16; dm.scale.set(s, s, s); dm.updateMatrix(); };
+  crowd.forEach((c, i) => {
+    place(c, 0);
+    for (const m of [body, head, hair]) m.setMatrixAt(i, dm.matrix);
+    body.setColorAt(i, col.set(CLOTHES[Math.floor(c.k * 97) % CLOTHES.length]));
+    head.setColorAt(i, col.set(SKIN[Math.floor(c.k * 53) % SKIN.length]));
+    hair.setColorAt(i, col.set(HAIR[Math.floor(c.k * 31) % HAIR.length]));
+  });
+  scene.add(body, head, hair);
+  let clapK = 0, time = 0, wasClapping = false;
+  const bob = (t) => {
+    crowd.forEach((c, i) => { place(c, clapK ? Math.abs(Math.sin(t * (7 + c.k * 3) + c.k * 40)) * 0.035 * clapK : 0); head.setMatrixAt(i, dm.matrix); hair.setMatrixAt(i, dm.matrix); });
+    head.instanceMatrix.needsUpdate = hair.instanceMatrix.needsUpdate = true;
+  };
+  return {
+    clap: (k) => { clapK = k; },
+    animate: (dt) => { time += dt; if (clapK > 0.01 || wasClapping) { bob(time); wasClapping = clapK > 0.01; } },
+  };
+}
 
 // The night scene behind the dancers: a moonlit lake.
 function backdrop() {
@@ -178,14 +221,7 @@ export function buildOperaHall(store, ROOM, EXIT) {
       }
     });
   }
-  { // every seat: a cushion, a back, dark arms (three instanced meshes)
-    const n = places.length, dm = new THREE.Object3D();
-    const cushion = new THREE.InstancedMesh(new THREE.BoxGeometry(R.pitch - 0.14, 0.1, 0.42).translate(0, SEAT_H - 0.05, 0), new THREE.MeshLambertMaterial({ color: C.seat }), n);
-    const back = new THREE.InstancedMesh(new THREE.BoxGeometry(R.pitch - 0.1, 0.62, 0.09).translate(0, SEAT_H + 0.27, 0.25), new THREE.MeshLambertMaterial({ color: C.seat }), n);
-    const frame = new THREE.InstancedMesh(new THREE.BoxGeometry(R.pitch - 0.02, SEAT_H - 0.1, 0.4).translate(0, (SEAT_H - 0.1) / 2, 0.02), new THREE.MeshLambertMaterial({ color: C.seatDark }), n);
-    places.forEach(([x, z], i) => { dm.position.set(x, 0, z); dm.updateMatrix(); cushion.setMatrixAt(i, dm.matrix); back.setMatrixAt(i, dm.matrix); frame.setMatrixAt(i, dm.matrix); });
-    scene.add(cushion, back, frame);
-  }
+  addSeats(scene, places, R.pitch, C.seat, C.seatDark);
 
   // --- The balconies ---------------------------------------------------------------------
   // Each tier: a slab along both side walls and across the back, a cream
@@ -227,42 +263,12 @@ export function buildOperaHall(store, ROOM, EXIT) {
   b.flush(scene);
   scene.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && !halves.includes(o)) { o.matrixAutoUpdate = false; o.updateMatrix(); } });
 
-  // --- The house: everyone seated, as one crowd -------------------------------------------
-  // A body, a head and hair each; clothes, skin and hair colours vary.
-  const CLOTHES = ['#2b2f45', '#4a2f3a', '#3a4a5c', '#6b2f38', '#2f4a3c', '#544a6e', '#1f2024', '#7a5a3a', '#8a8fa0', '#b0453f'];
-  const SKIN = ['#f3d2b3', '#e8bf9b', '#d9a67e', '#c58f68', '#f6dcc4'];
-  const HAIR = ['#1c1a1d', '#2e2320', '#4a3324', '#6b4a2e', '#8a8580', '#c9a25a'];
-  const n = crowd.length, dm = new THREE.Object3D(), col = new THREE.Color();
-  const body = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.15, 0.2, 0.42, 7).translate(0, SEAT_H + 0.2, 0), new THREE.MeshLambertMaterial(), n);
-  const head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 8, 6).translate(0, SEAT_H + 0.6, 0), new THREE.MeshLambertMaterial(), n);
-  const hair = new THREE.InstancedMesh(new THREE.SphereGeometry(0.215, 8, 5, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, SEAT_H + 0.615, 0.02), new THREE.MeshLambertMaterial(), n);
-  crowd.forEach((c, i) => {
-    dm.position.set(c.x, c.y, c.z); dm.rotation.y = c.ry; const s = 0.92 + c.k * 0.16; dm.scale.set(s, s, s); dm.updateMatrix();
-    for (const m of [body, head, hair]) m.setMatrixAt(i, dm.matrix);
-    body.setColorAt(i, col.set(CLOTHES[Math.floor(c.k * 97) % CLOTHES.length]));
-    head.setColorAt(i, col.set(SKIN[Math.floor(c.k * 53) % SKIN.length]));
-    hair.setColorAt(i, col.set(HAIR[Math.floor(c.k * 31) % HAIR.length]));
-  });
-  scene.add(body, head, hair);
-  // Clapping: the crowd bobs a little (clap(k): 0 still … 1 a full ovation).
-  let clapK = 0, time = 0;
-  const clap = (k) => { clapK = k; };
-  const bob = (t) => {
-    crowd.forEach((c, i) => {
-      const up = clapK ? Math.abs(Math.sin(t * (7 + c.k * 3) + c.k * 40)) * 0.035 * clapK : 0;
-      dm.position.set(c.x, c.y + up, c.z); dm.rotation.y = c.ry; const s = 0.92 + c.k * 0.16; dm.scale.set(s, s, s); dm.updateMatrix();
-      head.setMatrixAt(i, dm.matrix); hair.setMatrixAt(i, dm.matrix);
-    });
-    head.instanceMatrix.needsUpdate = hair.instanceMatrix.needsUpdate = true;
-  };
-  let wasClapping = false;
+  const house$ = addCrowd(scene, crowd);
+  const n = crowd.length, clap = house$.clap;
   // The house lights: lights(k) 1 = up (between pieces), 0 = down (the show).
   let lightK = 1;
   const lights = (k) => { lightK = k; house.intensity = 0.55 + 0.95 * k; fill.intensity = 6 + 24 * k; stageLight.intensity = 34 - 8 * k; };
-  const animate = (dt) => {
-    time += dt;
-    if (clapK > 0.01 || wasClapping) { bob(time); wasClapping = clapK > 0.01; }
-  };
+  const animate = house$.animate;
   curtain(0);
 
   return {

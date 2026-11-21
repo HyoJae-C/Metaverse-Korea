@@ -1145,6 +1145,18 @@ Nambusunhwan-ro in front of the gate.
   game's own track is the silent hidden track `concert` while inside. Nobody
   sings: an instrument takes the singer's line. To add a piece, write a score
   object there and put it in `OPERA_PROGRAM`.
-- The Music Hall's Concert Hall (orchestra on the stage, classical pieces
-  only) is a separate room, still to come; its door has no ring yet.
+- **The Concert Hall** (`src/core/concert-hall.js`, room `concert`, store
+  `arts-concert-hall` at the Music Hall's door) is for classical music only:
+  a wooden hall with the orchestra on the platform (winds and brass on
+  risers), a grand piano, and seats all round, behind the stage too. No
+  curtain and no dancers. The same show runs it; for a piano piece
+  (`kind: 'piano'`) the pianist walks on instead of the conductor and the
+  orchestra sits still.
+- Its programme is `CONCERT_PROGRAM` in `src/data/concert-scores.js`, a
+  generated file: `node scripts/build-concert-scores.mjs` cuts the excerpts
+  out of the MIDI in `scripts/data/scores/`, which LilyPond made from
+  public-domain and CC BY editions (sources and thanks in
+  `docs/CREDITS-MUSIC.md`). To add a piece, add its MIDI and a row in that
+  script's `PIECES`. Each hall fetches its own programme when you walk in
+  (`stations.stage.load`).
 

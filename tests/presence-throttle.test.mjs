@@ -43,3 +43,16 @@ test('a join tracks at once and drops what was waiting; clear drops it too', () 
   c.advance(5000);
   assert.deepEqual(sent, [{ look: 1 }, { look: 3 }, { look: 4 }]);
 });
+
+test('walking back and forth on a cell border: leave/appear is spaced out too, the latest wish last', () => {
+  const c = clock(), sent = [];
+  const p = createPresenceThrottle((x) => sent.push(x), { gap: 3000, ...c });
+  p.now({ name: 'a' }); // joined this cell as our own
+  for (let i = 0; i < 6; i++) { c.advance(300); p.track(i % 2 ? { name: 'a' } : null); } // out, in, out, in, out, in
+  assert.deepEqual(sent, [{ name: 'a' }]);
+  c.advance(3000);
+  assert.deepEqual(sent, [{ name: 'a' }, { name: 'a' }]);
+  p.track(null); // and we finally walk off
+  c.advance(3000);
+  assert.deepEqual(sent, [{ name: 'a' }, { name: 'a' }, null]);
+});
