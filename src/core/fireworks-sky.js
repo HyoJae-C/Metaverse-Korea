@@ -11,7 +11,8 @@
 // trail of points (TRAIL), and the lead one draws the climbing shell.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { program, atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './fireworks-show.js';
+import { atUV, BARGES, U, RISE, LIFE, RADIUS, ORIGIN, COLORS } from './fireworks-show.js';
+import { programOf } from './fireworks-patterns.js';
 
 const DRAG = 1.7; // how quickly sparks slow down
 const GRAVITY = 6; // m/s² (gentle: the sparks hang in the air)
@@ -236,7 +237,7 @@ export function createFireworksSky(scene, { phone = false } = {}) {
     // bursts that went off this frame ({ x, y, z, kind }), for their sound.
     update(showStart, t, night, camera, height) {
       const fired = [];
-      if (showStart !== start) { start = showStart; list = showStart ? program(showStart) : []; next = 0; lastT = -Infinity; busyUntil.fill(-1e6); for (let i = 0; i < N; i++) info.array[i * 4] = -1e6; info.needsUpdate = true; }
+      if (showStart !== start) { start = showStart; list = showStart ? programOf(showStart) : []; next = 0; lastT = -Infinity; busyUntil.fill(-1e6); for (let i = 0; i < N; i++) info.array[i * 4] = -1e6; info.needsUpdate = true; }
       // Arriving mid-show (or after a pause): skip what's long over.
       if (t < lastT || t - lastT > 3) {
         next = 0;
