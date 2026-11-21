@@ -7564,7 +7564,7 @@ renderer.setAnimationLoop((now) => {
   }
   motionSound.update(dt, {
     walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
-    running: input.run && !stamina.tired && !steadyWalk,
+    running: input.run && !stamina.tired && !steadyWalk && !quiet, // (walking only in a quiet place: its steps too)
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',

@@ -57,6 +57,22 @@ test('its doors are on walks, not in walls or water', () => {
   assert.ok(Math.hypot(store.at[0] - entry.offset[0] - ac.doors.opera[0], store.at[1] - entry.offset[1] - ac.doors.opera[1]) < 0.5, 'the Opera Theater is entered at the Opera House door');
 });
 
+test('the halls doors: solid porches, and the Music Hall door faces out of its wall', () => {
+  const walls = ac.buildings.map((b) => b.p || b.points || b);
+  for (const n of ['opera-porch', 'music-porch']) assert.ok(ac.buildings.some((b) => b.n === n), `${n} is a wall`);
+  // Walking from each door straight in: stopped by a wall within 1.7 m.
+  for (const [name, face] of [['opera', L.opera.face], ['music', L.music.face]]) {
+    const d = ac.doors[name], inX = -Math.sin(face), inZ = -Math.cos(face);
+    assert.ok(!walls.some((p) => inside(p, d)), `${name}: the door ring is outside`);
+    assert.ok(walls.some((p) => inside(p, [d[0] + inX * 1.7, d[1] + inZ * 1.7])), `${name}: nobody walks through the doors`);
+  }
+  // The Music Hall's door front lies along its wall: the nearest wall point is straight behind the door.
+  const m = L.music, back = [m.door[0] - Math.sin(m.face) * 1.6, m.door[1] - Math.cos(m.face) * 1.6];
+  let gap = Infinity;
+  for (let i = 0; i < m.p.length; i++) { const a = m.p[i], b = m.p[(i + 1) % m.p.length], t = Math.max(0, Math.min(1, ((back[0] - a[0]) * (b[0] - a[0]) + (back[1] - a[1]) * (b[1] - a[1])) / ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))); gap = Math.min(gap, Math.hypot(back[0] - a[0] - (b[0] - a[0]) * t, back[1] - a[1] - (b[1] - a[1]) * t)); }
+  assert.ok(gap < 0.2, `the door is 1.6 m straight out of the wall (${gap.toFixed(2)})`);
+});
+
 test('the Opera Theater: a stage, a pit, stalls and three balconies', () => {
   assert.equal(ROOM_SIZES.opera, ROOM_OPERA);
   const room = roomOf(store), built = buildOperaHall(store, room, exitOf(room));
@@ -109,7 +125,30 @@ test('watching the show: no name tags on the stage, and the eye button hides the
   assert.match(css, /html:not\(\.ui-hidden\) body\.in-store\.in-show \.ui-eye \{ display: grid; \}/, 'the eye shows in a hall with a show');
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /classList\.add\('in-show'\)/);
+  assert.match(main, /running: input\.run && !stamina\.tired && !steadyWalk && !quiet/, 'no running footsteps in a quiet place');
   assert.match(main, /classList\.remove\('in-store', 'in-show'\)/);
+});
+
+test('each piece has its own dance, long enough for the piece', async () => {
+  const { DANCES, figureAt } = await import('../src/core/stage-show.js');
+  const src = readFileSync(new URL('../src/core/stage-show.js', import.meta.url), 'utf8');
+  const forms = src.slice(src.indexOf('const FORMS = {'), src.indexOf('const up =')), steps = src.slice(src.indexOf('const STEPS = {'), src.indexOf('export const DANCES'));
+  const seen = new Set();
+  for (const p of OPERA_PROGRAM) {
+    const d = DANCES[p.id];
+    assert.ok(d, `${p.id} has a dance`);
+    for (const [form, step] of d.figs) { assert.ok(forms.includes(`  ${form}: `), `${p.id}: formation ${form}`); assert.ok(steps.includes(`  ${step}: `), `${p.id}: step ${step}`); }
+    const bars = p.beats / (p.pulse || 1), used = Math.ceil(bars / d.len);
+    assert.ok(used >= 6 && Math.abs(used - d.figs.length) <= 1, `${p.id}: ${d.figs.length} figures for ${bars.toFixed(0)} bars`);
+    assert.ok(new Set(d.figs.map((f) => f.join(':'))).size >= 6, `${p.id}: at least six different figures`);
+    const sig = d.figs.map((f) => f[1]).join(',');
+    assert.ok(!seen.has(sig), `${p.id}: not another piece's dance`);
+    seen.add(sig);
+    assert.equal(figureAt(p, 0).i, 0);
+    assert.equal(figureAt(p, bars + 50).i, d.figs.length - 1, 'the last figure holds');
+  }
+  // The pieces share few steps: each has at least three of its own.
+  for (const p of OPERA_PROGRAM) { const mine = new Set(DANCES[p.id].figs.map((f) => f[1])); for (const q of OPERA_PROGRAM) if (q !== p) for (const f of DANCES[q.id].figs) mine.delete(f[1]); assert.ok(mine.size >= 3, `${p.id}: ${mine.size} steps of its own`); }
 });
 
 test('the scores: written notes, in order, inside their length', () => {
