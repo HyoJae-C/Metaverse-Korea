@@ -34,17 +34,17 @@ export const SKATE = {
   grip: 3.2, // 1/s: how fast sideways slip dies away (the blades bite)
   brake: 5, // m/s² pushing against the glide
   jump0: 4.3, // m/s up from a standstill
-  jumpPerSpeed: 0.24, // more with speed (8.5 m/s: about 6.3 m/s up, 0.9 s in the air)
-  gravity: 14, // m/s²
+  jumpPerSpeed: 0.24, // more with speed (8.5 m/s: about 6.3 m/s up, 1.1 s in the air)
+  gravity: 11.5, // m/s² (gentle: 0.75 s in the air from a standstill; Yozi 2026-11-21 "자꾸 넘어져")
   perfect: 0.22, // s before the ice: Jump pressed in this window is a perfect landing
-  stepOut: 0.25, // a trick with this share or less left at touchdown is a shaky landing, more is a fall
-  fall: 1.2, // s on the ice after a fall
+  stepOut: 0.4, // a trick with this share or less left at touchdown is a shaky landing, more is a fall
+  fall: 0.9, // s on the ice after a fall
   chain: 4, // s: land the next jump within this to keep the combo
   maxMult: 3,
 };
 
 // Turns: how long n turns take, and what they are worth.
-export const TURN_TIME = (n) => 0.04 + 0.17 * n; // (a quad: 0.72 s of the 0.9 s a jump at full speed lasts)
+export const TURN_TIME = (n) => 0.04 + 0.17 * n; // (a quad: 0.72 s of the 1.1 s a jump at full speed lasts)
 export const TURN_PTS = [0, 100, 300, 700, 1500];
 const TURN_NAME = [
   null,
@@ -82,25 +82,32 @@ export const trickName = (k, lang = 'en') => k.name[lang] || k.name.en;
 // it: ← → ← is one triple, turning the way of its first key. The same key
 // twice is a new single. A lone ↑ or ↓
 // waits for its partner; a turn key after it drops it.
+// `end` is when the jump comes down: a new trick that could only end in a
+// fall by then is not started (a late tap, or steering in the air, costs
+// nothing). Raising a turn is always taken: that risk is yours.
 // Returns the trick it started or raised (null: nothing yet).
-export function addPress(jump, k, t) {
+export function addPress(jump, k, t, end = Infinity) {
   const { tricks } = jump;
   const last = tricks[tricks.length - 1];
   const free = Math.max(t, last ? last.at + last.dur : 0);
+  const fits = (dur) => free >= end || end - free >= dur * (1 - SKATE.stepOut);
   if (k === 'L' || k === 'R') {
     jump.half = null;
     if (last?.turns && last.key !== k && last.turns < 4 && !last.closed && t < last.at + last.dur) {
       Object.assign(last, turnTrick(last.dir, last.turns + 1), { key: k });
       return last;
     }
+    if (!fits(TURN_TIME(1))) return null;
     tricks.push({ ...turnTrick(k, 1), key: k, at: free });
     return tricks[tricks.length - 1];
   }
   if (k !== 'U' && k !== 'D') return null;
   if (last?.turns) last.closed = true; // (←→ ↑↓ ← is a double, a butterfly and a single)
   if (!jump.half) { jump.half = k; return null; }
-  tricks.push({ ...MOVES[jump.half + k], at: free });
+  const move = MOVES[jump.half + k];
   jump.half = null;
+  if (!fits(move.dur)) return null;
+  tricks.push({ ...move, at: free });
   return tricks[tricks.length - 1];
 }
 
@@ -169,6 +176,7 @@ export class IceSkater {
     if (!this.air) {
       this.air = true; this.t = 0; this.half = null; this.tricks = []; this.pressedAt = -1;
       this.vy = SKATE.jump0 + SKATE.jumpPerSpeed * this.speed;
+      this.end = 2 * this.vy / SKATE.gravity; // when this jump comes down
       this.y = 0.001;
       this.jumps++;
       return { kind: 'jump' };
@@ -179,7 +187,7 @@ export class IceSkater {
   // An arrow in the air. Returns { kind: 'trick', trick } when it started or raised one.
   press(k) {
     if (!this.air) return null;
-    const trick = addPress(this, k, this.t);
+    const trick = addPress(this, k, this.t, this.end);
     return trick ? { kind: 'trick', trick } : null;
   }
   // dt seconds on: ax, az the push (a unit vector or less, room axes).

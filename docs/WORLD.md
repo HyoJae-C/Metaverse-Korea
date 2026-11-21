@@ -1102,7 +1102,9 @@ middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
   backflip, ↑↑ cartwheel, ↓↓ death drop. A trick still turning when you land
   is shaky (half) or a fall; landing just after it finishes is perfect
   (×1.5). Clean landings in a row raise a combo up to ×3. A faster run-up
-  means a longer jump: a double from a standstill, a quad only at full speed.
+  means a longer jump (0.75 s from a standstill, 1.1 s at full speed): a
+  triple from a standstill, a quad with a little speed. A new trick tapped
+  too late to do anything but fall is not started; raising a turn always is.
   Points are a personal best on this device (no coins). Other skaters' jumps
   are sent as a short code (`st.ik`) and played back.
 
