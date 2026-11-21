@@ -2932,7 +2932,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .farm-row .bait-text { flex-basis: 150px; }
 .farm-panel > button.primary { width: 100%; }
 /* The farmer's journal (ui/farm-journal-ui.js) */
-.farm-log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 56vh; overflow-y: auto; background: #f4efe4; border-radius: 16px; padding: 10px; }
+.farm-log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 38vh; overflow-y: auto; background: #f4efe4; border-radius: 16px; padding: 10px; }
 .farm-log-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; background: #fffaf1; border: 1px dashed #d9c9b0; color: #8a7767; text-align: center; }
 .farm-log-cell b { font-size: 13px; }
 .farm-log-cell small { font-size: 11px; opacity: 0.8; }
@@ -3018,3 +3018,15 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .fc-vs-tick { animation: fc-vs-in .3s ease-out; }
 @keyframes fc-vs-in { from { scale: 1.5; } }
 @media (prefers-reduced-motion: reduce) { .fc-vs, .fc-vs-tick { animation: none; } }
+
+.farm-row-off { opacity: 0.6; }
+.farm-now { display: flex; flex-direction: column; gap: 6px; background: #eaf6e4; border-radius: 16px; padding: 10px 12px; margin-bottom: 8px; color: #4c3b32; }
+.farm-now-title { font-size: 14px; }
+.farm-now > small { font-size: 12px; opacity: 0.85; }
+.farm-now-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.farm-now-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 58px; border-radius: 10px; background: #fffaf1; border: 1px solid #d9c9b0; font-size: 20px; line-height: 1.1; }
+.farm-now-cell small { font-size: 10px; white-space: nowrap; }
+.farm-now-cell.empty { border-style: dashed; color: #b9a995; background: transparent; }
+.farm-now-cell.thirsty { border-color: #5aa7e0; background: #eef7ff; }
+.farm-now-cell.ripe { border-color: #e0a422; background: #fff3cf; }
+.farm-now-water { opacity: 0.7; }

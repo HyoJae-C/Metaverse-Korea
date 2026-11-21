@@ -37,20 +37,26 @@ export class FarmUI {
     if (seeds) {
       const empty = v.empty;
       for (const c of v.crops()) {
-        const row = el('div', 'bait-row farm-row');
+        const paid = c.from === 'farm', have = paid ? 0 : v.seeds[c.id] || 0;
+        if (c.from === 'rare' && !have) continue; // (a rare crop shows once you hold its seed)
+        const row = el('div', 'bait-row farm-row' + (paid || have ? '' : ' farm-row-off'));
         const txt = el('div', 'bait-text');
-        txt.append(el('b', null, `${c.emoji} ${v.name(c)} · ${t('farm.days', { n: v.days(c) })}`), el('small', null, t('farm.row', { sell: won(c.sell), fresh: won(c.fresh), n: v.days(c) })));
-        const one = el('button', 'primary', won(c.seed));
-        one.type = 'button';
-        one.disabled = v.busy || !v.known;
-        one.onclick = () => v.plantOne(this.bed, c);
-        row.append(txt, one);
-        if (empty > 1) {
-          const all = el('button', 'chip', t('farm.all', { n: empty, price: won(c.seed * empty) }));
-          all.type = 'button';
-          all.disabled = v.busy || !v.known;
-          all.onclick = () => v.plantAll(c);
-          row.append(all);
+        txt.append(el('b', null, `${c.emoji} ${v.name(c)} · ${t('farm.days', { n: v.days(c) })}`), el('small', null, paid || have ? t('farm.row', { sell: won(c.sell), fresh: won(c.fresh), n: v.days(c) }) : t('farm.atShop')));
+        row.append(txt);
+        if (paid || have) {
+          const one = el('button', 'primary', paid ? won(c.seed) : t('farm.sow', { n: have }));
+          one.type = 'button';
+          one.disabled = v.busy || !v.known;
+          one.onclick = () => v.plantOne(this.bed, c);
+          row.append(one);
+          const many = paid ? empty : Math.min(empty, have);
+          if (many > 1) {
+            const all = el('button', 'chip', paid ? t('farm.all', { n: empty, price: won(c.seed * empty) }) : t('farm.sowAll', { n: many }));
+            all.type = 'button';
+            all.disabled = v.busy || !v.known;
+            all.onclick = () => v.plantAll(c);
+            row.append(all);
+          }
         }
         list.append(row);
       }
