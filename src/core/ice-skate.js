@@ -141,6 +141,7 @@ export const glideKind = (coast, speed) => (coast < GLIDE.after || speed < GLIDE
 // The pose (bone offsets like the stride's in core/model-pack.js), t seconds on.
 export function glidePose(kind, t) {
   if (globalThis.__glide?.[kind]) return globalThis.__glide[kind]; // debug: tune live
+  if (PAIR_POSE[kind]) return PAIR_POSE[kind];
   const s = Math.sin(t * 1.5);
   if (kind === 'g2') {
     return {
@@ -159,6 +160,47 @@ export function glidePose(kind, t) {
     y: -0.015,
   };
 }
+// ---- Two together (Yozi 2026-11-21: "친구랑 손잡고 달리기, 앞에 앉고 달리기";
+// no sled). One leads (the one who asked) and skates as usual; the other
+// follows, held at a spot beside the leader (hand in hand) or just in front
+// (crouching, pushed along). Friends only; either lets go.
+export const PAIR = { near: 3, askFor: 15, hand: 0.82, push: 0.72, lost: 4 };
+// Between the two: "ice:ask:<to>:hand", "ice:yes:<to>:push", "ice:no:<to>", "ice:end:<to>".
+export const pairMsg = (verb, to, kind) => `ice:${verb}:${to}` + (kind ? `:${kind}` : '');
+export function parsePairMsg(e) {
+  const m = /^ice:(ask|yes|no|end):([\w-]{1,64})(?::(hand|push))?$/.exec(String(e));
+  return m ? { verb: m[1], to: m[2], kind: m[3] || null } : null;
+}
+// What everyone sees (the ip field): "hL:<follower>", "hF:<leader>", "pL:…", "pF:…".
+export const pairCode = (kind, role, other) => `${kind === 'push' ? 'p' : 'h'}${role}:${other}`;
+export function parsePairCode(c) {
+  const m = /^([hp])([LF]):([\w-]{1,64})$/.exec(String(c || ''));
+  return m ? { kind: m[1] === 'p' ? 'push' : 'hand', role: m[2], other: m[3], pose: m[1] + m[2] } : null;
+}
+// Where the follower is, from the leader's place and heading { x, z, ry }:
+// at the leader's right hand, or straight in front.
+export function pairSpot(kind, lead) {
+  const fx = Math.sin(lead.ry), fz = Math.cos(lead.ry);
+  if (kind === 'push') return { x: lead.x + fx * PAIR.push, z: lead.z + fz * PAIR.push, ry: lead.ry };
+  return { x: lead.x - fz * PAIR.hand, z: lead.z + fx * PAIR.hand, ry: lead.ry };
+}
+// The poses, laid over the stride (the legs keep skating) except the
+// crouch: hL / hF an arm out to the other's hand, pL both arms forward on
+// the other's shoulders, pF crouched low with the hands on the knees.
+const PAIR_POSE = {
+  hL: { over: true, bones: { upperarmr: [-0.55, 1.3, 0], upperarml: [0.1, 0, 0] } },
+  hF: { over: true, bones: { upperarml: [-0.55, -1.3, 0], upperarmr: [0.1, 0, 0] } },
+  pL: { over: true, bones: { spine: [0.3, 0, 0], head: [-0.2, 0, 0], upperarml: [-1.15, 0.12, 0], upperarmr: [-1.15, -0.12, 0] } },
+  pF: {
+    spine: [0.45, 0, 0], head: [-0.4, 0, 0],
+    upperarml: [-0.75, 0, 0], upperarmr: [-0.75, 0, 0],
+    upperlegl: [-1.75, 0, 0], lowerlegl: [2.25, 0, 0], footl: [-0.5, 0, 0],
+    upperlegr: [-1.75, 0, 0], lowerlegr: [2.25, 0, 0], footr: [-0.5, 0, 0],
+    y: -0.3,
+  },
+};
+export const isPairPose = (kind) => !!PAIR_POSE[kind];
+
 // From pose a to pose b by k (0..1), bone by bone.
 export function mixPose(a, b, k) {
   const out = {};
@@ -170,8 +212,8 @@ export function mixPose(a, b, k) {
   }
   return out;
 }
-// A glide laid over the stride, eased in and out: kind() says which glide
-// now. Returns fn(stroke, dt) for character.setStride.
+// A glide (or a pose for two) laid over the stride, eased in and out:
+// kind() says which now. Returns fn(stroke, dt) for character.setStride.
 export function glideStride(kind) {
   let now = '', k = 0, t = 0;
   return (stroke, dt) => {
@@ -181,7 +223,8 @@ export function glideStride(kind) {
     k += ((on ? 1 : 0) - k) * Math.min(1, dt * (on ? 4 : 7));
     if (!on && k < 0.05) { now = want || ''; if (!want) { k = 0; t = 0; return null; } }
     t += dt;
-    return mixPose(stroke, glidePose(now, t), k);
+    const P = glidePose(now, t);
+    return mixPose(stroke, P.over ? { ...stroke, ...P.bones } : P, k);
   };
 }
 

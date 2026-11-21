@@ -1663,12 +1663,13 @@ async function joinRoom(room, roomScene, area = null) {
       homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); liveStage.onLeave(id); sky.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
       if (liveStage.onMsg(id, e)) return; // the live café's voice set-up (game/live-stage.js)
       if (sky.onMsg(id, e)) return; // carrying someone in flight (game/sky-flight.js)
+      if (iceRink.loaded && iceRink.onMsg(id, e)) return; // two skating together (game/ice-pair.js)
       if (parseSnowMsg(e)) { if (!safety.isBlocked(id, others.nameOf(id))) snowman.onMsg(id, parseSnowMsg(e)); return; }
       if (parseTandem(e)) { onTandemMsg(id, parseTandem(e)); return; }
       if (parseGift(e)) { onGiftMsg(id, parseGift(e)); return; }
@@ -4808,6 +4809,7 @@ const iceRink = lazyPanel(() => import('./game/ice-rink.js').then(({ createIceRi
   get action() { return action; }, set action(v) { action = v; },
   get sendTimer() { return sendTimer; }, set sendTimer(v) { sendTimer = v; },
   get speed01() { return speed01; }, set speed01(v) { speed01 = v; },
+  myId, get net() { return net; }, isFriend: (name) => chat?.friendStatus?.(name) === 'friend', isBlocked: (id) => safety.isBlocked(id, others.nameOf(id)),
   $, STALE, input, moveRef, shop, sfx, skatePop: (...a) => skatePop(...a), missionEvent: (...a) => missionEvent(...a),
   collide: (x, z, dx, dz) => activeCollision.move(x, z, dx, dz, PLAYER_R),
 })), { tick: () => {}, action: () => null, state: () => {}, skating: false });
@@ -7691,7 +7693,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik || st.ip !== lastSent.ip;
     // Flying (operators): nothing is sent, so others keep seeing us where we
     // took off and our spot isn't given away; carrying someone still sends.
     if ((changed || idleTimer <= 0) && !(sky.active && !sky.carrying)) {
@@ -7716,6 +7718,7 @@ renderer.setAnimationLoop((now) => {
   const mapUp = mapView.open;
   camera.updateMatrixWorld(); // (this frame's camera for the name tags: set above, but three.js only rebuilds its matrix when drawing)
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
+  if (iceRink.loaded) iceRink.after(); // (a skater led by a friend stays at their side)
   updateBuskMusic(p);
   liveStage.tick(p);
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)

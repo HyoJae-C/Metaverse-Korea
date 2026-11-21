@@ -16,7 +16,8 @@ import { buzz } from '../core/haptics.js';
 import { dayKey } from '../core/daily.js';
 import { rideCode } from '../core/bike-garage.js';
 import { ICE_SKATES, HOWTO_EN } from '../core/ice-rink-hall.js';
-import { IceSkater, SKATE, PLAIN, glideKind, glideStride, onIce, jumpPose, peerJump, syncPeerTricks, bankJump, trickName, trickCode, trickFromCode } from '../core/ice-skate.js';
+import { createIcePair } from './ice-pair.js';
+import { IceSkater, SKATE, PLAIN, glideKind, glideStride, parsePairCode, onIce, jumpPose, peerJump, syncPeerTricks, bankJump, trickName, trickCode, trickFromCode } from '../core/ice-skate.js';
 
 export const RINK_TEXT = {
   jump: { en: 'Jump', ko: '점프', ja: 'ジャンプ', zh: '跳跃', es: 'Saltar', ar: 'اقفز', vi: 'Nhảy', hi: 'कूदें', fr: 'Sauter', th: 'กระโดด', id: 'Lompat' },
@@ -112,6 +113,9 @@ export function createIceRink(game) {
   const layer = $('hud') || document.body;
   layer.append(hud, pad, cmd);
 
+  // Two together (game/ice-pair.js).
+  const pair = createIcePair(game, { sk, free: () => skating && !sk.air && sk.down <= 0 });
+
   const pop = (text, kind = '') => game.skatePop?.(text, kind);
   const name = (k) => trickName(k, getLanguage());
 
@@ -185,12 +189,13 @@ export function createIceRink(game) {
   function setSkates(on) {
     const me = game.me;
     me.setBike(on ? 1 : 0, on ? ICE_SKATES : undefined);
-    me.setStride?.(on ? glideStride(() => glide) : null);
+    me.setStride?.(on ? glideStride(() => pair.pose() || glide) : null);
     if (!on) { coast = 0; glide = ''; }
     if (!on) me.setTrick(null, 0);
     myCh = on ? me : null;
   }
   function stop(p) {
+    pair.leave();
     if (skating) { skating = false; setSkates(false); if (p) p.y = 0; }
     sk.reset(); typed = ''; hudKeys.textContent = '';
     game.sendTimer = 0;
@@ -219,7 +224,9 @@ export function createIceRink(game) {
       if (on) { skating = true; sk.reset(); setSkates(true); shop.toast(L(RINK_TEXT.onIce)); game.sendTimer = 0; game.action = STALE; } else stop(p);
     }
     if (skating && myCh !== game.me) setSkates(true); // (a new look made a new character)
-    if (skating) {
+    const led = skating && pair.tick(dt, p); // (held at my spot by the friend who leads)
+    if (led) { coast = 0; glide = ''; game.me.setTrick(null, 0); }
+    if (skating && !led) {
       const yaw = moveRef.yaw;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
       const { dx, dz, events } = sk.step(dt, fx * my + rx * mx, fz * my + rz * mx);
@@ -250,7 +257,7 @@ export function createIceRink(game) {
     for (const [id, o] of game.others.players) {
       const code = o.hidden ? '' : o.target?.ik;
       // (a glide travels in the same field: 'g1' or 'g2')
-      const gk = code === 'g1' || code === 'g2' ? code : '';
+      const gk = (o.hidden ? '' : parsePairCode(o.target?.ip)?.pose) || (code === 'g1' || code === 'g2' ? code : '');
       let pg = peerGlide.get(id);
       if (pg && pg.ch !== o.ch) { pg.ch.setStride?.(null); pg = null; peerGlide.delete(id); }
       if (gk && !pg) { pg = { ch: o.ch, kind: gk }; const mine = pg; o.ch.setStride?.(glideStride(() => mine.kind)); peerGlide.set(id, pg); }
@@ -273,6 +280,7 @@ export function createIceRink(game) {
   // The action button on the ice (null: nothing of ours).
   function action() {
     if (!hall || !skating || sk.down > 0) return null;
+    if (pair.on) return pair.action(); // (no jumps while two skate together: the button lets go)
     return sk.air ? { key: 'ice-land', label: '⛸️ ' + L(RINK_TEXT.land), run: jump } : { key: 'ice-jump', label: '⛸️ ' + L(RINK_TEXT.jump), run: jump };
   }
   // My bits of the shared state.
@@ -281,12 +289,14 @@ export function createIceRink(game) {
     st.bk = 1; st.bv = rideCode(ICE_SKATES);
     const c = sk.code() || glide;
     if (c) st.ik = c;
+    pair.state(st);
   }
 
   return {
     tick, action, state, RINK_TEXT,
     get skating() { return skating; },
-    jump, arrow,
+    jump, arrow, pair,
+    onMsg: (id, e) => pair.onMsg(id, e), gone: (id) => pair.gone(id), after: () => { if (hall) pair.after(); },
     debug: () => ({ skating, air: sk.air, y: +sk.y.toFixed(2), t: +sk.t.toFixed(2), speed: +sk.speed.toFixed(2), down: +sk.down.toFixed(2), chain: sk.chain, tricks: sk.tricks.map(trickCode), code: sk.code(), glide, coast: +coast.toFixed(2), saved: read(), peers: [...peers].map(([id, q]) => [id, q.n, q.tricks.map(trickCode)]) }),
     skater: sk,
   };
