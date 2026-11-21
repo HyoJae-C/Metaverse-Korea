@@ -3129,7 +3129,7 @@ function enterStore(item, walkIn = null) {
   if (store.cinema) enterKpopCafe('cinema', store.cinema);
   if (store.category === 'bar') enterMusicCafe('jazz'); // a quiet bar plays jazz
   if (built.massNpcs) { enterMusicCafe('organ'); shop.toast(L(roomKit().CATHEDRAL_TEXT.welcome)); } // the cathedral: its organ, softly
-  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); } // the Opera Theater: only the orchestra plays
+  if (built.stageShow) { enterMusicCafe('concert'); built.stageShow.enter(); document.body.classList.add('in-show'); } // the Opera Theater: only the orchestra plays
   if (store.genre) enterClub(store.genre);
   if (store.workshop === 'livecafe') liveStage.enter();
   const quiet = store.category === 'library';
@@ -3401,7 +3401,7 @@ function leaveStore(walkOut = false) {
     if (doorCam) { cam.pitch = doorCam.pitch; cam.dist = doorCam.dist; }
   }
   doorCam = null;
-  document.body.classList.remove('in-store');
+  document.body.classList.remove('in-store', 'in-show');
   shop.leaveStore();
   interior = null;
   if (guide) $('guide').hidden = false;
@@ -7402,7 +7402,7 @@ renderer.setAnimationLoop((now) => {
     let d = targetRy - me.root.rotation.y;
     d = Math.atan2(Math.sin(d), Math.cos(d));
     me.root.rotation.y += d * Math.min(1, dt * 12);
-    const anim = steady ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN));
+    const anim = steady || (quiet && inStore && !riding) ? Math.min(STEADY_ANIM, (speed / walkPace) * STEADY_ANIM) : Math.min(1, speed / (riding ? rideSpeed() : inStore ? STORE_RUN : RUN)); // (a hall with a show, the cathedral: the walk never looks like a run)
     speed01 = THREE.MathUtils.lerp(speed01, anim, Math.min(1, dt * 10));
   } else if (mag > 0.05 && boatTaxi.busy) { // walking round the boat taxi's deck (it carries you along)
     const speed = STORE_WALK * Math.min(1, mag);
@@ -7810,6 +7810,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     stage: () => interior?.stageShow?.state ?? null, // the Opera Theater's show (core/stage-show.js)
+    speed01: () => speed01, // 0 idle, about 0.5 walking, over 0.55 the run animation
     rooms: () => interiorCache.size, // rooms kept in memory (game/room-cache.js)
     gpuSweep: () => gpuJanitor.sweepNow(), // free textures not drawn for a minute (game/gpu-janitor.js)
     gpu: () => ({ ...renderer.info.memory }),

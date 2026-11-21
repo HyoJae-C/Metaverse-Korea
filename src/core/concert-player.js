@@ -44,7 +44,10 @@ export class ConcertPlayer {
     this.count = 0; // notes played so far
   }
 
-  get ctx() { return this.music.on ? this.music.ctx : null; }
+  // (Only while the sound is really running: a phone back from another app
+  // has it stopped, its clock frozen, and notes handed over then would all
+  // sound at once later. play() finds its place again when it runs.)
+  get ctx() { const c = this.music.on ? this.music.ctx : null; return c && c.state === 'running' ? c : null; }
 
   // The hall: everything goes to the music output dry and through a long echo.
   _out() {

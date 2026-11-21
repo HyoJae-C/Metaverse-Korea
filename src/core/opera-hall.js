@@ -153,11 +153,21 @@ export function buildOperaHall(store, ROOM, EXIT) {
   scene.add(scenery);
 
   // The curtain: two halves that draw apart (curtain(k): 0 shut, 1 open).
-  const curtainMat = new THREE.MeshLambertMaterial({ color: C.curtain });
+  // Pleats: deep folds every half metre, drawn darker in their hollows so
+  // they read from the back row too; they gather tighter as it opens.
+  const curtainMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const halves = [-1, 1].map((s) => {
-    const geo = new THREE.PlaneGeometry(S.open / 2 + 0.3, S.high, 14, 1);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 5.2) * 0.16); // folds
+    const cw = S.open / 2 + 0.3, geo = new THREE.PlaneGeometry(cw, S.high, 96, 6);
+    const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
+    const lit = new THREE.Color(C.curtain), deep = new THREE.Color(C.curtainDark).multiplyScalar(0.62), c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), v = pos.getY(i) / S.high + 0.5; // v: 0 at the hem, 1 at the top
+      const f = Math.sin(x * 11.5 + Math.sin(x * 2.3) * 0.9), sway = Math.sin(x * 3.1 + v * 2.2) * 0.05 * (1 - v); // (the hem hangs a little unevenly)
+      pos.setZ(i, f * 0.13 + sway);
+      c.copy(deep).lerp(lit, 0.5 + 0.5 * f).multiplyScalar(0.86 + 0.14 * v);
+      col.set([c.r, c.g, c.b], i * 3);
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
     geo.computeVertexNormals();
     const m = new THREE.Mesh(geo, curtainMat);
     m.position.set(s * (S.open / 4 + 0.15), S.y + S.high / 2, S.front - 0.25);
@@ -168,7 +178,7 @@ export function buildOperaHall(store, ROOM, EXIT) {
   let curtainK = 0;
   const curtain = (k) => {
     curtainK = Math.min(1, Math.max(0, k));
-    for (const m of halves) { m.scale.x = 1 - curtainK * 0.84; m.position.x = m.userData.side * (S.open / 4 + 0.15 + curtainK * (S.open / 4) * 0.86); }
+    for (const m of halves) { m.scale.x = 1 - curtainK * 0.84; m.scale.z = 1 + curtainK * 0.9; m.position.x = m.userData.side * (S.open / 4 + 0.15 + curtainK * (S.open / 4) * 0.86); }
   };
 
   // --- The orchestra pit -----------------------------------------------------------
