@@ -5849,6 +5849,12 @@
    "z": -137.1,
    "ry": 1.571,
    "clear": 6,
+   "label": {
+    "ko": "동대문 종묘상",
+    "en": "Dongdaemun Seed Shop",
+    "ja": "東大門 種苗店",
+    "zh": "东大门种苗店"
+   },
    "sd": 1,
    "why": "made up: the real seed shops line Jongno from Jongno 5-ga to Dongdaemun; the game has no Jongno west of Heunginjimun yet, so this one stands at the Dongdaemun end, on the west kerb facing the gate (Yozi 2026-11-21)"
   }

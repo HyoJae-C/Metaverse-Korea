@@ -58,3 +58,14 @@ test('the temples are reached at their gate, not at the main hall', () => {
   assert.deepEqual(find('조계사'), ['jogyesa']);
   assert.deepEqual(find('봉은사'), ['bongeunsa']);
 });
+
+// Yozi 2026-11-21: "맵에서 농장 표시좀해줘". The weekend farm and its seed
+// shop carry a name the map draws (ui/map-view.js), and the search finds them.
+test('the weekend farm and the seed shop are named on the map and can be searched', () => {
+  for (const type of ['farm', 'seedshop']) {
+    const l = map.landmarks.find((m) => m.type === type);
+    assert.ok(l?.label?.ko && l.label.en, `${type} has no name on the map`);
+  }
+  for (const q of ['주말농장', '텃밭', 'Weekend Farm']) assert.deepEqual(find(q), ['farm'], q);
+  for (const q of ['종묘상', 'Seed Shop']) assert.deepEqual(find(q), ['seedshop'], q);
+});

@@ -55,6 +55,13 @@ export const LANDMARK_SEARCH = [
   { type: 'peacegate', icon: '⛩️', go: [0, 12],
     name: { en: 'World Peace Gate', ko: '평화의 문', ja: '平和の門', zh: '和平之门' },
     also: ['Peace Gate', '평화의문'] },
+  // The weekend farm and its seed shop: where you stand at the stall.
+  { type: 'farm', icon: '🌱', go: [5.8, 8.5], // by the farm stand, outside the glasshouse's door
+    name: { en: 'Weekend Farm (Yongsan Family Park)', ko: '주말농장 (용산가족공원 텃밭)', ja: '週末農園（龍山家族公園）', zh: '周末农场（龙山家族公园）' },
+    also: ['Farm', 'Eco Farm', 'Allotment', '텃밭', '농장', '친환경 텃밭', '農園', '农场'] },
+  { type: 'seedshop', icon: '🌰', go: [2.1, 0], // in front of its counter
+    name: { en: 'Dongdaemun Seed Shop', ko: '동대문 종묘상', ja: '東大門 種苗店', zh: '东大门种苗店' },
+    also: ['Seed Shop', 'Seeds', '종묘상', '씨앗', '씨앗 가게', '種', '种子'] },
 ];
 
 const norm = (v) => String(v ?? '').normalize('NFKC').toLocaleLowerCase().replace(/[\s\-_'·.()（）]+/g, '');
