@@ -623,17 +623,19 @@
           "ko": "종로3가",
           "en": "Jongno 3(sam)-ga"
         },
-        "note": "On Yulgok-ro at the foot of Bukchon-ro. Exit 2 is on the Bukchon side.",
+        "note": "On Yulgok-ro at the foot of Bukchon-ro: exit 2 west of Bukchon-ro, exit 3 east of it (OSM).",
         "exits": [
           {
             "n": 2,
             "at": [-1545, -904],
-            "ry": 1.5708
+            "ry": 1.5708,
+            "why": "OSM 3403538920 is 9.8 m east, on Bukchon-ro as the game draws it (7 m wide); kept on the corner west of it"
           },
           {
             "n": 3,
-            "at": [-1397, -902],
-            "ry": -1.5708
+            "at": [-1528, -902.1],
+            "ry": 3.14159,
+            "why": "OSM 3403538921 (1.5 m off); was 132 m east by Changdeokgung, left from the first Bukchon. Two filler hanok on the corner were taken out to make room"
           }
         ]
       },
