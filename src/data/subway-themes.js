@@ -28,4 +28,5 @@ export const STATION_THEMES = {
   'mongchontoseong-station': ['park', 'culture'], // Olympic Park
   'childrens-grand-park-station': ['park'],
   'ichon-station': ['culture', 'park'], // the art museum, Yongsan Family Park's weekend farm
+  'magongnaru-station': ['park'], // Seoul Botanic Park
 };

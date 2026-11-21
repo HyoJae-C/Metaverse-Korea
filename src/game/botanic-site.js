@@ -18,6 +18,14 @@ const C = {
   agave: '#6fa69a', lavender: '#8f7ac8', citrus: '#3f8a45', orange: '#f29a2a', cypress: '#2f6a45', baobab: '#a08a78', bottle: '#9a8a70', dragon: '#4f8f6a',
   flowerA: '#f2668a', flowerB: '#f2c230', wood: '#b88a5a', pot: '#c97b52', white: '#f6f1f6', jaw: '#c8504a',
 };
+// The flower field by season (core/season.js has summer and autumn today):
+// stripes of these colours; h: how tall a clump is, flat: how squashed its head.
+export const FIELD_FLOWERS = {
+  spring: { colors: ['#e8423a', '#f5c832', '#f28ab0', '#fbf7f2'], ground: '#5fa04a', h: 0.5, flat: 1.25 }, // tulips
+  summer: { colors: ['#6f8fe0', '#a47ad8', '#f29ac0', '#8fc0f0'], ground: '#4f8f4a', h: 0.75, flat: 0.9 }, // hydrangeas
+  autumn: { colors: ['#f29ac0', '#fbf7f2', '#d94f9a', '#f2c230'], ground: '#6f9a52', h: 0.9, flat: 0.75 }, // cosmos
+  winter: { colors: ['#e6d9b0', '#d9c89a', '#efe6c8'], ground: '#b8a45a', h: 1.1, flat: 1.4 }, // silver grass
+};
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 
 export function buildBotanicSite(l, store) {
@@ -265,7 +273,7 @@ export function buildBotanicSite(l, store) {
   const P = (x, z) => v4.set(x, 0, z); // (the map's spots are in metres from the greenhouse's middle)
   const trees = l.trees || [], leafy = trees.filter((t) => !t[3]), pines = trees.filter((t) => t[3]);
   if (trees.length) {
-    const trunks = inst(new THREE.CylinderGeometry(0.2, 0.3, 3, 6).translate(0, 1.5, 0), '#6b4a32', trees.length);
+    const trunks = inst(new THREE.CylinderGeometry(0.2, 0.3, 3, 5, 1, true).translate(0, 1.5, 0), '#6b4a32', trees.length);
     trees.forEach(([x, z, s], i) => trunks.setMatrixAt(i, m4.compose(P(x, z), q4.setFromAxisAngle(up, i), s4.set(s, s, s))));
     const crowns = inst(new THREE.IcosahedronGeometry(2.1, 0).translate(0, 4.3, 0), SEASON === 'autumn' ? '#e6e6e6' : '#5d8f4a', Math.max(1, leafy.length));
     const greens = ['#5d8f4a', '#6f9a52', '#4f8045', '#7aa35a'].map((c) => new THREE.Color(c));
@@ -291,6 +299,72 @@ export function buildBotanicSite(l, store) {
     const r = inst(tuft, '#b8a45a', reeds.length);
     reeds.forEach(([x, z], i) => r.setMatrixAt(i, m4.compose(P(x, z), q4.setFromAxisAngle(up, i * 1.7), s4.set(1, 0.85 + (i % 4) * 0.12, 1))));
   }
+  // The theme garden's flower field: the season's flowers in stripes of colour,
+  // a low clump every metre or so over a darker ground.
+  const fields = l.fields || [];
+  if (fields.length) {
+    const inP = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+    const F = FIELD_FLOWERS[SEASON] || FIELD_FLOWERS.summer, cols = F.colors.map((c) => new THREE.Color(c));
+    const ground = new THREE.Mesh(mergeGeometries(fields.map((p) => new THREE.ShapeGeometry(new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)))).rotateX(-Math.PI / 2).translate(0, 0.04, 0))), new THREE.MeshLambertMaterial({ color: F.ground }));
+    ground.matrixAutoUpdate = false;
+    group.add(ground);
+    const spots = [], STEP = 0.95;
+    for (const p of fields) {
+      const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]);
+      for (let x = Math.min(...xs); x < Math.max(...xs); x += STEP) for (let z = Math.min(...zs); z < Math.max(...zs); z += STEP) {
+        const k = spots.length + 1, px = x + (leafHash(k, 1) - 0.5) * 0.6, pz = z + (leafHash(k, 2) - 0.5) * 0.6;
+        if (inP(px, pz, p)) spots.push([px, pz]);
+      }
+    }
+    // (no stems: the darker ground under them reads as the leaves, and a head is 8 triangles)
+    const heads = inst(new THREE.OctahedronGeometry(0.36, 0).scale(1, F.flat, 1).translate(0, F.h * 0.5, 0), '#ffffff', Math.max(1, spots.length));
+    spots.forEach(([x, z], i) => {
+      const s = 0.85 + leafHash(i, 3) * 0.4;
+      heads.setMatrixAt(i, m4.compose(P(x, z), q4.setFromAxisAngle(up, i * 0.9), s4.set(s, s, s)));
+      heads.setColorAt(i, cols[(Math.floor((x * 0.8 + z * 0.6) / 4.5 + 100) + (leafHash(i, 4) < 0.12 ? 1 : 0)) % cols.length]); // stripes across the field, a stray one here and there
+    });
+    heads.count = spots.length;
+  }
+  // Wood: the footbridges' boards and rails, the lookout deck, the park's
+  // benches and the photo frame in the flowers (boxes, one mesh).
+  const boxes = []; // [x, y, z, sx, sy, sz, turn, colour]
+  const WOOD = '#b88a5a', RAIL = '#8a6240';
+  const along = (p, w, rails, y = 0.07) => {
+    for (let i = 1; i < p.length; i++) {
+      const [ax, az] = p[i - 1], [bx, bz] = p[i], len = Math.hypot(bx - ax, bz - az), t = Math.atan2(bx - ax, bz - az), nx = Math.cos(t), nz = -Math.sin(t), mx = (ax + bx) / 2, mz = (az + bz) / 2;
+      boxes.push([mx, y, mz, w, 0.1, len + 0.3, t, WOOD]);
+      if (rails) for (const sd of [-1, 1]) {
+        const ox = nx * sd * (w / 2 - 0.08), oz = nz * sd * (w / 2 - 0.08);
+        boxes.push([mx + ox, 1.0, mz + oz, 0.09, 0.09, len + 0.2, t, RAIL]);
+        for (let d = 0; d < len; d += 2.2) boxes.push([ax + ox + (bx - ax) * (d / len), 0.55, az + oz + (bz - az) * (d / len), 0.11, 0.95, 0.11, t, RAIL]);
+      }
+    }
+  };
+  for (const p of l.bridges || []) along(p, 2.6, true);
+  if (l.deck) {
+    const [[ax, az], [bx, bz]] = l.deck, t = Math.atan2(bx - ax, bz - az), W2 = 3.2;
+    along(l.deck, W2, true);
+    boxes.push([bx, 1.0, bz, W2, 0.09, 0.09, t, RAIL]); // the rail across the end
+  }
+  const parkBenches = l.benches || [];
+  for (const [x, z, ry] of parkBenches) {
+    const c = Math.cos(ry), sn = Math.sin(ry);
+    boxes.push([x, 0.44, z, 1.7, 0.08, 0.5, ry, WOOD], [x - sn * 0.24, 0.72, z - c * 0.24, 1.7, 0.4, 0.07, ry, WOOD]);
+    for (const u of [-0.7, 0.7]) boxes.push([x + c * u - sn * 0.1, 0.36, z - sn * u - c * 0.1, 0.08, 0.72, 0.4, ry, RAIL]);
+  }
+  // The photo frame: stand behind it with the flowers and the glass house at your back.
+  let frame = null;
+  if (fields.length) {
+    const big = fields.reduce((a, b) => (Math.abs(b.reduce((t, q, i) => t + q[0] * b[(i + 1) % b.length][1] - b[(i + 1) % b.length][0] * q[1], 0)) > Math.abs(a.reduce((t, q, i) => t + q[0] * a[(i + 1) % a.length][1] - a[(i + 1) % a.length][0] * q[1], 0)) ? b : a));
+    const fx = big.reduce((t, q) => t + q[0], 0) / big.length, fz = big.reduce((t, q) => t + q[1], 0) / big.length, t = Math.atan2(fx, fz), c = Math.cos(t), sn = Math.sin(t), WHITE = '#fbf7f2';
+    frame = { x: fx, z: fz, ry: t };
+    for (const u of [-1.3, 1.3]) boxes.push([fx + c * u, 1.15, fz - sn * u, 0.14, 2.3, 0.14, t, WHITE]);
+    for (const y of [0.55, 2.25]) boxes.push([fx, y, fz, 2.74, 0.14, 0.14, t, WHITE]);
+  }
+  if (boxes.length) {
+    const b = inst(new THREE.BoxGeometry(1, 1, 1), '#ffffff', boxes.length), col = new THREE.Color();
+    boxes.forEach(([x, y, z, sx, sy, sz, t, c], i) => { b.setMatrixAt(i, m4.compose(v4.set(x, y, z), q4.setFromAxisAngle(up, t), s4.set(sx, sy, sz))); b.setColorAt(i, col.set(c)); });
+  }
   group.traverse((o) => { if (o.isInstancedMesh) { o.instanceMatrix.needsUpdate = true; if (o.instanceColor) o.instanceColor.needsUpdate = true; o.computeBoundingSphere(); } });
   group.updateMatrixWorld(true);
 
@@ -301,9 +375,10 @@ export function buildBotanicSite(l, store) {
     ...wall.map(([x0, z0, x1, z1]) => W(thick(x0, z0, x1, z1))),
     ...lay.beds.map((b) => W(b.p)),
     W(circle(K.pond, 14)),
-    ...lay.benches.map((b) => { const c = Math.cos(b.ry), s = Math.sin(b.ry); return W([[-0.85, -0.25], [0.85, -0.25], [0.85, 0.25], [-0.85, 0.25]].map(([u, v]) => [b.x + u * c + v * s, b.z - u * s + v * c])); }),
+    ...[...lay.benches, ...parkBenches.map(([x, z, ry]) => ({ x, z, ry }))].map((b) => { const c = Math.cos(b.ry), s = Math.sin(b.ry); return W([[-0.85, -0.25], [0.85, -0.25], [0.85, 0.25], [-0.85, 0.25]].map(([u, v]) => [b.x + u * c + v * s, b.z - u * s + v * c])); }),
+    ...(frame ? [-1.3, 1.3].map((u) => { const x = frame.x + Math.cos(frame.ry) * u, z = frame.z - Math.sin(frame.ry) * u; return W([[x - 0.12, z - 0.12], [x + 0.12, z - 0.12], [x + 0.12, z + 0.12], [x - 0.12, z + 0.12]]); }) : []),
   ];
-  const seats = lay.benches.flatMap((b) => { const c = Math.cos(b.ry), s = Math.sin(b.ry); return [-0.45, 0.45].map((u) => ({ x: l.x + b.x + u * c, z: l.z + b.z - u * s, ry: b.ry, stand: [l.x + b.x + u * c + 0.85 * s, l.z + b.z - u * s + 0.85 * c], street: true })); });
+  const seats = [...lay.benches, ...parkBenches.map(([x, z, ry]) => ({ x, z, ry }))].flatMap((b) => { const c = Math.cos(b.ry), s = Math.sin(b.ry); return [-0.45, 0.45].map((u) => ({ x: l.x + b.x + u * c, z: l.z + b.z - u * s, ry: b.ry, stand: [l.x + b.x + u * c + 0.85 * s, l.z + b.z - u * s + 0.85 * c], street: true })); });
   const clerks = lay.clerks.map((c) => ({ x: l.x + c.x, z: l.z + c.z, ry: c.ry, rare: c.rare }));
   return { group, colliders, products, clerks, seats, layout: lay };
 }

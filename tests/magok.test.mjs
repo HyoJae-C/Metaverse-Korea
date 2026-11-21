@@ -49,7 +49,13 @@ test('the paths are the real footways (within 1 m); the made-up ones are marked'
   for (const r of walks.filter((q) => !q.approx)) for (const [x, z] of r.p) assert.ok(Math.min(...real.map((p) => lineDist(x, z, p))) < 1, `path point ${x}, ${z}`);
   const fake = walks.filter((r) => r.approx);
   assert.ok(fake.length >= 3 && made(/doors and the ring path/));
-  for (const r of fake) for (const [x, z] of r.p) assert.ok(Math.hypot(x - gh.x, z - gh.z) < gh.r + 4, 'the made-up paths are the ones at the greenhouse');
+  for (const r of fake.filter((q) => !q.deck)) for (const [x, z] of r.p) assert.ok(Math.hypot(x - gh.x, z - gh.z) < gh.r + 4, 'the made-up paths are the ones at the greenhouse');
+  // ... and the lookout deck: one, from a real path out over the lake, and said so.
+  const decks = fake.filter((q) => q.deck);
+  assert.ok(decks.length === 1 && made(/lookout deck/));
+  const [da, db] = decks[0].p;
+  assert.ok(Math.min(...real.map((p) => lineDist(da[0], da[1], p))) < 1, 'the deck starts on a real path');
+  assert.ok(inPoly(db[0], db[1], way(IDS.lake)) && Math.hypot(db[0] - da[0], db[1] - da[1]) < 25, 'and ends over the lake');
   const j10 = mg.roads.find((r) => r.n?.en === 'Magokjungang 10-ro'), jReal = named('마곡중앙10로');
   for (const [x, z] of j10.p) assert.ok(Math.min(...jReal.map((p) => lineDist(x, z, p))) < 10, `Magokjungang 10-ro at ${x}, ${z}`);
 });
@@ -167,4 +173,64 @@ test('the planting outside: in the garden, off the water and the buildings', () 
     assert.ok(!mg.buildings.some((b) => inPoly(x, z, b.p)) && Math.hypot(x - gh.x, z - gh.z) > gh.r + 3);
     assert.ok(!mg.areas.some((a) => a.k === 'water' && inPoly(x, z, a.p)), 'not in the water');
   }
+});
+
+test('the garden is planted: a flower field in the theme garden, trees, beds and benches off the paths and the water', () => {
+  const at = ([x, z]) => [x + gh.x, z + gh.z];
+  const walks = mg.roads.filter((r) => r.k === 'walk'), waters = mg.areas.filter((a) => a.k === 'water');
+  assert.ok(gh.trees.length >= 330, `trees: ${gh.trees.length}`);
+  assert.ok(gh.beds.length >= 20 && gh.benches.length >= 15);
+  const polyArea = (p) => Math.abs(p.reduce((s, q, i) => s + q[0] * p[(i + 1) % p.length][1] - p[(i + 1) % p.length][0] * q[1], 0) / 2);
+  const total = gh.fields.reduce((s, p) => s + polyArea(p), 0);
+  assert.ok(total > 900 && total < 2200 && made(/flower field/), `flower field: ${Math.round(total)} m2, said to be made up`);
+  for (const f of gh.fields) for (const q of f) {
+    const [x, z] = at(q);
+    assert.ok(inPoly(x, z, garden.p) || ringDist(x, z, garden.p) < 0.5, 'the field is inside the garden');
+    for (const w of waters) assert.ok(!inPoly(x, z, w.p), 'and not in the water');
+    for (const r of walks) assert.ok(lineDist(x, z, r.p) > r.w / 2 + 0.3, 'and off the paths');
+  }
+  for (const b of gh.benches) {
+    const [x, z] = at(b);
+    assert.ok(inPoly(x, z, garden.p), 'a bench in the garden');
+    for (const w of waters) assert.ok(!inPoly(x, z, w.p) && ringDist(x, z, w.p) > 1, 'a bench on dry ground');
+    for (const r of walks) assert.ok(lineDist(x, z, r.p) > r.w / 2 + 0.4, 'a bench beside a path, not on it');
+    for (const bd of mg.buildings) assert.ok(!inPoly(x, z, bd.p), 'a bench clear of the buildings');
+  }
+  // The footbridges are stretches of real path over the water.
+  assert.ok(gh.bridges.length >= 1);
+  for (const br of gh.bridges) for (const q of br) { const [x, z] = at(q); assert.ok(waters.some((w) => inPoly(x, z, w.p)) && walks.some((r) => !r.approx && lineDist(x, z, r.p) < 0.5), 'a bridge is a real path over water'); }
+});
+
+test('Magongnaru Station (Line 9, 905): exits within 15 m of the real 3 and 4, inside the garden, a walk from the greenhouse', () => {
+  const real = { 3: [37.5657219, 126.8280119], 4: [37.5649268, 126.8279046] }; // OSM 5968926277, 5968926278
+  const st = region.subway.stations.find((s) => s.id === 'magongnaru-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [3, 4]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+    assert.ok(inPoly(e.at[0] - ox, e.at[1] - oz, garden.p), `exit ${e.n} is in the garden`);
+  }
+  const main = gh.doors.find((d) => d.main), far = Math.hypot(main.out[0] + ox - st.exits[0].at[0], main.out[1] + oz - st.exits[0].at[1]);
+  assert.ok(far > 120 && far < 200, `the greenhouse door is ${Math.round(far)} m from exit 3`);
+});
+
+test('the Cactus & Succulent House: a made-up shop on the forest school\'s real building, four theme plants sold only there', async () => {
+  const { THEME_PLANTS } = await import('../src/core/house-plants.js');
+  const s = stores.find((x) => x.id === 'botanic-cactus-house'), green = stores.find((x) => x.id === 'seoul-botanic-greenhouse');
+  assert.ok(s && s.district === 'magok' && s.workshop === 'cactus-house' && !s.carts && made(/Cactus & Succulent House/), 'a room you walk into, said to be made up');
+  const school = way(1160626398), [x, z] = [s.at[0] - ox, s.at[1] - oz];
+  assert.ok(!inPoly(x, z, school) && ringDist(x, z, school) < 2.5, `its spot is just outside the school's wall (${ringDist(x, z, school).toFixed(1)} m)`);
+  assert.ok(inPoly(x, z, garden.p), 'inside the garden');
+  assert.ok(Math.min(...mg.roads.filter((q) => q.k === 'walk').map((r) => lineDist(x, z, r.p))) < 5, 'a path comes to its door');
+  for (const t of gh.trees) assert.ok(Math.hypot(t[0] + gh.x - x, t[1] + gh.z - z) > 3, 'no tree in the doorway');
+  assert.equal(THEME_PLANTS.length, 4);
+  assert.deepEqual(s.products.map((p) => p.furniture).sort(), THEME_PLANTS.map((p) => p[0]).sort());
+  for (const [id, emoji, size, rare, name] of THEME_PLANTS) {
+    const f = FURNITURE.find((q) => q.id === id);
+    assert.ok(f && f.item === id && ITEMS[id]?.furniture && emoji && size.length === 2 && !rare, id);
+    for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(name[k], `${id} name ${k}`);
+    assert.ok(buildFurniture(id).children.length > 3, `${id} has a model`);
+    assert.ok(!PLANTS.some((p) => p[0] === id) && !green.products.some((p) => p.furniture === id), `${id} is not sold in the greenhouse`);
+  }
+  for (const p of s.products) assert.ok(p.model === 'furniture' && p.price >= 5000 && p.price <= 40000 && p.name.ko && p.desc.ko, p.id);
 });

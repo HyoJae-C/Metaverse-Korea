@@ -55,7 +55,7 @@ await shot('2-from-the-lake-side');
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), out(l.r + 3));
 await page.evaluate((ry) => __mk.face(ry), Math.atan2(-Math.cos(main.a), -Math.sin(main.a)));
 await wait(500);
-await page.keyboard.down('w'); await wait(4500); await page.keyboard.up('w');
+await page.keyboard.down('w'); await wait(5500); await page.keyboard.up('w');
 const walked = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
 assert(Math.hypot(walked[0] - gx, walked[1] - gz) < l.r - 4, `walked in through the door (${walked.map((v) => v.toFixed(1))}, ${(Math.hypot(walked[0] - gx, walked[1] - gz)).toFixed(1)} m from the middle)`);
 assert(await page.evaluate(() => __mk.room().mode === 'street'), 'inside the greenhouse is still the street');
@@ -102,5 +102,67 @@ await page.evaluate(() => __mk.cam({ yaw: 0, pitch: 0.75, dist: 90 }));
 await wait(2000);
 await shot('8-park-from-above');
 assert(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.join(' | ') : ''));
+
+// The garden: the flower field, the lookout deck over the lake, a bench, the stamp.
+const big = l.fields.reduce((a, b) => (b.length > a.length ? b : a)), fc = [big.reduce((t, q) => t + q[0], 0) / big.length + gx, big.reduce((t, q) => t + q[1], 0) / big.length + gz];
+await page.evaluate(([x, z]) => __mk.goto(x, z + 5, 0), fc);
+await page.evaluate(() => __mk.cam({ yaw: 2.4, pitch: 0.42, dist: 30 }));
+await wait(2000);
+await shot('9-flower-field');
+console.log('field render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
+const [da, db] = l.deck.map(([x, z]) => [x + gx, z + gz]);
+await page.evaluate(([x, z]) => __mk.goto(x, z, 0), da);
+await page.evaluate((ry) => { __mk.cam({ yaw: ry + Math.PI, pitch: 0.3, dist: 10 }); __mk.face(ry); }, Math.atan2(db[0] - da[0], db[1] - da[1])); // (the camera behind me: W walks away from it)
+await wait(600);
+await page.keyboard.down('w'); await wait(3200); await page.keyboard.up('w');
+const onDeck = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
+assert(Math.hypot(onDeck[0] - db[0], onDeck[1] - db[1]) < 4, `walked out along the deck over the lake (${Math.hypot(onDeck[0] - db[0], onDeck[1] - db[1]).toFixed(1)} m from its end)`);
+await page.evaluate((yaw) => __mk.cam({ yaw, pitch: 0.3, dist: 14 }), Math.atan2(db[0] - da[0], db[1] - da[1]) + 0.7);
+await wait(1500);
+await shot('10-lake-deck');
+await page.evaluate((ry) => __mk.cam({ yaw: ry + Math.PI, pitch: 0.3, dist: 10 }), Math.atan2(db[0] - da[0], db[1] - da[1]));
+await wait(600);
+await page.keyboard.down('w'); await wait(2500); await page.keyboard.up('w');
+const stopped = await page.evaluate(() => { const q = __mk.outside(); return [q.x, q.z]; });
+assert(Math.hypot(stopped[0] - da[0], stopped[1] - da[1]) < Math.hypot(db[0] - da[0], db[1] - da[1]) + 1.2, 'the deck ends at its rail: no walking on into the water');
+
+// The Cactus & Succulent House: a door on the forest school, four pot plants inside.
+const cactus = read('stores.json').stores.find((q) => q.id === 'botanic-cactus-house');
+await page.evaluate(([x, z]) => __mk.goto(x, z, 0), cactus.at);
+await page.evaluate(() => __mk.cam({ yaw: 0.6, pitch: 0.3, dist: 16 }));
+await wait(2500);
+await shot('13-cactus-house-door');
+console.log('door action:', await label());
+await page.evaluate(() => __mk.enter('botanic-cactus-house'));
+await page.waitForFunction(() => __mk.room().mode !== 'street', null, { timeout: 30000 });
+await wait(2500);
+await shot('14-cactus-house-inside');
+assert(await page.evaluate(() => __mk.room().id === 'botanic-cactus-house'), 'walked into the cactus house');
+await page.evaluate(() => __mk.product(3));
+await wait(800);
+assert(await page.evaluate(() => /Golden barrel/.test(document.body.innerText)), 'the golden barrel cactus is for sale there');
+await shot('15-cactus-buy-sheet');
+await page.keyboard.press('Escape');
+await page.evaluate(() => __mk.leave?.());
+await page.waitForFunction(() => __mk.room().mode === 'street', null, { timeout: 30000 }).catch(() => {});
+
+// Magongnaru Station: down exit 3 into the station, and it is on the route map.
+const st = read('region.json').subway.stations.find((q) => q.id === 'magongnaru-station'), ex = st.exits[0];
+const { outsideOf } = await import('../../src/core/subway.js');
+const mouth = outsideOf(ex, 2.5);
+await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [mouth.x, mouth.z]);
+await page.evaluate((yaw) => __mk.cam({ yaw, pitch: 0.35, dist: 16 }), ex.ry + 0.6);
+await wait(1500);
+await shot('11-station-exit');
+await page.evaluate((ry) => { __mk.cam({ yaw: ry + Math.PI, pitch: 0.3, dist: 8 }); __mk.face(ry); }, Math.atan2(ex.at[0] - mouth.x, ex.at[1] - mouth.z));
+await wait(600);
+await page.keyboard.down('w');
+const went = await page.waitForFunction(() => __mk.room().mode !== 'street', null, { timeout: 15000 }).then(() => true, () => false);
+await page.keyboard.up('w');
+assert(went, 'walked down exit 3 into Magongnaru Station');
+console.log('room:', JSON.stringify(await page.evaluate(() => { const r = __mk.room(); return { mode: r.mode, store: r.store?.id || r.id || null }; })));
+await wait(1500);
+await shot('12-in-the-station');
+assert(errors.length === 0, 'no page errors at the end' + (errors.length ? ': ' + errors.join(' | ') : ''));
 await browser.close();
 console.log(process.exitCode ? 'FAILED' : 'OK');

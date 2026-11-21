@@ -1195,9 +1195,24 @@ the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
   furniture). Five everyday ones by the main door (₩12,000–45,000), five rare
   ones at the far end of the main walk, each in front of the big one of the
   same plant (₩55,000–200,000). The orchid and the flytrap can stand on a table.
-- **An island for now:** the land round Magok is closed, so you get here by
-  taxi or the map. Magongnaru Station and the boat taxi's Magok pier are not
-  built yet.
+- **The garden's planting** (Yozi 2026-11-21: too bare for its size): about
+  350 trees, round flower beds and benches beside the paths, reeds by the
+  wetland, and a **flower field** in the theme garden between the pond and
+  the greenhouse (about 1,270 m2 in nine pieces between the paths, made up).
+  The field's flowers follow `SEASON` (`FIELD_FLOWERS` in
+  `src/game/botanic-site.js`: tulips, hydrangeas, cosmos, silver grass). The
+  real path over the lake has footbridge rails; a made-up lookout deck goes
+  9 m out over the lake; a white photo frame stands in the biggest field.
+- **The Cactus & Succulent House** (stores.json `botanic-cactus-house`, made
+  up): a shop door on the forest school's real building. Its room
+  (`src/core/cactus-house.js`, with the room builder) has a sand island of big
+  cacti; it sells four theme plants (`THEME_PLANTS` in
+  `src/core/house-plants.js`) that the greenhouse does not.
+- **Magongnaru Station** (Line 9, 905) at the garden's west edge: exits at the
+  real 3 and 4, moved onto open ground inside the garden
+  (`stationExits()` in the script). The stamp stand is outside the
+  greenhouse's main door. The land round Magok is still closed, and the boat
+  taxi's Magok pier is not built.
 - `tests/magok.test.mjs` checks the real outlines, the exception and its
   notes, that every stand can be walked to from the door, and the shop.
   `tests/e2e/botanic.mjs` walks in and buys a monstera (`DAY=1` for daytime

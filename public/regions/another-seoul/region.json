@@ -855,6 +855,19 @@
           { "n": 2, "at": [-1764.1, 618.3], "ry": -1.9429 },
           { "n": 3, "at": [-1773.1, 637.3], "ry": -1.9429 }
         ]
+      },
+      {
+        "id": "magongnaru-station",
+        "name": { "ko": "마곡나루", "en": "Magongnaru", "ja": "麻谷ナル", "zh": "麻谷渡口" },
+        "code": "905",
+        "line": { "color": "#bdb092", "name": { "ko": "9호선", "en": "Line 9", "ja": "9号線", "zh": "9号线" } },
+        "prev": { "ko": "신방화", "en": "Sinbanghwa" },
+        "next": { "ko": "양천향교", "en": "Yangcheon Hyanggyo" },
+        "note": "Under Magokjungang 5-ro along the west edge of Seoul Botanic Park, at its real place (OSM station 5968926272; the airport railroad stops here too, the signs show Line 9). Exits at the real 3 and 4 (OSM 5968926277, 5968926278), the garden-side ones, each moved onto the nearest open ground inside the garden, off its paths (scripts/build-magok.mjs stationExits): exit 3 by the arts centre (2 m from the real one), exit 4 at the south-west corner (6 m). About 190 m from the greenhouse's main door (Yozi 2026-11-21).",
+        "exits": [
+          { "n": 3, "at": [-5022.1, -587.8], "ry": -3.1416 },
+          { "n": 4, "at": [-5020.5, -564.2], "ry": 0 }
+        ]
       }
     ]
   },

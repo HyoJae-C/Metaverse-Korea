@@ -243,4 +243,12 @@ export const STAMPS = [
     // a baseball with its stitches, and a bat across it
     icon: '<circle cx="92" cy="104" r="30"/><path d="M72 82 q12 22 0 44 M112 82 q-12 22 0 44"/><path d="M118 70 l34 -34 l8 8 l-34 34 z M118 70 l-8 8"/>',
   },
+  {
+    // outside the greenhouse's main door in Seoul Botanic Park, beside the walk in (scripts/build-magok.mjs STAMP_AT)
+    id: 'botanic', place: { at: [-4900.7, -687], ry: -1.195 }, color: '#2f8a4f', shape: 'circle',
+    name: { ko: '서울식물원', en: 'Seoul Botanic Park', ja: 'ソウル植物園', zh: '首尔植物园' },
+    gu: { ko: '강서구', en: 'Gangseo-gu', ja: '江西区', zh: '江西区' },
+    // the dish-roofed glass house with a palm inside
+    icon: '<path d="M46 132 l8 -52 h92 l8 52 z"/><path d="M54 80 q46 22 92 0"/><path d="M74 88 l-6 44 M126 88 l6 44 M100 92 v40"/><path d="M100 112 q-16 -14 -26 -4 M100 112 q16 -14 26 -4 M100 112 q-6 -18 -18 -18 M100 112 q6 -18 18 -18"/>',
+  },
 ];

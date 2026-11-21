@@ -118,5 +118,46 @@ export const PLANTS = [
     }
   }],
 ];
-export const PLANT_IDS = PLANTS.map((p) => [p[0], p[1], p[4]]);
+// Theme plants: sold only in the Cactus & Succulent House in the park's forest
+// school (stores.json "botanic-cactus-house"; Yozi 2026-11-21: themed plants in
+// one of the park's empty buildings). Same shape as PLANTS; none of them rare.
+export const THEME_PLANTS = [
+  ['plant-succulents', '🌱', [0.45, 0.45], false, { en: 'Succulent bowl', ko: '다육이 모둠', ja: '多肉の寄せ植え', zh: '多肉拼盘' }, (g, part) => {
+    part(cyl(0.2, 0.14, 0.12, 12), WHITE, 0, 0.06, 0); // a wide shallow bowl
+    part(cyl(0.185, 0.185, 0.02, 12), '#d9c7a0', 0, 0.125, 0); // sand
+    const c = '#7fb89a';
+    for (const [x, z, r] of [[0, 0, 0.075], [0.1, 0.04, 0.05], [-0.09, 0.06, 0.055], [-0.03, -0.1, 0.05], [0.08, -0.08, 0.04]]) { // rosettes: rings of fat leaves
+      for (let i = 0; i < 7; i++) { const a = i * 0.9, m = part(ball(1), c, x + Math.sin(a) * r * 0.6, 0.15, z + Math.cos(a) * r * 0.6); m.scale.set(r * 0.5, r * 0.28, r * 0.8); m.rotation.set(-0.5, a, 0, 'YXZ'); }
+      part(ball(1), c, x, 0.165, z).scale.set(r * 0.4, r * 0.4, r * 0.4);
+    }
+  }],
+  ['plant-aloe', '🎋', [0.5, 0.5], false, { en: 'Aloe', ko: '알로에', ja: 'アロエ', zh: '芦荟' }, (g, part) => {
+    pot(part, 0.17, 0.2, '#d9c7a0');
+    for (let i = 0; i < 11; i++) { // thick pointed leaves, the outer ones leaning out
+      const a = i * 2.4, lean = 0.2 + (i / 11) * 0.75, len = 0.5 - (i / 11) * 0.14;
+      const m = part(cone(0.045, len, 5), '#5fa57a', Math.sin(a) * Math.sin(lean) * len / 2, 0.2 + Math.cos(lean) * len / 2, Math.cos(a) * Math.sin(lean) * len / 2);
+      m.rotation.set(lean, a, 0, 'YXZ');
+      m.scale.set(1.5, 1, 0.6);
+    }
+  }],
+  ['plant-barrel', '🏵️', [0.45, 0.45], false, { en: 'Golden barrel cactus', ko: '금호 선인장', ja: '金鯱サボテン', zh: '金琥仙人球' }, (g, part) => {
+    pot(part, 0.2, 0.16);
+    const c = '#6f9a4a';
+    part(ball(1), c, 0, 0.36, 0).scale.set(0.2, 0.2, 0.2);
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2, m = part(ball(1), c, Math.sin(a) * 0.17, 0.36, Math.cos(a) * 0.17); m.scale.set(0.035, 0.19, 0.05); m.rotation.y = a; } // the ribs
+    part(ball(1), '#f0d060', 0, 0.56, 0).scale.set(0.08, 0.025, 0.08); // the golden crown
+  }],
+  ['plant-prickly', '🍐', [0.6, 0.6], false, { en: 'Prickly pear', ko: '부채선인장', ja: 'ウチワサボテン', zh: '团扇仙人掌' }, (g, part) => {
+    pot(part, 0.2, 0.22, '#b9b2a4');
+    const c = '#5f9a62';
+    const pad = (x, y, z, r, tilt, turn) => { const m = part(ball(1), c, x, y, z); m.scale.set(r, r * 1.25, r * 0.28); m.rotation.set(0, turn, tilt, 'YXZ'); return m; };
+    pad(0, 0.44, 0, 0.17, 0.05, 0.3);
+    pad(-0.14, 0.72, 0.02, 0.13, 0.5, 0.5);
+    pad(0.13, 0.76, -0.02, 0.14, -0.4, 0.1);
+    pad(0.22, 1.02, -0.03, 0.1, -0.6, 0.3);
+    pad(-0.2, 0.96, 0.04, 0.09, 0.3, 0.7);
+    for (const [x, y] of [[0.3, 1.14], [-0.26, 1.08], [0.02, 0.95]]) part(ball(0.035), '#e85a8a', x, y, 0); // the fruit
+  }],
+];
+export const PLANT_IDS = [...PLANTS, ...THEME_PLANTS].map((p) => [p[0], p[1], p[4]]);
 export const isRarePlant = (id) => !!PLANTS.find((p) => p[0] === id)?.[3];

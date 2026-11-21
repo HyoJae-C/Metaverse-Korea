@@ -6,7 +6,7 @@ import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE } from './furniture-shop.js';
 import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
-import { PLANTS, PLANT_IDS } from './house-plants.js';
+import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
 
 export { PLANT_IDS };
 
@@ -240,7 +240,7 @@ export const FURNITURE = [
   // bought; any home takes any tank that fits the room (Yozi 2026-11-18).
   ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
   // Pot plants from the greenhouse shop in Seoul Botanic Park (core/house-plants.js): only once bought.
-  ...PLANTS.map(([id, emoji, size, , name, make]) => ({ id, emoji, item: id, size, name, build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z)); } })),
+  ...[...PLANTS, ...THEME_PLANTS].map(([id, emoji, size, , name, make]) => ({ id, emoji, item: id, size, name, build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z)); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
@@ -378,7 +378,7 @@ export function buildFurniture(id, { off = false } = {}) {
 // tops (height in metres) and the pieces small enough to go on them.
 export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7 };
 const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
-  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap']);
+  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel']);
 export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);
 // The piece's place in a surface's own frame (x right, z front).
 const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };

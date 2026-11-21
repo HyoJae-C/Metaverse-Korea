@@ -76,10 +76,10 @@ const FINISH_DESC = {
 };
 const finishes = () => Object.fromEntries(FINISHES.map((f) => [f.id, { emoji: f.emoji, name: f.name, desc: FINISH_DESC, finish: f.kind }]));
 const PLANT_DESC = {
-  en: 'A pot plant from the greenhouse shop in Seoul Botanic Park. Put it in your home: Decorate at home, then pick it.',
-  ko: '서울식물원 온실 가게에서 산 화분이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
-  ja: 'ソウル植物園の温室ショップで買った鉢植え。家の「模様替え」で置けます。',
-  zh: '在首尔植物园温室商店买的盆栽。在家里点“装饰”就能摆放。',
+  en: 'A pot plant from Seoul Botanic Park. Put it in your home: Decorate at home, then pick it.',
+  ko: '서울식물원에서 산 화분이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: 'ソウル植物園で買った鉢植え。家の「模様替え」で置けます。',
+  zh: '在首尔植物园买的盆栽。在家里点“装饰”就能摆放。',
 };
 const plants = () => Object.fromEntries(PLANT_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: PLANT_DESC, furniture: true }]));
 const tanks = () => Object.fromEntries(TANK_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: TANK_DESC, furniture: true }]));
