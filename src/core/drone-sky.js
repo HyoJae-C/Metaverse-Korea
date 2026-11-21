@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { paintPicture, coasterY, PICTURE_NAMES } from './drone-pictures.js';
 import { eventOf, midOf, fit, MID_SECONDS, EVENTS, EVENT_MOVES } from './drone-events.js';
+import { PATTERNS, PATTERN_MOVES } from './drone-patterns.js';
 // The schedule and places (drone-show.js) are handed in by the park instead
 // of imported, so this file pulls in nothing the game hasn't loaded already
 // (an import here would split drone-show.js out of the main download).
@@ -118,6 +119,13 @@ export const routineTurn = (start) => ((((showNumber(start) - FIRST_HELLO_SHOW) 
 // is reworked. Set to true to let the two take turns again.
 const ROUTINE_2 = false;
 export const routineOf = (start) => (ROUTINE_2 ? routineTurn(start) : 1);
+// The patterns take turns, one per show (Yozi 2026-11-21): 'A' is routine 1,
+// the others are in drone-patterns.js, in its order. Only the middle of the
+// show (after the opening, up to the photo time) is the pattern's. The turn
+// starts with A at show number FIRST_PATTERN_SHOW (2026-11-22 23:10 KST).
+export const PATTERN_KEYS = ['A', ...Object.keys(PATTERNS)];
+const FIRST_PATTERN_SHOW = FIRST_HELLO_SHOW + 4;
+export const patternOf = (start) => { const n = PATTERN_KEYS.length; return PATTERN_KEYS[(((showNumber(start) - FIRST_PATTERN_SHOW) % n) + n) % n]; };
 
 const beat = (period) => (p, t, f) => { // part 1 (the ♡) beats like a heart
   if (p[2] !== 1) return;
@@ -188,9 +196,9 @@ const SHOW_LEN = 1200;
 const NIGHT_SECONDS = 277;
 // event: { key, year } of drone-events.js on its days (its own middle part
 // and good-night line; the rest as routine 1), else null.
-function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
+function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null, pattern = 'A') {
   const W = (lines, opts) => ({ lines, morph: 2, ...opts });
-  const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape] || EVENT_MOVES[shape], ...opts });
+  const P = (shape, opts) => ({ shape, morph: 2.5, move: MOVES[shape] || EVENT_MOVES[shape] || PATTERN_MOVES[shape], ...opts });
   const ev = event && EVENTS[event.key];
   const HEART = { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) };
   const C = { PINK, GOLD, SKYBLUE, WHITE, MINT, VIOLET, RED, HEART };
@@ -209,7 +217,7 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
     [10, W(['你好'], { color: [RED, GOLD] })],
     [10, W([hello], { color: [GOLD, RED], hello: true })],
     [18, P('waver')],
-    ...(ev ? midOf(event, { W, P, C }) : routine === 2 ? [
+    ...(ev ? midOf(event, { W, P, C }) : PATTERNS[pattern] && routine === 1 ? fit(PATTERNS[pattern].mid({ W, P, C }), MID_SECONDS) : routine === 2 ? [
     // Act 1: Korea
     [26, P('taegukgi')],
     [12, W(['대한민국'], { color: [RED, SKYBLUE] })],
@@ -364,8 +372,10 @@ function timed(list) {
   return list.map(([d, s]) => { const step = { at, ...s }; at += d; return step; });
 }
 
-// event: the event pattern of that day (drone-events.js), if any.
-export function program(start, routine = routineOf(start), event = eventOf(start)) {
+// event: the event pattern of that day (drone-events.js), if any; pattern:
+// whose turn it is (an event day's show keeps its turn's number, so the turn
+// goes on after it).
+export function program(start, routine = routineOf(start), event = eventOf(start), pattern = patternOf(start)) {
   const act3 = ACT3[((showNumber(start) % ACT3.length) + ACT3.length) % ACT3.length];
   const next = new Date(nextDroneShow(start + 1000));
   let nextText = '';
@@ -373,7 +383,7 @@ export function program(start, routine = routineOf(start), event = eventOf(start
   return [
     { at: -180, hover: true, morph: 70, stagger: 60 }, // lift-off from the barge
     ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((k, i) => ({ at: -10 + i, lines: [String(k)], color: k <= 3 ? GOLD : WHITE, morph: 0.5 })),
-    ...timed(scenes(act3, nextText, helloOf(start), routine, event)),
+    ...timed(scenes(act3, nextText, helloOf(start), routine, event, pattern)),
     { at: SHOW_SECONDS, land: true, morph: 45, stagger: 15 },
   ];
 }
