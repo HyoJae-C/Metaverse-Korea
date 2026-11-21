@@ -13,7 +13,7 @@ import { GREENHOUSE, greenhouseLayout, wallPieces } from '../core/botanic-layout
 import { SEASON, MIX, leafColor, leafHash } from '../core/season.js';
 
 const C = {
-  frame: '#f4f6f4', path: '#d9cfbd', soil: '#6a4f3a', edge: '#b9b0a0', water: '#5fa7b8', lily: '#4f9a5a', lilyFlower: '#f6e9f0',
+  frame: '#f4f6f4', path: '#d9cfbd', soil: '#6a4f3a', ground: '#86c468', groundMed: '#a8c27c', edge: '#b9b0a0', water: '#5fa7b8', lily: '#4f9a5a', lilyFlower: '#f6e9f0',
   trunk: '#7a5a3e', palm: '#3f8f4a', banana: '#6fb04a', ficus: '#2f7a48', fern: '#4f9e4a', olive: '#8fa88a', olTrunk: '#8a7a66', cactus: '#4f9a5c',
   agave: '#6fa69a', lavender: '#8f7ac8', citrus: '#3f8a45', orange: '#f29a2a', cypress: '#2f6a45', baobab: '#a08a78', bottle: '#9a8a70', dragon: '#4f8f6a',
   flowerA: '#f2668a', flowerB: '#f2c230', wood: '#b88a5a', pot: '#c97b52', white: '#f6f1f6', jaw: '#c8504a',
@@ -156,12 +156,12 @@ export function buildBotanicSite(l, store) {
   };
   for (const [kind, x, z, s, t] of lay.plants) PLANT[kind]?.(x, z, s, t);
 
-  // --- The floor: paving, the beds' soil with a low stone edge, the pond ---------
+  // --- The floor: paving, the beds green with ground cover (Yozi 2026-11-21) inside a low stone edge, the pond ---------
   const shape = (p) => new THREE.Shape(p.map(([x, z]) => new THREE.Vector2(x, -z)));
   const flat = (p, y, h = 0) => { const g = h ? new THREE.ExtrudeGeometry(shape(p), { depth: h, bevelEnabled: false }) : new THREE.ShapeGeometry(shape(p)); return g.rotateX(-Math.PI / 2).translate(0, y, 0); };
   const circle = (r, n = 40) => Array.from({ length: n }, (_, i) => [Math.cos((i / n) * Math.PI * 2) * r, Math.sin((i / n) * Math.PI * 2) * r]);
   add(C.path, flat(circle(R - 0.1, 48), 0.03));
-  for (const b of lay.beds) { add(C.edge, flat(b.p, 0.03, 0.22)); const c = [b.p.reduce((s, q) => s + q[0], 0) / b.p.length, b.p.reduce((s, q) => s + q[1], 0) / b.p.length]; add(C.soil, flat(b.p.map(([x, z]) => [c[0] + (x - c[0]) * 0.965, c[1] + (z - c[1]) * 0.965]), 0.27)); }
+  for (const b of lay.beds) { add(C.edge, flat(b.p, 0.03, 0.22)); const c = [b.p.reduce((s, q) => s + q[0], 0) / b.p.length, b.p.reduce((s, q) => s + q[1], 0) / b.p.length]; add(b.zone === 'med' ? C.groundMed : C.ground, flat(b.p.map(([x, z]) => [c[0] + (x - c[0]) * 0.965, c[1] + (z - c[1]) * 0.965]), 0.27)); }
   add(C.edge, new THREE.CylinderGeometry(K.pond, K.pond, 0.42, 28, 1, true).translate(0, 0.21, 0));
   add(C.edge, new THREE.RingGeometry(K.pond - 0.3, K.pond, 28).rotateX(-Math.PI / 2).translate(0, 0.42, 0));
   add(C.water, flat(circle(K.pond - 0.3, 28), 0.3));
