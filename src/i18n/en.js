@@ -182,6 +182,7 @@ export const EN = {
   "beauty.eyes": "Colour lenses",
   "beauty.tone": "Skin tone",
   "beauty.own": "My own",
+  "beauty.blush": "Blush",
   "beauty.cancel": "Cancel",
   "beauty.save": "Save",
   "beauty.pay": "Save · 🪙 {coins}",

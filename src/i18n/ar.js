@@ -180,6 +180,7 @@ export const AR = {
   'beauty.eyes': 'عدسات ملوّنة',
   'beauty.tone': 'لون البشرة',
   'beauty.own': 'الأصلي',
+  'beauty.blush': 'أحمر الخدود',
   'beauty.cancel': 'إلغاء',
   'beauty.save': 'حفظ',
   'beauty.pay': 'حفظ · 🪙 {coins}',

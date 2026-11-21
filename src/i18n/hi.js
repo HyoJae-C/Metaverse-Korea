@@ -180,6 +180,7 @@ export const HI = {
   'beauty.eyes': 'रंगीन लेंस',
   'beauty.tone': 'त्वचा का रंग',
   'beauty.own': 'मेरा अपना',
+  'beauty.blush': 'ब्लश',
   'beauty.cancel': 'रद्द करें',
   'beauty.save': 'सहेजें',
   'beauty.pay': 'सहेजें · 🪙 {coins}',

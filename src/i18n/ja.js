@@ -183,6 +183,7 @@ export const JA = {
   "beauty.eyes": "カラコン",
   "beauty.tone": "肌のトーン",
   "beauty.own": "元のまま",
+  "beauty.blush": "チーク",
   "beauty.cancel": "キャンセル",
   "beauty.save": "保存",
   "beauty.pay": "保存 · 🪙 {coins}",

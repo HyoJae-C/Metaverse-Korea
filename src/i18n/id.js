@@ -180,6 +180,7 @@ export const ID = {
   'beauty.eyes': 'Lensa warna',
   'beauty.tone': 'Warna kulit',
   'beauty.own': 'Punyaku',
+  'beauty.blush': 'Perona pipi',
   'beauty.cancel': 'Batal',
   'beauty.save': 'Simpan',
   'beauty.pay': 'Simpan · 🪙 {coins}',

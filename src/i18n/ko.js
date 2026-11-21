@@ -183,6 +183,7 @@ export const KO = {
   "beauty.eyes": "컬러렌즈",
   "beauty.tone": "피부 톤",
   "beauty.own": "원래대로",
+  "beauty.blush": "블러셔",
   "beauty.cancel": "취소",
   "beauty.save": "저장",
   "beauty.pay": "저장 · 🪙 {coins}",

@@ -183,6 +183,7 @@ export const ZH = {
   "beauty.eyes": "彩色隐形眼镜",
   "beauty.tone": "肤色",
   "beauty.own": "原样",
+  "beauty.blush": "腮红",
   "beauty.cancel": "取消",
   "beauty.save": "保存",
   "beauty.pay": "保存 · 🪙 {coins}",
