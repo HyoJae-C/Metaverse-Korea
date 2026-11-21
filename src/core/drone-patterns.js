@@ -231,6 +231,113 @@ export const PATTERNS = {
       [14, P('hearts')],
     ],
   },
+  // G: the palace and the king
+  G: {
+    name: 'palace',
+    mid: ({ W, P, C }) => [
+      [10, W(['궁궐과', '왕'], { color: [C.GOLD, C.RED], morph: 2.5 })],
+      [14, P('gwanghwamun')],
+      [8, W(['광화문'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('guard')],
+      [8, W(['문을', '열어라!'], { color: [C.RED, C.GOLD] })],
+      [14, P('buk')],
+      [8, W(['둥 둥 둥'], { color: [C.GOLD, C.RED] })],
+      [14, P('palace')],
+      [8, W(['경복궁'], { color: [C.GOLD, C.RED] })],
+      [14, P('chorong')],
+      [8, W(['청사초롱'], { color: [C.SKYBLUE, C.RED] })],
+      [15, P('gama', { morph: 3 })],
+      [8, W(['왕의 행차'], { color: [C.GOLD, C.RED] })],
+      [8, W(['물렀거라!'], { color: [C.RED, C.WHITE] })],
+      [14, P('crown')],
+      [8, W(['임금님'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('ilwol')],
+      [10, W(['해와 달', '다섯 봉우리'], { color: [C.RED, C.SKYBLUE] })],
+      [14, P('hanbok')],
+      [14, P('fan')],
+      [8, W(['부채춤'], { color: [C.PINK, C.GOLD] })],
+      [14, P('janggu')],
+      [14, P('mask')],
+      [8, W(['얼쑤!'], { color: [C.GOLD, C.RED] })],
+      [14, P('yut')],
+      [8, W(['윷이야!'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('haechi')],
+      [8, W(['해치'], { color: [C.SKYBLUE, C.WHITE] })],
+      [9, W(['궁을 지키는', '수호신'], { color: [C.SKYBLUE, C.GOLD] })],
+      [14, P('tiger')],
+      [8, W(['어흥!'], { color: [C.GOLD, C.RED] })],
+      [14, P('magpie')],
+      [14, P('mugunghwa')],
+      [14, P('taegukgi')],
+      [14, P('pouch')],
+      [8, W(['복을', '내리노라'], { color: [C.GOLD, C.RED] })],
+      [14, P('kite')],
+      [14, P('bosingak')],
+      [8, W(['보신각', '종소리'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('fullmoon')],
+      [8, W(['궁궐의 밤'], { color: [C.VIOLET, C.GOLD] })],
+      [14, P('dipper')],
+      [8, W(['별 헤는 밤'], { color: [C.WHITE, C.SKYBLUE] })],
+      [14, P('chorong')],
+      [14, P('haechi')],
+      [9, W(['해치를', '찾아봐!'], { color: [C.SKYBLUE, C.PINK] })],
+      [12, W([['서울 ', '♡']], C.HEART)],
+      [14, P('hearts')],
+    ],
+  },
+  // H: friends from the sea
+  H: {
+    name: 'sea',
+    mid: ({ W, P, C }) => [
+      [10, W(['바다', '친구들'], { color: [C.SKYBLUE, C.MINT], morph: 2.5 })],
+      [15, P('whale', { morph: 3 })],
+      [8, W(['뚝섬의', '전설'], { color: [C.SKYBLUE, C.WHITE] })],
+      [15, P('dolphin', { morph: 3 })],
+      [8, W(['점프!'], { color: [C.SKYBLUE, C.WHITE] })],
+      [14, P('fishes')],
+      [8, W(['같이 가자'], { color: [C.GOLD, C.PINK] })],
+      [14, P('jellyfish')],
+      [8, W(['둥실둥실'], { color: [C.PINK, C.VIOLET] })],
+      [14, P('turtle')],
+      [8, W(['천천히', '가도 돼'], { color: [C.MINT, C.GOLD] })],
+      [14, P('octopus')],
+      [8, W(['문어야', '안녕'], { color: [C.PINK, C.WHITE] })],
+      [14, P('crab')],
+      [8, W(['옆으로', '옆으로'], { color: [C.RED, C.GOLD] })],
+      [14, P('starfish')],
+      [8, W(['바다의 별'], { color: [C.GOLD, C.PINK] })],
+      [14, P('penguin')],
+      [8, W(['뒤뚱뒤뚱'], { color: [C.WHITE, C.SKYBLUE] })],
+      [14, P('sailboat')],
+      [8, W(['돛단배'], { color: [C.WHITE, C.MINT] })],
+      [14, P('duck')],
+      [8, W(['오리배도', '왔어'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('cruise')],
+      [14, P('fishing')],
+      [9, W(['오늘은', '뭐 낚았어?'], { color: [C.GOLD, C.SKYBLUE] })],
+      [14, P('bungeoppang')],
+      [8, W(['어? 붕어빵'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('cat')],
+      [8, W(['야옹~', '생선!'], { color: [C.GOLD, C.PINK] })],
+      [15, { wave: true, morph: 4 }],
+      [8, W(['파도 타자'], { color: [C.SKYBLUE, C.MINT] })],
+      [15, P('dolphin')],
+      [14, P('fountain')],
+      [14, P('rainbow')],
+      [14, P('hansunset')],
+      [8, W(['바다로 가는', '한강'], { color: [C.SKYBLUE, C.GOLD] })],
+      [14, P('lighthouse')],
+      [8, W(['등대'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('shootingstar')],
+      [8, W(['소원을', '빌어 봐'], { color: [C.GOLD, C.PINK] })],
+      [14, P('moon')],
+      [14, P('jellyfish')],
+      [14, P('fishes')],
+      [8, W(['또 놀자'], { color: [C.MINT, C.GOLD] })],
+      [12, W([['바다 ', '♡']], C.HEART)],
+      [14, P('hearts')],
+    ],
+  },
 };
 
 // ---- how the patterns' pictures move (p, t as MOVES in drone-sky.js) ---------
@@ -294,6 +401,47 @@ export const PATTERN_MOVES = {
   corndog: (p, t) => turn(p, 0, -9, Math.sin(t * 1.8 + p[2]) * 0.06),
   // the glasses clink
   cheers: (p, t) => { const k = Math.max(0, Math.sin(t * 2.2)) ** 3; if (p[2] === 0) turn(p, -5.6, -7, -k * 0.2); else if (p[2] === 1) turn(p, 5.6, -7, k * 0.2); else return k; return 1; },
+  guard: (p, t) => { if (p[2] === 1) p[0] += Math.sin(p[1] * 0.9 - t * 3) * 0.4 * ((p[1] - 1) / 8); }, // the flag flies
+  // the stick strikes, the drum skin flashes
+  buk: (p, t) => { const k = Math.max(0, Math.sin(t * 3.2)) ** 4; if (p[2] === 1) turn(p, 9.6, 6.6, k * 0.5); else if (p[2] === 2) return 0.55 + 0.45 * k; return 1; },
+  chorong: (p, t) => { turn(p, 0, 9.4, Math.sin(t * 1.5) * 0.12); return p[2] === 1 ? 0.7 + 0.3 * Math.sin(t * 4) : 1; },
+  // the procession walks across, right to left, bobbing
+  gama: (p, t) => { p[1] += Math.abs(Math.sin(t * 3 + (p[2] ? 1.5 : 0))) * 0.4; p[0] = p[0] * 0.8 + 9 - (t / 15) * 18; },
+  crown: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
+  ilwol: (p, t) => { if (p[2] === 1) p[0] += Math.sin(t * 1.6 + p[1] * 2) * 0.3; },
+  // the tail wags, the head nods
+  haechi: (p, t) => { if (p[2] === 1) turn(p, 6.6, -4.6, Math.sin(t * 5) * 0.3); else if (p[2] === 2) turn(p, -1.6, -3.0, Math.sin(t * 1.6) * 0.05); },
+  gwanghwamun: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
+  // jumps in an arc out of the water and back
+  dolphin: (p, t) => {
+    if (p[2] === 1) { p[0] += Math.sin(t * 2 + p[0] * 0.5) * 0.4; return twinkle(p, t); }
+    const k = ((t / 5) % 1), a = Math.PI * (1 - k);
+    const x = Math.cos(a) * 9, y = -6 + Math.sin(a) * 9, rot = a - Math.PI / 2;
+    turn(p, 0, 0, rot * 0.9); p[0] = p[0] * 0.75 + x; p[1] = p[1] * 0.75 + y;
+    return 1;
+  },
+  fishes: (p, t) => { p[0] -= ((t * 1.6 + 14) % 28) - 14; if (p[0] < -14) p[0] += 28; p[1] += Math.sin(t * 2 + p[2] * 1.3) * 0.5; },
+  // it pulses; the arms trail
+  jellyfish: (p, t) => { const k = Math.sin(t * 2.2); if (p[2] === 0) { p[0] *= 1 + k * 0.08; } else p[0] += Math.sin(p[1] * 0.8 - t * 2.4) * 0.6; p[1] += k * 0.8; },
+  turtle: (p, t) => { if (p[2] === 1) turn(p, 0, -0.6, Math.sin(t * 2.2) * 0.25 * (p[0] > 0 === p[1] > 0 ? 1 : -1)); p[0] += Math.sin(t * 0.5) * 1.2; },
+  octopus: (p, t) => { if (p[2] === 1) p[0] += Math.sin(p[1] * 0.9 - t * 2.6) * 0.6; },
+  crab: (p, t) => { p[0] += Math.sin(t * 1.3) * 3; if (p[2] === 1) turn(p, p[0] < 0 ? -6 : 6, 2, Math.sin(t * 5) * 0.15); },
+  starfish: (p, t) => { if (p[2] === 0) turn(p, -3.6, 0.4, Math.sin(t * 1.2) * 0.2); else return twinkle(p, t); return 1; },
+  // waddles from side to side, the flippers flap
+  penguin: (p, t) => { turn(p, 0, -9, Math.sin(t * 3) * 0.08); if (p[2] === 1) turn(p, p[0] < 0 ? -4.2 : 4.2, 2.4, (p[0] < 0 ? 1 : -1) * Math.abs(Math.sin(t * 3)) * 0.4); },
+  // the rod bends, the fish wriggles on the line
+  fishing: (p, t) => { if (p[2] === 1) { turn(p, 7.6, -5.6, Math.sin(t * 6) * 0.25); p[1] += Math.sin(t * 2) * 0.6; } },
+  // the beam sweeps left and right, the waves roll
+  lighthouse: (p, t) => {
+    if (p[2] === 1) { turn(p, 0, 5.4, Math.sin(t * 0.9) * 0.5); return 0.75 + 0.25 * Math.sin(t * 4); }
+    if (p[2] === 2) p[0] += Math.sin(t * 2 + p[1]) * 0.4;
+    return 1;
+  },
+  // the boat rocks on the waves
+  sailboat: (p, t) => {
+    if (p[2] === 0) { turn(p, 0, -5, Math.sin(t * 1.6) * 0.1); p[1] += Math.sin(t * 1.6) * 0.3; return 1; }
+    p[0] += Math.sin(t * 2 + p[1]) * 0.4; return 1;
+  },
 };
 
 // ---- the patterns' pictures (as PICTURES in drone-pictures.js) ---------------
@@ -732,5 +880,249 @@ addPictures({
     c.beginPath(); c.arc(sx * 3.4, 0, 2.6, sx > 0 ? -1.3 : Math.PI - 1.3, sx > 0 ? 1.3 : Math.PI + 1.3); line(c, '#e6f0ff', 0.7);
     for (const [x, y] of [[-1.0, -2.6], [1.2, 0.4], [-0.4, 2.6]]) { circle(c, x, y, 0.34); fill(c, '#fff8d0'); }
     c.restore();
+  } },
+
+  // Gwanghwamun: the stone base with three arches, the two-storey roof
+  // with upturned eaves; part 1: lights along the eaves.
+  gwanghwamun: { layers: 2, dens: [1, 1.2], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 9; k++) { circle(c, -10.4 + k * 2.6, 1.6, 0.4); fill(c, '#fff3a0'); } for (let k = 0; k < 7; k++) { circle(c, -7.2 + k * 2.4, 5.6, 0.4); fill(c, '#fff3a0'); } return; }
+    c.beginPath(); c.rect(-12.6, -9.4, 25.2, 8.4); fill(c, grad(c, 0, -1, 0, -9.4, ['#e6e0d0', '#b8b0a0']));
+    c.save(); c.globalCompositeOperation = 'destination-out';
+    for (const [x, w, h] of [[0, 2.2, 5.6], [-6.6, 1.7, 4.6], [6.6, 1.7, 4.6]]) { c.beginPath(); c.moveTo(x - w, -9.6); c.lineTo(x - w, -9.4 + h - w); c.arc(x, -9.4 + h - w, w, Math.PI, 0, true); c.lineTo(x + w, -9.6); c.closePath(); fill(c, '#000'); }
+    c.restore();
+    const roof = (y, w, h) => { c.beginPath(); c.moveTo(-w - 2.2, y + 0.4); c.quadraticCurveTo(-w, y + 0.2, -w + 1.6, y + h); c.lineTo(w - 1.6, y + h); c.quadraticCurveTo(w, y + 0.2, w + 2.2, y + 0.4); c.quadraticCurveTo(w, y - 0.6, w - 0.6, y - 0.6); c.lineTo(-w + 0.6, y - 0.6); c.quadraticCurveTo(-w, y - 0.6, -w - 2.2, y + 0.4); c.closePath(); fill(c, grad(c, 0, y + h, 0, y - 0.6, ['#7c8cb0', '#4a5a7a'])); };
+    c.beginPath(); c.rect(-9.6, -1.0, 19.2, 2.2); fill(c, '#e8243a'); for (let k = 0; k < 8; k++) { c.beginPath(); c.rect(-9.2 + k * 2.4, -0.6, 1.4, 1.4); fill(c, '#2fbf88'); }
+    roof(2.0, 11.0, 2.2);
+    c.beginPath(); c.rect(-7.0, 4.2, 14.0, 1.6); fill(c, '#e8243a');
+    roof(6.4, 8.2, 2.6);
+    c.beginPath(); c.rect(-2.2, -0.5, 4.4, 1.2); fill(c, '#3a2410'); c.beginPath(); c.rect(-1.8, -0.3, 3.6, 0.8); fill(c, '#ffe9a0');
+  } },
+
+  // A palace gate guard: a red robe, a black hat with a feather, a tall
+  // flag (part 1: it flies).
+  guard: { layers: 2, draw(c, l) {
+    if (l === 1) { path(c, [[5.0, 9.4], [12.4, 8.2], [11.6, 5.0], [12.6, 2.0], [5.0, 3.0]]); fill(c, grad(c, 5, 0, 12.6, 0, ['#ffd23a', '#ff9a2a'])); circle(c, 8.6, 6.0, 1.5); fill(c, '#e8243a'); return; }
+    seg(c, [4.6, -9.6], [4.6, 9.8], '#e8c27a', 0.4);
+    path(c, [[-5.6, -9.4], [3.0, -9.4], [1.8, 2.0], [-4.4, 2.0]]); fill(c, grad(c, -5, 0, 3, 0, ['#ff5a6a', '#e8243a', '#c8102e']));
+    c.beginPath(); c.rect(-4.9, -3.2, 7.0, 1.0); fill(c, '#3f5ad8');
+    seg(c, [1.6, 1.0], [4.4, -1.6], '#e8243a', 1.4); seg(c, [-4.2, 1.0], [-6.2, -3.4], '#e8243a', 1.4);
+    head(c, -1.3, 4.0, 2.1, '#3a2410');
+    oval(c, -1.3, 5.6, 4.0, 0.7); fill(c, '#46506a'); c.beginPath(); c.roundRect(-3.0, 5.6, 3.4, 2.4, 0.8); fill(c, '#46506a');
+    c.beginPath(); c.moveTo(-1.3, 8.0); c.quadraticCurveTo(-3.6, 9.8, -5.4, 8.6); line(c, '#ff5a6a', 0.4);
+  } },
+
+  // A great drum on its stand (part 2: the skin with a taegeuk, flashing),
+  // part 1: the stick.
+  buk: { layers: 3, dens: [1, 1.2, 1.2], draw(c, l) {
+    if (l === 1) { seg(c, [9.6, 6.6], [5.0, 2.0], '#e8c27a', 0.5); circle(c, 4.8, 1.8, 0.9); fill(c, '#ff5a6a'); return; }
+    if (l === 2) {
+      circle(c, -1.0, 0.4, 5.6); fill(c, '#fff3d8');
+      c.beginPath(); c.arc(-1.0, 0.4, 3.4, 0, Math.PI); c.closePath(); fill(c, '#e8243a'); c.beginPath(); c.arc(-1.0, 0.4, 3.4, Math.PI, 0); c.closePath(); fill(c, '#2f5bd8');
+      circle(c, -2.7, 0.4, 1.7); fill(c, '#e8243a'); circle(c, 0.7, 0.4, 1.7); fill(c, '#2f5bd8');
+      return;
+    }
+    circle(c, -1.0, 0.4, 7.6); fill(c, grad(c, -8, 8, 6, -7, ['#ff7a5a', '#c8402a']));
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * TAU; circle(c, -1.0 + Math.cos(a) * 6.6, 0.4 + Math.sin(a) * 6.6, 0.4); fill(c, '#ffd166'); }
+    seg(c, [-6.0, -5.6], [-8.4, -9.6], '#b87a3a', 0.8); seg(c, [4.0, -5.6], [6.4, -9.6], '#b87a3a', 0.8); c.beginPath(); c.rect(-9.4, -9.9, 16.8, 0.7); fill(c, '#b87a3a');
+  } },
+
+  // A cheongsachorong: a silk lantern, red above and blue below, on a
+  // stick with tassels (part 1: the glow inside).
+  chorong: { layers: 2, dens: [1, 1.3], draw(c, l) {
+    if (l === 1) { oval(c, 0, 0.6, 2.4, 3.6); fill(c, radial(c, 0, 0.6, 0.2, 3.6, ['#ffffff', '#fff3a0', '#ffd166'])); return; }
+    seg(c, [0, 9.4], [0, 6.6], '#e8c27a', 0.34); seg(c, [-4.6, 9.4], [4.6, 9.4], '#e8c27a', 0.5);
+    c.beginPath(); c.roundRect(-3.4, 5.6, 6.8, 1.1, 0.4); fill(c, '#5a3418'); c.beginPath(); c.roundRect(-3.4, -5.4, 6.8, 1.1, 0.4); fill(c, '#5a3418');
+    c.beginPath(); c.moveTo(-3.2, 5.6); c.quadraticCurveTo(-6.6, 0.6, -3.2, -4.4); c.lineTo(3.2, -4.4); c.quadraticCurveTo(6.6, 0.6, 3.2, 5.6); c.closePath(); fill(c, '#2f6ad8');
+    c.save(); c.beginPath(); c.rect(-7, 0.6, 14, 6); c.clip(); c.beginPath(); c.moveTo(-3.2, 5.6); c.quadraticCurveTo(-6.6, 0.6, -3.2, -4.4); c.lineTo(3.2, -4.4); c.quadraticCurveTo(6.6, 0.6, 3.2, 5.6); c.closePath(); fill(c, '#e8243a'); c.restore();
+    for (const x of [-1.6, 0, 1.6]) { seg(c, [x, -5.4], [x, -9.2], '#ffd166', 0.26); }
+    for (const [x, y, r] of [[-9.6, 4.0, 0.7], [9.4, 6.0, 0.6], [-8.6, -5.0, 0.5], [9.0, -3.6, 0.55]]) sparkle(c, x, y, r, '#fff3c4');
+  } },
+
+  // The king's palanquin carried by two bearers, a parasol above (part 1:
+  // the bearers).
+  gama: { layers: 2, draw(c, l) {
+    if (l === 1) {
+      for (const x of [-10.2, 10.2]) { path(c, [[x - 1.3, -2.0], [x + 1.3, -2.0], [x + 1.7, -7.6], [x - 1.7, -7.6]]); fill(c, '#46b4ff'); head(c, x, -0.4, 1.4, '#3a2410'); oval(c, x, 0.8, 2.3, 0.45); fill(c, '#3a2410'); seg(c, [x - 0.8, -7.6], [x - 1.2, -9.6], '#ffffff', 0.7); seg(c, [x + 0.8, -7.6], [x + 1.2, -9.6], '#ffffff', 0.7); }
+      return;
+    }
+    seg(c, [-12.6, -3.2], [12.6, -3.2], '#b87a3a', 0.6);
+    c.beginPath(); c.rect(-5.0, -5.6, 10.0, 7.6); fill(c, grad(c, -5, 0, 5, 0, ['#e8243a', '#ff5a6a', '#e8243a']));
+    c.beginPath(); c.rect(-2.6, -3.0, 5.2, 3.8); fill(c, '#ffe9a0'); head(c, 0, -1.4, 1.3, '#3a2410'); c.beginPath(); c.rect(-1.5, -0.4, 3.0, 0.9); fill(c, '#ffd23a');
+    c.beginPath(); c.moveTo(-7.2, 1.8); c.quadraticCurveTo(-5.4, 2.0, -4.4, 4.6); c.lineTo(4.4, 4.6); c.quadraticCurveTo(5.4, 2.0, 7.2, 1.8); c.closePath(); fill(c, grad(c, 0, 4.6, 0, 1.8, ['#ffd23a', '#e8a020']));
+    circle(c, 0, 5.2, 0.7); fill(c, '#ffd23a');
+    seg(c, [7.6, -3.2], [7.6, 8.4], '#e8c27a', 0.3); c.beginPath(); c.moveTo(3.6, 7.6); c.quadraticCurveTo(7.6, 10.6, 11.6, 7.6); c.closePath(); fill(c, '#ff5a6a'); for (let k = 0; k < 5; k++) seg(c, [4.2 + k * 1.7, 7.6], [4.2 + k * 1.7, 6.6], '#ffd23a', 0.24);
+  } },
+
+  // A gold crown of Silla: a band with three tree-shaped uprights, jade
+  // and dangling gold leaves (part 1: they twinkle).
+  crown: { layers: 2, dens: [1, 1.4], draw(c, l) {
+    if (l === 1) { for (const [x, y] of [[-6.0, 2.0], [-6.0, 5.4], [0, 3.6], [0, 7.4], [6.0, 2.0], [6.0, 5.4], [-3.0, -4.6], [3.0, -4.6], [-8.4, -7.6], [8.4, -7.6], [-3.0, 0.6], [3.0, 0.6]]) { circle(c, x, y, 0.55); fill(c, y < -6 ? '#fff3a0' : '#5fe0a8'); } return; }
+    const G = grad(c, -9, 0, 9, 0, ['#e8a020', '#ffe066', '#fff3a0', '#ffd23a', '#e8a020']);
+    c.beginPath(); c.roundRect(-9.6, -5.6, 19.2, 3.2, 0.8); fill(c, G);
+    for (const [x, h] of [[-6.0, 9.6], [0, 11.6], [6.0, 9.6]]) {
+      c.beginPath(); c.rect(x - 0.6, -2.6, 1.2, h); fill(c, G);
+      for (let k = 0; k < 3; k++) { const y = -1.0 + k * (h / 3.4); c.beginPath(); c.rect(x - 2.2, y, 4.4, 0.8); fill(c, G); c.beginPath(); c.rect(x - 2.2, y, 0.8, 2.0); fill(c, G); c.beginPath(); c.rect(x + 1.4, y, 0.8, 2.0); fill(c, G); }
+    }
+    for (const sx of [-1, 1]) { seg(c, [sx * 8.4, -5.6], [sx * 8.4, -9.4], '#ffd23a', 0.3); }
+  } },
+
+  // Irworobongdo, the screen behind the throne: a red sun and a white
+  // moon over five blue-green peaks, and waves (part 1).
+  ilwol: { layers: 2, dens: [1, 0.8], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-13.4, -7.4 - k * 1.4); for (let x = -13.4; x <= 13.4; x += 2.4) c.quadraticCurveTo(x + 0.6, -6.7 - k * 1.4, x + 1.2, -7.4 - k * 1.4), c.quadraticCurveTo(x + 1.8, -8.1 - k * 1.4, x + 2.4, -7.4 - k * 1.4); line(c, '#ffffff', 0.26); } return; }
+    circle(c, 7.6, 6.4, 2.6); fill(c, radial(c, 7.6, 6.4, 0.3, 2.6, ['#ff8a6a', '#e8243a']));
+    circle(c, -7.6, 6.4, 2.6); fill(c, radial(c, -7.6, 6.4, 0.3, 2.6, ['#ffffff', '#e6ecf8']));
+    for (const [x, w, h, col] of [[-10.2, 3.6, 6.4, '#3f8ad8'], [10.2, 3.6, 6.4, '#3f8ad8'], [-5.4, 3.8, 8.6, '#2fbf88'], [5.4, 3.8, 8.6, '#2fbf88'], [0, 4.6, 11.6, '#46b4ff']]) {
+      c.beginPath(); c.moveTo(x - w, -6.6); c.quadraticCurveTo(x - w * 0.5, -6.6 + h * 0.6, x - w * 0.2, -6.6 + h * 0.86); c.quadraticCurveTo(x, -6.6 + h * 1.04, x + w * 0.2, -6.6 + h * 0.86); c.quadraticCurveTo(x + w * 0.5, -6.6 + h * 0.6, x + w, -6.6); c.closePath(); fill(c, col);
+    }
+    for (const x of [-12.4, 12.4]) { seg(c, [x, -6.6], [x, -1.6], '#b87a3a', 0.4); for (const [dx, dy] of [[-1.0, 0], [1.0, 0.4], [0, 1.2]]) { oval(c, x + dx, -1.2 + dy, 1.4, 0.6); fill(c, '#3fd27a'); } }
+  } },
+
+  // The blue haechi (the game's own): a round sky-blue head with a gold
+  // horn, a mane of blue and red balls, a white muzzle, white paws (part 1:
+  // the tail, part 2: the head).
+  haechi: { layers: 3, draw(c, l) {
+    const B = ['#a8dcff', '#7fc4f0', '#5aa8dc'];
+    if (l === 1) { c.beginPath(); c.moveTo(6.6, -4.6); c.quadraticCurveTo(10.6, -3.6, 10.2, 0.6); line(c, '#7fc4f0', 0.9); circle(c, 10.2, 1.4, 1.5); fill(c, '#e8503a'); circle(c, 9.2, 2.6, 1.1); fill(c, '#2f5bd8'); return; }
+    if (l === 2) {
+      for (let k = 0; k < 11; k++) { const a = 0.15 * Math.PI + (k / 10) * 0.95 * Math.PI, r = 6.6; circle(c, -1.6 + Math.cos(a) * r + 1.4, 2.4 + Math.sin(a) * r, 1.7); fill(c, k % 2 ? '#e8503a' : '#2f5bd8'); }
+      path(c, [[-2.4, 8.0], [-0.8, 8.0], [-1.2, 10.6]]); fill(c, '#ffd23a');
+      circle(c, -1.6, 2.4, 5.8); fill(c, radial(c, -3, 4, 0.5, 6, B));
+      for (const sx of [-1, 1]) { path(c, [[-1.6 + sx * 4.4, 6.0], [-1.6 + sx * 5.6, 8.2], [-1.6 + sx * 3.0, 7.4]]); fill(c, '#7fc4f0'); }
+      oval(c, -3.4, 0.2, 2.9, 2.0); fill(c, '#fff6ea'); oval(c, -4.4, 1.2, 1.0, 0.7); fill(c, '#2f4a9a');
+      c.beginPath(); c.rect(-5.0, -1.4, 3.4, 0.6); fill(c, '#a83a3a');
+      for (const x of [-4.2, -0.4]) { oval(c, x + 0.6, 3.6, 0.7, 1.0); fill(c, '#2a1a3a'); circle(c, x + 0.4, 3.9, 0.26); fill(c, '#ffffff'); c.beginPath(); c.roundRect(x - 0.2, 4.9, 1.8, 0.6, 0.3); fill(c, '#2f5bd8'); }
+      circle(c, 0.6, 1.4, 0.8); fill(c, '#ff9a9a');
+      for (let k = 0; k < 4; k++) { circle(c, -3.6 + k * 1.3, -3.0, 0.9); fill(c, '#2f5bd8'); }
+      return;
+    }
+    oval(c, 2.6, -4.2, 5.6, 3.6); fill(c, radial(c, 1, -3, 0.5, 6, B));
+    for (const x of [-2.0, 0.6, 4.4, 6.6]) { c.beginPath(); c.roundRect(x - 1.1, -9.0, 2.2, 3.6, 0.8); fill(c, '#7fc4f0'); c.beginPath(); c.roundRect(x - 1.4, -9.8, 2.8, 1.3, 0.6); fill(c, '#fff6ea'); }
+  } },
+
+  // A dolphin leaping (it jumps in an arc); part 1: the water it leaves.
+  dolphin: { layers: 2, dens: [1.2, 0.7], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-13.4, -7.6 - k * 1.4); for (let x = -13.4; x <= 13.4; x += 2.4) c.quadraticCurveTo(x + 0.6, -7.0 - k * 1.4, x + 1.2, -7.6 - k * 1.4), c.quadraticCurveTo(x + 1.8, -8.2 - k * 1.4, x + 2.4, -7.6 - k * 1.4); line(c, k ? '#46b4ff' : '#7fd4ff', 0.26); } return; }
+    c.beginPath(); c.moveTo(-8.6, -1.6); c.bezierCurveTo(-7.6, 3.4, 0.6, 7.0, 5.4, 2.6); c.bezierCurveTo(7.0, 1.0, 7.8, -0.8, 8.4, -2.4);
+    c.lineTo(11.2, -2.6); c.lineTo(9.4, -4.0); c.lineTo(9.8, -6.4); c.lineTo(7.2, -4.2); c.bezierCurveTo(6.0, -1.6, 3.0, 1.4, -1.0, 0.6); c.bezierCurveTo(-4.0, 0, -6.0, -2.0, -7.4, -3.4);
+    c.lineTo(-11.0, -5.2); c.lineTo(-10.6, -3.6); c.closePath();
+    fill(c, grad(c, 0, 6, 0, -4, ['#2a8fe6', '#46b4ff', '#7fd4ff']));
+    c.beginPath(); c.moveTo(-7.4, -3.2); c.bezierCurveTo(-5.0, -0.6, -1.0, 1.4, 3.6, 0.4); c.bezierCurveTo(0, 2.6, -5.0, 1.6, -8.0, -2.4); c.closePath(); fill(c, '#f2fbff');
+    c.beginPath(); c.moveTo(0.2, 5.0); c.quadraticCurveTo(3.0, 8.6, 4.6, 7.4); c.quadraticCurveTo(3.4, 5.6, 3.8, 3.8); c.closePath(); fill(c, '#2a8fe6');
+    path(c, [[-3.6, 0.4], [-2.2, -3.6], [-0.8, 0.6]]); fill(c, '#2a8fe6');
+    circle(c, -6.4, -0.6, 0.5); fill(c, '#10203a');
+  } },
+
+  // A school of little fish in three colours (parts 0 to 2; they swim
+  // across).
+  fishes: { layers: 3, draw(c, l) {
+    const col = [['#ffd0a0', '#ff8a2a'], ['#d0f0ff', '#46b4ff'], ['#ffd0ec', '#ff5ca8']][l];
+    const at = [[[-9.6, 5.6], [-1.6, 7.0], [6.4, 4.6], [11.0, 7.6]], [[-11.4, 0.4], [-4.6, 1.6], [2.6, -0.4], [9.6, 1.0]], [[-8.6, -5.0], [-0.6, -6.4], [6.6, -4.4], [12.0, -6.6]]][l];
+    for (const [x, y] of at) {
+      oval(c, x, y, 2.4, 1.3); fill(c, grad(c, 0, y + 1.3, 0, y - 1.3, col));
+      path(c, [[x + 2.0, y], [x + 3.9, y + 1.4], [x + 3.9, y - 1.4]]); fill(c, col[1]);
+      circle(c, x - 1.3, y + 0.3, 0.36); fill(c, '#1a2a4a');
+    }
+  } },
+
+  // A jellyfish: a pink bell with spots (part 0), long arms (part 1).
+  jellyfish: { layers: 2, dens: [1, 0.9], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 5; k++) { const x = -4.4 + k * 2.2; c.beginPath(); c.moveTo(x, 1.6); c.bezierCurveTo(x - 1.6, -2.0, x + 1.6, -5.0, x + (k - 2) * 0.4, -9.4); line(c, k % 2 ? '#d8b8ff' : '#ff8cc0', 0.5); } return; }
+    c.beginPath(); c.moveTo(-7.0, 1.6); c.bezierCurveTo(-7.4, 10.6, 7.4, 10.6, 7.0, 1.6); for (let k = 0; k < 4; k++) c.quadraticCurveTo(7.0 - k * 3.5 - 1.75, 0.2, 7.0 - (k + 1) * 3.5, 1.6); c.closePath();
+    fill(c, radial(c, -1.6, 6, 0.5, 8, ['#fff0fa', '#ffb0dc', '#ff7ac0']));
+    for (const [x, y, r] of [[-2.6, 5.0, 1.1], [1.8, 6.2, 0.9], [2.6, 3.4, 0.7]]) { circle(c, x, y, r); fill(c, '#ffffff'); }
+  } },
+
+  // A sea turtle from above: a green shell with plates, head and tail
+  // (part 1: the four flippers, paddling).
+  turtle: { layers: 2, draw(c, l) {
+    if (l === 1) { for (const [x, y, a] of [[-6.0, 4.6, 0.7], [6.0, 4.6, -0.7], [-5.4, -5.2, -0.6], [5.4, -5.2, 0.6]]) { oval(c, x, y, 3.2, 1.4, a); fill(c, '#7cf2a4'); } return; }
+    oval(c, 0, 7.4, 1.9, 2.3); fill(c, '#7cf2a4'); for (const sx of [-1, 1]) { circle(c, sx * 0.8, 8.2, 0.34); fill(c, '#1a2a4a'); }
+    path(c, [[-0.7, -7.0], [0.7, -7.0], [0, -9.0]]); fill(c, '#7cf2a4');
+    oval(c, 0, -0.6, 6.4, 7.0); fill(c, radial(c, -1.6, 1.4, 0.5, 7.4, ['#a8f0b8', '#3fbf78', '#2a9a5a']));
+    for (const [x, y] of [[0, -0.6], [0, 3.8], [0, -5.0], [-3.8, 1.6], [3.8, 1.6], [-3.8, -2.8], [3.8, -2.8]]) { c.beginPath(); for (let k = 0; k < 6; k++) { const a = (k / 6) * TAU; c[k ? 'lineTo' : 'moveTo'](x + Math.cos(a) * 1.9, y + Math.sin(a) * 1.9); } c.closePath(); line(c, '#d8ffe4', 0.2); }
+  } },
+
+  // An octopus: a round pink head with a smile (part 0), eight curling
+  // arms (part 1).
+  octopus: { layers: 2, draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 8; k++) { const x = -7.0 + k * 2.0, out = (k - 3.5) * 0.9; c.beginPath(); c.moveTo(x * 0.7, 0.6); c.bezierCurveTo(x + out * 0.4, -3.0, x + out * 1.6, -5.0, x + out * 1.2, -8.4); line(c, k % 2 ? '#ff8cc0' : '#ff5ca8', 1.1); } return; }
+    c.beginPath(); c.moveTo(-6.0, 0.6); c.bezierCurveTo(-8.0, 10.4, 8.0, 10.4, 6.0, 0.6); c.closePath(); fill(c, radial(c, -1.6, 6, 0.5, 8, ['#ffd0ec', '#ff8cc0', '#ff5ca8']));
+    for (const sx of [-1, 1]) { circle(c, sx * 2.2, 4.4, 1.0); fill(c, '#ffffff'); circle(c, sx * 2.2, 4.2, 0.5); fill(c, '#1a2a4a'); circle(c, sx * 4.0, 2.6, 0.8); fill(c, '#ff5a8a'); }
+    c.beginPath(); c.arc(0, 2.8, 1.3, 1.15 * Math.PI, 1.85 * Math.PI); line(c, '#a8204a', 0.3);
+  } },
+
+  // A red crab: shell, eyes on stalks, legs (part 0), two big claws (part 1,
+  // they snap); it walks sideways.
+  crab: { layers: 2, draw(c, l) {
+    if (l === 1) { for (const sx of [-1, 1]) { seg(c, [sx * 5.0, 0.4], [sx * 7.6, 3.4], '#ff5a4a', 1.0); c.beginPath(); c.arc(sx * 8.6, 5.2, 2.4, sx > 0 ? 0.9 : Math.PI - 0.9 - 4.5, sx > 0 ? 0.9 + 4.5 : Math.PI - 0.9); c.lineTo(sx * 8.6, 5.2); c.closePath(); fill(c, '#ff5a4a'); } return; }
+    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(sx * 4.4, -2.0 - k * 0.8); c.quadraticCurveTo(sx * (7.6 + k * 0.4), -1.6 - k * 1.2, sx * (8.0 + k * 0.6), -5.0 - k * 1.2); line(c, '#ff7a5a', 0.6); }
+    oval(c, 0, -1.6, 6.4, 4.2); fill(c, radial(c, -1.6, -0.4, 0.5, 6.6, ['#ff9a7a', '#ff5a4a', '#e83a2a']));
+    for (const sx of [-1, 1]) { seg(c, [sx * 2.0, 2.0], [sx * 2.4, 4.4], '#ff5a4a', 0.4); circle(c, sx * 2.4, 4.8, 0.9); fill(c, '#ffffff'); circle(c, sx * 2.4, 4.9, 0.4); fill(c, '#1a2a4a'); }
+    c.beginPath(); c.arc(0, -1.0, 1.6, 1.15 * Math.PI, 1.85 * Math.PI); line(c, '#8a1a1a', 0.3);
+  } },
+
+  // A starfish and a shell with a pearl on the sand (part 1: sparkles).
+  starfish: { layers: 2, dens: [1, 0.8], draw(c, l) {
+    if (l === 1) { for (const [x, y, r] of [[7.4, 3.6, 0.9], [-10.6, 6.6, 0.6], [11.6, 7.4, 0.6], [-9.6, -6.0, 0.5], [2.6, 8.6, 0.5]]) sparkle(c, x, y, r, '#ffffff'); return; }
+    c.beginPath(); for (let k = 0; k < 10; k++) { const a = Math.PI / 2 + (k * Math.PI) / 5, r = k % 2 ? 2.6 : 6.6; c[k ? 'lineTo' : 'moveTo'](-3.6 + Math.cos(a) * r, 0.4 + Math.sin(a) * r); } c.closePath(); fill(c, radial(c, -3.6, 0.4, 0.5, 6.6, ['#ffe9a0', '#ffb040', '#ff8a2a']));
+    for (let k = 0; k < 5; k++) { const a = Math.PI / 2 + (k * TAU) / 5; for (const r of [1.6, 3.2, 4.6]) { circle(c, -3.6 + Math.cos(a) * r, 0.4 + Math.sin(a) * r, 0.3); fill(c, '#fff8d8'); } }
+    c.beginPath(); c.arc(7.4, -3.4, 4.6, 0, Math.PI); c.closePath(); fill(c, radial(c, 7.4, -3.4, 0.5, 4.6, ['#ffe6f0', '#ffb0d0']));
+    for (let k = 1; k < 6; k++) { const a = (k / 6) * Math.PI; seg(c, [7.4, -3.4], [7.4 + Math.cos(a) * 4.4, -3.4 + Math.sin(a) * 4.4], '#ff8cb8', 0.16); }
+    circle(c, 7.4, -4.4, 1.0); fill(c, '#ffffff');
+    oval(c, 0, -7.6, 13.4, 1.4); fill(c, '#f0d8a0');
+  } },
+
+  // A penguin with a red scarf (part 1: the flippers); it waddles.
+  penguin: { layers: 2, draw(c, l) {
+    if (l === 1) { for (const sx of [-1, 1]) { oval(c, sx * 5.4, -0.6, 1.4, 3.6, sx * 0.4); fill(c, '#46506a'); } return; }
+    oval(c, 0, -1.6, 5.0, 6.6); fill(c, '#46506a'); oval(c, 0, -2.4, 3.6, 5.2); fill(c, '#ffffff');
+    circle(c, 0, 5.6, 3.8); fill(c, '#46506a'); oval(c, -1.3, 5.0, 1.5, 1.9); fill(c, '#ffffff'); oval(c, 1.3, 5.0, 1.5, 1.9); fill(c, '#ffffff');
+    for (const sx of [-1, 1]) { circle(c, sx * 1.3, 5.4, 0.45); fill(c, '#1a2a4a'); oval(c, sx * 2.0, -8.4, 1.7, 0.7); fill(c, '#ffb020'); }
+    path(c, [[-0.9, 4.2], [0.9, 4.2], [0, 3.0]]); fill(c, '#ffb020');
+    c.beginPath(); c.roundRect(-4.0, 1.2, 8.0, 1.5, 0.7); fill(c, '#e8243a'); c.beginPath(); c.rect(1.6, -1.6, 1.5, 3.0); fill(c, '#e8243a');
+  } },
+
+  // A lighthouse on a rock: red and white bands, a lamp room; the beam
+  // (part 1) sweeps, waves below (part 2).
+  lighthouse: { layers: 3, dens: [1.2, 0.8, 0.7], draw(c, l) {
+    if (l === 1) { for (const sx of [-1, 1]) { path(c, [[sx * 1.4, 5.4], [sx * 13.0, 8.4], [sx * 13.0, 3.4]]); fill(c, grad(c, sx * 1.4, 0, sx * 13, 0, ['#fff2a0', '#ffd24a'])); } return; }
+    if (l === 2) { for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-13.4, -8.0 - k * 1.3); for (let x = -13.4; x <= 13.4; x += 2.4) c.quadraticCurveTo(x + 0.6, -7.4 - k * 1.3, x + 1.2, -8.0 - k * 1.3), c.quadraticCurveTo(x + 1.8, -8.6 - k * 1.3, x + 2.4, -8.0 - k * 1.3); line(c, k ? '#46b4ff' : '#7fd4ff', 0.26); } return; }
+    path(c, [[-6.6, -7.0], [-4.6, -4.6], [4.6, -4.6], [6.6, -7.0]]); fill(c, '#6a7488');
+    const w = (y) => 3.4 - (y + 4.6) * 0.14;
+    for (let k = 0; k < 4; k++) { const y0 = -4.6 + k * 2.2, y1 = y0 + 2.2; path(c, [[-w(y0), y0], [w(y0), y0], [w(y1), y1], [-w(y1), y1]]); fill(c, k % 2 ? '#ffffff' : '#e8243a'); }
+    c.beginPath(); c.rect(-2.8, 4.2, 5.6, 0.6); fill(c, '#46506a');
+    c.beginPath(); c.rect(-1.5, 4.8, 3.0, 1.6); fill(c, '#fff2a0');
+    path(c, [[-2.4, 6.4], [2.4, 6.4], [0, 8.6]]); fill(c, '#e8243a');
+    c.beginPath(); c.roundRect(-0.7, -4.6, 1.4, 2.0, 0.6); fill(c, '#46506a');
+  } },
+
+  // A sailboat: a white and a mint sail, a red hull, a flag; waves below
+  // (part 1).
+  sailboat: { layers: 2, dens: [1.2, 0.7], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-13.4, -7.4 - k * 1.3); for (let x = -13.4; x <= 13.4; x += 2.4) c.quadraticCurveTo(x + 0.6, -6.8 - k * 1.3, x + 1.2, -7.4 - k * 1.3), c.quadraticCurveTo(x + 1.8, -8.0 - k * 1.3, x + 2.4, -7.4 - k * 1.3); line(c, k ? '#46b4ff' : '#7fd4ff', 0.26); } return; }
+    path(c, [[-8.6, -2.6], [8.6, -2.6], [6.0, -6.0], [-6.0, -6.0]]); fill(c, grad(c, 0, -2.6, 0, -6, ['#ff6a5a', '#e8243a']));
+    c.beginPath(); c.rect(-8.6, -2.9, 17.2, 0.7); fill(c, '#ffd24a');
+    c.beginPath(); c.rect(-0.3, -2.6, 0.6, 11.0); fill(c, '#c98a4a');
+    c.beginPath(); c.moveTo(0.9, 7.6); c.quadraticCurveTo(8.6, 2.6, 7.8, -1.6); c.lineTo(0.9, -1.6); c.closePath(); fill(c, grad(c, 0, 7.6, 0, -1.6, ['#ffffff', '#cfe8ff']));
+    c.beginPath(); c.moveTo(-0.9, 6.0); c.quadraticCurveTo(-6.6, 2.4, -6.2, -1.6); c.lineTo(-0.9, -1.6); c.closePath(); fill(c, grad(c, 0, 6, 0, -1.6, ['#b8ffe0', '#3fd6a0']));
+    path(c, [[0.3, 8.4], [3.0, 7.7], [0.3, 7.0]]); fill(c, '#ffd24a');
+  } },
+
+  // Fishing: a rod bending from the right, the line, and a gold fish on
+  // the hook (part 1), ripples below.
+  fishing: { layers: 2, draw(c, l) {
+    if (l === 1) {
+      seg(c, [7.6, 8.4], [7.6, -4.0], '#e6f0ff', 0.16);
+      c.save(); c.translate(7.6, -5.6); c.rotate(-1.2);
+      oval(c, 0, 0, 3.4, 1.9); fill(c, radial(c, -0.8, 0.5, 0.3, 3.4, ['#fff3a0', '#ffc93a', '#ff9a2a']));
+      path(c, [[2.8, 0], [5.4, 1.9], [5.4, -1.9]]); fill(c, '#ff9a2a'); circle(c, -1.8, 0.5, 0.45); fill(c, '#1a2a4a');
+      c.restore();
+      return;
+    }
+    c.beginPath(); c.moveTo(-12.6, -3.6); c.quadraticCurveTo(-2.0, 6.0, 7.6, 8.4); line(c, '#e8c27a', 0.5);
+    circle(c, -10.6, -2.4, 1.2); fill(c, '#c8ccd8'); seg(c, [-13.2, -4.2], [-11.6, -2.8], '#b87a3a', 1.0);
+    for (let k = 0; k < 3; k++) { oval(c, 7.6, -8.6, 2.4 + k * 2.2, 0.5 + k * 0.35); line(c, k % 2 ? '#7fd4ff' : '#46b4ff', 0.22); }
+    for (const [x, y, r] of [[-6.6, 7.6, 0.7], [0.6, 9.0, 0.5], [12.0, 4.6, 0.6]]) sparkle(c, x, y, r, '#fff3c4');
   } },
 });
