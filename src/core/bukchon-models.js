@@ -232,6 +232,14 @@ function pavingTexture(kind) {
   return (paveCache[kind] = t);
 }
 
+const LAYER = 0.012; // between two alleys' ribbons where they cross
+// The gap between two segments on the map (0 when they cross).
+function segGap(a, b, c, d) {
+  const pt = (p, q, r) => { const dx = r[0] - q[0], dz = r[1] - q[1], l = dx * dx + dz * dz, t = l ? Math.max(0, Math.min(1, ((p[0] - q[0]) * dx + (p[1] - q[1]) * dz) / l)) : 0; return Math.hypot(p[0] - q[0] - dx * t, p[1] - q[1] - dz * t); };
+  const side = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  if (side(a, b, c) !== side(a, b, d) && side(c, d, a) !== side(c, d, b)) return 0;
+  return Math.min(pt(a, c, d), pt(b, c, d), pt(c, a, b), pt(d, a, b));
+}
 export const LANE_UP = 0.12; // the alleys' paving over the hill's ground (main.js stands you on it)
 export function buildBukchonHill(roads, [ox, oz]) {
   const g = new THREE.Group();
@@ -256,11 +264,29 @@ export function buildBukchonHill(roads, [ox, oz]) {
   g.add(earth);
   // Alleys: ribbons along each footpath, on the slope. Bukchon-ro (the one
   // wide street, with cars in the real one) is asphalt; the lanes are setts.
+  // Where two alleys meet, their ribbons overlap, and two sheets at the same
+  // height flicker (z-fighting). Each alley gets its own layer, a few mm from
+  // any alley it touches (the wider one on top), and a ribbon's pieces
+  // alternate by half a layer so they don't flicker at a bend either.
+  const lanes = roads.filter((r) => r.k === 'walk').sort((a, b) => a.w - b.w);
+  const layer = new Map();
+  const touch = (a, b) => {
+    const reach = (a.w + b.w) / 2;
+    for (let i = 1; i < a.p.length; i++) for (let j = 1; j < b.p.length; j++) if (segGap(a.p[i - 1], a.p[i], b.p[j - 1], b.p[j]) < reach) return true;
+    return false;
+  };
+  for (const r of lanes) {
+    const used = new Set(lanes.filter((o) => layer.has(o) && touch(r, o)).map((o) => layer.get(o)));
+    let n = 0;
+    while (used.has(n)) n++;
+    layer.set(r, n);
+  }
   for (const [kind, pick] of [['alley', (r) => r.w >= 7], ['setts', (r) => r.w < 7]]) {
     const pts = [], uvs = [], STEP = 1.5;
     for (const r of roads) {
       if (r.k !== 'walk' || !pick(r)) continue;
       for (let i = 1; i < r.p.length; i++) {
+        const up = LANE_UP + layer.get(r) * LAYER + (i % 2) * LAYER / 2;
         const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(len / STEP));
         const px = -(bz - az) / len * r.w / 2, pz = (bx - ax) / len * r.w / 2;
         const along = kind === 'setts' ? r.w / 1.6 : 2; // (setts: about 30 cm stones whatever the width)
@@ -268,7 +294,7 @@ export function buildBukchonHill(roads, [ox, oz]) {
           const quad = [k / n, (k + 1) / n].map((t) => {
             const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
             // (each edge at its own height, so a lane across a slope lies on it; LANE_UP is well above the plain footpath world.js draws at 0.06 on the flat)
-            return [[x - px, ground(x - px - ox, z - pz - oz) + LANE_UP, z - pz], [x + px, ground(x + px - ox, z + pz - oz) + LANE_UP, z + pz]];
+            return [[x - px, ground(x - px - ox, z - pz - oz) + up, z - pz], [x + px, ground(x + px - ox, z + pz - oz) + up, z + pz]];
           });
           const [[a, b], [c, d]] = quad;
           pts.push(...a, ...b, ...d, ...a, ...d, ...c);
