@@ -166,7 +166,8 @@ import { createZooSounds } from './game/zoo-sounds.js';
 import { createRainbowFountain } from './game/rainbow-fountain.js';
 import { parseDarts, parseDartsGo, parseDartPin } from './core/arcade.js';
 import { DartPins } from './core/dart-pins.js';
-import { JOB_TEXT, jobOf, shiftsLeft, takeShift, readShifts, writeShifts } from './core/jobs.js';
+import { JOB_TEXT, jobOf } from './core/jobs.js';
+import { createCareer } from './game/career.js';
 import { hiringTexture, drawHiring, wallPoster, doorSticker, assignSpots } from './core/hiring-ads.js';
 import { supportTexture, pickSupportSpots } from './core/support-poster.js';
 import { BeautyUI } from './ui/beauty-ui.js';
@@ -4579,15 +4580,12 @@ const pochaUi = new PochaUI({
   onDeliver: () => startDelivery(),
   onMedal: () => missionEvent('cook'), // practice only: no coins, no together bonus
 });
-// Part-time jobs (core/jobs.js): a few shifts a day, all jobs together.
-const shifts = {
-  left: () => shiftsLeft(readShifts(), dayKey()),
-  take: () => { const n = takeShift(readShifts(), dayKey()); if (!n) return false; writeShifts(n); return true; },
-};
+// Part-time jobs (core/jobs.js) and the job you picked (game/career.js):
+// no daily limit, the server times and pays each shift.
+const career = createCareer({ cloud, wallet });
 const jobUi = lazyPanel(() => import('./ui/job-ui.js').then(({ JobUI }) => new JobUI({
   root: $('job-panel'),
-  wallet,
-  shifts,
+  career,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
   onPaid: (coins) => { refreshWallet(); if (coins) { shop.toast(fmt(L(JOB_TEXT.paid), { n: coins })); me.play('cheer'); } missionEvent('job'); }, // (a shift counts for the "work shifts" mission)
 })));
@@ -5045,6 +5043,8 @@ function nearestStore(test) {
 const infoUi = lazyPanel(() => import('./ui/info-ui.js').then(({ InfoUI }) => new InfoUI({
   root: $('info-panel'),
   guide: guideToPlace,
+  career,
+  toast: (m) => shop.toast(m),
   places: {
     districtOf: (to) => {
       if (to.store) { const st = storeData.find((x) => x.id === to.store); return st ? districtOfStore(st) : null; }
@@ -6260,7 +6260,7 @@ const rainbowFountain = createRainbowFountain({
 // Delivery runs from the tteokbokki stall. (game/delivery.js)
 const deliveryGame = createDelivery({
   get interior() { return interior; }, get me() { return me; }, get mode() { return mode; }, $, leaveStore,
-  missionEvent, roadGraph, setGuide, shifts, shop, storefronts, wallet,
+  missionEvent, roadGraph, setGuide, career, refreshWallet, shop, storefronts,
 });
 const { deliveryArrived, startDelivery, updateDelivery } = deliveryGame;
 // Beauty shops (core/beauty.js): sit in front of the big mirror (salon,
