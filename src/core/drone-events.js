@@ -252,14 +252,14 @@ export const EVENTS = {
 // The longest a scene stays (Yozi 2026-11-21: after 15 seconds it gets
 // boring), and the shortest a picture or a line may get when times are evened.
 export const MAX_SCENE = 15;
-// The middle part of `event` ({ key, year }), exactly MID_SECONDS long: what
-// is missing (or too much) is shared out a second at a time, pictures first
-// (10 to MAX_SCENE s), then the lines (6 to 10 s).
-export function midOf(event, h) {
-  const list = EVENTS[event.key].mid({ ...h, year: event.year });
-  let left = MID_SECONDS - list.reduce((a, [d]) => a + d, 0);
+// Evens the times of a [seconds, step] list so it is `total` seconds long:
+// what is missing (or too much) is shared out a second at a time, pictures
+// first (10 to MAX_SCENE s), then the lines (6 to 10 s). (drone-sky.js uses
+// it for the everyday show too.)
+export function fit(list, total) {
+  let left = total - list.reduce((a, [d]) => a + d, 0);
   const d = Math.sign(left);
-  for (const [lo, hi, pick] of [[10, MAX_SCENE, (s) => s.shape], [6, 10, (s) => !s.shape]]) {
+  for (const [lo, hi, pick] of [[10, MAX_SCENE, (s) => !s.lines], [6, 10, (s) => s.lines]]) {
     for (let moved = true; left !== 0 && moved;) {
       moved = false;
       for (const step of list) if (left !== 0 && pick(step[1]) && step[0] + d >= lo && step[0] + d <= hi) { step[0] += d; left -= d; moved = true; }
@@ -267,6 +267,8 @@ export function midOf(event, h) {
   }
   return list;
 }
+// The middle part of `event` ({ key, year }), exactly MID_SECONDS long.
+export const midOf = (event, h) => fit(EVENTS[event.key].mid({ ...h, year: event.year }), MID_SECONDS);
 
 // ---- how the event pictures move (p, t as MOVES in drone-sky.js) -------------
 const turn = (p, cx, cy, a) => {

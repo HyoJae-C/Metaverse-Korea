@@ -9,7 +9,7 @@
 // the same picture as everyone else.
 import * as THREE from 'three';
 import { paintPicture, coasterY, PICTURE_NAMES } from './drone-pictures.js';
-import { eventOf, midOf, EVENTS, EVENT_MOVES } from './drone-events.js';
+import { eventOf, midOf, fit, MID_SECONDS, EVENTS, EVENT_MOVES } from './drone-events.js';
 // The schedule and places (drone-show.js) are handed in by the park instead
 // of imported, so this file pulls in nothing the game hasn't loaded already
 // (an import here would split drone-show.js out of the main download).
@@ -145,7 +145,7 @@ const MOVES = {
     let k = 1;
     if (p[2] === 1) { const s = Math.sin(t * 3) * 0.5 + 0.5; p[1] += s * 1.2; k = 0.35 + 0.65 * s; } // the spout
     p[1] += Math.sin(t * 1.4 + p[0] * 0.2) * 0.4;
-    p[0] = p[0] * 0.85 + 15 - (t / 44) * 30; // swims across, right to left
+    p[0] = p[0] * 0.85 + 11 - (t / 15) * 22; // swims across, right to left, in the 15 s it stays
     return k;
   },
   duck: (p, t) => { if (p[2] === 1) p[0] += Math.sin(t * 1.6 + p[1]) * 0.5; else p[1] += Math.sin(t * 1.5) * 0.3; },
@@ -181,6 +181,11 @@ const MOVES = {
 // to the end (20 minutes). Each picture or line stays about half as long as
 // in the first shows (2026-11-11), with more of them.
 const SHOW_LEN = 1200;
+// No scene stays over 15 seconds (Yozi 2026-11-21: after that it gets
+// boring), but the photo pause. Routine 1's middle and the night sky are
+// evened to these lengths (fit), so the photo time and the end stay put; the
+// last line (the next show's time) then stays 15 s.
+const NIGHT_SECONDS = 277;
 // event: { key, year } of drone-events.js on its days (its own middle part
 // and good-night line; the rest as routine 1), else null.
 function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
@@ -249,46 +254,62 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
     [14, W(['우리 함께'], { color: [PINK, GOLD] })],
     [18, W([['모두 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
     [18, P('hearts')],
-    ] : [
+    ] : fit([
     // Act 1: Seoul
-    [30, P('fan')],
-    [22, P('hanbok')],
-    [18, P('janggu')],
-    [18, P('mask')],
-    [18, P('taekwondo')],
-    [10, W(['태권!'], { color: [WHITE, SKYBLUE] })],
-    [32, P('palace')],
-    [12, W(['경복궁'], { color: [GOLD, RED] })],
-    [32, P('tower')],
-    [12, W(['남산'], { color: [MINT, SKYBLUE] })],
-    [22, P('anothertower')],
-    [18, P('mugunghwa')],
-    [22, P('subway')],
-    [14, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
+    [14, P('fan')],
+    [8, W(['부채춤'], { color: [PINK, GOLD] })],
+    [14, P('hanbok')],
+    [8, W(['한복'], { color: [PINK, SKYBLUE] })],
+    [14, P('janggu')],
+    [8, W(['덩기덕', '쿵더러러'], { color: [GOLD, RED] })],
+    [14, P('mask')],
+    [8, W(['탈춤'], { color: [GOLD, WHITE] })],
+    [14, P('taekwondo')],
+    [8, W(['태권!'], { color: [WHITE, SKYBLUE] })],
+    [14, P('tiger')],
+    [8, W(['어흥!'], { color: [GOLD, RED] })],
+    [14, P('palace')],
+    [8, W(['경복궁'], { color: [GOLD, RED] })],
+    [14, P('bosingak')],
+    [8, W(['보신각'], { color: [GOLD, WHITE] })],
+    [14, P('tower')],
+    [8, W(['남산'], { color: [MINT, SKYBLUE] })],
+    [14, P('magpie')],
+    [8, W(['반가워!'], { color: [SKYBLUE, WHITE] })],
+    [14, P('anothertower')],
+    [8, W(['모두타워'], { color: [VIOLET, SKYBLUE] })],
+    [14, P('mugunghwa')],
+    [8, W(['무궁화'], { color: [PINK, WHITE] })],
+    [14, P('subway')],
+    [10, W(['서울의 밤'], { color: [VIOLET, SKYBLUE] })],
     // Act 2: a Ttukseom night
-    [44, P('whale', { morph: 3 })],
+    [15, P('whale', { morph: 3 })],
     [7, W(['뚝섬의', '전설'], { color: [SKYBLUE, WHITE] })],
-    [16, P('duck')],
-    [18, P('bike')],
-    [18, P('bridge')],
-    [12, W(['한강'], { color: [SKYBLUE, MINT] })],
-    [18, P('chimaek')],
-    [10, W(['치맥'], { color: [GOLD, RED] })],
-    [16, P('ramen')],
+    [14, P('duck')],
+    [8, W(['오리배'], { color: [GOLD, WHITE] })],
+    [14, P('bike')],
+    [8, W(['따릉따릉'], { color: [MINT, WHITE] })],
+    [14, P('bridge')],
+    [8, W(['한강'], { color: [SKYBLUE, MINT] })],
+    [14, P('gimbap')],
+    [8, W(['김밥'], { color: [MINT, GOLD] })],
+    [14, P('chimaek')],
+    [8, W(['치맥'], { color: [GOLD, RED] })],
+    [14, P('ramen')],
     // (Yozi)
     [6, W(['라면'], { color: [RED, GOLD] })],
     [6, W(['먹고갈래?'], { color: [GOLD, PINK] })],
     [7, W(['뚝섬에서'], { color: [PINK, SKYBLUE] })],
-    [22, P('wheel')],
-    [22, P('coaster')],
-    [12, W(['모두랜드'], { color: [PINK, GOLD] })],
+    [14, P('wheel')],
+    [14, P('coaster')],
+    [8, W(['모두랜드'], { color: [PINK, GOLD] })],
     // Love (Yozi)
-    [12, W(['사 랑'], { color: PINK })],
-    [12, W(['행 복'], { color: GOLD })],
-    [15, W([['그리고', ' .', ' .', ' .']], { color: WHITE, parts: [0, 2, 4, 6] })],
-    [18, W([['너 ', '♡']], { color: (u, v, t, part) => rgb(part === 1 ? RED : PINK), move: beat(0.85) })],
-    [18, P('hearts')],
-    ]),
+    [8, W(['사 랑'], { color: PINK })],
+    [8, W(['행 복'], { color: GOLD })],
+    [12, W([['그리고', ' .', ' .', ' .']], { color: WHITE, parts: [0, 2, 4, 6] })],
+    [12, W([['너 ', '♡']], HEART)],
+    [14, P('hearts')],
+    ], MID_SECONDS)),
     // Photo time: 하나, 둘, 셋, 김치~ then the heart frame holds still
     [10, W(['사진 찍자!'], { color: [GOLD, PINK] })],
     [3, W(['하나'], { color: WHITE, morph: 1.2 })],
@@ -297,52 +318,44 @@ function scenes(act3, nextText, hello = HELLOS[0], routine = 1, event = null) {
     [6, W(['김치~'], { color: GOLD, morph: 1.2 })],
     [45, P('frame', { photo: true, morph: 3 })],
     // Act 3: changes from show to show
-    [12, W(act3[0], { color: MINT, act3: true })],
-    [12, W(act3[1], { color: [MINT, SKYBLUE] })],
-    [14, W(act3[2], { color: [SKYBLUE, VIOLET] })],
-    [18, P('lightstick')],
-    [34, { wave: true, morph: 4 }],
-    ...(routine === 2 && !ev ? [
-    // The night sky
-    [18, P('moonrabbit')],
-    [8, W(['방아 쿵쿵'], { color: [GOLD, WHITE] })],
+    [10, W(act3[0], { color: MINT, act3: true })],
+    [10, W(act3[1], { color: [MINT, SKYBLUE] })],
+    [10, W(act3[2], { color: [SKYBLUE, VIOLET] })],
+    [15, P('lightstick')],
+    [15, { wave: true, morph: 4 }],
+    // The night sky (the same in every routine and event; only the
+    // good-night line is the event's)
+    ...fit([
     [14, P('star')],
-    [10, W(['별 하나'], { color: GOLD })],
-    [10, W(['나 하나'], { color: [GOLD, WHITE] })],
-    [18, P('dipper')],
-    [10, W(['북두칠성'], { color: [VIOLET, PINK] })],
-    [15, P('shootingstar')],
-    [12, W(['소원 말해 봐'], { color: [VIOLET, GOLD] })],
-    [14, P('clover')],
-    [10, W(['행운을 빌어'], { color: [MINT, GOLD] })],
-    [18, P('blossom')],
-    [17, P('rainbow')],
-    [24, P('firework')],
-    [18, W(['오늘도', '반가웠어'], { color: [GOLD, PINK] })],
-    [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
-    ] : [
-    // The night sky
-    [14, P('star')],
-    [10, W(['별'], { color: GOLD })],
-    [10, W(['반짝반짝'], { color: [GOLD, WHITE] })],
+    [8, W(['별 하나'], { color: GOLD })],
+    [8, W(['나 하나'], { color: [GOLD, WHITE] })],
     [14, P('moon')],
-    [10, W(['달'], { color: '#fff3c4' })],
-    [20, P('dipper')],
-    [10, W(['꿈'], { color: [VIOLET, PINK] })],
-    [15, P('shootingstar')],
-    [12, W(['소원 빌어'], { color: [VIOLET, GOLD] })],
+    [8, W(['달'], { color: '#fff3c4' })],
+    [14, P('moonrabbit')],
+    [8, W(['방아 쿵쿵'], { color: [GOLD, WHITE] })],
+    [14, P('dipper')],
+    [8, W(['북두칠성'], { color: [VIOLET, PINK] })],
+    [8, W(['꿈'], { color: [VIOLET, PINK] })],
+    [14, P('shootingstar')],
+    [8, W(['소원 빌어'], { color: [VIOLET, GOLD] })],
     [14, P('clover')],
-    [10, W(['행운'], { color: [MINT, GOLD] })],
-    [18, P('blossom')],
-    [17, P('rainbow')],
-    [24, P('firework')],
-    [18, W(bye || ['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
-    [14, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
-    ]),
-    // Finale
-    [32, { burst: true, morph: 6 }],
-    [12, W(['또 만나'], { color: [PINK, GOLD], morph: 3 })],
-    [12, W(['SEE YOU', 'AGAIN'], { color: [SKYBLUE, PINK] })],
+    [8, W(['행운'], { color: [MINT, GOLD] })],
+    [14, P('blossom')],
+    [8, W(['꽃비'], { color: [PINK, WHITE] })],
+    [14, P('rainbow')],
+    [8, W(['무지개'], { color: [RED, VIOLET] })],
+    [14, P('heart')],
+    [8, W(['사랑해'], { color: [PINK, RED] })],
+    [15, { wave: true, morph: 4 }],
+    [14, P('firework')],
+    [10, W(bye || ['오늘 하루도', '수고했어'], { color: [GOLD, PINK] })],
+    [10, W(['고마워', 'THANK YOU'], { color: [PINK, SKYBLUE] })],
+    ], NIGHT_SECONDS),
+    // Finale (the burst gathers for 6 s, opens, and hangs)
+    [15, { burst: true, morph: 6 }],
+    [10, W(['또 만나'], { color: [PINK, GOLD], morph: 3 })],
+    [10, W(['SEE YOU', 'AGAIN'], { color: [SKYBLUE, PINK] })],
+    [10, W(['안녕', 'BYE BYE'], { color: [GOLD, PINK] })],
     [0, W(['NEXT SHOW', nextText], { color: [GOLD, WHITE] })],
   ];
 }

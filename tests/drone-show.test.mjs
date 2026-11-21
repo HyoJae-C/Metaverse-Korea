@@ -201,3 +201,18 @@ test('event patterns: Christmas, the year\'s end, New Year and Chuseok on their 
   assert.ok(words(2026, 12, 24).includes('MERRYCHRISTMAS'));
   assert.ok(!words(2026, 11, 22).includes('MERRYCHRISTMAS'));
 });
+
+test('after the opening no scene stays over 15 seconds, but the photo pause (Yozi 2026-11-21)', async () => {
+  const { EVENTS } = await import('../src/core/drone-events.js');
+  useShow(show);
+  for (const event of [null, ...Object.keys(EVENTS).map((key) => ({ key, year: 2026 }))]) {
+    const steps = program(DRONE(), 1, event).filter((s) => s.at >= 144);
+    for (let i = 0; i + 1 < steps.length; i++) {
+      const d = steps[i + 1].at - steps[i].at;
+      assert.ok(d <= 15 || (steps[i].photo && d === 45), `${event?.key ?? 'everyday'}: ${steps[i].shape || steps[i].lines || 'a move'} stays ${d} s`);
+    }
+  }
+  assert.equal(LAST_LINE_SECONDS, 15);
+  const shown = program(DRONE()).filter((s) => s.at >= 0 && s.at < SHOW_SECONDS);
+  assert.ok(shown.length >= 95, `${shown.length} scenes in the 20 minutes`);
+});
