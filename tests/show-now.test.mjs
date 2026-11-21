@@ -32,7 +32,9 @@ test('drone numbers of the regular shows stay the same', () => {
   const n = cycleNumber(Date.parse('2026-11-20T14:10:00Z')); // a regular drone night
   const before = droneNumber(n - 16), here = droneNumber(n);
   assert.equal(here, before + 1);
-  assert.equal(droneNumber(n + 1), here + 1); // an extra in a quiet cycle counts as the next one
+  assert.equal(droneNumber(n + 1), here); // an extra in a quiet cycle repeats the show before it
+  assert.equal(droneNumber(n + 15), here); // still that one the night before the next regular show
+  assert.equal(droneNumber(n + 16), here + 1); // the next regular show gets its own turn
 });
 
 test('an extra fireworks start, and Modu Sky sees both', () => {
