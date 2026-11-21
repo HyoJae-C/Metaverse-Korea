@@ -9,18 +9,18 @@
 //
 // Every keeper answers the same:
 //   info()                         → { now, beds: [bed|null × n], barn, crops } or { error }
-//   plant({ requestId, bed, crop, price }, note) → { bed: { crop, at, wet } } or { error, price? }
-//   water(bed)                     → { wet } or { error }
+//   plant({ requestId, bed, crop, price }, note) → { bed: { crop, at, wet, n } } or { error, price? }
+//   water(bed)                     → { wet, n } or { error } (once a Korean day)
 //   pick(bed)                      → { crop, fresh, barn } or { error, left? }
 //   sell({ requestId }, note)      → { paid, sold } or { error }
 // error: 'signin' | 'crop' | 'bed' | 'busy' | 'price' | 'nosave' | 'coins' |
-//   'empty' | 'early' | 'late' | 'wet' | 'unripe' | 'none' | 'missing' | 'network'
+//   'empty' | 'late' | 'wet' | 'unripe' | 'none' | 'missing' | 'network'
 // Times are the keeper's clock in ms; `now` in info() lets the game follow it.
-import { CROPS, FARM_BEDS, barnCount, barnKey, barnWorth, bedState, cropById } from './farm.js';
+import { CROPS, FARM_BEDS, barnCount, barnKey, barnWorth, bedState, cropById, kstDayNo } from './farm.js';
 
 export const newRequestId = () => (globalThis.crypto?.randomUUID?.() || `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`);
 const LOCAL_KEY = 'mkfarm.local'; // not "mk.": stays out of the cloud save
-const crops0 = () => Object.fromEntries(CROPS.map((c) => [c.id, { grow: c.grow, seed: c.seed, sell: c.sell }]));
+const crops0 = () => Object.fromEntries(CROPS.map((c) => [c.id, { grow: c.grow, seed: c.seed, sell: c.sell, fresh: c.fresh }]));
 
 // In this browser only.
 export class LocalFarm {
@@ -44,7 +44,7 @@ export class LocalFarm {
     if (s.beds[bed]) return { error: 'busy' };
     if (price !== c.seed) return { error: 'price', price: c.seed };
     if (!this.wallet.spend(c.seed, note, { ask: false })) return { error: 'coins' };
-    s.beds[bed] = { crop, at: now, wet: null };
+    s.beds[bed] = { crop, at: now, wet: null, n: 0 };
     s.ids = [...s.ids, requestId].slice(-40);
     this._save(s);
     return { bed: s.beds[bed] };
@@ -52,13 +52,12 @@ export class LocalFarm {
   async water(bed, now = Date.now()) {
     const s = this._load(), b = s.beds[bed];
     if (!b) return { error: 'empty' };
-    if (Number.isFinite(b.wet)) return { error: 'wet', wet: b.wet };
     const st = bedState(b, now);
-    if (st.stage === 'sprout') return { error: 'early' };
     if (st.stage === 'ripe') return { error: 'late' };
-    b.wet = now;
+    if (st.n >= st.need || (Number.isFinite(b.wet) && kstDayNo(b.wet) === kstDayNo(now))) return { error: 'wet', wet: b.wet, n: st.n };
+    b.wet = now; b.n = st.n + 1;
     this._save(s);
-    return { wet: now };
+    return { wet: now, n: b.n };
   }
   async pick(bed, now = Date.now()) {
     const s = this._load(), b = s.beds[bed];
@@ -115,10 +114,10 @@ export class SupabaseFarm {
     if (d.error) return d;
     const f = this._sf(), n = Number(d.beds) || FARM_BEDS;
     const beds = Array.from({ length: n }, () => null);
-    for (const b of d.mine || []) if (b.bed >= 0 && b.bed < n) beds[b.bed] = { crop: b.crop, at: b.at, wet: b.wet ?? null };
+    for (const b of d.mine || []) if (b.bed >= 0 && b.bed < n) beds[b.bed] = { crop: b.crop, at: b.at, wet: b.wet ?? null, n: Number(b.n) || 0 };
     const crops = crops0();
-    for (const [id, c] of Object.entries(d.crops || {})) if (crops[id]) crops[id] = { grow: Number(c.grow) || crops[id].grow, seed: c.seed * f, sell: c.sell * f };
-    return { now: Number(d.now) || Date.now(), beds, barn: { ...(d.barn || {}) }, crops, fresh: Number(d.fresh) || undefined };
+    for (const [id, c] of Object.entries(d.crops || {})) if (crops[id]) crops[id] = { grow: Number(c.grow) || crops[id].grow, seed: c.seed * f, sell: c.sell * f, fresh: (Number(c.fresh) || Math.round(c.sell * (Number(d.fresh) || 1.5))) * f };
+    return { now: Number(d.now) || Date.now(), beds, barn: { ...(d.barn || {}) }, crops };
   }
   async plant({ requestId, bed, crop, price }, note) {
     if (!cropById(crop)) return { error: 'crop' };
@@ -132,11 +131,11 @@ export class SupabaseFarm {
       if (this.wallet.server && d.ver != null) this.wallet.charged(d.charged ? p : 0, d, note);
       else if (d.charged) this.wallet.add(-p, note);
     }
-    return { bed: d.bed ? { crop: d.bed.crop, at: d.bed.at, wet: d.bed.wet ?? null } : null };
+    return { bed: d.bed ? { crop: d.bed.crop, at: d.bed.at, wet: d.bed.wet ?? null, n: 0 } : null };
   }
   async water(bed) {
     const d = await this._call('farm_water', { p_bed: bed });
-    return d.error ? { error: d.error, wet: d.wet } : { wet: d.wet };
+    return d.error ? { error: d.error, wet: d.wet, n: d.n } : { wet: d.wet, n: Number(d.n) || 1 };
   }
   async pick(bed) {
     const d = await this._call('farm_pick', { p_bed: bed });

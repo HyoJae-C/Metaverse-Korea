@@ -2931,6 +2931,15 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .farm-row { flex-wrap: wrap; }
 .farm-row .bait-text { flex-basis: 150px; }
 .farm-panel > button.primary { width: 100%; }
+/* The farmer's journal (ui/farm-journal-ui.js) */
+.farm-log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 56vh; overflow-y: auto; background: #f4efe4; border-radius: 16px; padding: 10px; }
+.farm-log-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; background: #fffaf1; border: 1px dashed #d9c9b0; color: #8a7767; text-align: center; }
+.farm-log-cell b { font-size: 13px; }
+.farm-log-cell small { font-size: 11px; opacity: 0.8; }
+.farm-log-stamp { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; border: 3px solid #d9c9b0; filter: grayscale(1); opacity: 0.35; }
+.farm-log-cell.got { border-style: solid; color: #4c3b32; }
+.farm-log-cell.got .farm-log-stamp { filter: none; opacity: 1; border-color: #4c9a5f; background: #eaf6e4; transform: rotate(-6deg); }
+.farm-log-cell.fresh .farm-log-stamp { border-color: #e0a422; background: #fff3cf; }
 /* The dish upgrade panel (ui/dish-upgrade-ui.js) */
 .upgrade-have { font-weight: 700; margin: 6px 0; }
 .upgrade-list { max-height: 34vh; overflow-y: auto; }

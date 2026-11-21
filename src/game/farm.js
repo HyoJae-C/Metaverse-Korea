@@ -9,7 +9,7 @@ import { mergeStatic } from '../core/merge-static.js';
 import { lazyPanel } from '../core/lazy-panel.js';
 import { t } from '../core/i18n.js';
 import { won } from '../core/money.js';
-import { CROPS, FRESH, barnCount, barnWorth, bedAct, bedState, cropById, timeLeft } from '../core/farm.js';
+import { CROPS, barnCount, barnWorth, bedAct, bedState, cropById, cropDays, timeLeft } from '../core/farm.js';
 import { BED, BED_SPOTS, FARM_HOUSE, STALL, STALL_STAND, bedNear, farmToLocal, farmToWorld } from '../core/farm-site.js';
 import { LocalFarm, SupabaseFarm, newRequestId } from '../core/farm-till.js';
 import { DEFAULT_LOOK } from '../data/appearance.js';
@@ -19,7 +19,7 @@ const SHOW = 140; // m: the glasshouse is drawn
 const ASK_EVERY = 120e3; // ms: ask the keeper again while you stay (another device may have farmed)
 const FARMER_LOOK = { ...DEFAULT_LOOK, model: 'basic', shirt: 'leaf', pants: 'olive', hair: 'espresso', skin: 'warm', head: 'bucket-grey' };
 const FARMER_LINES = [
-  ['물은 반쯤 자랐을 때 한 번만 주면 돼요!', 'mureun banjjeum jarasseul ttae han beonman jumyeon dwaeyo!', 'farm.hi1'],
+  ['물은 하루에 한 번, 매일 줘야 싱싱해요!', 'mureun harue han beon, maeil jwoya singsinghaeyo!', 'farm.hi1'],
   ['오늘 딴 채소가 제일 맛있죠!', 'oneul ttan chaesoga jeil masitjyo!', 'farm.hi2'],
 ];
 const SOIL_TOP = 0.34;
@@ -28,8 +28,13 @@ const PLANTS = [[-0.36, -0.42], [0.36, -0.42], [-0.36, 0.42], [0.36, 0.42]]; // 
 // colour) and its fruit (when it shows, where, sizes, colour unripe → ripe).
 const LOOKS = {
   lettuce: { leaf: [0.27, 0.15, 0.27], color: '#93d05c' },
+  spinach: { leaf: [0.22, 0.2, 0.22], color: '#2f7d3a' },
+  cucumber: { leaf: [0.24, 0.42, 0.24], color: '#4c9a4a', fruit: { at: [0.16, 0.3, 0.1], s: [0.055, 0.17, 0.055], from: '#7fbf5a', to: '#2f8a3c' } },
+  carrot: { leaf: [0.16, 0.3, 0.16], color: '#58a84a', fruit: { at: [0, 0.0, 0], s: [0.09, 0.07, 0.09], from: '#f2a14a', to: '#ee7b22', ripeOnly: true } },
+  corn: { leaf: [0.15, 0.62, 0.15], color: '#5aa13f', fruit: { at: [0.13, 0.5, 0.06], s: [0.07, 0.17, 0.07], from: '#cfe07a', to: '#f5d13a' } },
   tomato: { leaf: [0.2, 0.5, 0.2], color: '#3f8f3f', fruit: { at: [0.14, 0.52, 0.1], s: [0.1, 0.1, 0.1], from: '#9fc24a', to: '#e2412f' } },
-  potato: { leaf: [0.28, 0.17, 0.28], color: '#4f8f45', fruit: { at: [0.2, -0.1, 0.16], s: [0.12, 0.09, 0.1], from: '#b8935a', to: '#b8935a', ripeOnly: true } },
+  strawberry: { leaf: [0.27, 0.16, 0.27], color: '#3f9a48', fruit: { at: [0.17, 0.12, 0.13], s: [0.085, 0.1, 0.085], from: '#e9efc0', to: '#e8283c' } },
+  ginseng: { leaf: [0.2, 0.3, 0.2], color: '#2f8f4f', fruit: { at: [0, 0.36, 0], s: [0.07, 0.07, 0.07], from: '#5fa83f', to: '#d8262c' } },
   chili: { leaf: [0.2, 0.36, 0.2], color: '#3c8a4a', fruit: { at: [0.13, 0.36, 0.08], s: [0.05, 0.15, 0.05], from: '#5fa83f', to: '#d92b2b' } },
   cabbage: { leaf: [0.31, 0.25, 0.31], color: '#bfe0a0', fruit: { at: [0, 0.2, 0], s: [0.2, 0.2, 0.2], from: '#d8ecb4', to: '#eef6d2' } },
 };
@@ -142,7 +147,8 @@ function makeHouse() {
 
 // game: { scene, collision, spot: { x, z, ry } (the map's 'farm' landmark),
 // root (the panel's element), cloud, wallet, refreshWallet(), toast(m), sfx,
-// me, mode(), makeNpc(name, look), say(npc, phrase) }.
+// me, mode(), makeNpc(name, look), say(npc, phrase), journal (core/
+// farm-journal.js), onJournal() }.
 export function createFarm(game) {
   const spot = game.spot;
   const { hw, hl, door } = FARM_HOUSE;
@@ -188,7 +194,7 @@ export function createFarm(game) {
   const now = () => Date.now() + skew;
   const crop = (id) => { const c = cropById(id); return c && crops?.[id] ? { ...c, ...crops[id] } : c; };
   const name = (c) => t('farm.' + c.id);
-  const time = (ms) => { const { h, m } = timeLeft(ms); return h ? t(m ? 'farm.hm' : 'farm.h', { h, m }) : t('farm.m', { m: Math.max(1, m) }); };
+  const time = (ms) => { const { d, h, m } = timeLeft(ms); return d ? t(h ? 'farm.dh' : 'farm.d', { d, h }) : h ? t(m ? 'farm.hm' : 'farm.h', { h, m }) : t('farm.m', { m: Math.max(1, m) }); };
 
   let till = null;
   const store = () => {
@@ -208,18 +214,18 @@ export function createFarm(game) {
     drawn = '';
     if (ui.open) ui.refresh();
   }
-  const whyNot = (e, v = {}) => t({ coins: 'farm.poor', price: 'farm.price', busy: 'farm.busy', missing: 'farm.missing', early: 'farm.early', late: 'farm.late', wet: 'farm.wetAlready', unripe: 'farm.unripe', none: 'farm.barnEmpty' }[e] || 'farm.network', v);
+  const whyNot = (e, v = {}) => t({ coins: 'farm.poor', price: 'farm.price', busy: 'farm.busy', missing: 'farm.missing', late: 'farm.late', wet: 'farm.wetAlready', unripe: 'farm.unripe', none: 'farm.barnEmpty' }[e] || 'farm.network', v);
 
   // Draw the beds as they stand now (only when something changed).
   function draw() {
     const t0 = now();
     const states = beds.map((b) => bedState(b, t0));
-    const key = states.map((s, i) => (s.crop ? `${beds[i].crop}${s.stage[0]}${s.fresh ? 'f' : ''}${Math.round(s.t * 40)}` : '-')).join('|');
+    const key = states.map((s, i) => (s.crop ? `${beds[i].crop}${s.stage[0]}${s.n}${Math.round(s.t * 40)}` : '-')).join('|');
     if (key === drawn) return;
     drawn = key;
     states.forEach((s, i) => {
       const [bx, bz] = BED_SPOTS[i];
-      put(soil, i, bx, SOIL_TOP - 0.02, bz, 1, 1, 1, col.set(s.fresh ? '#4a3222' : '#6e4d35'));
+      put(soil, i, bx, SOIL_TOP - 0.02, bz, 1, 1, 1, col.set(s.crop && s.stage === 'growing' ? '#4a3222' : '#6e4d35')); // (dark: watered today)
       const look = s.crop && LOOKS[s.crop.id];
       PLANTS.forEach(([px, pz], k) => {
         const j = i * PLANTS.length + k;
@@ -266,10 +272,11 @@ export function createFarm(game) {
     busy = true;
     const r = await store().water(i);
     busy = false;
-    if (r.error && r.error !== 'wet') { game.toast(whyNot(r.error)); ask(); return; }
-    beds[i] = { ...beds[i], wet: r.wet }; drawn = '';
+    if (r.error) { game.toast(whyNot(r.error)); ask(); return; }
+    beds[i] = { ...beds[i], wet: r.wet, n: r.n }; drawn = '';
     game.sfx?.pop?.();
-    game.toast(t('farm.watered'));
+    const need = bedState(beds[i], now()).need;
+    game.toast(t(r.n >= need ? 'farm.wateredAll' : 'farm.watered', { n: r.n, all: need }));
   }
   async function pick(i) {
     if (busy) return;
@@ -281,6 +288,9 @@ export function createFarm(game) {
     game.sfx?.pop?.(); game.me?.play?.('clap');
     const c = crop(r.crop);
     game.toast(t(r.fresh ? 'farm.pickedFresh' : 'farm.picked', { name: c ? name(c) : '', n: barnCount(barn) }));
+    // The farmer's journal: a stamp for every kind you harvested yourself.
+    if (c && game.journal?.add(c.id, r.fresh)) setTimeout(() => game.toast(t('farm.logNew', { name: name(c), k: game.journal.kinds, all: CROPS.length })), 2600);
+    game.onJournal?.();
   }
   let sellId = null;
   async function sell() {
@@ -301,8 +311,8 @@ export function createFarm(game) {
   const view = {
     get busy() { return busy; }, get known() { return known; }, get problem() { return problem; }, get local() { return !store().shared; },
     get barn() { return barn; }, get coins() { return game.wallet.coins; }, get empty() { return empties().length; },
-    crops: () => CROPS.map((c) => crop(c.id)), name, time, fresh: FRESH,
-    worth: () => Object.entries(barn).reduce((s, [k, v]) => { const f = k.endsWith('+'), c = crop(f ? k.slice(0, -1) : k); return s + (c && v > 0 ? Math.round(c.sell * (f ? FRESH : 1)) * v : 0); }, 0) || barnWorth(barn),
+    crops: () => CROPS.map((c) => crop(c.id)), name, time, days: cropDays,
+    worth: () => Object.entries(barn).reduce((s, [k, v]) => { const f = k.endsWith('+'), c = crop(f ? k.slice(0, -1) : k); return s + (c && v > 0 ? (f ? c.fresh : c.sell) * v : 0); }, 0) || barnWorth(barn),
     plantOne: (bed, c) => plant([bed], c), plantAll: (c) => plant(empties(), c), sell,
   };
   const ui = lazyPanel(() => import('../ui/farm-ui.js').then(({ FarmUI }) => new FarmUI({ root: game.root, view })), { refresh: () => {} });
@@ -337,9 +347,9 @@ export function createFarm(game) {
       if (!known) return null;
       const s = bedState(beds[i], now()), a = bedAct(beds[i], now());
       if (a === 'plant') return { key: 'farm-plant:' + i, label: '🌱 ' + t('farm.plant'), run: () => ui.showSeeds(i) };
-      if (a === 'water') return { key: 'farm-water:' + i, label: '💧 ' + t('farm.water'), run: () => water(i) };
+      if (a === 'water') return { key: 'farm-water:' + i, label: `💧 ${t('farm.water')} ${s.n + 1}/${s.need}`, run: () => water(i) };
       if (a === 'pick') return { key: 'farm-pick:' + i, label: '🧺 ' + t('farm.pick', { name: name(s.crop) }), run: () => pick(i) };
-      return { key: 'farm-wait:' + i, label: `${s.crop.emoji} ${time(s.left)}`, run: () => game.toast(t(s.stage === 'sprout' ? 'farm.growing' : 'farm.growingWet', { name: name(s.crop), time: time(s.left) })) };
+      return { key: 'farm-wait:' + i, label: `${s.crop.emoji} ${time(s.left)}`, run: () => game.toast(t(s.fresh ? 'farm.growingWet' : 'farm.growing', { name: name(s.crop), time: time(s.left), n: s.n, all: s.need })) };
     },
   };
 }
