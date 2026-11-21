@@ -674,7 +674,7 @@ export const EN = {
   'start.region': 'First stop: {region}, {city}',
   'start.survey': '🎨 Apply to decorate Modu Seoul with us',
   'start.where': 'What would you like to do first?', // the start screen: where new players start (region.json spawn.starts)
-  'start.tour': 'Sights · Bukchon',
+  'start.tour': 'Sights · Gwanghwamun',
   'start.shop': 'Shopping & style · Seongsu',
   'start.activity': 'Outdoors · Han River',
   'start.heal': 'Relax · Seoul Forest',

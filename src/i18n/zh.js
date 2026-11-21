@@ -675,7 +675,7 @@ export const ZH = {
   'start.region': '第一站：{city}{region}',
   'start.survey': '🎨 申请一起装饰 Modu Seoul',
   'start.where': '你想先做什么？',
-  'start.tour': '观光 · 北村',
+  'start.tour': '观光 · 光化门',
   'start.shop': '购物·打扮 · 圣水',
   'start.activity': '户外活动 · 汉江',
   'start.heal': '放松 · 首尔林',

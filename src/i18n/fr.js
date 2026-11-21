@@ -669,7 +669,7 @@ export const FR = {
   'start.region': 'Première étape : {region}, {city}',
   'start.survey': '🎨 Postulez pour décorer Modu Seoul avec nous',
   'start.where': 'Que veux-tu faire en premier ?',
-  'start.tour': 'Visites · Bukchon',
+  'start.tour': 'Visites · Gwanghwamun',
   'start.shop': 'Shopping et style · Seongsu',
   'start.activity': 'Plein air · fleuve Han',
   'start.heal': 'Détente · forêt de Séoul',

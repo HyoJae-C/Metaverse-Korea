@@ -669,7 +669,7 @@ export const HI = {
   'start.region': 'पहला पड़ाव: {region}, {city}',
   'start.survey': '🎨 हमारे साथ Modu Seoul सजाने के लिए आवेदन करें',
   'start.where': 'पहले क्या करना चाहेंगे?',
-  'start.tour': 'घूमना · बुकचोन',
+  'start.tour': 'घूमना · ग्वांगह्वामुन',
   'start.shop': 'शॉपिंग और स्टाइल · सोंगसू',
   'start.activity': 'आउटडोर मज़ा · हान नदी',
   'start.heal': 'सुकून · सियोल फ़ॉरेस्ट',
