@@ -101,13 +101,17 @@ create index if not exists job_runs_user_at on public.job_runs (user_id, started
 alter table public.job_runs enable row level security;
 revoke all on public.job_runs from anon, authenticated;
 
--- Shifts worked before jobs count as skill (2 points a shift), once.
+-- Shifts worked before jobs count as skill (2 points a shift), once. The old
+-- receipts have no reward name, only the note ('ledger.delivery',
+-- 'Part-time pay · <shop>').
 insert into public.job_skill (user_id, job, xp, shifts)
 select l.user_id,
-  case when l.r = 'delivery' then 'delivery' when l.note ilike '%Nonna Lucia%' then 'serving' else 'mart' end,
+  case when l.note like 'ledger.delivery%' or l.r = 'delivery' then 'delivery'
+       when l.note ilike '%Nonna Lucia%' then 'serving' else 'mart' end,
   count(*) * 2, count(*)
 from public.coin_ledger l
-where l.kind = 'earn' and l.r in ('job', 'delivery')
+where l.kind = 'earn' and l.op_id not in (select id from public.job_runs)
+  and (l.r in ('job', 'delivery') or l.note like 'ledger.delivery%' or l.note like 'Part-time pay%')
 group by 1, 2
 on conflict (user_id, job) do nothing;
 
