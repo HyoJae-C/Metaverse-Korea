@@ -22,14 +22,22 @@ export function missionSpot(pin, w, fallbackTop) {
 }
 
 // Phones: the bars under the lowest of the top-left corner buttons
-// (DOMRects, null or empty when not shown), on a `w`-wide screen; `right`:
-// room kept for the bag and notes buttons on the right (Android: they are in
-// its bottom bar).
-export function cornerSpot(rects, w, fallbackTop, right = 130) {
+// (DOMRects, null or empty when not shown), on a `w`-wide screen.
+// `tools`: the round buttons in the top-right row (bag, notes, and ☕ / 📥
+// while you hold something), as DOMRects; when they leave the bar too little
+// room, it goes under them instead.
+export function cornerSpot(rects, w, fallbackTop, tools = []) {
   const shown = rects.filter((r) => r && r.height);
-  const top = shown.length ? Math.round(Math.max(...shown.map((r) => r.bottom)) + GAP) : fallbackTop;
+  let top = shown.length ? Math.round(Math.max(...shown.map((r) => r.bottom)) + GAP) : fallbackTop;
+  const row = tools.filter((r) => r && r.height && r.top < top + 40 && r.bottom > top);
+  let right = EDGE;
+  if (row.length) {
+    right = Math.round(w - Math.min(...row.map((r) => r.left)) + GAP);
+    if (w - EDGE - right < MIN_BAR) { top = Math.round(Math.max(...row.map((r) => r.bottom)) + GAP); right = EDGE; }
+  }
   return { left: EDGE, top, maxWidth: Math.max(160, w - EDGE - right) };
 }
+const MIN_BAR = 200; // (the 📜 chip and 🧭 both still readable)
 
 const DOCK = '(max-width: 760px) and (pointer: coarse)';
 
@@ -69,8 +77,8 @@ export function createMissionSpot() {
     if (dock.matches) dockPin();
     else if (pin.style.left || lastLift) { pin.style.left = ''; lastLift = 0; root.style.setProperty('--pin-lift', '0px'); }
     const map = $('map-btn');
-    const cornerEls = [document.querySelector('.ui-eye'), map?.classList.contains('corner-map') ? map : null, document.querySelector('.minimap')];
-    const s = dock.matches ? cornerSpot(cornerEls.map(shownRect), window.innerWidth, EDGE + 52, root.classList.contains('android') ? EDGE : 130) : missionSpot(pinRect(), window.innerWidth, EDGE + 62);
+    const cornerEls = [document.querySelector('.ui-eye'), map?.classList.contains('corner-map') ? map : null, document.querySelector('.minimap'), $('drink-btn') && getComputedStyle($('drink-btn')).position === 'fixed' ? $('drink-btn') : null];
+    const s = dock.matches ? cornerSpot(cornerEls.map(shownRect), window.innerWidth, EDGE + 52, [...document.querySelectorAll('.tools > .tool:not(.corner-map)')].map(shownRect)) : missionSpot(pinRect(), window.innerWidth, EDGE + 62);
     const dTop = s.top + (bar.hidden ? 0 : bar.offsetHeight + GAP);
     const showDelivery = delivery && !delivery.hidden;
     const bottom = showDelivery ? dTop + delivery.offsetHeight : bar.hidden ? s.top - GAP : dTop - GAP;
