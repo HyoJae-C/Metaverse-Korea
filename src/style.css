@@ -2908,6 +2908,10 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .bait-row button { flex: none; width: auto; white-space: nowrap; font-size: 15px; padding: 8px 14px; border-radius: 14px; }
 .bait-row button.chip { box-shadow: none; opacity: 0.7; }
 .bait-free { font-weight: 700; opacity: 0.7; }
+/* The weekend farm (ui/farm-ui.js) */
+.farm-row { flex-wrap: wrap; }
+.farm-row .bait-text { flex-basis: 150px; }
+.farm-panel > button.primary { width: 100%; }
 /* The dish upgrade panel (ui/dish-upgrade-ui.js) */
 .upgrade-have { font-weight: 700; margin: 6px 0; }
 .upgrade-list { max-height: 34vh; overflow-y: auto; }

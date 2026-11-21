@@ -833,6 +833,19 @@
           { "n": 1, "at": [443, -119], "ry": 3.14159 },
           { "n": 2, "at": [422, -75], "ry": 1.5708 }
         ]
+      },
+      {
+        "id": "ichon-station",
+        "name": { "ko": "이촌", "en": "Ichon", "ja": "二村", "zh": "二村" },
+        "code": "430",
+        "line": { "color": "#00a5de", "name": { "ko": "4호선", "en": "Line 4", "ja": "4号線", "zh": "4号线" } },
+        "prev": { "ko": "신용산", "en": "Sinyongsan" },
+        "next": { "ko": "동작", "en": "Dongjak" },
+        "note": "Under Seobinggo-ro west of the art museum's grounds (the real station serves the National Museum of Korea and Yongsan Family Park; Yozi 2026-11-21: Ichon rather than Seobinggo, one station for the museum and the weekend farm, which is about 220 m east). Exits at the real 2 and 3 (OSM 3403175975, 3403175976), the museum-side ones, moved out of Seobinggo-ro onto its two sides (the game's road is wider than 1/4): 2 on the museum's side, 3 across the road.",
+        "exits": [
+          { "n": 2, "at": [-1764.1, 618.3], "ry": -1.9429 },
+          { "n": 3, "at": [-1773.1, 637.3], "ry": -1.9429 }
+        ]
       }
     ]
   },
