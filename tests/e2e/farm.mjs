@@ -68,7 +68,7 @@ await page.evaluate(([x, z]) => __mk.place(x, z), stand(0)); await page.waitForT
 console.log('grown', await acts());
 await shot('ripe', { dist: 8, pitch: 0.6, yaw: spot.ry + Math.PI });
 await run('Harvest');
-assert((await page.textContent('#farmlog-btn')).includes('1/10'), "the journal counts the lettuce: " + await page.textContent('#farmlog-btn'));
+assert((await page.textContent('#farmlog-btn')).includes('1/12'), "the journal counts the lettuce: " + await page.textContent('#farmlog-btn'));
 await page.evaluate(([x, z]) => __mk.place(x, z), stand(1)); await page.waitForTimeout(600);
 await run('Harvest');
 await page.evaluate(([x, z]) => __mk.place(x, z), at(...STALL_STAND)); await page.waitForTimeout(800);
@@ -84,21 +84,25 @@ assert(await page.evaluate(() => __mk.wallet.coins) - c0 === 4500 + 3500, 'one f
 // The farmer's journal in the notebook.
 await page.evaluate(() => { document.getElementById('farm-panel').hidden = true; document.getElementById('farmlog-btn').click(); });
 await page.waitForSelector('#farmlog-panel:not([hidden]) .farm-log-cell.got', { timeout: 8000 });
-assert(await page.locator('#farmlog-panel .farm-log-cell').count() === 10, 'ten crops in the journal');
+assert(await page.locator('#farmlog-panel .farm-log-cell').count() === 12, 'twelve crops in the journal');
 assert(await page.locator('#farmlog-panel .farm-log-cell.got').count() === 1, 'one stamp');
+await page.waitForSelector('#farmlog-panel .farm-now-cell', { timeout: 8000 });
+assert(await page.locator('#farmlog-panel .farm-now-cell').count() === 12, 'my twelve beds in the journal');
+assert(await page.locator('#farmlog-panel .farm-now-cell.ripe').count() === 10, 'ten lettuces still to pick: ' + await page.locator('#farmlog-panel .farm-now-cell.ripe').count());
+assert(await page.locator('#farmlog-panel .farm-log-cell.secret').count() === 2, 'the two rare crops are a secret');
 if (S) { await page.waitForTimeout(400); await page.screenshot({ path: `${S}/journal.png` }); }
 await page.evaluate(() => { document.getElementById('farmlog-panel').hidden = true; });
 if (S) { // every crop at once, half grown and grown, for a look
   await page.evaluate(() => {
-    const ids = ['lettuce', 'spinach', 'tomato', 'cucumber', 'strawberry', 'carrot', 'chili', 'corn', 'cabbage', 'ginseng', 'strawberry', 'ginseng'], days = { lettuce: 1, spinach: 1, tomato: 2, cucumber: 2, strawberry: 4, carrot: 5, chili: 7, corn: 10, cabbage: 15, ginseng: 30 };
+    const ids = ['lettuce', 'sprout', 'spinach', 'strawberry', 'carrot', 'tomato', 'broccoli', 'cucumber', 'corn', 'pumpkin', 'cabbage', 'ginseng'], days = { lettuce: 1, sprout: 2, spinach: 3, strawberry: 4, carrot: 5, tomato: 6, broccoli: 7, cucumber: 8, corn: 10, pumpkin: 15, cabbage: 20, ginseng: 30 };
     const s = JSON.parse(localStorage.getItem('mkfarm.local')), now = Date.now();
-    s.beds = ids.map((crop, i) => ({ crop, at: now - days[crop] * 86400e3 * (i >= 10 ? 0.6 : 1.01), wet: now, n: 99 }));
+    s.beds = ids.map((crop, i) => ({ crop, at: now - days[crop] * 86400e3 * 1.01, wet: now, n: 99 }));
     localStorage.setItem('mkfarm.local', JSON.stringify(s));
   });
   await page.evaluate(([x, z]) => __mk.goto(x, z, 0), at(0, 60)); await page.waitForTimeout(800);
   await page.evaluate(([x, z]) => __mk.place(x, z), at(0, 5)); await page.waitForTimeout(1500);
   await shot('all-crops', { dist: 9, pitch: 0.75, yaw: spot.ry + Math.PI });
-  await page.evaluate(([x, z]) => __mk.place(x, z), stand(4)); await page.waitForTimeout(800);
+  await page.evaluate(([x, z]) => __mk.place(x, z), stand(3)); await page.waitForTimeout(800);
   await shot('strawberry', { dist: 4.5, pitch: 0.7, yaw: spot.ry + Math.PI / 2 });
 }
 assert(!errors.length, 'page errors: ' + errors.join(' | '));

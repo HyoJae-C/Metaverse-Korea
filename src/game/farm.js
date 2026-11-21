@@ -35,7 +35,9 @@ const LOOKS = {
   tomato: { leaf: [0.2, 0.5, 0.2], color: '#3f8f3f', fruit: { at: [0.14, 0.52, 0.1], s: [0.1, 0.1, 0.1], from: '#9fc24a', to: '#e2412f' } },
   strawberry: { leaf: [0.27, 0.16, 0.27], color: '#3f9a48', fruit: { at: [0.17, 0.12, 0.13], s: [0.085, 0.1, 0.085], from: '#e9efc0', to: '#e8283c' } },
   ginseng: { leaf: [0.2, 0.3, 0.2], color: '#2f8f4f', fruit: { at: [0, 0.36, 0], s: [0.07, 0.07, 0.07], from: '#5fa83f', to: '#d8262c' } },
-  chili: { leaf: [0.2, 0.36, 0.2], color: '#3c8a4a', fruit: { at: [0.13, 0.36, 0.08], s: [0.05, 0.15, 0.05], from: '#5fa83f', to: '#d92b2b' } },
+  broccoli: { leaf: [0.26, 0.2, 0.26], color: '#3f8f4a', fruit: { at: [0, 0.3, 0], s: [0.17, 0.13, 0.17], from: '#7fbf6a', to: '#2f7d3a' } },
+  sprout: { leaf: [0.07, 0.3, 0.07], color: '#f1ecd2', fruit: { at: [0, 0.34, 0], s: [0.07, 0.05, 0.07], from: '#f2e27a', to: '#f4d84a' } },
+  pumpkin: { leaf: [0.3, 0.13, 0.3], color: '#3f8a45', fruit: { at: [0.12, 0.16, 0.1], s: [0.2, 0.15, 0.2], from: '#9fbf4a', to: '#f08a1f' } },
   cabbage: { leaf: [0.31, 0.25, 0.31], color: '#bfe0a0', fruit: { at: [0, 0.2, 0], s: [0.2, 0.2, 0.2], from: '#d8ecb4', to: '#eef6d2' } },
 };
 
@@ -189,7 +191,7 @@ export function createFarm(game) {
   const put = (im, i, x, y, z, sx, sy, sz, c) => { im.setMatrixAt(i, m4.compose(v3.set(x, y, z), q0, sc.set(sx, sy, sz))); im.setColorAt(i, c); };
 
   // My farm as the keeper last said, and how far its clock is from mine.
-  let beds = Array.from({ length: n }, () => null), barn = {}, crops = null, skew = 0, known = false, problem = null;
+  let beds = Array.from({ length: n }, () => null), barn = {}, seeds = {}, crops = null, skew = 0, known = false, problem = null;
   let busy = false, askedAt = -Infinity, drawn = '';
   const now = () => Date.now() + skew;
   const crop = (id) => { const c = cropById(id); return c && crops?.[id] ? { ...c, ...crops[id] } : c; };
@@ -210,11 +212,11 @@ export function createFarm(game) {
     problem = null; known = true;
     skew = r.now - Date.now();
     beds = Array.from({ length: n }, (_, i) => r.beds[i] || null);
-    barn = r.barn; crops = r.crops;
+    barn = r.barn; seeds = r.seeds || {}; crops = r.crops;
     drawn = '';
     if (ui.open) ui.refresh();
   }
-  const whyNot = (e, v = {}) => t({ coins: 'farm.poor', price: 'farm.price', busy: 'farm.busy', missing: 'farm.missing', late: 'farm.late', wet: 'farm.wetAlready', unripe: 'farm.unripe', none: 'farm.barnEmpty' }[e] || 'farm.network', v);
+  const whyNot = (e, v = {}) => t({ coins: 'farm.poor', price: 'farm.price', busy: 'farm.busy', missing: 'farm.missing', noseed: 'farm.noseed', late: 'farm.late', wet: 'farm.wetAlready', unripe: 'farm.unripe', none: 'farm.barnEmpty' }[e] || 'farm.network', v);
 
   // Draw the beds as they stand now (only when something changed).
   function draw() {
@@ -250,14 +252,18 @@ export function createFarm(game) {
   // Plant `c` in these beds: one question for the lot, then bed by bed.
   function plant(list, c) {
     if (busy || !list.length) return;
-    const total = c.seed * list.length;
-    if (game.wallet.coins < total) { game.toast(t('farm.poor', { n: won(total) })); return; }
-    game.wallet.confirm(total, { k: 'ledger.farmSeed' }, async () => {
+    const paid = c.from === 'farm'; // (any other seed comes out of the pouch: no money)
+    if (!paid) list = list.slice(0, seeds[c.id] || 0);
+    if (!list.length) { game.toast(t('farm.noseed')); return; }
+    const total = paid ? c.seed * list.length : 0;
+    if (paid && game.wallet.coins < total) { game.toast(t('farm.poor', { n: won(total) })); return; }
+    const go = async () => {
       busy = true; ui.refresh();
       let done = 0, err = null;
       for (const bed of list) {
-        const r = await store().plant({ requestId: newRequestId(), bed, crop: c.id, price: c.seed }, { k: 'ledger.farmSeed' });
+        const r = await store().plant({ requestId: newRequestId(), bed, crop: c.id, price: paid ? c.seed : 0 }, { k: 'ledger.farmSeed' });
         if (r.error) { err = r; if (r.error !== 'busy') break; continue; }
+        if (r.seeds) seeds = r.seeds;
         if (r.bed) { beds[bed] = r.bed; done++; }
       }
       busy = false; drawn = '';
@@ -265,7 +271,8 @@ export function createFarm(game) {
       if (done) { game.sfx?.pop?.(); game.me?.play?.('clap'); game.toast(t(done > 1 ? 'farm.plantedN' : 'farm.planted', { name: name(c), n: done, time: time(c.grow * 60e3) })); }
       if (err) { game.toast(whyNot(err.error, { n: won(err.price ?? total) })); await ask(); }
       if (done) ui.close(); else ui.refresh();
-    });
+    };
+    if (paid) game.wallet.confirm(total, { k: 'ledger.farmSeed' }, go); else go();
   }
   async function water(i) {
     if (busy) return;
@@ -311,7 +318,7 @@ export function createFarm(game) {
   const view = {
     get busy() { return busy; }, get known() { return known; }, get problem() { return problem; }, get local() { return !store().shared; },
     get barn() { return barn; }, get coins() { return game.wallet.coins; }, get empty() { return empties().length; },
-    crops: () => CROPS.map((c) => crop(c.id)), name, time, days: cropDays,
+    crops: () => CROPS.map((c) => crop(c.id)), name, time, get seeds() { return seeds; }, days: cropDays,
     worth: () => Object.entries(barn).reduce((s, [k, v]) => { const f = k.endsWith('+'), c = crop(f ? k.slice(0, -1) : k); return s + (c && v > 0 ? (f ? c.fresh : c.sell) * v : 0); }, 0) || barnWorth(barn),
     plantOne: (bed, c) => plant([bed], c), plantAll: (c) => plant(empties(), c), sell,
   };
