@@ -34,7 +34,7 @@ function face(g, c, hx, hy, hz, hr) {
 
 // A round head with a lion snout, open grin with two fangs, the horn, ears
 // and a ring of mane curls behind it.
-function head(g, c, [hx, hy, hz], hr) {
+function head(g, c, [hx, hy, hz], hr, back = 0) {
   part(g, ball(hr, 10, 8), c.body, [hx, hy, hz], [1.08, 0.98, 1]);
   part(g, ball(hr * 0.5, 8, 6), c.snout, [hx, hy - hr * 0.3, hz + hr * 0.78], [1.35, 0.8, 0.9]);
   part(g, ball(hr * 0.17, 6, 5), c.nose, [hx, hy - hr * 0.12, hz + hr * 1.18], [1.3, 0.9, 1]);
@@ -48,7 +48,7 @@ function head(g, c, [hx, hy, hz], hr) {
   // Mane: two rings of curls round the back of the head, and a beard.
   const n = 11;
   for (let ring = 0; ring < 2; ring++) {
-    const rr = hr * (ring ? 1.08 : 0.9), off = ring ? 0.5 : 0, z = hz - hr * (ring ? 0.45 : 0.15);
+    const rr = hr * (ring ? 1.08 : 0.9) * (1 + back * 0.15), off = ring ? 0.5 : 0, z = hz - hr * (ring ? 0.45 : 0.15) - hr * back;
     for (let i = 0; i < n; i++) {
       const a = -Math.PI * 0.8 + (i + off) * (Math.PI * 1.6) / (n - 1) + Math.PI / 2;
       if (ring && i === n - 1) continue;
@@ -93,7 +93,7 @@ const LOOKS = {
 export const HAECHI_INFO = {
   stone: 'A · 청석 해치 (광화문 석상처럼 앉은 자세)',
   gold: 'B · 파랑·금빛 해치 (걷는 자세, 방울)',
-  dancheong: 'C · 하늘 단청 해치 (머리 큰 귀여운 비율)',
+  dancheong: 'C · 하늘 단청 해치 (다듬은 안)',
 };
 
 export function createHaechi(kind = 'gold') {
@@ -134,7 +134,7 @@ export function createHaechi(kind = 'gold') {
     head(g, c, [0, 1.12, 0.52], 0.33);
     tail(g, c, [0, 0.82, -0.52], 0.75);
   } else {
-    // Chibi like the players (big head on a small body). About 1.35 m.
+    // Chibi like the players (big head on a small body). About 1.7 m.
     part(g, caps(0.27, 0.35), c.body, [0, 0.48, -0.08], [1, 1, 1], [Math.PI / 2 - 0.25, 0, 0]);
     for (const [x, z] of [[-0.17, 0.18], [0.17, 0.18], [-0.17, -0.3], [0.17, -0.3]]) {
       part(g, caps(0.1, 0.18), c.body, [x, 0.22, z]);
@@ -145,8 +145,11 @@ export function createHaechi(kind = 'gold') {
     part(g, new THREE.TorusGeometry(0.27, 0.035, 4, 14), c.trim, [0, 0.5, -0.2], [1, 1, 0.9]);
     part(g, new THREE.TorusGeometry(0.28, 0.025, 4, 14), c.horn, [0, 0.5, -0.27], [1, 1, 0.9]);
     bell(g, c, [0, 0.66, 0.18], 0.2, -0.5);
-    head(g, c, [0, 0.92, 0.25], 0.38);
-    tail(g, c, [0, 0.5, -0.4], 0.6);
+    head(g, c, [0, 0.92, 0.25], 0.38, 0.45); // mane pushed back so the side view shows the face
+    // Tail root sunk into the rump so the curl grows out of the body.
+    part(g, ball(0.11, 7, 5), c.body, [0, 0.52, -0.5]);
+    tail(g, c, [0, 0.5, -0.52], 0.6);
+    g.scale.setScalar(1.14); // 1.49 m -> 1.7 m (Yozi 2026-11-21: C, a bit bigger)
   }
   const blob = new THREE.Mesh(new THREE.CircleGeometry(0.6, 16).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: 0.18, depthWrite: false }));
   blob.position.y = 0.01;
