@@ -47,7 +47,7 @@ export const TRIP = [
   { step: 'forestStop', on: 'subway', target: 'seoul-forest-station' },
   { step: 'forest', on: 'place', target: 'A-7' }, // Seoul Forest (zones.json)
   { step: 'anguk', on: 'subway', target: 'anguk-station' },
-  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
+  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village (its information centre)
   { step: 'cheonggye', on: 'place', target: 'B-2' }, // Cheonggye Plaza (zones.json)
 ];
 // The same first errand for new players who start in Bukchon (region.json
@@ -57,7 +57,7 @@ export const TRIP = [
 // A trip taken from the square guide, or saved before this, keeps TRIP.
 export const BUKCHON_TRIP = [
   { step: 'openHouse', on: 'place', target: 'open-house' }, // through the Open House's gate (data/bukchon.js)
-  { step: 'angukWalk', on: 'place', target: 'subway' }, // Anguk Station, just outside Bukchon's gate
+  { step: 'angukWalk', on: 'place', target: 'subway' }, // Anguk Station, at the foot of Bukchon
   { step: 'down', on: 'subwayIn' },
   { step: 'seongsuStop', on: 'subway', target: 'seongsu-station' },
   { step: 'square', on: 'place', target: 'A-1' }, // Seongsu Square (zones.json)
@@ -71,7 +71,7 @@ export const TO_BUKCHON_TRIP = [
   { step: 'stationNear', on: 'place', target: 'subway' }, // the nearest subway exit
   { step: 'down', on: 'subwayIn' },
   { step: 'anguk', on: 'subway', target: 'anguk-station' },
-  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village's gate
+  { step: 'bukchon', on: 'place', target: 'bukchon' }, // Bukchon Hanok Village (its information centre)
 ];
 const TRIPS = { bukchon: BUKCHON_TRIP, toBukchon: TO_BUKCHON_TRIP };
 export const TRIP_ROUTES = Object.keys(TRIPS);

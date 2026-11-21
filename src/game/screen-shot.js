@@ -1,4 +1,5 @@
-// Screenshot button (Yozi): a 📷 under the 👁️ in the top-left corner. It
+// Screenshot button (Yozi): a 📷 under the 👁️ in the top-left corner, shown
+// only while the 👁️ has hidden the other buttons (Yozi 2026-11-21). It
 // copies the game view only (no buttons, name tags or chat: those are page
 // elements, not the 3D canvas), adds a small "MODU SEOUL" mark, and shows it
 // with Save and Share. Phones share through the system sheet (which also has

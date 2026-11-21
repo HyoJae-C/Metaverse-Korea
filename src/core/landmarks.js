@@ -177,6 +177,14 @@ const OWN_BUILD = {
     box(g, 18, 0.04, 11.6, 0, 0.02, 0, C.stoneDark);
     import('./jogyesa-model.js').then(({ buildJogyesa }) => buildJogyesa(g));
   },
+  // Huwon, Changdeokgung's garden (core/huwon-model.js, loaded when you
+  // first walk in through Donhwamun): its pavilions, and Buyongji's bank and island.
+  jeongja(g, l) {
+    import('./huwon-model.js').then(({ buildJeongja }) => buildJeongja(g, l));
+  },
+  pondisle(g, l) {
+    import('./huwon-model.js').then(({ buildPondIsle }) => buildPondIsle(g, l));
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the
