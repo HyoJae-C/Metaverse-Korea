@@ -23,6 +23,7 @@ import { buildOperaHall, ROOM_OPERA } from './opera-hall.js';
 import { buildConcertHall, ROOM_CONCERT } from './concert-hall.js';
 import { buildConfessionRoom, ROOM_CONFESSION } from './confession-room.js';
 import { buildDharmaHall, ROOM_DHARMA } from './dharma-hall.js';
+import { buildIceRinkHall, ROOM_RINK } from './ice-rink-hall.js';
 import { buildSkyDeck, ROOM_SKYDECK } from './sky-deck.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
 import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
@@ -78,6 +79,7 @@ export const ROOM_SIZES = {
   opera: ROOM_OPERA, concert: ROOM_CONCERT, // the Opera Theater in Seoul Arts Center's Opera House (see opera-hall.js)
   confession: ROOM_CONFESSION, // its confession room, alone (see confession-room.js)
   dharmahall: ROOM_DHARMA, // inside Jogyesa's and Bongeunsa's Daeungjeon: the silent hall (see dharma-hall.js)
+  icerink: ROOM_RINK, // Mokdong Ice Rink: the ice, the boards and the stands (see ice-rink-hall.js)
   skydeck: ROOM_SKYDECK, // Modu Sky, the deck at the top of Modu Tower (see sky-deck.js)
 };
 export const roomOf = (store) => store.roomDims || ROOM_SIZES[store.size] || ROOM_SIZES.medium; // (roomDims: a home's size by its level, core/home-stages.js)
@@ -231,6 +233,7 @@ export function buildInterior(store) {
   if (store.workshop === 'concert') return buildConcertHall(store, ROOM, EXIT);
   if (store.workshop === 'confession') return buildConfessionRoom(store, ROOM, EXIT);
   if (store.workshop === 'dharmahall') return buildDharmaHall(store, ROOM, EXIT);
+  if (store.workshop === 'icerink') return buildIceRinkHall(store, ROOM, EXIT);
   if (store.workshop === 'skydeck') return buildSkyDeck(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
   if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
