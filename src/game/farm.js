@@ -155,6 +155,7 @@ export function createFarm(game) {
   const spot = game.spot;
   const { hw, hl, door } = FARM_HOUSE;
   const group = makeHouse();
+  group.userData.noSnow = true; // (under glass: core/snow-cover.js leaves the floor, the beds and the stall bare, Yozi 2026-11-21)
   group.position.set(spot.x, 0, spot.z);
   group.rotation.y = spot.ry || 0;
   group.updateMatrixWorld(true); // (main.js's FarCull measures its parts where they stand)

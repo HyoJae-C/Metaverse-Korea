@@ -34,7 +34,7 @@ const x = r1(kerb - GAP - SEED_SHOP.front), z = r1((a[1] + b[1]) / 2 - 1);
 const ry = Math.round((Math.PI / 2) * 1000) / 1000; // its front looks east, at the gate
 const why = 'made up: the real seed shops line Jongno from Jongno 5-ga to Dongdaemun; the game has no Jongno west of Heunginjimun yet, so this one stands at the Dongdaemun end, on the west kerb facing the gate (Yozi 2026-11-21)';
 const name = (ko, en, ja, zh) => ({ ko, en, ja, zh });
-map.landmarks.push({ type: 'seedshop', x, z, ry, clear: 6, sd: 1, why });
+map.landmarks.push({ type: 'seedshop', x, z, ry, clear: 6, label: name('동대문 종묘상', 'Dongdaemun Seed Shop', '東大門 種苗店', '东大门种苗店'), sd: 1, why }); // label: its name on the map
 map.pois.push({ kind: 'landmark', x: r1(x + SEED_STAND[1]), z, name: name('동대문 종묘상', 'Dongdaemun Seed Shop', '東大門 種苗店', '东大门种苗店'), sd: 1 });
 // Nothing else may stand there.
 const box = [x + SEED_SHOP.back - 1, z - SEED_SHOP.hw - 1, x + SEED_SHOP.front + GAP, z + SEED_SHOP.hw + 1];

@@ -84,7 +84,8 @@ const name = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 itaewon.areas.push({ k: 'park', p: park, fm: 1 }, { k: 'water', p: pond, fm: 1 });
 itaewon.blockers.push({ p: pond, fm: 1, n: name('연못', 'Pond', '池', '池塘') });
 itaewon.roads.push({ k: 'walk', w: PATH_W, p: walk, n: name('용산가족공원 산책로', 'Yongsan Family Park path', '龍山家族公園 散策路', '龙山家族公园步道'), fm: 1, ...(kerb ? { approx: [[gate, kerb]], why: 'OSM\'s path stops at the gate; the last piece to Seobinggo-ro is made up' } : {}) });
-itaewon.landmarks.push({ type: 'farm', x: cx, z: cz, ry: Math.round(ry * 1000) / 1000, clear: 10, fm: 1, why });
+// label: its name on the map (ui/map-view.js draws it, Yozi 2026-11-21).
+itaewon.landmarks.push({ type: 'farm', x: cx, z: cz, ry: Math.round(ry * 1000) / 1000, clear: 10, label: name('주말농장', 'Weekend Farm', '週末農園', '周末农场'), fm: 1, why });
 const [px, pz] = W(0, hl + 3).map(r1);
 itaewon.pois.push({ kind: 'landmark', x: px, z: pz, name: name('용산가족공원 친환경 텃밭', 'Yongsan Family Park Eco Farm', '龍山家族公園 エコ農園', '龙山家族公园生态农园'), fm: 1 });
 writeFileSync(MAP, JSON.stringify(itaewon));
