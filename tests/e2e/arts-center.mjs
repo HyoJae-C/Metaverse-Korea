@@ -100,5 +100,37 @@ await view({ yaw: Math.PI, pitch: 0.2, dist: 6 }, 800);
 await shot('9-the-balconies');
 console.log('room render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
 if (!process.env.QUICK) { await waitPart('clap', 3); await page.evaluate(() => __mk.goto(0, -4.6, 0)); await view({ yaw: 0, pitch: 0.3, dist: 3 }); await shot('10-curtain-call'); }
+
+// Inside the Concert Hall.
+if (!process.env.OPERA_ONLY) {
+  await page.evaluate(() => __mk.leave?.());
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => __mk.enter('arts-concert-hall'));
+  await page.waitForFunction(() => __mk.stage?.(), null, { timeout: 30000 });
+  await page.waitForTimeout(1500);
+  assert(await page.evaluate(() => __mk.sitNear(0, 4)), 'a free seat in the Concert Hall');
+  await view({ yaw: 0, pitch: 0.2, dist: 6 });
+  await waitPart('play', 5);
+  await shot('11-concert-from-a-seat');
+  const c1 = await page.evaluate(() => __mk.stage());
+  assert(c1.part === 'play' && c1.notes > 5, `the concert is playing (${c1.piece}, ${c1.notes} notes)`);
+  await page.keyboard.press('e');
+  await page.waitForTimeout(600);
+  await page.evaluate(() => __mk.goto(0, -3, 0));
+  await view({ yaw: 0, pitch: 0.45, dist: 4 }, 800);
+  await shot('12-the-orchestra');
+  await view({ yaw: 0.7, pitch: 0.3, dist: 3 }, 800);
+  await shot('13-the-piano-side');
+  await view({ yaw: Math.PI, pitch: 0.25, dist: 7 }, 800);
+  await shot('14-the-house');
+  await page.evaluate(() => __mk.goto(4.55, 8, 0));
+  await view({ yaw: 0, pitch: 0.6, dist: 7 }, 800);
+  await shot('15-the-whole-hall');
+  const behind = await page.evaluate(() => __mk.sitNear(9, -17));
+  assert(behind && behind[1] < -15, 'a free seat behind the stage');
+  await view({ yaw: Math.PI, pitch: 0.3, dist: 4 }, 800);
+  await shot('16-from-behind-the-stage');
+  console.log('concert render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
+}
 assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`);
 await browser.close();

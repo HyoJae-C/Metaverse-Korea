@@ -15,6 +15,7 @@ export function storeIcon(store) {
   if (store.workshop === 'cablecar') return '🚡';
   if (store.workshop === 'cathedral') return '⛪'; // Myeongdong Cathedral
   if (store.workshop === 'opera') return '🎭'; // the Opera Theater (Seoul Arts Center)
+  if (store.workshop === 'concert') return '🎻'; // its Concert Hall
   if (store.cinema) return '🎬'; // the cinema
   if (store.workshop === 'bike') return '🚲'; // the ride shops
   if (store.workshop === 'salon') return '💇'; // hair salons stand out from the cosmetics shops
