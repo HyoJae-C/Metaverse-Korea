@@ -101,6 +101,16 @@ export function buildHair(style, material, atlas, ey) {
   };
   // A smooth strand through the given points (curtains, waves, curls).
   const tube = (pts, r, seg = 24) => add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((q) => new THREE.Vector3(...q))), seg, r, 8, false), 0, 0, 0);
+  // A springy curl (a short coil, its axis along +y): the curls of perms,
+  // instead of round balls.
+  const coil = (R = 0.11, len = 0.34, turns = 1.75, r = 0.06) => {
+    const pts = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24, a = t * turns * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * R * (1 - 0.3 * t), t * len, Math.sin(a) * R * (1 - 0.3 * t)));
+    }
+    return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, r, 6, false);
+  };
   // A wavy lock hanging from (x, y, z) down to y1: it swings `amp` side to
   // side (along the head's outline) in `n` half waves.
   const waveLock = (x, y, z, y1, amp, n, r) => {
@@ -152,16 +162,28 @@ export function buildHair(style, material, atlas, ey) {
     shade = keep;
   };
   switch (style) {
-    case 'short': // 짧은 커트
-      cap();
+    case 'short': // 짧은 커트: tapered sides, a textured top and short locks falling forward (the forehead shows)
+      shade = [0.5, 0.92];
+      cap(0.95, 0.47, -0.5, 0.02); // the tapered sides and back, close and a shade darker
+      shade = [0.15, 0.8];
+      add(sphere(0.9, 20, 10, 0, Math.PI * 0.38), 0, 0.24, 0.0, 1.06, 0.85, 1.1, -0.12); // the top
+      for (const [x, z] of [[-0.45, 0.3], [0.0, 0.42], [0.45, 0.28], [-0.3, -0.1], [0.3, -0.12], [0, -0.4]]) point(new THREE.ConeGeometry(0.3, 0.42, 5), x, 0.86 - Math.abs(x) * 0.15, z, [x * 0.5, 0.7, 1], 1, 1, 0.45); // flat tufts, pushed forward
+      fringe(Math.PI / 2 - 0.12, 1.5, 5, (i) => Math.PI * [0.36, 0.32, 0.37, 0.33, 0.35][i], 1.04, () => -0.18, Math.PI * 0.14, 0.06); // short choppy locks, well above the brows
       break;
-    case 'crop': // 투블럭: short sides, a little volume on top
-      cap(0.93, 0.5, -0.38, 0.02);
-      add(sphere(0.8, 18, 10, 0, Math.PI * 0.42), 0, 0.2, 0.0, 1.05, 0.9, 1.08, -0.2);
+    case 'crop': // 투블럭: clipped sides and a heavy top that hangs over them, the fringe down to the brows
+      shade = [0.62, 1.0];
+      cap(0.95, 0.47, -0.5, 0.02); // the clipped under-layer
+      shade = [0.15, 0.8];
+      add(sphere(0.98, 24, 12, 0, Math.PI * 0.36), 0, 0.22, -0.05, 1.07, 0.95, 1.09, -0.22); // the block on top, its rim standing out above the ears
+      fringe(Math.PI / 2, 1.6, 7, (i) => Math.PI * (i % 2 ? 0.42 : 0.44), 1.05, (i) => (i - 3) * -0.03, Math.PI * 0.2, 0.03); // a thick fringe
       break;
-    case 'bangs': // 앞머리: a straight fringe over the forehead
-      cap(0.97, 0.56, -0.25);
-      add(new THREE.SphereGeometry(1.0, 20, 6, Math.PI / 2 - 0.8, 1.6, Math.PI * 0.18, Math.PI * 0.27), 0, 0.02, -0.02, 1.03, 1, 1);
+    case 'bangs': // 앞머리: a short cut with see-through bangs and a few wisps by the cheeks
+      cap(0.97, 0.55, -0.3);
+      fringe(Math.PI / 2, 1.5, 6, (i) => Math.PI * (i % 2 ? 0.45 : 0.48), 1.03, () => 0, Math.PI * 0.17, 0.15); // thin, with gaps
+      for (const s2 of [-1, 1]) { // wisps in front of the ears, curving in to the cheek
+        tube([[0.84 * s2, 0.42, 0.5], [0.94 * s2, 0.12, 0.5], [0.92 * s2, -0.18, 0.46], [0.82 * s2, -0.34, 0.5]], 0.06, 14);
+        tube([[0.92 * s2, 0.38, 0.3], [1.0 * s2, 0.05, 0.3], [0.96 * s2, -0.22, 0.26]], 0.065, 12);
+      }
       break;
     case 'bob': // 단발: chin-length all round, open at the face, the ends turned in
       range = [-0.9, 1.05];
@@ -188,17 +210,18 @@ export function buildHair(style, material, atlas, ey) {
       cap(0.97, 0.55, -0.3);
       add(sphere(0.42, 16, 12), 0, 0.98, -0.25, 1, 0.9, 1);
       break;
-    case 'curly': { // 뽀글 파마: a cloud of curls
+    case 'curly': { // 뽀글 파마: tight springy curls all over
       cap(0.98, 0.52, -0.35);
-      const curl = sphere(0.3, 10, 8);
-      for (let i = 0; i < 16; i++) {
-        const a = (i / 16) * Math.PI * 2;
-        const ring = i % 2 ? 0.55 : 0.9;
-        const x = Math.cos(a) * 0.95, z = Math.sin(a) * 0.95 - 0.08;
-        if (z > 0.55 && Math.abs(x) < 0.6) continue; // keep the face clear
-        add(curl, x, 0.2 + ring * 0.35, z);
+      add(sphere(0.9, 20, 10, 0, Math.PI * 0.45), 0, 0.22, -0.05, 1.1, 0.95, 1.12, -0.15); // the volume under the curls
+      const c = coil(0.13, 0.26, 1.75, 0.075);
+      for (let ring = 0; ring < 4; ring++) {
+        const th = 0.12 + ring * 0.3, n = [5, 11, 15, 17][ring]; // (the lowest ring is the hairline, above the brows)
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2 + ring * 0.3;
+          const x = Math.sin(th) * Math.cos(a), z = Math.sin(th) * Math.sin(a) - 0.08, y = Math.cos(th) * 0.9 + 0.1;
+          point(c, x * 0.98, y, z * 0.98, [x, Math.cos(th) + 0.2, z + 0.08]);
+        }
       }
-      for (const [x, y, z] of [[0, 0.95, -0.1], [-0.45, 0.85, 0.15], [0.45, 0.85, 0.15], [-0.4, 0.85, -0.5], [0.4, 0.85, -0.5], [0, 0.8, 0.45]]) add(curl, x, y, z, 1.1, 1.1, 1.1);
       break;
     }
     case 'pomp': // 포마드: short sides, the top combed up off the forehead into one high, smooth front
@@ -232,12 +255,16 @@ export function buildHair(style, material, atlas, ey) {
       add(sphere(0.86, 20, 10, 0, Math.PI * 0.42), 0, 0.26, 0, 1.1, 0.92, 1.14, -0.1);
       fringe(Math.PI / 2, 1.9, 8, (i) => Math.PI * (i % 2 ? 0.43 : 0.45));
       break;
-    case 'asperm': { // 애즈펌: a loose wave parted in the middle, both sides curling out
+    case 'asperm': { // 애즈펌: a loose wave parted in the middle, both sides rolling out (wave ridges, not balls)
       cap(0.98, 0.52, -0.38);
-      for (const [x, y, z] of [[-0.42, 0.78, 0.2], [0.42, 0.78, 0.2], [0, 0.92, -0.15], [-0.55, 0.62, -0.4], [0.55, 0.62, -0.4]]) add(sphere(0.38, 14, 10), x, y, z, 1, 0.7, 1);
+      add(sphere(0.86, 20, 10, 0, Math.PI * 0.42), 0, 0.26, -0.02, 1.1, 0.95, 1.12, -0.1); // soft volume on top
       for (const s2 of [-1, 1]) {
-        fringe(Math.PI / 2 + 0.45 * s2, 0.8, 3, (i) => Math.PI * (0.47 - i * 0.02), 1.03, () => 0.22 * s2); // each half sweeps out
-        add(new THREE.TorusGeometry(0.12, 0.06, 8, 14, Math.PI * 1.4), 0.6 * s2, 0.28, 0.78, s2, 1, 1, 0, 0.6 * s2, -0.6); // and curls at the temple
+        for (let k = 0; k < 3; k++) { // ridges from the parting, rolling out to the side
+          const z0 = 0.5 - k * 0.5;
+          tube([[0.06 * s2, 1.02 - k * 0.04, z0], [0.4 * s2, 1.0 - k * 0.05, z0 - 0.02], [0.68 * s2, 0.8 - k * 0.04, z0 - 0.1], [0.9 * s2, 0.52 - k * 0.04, z0 - 0.06]], 0.14, 20);
+        }
+        tube([[0.12 * s2, 0.92, 0.7], [0.45 * s2, 0.72, 0.84], [0.7 * s2, 0.5, 0.74], [0.8 * s2, 0.3, 0.6]], 0.12, 20); // the front, sweeping out
+        add(new THREE.TorusGeometry(0.13, 0.07, 8, 16, Math.PI * 1.5), 0.82 * s2, 0.26, 0.58, s2, 1, 1, 0, 0.9 * s2, -0.8); // and curling at the temple
       }
       break;
     }
@@ -256,20 +283,19 @@ export function buildHair(style, material, atlas, ey) {
       }
       break;
     }
-    case 'hippie': { // 히피펌: a shaggy mop of small curls down to the shoulders
-      cap(0.99, 0.55, -0.32);
-      const curl = sphere(0.24, 10, 8);
-      for (let ring = 0; ring < 4; ring++) {
-        const y = 0.75 - ring * 0.42, R = 0.95 + ring * 0.06;
-        for (let i = 0; i < 14; i++) {
-          const a = (i / 14) * Math.PI * 2 + ring * 0.2;
-          const x = Math.cos(a) * R, z = Math.sin(a) * R - 0.1;
-          if (ring > 0 && z > (ring > 1 ? 0.05 : 0.35) && Math.abs(x) < (ring > 1 ? 0.95 : 0.75)) continue; // the face
-          if (z > 0.55 && Math.abs(x) < 0.45) continue;
-          add(curl, x, y, z);
-        }
+    case 'hippie': { // 히피펌: a shaggy mop of small S-curls down to the shoulders
+      range = [-1.1, 1.05];
+      cap(0.99, 0.55, -0.32, 0.04, false);
+      curtain([[0.88, 0.5], [1.06, 0.15], [1.1, -0.3], [1.08, -0.7]], { thick: 0.12, phi0: Math.PI * 0.3, len: Math.PI * 1.4 });
+      for (let i = 0; i < 16; i++) { // wavy locks all round but the face
+        const a = Math.PI * (0.3 + (i / 15) * 1.4);
+        waveLock(Math.sin(a) * 1.04, 0.2 + (i % 2) * 0.12, Math.cos(a) * 1.0 - 0.06, -0.95 - (i % 3) * 0.08, 0.1, 4, 0.11);
       }
-      for (const [x, y, z] of [[0, 1.0, 0], [-0.45, 0.9, 0.2], [0.45, 0.9, 0.2], [0, 0.9, -0.5], [-0.25, 0.75, 0.62], [0.25, 0.75, 0.62]]) add(curl, x, y, z, 1.2, 1.2, 1.2);
+      for (let i = 0; i < 8; i++) { // wavy locks over the top, rolling forward
+        const a = (i / 8) * Math.PI * 2, x = Math.cos(a) * 0.5, z = Math.sin(a) * 0.5 - 0.1;
+        tube([[x * 0.3, 1.04, z * 0.3 - 0.05], [x * 0.8, 0.98, z * 0.8 + 0.05], [x * 1.3, 0.8, z * 1.3], [x * 1.8, 0.55, z * 1.8 + 0.08]], 0.1, 16);
+      }
+      fringe(Math.PI / 2, 1.5, 6, (i) => Math.PI * (i % 2 ? 0.42 : 0.46), 1.04, (i) => (i % 2 ? 0.15 : -0.15), Math.PI * 0.16, 0.06); // a loose fringe
       break;
     }
     case 'wave': { // 물결 웨이브: long hair in big S waves down the back
