@@ -334,3 +334,27 @@ test('hanok shops get a hanok sign under the eaves, not a street board through t
     assert.ok(top <= eaves, `${st} reaches ${top} m, the eaves start at ${eaves} m`);
   }
 });
+
+test('no two hanok surfaces of different colours lie at one height (they flicker)', async () => {
+  // (Yozi 2026-11-21: the tops of the walls shimmered under gable roofs: the
+  // wall's top and the beam's top were at the same height.)
+  const { buildHanoks } = await import('../src/core/hanok.js');
+  const lots = [[8, 9, 5], [13, 12, 5], [18, 14, 5], [22, 16, 5], [14, 18, 6], [20, 20, 6]];
+  for (const [i, [L, D, h]] of lots.entries()) {
+    const x = i * 40;
+    const walls = buildHanoks([{ h, hanok: 1, lv: i % 2, p: [[x, 0], [x + L, 0], [x + L, D], [x, D]], fr: [0, 1] }]).children[0].geometry;
+    const p = walls.attributes.position, c = walls.attributes.color, tops = [];
+    for (let t = 0; t < p.count; t += 3) {
+      const ys = [0, 1, 2].map((k) => p.getY(t + k)), xs = [0, 1, 2].map((k) => p.getX(t + k)), zs = [0, 1, 2].map((k) => p.getZ(t + k));
+      if (Math.max(...ys) - Math.min(...ys) > 1e-4) continue;
+      const up = (xs[1] - xs[0]) * (zs[2] - zs[0]) - (xs[2] - xs[0]) * (zs[1] - zs[0]) < 0; // faces up
+      if (up) tops.push({ y: ys[0], x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs), col: [c.getX(t), c.getY(t), c.getZ(t)].map((v) => v.toFixed(3)).join() });
+    }
+    assert.ok(tops.length > 20);
+    for (const a of tops) for (const b of tops) {
+      if (a.col === b.col || Math.abs(a.y - b.y) > 0.004) continue;
+      const over = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), overZ = Math.min(a.z1, b.z1) - Math.max(a.z0, b.z0);
+      assert.ok(over < 0.05 || overZ < 0.05, `a ${L} × ${D} hanok: two tops at ${a.y.toFixed(2)} m overlap`);
+    }
+  }
+});
