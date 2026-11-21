@@ -111,6 +111,7 @@ import { getEmote } from './data/emotes.js';
 import { WeatherSystem, WET, weatherSpeed, darkness } from './core/weather.js';
 import { coverScene, snowUniform } from './core/snow-cover.js';
 import { watchWeather } from './core/weather-watch.js';
+import { applyShowNow } from './core/show-now.js';
 import { Storefronts, latLonToLocal as llToLocal } from './core/storefronts.js';
 import { AdPosters } from './core/ad-posters.js';
 import { Zones } from './core/zones.js';
@@ -1509,7 +1510,7 @@ function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
   weatherClient = cloud.client;
-  stopWeather = watchWeather(weatherClient, (raw) => weather.setSettings(raw));
+  stopWeather = watchWeather(weatherClient, (raw) => { weather.setSettings(raw); applyShowNow(raw); }); // (and an operator's "/드론쇼")
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 

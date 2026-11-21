@@ -39,7 +39,8 @@ const mod = (a, b) => ((a % b) + b) % b;
 export const showOf = (n) => PLAN[mod(Math.floor(n / DAY_CYCLES), PLAN_DAYS)][mod(n, DAY_CYCLES)] ?? NONE;
 // The drone shows counted one by one, for their changing parts.
 const DRONE_SLOTS = [...Array(PERIOD).keys()].filter((r) => showOf(r) === DRONES);
-export const droneNumber = (n) => Math.floor(n / PERIOD) * DRONE_SLOTS.length + DRONE_SLOTS.indexOf(mod(n, PERIOD));
+// (An extra show in a cycle without one counts as the next regular one.)
+export const droneNumber = (n) => Math.floor(n / PERIOD) * DRONE_SLOTS.length + DRONE_SLOTS.filter((r) => r < mod(n, PERIOD)).length;
 
 // The game's clock as an hour of a 24-hour day (sunrise 6:00, sunset
 // 18:00, the sky's colours in weather.js): morning runs 5:18–8:00, day
@@ -55,8 +56,22 @@ export function gameHour(now) {
 
 // Start times (ms) of one show (FIREWORKS, DRONES or LANTERNS) around
 // `now`: a whole plan back to a whole plan ahead, in order.
+// Includes an extra show an operator started (setExtraShow).
 export function showStarts(now, which) {
   const n = cycleNumber(now), out = [];
   for (let k = n - PERIOD; k <= n + PERIOD; k++) if (showOf(k) === which) out.push(k * CYCLE_MS + SHOW_FROM);
+  const x = extra[which];
+  if (x != null && Math.abs(cycleNumber(x) - n) <= PERIOD) {
+    out.push(x);
+    out.sort((a, b) => a - b);
+  }
   return out;
+}
+
+// One extra show on top of the plan (operators' "/드론쇼", core/show-now.js):
+// its start in ms, or null for none. The same on every screen, from the server.
+const extra = {};
+export function setExtraShow(which, start) {
+  if (Number.isFinite(start)) extra[which] = start;
+  else delete extra[which];
 }
