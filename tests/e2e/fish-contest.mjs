@@ -117,6 +117,12 @@ try {
   await b.waitForFunction(() => /accept/i.test(__mk.action() || ''), null, { timeout: 25000 });
   await b.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /accept/i.test(l)); __mk.pick(i); });
   for (const page of [a, b]) await page.waitForFunction(() => __mk.contest()?.phase === 'count' || __mk.contest()?.phase === 'fish', null, { timeout: 10000 });
+  // Both see the big VS banner with both names (Yozi 2026-11-21).
+  for (const page of [a, b]) {
+    const vs = await page.evaluate(() => __mk.contestVs());
+    if (!vs || !vs.includes('Rod A') || !vs.includes('Rod B')) throw new Error('no VS banner with both names: ' + JSON.stringify(vs));
+  }
+  if (shotDir) await b.screenshot({ path: shotDir + '/contest-vs.png' });
   for (const page of [a, b]) if ((await page.evaluate(() => __mk.contest().rule)) !== 'sum') throw new Error('the rule A picked did not reach both');
   for (const page of [a, b]) await page.waitForFunction(() => __mk.contest()?.phase === 'fish', null, { timeout: 8000 });
   if (!(await a.isVisible('#contest-chip'))) throw new Error('no contest chip');

@@ -11,7 +11,11 @@
 // game: { myId, others(), send(msg), isFriend(name), blocked(id, name),
 //   park(): the Han River park I'm in (or null), toast(msg), sfx,
 //   chip: the HUD chip, cheer(), bubble(text), peerBubble(id, text),
-//   refreshFishing() (redraw the fishing panel's buttons) }
+//   refreshFishing() (redraw the fishing panel's buttons), myName() }
+//
+// When the friend accepts, both screens (only those two: the messages are
+// addressed to one player) show a big "Fishing contest!" banner in the
+// middle: my name VS theirs, the rule, and 3-2-1, then GO! (Yozi 2026-11-21).
 import { t, getLanguage, localName } from '../core/i18n.js';
 import { fishById } from '../core/fishing.js';
 import { FishContest, contestMsg, ASK_RADIUS, RULES, sumOf } from '../core/fish-contest.js';
@@ -92,8 +96,47 @@ export function createFishContest(game) {
     friendName = nameOf(contest.c.with);
     lastPhase = null;
     game.sfx.pop?.();
+    showVs();
     paint();
     game.refreshFishing();
+  }
+
+  // The big VS banner: from accept through 3-2-1 to GO!, then it fades.
+  let vs = null, vsTimer = 0;
+  function showVs() {
+    if (!vs) {
+      vs = document.createElement('div');
+      vs.className = 'fc-vs';
+      vs.setAttribute('role', 'status');
+      vs.setAttribute('aria-live', 'assertive');
+      (document.getElementById('hud') || document.body).append(vs);
+    }
+    const el = (cls, text) => { const d = document.createElement('div'); d.className = cls; if (text != null) d.textContent = text; return d; };
+    const row = el('fc-vs-row');
+    row.append(el('fc-vs-name fc-vs-me', game.myName?.() || t('fc.you')), el('fc-vs-x', 'VS'), el('fc-vs-name fc-vs-them', friendName));
+    vs.replaceChildren(el('fc-vs-title', t('fc.vsTitle')), row, el('fc-vs-rule', t('fc.' + contest.rule)), el('fc-vs-n'));
+    vs.classList.remove('fc-vs-out');
+    vs.hidden = false;
+    clearInterval(vsTimer);
+    vsTimer = setInterval(stepVs, 100);
+    stepVs();
+  }
+  let vsShown = '';
+  function stepVs() {
+    const c = contest.c;
+    const n = vs.querySelector('.fc-vs-n');
+    if (!c || c.done || c.quit) { hideVs(); return; }
+    const left = c.go - contest.now();
+    const txt = left > 0 ? String(Math.ceil(left / 1000)) : t('fc.vsGo');
+    if (txt !== vsShown) { vsShown = txt; n.textContent = txt; n.classList.remove('fc-vs-tick'); void n.offsetWidth; n.classList.add('fc-vs-tick'); }
+    if (left <= -1100) hideVs();
+    else if (left <= -700) vs.classList.add('fc-vs-out');
+  }
+  function hideVs() {
+    clearInterval(vsTimer);
+    vsTimer = 0;
+    vsShown = '';
+    if (vs) vs.hidden = true;
   }
 
   // The buttons: accept when a friend near asked me, else ask each friend near.
@@ -197,6 +240,8 @@ export function createFishContest(game) {
     // Auto fishing is off while a contest runs.
     get noAuto() { return contest.on; },
     get on() { return contest.on; },
+    // (tests/e2e) the VS banner's names while it shows, else null
+    get vs() { return vs && !vs.hidden ? [...vs.querySelectorAll('.fc-vs-name')].map((e) => e.textContent) : null; },
     // (tests/e2e) where it stands
     get state() { const c = contest.c; return c && { phase: contest.phase(), rule: c.rule, done: c.done, quit: c.quit || null, me: { ...c.me, by: [...c.me.by] }, them: { ...c.them, by: [...c.them.by] } }; },
   };

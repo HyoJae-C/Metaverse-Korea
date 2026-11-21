@@ -4381,7 +4381,7 @@ const fishingUi = lazyPanel(() => fishPanels().then(({ FishingUI }) => new Fishi
 })), { state: 'idle' });
 // A three-minute fishing contest with a friend in the same Han River park (game/fish-contest.js).
 const fishContest = createFishContest({
-  myId, others: () => others, send: (m) => net.sendEmote(m), isFriend: (name) => chat?.friendStatus?.(name) === 'friend',
+  myId, myName: () => nickname, others: () => others, send: (m) => net.sendEmote(m), isFriend: (name) => chat?.friendStatus?.(name) === 'friend',
   blocked: (id, name) => safety.isBlocked(id, name), park: () => hanPark(), toast: (m) => shop.toast(m), sfx, chip: $('contest-chip'),
   cheer: () => me.play('cheer'), bubble: (text) => showBubble(myLabel, $('labels'), text), peerBubble: (id, text) => others.chat(id, text, 4000),
   refreshFishing: () => {
@@ -7962,6 +7962,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     fishDex: () => ({ ...fishDex.c }),
     fishing: () => fishingUi.state,
     spots: () => hanPark()?.fishing?.map((f) => [f.x, f.z]) || null,
+    contestVs: () => fishContest.vs, // (the VS banner's names, or null)
     contest: () => fishContest.state, // (a fishing contest with a friend: game/fish-contest.js)
     contestCatch: (id) => fishContest.caught({ id }), // (as if I landed that fish by hand)
     ramenSpot: () => hanPark()?.ramen && [hanPark().ramen.x, hanPark().ramen.z],
