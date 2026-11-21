@@ -33,8 +33,8 @@ export const JOB_TEXT = {
   help: { en: 'HELP WANTED', ko: '알바 구해요', ja: 'アルバイト急募', zh: '急招兼职', es: 'SE BUSCA PERSONAL', id: 'DICARI PEKERJA', vi: 'CẦN TUYỂN GẤP', hi: 'तुरंत भर्ती', fr: 'ON RECRUTE', th: 'รับสมัครงาน', ar: 'مطلوب موظفون' },
   role: {
     delivery: { en: 'Delivery rider', ko: '배달 라이더', ja: '配達ライダー', zh: '外卖骑手', es: 'Repartidor/a', id: 'Kurir antar', vi: 'Shipper giao hàng', hi: 'डिलीवरी राइडर', fr: 'Livreur', th: 'ไรเดอร์ส่งของ', ar: 'عامل توصيل' },
-    mart: { en: 'Convenience store clerk', ko: '편의점 계산대', ja: 'コンビニのレジ', zh: '便利店收银员', es: 'Cajero/a de tienda 24 h', id: 'Kasir minimarket', vi: 'Thu ngân cửa hàng tiện lợi', hi: 'कन्वीनियंस स्टोर कैशियर', fr: 'Vendeur de supérette', th: 'พนักงานร้านสะดวกซื้อ', ar: 'كاشير متجر صغير' },
-    serving: { en: 'Server (hall staff)', ko: '홀 서빙', ja: 'ホールスタッフ', zh: '餐厅服务员', es: 'Camarero/a', id: 'Pelayan restoran', vi: 'Phục vụ bàn', hi: 'वेटर', fr: 'Serveur (salle)', th: 'พนักงานเสิร์ฟ', ar: 'نادل' },
+    mart: { en: 'Convenience store clerk', ko: '편의점 점원', ja: 'コンビニ店員', zh: '便利店店员', es: 'Dependiente/a de tienda 24 h', id: 'Pegawai minimarket', vi: 'Nhân viên cửa hàng tiện lợi', hi: 'कन्वीनियंस स्टोर कर्मचारी', fr: 'Employé de supérette', th: 'พนักงานร้านสะดวกซื้อ', ar: 'موظف متجر صغير' },
+    serving: { en: 'Restaurant staff', ko: '식당 직원', ja: '飲食店スタッフ', zh: '餐厅员工', es: 'Personal de restaurante', id: 'Pegawai restoran', vi: 'Nhân viên nhà hàng', hi: 'रेस्टोरेंट कर्मचारी', fr: 'Employé de restaurant', th: 'พนักงานร้านอาหาร', ar: 'موظف مطعم' },
   },
   pay: { en: 'Pay: up to 🪙 {n} a shift', ko: '시급: 한 번에 최대 🪙 {n}', ja: '給料：1回最大 🪙 {n}', zh: '报酬：每班最多 🪙 {n}', es: 'Paga: hasta 🪙 {n} por turno', id: 'Upah: maks 🪙 {n} per sif', vi: 'Lương: tối đa 🪙 {n} mỗi ca', hi: 'वेतन: हर शिफ़्ट 🪙 {n} तक', fr: 'Salaire : jusqu\'à 🪙 {n} par service', th: 'ค่าจ้าง: สูงสุด 🪙 {n} ต่อกะ', ar: 'الأجر: حتى 🪙 {n} للوردية' },
   away: { en: '{m} m from here', ko: '여기서 {m}m', ja: 'ここから{m}m', zh: '距此{m}米', es: 'a {m} m de aquí', id: '{m} m dari sini', vi: 'cách đây {m} m', hi: 'यहाँ से {m} मी', fr: 'À {m} m d\'ici', th: 'ห่างจากที่นี่ {m} ม.', ar: 'على بعد {m} م' },

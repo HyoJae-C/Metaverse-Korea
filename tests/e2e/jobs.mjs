@@ -51,6 +51,19 @@ try {
   if (!/My job · Lv 1 · bonus \+20%/.test(txt)) throw new Error('no job status');
   if (/Shifts left/i.test(txt)) throw new Error('still shows a daily limit');
   if (shotDir) await page.screenshot({ path: `${shotDir}/mart.png` });
+  await page.click('#job-panel .sheet-x');
+
+  // The new delivery shops (Yeonnam, by Bukchon) hire riders; the first starts a run
+  // (one run at a time, so the second only shows the job).
+  for (const id of ['wolhwa-banjeom', 'seongsu-mandu']) {
+    await mk('enter', id);
+    await nearClerk();
+    await until(async () => /Delivery rider/i.test(String(await mk('action'))), 15000, 'delivery action at ' + id);
+    if (id !== 'wolhwa-banjeom') continue;
+    await mk('act');
+    await until(() => page.isVisible('#delivery-chip'), 15000, 'delivery started at ' + id);
+    console.log(id, 'delivery:', await page.locator('#delivery-chip').innerText());
+  }
   if (errors.length) throw new Error('page errors: ' + errors.join(' / '));
   ok = true;
   console.log('ok');

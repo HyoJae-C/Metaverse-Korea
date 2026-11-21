@@ -10,14 +10,14 @@ import { loadRegionMap, districtBoxes, districtAt } from '../src/core/districts.
 
 const read = (f) => JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + f, import.meta.url)));
 
-test('part-time jobs: delivery in Seongsu (2), convenience stores in Hongdae (2), serving in Sinchon (1)', async () => {
+test('part-time jobs: delivery in 4 places (Seongsu 2, Bukchon side, Yeonnam), convenience stores in Hongdae (2) and Seongsu, serving in Sinchon', async () => {
   const region = read('region.json');
   const stores = read('stores.json').stores;
   // The district each shop stands in, the way the game finds it.
   const boxes = districtBoxes(await loadRegionMap(region, async (f) => read(f)));
   const district = (s) => districtAt(boxes, s.at[0], s.at[1]);
   const jobs = stores.filter((s) => jobOf(s)).map((s) => `${district(s)}:${s.job}`).sort();
-  assert.deepEqual(jobs, ['hongdae:mart', 'hongdae:mart', 'seodaemun:serving', 'seongsu:delivery', 'seongsu:delivery']);
+  assert.deepEqual(jobs, ['gyeongbokgung:delivery', 'hongdae:mart', 'hongdae:mart', 'seodaemun:serving', 'seongsu:delivery', 'seongsu:delivery', 'seongsu:mart', 'yeonnam:delivery']);
   for (const s of stores.filter((q) => q.job === 'mart')) assert.equal(s.category, 'market');
 });
 
