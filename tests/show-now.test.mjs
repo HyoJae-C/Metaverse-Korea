@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { setExtraShow, showStarts, DRONES, FIREWORKS, droneNumber, cycleNumber } from '../src/core/show-clock.js';
 import { droneShowAt, nextDroneShow, LIFT_SECONDS, SHOW_SECONDS } from '../src/core/drone-show.js';
 import { applyShowNow } from '../src/core/show-now.js';
+import { fireworksAt } from '../src/core/fireworks-show.js';
+import { showAt } from '../src/core/sky-deck.js';
 
 const NOW = Date.parse('2026-11-20T14:35:00Z'); // 23:35 KST, just after that night's show
 
@@ -31,4 +33,18 @@ test('drone numbers of the regular shows stay the same', () => {
   const before = droneNumber(n - 16), here = droneNumber(n);
   assert.equal(here, before + 1);
   assert.equal(droneNumber(n + 1), here + 1); // an extra in a quiet cycle counts as the next one
+});
+
+test('an extra fireworks start, and Modu Sky sees both', () => {
+  assert.equal(fireworksAt(NOW), null);
+  const start = NOW + 180e3;
+  applyShowNow({ fireworks_at: new Date(start).toISOString() });
+  assert.equal(fireworksAt(NOW).start, start);
+  assert.ok(fireworksAt(NOW).night > 0 || fireworksAt(NOW + 60e3).night > 0);
+  assert.equal(showAt(start + 10e3).kind, FIREWORKS);
+  assert.equal(droneShowAt(NOW), null); // the drones are left alone
+  applyShowNow({ fireworks_at: null });
+  assert.equal(fireworksAt(NOW), null);
+  // regular shows still show on the deck: 2026-11-20 23:10 KST was a drone night
+  assert.equal(showAt(Date.parse('2026-11-20T14:15:00Z')).kind, DRONES);
 });

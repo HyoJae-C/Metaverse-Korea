@@ -1510,7 +1510,7 @@ function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
   weatherClient = cloud.client;
-  stopWeather = watchWeather(weatherClient, (raw) => { weather.setSettings(raw); applyShowNow(raw); }); // (and an operator's "/드론쇼")
+  stopWeather = watchWeather(weatherClient, (raw) => { weather.setSettings(raw); applyShowNow(raw); }); // (and an operator's "/드론쇼", "/불꽃놀이")
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
