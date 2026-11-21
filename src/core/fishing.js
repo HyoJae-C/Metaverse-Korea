@@ -453,7 +453,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "clownfish",
@@ -466,7 +466,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "puffer",
@@ -479,7 +479,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "cuttlefish",
@@ -492,7 +492,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "lobster",
@@ -505,7 +505,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "blue-tang",
@@ -518,7 +518,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "seahorse",
@@ -531,7 +531,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "butterflyfish",
@@ -544,7 +544,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "electric-eel",
@@ -559,7 +559,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "moray",
@@ -572,7 +572,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "dolphin",
@@ -587,7 +587,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "tuna",
@@ -602,7 +602,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "shark",
@@ -617,7 +617,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "marlin",
@@ -630,7 +630,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "axolotl",
@@ -645,7 +645,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "sea-turtle",
@@ -658,7 +658,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "anglerfish",
@@ -673,7 +673,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "beluga",
@@ -688,7 +688,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "orca",
@@ -701,7 +701,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "dugong",
@@ -716,7 +716,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "giant-squid",
@@ -729,7 +729,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "blobfish",
@@ -742,7 +742,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "manta",
@@ -755,7 +755,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "whale",
@@ -770,7 +770,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   }
 ];
 
@@ -793,6 +793,12 @@ export const TIER_WEIGHT = {
   'sea-turtle': 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
+// Prices: ★1 100-200 and ★2 300-600 by kind; ★3, ★4 and ★5 one price each,
+// raised 2026-11-21 (Yozi: fishing paid too little) from 1,400 / 6,000 /
+// 50,000 to 3,000 / 15,000 / 200,000, the legend the most so it stays special.
+// About 45k → 70k an hour at the lucky spot; selling stays under the server's
+// fish cap (reward_rules 'fish', 500k a day) and baits still cost more than
+// they bring in on average.
 // What each rarity is called (the fish book and the odds table).
 export const TIER_NAMES = [null,
   { ko: '흔함', en: 'Common', ja: 'ふつう', zh: '常见' },
