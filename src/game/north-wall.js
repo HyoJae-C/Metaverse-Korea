@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { stoneTexture, smallGate, MERLON, WALL_STONE } from './city-wall-parts.js';
 import { addSnowCover } from '../core/snow-cover.js';
 import { northBox } from '../core/north-ground.js';
+import { MIX, leafColor, leafHash } from '../core/season.js';
 
 const CELL = 8; // m: the hills' ground grid
 const SINK = 0.15; // the grid is drawn this much lower (you walk on the true height)
@@ -100,11 +101,24 @@ export function buildNorthWall({ scene, l, y }) {
     wall.castShadow = wall.receiveShadow = true;
     group.add(wall);
     const block = new THREE.BoxGeometry(MERLON.len, MERLON.h, MERLON.t).translate(0, MERLON.h / 2, 0);
-    const blocks = new THREE.InstancedMesh(block, new THREE.MeshLambertMaterial({ color: WALL_STONE, map: tex }), merlons.length);
+    // In 150 m tiles, so the far cull hides the stretches past the fog (from
+    // Namsan the whole 2 km of merlons was drawn for the one corner in reach).
+    const blockMat = new THREE.MeshLambertMaterial({ color: WALL_STONE, map: tex });
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
-    merlons.forEach(([x, z, yy, ry], i) => blocks.setMatrixAt(i, m4.compose(new THREE.Vector3(x, yy, z), q.setFromAxisAngle(up, ry), one)));
-    blocks.castShadow = true;
-    group.add(blocks);
+    const tiles = new Map();
+    for (const mm of merlons) {
+      const k = Math.floor(mm[0] / 150) + ':' + Math.floor(mm[1] / 150);
+      if (!tiles.has(k)) tiles.set(k, []);
+      tiles.get(k).push(mm);
+    }
+    for (const list of tiles.values()) {
+      const blocks = new THREE.InstancedMesh(block, blockMat, list.length);
+      list.forEach(([x, z, yy, ry], i) => blocks.setMatrixAt(i, m4.compose(new THREE.Vector3(x, yy, z), q.setFromAxisAngle(up, ry), one)));
+      blocks.computeBoundingBox();
+      blocks.computeBoundingSphere();
+      blocks.castShadow = true;
+      group.add(blocks);
+    }
   }
 
   // Changuimun and Sukjeongmun, 43.75% like Hyehwamun.
@@ -143,7 +157,7 @@ export function buildNorthWall({ scene, l, y }) {
       const crowns = new THREE.InstancedMesh(crown, mat, spots.length);
       spots.forEach(([x, h, z, sc], i) => {
         crowns.setMatrixAt(i, m4.compose(p3.set(x, h - 0.5, z), q, s3.set(sc, sc * (0.9 + (n % 5) * 0.08), sc)));
-        crowns.setColorAt(i, greens[n++ % greens.length]);
+        crowns.setColorAt(i, leafColor(greens[n % greens.length], leafHash(n++), MIX.wood)); // (the season's colours, core/season.js)
       });
       crowns.computeBoundingSphere();
       crowns.name = 'woods-north';

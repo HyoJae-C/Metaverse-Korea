@@ -34,3 +34,9 @@ test('looks keep valid emblem and name colour only', () => {
   assert.equal(bad.emblem, undefined);
   assert.equal(bad.nameColor, undefined);
 });
+
+test('the Angler emblem is no longer sold, but still shows for anyone who has it', () => {
+  const fish = EMBLEMS.find((e) => e.id === 'fish');
+  assert.equal(fish.retired, true);
+  assert.equal(EMBLEMS.filter((e) => e.retired).length, 1);
+});

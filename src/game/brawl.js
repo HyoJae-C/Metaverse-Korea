@@ -14,44 +14,47 @@ import { createCaster, createSoloCaster } from '../core/brawl-tv.js';
 const T = {
   title: { en: 'Rooftop Rumble', ko: '옥상 격투왕', ja: '屋上ランブル', zh: '天台格斗王', es: 'Rooftop Rumble', id: 'Rooftop Rumble', vi: 'Rooftop Rumble', hi: 'रूफ़टॉप रंबल', fr: 'Rooftop Rumble', th: 'ศึกดาดฟ้า', ar: 'نزال السطح' },
   how: {
-    en: 'You fight as your own character. Keep pressing punch, or kick, and a string of hits comes out. Hold away from your rival to guard, and step up or down to slip round a punch. Hitting, guarding and being hit fill the special bar; each half of it is one special. Best of three rounds.',
-    ko: '내 캐릭터 그대로 싸워요. 주먹이나 발 버튼만 계속 누르면 연속기가 나가요. 상대 반대쪽으로 누르고 있으면 막기, 위아래로 옆걸음해서 주먹을 피해요. 때리고, 막고, 맞으면 필살기 게이지가 차고, 한 칸에 필살기 한 번이에요. 3판 2선승.',
-    ja: '自分のキャラクターのまま戦います。パンチかキックを押し続けるだけで連続技が出ます。相手と反対に入れっぱなしでガード、上下で横移動してパンチをかわそう。当てる・ガードする・くらうと必殺ゲージがたまり、半分で必殺技1回。3本勝負。',
-    zh: '用你自己的角色上场。连按拳或脚就能打出连招。按住远离对手的方向防御，上下横移躲开直拳。击中、防御、挨打都会积攒必杀槽，每半格可放一次必杀技。三局两胜。',
-    es: 'Peleas con tu propio personaje. Sigue pulsando puño o patada y sale un combo. Mantén hacia atrás para cubrirte y da un paso arriba o abajo para esquivar. Golpear, cubrirte y recibir golpes llenan la barra especial; cada mitad es un especial. Al mejor de tres.',
-    id: 'Kamu bertarung dengan karaktermu sendiri. Tekan terus pukulan atau tendangan dan kombonya keluar. Tahan menjauh dari lawan untuk bertahan, melangkah ke atas atau bawah untuk menghindar. Memukul, bertahan, dan terkena pukulan mengisi bar spesial; tiap setengahnya satu jurus spesial. Dua dari tiga ronde.',
-    vi: 'Bạn chiến đấu bằng chính nhân vật của mình. Cứ bấm liên tục đấm hoặc đá là ra chuỗi đòn. Giữ hướng ra xa đối thủ để đỡ, bước lên hoặc xuống để né. Đánh trúng, đỡ đòn và bị đánh đều nạp thanh tuyệt chiêu; mỗi nửa thanh là một tuyệt chiêu. Thắng 2 trên 3 hiệp.',
-    hi: 'आप अपने ही किरदार से लड़ते हैं। मुक्का या किक बार-बार दबाते रहें और कॉम्बो निकलता है। बचाव के लिए प्रतिद्वंद्वी से दूर दबाए रखें, मुक्के से बचने के लिए ऊपर या नीचे हटें। मारने, रोकने और मार खाने से स्पेशल बार भरता है; हर आधे हिस्से से एक स्पेशल। तीन में से दो राउंड।',
-    fr: "Tu te bats avec ton propre personnage. Continue d'appuyer sur poing ou sur pied et un enchaînement sort. Maintiens la direction opposée pour te protéger, fais un pas en haut ou en bas pour esquiver. Frapper, parer et encaisser remplissent la jauge spéciale ; chaque moitié vaut un coup spécial. Deux manches gagnantes.",
-    th: 'สู้ด้วยตัวละครของคุณเอง กดหมัดหรือเตะรัว ๆ คอมโบก็ออกเอง กดค้างทิศออกจากคู่ต่อสู้เพื่อป้องกัน ก้าวขึ้นหรือลงเพื่อหลบหมัด ตีโดน ป้องกัน และโดนตีจะเติมเกจท่าไม้ตาย ครึ่งเกจใช้ได้หนึ่งครั้ง ชนะ 2 ใน 3 ยก',
-    ar: 'تقاتل بشخصيتك كما هي. واصل الضغط على اللكمة أو الركلة فتخرج سلسلة ضربات. اضغط مبتعدًا عن خصمك للصد، وتحرّك للأعلى أو الأسفل لتفادي اللكمة. الضرب والصد وتلقّي الضربات تملأ شريط الضربة الخاصة، وكل نصف منه ضربة خاصة واحدة. الأفضل من ثلاث جولات.',
+    en: 'You fight as your own character, side on. Keep pressing J for a string of punches, K for a string of kicks (slower, but further and harder). W jumps (J or K in the air is a jump kick), L dashes the way you hold (back on its own) and nothing hits you for a moment, U throws a shot. Hold S to guard. Hitting, guarding and being hit fill the special bar: I spends half of it on your special, S + I a full bar on a stronger one no guard stops. Two rounds out of three.',
+    ko: '내 캐릭터 그대로, 옆에서 보며 싸워요. J를 계속 누르면 주먹 연속기, K를 계속 누르면 발차기 연속기(느리지만 멀리 닿고 더 아파요). W는 점프(공중에서 J나 K는 점프 킥), L은 누른 방향으로 대시(그냥 누르면 뒤로)하고 잠깐 안 맞아요, U는 원거리 공격. S를 누르고 있으면 막기. 때리고, 막고, 맞으면 필살 게이지가 차요. I는 반 칸으로 필살기, S + I는 꽉 찬 게이지로 막을 수 없는 2단 필살기. 3판 2선승.',
+    ja: '自分のキャラクターのまま、横から見て戦います。Jを押し続けるとパンチの連続技、Kでキックの連続技（遅いが遠くまで届き、強い）。Wでジャンプ（空中でJかKはジャンプキック）、Lで押した方向にダッシュ（単押しで後ろ）し一瞬無敵、Uで飛び道具。Sを押している間はガード。当てる・ガードする・食らうと必殺ゲージがたまり、Iで半分使って必殺技、S + Iで満タンを使うガード不能の2段必殺技。2本先取。',
+    zh: '用你自己的角色，从侧面对战。连按J打出拳连招，连按K打出踢连招（慢一些，但更远更痛）。W跳跃（空中按J或K是跳踢），L朝按住的方向冲刺（单按向后），短暂无敌，U发射远程攻击。按住S防御。击中、防御、挨打都会积攒必杀槽：I消耗一半放必杀技，S + I消耗满槽放无法防御的二段必杀。三局两胜。',
+    es: 'Peleas con tu propio personaje, de lado. Sigue pulsando J para un combo de puñetazos y K para uno de patadas (más lentas, pero llegan más lejos y duelen más). W salta (J o K en el aire es una patada aérea), L hace un dash hacia donde apuntas (atrás si no) y por un momento nada te golpea, U lanza un disparo. Mantén S para cubrirte. Golpear, cubrirte y recibir golpes llenan la barra: I gasta la mitad en tu especial, S + I la barra llena en uno más fuerte que no se puede bloquear. Al mejor de tres.',
+    id: 'Kamu bertarung dengan karaktermu sendiri, dari samping. Tekan terus J untuk kombo pukulan, K untuk kombo tendangan (lebih lambat, tapi lebih jauh dan lebih sakit). W melompat (J atau K di udara tendangan lompat), L melesat ke arah yang ditahan (ke belakang jika tidak) dan sesaat kebal, U menembak. Tahan S untuk bertahan. Memukul, bertahan, dan terkena pukulan mengisi bar spesial: I memakai setengahnya untuk jurus spesial, S + I bar penuh untuk jurus lebih kuat yang tak bisa ditahan. Dua dari tiga ronde.',
+    vi: 'Bạn chiến đấu bằng chính nhân vật của mình, nhìn từ bên cạnh. Cứ bấm J là ra chuỗi đấm, bấm K là chuỗi đá (chậm hơn nhưng xa hơn và đau hơn). W để nhảy (J hoặc K trên không là đá bay), L lướt theo hướng đang giữ (không giữ thì lùi) và miễn đòn trong chốc lát, U bắn từ xa. Giữ S để đỡ. Đánh trúng, đỡ đòn và bị đánh đều làm đầy thanh tuyệt chiêu: I dùng nửa thanh, S + I dùng cả thanh cho đòn mạnh hơn không thể đỡ. Thắng hai trong ba hiệp.',
+    hi: 'आप अपने ही किरदार से, बगल से देखते हुए लड़ते हैं। J दबाते रहें तो मुक्कों का कॉम्बो, K दबाते रहें तो किक का कॉम्बो (धीमा, पर दूर तक और ज़्यादा ज़ोर से)। W से कूदें (हवा में J या K से जंप किक), L से दबाई दिशा में डैश (अकेले दबाएँ तो पीछे), थोड़ी देर कोई वार नहीं लगता, U से दूर से वार। S दबाकर रखें तो बचाव। मारने, बचाने और मार खाने से स्पेशल बार भरता है: I आधा बार लेकर स्पेशल, S + I पूरा बार लेकर ऐसा ज़ोरदार वार जिसे रोका नहीं जा सकता। तीन में से दो राउंड।',
+    fr: "Tu te bats avec ton propre personnage, vu de côté. Continue d'appuyer sur J pour un enchaînement de poings, sur K pour un enchaînement de coups de pied (plus lents, mais plus loin et plus forts). W saute (J ou K en l'air : coup de pied sauté), L fonce dans la direction tenue (en arrière sinon) et rien ne te touche un instant, U lance un tir. Maintiens S pour te protéger. Frapper, te protéger et encaisser remplissent la barre : I en dépense la moitié pour ton spécial, S + I la barre pleine pour un coup plus fort impossible à parer. En deux manches gagnantes.",
+    th: 'สู้ด้วยตัวละครของคุณเอง มองจากด้านข้าง กด J รัว ๆ เป็นคอมโบหมัด กด K รัว ๆ เป็นคอมโบเตะ (ช้ากว่า แต่ไกลและแรงกว่า) W กระโดด (กด J หรือ K กลางอากาศคือเตะกระโดด) L พุ่งไปทางที่กดค้าง (กดเฉย ๆ คือถอย) และโดนไม่ได้ชั่วครู่ U ยิงระยะไกล กด S ค้างไว้เพื่อป้องกัน การตี การป้องกัน และการโดนตีจะเติมเกจท่าไม้ตาย: I ใช้ครึ่งเกจ S + I ใช้เกจเต็มสำหรับท่าที่แรงกว่าและป้องกันไม่ได้ ชนะ 2 ใน 3 ยก',
+    ar: 'تقاتل بشخصيتك كما هي، من الجانب. واصل الضغط على J لسلسلة لكمات، وK لسلسلة ركلات (أبطأ، لكنها أبعد وأقوى). W للقفز (J أو K في الهواء ركلة قفز)، L اندفاع في الاتجاه الذي تضغطه (للخلف وحدها) ولا يصيبك شيء للحظة، U لضربة عن بعد. اضغط S باستمرار للصد. الضرب والصد وتلقي الضربات تملأ شريط الضربة الخاصة: I تستهلك نصفه، وS + I الشريط كاملًا لضربة أقوى لا يمكن صدها. الفوز بجولتين من ثلاث.',
   },
+
   moves: {
-    en: '→ + 👊 launcher · ← + 👊 heavy punch · → + 🦶 roundhouse · ← + 🦶 sweep · 👊 in a dash: rushing punch · ⭐1 guard breaker · ⭐2 flying kick (they hurt even through a guard)',
-    ko: '→ + 👊 띄우기 · ← + 👊 묵직한 한 방 · → + 🦶 돌려차기 · ← + 🦶 다리 걸기 · 대시 중 👊 돌진 펀치 · ⭐1 가드 깨기 · ⭐2 날아차기 (필살기는 막아도 아파요)',
-    ja: '→＋👊 浮かせ技 · ←＋👊 重い一撃 · →＋🦶 回し蹴り · ←＋🦶 足払い · ダッシュ中👊 突進パンチ · ⭐1 ガード崩し · ⭐2 飛び蹴り（必殺技はガードしても痛い）',
-    zh: '→ + 👊 浮空 · ← + 👊 重拳 · → + 🦶 回旋踢 · ← + 🦶 扫腿 · 冲刺中👊 突进拳 · ⭐1 破防 · ⭐2 飞踢（必杀技防住也会掉血）',
-    es: '→ + 👊 lanzador · ← + 👊 puño fuerte · → + 🦶 patada circular · ← + 🦶 barrido · 👊 en carrera: puño de embestida · ⭐1 rompeguardias · ⭐2 patada voladora (duelen aunque te cubras)',
-    id: '→ + 👊 pelontar · ← + 👊 pukulan berat · → + 🦶 tendangan putar · ← + 🦶 sapuan · 👊 saat dash: pukulan terjang · ⭐1 pemecah pertahanan · ⭐2 tendangan terbang (tetap sakit walau ditahan)',
-    vi: '→ + 👊 hất tung · ← + 👊 cú đấm nặng · → + 🦶 đá xoay · ← + 🦶 quét chân · 👊 khi lướt: cú đấm lao tới · ⭐1 phá thủ · ⭐2 đá bay (đỡ vẫn mất máu)',
-    hi: '→ + 👊 लॉन्चर · ← + 👊 भारी मुक्का · → + 🦶 घूमती किक · ← + 🦶 टांग मारना · डैश में 👊 दौड़ता मुक्का · ⭐1 गार्ड तोड़ · ⭐2 उड़ती किक (रोकने पर भी चोट लगती है)',
-    fr: '→ + 👊 lanceur · ← + 👊 coup lourd · → + 🦶 coup de pied circulaire · ← + 🦶 balayage · 👊 en dash : poing chargé · ⭐1 brise-garde · ⭐2 coup de pied sauté (ils font mal même parés)',
-    th: '→ + 👊 ท่าเสย · ← + 👊 หมัดหนัก · → + 🦶 เตะเหวี่ยง · ← + 🦶 กวาดขา · 👊 ระหว่างแดช: หมัดพุ่ง · ⭐1 ทำลายการ์ด · ⭐2 เตะลอย (ป้องกันก็ยังเจ็บ)',
-    ar: '→ + 👊 ضربة رافعة · ← + 👊 لكمة ثقيلة · → + 🦶 ركلة دائرية · ← + 🦶 كنس القدم · 👊 أثناء الاندفاع: لكمة اندفاع · ⭐1 كاسرة الصد · ⭐2 ركلة طائرة (تؤلم حتى مع الصد)',
+    en: 'Up close: → + J (or → + U) grabs, and no guard stops it · I special (half bar) · S + I special 2 (full bar, unguardable) · damage and reach differ by style',
+    ko: '가까이서 → + J (또는 → + U): 잡기, 막아도 들어가요 · I 필살기 (게이지 반) · S + I 2단 필살기 (게이지 꽉, 못 막음) · 데미지와 사거리는 스타일마다 달라요',
+    ja: '近くで → + J（または → + U）：つかみ、ガード不能 · I 必殺技（ゲージ半分）· S + I 2段必殺技（満タン、ガード不能）· ダメージと射程はスタイルごとに違います',
+    zh: '近身 → + J（或 → + U）：抓取，无法防御 · I 必杀技（半槽）· S + I 二段必杀（满槽，无法防御）· 伤害和距离因流派而异',
+    es: 'De cerca: → + J (o → + U) agarra y no se puede bloquear · I especial (media barra) · S + I especial 2 (barra llena, imbloqueable) · daño y alcance según el estilo',
+    id: 'Dari dekat: → + J (atau → + U) bantingan, tak bisa ditahan · I spesial (setengah bar) · S + I spesial 2 (bar penuh, tak bisa ditahan) · kekuatan dan jangkauan beda tiap gaya',
+    vi: 'Ở gần: → + J (hoặc → + U) để vật, không thể đỡ · I tuyệt chiêu (nửa thanh) · S + I tuyệt chiêu 2 (đầy thanh, không thể đỡ) · sát thương và tầm đánh tùy phong cách',
+    hi: 'पास से: → + J (या → + U) पकड़, रोकी नहीं जा सकती · I स्पेशल (आधा बार) · S + I स्पेशल 2 (पूरा बार, रोक नहीं सकते) · ताकत और पहुँच हर स्टाइल की अलग',
+    fr: 'De près : → + J (ou → + U) saisit, impossible à parer · I spécial (demi-barre) · S + I spécial 2 (barre pleine, imparable) · dégâts et portée selon le style',
+    th: 'ระยะประชิด: → + J (หรือ → + U) จับทุ่ม ป้องกันไม่ได้ · I ท่าไม้ตาย (ครึ่งเกจ) · S + I ท่าไม้ตาย 2 (เกจเต็ม ป้องกันไม่ได้) · พลังและระยะต่างกันตามสไตล์',
+    ar: 'عن قرب: → + J (أو → + U) مسكة لا تُصد · I ضربة خاصة (نصف الشريط) · S + I ضربة خاصة 2 (الشريط كامل، لا تُصد) · القوة والمدى حسب الأسلوب',
   },
+
   keys: {
-    en: 'A D move · W S side-step · J punch · K kick · U I specials',
-    ko: 'A D 이동 · W S 옆걸음 · J 주먹 · K 발 · U I 필살기',
-    ja: 'A D 移動 · W S 横移動 · J パンチ · K キック · U I 必殺技',
-    zh: 'A D 移动 · W S 横移 · J 拳 · K 脚 · U I 必杀技',
-    es: 'A D mover · W S paso lateral · J puño · K patada · U I especiales',
-    id: 'A D gerak · W S langkah samping · J pukulan · K tendangan · U I spesial',
-    vi: 'A D di chuyển · W S bước ngang · J đấm · K đá · U I tuyệt chiêu',
-    hi: 'A D चलें · W S बगल कदम · J मुक्का · K किक · U I स्पेशल',
-    fr: 'A D bouger · W S pas de côté · J poing · K pied · U I spéciaux',
-    th: 'A D เดิน · W S ก้าวข้าง · J หมัด · K เตะ · U I ท่าไม้ตาย',
-    ar: 'A D تحرّك · W S خطوة جانبية · J لكمة · K ركلة · U I ضربات خاصة',
+    en: 'A D move · W jump · S guard · J punch · K kick · L dash · U shot · I special · S + I special 2',
+    ko: 'A D 이동 · W 점프 · S 막기 · J 주먹 · K 발차기 · L 대시 · U 원거리 · I 필살기 · S + I 2단 필살',
+    ja: 'A D 移動 · W ジャンプ · S ガード · J パンチ · K キック · L ダッシュ · U 飛び道具 · I 必殺技 · S + I 2段必殺',
+    zh: 'A D 移动 · W 跳跃 · S 防御 · J 拳 · K 踢 · L 冲刺 · U 远程 · I 必杀技 · S + I 二段必杀',
+    es: 'A D mover · W saltar · S cubrirse · J puño · K patada · L dash · U disparo · I especial · S + I especial 2',
+    id: 'A D gerak · W lompat · S bertahan · J pukul · K tendang · L melesat · U tembak · I spesial · S + I spesial 2',
+    vi: 'A D di chuyển · W nhảy · S đỡ · J đấm · K đá · L lướt · U bắn · I tuyệt chiêu · S + I tuyệt chiêu 2',
+    hi: 'A D चलें · W कूदें · S बचाव · J मुक्का · K किक · L डैश · U दूर वार · I स्पेशल · S + I स्पेशल 2',
+    fr: 'A D bouger · W saut · S garde · J poing · K pied · L élan · U tir · I spécial · S + I spécial 2',
+    th: 'A D เดิน · W กระโดด · S ป้องกัน · J หมัด · K เตะ · L พุ่ง · U ยิง · I ท่าไม้ตาย · S + I ท่าไม้ตาย 2',
+    ar: 'A D تحرّك · W قفز · S صد · J لكمة · K ركلة · L اندفاع · U رمية · I ضربة خاصة · S + I ضربة خاصة 2',
   },
+
   start: { en: 'Fight {name}', ko: '{name}와 대결', ja: '{name}と対戦', zh: '挑战{name}', es: 'Pelear contra {name}', id: 'Lawan {name}', vi: 'Đấu với {name}', hi: '{name} से लड़ें', fr: 'Affronter {name}', th: 'สู้กับ {name}', ar: 'قاتل {name}' },
   rival: { en: 'Rival {n} of {max}', ko: '상대 {n} / {max}', ja: 'ライバル {n} / {max}', zh: '对手 {n} / {max}', es: 'Rival {n} de {max}', id: 'Lawan {n} dari {max}', vi: 'Đối thủ {n} / {max}', hi: 'प्रतिद्वंद्वी {n} / {max}', fr: 'Rival {n} sur {max}', th: 'คู่ต่อสู้ {n} / {max}', ar: 'الخصم {n} من {max}' },
   best: { en: 'Best: {n} rivals beaten', ko: '최고 기록: {n}명 격파', ja: 'ベスト：{n}人撃破', zh: '最佳：击败{n}人', es: 'Récord: {n} rivales vencidos', id: 'Terbaik: {n} lawan kalah', vi: 'Tốt nhất: hạ {n} đối thủ', hi: 'बेस्ट: {n} प्रतिद्वंद्वी हराए', fr: 'Record : {n} rivaux battus', th: 'ดีที่สุด: ชนะ {n} คน', ar: 'الأفضل: هزمت {n} خصوم' },
@@ -65,18 +68,19 @@ const T = {
   hits: { en: '{n} HITS', ko: '{n} 연타', ja: '{n} HITS', zh: '{n} 连击', es: '{n} GOLPES', id: '{n} HIT', vi: '{n} ĐÒN', hi: '{n} हिट', fr: '{n} COUPS', th: '{n} ฮิต', ar: '{n} ضربات' },
   pick: { en: 'Pick your style', ko: '스타일을 골라요', ja: 'スタイルを選ぼう', zh: '选择你的流派', es: 'Elige tu estilo', id: 'Pilih gayamu', vi: 'Chọn phong cách', hi: 'अपनी शैली चुनें', fr: 'Choisis ton style', th: 'เลือกสไตล์ของคุณ', ar: 'اختر أسلوبك' },
   dash: {
-    en: 'Dash: tap ← or → twice (or hold Shift). An attack can cut a dash short.',
-    ko: '대시: ← 또는 →를 두 번 톡톡 (또는 Shift). 대시 중에 공격으로 이어져요.',
-    ja: 'ダッシュ：← か → を2回（またはShift）。ダッシュ中に攻撃へつなげます。',
-    zh: '冲刺：连按两下 ← 或 →（或按住 Shift）。冲刺中可以接攻击。',
-    es: 'Carrera: pulsa ← o → dos veces (o Shift). Un ataque puede cortar la carrera.',
-    id: 'Dash: ketuk ← atau → dua kali (atau Shift). Serangan bisa memotong dash.',
-    vi: 'Lướt: nhấn ← hoặc → hai lần (hoặc Shift). Có thể ra đòn giữa lúc lướt.',
-    hi: 'डैश: ← या → दो बार दबाएँ (या Shift)। डैश के बीच वार किया जा सकता है।',
-    fr: 'Dash : appuie deux fois sur ← ou → (ou Maj). Une attaque peut couper le dash.',
-    th: 'แดช: กด ← หรือ → สองครั้ง (หรือ Shift) ออกท่าโจมตีระหว่างแดชได้',
-    ar: 'اندفاع: اضغط ← أو → مرتين (أو Shift). يمكن أن يقطعه هجوم.',
+    en: 'On a phone: the stick moves you (up jumps, down guards), and the buttons are J 👊, K 🦵, L 💨, U 🔵, I ⭐ and ✊ grab.',
+    ko: '폰에서는: 스틱으로 이동(위로 밀면 점프, 아래로 당기면 막기), 버튼은 J 👊, K 🦵, L 💨, U 🔵, I ⭐, ✊ 잡기예요.',
+    ja: 'スマホでは：スティックで移動（上でジャンプ、下でガード）、ボタンは J 👊、K 🦵、L 💨、U 🔵、I ⭐、✊ つかみ。',
+    zh: '手机上：摇杆移动（向上跳跃，向下防御），按键是 J 👊、K 🦵、L 💨、U 🔵、I ⭐、✊ 抓取。',
+    es: 'En el móvil: el stick te mueve (arriba salta, abajo te cubre) y los botones son J 👊, K 🦵, L 💨, U 🔵, I ⭐ y ✊ agarre.',
+    id: 'Di ponsel: stik untuk bergerak (atas lompat, bawah bertahan), tombolnya J 👊, K 🦵, L 💨, U 🔵, I ⭐ dan ✊ bantingan.',
+    vi: 'Trên điện thoại: cần gạt để di chuyển (đẩy lên để nhảy, kéo xuống để đỡ), các nút là J 👊, K 🦵, L 💨, U 🔵, I ⭐ và ✊ vật.',
+    hi: 'फ़ोन पर: स्टिक से चलें (ऊपर से कूदें, नीचे से बचाव), बटन हैं J 👊, K 🦵, L 💨, U 🔵, I ⭐ और ✊ पकड़।',
+    fr: 'Sur téléphone : le stick te déplace (haut pour sauter, bas pour la garde), les boutons sont J 👊, K 🦵, L 💨, U 🔵, I ⭐ et ✊ saisie.',
+    th: 'บนมือถือ: ใช้สติ๊กเดิน (ดันขึ้นเพื่อกระโดด ดึงลงเพื่อป้องกัน) ปุ่มคือ J 👊, K 🦵, L 💨, U 🔵, I ⭐ และ ✊ จับทุ่ม',
+    ar: 'على الهاتف: العصا للتحرك (للأعلى للقفز، للأسفل للصد)، والأزرار J 👊 وK 🦵 وL 💨 وU 🔵 وI ⭐ و✊ للمسك.',
   },
+
   you: { en: 'You', ko: '나', ja: '自分', zh: '你', es: 'Tú', id: 'Kamu', vi: 'Bạn', hi: 'आप', fr: 'Toi', th: 'คุณ', ar: 'أنت' },
   // With someone else in the room.
   vsTitle: { en: '👥 Fight someone here', ko: '👥 옆 사람과 대전', ja: '👥 ここにいる人と対戦', zh: '👥 和这里的人对战', es: '👥 Pelea con alguien de aquí', id: '👥 Lawan orang di sini', vi: '👥 Đấu với người ở đây', hi: '👥 यहाँ किसी से लड़ें', fr: '👥 Affronte quelqu’un ici', th: '👥 สู้กับคนในห้องนี้', ar: '👥 قاتل شخصًا هنا' },
@@ -96,8 +100,13 @@ const T = {
   vsLose: { en: '{name} wins this time.', ko: '이번엔 {name}님의 승리.', ja: '今回は{name}さんの勝ち。', zh: '这次{name}赢了。', es: 'Esta vez gana {name}.', id: 'Kali ini {name} menang.', vi: 'Lần này {name} thắng.', hi: 'इस बार {name} जीते।', fr: 'Cette fois, {name} gagne.', th: 'รอบนี้ {name} ชนะ', ar: 'فاز {name} هذه المرة.' },
   draw: { en: 'Draw!', ko: '무승부!', ja: '引き分け！', zh: '平局！', es: '¡Empate!', id: 'Seri!', vi: 'Hòa!', hi: 'ड्रॉ!', fr: 'Égalité !', th: 'เสมอ!', ar: 'تعادل!' },
   vsSlow: { en: 'Waiting for the other player…', ko: '상대를 기다리는 중…', ja: '相手を待っています…', zh: '正在等待对方…', es: 'Esperando al otro jugador…', id: 'Menunggu pemain lain…', vi: 'Đang chờ người chơi kia…', hi: 'दूसरे खिलाड़ी का इंतज़ार…', fr: 'En attente de l’autre joueur…', th: 'กำลังรออีกฝ่าย…', ar: 'بانتظار اللاعب الآخر…' },
+  // A game costs money (wallet ops go to the server's ledger: core/wallet.js).
+  poor: { en: 'Not enough money: a game is 🪙 {n}.', ko: '돈이 부족해요. 한 판에 🪙 {n}이에요.', ja: 'お金が足りません。1回 🪙 {n} です。', zh: '钱不够：一局 🪙 {n}。', es: 'No tienes suficiente dinero: una partida cuesta 🪙 {n}.', id: 'Uang tidak cukup: satu permainan 🪙 {n}.', vi: 'Không đủ tiền: một ván 🪙 {n}.', hi: 'पैसे कम हैं: एक गेम 🪙 {n} का है।', fr: 'Pas assez d’argent : une partie coûte 🪙 {n}.', th: 'เงินไม่พอ เล่นหนึ่งตา 🪙 {n}', ar: 'المال لا يكفي: اللعبة الواحدة 🪙 {n}.' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
+// One game (one rival, or one match with someone) at the cabinet.
+export const PLAY_COST = 1000;
+const PRICE = ' · 🪙 ' + PLAY_COST.toLocaleString('en-US');
 
 // The five rivals (made up for this game), easy to champion: their look and
 // the sky over their round.
@@ -160,7 +169,7 @@ export const STYLE = {
     stance: { armL: [-0.4, -0.7, 0], foreL: [-0.8, 0, 0], armR: [-0.4, 0.7, 0], foreR: [-0.8, 0, 0], legL: [-0.3, 0, 0], kneeL: [0.45, 0, 0], legR: [0.25, 0, 0], kneeR: [0.4, 0, 0], spine: [0.1, 0, 0] }, sway: 0.25, bounce: 0.04,
   },
 };
-const BTN = { p: '👊', k: '🦶', s1: '⭐1', s2: '⭐2' };
+const BTN = { p: '👊 J', k: '🦵 K', s1: '🔵 U', s2: '⭐ I' };
 
 export const RIVAL = [
   { name: { en: 'Dalgona Kid', ko: '달고나 키드', ja: 'ダルゴナ・キッド', zh: '椪糖小子' }, style: 'brawler', look: { model: 'hoodie-orange', pants: 'denim', hair: 'caramel', skin: 'fair', hairStyle: 'bowl' }, sky: ['#2a1f4d', '#c9587a'] },
@@ -219,8 +228,8 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-stick { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; }
 .bw-ring { position: absolute; width: 120px; height: 120px; margin: -60px; border-radius: 50%; border: 3px solid rgba(255,255,255,.55); background: rgba(10,10,20,.3); left: calc(28px + 60px + env(safe-area-inset-left)); bottom: calc(26px + 60px + env(safe-area-inset-bottom)); }
 .bw-knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%; background: rgba(255,255,255,.85); }
-.bw-btns { position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 68px 68px; gap: 10px; }
-.bw-btns button { width: 68px; height: 68px; border-radius: 50%; border: 3px solid #fff; color: #fff; font: 800 22px system-ui; line-height: 1; padding: 0; touch-action: none; }
+.bw-btns { position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: 62px 62px 62px; gap: 9px; }
+.bw-btns button { width: 62px; height: 62px; border-radius: 50%; border: 3px solid #fff; color: #fff; font: 800 22px system-ui; line-height: 1; padding: 0; touch-action: none; }
 .bw-btns button small { display: block; font-size: 11px; margin-top: 2px; }
 .bw-btns button.on { filter: brightness(1.6); transform: scale(.93); }
 .bw-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(92vw, 430px); max-height: 88vh; overflow: auto; background: rgba(18,14,34,.93); border: 2px solid #ffd23c; border-radius: 18px; padding: 16px 18px; pointer-events: auto; font-weight: 500; text-align: center; }
@@ -246,8 +255,6 @@ html.brawl-on #hud > *, html.brawl-on #labels, html.brawl-on .credit { visibilit
 .bw-card .seq { font-size: 13px; margin: 4px 0; }
 .bw-style { font-size: 11px; opacity: .9; margin-top: 1px; text-shadow: 0 1px 3px #000; white-space: nowrap; }
 .bw-side.r .bw-style { text-align: right; }
-.bw-dash { position: absolute; right: calc(170px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 50%; border: 3px solid #fff; background: #6a5acd; color: #fff; font: 800 20px system-ui; padding: 0; touch-action: none; }
-.bw-dash.on { filter: brightness(1.6); }
 .bw-card .row { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
 .bw-card button { border: 0; border-radius: 12px; padding: 12px 18px; font: 800 16px system-ui; cursor: pointer; background: #3a3260; color: #fff; }
 .bw-card button.go { background: linear-gradient(#ffd23c, #ff8a2e); color: #2a1030; }
@@ -329,10 +336,12 @@ function poseOf(f, time, out, body) {
     if (key === 'charge') body.pitch = 0.25 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 12) : 1);
     if (f.move === 'upper') body.lift += 0.16 * Math.sin(smooth((t - m.startup * 0.6) / (m.active + m.recover * 0.5)) * Math.PI);
     if (f.move === 'fly' && !m.pose) body.pitch = -0.35 * Math.sin(whole * Math.PI * 0.5) * (t > m.startup + m.active ? 1 - smooth((t - m.startup - m.active) / 14) : 1);
-  } else if (f.st === 'dash') {
-    mix(out, S, DASH, Math.sin(Math.min(1, f.t / 9) * Math.PI));
-    if (f.dashDir < 0) { out.spine[0] = -0.2; }
-    body.lift += 0.05;
+  } else if (f.st === 'dodge') { // a quick dash: leaning back, or forward into it
+    mix(out, S, DASH, Math.sin(Math.min(1, f.t / 16) * Math.PI));
+    out.spine[0] = f.dd > 0 ? 0.3 : -0.25;
+  } else if (f.st === 'jump') { // knees tucked at the top
+    mix(out, S, DASH, Math.min(1, f.t / 6));
+    out.kneeL[0] += 0.6; out.kneeR[0] += 0.6; out.legL[0] -= 0.5; out.legR[0] -= 0.3;
   } else if (f.st === 'hit') {
     mix(out, S, HURT, Math.min(1, f.stun / 8) * Math.min(1, f.t / 2));
   } else if (f.st === 'block') {
@@ -361,6 +370,92 @@ function poseOf(f, time, out, body) {
     if (stepping) body.lift += 0.06 * Math.sin((f.t / 13) * Math.PI);
   }
   return body;
+}
+
+// ── Shots (U): each style throws its own thing ──────────────────────────
+// Drawn once on a small canvas and shown as a sprite (the 'ki' ball and a
+// signature's ball of light use the hit-spark glow instead).
+const SHOT_LOOK = {
+  ki: { glow: true, size: 0.75, spin: 9 },
+  orb: { glow: true, color: '#c58bff', size: 1.25, spin: 2 },
+  star: { size: 0.5, spin: 22 },
+  rock: { size: 0.95, spin: 4 },
+  wind: { size: 0.95, spin: 0 },
+  fist: { size: 0.8, spin: 0 },
+  can: { size: 0.55, spin: 10 },
+  ribbon: { size: 0.7, spin: 7 },
+};
+export const SHOT_NAME = {
+  ki: { en: 'Ki blast', ko: '장풍', ja: '気功弾', zh: '气功波' },
+  star: { en: 'Throwing star (fast, far)', ko: '수리검 (빠르고 멀리)', ja: '手裏剣（速く遠く）', zh: '手里剑（快又远）' },
+  rock: { en: 'Rock (slow, floors them)', ko: '바위 (느리지만 넘어뜨림)', ja: '岩（遅いがダウン）', zh: '石头（慢，但能击倒）' },
+  wind: { en: 'Wind kick', ko: '바람 발차기', ja: '風の蹴り', zh: '风之踢' },
+  fist: { en: 'Air punch (short, quick)', ko: '권풍 (짧고 빠름)', ja: '拳風（短く速い）', zh: '拳风（短而快）' },
+  can: { en: 'Can lob (arcs, floors them)', ko: '캔 던지기 (포물선, 넘어뜨림)', ja: '缶投げ（放物線、ダウン）', zh: '扔罐子（抛物线，击倒）' },
+  orb: { en: 'Big orb (slow, very far)', ko: '큰 구슬 (느리고 아주 멀리)', ja: '大きな玉（遅くとても遠く）', zh: '大光球（慢，非常远）' },
+  ribbon: { en: 'Ribbon (comes back)', ko: '리본 (돌아옴)', ja: 'リボン（戻ってくる）', zh: '丝带（会飞回来）' },
+};
+const shotMaps = {};
+function shotMap(kind) {
+  if (shotMaps[kind]) return shotMaps[kind];
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  g.translate(64, 64);
+  g.lineJoin = 'round';
+  if (kind === 'star') { // a throwing star
+    g.fillStyle = '#cfd6e0'; g.strokeStyle = '#4a5260'; g.lineWidth = 5;
+    g.beginPath();
+    for (let i = 0; i < 8; i++) { const r = i % 2 ? 14 : 58, a = (i / 8) * Math.PI * 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#4a5260'; g.beginPath(); g.arc(0, 0, 8, 0, Math.PI * 2); g.fill();
+  } else if (kind === 'rock') {
+    g.fillStyle = '#8a7462'; g.strokeStyle = '#4e3f33'; g.lineWidth = 6;
+    g.beginPath();
+    [[-50, -10], [-30, -46], [12, -52], [48, -24], [54, 16], [26, 48], [-20, 50], [-52, 22]].forEach(([x, y]) => g.lineTo(x, y));
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#6b594b';
+    for (const [x, y, r] of [[-14, -14, 10], [18, 10, 8], [-8, 24, 6]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+  } else if (kind === 'wind') { // a crescent of wind from a kick
+    g.fillStyle = 'rgba(190,255,230,0.9)'; g.strokeStyle = 'rgba(80,200,160,0.9)'; g.lineWidth = 4;
+    g.beginPath(); g.arc(-20, 0, 56, -1.2, 1.2); g.arc(-44, 0, 50, 1.05, -1.05, true); g.closePath(); g.fill(); g.stroke();
+  } else if (kind === 'fist') { // a punch of air
+    for (const [r, a] of [[56, 0.25], [42, 0.45], [28, 0.8]]) { g.fillStyle = `rgba(255,170,80,${a})`; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = '#fff2d8'; g.beginPath(); g.ellipse(4, 0, 18, 22, 0, 0, Math.PI * 2); g.fill();
+  } else if (kind === 'can') { // a soda can
+    g.rotate(0.3);
+    g.fillStyle = '#e8473c'; g.fillRect(-24, -46, 48, 92);
+    g.fillStyle = '#d7dce2'; g.fillRect(-24, -52, 48, 10); g.fillRect(-24, 42, 48, 10);
+    g.fillStyle = '#fff'; g.fillRect(-24, -8, 48, 14);
+    g.strokeStyle = '#7a1f1a'; g.lineWidth = 4; g.strokeRect(-24, -52, 48, 104);
+  } else if (kind === 'ribbon') { // a ribbon bow
+    g.fillStyle = '#ff7eb6'; g.strokeStyle = '#c23c7c'; g.lineWidth = 5;
+    for (const k of [-1, 1]) { g.beginPath(); g.moveTo(0, 0); g.lineTo(k * 56, -34); g.lineTo(k * 56, 34); g.closePath(); g.fill(); g.stroke(); }
+    g.beginPath(); g.arc(0, 0, 13, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return (shotMaps[kind] = tex);
+}
+// One fighter's shot on the stage (i: 0 left, 1 right), or none.
+export function showShot(stage, i, f, dt) {
+  const sp = stage.shots[i];
+  sp.visible = !!f.shot;
+  if (!f.shot) return;
+  const kind = f.shot.m === 'ranged' ? f.mv.ranged.shot.kind || 'ki' : 'orb';
+  const look = SHOT_LOOK[kind] || SHOT_LOOK.ki, mat = sp.material;
+  if (sp.userData.kind !== kind) {
+    sp.userData.kind = kind;
+    mat.map = look.glow ? stage.sparkMap : shotMap(kind);
+    mat.blending = look.glow ? THREE.AdditiveBlending : THREE.NormalBlending;
+    mat.color.set(look.glow ? look.color || (i ? '#ff9aa8' : '#7df0ff') : '#ffffff');
+    mat.rotation = 0;
+    mat.needsUpdate = true;
+  }
+  sp.position.set(f.shot.x, f.shot.y ?? 0.78, f.shot.z);
+  mat.rotation += dt * look.spin * (f.shot.dx < 0 ? 1 : -1);
+  if (kind === 'wind' || kind === 'fist') mat.rotation = f.shot.dx < 0 ? Math.PI : 0; // (facing the way it flies)
+  sp.scale.setScalar(look.size * (look.glow ? 1 + Math.sin(f.shot.t * 0.5) * 0.08 : 1));
 }
 
 // ── The stage ────────────────────────────────────────────────────────────
@@ -471,7 +566,7 @@ export function buildStage(sky, y = STAGE_Y) {
     g.add(sp);
     return sp;
   });
-  return { g, sparks, shots, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
+  return { g, sparks, shots, sparkMap, dispose() { g.removeFromParent(); posts.dispose(); lamps.dispose(); for (const o of own) o.dispose(); } };
 }
 
 // ── The fighters (also stood on the arcade's wall screen: game/brawl-tv.js) ──
@@ -533,7 +628,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   const stick = { mx: 0, mz: 0 };
   const KEYS = {
     KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down',
-    KeyJ: 'p', KeyK: 'k', KeyU: 's1', KeyI: 's2', Numpad1: 'p', Numpad2: 'k', Numpad4: 's1', Numpad5: 's2',
+    KeyJ: 'p', KeyK: 'k', KeyL: 'dodge', KeyU: 's1', KeyI: 's2', KeyO: 'tag', Numpad1: 'p', Numpad2: 'k', Numpad3: 'dodge', Numpad4: 's1', Numpad5: 's2',
   };
   const onKey = (e) => {
     if (!on) return;
@@ -551,27 +646,16 @@ export function createBrawl(game, { versusFull = null } = {}) {
     if (!k) return;
     e.preventDefault();
     if (down) {
-      if (!held.has(k)) {
-        pressed.add(k);
-        if (k === 'left' || k === 'right') tapped(k === 'right' ? 1 : -1);
-      }
+      if (!held.has(k)) pressed.add(k);
       held.add(k);
     } else held.delete(k);
   };
-  // Twice the same way in a quarter of a second is a dash.
-  let lastTap = 0, lastTapAt = 0, dashAsk = 0;
-  function tapped(dir) {
-    const now = performance.now();
-    if (dir === lastTap && now - lastTapAt < 280) { dashAsk = dir; lastTap = 0; } else { lastTap = dir; lastTapAt = now; }
-  }
-  const onShift = (e) => {
-    if (!on || e.key !== 'Shift' || e.repeat || e.type !== 'keydown') return;
-    dashAsk = held.has('left') ? -1 : 1;
-  };
   function readInput() {
-    const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: (held.has('up') ? 1 : 0) - (held.has('down') ? 1 : 0) || stick.mz };
+    // (the left and right keys say toward and away for whoever is on the left: the guest is shown on the left too)
+    const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0) || stick.mx, mz: held.has('down') || stick.mz < 0 ? -1 : held.has('up') || stick.mz > 0 ? 1 : 0 };
     for (const b of ['p', 'k', 's1', 's2']) if (pressed.has(b)) inp[b] = true;
-    if (dashAsk) { inp.dash = dashAsk; dashAsk = 0; }
+    if (pressed.has('dodge')) inp.dash = inp.mx > 0.3 ? 1 : -1; // (L: a dash the way the stick points, back when it points nowhere)
+    if (pressed.has('grab')) { inp.mx = 1; inp.p = true; } // (the phone's grab button: toward + J)
     pressed.clear();
     return inp;
   }
@@ -609,20 +693,20 @@ export function createBrawl(game, { versusFull = null } = {}) {
     commands.style.cssText = 'pointer-events:auto;box-sizing:border-box;width:min(94vw,720px);max-height:88dvh;overflow:auto;padding:24px;border:2px solid #c39bff;border-radius:20px;background:#171329;color:white;font:18px system-ui';
     commands.setAttribute('aria-label', L({ en: 'Commands', ko: '커맨드표' }));
     const heading = el('h2', null, L({ en: 'Commands', ko: '커맨드표' }));
-    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. → means toward your rival. Specials cost 50 gauge.', ko: '싱글은 일시정지됩니다. 온라인 대전은 계속 진행됩니다. →는 상대 방향이며, 필살기는 게이지 50이 필요합니다.' }));
+    const note = el('p', null, L({ en: 'Solo pauses here. Online matches keep running. The same keys for every style; damage and reach differ. → means toward your rival.', ko: '싱글은 일시정지됩니다. 온라인 대전은 계속 진행됩니다. 모든 스타일이 같은 키를 쓰고, 데미지와 사거리만 달라요. →는 상대 방향이에요.' }));
     const table = document.createElement('table'); table.style.cssText = 'width:100%;border-collapse:collapse;font-size:clamp(18px,3.6vw,24px)';
     for (const [label, input] of [
-      [L({ en: 'Punch / kick', ko: '펀치 / 킥' }), '👊 J / 🦶 K'],
-      [L({ en: 'Combo', ko: '연속 공격' }), '👊 → 👊 → 👊 / 🦶 → 🦶 → 🦶'],
-      [L({ en: 'Launcher', ko: '띄우기' }), '→ + 👊 J'],
-      [L({ en: 'Heavy punch', ko: '묵직한 한 방' }), '← + 👊 J'],
-      [L({ en: 'Roundhouse', ko: '돌려차기' }), '→ + 🦶 K'],
-      [L({ en: 'Sweep', ko: '다리 걸기' }), '← + 🦶 K'],
-      [L({ en: 'Rushing punch', ko: '돌진 펀치' }), '→ → + 👊 J'],
-      [L({ en: 'Special 1', ko: '필살기 1' }), '↓ → + 👊 J  /  ⭐1 U'],
-      [L({ en: 'Special 2', ko: '필살기 2' }), '↓ → + 🦶 K  /  ⭐2 I'],
-      [L({ en: 'Guard', ko: '방어' }), '←'],
-      [L({ en: 'Dash', ko: '대시' }), '→ → / ← ← / Shift'],
+      [L({ en: 'Move', ko: '이동' }), touch ? '🕹️ ← →' : 'A / D'],
+      [L({ en: 'Jump (J or K in the air: jump kick)', ko: '점프 (공중에서 J나 K: 점프 킥)' }), touch ? '🕹️ ↑' : 'W'],
+      [L({ en: 'Guard', ko: '막기' }), touch ? '🕹️ ↓' : 'S'],
+      [L({ en: 'Punch (press again: combo)', ko: '주먹 (계속 누르면 연속기)' }), touch ? '👊' : 'J'],
+      [L({ en: 'Kick (slower, longer, harder; press again: combo)', ko: '발차기 (느리지만 멀리·세게, 계속 누르면 연속기)' }), touch ? '🦵' : 'K'],
+      [L({ en: 'Dash back, unhittable for a moment', ko: '뒤로 대시, 잠깐 안 맞음' }), touch ? '💨' : 'L'],
+      [L({ en: 'Dash in, unhittable for a moment', ko: '앞으로 대시, 잠깐 안 맞음' }), touch ? '🕹️ → + 💨' : 'D + L'],
+      [L({ en: 'Shot', ko: '원거리' }), touch ? '🔵' : 'U'],
+      [L({ en: 'Special (half gauge)', ko: '필살기 (게이지 반)' }), touch ? '⭐' : 'I'],
+      [L({ en: 'Special 2 (full gauge, unguardable)', ko: '2단 필살기 (게이지 꽉, 못 막음)' }), touch ? '🕹️ ↓ + ⭐' : 'S + I'],
+      [L({ en: 'Grab (up close, unguardable)', ko: '잡기 (가까이서, 못 막음)' }), touch ? '✊' : '→ + J  /  → + U'],
     ]) {
       const row = document.createElement('tr');
       for (const text of [label, input]) { const cell = document.createElement('td'); cell.textContent = text; cell.style.cssText = 'padding:15px 8px;border-bottom:1px solid #49365f'; row.append(cell); }
@@ -632,7 +716,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
     dismiss.style.cssText = 'margin-top:20px;width:100%;padding:14px;border:0;border-radius:12px;background:#c39bff;font:bold 20px system-ui;cursor:pointer';
     dismiss.onclick = () => commands.close();
     commands.append(heading, note, table, dismiss);
-    commandButton.onclick = () => { held.clear(); pressed.clear(); stick.mx = stick.mz = 0; dashAsk = 0; commands.showModal(); };
+    commandButton.onclick = () => { held.clear(); pressed.clear(); stick.mx = stick.mz = 0; commands.showModal(); };
     root.append(commandButton, commands);
     let pad = null;
     if (touch) {
@@ -643,9 +727,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       const move = (e) => {
         const dx = e.clientX - ox, dy = e.clientY - oy, d = Math.hypot(dx, dy), k = d > 44 ? 44 / d : 1;
         knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
-        const was = stick.mx;
         stick.mx = Math.abs(dx) > 16 ? Math.sign(dx) : 0;
-        if (stick.mx && stick.mx !== was) tapped(stick.mx);
         stick.mz = Math.abs(dy) > 26 && Math.abs(dy) > Math.abs(dx) * 0.7 ? -Math.sign(dy) : 0;
       };
       zone.onpointerdown = (e) => {
@@ -658,21 +740,16 @@ export function createBrawl(game, { versusFull = null } = {}) {
       zone.onpointermove = (e) => { if (e.pointerId === id) move(e); };
       zone.onpointerup = zone.onpointercancel = (e) => { if (e.pointerId !== id) return; id = null; stick.mx = stick.mz = 0; knob.style.transform = ''; };
       const btns = el('div', 'bw-btns');
-      for (const [k, icon, tag, col] of [['s1', '⭐', '1', '#8a5ad6'], ['s2', '⭐', '2', '#d9982a'], ['p', '👊', '', '#3f7fe0'], ['k', '🦶', '', '#e0483f']]) {
-        const b = el('button', k[0] === 's' ? 'sp' : null, icon);
-        if (tag) b.append(el('small', null, tag));
+      for (const [k, icon, col] of [['s2', '⭐', '#d9982a'], ['s1', '🔵', '#8a5ad6'], ['grab', '✊', '#2f9e6e'], ['k', '🦵', '#e0483f'], ['dodge', '💨', '#6a5acd'], ['p', '👊', '#3f7fe0']]) {
+        const b = el('button', k === 's2' ? 'sp' : null, icon);
         b.style.background = col;
         b.onpointerdown = (e) => { e.preventDefault(); pressed.add(k); b.classList.add('on'); };
         b.onpointerup = b.onpointercancel = b.onpointerleave = () => b.classList.remove('on');
         btns.append(b);
       }
-      const dash = el('button', 'bw-dash', '💨');
-      dash.onpointerdown = (e) => { e.preventDefault(); dashAsk = stick.mx < 0 ? -1 : 1; dash.classList.add('on'); };
-      dash.onpointerup = dash.onpointercancel = dash.onpointerleave = () => dash.classList.remove('on');
-      pad.append(zone, btns, dash);
+      pad.append(zone, btns);
       root.append(pad);
-    } else root.append(el('div', 'bw-keys', tt('keys') + ' · ↓ → + J / K = ⭐1 / ⭐2'));
-    if (touch) root.append(el('div', 'bw-keys', '↓ → + 👊 / 🦶 = ⭐1 / ⭐2'));
+    } else root.append(el('div', 'bw-keys', tt('keys')));
     root.oncontextmenu = (e) => e.preventDefault();
     document.body.append(root);
     return { root, a, b, time, msg, sub, combo, pad, flash, commands, comboT: [0, 0], msgT: 0 };
@@ -698,20 +775,23 @@ export function createBrawl(game, { versusFull = null } = {}) {
     c.append(row);
   }
   const styleTag = (id) => STYLE[id].icon + ' ' + L(STYLE[id].name);
-  const seqText = (seq, i) => (i ? BTN.k : BTN.p).repeat(seq.length); // (the same button, once a hit)
+  const seqText = (seq, icon) => Array(seq.length).fill(icon).join(' '); // (the same button, once a hit)
   function styleInfo(box, id) {
     const st = STYLES[id], mv = movesFor(id);
     box.replaceChildren();
     box.append(el('p', 'big', styleTag(id)), el('p', null, L(STYLE[id].line)));
-    const power = (st.punch[1] + st.kick[1]) / 2;
-    for (const [icon, k] of [['❤️', st.hp / 120], ['⚡', st.walk / 1.25], ['💪', (power - 0.7) / 0.5]]) {
+    // 💪 how fast the J string deals damage; 🎯 how far the shot (U) goes.
+    const str = st.combos[0], ticks = str.reduce((n, id) => n + mv[id].startup + mv[id].active, 0);
+    const power = str.reduce((n, id) => n + mv[id].dmg, 0) / ticks, reach = mv.ranged.shot.speed * mv.ranged.shot.ttl / (mv.ranged.shot.back ? 2 : 1);
+    for (const [icon, k] of [['❤️', (st.hp - 70) / 45], ['⚡', st.walk / 1.25], ['💪', (power - 0.45) / 0.55], ['🎯', reach / 7]]) {
       const row = el('div', 'bw-stat'), bar = el('i'), fill = el('u');
       fill.style.width = Math.round(Math.max(0.12, Math.min(1, k)) * 100) + '%';
       bar.append(fill); row.append(el('span', null, icon), bar);
       box.append(row);
     }
-    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + (st.slot === 'palm' ? BTN.s1 : BTN.s2) + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '')));
-    box.append(el('p', 'seq', '🔗 ' + st.combos.map(seqText).join('   ·   ')));
+    box.append(el('p', 'seq', '⭐ ' + L(STYLE[id].sig) + ': ' + BTN.s2 + (mv[st.slot].hits ? ` ×${mv[st.slot].hits}` : '') + '   ·   ⭐⭐ S + I'));
+    box.append(el('p', 'seq', '🔗 ' + seqText(st.combos[0], '👊') + '   ·   ' + seqText(st.combos[1], '🦵')));
+    box.append(el('p', 'seq', BTN.s1 + ': ' + L(SHOT_NAME[st.shot?.kind] || SHOT_NAME.ki)));
     box.append(el('p', 'dim', tt('moves')));
   }
   // The eight styles to pick from, and what the picked one does.
@@ -733,6 +813,10 @@ export function createBrawl(game, { versusFull = null } = {}) {
     c.append(grid, info);
     pick(on.style);
   }
+  // Paying for a game. Without a wallet (tests), games are free.
+  const canPay = () => !game.wallet || game.wallet.coins >= PLAY_COST;
+  const pay = () => !game.wallet || game.wallet.spend(PLAY_COST, { k: 'ledger.arcade', name: { en: 'Rooftop Rumble', ko: '옥상 격투왕' } });
+  const poor = () => tt('poor', { n: PLAY_COST.toLocaleString('en-US') });
   function menu(note) {
     endCast();
     const rec = loadBrawl(store);
@@ -757,7 +841,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(more);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }), 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('start', { name: L(RIVAL[rec.stage].name) }) + PRICE, 'go', () => begin(rec.stage)), button(tt('close'), null, () => close()));
       c.append(row);
     });
     fillPeople();
@@ -788,6 +872,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   function invite(peer) {
     if (on.vs || on.match) return;
     if (versusFull?.()) { menu(tt('vsFull')); return; } // (two matches between people at a time: core/brawl-room.js)
+    if (!canPay()) { menu(poor()); return; } // (each player pays for their own game when it starts)
     const nonce = Math.random().toString(36).slice(2, 10);
     on.vs = { host: true, peer: { id: peer.id, name: peer.name }, nonce, st: 'wait', until: on.time + 32 };
     tell(peer.id, 'i', nonce);
@@ -827,7 +912,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(el('p', 'big', tt('pick')));
       styleGrid(c);
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('ready'), 'go', () => { const vs = on.vs; tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
+      row.append(button('🥊 ' + tt('ready') + PRICE, 'go', () => { const vs = on.vs; if (!canPay()) { leaveVs(true); menu(poor()); return; } tell(vs.peer.id, 'y', vs.nonce); connect(vs.style); }), button(tt('no'), null, () => { leaveVs(true); menu(); }));
       c.append(row);
     });
   }
@@ -853,7 +938,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       if (vs.dead || !on || on.vs !== vs || !m || typeof m !== 'object') return;
       vs.heardAt = on.time;
       if (m.bye) { leaveVs(false); menu(tt('vsLeft', { name: vs.peer.name })); return; }
-      if (!vs.session) startVs();
+      if (!vs.session) { startVs(); if (!vs.session) return; } // (no money after all: out)
       if (m.hi) { if (m.hi === 1) vs.link?.send({ hi: 2 }); } else vs.session.receive(m);
     };
     Promise.resolve().then(() => game.link('brawl-' + vs.nonce, onMsg)).then((link) => {
@@ -866,6 +951,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   }
   function startVs() {
     const vs = on.vs;
+    if (!pay()) { leaveVs(true); menu(poor()); return; }
     vs.st = 'play';
     vs.session = createSession({
       side: vs.host ? 0 : 1, styles: vs.host ? [on.style, vs.style] : [vs.style, on.style], send: (m) => { if (!vs.dead) vs.link?.send(m); },
@@ -884,7 +970,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       c.append(el('h3', null, '🥊 ' + tt('title')));
       c.append(el('p', 'big', res === 2 ? tt('draw') : won ? tt('won', { name }) : tt('vsLose', { name })));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + tt('again'), 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + tt('again') + PRICE, 'go', () => { const f = people().find((q) => q.id === peer.id); if (f) invite(f); else menu(tt('vsGone')); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -897,7 +983,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       ladder(c, rec, champ ? RIVALS : rec.stage);
       if (rec.best) c.append(el('p', 'dim', tt('best', { n: rec.best }) + (rec.crowns ? ' · ' + tt('crowns', { n: rec.crowns }) : '')));
       const row = el('div', 'row');
-      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')), 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
+      row.append(button('🥊 ' + (won && !champ ? tt('next') : tt('again')) + PRICE, 'go', () => { setRival(rec.stage); begin(rec.stage); }), button(styleTag(on.style) + ' ↺', null, () => menu()), button(tt('close'), null, () => close()));
       c.append(row);
     });
   }
@@ -948,6 +1034,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
   }
   function begin(stage) {
     if (on.vs) return;
+    if (!pay()) { menu(poor()); return; }
     startUi();
     const m = on.match = createMatch({ level: stage, style: on.style, rivalStyle: RIVAL[stage].style });
     endCast();
@@ -975,25 +1062,26 @@ export function createBrawl(game, { versusFull = null } = {}) {
       } else if (e.k === 'fight') { say('FIGHT!', '', 0.8); sfx.tock(0.9, 900); }
       else if (e.k === 'swing') {
         const fighter = e.by ? m.b : m.a;
-        if (e.move === 'palm' || e.move === 'fly') { // (a special: its name was shown when it began)
+        if (e.move === 'palm' || e.move === 'fly' || e.move === 'super') { // (a special: its name was shown when it began)
           spark(fighter.x, 0.85, fighter.z, '#c39bff', 2.1);
           sfx.tock(0.7, 1250);
         } else sfx.tock(0.18, fighter.mv[e.move].level >= 3 ? 520 : 760);
       }
       else if (e.k === 'dash') sfx.tock(0.2, 1100);
+      else if (e.k === 'jump') sfx.tock(0.15, 1300);
       else if (e.k === 'super') { // a special: the screen flashes and holds a moment
         const f = e.who ? m.b : m.a;
         spark(f.x, 0.9, f.z, '#fff36b', 1.6); sfx.tock(0.7, 240); on.shake = Math.max(on.shake, 0.12);
         if (!on.vs) on.freeze = 22;
         const fl = on.hud.flash; fl.classList.remove('show'); void fl.offsetWidth; fl.classList.add('show');
-        const c = on.hud.combo[e.who ^ on.flip]; c.textContent = '⭐ ' + L(STYLE[f.style].sig); c.classList.add('show'); on.hud.comboT[e.who] = 1.2;
+        const c = on.hud.combo[e.who ^ on.flip]; c.textContent = (e.move === 'super' ? '⭐⭐ ' : '⭐ ') + L(STYLE[f.style].sig); c.classList.add('show'); on.hud.comboT[e.who] = 1.2;
       }
       else if (e.k === 'shot') sfx.tock(0.5, 1500);
       else if (e.k === 'blink') { spark(e.from[0], 0.7, e.from[1], '#b9a6f0', 1.2); spark(e.x, 0.7, e.z, '#b9a6f0', 1.2); sfx.tock(0.4, 1800); }
       else if (e.k === 'combo') { const c = on.hud.combo[e.by ^ on.flip]; c.textContent = 'COMBO!'; c.classList.add('show'); on.hud.comboT[e.by] = 1.3; on.comboAt = on.time; }
       else if (e.k === 'block') { spark(e.x, e.y, e.z, '#7df0ff', 0.7); sfx.tock(0.45, 420); if (!on.vs) on.freeze = 3; }
       else if (e.k === 'hit') {
-        const special = ['palm', 'fly', 'shot'].includes(e.move);
+        const special = ['palm', 'fly', 'shot', 'super'].includes(e.move);
         const big = special || e.dmg >= 14 || e.launch || e.ko || e.fin;
         spark(e.x, e.y, e.z, special ? '#c39bff' : e.armor ? '#9fb4c8' : e.counter ? '#ff6a5a' : '#ffe9a0', special ? 2.3 : big ? 1.5 : 1);
         sfx.tock(big ? 1 : 0.7, big ? 170 : 250);
@@ -1066,9 +1154,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       place(on.me, mine, dt); place(on.rival, theirs, dt);
       // Balls of light in flight.
       for (const [i, f] of [m.a, m.b].entries()) {
-        const sp = on.stage.shots[i];
-        sp.visible = !!f.shot;
-        if (f.shot) { sp.position.set(f.shot.x, 0.78, f.shot.z); sp.material.rotation += dt * 9; sp.scale.setScalar(0.75 + Math.sin(on.time * 30) * 0.08); }
+        showShot(on.stage, i, f, dt);
       }
       // The bars, the clock, the rounds won.
       for (const [s, f] of [[h.a, mine], [h.b, theirs]]) {
@@ -1141,7 +1227,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
     endCast();
     const o = on;
     on = null;
-    removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true); removeEventListener('keydown', onShift, true);
+    removeEventListener('keydown', onKey, true); removeEventListener('keyup', onKey, true);
     held.clear(); pressed.clear(); stick.mx = stick.mz = 0;
     for (const f of [o.me, o.rival]) { f.ch.setMoves(null); f.ch.root.removeFromParent(); }
     o.stage.dispose();
@@ -1161,7 +1247,7 @@ export function createBrawl(game, { versusFull = null } = {}) {
       on.idle = [{ side: 0, x: -1.1, z: 0, y: 0, face: 0, st: 'idle', t: 0, style: 'brawler' }, { side: 1, x: 1.1, z: 0, y: 0, face: Math.PI, st: 'idle', t: 0, style: 'brawler' }];
       on.hud = buildHud();
       document.documentElement.classList.add('brawl-on');
-      addEventListener('keydown', onKey, true); addEventListener('keyup', onKey, true); addEventListener('keydown', onShift, true);
+      addEventListener('keydown', onKey, true); addEventListener('keyup', onKey, true);
       menu();
     },
     // Each frame, after the game's own camera (game/arcade.js).

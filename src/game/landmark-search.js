@@ -43,6 +43,15 @@ export const LANDMARK_SEARCH = [
   { type: 'naksanpin', icon: '⛰️', go: [0, 0], // Naksan Park, on the hill inside the city wall
     name: { en: 'Naksan Park (Seoul City Wall)', ko: '낙산공원 (한양도성)', ja: '駱山公園（漢陽都城）', zh: '骆山公园（汉阳都城）' },
     also: ['Naksan', 'City Wall', 'Seoul City Wall', 'Hanyangdoseong', '낙산', '성곽길', '한양도성', '駱山', '骆山'] },
+  // The temples: at the way in, between the first gate and the next (not in
+  // the yard or at a hall's door: you walk in through the gates; the same
+  // spot as their hall's "go" in stores.json).
+  { type: 'bongeunsa', icon: '🪷', go: [17.7, 46.8], // inside Iljumun, in front of Jinyeomun
+    name: { en: 'Bongeunsa Temple', ko: '봉은사', ja: '奉恩寺（ボンウンサ）', zh: '奉恩寺' },
+    also: ['Bongeunsa', 'Temple', '절', '사찰', 'お寺', '寺庙'] },
+  { type: 'jogyesa', icon: '🪷', go: [23.6, 2.5], // just inside Iljumun, off Ujeongguk-ro
+    name: { en: 'Jogyesa Temple', ko: '조계사', ja: '曹渓寺（チョゲサ）', zh: '曹溪寺' },
+    also: ['Jogyesa', 'Temple', '절', '사찰', 'お寺', '寺庙'] },
   { type: 'peacegate', icon: '⛩️', go: [0, 12],
     name: { en: 'World Peace Gate', ko: '평화의 문', ja: '平和の門', zh: '和平之门' },
     also: ['Peace Gate', '평화의문'] },

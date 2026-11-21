@@ -16,6 +16,7 @@ import * as THREE from 'three';
 import { matCache, canvasTex } from './three-kit.js';
 import { makeZooAnimal, ZOO_LOOKS, foldWings, SNAKE } from './zoo-animals.js';
 import { hallMurals } from './zoo-murals.js';
+import { MIX, leafHex, leafHash } from './season.js';
 
 const mat = matCache();
 const AWAKE = 80;
@@ -361,7 +362,7 @@ function buildProps(g, pen) {
     } else if (kind === 'tree') {
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 3, 7), mat('#7a5434'));
       trunk.position.y = 1.5;
-      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 1), new THREE.MeshLambertMaterial({ color: '#5fa04e', flatShading: true }));
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2, 1), new THREE.MeshLambertMaterial({ color: leafHex('#5fa04e', leafHash(x, z), MIX.park), flatShading: true })); // (the season's colours, core/season.js)
       crown.position.y = 4;
       p.add(trunk, crown);
     } else continue;

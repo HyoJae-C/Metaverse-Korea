@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME, FINALE_TIME,
-  KINDS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
+  KINDS, COLORS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
 } from '../src/core/fireworks-show.js';
 import { droneShowAt } from '../src/core/drone-show.js';
 import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
@@ -113,4 +113,18 @@ test('built like a festival: stacked clusters, fans on the water, a beat every m
   const swept = a.filter((x, i) => x.kind !== 'fan' && i > 0 && a[i - 1].kind === x.kind && Math.abs(x.t - a[i - 1].t - 0.14) < 0.011).length;
   assert.ok(swept > 100, `${swept} shells in sweeps along the river`);
   assert.ok(a.slice(0, 3).every((x) => x.kind === 'willow') && new Set(a.slice(0, 3).map((x) => x.barge)).size === 3, 'curtain up: a willow from each barge');
+});
+
+test('the three acts differ: act 1 warm and low, act 2 cool and higher, act 3 every colour over the widest range', () => {
+  const warm = ['#ff4d5e', '#ff9a3c', '#ffd34d', '#ff7ae0', '#ff7a5c', '#ffffff'];
+  const of = (t0, t1) => { const h = [], c = {}; for (let d = 0; d < 8; d++) for (const b of program(1.8e12 + d * 6 * 3600e3)) if (b.t >= t0 && b.t < t1 && !['fan', 'small', 'willow', 'kamuro'].includes(b.kind)) { h.push(b.h); c[b.color] = (c[b.color] || 0) + 1; } h.sort((a, b) => a - b); return { h, c, med: h[h.length >> 1], n: h.length }; };
+  const a1 = of(70, 150), a2 = of(168, 235), a3 = of(270, 330);
+  const share = (a, list) => list.reduce((s, k) => s + (a.c[k] || 0), 0) / a.n;
+  assert.ok(share(a1, warm) > 0.9, `act 1 is warm (${share(a1, warm).toFixed(2)})`);
+  assert.ok(share(a2, warm.slice(0, 5)) < 0.1, `act 2 is cool (${share(a2, warm.slice(0, 5)).toFixed(2)})`);
+  assert.equal(Object.keys(a3.c).length, COLORS.length, 'act 3 uses every colour');
+  assert.ok(a2.med > a1.med + 10, `act 2 opens higher than act 1 (${a1.med.toFixed(0)} → ${a2.med.toFixed(0)} m)`);
+  const range = (a) => a.h[Math.floor(a.n * 0.9)] - a.h[Math.floor(a.n * 0.1)];
+  assert.ok(range(a3) > range(a1) + 10, `act 3 spans more height than act 1 (${range(a1).toFixed(0)} → ${range(a3).toFixed(0)} m)`);
+  assert.ok(a3.h.at(-1) < 110, 'nothing so high it leaves the view');
 });

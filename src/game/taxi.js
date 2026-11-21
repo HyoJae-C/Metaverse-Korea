@@ -202,8 +202,11 @@ export function createTaxi(game) {
     p.append(actions);
     p.hidden = false;
   }
-  function goAlone(dest, fx, fz, fare) {
-    if (!game.wallet.spend(fare, { k: 'ledger.taxi' })) { shop.toast(t('taxi.noCoins', { n: won(fare) })); return; }
+  // The map closes when you pick a place, so the "Spend ₩…?" question
+  // (game/spend-ask.js) can't play that tap again: ask here, pay on OK.
+  function goAlone(dest, fx, fz, fare, agreed = false) {
+    if (!agreed) { game.wallet.confirm(fare, { k: 'ledger.taxi' }, () => goAlone(dest, fx, fz, fare, true)); return; }
+    if (!game.wallet.spend(fare, { k: 'ledger.taxi' }, { ask: false })) { shop.toast(t('taxi.noCoins', { n: won(fare) })); return; }
     refreshWallet();
     ride({ fx, fz, tx: dest.x, tz: dest.z, label: dest.label, guide: dest.guide, fare });
   }
@@ -216,7 +219,10 @@ export function createTaxi(game) {
     host.timer = setInterval(() => {
       if (!host) return;
       if (Date.now() < host.until) { drawHost(); return; }
-      if (host.h.plan().guests.some((g) => !g.pays)) { clearInterval(host.timer); host.until = 0; drawHost(); } else leaveNow();
+      // (time up: stop the clock first, so a "no" to the fare question
+      // leaves the panel with its Go / Cancel instead of asking again)
+      clearInterval(host.timer); host.until = 0; drawHost();
+      if (!host.h.plan().guests.some((g) => !g.pays)) leaveNow();
     }, 500);
     drawHost();
   }
@@ -244,12 +250,13 @@ export function createTaxi(game) {
     if (was) for (const id of was.h.riders.keys()) send('drop', id, was.h.trip);
     closePanel();
   }
-  function leaveNow() {
+  function leaveNow(agreed = false) {
     const was = host;
     if (!was) return;
     const { h, dest, fx, fz } = was;
     const plan = h.plan();
-    if (!game.wallet.spend(plan.host, { k: 'ledger.taxi' })) { shop.toast(t('taxi.noCoins', { n: won(plan.host) })); return; }
+    if (agreed !== true) { game.wallet.confirm(plan.host, { k: 'ledger.taxi' }, () => { if (host === was) leaveNow(true); }); return; }
+    if (!game.wallet.spend(plan.host, { k: 'ledger.taxi' }, { ask: false })) { shop.toast(t('taxi.noCoins', { n: won(plan.host) })); return; }
     stopHost();
     refreshWallet();
     for (const id of h.asked.keys()) if (!h.riders.has(id)) send('drop', id, h.trip);
@@ -313,7 +320,8 @@ export function createTaxi(game) {
         const g = guest;
         endGuest();
         let pays = Math.max(0, m.a | 0);
-        if (pays && !game.wallet.spend(pays, { k: 'ledger.taxi' })) { send('short', from, g.trip, pays); pays = 0; }
+        // (No question: they already said yes to the shared ride.)
+        if (pays && !game.wallet.spend(pays, { k: 'ledger.taxi' }, { ask: false })) { send('short', from, g.trip, pays); pays = 0; }
         if (!pays) shop.toast(st('treated', { name }));
         refreshWallet();
         const [rx, rz] = taxiDropOff(g.x, g.z);

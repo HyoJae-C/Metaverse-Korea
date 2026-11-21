@@ -3,6 +3,9 @@
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
+import { SHOP_FURNITURE } from './furniture-shop.js';
+import { TANKS, buildTank } from './fish-tank-pieces.js';
+import { photoOfFrame } from './ride-photos.js';
 
 const mat = matCache();
 
@@ -130,79 +133,109 @@ const LAMPS = [
   }],
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
+// The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
+const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 } };
+export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
+export const TANK_IDS = TANKS.map((t) => [t.id, t.emoji, t.name]);
 
 export const FURNITURE = [
-  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], name: { en: 'Bed', ko: '침대', ja: 'ベッド', zh: '床' },
+  // The free basics every home starts with are worn hand-me-downs: faded,
+  // stained, patched and a little crooked, so the furniture shops on
+  // Euljiro have something to replace (Yozi 2026-11-16). Ids stay the same,
+  // so rooms already decorated keep their pieces.
+  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], lie: 2, name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
     build(g) {
-      box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#c9a27a');
-      box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#ffffff');
-      box(g, 1.5, 0.05, 1.3, 0, 0.5, 0.33, '#9cc8e8'); // blanket
-      box(g, 0.6, 0.12, 0.35, -0.35, 0.56, -0.75, '#fff6e6');
-      box(g, 0.6, 0.12, 0.35, 0.35, 0.56, -0.75, '#fff6e6');
-      box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#a07850'); // headboard
+      box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#a99278');
+      box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#e8e2d4'); // yellowed mattress
+      box(g, 1.5, 0.05, 1.3, 0, 0.5, 0.33, '#9fb0b8'); // faded blanket
+      box(g, 0.32, 0.055, 0.3, 0.42, 0.5, 0.55, '#c9a46a'); // a patch sewn on
+      box(g, 0.6, 0.1, 0.35, -0.3, 0.55, -0.75, '#e6dcc6'); // flat pillow
+      box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#8a6e52'); // headboard
+      box(g, 0.5, 0.04, 0.11, 0.5, 0.62, -1.03, '#6e5640').rotation.z = 0.2; // a cracked board
     } },
-  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: true, name: { en: 'Sofa', ko: '소파', ja: 'ソファ', zh: '沙发' },
+  { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: 2, name: { en: 'Old sofa', ko: '낡은 소파', ja: '古いソファ', zh: '旧沙发' },
     build(g) {
-      box(g, 1.8, 0.38, 0.8, 0, 0.19, 0, '#e58f7a');
-      box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#e58f7a');
-      for (const s of [-1, 1]) box(g, 0.18, 0.5, 0.8, 0.81 * s, 0.33, 0, '#d97a65');
+      box(g, 1.8, 0.36, 0.8, 0, 0.18, 0, '#b3877a');
+      box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#b3877a');
+      for (const s of [-1, 1]) box(g, 0.18, 0.5, 0.8, 0.81 * s, 0.33, 0, '#9e766a');
+      box(g, 0.5, 0.03, 0.45, -0.4, 0.37, 0.05, '#8c9c7a'); // a mismatched patch
+      box(g, 0.08, 0.06, 0.08, 0.5, 0.39, 0.1, '#e8dcc0'); // stuffing poking out
+      box(g, 0.3, 0.012, 0.22, 0.35, 0.367, -0.05, '#8f6a5e'); // a stain
     } },
-  { id: 'chair', emoji: '🪑', size: [0.5, 0.5], seat: true, name: { en: 'Chair', ko: '의자', ja: '椅子', zh: '椅子' },
+  { id: 'chair', emoji: '🪑', size: [0.5, 0.5], seat: true, name: { en: 'Creaky chair', ko: '삐걱이는 의자', ja: 'きしむ椅子', zh: '吱呀作响的椅子' },
     build(g) {
-      box(g, 0.45, 0.06, 0.45, 0, 0.35, 0, '#e9b97a');
-      box(g, 0.45, 0.5, 0.06, 0, 0.62, -0.2, '#e9b97a');
-      for (const x of [-0.18, 0.18]) for (const z of [-0.18, 0.18]) box(g, 0.05, 0.33, 0.05, x, 0.16, z, '#8a5a3a');
+      box(g, 0.45, 0.06, 0.45, 0, 0.35, 0, '#c4a37e');
+      box(g, 0.45, 0.5, 0.06, 0, 0.62, -0.2, '#c4a37e').rotation.z = 0.05; // leans a little
+      for (const x of [-0.18, 0.18]) for (const z of [-0.18, 0.18]) box(g, 0.05, 0.33, 0.05, x, 0.16, z, '#7a5a40');
+      box(g, 0.07, 0.08, 0.07, 0.18, 0.12, 0.18, '#d8c8a0'); // taped-up leg
     } },
-  { id: 'table', emoji: '🍽️', size: [1.2, 0.8], name: { en: 'Table', ko: '테이블', ja: 'テーブル', zh: '桌子' },
+  { id: 'table', emoji: '🍽️', size: [1.2, 0.8], name: { en: 'Wobbly table', ko: '흔들리는 테이블', ja: 'ぐらつくテーブル', zh: '摇晃的桌子' },
     build(g) {
-      box(g, 1.2, 0.06, 0.8, 0, 0.62, 0, '#c98b4f');
-      for (const x of [-0.52, 0.52]) for (const z of [-0.32, 0.32]) box(g, 0.07, 0.6, 0.07, x, 0.3, z, '#8a5a3a');
+      box(g, 1.2, 0.06, 0.8, 0, 0.62, 0, '#a8866a');
+      for (const x of [-0.52, 0.52]) for (const z of [-0.32, 0.32]) box(g, 0.07, 0.6, 0.07, x, 0.3, z, '#7a5a40');
+      box(g, 0.12, 0.04, 0.1, 0.52, 0.02, 0.32, '#e8e0cc'); // folded paper under one leg
+      for (const [x, z] of [[-0.3, 0.1], [0.2, -0.15]]) box(g, 0.16, 0.004, 0.16, x, 0.652, z, '#8f6f55'); // cup rings
     } },
-  { id: 'desk', emoji: '💻', size: [1.2, 0.6], name: { en: 'Desk', ko: '책상', ja: '机', zh: '书桌' },
+  { id: 'desk', emoji: '💻', size: [1.2, 0.6], name: { en: 'Old desk', ko: '낡은 책상', ja: '古い机', zh: '旧书桌' },
     build(g) {
-      box(g, 1.2, 0.06, 0.6, 0, 0.68, 0, '#f2efe8');
-      for (const s of [-1, 1]) box(g, 0.06, 0.66, 0.58, 0.56 * s, 0.33, 0, '#d9d4c8');
-      box(g, 0.45, 0.03, 0.3, 0, 0.72, 0.05, '#4a4f5a'); // laptop
+      box(g, 1.2, 0.06, 0.6, 0, 0.68, 0, '#ddd6c6');
+      for (const s of [-1, 1]) box(g, 0.06, 0.66, 0.58, 0.56 * s, 0.33, 0, '#c4bcaa');
+      box(g, 0.45, 0.03, 0.3, 0, 0.72, 0.05, '#4a4f5a'); // an old laptop
       box(g, 0.45, 0.3, 0.02, 0, 0.87, -0.1, '#4a4f5a');
+      box(g, 0.22, 0.004, 0.1, -0.38, 0.712, 0.12, '#7aa0c8'); // stickers
+      box(g, 0.12, 0.004, 0.12, -0.42, 0.712, -0.08, '#e8a0a0');
     } },
-  { id: 'shelf', emoji: '📚', size: [1.0, 0.35], name: { en: 'Bookshelf', ko: '책장', ja: '本棚', zh: '书架' },
+  { id: 'shelf', emoji: '📚', size: [1.0, 0.35], name: { en: 'Old bookshelf', ko: '낡은 책장', ja: '古い本棚', zh: '旧书架' },
     build(g) {
-      box(g, 1.0, 1.6, 0.35, 0, 0.8, 0, '#a07850');
-      const colors = ['#e0604d', '#4f8fc0', '#f2c14e', '#6bb38a', '#9b7ad1'];
+      box(g, 1.0, 1.6, 0.35, 0, 0.8, 0, '#8a6e52');
+      const colors = ['#b87a6e', '#7d93a8', '#c9b07a', '#8aa08e', '#998aa8'];
       for (let r = 0; r < 3; r++) for (let i = 0; i < 6; i++) {
-        box(g, 0.1, 0.32, 0.25, -0.33 + i * 0.13, 0.3 + r * 0.5, 0.06, colors[(i + r) % colors.length]);
+        if ((i + r * 2) % 5 === 4) continue; // a few gaps
+        const b = box(g, 0.1, 0.32, 0.25, -0.33 + i * 0.13, 0.3 + r * 0.5, 0.06, colors[(i + r) % colors.length]);
+        if ((i + r) % 4 === 3) b.rotation.z = 0.25; // a book leaning over
       }
     } },
-  { id: 'tv', emoji: '📺', size: [1.2, 0.45], name: { en: 'TV stand', ko: 'TV', ja: 'テレビ', zh: '电视' },
+  { id: 'tv', emoji: '📺', size: [1.2, 0.45], name: { en: 'Old TV', ko: '낡은 TV', ja: '古いテレビ', zh: '旧电视' },
     build(g) {
-      box(g, 1.2, 0.45, 0.45, 0, 0.23, 0, '#f2efe8');
-      box(g, 1.1, 0.62, 0.05, 0, 0.82, -0.05, '#22252b');
-      box(g, 1.02, 0.54, 0.01, 0, 0.82, -0.02, '#3d5a80');
+      box(g, 1.2, 0.45, 0.45, 0, 0.23, 0, '#ddd6c6');
+      box(g, 1.1, 0.62, 0.05, 0, 0.82, -0.05, '#2b2c30');
+      box(g, 1.02, 0.54, 0.01, 0, 0.82, -0.02, '#56606e'); // a dim screen
+      box(g, 0.5, 0.012, 0.004, 0.18, 0.95, -0.013, '#8a929e').rotation.z = -0.5; // a crack
     } },
-  { id: 'lamp', emoji: '💡', size: [0.4, 0.4], name: { en: 'Floor lamp', ko: '스탠드', ja: 'ランプ', zh: '落地灯' },
+  { id: 'lamp', emoji: '💡', size: [0.4, 0.4], name: { en: 'Old floor lamp', ko: '낡은 스탠드', ja: '古いフロアランプ', zh: '旧落地灯' },
     build(g) {
       box(g, 0.35, 0.04, 0.35, 0, 0.02, 0, '#4a3f35');
       box(g, 0.04, 1.4, 0.04, 0, 0.72, 0, '#4a3f35');
       const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 0.3, 14),
-        new THREE.MeshBasicMaterial({ color: '#ffe9b8' }));
-      shade.position.y = 1.5;
+        new THREE.MeshBasicMaterial({ color: '#e8d6a8' })); // a yellowed shade
+      shade.position.set(0.03, 1.5, 0);
+      shade.rotation.z = -0.18; // sits crooked
       g.add(shade);
     } },
-  { id: 'plant', emoji: '🪴', size: [0.5, 0.5], name: { en: 'Plant', ko: '화분', ja: '観葉植物', zh: '盆栽' },
+  { id: 'plant', emoji: '🪴', size: [0.5, 0.5], name: { en: 'Droopy plant', ko: '시든 화분', ja: 'しおれた鉢植え', zh: '蔫了的盆栽' },
     build(g) {
-      box(g, 0.4, 0.4, 0.4, 0, 0.2, 0, '#c98b4f');
-      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 1), mat('#8fcf7a'));
-      leaf.position.y = 0.85;
+      box(g, 0.4, 0.4, 0.4, 0, 0.2, 0, '#a8866a');
+      const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), mat('#a8b86a'));
+      leaf.position.set(0.06, 0.74, 0);
+      leaf.scale.set(1, 0.75, 1); // drooping
       g.add(leaf);
+      box(g, 0.08, 0.02, 0.06, 0.24, 0.41, 0.12, '#b89a5a'); // a fallen leaf
     } },
-  { id: 'rug', emoji: '🟫', size: [2.0, 1.4], walkable: true, name: { en: 'Rug', ko: '러그', ja: 'ラグ', zh: '地毯' },
+  { id: 'rug', emoji: '🟫', size: [2.0, 1.4], walkable: true, name: { en: 'Worn rug', ko: '닳은 러그', ja: 'すり切れたラグ', zh: '磨旧的地毯' },
     build(g) {
-      box(g, 2.0, 0.02, 1.4, 0, 0.012, 0, '#e6c9a8');
-      box(g, 1.7, 0.022, 1.1, 0, 0.014, 0, '#d9a066');
+      box(g, 2.0, 0.02, 1.4, 0, 0.012, 0, '#cdb89e');
+      box(g, 1.7, 0.022, 1.1, 0, 0.014, 0, '#b89a78');
+      box(g, 0.5, 0.024, 0.35, 0.35, 0.015, 0.1, '#c8b49a'); // a bare patch
     } },
   // Lamps from the lighting shops on Cheonggyecheon-ro (stores.json
   // "furniture"): only once you've bought one. Shades glow (unlit material).
   ...LAMPS.map(([id, emoji, size, name, build]) => ({ id, emoji, item: id, size, name, build })),
+  // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
+  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
+    build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
+  // Fish tanks from the KONEXT Aquarium shop (core/fish-tank.js): only once
+  // bought; any home takes any tank that fits the room (Yozi 2026-11-18).
+  ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
@@ -252,17 +285,142 @@ export const FURNITURE = [
     } },
 ];
 
-export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);
+// A ride photo in a frame (core/ride-photos.js): 'ph:<photo id>', made on
+// demand. Its picture comes from setPhotoSrc (my own photos, or the ones a
+// host sends to visitors); until then the print is blank.
+const PHOTO_NAME = { en: 'Jelly Flume photo', ko: '젤리 후룸라이드 사진', ja: 'ゼリー・フルームの写真', zh: '果冻激流勇进照片' };
+const photoSrcs = new Map(), photoTex = new Map(), photoDefs = new Map();
+export function setPhotoSrc(id, src) {
+  if (!id || !src || photoSrcs.get(id) === src) return false;
+  photoSrcs.set(id, src);
+  photoTex.get(id)?.dispose();
+  photoTex.delete(id);
+  return true;
+}
+export const hasPhotoSrc = (id) => photoSrcs.has(id);
+function photoMat(id) {
+  const src = photoSrcs.get(id);
+  if (!src) return mat('#efe9dc');
+  if (!photoTex.has(id)) {
+    const tex = new THREE.TextureLoader().load(src);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    photoTex.set(id, new THREE.MeshBasicMaterial({ map: tex }));
+  }
+  return photoTex.get(id);
+}
+function photoFrame(fid) {
+  const pid = photoOfFrame(fid);
+  if (!pid) return null;
+  if (!photoDefs.has(fid)) photoDefs.set(fid, { id: fid, emoji: '🖼️', size: [0.42, 0.24], name: PHOTO_NAME, photo: pid,
+    // A wooden frame on a little stand, the print with a white film border, leaning back a little.
+    build(g) {
+      const f = new THREE.Group();
+      f.position.set(0, 0.2, 0.02);
+      f.rotation.x = -0.14;
+      g.add(f);
+      box(f, 0.4, 0.32, 0.03, 0, 0, 0, '#7a4f2e');
+      box(f, 0.35, 0.27, 0.005, 0, 0, 0.017, '#fbf8f1'); // the print's white border
+      const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.2325), photoMat(pid));
+      pic.position.set(0, 0.008, 0.021);
+      f.add(pic);
+      box(g, 0.04, 0.3, 0.03, 0, 0.15, -0.09, '#7a4f2e').rotation.x = 0.35; // the stand at the back
+      box(g, 0.34, 0.02, 0.07, 0, 0.01, 0.02, '#6a4226'); // the foot
+    } });
+  return photoDefs.get(fid);
+}
 
-export function buildFurniture(id) {
+export const furnitureById = (id) => FURNITURE.find((f) => f.id === id) || photoFrame(id);
+
+// Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
+// shape interiors use (main.js sitDown). Long sofas and benches seat two side
+// by side, a bed lies two (Yozi 2026-11-16), floor cushions sit on the floor.
+export function furnitureSeats(it) {
+  const f = furnitureById(it.id);
+  const n = f?.lie || f?.seat;
+  if (!n) return [];
+  const [w, d] = f.size, c = Math.cos(it.ry), s = Math.sin(it.ry);
+  const at = (lx, lz) => [it.x + lx * c + lz * s, it.z - lx * s + lz * c]; // the piece's own x (right) and z (front)
+  const xs = n === 2 ? [-w / 4, w / 4] : [0];
+  // Head on the pillow at the back. A bed often stands against a wall, so
+  // both places are offered from either side or the foot (reach), and you
+  // get up at the foot, never on the wall side.
+  if (f.lie) return xs.map((lx) => {
+    const [x, z] = at(lx, 0.15);
+    return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6, stand: at(lx, d / 2 + 0.55) };
+  });
+  return xs.map((lx) => {
+    const [x, z] = at(lx, 0.05);
+    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}) };
+  });
+}
+
+// Lamps can be switched off (Yozi 2026-11-16): their glowing parts dim.
+export const isLamp = (id) => id === 'lamp' || id.startsWith('lamp-');
+const dimmed = new Map();
+const dim = (m) => {
+  if (!dimmed.has(m)) { const d = m.clone(); d.color.multiplyScalar(0.32); dimmed.set(m, d); }
+  return dimmed.get(m);
+};
+export function buildFurniture(id, { off = false } = {}) {
   const def = furnitureById(id);
   const g = new THREE.Group();
   def?.build(g);
+  if (off && isLamp(id)) g.traverse((o) => { if (o.isMesh && o.material?.isMeshBasicMaterial) o.material = dim(o.material); });
   return g;
 }
 
-// Collision polygon for a placed piece, or null for walkable ones (rugs).
+// Small things can stand on a table, desk or chest (Yozi 2026-11-16): the
+// tops (height in metres) and the pieces small enough to go on them.
+export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7 };
+const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
+  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae']);
+export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);
+// The piece's place in a surface's own frame (x right, z front).
+const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };
+// What a small piece at its x, z would stand on: { on, y } for the highest
+// top under its middle, or null (the floor).
+export function topUnder(item, items) {
+  if (!isSmall(item.id)) return null;
+  let best = null;
+  for (const o of items) {
+    if (o === item || o.y || !(o.id in TOPS)) continue;
+    const [w, d] = furnitureById(o.id).size, [lx, lz] = localTo(o, item.x, item.z);
+    if (Math.abs(lx) <= w / 2 - 0.08 && Math.abs(lz) <= d / 2 - 0.06 && (!best || TOPS[o.id] > best.y)) best = { on: o, y: TOPS[o.id] };
+  }
+  return best;
+}
+// The small pieces standing on a surface, in its own frame (they go with it
+// when it's carried or turned).
+export function ridersOf(surface, items) {
+  return items.filter((i) => i.y && topUnder(i, [surface])?.on === surface).map((it) => { const [lx, lz] = localTo(surface, it.x, it.z); return { it, lx, lz, dry: it.ry - surface.ry }; });
+}
+export function placeRiders(surface, riders) {
+  const c = Math.cos(surface.ry), s = Math.sin(surface.ry);
+  for (const r of riders) {
+    r.it.x = surface.x + r.lx * c + r.lz * s;
+    r.it.z = surface.z - r.lx * s + r.lz * c;
+    r.it.ry = surface.ry + r.dry;
+  }
+}
+
+// The footprint of a placed piece (null for walkable ones: rugs).
+function piecePoly(item) {
+  const def = furnitureById(item.id);
+  if (!def || def.walkable) return null;
+  const [w, d] = def.size;
+  const c = Math.cos(item.ry), s = Math.sin(item.ry);
+  return { p: [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]) };
+}
+// True when a piece pokes through a wall of a w × d room (Yozi 2026-11-18:
+// any tank goes in any home it fits).
+export function outsideRoom(item, w, d) {
+  const me = piecePoly(item);
+  return !!me && me.p.some(([x, z]) => Math.abs(x) > w / 2 - 0.02 || Math.abs(z) > d / 2 - 0.02);
+}
+// Collision polygon for a placed piece, or null for walkable ones (rugs) and
+// things standing on a table (the table blocks you already).
 export function furnitureCollider(item) {
+  if (item.y) return null;
   const def = furnitureById(item.id);
   if (!def || def.walkable) return null;
   const [w, d] = def.size;
@@ -270,4 +428,52 @@ export function furnitureCollider(item) {
   const p = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]]
     .map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]);
   return { p };
+}
+
+// Do two convex polygons overlap? (separating axis test; touching edges don't count)
+function polysOverlap(a, b) {
+  for (const poly of [a, b]) {
+    for (let i = 0; i < poly.length; i++) {
+      const [x1, z1] = poly[i], [x2, z2] = poly[(i + 1) % poly.length];
+      const nx = z1 - z2, nz = x2 - x1;
+      const proj = (p) => p.map(([x, z]) => x * nx + z * nz);
+      const pa = proj(a), pb = proj(b);
+      if (Math.max(...pa) <= Math.min(...pb) + 1e-6 || Math.max(...pb) <= Math.min(...pa) + 1e-6) return false;
+    }
+  }
+  return true;
+}
+
+// Is this piece blocked: by another solid piece, or by someone standing at
+// `who` ({ x, z }, about 0.6 m wide)? Rugs never block and are never blocked.
+// Room kept round a player when a piece is placed, carried or turned.
+export const WHO_R = 0.45;
+export function pieceBlocked(item, others, who = null) {
+  const me = piecePoly(item), lvl = item.y || 0;
+  if (!me) return false;
+  // Pieces only bump into pieces at the same height: the floor, or the same top.
+  if (others.some((o) => o !== item && o.id !== item.id && (o.y || 0) === lvl && piecePoly(o) && polysOverlap(me.p, piecePoly(o).p))) return true;
+  if (who && !lvl) {
+    const r = WHO_R; // (a little more than a player's radius, 0.35: a piece set down against you mustn't overlap you)
+    if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;
+  }
+  return false;
+}
+
+// A first home isn't an empty floor: the room starts with a few basics
+// (a bed in the back corner, a sofa facing the TV on a rug, a plant, a lamp
+// and a little table). Positions are for a room w × d (metres, door at +z),
+// kept clear of the door. Only used the very first time a home is opened.
+export function starterLayout(w, d) {
+  const L = -w / 2, R = w / 2, B = -d / 2;
+  return [
+    { id: 'rug', x: 0, z: B + 2.6, ry: 0 },
+    { id: 'tv', x: 0, z: B + 0.45, ry: 0 },
+    { id: 'sofa', x: 0, z: B + 3.6, ry: Math.PI },
+    { id: 'bed', x: L + 1.2, z: B + 1.25, ry: 0 },
+    { id: 'lamp', x: L + 2.45, z: B + 0.4, ry: 0 },
+    { id: 'plant', x: R - 0.5, z: B + 0.5, ry: 0 },
+    { id: 'table', x: R - 1.4, z: B + 3.2, ry: 0 },
+    { id: 'chair', x: R - 1.4, z: B + 4.0, ry: Math.PI },
+  ];
 }

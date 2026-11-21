@@ -1,5 +1,7 @@
 // The Cotton Candy Express's sense of speed, lent to Modu Land's swing
-// ride, drop tower and gyro swing: the same numbers (coaster.js rideFx: a wider view
+// ride, drop tower and gyro swing up on the island, and the pirate ship, the
+// log flume, the train, the carousel and the teacups underground (the gentle
+// three get only a breeze: park-rides.js GENTLE_K): the same numbers (coaster.js rideFx: a wider view
 // and a shake that grow with the speed, a narrow view while it climbs and
 // holds) and the same overlay and sounds (ui/coaster-fx.js: speed lines,
 // the dark edge, cotton candy bits, the lift's clack, the heartbeat at the
@@ -7,15 +9,20 @@
 // park-rides.js rideSpeed(). main.js calls update() after the ride camera
 // has placed the view.
 import { rideFx } from '../core/coaster.js';
-import { rideSpeed } from '../core/park-rides.js';
+import { rideSpeed, vikingAngle, gyroAngle } from '../core/park-rides.js';
 
-export const THRILL_RIDES = new Set(['swing', 'drop', 'gyro']);
+const rideAngle = (kind, now) => (kind === 'viking' ? vikingAngle(now) : gyroAngle(now));
+
+export const THRILL_RIDES = new Set(['swing', 'drop', 'gyro', 'viking', 'flume', 'train', 'carousel', 'teacups']);
 const BASE_FOV = 62;
+// The bits flying past: cotton candy pink, but spray on the water and gold
+// sparkles round the carousel.
+const BITS = { flume: '#d6f1ff', viking: '#ffffff', carousel: '#ffe27a' };
 
 export function createRideThrill({ camera, fx: overlay }) {
-  let on = false, fov = BASE_FOV, t = 0, lag = 0;
+  let on = false, fov = BASE_FOV, t = 0, lag = 0, swingSide = 0, swings = 0;
   return {
-    start(scene) { on = true; fov = camera.fov; t = 0; lag = 0; overlay.start(scene); },
+    start(scene, kind) { on = true; fov = camera.fov; t = 0; lag = 0; swingSide = 0; swings = 0; overlay.start(scene, BITS[kind]); },
     stop() {
       if (!on) return;
       on = false;
@@ -39,6 +46,15 @@ export function createRideThrill({ camera, fx: overlay }) {
       // above you as you fall away from it, and catches up in the brakes.
       lag += ((kind === 'drop' && sp.phase === 'drop' ? sp.v * 0.06 : 0) - lag) * Math.min(1, dt * 5);
       camera.position.y += lag * (soft ? 0.5 : 1);
+      // The pirate ship and the gyro swing: a whoosh each time you sweep
+      // through the bottom fast, and screams on every other big swing.
+      if ((kind === 'viking' || kind === 'gyro') && sp.phase !== 'board' && sp.phase !== 'unload') {
+        const side = Math.sign(rideAngle(kind, now));
+        if (side && side !== swingSide) {
+          if (swingSide && sp.k > 0.55) { overlay.whoosh(); if (++swings % 2 === 0) overlay.scream(); }
+          swingSide = side;
+        }
+      }
       fov += (fx.fov - fov) * Math.min(1, dt * (sp.phase === 'drop' ? 6 : 3));
       if (Math.abs(camera.fov - fov) > 0.05) { camera.fov = fov; camera.updateProjectionMatrix(); }
       overlay.update(dt, { fx, k: sp.k, v: sp.v, phase: sp.phase, camera, tunnel: false });

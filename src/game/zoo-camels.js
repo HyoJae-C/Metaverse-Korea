@@ -14,6 +14,8 @@ export const REACH = 3; // m from the kneeling camel to get on
 const SIT = 0.28; // m from a sitting person's feet line (their root) up to the seat
 export const LEAD = { ahead: 1.45, side: 0.85 }; // m: where the keeper walks, from the camel (at its head, on its left)
 const KEEPER_LOOK = { shirt: 'leaf', pants: 'olive', head: 'bucket-cream' };
+export const CAMEL_PACE = 1.5; // m/s: PACE in core/zoo-camel-ride.js (not imported: that loads with the zoo's room)
+export const KEEPER_STEP = 0.4; // the keeper's walk animation at the camel's full pace (character speed01: over 0.55 is a run)
 const KEEPER_VIEW = 45; // m: a keeper further off isn't drawn (unless it's leading you)
 
 // Where camel i's keeper is, from the camel's place and heading: { x, z, ry }.
@@ -98,7 +100,7 @@ export function createZooCamels(game) {
         const s = keeperSpot(root.position.x, root.position.z, root.rotation.y, st.phase === 'load');
         o.position.set(s.x, 0, s.z);
         o.rotation.y = s.ry;
-        k.npc.ch.animate?.(dt, st.speed);
+        k.npc.ch.animate?.(dt, KEEPER_STEP * Math.min(1, st.speed / CAMEL_PACE)); // walking beside it, not running (the camel's speed is m/s, not speed01)
         hand.set(s.x - Math.cos(s.ry) * 0.25, 0.85, s.z + Math.sin(s.ry) * 0.25); // (the hand nearer the camel)
         c.a.head.getWorldPosition(muzzle);
         k.rope.geometry.setFromPoints([hand, muzzle]);
@@ -118,6 +120,21 @@ export function createZooCamels(game) {
     // On a camel: get off (here, or back at the stand).
     offAct() { return { key: 'zoocamel-off', label: '🐪 ' + game.t('zoocamel.off'), run: () => getOff(false) }; },
     riding: () => mine() >= 0,
+    // What others need to see us on our camel: which one (cm: camel + 1).
+    state(st) { const i = mine(); if (i >= 0) st.cm = i + 1; },
+    // Someone else riding (their cm): on that camel's saddle on our screen,
+    // every frame. Their sent spot trails or runs ahead of the camel here
+    // (network delay, the smoothing's look-ahead, clocks a little apart),
+    // which put them on its neck; the camel itself is on our clock, so
+    // the saddle is where they really sit. (q: their entry in others)
+    placePeer(q) {
+      const i = (q.target?.cm | 0) - 1, r = ride();
+      if (!r || i < 0 || i >= r.camels.length || !game.here() || !r.camels[i].a.root.visible) return false;
+      const s = r.seat(i), o = q.ch.root;
+      o.position.set(s.x, s.y - SIT, s.z);
+      o.rotation.y = s.ry;
+      return true;
+    },
     // Each frame: carry the rider on the saddle; off at the stand after the lap.
     tick(dt = 0, p = null) {
       this.lead(dt, p);

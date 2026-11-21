@@ -44,7 +44,9 @@ test('the cable car\'s lower station is on the real one by Sopa-ro, and you can 
   assert.ok(station.p.every(([x, z]) => !onNamsan(hill, x - hill.x, z - hill.z)), 'the station is off the hill');
   const sopa = region.links.find((l) => l.n?.en === 'Sopa-ro');
   assert.ok(sopa, 'Sopa-ro leads there');
-  assert.ok(segDist(store.at, sopa.p) < 15, 'the door is by Sopa-ro');
+  assert.ok(segDist(store.at, sopa.p) < 20, 'the door is by Sopa-ro');
+  const path = itaewon.roads.find((r) => r.cc); // (scripts/build-namsan-cable.mjs: a footpath from the road round the bay)
+  assert.ok(path && dist([path.p[0][0] + ox, path.p[0][1] + oz], store.at) < 0.5 && segDist([path.p.at(-1)[0] + ox, path.p.at(-1)[1] + oz], sopa.p) < 0.5, 'a footpath leads from Sopa-ro to the door');
   for (const [x, z] of station.p) assert.ok(segDist([x + ox, z + oz], sopa.p) > sopa.w / 2, 'the station is off the road');
   // Sopa-ro joins Toegye-ro and Sowol-ro.
   for (const n of ['Toegye-ro', 'Sowol-ro']) {
@@ -61,6 +63,41 @@ test('the cable runs up to the real upper station, over the trees', () => {
     const [x, z, y] = cable.path[i];
     assert.ok(y - namsanGround(hill, cable.x + x - hill.x, cable.z + z - hill.z) >= 8, `pylon ${i} high enough`);
   }
+});
+
+test('the hill follows the real ground (scripts/build-namsan-terrain.mjs): level top, foot at the street', () => {
+  const dem = JSON.parse(readFileSync(new URL('../scripts/data/namsan-dem.json', import.meta.url), 'utf8'));
+  assert.match(dem.source, /SRTM/);
+  const { n, k } = hill.dem;
+  assert.equal(k.length, hill.rad.length * (n + 1));
+  for (let i = 0; i < hill.rad.length; i++) { assert.equal(k[i * (n + 1)], 1000); assert.equal(k[i * (n + 1) + n], 0); }
+});
+
+test('the cable car keeps off the city wall trail: its stations at 1/4, two pylons on OSM\'s line', () => {
+  // (scripts/build-namsan-cable.mjs; Yozi 2026-11-19: the old upper station stood on the trail)
+  const L = (p) => [cable.x + ox + p[0], cable.z + oz + p[1]];
+  const H = (p) => [hill.x + ox + p[0], hill.z + oz + p[1]];
+  const trails = [...hill.wtrail.map((r) => ({ p: r.map(H), w: hill.wtrailW })), { p: hill.trail.map(H), w: hill.trailW }];
+  const gap = (q) => Math.min(...trails.map((t) => segDist(q, t.p) - t.w / 2));
+  const top = L(cable.path.at(-1)), low = L(cable.path[0]), a = Math.atan2(top[0] - low[0], top[1] - low[1]);
+  const f = [Math.sin(a), Math.cos(a)], s = [Math.cos(a), -Math.sin(a)];
+  // The upper station (8.4 m across for two cabins, 4.4 m bay and a 1.2 m booth) and its cabins clear every trail.
+  for (const [u, v] of [[-2.2, -4.2], [3.4, -4.2], [3.4, 4.2], [-2.2, 4.2], [0.6, -4.2], [0.6, 4.2]]) {
+    assert.ok(gap([top[0] + f[0] * u + s[0] * v, top[1] + f[1] * u + s[1] * v]) > 0.5, 'the upper station is off the trail');
+  }
+  assert.ok(dist(top, mid(osm.upperStation.slice(0, -1))) < 5, 'the upper station is on the real one');
+  // Two pylons, near OSM's two middle points of the line, each off the trail.
+  const real = osm.cable.map((p) => toGame(...p)).slice(1, -1);
+  assert.equal(cable.path.length, 4);
+  cable.path.slice(1, -1).forEach((p, i) => {
+    const q = L(p);
+    assert.ok(Math.min(...real.map((r) => dist(q, r))) < 5, `pylon ${i + 1} on OSM's line`);
+    assert.ok(gap(q) > 2, `pylon ${i + 1} off the trail`);
+  });
+  assert.ok(Array.isArray(cable.door) && cable.why, 'the upper door, and why it moved');
+  // The lower station is about the real one's size at 1/4, not a big building.
+  const xs = station.p.map((q) => q[0]), zs = station.p.map((q) => q[1]);
+  assert.ok((Math.max(...xs) - Math.min(...xs)) * (Math.max(...zs) - Math.min(...zs)) < 150, 'the ticket hall is small');
 });
 
 test('the hill\'s foot follows the real Namsan outline at 1/4 and keeps off the roads', () => {
@@ -88,4 +125,79 @@ test('the Namsan trail runs from Sowol-ro up to beside the tower', () => {
   assert.ok(Math.hypot(top[0] - hill.px, top[1] - hill.pz) < 30, 'its top is by the tower');
   const sowol = itaewon.roads.find((r) => r.n?.en === 'Sowol-ro');
   assert.ok(segDist(road.p[0], sowol.p) <= sowol.w / 2 + 1, 'it starts on Sowol-ro');
+});
+
+test('Palgakjeong stands on its real spot on the summit, the whole place at 50% (Yozi 2026-11-19), and you walk up onto it', async () => {
+  const { NAMSAN_WALK, PALGAK, palgakStep } = await import('../src/game/namsan-walk.js');
+  const top = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const real = mid(osm.palgakjeong);
+  const at = [top[0] + NAMSAN_WALK.palgak[0], top[1] + NAMSAN_WALK.palgak[1]];
+  assert.ok(dist(at, real) < 1, `${dist(at, real).toFixed(2)} m from the real one (OSM way 1555991263)`);
+  // 50%: the pavilion ~6 m real → ~3 m; the base ~18 m real → ~9 m.
+  assert.ok(Math.abs(PALGAK.colR * 2 - 3.2) < 0.3 && Math.abs(PALGAK.steps[0][0] * 2 - 9.2) < 0.5);
+  // On the plaza: clear of the tower's terrace and inside the railing.
+  const d = Math.hypot(...NAMSAN_WALK.palgak);
+  assert.ok(d - PALGAK.steps[0][0] > NAMSAN_WALK.towerR + 2 && d + PALGAK.steps[0][0] < NAMSAN_WALK.plazaR - 1);
+  // Steps of at most 0.15 m from the plaza up to the floor.
+  let prev = 0;
+  for (let r = 6; r >= 0; r -= 0.05) { const y = palgakStep(r, 0); assert.ok(y - prev <= 0.151, `step at ${r.toFixed(2)}`); prev = y; }
+  assert.equal(palgakStep(0, 0), PALGAK.steps.at(-1)[1]);
+  assert.equal(palgakStep(5, 0), 0);
+});
+
+test('the tower\'s terrace can be walked onto: a step, then the terrace, the foot building the only wall', async () => {
+  const { NAMSAN_TOWER: T } = await import('../src/core/namsan-tower.js');
+  const { NAMSAN_WALK: W, terraceStep } = await import('../src/game/namsan-walk.js');
+  const S = 0.75, sunk = 1; // (the tower is drawn at 0.75, set 1 m into the plaza: core/landmarks.js)
+  const [[rStep, yStep], [rTop, yTop]] = W.terrace;
+  assert.ok(Math.abs(2 * S - sunk - yTop) < 0.01, 'the terrace\'s top');
+  assert.ok(Math.abs(T.step.h * S - sunk - yStep) < 0.01, 'the step\'s top');
+  assert.ok(Math.abs(T.step.r * S - rStep) < 0.05, 'the step\'s edge');
+  assert.ok(rTop <= (13 - (sunk / S) / 2) * S + 0.05 && rTop >= 12 * S, 'the terrace\'s edge at the plaza');
+  let prev = 0;
+  for (let r = 12; r >= 0; r -= 0.05) { const y = terraceStep(r, 0); assert.ok(y - prev <= 0.26, `step at ${r.toFixed(2)}`); prev = y; }
+  assert.ok(W.footR >= 8 * S && W.footR < rTop - 2, 'room to walk round the foot building');
+});
+
+test('the tower is a quarter of the real one\'s OSM heights: the deck 88–112 m, the antenna to 236.7 m', async () => {
+  const { NAMSAN_TOWER: T } = await import('../src/core/namsan-tower.js');
+  // (units of T.unit real metres: drawn at 0.75 game metres each, a quarter)
+  const P = osm.towerParts, real = (u) => u * T.unit;
+  assert.ok(Math.abs(real(T.head) - P.deck[0]) < 4, `the deck starts ${real(T.head)} m up`);
+  assert.ok(Math.abs(real(T.top) - P.upper[1]) < 4, `the deck's top ${real(T.top)} m`);
+  assert.ok(Math.abs(real(T.tip) - P.top) < 2, `the tip ${real(T.tip)} m`);
+  assert.ok(Math.abs(real(T.deckR * 2) - P.deckD) < 1.5);
+});
+
+// The summit plaza on its real outline (Yozi 2026-11-19: "원 모양이 아닌데"):
+// scripts/build-namsan-plaza.mjs.
+test('the summit plaza\'s level top follows the real plaza (OSM), not a disc', async () => {
+  const { namsanFlat } = await import('../src/core/namsan-shape.js');
+  const { NAMSAN_WALK: W, PALGAK, plazaEdge } = await import('../src/game/namsan-walk.js');
+  const P = { min: 12 }; // (scripts/build-namsan-plaza.mjs NAMSAN_PLAZA.min)
+  assert.equal(hill.flatRad.length, hill.rad.length, 'on the angles of the outline');
+  const T = [hill.x + ox + hill.px, hill.z + oz + hill.pz];
+  const edgeAt = (x, z) => namsanFlat(hill, Math.atan2(z - T[1], x - T[0]));
+  // every corner of the real plaza's paved and decked areas is on the level top
+  for (const w of Object.values(osm.summit.areas)) for (const p of w) {
+    const [x, z] = toGame(...p);
+    assert.ok(Math.hypot(x - T[0], z - T[1]) <= edgeAt(x, z) - W.rail, `OSM plaza corner ${p} inside the railing`);
+  }
+  // not much bigger than it: south of the tower the real plaza ends ~7 m out
+  assert.ok(namsanFlat(hill, Math.PI / 2) <= P.min + 0.5, 'south: the tower\'s terrace only');
+  assert.ok(Math.min(...hill.flatRad) >= W.terrace[0][0] + 1.5, 'room round the terrace');
+  assert.ok(Math.max(...hill.flatRad) - Math.min(...hill.flatRad) > 15, 'not a disc');
+  // the approximated angles (no OSM area there) are listed, with why
+  assert.ok(Array.isArray(hill.plazaApprox) && hill.plazaWhy);
+  // what stands on the plaza is inside its railing
+  const tw = (dx, dz) => [T[0] + dx, T[1] + dz];
+  const inside = ([x, z], m, what) => assert.ok(Math.hypot(x - T[0], z - T[1]) < plazaEdge(hill, Math.atan2(z - T[1], x - T[0])) - W.rail - m, what);
+  inside(tw(...W.palgak), PALGAK.steps[0][0], 'Palgakjeong\'s base');
+  inside(tw(...W.heart), 1.5, 'the love-lock heart');
+  // the trails that come up to it end on it, and reach the plaza's edge level
+  for (const run of [hill.trail, ...hill.wtrail.filter((r) => r.length)]) {
+    const e = run.at(-1), d = Math.hypot(e[0] - hill.px, e[1] - hill.pz);
+    if (d > hill.flat + 1) continue;
+    assert.ok(d <= namsanFlat(hill, Math.atan2(e[1] - hill.pz, e[0] - hill.px)), 'a trail ends on the plaza');
+  }
 });

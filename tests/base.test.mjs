@@ -27,7 +27,7 @@ test('the base map is in the region, credited, and small enough to fetch at the 
 });
 
 test('base roads are big streets inside Seoul, in the joined map as base roads', () => {
-  const joined = map.roads.filter((r) => r.base);
+  const joined = map.roads.filter((r) => r.base && !r.split); // (a Han bridge cuts its road in three: core/han-bridges.js)
   assert.equal(joined.length, base.roads.length);
   assert.ok(joined.every((r) => r.d === 'base'));
   for (const r of base.roads) {
@@ -114,6 +114,17 @@ test('the base is only near what is built: no base road or green far from every 
     const n = g.p.length, x = g.p.reduce((t, q) => t + q[0], 0) / n, z = g.p.reduce((t, q) => t + q[1], 0) / n;
     if (!inPolygon(x, z, g.p) || near(x, z, 0)) continue;
     assert.ok(solid.blocked(x, z, 0.5) || map.areas.some((a) => a.k === 'water' && inPolygon(x, z, a.p)), `${g.id}'s middle is open`);
+  }
+});
+
+test('no base road lies on a sunken stream or crosses it (Cheonggyecheon: its trench and bridges are the district\'s)', () => {
+  assert.ok(map.streams.length > 0);
+  for (const st of map.streams) {
+    const line = st.path.map(([x, z]) => [st.at[0] + x, st.at[1] + z]);
+    for (const r of base.roads) for (const [x, z] of samples(r.p, 2)) {
+      const d = Math.min(...line.slice(1).map((b, i) => segDist(x, z, line[i], b)));
+      assert.ok(d > st.w / 2 + 2, `${r.n?.ko || r.k} is ${d.toFixed(1)} m from the middle of ${st.id} at ${Math.round(x)}, ${Math.round(z)}`);
+    }
   }
 });
 

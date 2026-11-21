@@ -453,7 +453,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "clownfish",
@@ -466,7 +466,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "puffer",
@@ -479,7 +479,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "cuttlefish",
@@ -492,7 +492,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 3,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "lobster",
@@ -505,7 +505,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "blue-tang",
@@ -518,7 +518,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "seahorse",
@@ -531,7 +531,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "butterflyfish",
@@ -544,7 +544,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "electric-eel",
@@ -559,7 +559,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "moray",
@@ -572,7 +572,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "dolphin",
@@ -587,7 +587,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "tuna",
@@ -602,7 +602,7 @@ export const FISH = [
     "rarity": 3,
     "released": true,
     "page": 4,
-    "price": 1400
+    "price": 3000
   },
   {
     "id": "shark",
@@ -617,7 +617,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 4,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "marlin",
@@ -630,7 +630,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "axolotl",
@@ -645,7 +645,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "sea-turtle",
@@ -658,7 +658,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "anglerfish",
@@ -673,7 +673,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "beluga",
@@ -688,7 +688,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "orca",
@@ -701,7 +701,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "dugong",
@@ -716,7 +716,7 @@ export const FISH = [
     "rarity": 4,
     "released": true,
     "page": 5,
-    "price": 6000
+    "price": 15000
   },
   {
     "id": "giant-squid",
@@ -729,7 +729,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "blobfish",
@@ -742,7 +742,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "manta",
@@ -755,7 +755,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   },
   {
     "id": "whale",
@@ -770,7 +770,7 @@ export const FISH = [
     "rarity": 5,
     "released": true,
     "page": 6,
-    "price": 50000
+    "price": 200000
   }
 ];
 
@@ -793,6 +793,12 @@ export const TIER_WEIGHT = {
   'sea-turtle': 1.1, marlin: 1, shark: 0.9, orca: 0.8, anglerfish: 1,
   manta: 2, blobfish: 1.5, whale: 1, 'giant-squid': 0.7,
 };
+// Prices: ★1 100-200 and ★2 300-600 by kind; ★3, ★4 and ★5 one price each,
+// raised 2026-11-21 (Yozi: fishing paid too little) from 1,400 / 6,000 /
+// 50,000 to 3,000 / 15,000 / 200,000, the legend the most so it stays special.
+// About 45k → 70k an hour at the lucky spot; selling stays under the server's
+// fish cap (reward_rules 'fish', 500k a day) and baits still cost more than
+// they bring in on average.
 // What each rarity is called (the fish book and the odds table).
 export const TIER_NAMES = [null,
   { ko: '흔함', en: 'Common', ja: 'ふつう', zh: '常见' },
@@ -885,17 +891,54 @@ const migrate = (raw) => {
 // often. It comes from the clock, so everyone in the park sees the same spot.
 export const LUCKY_MINUTES = 5;
 export const LUCKY_BOOST = 1.5;
-const luckyWeight = (f, park = null) => chanceAt(f, park) * (f.rarity >= 2 ? LUCKY_BOOST : 1);
+// The double spot (2배 포인트): rarer and shorter. Once every DOUBLE_EVERY
+// minutes, at a random moment, another spot (not the lucky one) turns double
+// for DOUBLE_MINUTES: ★2 and up bite DOUBLE_BOOST times as often there. The
+// window always sits inside one lucky slot, so the two never swap places
+// mid-way. Also from the clock: everyone sees it at once.
+export const DOUBLE_EVERY = 60;
+export const DOUBLE_MINUTES = 3;
+export const DOUBLE_BOOST = 2;
+// `lucky` across these: false (a plain spot), true (the lucky spot) or the
+// spot's boost as a number (LUCKY_BOOST, DOUBLE_BOOST).
+const boostOf = (lucky) => (lucky === true ? LUCKY_BOOST : typeof lucky === 'number' && lucky > 1 ? lucky : 1);
+const luckyWeight = (f, park, boost) => chanceAt(f, park) * (f.rarity >= 2 ? boost : 1);
 // The same at every park (each park's ★5 still adds up to the tier's share).
-const luckyTotal = AVAILABLE_FISH.reduce((a, f) => a + luckyWeight(f), 0);
-// A fish's chance (in % of fish) at the lucky spot.
-export const luckyChance = (f, park = null) => (f.released ? luckyWeight(f, park) / luckyTotal * 100 : 0);
+const luckyTotals = new Map();
+const luckyTotal = (boost) => {
+  if (!luckyTotals.has(boost)) luckyTotals.set(boost, AVAILABLE_FISH.reduce((a, f) => a + luckyWeight(f, null, boost), 0));
+  return luckyTotals.get(boost);
+};
+// A fish's chance (in % of fish) at the lucky spot (or at a spot with this boost).
+export const luckyChance = (f, park = null, lucky = true) => {
+  const boost = boostOf(lucky);
+  return f.released ? luckyWeight(f, park, boost) / luckyTotal(boost) * 100 : 0;
+};
+const mix = (x) => {
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
+  return (x ^ (x >>> 16)) >>> 0;
+};
 export function luckySpot(n, now = Date.now()) {
   if (n < 2) return 0;
-  let x = Math.floor(now / (LUCKY_MINUTES * 60000)) | 0; // the time slot, hashed
-  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
-  x = Math.imul(x ^ (x >>> 16), 0x45d9f3b);
-  return ((x ^ (x >>> 16)) >>> 0) % n;
+  return mix(Math.floor(now / (LUCKY_MINUTES * 60000)) | 0) % n; // the time slot, hashed
+}
+// When the double spot of the hour `now` is in starts (ms).
+export function doubleStart(now = Date.now()) {
+  const every = DOUBLE_EVERY * 60000, h = Math.floor(now / every);
+  const v = mix((h ^ 0x2b7e1516) | 0);
+  const slots = Math.floor(DOUBLE_EVERY / LUCKY_MINUTES), fits = LUCKY_MINUTES - DOUBLE_MINUTES + 1;
+  return h * every + ((v % slots) * LUCKY_MINUTES + ((v >>> 8) % fits)) * 60000;
+}
+// The double spot right now (an index into the park's n spots), or -1.
+// A park with one spot: that spot, lucky as it is, turns double.
+export function doubleSpot(n, now = Date.now()) {
+  if (n < 1) return -1;
+  const t0 = doubleStart(now);
+  if (now < t0 || now >= t0 + DOUBLE_MINUTES * 60000) return -1;
+  if (n < 2) return 0;
+  const lucky = luckySpot(n, now), j = mix((Math.floor(t0 / 60000) ^ 0x3c6ef372) | 0) % (n - 1);
+  return j >= lucky ? j + 1 : j;
 }
 // With a bait on the hook (core/bait.js): ★3 and up bite `bait.rare` % of
 // the time in all, `bait.legend` % of it the park's ★5, the rest shared by
@@ -903,12 +946,12 @@ export function luckySpot(n, now = Date.now()) {
 // gives up the difference. Each kind keeps its place within its tier. At the
 // lucky spot the bait's odds go up as much as plain bait's do there, so a
 // bait never makes the lucky spot worse.
-const tierChance = (r, park, lucky) => AVAILABLE_FISH.reduce((a, q) => a + (q.rarity === r ? (lucky ? luckyChance(q, park) : chanceAt(q, park)) : 0), 0);
+const tierChance = (r, park, lucky) => AVAILABLE_FISH.reduce((a, q) => a + (q.rarity === r ? (lucky ? luckyChance(q, park, lucky) : chanceAt(q, park)) : 0), 0);
 export function baitedChance(f, park = null, lucky = false, bait = null) {
-  const c = lucky ? luckyChance(f, park) : chanceAt(f, park);
+  const c = lucky ? luckyChance(f, park, lucky) : chanceAt(f, park);
   if (!bait || !c) return c;
   const rare3 = (l) => tierChance(3, park, l) + tierChance(4, park, l) + tierChance(5, park, l);
-  const k = lucky ? rare3(true) / rare3(false) : 1, rare = bait.rare * k, legend = bait.legend * k;
+  const k = lucky ? rare3(lucky) / rare3(false) : 1, rare = bait.rare * k, legend = bait.legend * k;
   const t = tierChance(f.rarity, park, lucky), rest = rare - legend, r34 = TIER_SHARE[3] + TIER_SHARE[4];
   const want = f.rarity >= 5 ? legend : f.rarity === 4 ? rest * TIER_SHARE[4] / r34 : f.rarity === 3 ? rest * TIER_SHARE[3] / r34
     : f.rarity === 2 ? t : 100 - rare - tierChance(2, park, lucky);
@@ -918,7 +961,7 @@ export function rollFish(rand = Math.random, lucky = false, park = null, bait = 
   let r = rand() * 100;
   let last = null;
   for (const f of AVAILABLE_FISH) {
-    const c = bait ? baitedChance(f, park, lucky, bait) : lucky ? luckyChance(f, park) : chanceAt(f, park);
+    const c = bait ? baitedChance(f, park, lucky, bait) : lucky ? luckyChance(f, park, lucky) : chanceAt(f, park);
     if (!c) continue;
     last = f; r -= c; if (r < 0) return f;
   }
@@ -1147,7 +1190,8 @@ export class FishDex {
 //   lost: fish that got away while reeling, by rarity
 //   escape: fish that slipped off at the end, by rarity
 //   land: fish landed by hand, by rarity [trash, ★1…★5]
-//   lucky: bites at the lucky spot   auto: fish landed by auto fishing
+//   lucky: bites at the lucky spot (and the double spot)   double: bites at the double spot
+//   auto: fish landed by auto fishing
 //   got: fish landed by hand, by kind { id: n }   gotAuto: the same for auto fishing
 //   since: when counting started (ms)
 const STATS_KEY = 'mk.fishstats';
@@ -1162,12 +1206,12 @@ export class FishStats {
     const kinds = v => Object.fromEntries(FISH.filter(f => num(v?.[f.id])).map(f => [f.id, num(v[f.id])]));
     this.s = {
       since: num(raw.since) || now,
-      cast: num(raw.cast), early: num(raw.early), miss: num(raw.miss), lucky: num(raw.lucky), auto: num(raw.auto),
+      cast: num(raw.cast), early: num(raw.early), miss: num(raw.miss), lucky: num(raw.lucky), double: num(raw.double), auto: num(raw.auto),
       bite: arr(raw.bite), lost: arr(raw.lost), escape: arr(raw.escape), land: arr(raw.land),
       got: kinds(raw.got), gotAuto: kinds(raw.gotAuto),
     };
   }
-  // n: 'cast' | 'early' | 'miss' | 'lucky', a per-rarity counter
+  // n: 'cast' | 'early' | 'miss' | 'lucky' | 'double', a per-rarity counter
   // ('bite' | 'lost' | 'escape' | 'land') with the fish, or 'auto' with the fish.
   // Landing a fish (by hand or auto) also counts its kind in got / gotAuto.
   add(n, fish) {

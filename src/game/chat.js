@@ -22,14 +22,30 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
+import { SHOW_NOW, startShowNow } from '../core/show-now.js';
 import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
+// Operator-only toasts for "/드론쇼" and "/불꽃놀이" (core/show-now.js).
+const SHOW_NOW_TEXT = {
+  drone: { en: 'Drone show: the drones are rising now. The show starts in 3 minutes.', ko: '드론쇼: 드론이 지금 떠올라. 3분 뒤 쇼 시작.' },
+  fireworks: { en: 'Fireworks: Yeouido\'s sky is darkening now. The first shells go up in 3 minutes.', ko: '불꽃놀이: 여의도 하늘이 지금 어두워져. 3분 뒤 첫 발.' },
+  off: { en: 'Show called off.', ko: '쇼 취소했어.' },
+  operator: { en: 'Operators only.', ko: '운영자만 쓸 수 있어.' },
+  setup: { en: 'Run supabase/061_fireworks_now.sql first.', ko: '061_fireworks_now.sql 먼저 실행해 줘.' },
+  failed: { en: 'Could not start the show.', ko: '쇼를 시작하지 못했어.' },
+};
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
   operator: { en: 'Only operators can send notices', ko: '공지는 운영자만 보낼 수 있어요', ja: 'お知らせは運営者だけが送れます', zh: '只有运营者可以发送公告' },
   setup: { en: 'Notices are not set up yet', ko: '공지 기능이 아직 준비되지 않았어요', ja: 'お知らせはまだ準備中です', zh: '公告功能尚未开启' },
   busy: { en: 'Too many notices, wait a minute', ko: '공지가 너무 잦아요. 1분 뒤에 다시', ja: 'お知らせが多すぎます。1分後に', zh: '公告太频繁，请一分钟后再试' },
   failed: { en: 'Could not send the notice', ko: '공지를 보내지 못했어요', ja: 'お知らせを送れませんでした', zh: '公告发送失败' },
+};
+
+// The silent dharma halls' only word.
+export const SILENT = '🙏';
+const SILENT_TEXT = {
+  placeholder: { en: 'A silent hall: only 🙏 is sent', ko: '침묵의 법당: 🙏만 보낼 수 있어요', ja: '沈黙のお堂：🙏だけ送れます', zh: '静默的法堂：只能发送🙏', es: 'Sala en silencio: solo se envía 🙏', id: 'Aula hening: hanya 🙏 yang terkirim', vi: 'Điện tĩnh lặng: chỉ gửi được 🙏', hi: 'मौन कक्ष: केवल 🙏 भेजा जाता है', fr: 'Salle du silence : seul 🙏 est envoyé', th: 'ห้องแห่งความเงียบ: ส่งได้แค่ 🙏', ar: 'قاعة صامتة: يُرسل 🙏 فقط' },
 };
 
 export function createChat(game) {
@@ -133,6 +149,7 @@ export function createChat(game) {
     input.keys.clear();
     chatInput.focus();
     if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
+    if (game.silent) { chatInput.placeholder = L(SILENT_TEXT.placeholder); $('chat-to').hidden = true; return; } // the silent dharma hall: 🙏 only
     renderChatTo(); // (back from the confession room: the picker and its words)
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
@@ -167,6 +184,19 @@ export function createChat(game) {
       const text = cleanChat(chatInput.value);
       chatInput.value = '';
       if (text) { showBubble(myLabel, $('labels'), text, 6000, 'chat'); booth.hear(text); }
+      if (input.isTouch) closeChat();
+      return;
+    }
+    // The temples' silent dharma halls (Yozi 2026-11-15): nothing but 🙏,
+    // whatever you type, to the people in the room.
+    if (game.silent) {
+      chatInput.value = '';
+      const now = performance.now() / 1000;
+      if (now - lastChatAt < config.chatCooldown) return;
+      lastChatAt = now;
+      showBubble(myLabel, $('labels'), SILENT, 4000, 'chat');
+      addChatLine(game.nickname, SILENT, 'mine');
+      game.net.sendChat?.(SILENT);
       if (input.isTouch) closeChat();
       return;
     }
@@ -207,6 +237,12 @@ export function createChat(game) {
         saveLook(game.myLook);
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
+      }
+      // Operators: "/드론쇼" or "/불꽃놀이" starts that show now for everyone; "…취소" calls it off.
+      if (code in SHOW_NOW) {
+        const cmd = SHOW_NOW[code], r = await startShowNow(cloud.client, cmd);
+        game.shop.toast(L(r.ok ? (r.start ? SHOW_NOW_TEXT[cmd.kind] : SHOW_NOW_TEXT.off) : SHOW_NOW_TEXT[r.error] || SHOW_NOW_TEXT.failed));
+        return;
       }
       // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,
       // /양탄자, /손오공, /착지.
@@ -312,6 +348,7 @@ export function createChat(game) {
     // Hide people I've blocked.
     const ok = (f) => !safety.isBlocked(null, f.name);
     friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
+    game.net?.refilter?.(); // on the street only friends are shown (net/area.js)
     const seen = new Set(friendList.incoming.map((f) => f.uid));
     // A new request: say who, and if they're around me, where — and make
     // them easy to spot (their name tag glows, a 👋 pops over their head).
@@ -353,6 +390,7 @@ export function createChat(game) {
     const name = friendName(m.from) || m.name || '?';
     if (safety.isBlocked(null, name)) return;
     if (!friendInbox.add({ ...m, name }).length) return;
+    game.onFriendLetter?.(name, m.body); // a wrapped gift's letter opens on screen (game/wrap-gifts.js)
     const key = convKey(m, friendBackend.uid);
     const reading = friendsUi.open && friendsUi.view === key;
     if (!reading) {
@@ -479,8 +517,10 @@ export function createChat(game) {
   // remembered on this device.
   const pinBox = $('notice-pin');
   const FOLD_KEY = 'noticePinFolded';
-  let pinFolded = false;
-  try { pinFolded = localStorage.getItem(FOLD_KEY) === '1'; } catch { /* no storage */ }
+  // A first visit starts folded: the first minute already has the welcome,
+  // the guide and the first mission on screen (UI check 2026-11-19).
+  let pinFolded = !!game.firstVisit;
+  try { const v = localStorage.getItem(FOLD_KEY); if (v != null) pinFolded = v === '1'; } catch { /* no storage */ }
   const setFolded = (v) => { pinFolded = v; try { localStorage.setItem(FOLD_KEY, v ? '1' : '0'); } catch { /* no storage */ } };
   // A pinned notice opens them again, but only one this device hasn't seen
   // (the ones still up come again on every start).
@@ -553,5 +593,12 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  // A wrapped gift's letter (game/wrap-gifts.js) goes as a friend message, so
+  // the server keeps it like any chat (admins can read it, a chat ban stops it).
+  const friendUid = (name) => friendList.friends.find((f) => f.name === name)?.uid || null;
+  const sendLetter = (uid, text) => {
+    const body = filterText(cleanFriendBody(text));
+    return body && !mustSignInToChat() ? sendFriend(uid, body) : false;
+  };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, friendUid, sendLetter, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

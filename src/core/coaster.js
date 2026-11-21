@@ -31,6 +31,7 @@ const DEPART_V = 3; // tyres push the train out of the station
 const MIN_V = 2.2; // booster tyres keep it rolling on the flats
 const DRAG = 0.03; // energy lost per metre, as a fraction of g (wheels, air)
 const BRAKE_A = 3.2; // m/s² in the brakes
+const LEVEL_IN = 32, LEVEL_AT = 9; // m before the stop: the bank rolls out between these
 const HANG = 2.6; // how far past the crest the front car stops (looking down)
 
 // The vertical loop after the airtime hill: in at its foot heading east
@@ -208,6 +209,14 @@ const T = [], B = [];
     B.push(inLoop(i * DS) ? 0 : Math.max(-0.75, Math.min(0.75, Math.atan((v[i] ** 2 * k) / G)))); // (no banking in the loop)
   }
   for (let pass = 0; pass < 3; pass++) { const c = B.slice(); for (let i = 0; i < N; i++) { let sum = 0; for (let j = -10; j <= 10; j++) sum += c[(i + j + N) % N]; B[i] = sum / 21; } }
+  // Coming home: the last curve is taken in the brakes, still fast, and its
+  // bank used to hold to the end and snap level in the last few metres. Roll
+  // it out over the last LEVEL_IN m instead, level LEVEL_AT m before the stop
+  // so the whole train (the last car sits 6 m back) pulls in flat.
+  for (let i = 0; i < N; i++) {
+    const before = wrap(S_STOP - i * DS);
+    if (before < LEVEL_IN) { const u = Math.max(0, (before - LEVEL_AT) / (LEVEL_IN - LEVEL_AT)); B[i] *= u * u * (3 - 2 * u); }
+  }
 }
 const _p = new THREE.Vector3(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _r = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), SIDE = new THREE.Vector3(0, 0, 1);
 export function frameAt(s, out = {}) {

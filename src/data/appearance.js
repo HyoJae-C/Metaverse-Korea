@@ -14,6 +14,7 @@
 import { PACK } from './characters/index.js';
 import { emblemById, nameColorById } from '../core/emblems.js';
 import { skirtById } from './skirts.js';
+import { TEAM_LIST } from './ballpark-teams.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
@@ -21,6 +22,9 @@ export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'tw
   'bowl', 'drill', 'fountain'];
 // Plain hairstyles anyone can pick on the start screen (the rest are cut at
 // the hair salon). With none picked, the model's own hair stays.
+// Hairstyles only the game's own people wear (no salon cuts them): a monk's
+// shaved head (core/hair-styles.js).
+export const NPC_HAIR_STYLES = ['shaved'];
 export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
@@ -108,6 +112,23 @@ export const HAT_SHAPES = ['bucket', 'cap', 'beanie', 'beret'];
 
 export const SLOTS = ['head', 'face', 'ear', 'neck', 'back', 'hand'];
 
+// Maeum Knot Studio's maedeup bracelets: a silk cord round the wrist with one
+// knot on it, worn in the glove slot (look.hand), so a bracelet and paw
+// gloves don't go on together. The colours and knots of the studio
+// (ui/bukchon-ui.js CRAFT.knot).
+export const KNOT_COLORS = {
+  red: { color: 0xc8323f, name: { en: 'Red', ko: '다홍', ja: '紅', zh: '朱红' } },
+  green: { color: 0x2f6b4f, name: { en: 'Green', ko: '초록', ja: '緑', zh: '绿色' } },
+  blue: { color: 0x2d4f8a, name: { en: 'Indigo', ko: '쪽빛', ja: '藍', zh: '靛蓝' } },
+  yellow: { color: 0xe3b23c, name: { en: 'Yellow', ko: '노랑', ja: '黄', zh: '黄色' } },
+  purple: { color: 0x8b5aa8, name: { en: 'Purple', ko: '보라', ja: '紫', zh: '紫色' } },
+};
+export const KNOTS = {
+  butterfly: { en: 'butterfly', ko: '나비', ja: '蝶', zh: '蝴蝶' },
+  chrysanthemum: { en: 'chrysanthemum', ko: '국화', ja: '菊', zh: '菊花' },
+  'double-coin': { en: 'double coin', ko: '도래', ja: '二つ輪', zh: '双钱' },
+};
+
 // The animals of Nyang Meong To Pan (cat, dog, bunny, panda): each as an
 // ear headband and a pair of paw gloves in the same colours. Two colours at
 // most per animal.
@@ -183,6 +204,8 @@ export const ACCESSORIES = {
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
+    // Modu Ballpark's team caps (the team shop).
+    ...TEAM_LIST.map((t) => ({ id: 'cap-' + t.id, shape: 'cap', emoji: '🧢', color: parseInt(t.color.slice(1), 16) })),
     // Animal-ear headbands from Nyang Meong To Pan (core/animal-wear.js):
     // color the ears and band, inner the inside of the ears.
     ...ANIMAL_LOOKS.map((a) => ({ id: 'ears-' + a.id, shape: 'ears', animal: a.animal, emoji: a.emoji, color: a.color, inner: a.inner, band: a.band ?? a.color })),
@@ -211,6 +234,9 @@ export const ACCESSORIES = {
     { id: 'scarf', emoji: '🧣', color: 0xe9735c },
     { id: 'scarf-mint', shape: 'scarf', emoji: '🧣', color: 0x8fd3c7 },
     { id: 'scarf-cream', shape: 'scarf', emoji: '🧣', color: 0xefe6d2 },
+    // Modu Ballpark's cheer towels (the team shop): round the neck, held up
+    // over the head when cheering in the stadium (game/ballpark-cams.js).
+    ...TEAM_LIST.map((t) => ({ id: 'towel-' + t.id, shape: 'towel', emoji: '🧣', color: parseInt(t.color.slice(1), 16), trim: parseInt(t.trim.slice(1), 16), team: t.id })),
     // Necklaces from Jongno Geumeunbang and Gyeol Ring Studio:
     // a fine chain with a charm: a moon, a plum blossom, or a round tag
     // engraved with a hanja word (PENDANT_CHARMS).
@@ -226,10 +252,19 @@ export const ACCESSORIES = {
   ],
   // Gloves, one on each hand: the animal paws match the headbands (pad: the
   // paw pads' colour).
-  hand: ANIMAL_LOOKS.map((a) => ({ id: 'paws-' + a.id, shape: 'paws', animal: a.animal, emoji: a.emoji, color: a.color, pad: a.pad })),
+  // A knot bracelet (KNOT_COLORS, KNOTS) goes in the same slot, on the left wrist.
+  hand: [
+    ...ANIMAL_LOOKS.map((a) => ({ id: 'paws-' + a.id, shape: 'paws', animal: a.animal, emoji: a.emoji, color: a.color, pad: a.pad })),
+    ...Object.entries(KNOT_COLORS).flatMap(([c, k]) => Object.keys(KNOTS).map((knot) => ({ id: `knot-${c}-${knot}`, shape: 'bracelet', knot, emoji: '🎀', color: k.color }))),
+  ],
 };
 // What an accessory is drawn as.
 export const shapeOf = (a) => a?.shape || a?.id || null;
+
+// The cut of each trouser colour (core/outfit-mesh.js LEG_CUTS; the rest
+// are jeans) and which shoe colours are leather loafers, not sneakers.
+export const PANTS_CUT = { navy: 'slacks', charcoal: 'slacks', cocoa: 'slacks', sand: 'wide', cream: 'wide', olive: 'cargo' };
+export const LOAFERS = new Set(['brown', 'tan', 'burgundy']);
 
 export const DEFAULT_LOOK = {
   model: MODELS[0],
@@ -280,7 +315,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.hatColor === 'string' && Object.hasOwn(PALETTES.hat, raw.hatColor)) look.hatColor = raw.hatColor;
   if (typeof raw.hatPatch === 'string' && Object.hasOwn(PATCHES, raw.hatPatch)) look.hatPatch = raw.hatPatch;
   if (typeof raw.dye === 'string' && Object.hasOwn(PALETTES.dye, raw.dye)) look.dye = raw.dye;
-  if (typeof raw.hairStyle === 'string' && HAIR_STYLES.includes(raw.hairStyle)) look.hairStyle = raw.hairStyle;
+  if (typeof raw.hairStyle === 'string' && (HAIR_STYLES.includes(raw.hairStyle) || NPC_HAIR_STYLES.includes(raw.hairStyle))) look.hairStyle = raw.hairStyle;
   if (typeof raw.eyeShape === 'string' && EYE_SHAPE_IDS.includes(raw.eyeShape)) look.eyeShape = raw.eyeShape;
   if (typeof raw.nose === 'string' && NOSE_IDS.includes(raw.nose)) look.nose = raw.nose;
   if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;

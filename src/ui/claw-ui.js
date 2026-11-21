@@ -74,7 +74,7 @@ export class ClawUI {
   }
 
   play(cv, btn) {
-    if (!this.wallet.spend(CLAW_COST)) { this.render(tt('noCoins', { n: CLAW_COST })); return; }
+    if (!this.wallet.spend(CLAW_COST)) { if (!this.wallet.justDeclined) this.render(tt('noCoins', { n: CLAW_COST })); return; }
     this.tries++;
     btn.textContent = '⬇️ ' + tt('drop');
     const t0 = performance.now();

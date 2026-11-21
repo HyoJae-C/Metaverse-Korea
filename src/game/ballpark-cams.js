@@ -17,10 +17,14 @@ import { waveAt, waveGap, pickPair, pickOne, seatPairs, npcKisses, bpMsg, parseB
 import { rowAt } from '../core/dome.js';
 import { CAM_TEXT } from '../data/ballpark-cam-text.js';
 import { createCheerAlong, createFoulBalls } from './ballpark-fun.js';
+import { createTowels } from './ballpark-towel.js';
 
 const PX = [512, 256]; // the picture (the scoreboard is 2:1)
 const FOV = 30;
-const POSE_S = { kiss: 2.8, shy: 3, sorry: 2.4, dance: 6, wave: 1.6, clap: 0.5 };
+const POSE_S = { kiss: 2.8, shy: 3, sorry: 2.4, dance: 6, wave: 1.6, clap: 0.5, towel: 2.6, towelClap: 0.9 };
+// With a cheer towel round the neck, cheering holds it up overhead instead
+// (game/ballpark-towel.js): a clap becomes a shake of the towel.
+const TOWEL_POSE = { clap: 'towelClap', wave: 'wave', towel: 'towel' };
 
 const smooth = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
 const env = (t, dur) => smooth(t / 0.3) * (1 - smooth((t - (dur - 0.4)) / 0.4));
@@ -62,6 +66,12 @@ const POSES = {
     const k = env(t, POSE_S.wave);
     return { spine: [-0.12 * k, 0, 0], head: [-0.2 * k, 0, 0], armL: [-2.9 * k, -0.25 * k, 0], armR: [-2.9 * k, 0.25 * k, 0] };
   },
+  // The cheer towel up in both hands, shaken side to side (a team's hit).
+  towel: (t) => {
+    const k = env(t, POSE_S.towel), s = Math.sin(t * 7) * 0.25;
+    return { spine: [-0.08 * k, 0, s * 0.3 * k], head: [-0.15 * k, 0, 0], armL: [-2.75 * k, (-0.35 + s) * k, 0], armR: [-2.75 * k, (0.35 + s) * k, 0], foreL: [-0.35 * k, 0, 0], foreR: [-0.35 * k, 0, 0] };
+  },
+  towelClap: (t) => POSES.towel(t * (POSE_S.towel / POSE_S.towelClap)),
 };
 
 export function createBallparkCams(game) {
@@ -125,6 +135,8 @@ export function createBallparkCams(game) {
   function pose(id, name, other) {
     const ch = charOf(id);
     if (!ch) return;
+    if (ch.towel && TOWEL_POSE[name]) { name = TOWEL_POSE[name]; towels.up(room?.scene, ch, POSE_S[name]); }
+    else if (name === 'towel') return; // (no towel: a team's hit is just the crowd's cheer)
     let side = 1;
     if (other) {
       const a = ch.root.position, b = charOf(other)?.root.position;
@@ -166,7 +178,63 @@ export function createBallparkCams(game) {
       return { mesh, idle: mesh.material.map, over };
     });
   }
+  // ---- The big view: the scoreboard's picture up on our own screen during
+  // the Dance and Kiss Cams (the real scoreboard is far away). The picture
+  // is read back from the scoreboard's render target a dozen times a second
+  // into a page canvas, so it sits above the game's other panels.
+  let big = null, bigT = 0;
+  function bigView(on) {
+    if (!on) { big?.remove(); big = null; return; }
+    if (big || !frame) return;
+    big = document.createElement('div');
+    big.id = 'ballpark-bigview';
+    big.style.cssText = 'position:fixed;left:50%;top:64px;transform:translateX(-50%);width:min(96vw,720px,calc((100vh - 210px) * 2));aspect-ratio:2/1;pointer-events:none;z-index:45;border-radius:10px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.35);background:#0d1118';
+    const pic = document.createElement('canvas');
+    [pic.width, pic.height] = PX;
+    pic.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+    frame.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
+    big.append(pic, frame.canvas);
+    big.pic = pic;
+    big.px = new Uint8Array(PX[0] * PX[1] * 4);
+    big.img = pic.getContext('2d').createImageData(...PX);
+    document.body.appendChild(big);
+  }
+  function copyBig() {
+    if (!big || !rt || !game.renderer) return;
+    const [W, H] = PX;
+    game.renderer.readRenderTargetPixels(rt, 0, 0, W, H, big.px);
+    for (let y = 0; y < H; y++) big.img.data.set(big.px.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4); // (bottom row first)
+    big.pic.getContext('2d').putImageData(big.img, 0, 0);
+  }
+
+  // ---- 📊 Scoreboard: the scoreboard's picture up close, in a panel (the
+  // real one is far across the field). It is the same canvas, so it stays live.
+  let scorePanel = null;
+  function toggleScore(on = !scorePanel) {
+    if (!on || !room) { scorePanel?.remove(); scorePanel = null; game.clearAction(); return; }
+    scorePanel = document.createElement('div');
+    scorePanel.id = 'ballpark-score';
+    scorePanel.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%);width:min(94vw,720px);z-index:31;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.4);background:#0d1118';
+    const c = room.dome.board;
+    const img = document.createElement('canvas');
+    img.width = c.width; img.height = c.height;
+    img.style.cssText = 'width:100%;display:block';
+    const close = document.createElement('button');
+    close.textContent = '✕';
+    close.setAttribute('aria-label', 'Close');
+    close.style.cssText = 'position:absolute;bottom:6px;right:6px;width:34px;height:34px;border:0;border-radius:17px;background:rgba(255,255,255,.18);color:#fff;font-size:18px;cursor:pointer';
+    close.onclick = () => toggleScore(false);
+    scorePanel.append(img, close);
+    document.body.appendChild(scorePanel);
+    scorePanel.copy = () => img.getContext('2d').drawImage(c, 0, 0);
+    scorePanel.copy();
+    game.clearAction();
+  }
+  const scoreAct = () => ({ key: 'bp-score:' + !!scorePanel, label: '📊 ' + L(CAM_TEXT.score), run: () => toggleScore() });
+
   function tearDown() {
+    towels.clear();
+    toggleScore(false);
     endShow();
     for (const s of screens || []) { s.over.removeFromParent(); s.over.material.dispose(); }
     screens = null;
@@ -191,10 +259,9 @@ export function createBallparkCams(game) {
     g.fillText(kiss ? '💋 KISS CAM · 키스타임 💋' : '💃 DANCE CAM · 댄스캠 🕺', W / 2, 35);
     if (kiss) { // hearts round the edge
       g.font = '26px system-ui, sans-serif';
-      for (let i = 0; i < 6; i++) { g.fillText('💗', 30 + i * ((W - 60) / 5), H - 26); }
       for (const y of [90, 150]) { g.fillText('💗', 30, y); g.fillText('💗', W - 30, y); }
     }
-    if (note) {
+    if (note && false) { // (no words over the faces: Yozi 2026-11-15)
       g.fillStyle = 'rgba(10,12,20,.72)'; g.fillRect(W / 2 - 150, H - 96, 300, 52);
       g.fillStyle = '#ffffff'; g.font = '900 38px system-ui, sans-serif';
       g.fillText(note, W / 2, H - 70);
@@ -212,12 +279,14 @@ export function createBallparkCams(game) {
       const one = pickOne(players().filter((p) => !blocked(p.id)), c.k) || pickOne(npcs(false), c.k);
       if (one) show.ids = [one.id];
     }
-    rt ||= new THREE.WebGLRenderTarget(PX[0], PX[1]);
+    if (!rt) { rt = new THREE.WebGLRenderTarget(PX[0], PX[1]); rt.texture.colorSpace = THREE.SRGBColorSpace; }
+    bigView(true);
     for (const s of screens) { s.mesh.material.map = rt.texture; s.mesh.material.needsUpdate = true; s.over.visible = true; }
     drawFrame(c.kind, '');
     game.clearAction();
   }
   function endShow() {
+    bigView(false);
     if (show?.kind === 'kiss' && kc) for (const o of kc.end()) settle(o, o.shy, o.other);
     show = null;
     for (const s of screens || []) { if (s.mesh.material.map !== s.idle) { s.mesh.material.map = s.idle; s.mesh.material.needsUpdate = true; } s.over.visible = false; }
@@ -230,22 +299,26 @@ export function createBallparkCams(game) {
     show.ids = ids;
     show.camSet = false;
   }
-  function film(dt) {
+  let filming = false; // the camera has someone to film this frame
+  function film(dt, toScreen) {
+    filming = false;
     const ids = show?.ids;
     if (!ids || !game.renderer) return;
     const chs = ids.map(charOf).filter(Boolean);
     if (!chs.length) return;
+    filming = true;
     look.set(0, 0, 0);
     for (const ch of chs) look.add(ch.root.position);
     look.multiplyScalar(1 / chs.length);
     const r = Math.hypot(look.x, look.z) || 1;
-    const back = chs.length > 1 ? 3.0 : 2.7; // out over the field side, facing them
-    v.set(look.x - (look.x / r) * back, look.y + 1.75, look.z - (look.z / r) * back); // (high enough to see over the row in front)
-    look.y += 0.8;
+    const back = chs.length > 1 ? 2.2 : 1.9; // out over the field side, facing them, close on the faces
+    v.set(look.x - (look.x / r) * back, look.y + 1.55, look.z - (look.z / r) * back); // (high enough to see over the row in front)
+    look.y += 0.95;
     if (!show.camSet) { camAt3.copy(v); show.camSet = true; } else camAt3.lerp(v, 1 - Math.exp(-dt * 5));
     cam3.position.copy(camAt3);
     cam3.lookAt(look);
     cam3.updateMatrixWorld();
+    if (!toScreen) return;
     const ren = game.renderer, was = ren.getRenderTarget();
     ren.setRenderTarget(rt);
     ren.render(room.scene, cam3);
@@ -324,17 +397,21 @@ export function createBallparkCams(game) {
     leaderShout: (text) => { const o = (room?.patronNpcs || []).find((q) => q.squad?.role === 'leader' && q.squad.side === 'home'); if (o) game.npcBubble(o, text); },
     npcNear: (x, z, r) => { let best = null, bd = r; for (const p of npcs(false)) { const d = Math.hypot(p.x - x, p.z - z); if (d < bd) { bd = d; best = p.id; } } return best; },
   };
+  const towels = createTowels();
   const clapAlong = createCheerAlong(game, handle);
   const fouls = createFoulBalls(game, handle);
 
   // ---- Each frame ----
   let actKey = '';
+  let scoreT = 0;
   function tick(dt) {
     const r = game.interior?.dome ? game.interior : null;
     if (r !== room) { if (room) tearDown(); if (r) setUp(r); }
+    if (scorePanel && (scoreT = (scoreT || 0) - dt) <= 0) { scoreT = 0.25; scorePanel.copy(); }
     fouls.tick(room);
     if (!room) return;
     clapAlong.tick();
+    towels.tick(dt);
     for (const [ch, p] of posed) { p.t += dt; if (p.t >= POSE_S[p.name]) { ch.setMoves(null); posed.delete(ch); } }
     const c = dome().cam();
     const kind = c && c.kind !== 'wave' ? c.kind : null;
@@ -366,7 +443,8 @@ export function createBallparkCams(game) {
     }
     if (show) {
       odd ^= 1;
-      if (odd) film(dt * 2); // (every other frame)
+      film(dt, odd); // (every other frame)
+      if (odd && filming && (bigT -= dt * 2) <= 0) { bigT = 0.08; copyBig(); }
     }
     // The button changes as the moment goes on.
     const key = [kissActs().map((a) => a.key).join(), danceAct()?.key, waveAct()?.key, fouls.action()?.key, clapAlong.action()?.key].join('|');
@@ -403,8 +481,14 @@ export function createBallparkCams(game) {
     action: () => kissActs()[0] || danceAct() || waveAct() || fouls.action() || clapAlong.action(),
     // Standing in the stands too: a foul ball coming down near you.
     standingAction: () => (game.seated ? null : fouls.action()),
+    // A team got a hit (core/dome.js ev.onCheer): everyone in the stands
+    // wearing that team's cheer towel holds it up (on every screen alike, so
+    // no messages).
+    teamHit: (teamId) => { if (room) for (const p of players()) if (charOf(p.id)?.towel?.team === teamId) pose(p.id, 'towel'); },
     // The rest for the chooser ("no thanks" next to the kiss).
-    more: () => kissActs().slice(1),
+    more: () => [...kissActs().slice(1), scoreAct()],
+    // 📊 Scoreboard, for the list of things to do anywhere in the stadium.
+    scoreAct: () => (room ? scoreAct() : null),
     // The picture on the big screen as a PNG data URL (tests, screenshots).
     snap: () => {
       if (!rt || !game.renderer) return null;

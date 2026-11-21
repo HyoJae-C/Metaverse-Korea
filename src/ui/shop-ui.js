@@ -1,5 +1,6 @@
 // Shopping UI: store banner, product card, cart. Prices are virtual.
 import { ITEMS } from '../core/inventory.js';
+import { isTank } from '../core/fish-tank.js';
 import { t, localName, getLanguage } from '../core/i18n.js';
 import { STYLES, SPRAYS, onSale } from '../core/perfume.js';
 import { hanbokById, RENT_HOURS } from '../data/hanbok.js';
@@ -51,7 +52,7 @@ export const goodsKind = (product) => (product?.goods ? 'gift' : FOOD_MODELS.inc
 // walk (pets), spray (perfume), cook with (ingredients), sit on (picnic
 // mat), keep dry (umbrella). A thing you could only carry around is not
 // sold: players felt they had wasted their coins.
-export const usable = (product) => !!product && !!(product.outfit || product.item || product.furniture || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || goodsKind(product) !== 'gift');
+export const usable = (product) => !!product && !!(product.outfit || product.item || product.furniture || product.rent || product.adopt || product.umbrella || product.perfume || product.ingredient || product.letter || goodsKind(product) !== 'gift');
 // Clothes, shoes and accessories are bought with coins and worn on the
 // spot. A fashion shop or pop-up with nothing to wear yet is coming soon,
 // and so is any shop whose goods could only be carried around (candles,
@@ -129,8 +130,8 @@ export class ShopUI {
   // onGift(product): pick a friend and send it (see ui/gift-ui.js).
   // onRent(product): rent a hanbok, or give it back; rentLeft(product): ms
   // left on this hanbok's rental (0: not renting it).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, onRent, rentLeft, onFurniture });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -138,6 +139,7 @@ export class ShopUI {
     this.$('cart-close').onclick = () => { this.$('cart-panel').hidden = true; };
     this.$('cart-checkout').onclick = () => { this.$('cart-note').hidden = false; };
     this.$('store-exit').onclick = () => this.onExit();
+    this.$('store-banner').querySelector('.store-meta').onclick = () => this.$('store-banner').classList.toggle('open');
     cart.onChange(() => this.refreshCart());
     this.refreshCart();
   }
@@ -152,6 +154,7 @@ export class ShopUI {
     const tag = localName(store.tagline, lang) || '';
     this.$('store-tagline').textContent = comingSoon(store) ? `🚧 ${t('map.soon')}${tag ? ' · ' + tag : ''}` : tag;
     this.$('store-banner').style.setProperty('--store', store.colors.sign);
+    this.$('store-banner').classList.remove('open');
     this.$('store-banner').querySelector('.sample').hidden = store.category === 'home' || store.category === 'school' || store.category === 'station' || store.category === 'train' || store.category === 'museum' || store.category === 'memorial' || store.category === 'culture' || store.workshop === 'zoo' || store.workshop === 'zoo-sea'; // (the zoo is a real public place, not a made-up brand)
   }
 
@@ -171,6 +174,7 @@ export class ShopUI {
     this.$('product-name-ko').textContent = lang === 'ko' ? '' : product.name.ko;
     this.$('product-price').textContent = formatPrice(product.price);
     this.$('product-desc').textContent = localName(product.desc, lang) || '';
+    if (isTank(product.furniture)) this.$('product-desc').textContent += '\n' + t('tank.noHuge'); // (told before you buy, Yozi 2026-11-18)
     if (product.perfume) { // which style, and how a bottle works
       const st = STYLES[product.perfume];
       const lim = product.limited ? '\n' + fmt(L(LIMITED.on), product.limited) : '';
@@ -269,6 +273,11 @@ export class ShopUI {
     gift.hidden = itemSoon(this.store, product) || !this.canGift?.(product);
     gift.textContent = this.giftLabel?.() || '🎁';
     gift.onclick = () => this.onGift?.(product);
+    // Or gift-wrapped, to carry in the bag and hand over later (game/wrap-gifts.js).
+    const wrap = this.$('product-wrap');
+    wrap.hidden = itemSoon(this.store, product) || !this.canWrap?.(product);
+    wrap.textContent = '🎀 ' + t('wrap.button');
+    wrap.onclick = () => this.onWrap?.(product);
     this.$('product-note').textContent = L(HOW.note);
   }
 

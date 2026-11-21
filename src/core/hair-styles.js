@@ -17,14 +17,16 @@ export function isScalpHair(cx, cy, cz, ey) {
 
 // Point every vertex at one atlas cell, shading top to bottom like the
 // atlas's own gradient (light at the top of a cell, darker lower down).
-export function paintCell(geo, [cx, cy], atlas, light = 0.15, dark = 0.8) {
+// range: [bottom, top] heights to shade over instead of the piece's own
+// (pieces that meet, like a cap and a curtain, then match where they join).
+export function paintCell(geo, [cx, cy], atlas, light = 0.15, dark = 0.8, range = null) {
   const pos = geo.attributes.position;
   geo.computeBoundingBox();
-  const { min, max } = geo.boundingBox;
-  const h = Math.max(1e-6, max.y - min.y);
+  const [y0, y1] = range || [geo.boundingBox.min.y, geo.boundingBox.max.y];
+  const h = Math.max(1e-6, y1 - y0);
   const uv = new Float32Array(pos.count * 2);
   for (let i = 0; i < pos.count; i++) {
-    const t = (pos.getY(i) - min.y) / h; // 0 bottom .. 1 top
+    const t = Math.min(1, Math.max(0, (pos.getY(i) - y0) / h)); // 0 bottom .. 1 top
     uv[i * 2] = (cx + 0.5) / atlas.cols;
     uv[i * 2 + 1] = (cy + light + (1 - t) * (dark - light)) / atlas.rows;
   }
@@ -51,10 +53,11 @@ const sphere = (r, ws = 22, hs = 16, t0 = 0, tl = Math.PI) => new THREE.SphereGe
 export function buildHair(style, material, atlas, ey) {
   const g = new THREE.Group();
   g.name = 'hairStyle';
-  const hairCell = atlas.hair;
+  let hairCell = atlas.hair; // (a shaved head is painted with the skin's cell)
   let shade = [0.15, 0.8]; // atlas light .. dark (a darker pair reads as shaved)
+  let range = null; // (see paintCell)
   const add = (geo, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) => {
-    const m = new THREE.Mesh(paintCell(geo, hairCell, atlas, ...shade), material);
+    const m = new THREE.Mesh(paintCell(geo, hairCell, atlas, ...shade, range), material);
     m.position.set(x, y, z);
     m.scale.set(sx, sy, sz);
     m.rotation.set(rx, ry, rz);
@@ -67,8 +70,9 @@ export function buildHair(style, material, atlas, ey) {
   // bare (seen when the head bends forward, on a bike); a band of hair goes
   // round the back down to the nape.
   // (One mesh: the band is merged into the cap.)
-  const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04) => {
+  const cap = (r = 0.97, cover = 0.52, tilt = -0.42, y = 0.04, withBand = true) => {
     const top = sphere(r, 24, 14, 0, Math.PI * cover).scale(1.02, 1, 1).rotateX(tilt).translate(0, y, -0.04);
+    if (!withBand) return add(top, 0, 0, 0); // (a curtain covers the back)
     const band = new THREE.SphereGeometry(r, 20, 8, Math.PI * 1.02, Math.PI * 0.96, Math.PI * 0.3, Math.PI * 0.45).scale(1.05, 1, 1.06).translate(0, y, -0.06);
     return add(joinGeos(top, band), 0, 0, 0);
   };
@@ -109,6 +113,45 @@ export function buildHair(style, material, atlas, ey) {
     }
     tube(pts, r, n * 10);
   };
+  // A curtain of hair round the head: a thick shell turned about the head's
+  // vertical axis, open at the face. outer: [radius, y] from the top down
+  // (the inner side is `thick` in from it, and the bottom is rounded off);
+  // phi0/len: where it starts and how far round it goes (0 is the face).
+  const curtain = (outer, { thick = 0.12, phi0 = Math.PI * 0.3, len = Math.PI * 1.4, x = 0, y = 0, z = -0.06, sx = 1, sz = 1, rx = 0 } = {}) => {
+    const [rb, yb] = outer[outer.length - 1];
+    const prof = [...outer];
+    for (let k = 1; k < 4; k++) { // the rounded bottom, outer side round to inner
+      const a = (k / 4) * Math.PI;
+      prof.push([rb - thick / 2 + Math.cos(a) * thick / 2, yb - Math.sin(a) * thick * 0.45]);
+    }
+    for (let k = outer.length - 1; k >= 0; k--) prof.push([outer[k][0] - thick, outer[k][1]]);
+    prof.push([...outer[0]]);
+    const pts = prof.map(([r, h]) => new THREE.Vector2(Math.max(0.01, r), h));
+    let geo = new THREE.LatheGeometry(pts, Math.max(6, Math.round(len * 5)), phi0, len);
+    // Close its two ends (seen at the sides of the face).
+    const end = (phi, flip) => {
+      const c = new THREE.ShapeGeometry(new THREE.Shape(pts));
+      if (flip) {
+        const ix = c.index.array;
+        for (let i = 0; i < ix.length; i += 3) [ix[i + 1], ix[i + 2]] = [ix[i + 2], ix[i + 1]];
+      }
+      c.rotateY(phi - Math.PI / 2);
+      c.computeVertexNormals();
+      return c;
+    };
+    geo = joinGeos(joinGeos(geo, end(phi0, false)), end(phi0 + len, true));
+    return add(geo, x, y, z, sx, 1, sz, rx);
+  };
+  // A tail of hair (a ponytail, a pigtail): a teardrop turned round its own
+  // axis, fullest a third of the way down, with a tie at the top.
+  const tail = (x, y, z, len, r, rx = 0, rz = 0) => {
+    const prof = [[0.001, 0.05], [r * 0.55, 0.02], [r * 0.85, -len * 0.15], [r, -len * 0.38], [r * 0.82, -len * 0.7], [r * 0.4, -len * 0.93], [0.001, -len]];
+    add(new THREE.LatheGeometry(prof.map(([a, b]) => new THREE.Vector2(a, b)), 14), x, y, z, 1, 1, 0.85, rx, 0, rz);
+    const keep = shade;
+    shade = [0.7, 0.95]; // the tie, darker
+    add(new THREE.TorusGeometry(r * 0.5, r * 0.16, 6, 14), x, y + 0.01, z, 1, 1, 1, Math.PI / 2 + rx, 0, rz);
+    shade = keep;
+  };
   switch (style) {
     case 'short': // 짧은 커트
       cap();
@@ -121,29 +164,25 @@ export function buildHair(style, material, atlas, ey) {
       cap(0.97, 0.56, -0.25);
       add(new THREE.SphereGeometry(1.0, 20, 6, Math.PI / 2 - 0.8, 1.6, Math.PI * 0.18, Math.PI * 0.27), 0, 0.02, -0.02, 1.03, 1, 1);
       break;
-    case 'bob': { // 단발: chin-length all round, open at the face
-      cap(0.99, 0.55, -0.3);
-      const shell = new THREE.CylinderGeometry(0.97, 1.02, 0.95, 24, 2, true, Math.PI * 0.3, Math.PI * 1.4);
-      add(shell, 0, -0.3, -0.06);
+    case 'bob': // 단발: chin-length all round, open at the face, the ends turned in
+      range = [-0.9, 1.05];
+      cap(0.99, 0.55, -0.3, 0.04, false);
+      curtain([[0.86, 0.52], [1.03, 0.18], [1.08, -0.2], [1.06, -0.5], [0.96, -0.74]], { thick: 0.16 });
       break;
-    }
-    case 'long': { // 긴 생머리: down the back, past the shoulders
-      cap(0.99, 0.55, -0.3);
-      const shell = new THREE.CylinderGeometry(0.97, 1.0, 1.0, 24, 2, true, Math.PI * 0.32, Math.PI * 1.36);
-      add(shell, 0, -0.32, -0.06);
-      add(new THREE.BoxGeometry(1.7, 1.3, 0.3, 4, 4, 1), 0, -1.2, -0.62, 1, 1, 1, 0.12);
+    case 'long': // 긴 생머리: down the back, past the shoulders
+      range = [-1.9, 1.05];
+      cap(0.99, 0.55, -0.3, 0.04, false);
+      curtain([[0.86, 0.52], [1.03, 0.18], [1.07, -0.3], [1.04, -0.75], [0.98, -0.9]], { thick: 0.13, phi0: Math.PI * 0.32, len: Math.PI * 1.36 });
+      curtain([[0.85, -0.5], [0.96, -0.8], [1.0, -1.05], [0.94, -1.4], [0.84, -1.8]], { thick: 0.3, phi0: Math.PI * 0.64, len: Math.PI * 0.72, z: 0.0, sx: 1.12 }); // down the back
       break;
-    }
     case 'pony': // 포니테일
       cap(0.97, 0.55, -0.3);
-      add(sphere(0.2, 12, 10), 0, 0.35, -0.95);
-      add(new THREE.CapsuleGeometry(0.22, 0.75, 6, 12), 0, -0.2, -1.12, 1, 1, 0.85, 0.3);
+      tail(0, 0.5, -1.12, 1.35, 0.3, 0.0);
       break;
     case 'twin': // 양갈래
       cap(0.97, 0.55, -0.3);
       for (const s of [-1, 1]) {
-        add(sphere(0.17, 12, 10), 0.86 * s, 0.05, -0.25);
-        add(new THREE.CapsuleGeometry(0.2, 0.7, 6, 12), 1.0 * s, -0.5, -0.32, 0.9, 1, 0.9, 0, 0, 0.18 * s);
+        tail(0.98 * s, 0.1, -0.28, 1.05, 0.26, 0.12, 0.14 * s);
       }
       break;
     case 'bun': // 똥머리
@@ -172,6 +211,12 @@ export function buildHair(style, material, atlas, ey) {
       cap(0.98, 0.46, -0.72, 0.03);
       add(sphere(0.92, 22, 12, 0, Math.PI * 0.45), 0, 0.2, -0.18, 1.05, 0.9, 1.1, -0.65);
       add(sphere(1, 16, 10), 0, -0.12, -0.82, 0.62, 0.32, 0.3, -0.3); // tucked in at the nape
+      break;
+    case 'shaved': // 삭발: monks (NPCs only, not in HAIR_STYLES). The model's skull IS its hair, so
+      // without it the head is open on top: a smooth cap in the skin's own colour closes it.
+      hairCell = atlas.skin;
+      shade = [0.2, 0.6]; // (the cell's lower band is the mouth's darker tone)
+      cap(0.95, 0.56, -0.42, 0.03);
       break;
     case 'buzz': // 버즈컷: clipped all over, close to the head
       shade = [0.55, 0.95];
@@ -229,8 +274,9 @@ export function buildHair(style, material, atlas, ey) {
       break;
     }
     case 'wave': { // 물결 웨이브: long hair in big S waves down the back
-      cap(0.99, 0.55, -0.3);
-      add(new THREE.CylinderGeometry(0.98, 1.02, 0.7, 24, 2, true, Math.PI * 0.32, Math.PI * 1.36), 0, -0.2, -0.06);
+      range = [-1.8, 1.05];
+      cap(0.99, 0.55, -0.3, 0.04, false);
+      curtain([[0.86, 0.52], [1.03, 0.18], [1.06, -0.3], [1.03, -0.55]], { thick: 0.12, phi0: Math.PI * 0.32, len: Math.PI * 1.36 });
       for (let i = 0; i < 9; i++) {
         const a = Math.PI * (0.12 + (i / 8) * 0.76); // round the back
         waveLock(Math.cos(a) * 0.92, -0.3, -Math.sin(a) * 0.82 - 0.06, -1.75, 0.13, 3, 0.2);
@@ -239,18 +285,20 @@ export function buildHair(style, material, atlas, ey) {
       break;
     }
     case 'hime': // 히메컷: blunt bangs, cheek-length side locks and long straight hair
-      cap(0.97, 0.56, -0.25);
+      range = [-1.9, 1.05];
+      cap(0.97, 0.56, -0.25, 0.04, false);
       add(new THREE.SphereGeometry(1.0, 20, 6, Math.PI / 2 - 0.8, 1.6, Math.PI * 0.18, Math.PI * 0.27), 0, 0.02, -0.02, 1.03, 1, 1);
-      add(new THREE.CylinderGeometry(0.97, 1.0, 1.0, 24, 2, true, Math.PI * 0.32, Math.PI * 1.36), 0, -0.32, -0.06);
-      add(new THREE.BoxGeometry(1.7, 1.3, 0.3, 4, 4, 1), 0, -1.2, -0.62, 1, 1, 1, 0.12);
+      curtain([[0.86, 0.52], [1.03, 0.18], [1.07, -0.3], [1.04, -0.75], [0.98, -0.9]], { thick: 0.13, phi0: Math.PI * 0.32, len: Math.PI * 1.36 });
+      curtain([[0.85, -0.5], [0.96, -0.8], [1.0, -1.05], [0.94, -1.4], [0.84, -1.8]], { thick: 0.3, phi0: Math.PI * 0.64, len: Math.PI * 0.72, z: 0.0, sx: 1.12 }); // down the back
       for (const s2 of [-1, 1]) { // the side locks, cut straight at the cheek
         const p = Math.PI / 2 + s2 * 0.62;
         shell(Math.min(p, p + s2 * 0.4), Math.max(p, p + s2 * 0.4), Math.PI * 0.3, Math.PI * 0.68, 1.07);
       }
       break;
     case 'hush': { // 허쉬컷: light layers to the shoulders, ends flicked out, wispy bangs
-      cap(0.99, 0.55, -0.3);
-      add(new THREE.CylinderGeometry(0.98, 1.08, 0.9, 24, 2, true, Math.PI * 0.3, Math.PI * 1.4), 0, -0.3, -0.06);
+      range = [-0.9, 1.05];
+      cap(0.99, 0.55, -0.3, 0.04, false);
+      curtain([[0.86, 0.52], [1.03, 0.18], [1.07, -0.25], [1.12, -0.6], [1.14, -0.72]], { thick: 0.11 });
       for (let i = 0; i < 9; i++) {
         const a = Math.PI * (0.32 + (i / 8) * 1.36); // round the back, not the face
         add(new THREE.ConeGeometry(0.2, 0.55, 8), Math.sin(a) * 1.08, -0.85, Math.cos(a) * 1.0 - 0.06, 1, 1, 0.6, Math.cos(a) * -0.5, 0, Math.sin(a) * 0.5 + Math.PI); // the flicked ends
@@ -262,9 +310,10 @@ export function buildHair(style, material, atlas, ey) {
       shade = [0.55, 0.95];
       cap(0.955, 0.48, -0.45, 0.02);
       shade = [0.15, 0.8];
-      for (let i = 0; i < 7; i++) {
-        const a = -0.55 + i * 0.4; // round the top, front (-) to back (+)
-        add(new THREE.BoxGeometry(0.3, 0.75 - Math.abs(a - 0.4) * 0.2, 0.36), 0, Math.cos(a) * 1.18, -Math.sin(a) * 1.18, 1, 1, 1, -a);
+      add(sphere(1, 20, 14), 0, 0.55, -0.15, 0.16, 0.55, 1.0, -0.15); // one smooth crest, highest at the front
+      for (let i = 0; i < 5; i++) { // a few points along its top
+        const a = -0.6 + i * 0.38;
+        point(new THREE.ConeGeometry(0.16, 0.45, 6), 0, 0.55 + Math.cos(a) * 0.5, -0.15 - Math.sin(a) * 0.95, [0, Math.cos(a), -Math.sin(a) * 1.4], 0.7, 1, 1);
       }
       break;
     }
@@ -302,8 +351,9 @@ export function buildHair(style, material, atlas, ey) {
       add(sphere(0.3, 14, 10), 0, 0.72, -0.82, 1, 0.85, 1);
       break;
     case 'layered': // 장발: men's long layers to the shoulders, parted in the middle
-      cap(0.99, 0.52, -0.42);
-      add(new THREE.CylinderGeometry(0.98, 1.06, 1.1, 24, 2, true, Math.PI * 0.32, Math.PI * 1.36), 0, -0.4, -0.06);
+      range = [-1.1, 1.05];
+      cap(0.99, 0.52, -0.42, 0.04, false);
+      curtain([[0.86, 0.5], [1.03, 0.15], [1.07, -0.35], [1.08, -0.8], [1.0, -0.95]], { thick: 0.13, phi0: Math.PI * 0.32, len: Math.PI * 1.36 });
       for (const s2 of [-1, 1]) {
         add(sphere(0.62, 16, 10, 0, Math.PI * 0.5), 0.36 * s2, 0.52, 0.2, 1, 0.75, 1.1, -0.3, 0, -0.3 * s2);
         const p = Math.PI / 2 + s2 * 0.55;
@@ -311,7 +361,7 @@ export function buildHair(style, material, atlas, ey) {
       }
       break;
     case 'afro': // 아프로: one big round cloud
-      add(sphere(1.2, 26, 18), 0, 0.72, -0.45, 1.12, 0.95, 1); // set back so the face shows
+      add(sphere(1.12, 26, 18), 0, 0.6, -0.4, 1.08, 0.92, 1); // set back so the face shows
       break;
     case 'braids': // 땋은 머리: two long braids down the back
       cap(0.98, 0.55, -0.3);

@@ -13,14 +13,14 @@
 export const STAMPS = [
   {
     // on the Namsan summit plaza (outdoors on the hilltop, game/namsan-summit.js), across from the love locks
-    id: 'namsan', place: { at: [-1469.8, -188.8], y: 56.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
+    id: 'namsan', place: { at: [-1474.5, -187.3], y: 56.06, ry: -Math.PI / 2 }, color: '#c8323a', shape: 'circle',
     name: { ko: '남산타워', en: 'N Seoul Tower', ja: 'Nソウルタワー', zh: 'N首尔塔' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<path d="M100 40 v12 M92 58 h16 l-3 10 h-10 z M97 68 l-5 62 h16 l-5 -62 M86 130 h28" /><circle cx="100" cy="62" r="2"/><path d="M60 138 q20 -18 40 -6 q22 -14 42 6" />',
   },
   {
     id: 'museum', place: { store: 'national-museum' }, color: '#2b4c8c', shape: 'square',
-    name: { ko: '국립중앙미술관', en: 'National Art Museum', ja: '国立中央美術館', zh: '国立中央美术馆' },
+    name: { ko: '국립중앙미술관', en: 'National Central Art Museum', ja: '国立中央美術館', zh: '国立中央美术馆' },
     gu: { ko: '용산구', en: 'Yongsan-gu', ja: '龍山区', zh: '龙山区' },
     icon: '<rect x="66" y="62" width="68" height="56" rx="2"/><rect x="73" y="69" width="54" height="42"/><path d="M76 106 l15 -18 l10 11 l8 -8 l15 15" /><circle cx="114" cy="80" r="4"/>',
   },
@@ -37,8 +37,9 @@ export const STAMPS = [
     icon: '<path d="M84 128 a14 14 0 1 1 10 -24 l20 -36 l8 4 l-20 36 a14 14 0 0 1 -18 20 z"/><path d="M114 62 l10 5 M126 92 v-20 l14 -4 v20"/><circle cx="122" cy="94" r="4"/><circle cx="136" cy="90" r="4"/>',
   },
   {
-    // on the little plaza in the middle of the Yeonmujang-gil block
-    id: 'seongsu', place: { at: [23, 92] }, color: '#e0662a', shape: 'square',
+    // on Yeonmujang-gil's pavement, among its shops (between the perfume and
+    // ring shops): the old spot was an empty lot behind the offices (Yozi 2026-11-18)
+    id: 'seongsu', place: { at: [4.7, 67.4], ry: 2.784 }, color: '#e0662a', shape: 'square',
     name: { ko: '성수 팝업스토어', en: 'Seongsu Pop-up', ja: '聖水ポップアップ', zh: '圣水快闪店' },
     gu: { ko: '성동구', en: 'Seongdong-gu', ja: '城東区', zh: '城东区' },
     icon: '<path d="M64 84 l36 -26 l36 26 z M68 84 v40 h64 v-40"/><path d="M64 84 q9 10 18 0 q9 10 18 0 q9 10 18 0 q9 10 18 0"/><rect x="90" y="100" width="20" height="24"/>',
@@ -130,8 +131,11 @@ export const STAMPS = [
     icon: '<path d="M44 124 q-4 -30 26 -38 q30 -8 60 -4 q30 4 28 30 q-2 12 -14 12 h-88 q-10 0 -12 0 z"/><path d="M62 96 q38 -10 76 -2"/><path d="M60 110 q40 -8 84 0"/><path d="M90 124 v-12 h20 v12"/><path d="M36 138 h128"/>',
   },
   {
+    // at the kimchi class in Bukchon; the id is from the shop's old name (수라간),
+    // kept so stamps already collected still count. A stamp at a shop goes by
+    // the shop's name (tests/place-names.test.mjs).
     id: 'suragan', place: { store: 'sonmat-kimchi' }, color: '#1f7a5c', shape: 'square',
-    name: { ko: '수라간', en: 'Suragan Kitchen', ja: '水刺間', zh: '水剌间' },
+    name: { ko: '김치만들기체험', en: 'Kimchi Making Class', ja: 'キムチ作り体験', zh: '泡菜制作体验' },
     gu: { ko: '종로구', en: 'Jongno-gu', ja: '鍾路区', zh: '钟路区' },
     icon: '<path d="M64 98 h72 q-4 26 -36 26 q-32 0 -36 -26 z M60 98 h80"/><path d="M84 88 q-6 -8 0 -16 q6 -8 0 -16 M100 88 q-6 -8 0 -16 q6 -8 0 -16 M116 88 q-6 -8 0 -16 q6 -8 0 -16"/>',
   },
@@ -144,7 +148,7 @@ export const STAMPS = [
   },
   {
     id: 'hyojae', place: { store: 'hyojae-academy' }, color: '#3d3a8a', shape: 'square',
-    name: { ko: '효재대학교', en: 'Hyojae University', ja: 'ヒョジェ大学', zh: '孝才大学' },
+    name: { ko: '효재대학교', en: 'Hyojae University', ja: 'ヒョジェ大学', zh: '孝在大学' },
     gu: { ko: '서대문구', en: 'Seodaemun-gu', ja: '西大門区', zh: '西大门区' },
     icon: '<path d="M100 60 l42 16 l-42 16 l-42 -16 z M76 84 v18 q24 14 48 0 v-18 M138 78 v22"/><path d="M70 120 h28 q2 0 2 3 q0 -3 2 -3 h28 v10 h-28 q-2 0 -2 3 q0 -3 -2 -3 h-28 z"/>',
   },
@@ -213,6 +217,14 @@ export const STAMPS = [
     gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
     // the mall's long front with its wave skylight, over a wave
     icon: '<path d="M52 120 h96 M56 120 v-34 h88 v34 M56 98 h88"/><path d="M70 86 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0 q8 -14 15 0"/><path d="M50 138 q12 -7 25 0 q12 7 25 0 q12 -7 25 0 q12 7 25 0"/>',
+  },
+  {
+    // in Bongeunsa's courtyard, beside the pagoda, facing Beopwangru (scripts/bongeunsa-layout.mjs)
+    id: 'bongeunsa', place: { at: [32.0, 797.6], ry: 0.497 }, color: '#b5462f', shape: 'circle',
+    name: { ko: '봉은사', en: 'Bongeunsa Temple', ja: '奉恩寺', zh: '奉恩寺' },
+    gu: { ko: '강남구', en: 'Gangnam-gu', ja: '江南区', zh: '江南区' },
+    // a temple hall's curved roof over its posts, and a lotus in front
+    icon: '<path d="M44 82 q56 -30 112 0 q-8 -4 -14 -2 q-42 -18 -84 0 q-6 -2 -14 2 z"/><path d="M60 86 h80 M66 86 v38 M88 86 v38 M112 86 v38 M134 86 v38 M58 124 h84"/><path d="M100 150 q-10 -10 0 -22 q10 12 0 22 z M100 150 q-20 -2 -24 -14 q14 -2 24 14 z M100 150 q20 -2 24 -14 q-14 -2 -24 14 z"/>',
   },
   {
     // in Dongmyo's flea market, between Potato Market's mats and the way up

@@ -29,6 +29,12 @@ export const config = {
   // netSendRateMin. Realtime services count each message once per receiver.
   netRecvBudget: 20,
   netSendRateMin: 1.5,
+  // On the street with nobody but strangers around (no friend in sight),
+  // movement goes out at most this often (walking / riding). Each message is
+  // billed once per receiver, and most time near others is near strangers;
+  // with a friend around we send at the full rate so they see us smoothly.
+  netSendRateStranger: 2,
+  netSendRateStrangerRide: 3,
   // Street multiplayer is split into square cells of this size (metres). You
   // see players in your cell and the 8 around it, i.e. at least this far.
   netCellSize: 200,

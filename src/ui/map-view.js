@@ -109,7 +109,7 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
-const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹' };
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹', bongeunsa: '🪷' };
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -947,7 +947,7 @@ export class MapView {
     for (const s of byDist) {
       row(storeIcon(s.store), '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
-          this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
+          this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
         });
     }
   }
@@ -1034,7 +1034,7 @@ export class MapView {
         this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
       } else if (hit.kind === 'store') {
         const s = hit.item;
-        this._pick({ kind: 'store', id: s.store.id, x: s.door.x, z: s.door.z, label: localName(s.store.name, lang) });
+        this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
       } else {
         const z = hit.item;
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });

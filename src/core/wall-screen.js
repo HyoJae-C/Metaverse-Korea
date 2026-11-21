@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { inPoly } from './geom.js';
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+const SMALL = 64; // px, a sleeping screen's still copy (longer side)
 
 
 // The wall nearest (x, z) that is at least `minLen` long: its middle point
@@ -32,6 +33,22 @@ export function wallNear(buildings, x, z, minLen = 8) {
     }
   }
   return best;
+}
+
+// Where a region.json screen goes on the wall wallNear found: kept inside the
+// wall's two ends and under its roof. A screen past the corner or over the
+// roof hangs in the air with nothing behind it (one by Jogyesa did, 2026-11-16).
+// Too tall for the building: shrunk whole, keeping its shape.
+// Returns { x, z, w, h, y } (the screen's middle on the wall, its size, its bottom).
+export const SCREEN_LOW = 3, SCREEN_ROOF = 2; // lowest bottom; gap kept under the roof
+export function screenSpot(wall, sc) {
+  let w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
+  const room = wall.h - SCREEN_ROOF - SCREEN_LOW;
+  if (h > room) { w *= room / h; h = room; }
+  const y = Math.min(sc.y ?? 10, Math.max(SCREEN_LOW, wall.h - h - SCREEN_ROOF));
+  const t0 = (wall.x - wall.x1) * wall.ax + (wall.z - wall.z1) * wall.az; // how far along the wall
+  const t = Math.max(w / 2 + 0.5, Math.min(wall.len - w / 2 - 0.5, t0 + (sc.along || 0)));
+  return { x: wall.x1 + wall.ax * t, z: wall.z1 + wall.az * t, w, h, y };
 }
 
 function drawSoon(g, t) {
@@ -245,7 +262,37 @@ export class WallScreen {
     this.root.rotation.y = Math.atan2(wall.nx, wall.nz);
   }
 
+  // Far away (past the distance it's drawn at) the screen keeps only a small
+  // still copy and lets its 1024 px canvas go: 12 screens were 30 MB of
+  // canvas memory, the biggest share on iPhone Safari, which closes the page
+  // past its canvas limit. Coming back near, the full canvas returns and is
+  // drawn again on the next frame (every frame redraws it all anyway).
+  sleep() {
+    if (this.asleep) return;
+    const c = this.canvas;
+    const k = SMALL / Math.max(c.width, c.height);
+    const small = document.createElement('canvas');
+    small.width = Math.max(1, Math.round(c.width * k)); small.height = Math.max(1, Math.round(c.height * k));
+    small.getContext('2d').drawImage(c, 0, 0, small.width, small.height);
+    this.size = [c.width, c.height];
+    this.tex.dispose();
+    this.tex.image = small;
+    this.tex.needsUpdate = true;
+    c.width = c.height = 0;
+    this.asleep = true;
+  }
+
+  wake() {
+    if (!this.asleep) return;
+    [this.canvas.width, this.canvas.height] = this.size; // (same 2D context, now blank: the next update fills it)
+    this.tex.dispose();
+    this.tex.image = this.canvas;
+    this.asleep = false;
+    this.frameT = 1; // draw at once
+  }
+
   update(dt) {
+    this.wake();
     this.t += dt;
     this.frameT += dt;
     if (this.frameT < 1 / 15) return; // 15 fps is plenty for a sign

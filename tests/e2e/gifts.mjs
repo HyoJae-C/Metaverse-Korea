@@ -113,6 +113,8 @@ try {
     await a.click('#product-gift');
     if (shotDir && check === 'bag') await a.screenshot({ path: shotDir + '/gift-picker.png' });
     await a.click('.gift-person');
+    // "Spend ₩…?" (game/spend-ask.js): OK plays the tap again and pays.
+    await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 });
     step = `${shop}: B waits for the gift card`;
     await b.waitForSelector('.gift-card', { timeout: 10000 });
     if (shotDir && check === 'bag') { await b.waitForTimeout(800); await b.screenshot({ path: shotDir + '/gift-card.png' }); }
@@ -133,11 +135,46 @@ try {
     await b.evaluate(() => __mk.leave());
     await a.waitForTimeout(1500);
   }
+  // Gift-wrapped with a letter: A buys it wrapped in the shop, carries the
+  // box out in the bag, and hands it to B on the street from the bag.
+  await bothIn('denim-lab');
+  step = 'wrap: A buys it gift-wrapped with a letter';
+  await a.evaluate(() => __mk.bagAdd({ kind: 'letter', sips: 2 }));
+  await a.evaluate(() => __mk.product(1));
+  await a.waitForSelector('#product-wrap:not([hidden])', { timeout: 5000 });
+  await a.click('#product-wrap');
+  await a.fill('.wrap-letter-in', 'Happy trip to Seoul!');
+  if (shotDir) await a.screenshot({ path: shotDir + '/wrap-letter.png' });
+  await a.click('.wrap-panel .wrap-row .primary');
+  await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 });
+  await a.waitForFunction(() => __mk.bagList().some((e) => e.kind === 'wrap' && e.lt === 'Happy trip to Seoul!'), null, { timeout: 5000 });
+  if (!(await a.evaluate(() => __mk.bagList().some((e) => e.kind === 'letter' && e.sips === 1)))) throw new Error('the letter did not use a sheet');
+  const wrapped = await a.evaluate(() => { const e = __mk.bagList().find((x) => x.kind === 'wrap'); return e && { s: e.s, p: e.p }; });
+  for (const page of [a, b]) await page.evaluate(() => __mk.leave());
+  await a.waitForTimeout(1500);
+  step = 'wrap: A hands it over from the bag';
+  for (const page of [a, b]) await page.waitForFunction(() => __mk.near() >= 1, null, { timeout: 15000 }); // (an offer before B sees A is dropped)
+  await b.waitForTimeout(1000);
+  await a.evaluate(() => __mk.bagTab('bag'));
+  await a.click('#bag-panel .bag-slot[title="Wrapped gift"]');
+  if (shotDir) await a.screenshot({ path: shotDir + '/wrap-bag.png' });
+  await a.click('#bag-panel .bag-actions .chip.on');
+  await a.click('.wrap-panel .gift-person', { timeout: 5000 });
+  step = 'wrap: B opens it';
+  await b.waitForSelector('.gift-card', { timeout: 10000 });
+  if (shotDir) { await b.waitForTimeout(600); await b.screenshot({ path: shotDir + '/wrap-card.png' }); }
+  await b.click('.gift-card .primary');
+  await a.waitForFunction(() => !__mk.bagList().some((e) => e.kind === 'wrap'), null, { timeout: 10000 });
+  const res = await fetch(new URL('regions/another-seoul/stores.json', url));
+  const p1 = (await res.json()).stores.find((s) => s.id === wrapped.s).products.find((p) => p.id === wrapped.p);
+  if (!(await b.evaluate((x) => __mk.owns(x), p1.item || p1.outfit))) throw new Error('wrapped clothes not in B\'s items');
+  if (shotDir) await b.screenshot({ path: shotDir + '/wrap-opened.png' });
+  await b.click('.wrap-panel .sheet-x');
   // A last one, declined: A gets the coins back, and B isn't asked again
   // by A for a while (the next offer is turned down on its own).
   await bothIn('salam-halal');
   const before = await a.evaluate(() => __mk.coins());
-  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); };
+  const sendOne = async () => { await a.evaluate(() => __mk.product(2)); await a.click('#product-gift'); await a.click('.gift-person'); await a.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 }); };
   step = 'decline: A sends a gift';
   await sendOne();
   step = 'decline: B waits for the gift card';

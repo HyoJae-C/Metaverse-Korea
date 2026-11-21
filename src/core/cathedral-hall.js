@@ -316,6 +316,12 @@ export function buildCathedralHall(store, ROOM, EXIT) {
   }
   b.box(0.04, 0.36, 0.04, A.x + 0.5, top + 0.2, A.z - 0.32, C.gold); // a small altar cross (to one side: the priest's face stays in view)
   b.box(0.2, 0.04, 0.04, A.x + 0.5, top + 0.28, A.z - 0.32, C.gold);
+  // The chalice (cup of wine) and the paten (the plate the host lies on), in
+  // front of the priest's place.
+  b.add(new THREE.CylinderGeometry(0.06, 0.07, 0.02, 12), C.gold, A.x - 0.3, top + 0.04, A.z - 0.1); // its foot
+  b.add(new THREE.CylinderGeometry(0.012, 0.012, 0.1, 6), C.gold, A.x - 0.3, top + 0.1, A.z - 0.1); // its stem
+  b.add(new THREE.CylinderGeometry(0.06, 0.03, 0.09, 12), C.gold, A.x - 0.3, top + 0.19, A.z - 0.1); // its cup
+  b.add(new THREE.CylinderGeometry(0.09, 0.09, 0.012, 16), C.gold, A.x + 0.05, top + 0.036, A.z - 0.1); // the paten
   // A big wooden cross hanging over the altar, in front of the apse windows.
   const XZ = -14.3;
   b.box(0.2, 2.6, 0.1, 0, 4.6, XZ, C.wood);
@@ -389,12 +395,14 @@ export function buildCathedralHall(store, ROOM, EXIT) {
   rose.rotation.y = Math.PI;
   scene.add(rose);
   b.add(new THREE.TorusGeometry(1.36, 0.08, 5, 24), C.stone, 0, L.clerestory + 0.5, F - 0.05);
+  const fonts = [];
   for (const s of [-1, 1]) { // holy water fonts
     const x = s * 2.4, z = F - 2.6;
     b.add(new THREE.CylinderGeometry(0.08, 0.12, 0.62, 8), C.stone, x, 0.31, z);
     b.add(new THREE.CylinderGeometry(0.26, 0.14, 0.14, 12), C.marble, x, 0.68, z);
     b.add(new THREE.CircleGeometry(0.22, 12).rotateX(-Math.PI / 2), '#a9c6d8', x, 0.755, z);
     block(x, z, 0.5, 0.5);
+    fonts.push({ x, z, r: 1.15 }); // (game/holy-water.js: dip your fingers, the sign of the cross)
   }
   // The confessional (L.confessional): a dark wooden booth, the priest's
   // door in the middle with a small cross over it, a purple curtain on
@@ -446,7 +454,7 @@ export function buildCathedralHall(store, ROOM, EXIT) {
 
   return {
     scene, products: [], colliders, seats, clerk: null, turntable: null, room: ROOM, exit: EXIT,
-    stations: { patrons, mass: { ...L }, confessional: [{ x: kf - 0.75, z: K.z }] },
+    stations: { patrons, mass: { ...L }, confessional: [{ x: kf - 0.75, z: K.z }], pray: [{ x: 0, z: L.rail + 0.9, r: 2.4, face: Math.PI, pose: 'prayc' }], font: fonts }, // (pray: at the altar rail, game/prayer.js; font: game/holy-water.js)
     animate,
     // The camera stays inside the walls (and in front of the organ pipes).
     camBlocked: (x, z) => Math.abs(x) > AW - 0.3 || z > F - 0.8 || z < -d / 2 + 0.4,

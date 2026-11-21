@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { JOGYESA as J } from '../src/data/jogyesa.js';
+import { JOGYESA as J, wallRuns, WALL } from '../src/data/jogyesa.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'gyeongbokgung.json');
@@ -30,28 +30,37 @@ for (const k of ['roads', 'buildings', 'areas', 'blockers', 'landmarks', 'pois']
 const filler = (x0, z0) => map.buildings.find((b) => !b.jg && b.p.length === 4 && Math.min(...b.p.map((q) => q[0])) === x0 && Math.min(...b.p.map((q) => q[1])) === z0);
 const roadEast = J.road.x + J.road.w / 2 + 0.5;
 const west = filler(56, 40), east = filler(124, 40) || filler(roadEast, 40), southEast = filler(124, 86) || filler(roadEast, 86);
-if (west) west.p = rect(56, 40, 91, 76);
+if (west) west.p = rect(56, 40, 80, 76); // (the temple at 37.5% reaches x 82)
 if (east) east.p = rect(roadEast, 40, 186, 76);
 if (southEast) southEast.p = rect(roadEast, 86, 186, 122); // (Ujeongguk-ro runs on down to Jong-ro)
 
 const jg = 1;
 map.roads.push({ k: 'secondary', w: J.road.w, p: [[J.road.x, J.road.from], [J.road.x, J.road.to]], n: { ko: '우정국로', en: 'Ujeongguk-ro' }, jg });
-map.areas.push({ k: 'stone', p: J.site, jg, why: 'Jogyesa\'s grounds at 1/4 (OSM way 223157537)' });
-map.buildings.push({ h: 13, p: rect(103, 30, 120, 44.5), n: { ko: '한국불교역사문화기념관', en: 'Korean Buddhist History and Culture Memorial Hall' }, jg, why: 'OSM 103.5-119.8 × 30.9-49.2: its south side cut back 4.7 m for Daeungjeon at 50%' });
-map.landmarks.push({ type: 'jogyesa', x: J.daeungjeon.x, z: J.daeungjeon.z, clear: 22, jg, name: { ko: '조계사', en: 'Jogyesa Temple', ja: '曹渓寺', zh: '曹溪寺' }, why: 'Daeungjeon 3 m north and Geungnakjeon 7 m west of their real middles, so both halls fit at 50% (src/data/jogyesa.js)' });
+map.areas.push({ k: 'stone', p: J.site, jg, why: 'Jogyesa\'s grounds at 37.5% (OSM way 223157537 grown 1.5 times about Iljumun, squared off; Yozi 2026-11-15)' });
+map.buildings.push({ h: 10, p: rect(...J.museum), n: { ko: '한국불교역사문화기념관', en: 'Korean Buddhist History and Culture Memorial Hall' }, jg, why: 'OSM outline at 37.5%, its north end cut at Yulgok-ro (19 m deep, not 27)' });
+map.landmarks.push({ type: 'jogyesa', x: J.daeungjeon.x, z: J.daeungjeon.z, clear: 30, jg, name: { ko: '조계사', en: 'Jogyesa Temple', ja: '曹渓寺', zh: '曹溪寺' }, why: 'the whole temple at 37.5%, grown about Iljumun: bigger than 1/4 on purpose (src/data/jogyesa.js)' });
 
 map.pois.push({ kind: 'landmark', x: J.daeungjeon.x, z: J.daeungjeon.z + 12, name: { ko: '조계사', en: 'Jogyesa Temple', ja: '曹渓寺', zh: '曹溪寺' }, jg });
 
 const B = (p, why) => map.blockers.push({ p, why, jg });
 const D = J.daeungjeon, G = J.geungnakjeon, I = J.iljumun;
-B(around(D.x, D.z, D.w + 1.6, D.d + 1.6), 'Daeungjeon on its plinth');
-B(around(G.x, G.z, G.w + 1, G.d + 1), 'Geungnakjeon');
+B(around(D.x, D.z, D.w + 2.6, D.d + 2.6), 'Daeungjeon on its plinth');
+B(around(G.x, G.z, G.w + 2.6, G.d + 2.6), 'Geungnakjeon on its plinth');
 for (const sz of [-1, 1]) B(around(I.x, I.z + sz * (I.w / 2 - I.bay / 2), I.d, I.bay), 'Iljumun: a side bay with two of the Four Heavenly Kings');
 B(around(J.pagodaTree.x, J.pagodaTree.z, 1.6, 1.6), 'the pagoda tree');
 B(around(J.whitePine.x, J.whitePine.z, 1.4, 1.4), 'the white pine');
 B(around(J.sarira.x, J.sarira.z, 3, 3), 'the sarira pagoda\'s base');
 B(around(J.babyBuddha.x, J.babyBuddha.z, 1.6, 1.6), 'the baby Buddha');
 B(around(J.stele.x, J.stele.z, 1.2, 0.8), 'the stele');
+B(around(J.bell.x, J.bell.z, J.bell.w + 0.5, J.bell.w + 0.5), 'the bell pavilion');
+const U = J.ujeongguk;
+B(around(U.x, U.z, U.w + 2.6, U.d + 2.6), 'Ujeongchongguk on its base');
+map.pois.push({ kind: 'landmark', x: U.x, z: U.z + 4, name: { ko: '우정총국', en: 'Ujeongchongguk (old post office)', ja: '郵征総局', zh: '邮征总局' }, jg });
+
+for (const [x0, z0, x1, z1] of wallRuns()) { // the temple wall: you come in by Iljumun
+  const t = WALL.t / 2 + 0.05;
+  B(rect(Math.min(x0, x1) - t, Math.min(z0, z1) - t, Math.max(x0, x1) + t, Math.max(z0, z1) + t), 'the temple wall');
+}
 
 const pretty = (o) => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']'); // (as build-gyeongbokgung.mjs writes it)
 writeFileSync(MAP, pretty(map) + '\n');

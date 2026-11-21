@@ -591,6 +591,16 @@ test('riding a camel: pay at the stand, sit on the saddle, carried round, off at
     assert.ok(seated, 'still riding');
     assert.ok(me.root.position.y > low + 0.8, `sitting up high once it stands (${low.toFixed(2)} → ${me.root.position.y.toFixed(2)})`);
     assert.ok(Math.hypot(me.root.position.x - R.stand.x, me.root.position.z - R.stand.z) > 20, 'carried away from the stand');
+    // Others see us on the saddle: we send which camel, and on their screen
+    // we're put on its saddle, wherever our sent spot says (it lags or runs
+    // ahead of the camel: they saw us on its neck).
+    const st = {};
+    cam.state(st);
+    assert.equal(st.cm, 1, 'we tell others which camel we ride');
+    const peer = { target: { cm: 1, x: me.root.position.x + 1.5, z: me.root.position.z }, ch: { root: new THREE.Object3D() } };
+    assert.ok(cam.placePeer(peer), 'a rider seen from outside is placed');
+    assert.ok(peer.ch.root.position.distanceTo(me.root.position) < 1e-6, 'on the same saddle as they see themselves');
+    assert.equal(cam.placePeer({ target: { x: 0, z: 0 }, ch: { root: new THREE.Object3D() } }), false, 'someone not on a camel is left alone');
     // Round the loop and back: off at the stand.
     for (let t = 0; t < C; t += 0.1) { T += 0.1; b.tick(0.1, me.root.position); cam.tick(); if (!seated) break; }
     assert.equal(seated, null, 'off at the end of the lap');
@@ -629,6 +639,13 @@ test('the Sea Animals hall has pictures on its outside walls, with MODU SEOUL on
     draw(c, w, h);
     assert.ok(said.join(' ').replace(/\s+/g, ' ').includes('MODU') && said.join(' ').includes('SEOUL'), `${name} says MODU SEOUL`);
   }
+});
+
+test('the camel ride: the keeper walks beside the camel, not runs', async () => {
+  const { CAMEL_PACE, KEEPER_STEP } = await import('../src/game/zoo-camels.js');
+  const { PACE } = await import('../src/core/zoo-camel-ride.js');
+  assert.equal(CAMEL_PACE, PACE, 'the keeper knows the camel\'s pace');
+  assert.ok(KEEPER_STEP > 0.01 && KEEPER_STEP < 0.55, 'the walk animation, not the run (character speed01 over 0.55 runs)');
 });
 
 test('the camel ride: a keeper leads each camel round, at its head on its left, clear of the pens', async () => {

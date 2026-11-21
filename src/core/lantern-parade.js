@@ -100,7 +100,7 @@ export function figureLitAt(u) {
 // Where each marcher stands in the yard once in: rows facing Daeungjeon.
 export function yardSpot(i) {
   const cols = 6, r = Math.floor(i / cols), c = i % cols;
-  return [J.canopy.x0 + 11 + c * 2.1, J.canopy.z0 + 6 + r * 1.9]; // (clear of the pagoda tree, the baby Buddha and the stele)
+  return [J.canopy.yard[0] + c * 2.1, J.canopy.yard[1] + r * 1.9]; // (clear of the pagoda tree, the baby Buddha and the stele)
 }
 
 // How far back a row walks: its place, plus the room left for floats ahead.

@@ -25,6 +25,14 @@ const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: h
 const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
+// A floating balloon's knot, in the rig's metres: up by the head on the
+// right (-x), just behind the shoulder line (the dog rises ~0.4 m above it).
+const FLOAT_AT = new THREE.Vector3(-0.5, 1.12, -0.05);
+const STRING_MAT = new THREE.LineBasicMaterial({ color: 0xd9d4ca });
+// The open umbrella against the left hand: dx/dy/dz from the hand to the pole's
+// foot (the hand grips the pole partway up), tilt leans the canopy over the head.
+// x/y/z: where it stands before the model has loaded.
+const UMB_AT = { dx: 0.055, dy: -0.25, dz: 0, tilt: 0.22, x: 0.4, y: 0.6, z: 0.05 };
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
   const o = {
@@ -132,6 +140,8 @@ export function createCharacter(rawLook) {
   let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
+  let string = null; // the line from the hand up to a floating balloon
+  let floatT = Math.random() * 10; // (floating balloons don't all bob together)
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
   let tube = null; // a swim ring (the pool)
@@ -142,6 +152,19 @@ export function createCharacter(rawLook) {
     if (held.userData.onHead) { // (a balloon crown: worn, not held)
       held.scale.setScalar(1);
       headAcc.add(held);
+      return;
+    }
+    if (held.userData.floats) { // (a balloon dog: up by the head, on a string from the hand)
+      held.scale.setScalar(1);
+      held.position.set(FLOAT_AT.x, FLOAT_AT.y, FLOAT_AT.z);
+      held.rotation.set(0, 0, 0);
+      rig.add(held);
+      if (!string) {
+        string = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(6, 3)), STRING_MAT);
+        string.frustumCulled = false;
+        rig.add(string);
+      }
+      string.visible = !!model?.hand;
       return;
     }
     if (model?.hand) {
@@ -173,14 +196,19 @@ export function createCharacter(rawLook) {
       return;
     }
     model = m; blob.visible = true;
+    if (umbrella) m.setUmbrella?.(true);
     for (const f of footProps.splice(0)) f(m);
     addGloves(look, m);
     m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
   });
   tryModel();
+  const towel = accessory('neck', look.neck);
   return {
     root,
     head,
+    // The team cheer towel round the neck, if any ({ color, trim, team }):
+    // Modu Ballpark has it held up overhead when cheering (game/ballpark-towel.js).
+    towel: shapeOf(towel) === 'towel' ? towel : null,
     // Put on a costume head (a THREE.Group in chibi head units).
     setMascot(g) { mascot?.removeFromParent(); mascot = g; headAcc.add(g); wearMascot(); },
     // A costume piece on the head or body (NPC costumes), in the chibi's units
@@ -277,12 +305,37 @@ export function createCharacter(rawLook) {
             skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
+        if (umbrella && model.hands?.[0]) {
+          // The pole's grip follows the left hand; the umbrella stays upright, leaning a little over the head.
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hands[0].getWorldPosition(_fv));
+          const U = globalThis.__umbAt || UMB_AT; // debug: tune live
+          umbrella.position.set(_fv.x + U.dx, _fv.y + U.dy, _fv.z + U.dz);
+          umbrella.rotation.z = U.tilt;
+        }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
           rig.updateWorldMatrix(true, true);
           model.hand.getWorldQuaternion(qHand);
           rig.getWorldQuaternion(qRoot);
           held.quaternion.copy(qHand.invert().multiply(qRoot));
+        } else if (held?.parent === rig && held.userData.floats && model.hand) {
+          // A floating balloon bobs and sways, trails back a little while
+          // walking, and its string runs from the hand up to the knot.
+          floatT += dt;
+          const k = Math.min(1, dt * 4);
+          held.position.x = FLOAT_AT.x + Math.sin(floatT * 1.1) * 0.03;
+          held.position.y = FLOAT_AT.y + Math.sin(floatT * 1.7) * 0.035;
+          held.position.z += (FLOAT_AT.z - speed01 * 0.18 - held.position.z) * k;
+          held.rotation.z = Math.sin(floatT * 1.3) * 0.08;
+          held.rotation.x += (-speed01 * 0.2 - held.rotation.x) * k;
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hand.getWorldPosition(_fv));
+          const a = string.geometry.attributes.position;
+          a.setXYZ(0, _fv.x, _fv.y, _fv.z);
+          a.setXYZ(1, held.position.x, held.position.y, held.position.z);
+          a.needsUpdate = true;
+          string.visible = held.visible;
         }
         return;
       }
@@ -338,12 +391,15 @@ export function createCharacter(rawLook) {
       }
     },
     // An open umbrella over the head (rainy days), or none.
+    // Held in the left hand, raised beside the head (the right hand stays
+    // free for a cup); the pole stays clear of the face.
     setUmbrella(on) {
       if (!!umbrella === !!on) return;
+      model?.setUmbrella?.(!!on);
       if (on) {
         umbrella = makeUmbrella();
-        umbrella.position.set(0.16, 0.62, 0.05);
-        umbrella.rotation.z = -0.08;
+        umbrella.position.set(UMB_AT.x, UMB_AT.y, UMB_AT.z);
+        umbrella.rotation.z = UMB_AT.tilt;
         rig.add(umbrella);
       } else { umbrella.removeFromParent(); umbrella = null; }
     },
@@ -352,6 +408,7 @@ export function createCharacter(rawLook) {
       if ((held?.name || null) === (kind ? 'held:' + kind : null)) return;
       held?.removeFromParent();
       held = kind ? makeHeld(kind) : null;
+      if (string) string.visible = false;
       attachHeld();
     },
     // The held thing's 3D object (the fishing rig moves the rod's parts).
@@ -665,6 +722,15 @@ const PAW_DROP = 0.075; // metres from the wrist bone to the mitten's middle
 function addGloves(look, m) {
   const glove = accessory('hand', look.hand);
   if (!glove || !m.hands) return;
+  if (shapeOf(glove) === 'bracelet') { // a knot bracelet: on the left wrist only
+    const h = m.hands[0];
+    if (!h) return;
+    const b = makeBracelet(glove);
+    b.scale.multiplyScalar(1 / m.scale);
+    b.position.y = BRACELET_Y / m.scale;
+    h.add(b);
+    return;
+  }
   for (const [i, h] of m.hands.entries()) {
     if (!h) continue;
     const p = makePaw(glove);
@@ -678,6 +744,42 @@ function addGloves(look, m) {
     p.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     h.add(p);
   }
+}
+
+// Maeum Knot Studio's maedeup bracelet (data/appearance.js KNOT_COLORS,
+// KNOTS), in metres: a silk cord round the wrist (the hand bone's y axis)
+// with its knot on the back of the wrist (+z), facing out.
+const BRACELET_R = 0.042, BRACELET_Y = 0.012;
+function makeBracelet(a) {
+  const g = new THREE.Group();
+  const m = mat(a.color);
+  const cord = new THREE.Mesh(geo('braceletCord', () => new THREE.TorusGeometry(BRACELET_R, 0.008, 6, 24).rotateX(Math.PI / 2)), m);
+  g.add(cord);
+  const knot = new THREE.Group();
+  knot.position.z = BRACELET_R + 0.008;
+  knot.scale.setScalar(1.6); // (bigger than real, so it reads on a chibi)
+  g.add(knot);
+  const ball = (r, x, y, sx = 1, sy = 1) => {
+    const b = new THREE.Mesh(geo('braceletBall', () => new THREE.SphereGeometry(1, 10, 8)), m);
+    b.scale.set(r * sx, r * sy, r * 0.6);
+    b.position.set(x, y, 0);
+    knot.add(b);
+  };
+  if (a.knot === 'butterfly') { // two loops out to the sides of a small knot
+    for (const s of [-1, 1]) ball(0.013, s * 0.015, 0, 1.3, 0.85);
+    ball(0.008, 0, 0);
+  } else if (a.knot === 'chrysanthemum') { // petals round a centre
+    for (let k = 0; k < 6; k++) ball(0.007, Math.cos((k / 6) * Math.PI * 2) * 0.012, Math.sin((k / 6) * Math.PI * 2) * 0.012);
+    ball(0.008, 0, 0);
+  } else { // double coin: two rings side by side, overlapping
+    for (const s of [-1, 1]) {
+      const r = new THREE.Mesh(geo('braceletCoin', () => new THREE.TorusGeometry(0.011, 0.0035, 5, 14)), m);
+      r.position.x = s * 0.008;
+      knot.add(r);
+    }
+  }
+  g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  return g;
 }
 
 // Just the hat, on its own, sized for a chibi head (radius about 0.33) and
@@ -789,6 +891,26 @@ function addAccessories(look, head, torso, body) {
       charm.add(face);
     }
     body.add(chain, bail, charm);
+  } else if (neck && shapeOf(neck) === 'towel') {
+    // A cheer towel (Modu Ballpark's team shop): a flat band round the back
+    // of the neck with both ends hanging down the chest, in the team colour
+    // with a stripe of its trim at the ends. (Held up overhead when cheering:
+    // game/ballpark-towel.js.)
+    const m = mat(neck.color), t = mat(neck.trim ?? 0xffffff);
+    const band = new THREE.Mesh(geo('towelBand', () => new THREE.TorusGeometry(0.18, 0.035, 4, 18, Math.PI * 1.25)), m);
+    band.rotation.set(Math.PI / 2, 0, Math.PI * 0.375 + Math.PI);
+    band.scale.set(1, 1, 0.6);
+    band.position.y = 0.6;
+    body.add(band);
+    for (const sx of [-1, 1]) {
+      const end = new THREE.Mesh(geo('towelEnd', () => new THREE.BoxGeometry(0.075, 0.26, 0.02)), m);
+      end.position.set(0.085 * sx, 0.47, 0.205);
+      end.rotation.set(-0.12, 0, -0.05 * sx);
+      const stripe = new THREE.Mesh(geo('towelStripe', () => new THREE.BoxGeometry(0.077, 0.03, 0.022)), t);
+      stripe.position.y = -0.09;
+      end.add(stripe);
+      body.add(end);
+    }
   } else if (neck) {
     const m = mat(neck.color);
     const wrap = new THREE.Mesh(geo('scarf', () => new THREE.TorusGeometry(0.17, 0.06, 8, 18)), m);

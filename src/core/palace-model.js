@@ -319,19 +319,22 @@ export const PALACE_BUILD = {
         box(h, w - post, 0.5 * V, d - post + 0.02, 0, B + 0.25 * V, 0, C.post); // the red dado
       } else box(h, w - post, 0.6 * V, 0.2, 0, B + H - 0.3 * V, 0, C.wall);
       const nx = Math.max(1, Math.round(w / 1.7));
-      for (let i = 0; i <= nx; i++) for (const sz of gate ? [-1, 0, 1] : [-1, 1]) box(h, post, H, post, -w / 2 + (i * w) / nx, B + H / 2, (sz * d) / 2, C.post);
+      // (l.gateMid: a gate of three bays, its middle one that wide between the
+      // posts' lines, so no post stands in the way through: Bongeunsa's Jinyeomun)
+      const xs = gate && l.gateMid ? [-w / 2, -l.gateMid / 2, l.gateMid / 2, w / 2] : Array.from({ length: nx + 1 }, (_, i) => -w / 2 + (i * w) / nx);
+      for (const px of xs) for (const sz of gate ? [-1, 0, 1] : [-1, 1]) box(h, post, H, post, px, B + H / 2, (sz * d) / 2, C.post);
       box(h, w + 0.25, 0.32 * V, d + 0.25, 0, B + H + 0.16 * V, 0, C.beam);
       box(h, w + 0.6, 0.3 * V, d + 0.6, 0, B + H + 0.47 * V, 0, C.bracket);
       tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3.4, d * 0.5)) * V, B + H + 0.62 * V, { hip: true, lift: Math.min(0.9, 0.25 + k * 0.1), seg: k > 4 ? 6 : 4, rows: 2, ridgeEnds: k > 3, noRidge: kind === 'n' });
       h.position.set(x, 0, z);
       h.rotation.y = ry;
       g.add(h);
-      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88]);
+      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88, d / 2 + Math.max(post / 2, 0.13) + 0.06]); // (out in front of the posts and the beam)
     }
     mergeStatic(g);
-    for (const [han, x, z, w, d, ry, y] of boards) { // name boards on the main halls (one draw call each)
+    for (const [han, x, z, w, , ry, y, out] of boards) { // name boards on the main halls (one draw call each)
       const bw = Math.min(2.4, w * 0.35), sign = nameBoard(han, bw, bw * 0.38);
-      sign.position.set(x + Math.sin(ry) * (d / 2 + 0.12), y, z + Math.cos(ry) * (d / 2 + 0.12));
+      sign.position.set(x + Math.sin(ry) * out, y, z + Math.cos(ry) * out);
       sign.rotation.y = ry;
       g.add(sign);
     }

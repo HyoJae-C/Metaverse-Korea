@@ -71,6 +71,8 @@ const T = {
   bLose: { en: '{name} wins with {b}. Rematch?', ko: '{b}점으로 {name}님 승리. 한 판 더?', ja: '{b}点で{name}さんの勝ち。もう一戦？', zh: '{name}以{b}分获胜。再来一局？', es: 'Gana {name} con {b}. ¿Revancha?', id: '{name} menang dengan {b}. Tanding ulang?', vi: '{name} thắng với {b} điểm. Đấu lại?', hi: '{name} {b} से जीते। फिर से?', fr: '{name} gagne avec {b}. Revanche ?', th: '{name} ชนะด้วย {b} คะแนน แก้มือไหม?', ar: 'فاز {name} بـ {b}. جولة أخرى؟' },
   bTie: { en: 'A tie at {a}!', ko: '{a}점 동점이에요!', ja: '{a}点で引き分け！', zh: '{a}分平局！', es: '¡Empate a {a}!', id: 'Seri di {a}!', vi: 'Hòa {a} điểm!', hi: '{a} पर बराबरी!', fr: 'Égalité à {a} !', th: 'เสมอที่ {a} คะแนน!', ar: 'تعادل عند {a}!' },
   bLeft: { en: '{name} left the game.', ko: '{name}님이 게임을 나갔어요.', ja: '{name}さんが抜けました。', zh: '{name}离开了比赛。', es: '{name} dejó la partida.', id: '{name} keluar dari permainan.', vi: '{name} đã rời ván.', hi: '{name} ने खेल छोड़ दिया।', fr: '{name} a quitté la partie.', th: '{name} ออกจากเกมแล้ว', ar: 'غادر {name} اللعبة.' },
+  bGroupStays: { en: 'You can close this and walk around: the group stays while you are in the alley.', ko: '이 창을 닫고 돌아다녀도 볼링장 안에 있으면 같이하기는 그대로예요.', ja: 'この画面を閉じて歩き回っても、ボウリング場にいる間はグループのままです。', zh: '可以关掉这个窗口四处走走：只要还在保龄球馆里，组队就保留。', es: 'Puedes cerrar esto y pasear: el grupo sigue mientras estés en la bolera.', id: 'Kamu boleh menutup ini dan berjalan-jalan: grupnya tetap selama kamu di arena bowling.', vi: 'Bạn có thể đóng bảng này và đi dạo: nhóm vẫn giữ khi bạn còn trong sân bowling.', hi: 'इसे बंद करके घूम सकते हैं: जब तक आप बॉलिंग हॉल में हैं, ग्रुप बना रहेगा।', fr: 'Tu peux fermer ceci et te balader : le groupe reste tant que tu es au bowling.', th: 'ปิดหน้านี้แล้วเดินเล่นได้ ตราบใดที่ยังอยู่ในโบว์ลิ่ง กลุ่มก็ยังอยู่', ar: 'يمكنك إغلاق هذا والتجول: تبقى المجموعة ما دمت في صالة البولينغ.' },
+  bLeaveGroup: { en: 'Leave the group', ko: '같이하기 나가기', ja: 'グループを抜ける', zh: '退出组队', es: 'Salir del grupo', id: 'Keluar dari grup', vi: 'Rời nhóm', hi: 'ग्रुप छोड़ें', fr: 'Quitter le groupe', th: 'ออกจากกลุ่ม', ar: 'غادر المجموعة' },
   // Climbing
   cTitle: { en: 'Bouldering', ko: '볼더링', ja: 'ボルダリング', zh: '抱石', es: 'Búlder', id: 'Bouldering', vi: 'Leo tường', hi: 'बोल्डरिंग', fr: 'Bloc', th: 'โบลเดอริ่ง', ar: 'تسلق الصخور' },
   cHow: {
@@ -232,7 +234,35 @@ export class BowlingUI extends Panel {
       } else tapKey(e);
     };
   }
-  show() { this.lobby = null; super.show(); }
+  // The ✕ before a game with friends only puts the panel away: on a phone
+  // the panel covers the stick, so closing it is how you walk. The group
+  // stays until you leave it (Leave the group, or close() when the room goes)
+  // or walk away from the lanes (checkLobby, game/arcade.js).
+  _frame() {
+    super._frame();
+    this.root.querySelector('.sheet-x').onclick = () => (this.lobby && !this.game ? this.hide() : this.close());
+  }
+  hide() { this._stop(); this.root.hidden = true; }
+  // Out of the group (your own choice, or you walked off): the others hear it.
+  cancelLobby() {
+    const lb = this.lobby;
+    if (!lb) return;
+    for (const id of [...lb.invited, lb.host].filter(Boolean)) this.net.send(bowlToMsg('n', id));
+    this.lobby = null;
+    if (this.open && !this.game) this.renderStart();
+  }
+  // Now and then from game/arcade.js: away (out of the alley, or far from
+  // the lanes) ends your group; people who left the room drop out of it.
+  checkLobby(away) {
+    const lb = this.lobby;
+    if (!lb || this.game) return;
+    if (away) { this.cancelLobby(); return; }
+    const here = (id) => !!this.net.nameOf(id);
+    let changed = false;
+    if (lb.host && !here(lb.host)) { this.lobby = null; changed = true; }
+    else for (const id of [...lb.invited]) if (!here(id)) { lb.invited.delete(id); lb.joined = lb.joined.filter((j) => j !== id); changed = true; }
+    if (changed && this.open) this.renderStart();
+  }
   close() {
     const g = this.game;
     if (g?.vs) for (const p of g.players) if (p.id !== this.net.myId) this.net.send(bowlToMsg('n', p.id));
@@ -287,6 +317,10 @@ export class BowlingUI extends Panel {
         if (lb?.joined.length) buttons.unshift(this._button('⚔️ ' + tt('bStartVs', { n: lb.joined.length + 1 }), true, () => this.startMatch()));
         else if (!inv && !near.length && lb) this.root.append(el('p', 'order-hint', tt('bNobody')));
       }
+      if (lb) {
+        this.root.append(el('p', 'order-hint claw-note', tt('bGroupStays')));
+        buttons.push(this._button(tt('bLeaveGroup'), false, () => this.cancelLobby()));
+      }
     }
     this._actions(...buttons);
   }
@@ -295,7 +329,7 @@ export class BowlingUI extends Panel {
     const lb = this.lobby, g = this.game;
     if (m.kind === 'a' && lb && !lb.host && lb.invited.has(from) && !lb.joined.includes(from) && lb.joined.length < BOWL_MAX_PLAYERS - 1) {
       lb.joined.push(from);
-      if (!g) this.renderStart();
+      if (!g) { if (this.open) this.renderStart(); else this.show(); } // (put away while you walked: back up, with Start)
     } else if (m.kind === 'n') {
       if (lb) {
         lb.invited.delete(from); lb.joined = lb.joined.filter((id) => id !== from);
@@ -335,6 +369,7 @@ export class BowlingUI extends Panel {
   play(vs = null) {
     this.lobby = null;
     this.leaveLane();
+    this.root.hidden = false; // (the host can start while your panel is put away)
     if (vs) this.net.lane(vs.lane);
     const me = this.net?.myId ?? 'me', name = (id) => (id === me ? this.net?.myName() || '🙂' : this.net.nameOf(id) || '?');
     const players = (vs ? vs.ids : [me]).map((id) => ({ id, name: name(id), rolls: [], rack: freshRack(), gone: false }));

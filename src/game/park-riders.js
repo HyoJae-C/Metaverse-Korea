@@ -5,11 +5,22 @@
 // shared clock (park-rides.js), arms up when the ship swings high, and
 // stay on through every cycle. The player gets a seat none of them has.
 import { RIDE_CYCLE, seatAt } from '../core/park-rides.js';
+import { Vector3 } from 'three';
 import { makeNpc } from '../core/npcs.js';
 
 const ARMS_UP = () => ({ armR: [-2.9, 0.5, 0], armL: [-2.9, -0.5, 0], foreR: [-0.2, 0, 0], foreL: [-0.2, 0, 0] });
 // Which seats the guests take (the ship's ends and middle, three horses).
 export const GUEST_SEATS = { viking: [1, 2, 6], carousel: [2, 5, 9], drop: [1, 4, 6], wheel: [7, 10], swing: [3, 8, 13], teacups: [0, 7, 11], train: [1, 6, 9], flume: [3], gyro: [2, 7, 12] };
+
+// A seated rider's head: about 1.15 m over the seat's feet, along the
+// rider's own up (tipped with the ride); EYE_CLEAR: its radius (the hair's
+// 0.42 m) and a little.
+const HEAD_UP = 1.15, EYE_CLEAR = 0.5;
+const _up = new Vector3();
+export function headGap(root, eye) {
+  _up.set(0, HEAD_UP, 0).applyEuler(root.rotation);
+  return Math.hypot(root.position.x + _up.x - eye.x, root.position.y + _up.y - eye.y, root.position.z + _up.z - eye.z);
+}
 
 export function createParkRiders(labels) {
   return {
@@ -32,13 +43,22 @@ export function createParkRiders(labels) {
       }
       return built.riderNpcs;
     },
-    tick(list) {
+    // eye: the camera, when it's in your seat (a ride's view from your
+    // seat): a guest whose head comes within EYE_CLEAR of it steps out of
+    // sight for that moment, not cut open by the camera. (The log flume's
+    // rows are 1 m apart: at the foot of the lift and the bottom of the big
+    // drop the boat bends, and the rider in front tips back into your face.)
+    tick(list, eye = null) {
       if (!list) return;
       const now = Date.now() / 1000;
       for (const o of list) {
         const s = seatAt(o.kind, o.seat, now);
         o.ch.root.position.set(s.x, s.y, s.z);
         o.ch.root.rotation.set(s.pitch || 0, s.ry, s.roll);
+        if (eye || o.hid) {
+          const near = !!eye && headGap(o.ch.root, eye) < EYE_CLEAR;
+          if (near !== !!o.hid) { o.hid = near; o.ch.root.visible = !near; }
+        }
         o.labelY = s.y + 1.45; // (the name tag rides up with them: up the drop tower, round the wheel)
         const up = (o.kind === 'viking' && Math.abs(s.roll) > 0.7) || (o.kind === 'drop' && s.y < 3 && s.y > 1) || (o.kind === 'flume' && s.pitch > 0.4) || (o.kind === 'swing' && s.y > 1.2) || (o.kind === 'gyro' && Math.abs(s.roll) > 1);
         if (up !== o.up) { o.up = up; o.ch.setMoves?.(up ? ARMS_UP : null); }

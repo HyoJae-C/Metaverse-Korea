@@ -13,6 +13,7 @@
 // (core/collision.js).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { SEASON } from './season.js';
 
 export const HANOK = {
   base: 0.6, // stone base height
@@ -32,6 +33,8 @@ const PAL = {
   leaf: ['#6f8f45', '#5f7f3e', '#89a04a', '#c9762e', '#d9a23a', '#b8432f'],
   pine: '#3f6a3a', trunk: '#5e4330', fruit: '#f07a1a', jar: '#5a3422', jarLid: '#3d2418',
 };
+
+const AUTUMN_LEAF = ['#c9762e', '#d9a23a', '#b8432f', '#e0b23a', '#a8562c']; // (core/season.js: every round tree turns)
 
 // A small seeded random from the building's position (same look every visit).
 function rng(x, z) {
@@ -255,7 +258,7 @@ function garden(k, x, z, w, d, r) {
   const n = Math.max(2, Math.round(w / 0.9));
   for (let i = 0; i < n; i++) {
     const s = 0.32 + r() * 0.18, bx = x - w / 2 + 0.45 + (i * (w - 0.9)) / Math.max(1, n - 1);
-    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.8, 1).translate(bx, 0.3 + s * 0.7, z + (r() - 0.5) * (d - 0.8)), pick(r, PAL.leaf));
+    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.8, 1).translate(bx, 0.3 + s * 0.7, z + (r() - 0.5) * (d - 0.8)), pick(r, SEASON === 'autumn' ? AUTUMN_LEAF : PAL.leaf));
     if (r() < 0.5) k.box(pick(r, ['#e0566b', '#f2c94c', '#f7f2e8', '#c77dd8']), 0.14, 0.14, 0.14, bx + 0.2, 0.3 + s * 1.3, z);
   }
 }

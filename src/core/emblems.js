@@ -10,6 +10,8 @@ export const TIERS = {
 };
 
 // 20 emblems. bg: badge colour (or a gradient for fancy/dazzling ones).
+// retired: no longer sold (anyone who owns it keeps it). 'fish' (Angler) went
+// on 2026-11-16, nobody had it: an angler's emblem is to be earned by fishing.
 export const EMBLEMS = [
   // basic: a symbol on a plain colour
   { id: 'heart', tier: 'basic', icon: '❤', bg: '#ff8fa3', name: { en: 'Heart', ko: '하트', ja: 'ハート', zh: '爱心' } },
@@ -23,7 +25,7 @@ export const EMBLEMS = [
   // fancy: gradients and an outline
   { id: 'sakura', tier: 'fancy', icon: '🌸', bg: 'linear-gradient(135deg,#ffd1e3,#ff8fb8)', name: { en: 'Cherry blossom', ko: '벚꽃', ja: '桜', zh: '樱花' } },
   { id: 'taegeuk', tier: 'fancy', icon: '☯', bg: 'linear-gradient(135deg,#e04a5f,#3f6fd6)', name: { en: 'Taegeuk', ko: '태극', ja: '太極', zh: '太极' } },
-  { id: 'fish', tier: 'fancy', icon: '🐟', bg: 'linear-gradient(135deg,#a9e2ff,#4f9fe0)', name: { en: 'Angler', ko: '낚시왕', ja: '釣り名人', zh: '钓鱼王' } },
+  { id: 'fish', tier: 'fancy', retired: true, icon: '🐟', bg: 'linear-gradient(135deg,#a9e2ff,#4f9fe0)', name: { en: 'Angler', ko: '낚시왕', ja: '釣り名人', zh: '钓鱼王' } },
   { id: 'mic', tier: 'fancy', icon: '🎤', bg: 'linear-gradient(135deg,#d6b8ff,#8a5cc9)', name: { en: 'Singer', ko: '노래왕', ja: '歌うま', zh: '麦霸' } },
   { id: 'tteok', tier: 'fancy', icon: '🍡', bg: 'linear-gradient(135deg,#fff1b8,#ff9fb0)', name: { en: 'Rice cake', ko: '떡꼬치', ja: '餅串', zh: '年糕串' } },
   { id: 'moon', tier: 'fancy', icon: '🌙', bg: 'linear-gradient(135deg,#43418a,#1d1b3a)', name: { en: 'Night owl', ko: '올빼미', ja: '夜ふかし', zh: '夜猫子' } },

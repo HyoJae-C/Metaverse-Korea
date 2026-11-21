@@ -43,7 +43,12 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
   const bottom = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#ffffff' }));
   const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.08, 6), new THREE.MeshLambertMaterial({ color: '#ffd166' }));
   stick.position.y = 0.09;
-  bobber.add(top, bottom, stick);
+  // With a bait on the hook (userData.rod.bait, its colour) a glowing bead
+  // tops the stick, so the bait shows out on the water too.
+  const bead = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), new THREE.MeshLambertMaterial({ color: '#ffffff', emissiveIntensity: 0.8 }));
+  bead.position.y = 0.14;
+  bead.visible = false;
+  bobber.add(top, bottom, stick, bead);
 
   // Splash effects: expanding rings on the water and droplets.
   const ringGeo = new THREE.RingGeometry(0.8, 1, 28).rotateX(-Math.PI / 2);
@@ -258,6 +263,8 @@ export function createFishingRig({ sfx, waterY = () => -0.25, remote = false } =
       // 2) The bobber.
       let slack = 0.05;
       bobber.visible = true;
+      bead.visible = !!rod.bait;
+      if (rod.bait && bead.userData.c !== rod.bait) { bead.userData.c = rod.bait; bead.material.color.set(rod.bait); bead.material.emissive.set(rod.bait); }
       if (phase === 'idle') { bobber.visible = false; bob.copy(tipW); bob.y -= 0.55; slack = 0; }
       else if (phase === 'cast') {
         if (t < RELEASE) { bob.copy(tipW); bob.y -= 0.12; slack = 0; }

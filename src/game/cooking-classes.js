@@ -9,12 +9,15 @@
 import { BOSS_LINES } from '../ui/market-text.js';
 import { KimchiSellUI, ML as MARKET_L } from '../ui/kimchi-sell-ui.js';
 import { lazyPanel } from '../core/lazy-panel.js';
+import { DISH_CAP } from '../core/bag.js';
 import { kimchiJar } from '../core/kimchi-market.js';
 import { localName, t } from '../core/i18n.js';
 import { say } from '../core/npcs.js';
 
 export function createCookingClasses(game) {
   const { $, bag, missionEvent, setHeld, shop, togetherBonus, wallet } = game;
+  // A dish from a class: into the bag, and written in the recipe book.
+  const dish = (e) => { if (!bag.add(e)) shop.toast(t('bag.foodFull', { cap: DISH_CAP })); game.onCooked?.(e); }; // (cooked even if the food bag is full)
   const kimchiUi = lazyPanel(async () => {
     const [{ KimchiUI }, { KT: KIMCHI_TEXT }] = await Promise.all([import('../ui/kimchi-ui.js'), import('../ui/kimchi-text.js')]);
     return new KimchiUI({
@@ -22,7 +25,7 @@ export function createCookingClasses(game) {
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
       onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
-      onJar: (score) => bag.add(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
+      onJar: (score) => dish(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
     });
   });
   // Yongmaru Market (Itaewon): the side-dish stall buys homemade kimchi, a few
@@ -49,7 +52,7 @@ export function createCookingClasses(game) {
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
       onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
-      onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
+      onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
     });
   });
   // Free-style kimbap at the Kimbap Making Class (김밥만들기체험), next door.
@@ -60,7 +63,7 @@ export function createCookingClasses(game) {
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
       onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
-      onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
+      onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
     });
   });
   // Tteok Making Class (떡만들기체험, songpyeon) and Bibimbap Making Class
@@ -76,7 +79,7 @@ export function createCookingClasses(game) {
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
       onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
-      onBox: (score) => bag.add({ kind: 'gift', sips: 1, name: localName(c.text.item, 'en'), icon: c.game.icon, g: c.game.id, q: score }),
+      onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(c.text.item, 'en'), icon: c.game.icon, g: c.game.id, q: score }),
     });
   });
   const tteokUi = cookClass('tteok-panel', async () => {

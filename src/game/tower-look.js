@@ -10,21 +10,28 @@
 //   towerLook.min(p)                // the lowest pitch here, or null (the usual)
 //   towerLook.lift(cam.pitch, dist) // m to raise the point the camera looks at
 //   towerLook.tick(cam, p, dt)      // walked away still looking up: ease back
+// more(): other towers [{ x, z, range, gain }] (Namsan's tower on its summit,
+// game/namsan-walk.js lookUp: close and short, so it tilts up further).
 export const TOWER_LOOK = { range: 700, minPitch: -0.35, from: -0.12, gain: 3 };
 
 // How far the look-at point rises for a pitch below `from` (0 above it): at
 // the lowest pitch and the usual 9 m, about 6 m, so the view tilts up ~32°.
-export function towerLift(pitch, dist) {
-  return Math.max(0, TOWER_LOOK.from - pitch) * dist * TOWER_LOOK.gain;
+export function towerLift(pitch, dist, gain = TOWER_LOOK.gain) {
+  return Math.max(0, TOWER_LOOK.from - pitch) * dist * gain;
 }
 
-export function createTowerLook(at) {
+// also(p): another place that looks up (game/buddha-view.js), its lowest pitch or null.
+export function createTowerLook(at, also = () => null, more = () => []) {
+  let gain = TOWER_LOOK.gain; // the tower you're by (min() picks it)
   return {
     min(p) {
       const t = at();
-      return t && Math.hypot(p.x - t.x, p.z - t.z) < TOWER_LOOK.range ? TOWER_LOOK.minPitch : null;
+      gain = TOWER_LOOK.gain;
+      if (t && Math.hypot(p.x - t.x, p.z - t.z) < TOWER_LOOK.range) return TOWER_LOOK.minPitch;
+      for (const q of more() || []) if (Math.hypot(p.x - q.x, p.z - q.z) < q.range) { gain = q.gain || gain; return TOWER_LOOK.minPitch; }
+      return also(p);
     },
-    lift: towerLift,
+    lift: (pitch, dist) => towerLift(pitch, dist, gain),
     tick(cam, p, dt) {
       if (cam.pitch < TOWER_LOOK.from && this.min(p) == null) cam.pitch += (TOWER_LOOK.from - cam.pitch) * Math.min(1, dt * 2);
     },

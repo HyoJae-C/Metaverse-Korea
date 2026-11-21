@@ -35,11 +35,12 @@ export const PHRASES = {
     ['안쪽 추모실에서 헌화할 수 있어요.', 'anjjok chumosireseo heonhwahal su isseoyo', 'You can lay a flower in the memorial room at the back.'],
   ],
   culture: [
-    ['어서 오세요. 다음 전시를 준비하고 있어요.', 'eoseo oseyo. daeum jeonsireul junbihago isseoyo', 'Welcome! We are getting the next exhibition ready.'],
-    ['천천히 둘러보세요. 곧 새 작품이 걸릴 거예요.', 'cheoncheonhi dulleoboseyo. got sae jakpumi geollil geoyeyo', 'Take your time. New works will be hung soon.'],
+    ['어서 오세요. 천천히 둘러보세요.', 'eoseo oseyo. cheoncheonhi dulleoboseyo', 'Welcome! Take your time looking around.'],
+    ['작품 앞에 서면 크게 볼 수 있어요.', 'jakpum ape seomyeon keuge bol su isseoyo', 'Stand in front of a work to see it up close.'],
+    ['작품은 눈으로만 감상해 주세요.', 'jakpumeun nuneuroman gamsanghae juseyo', 'Please enjoy the works with your eyes only.'],
   ],
   photoshow: [
-    ['사진전 「내가 본 서울」에 오신 걸 환영해요. 1층부터 3층까지 둘러보세요.', 'sajinjeon "naega bon seoul"e osin geol hwanyeonghaeyo. ilcheungbuteo samcheungkkaji dulleoboseyo', 'Welcome to "Seoul As I Saw It". The photos are on floors 1 to 3.'],
+    ['사진전에 오신 걸 환영해요. 위층도 꼭 둘러보세요.', 'sajinjeone osin geol hwanyeonghaeyo. wicheungdo kkok dulleoboseyo', 'Welcome to the photo exhibition. Do look upstairs too.'],
     ['엘리베이터로 다른 층에 갈 수 있어요.', 'elribeiteoro dareun cheunge gal su isseoyo', 'Take the lift to the other floors.'],
     ['사진은 눈으로만 감상해 주세요.', 'sajineun nuneuroman gamsanghae juseyo', 'Please enjoy the photos with your eyes only.'],
   ],

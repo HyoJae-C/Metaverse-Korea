@@ -101,6 +101,13 @@
       .wxnext { display: flex; flex-wrap: wrap; gap: 6px; }
       #tab-exhibits .ximgs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
       #tab-exhibits .ximgs img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; background: var(--line); display: block; }
+      #tab-phone { display: grid; grid-template-rows: auto 1fr; overflow: hidden; }
+      #tab-phone .tools { padding: 10px 16px 0; margin: 0; }
+      #phoneStage { min-height: 0; display: grid; place-items: center; overflow: hidden; padding: 12px; }
+      #phoneBox { position: relative; }
+      #phoneFrame { position: absolute; left: 0; top: 0; transform-origin: 0 0; box-sizing: content-box; border: 12px solid #1b1b1d; border-radius: 44px; background: #000; box-shadow: 0 10px 40px rgba(0,0,0,.25); overflow: hidden; }
+      #phoneFrame.android { border-radius: 30px; border-width: 9px; }
+      #phoneFrame iframe { display: block; border: 0; width: 100%; height: 100%; background: #000; }
       #tab-codes h3 { font-size: 15px; margin: 20px 0 8px; }
       #tab-codes table.grid td:first-child { white-space: nowrap; }
       #tab-codes code { background: #f3ecdc; padding: 1px 6px; border-radius: 5px; font-size: 13px; }
@@ -125,6 +132,7 @@
       <button data-tab="weather">🌦️ Weather</button>
       <button data-tab="retention">Retention</button>
       <button data-tab="codes">📋 Codes</button>
+      <button data-tab="phone">📱 Phone view</button>
       <button data-tab="exhibits">🎨 Exhibits <span class="badge" id="exhibitBadge" hidden></span></button>
     </nav>
     <section class="tab" id="tab-overview" hidden><div class="pad">
@@ -340,6 +348,15 @@
         <div class="row"><span class="muted" id="codeMemoNote"></span></div>
       </div>
     </div></section>
+    <section class="tab" id="tab-phone" hidden>
+      <div class="tools">
+        <select id="phoneModel" aria-label="Phone"></select>
+        <button id="phoneTurn" type="button">⟲ Rotate</button>
+        <button id="phoneReload" type="button">↻ Reload</button>
+        <span class="muted" id="phoneNote">폰처럼 터치 화면으로 열려요. 마우스로 조이스틱을 끌면 걸어요. 내 게임 탭과 따로 노는 손님 계정이라 저장·“다른 탭” 경고에 영향 없어요.</span>
+      </div>
+      <div id="phoneStage"><div id="phoneBox"><div id="phoneFrame"></div></div></div>
+    </section>
     <div id="msg" hidden></div>
     <script type="module" src="/src/admin/admin.js"></script>
   </body>

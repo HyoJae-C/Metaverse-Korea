@@ -273,6 +273,9 @@ export class NavGrid {
         if (d > wd) { wd = d; worst = k; }
       }
       if (wd > 0.8 || !this.clear(x1, z1, x2, z2)) {
+        // (Points dead in line, yet the line not clear, a start a hair inside
+        // a wall's margin: split in the middle, there is no farthest point.)
+        if (worst < 0) worst = (a + b) >> 1;
         keep[worst] = 1;
         stack.push([a, worst], [worst, b]);
       }

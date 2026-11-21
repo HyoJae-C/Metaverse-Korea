@@ -10,8 +10,11 @@ import { matCache } from './three-kit.js';
 export const CLEAN_SECONDS = 45;
 // Like the real fine in Korea for not picking up after a dog (₩50,000).
 export const FINE = 50000;
-// Metres walked between poops (random in this range).
-export const POOP_EVERY = [150, 260];
+// Seconds of play with the pet out between poops (random in this range):
+// 45–75 real minutes, so about 3 times (2–4) per 3-hour game day. It used to
+// be every 150–260 m walked (~30 s of walking), far too often. The clock is
+// not saved, so nothing piles up while offline: each visit starts a fresh one.
+export const POOP_EVERY = [45 * 60, 75 * 60];
 export const nextPoopAt = (rand = Math.random) => POOP_EVERY[0] + rand() * (POOP_EVERY[1] - POOP_EVERY[0]);
 
 // Poop timers, without any 3D (unit-tested). Each poop: { id, left }.
@@ -66,7 +69,7 @@ export class Companion {
     Object.assign(this, a);
     this.phase = Math.random() * 6;
     this.squat = 0; // seconds left of a poop pose
-    this.walked = 0; // metres since the last poop
+    this.since = 0; // seconds with the pet out since the last poop
     this.poopAt = nextPoopAt();
     this.fences = null; // keep-out boxes in this room (the bumper car rink): see keepOut
   }
@@ -85,6 +88,7 @@ export class Companion {
     if (this.playing) return false; // fetching a frisbee (game/frisbee.js moves it)
     this.root.visible = !riding;
     if (riding) { this.place(owner.x, owner.z, owner.ry, owner.y || 0); return false; }
+    this.since += dt;
     const r = this.root.position;
     // Aim for a spot behind and a little to the side of the owner.
     // (owner in a bumper car: wait by the rail nearest them, not on the floor)
@@ -99,7 +103,6 @@ export class Companion {
       r.z += (dz / d) * sp;
       turn(this.root, Math.atan2(dx, dz), dt);
       moving = true;
-      this.walked += sp;
     } else turn(this.root, owner.ry, dt);
     if (this.fences) [r.x, r.z] = keepOut(r.x, r.z, this.fences);
     r.y += ((owner.y || 0) - r.y) * Math.min(1, dt * 8); // follow the owner up and down the stairs
@@ -111,8 +114,8 @@ export class Companion {
     this.body.rotation.x = this.squat > 0 ? -0.35 : moving ? 0 : -0.2;
     this.tail.rotation.y = Math.sin(this.phase * (moving ? 12 : 4)) * 0.5;
     swingEars(this.ears, this.phase * 8, moving ? 0.22 : 0);
-    if (canPoop && moving && this.walked >= this.poopAt) {
-      this.walked = 0;
+    if (canPoop && moving && this.since >= this.poopAt) {
+      this.since = 0;
       this.poopAt = nextPoopAt();
       this.squat = 1.6;
       return true;

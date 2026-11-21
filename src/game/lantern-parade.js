@@ -14,6 +14,7 @@ import { createCharacter } from '../core/character.js';
 import { randomLook } from '../data/appearance.js';
 import { hanbokById } from '../data/hanbok.js';
 import { JOGYESA as J } from '../data/jogyesa.js';
+import { MONK_LOOK } from '../data/temple-monks.js';
 
 const N = ROWS * PER_ROW;
 const LANTERNS = ['#ff8fb1', '#ffd84d', '#ff6f91', '#fff4ea', '#ef4f5f', '#ffb3c6'];
@@ -21,7 +22,7 @@ const DIM = 0.16; // the canopy before it lights up, at night
 const FIG_DIM = 0.25, FIG_FLARE = 2.2; // the festival figures: waiting in the dark, then a flash as the column passes
 // Who walks: two monks in grey, then the hanbok sets of the shop by
 // Gyeongbokgung (data/hanbok.js), women's and men's in turn.
-const MONK = { model: 'hanbok-durumagi-gray', skirt: null, tee: null, hair: 'black', dye: 'black', hairStyle: 'buzz' };
+const MONK = MONK_LOOK; // (shaved heads)
 const SETS = ['pink-navy', 'baji-blue', 'yellow-red', 'baji-jade', 'mint-pink', 'durumagi-lilac', 'pink-navy', 'baji-navy', 'yellow-red', 'baji-ivory'];
 const HAIR = { f: ['bun', 'long', 'braids', 'bob'], m: ['short', 'comma', 'side', 'crop'] };
 const lookOf = (i) => {

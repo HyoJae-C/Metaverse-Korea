@@ -4,7 +4,8 @@
 // swapped for another, like trousers).
 import { WEAR_DESC } from './wear-desc.js';
 import { SKIRTS, SKIRT_PRICE, skirtName } from './skirts.js';
-import { ANIMAL_LOOKS, PENDANT_CHARMS } from './appearance.js';
+import { ANIMAL_LOOKS, PENDANT_CHARMS, KNOT_COLORS, KNOTS } from './appearance.js';
+import { TEAM_LIST } from './ballpark-teams.js';
 
 const ANIMAL_NAMES = {
   'cat-black': { en: 'Black cat', ko: '검은 고양이', ja: '黒猫', zh: '黑猫' },
@@ -23,7 +24,16 @@ export const RETIRED = new Set([
   'acc-cap-sky', 'acc-cap-orange', 'acc-beanie-mustard',
   'acc-glasses-gold', 'acc-glasses-pink', 'acc-sunglasses-brown', 'acc-sunglasses-blue',
   'acc-scarf-cream', 'acc-tote-brick',
+  // Maeum Knot Studio makes butterfly and double-coin knots in red and indigo
+  // only (2026-11-15); these come from old knot charms.
+  'acc-knot-red-chrysanthemum', 'acc-knot-blue-chrysanthemum',
+  ...['green', 'yellow', 'purple'].flatMap((c) => ['butterfly', 'chrysanthemum', 'double-coin'].map((k) => `acc-knot-${c}-${k}`)),
 ]);
+
+// secs: limited-time clothes, gone that many seconds after buying
+// (game/timed-wear.js). 7 days (Yozi 2026-11-20). The server drops them
+// from the account save too: change timed_items there (supabase/058) with it.
+export const TIMED_SECS = 7 * 24 * 3600;
 
 // price: listed in ₩1,000s (70 = ₩70,000).
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
@@ -69,6 +79,15 @@ export const WEARABLES = {
   'outfit-turtle-camel': item('👕', 50, { model: 'turtle-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel turtleneck', ko: '카멜 터틀넥', ja: 'キャメルのタートルネック', zh: '驼色高领衫' }, { outfit: 'turtle-camel' }),
   'outfit-windbreaker-yellow': item('🧥', 75, { model: 'windbreaker-yellow' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow windbreaker', ko: '옐로 바람막이', ja: 'イエローのウィンドブレーカー', zh: '黄色防风夹克' }, { outfit: 'windbreaker-yellow' }),
   'outfit-vest-padded': item('🦺', 80, { model: 'vest-padded' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Sky blue padded vest', ko: '하늘색 패딩 조끼', ja: '水色のダウンベスト', zh: '天蓝色羽绒背心' }, { outfit: 'vest-padded' }),
+  // Floral dresses (Bomnal Dresses): the dress has its own skirt, so a skirt comes off.
+  'outfit-dress-floral-navy': item('👗', 75, { model: 'dress-floral-navy', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy floral dress', ko: '네이비 꽃무늬 원피스', ja: 'ネイビーの花柄ワンピース', zh: '藏青色碎花连衣裙' }, { outfit: 'dress-floral-navy' }),
+  'outfit-dress-floral-yellow': item('👗', 75, { model: 'dress-floral-yellow', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow floral dress', ko: '옐로 꽃무늬 원피스', ja: 'イエローの花柄ワンピース', zh: '黄色碎花连衣裙' }, { outfit: 'dress-floral-yellow' }),
+  // Animal onesies (Pogeun Onesies): hood with ears, a tummy and a tail.
+  // Limited-time (a test for seasonal sales): gone TIMED_SECS after you buy
+  // one (game/timed-wear.js), so cheaper, and never resold or gifted.
+  'outfit-onesie-bear': item('🐻', 50, { model: 'onesie-bear', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bear onesie', ko: '곰돌이 잠옷', ja: 'くまの着ぐるみパジャマ', zh: '小熊连体睡衣' }, { outfit: 'onesie-bear', secs: TIMED_SECS }),
+  'outfit-onesie-bunny': item('🐰', 50, { model: 'onesie-bunny', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bunny onesie', ko: '토끼 잠옷', ja: 'うさぎの着ぐるみパジャマ', zh: '兔子连体睡衣' }, { outfit: 'onesie-bunny', secs: TIMED_SECS }),
+  'outfit-onesie-dino': item('🦖', 50, { model: 'onesie-dino', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Dinosaur onesie', ko: '공룡 잠옷', ja: '恐竜の着ぐるみパジャマ', zh: '恐龙连体睡衣' }, { outfit: 'onesie-dino', secs: TIMED_SECS }),
   // Trousers (a colour of look.pants).
   'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
   'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
@@ -91,6 +110,15 @@ export const WEARABLES = {
   'shoes-tan': item('👞', 60, { shoes: 'tan' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Tan leather loafers', ko: '탄 가죽 로퍼', ja: 'タンの革ローファー', zh: '浅棕色皮质乐福鞋' }),
   'shoes-burgundy': item('👞', 60, { shoes: 'burgundy' }, { shoes: null }, WEAR_DESC.shoes, { en: 'Burgundy leather shoes', ko: '버건디 가죽 구두', ja: 'バーガンディの革靴', zh: '酒红色皮鞋' }),
   // Accessories: one per slot (data/appearance.js ACCESSORIES).
+  // Modu Ballpark's team shop: each team's jersey, cap and cheer towel.
+  ...Object.fromEntries(TEAM_LIST.flatMap((t) => {
+    const n = t.name;
+    return [
+      ['outfit-jersey-' + t.id, item('⚾', 60, { model: 'jersey-' + t.id }, { model: 'basic' }, WEAR_DESC.clothes, { en: `${n.en} jersey`, ko: `${n.ko} 유니폼`, ja: `${n.ja}ユニフォーム`, zh: `${n.zh}球衣` }, { outfit: 'jersey-' + t.id, team: t.id })],
+      ['acc-cap-' + t.id, item('🧢', 25, { head: 'cap-' + t.id, hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: `${n.en} cap`, ko: `${n.ko} 모자`, ja: `${n.ja}キャップ`, zh: `${n.zh}棒球帽` }, { team: t.id })],
+      ['acc-towel-' + t.id, item('🧣', 15, { neck: 'towel-' + t.id }, { neck: null }, WEAR_DESC.accessory, { en: `${n.en} cheer towel`, ko: `${n.ko} 응원 수건`, ja: `${n.ja}応援タオル`, zh: `${n.zh}应援毛巾` }, { team: t.id })],
+    ];
+  })),
   'acc-cap-red': item('🧢', 25, { head: 'cap-red', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Red cap', ko: '빨간 캡모자', ja: '赤いキャップ', zh: '红色棒球帽' }),
   'acc-cap-sky': item('🧢', 25, { head: 'cap-sky', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Sky blue cap', ko: '하늘색 캡모자', ja: '水色のキャップ', zh: '天蓝色棒球帽' }),
   'acc-cap-black': item('🧢', 25, { head: 'cap-black', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Black cap', ko: '검정 캡모자', ja: '黒いキャップ', zh: '黑色棒球帽' }),
@@ -140,6 +168,11 @@ export const WEARABLES = {
         { en: `${n.en} paw gloves`, ko: `${n.ko} 발바닥 장갑`, ja: `${n.ja}の肉球手袋`, zh: `${n.zh}爪爪手套` })],
     ];
   })),
+  // Maeum Knot Studio (Bukchon): maedeup bracelets, worn like gloves (look.hand).
+  // Made in the studio for ₩8,000, never sold in a shop.
+  ...Object.fromEntries(Object.entries(KNOT_COLORS).flatMap(([c, { name: C }]) => Object.entries(KNOTS).map(([k, K]) => [`acc-knot-${c}-${k}`,
+    item('🎀', 8, { hand: `knot-${c}-${k}` }, { hand: null }, WEAR_DESC.accessory,
+      { en: `${C.en} ${K.en} knot bracelet`, ko: `${C.ko} ${K.ko}매듭 팔찌`, ja: `${C.ja}の${K.ja}結びブレスレット`, zh: `${C.zh}${K.zh}结手链` })]))),
   // Skirts (look.skirt, data/skirts.js): two lengths, many colours and patterns.
   ...Object.fromEntries(Object.entries(SKIRTS).map(([id, sk]) => ['skirt-' + id,
     item('👗', SKIRT_PRICE[sk.length], { skirt: id }, { skirt: null }, WEAR_DESC.skirt, skirtName(sk))])),

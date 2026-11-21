@@ -15,6 +15,10 @@ const DARTS_PLACE = [
   { en: '🥉 3rd', ko: '🥉 3등', ja: '🥉 3位', zh: '🥉 第3名', es: '🥉 3.º', id: '🥉 Juara 3', vi: '🥉 Hạng 3', hi: '🥉 तीसरा', fr: '🥉 3e', th: '🥉 ที่ 3', ar: '🥉 الثالث' },
   { en: '4th', ko: '4등', ja: '4位', zh: '第4名', es: '4.º', id: 'Juara 4', vi: 'Hạng 4', hi: 'चौथा', fr: '4e', th: 'ที่ 4', ar: 'الرابع' },
 ];
+// Rooftop Rumble is closed for now (server load, Yozi 2026-11-15): the
+// cabinets say so instead of opening. false opens them again.
+export const FIGHT_PAUSED = false;
+const FIGHT_PAUSED_TEXT = { en: '🥊 Rooftop Rumble is paused for a while due to server issues. Back soon!', ko: '🥊 옥상 격투왕은 서버 운영 문제로 당분간 쉬어요. 곧 다시 열게요!', ja: '🥊 格闘ゲームはサーバーの都合でしばらく休止します。まもなく再開！', zh: '🥊 格斗游戏因服务器问题暂停，很快恢复！', es: '🥊 Rooftop Rumble está en pausa por problemas del servidor. ¡Vuelve pronto!', id: '🥊 Rooftop Rumble dihentikan sementara karena masalah server. Segera kembali!', vi: '🥊 Rooftop Rumble tạm dừng do sự cố máy chủ. Sẽ sớm trở lại!', hi: '🥊 सर्वर की समस्या के कारण रूफ़टॉप रंबल कुछ समय के लिए बंद है। जल्द वापस!', fr: '🥊 Rooftop Rumble est en pause pour un problème de serveur. De retour bientôt !', th: '🥊 ศึกดาดฟ้าปิดชั่วคราวเพราะปัญหาเซิร์ฟเวอร์ เร็ว ๆ นี้จะกลับมา!', ar: '🥊 نزال السطح متوقف مؤقتًا بسبب مشكلة في الخادم. سيعود قريبًا!' };
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
 export function createArcade(game) {
@@ -181,6 +185,7 @@ export function createArcade(game) {
     const inv = { from, name, nonce, style: +style || 0, at: performance.now() };
     const no = (k) => game.net.sendEmote(`brawl:${from}:${k}:${nonce}:0`);
     if (!game.interior?.stations?.fight) return true; // (not in a room with the game)
+    if (FIGHT_PAUSED) { no('b'); return true; } // (closed for now: an older page's invite gets "busy")
     const cross = brawl?.crossed(from); // we asked them at the same moment
     if (cross === 'keep') return true;
     if (brawl?.busy || versusFull()) { no('b'); return true; } // (busy, or two matches are on already)
@@ -228,6 +233,7 @@ export function createArcade(game) {
       return;
     }
     if (kind === 'fight') {
+      if (FIGHT_PAUSED) { shop.toast(L(FIGHT_PAUSED_TEXT), 4000); return; }
       stopWatch();
       const at = game.interior;
       await loadBrawl();
@@ -418,7 +424,20 @@ export function createArcade(game) {
     fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
     darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
+  // A bowling group (invited, or waiting to start) lasts while you are in
+  // the alley: walking round with the panel put away keeps it; leaving the
+  // alley or walking this far from your lane ends it (ui/activity-ui.js).
+  const BOWL_GROUP_AWAY = 12; // m
+  let bowlCheckAt = 0;
+  function checkBowlGroup() {
+    const ui = arcade.bowling;
+    if (!ui?.lobby || performance.now() - bowlCheckAt < 500) return;
+    bowlCheckAt = performance.now();
+    const p = game.me.root.position;
+    const away = !game.interior?.stations?.bowling || (bowlLane && Math.hypot(p.x - bowlLane.x, p.z - bowlLane.z) > BOWL_GROUP_AWAY);
+    ui.checkLobby(!!away);
+  }
   // Darts or bowling played in the world: the camera is theirs (main.js).
-  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
+  return { camOn: () => !!(dartsView?.active || bowlView?.active || climbView?.active || brawl?.active || strike?.active || watch), watching: () => !!watch, fightUi, brawl: () => brawl, strike: () => strike, brawlTv: () => tv, camera: (dt) => { brawl?.update(dt); strike?.update(dt); tv?.update(dt, !!brawl?.active); if (watch) { if (brawl?.active) stopWatch(); else watchCamera(); } dartsView?.update(); bowlView?.update(dt); checkBowlGroup(); bowlLanes?.update(); climbView?.update(dt); placeFx?.update(dt); }, onDartsMsg, onBowlMsg, onBrawlMsg, bowlInvite: freshBowlInvite, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, ARCADE_OPEN, openArcade,
     freshInvite };
 }

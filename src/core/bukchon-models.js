@@ -8,6 +8,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hipRoofGeometry } from './landmarks.js';
 import { HANOK, curvedRoof } from './hanok.js';
 import { BUKCHON, ground } from '../data/bukchon.js';
+import { SEASON } from './season.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
 // into one per material (the ones with a texture or several materials stay).
@@ -121,7 +122,7 @@ const BUILD = {
     // Persimmon tree (감나무) with fruit, a magpie on top, near the west wing.
     const tx = -hw + 12, tz = hd - 8;
     box(g, 0.5, 3.4, 0.5, tx, 1.7, tz, '#6b4a33');
-    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6, 0), mat('#7d9a4a'));
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6, 0), mat(SEASON === 'autumn' ? '#d8742e' : '#7d9a4a')); // (autumn, core/season.js: persimmon leaves go orange)
     crown.position.set(tx, 4.6, tz);
     crown.scale.set(1, 0.8, 1);
     g.add(crown);
@@ -182,7 +183,8 @@ const BUILD = {
   planter(g, l) {
     box(g, 1.6, 0.5, 1.6, 0, 0.25, 0, C.stone);
     box(g, 1.4, 0.06, 1.4, 0, 0.5, 0, '#6b5a44');
-    const leaf = ['#7fae5a', '#d9773a', '#9cc06a'][Math.abs(Math.round(l.x * 7 + l.z)) % 3];
+    const pickL = (list) => list[Math.abs(Math.round(l.x * 7 + l.z)) % 3];
+    const leaf = l.kind !== 'bush' && SEASON === 'autumn' ? pickL(['#d9773a', '#c8452e', '#e3a93a']) : pickL(['#7fae5a', '#d9773a', '#9cc06a']); // (the small trees turn in autumn, core/season.js; clipped shrubs stay)
     if (l.kind === 'bush') {
       for (const [x, z, s] of [[-0.35, -0.3, 0.42], [0.35, 0.1, 0.38], [-0.1, 0.4, 0.34]]) {
         const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(leaf));

@@ -18,6 +18,7 @@ import { zooCartStation, zooFlowers } from './zoo-props.js';
 import { ZOO_PARK_ENTRY } from './zoo-rooms.js';
 import { buildCamelRide } from './zoo-camel-ride.js';
 import GROUNDS from '../data/zoo-grounds.json' with { type: 'json' };
+import { MIX, leafColor, leafHash } from './season.js';
 
 export { buildSeaHall } from './zoo-sea-hall.js';
 export { GROUNDS };
@@ -86,7 +87,7 @@ function trees(scene, spots) {
   spots.forEach(([x, z, s], i) => {
     trunk.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.identity(), sc.set(s, s, s)));
     crown.setMatrixAt(i, m4.compose(v.set(x, 2.6 * s, z), q.setFromAxisAngle(up, i * 1.1), sc.set(s, s * 0.95, s)));
-    crown.setColorAt(i, greens[i % greens.length]);
+    crown.setColorAt(i, leafColor(greens[i % greens.length], leafHash(x, z), MIX.park)); // (the season's colours, core/season.js)
   });
   for (const m of [trunk, crown]) { m.computeBoundingSphere(); m.userData.noShadow = true; scene.add(m); }
 }

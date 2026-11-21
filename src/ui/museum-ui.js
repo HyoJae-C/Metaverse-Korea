@@ -50,7 +50,8 @@ export class MuseumUI {
       img.alt = `${p.title.en} (${p.title.ko})`;
       img.decoding = 'async';
       const b = el('div', 'museum-lang');
-      b.append(el('h3', null, `${p.title.ko} · ${localName(p.title, getLanguage())}`), el('p', 'museum-meta', `📷 ${p.artist.ko} · ${p.artist.en}${p.n ? ` · ${p.n} / 30` : ''}`));
+      const local = localName(p.title, getLanguage()), artist = p.artist.ko === p.artist.en ? p.artist.en : `${p.artist.ko} · ${p.artist.en}`;
+      b.append(el('h3', null, local === p.title.ko ? local : `${p.title.ko} · ${local}`), el('p', 'museum-meta', [`📷 ${artist}`, p.show && p.show !== p.title ? localName(p.show, getLanguage()) : null, p.of ? `${p.n} / ${p.of}` : null].filter(Boolean).join(' · ')));
       this.root.replaceChildren(x, img, b);
       this.root.hidden = false;
       return;

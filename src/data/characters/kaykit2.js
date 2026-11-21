@@ -8,18 +8,20 @@
 // colors: fixed colours for roles ("top" and "bottom" default to the look's
 // T-shirt and trouser colours); wear: atlas rules for what is left of the
 // model's head (core/model-pack.js, applyWear), e.g. no earrings.
+import { TEAM_LIST } from '../ballpark-teams.js';
+
 const HANDS = [['Head', '3,0', 'cut']]; // no earrings
 const wear = ({ outfit, colors, rules = [] }) => ({
   outfit,
   rules: [...rules, ...HANDS],
-  colors: { shoes: 0xffffff, sole: 0x5d5952, accent: 0x3b3a40, stitch: 0x1d1d22, ...colors },
+  colors: { shoes: 0xffffff, sole: 0xf1ede4, accent: 0x3b3a40, stitch: 0x1d1d22, ...colors },
 });
 // A crew-neck T-shirt, jeans and sneakers.
 const TEE = { outfit: { hem: 0.6, sleeve: 0.42, collar: 'top' } };
 // A denim jacket, open over a white T-shirt.
-const JACKET = { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', bulk: 0.012 }, colors: { top: 0x7f9fcc, accent: 0xf4f1ea } };
+const JACKET = { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', flaps: 'accent3', bulk: 0.012 }, colors: { top: 0x7f9fcc, accent: 0xf4f1ea } };
 // A grey hoodie with a front pocket, hood up.
-const HOODIE = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'top', pocket: 'accent', bulk: 0.012 }, colors: { top: 0x9d9fa6, accent: 0x8a8c93 }, rules: [['Head', '1,1', 'top']] };
+const HOODIE = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', rib: 'accent', pocket: 'accent', strings: 'accent2', bulk: 0.012 }, colors: { top: 0x9d9fa6, accent: 0x8a8c93, accent2: 0xf4f1ea }, rules: [['Head', '1,1', 'top']] };
 // A black long padded coat (롱패딩) down to the knees.
 const LONG_PADDING = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', quilt: true, bulk: 0.03, zip: 'accent', collar: 'top' }, colors: { top: 0x2b2b31, accent: 0x55565e, stitch: 0x111114 } };
 // A short cream puffer jacket.
@@ -27,37 +29,40 @@ const PUFFER = { outfit: { hem: 0.5, sleeve: 0.84, cuff: 'top', quilt: true, bul
 // A sleeveless sports top, shorts and white socks.
 const TANK = { outfit: { hem: 0.6, sleeve: 0, shorts: 0.3, socks: 'accent2' }, colors: { accent2: 0xf4f1ea } };
 // A short-sleeved shirt with a collar and a button placket.
-const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
+const SHIRT = { outfit: { hem: 0.6, sleeve: 0.5, cuff: 'top', collar: 'top', points: 'top', placket: 'accent' }, colors: { accent: 0xf4f1ea } };
 // A dark suit jacket, open over a white dress shirt (front and collar), with
 // black leather shoes: the guide at the War History Museum's information
 // desk wears it with a suit skirt (look.skirt).
-const SUIT = { outfit: { hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, shoes: 0x1d1d22, sole: 0x111114 } };
+const SUIT = { outfit: { dress: true, hem: 0.6, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', lapel: 'accent3', tie: 'accent2', buttons: { role: 'stitch', n: 2, x: 0.06, top: 0.8, gap: 0.1 }, bulk: 0.01 }, colors: { top: 0x2a2e38, accent: 0xf4f1ea, accent2: 0x8a2f45, shoes: 0x1d1d22, sole: 0x111114 } };
 // Men's clothes from the Dongdaemun fashion malls (Gentle Floor, Gwajam
 // Club), all on the basic model so the face stays the same.
 // A wool overcoat down to the knees, open over a knit (accent).
-const OVERCOAT = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', bulk: 0.018 }, colors: { accent: 0x2b2b31 } };
+const OVERCOAT = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', lapel: 'accent3', buttons: { role: 'stitch', n: 3, x: 0.09, top: 0.82, gap: 0.14 }, bulk: 0.018 }, colors: { accent: 0x2b2b31 } };
 // A varsity jacket (과잠): wool body, sleeves in another colour (accent2),
 // ribbed collar, cuffs and snap placket (accent).
 const VARSITY = { outfit: { hem: 0.56, sleeve: 0.84, arms: 'accent2', cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.016 } };
 // A crew-neck knit jumper with ribbed cuffs.
-const KNIT = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', bulk: 0.012 } };
+const KNIT = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', rib: 'accent', bulk: 0.012 } };
 
 // Unisex tops, one colour each (2026-11-10): new shapes rather than more
 // colours of the same one. W: the white T-shirt worn under some of them.
 const W = 0xf4f1ea;
 const TOPS = {
   // A sweatshirt (맨투맨) with a small chest logo.
-  'sweat-pistachio': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', badge: 'accent2', bulk: 0.014 }, colors: { top: 0xb5d68c, accent: 0x9fc376, accent2: 0x3f5a2c } },
+  'sweat-pistachio': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', rib: 'accent', badge: 'accent2', bulk: 0.014 }, colors: { top: 0xb5d68c, accent: 0x9fc376, accent2: 0x3f5a2c } },
   // A cardigan, open over a white T-shirt.
-  'cardigan-brown': { outfit: { hem: 0.54, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'accent', bulk: 0.012 }, colors: { top: 0x7a5640, accent: W } },
+  'cardigan-brown': { outfit: { hem: 0.54, sleeve: 0.84, cuff: 'top', rib: 'top', panel: 'accent', collar: 'accent', buttons: { role: 'accent2', n: 3, x: 0.065, top: 0.9, gap: 0.1 }, bulk: 0.012 }, colors: { top: 0x7a5640, accent: W, accent2: 0xe8d7b8 } },
   // A denim vest over a white T-shirt.
   'vest-denim': { outfit: { hem: 0.58, sleeve: 0.42, vest: true, arms: 'accent2', panel: 'accent', collar: 'top', bulk: 0.014 }, colors: { top: 0x9db8dc, accent: W, accent2: W } },
   // A rugby shirt: wide stripes, a white collar.
   'rugby-green': { outfit: { hem: 0.58, sleeve: 0.84, cuff: 'accent2', collar: 'accent2', placket: 'accent2', stripes: { step: 0.12, width: 0.05, role: 'accent' } }, colors: { top: 0x2f5a3e, accent: 0xe9dfc4, accent2: W } },
   // A short-sleeved polo shirt.
-  'polo-mint': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'top', collar: 'top', placket: 'accent' }, colors: { top: 0x8fd6c4, accent: 0x74c0ad } },
+  'polo-mint': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'top', collar: 'top', points: 'top', placket: 'accent' }, colors: { top: 0x8fd6c4, accent: 0x74c0ad } },
   // A baseball jersey with white piping and a chest number.
   'jersey-red': { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'accent', collar: 'accent', placket: 'accent', badge: 'accent' }, colors: { top: 0xe0574f, accent: W } },
+  // Modu Ballpark's eight team jerseys (data/ballpark-teams.js): the team
+  // colour with piping, collar and number in its trim colour.
+  ...Object.fromEntries(TEAM_LIST.map((t) => ['jersey-' + t.id, { outfit: { hem: 0.6, sleeve: 0.46, cuff: 'accent', collar: 'accent', placket: 'accent', badge: 'accent' }, colors: { top: parseInt(t.color.slice(1), 16), accent: parseInt(t.trim.slice(1), 16) } }])),
   // A track jacket (트레이닝 집업): white zip, collar and cuffs.
   'track-blue': { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'accent', zip: 'accent', bulk: 0.01 }, colors: { top: 0x4a8be0, accent: W } },
   // A fluffy fleece with a zip.
@@ -71,6 +76,24 @@ const TOPS = {
   'vest-fishing': { outfit: { hem: 0.56, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', zip: 'accent', pockets: 'stitch', collar: 'top', bulk: 0.02 }, colors: { top: 0x8f9188, accent: 0x3b3a40, stitch: 0x7a7c73, accent2: 0xe9e3d3 } },
   // A padded vest over a long-sleeved T-shirt.
   'vest-padded': { outfit: { hem: 0.54, sleeve: 0.84, vest: true, arms: 'accent2', cuff: 'accent2', quilt: true, zip: 'accent', collar: 'top', bulk: 0.035 }, colors: { top: 0x8cc4ec, accent: 0x6aa6d4, stitch: 0x6c9fc8, accent2: W } },
+};
+// Floral dresses (원피스, Bomnal Dresses): a bodice with cap sleeves over
+// its own long skirt (the model's "skirt", data/skirts.js DRESS_SKIRTS),
+// the bodice in the skirt's print (print) and a cream belt between.
+const FLORAL_DRESS = { outfit: { hem: 0.6, sleeve: 0.3, cuff: 'top', collar: 'top', belt: 'accent', print: true } };
+const DRESSES = {
+  'dress-floral-navy': { def: FLORAL_DRESS, colors: { top: 0x2f3c66, accent: 0xf6f1e7 } },
+  'dress-floral-yellow': { def: FLORAL_DRESS, colors: { top: 0xf2cf5b, accent: 0xf6f1e7 } },
+};
+// Animal onesies (동물 잠옷, Nyang Meong To Pan): one colour from the hood to
+// the ankles, wide legs over the shoes, the animal's ears on the hood
+// (the model's "ears", core/animal-wear.js), a tummy patch and a tail.
+// accent: the inside of the ears, the tummy and the spikes.
+const ONESIE = { hem: 0.6, sleeve: 0.84, cuff: 'top', collar: 'top', zip: 'accent2', bulk: 0.03, cut: 'wide' };
+const ONESIES = {
+  'onesie-bear': { ears: 'bear', outfit: { ...ONESIE, belly: 'accent', tail: 'pom' }, colors: { top: 0xc08a5a, bottom: 0xc08a5a, accent: 0xf2dcb8, accent2: 0x9a6a44 } },
+  'onesie-bunny': { ears: 'bunny', outfit: { ...ONESIE, tail: 'pom' }, colors: { top: 0xf6f1ea, bottom: 0xf6f1ea, accent: 0xf7b6c8, accent2: 0xe2dbd0 } },
+  'onesie-dino': { ears: 'dino', outfit: { ...ONESIE, belly: 'accent', tail: 'dino', spikes: 'accent' }, colors: { top: 0x7cc36a, bottom: 0x7cc36a, accent: 0xf2d36b, accent2: 0x5f9e50 } },
 };
 // A windbreaker with the hood up (on the hooded model).
 const WINDBREAKER = { outfit: { hem: 0.56, sleeve: 0.84, cuff: 'accent', collar: 'top', zip: 'accent', bulk: 0.02 }, colors: { top: 0xffc93c, accent: 0x2c3a6e }, rules: [['Head', '1,1', 'top']] };
@@ -152,6 +175,10 @@ export default {
       'knit-grey': { top: 0x9a9ca3, accent: 0x84868d }, 'knit-navy': { top: 0x51639a, accent: 0x44558a }, 'knit-cream': { top: 0xeee6d3, accent: 0xddd3bd },
     }),
     ...Object.fromEntries(Object.entries(TOPS).map(([id, def]) => [id, { url: 'models/kaykit2/rogue.glb', emoji: '👕', wear: wear(def) }])),
+    ...Object.fromEntries(Object.entries(DRESSES).map(([id, { def, colors }]) => [id,
+      { url: 'models/kaykit2/rogue.glb', emoji: '👗', skirt: id, wear: wear({ ...def, colors }) }])),
+    ...Object.fromEntries(Object.entries(ONESIES).map(([id, { ears, outfit, colors }]) => [id,
+      { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧸', ears, hood: true, wear: wear({ outfit, colors, rules: [['Head', '1,1', 'top']] }) }])),
     'windbreaker-yellow': { url: 'models/kaykit2/rogue_hooded.glb', emoji: '🧥', wear: wear(WINDBREAKER), hood: true },
     // Hanbok: all on the basic model, so the face stays the same.
     ...variants('rogue', '🪭', JEOGORI, {

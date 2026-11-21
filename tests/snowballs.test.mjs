@@ -56,7 +56,8 @@ test('a snowman head is smaller and liftable', () => {
   assert.equal(canTop(130, 150), true); // and stage 7
   assert.equal(canTop(145, 150), true); // even a giant on a bigger giant
   assert.equal(canTop(50, 110), true); // stage 3 on stage 6
-  assert.equal(canTop(110, 110), false); // (the bottom has to be bigger)
+  assert.equal(canTop(110, 110), true); // the same size works too
+  assert.equal(canTop(111, 110), false); // (but not a bigger head)
   assert.equal(canTop(50, 40), false);
 });
 

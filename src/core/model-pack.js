@@ -12,10 +12,11 @@ import { SKATE_LIFT, RIDE_CLEAR } from './rides.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
-import { PALETTES, accessory, shapeOf } from '../data/appearance.js';
+import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
 import { buildBlush, buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
-import { addSkirt } from './skirt-mesh.js';
+import { addSkirt, printMaterial } from './skirt-mesh.js';
+import { makeEars } from './animal-wear.js';
 import { skirtById } from '../data/skirts.js';
 
 // Kick scooter and inline skate strokes, added to the idle clip per bone
@@ -114,6 +115,9 @@ function load(id) {
   }
   return cache.get(id);
 }
+// The pack model's loaded file, as the characters use it (core/statue-face.js
+// takes its head for the city's statues).
+export const loadPackModel = load;
 
 // Everyday clothes on the adventurer models. Each model's texture is an
 // 8×4 atlas of flat colour cells, and every part of the mesh points at one
@@ -137,6 +141,9 @@ function wearUv(role) {
   const [cx, cy] = role === 'skin' ? A.skin : WEAR_CELLS[role] || WEAR_CELLS.top;
   return [(cx + 0.5) / A.cols, (cy + 0.5) / A.rows];
 }
+// accent3 (unless set): a shade of the top's colour, for lapels, collar
+// points and pocket flaps, so they show against the cloth they lie on.
+const shade = (hex, k = 0.8) => [16, 8, 0].reduce((c, b) => c | (Math.round(((hex >> b) & 255) * k) << b), 0);
 function applyWear(gltf, wear) {
   const A = PACK.atlas;
   const rules = wear.rules.map(([mesh, cell, role, min = -Infinity, max = Infinity, axis = 'y']) => ({ mesh: new RegExp(mesh, 'i'), cell, role, min, max, axis }));
@@ -242,6 +249,8 @@ function makeBarbell() {
   return g;
 }
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
+// The left arm holding an open umbrella (bone rotations, set over the clip).
+const UMB_ARM = { arm: [-1.0, 0, 0], fore: [0, 0, -1.2] };
 // Hairdresser's scissors, held in the right hand while snipping.
 function makeScissors() {
   const g = new THREE.Group();
@@ -286,12 +295,14 @@ function dyedMaterial(id, src, look) {
     const bottom = c.bottom ?? PALETTES.pants[look.pants] ?? PALETTES.pants.denim;
     for (const [role, cell] of Object.entries(WEAR_CELLS)) {
       if (!cell) continue;
-      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes : c[role];
+      const hex = role === 'top' ? top : role === 'bottom' ? bottom : role === 'shoes' ? PALETTES.shoes[look.shoes] ?? c.shoes
+        : role === 'accent3' ? c.accent3 ?? shade(top) : c[role];
       if (hex != null) paint.push([cell, hex]);
     }
   }
   // Under a skirt the legs are bare: the trousers cells take the skin's.
-  const bareLegs = !!(wear?.outfit && skirtById(look.skirt));
+  // (A dress has its own skirt: the model's "skirt".)
+  const bareLegs = !!(wear?.outfit && skirtById(look.skirt || PACK.models[id]?.skirt));
   if (!paint.length && shirt == null) return null;
   const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : '', bareLegs ? 'legs' : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
@@ -726,19 +737,39 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   m.scale.setScalar(PACK.scale);
   let headMesh = null, bodyMesh = null;
   const dyeMat = dyedMaterial(id, src, look);
+  // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
+  // straight legs under a skirt; a suit's own shoes are leather.
+  const wearDef = PACK.models[id].wear;
+  // A dress's own skirt (the model's "skirt") is worn like one; onesies
+  // pick their own cut (outfit.cut).
+  const skirtId = look.skirt || PACK.models[id].skirt || null;
+  const cut = skirtId || wearDef?.outfit?.dress ? 'slacks' : wearDef?.outfit?.cut || (wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans');
+  const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
+  const picked = (name) => {
+    const [, part, kind] = /^Outfit_(Legs|Shoes)_(\w+)$/.exec(name) || [];
+    if (!part) return true;
+    const want = part === 'Legs' ? cut : shoeKind;
+    // (shorts and swimwear only have one of each)
+    return kind === want || !m.getObjectByName('Outfit_' + part + '_' + want);
+  };
   m.traverse((o) => {
     if (!o.isMesh) return;
     if (dyeMat) o.material = dyeMat;
-    if (PACK.hide.test(o.name) || o.userData.wearHidden) { o.visible = false; return; }
+    if (PACK.hide.test(o.name) || o.userData.wearHidden || !picked(o.name)) { o.visible = false; return; }
     o.castShadow = true;
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
   });
+  // A printed dress: its top in the skirt's print (core/outfit-mesh.js o.print).
+  if (wearDef?.outfit?.print && PACK.models[id].skirt) {
+    const pm = printMaterial(PACK.models[id].skirt);
+    if (pm) m.traverse((o) => { if (o.isMesh && /^Outfit_Print/.test(o.name)) o.material = pm; });
+  }
   // A skirt over the everyday clothes (its own mesh and patterned material).
   const outfit = PACK.models[id].wear?.outfit;
-  const skirtMesh = outfit && look.skirt ? addSkirt(m, look.skirt, outfit) : null;
+  const skirtMesh = outfit && skirtId ? addSkirt(m, skirtId, outfit) : null;
   // Under a skirt the walk and run clips take smaller steps (SKIRT_STRIDE).
-  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(look.skirt).length] ?? 1 : 1;
+  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(skirtId).length] ?? 1 : 1;
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
@@ -765,6 +796,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       cap.rotation.x = -0.3;
       cap.scale.set(1.04, 0.98, 1.06);
       headAcc.add(cap);
+    }
+    // An animal onesie's hood: the animal's ears (or a dinosaur's spikes)
+    // on top, in the onesie's colours (core/animal-wear.js). A hat goes
+    // over the hood instead.
+    const ears = PACK.models[id].ears;
+    if (ears && !look.head) {
+      const c = PACK.models[id].wear?.colors || {};
+      const g = makeEars({ animal: ears, color: c.top, inner: c.accent ?? c.top, hood: true });
+      g.name = 'hoodEars';
+      headAcc.add(g);
     }
     if (chestBone && bodyMesh) {
       // Chibi torso: ~0.42 m wide, 0.36 m deep, scarf sits at ~0.6 m.
@@ -834,6 +875,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
+  let umbrellaUp = false; // left hand up by the head, holding the umbrella's pole
   let pullT = 0;
   let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
@@ -853,6 +895,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
     setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    // Raise the left hand beside the head to hold an open umbrella.
+    setUmbrella(on) { umbrellaUp = !!on; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
     // Wind in the hair, 0..1 (the roller coaster).
@@ -1062,6 +1106,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [side, c] of [['L', Math.max(0, ph)], ['R', Math.max(0, -ph)]]) {
           const f = dBones['fore' + side], r = C['fore' + side], amt = 0.15 + 0.85 * c;
           if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
+        }
+      }
+      if (umbrellaUp && !moves) { // the umbrella: upper arm out and forward, forearm up, the hand beside the head
+        const U = globalThis.__umb || UMB_ARM; // debug: tune live
+        const a = dBones.armL, f = dBones.foreL;
+        for (const [b, r] of [[a, U.arm], [f, U.fore]]) {
+          if (!b) continue;
+          if (lRest.has(b)) b.quaternion.copy(lRest.get(b)); // from rest: steady while walking
+          b.rotation.set(b.rotation.x + r[0], b.rotation.y + r[1], b.rotation.z + r[2]);
         }
       }
       if (extMoves) moves = extMoves() || moves; // basketball shots and other scripted moves

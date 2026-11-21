@@ -54,9 +54,9 @@ export function crewSize(pushes, now) {
   return Math.max(1, who.size);
 }
 
-// A snowman: any smaller ball put on top of a bigger one (a stage-3 head
+// A snowman: any ball put on top of one as big or bigger (a stage-3 head
 // on a stage-6 body, a stage-7 head on a giant...).
-export const canTop = (head, body) => head > 0 && head < body;
+export const canTop = (head, body) => head > 0 && head <= body; // (the same size is fine too: Yozi 2026-11-20, remaking one that's a step too big was tiring)
 
 // Our balls go in our state as "k,x,z,n[,h,ry[,t]]" joined by ";": k a small
 // id, n the body's steps, h the head's (a snowman), ry the way its face

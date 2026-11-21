@@ -205,6 +205,13 @@ export function makeSkate1({ tier, color, pattern }) {
   const box = boxer(g);
   const boot = skinMaterial(color, pattern);
   const R = 0.034, d = 2 * R - 0.048; // bigger wheels: everything above them sits d higher
+  if (tier === 3) { // ice skates (Mokdong Ice Rink, game/ice-rink.js): a boot on a steel blade, no wheels
+    box(0.1, 0.09, 0.17, 0, 0.085 + d, 0.01, boot);
+    box(0.105, 0.04, 0.08, 0, 0.145 + d, -0.04, boot);
+    box(0.014, 0.05, 0.26, 0, 0.025, 0.015, mat('#d7dde2'));
+    for (const z of [-0.06, 0.08]) box(0.03, 0.03, 0.04, 0, 0.045 + d / 2, z, mat('#d7dde2'));
+    return g;
+  }
   box(0.1, 0.07, 0.17, 0, 0.075 + d, 0.01, boot); // boot
   box(0.105, 0.03, 0.08, 0, 0.12 + d, -0.04, tier >= 1 ? mat(shade(color, 1.35)) : mat('#e9e4da')); // cuff
   box(0.03, 0.025, 0.24, 0, 0.032 + d, 0.01, mat(tier === 2 ? '#d7dde2' : DARK)); // frame

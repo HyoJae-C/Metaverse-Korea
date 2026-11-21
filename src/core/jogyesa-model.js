@@ -9,7 +9,10 @@ import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { tiles, band, body, nameBoard } from './palace-model.js';
 import { mergeStatic } from './bukchon-models.js';
-import { JOGYESA as J, canopySlots } from '../data/jogyesa.js';
+import { SEASON } from './season.js';
+import { statueFace } from './statue-face.js';
+import { heavenlyKing } from './heavenly-kings.js';
+import { JOGYESA as J, canopySlots, canopySpan, canopyPoles, wallRuns, WALL } from '../data/jogyesa.js';
 
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -76,28 +79,6 @@ function gate(g, I) {
   g.add(back);
 }
 
-// A Heavenly King: a big armoured guardian on a plinth, about 2.6 m tall,
-// facing +z, with what he holds (a pagoda, a lute, a sword or a dragon).
-function king(k) {
-  const g = new THREE.Group();
-  box(g, 0.9, 0.3, 0.8, 0, 0.15, 0, C.stoneDark);
-  cyl(g, 0.38, 0.5, 1.2, 0, 0.9, 0, k.color, 8); // robe
-  box(g, 0.9, 0.75, 0.55, 0, 1.85, 0, k.color); // armoured chest
-  box(g, 0.95, 0.12, 0.6, 0, 1.5, 0, C.gold); // belt
-  box(g, 1.25, 0.22, 0.5, 0, 2.2, 0, C.gold); // shoulder guards
-  blob(g, 0.3, 0, 2.55, 0.02, C.skin, 1.05); // head
-  box(g, 0.34, 0.08, 0.04, 0, 2.62, 0.27, '#2a1d17'); // fierce brows
-  cyl(g, 0.2, 0.28, 0.3, 0, 2.9, 0, C.gold, 6); // crown
-  for (const sx of [-1, 1]) box(g, 0.22, 0.75, 0.22, sx * 0.6, 1.75, 0.15, k.color); // arms
-  const hand = [0.6, 1.4, 0.35];
-  if (k.holds === 'pagoda') { box(g, 0.24, 0.24, 0.24, ...hand, C.gold); cyl(g, 0.02, 0.1, 0.25, hand[0], hand[1] + 0.25, hand[2], C.gold, 6); } else if (k.holds === 'lute') box(g, 0.3, 0.8, 0.12, 0, 1.6, 0.42, '#8a5a2b');
-  else if (k.holds === 'sword') box(g, 0.08, 1.2, 0.05, hand[0], 1.95, hand[2], '#c9ced6');
-  else { const d = cyl(g, 0.07, 0.07, 1.1, hand[0], 1.85, hand[2], '#2f8a68', 6); d.rotation.z = 0.5; blob(g, 0.13, 0.9, 2.35, hand[2], '#d4a73a'); }
-  g.position.set(k.x, 0.35, k.z);
-  g.rotation.y = k.ry;
-  return g;
-}
-
 // The pagoda tree (회화나무): a thick old trunk that splits into big limbs,
 // and a wide, loose crown that rises up through the canopy.
 function pagodaTree(T) {
@@ -109,7 +90,8 @@ function pagodaTree(T) {
     limb.rotation.set(Math.sin(a) * lean, 0, -Math.cos(a) * lean);
   }
   const r = T.r;
-  for (const [x, y, z, s, c] of [[0, T.h - 2.5, 0, 1, C.leaf], [r * 0.55, T.h - 3.8, 0.8, 0.8, C.leafDark], [-r * 0.5, T.h - 3.5, -0.6, 0.85, C.leaf], [0.6, T.h - 4, -r * 0.5, 0.75, C.leafDark], [-0.4, T.h - 4.2, r * 0.5, 0.75, C.leaf], [0, T.h - 1, 0, 0.6, C.leafDark]]) blob(g, r * 0.55 * s, x, y, z, c, 0.6);
+  const L = SEASON === 'autumn' ? '#e6b83a' : C.leaf, D = SEASON === 'autumn' ? '#cf9a2c' : C.leafDark; // (autumn, core/season.js: the old pagoda tree goes yellow)
+  for (const [x, y, z, s, c] of [[0, T.h - 2.5, 0, 1, L], [r * 0.55, T.h - 3.8, 0.8, 0.8, D], [-r * 0.5, T.h - 3.5, -0.6, 0.85, L], [0.6, T.h - 4, -r * 0.5, 0.75, D], [-0.4, T.h - 4.2, r * 0.5, 0.75, L], [0, T.h - 1, 0, 0.6, D]]) blob(g, r * 0.55 * s, x, y, z, c, 0.6);
   g.position.set(T.x, 0, T.z);
   return g;
 }
@@ -152,8 +134,8 @@ function babyBuddha(T) {
   cyl(g, 0.7, 0.8, 0.6, 0, 0.3, 0, C.stone, 8);
   cyl(g, 0.55, 0.35, 0.25, 0, 0.72, 0, '#e98aa6', 8); // lotus
   cyl(g, 0.16, 0.22, 0.6, 0, 1.15, 0, C.gold, 8);
-  blob(g, 0.17, 0, 1.6, 0, C.gold, 1);
-  box(g, 0.06, 0.4, 0.06, 0.12, 1.65, 0.02, C.gold); // one hand pointing to the sky
+  statueFace(g, { width: 0.36, at: [0, 1.6, 0.02], colors: { skin: C.gold, hair: '#9a7424', eyes: '#6e5218' } }); // our characters' face, in gilt
+  box(g, 0.06, 0.42, 0.06, 0.2, 1.68, 0.02, C.gold).rotation.z = -0.12; // one hand pointing to the sky
   g.position.set(T.x, 0, T.z);
   return g;
 }
@@ -165,6 +147,39 @@ function stele(T) {
   box(g, 0.95, 0.25, 0.32, 0, 2.2, 0, C.stoneDark);
   g.position.set(T.x, 0, T.z);
   return g;
+}
+
+// The bell pavilion (범종루): four posts on a stone base, a tiled roof, the
+// bronze bell hanging inside.
+function bellHouse(T) {
+  const g = new THREE.Group(), w = T.w, H = 2.6, hw = w / 2 - 0.25;
+  box(g, w + 0.5, 0.35, w + 0.5, 0, 0.175, 0, C.stone);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 0.26, H, 0.26, sx * hw, 0.35 + H / 2, sz * hw, C.post);
+  const top = new THREE.Group();
+  top.position.y = 0.35;
+  band(top, w - 0.3, w - 0.3, H);
+  g.add(top);
+  tiles(g, w + 2, w + 2, 1.4, 0.35 + H + 1.75, { hip: true, lift: 0.7, seg: 5, rows: 2 });
+  cyl(g, 0.5, 0.62, 1.15, 0, 0.35 + H - 0.95, 0, '#5f6a55', 12); // the bell
+  cyl(g, 0.08, 0.08, 0.35, 0, 0.35 + H - 0.2, 0, '#4b4038', 6);
+  g.position.set(T.x, 0, T.z);
+  return g;
+}
+
+// The temple wall (data/jogyesa.js wallRuns): a granite base, a plastered
+// wall and a dark tiled top with a ridge.
+function templeWall(g, ox, oz) {
+  const h = WALL.h;
+  for (const [x0, z0, x1, z1] of wallRuns()) {
+    const len = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group();
+    box(p, len + 0.5, 0.4, 0.55, 0, 0.2, 0, C.stoneDark);
+    box(p, len + 0.4, h - 0.65, 0.42, 0, 0.4 + (h - 0.65) / 2, 0, '#efe6d2');
+    box(p, len + 0.8, 0.14, 0.8, 0, h - 0.18, 0, '#4a4e55');
+    box(p, len + 0.8, 0.12, 0.36, 0, h - 0.06, 0, '#3c4046');
+    p.position.set((x0 + x1) / 2 - ox, 0, (z0 + z1) / 2 - oz);
+    p.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(p);
+  }
 }
 
 export { canopySlots }; // (data/jogyesa.js)
@@ -182,11 +197,14 @@ function canopy(g, ox, oz) {
     tag.setMatrixAt(i, m4);
     lant.setColorAt(i, col.set(CANOPY_COLORS[row % CANOPY_COLORS.length]));
   });
-  // The lines the lanterns hang from (one per row) and the poles holding them up.
-  const rows = Math.round((c.z1 - c.z0) / c.gap) + 1;
-  for (let r = 0; r < rows; r++) box(g, c.x1 - c.x0 + 1, 0.03, 0.03, (c.x0 + c.x1) / 2 - ox, c.y, c.z0 + r * c.gap - oz, C.rope);
-  for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, c.x1 - c.x0 + 1, 0.05, 0.05, (c.x0 + c.x1) / 2 - ox, c.y + 0.05, z - oz, C.rope);
-  for (let x = c.x0; x <= c.x1 + 0.1; x += (c.x1 - c.x0) / 4) for (const z of [c.z0 - 0.3, c.z1 + 0.3]) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
+  // The lines the lanterns hang from (one per row, across the part it is
+  // in) and the poles holding them up round the edge (on the north edge the
+  // lines tie to the halls' eaves).
+  for (let z = c.z0 + c.gap / 2; z < c.z1; z += c.gap) {
+    const span = canopySpan(z, c);
+    if (span) box(g, span[1] - span[0] + 0.4, 0.03, 0.03, (span[0] + span[1]) / 2 - ox, c.y, z - oz, C.rope);
+  }
+  for (const [x, z] of canopyPoles(c)) box(g, 0.14, c.y + 0.2, 0.14, x - ox, (c.y + 0.2) / 2, z - oz, '#4b4038');
   mergeStatic(g); // the lines and poles (before the lanterns go in: it would bake instanced meshes too)
   for (const m of [lant, tag]) { m.userData.noShadow = true; g.add(m); }
   lant.name = 'jogyesa-canopy'; // (game/lantern-parade.js lights it up row by row)
@@ -204,12 +222,16 @@ export function buildJogyesa(g) {
   hall(gg, { ...G, w: G.d, d: G.w }, '極樂殿');
   const I = J.iljumun;
   gate(at(new THREE.Group(), I.x, I.z, Math.PI / 2), I); // road side (+z) to the east
-  for (const k of J.kings) sub(king, k);
+  for (const k of J.kings) sub(heavenlyKing, k, J.kingScale);
   sub(pagodaTree, J.pagodaTree);
   sub(whitePine, J.whitePine);
   sub(sarira, J.sarira);
   sub(babyBuddha, J.babyBuddha);
   sub(stele, J.stele);
+  sub(bellHouse, J.bell);
+  templeWall(g, ox, oz);
+  const U = J.ujeongguk;
+  hall(at(new THREE.Group(), U.x, U.z), U, '郵征總局');
   mergeStatic(g); // (before the canopy: it would bake the instanced lanterns too)
   const cg = new THREE.Group();
   g.userData.canopy = canopy(cg, ox, oz);

@@ -5,9 +5,9 @@
 //
 // Like the Cheonggyecheon wish lanterns, the wishes come from a fixed list
 // (core/lanterns.js WISHES, sent as a number), so there is nothing to
-// moderate; the colours are the same seven. The canopy's 400 spots
-// (data/jogyesa.js canopySlots) are numbered; a lantern takes the lowest
-// free one, the front rows by Daeungjeon first.
+// moderate; the colours are the same seven. The canopy's first 400
+// spots (data/jogyesa.js canopySlots) are numbered; a lantern takes the
+// lowest free one, the gate side's wing first.
 //
 // On the server (supabase/041_temple_lanterns.sql) one function takes the
 // money from the player's wallet and hangs the lantern together, so the two
@@ -27,7 +27,7 @@ export const TEMPLE_LANTERN = {
   dailyLimit: 3, // lanterns a player can hang a day (KST)
   maxName: 16,
 };
-export const SLOTS = canopySlots().length; // 400
+export const SLOTS = Math.min(400, canopySlots().length); // 400 (the canopy has more spots: the rest are the temple's own)
 const DAY = 86400e3;
 const TABLE = 'temple_lanterns';
 const LOCAL_KEY = 'mktemple.local'; // not "mk.": stays out of the cloud save

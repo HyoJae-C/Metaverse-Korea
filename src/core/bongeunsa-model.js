@@ -1,24 +1,26 @@
 // Bongeunsa (봉은사), the temple opposite KONEXT (map "landmarks" in
 // districts/samseong.json, laid out by scripts/bongeunsa-layout.mjs):
 //   bongeunsa  the halls (core/palace-model.js palacehalls), Beopwangru's two
-//              storeys, the lantern canopy over Daeungjeon's courtyard and the
-//              lanterns along the way in, the three-storey pagoda, Haesu
-//              Gwaneum on her pond, the bell pavilion and Iljumun
+//              storeys, the three-storey pagoda, Haesu Gwaneum on her pond,
+//              the bell pavilions and Iljumun (no lanterns: Yozi 2026-11-15)
 //   maitreya   the Maitreya Buddha (미륵대불): a white granite standing Buddha
 //              under a square canopy (보개) with bells, on a double lotus over
 //              a hexagonal base with columns and carved panels, a curved wall
 //              of small niches behind and stone lanterns in front
 // Loaded with import() by the landmarks' stubs (core/landmarks.js), so none
 // of it is in the first download. Every plain part is baked into one mesh per
-// look (core/merge-static.js bakeColors); the lanterns are one InstancedMesh.
-// The temple pieces (lanternCanopy, stonePagoda, stoneLantern, bellPavilion)
+// look (core/merge-static.js bakeColors).
+// The temple pieces (stonePagoda, stoneLantern, bellPavilion)
 // are exported for other temples (Jogyesa).
 import * as THREE from 'three';
 import { bakeColors } from './merge-static.js';
 import { curvedRoof } from './hanok.js';
 import { PALACE_BUILD } from './palace-model.js';
 import { farFree } from './far-textures.js';
-import { glowAtNight } from './weather.js';
+import { statueFace } from './statue-face.js';
+import { gateKings } from './heavenly-kings.js';
+import { gateStep } from './temple-terrace.js';
+import { MIX, leafColor, leafHash } from './season.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -73,66 +75,9 @@ const C = {
   beam: '#2f8a68', beamBlue: '#3f6f9a', bracket: '#2a6f5a', bronze: '#5f6a55', gold: '#d4a73a',
   g0: '#efeee9', g1: '#e2dfd6', g2: '#cdc9be', g3: '#aaa59a', g4: '#8d887e', // white granite, light to dark
 };
-// The lanterns' paper: lit from inside after dark (weather.js glowAtNight).
-function lanternMat() {
-  const m = new THREE.MeshLambertMaterial({ emissive: '#ffb45e' });
-  glowAtNight(m, 0.55);
-  return m;
-}
-const LANTERN_COLORS = ['#f28cb1', '#ffd45c', '#e8483f', '#5b8fd9', '#5cbf72', '#a777d6', '#ff9a4a'].map((c) => new THREE.Color(c));
 
 // --- temple pieces -------------------------------------------------------------
 
-// Paper lanterns (연등) hung in rows: a canopy w × d over a courtyard (rows
-// of one colour each, as Bongeunsa hangs them) at height y, on poles at the
-// corners. Returns the InstancedMesh (one draw call) and adds the wires.
-export function lanternCanopy(g, w, d, y = 3.4, gap = 0.5) {
-  const nx = Math.max(2, Math.round(w / gap)), nz = Math.max(2, Math.round(d / gap));
-  const geo = new THREE.SphereGeometry(0.17, 8, 6);
-  geo.scale(1, 1.2, 1);
-  const m = new THREE.InstancedMesh(geo, lanternMat(), nx * nz);
-  const m4 = new THREE.Matrix4();
-  let i = 0;
-  for (let r = 0; r < nz; r++) {
-    const z = -d / 2 + (r + 0.5) * (d / nz);
-    box(g, w, 0.025, 0.025, 0, y + 0.22, z, C.g4); // the wire
-    for (let k = 0; k < nx; k++, i++) {
-      m.setMatrixAt(i, m4.makeTranslation(-w / 2 + (k + 0.5) * (w / nx), y, z));
-      m.setColorAt(i, LANTERN_COLORS[r % LANTERN_COLORS.length]);
-    }
-  }
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(g, 0.1, y + 0.3, 0.1, sx * w / 2, (y + 0.3) / 2, sz * d / 2, C.g4);
-  m.userData.noShadow = true;
-  g.add(m);
-  return m;
-}
-// Two strings of lanterns either side of a path from a to b ([x, z]).
-function lanternLane(g, a, b, y = 2.8, half = 1.3, gap = 0.5) {
-  const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(2, Math.round(L / gap));
-  const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, sx = -uz, sz = ux;
-  const geo = new THREE.SphereGeometry(0.17, 8, 6);
-  geo.scale(1, 1.2, 1);
-  const m = new THREE.InstancedMesh(geo, lanternMat(), n * 2);
-  const m4 = new THREE.Matrix4(), lane = [LANTERN_COLORS[0], LANTERN_COLORS[1], LANTERN_COLORS[2]];
-  let i = 0;
-  for (const side of [-1, 1]) {
-    const ox = sx * half * side, oz = sz * half * side;
-    const wire = box(g, 0.025, 0.025, L, (a[0] + b[0]) / 2 + ox, y + 0.22, (a[1] + b[1]) / 2 + oz, C.g4);
-    wire.rotation.y = Math.atan2(ux, uz);
-    for (let k = 0; k < n; k++, i++) {
-      const t = (k + 0.5) / n;
-      m.setMatrixAt(i, m4.makeTranslation(a[0] + (b[0] - a[0]) * t + ox, y, a[1] + (b[1] - a[1]) * t + oz));
-      m.setColorAt(i, lane[k % lane.length]);
-    }
-    for (let p = 0; p <= Math.ceil(L / 4); p++) {
-      const t = Math.min(1, (p * 4) / L);
-      box(g, 0.09, y + 0.3, 0.09, a[0] + (b[0] - a[0]) * t + ox, (y + 0.3) / 2, a[1] + (b[1] - a[1]) * t + oz, C.g4);
-    }
-  }
-  m.userData.noShadow = true;
-  g.add(m);
-  return m;
-}
 // A three-storey granite pagoda (삼층석탑) on a two-tier base, about 1.9 m (1/4).
 export function stonePagoda(g, x, z, s = 1) {
   const p = new THREE.Group();
@@ -211,14 +156,14 @@ function beopwangru(g, [x, z, w, d, ry]) {
   box(p, w2 + 1.2, 0.14, d2 + 1.2, 0, y + 0.69, 0, C.beamBlue);
   tiles(p, w + 2.6, d + 2.6, 2.4, y + 0.76, { hip: true, lift: 1.0, seg: 6, rows: 3 });
   const sign = nameBoard('法王樓', 2.4, 0.9);
-  sign.position.set(0, y - H2 * 0.25, d2 / 2 + 0.14);
+  sign.position.set(0, y - H2 * 0.25, d2 / 2 + 0.22); // (in front of the posts)
   p.add(sign);
   p.position.set(x, 0, z);
   p.rotation.y = ry;
   g.add(p);
 }
 // Iljumun (일주문): the one-pillar gate, two posts in a line under a gable roof.
-function iljumun(g, [x, z, ry]) {
+function iljumun(g, [x, z, ry], k = 1) {
   const p = new THREE.Group(), H = 2.6, s = 1.35;
   for (const sx of [-1, 1]) {
     box(p, 0.55, 0.35, 0.55, sx * s, 0.175, 0, C.stone);
@@ -234,13 +179,17 @@ function iljumun(g, [x, z, ry]) {
     if (zz < 0) sign.rotation.y = Math.PI;
     p.add(sign);
   }
+  p.scale.setScalar(k);
   p.position.set(x, 0, z);
   p.rotation.y = ry;
   g.add(p);
 }
+// Our characters' face in white granite (the Maitreya Buddha, Gwaneum).
+const GRANITE_FACE = { skin: '#efeee9', hair: '#aaa59a', eyes: '#77726a' };
+
 // Haesu Gwaneum (해수관음상): a white standing Bodhisattva holding a vase,
 // on a rock in her pond (the water is the map's; here the rim, rock, figure).
-function gwaneum(g, [x, z]) {
+function gwaneum(g, [x, z], k = 1) {
   const p = new THREE.Group();
   const rim = add(p, new THREE.TorusGeometry(1.75, 0.12, 4, 18), C.g2, 0, 0.08, 0);
   rim.rotation.x = Math.PI / 2;
@@ -249,12 +198,13 @@ function gwaneum(g, [x, z]) {
   cyl(p, 0.42, 0.48, 0.18, 0, 0.6, 0, C.g1, 10); // the lotus seat
   const body = add(p, new THREE.LatheGeometry([[0, 0], [0.3, 0], [0.32, 0.15], [0.26, 0.7], [0.27, 1.0], [0.3, 1.15], [0.12, 1.22], [0, 1.23]].map(([r, y]) => new THREE.Vector2(r, y)), 10), C.g0, 0, 0.69, 0);
   body.scale.z = 0.75;
-  ball(p, 0.15, 0, 2.02, 0, C.g0, 0.95, 1.1, 0.95, 8, 6);
-  cyl(p, 0.1, 0.13, 0.16, 0, 2.2, 0, C.g1, 8); // the crown
+  statueFace(p, { width: 0.34, at: [0, 2.0, 0.02], colors: GRANITE_FACE }); // our characters' face (core/statue-face.js)
+  cyl(p, 0.11, 0.15, 0.16, 0, 2.21, -0.01, C.g1, 8); // the crown
   limb(p, [0.27, 1.75, 0], [0.32, 1.42, 0.16], 0.07, 0.06, C.g0, 6);
   limb(p, [0.32, 1.42, 0.16], [0.2, 1.55, 0.3], 0.06, 0.05, C.g0, 6);
   ball(p, 0.07, 0.2, 1.62, 0.32, C.g1, 1, 1.5, 1, 8, 6); // the vase
   limb(p, [-0.27, 1.75, 0], [-0.3, 1.25, 0.08], 0.07, 0.06, C.g0, 6);
+  p.scale.setScalar(k);
   p.position.set(x, 0, z);
   g.add(p);
 }
@@ -262,6 +212,7 @@ function gwaneum(g, [x, z]) {
 // A low wooded mound behind the temple: a squashed half ball with a few
 // chunky blob trees on it (they're only backdrop, so low-poly and baked in).
 const TREE = ['#4f8a45', '#5e9a4c', '#447a3e'];
+const TREE_C = TREE.map((c) => new THREE.Color(c));
 function hill(g, x, z, r, h) {
   const m = add(g, new THREE.SphereGeometry(1, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), '#86b066', x, 0, z);
   m.scale.set(r, h, r);
@@ -270,33 +221,61 @@ function hill(g, x, z, r, h) {
     const a = i * 2.4 + x, d = r * 0.7 * Math.sqrt((i + 0.5) / n);
     const tx = x + Math.cos(a) * d, tz = z + Math.sin(a) * d, ty = h * Math.sqrt(1 - (d / r) ** 2);
     const s = 1.6 + ((i * 7) % 5) * 0.25;
-    const crown = add(g, new THREE.IcosahedronGeometry(s, 0), TREE[i % 3], tx, ty + s * 1.1, tz);
+    const crown = add(g, new THREE.IcosahedronGeometry(s, 0), '#' + leafColor(TREE_C[i % 3], leafHash(tx, tz), MIX.wood).getHexString(), tx, ty + s * 1.1, tz); // (the season's colours, core/season.js)
     crown.scale.set(1, 1.15, 1);
   }
+}
+
+// The temple wall (담장): runs [x0, z0, x1, z1] of a granite base, a
+// plastered wall and a dark tiled top with a ridge.
+function templeWall(g, runs, h = 1.5) {
+  for (const [x0, z0, x1, z1] of runs) {
+    const len = Math.hypot(x1 - x0, z1 - z0), p = new THREE.Group();
+    box(p, len + 0.1, 0.4, 0.55, 0, 0.2, 0, C.g3);
+    box(p, len, h - 0.65, 0.42, 0, 0.4 + (h - 0.65) / 2, 0, C.wall);
+    box(p, len + 0.2, 0.14, 0.8, 0, h - 0.18, 0, '#4a4e55');
+    box(p, len + 0.2, 0.12, 0.36, 0, h - 0.06, 0, '#3c4046');
+    p.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
+    p.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
+    g.add(p);
+  }
+}
+
+// Jinyeomun's steps up to its base, in front and behind its middle bay
+// (core/temple-terrace.js walks you up them as a smooth slope).
+function gateSteps(g, gate, mid) {
+  const [x, z, , , ry] = gate, { B, n, tread, bd, sw } = gateStep(gate, mid);
+  const s = new THREE.Group();
+  s.position.set(x, 0, z);
+  s.rotation.y = ry;
+  for (const sz of [-1, 1]) for (let i = 0; i < n; i++) {
+    const top = B * (1 - (i + 0.5) / n);
+    box(s, sw, top, tread + 0.02, 0, top / 2, sz * (bd + tread * (i + 0.5)), i % 2 ? C.g1 : C.g0);
+  }
+  g.add(s);
 }
 
 export function buildTemple(g, l) {
   const halls = new THREE.Group();
   g.add(halls);
-  PALACE_BUILD.palacehalls(halls, { halls: l.halls });
+  PALACE_BUILD.palacehalls(halls, { halls: l.halls, gateMid: l.gateMid });
   const own = new THREE.Group();
   g.add(own);
   if (l.nu) beopwangru(own, l.nu);
-  if (l.iljumun) iljumun(own, l.iljumun);
-  if (l.gwaneum) gwaneum(own, l.gwaneum);
-  if (l.pagoda) stonePagoda(own, ...l.pagoda);
-  if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2]);
-  const lamps = [];
-  if (l.canopy) {
-    const [x, z, w, d, ry] = l.canopy, c = new THREE.Group();
-    c.position.set(x, 0, z);
-    c.rotation.y = ry;
-    own.add(c);
-    lamps.push(lanternCanopy(c, w, d));
-  }
-  if (l.lane) lamps.push(lanternLane(own, l.lane[0], l.lane[1]));
+  // The Four Heavenly Kings in Jinyeomun's side bays (palacehalls draws the
+  // gate; its side bays are walled off for walking, scripts/bongeunsa-layout.mjs).
+  const jinyeomun = (l.halls || []).find((h) => h[5] === 'g');
+  if (jinyeomun) own.add(gateKings(jinyeomun, { scale: 0.9, y: 0.55, bay: jinyeomun[2] * 0.375 }));
+  if (jinyeomun && l.gateMid) gateSteps(own, jinyeomun, l.gateMid);
+  const k = l.k || 1; // (the whole temple at 37.5%: these 1/4 models grow with it)
+  if (l.iljumun) iljumun(own, l.iljumun, 1 + (k - 1) * 0.7);
+  if (l.gwaneum) gwaneum(own, l.gwaneum, k);
+  if (l.pagoda) stonePagoda(own, l.pagoda[0], l.pagoda[1], k);
+  if (l.bell) bellPavilion(own, l.bell[0], l.bell[1], l.bell[2], 2.8 * k);
+  if (l.bell2) bellPavilion(own, l.bell2[0], l.bell2[1], l.bell2[2], 1.9 * k); // 종각, the smaller bell house
   for (const h of l.hills || []) hill(own, ...h);
-  bakeColors(own, lamps);
+  if (l.wall) templeWall(own, l.wall, l.wallH);
+  bakeColors(own);
   g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.noShadow; o.receiveShadow = true; } });
 }
 
@@ -366,21 +345,17 @@ function buddha(g) {
   limb(g, [1.0, y0 + 4.75, 0], [1.08, y0 + 3.55, 0.12], 0.26, 0.22, C.g0);
   limb(g, [1.08, y0 + 3.55, 0.12], [0.96, y0 + 2.75, 0.4], 0.2, 0.15, C.g0);
   box(g, 0.26, 0.42, 0.14, 0.94, y0 + 2.52, 0.46, C.g0);
-  // Neck, head, ears, the curls and the ushnisha (육계), the face.
+  // Neck, our characters' face (core/statue-face.js) with the long ears,
+  // the curls and the ushnisha (육계), the jewel and the urna.
   cyl(g, 0.3, 0.34, 0.34, 0, y0 + 5.38, 0, C.g0, 10);
   for (const yy of [5.33, 5.43]) { const t = add(g, new THREE.TorusGeometry(0.31, 0.02, 4, 12), C.g2, 0, y0 + yy, 0); t.rotation.x = Math.PI / 2; }
-  ball(g, 0.58, 0, y0 + 5.98, 0, C.g0, 0.92, 1.1, 0.96, 12, 9);
-  ball(g, 0.6, 0, y0 + 6.14, -0.06, C.g2, 0.95, 0.82, 0.95, 12, 8); // the curls
-  ball(g, 0.3, 0, y0 + 6.68, -0.04, C.g2, 1, 0.9, 1, 10, 7);
-  ball(g, 0.07, 0, y0 + 6.33, 0.5, C.g1, 1, 1, 0.6, 6, 5); // the jewel at the parting
-  for (const sx of [-1, 1]) {
-    box(g, 0.12, 0.62, 0.24, sx * 0.55, y0 + 5.85, -0.02, C.g0); // the long ears
-    box(g, 0.2, 0.035, 0.05, sx * 0.19, y0 + 6.12, 0.5, C.g3); // brows
-    box(g, 0.16, 0.025, 0.04, sx * 0.19, y0 + 6.01, 0.52, C.g4); // half-closed eyes
-  }
-  ball(g, 0.035, 0, y0 + 6.22, 0.54, C.g3, 1, 1, 0.5, 6, 4); // the urna
-  box(g, 0.1, 0.24, 0.12, 0, y0 + 5.88, 0.53, C.g1); // nose
-  box(g, 0.16, 0.025, 0.04, 0, y0 + 5.7, 0.5, C.g3); // mouth
+  statueFace(g, { width: 1.35, at: [0, y0 + 5.95, 0.02], colors: GRANITE_FACE });
+  const curls = ball(g, 0.72, 0, y0 + 6.12, -0.1, C.g2, 0.98, 0.78, 0.98, 12, 8); // the curls
+  curls.rotation.x = -0.35;
+  ball(g, 0.3, 0, y0 + 6.75, -0.08, C.g2, 1, 0.9, 1, 10, 7);
+  ball(g, 0.07, 0, y0 + 6.36, 0.56, C.g1, 1, 1, 0.6, 6, 5); // the jewel at the parting
+  for (const sx of [-1, 1]) box(g, 0.12, 0.62, 0.24, sx * 0.7, y0 + 5.8, -0.02, C.g0); // the long ears
+  ball(g, 0.035, 0, y0 + 6.04, 0.66, C.g3, 1, 1, 0.5, 6, 4); // the urna
   // The square canopy (보개) on a short post over the head, bells at its corners.
   const yc = y0 + 7.02;
   cyl(g, 0.1, 0.12, 0.22, 0, y0 + 6.92, 0, C.g1, 8);
@@ -437,13 +412,37 @@ function nicheWall(g, pts) {
 export function buildMaitreya(g, l) {
   const all = new THREE.Group();
   g.add(all);
+  const [pw0, pl0, pc0] = l.plaza || [8.6, 10.3, 1.15];
+  if (l.lift) { // up on its terrace (core/temple-terrace.js): a stone wall round it, stairs down the front
+    const T = l.lift, base = new THREE.Group(), front = pc0 + pl0 / 2, [sw, run] = l.stairs;
+    g.add(base);
+    all.position.y = T;
+    box(base, pw0, T, pl0, 0, T / 2, pc0, C.g3); // the dressed stone wall
+    for (let y = 0.45; y < T; y += 0.45) box(base, pw0 + 0.04, 0.04, pl0 + 0.04, 0, y, pc0, C.g4); // its courses
+    box(base, pw0 + 0.3, 0.14, pl0 + 0.3, 0, T - 0.05, pc0, C.g2); // the coping
+    const [len, rise] = l.ramp || [0, 0];
+    const n = Math.max(4, Math.round((T - rise) / 0.16)), d = run / n; // (low steps, wide as the plaza)
+    for (let i = 0; i < n; i++) { // each step's top on the slope you walk up
+      const top = T - (T - rise) * ((i + 0.5) / n);
+      box(base, sw, top, d + 0.02, 0, top / 2, front + d * (i + 0.5), i % 2 ? C.g1 : C.g0);
+    }
+    // (shape x -> forward, y -> up, depth -> -x)
+    const prism = (pts, depth) => new THREE.ExtrudeGeometry(new THREE.Shape(pts.map(([a, b]) => new THREE.Vector2(a, b))), { depth, bevelEnabled: false }).rotateY(-Math.PI / 2);
+    // The gentle paved slope up to the stairs' foot.
+    if (len) add(base, prism([[0, 0], [len, 0], [0, rise]], sw), C.g1, sw / 2, 0, front + run);
+    // The cheek walls either side of the stairs, 0.3 m thick, just outside them.
+    const cheekGeo = prism([[0, 0], [run, 0], [run, rise + 0.3], [0, T + 0.3]], 0.3);
+    for (const sx of [-1, 1]) add(base, cheekGeo, C.g2, sx * sw / 2 + (sx > 0 ? 0.3 : 0), 0, front);
+    bakeColors(base);
+  }
   // The plaza: a pale paved rectangle [w, l, its middle ahead of the statue],
   // a kerb round it, and the red mat for bows in front of the statue.
   const [pw, pl, pc] = l.plaza || [8.6, 10.3, 1.15];
   box(all, pw, 0.04, pl, 0, 0.02, pc, C.g1);
   for (const sx of [-1, 1]) box(all, 0.2, 0.12, pl, sx * (pw / 2 - 0.1), 0.06, pc, C.g2);
   box(all, pw, 0.12, 0.2, 0, 0.06, pc - pl / 2 + 0.1, C.g2);
-  for (const sx of [-1, 1]) box(all, (pw - 2.4) / 2, 0.12, 0.2, sx * (pw + 2.4) / 4, 0.06, pc + pl / 2 - 0.1, C.g2); // (the front: open in the middle, where the stairs go down)
+  const gap = l.stairs?.[0] || 2.4; // (the front: open where the stairs go down)
+  if (pw - gap > 0.1) for (const sx of [-1, 1]) box(all, (pw - gap) / 2, 0.12, 0.2, sx * (pw + gap) / 4, 0.06, pc + pl / 2 - 0.1, C.g2);
   box(all, 2.8, 0.03, 2.4, 0, 0.055, 3.6, '#8e2a26');
   const statue = new THREE.Group();
   statue.scale.setScalar((l.h || 11.5) / 12);
