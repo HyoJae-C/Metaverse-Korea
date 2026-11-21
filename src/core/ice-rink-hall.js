@@ -227,10 +227,13 @@ export function buildIceRinkHall(store, ROOM = ROOM_RINK, EXIT = { x: 0, z: ROOM
   const drawHow = (T) => { drawHowTo(howCanvas.getContext('2d'), 640, 580, T); howTex.needsUpdate = true; };
   drawHow(HOWTO_EN);
   const howAt = { x: 0, z: iz1 + 1.6 };
-  put(new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.9), new THREE.MeshBasicMaterial({ map: howTex })), howAt.x, 2.0, howAt.z + 0.06);
-  put(new THREE.Mesh(new THREE.BoxGeometry(3.4, 3.1, 0.1), new THREE.MeshLambertMaterial({ color: C.band })), howAt.x, 2.0, howAt.z);
-  put(new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.15), new THREE.MeshLambertMaterial({ color: C.steel })), howAt.x, 0.25, howAt.z);
-  block(howAt.x, howAt.z, 3.4, 0.3);
+  const howMat = new THREE.MeshBasicMaterial({ map: howTex });
+  // Up above the boards, and the same on its back, so it reads from the lobby and from the ice (Yozi 2026-11-21).
+  put(new THREE.Mesh(new THREE.PlaneGeometry(4.2, 3.8), howMat), howAt.x, 3.5, howAt.z + 0.06);
+  put(new THREE.Mesh(new THREE.PlaneGeometry(4.2, 3.8).rotateY(Math.PI), howMat), howAt.x, 3.5, howAt.z - 0.06);
+  put(new THREE.Mesh(new THREE.BoxGeometry(4.4, 4.0, 0.1), new THREE.MeshLambertMaterial({ color: C.band })), howAt.x, 3.5, howAt.z);
+  put(new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.5, 0.15), new THREE.MeshLambertMaterial({ color: C.steel })), howAt.x, 0.75, howAt.z);
+  block(howAt.x, howAt.z, 0.4, 0.3);
 
   // The score cube over the middle of the ice: game/ice-rink.js writes on it.
   const cubeCanvas = document.createElement('canvas');

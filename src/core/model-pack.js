@@ -874,6 +874,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let emote = null; // { key, t, dur }
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  let extStride = null; // on skates: (stroke, dt) => another pose for the stride bones (the ice rink's glides)
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
   let umbrellaUp = false; // left hand up by the head, holding the umbrella's pole
   let pullT = 0;
@@ -899,6 +900,8 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     setUmbrella(on) { umbrellaUp = !!on; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
+    // On skates, a pose in place of the stride: fn(stroke, dt) → bone offsets like STRIDE's, or null.
+    setStride(fn) { extStride = fn || null; },
     // Wind in the hair, 0..1 (the roller coaster).
     setWind(k) { if (!locks.length || (k < 0.01 && windK < 0.01)) { windK = k; return; } windK = k; if (k < 0.01) blow(0); },
     play(name) {
@@ -983,6 +986,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         if (strideAmp > 0.01) strideT += dt * S.rate * Math.PI * 2;
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
+        if (extStride && skates) stroke = extStride(stroke, dt) || stroke;
       }
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
       // (Sitting on a chair, by the sit flag or the 'sit' activity (NPCs): up

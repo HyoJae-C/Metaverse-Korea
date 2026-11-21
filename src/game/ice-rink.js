@@ -16,7 +16,7 @@ import { buzz } from '../core/haptics.js';
 import { dayKey } from '../core/daily.js';
 import { rideCode } from '../core/bike-garage.js';
 import { ICE_SKATES, HOWTO_EN } from '../core/ice-rink-hall.js';
-import { IceSkater, SKATE, PLAIN, onIce, jumpPose, peerJump, syncPeerTricks, bankJump, trickName, trickCode } from '../core/ice-skate.js';
+import { IceSkater, SKATE, PLAIN, glideKind, glideStride, onIce, jumpPose, peerJump, syncPeerTricks, bankJump, trickName, trickCode, trickFromCode } from '../core/ice-skate.js';
 
 export const RINK_TEXT = {
   jump: { en: 'Jump', ko: '점프', ja: 'ジャンプ', zh: '跳跃', es: 'Saltar', ar: 'اقفز', vi: 'Nhảy', hi: 'कूदें', fr: 'Sauter', th: 'กระโดด', id: 'Lompat' },
@@ -54,6 +54,8 @@ export function createIceRink(game) {
   let typed = ''; // the arrows of this jump, shown while in the air
   let hudAt = 0;
   const peers = new Map(); // id -> { n, fall, t, tricks }
+  let coast = 0, glide = ''; // seconds coasting with no push, and my glide now ('' | 'g1' | 'g2')
+  const peerGlide = new Map(); // id -> { ch, kind } (the others' glides)
 
   // ---- the HUD and the arrow pad (made here, so nothing is in the first download) ----
   const el = (tag, css, text = '') => { const e = document.createElement(tag); e.style.cssText = css; e.textContent = text; return e; };
@@ -72,8 +74,43 @@ export function createIceRink(game) {
     pad.append(b);
   }
   pad.hidden = true;
+  // The commands, to look at while you skate (Yozi 2026-11-21): a small
+  // button on the left that opens and closes the list under it.
+  const CMD_KEY = 'mk.icerink.cmd';
+  const CMD_ROWS = [['←', 'L1'], ['← →', 'L2'], ['← → ←', 'L3'], ['← → ← →', 'L4'], ['↑ ↓', 'UD'], ['↓ ↑', 'DU'], ['↑ ↑', 'UU'], ['↓ ↓', 'DD']];
+  // (On a phone it starts closed and opens upward as two short columns without the points, clear of the buttons.)
+  let cmdOpen = !touch;
+  try { const v = localStorage.getItem(CMD_KEY); if (v) cmdOpen = v === '1'; } catch { /* as it is */ }
+  const cmd = el('div', 'position:fixed;left:calc(env(safe-area-inset-left,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 290px);z-index:6;font:700 12px system-ui,sans-serif;color:#fff;user-select:none;-webkit-user-select:none');
+  cmd.id = 'ice-cmd';
+  const cmdBtn = el('button', 'display:block;height:30px;padding:0 10px;border-radius:15px;border:2px solid rgba(255,255,255,.85);background:rgba(20,40,70,.7);color:#fff;font:800 13px system-ui,sans-serif;white-space:nowrap');
+  cmdBtn.setAttribute('aria-label', 'Commands');
+  const cmdList = el('div', `padding:6px 9px;border-radius:12px;background:rgba(20,40,70,.7);pointer-events:none;display:grid;grid-template-columns:${touch ? 'auto auto auto auto' : 'auto auto auto'};gap:3px ${touch ? 6 : 9}px;align-items:center;line-height:17px;${touch ? 'position:absolute;left:0;bottom:36px;white-space:nowrap' : 'margin-top:6px'}`);
+  cmd.append(cmdBtn, cmdList);
+  cmd.hidden = true;
+  function drawCmd() {
+    cmdBtn.textContent = `📋 ← → ${cmdOpen ? '▴' : '▾'}`;
+    cmdBtn.setAttribute('aria-expanded', String(cmdOpen));
+    cmdList.hidden = !cmdOpen;
+    cmdList.style.display = cmdOpen ? 'grid' : 'none';
+    if (!cmdOpen) return;
+    cmdList.textContent = '';
+    for (const [keys, code] of CMD_ROWS) {
+      const k = trickFromCode(code);
+      cmdList.append(el('span', 'color:#ffd84a;font-weight:800;letter-spacing:1px', keys), el('span', '', name(k)));
+      if (!touch) cmdList.append(el('span', 'color:#9fe0b0;text-align:right', '+' + k.pts.toLocaleString()));
+    }
+  }
+  cmdBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  cmdBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    cmdOpen = !cmdOpen;
+    try { localStorage.setItem(CMD_KEY, cmdOpen ? '1' : '0'); } catch { /* not kept */ }
+    drawCmd();
+    cmdBtn.blur();
+  });
   const layer = $('hud') || document.body;
-  layer.append(hud, pad);
+  layer.append(hud, pad, cmd);
 
   const pop = (text, kind = '') => game.skatePop?.(text, kind);
   const name = (k) => trickName(k, getLanguage());
@@ -129,6 +166,7 @@ export function createIceRink(game) {
 
   function showHud(now) {
     hud.hidden = !skating;
+    cmd.hidden = !skating;
     pad.hidden = !(skating && touch);
     if (!skating || now - hudAt < 200) return;
     hudAt = now;
@@ -147,6 +185,8 @@ export function createIceRink(game) {
   function setSkates(on) {
     const me = game.me;
     me.setBike(on ? 1 : 0, on ? ICE_SKATES : undefined);
+    me.setStride?.(on ? glideStride(() => glide) : null);
+    if (!on) { coast = 0; glide = ''; }
     if (!on) me.setTrick(null, 0);
     myCh = on ? me : null;
   }
@@ -160,7 +200,9 @@ export function createIceRink(game) {
     stop(null);
     hall = null; lang = null;
     peers.clear();
-    hud.hidden = true; pad.hidden = true;
+    for (const g of peerGlide.values()) g.ch.setStride?.(null);
+    peerGlide.clear();
+    hud.hidden = true; pad.hidden = true; cmd.hidden = true;
   }
 
   // Every frame, before the walking (main.js): on the ice we do the moving.
@@ -171,7 +213,7 @@ export function createIceRink(game) {
       hall = room;
       shop.toast(L(RINK_TEXT.welcome));
     }
-    if (lang !== getLanguage()) { lang = getLanguage(); hall.drawHow(HOWTO[lang] || HOWTO.en); }
+    if (lang !== getLanguage()) { lang = getLanguage(); hall.drawHow(HOWTO[lang] || HOWTO.en); drawCmd(); }
     const on = !game.seated && onIce(p.x, p.z);
     if (on !== skating) {
       if (on) { skating = true; sk.reset(); setSkates(true); shop.toast(L(RINK_TEXT.onIce)); game.sendTimer = 0; game.action = STALE; } else stop(p);
@@ -181,6 +223,10 @@ export function createIceRink(game) {
       const yaw = moveRef.yaw;
       const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
       const { dx, dz, events } = sk.step(dt, fx * my + rx * mx, fz * my + rz * mx);
+      // Coasting (no push, no jump): the arms open, then a spiral.
+      coast = Math.hypot(mx, my) > 0.05 || sk.air || sk.down > 0 ? 0 : coast + dt;
+      const g = glideKind(coast, sk.speed);
+      if (g !== glide) { glide = g; game.sendTimer = 0; }
       const n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / STEP));
       let x = p.x, z = p.z;
       for (let i = 0; i < n; i++) [x, z] = game.collide(x, z, dx / n, dz / n);
@@ -203,6 +249,13 @@ export function createIceRink(game) {
     // The others' jumps, from their codes.
     for (const [id, o] of game.others.players) {
       const code = o.hidden ? '' : o.target?.ik;
+      // (a glide travels in the same field: 'g1' or 'g2')
+      const gk = code === 'g1' || code === 'g2' ? code : '';
+      let pg = peerGlide.get(id);
+      if (pg && pg.ch !== o.ch) { pg.ch.setStride?.(null); pg = null; peerGlide.delete(id); }
+      if (gk && !pg) { pg = { ch: o.ch, kind: gk }; const mine = pg; o.ch.setStride?.(glideStride(() => mine.kind)); peerGlide.set(id, pg); }
+      if (pg) pg.kind = gk;
+      if (gk) { if (peers.has(id)) { o.ch.setTrick(null, 0); peers.delete(id); } continue; }
       let pj = peers.get(id);
       if (!code) { if (pj) { o.ch.setTrick(null, 0); peers.delete(id); } continue; }
       const j = peerJump(code);
@@ -213,6 +266,7 @@ export function createIceRink(game) {
       if (j.fall) { const q = Math.min(1, pj.t / SKATE.fall); o.ch.setTrick({ flip: -Math.sin(Math.PI * Math.min(1, q * 1.15)) * 1.35, tuck: 1 }, y); } else o.ch.setTrick(jumpPose(syncPeerTricks(pj.tricks, j.codes, pj.t), pj.t), y);
     }
     for (const id of peers.keys()) if (!game.others.players.has(id)) peers.delete(id);
+    for (const id of peerGlide.keys()) if (!game.others.players.has(id)) peerGlide.delete(id);
     showHud(performance.now());
   }
 
@@ -225,7 +279,7 @@ export function createIceRink(game) {
   function state(st) {
     if (!skating) return;
     st.bk = 1; st.bv = rideCode(ICE_SKATES);
-    const c = sk.code();
+    const c = sk.code() || glide;
     if (c) st.ik = c;
   }
 
@@ -233,7 +287,7 @@ export function createIceRink(game) {
     tick, action, state, RINK_TEXT,
     get skating() { return skating; },
     jump, arrow,
-    debug: () => ({ skating, air: sk.air, y: +sk.y.toFixed(2), t: +sk.t.toFixed(2), speed: +sk.speed.toFixed(2), down: +sk.down.toFixed(2), chain: sk.chain, tricks: sk.tricks.map(trickCode), code: sk.code(), saved: read(), peers: [...peers].map(([id, q]) => [id, q.n, q.tricks.map(trickCode)]) }),
+    debug: () => ({ skating, air: sk.air, y: +sk.y.toFixed(2), t: +sk.t.toFixed(2), speed: +sk.speed.toFixed(2), down: +sk.down.toFixed(2), chain: sk.chain, tricks: sk.tricks.map(trickCode), code: sk.code(), glide, coast: +coast.toFixed(2), saved: read(), peers: [...peers].map(([id, q]) => [id, q.n, q.tricks.map(trickCode)]) }),
     skater: sk,
   };
 }

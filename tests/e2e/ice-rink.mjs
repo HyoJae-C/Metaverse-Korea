@@ -68,7 +68,18 @@ assert(fast.speed > 4, `gliding at ${fast.speed} m/s`);
 await page.keyboard.up('KeyW');
 await wait(400);
 assert((await page.evaluate(() => __mk.iceRink.debug().speed)) > 3, 'still gliding with no push');
+await wait(500);
+const gl = await page.evaluate(() => __mk.iceRink.debug());
+assert(gl.glide === 'g1' || gl.glide === 'g2', `coasting: the arms open (${gl.glide}, coast ${gl.coast}, speed ${gl.speed})`);
 await shot('4-on-the-ice');
+// The commands: a list on the left while you skate, closed and opened by its button.
+const cmd = () => page.evaluate(() => { const c = document.getElementById('ice-cmd'); return { shown: !c.hidden, open: !c.lastChild.hidden, cells: c.lastChild.children.length }; });
+let c = await cmd();
+assert(c.shown && c.open && c.cells === 24, `the command list is open on the ice: ${JSON.stringify(c)}`);
+await page.click('#ice-cmd button');
+assert(!(await cmd()).open, 'its button closes it');
+await page.click('#ice-cmd button');
+assert((await cmd()).open, 'and opens it again');
 assert(/⛸/.test(await page.evaluate(() => __mk.action() || '')), 'the action button is Jump');
 
 // A jump with a triple: Space, then ← → ← in the air.
