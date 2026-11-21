@@ -22,16 +22,17 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
-import { DRONE_NOW, startDroneNow } from '../core/show-now.js';
+import { SHOW_NOW, startShowNow } from '../core/show-now.js';
 import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
-// Operator-only toasts for "/드론쇼" (core/show-now.js).
-const DRONE_NOW_TEXT = {
-  on: { en: 'Drone show: the drones are rising now. The show starts in 3 minutes.', ko: '드론쇼: 드론이 지금 떠올라. 3분 뒤 쇼 시작.' },
-  off: { en: 'Drone show called off.', ko: '드론쇼 취소했어.' },
+// Operator-only toasts for "/드론쇼" and "/불꽃놀이" (core/show-now.js).
+const SHOW_NOW_TEXT = {
+  drone: { en: 'Drone show: the drones are rising now. The show starts in 3 minutes.', ko: '드론쇼: 드론이 지금 떠올라. 3분 뒤 쇼 시작.' },
+  fireworks: { en: 'Fireworks: Yeouido\'s sky is darkening now. The first shells go up in 3 minutes.', ko: '불꽃놀이: 여의도 하늘이 지금 어두워져. 3분 뒤 첫 발.' },
+  off: { en: 'Show called off.', ko: '쇼 취소했어.' },
   operator: { en: 'Operators only.', ko: '운영자만 쓸 수 있어.' },
-  setup: { en: 'Run supabase/060_drone_now.sql first.', ko: '060_drone_now.sql 먼저 실행해 줘.' },
-  failed: { en: 'Could not start the drone show.', ko: '드론쇼를 시작하지 못했어.' },
+  setup: { en: 'Run supabase/061_fireworks_now.sql first.', ko: '061_fireworks_now.sql 먼저 실행해 줘.' },
+  failed: { en: 'Could not start the show.', ko: '쇼를 시작하지 못했어.' },
 };
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
@@ -237,10 +238,10 @@ export function createChat(game) {
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
       }
-      // Operators: "/드론쇼" starts the drone show now for everyone, "/드론쇼취소" calls it off.
-      if (code in DRONE_NOW) {
-        const r = await startDroneNow(cloud.client, DRONE_NOW[code]);
-        game.shop.toast(L(r.ok ? (r.start ? DRONE_NOW_TEXT.on : DRONE_NOW_TEXT.off) : DRONE_NOW_TEXT[r.error] || DRONE_NOW_TEXT.failed));
+      // Operators: "/드론쇼" or "/불꽃놀이" starts that show now for everyone; "…취소" calls it off.
+      if (code in SHOW_NOW) {
+        const cmd = SHOW_NOW[code], r = await startShowNow(cloud.client, cmd);
+        game.shop.toast(L(r.ok ? (r.start ? SHOW_NOW_TEXT[cmd.kind] : SHOW_NOW_TEXT.off) : SHOW_NOW_TEXT[r.error] || SHOW_NOW_TEXT.failed));
         return;
       }
       // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, PHOTO_TIME, FINALE_TIME,
-  KINDS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
+  SHOW_SECONDS, ALERT_SECONDS, DUSK_SECONDS, fireworksAt, nextFireworks, nightAt, program, ACTS, PHOTO_TIME, FINALE_TIME,
+  KINDS, COLORS, LIFE, RADIUS, BARGES, nearYeouido, atUV, ORIGIN as FW_ORIGIN, U as FW_U,
 } from '../src/core/fireworks-show.js';
 import { droneShowAt } from '../src/core/drone-show.js';
 import { CYCLE_MS, SHOW_FROM, cycleNumber } from '../src/core/show-clock.js';
@@ -113,4 +113,61 @@ test('built like a festival: stacked clusters, fans on the water, a beat every m
   const swept = a.filter((x, i) => x.kind !== 'fan' && i > 0 && a[i - 1].kind === x.kind && Math.abs(x.t - a[i - 1].t - 0.14) < 0.011).length;
   assert.ok(swept > 100, `${swept} shells in sweeps along the river`);
   assert.ok(a.slice(0, 3).every((x) => x.kind === 'willow') && new Set(a.slice(0, 3).map((x) => x.barge)).size === 3, 'curtain up: a willow from each barge');
+});
+
+test('the three acts differ: act 1 warm and low, act 2 cool and higher, act 3 every colour over the widest range', () => {
+  const warm = ['#ff4d5e', '#ff9a3c', '#ffd34d', '#ff7ae0', '#ff7a5c', '#ffffff'];
+  const of = (t0, t1) => { const h = [], c = {}; for (let d = 0; d < 8; d++) for (const b of program(1.8e12 + d * 6 * 3600e3)) if (b.t >= t0 && b.t < t1 && !['fan', 'small', 'willow', 'kamuro'].includes(b.kind)) { h.push(b.h); c[b.color] = (c[b.color] || 0) + 1; } h.sort((a, b) => a - b); return { h, c, med: h[h.length >> 1], n: h.length }; };
+  const a1 = of(70, 150), a2 = of(168, 235), a3 = of(270, 330);
+  const share = (a, list) => list.reduce((s, k) => s + (a.c[k] || 0), 0) / a.n;
+  assert.ok(share(a1, warm) > 0.9, `act 1 is warm (${share(a1, warm).toFixed(2)})`);
+  assert.ok(share(a2, warm.slice(0, 5)) < 0.1, `act 2 is cool (${share(a2, warm.slice(0, 5)).toFixed(2)})`);
+  assert.equal(Object.keys(a3.c).length, COLORS.length, 'act 3 uses every colour');
+  assert.ok(a2.med > a1.med + 10, `act 2 opens higher than act 1 (${a1.med.toFixed(0)} → ${a2.med.toFixed(0)} m)`);
+  const range = (a) => a.h[Math.floor(a.n * 0.9)] - a.h[Math.floor(a.n * 0.1)];
+  assert.ok(range(a3) > range(a1) + 10, `act 3 spans more height than act 1 (${range(a1).toFixed(0)} → ${range(a3).toFixed(0)} m)`);
+  assert.ok(a3.h.at(-1) < 110, 'nothing so high it leaves the view');
+});
+
+test('five patterns, one per show in turn; each keeps the length, the photo time, the finale and the gold curtain', async () => {
+  const { PATTERNS, patternOf, programOf } = await import('../src/core/fireworks-patterns.js');
+  assert.equal(PATTERNS.length, 5);
+  assert.equal(PATTERNS[0].acts, ACTS, 'the first is the festival');
+  const first = Date.UTC(2026, 10, 21, 14, 10), two = 48 * 3600e3; // 2026-11-21 23:10 KST
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map((k) => patternOf(first + k * two)), [0, 1, 2, 3, 4, 0, 1], 'the next pattern every show');
+  assert.equal(patternOf(first - 9 * 3600e3), 0, 'an extra show earlier that day repeats the day\'s pattern');
+  assert.equal(patternOf(first + 20 * 3600e3), 0, 'and one the day after too');
+  assert.deepEqual(programOf(first + two), program(first + two, PATTERNS[1].acts));
+  const sig = new Set();
+  for (const [i, { name, acts }] of PATTERNS.entries()) {
+    assert.deepEqual([acts[0].from, acts.at(-1).to], [0, SHOW_SECONDS], name);
+    for (let k = 1; k < acts.length; k++) assert.equal(acts[k].from, acts[k - 1].to, `${name}: no hole before ${acts[k].from} s`);
+    for (let d = 0; d < 4; d++) {
+      const a = program(first + (i + 5 * d) * two, acts);
+      assert.ok(a.length > 1000 && a.length < 5000, `${name}: ${a.length} bursts`);
+      for (let k = 1; k < a.length; k++) assert.ok(a[k].t >= a[k - 1].t && a[k].t - a[k - 1].t < 2.5, `${name}: no gap over 2.5 s (at ${a[k].t})`);
+      assert.ok(a[0].t < 1 && a.at(-1).t < SHOW_SECONDS && a.at(-1).t > SHOW_SECONDS - 1, name);
+      assert.ok(a.every((x) => KINDS.includes(x.kind) && (x.kind === 'fan' ? x.h < 10 : x.h > 25 && x.h < 115)), name);
+      const photo = a.filter((x) => x.t >= PHOTO_TIME[0] && x.t < PHOTO_TIME[1]);
+      assert.ok(photo.length > 30 && photo.every((x) => x.kind === 'willow'), `${name}: gold willows at photo time`);
+      const last = a.filter((x) => x.t >= 513 && x.kind !== 'fan');
+      assert.ok(last.length >= 14 && last.every((x) => x.kind === 'kamuro'), `${name}: the gold curtain at the end`);
+      const perMin = (t0) => a.filter((x) => x.t >= t0 && x.t < t0 + 60).length;
+      assert.ok(perMin(450) > 2 * perMin(20), `${name}: the finale is the fullest (${perMin(450)} a minute, opening ${perMin(20)})`);
+      assert.ok(!a.some((x) => x.kind === 'saturn'), 'no saturns');
+    }
+    sig.add(JSON.stringify(acts.slice(1, 6).map((x) => [x.from, x.kinds, x.palette])));
+  }
+  assert.equal(sig.size, 5, 'five different middles');
+  // what each is about
+  const mid = (i) => program(first + i * two, PATTERNS[i].acts).filter((x) => x.t >= 12 && x.t < PHOTO_TIME[0] && x.kind !== 'fan');
+  const gold = mid(1), golds = ['#ffc861', '#ffffff', '#ffd34d', '#ff9a3c'];
+  assert.ok(gold.every((x) => golds.includes(x.color) && golds.includes(x.color2)), 'gold night: gold and white only');
+  const red = mid(2).filter((x) => x.t >= 13 && x.t < 48);
+  assert.ok(red.every((x) => ['#ff4d5e', '#ff7a5c'].includes(x.color)), 'rainbow: the sky starts all red');
+  const waves = mid(3), early = waves.filter((x) => x.t < 75), late = waves.filter((x) => x.t >= 260);
+  const mean = (l) => l.reduce((s, x) => s + x.h, 0) / l.length;
+  assert.ok(mean(late) > mean(early) + 15, `waves: rising (${mean(early).toFixed(0)} → ${mean(late).toFixed(0)} m)`);
+  const rhythm = mid(4), per = (t0, t1) => rhythm.filter((x) => x.t >= t0 && x.t < t1).length / (t1 - t0);
+  assert.ok(per(50, 60) > 6 * per(61, 74), `rhythm: a rush, then quiet (${per(50, 60).toFixed(1)} → ${per(61, 74).toFixed(1)} a second)`);
 });

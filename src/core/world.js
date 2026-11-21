@@ -1,10 +1,29 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowAtNight } from './weather.js';
 import { SEASON, MIX, leafColor, leafHash, ginkgoColor } from './season.js';
 
 const GINKGO_STREET = 0.55, GINKGO_PARK = 0.12; // shares of the street and park round trees that are ginkgos
+const GINKGO_TRUNK = [1.6, 1.45]; // a ginkgo's trunk against a round tree's: thicker, taller
+// A ginkgo's crown (Yozi 2026-11-20, from a photo of an old ginkgo): a wide,
+// lumpy crown of four clumps spreading out over a thick trunk. Four plain
+// icosahedra: 80 triangles, the same as a round tree's crown.
+function ginkgoCrown() {
+  return mergeGeometries([
+    [0, 3.0, 0, 1.45, 1.15, 1.0], // the big middle clump
+    [1.3, 2.55, 0.4, 1.05, 1.05, 0.9], // spreading out to one side, lower
+    [-1.25, 2.65, -0.4, 1.1, 1.05, 0.9], // and the other
+    [0.1, 4.3, 0.1, 1.15, 1.0, 0.95], // the top
+  ].map(([x, y, z, r, w, h]) => {
+    const g = new THREE.IcosahedronGeometry(r, 0);
+    g.deleteAttribute('uv');
+    g.deleteAttribute('normal');
+    const soft = mergeVertices(g); // (shared corners: soft shading like the round trees, not facets)
+    soft.computeVertexNormals();
+    return soft.scale(w, h, w).rotateY(x * 2).translate(x, y, z);
+  }));
+}
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -682,11 +701,12 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
   const tint = new THREE.MeshLambertMaterial({ color: 0xffffff });
   // instanced(list, geometry, material, colours?)
-  const instanced = (list, geo, material, colors, yScale = 1) => {
+  const instanced = (list, geo, material, colors, yScale = 1, trunkFat = false) => {
     const mesh = new THREE.InstancedMesh(geo, material, list.length);
     list.forEach(([x, z, s], i) => {
       q.setFromAxisAngle(up, i * 1.7);
-      m.compose(pos.set(x, 0, z), q, sc.set(s, s * yScale, s));
+      const k = trunkFat && list[i][4] ? GINKGO_TRUNK : null; // (a ginkgo's trunk: the same mesh, thicker and taller)
+      m.compose(pos.set(x, 0, z), q, k ? sc.set(s * k[0], s * k[1], s * k[0]) : sc.set(s, s * yScale, s));
       mesh.setMatrixAt(i, m);
       if (colors) mesh.setColorAt(i, list[i][3] || colors[i % colors.length]);
     });
@@ -695,14 +715,11 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     out.push(mesh);
   };
   const round = spots.filter((t) => !t[4]), ginkgos = spots.filter((t) => t[4]);
-  if (round.length) {
-    instanced(round, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
-    instanced(round, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
-  }
-  if (ginkgos.length) { // (same triangles as a round tree: a tall trunk and an upright oval crown)
-    instanced(ginkgos, new THREE.CylinderGeometry(0.15, 0.22, 2.4, 6).translate(0, 1.2, 0), trunkMat);
-    instanced(ginkgos, new THREE.IcosahedronGeometry(1.25, 1).scale(0.7, 1.45, 0.7).translate(0, 3.6, 0), tint, greens);
-  }
+  // One trunk mesh for every leafy tree (ginkgos' scaled up per instance),
+  // so the ginkgos add only their crowns' draw calls.
+  if (spots.length) instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat, null, 1, true);
+  if (round.length) instanced(round, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  if (ginkgos.length) instanced(ginkgos, ginkgoCrown(), tint, greens);
   if (pines.length) {
     const pine = mergeGeometries([
       new THREE.ConeGeometry(1.35, 2.2, 7).translate(0, 2.1, 0),

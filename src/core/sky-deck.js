@@ -26,7 +26,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from './cathedral-hall.js';
 import * as droneShow from './drone-show.js';
-import { CYCLE_MS, SHOW_FROM, FIREWORKS, DRONES, cycleNumber, cycleMs, showOf, smooth } from './show-clock.js';
+import { FIREWORKS, DRONES, cycleMs, showStarts, smooth } from './show-clock.js';
 
 const SEAT_H = 0.38; // the same seat height as every chair in the game
 const A = 12; // the octagon's apothem: the centre to the middle of a wall
@@ -105,11 +105,15 @@ export function skyAt(now, out = { top: new THREE.Color(), hor: new THREE.Color(
 }
 
 // The show in the sky at `now`: { kind: FIREWORKS | DRONES, t: seconds in } or null.
+// (From showStarts, so an operator's extra show is seen here too.)
 export function showAt(now) {
-  const n = cycleNumber(now), kind = showOf(n);
-  if (!(kind in SHOW_LEN)) return null;
-  const t = (now - (n * CYCLE_MS + SHOW_FROM)) / 1000;
-  return t >= 0 && t < SHOW_LEN[kind] ? { kind, t } : null;
+  for (const kind of [FIREWORKS, DRONES]) {
+    for (const start of showStarts(now, kind)) {
+      const t = (now - start) / 1000;
+      if (t >= 0 && t < SHOW_LEN[kind]) return { kind, t };
+    }
+  }
+  return null;
 }
 
 // ---- The painting -----------------------------------------------------------

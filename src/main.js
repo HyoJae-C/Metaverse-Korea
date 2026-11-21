@@ -85,7 +85,7 @@ import { braceletsFromCharms } from './game/knot-bracelets.js';
 import { createTimedWear } from './game/timed-wear.js';
 import { BUKCHON, ViewBook, PartBook, EXPLORER_REWARD, inside as inPolygonXZ, nearestAt, ground as bukchonGround } from './data/bukchon.js';
 import { Enclosure, FarCull } from './core/enclosure.js';
-import { buildBukchonHill } from './core/bukchon-models.js';
+import { buildBukchonHill, LANE_UP } from './core/bukchon-models.js';
 import { buildHanoks } from './core/hanok.js';
 import { BukchonMarks } from './core/bukchon-marks.js';
 import { createCharacter } from './core/character.js';
@@ -180,7 +180,7 @@ const fishPanels = () => import('./ui/fishing-panels.js'); // (the rod, market a
 import { FishBag, FishDex, FishStats, FishPity, FISH, fishById, resetFishBookOnce } from './core/fishing.js';
 import { createFishingRig } from './core/fishing-rig.js';
 import { HELD_KINDS, COFFEE_SIPS, giftKind, SNACKS } from './core/held.js';
-import { lipstickEntry } from './core/lipstick.js';
+import { isStick, stickEntry } from './core/lipstick.js';
 import { createLipstick } from './game/lipstick.js';
 import { createFishBait } from './game/fish-bait.js';
 import { createDishUpgrade } from './game/dish-upgrade.js';
@@ -1512,7 +1512,7 @@ function watchWeatherSetting() {
   if (!cloud.client || cloud.client === weatherClient) return;
   stopWeather?.();
   weatherClient = cloud.client;
-  stopWeather = watchWeather(weatherClient, (raw) => { weather.setSettings(raw); applyShowNow(raw); }); // (and an operator's "/드론쇼")
+  stopWeather = watchWeather(weatherClient, (raw) => { weather.setSettings(raw); applyShowNow(raw); }); // (and an operator's "/드론쇼", "/불꽃놀이")
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
@@ -2297,7 +2297,7 @@ let held = (() => {
     if (h?.kind === 'gift') return giftEntry(h);
     if (h?.kind === 'duckmold') return { kind: 'duckmold' };
     if (h?.kind === 'balloon') return restoreBalloon(h); // (Modu Land's clown; gone once its air is out)
-    if (h?.kind === 'lipstick') return lipstickEntry(h);
+    if (isStick(h?.kind)) return stickEntry(h);
     if (h?.kind === 'bait') return baitEntry(h);
     if (h?.kind === 'perfume') return perfumes.has(h.p) && h.sips > 0 ? { kind: 'perfume', p: h.p, sips: Math.min(SPRAYS, h.sips | 0), name: String(h.name || '').slice(0, 60) } : null;
     return h && HELD_KINDS.includes(h.kind) && h.sips > 0 ? { kind: h.kind, sips: Math.min(COFFEE_SIPS, h.sips | 0), name: String(h.name || '').slice(0, 40), ...(h.ramen && h.kind === 'food' ? { ramen: true } : {}), ...(h.kind === 'food' && SNACKS.includes(h.snack) ? { snack: h.snack } : {}) } : null;
@@ -2322,15 +2322,15 @@ const dishUpgrade = createDishUpgrade({
 // setHeld below must not draw it (a finished errand + a held drink broke the
 // load: "openParkHere is not a function", then every message from others).
 let questChipReady = false;
-const heldKind = () => (rodOut ? baitedRod(rodKind(rodSkins.equipped), fishBait.fishing.bait?.id) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : held?.kind === 'lipstick' ? 'lipstick:' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
+const heldKind = () => (rodOut ? baitedRod(rodKind(rodSkins.equipped), fishBait.fishing.bait?.id) : held?.kind === 'gift' ? giftKind(held) : held?.snack ? 'food:' + held.snack : isStick(held?.kind) ? held.kind + ':' + held.c : held?.kind === 'bait' ? 'bait:' + held.b : balloonKind(held) || held?.kind || null);
 function setHeld(h) {
   held = h;
   try { if (h) localStorage.setItem(HELD_KEY, JSON.stringify(h)); else localStorage.removeItem(HELD_KEY); } catch { /* storage blocked */ }
   me.setHeld(heldKind());
   $('drink-btn').hidden = !h || h.kind === 'gift' || h.kind === 'duckmold' || h.kind === 'balloon'; // a shopping bag is just carried (the duck maker works with E)
   $('stow-btn').hidden = !h || h.kind === 'balloon'; // (a balloon won't fit in the bag)
-  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : h?.kind === 'lipstick' ? '💄' : h?.kind === 'bait' ? '🪱' : '☕';
-  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : h?.kind === 'lipstick' ? lipstick.label() : h?.kind === 'bait' ? fishBait.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
+  $('drink-btn').querySelector('span').textContent = h?.kind === 'book' ? '📖' : h?.kind === 'food' ? '🥡' : h?.kind === 'glass' ? '🍹' : h?.kind === 'perfume' ? '🧴' : isStick(h?.kind) ? lipstick.icon(h.kind) : h?.kind === 'bait' ? '🪱' : '☕';
+  $('drink-btn').querySelector('small').textContent = h?.kind === 'food' ? L(DINE_TEXT.eat) : h?.kind === 'perfume' ? L(PERFUME_TEXT.spray) : isStick(h?.kind) ? lipstick.label() : h?.kind === 'bait' ? fishBait.label() : t(h?.kind === 'book' ? 'book.read' : 'coffee.drink');
   lastSent = null; // others see it on the next update
   refreshQuestChip();
 }
@@ -2342,7 +2342,7 @@ function drink() {
     return;
   }
   if (held.kind === 'perfume') { sprayPerfume(); return; }
-  if (held.kind === 'lipstick') { setHeld(lipstick.apply(held)); return; }
+  if (isStick(held.kind)) { setHeld(lipstick.apply(held)); return; }
   if (held.kind === 'bait') { setHeld(fishBait.apply(held)); return; }
   if (held.ramen && !seated?.parasol) { shop.toast(L(INGREDIENT_TEXT.sit)); return; } // Han River ramen: at a parasol table
   me.play('clap'); // the "use item" move: lift the cup
@@ -2400,7 +2400,7 @@ function describeEntry(e) {
   }
   if (e.kind === 'food') return { emoji: '🥡', name: e.name || 'Takeout', desc: fmt(L(DINE_TEXT.boxDesc), { n: e.sips }), canHold: true };
   if (e.kind === 'gift') return { emoji: e.icon || '🛍️', name: e.name || 'Shopping bag', desc: fmt(L(GOODS_TEXT.gift), { name: e.name || '' }), canHold: true };
-  if (e.kind === 'lipstick') return lipstick.describe(e);
+  if (isStick(e.kind)) return lipstick.describe(e);
   if (e.kind === 'bait') return fishBait.describe(e);
   if (e.kind === 'wrap' || e.kind === 'letter') return wrapGifts.describe(e); // (a wrapped gift, letter paper)
   if (e.kind === 'photo') { const p = photos.get(e.ph); return { emoji: '🎞️', name: t('photo.name'), desc: t('photo.desc', { date: p ? new Date(p.at).toLocaleDateString() : '' }), canHold: false, img: p?.src }; } // (a ride photo: game/ride-photo.js)
@@ -2452,10 +2452,10 @@ const bagUi = new BagUI({
   seasoning: () => dishUpgrade.seasoning(), // 🧂 in the food tab
   // The wardrobe's perfume and lipsticks: use one right there, or hold it.
   vanity: {
-    useLabel: (e) => (e.kind === 'lipstick' ? '💄 ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
+    useLabel: (e) => (isStick(e.kind) ? lipstick.icon(e.kind) + ' ' + lipstick.label() : '🧴 ' + L(PERFUME_TEXT.spray)),
     onUse: (i) => {
       const e = bag.vanityList()[i];
-      if (e?.kind === 'lipstick') bag.setVanity(i, lipstick.apply(e));
+      if (isStick(e?.kind)) bag.setVanity(i, lipstick.apply(e));
       else if (e) { bagUi.hide(); sprayPerfume(i); }
     },
     onHold: (i) => {
@@ -3839,9 +3839,9 @@ $('map-btn').onclick = () => {
   const pos = myPlace();
   mapView.show(pos.x, pos.z);
 };
-// Bukchon Hanok Village's gate (a step of the new player's trip, below), and
+// Bukchon Hanok Village's information centre (a step of the new player's trip, below), and
 // the cards that trip shows. "Back to the guide" puts you beside the square guide.
-const FIRST_TAXI = { x: -1511, z: -902.5 }; // Bukchon's gate on Bukchon-ro (bukchon.json: local 36, -11.5)
+const FIRST_TAXI = { x: -1522.5, z: -916.3 }; // Bukchon's information centre on Gyedong-gil, up from Anguk Station (stores.json info-bukchon)
 function firstTaxiCard(lines, buttons) {
   const box = $('info-hint');
   const actions = document.createElement('div');
@@ -3938,7 +3938,7 @@ function onTripStep() {
     sfx.pop?.();
     me.play('cheer');
     const route = quests.active?.route;
-    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's gate by its Information Center: a guide is right here
+    if (route === 'bukchon' || route === 'toBukchon') { // on Seongsu Square, or at Bukchon's Information Center: a guide is right here
       firstTaxiCard(L(route === 'bukchon' ? BUKCHON_TRIP_CARD.done : BUKCHON_TRIP_CARD.arrived), [['primary', L(BUKCHON_TRIP_CARD.find), () => { const here = myPlace(), g = nearestGuidePlace(here.x, here.z); if (g) setGuide(g); }]]);
     } else tripTaxiCard();
     return;
@@ -5210,10 +5210,24 @@ const viewBook = new ViewBook(), partBook = new PartBook();
 // Bukchon's hill (data/bukchon.js ground): how high the street is at (x, z).
 // In the yard of a home open to visitors, the ground is its flat terrace.
 const visitYards = map.buildings.filter((b) => b.visit).map((b) => ({ x0: Math.min(...b.p.map((q) => q[0])), x1: Math.max(...b.p.map((q) => q[0])), z0: Math.min(...b.p.map((q) => q[1])), z1: Math.max(...b.p.map((q) => q[1])), y: b.lv || 0 }));
+const bukchonLanes = map.roads.filter((r) => r.d === BUKCHON.district && r.k === 'walk').map((r) => ({ p: r.p, w: r.w, x0: Math.min(...r.p.map((q) => q[0])) - r.w, x1: Math.max(...r.p.map((q) => q[0])) + r.w, z0: Math.min(...r.p.map((q) => q[1])) - r.w, z1: Math.max(...r.p.map((q) => q[1])) + r.w }));
 function bukchonY(x, z) {
   if (!bukchonAt) return 0;
   for (const v of visitYards) if (x > v.x0 && x < v.x1 && z > v.z0 && z < v.z1) return v.y;
-  return bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  const y = bukchonGround(x - bukchonAt[0], z - bukchonAt[1]);
+  // On an alley you stand on its paving, which is drawn LANE_UP over the hill
+  // (core/bukchon-models.js); feet used to sink into it on the way up.
+  if (y <= 0.001 || !bukchonLanes.length) return y;
+  let near = 1;
+  for (const r of bukchonLanes) {
+    if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+    for (let i = 1; i < r.p.length && near > 0; i++) {
+      const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz;
+      const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
+      near = Math.min(near, Math.max(0, (Math.hypot(x - ax - dx * t, z - az - dz * t) - r.w / 2) / 0.4)); // (0 on the paving, 1 from 40 cm off it)
+    }
+  }
+  return y + 0.02 + (LANE_UP - 0.02) * (1 - near);
 }
 // Villagers in hanbok, men and women, strolling the alleys inside the wall.
 const HANBOK_WOMEN = [['yellow-red', 'long'], ['pink-navy', 'bun'], ['mint-pink', 'pony'], ['pink-navy', 'bob'], ['yellow-red', 'bun']];
@@ -5244,18 +5258,41 @@ const inEnclosure = (d, b) => {
 for (const d of map.meta?.districts || []) {
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && !inEnclosure(d, b));
   if (!hanoks.length) continue;
-  const g = buildHanoks(hanoks);
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-  if (d.id === BUKCHON.district) g.add(buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset)); // the hill and its alleys
-  scene.add(g);
-  openHanok.push(g);
+  // In blocks of 64 m, so the ones behind you aren't drawn, and a block more
+  // than 90 m away shows its plain version (Bukchon has ~300 hanok at ~900
+  // triangles each: all of them in full was 260k triangles a frame).
+  const cells = new Map();
+  for (const b of hanoks) {
+    const k = Math.floor(b.p[0][0] / 64) + ',' + Math.floor(b.p[0][1] / 64);
+    if (!cells.has(k)) cells.set(k, []);
+    cells.get(k).push(b);
+  }
+  for (const list of cells.values()) {
+    const cx = list.reduce((s, b) => s + b.p[0][0], 0) / list.length, cz = list.reduce((s, b) => s + b.p[0][1], 0) / list.length;
+    const lod = new THREE.LOD();
+    lod.position.set(cx, 0, cz);
+    for (const [far, from] of [[false, 0], [true, 90]]) {
+      const g = buildHanoks(list, { far });
+      g.position.set(-cx, 0, -cz);
+      g.traverse((o) => { if (o.isMesh) { o.castShadow = !far; o.receiveShadow = true; } });
+      lod.addLevel(g, from);
+    }
+    scene.add(lod);
+    openHanok.push(lod);
+  }
+  if (d.id === BUKCHON.district) { // the hill and its alleys
+    const hill = buildBukchonHill(map.roads.filter((r) => r.d === d.id), d.offset);
+    hill.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+    scene.add(hill);
+    openHanok.push(hill);
+  }
 }
 // Walled places (district meta "enclosure", core/enclosure.js): Gyeongbokgung
 // shows its wall and gates from the street; what is inside is drawn once you
 // walk in.
 const enclosures = (map.meta?.districts || []).filter((d) => d.enclosure).map((d) => {
   const [x0, z0, x1, z1] = d.enclosure.box, [ox, oz] = d.offset;
-  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz] });
+  const e = new Enclosure({ id: d.id, box: [x0 + ox, z0 + oz, x1 + ox, z1 + oz], poly: d.enclosure.poly?.map(([x, z]) => [x + ox, z + oz]) });
   const hanoks = map.buildings.filter((b) => b.hanok && b.d === d.id && inEnclosure(d, b));
   const inner = map.landmarks.filter((l) => l.inner && (l.p ? l.p.every(([x, z]) => e.contains(x, z, -1)) : e.contains(l.x, l.z, -1)));
   if (hanoks.length || inner.length) e.onFirstEnter = () => {
@@ -5322,7 +5359,7 @@ function updateEnclosures(p, dt = 0) {
   // Coming up to the pungmul troupe: what it is (once each time you come up).
   if (pungmul?.watching(p.x, p.z)) { if (!pungmulNoted && !spaceBusy()) { pungmulNoted = true; shop.toast('🥁 ' + L(PUNGMUL_TEXT.hello)); } }
   else if (pungmulNoted && !pungmul?.watching(p.x, p.z, 15)) pungmulNoted = false;
-  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || { en: e.id }));
+  for (const e of enclosures) if (e.update(p) === 'enter') shop.toast((AREA[e.id]?.icon || '🚪') + ' ' + L(AREA[e.id]?.name || DISTRICT_NAME[e.id] || { en: e.id }));
   // Walking up into Bukchon the first time this visit: what it is, and the rules.
   const inBk = bukchonIn(p.x, p.z), entered = wasInBukchon === false && inBk;
   wasInBukchon = inBk;
@@ -6251,7 +6288,7 @@ const beautyUi = new BeautyUI({
     return true;
   },
   onCancel: () => { setLook(myLook); endBeautyCam(); },
-  onBuyStick: (shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(shade, coins),
+  onBuyStick: (kind, shade, coins) => !beauty.surgery && !beauty.haircut && lipstick.buy(kind, shade, coins),
 });
 // Beauty shops: mirror close-up, haircut, surgery (src/game/beauty.js).
 const beauty = createBeauty({
@@ -7575,7 +7612,7 @@ renderer.setAnimationLoop((now) => {
   }
   motionSound.update(dt, {
     walking: speed01 > 0.05 && !riding && !seated && !ride && !dancing,
-    running: input.run && !stamina.tired && !steadyWalk,
+    running: input.run && !stamina.tired && !steadyWalk && !quiet, // (walking only in a quiet place: its steps too)
     riding: ride ? 0 : riding,
     speed01,
     indoor: mode === 'store',

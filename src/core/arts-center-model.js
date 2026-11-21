@@ -79,9 +79,9 @@ export function operaShape({ r: R, eave, top }) {
 function nameBoard(ko, en, w = 8) {
   const tex = canvasTex(512, 96, (g) => {
     g.fillStyle = '#efe8d8'; g.fillRect(0, 0, 512, 96);
-    g.fillStyle = '#3a332c'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = 'bold 44px sans-serif'; g.fillText(ko, 256, 36);
-    g.font = '20px sans-serif'; g.fillText(en, 256, 76);
+    g.fillStyle = '#231d18'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 54px sans-serif'; g.fillText(ko, 256, 38);
+    g.font = 'bold 20px sans-serif'; g.fillText(en, 256, 80);
   });
   return new THREE.Mesh(new THREE.PlaneGeometry(w, w * 96 / 512), new THREE.MeshBasicMaterial({ map: tex }));
 }
@@ -121,7 +121,8 @@ export function buildArtsCenter(g, l) {
   { const [x, z] = at(S.skirt.r0 + 0.3); P.box(9.6, 0.3, 4.2, x, 3.45, z, C.copperDark, f); }
   for (const s of [-2.4, 0, 2.4]) { const [x, z] = at(S.skirt.r0 + 0.63, s); P.box(0.12, 2.5, 0.06, x, 1.3, z, C.stone, f); } // the door frames
   const board = nameBoard('오페라하우스', 'OPERA HOUSE', 6.4);
-  { const [x, z] = at(S.skirt.r0 + 0.58); board.position.set(x, 2.95, z); board.rotation.y = f; }
+  { const [x, z] = at(S.skirt.r0 + 2.3); board.position.set(x, 3.6 + 0.6, z); board.rotation.y = f; } // (standing on the porch roof's front edge: under it the roof hid half the name)
+  { const [x, z] = at(S.skirt.r0 + 2.24); P.box(6.5, 1.24, 0.1, x, 3.6 + 0.6, z, C.stoneDark, f); } // its back
 
   // --- The Music Hall ------------------------------------------------------------
   const M = l.music;
@@ -133,8 +134,10 @@ export function buildArtsCenter(g, l) {
   const mf = M.face, mx = Math.sin(mf), mz = Math.cos(mf);
   P.box(6.4, 2.6, 0.5, M.door[0] - mx * 1.5, 1.3, M.door[1] - mz * 1.5, C.door, mf);
   P.box(8, 0.3, 2.6, M.door[0] - mx * 0.7, 2.9, M.door[1] - mz * 0.7, C.copperDark, mf);
+  for (const w of [-1.6, 0, 1.6]) P.box(0.12, 2.6, 0.06, M.door[0] - mx * 1.22 + mz * w, 1.3, M.door[1] - mz * 1.22 - mx * w, C.stone, mf); // the door frames
   const board2 = nameBoard('음악당', 'MUSIC HALL', 5.2);
-  board2.position.set(M.door[0] - mx * 1.2, 3.75, M.door[1] - mz * 1.2);
+  board2.position.set(M.door[0] + mx * 0.55, 3.05 + 0.5, M.door[1] + mz * 0.55); // (on the porch roof's front edge)
+  P.box(5.3, 1.02, 0.1, M.door[0] + mx * 0.49, 3.05 + 0.5, M.door[1] + mz * 0.49, C.stoneDark, mf);
   board2.rotation.y = mf;
 
   // --- The museums and the practice hall --------------------------------------------
