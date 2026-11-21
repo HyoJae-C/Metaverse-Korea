@@ -170,20 +170,20 @@ export function createNeonAlley(game) {
   const plan = [
     // [s, side, cell, bottom y, height, width]
     [2.2, -1, 9, 2.7, 1.5], [3.4, 1, 6, 2.9, 1.8], [4.6, -1, 14, 3.4, 1.9], [5.8, 1, 10, 2.6, 2.0],
-    [7.2, -1, 7, 2.8, 1.5], [8.4, 1, 4, 3.6, 2.4, 0.78], [9.6, -1, 3, 3.0, 2.2, 0.8],
+    [7.2, -1, 7, 2.8, 1.5], [8.4, 1, 4, 3.6, 2.4, 0.78], [9.6, -1, 3, 2.8, 3.1, 1.15], // 을지모두, big (Yozi 2026-11-21)
     [11.2, 1, 0, 2.7, 2.9, 0.95], // 모두맥옥
     [12.4, -1, 1, 4.1, 2.6, 0.78], [12.6, -1, 2, 2.5, 1.5, 0.7], [13.8, 1, 5, 2.5, 1.2, 0.7],
     [15.0, -1, 11, 2.9, 2.0], [16.2, 1, 12, 3.3, 1.6], [17.4, -1, 15, 2.6, 1.4], [18.6, 1, 13, 2.4, 1.3, 0.6],
     [19.8, -1, 8, 3.0, 1.7], [21.0, 1, 1, 3.4, 2.2], [22.2, -1, 6, 2.7, 1.6],
     // higher up, the second layer
-    [6.4, 1, 1, 5.2, 2.2, 0.7], [14.4, 1, 3, 5.0, 1.8, 0.7], [18.0, -1, 0, 4.9, 2.0, 0.7],
+    [6.4, 1, 1, 5.2, 2.2, 0.7], [14.4, 1, 3, 4.9, 2.5, 1.0], [18.0, -1, 0, 4.9, 2.0, 0.7],
   ];
   for (const [s, side, cell, y, h, wd] of plan) if (s < LEN - 1) blade(lane, s, side, cell, y, h, wd);
   // A few on the diagonal lane, so it pulls you in from Eulji-ro.
   const cross = NEON.cross, CL = lengthOf(cross);
   const cw = NEON.crossWidth / 2;
-  const crossBlade = (s, side, cell, y, h) => {
-    const a = along(cross, s, side), wd = 0.7, out = 0.12 + wd / 2;
+  const crossBlade = (s, side, cell, y, h, wd = 0.7) => {
+    const a = along(cross, s, side), out = 0.12 + wd / 2;
     const x = a.x + a.n[0] * (cw - out), z = a.z + a.n[1] * (cw - out), ry = Math.atan2(a.d[0], a.d[1]);
     const geo = new THREE.BoxGeometry(wd, h, 0.08);
     const u0 = (cell % COLS) / COLS, u1 = u0 + 1 / COLS, v1 = 1 - Math.floor(cell / COLS) / rows, v0 = v1 - 1 / rows;
@@ -194,8 +194,8 @@ export function createNeonAlley(game) {
     rod(props, [a.x + a.n[0] * cw, y + h + 0.12, a.z + a.n[1] * cw], [x - a.n[0] * (wd / 2), y + h + 0.12, z - a.n[1] * (wd / 2)], 0.05, '#2a2a2e');
     pools.push([x - a.n[0] * 0.5, z - a.n[1] * 0.5, SIGNS[cell].frame, 2.4]);
   };
-  for (const [s, side, cell, y, h] of [[3, 1, 14, 3.2, 2.0], [6, -1, 10, 2.8, 1.8], [9, 1, 7, 3.4, 1.6], [12, -1, 3, 3.0, 2.0], [CL - 10, 1, 9, 2.8, 1.8], [CL - 6, -1, 15, 3.1, 1.6]]) {
-    if (s > 1 && s < CL - 1) crossBlade(s, side, cell, y, h);
+  for (const [s, side, cell, y, h, wd] of [[3, 1, 14, 3.2, 2.0], [6, -1, 10, 2.8, 1.8], [9, 1, 7, 3.4, 1.6], [12, -1, 3, 2.9, 2.8, 1.05], [CL - 10, 1, 9, 2.8, 1.8], [CL - 6, -1, 15, 3.1, 1.6]]) {
+    if (s > 1 && s < CL - 1) crossBlade(s, side, cell, y, h, wd);
   }
 
   // Shop fronts: a neon tube along the wall over each door, in pink, purple
