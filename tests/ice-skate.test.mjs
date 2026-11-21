@@ -2,8 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ICE, GATES, SKATE, MOVES, TURN_PTS, TURN_TIME, IceSkater, addPress, bankJump, comboMult, iceDepth, judge, jumpPose, onIce,
-  peerJump, syncPeerTricks, trickCode, trickFromCode,
-} from '../src/core/ice-skate.js';
+  peerJump, syncPeerTricks, trickCode, trickFromCode, GLIDE, glideKind, glidePose, mixPose, glideStride } from '../src/core/ice-skate.js';
 
 // Mokdong Ice Rink's skating (Yozi 2026-11-21): jump, then arrows in the air
 // make tricks; clean landings in a row make a combo.
@@ -175,4 +174,34 @@ test("today's points and the best jump", () => {
   s = bankJump(s, 'd1', 700);
   assert.deepEqual(s, { day: 'd1', pts: 1000, best: 700 });
   assert.deepEqual(bankJump(s, 'd2', 100), { day: 'd2', pts: 100, best: 700 }, 'a new day: the best stays');
+});
+
+test('gliding with no trick: the arms open after a moment, a long fast glide becomes a spiral', () => {
+  assert.equal(glideKind(0.1, 6), '', 'not at once (a tap of the stick is not a glide)');
+  assert.equal(glideKind(1, 6), 'g1');
+  assert.equal(glideKind(GLIDE.spiralAfter + 0.1, 6), 'g2');
+  assert.equal(glideKind(GLIDE.spiralAfter + 0.1, 2), 'g1', 'too slow for a spiral');
+  assert.equal(glideKind(5, 1), '', 'nearly stopped: just standing');
+  const open = glidePose('g1', 0), spiral = glidePose('g2', 0);
+  assert.ok(open.upperarml[1] < -1 && open.upperarmr[1] > 1, 'both arms out to the sides');
+  assert.ok(spiral.spine[0] > 0.5 && spiral.upperlegr[0] > 1, 'the body forward, one leg out behind');
+  assert.deepEqual(mixPose({ spine: [1, 0, 0], y: 2 }, { head: [0, 2, 0] }, 0.5), { spine: [0.5, 0, 0], y: 1, head: [0, 1, 0] });
+});
+
+test('the glide is eased over the stride, and gives the stride back when it ends', () => {
+  let kind = '';
+  const f = glideStride(() => kind);
+  const stroke = { spine: [0.35, 0, 0], y: -0.05 };
+  assert.equal(f(stroke, 1 / 60), null, 'no glide: the stride as it is');
+  kind = 'g1';
+  const first = f(stroke, 1 / 60);
+  assert.ok(first.spine[0] < 0.35 && first.spine[0] > 0.2, 'eased in, not snapped');
+  let p; for (let i = 0; i < 120; i++) p = f(stroke, 1 / 60);
+  assert.ok(Math.abs(p.upperarml[1] - glidePose('g1', 0).upperarml[1]) < 0.05, 'all the way there after a moment');
+  kind = 'g2';
+  for (let i = 0; i < 120; i++) p = f(stroke, 1 / 60);
+  assert.ok(p.upperlegr[0] > 1, 'through the stride into the spiral');
+  kind = '';
+  for (let i = 0; i < 120; i++) p = f(stroke, 1 / 60);
+  assert.equal(p, null);
 });

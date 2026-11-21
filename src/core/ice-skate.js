@@ -130,6 +130,61 @@ export function jumpPose(tricks, t) {
   return { spin, flip: 0, roll: 0, tuck: 0, i: -1, left: 0 }; // (whole turns: facing the way you took off)
 }
 
+// Gliding with no trick (Yozi 2026-11-21: "묘기를 부리지 않아도 활주하는
+// 동작이나 손을 펼치는 동작"): let go of the stick and you coast; after a
+// moment the arms open wide, and a long glide becomes a spiral (one leg
+// out behind, the body forward). Pushing, jumping or slowing ends it.
+export const GLIDE = { after: 0.35, spiralAfter: 2.6, minSpeed: 1.4, spiralSpeed: 3 };
+// Which glide: '' none, 'g1' arms open, 'g2' the spiral. coast: seconds
+// coasting, speed: m/s.
+export const glideKind = (coast, speed) => (coast < GLIDE.after || speed < GLIDE.minSpeed ? '' : coast >= GLIDE.spiralAfter && speed >= GLIDE.spiralSpeed ? 'g2' : 'g1');
+// The pose (bone offsets like the stride's in core/model-pack.js), t seconds on.
+export function glidePose(kind, t) {
+  if (globalThis.__glide?.[kind]) return globalThis.__glide[kind]; // debug: tune live
+  const s = Math.sin(t * 1.5);
+  if (kind === 'g2') {
+    return {
+      spine: [0.8, 0, 0.03 * s], head: [-0.7, 0, 0],
+      upperarml: [-0.55, -1.3, 0], upperarmr: [-0.55, 1.3, 0],
+      upperlegl: [-0.05, 0, 0], lowerlegl: [0.12, 0, 0], footl: [-0.07, 0, 0],
+      upperlegr: [1.25 + 0.04 * s, 0, 0], lowerlegr: [0.1, 0, 0], footr: [0.5, 0, 0],
+      y: -0.01,
+    };
+  }
+  return {
+    spine: [-0.06, 0, 0.05 * s], head: [-0.12, 0, -0.04 * s],
+    upperarml: [-0.7 + 0.08 * s, -1.28, 0], upperarmr: [-0.7 - 0.08 * s, 1.28, 0],
+    upperlegl: [-0.14, 0, 0], lowerlegl: [0.24, 0, 0], footl: [-0.1, 0, 0],
+    upperlegr: [0.22, 0, 0.08], lowerlegr: [0.2, 0, 0], footr: [-0.05, 0, 0],
+    y: -0.015,
+  };
+}
+// From pose a to pose b by k (0..1), bone by bone.
+export function mixPose(a, b, k) {
+  const out = {};
+  for (const n of new Set([...Object.keys(a || {}), ...Object.keys(b || {})])) {
+    const p = a?.[n], q = b?.[n];
+    if (n === 'y') { out.y = (p || 0) * (1 - k) + (q || 0) * k; continue; }
+    const u = p || [0, 0, 0], v = q || [0, 0, 0];
+    out[n] = [u[0] + (v[0] - u[0]) * k, u[1] + (v[1] - u[1]) * k, u[2] + (v[2] - u[2]) * k];
+  }
+  return out;
+}
+// A glide laid over the stride, eased in and out: kind() says which glide
+// now. Returns fn(stroke, dt) for character.setStride.
+export function glideStride(kind) {
+  let now = '', k = 0, t = 0;
+  return (stroke, dt) => {
+    const want = kind();
+    if (want && want !== now && k < 0.05) now = want;
+    const on = want && want === now;
+    k += ((on ? 1 : 0) - k) * Math.min(1, dt * (on ? 4 : 7));
+    if (!on && k < 0.05) { now = want || ''; if (!want) { k = 0; t = 0; return null; } }
+    t += dt;
+    return mixPose(stroke, glidePose(now, t), k);
+  };
+}
+
 // What a jump scores when it comes down `t` seconds after take-off.
 //   { kind: 'fall', done } | { kind: 'land', clean, perfect, done: [tricks], pts }
 export function judge(tricks, t, perfect = false) {

@@ -137,6 +137,7 @@ export function createCharacter(rawLook) {
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let strideFn = null; // on skates, a pose in place of the stride (see setStride)
   let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
@@ -199,7 +200,7 @@ export function createCharacter(rawLook) {
     if (umbrella) m.setUmbrella?.(true);
     for (const f of footProps.splice(0)) f(m);
     addGloves(look, m);
-    m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
+    m.setActivity(activityName); m.setMoves?.(movesFn); m.setStride?.(strideFn); attachHeld(); wearMascot();
   });
   tryModel();
   const towel = accessory('neck', look.neck);
@@ -444,6 +445,8 @@ export function createCharacter(rawLook) {
     // the dances use), laid over the idle or running clip. null stops it.
     // Used for basketball shots (core/basketball-game.js shotMove).
     setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
+    // On skates: fn(stroke, dt) → bone offsets in place of the stride (the ice rink's glides), or null.
+    setStride(fn) { strideFn = fn || null; model?.setStride?.(strideFn); },
     // Wind in the hair (the roller coaster): k 0 still .. 1 full speed.
     setWind(k) {
       if (model) { model.setWind?.(k); return; }

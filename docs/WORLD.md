@@ -1135,6 +1135,10 @@ middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
   means a longer jump (0.75 s from a standstill, 1.1 s at full speed): a
   triple from a standstill, a quad with a little speed. A new trick tapped
   too late to do anything but fall is not started; raising a turn always is.
+  Let go and you coast: after a moment the arms open wide, and a long fast
+  glide becomes a spiral (one leg out behind); pushing, jumping or slowing
+  ends it. The commands are on a board by the gates (readable from both
+  sides) and in a list on the screen that its button opens and closes.
   Points are a personal best on this device (no coins). Other skaters' jumps
   are sent as a short code (`st.ik`) and played back.
 
