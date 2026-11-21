@@ -275,6 +275,7 @@ import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createBoatTaxiNear } from './game/boat-taxi-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { createTandemRentalNear } from './game/tandem-rental-near.js';
+import { createFarmNear } from './game/farm-near.js';
 import { createLanternParadeNear } from './game/lantern-parade-near.js';
 import { createTempleLanterns } from './game/temple-lanterns-near.js';
 import { createTempleMonksNear } from './game/temple-monks-near.js';
@@ -3358,7 +3359,7 @@ function leaveStore(walkOut = false) {
   tarotUi.close();
   leaveTarotLine(true);
   gymSpot = null; // (you leave by the door, not off the bench)
-  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui, dishUpgrade.ui]) if (g.open) g.close();
+  for (const g of [pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, museumUi, loveLockUi, wishUi, templeLanterns.ui, fishBait.ui, dishUpgrade.ui, farm.ui]) if (g.open) g.close();
   beautyUi.close();
   listenBar.stop(); // (puts the café's music back first)
   liveStage.leave(); // (tells the room the song is over, while still in it)
@@ -4162,7 +4163,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, farm.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, stampUi, museumUi].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden || helpBook.open; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4192,6 +4193,7 @@ addEventListener('keydown', (e) => {
     else if (wishUi.open) wishUi.close();
     else if (templeLanterns.ui.open) templeLanterns.ui.close();
     else if (fishBait.ui.open) fishBait.ui.close();
+    else if (farm.ui.open) farm.ui.close();
     else if (dishUpgrade.ui.open) dishUpgrade.ui.close();
     else if (emoteWheel.wheelOpen) closeWheel();
     else if (!$('product-panel').hidden) shop.closeProduct();
@@ -4420,6 +4422,9 @@ const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.
 const tandemRent = createTandemRentalNear({ spot: map.landmarks.find((l) => l.type === 'tandemrental'), ready: walletReady,
   scene, collision, areas: map.areas, wallet, refreshWallet, sfx, chip: $('tandem-chip'), toast: (m) => shop.toast(m),
   riding: () => riding, setRiding, mode: () => mode, passengers: () => passengers.size, driverKind: () => (riding === 3 ? others.kindOf(tandemDriver) : 0) });
+// The weekend farm at Yongsan Family Park (game/farm-near.js).
+const farm = createFarmNear({ spot: map.landmarks.find((l) => l.type === 'farm'), scene, collision, root: $('farm-panel'), cloud, wallet, refreshWallet, toast: (m) => shop.toast(m),
+  get sfx() { return sfx; }, get me() { return me; }, mode: () => mode, makeNpc: (name, look) => makeNpc($('labels'), name, look), say: (o, phrase) => say(o, $('labels'), phrase) });
 // Gift receipts: binds still waiting (I gave clothes), receipts for clothes
 // given to me.
 const giftSync = walletReady.then(() => {
@@ -5278,7 +5283,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group, () => farm.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -6752,6 +6757,7 @@ function moreActions(p, door) {
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const tdr = !seated && tandemRent.act(p); if (tdr) out.push(tdr);
+    const frm = !seated && !riding && farm.act(p); if (frm) out.push(frm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
     out.push(...templeLanterns.acts(p));
@@ -6867,6 +6873,7 @@ function updateAction(p, tSec) {
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
     else if (!riding && !seated && tandemRent.act(p)) next = tandemRent.act(p); // Seoul Forest's tandem rental
+    else if (!riding && !seated && farm.act(p)) next = farm.act(p); // the weekend farm's beds and stall
     else if (guideAct(p)) next = guideAct(p);
     else if (sb) next = sb; // start a snowball
     else if (!riding && inSkate && !seated) next = { key: 'skate-ride', label: `${VEHICLE_ICON[garage.current.type]} ${L(SKATE_TEXT.ride)}`, run: () => setRiding(1) };
@@ -7344,6 +7351,7 @@ renderer.setAnimationLoop((now) => {
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
   boatTaxi.update(p, dt); // (carries me down the river on the boat)
   tandemRent.update(p, dt); // (the rented tandem's meter; given back on getting off)
+  farm.update(p, dt); // (the weekend farm: loads when near, the crops grow)
   updateOpenParks(dt);
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
@@ -7640,6 +7648,7 @@ renderer.setAnimationLoop((now) => {
   if (openParkHere() && !mapUp) npcs.update(dt, streetCam(), w, h); // (the street's people walk on by the open park)
   if (mode === 'street') for (const o of hanParks.staffNear(p)) placeLabels(o, camera, w, h); // (a park's clerk and sellers)
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
+  if (mode === 'street') for (const o of farm.staffNear()) placeLabels(o, camera, w, h); // (the farm stand's farmer)
   if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
