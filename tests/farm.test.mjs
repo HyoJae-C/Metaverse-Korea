@@ -79,8 +79,8 @@ test('time left rounds up to the minute', () => {
   assert.deepEqual(timeLeft(-5), { h: 0, m: 0 });
 });
 
-test('the server has the same crops and prices (supabase/063_farm.sql)', () => {
-  const sql = readFileSync(new URL('../supabase/063_farm.sql', import.meta.url), 'utf8');
+test('the server has the same crops and prices (supabase/064_farm.sql)', () => {
+  const sql = readFileSync(new URL('../supabase/064_farm.sql', import.meta.url), 'utf8');
   for (const c of CROPS) {
     assert.ok(sql.includes(`('${c.id}', ${c.grow}, ${c.seed}, ${c.sell})`), `${c.id} row`);
   }

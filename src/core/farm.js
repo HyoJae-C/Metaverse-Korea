@@ -9,7 +9,7 @@
 // Short crops earn more an hour but need you there; long crops earn more a
 // visit. Watered in its second half, a crop sells for half as much again.
 //
-// The server (supabase/063_farm.sql) keeps the beds, the clock and the
+// The server (supabase/064_farm.sql) keeps the beds, the clock and the
 // money; the numbers here must match its farm_crops table, which wins when
 // they differ. No DOM here, so it can be unit-tested.
 
