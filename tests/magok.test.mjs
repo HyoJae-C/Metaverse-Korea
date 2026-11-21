@@ -161,6 +161,7 @@ test('the shop: ten pot plants for the home, each one a piece of furniture with 
   }
   const prices = (rare) => s.products.filter((p) => isRarePlant(p.furniture) === rare).map((p) => p.price);
   assert.ok(Math.max(...prices(false)) < Math.min(...prices(true)), 'every rare plant costs more than every everyday one');
+  assert.deepEqual(prices(true).sort((a, b) => a - b), [100000, 120000, 300000, 400000, 600000], 'the rare ones: 100k to 600k (Yozi 2026-11-21)');
   assert.ok(isSmall('plant-orchid') && isSmall('plant-flytrap') && !isSmall('plant-baobab'), 'the two small ones can stand on a table');
 });
 

@@ -1224,7 +1224,7 @@ the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
   beds' edge, bought through the usual product sheet (receipt as for any
   furniture). Five everyday ones by the main door (₩12,000–45,000), five rare
   ones at the far end of the main walk, each in front of the big one of the
-  same plant (₩55,000–200,000). The orchid and the flytrap can stand on a table.
+  same plant (₩100,000–600,000, Yozi 2026-11-21: rare ones may cost more). The orchid and the flytrap can stand on a table.
 - **The garden's planting** (Yozi 2026-11-21: too bare for its size): about
   350 trees, round flower beds and benches beside the paths, reeds by the
   wetland, and a **flower field** in the theme garden between the pond and
@@ -1247,3 +1247,23 @@ the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
   notes, that every stand can be walked to from the door, and the shop.
   `tests/e2e/botanic.mjs` walks in and buys a monstera (`DAY=1` for daytime
   pictures).
+## Gimpo Airport (Gangseo-gu)
+
+`scripts/build-gimpo.mjs` (data `scripts/data/gimpo-osm.json`, OpenStreetMap)
+puts Gimpo International Airport on its real place at 1/4: the airfield's
+fence (about 1,006 x 913 m, a blocker you can't walk into, grass with the
+aprons paved), the two runways on their OSM centre lines and lengths (900
+and 800 m) but half the real width (22.5 and 30 m), and the domestic and
+international terminals on their OSM outlines (154 x 27 m and 153 x 33 m).
+Planes are MODU AIR (made up), about half size (22 m): five stand nose-in
+at the domestic terminal, and one takes off or lands every 20 minutes of
+real time, a takeoff and then its landing back at the same stand, none at
+night (`core/gimpo-flights.js`; Yozi 2026-11-21). The domestic terminal's
+roof deck (OSM has the real one) is a balcony along its airside edge, a walk
+across the roof and a stair down beside the front door (`game/gimpo-walk.js`:
+decks through the terminal and the fence); a board there counts down to the
+next flight. The terminals, runways and planes load near
+(`game/gimpo-site.js`). Gimpo Airport Station (Line 5) has its four exits
+where OSM has them. What is made up is listed in the district's
+`meta.approx`. The Seoul Botanic Park (Magok) is a separate district east of
+x -5,280.

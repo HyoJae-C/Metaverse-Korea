@@ -24,6 +24,7 @@ export const DISTRICT_NAME = {
   mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },
   'arts-center': { en: 'Seoul Arts Center', ko: '예술의전당', ja: '芸術の殿堂', zh: '艺术殿堂', es: 'Centro de Artes de Seúl', id: 'Pusat Seni Seoul', ar: 'مركز سيول للفنون', vi: 'Trung tâm Nghệ thuật Seoul', hi: 'सियोल आर्ट्स सेंटर', fr: 'Centre des arts de Séoul', th: 'ศูนย์ศิลปะโซล' },
   nanji: { en: 'Haneul Park & Nanji', ko: '하늘공원·난지', ja: '空公園・蘭芝', zh: '天空公园·兰芝', es: 'Parque Haneul y Nanji', id: 'Taman Haneul & Nanji', ar: 'حديقة هانول ونانجي', vi: 'Công viên Haneul & Nanji', hi: 'हानुल पार्क और नानजी', fr: 'Parc Haneul et Nanji', th: 'สวนฮานึลและนันจี' },
+  gimpo: { en: 'Gimpo Airport', ko: '김포공항', ja: '金浦空港', zh: '金浦机场', es: 'Aeropuerto de Gimpo', id: 'Bandara Gimpo', ar: 'مطار غيمبو', vi: 'Sân bay Gimpo', hi: 'गिम्पो हवाई अड्डा', fr: 'Aéroport de Gimpo', th: 'สนามบินกิมโป' },
   mokdong: { en: 'Mokdong', ko: '목동', ja: '木洞', zh: '木洞', es: 'Mokdong', id: 'Mokdong', ar: 'موكدونغ', vi: 'Mokdong', hi: 'मोकदोंग', fr: 'Mokdong', th: 'มกดง' },
   magok: { en: 'Magok', ko: '마곡', ja: '麻谷', zh: '麻谷', es: 'Magok', id: 'Magok', ar: 'ماغوك', vi: 'Magok', hi: 'मागोक', fr: 'Magok', th: 'มาก๊ก' },
 };
