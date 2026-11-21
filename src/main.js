@@ -204,6 +204,8 @@ import { mountSideAd, sideAdOn } from './core/side-ad.js';
 import { Safety, filterText } from './core/safety.js';
 import { Pets } from './core/pets.js';
 import { SEA_STORE } from './core/zoo-rooms.js';
+import { skipHiddenMatrices } from './core/visible-matrices.js';
+import { createScreenCovered } from './game/screen-covered.js';
 import { StreetNpcs, makeNpc, say, placeLabels, PHRASES } from './core/npcs.js';
 import { RoadGraph, RouteLine } from './core/route.js';
 import { cleanName, readIdentity, saveIdentity, isReservedName, isDefaultName, defaultNamePrefix, localDefaultName, renameState } from './core/identity.js';
@@ -775,7 +777,7 @@ renderer.shadowMap.enabled = !lowSpec && !softwareGL;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-const scene = new THREE.Scene();
+const scene = skipHiddenMatrices(new THREE.Scene()); // (hidden things are not re-placed every frame: core/visible-matrices.js)
 scene.background = new THREE.Color(COLORS.sky);
 scene.fog = DEBUG_TOP ? null : new THREE.Fog(COLORS.sky, 140, 420);
 
@@ -7368,6 +7370,7 @@ import('./game/screen-shot.js').then(({ createScreenShot }) => {
 }).catch(() => { /* no button */ });
 // The camera eases round behind you as you walk (game/follow-cam.js).
 const followCam = createFollowCam({ cam, me, t, toast: (s) => shop.toast(s) });
+const screenCovered = createScreenCovered();
 let mapPause = 0; // (seconds since other players last moved while the map is open)
 // Shaders for everything on the map, built once now rather than the first
 // time each kind comes into view while walking (a stall each time).
@@ -7790,7 +7793,7 @@ renderer.setAnimationLoop((now) => {
 
   // The full map covers the screen, so there is nothing to see behind it:
   // the game keeps going but the 3D view is not drawn (Yozi, to keep phones cool).
-  if (mapView.open) { updateDelivery(); return; }
+  if (mapView.open || screenCovered(dt)) { updateDelivery(); return; } // (and the textbook reader, the gallery game: game/screen-covered.js)
   renderScenes(); // (the street, the room you're in, open parks: renderScenes)
   // Skip people too far away to see (core/far-people.js): after drawing, so
   // everyone's matrixWorld is this frame's; never your own character.
@@ -7984,6 +7987,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
     graphics: () => gfx.state(),
+    sceneRef: () => scene,
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
