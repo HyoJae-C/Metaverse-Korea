@@ -272,6 +272,7 @@ import { createBotanicNear } from './game/botanic-near.js';
 import { createGimpoWalk } from './game/gimpo-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createNaksanNear } from './game/naksan-near.js';
+import { createNeonAlleyNear } from './game/neon-alley-near.js';
 import { createNorthWallNear } from './game/north-wall-near.js';
 import { northGround } from './core/north-ground.js';
 import { ridgeGround } from './core/ridge-ground.js';
@@ -877,6 +878,8 @@ const gyeongnidan = createGyeongnidanNear({ district: hillDistrict, scene, label
 const ridgeDistrict = (map.meta?.districts || []).find((d) => d.ridge);
 const naksanY = ridgeDistrict ? ridgeGround(ridgeDistrict.ridge, ridgeDistrict.offset) : () => 0;
 const naksan = createNaksanNear({ district: ridgeDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, buildings: map.buildings, groundY: naksanY, randomLook });
+// Euljiro 3-ga's neon alley: its signs, wires and people load when you come near (game/neon-alley-near.js).
+const neonAlley = createNeonAlleyNear({ scene, labels: $('labels'), roadGraph, randomLook });
 // Inwangsan and Bugaksan, with the city wall on their crest (the Gyeongbokgung map's
 // `northwall` landmark, core/north-ground.js); the hills load when you come near (game/north-wall-near.js).
 const northY = northGround(map.landmarks);
@@ -6856,7 +6859,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
   if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss, 📊 Scoreboard)
@@ -6966,7 +6969,7 @@ function updateAction(p, tSec) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
-      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z);
+      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z);
       if (n) next = npcAct(n, p);
     }
   } else {
@@ -7743,7 +7746,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
   if (mode === 'street') for (const o of [...farm.staffNear(), ...seedShop.staffNear()]) placeLabels(o, camera, w, h); // (the farm stand's farmer, the seed shop's keeper)
   if (mode === 'street') for (const o of botanic.staffNear()) placeLabels(o, camera, w, h); // (the greenhouse's gardeners)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
