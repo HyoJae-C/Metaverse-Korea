@@ -162,7 +162,7 @@ test('every show gets its own number', () => {
 });
 
 test('event patterns: Christmas, the year\'s end, New Year and Chuseok on their days only, photo time unchanged', async () => {
-  const { eventOf, EVENTS, EVENT_MOVES, MID_SECONDS, midOf } = await import('../src/core/drone-events.js');
+  const { eventOf, EVENTS, EVENT_MOVES, MID_SECONDS, MAX_SCENE, midOf } = await import('../src/core/drone-events.js');
   useShow(show);
   const kst = (y, m, d) => Date.UTC(y, m - 1, d, 14, 10); // 23:10 KST
   const key = (y, m, d) => eventOf(kst(y, m, d))?.key ?? null;
@@ -180,7 +180,11 @@ test('event patterns: Christmas, the year\'s end, New Year and Chuseok on their 
   const W = (lines, o) => ({ lines, ...o }), P = (shape, o) => ({ shape, ...o });
   for (const k of Object.keys(EVENTS)) {
     const event = { key: k, year: 2026 };
-    assert.equal(midOf(event, { W, P, C: {} }).reduce((a, [d]) => a + d, 0), MID_SECONDS, k);
+    const mid = midOf(event, { W, P, C: {} });
+    assert.equal(mid.reduce((a, [d]) => a + d, 0), MID_SECONDS, k);
+    // (Yozi 2026-11-21: a scene over 15 seconds gets boring)
+    assert.equal(MAX_SCENE, 15);
+    for (const [d, s] of mid) assert.ok(d <= MAX_SCENE && d >= (s.shape ? 10 : 6), `${k}: ${s.shape || s.lines} stays ${d} s`);
     const steps = program(DRONE(), 1, event);
     assert.equal(steps.find((s) => s.photo).at, PHOTO_TIME[0], `${k}: the photo time`);
     assert.equal(steps.at(-2).at, program(DRONE(), 1, null).at(-2).at, `${k}: the last line`);
