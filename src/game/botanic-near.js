@@ -23,6 +23,7 @@ export const GARDENER_HI = [['어서 오세요!', 'eoseo oseyo!', 'Welcome!'], [
 export function createBotanicNear(game) {
   const l = (game.landmarks || []).find((q) => q.type === 'botanic');
   let site = null, loading = false, npcs = [];
+  let wasIn = false;
   const store = l ? game.store(l.store) : null;
   const inside = (p) => !!l && Math.hypot(p.x - l.x, p.z - l.z) < l.r;
   return {
@@ -31,6 +32,9 @@ export function createBotanicNear(game) {
     update(p, dt) {
       if (!l || !game.scene) return;
       const d = Math.hypot(p.x - l.x, p.z - l.z);
+      // Walking in under the glass is the visit (a daily "visit …" mission:
+      // there is no door to go through, so nothing else would count it).
+      if ((d < l.r) !== wasIn) { wasIn = d < l.r; if (wasIn && store) game.onVisit?.(store); }
       if (!site) {
         if (loading || d > BOTANIC_NEAR) return;
         loading = true;
