@@ -20,6 +20,11 @@ const DAY = Date.UTC(2026, 10, 11, 1, 0), NIGHT = Date.UTC(2026, 10, 11, 2, 40);
 let ok = false;
 try {
   await page.clock.setFixedTime(DAY);
+  // Today's mission is "visit the night carts": coming up to a cart at night must count (there is no door).
+  await page.addInitScript(() => {
+    const d = new Date(), p = (n) => String(n).padStart(2, '0'), day = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    localStorage.setItem('mk.daily', JSON.stringify({ day, missions: [{ type: 'visit', target: 'myeongdong-night-carts', need: 1, id: 'visit:myeongdong-night-carts', n: 0 }], bonus: false, streak: 1, last: day, total: 0 }));
+  });
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=e2e' + Math.random().toString(36).slice(2, 8));
   await page.click('#next-btn');
   await page.fill('#nickname', 'Cart');
@@ -31,6 +36,9 @@ try {
   await wait(3000);
   const day = await mk('nightCarts');
   if (day[0]?.shown) throw new Error('carts out in the day');
+  { const [x0, z0] = day[0].spots[0]; await mk('place', x0 + 1, z0 + 1); await wait(800); }
+  if ((await mk('missions')).find((m) => m.target === 'myeongdong-night-carts')?.n !== 0) throw new Error('the empty street counted as a visit in the day');
+  await mk('place', -1559.5, -455);
   if (shotDir) await page.screenshot({ path: `${shotDir}/carts-day.png` });
   await page.clock.setFixedTime(NIGHT);
   const night = await until(async () => { const s = await mk('nightCarts'); return s[0]?.shown && s; }, 20000, 'carts out at night');
@@ -42,6 +50,9 @@ try {
   await mk('place', x + Math.sin(ry) * 1.3, z + Math.cos(ry) * 1.3); await mk('face', ry + Math.PI);
   await until(async () => (await label()).includes('👀'), 10000, 'look at its food');
   console.log('action:', await label());
+  const visit = (await mk('missions')).find((m) => m.target === 'myeongdong-night-carts');
+  if (!visit || visit.n !== 1) throw new Error('coming up to a cart did not count as the visit: ' + JSON.stringify(visit));
+  console.log('visit mission done');
   if (shotDir) { await mk('place', x + Math.sin(ry) * 3.2 + Math.cos(ry) * 1.2, z + Math.cos(ry) * 3.2 - Math.sin(ry) * 1.2); await mk('face', ry + Math.PI - 0.3); await wait(1500); await page.screenshot({ path: `${shotDir}/carts-close.png` }); }
   if (errors.length) throw new Error(errors.join('\n'));
   ok = true;
