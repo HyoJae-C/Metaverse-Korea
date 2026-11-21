@@ -227,18 +227,19 @@ test('the patterns take turns, one per show; each keeps the photo time and the 1
   let t = first; const turn = [];
   for (let k = 0; k <= PATTERN_KEYS.length; k++) { turn.push(patternOf(t)); t = show.nextDroneShow(t + 1000); }
   assert.deepEqual(turn, [...PATTERN_KEYS, 'A']);
+  const nameOf = (s) => s.shape || (s.lines ? s.lines.join('/') : 'a move');
   const mids = new Set();
   for (const key of PATTERN_KEYS) {
     const steps = program(DRONE(), 1, null, key);
     assert.equal(steps.find((s) => s.photo).at, PHOTO_TIME[0], `${key}: the photo time`);
     assert.equal(steps.at(-2).at, program(DRONE(), 1, null, 'A').at(-2).at, `${key}: the last line`);
     const after = steps.filter((s) => s.at >= 144);
-    for (let i = 0; i + 1 < after.length; i++) { const d = after[i + 1].at - after[i].at; assert.ok(d <= 15 || (after[i].photo && d === 45), `${key}: ${after[i].shape || after[i].lines} stays ${d} s`); }
+    for (let i = 0; i + 1 < after.length; i++) { const d = after[i + 1].at - after[i].at; assert.ok(d <= 15 || (after[i].photo && d === 45), `${key}: ${nameOf(after[i])} stays ${d} s`); }
     for (const s of steps) if (s.shape) assert.ok(SHAPE_NAMES.includes(s.shape), `${key}: ${s.shape}`);
     for (const s of steps) if (s.lines) for (const l of s.lines) for (const seg of [].concat(l)) assert.ok(String(seg).length <= 10, `${key}: "${seg}" fits the sky`);
-    mids.add(steps.filter((s) => s.at >= 144 && s.at < 700).map((s) => s.shape || s.lines.join('/')).join(','));
+    mids.add(steps.filter((s) => s.at >= 144 && s.at < 700).map(nameOf).join(','));
     // the opening is the same in every pattern
-    assert.deepEqual(steps.filter((s) => s.at >= 0 && s.at < 144).map((s) => s.shape || s.lines.join('/')), program(DRONE(), 1, null, 'A').filter((s) => s.at >= 0 && s.at < 144).map((s) => s.shape || s.lines.join('/')));
+    assert.deepEqual(steps.filter((s) => s.at >= 0 && s.at < 144).map(nameOf), program(DRONE(), 1, null, 'A').filter((s) => s.at >= 0 && s.at < 144).map(nameOf));
   }
   assert.equal(mids.size, PATTERN_KEYS.length, 'every pattern has its own middle');
   for (const name of Object.keys(PATTERN_MOVES)) assert.ok(SHAPE_NAMES.includes(name), name);
