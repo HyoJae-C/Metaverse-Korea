@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
+import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, footprintOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const stations = region.subway.stations;
@@ -81,6 +81,13 @@ test('station exits are clear of roads and buildings', () => {
     return Math.hypot(px - ax - t * dx, pz - az - t * dz);
   };
   const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const cross = (a, b, c, d) => {
+    const o = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+  };
+  const edges = (p) => p.map((q, i) => [q, p[(i + 1) % p.length]]);
+  const segHitsPoly = (a, b, p) => inPoly(a[0], a[1], p) || inPoly(b[0], b[1], p) || edges(p).some(([c, d]) => cross(a, b, c, d));
+  const polysOverlap = (p, q) => p.some(([x, z]) => inPoly(x, z, q)) || q.some(([x, z]) => inPoly(x, z, p)) || edges(p).some(([a, b]) => edges(q).some(([c, d]) => cross(a, b, c, d)));
   const roads = [], solids = [];
   for (const d of region.districts) {
     const m = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url)));
@@ -99,8 +106,13 @@ test('station exits are clear of roads and buildings', () => {
     for (const e of st.exits) {
       for (const [x, z] of blockersOf(e).flatMap((w) => w.p).concat(holeOf(e))) {
         for (const r of roads) for (let i = 1; i < r.p.length; i++) assert.ok(segDist(x, z, r.p[i - 1], r.p[i]) > r.w / 2 + 0.5, `${st.id} exit ${e.n} on ${r.n?.en || r.k}`);
-        for (const p of solids) assert.ok(!inPoly(x, z, p), `${st.id} exit ${e.n} in a building or water`);
       }
+      // The whole entrance (walls, plus the 3 m in front of the mouth), not just
+      // its corners: a small building or a road's centre line can sit inside it
+      // with every corner clear.
+      const box = footprintOf(e, 0).p;
+      for (const r of roads) for (let i = 1; i < r.p.length; i++) assert.ok(!segHitsPoly(r.p[i - 1], r.p[i], box), `${st.id} exit ${e.n} on ${r.n?.en || r.k}`);
+      for (const p of solids) assert.ok(!polysOverlap(box, p), `${st.id} exit ${e.n} in a building or water`);
     }
   }
 });

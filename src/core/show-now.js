@@ -1,7 +1,7 @@
 // Operators start a show now: "/드론쇼" (the Ttukseom drone show) or
 // "/불꽃놀이" (the Yeouido fireworks) in the chat (game/chat.js); add
 // "취소" to call it off ("/드론쇼취소", "/불꽃놀이취소").
-// supabase/060_drone_now.sql and 061_fireworks_now.sql.
+// supabase/060_drone_now.sql and 061b_fireworks_now.sql.
 // The server keeps the starts on the weather setting, so every game gets
 // them with the weather (core/weather-watch.js: on start, live, every 5
 // minutes) and adds each to the timetable as one extra show (show-clock.js

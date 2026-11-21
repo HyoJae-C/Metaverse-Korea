@@ -1,6 +1,6 @@
 -- Coins on the server: the balance can no longer be changed from the browser.
 -- Run once in the Supabase dashboard: SQL Editor → New query → paste → Run.
--- Needs 001_saves.sql, 003_names.sql, 005_operators.sql and 007_love_locks.sql.
+-- Needs 001_saves.sql, 003_names.sql, 005_operators.sql and 007b_love_locks.sql.
 -- Safe to run again.
 --
 -- How it works:
@@ -289,7 +289,7 @@ end $$;
 revoke all on function public.wallet_ad(uuid) from public, anon;
 grant execute on function public.wallet_ad(uuid) to authenticated;
 
--- Love locks (007_love_locks.sql) now pay from the wallet above. Same
+-- Love locks (007b_love_locks.sql) now pay from the wallet above. Same
 -- answers as before, plus ver; 'nosave' now means the wallet isn't open yet.
 create or replace function public.hang_love_lock(
   p_request_id uuid, p_shape text, p_name text, p_body text, p_price int

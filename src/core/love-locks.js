@@ -5,7 +5,7 @@
 // The 3D heart on the summit is fixed decoration; a lock someone hangs is a
 // row on the server, never a new 3D object.
 //
-// On the server (supabase/007_love_locks.sql) one function takes the coins
+// On the server (supabase/007b_love_locks.sql) one function takes the coins
 // from the player's cloud save and saves the note together, so the two can
 // never disagree. A request id per note makes a double tap (or a retry after
 // a dropped connection) hang one lock and charge once. Without the server
@@ -13,7 +13,7 @@
 
 export const LOCK_SHAPES = ['heart', 'circle', 'square', 'star'];
 // Settings. The price is also kept on the server (love_lock_settings in
-// 007_love_locks.sql), which wins whenever the game is online: change it
+// 007b_love_locks.sql), which wins whenever the game is online: change it
 // there to change it for everyone, and here for offline play.
 export const LOVE_LOCK = {
   price: 15000, // won (₩15,000, about what a padlock costs at Namsan)

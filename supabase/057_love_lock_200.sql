@@ -1,7 +1,7 @@
 -- 057: love-lock notes up to 200 characters (was 1000). Yozi 2026-11-19.
 --
 -- Only new locks are checked: the limit lives in hang_love_lock, the one way
--- in. The table's CHECK (1..1000, 007_love_locks.sql) stays as it is, so locks
+-- in. The table's CHECK (1..1000, 007b_love_locks.sql) stays as it is, so locks
 -- already hung with more than 200 characters keep their text and can still be
 -- hidden by the operator (a tighter CHECK, even NOT VALID, would refuse any
 -- update to those rows). Same function as 018_won.sql apart from the limit.
