@@ -39,8 +39,10 @@ const mod = (a, b) => ((a % b) + b) % b;
 export const showOf = (n) => PLAN[mod(Math.floor(n / DAY_CYCLES), PLAN_DAYS)][mod(n, DAY_CYCLES)] ?? NONE;
 // The drone shows counted one by one, for their changing parts.
 const DRONE_SLOTS = [...Array(PERIOD).keys()].filter((r) => showOf(r) === DRONES);
-// (An extra show in a cycle without one counts as the next regular one.)
-export const droneNumber = (n) => Math.floor(n / PERIOD) * DRONE_SLOTS.length + DRONE_SLOTS.filter((r) => r < mod(n, PERIOD)).length;
+// An extra show (an operator's "/드론쇼") in a cycle without one counts as
+// the regular show before it, so it plays that show once more (hello,
+// pattern, act 3) and the next regular show still gets its own turn.
+export const droneNumber = (n) => Math.floor(n / PERIOD) * DRONE_SLOTS.length + DRONE_SLOTS.filter((r) => r <= mod(n, PERIOD)).length - 1;
 
 // The game's clock as an hour of a 24-hour day (sunrise 6:00, sunset
 // 18:00, the sky's colours in weather.js): morning runs 5:18–8:00, day
