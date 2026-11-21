@@ -109,6 +109,7 @@ test('watching the show: no name tags on the stage, and the eye button hides the
   assert.match(css, /html:not\(\.ui-hidden\) body\.in-store\.in-show \.ui-eye \{ display: grid; \}/, 'the eye shows in a hall with a show');
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /classList\.add\('in-show'\)/);
+  assert.match(main, /running: input\.run && !stamina\.tired && !steadyWalk && !quiet/, 'no running footsteps in a quiet place');
   assert.match(main, /classList\.remove\('in-store', 'in-show'\)/);
 });
 
