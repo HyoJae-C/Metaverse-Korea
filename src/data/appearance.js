@@ -80,7 +80,7 @@ export const PALETTES = {
     ice: 0xb8d9f0, sky: 0x7fb8f0, teal: 0x2a9a9a, cobalt: 0x2f5fd6, navy: 0x2b3f7a,
   },
   // Blush (볼 터치) from the lip shops' second tab (core/lipstick.js).
-  blush: { peach: 0xffa98a, coral: 0xff7f73, rose: 0xf07f9a, pink: 0xff94c2, berry: 0xd2607f, lilac: 0xc79be6 },
+  blush: { peach: 0xff9070, coral: 0xff6a5e, rose: 0xe86a8a, pink: 0xff7fb5, berry: 0xc94d70, lilac: 0xb987e0 },
   // Hat colours from the hat workshop.
   hat: {
     butter: 0xffd36e, sky: 0x86b8f0, coral: 0xff9b85, mint: 0x8fd3c7, lilac: 0xb9a6f0,
