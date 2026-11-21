@@ -3,7 +3,7 @@
 // the developer master code (typed in chat) adds every item.
 
 import { WEARABLES } from '../data/wearables.js';
-import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS } from './furniture.js';
+import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS, PLANT_IDS } from './furniture.js';
 import { FINISHES } from './home-finish.js';
 
 const PET_DESC = {
@@ -75,6 +75,13 @@ const FINISH_DESC = {
   zh: '在乙支路家具街壁纸店买的壁纸或地板。在家里点“装饰”选择即可更换，点“基本”恢复原样。',
 };
 const finishes = () => Object.fromEntries(FINISHES.map((f) => [f.id, { emoji: f.emoji, name: f.name, desc: FINISH_DESC, finish: f.kind }]));
+const PLANT_DESC = {
+  en: 'A pot plant from Seoul Botanic Park. Put it in your home: Decorate at home, then pick it.',
+  ko: '서울식물원에서 산 화분이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: 'ソウル植物園で買った鉢植え。家の「模様替え」で置けます。',
+  zh: '在首尔植物园买的盆栽。在家里点“装饰”就能摆放。',
+};
+const plants = () => Object.fromEntries(PLANT_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: PLANT_DESC, furniture: true }]));
 const tanks = () => Object.fromEntries(TANK_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: TANK_DESC, furniture: true }]));
 const lamps = () => Object.fromEntries(LAMP_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: LAMP_DESC, lamp: true }]));
 function plushies(defs) {
@@ -175,6 +182,8 @@ export const ITEMS = {
   // Wallpaper and flooring from the wallpaper shops on Euljiro (home-finish.js).
   ...finishes(),
   ...tanks(),
+  // Pot plants from the greenhouse shop in Seoul Botanic Park (house-plants.js).
+  ...plants(),
   // Pets: adopted for money (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the

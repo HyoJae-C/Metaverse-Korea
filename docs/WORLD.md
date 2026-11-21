@@ -1193,6 +1193,60 @@ Nambusunhwan-ro in front of the gate.
   (`stations.stage.load`).
 
 
+## Seoul Botanic Park (Magok, Gangseo-gu)
+
+`scripts/build-magok.mjs` writes `districts/magok.json` from OpenStreetMap
+(`scripts/data/magok-osm.json`, cut from the national extract). The middle of
+the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
+
+- **Real, within 1 m, at 1/4:** the garden's outline (about 221 × 400 m; real
+  884 × 1,595 m), the lake (호수원), the wetland's water (습지원), the pond and
+  streams, the park's footways of 20 m or longer, and the outlines of the arts
+  centre, the forest school and the research greenhouse (plain and unnamed;
+  you cannot go in). Magokjungang 10-ro is within 10 m; the bigger roads round
+  the garden come from the base map.
+- **The greenhouse is the one size exception** (Yozi 2026-11-21: "땅 1/4, 온실
+  50% 오픈형"): 45.6 m across instead of 22.8 m, and its middle is 10 m
+  north-west of the real one so the glass stays 4 m off Magokdong-ro's kerb.
+  It is an open building on the street: no room, you walk in through two
+  doorways (`src/game/botanic-near.js` in the first download,
+  `src/game/botanic-site.js` loaded near).
+- **Made up** (`meta.approx`): the greenhouse's size, place, doors and the
+  path round it; its support building is left out; everything planted (trees,
+  flower beds, reeds outside; all of the inside); the Information Center (on
+  the real visitor centre's spot); Magokjungang 10-ro as one road.
+- **Inside the greenhouse** (`src/core/botanic-layout.js`): a lily pond, a
+  ring of low beds, a wide walk, tall beds against the glass, and four walks
+  through them. The half by the main door is tropical, the far half
+  Mediterranean. Merged per colour: the whole place is about 30 draw calls.
+- **Pot plants for the home** (`src/core/house-plants.js`, store
+  `seoul-botanic-greenhouse`): ten pieces of furniture sold from stands on the
+  beds' edge, bought through the usual product sheet (receipt as for any
+  furniture). Five everyday ones by the main door (₩12,000–45,000), five rare
+  ones at the far end of the main walk, each in front of the big one of the
+  same plant (₩100,000–600,000, Yozi 2026-11-21: rare ones may cost more). The orchid and the flytrap can stand on a table.
+- **The garden's planting** (Yozi 2026-11-21: too bare for its size): about
+  350 trees, round flower beds and benches beside the paths, reeds by the
+  wetland, and a **flower field** in the theme garden between the pond and
+  the greenhouse (about 1,270 m2 in nine pieces between the paths, made up).
+  The field's flowers follow `SEASON` (`FIELD_FLOWERS` in
+  `src/game/botanic-site.js`: tulips, hydrangeas, cosmos, silver grass). The
+  real path over the lake has footbridge rails; a made-up lookout deck goes
+  9 m out over the lake; a white photo frame stands in the biggest field.
+- **The Cactus & Succulent House** (stores.json `botanic-cactus-house`, made
+  up): a shop door on the forest school's real building. Its room
+  (`src/core/cactus-house.js`, with the room builder) has a sand island of big
+  cacti; it sells four theme plants (`THEME_PLANTS` in
+  `src/core/house-plants.js`) that the greenhouse does not.
+- **Magongnaru Station** (Line 9, 905) at the garden's west edge: exits at the
+  real 3 and 4, moved onto open ground inside the garden
+  (`stationExits()` in the script). The stamp stand is outside the
+  greenhouse's main door. The land round Magok is still closed, and the boat
+  taxi's Magok pier is not built.
+- `tests/magok.test.mjs` checks the real outlines, the exception and its
+  notes, that every stand can be walked to from the door, and the shop.
+  `tests/e2e/botanic.mjs` walks in and buys a monstera (`DAY=1` for daytime
+  pictures).
 ## Gimpo Airport (Gangseo-gu)
 
 `scripts/build-gimpo.mjs` (data `scripts/data/gimpo-osm.json`, OpenStreetMap)

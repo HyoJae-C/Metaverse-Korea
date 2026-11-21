@@ -17,6 +17,7 @@ export const STAMP_ORDER = [
   'seoul-forest', 'mangwon-pier', 'igansumun', 'yeonnam', // 서울숲 · 망원 한강공원 · 이간수문 · 경의선숲길
   'war-memorial', 'dongmyo-market', 'seokchon', 'yeouido', // 전쟁역사박물관 · 동묘 감자마켓 · 석촌호수 · 여의도 한강공원
   'drone-show', 'banpo-jamwon', 'konext', 'bongeunsa', // 드론쇼 · 반포 한강공원 · 코넥스트 · 봉은사
+  'botanic', // 서울식물원
 ];
 const rank = (s) => { const i = STAMP_ORDER.indexOf(s.id); return i < 0 ? STAMP_ORDER.length : i; };
 export const inNoteOrder = (stamps) => stamps.map((s, i) => [s, i]).sort((x, y) => rank(x[0]) - rank(y[0]) || x[1] - y[1]).map(([s]) => s);
