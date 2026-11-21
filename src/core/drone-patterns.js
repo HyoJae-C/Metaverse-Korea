@@ -1,6 +1,7 @@
 // The drone show's patterns (Yozi 2026-11-21): the middle of the show
 // (after the opening, up to the photo time) changes from show to show, one
-// pattern each in turn (drone-sky.js patternOf; pattern A is its routine 1).
+// pattern each in turn (drone-sky.js patternOf; pattern A is its routine 1,
+// B takes the place of the paused routine 2).
 // Each pattern: mid(h) = the [seconds, step] list, evened by fit() to the
 // middle's length; no scene stays over 15 seconds. h: { W, P, C } of
 // drone-sky.js. The patterns' own pictures and moves are below.
@@ -11,6 +12,60 @@ const { path, fill, line, circle, oval, seg, grad, radial, sparkle, heartPath, s
 const TAU = Math.PI * 2;
 
 export const PATTERNS = {
+  // B: Korea (the old routine 2, remade; Yozi 2026-11-21)
+  B: {
+    name: 'korea',
+    mid: ({ W, P, C }) => [
+      [10, W(['대한민국'], { color: [C.RED, C.SKYBLUE], morph: 2.5 })],
+      [14, P('taegukgi')],
+      [8, W(['태극기'], { color: [C.RED, C.SKYBLUE] })],
+      [14, P('mugunghwa')],
+      [8, W(['무궁화 꽃이', '피었습니다'], { color: [C.PINK, C.WHITE] })],
+      [14, P('hangul')],
+      [8, W(['한글'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('tiger')],
+      [8, W(['어흥!'], { color: [C.GOLD, C.RED] })],
+      [14, P('magpie')],
+      [8, W(['좋은 소식'], { color: [C.SKYBLUE, C.WHITE] })],
+      [14, P('hanbok')],
+      [8, W(['고운 한복'], { color: [C.PINK, C.GOLD] })],
+      [14, P('fan')],
+      [14, P('janggu')],
+      [8, W(['덩기덕', '쿵더러러'], { color: [C.GOLD, C.RED] })],
+      [14, P('buk')],
+      [8, W(['둥 둥 둥'], { color: [C.RED, C.GOLD] })],
+      [14, P('mask')],
+      [8, W(['얼쑤!'], { color: [C.GOLD, C.RED] })],
+      [14, P('taekwondo')],
+      [8, W(['태권!'], { color: [C.WHITE, C.SKYBLUE] })],
+      [14, P('ssireum')],
+      [8, W(['으라차차!'], { color: [C.RED, C.SKYBLUE] })],
+      [14, P('turtleship')],
+      [8, W(['거북선'], { color: [C.MINT, C.GOLD] })],
+      [14, P('cheomseongdae')],
+      [9, W(['별을 보던', '첨성대'], { color: [C.WHITE, C.GOLD] })],
+      [14, P('dolhareubang')],
+      [8, W(['혼저 옵서예'], { color: [C.GOLD, C.MINT] })],
+      [14, P('moonjar')],
+      [8, W(['달항아리'], { color: [C.WHITE, C.PINK] })],
+      [14, P('chorong')],
+      [8, W(['청사초롱'], { color: [C.SKYBLUE, C.RED] })],
+      [14, P('kite')],
+      [8, W(['연날리기'], { color: [C.SKYBLUE, C.WHITE] })],
+      [14, P('yut')],
+      [8, W(['모 나와라!'], { color: [C.GOLD, C.WHITE] })],
+      [14, P('pouch')],
+      [8, W(['복 많이', '받아'], { color: [C.GOLD, C.RED] })],
+      [14, P('jindo')],
+      [8, W(['멍멍!', '진돗개'], { color: [C.WHITE, C.GOLD] })],
+      [14, P('palace')],
+      [14, P('ilwol')],
+      [14, P('fullmoon')],
+      [9, W(['또 만나요', '대한민국'], { color: [C.RED, C.SKYBLUE] })],
+      [12, W([['한국 ', '♡']], C.HEART)],
+      [14, P('hearts')],
+    ],
+  },
   // C: the four seasons of Seoul
   C: {
     name: 'seasons',
@@ -593,6 +648,14 @@ export const PATTERN_MOVES = {
     const near = Math.min(1, t / 6); if (p[2] === 1) p[0] -= (1 - near) * 6; else if (p[2] === 2) p[0] += (1 - near) * 6;
     return 1;
   },
+  // the letters light up one after another
+  hangul: (p, t) => { const k = (t * 0.8) % 4; return k > p[2] ? 1 : 0.2; },
+  ssireum: (p, t) => { if (p[2]) turn(p, 0, -8.8, Math.sin(t * 2.2) * 0.14); },
+  // rocks on the waves
+  turtleship: (p, t) => { if (p[2] === 1) { p[0] += Math.sin(t * 2 + p[1]) * 0.4; return 1; } turn(p, 0, -6, Math.sin(t * 1.4) * 0.05); p[1] += Math.sin(t * 1.4) * 0.3; return 1; },
+  cheomseongdae: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
+  dolhareubang: (p, t) => { if (p[2] === 1) p[1] += Math.abs(Math.sin(t * 2.4 + p[0])) * 0.5; else turn(p, 0, -9, Math.sin(t * 1.5) * 0.04); },
+  moonjar: (p, t) => (p[2] === 1 ? twinkle(p, t) : 1),
 };
 
 // ---- the patterns' pictures (as PICTURES in drone-pictures.js) ---------------
@@ -1479,5 +1542,81 @@ addPictures({
     path(c, [[x - 1.5, girl ? -0.6 : -2.6], [x + 1.5, girl ? -0.6 : -2.6], [x + 1.2, 1.4], [x - 1.2, 1.4]]); fill(c, top);
     seg(c, [x + (girl ? -1.0 : 1.0), 0.8], [x + (girl ? -2.3 : 2.3), -0.4], top, 0.7);
     circle(c, x, 3.9, 0.55); fill(c, '#8a5a3a'); head(c, x, 2.5, 1.25, '#8a5a3a');
+  } },
+
+  // Hangul: 가 나 다, one letter per part.
+  hangul: { layers: 3, draw(c, l) {
+    const x = [-9.0, 0, 9.0][l], col = ['#ff4a5a', '#ffd24a', '#46b4ff'][l], w = 1.1;
+    if (l === 0) { seg(c, [x - 3.2, 4.2], [x + 0.4, 4.2], col, w); seg(c, [x + 0.4, 4.2], [x - 1.6, -3.4], col, w); }
+    if (l === 1) { seg(c, [x - 3.2, 4.4], [x - 3.2, -2.6], col, w); seg(c, [x - 3.2, -2.6], [x + 0.6, -2.6], col, w); }
+    if (l === 2) { seg(c, [x - 3.2, 4.2], [x + 0.6, 4.2], col, w); seg(c, [x - 3.2, 4.2], [x - 3.2, -2.6], col, w); seg(c, [x - 3.2, -2.6], [x + 0.6, -2.6], col, w); }
+    seg(c, [x + 2.4, 6.0], [x + 2.4, -5.6], col, w); seg(c, [x + 2.4, 0.4], [x + 4.0, 0.4], col, w);
+    sparkle(c, x, -8.4, 0.8, '#ffffff'); sparkle(c, x, 8.8, 0.6, '#fff3c4');
+  } },
+
+  // Ssireum: two wrestlers leaning into each other (red belt part 1, blue
+  // belt part 2) in a sand ring.
+  ssireum: { layers: 3, dens: [0.7, 1.2, 1.2], draw(c, l) {
+    if (l === 0) { oval(c, 0, -8.8, 12.4, 1.1); line(c, '#ffd24a', 0.5); return; }
+    const s = l === 1 ? -1 : 1, skin = l === 1 ? '#ffd7b8' : '#f0c090', belt = l === 1 ? '#e8243a' : '#3f7ad8';
+    seg(c, [s * 5.2, -3.6], [s * 8.0, -8.4], skin, 1.5); seg(c, [s * 5.2, -3.6], [s * 3.0, -8.4], skin, 1.5);
+    seg(c, [s * 1.8, 3.4], [s * 5.2, -2.6], skin, 2.8);
+    oval(c, s * 5.2, -3.0, 2.2, 1.6); fill(c, belt);
+    seg(c, [s * 2.2, 2.6], [-s * 3.6, -1.6], skin, 1.1);
+    head(c, s * 2.2, 5.6, 1.9, '#8a5a3a', skin);
+  } },
+
+  // The turtle ship: a spiked green shell, a dragon head, a sail, oars;
+  // waves (part 1).
+  turtleship: { layers: 2, dens: [1.2, 0.7], draw(c, l) {
+    if (l === 1) { for (let k = 0; k < 2; k++) { c.beginPath(); c.moveTo(-13.4, -8.2 - k * 1.2); for (let x = -13.4; x <= 13.4; x += 2.4) c.quadraticCurveTo(x + 0.6, -7.6 - k * 1.2, x + 1.2, -8.2 - k * 1.2), c.quadraticCurveTo(x + 1.8, -8.8 - k * 1.2, x + 2.4, -8.2 - k * 1.2); line(c, k ? '#46b4ff' : '#7fd4ff', 0.26); } return; }
+    seg(c, [-1.6, 3.0], [-1.6, 9.6], '#c98a4a', 0.4); c.beginPath(); c.rect(-5.0, 4.6, 6.8, 4.4); fill(c, '#fff3d8'); c.beginPath(); c.rect(-5.0, 6.4, 6.8, 0.7); fill(c, '#e8243a');
+    for (let x = -8.0; x <= 6.4; x += 2.4) seg(c, [x, -5.6], [x - 1.0, -7.4], '#e8c27a', 0.3);
+    c.beginPath(); c.moveTo(8.6, -1.6); c.quadraticCurveTo(11.6, -0.6, 11.4, 3.0); line(c, '#3fbf7a', 1.3);
+    circle(c, 11.6, 3.8, 1.5); fill(c, '#ffd24a'); path(c, [[12.6, 3.6], [13.6, 3.0], [12.6, 2.8]]); fill(c, '#e8243a'); circle(c, 11.8, 4.3, 0.36); fill(c, '#3a2410');
+    path(c, [[-10.6, -1.8], [9.6, -1.8], [8.0, -6.0], [-9.0, -6.0]]); fill(c, grad(c, 0, -1.8, 0, -6, ['#c98a4a', '#8a5a3a']));
+    c.beginPath(); c.moveTo(-9.6, -1.8); c.quadraticCurveTo(-0.6, 7.6, 8.6, -1.8); c.closePath(); fill(c, grad(c, 0, 3, 0, -1.8, ['#6fe0a0', '#2fa868']));
+    for (const [x, y] of [[-5.6, -0.4], [-2.6, 1.2], [0.6, 1.2], [3.8, -0.2], [-1.0, -0.6], [-7.0, -1.2], [6.0, -1.2]]) sparkle(c, x, y, 0.6, '#ffe08a');
+    for (let x = -7.0; x <= 6.0; x += 2.6) { c.beginPath(); c.rect(x, -4.2, 1.0, 1.0); fill(c, '#ffd24a'); }
+  } },
+
+  // Cheomseongdae, the old star tower, under a crescent moon and stars
+  // (part 1).
+  cheomseongdae: { layers: 2, dens: [1.2, 1], draw(c, l) {
+    if (l === 1) {
+      circle(c, -9.4, 6.0, 2.4); fill(c, '#ffe08a'); circle(c, -8.4, 6.6, 2.1); fill(c, '#000000');
+      for (const [x, y, r] of [[9.0, 7.6, 0.9], [11.4, 2.6, 0.6], [7.6, 3.4, 0.5], [-11.4, 0.6, 0.6], [-7.6, -2.6, 0.5], [10.0, -3.6, 0.7]]) sparkle(c, x, y, r, '#ffffff');
+      return;
+    }
+    c.beginPath(); c.rect(-6.0, -9.4, 12.0, 1.5); fill(c, '#b8a888');
+    c.beginPath(); c.moveTo(-5.0, -7.9); c.bezierCurveTo(-4.8, -2.0, -2.8, 1.6, -2.8, 5.6); c.lineTo(2.8, 5.6); c.bezierCurveTo(2.8, 1.6, 4.8, -2.0, 5.0, -7.9); c.closePath();
+    fill(c, grad(c, -5, 0, 5, 0, ['#f0e4c8', '#d8c8a0', '#b8a888']));
+    c.beginPath(); c.rect(-3.4, 5.6, 6.8, 0.9); fill(c, '#f0e4c8'); c.beginPath(); c.rect(-3.0, 6.5, 6.0, 0.9); fill(c, '#d8c8a0');
+    c.beginPath(); c.rect(-1.0, -1.4, 2.0, 2.0); fill(c, '#3f5ad8');
+  } },
+
+  // A dol hareubang (Jeju's stone grandfather) with tangerines (part 1).
+  dolhareubang: { layers: 2, dens: [1.1, 1.2], draw(c, l) {
+    if (l === 1) { for (const [x, y] of [[-9.4, -7.6], [-7.0, -4.4], [9.2, -7.6], [7.2, -4.6]]) { circle(c, x, y, 1.7); fill(c, radial(c, x - 0.4, y + 0.4, 0.2, 1.7, ['#ffc23a', '#ff8a1a'])); oval(c, x + 0.6, y + 1.7, 0.9, 0.4, 0.5); fill(c, '#3fbf7a'); } return; }
+    c.beginPath(); c.roundRect(-4.8, -9.4, 9.6, 10.4, 2.4); fill(c, grad(c, -4.8, 0, 4.8, 0, ['#7482a0', '#5c6884']));
+    circle(c, 0, 4.0, 4.3); fill(c, '#7482a0');
+    c.beginPath(); c.arc(0, 6.6, 3.6, 0, Math.PI); c.closePath(); fill(c, '#a8b4cc'); oval(c, 0, 6.6, 5.0, 0.8); fill(c, '#a8b4cc');
+    for (const sx of [-1, 1]) { circle(c, sx * 1.8, 4.4, 1.15); fill(c, '#ffffff'); circle(c, sx * 1.8, 4.4, 0.45); fill(c, '#3a4660'); }
+    c.beginPath(); c.roundRect(-0.7, 1.9, 1.4, 2.0, 0.6); fill(c, '#e6ecf8'); seg(c, [-1.6, 0.8], [1.6, 0.8], '#ffffff', 0.4);
+    seg(c, [-4.4, -1.0], [-1.6, -2.0], '#e6ecf8', 1.1); oval(c, -1.2, -2.0, 1.3, 0.9); fill(c, '#e6ecf8');
+    seg(c, [4.4, -3.6], [1.6, -4.6], '#e6ecf8', 1.1); oval(c, 1.2, -4.6, 1.3, 0.9); fill(c, '#e6ecf8');
+  } },
+
+  // A white moon jar with a branch of plum blossoms (part 1).
+  moonjar: { layers: 2, dens: [1.1, 1.2], draw(c, l) {
+    if (l === 1) {
+      c.beginPath(); c.moveTo(1.0, 6.6); c.bezierCurveTo(3.0, 9.6, 7.0, 7.0, 11.4, 9.6); line(c, '#c98a4a', 0.4); c.beginPath(); c.moveTo(4.6, 8.4); c.quadraticCurveTo(7.0, 5.6, 10.6, 5.4); line(c, '#c98a4a', 0.3);
+      for (const [x, y] of [[4.0, 8.9], [7.6, 8.0], [11.4, 9.6], [8.0, 5.9], [10.8, 5.2]]) { for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU; circle(c, x + Math.cos(a) * 0.7, y + Math.sin(a) * 0.7, 0.55); fill(c, '#ff9ac8'); } circle(c, x, y, 0.4); fill(c, '#ffe08a'); }
+      for (const [x, y] of [[-10.6, 6.0], [-9.0, -5.6], [10.6, -4.0]]) sparkle(c, x, y, 0.7, '#fff3c4');
+      return;
+    }
+    c.beginPath(); c.rect(-2.8, -9.2, 5.6, 1.4); fill(c, '#cfd8ec');
+    oval(c, 0, -1.0, 7.8, 7.2); fill(c, radial(c, -2.4, 1.6, 0.6, 9, ['#ffffff', '#eef2fb', '#c8d2ea']));
+    c.beginPath(); c.roundRect(-3.2, 5.6, 6.4, 1.3, 0.5); fill(c, '#eef2fb');
   } },
 });
