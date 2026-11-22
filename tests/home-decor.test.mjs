@@ -41,8 +41,8 @@ test('the Euljiro furniture shops: every new piece is an item, sold in exactly o
   const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds'].includes(s.id));
-  assert.equal(shops.length, 8);
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds', 'neugeut-afternoon', 'danjang-dressroom'].includes(s.id));
+  assert.equal(shops.length, 10);
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
   for (const [id] of SHOP_FURNITURE_IDS) {
@@ -65,7 +65,8 @@ test('the free basics are the worn ones', () => {
 test('each furniture shop sells three pieces', async () => {
   const { readFileSync } = await import('node:fs');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, 3, s.id);
+  // (Yozi 2026-11-22 picked five pieces: the dressing room sells its two.)
+  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, s.id === 'danjang-dressroom' ? 2 : 3, s.id);
 });
 
 test('long sofas and benches seat two, beds lie two, cushions sit on the floor', async () => {
@@ -76,6 +77,12 @@ test('long sofas and benches seat two, beds lie two, cushions sit on the floor',
   assert.ok(n('f-bangseok').length === 2 && n('f-bangseok').every((s) => s.mat && s.cushion));
   for (const id of ['chair', 'f-steel-stool', 'f-beanbag', 'f-rocking']) assert.equal(n(id).length, 1, id);
   for (const id of ['table', 'f-najeon']) assert.equal(n(id).length, 0, id);
+  // A hammock lies one; at the vanity you sit on the stool in front, facing the mirror.
+  const [h] = n('f-hammock');
+  assert.ok(n('f-hammock').length === 1 && h.lie && h.bed);
+  const v = furnitureSeats({ id: 'f-vanity', x: 0, z: 0, ry: 0 });
+  assert.ok(v.length === 1 && Math.abs(v[0].ry - Math.PI) < 1e-9 && v[0].z > 0.1, 'stool in front, facing back');
+  for (const id of ['f-low-table', 'f-grand-clock', 'f-clothes-rack']) assert.equal(n(id).length, 0, id);
   // Turned a quarter: the two places stay side by side along the piece.
   const [a, b] = furnitureSeats({ id: 'sofa', x: 5, z: 5, ry: Math.PI / 2 });
   assert.ok(Math.abs(a.x - b.x) < 1e-9 && Math.abs(Math.abs(a.z - b.z) - 0.9) < 1e-9);
