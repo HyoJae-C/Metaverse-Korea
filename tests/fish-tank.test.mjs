@@ -113,3 +113,26 @@ test('home tanks use the light drawings: a full wall aquarium stays inside the t
   assert.ok(lite < full / 4, `${lite} vs ${full}`);
   assert.ok((lite / FISH.length) * 150 < 150000, 'even 150 fish on average under 150k triangles');
 });
+
+test('an octopus in a tank rests, now and then inks and jets up, and stays in the water', async () => {
+  const THREE = await import('three');
+  const { fillTank } = await import('../src/core/tank-fish.js');
+  const tank = tankById('tank-m'), W = waterOf(tank), g = new THREE.Group();
+  const f = fillTank(g, tank, ['octopus']);
+  const mesh = g.children.find((c) => c.isInstancedMesh), ink = g.children.find((c) => c.isMesh && !c.isInstancedMesh);
+  const m = new THREE.Matrix4(), p = new THREE.Vector3();
+  let low = 0, high = 0, inked = 0;
+  for (let t = 0; t < 120; t += 0.1) {
+    f.tick(t);
+    mesh.getMatrixAt(0, m);
+    p.setFromMatrixPosition(m);
+    assert.ok(Math.abs(p.x) <= W.hx && Math.abs(p.z) <= W.hz && p.y >= W.y0 - 1e-6 && p.y < W.y1, `in the water at ${t.toFixed(1)}s`);
+    if (p.y < W.y0 + 0.01) low++; else if (p.y > W.y0 + (W.y1 - W.y0) * 0.5) high++;
+    if (ink.visible) inked++;
+  }
+  assert.ok(low > 600, 'mostly resting on the sand');
+  assert.ok(high > 10 && high < 300, `now and then up in the water (${high})`);
+  assert.ok(inked > 0, 'puffs ink sometimes');
+  f.dispose();
+  assert.equal(g.children.length, 0);
+});

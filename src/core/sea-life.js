@@ -149,12 +149,13 @@ function rod([ax, ay, az], [bx, by, bz], r0, r1, color) {
 
 // Both eyes, on the skin at (x, u): big and round, the friendly way the
 // game's people are drawn: a white, a coloured ring, a dark pupil and a
-// highlight that catches the light.
-function eyes(b, x, u, r, ring = '#3a2a1a', pupil = '#0d0f12') {
+// highlight that catches the light. `white`: the white of the eye (a shark's
+// and a beluga's are dark, so their eyes read as the real animal's).
+function eyes(b, x, u, r, ring = '#3a2a1a', pupil = '#0d0f12', white = '#f7f8f6') {
   const out = [];
   for (const side of [-1, 1]) {
     const [px, py, pz] = b.surf(x, u, side), o = side * r;
-    out.push(ball(r, '#f7f8f6', [px, py, pz - o * 0.3], [1, 1, 0.75], 14),
+    out.push(ball(r, white, [px, py, pz - o * 0.3], [1, 1, 0.75], 14),
       ball(r * 0.74, ring, [px + r * 0.08, py, pz + o * 0.2], [1, 1, 0.6], 12),
       ball(r * 0.48, pupil, [px + r * 0.12, py, pz + o * 0.34], [1, 1, 0.5], 10),
       ball(r * 0.2, '#ffffff', [px + r * 0.32, py + r * 0.3, pz + o * 0.5], [1, 1, 0.5], 6));
@@ -172,6 +173,17 @@ function mouth(b, x, u, w = 0.04, color = '#3a2420') {
   return out;
 }
 
+// A mouth line drawn on the skin through [[x, u], ...] on both sides (a
+// shark's crescent under the snout, a beluga's long smile).
+function lip(b, pts, w, color) {
+  const out = [];
+  for (const side of [-1, 1]) {
+    const p = pts.map(([x, u]) => b.surf(x, u, side));
+    for (let i = 0; i + 1 < p.length; i++) out.push(rod(p[i], p[i + 1], w, w, color));
+  }
+  return out;
+}
+
 // Pectoral fins: an outline hanging from the shoulder (side view, relative
 // to the root), splayed out from the body by `spread`.
 function pectorals(pts, color, x, y, z, spread = 0.7, opts = {}) {
@@ -182,7 +194,7 @@ const inBand = (v, a, c, soft = 0.012) => smooth(a - soft, a + soft, v) * (1 - s
 
 // For core/tank-species.js, which draws the rest of the fishing catalogue
 // the same way.
-export const parts = { lerp, clamp01, smooth, mix, finish, body, fin, flatFin, ball, rod, eyes, mouth, pectorals, inBand };
+export const parts = { lerp, clamp01, smooth, mix, finish, body, fin, flatFin, ball, rod, eyes, mouth, lip, pectorals, inBand };
 
 // ---- the species ----
 // Each builds its parts; `mode` is how it swims (see BEND), `hz` how fast
@@ -327,14 +339,18 @@ const SPECIES = {
   } },
   // Blacktip reef shark: grey above, white below, a tall swept dorsal fin
   // with a black tip, big pectorals and the long upper lobe of the tail.
+  // The eyes as on a real shark: small and dark, on the side of the head
+  // about a third of the way from the snout to the gills, above the front of
+  // the crescent mouth under the snout (not the shared fish eye up top).
   shark: { mode: 'fish', hz: 2.6, amp: 0.07, build() {
-    const b = body({ x0: -0.25, H: 0.21, W: 0.2, peak: 0.58, ped: 0.18, nose: 2.6, color: (x, y, z, u) => {
+    const b = body({ x0: -0.25, H: 0.21, W: 0.2, peak: 0.58, ped: 0.18, nose: 2.1, color: (x, y, z, u) => {
       const base = mix('#f2f4f5', '#7a8894', smooth(-0.3, 0.05, u));
       const gill = smooth(0.4, 0.8, Math.sin(x * 160)) * inBand(x, 0.24, 0.33, 0.005) * inBand(u, -0.3, 0.35, 0.05);
       return base.lerp(new THREE.Color('#4e5962'), 0.8 * gill);
     } });
     const grey = '#7a8894', tip = '#15181b';
-    return [b.geo, ...eyes(b, 0.37, 0.22, 0.03, '#2a2f33'), ...mouth(b, 0.42, -0.45, 0.06, '#5a5258'),
+    return [b.geo, ...eyes(b, 0.425, 0.08, 0.02, '#15181b', '#050607', '#3a4248'),
+      ...lip(b, [[0.455, -0.97], [0.44, -0.88], [0.42, -0.76], [0.395, -0.62], [0.37, -0.52]], 0.0045, '#3a3236'),
       ...fin([[0.16, 0.08], [0.02, 0.3], [-0.01, 0.29], [0.02, 0.17], [-0.04, 0.08]], grey, { tip: '#15181b', rays: false }),
       ...fin([[-0.19, 0.05], [-0.21, 0.1], [-0.15, 0.05]], grey, { rays: false }),
       ...fin([[-0.17, -0.05], [-0.19, -0.09], [-0.13, -0.05]], '#c9d0d5', { rays: false }),
