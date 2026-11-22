@@ -8,6 +8,7 @@
 // seat: false, true (one person), 2 (two side by side), 'floor' (two
 // floor cushions) or 'bed' (two lie down); see furnitureSeats in furniture.js.
 import * as THREE from 'three';
+import { APPLIANCES } from './appliances.js';
 
 export const SHOP_FURNITURE = [
   // --- Traditional: 전통 가구 ---
@@ -380,6 +381,8 @@ export const SHOP_FURNITURE = [
       box(0.05, len, 0.4 - (len > 0.8 ? 0 : 0.04), x, 1.5 - len / 2, 0, c);
     }
   }],
+  // --- Home appliances: 테헤란로, Gangnam (core/appliances.js) ---
+  ...APPLIANCES,
 ];
 
 // The big flower quilt (꽃무늬 이불): big pink and red peonies with green

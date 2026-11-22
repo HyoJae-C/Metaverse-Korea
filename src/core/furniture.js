@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE } from './furniture-shop.js';
+import { APPLIANCE_KIND } from './appliances.js';
 import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
 import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
@@ -235,7 +236,7 @@ export const FURNITURE = [
   // "furniture"): only once you've bought one. Shades glow (unlit material).
   ...LAMPS.map(([id, emoji, size, name, build]) => ({ id, emoji, item: id, size, name, build })),
   // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
-  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
+  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name, ...(APPLIANCE_KIND[id] && { appliance: APPLIANCE_KIND[id] }), // (appliance: game/appliances.js)
     build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
   // Fish tanks from the KONEXT Aquarium shop (core/fish-tank.js): only once
   // bought; any home takes any tank that fits the room (Yozi 2026-11-18).
@@ -340,6 +341,11 @@ export const furnitureById = (id) => FURNITURE.find((f) => f.id === id) || photo
 // Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
 // shape interiors use (main.js sitDown). Long sofas and benches seat two side
 // by side, a bed lies two (Yozi 2026-11-16), floor cushions sit on the floor.
+// Pieces that rock (Yozi 2026-11-22): r, the rockers' radius, and y, the
+// height of their centre (game/rocking.js rolls the chair on them).
+const ROCKERS = { 'f-rocking': { r: 1.2, y: 1.22 } };
+// it.mesh: the piece as built (a home's piece gets it when the room is
+// laid; a shop's sample passes it), needed only by a rocking chair.
 export function furnitureSeats(it) {
   const f = furnitureById(it.id);
   const n = f?.lie || f?.seat;
@@ -356,7 +362,7 @@ export function furnitureSeats(it) {
   });
   return xs.map((lx) => {
     const [x, z] = at(lx, f.seatAt ?? 0.05);
-    return { x, z, ry: it.ry + (f.faceMirror ? Math.PI : 0), stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}) };
+    return { x, z, ry: it.ry + (f.faceMirror ? Math.PI : 0), stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}), ...(ROCKERS[it.id] ? { rock: { piece: it, ...ROCKERS[it.id] } } : {}) };
   });
 }
 
@@ -379,7 +385,7 @@ export function buildFurniture(id, { off = false } = {}) {
 // tops (height in metres) and the pieces small enough to go on them.
 export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7, 'f-low-table': 0.405 };
 const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
-  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel']);
+  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel', 'f-microwave']);
 export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);
 // The piece's place in a surface's own frame (x right, z front).
 const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };

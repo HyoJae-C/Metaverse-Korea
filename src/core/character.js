@@ -292,6 +292,9 @@ export function createCharacter(rawLook) {
       blob.position.y = 0.07 - Math.max(0, air);
       blob.scale.setScalar(Math.max(0.45, 1 - air * 0.25));
     },
+    // Rocking in a rocking chair (game/rocking.js): the whole body tipped
+    // forward by rx (radians) and moved by (y, z), in the root's own frame.
+    setRock(rx = 0, y = 0, z = 0) { rig.rotation.set(rx, 0, 0); rig.position.set(0, y, z); },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
       if (model) {

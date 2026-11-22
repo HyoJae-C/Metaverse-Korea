@@ -72,6 +72,7 @@ export function createDecor(game) {
     saveDecor();
     markPlaced();
     fillTanks();
+    if (appl || (!decor.guest && decor.items.some((i) => furnitureById(i.id)?.appliance === 'fridge'))) appliances().then((a) => a.refill(), () => {}); // (what's in the fridge, on its shelves)
   }
   // The fish in this room's tanks (core/tank-fish.js, loaded with the first
   // tank): mine from mk.tanks, a host's from the layout they sent.
@@ -91,6 +92,7 @@ export function createDecor(game) {
     }).catch(() => { tankFish = null; });
   }
   function tick(dt) {
+    appl?.tick(dt); // (appliance doors, a spinning washer)
     if (!swimming.length) return;
     swimT += dt;
     for (const f of swimming) f.tick(swimT);
@@ -152,6 +154,7 @@ export function createDecor(game) {
     for (const f of swimming) f.dispose();
     swimming = [];
     tankPanel?.close();
+    appl?.close();
     setDecorating(false);
     finish.close();
     hideFootprint();
@@ -494,8 +497,28 @@ export function createDecor(game) {
     await tankPanelLoading;
     if (decor && !decor.guest) tankPanel.open(id);
   }
-  // Walked away from the tank: close its panel.
+  // Home appliances (core/appliances.js): the fridge keeps drinks and food,
+  // the washer and the microwave run (game/appliances.js, loaded the first
+  // time a home has a fridge or one is used). Only in my own home.
+  let appl = null, applLoading = null;
+  const appliances = () => (applLoading ||= import('./appliances.js').then((m) => (appl = m.createAppliances(game, api))).catch((e) => { applLoading = null; throw e; }));
+  const APPL_ICON = { fridge: '🧊', washer: '🧺', microwave: '♨️' };
+  function applianceAct(p) {
+    if (!decor || decor.guest || decor.editing || decor.carry) return null;
+    let best = null, bd = Infinity;
+    for (const it of decor.items) {
+      const f = furnitureById(it.id);
+      if (!f.appliance) continue;
+      const d = Math.hypot(p.x - it.x, p.z - it.z);
+      if (d < Math.max(...f.size) / 2 + 0.9 && d < bd) { bd = d; best = it; }
+    }
+    if (!best) return null;
+    const kind = furnitureById(best.id).appliance; // (opens or runs at once, like watering a plant: carry and remove are in Decorate)
+    return { key: 'appl:' + best.id, now: true, label: APPL_ICON[kind] + ' ' + t(kind + '.use'), run: () => appliances().then((a) => a.use(best.id), () => {}) };
+  }
+  // Walked away from the tank (or the fridge): close its panel.
   function tankAway(p) {
+    appl?.away(p);
     if (!tankPanel?.isOpen) return;
     const it = decor?.items.find((i) => i.id === tankPanel.tankId);
     if (!it || Math.hypot(p.x - it.x, p.z - it.z) > Math.max(...tankById(it.id).size) / 2 + 1.6) tankPanel.close();
@@ -514,6 +537,6 @@ export function createDecor(game) {
   }
   $('grow-btn').onclick = () => grow().then((g) => g.open(), () => {});
   const api = { finish, visit, labelDecor, lampAct, plantAct, pieceActs, footprint: () => (footprint ? (footprint.userData.bad ? 'red' : 'green') : null), grid: () => !!floorGrid, openHome, openGuest, showLayout, layout, closeHome, get decor() { return decor; }, nearestPiece, putDown,
-    closePiece, openPiece, updateCarry, tankAct, tankAway, tick, sizeHome, unstick, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
+    closePiece, openPiece, updateCarry, tankAct, applianceAct, tankAway, tick, sizeHome, unstick, saveDecor: () => decor && saveDecor(), rebuildDecor: () => decor && rebuildDecor(), cleanLayout };
   return api;
 }

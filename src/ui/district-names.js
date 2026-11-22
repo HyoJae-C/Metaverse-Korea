@@ -8,6 +8,7 @@ export const DISTRICT_NAME = {
   jongmyo: { en: 'Jongmyo', ko: '종묘', ja: '宗廟', zh: '宗庙', es: 'Jongmyo', id: 'Jongmyo', ar: 'جونغميو', vi: 'Jongmyo', hi: 'जोंगम्यो', fr: 'Jongmyo', th: 'ชงมโย' },
   changdeokgung: { en: 'Changdeokgung', ko: '창덕궁', ja: '昌徳宮', zh: '昌德宫', es: 'Changdeokgung', id: 'Changdeokgung', ar: 'قصر تشانغدوكغونغ', vi: 'Changdeokgung', hi: 'चांगदेओकगुंग', fr: 'Changdeokgung', th: 'ชางด็อกกุง' },
   euljiro: { en: 'Euljiro', ko: '을지로', ja: '乙支路', zh: '乙支路', es: 'Euljiro', id: 'Euljiro', ar: 'أولجيرو', vi: 'Euljiro', hi: 'उलजीरो', fr: 'Euljiro', th: 'อึลจีโร' },
+  dongmyo: { en: 'Dongmyo', ko: '동묘', ja: '東廟', zh: '东庙', es: 'Dongmyo', id: 'Dongmyo', ar: 'دونغميو', vi: 'Dongmyo', hi: 'दोंगम्यो', fr: 'Dongmyo', th: 'ดงมโย' },
   myeongdong: { en: 'Myeongdong', ko: '명동', ja: '明洞', zh: '明洞', es: 'Myeongdong', id: 'Myeongdong', ar: 'ميونغدونغ', vi: 'Myeongdong', hi: 'म्योंगदोंग', fr: 'Myeongdong', th: 'มย็องดง' },
   'seoul-station': { en: 'Seoul Station', ko: '서울역', ja: 'ソウル駅', zh: '首尔站', es: 'Estación de Seúl', id: 'Stasiun Seoul', ar: 'محطة سيول', vi: 'Ga Seoul', hi: 'सियोल स्टेशन', fr: 'Gare de Séoul', th: 'สถานีโซล' },
   itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', ar: 'إيتايوون', vi: 'Itaewon', hi: 'इतेवॉन', fr: 'Itaewon', th: 'อิแทวอน' },

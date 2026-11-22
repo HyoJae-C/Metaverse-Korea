@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { addSpecies, parts } from './sea-life.js';
 
-const { lerp, smooth, mix, finish, body, fin, flatFin, ball, rod, eyes, mouth, pectorals, inBand } = parts;
+const { lerp, smooth, mix, finish, body, fin, flatFin, ball, rod, eyes, mouth, lip, pectorals, inBand } = parts;
 const col = (c) => new THREE.Color(c);
 
 // A dorsal fin along the top of the body from xa to xb, `h` tall.
@@ -178,9 +178,12 @@ const MORE = {
       ...tail(-0.3, 'round', 0.8, '#e8a8b0'), ...pectorals([[0, 0], [-0.02, -0.08], [-0.09, -0.08]], '#e8a8b0', 0.2, -0.1, 0.18, 1)];
   }),
   // ---- big swimmers ----
+  // A real beluga's eyes are small and dark, low on the head just behind and
+  // above the corner of its long, upturned mouth (below the melon).
   beluga: def('whale', 1.8, 0.06, () => {
     const b = body({ x0: -0.32, H: 0.24, W: 0.24, peak: 0.5, ped: 0.15, nose: 2.6, hf: (t) => 1 - 0.12 * smooth(0.8, 0.88, t) * (1 - smooth(0.92, 1, t)), color: (x, y, z, u) => mix('#f2f6f8', '#dce6ec', smooth(-0.5, 0.8, u)) });
-    return [b.geo, ...eyes(b, 0.34, 0.08, 0.025, '#3a4a5a'), ...mouth(b, 0.47, -0.3, 0.07, '#8a9aa8'),
+    return [b.geo, ...eyes(b, 0.375, -0.12, 0.018, '#1e262e', '#06080a', '#4a5866'),
+      ...lip(b, [[0.488, -0.42], [0.47, -0.36], [0.445, -0.3], [0.415, -0.24], [0.395, -0.2]], 0.004, '#8a9aa8'),
       ...flatFin([[-0.3, 0], [-0.42, 0.15], [-0.48, 0.16], [-0.44, 0.04], [-0.46, 0], [-0.44, -0.04], [-0.48, -0.16], [-0.42, -0.15]], '#e0e8ee', [0, 0, 0], { thick: 0.014 }),
       ...pectorals([[0, 0], [-0.03, -0.1], [-0.08, -0.1], [-0.05, 0]], '#e0e8ee', 0.22, -0.07, 0.09, 0.9, { rays: false, thick: 0.012 })];
   }),
