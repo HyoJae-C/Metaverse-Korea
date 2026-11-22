@@ -3074,6 +3074,22 @@
       ]
     },
     {
+      "id": "sewoon-electronics",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1329, -638.5],
+      "district": "euljiro",
+      "name": {"ko": "세운 전자상회", "en": "Sewoon Electronics", "ja": "世運電子商会", "zh": "世运电子商会"},
+      "tagline": {"en": "Home appliances from the old electronics arcade: a fridge, a washer, a microwave", "ko": "전자상가의 가전 가게, 냉장고·세탁기·전자레인지", "ja": "電子商街の家電店：冷蔵庫・洗濯機・電子レンジ", "zh": "电子商街的家电店：冰箱、洗衣机、微波炉"},
+      "why": "Fictional shop in the real Sewoon Sangga electronics arcade (the Daerim part between Cheonggyecheon and Eulji-ro), on its Cheonggyecheon-ro side. Real point 37.5672, 126.9957 is toGame (-1324, -629): the door is 11 m from it, inside the 15 m point rule (Yozi 2026-11-22: home appliances like a fridge and a washer).",
+      "colors": {"sign": "#2a5d8a", "awning": "#d9eef8", "accent": "#f4fafd"},
+      "products": [
+        {"id": "buy-f-fridge", "model": "furniture", "furniture": "f-fridge", "color": "#f3e5c8", "name": {"en": "Side-by-side fridge", "ko": "양문형 냉장고", "ja": "両開き冷蔵庫", "zh": "对开门冰箱"}, "price": 250000, "desc": {"en": "A sage green fridge with two doors that really open. Keep drinks, takeout and dishes in it: walk up to it at home.", "ko": "정말 열리는 문 두 개의 세이지색 냉장고예요. 집에서 다가가면 음료·포장 음식·요리를 넣어 둘 수 있어요."}},
+        {"id": "buy-f-washer", "model": "furniture", "furniture": "f-washer", "color": "#f3e5c8", "name": {"en": "Front-loading washer", "ko": "드럼 세탁기", "ja": "ドラム式洗濯機", "zh": "滚筒洗衣机"}, "price": 200000, "desc": {"en": "A white drum washer. Walk up to it at home to do the laundry: the drum really spins.", "ko": "하얀 드럼 세탁기예요. 집에서 다가가 빨래를 돌리면 드럼이 정말 돌아가요."}},
+        {"id": "buy-f-microwave", "model": "furniture", "furniture": "f-microwave", "color": "#f3e5c8", "name": {"en": "Microwave", "ko": "전자레인지", "ja": "電子レンジ", "zh": "微波炉"}, "price": 60000, "desc": {"en": "A small microwave that fits on a table or desk. It hums with the light on, then dings.", "ko": "테이블이나 책상 위에 올라가는 작은 전자레인지예요. 불이 켜진 채 웅 돌다가 띵 하고 끝나요."}}
+      ]
+    },
+    {
       "id": "hanok-jimulpo",
       "category": "lifestyle",
       "size": "small",

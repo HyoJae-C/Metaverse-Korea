@@ -41,8 +41,8 @@ test('the Euljiro furniture shops: every new piece is an item, sold in exactly o
   const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds'].includes(s.id));
-  assert.equal(shops.length, 8);
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds', 'sewoon-electronics'].includes(s.id));
+  assert.equal(shops.length, 9);
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
   for (const [id] of SHOP_FURNITURE_IDS) {
