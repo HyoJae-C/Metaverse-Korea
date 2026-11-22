@@ -535,6 +535,7 @@ export const ID = {
   'home.putDown': 'Taruh',
   'home.remove': 'Singkirkan',
   'home.blocked': 'Ada yang menghalangi. Geser sedikit lalu taruh lagi.',
+  'home.dividerGap': 'Sisakan celah untuk lewat di samping sekat (sekitar 80 cm).',
   'home.noRoom': "Tidak cukup ruang di sini",
   'home.lie': 'Berbaring',
   'home.lampOn': 'Nyalakan lampu',

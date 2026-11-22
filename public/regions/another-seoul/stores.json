@@ -3135,7 +3135,7 @@
       "id": "neugeut-afternoon",
       "category": "lifestyle",
       "size": "small",
-      "at": [-1258.9, -517.6],
+      "at": [-1260.3, -536.8],
       "sign": {"shape": "tall"},
       "district": "euljiro",
       "name": {"ko": "느긋한 오후", "en": "Slow Afternoon", "ja": "のんびり午後", "zh": "悠闲午后"},
@@ -3183,6 +3183,23 @@
       "products": [
         {"id": "buy-f-vanity", "model": "furniture", "furniture": "f-vanity", "color": "#f3e5c8", "name": {"en": "Vanity with a stool", "ko": "화장대와 의자", "ja": "スツール付きドレッサー", "zh": "梳妆台和凳子"}, "price": 170000, "desc": {"en": "A white vanity with a bulb-lit oval mirror and a round pink stool. Sit down and face the mirror.", "ko": "전구가 둘린 타원 거울과 동그란 분홍 의자가 있는 하얀 화장대예요. 앉으면 거울을 봐요."}},
         {"id": "buy-f-clothes-rack", "model": "furniture", "furniture": "f-clothes-rack", "color": "#f3e5c8", "name": {"en": "Clothes rack", "ko": "옷걸이 행거", "ja": "ハンガーラック", "zh": "衣架"}, "price": 60000, "desc": {"en": "A chrome rack with shirts, a coat and a dress on hangers, and shoes on the shelf below.", "ko": "셔츠·코트·원피스가 걸리고 아래 선반에 신발이 놓인 크롬 행거예요."}}
+      ]
+    },
+    {
+      "id": "eulji-divider",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1258.8, -517.5],
+      "sign": {"shape": "tall"},
+      "district": "euljiro",
+      "name": {"ko": "을지 칸막이", "en": "Eulji Room Dividers", "ja": "乙支 間仕切り", "zh": "乙支隔断"},
+      "tagline": {"en": "Room dividers: split your room into corners of its own", "ko": "방을 나눠 나만의 공간을, 파티션 전문", "ja": "部屋を仕切って自分だけのコーナーを", "zh": "隔出属于自己的小角落"},
+      "why": "Fictional shop on the real Euljiro furniture street, east side of Changgyeonggung-ro, between the wallpaper shops (Yozi 2026-11-22: partitions to split a room).",
+      "colors": {"sign": "#6a4a2e", "awning": "#efe2cc", "accent": "#fbf6ee"},
+      "products": [
+        {"id": "buy-f-part-slat", "model": "furniture", "furniture": "f-part-slat", "color": "#f3e5c8", "name": {"en": "Oak slat divider", "ko": "원목 슬랫 파티션", "ja": "オーク材のスラット間仕切り", "zh": "橡木格栅隔断"}, "price": 140000, "desc": {"en": "Oak slats with gaps between: it splits the room but still lets the light through.", "ko": "틈을 두고 세운 원목 살이에요. 방은 나뉘어도 빛은 지나가요."}},
+        {"id": "buy-f-part-rattan", "model": "furniture", "furniture": "f-part-rattan", "color": "#f3e5c8", "name": {"en": "Rattan folding divider", "ko": "라탄 3폭 파티션", "ja": "ラタンの三つ折り衝立", "zh": "藤编三折屏风"}, "price": 110000, "desc": {"en": "Three cane-woven panels that fold in a zigzag. A soft corner for a bed or a dressing table.", "ko": "지그재그로 접히는 라탄 세 폭이에요. 침대나 화장대 쪽을 살짝 가려 줘요."}},
+        {"id": "buy-f-part-shelf", "model": "furniture", "furniture": "f-part-shelf", "color": "#f3e5c8", "name": {"en": "Open bookcase divider", "ko": "오픈 책장 파티션", "ja": "オープン本棚の間仕切り", "zh": "开放式书架隔断"}, "price": 170000, "desc": {"en": "An open bookcase that stands in the middle of the room, with books and a plant on both sides.", "ko": "방 한가운데 세우는 뚫린 책장이에요. 양쪽에서 책과 화분이 보여요."}}
       ]
     },
     {"id": "info-bukchon", "category": "info", "workshop": "info", "size": "small", "district": "bukchon", "front": "hanok", "at": [-1522.4, -910.8], "name": {"en": "Bukchon Information Center", "ko": "북촌 안내센터", "ja": "北村インフォメーションセンター", "zh": "北村信息中心"}, "tagline": {"en": "Two guides: how the game works, and Bukchon's alleys and manners", "ko": "게임 안내와 북촌 골목·방문 예절 안내, 두 명의 안내원", "ja": "ゲーム案内と北村の路地・マナー案内の2人がご案内", "zh": "两位向导：游戏玩法，以及北村的小巷和礼仪"}, "colors": {"sign": "#2f6fd6", "awning": "#cfe2ff", "accent": "#f2f7ff"}, "products": []},
