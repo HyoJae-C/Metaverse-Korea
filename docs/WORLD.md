@@ -1141,8 +1141,10 @@ middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
   sides) and in a list on the screen that its button opens and closes.
   Points are a personal best on this device (no coins). Other skaters' jumps
   are sent as a short code (`st.ik`) and played back.
-- **Skating as a pair** (`src/game/ice-pair.js`, friends only): next to a
-  friend on the ice a button offers "hold hands" or "push from behind"; the
+- **Skating as a pair** (`src/game/ice-pair.js`, friends only): the 🤝 button is
+  always there on the ice; within 5 m of a friend it names them and offers
+  "hold hands" or "push from behind" (otherwise a tap says what is missing:
+  come closer, be friends first, or no friend on the ice); the
   friend says yes or no, as with the tandem bike. The one who asked leads
   and steers; the other is carried at their right hand, or crouched just in
   front on their own skates (there is no sled). Either can let go with the
