@@ -1,7 +1,7 @@
 // Fishing contest with a friend (낚시 내기): the game side. Rules and the
 // messages are in core/fish-contest.js.
 //
-// In a Han River park, with a friend a few steps away, a 🎣 Fishing contest
+// In a Han River park with fishing spots (not Yeouido), with a friend a few steps away, a 🎣 Fishing contest
 // button shows (in the more-actions list and in the fishing panel). The
 // friend gets a notice and the same button, now "Accept"; both count 3-2-1
 // and fish for three minutes. A chip at the top shows the time and both
@@ -9,7 +9,7 @@
 // count). Walking out of the park, or the friend leaving, ends it.
 //
 // game: { myId, others(), send(msg), isFriend(name), blocked(id, name),
-//   park(): the Han River park I'm in (or null), toast(msg), sfx,
+//   park(): the Han River park I'm in (or null; its `fishing` spots), toast(msg), sfx,
 //   chip: the HUD chip, cheer(), bubble(text), peerBubble(id, text),
 //   refreshFishing() (redraw the fishing panel's buttons), myName() }
 //
@@ -34,14 +34,17 @@ export function createFishContest(game) {
     if (!f) return '🐟';
     return getLanguage() === 'ko' ? f.ko : localName(f.name, getLanguage());
   };
+  // Only in a park with fishing spots: Yeouido Han River Park is a
+  // no-fishing area (core/fishing.js PARK_FISH), so no contest there either.
+  const fishable = () => (game.park()?.fishing?.length || 0) > 0;
   // Friends close enough to ask, closest first.
   function friendsNear(p) {
-    if (!game.park()) return [];
+    if (!fishable()) return [];
     return game.others().nearbyFree(p.x, p.z, ASK_RADIUS).filter((o) => game.isFriend(o.name) && !game.blocked(o.id, o.name));
   }
   // Anyone near who asked me (friends only).
   function askerNear(p) {
-    if (!game.park()) return null;
+    if (!fishable()) return null;
     for (const o of game.others().nearbyFree(p.x, p.z, ASK_RADIUS)) if (contest.asked(o.id) && game.isFriend(o.name)) return o;
     return null;
   }
