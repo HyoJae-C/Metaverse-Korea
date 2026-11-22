@@ -5,7 +5,7 @@
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/ice-pair.mjs http://localhost:4173/ [screenshot dir]
 // Realtime runs on a fake server in this script (fake-realtime.mjs).
-import { chromium } from 'playwright';
+import { chromium, devices } from 'playwright';
 import { useFakeRealtime, summary, log as rtLog } from './fake-realtime.mjs';
 
 const url = process.argv[2] || 'http://localhost:4173/';
@@ -26,7 +26,8 @@ let step = 'joining';
 async function join(name) {
   const browser = await launch();
   browsers.push(browser);
-  const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
+  // E2E_PHONE=1: both on a phone (the button has to be on the screen there too).
+  const ctx = await browser.newContext(process.env.E2E_PHONE ? { ...devices['iPhone 13'] } : { viewport: { width: 900, height: 640 } });
   if (!bridge) await useFakeRealtime(ctx, name);
   const page = await ctx.newPage();
   if (bridge) {
@@ -93,12 +94,21 @@ try {
   step = 'strangers cannot ask';
   await a.waitForTimeout(1500);
   if ((await dbg(a)).near) throw new Error('a stranger was offered');
+  // The button is there all the same, and says why when tapped.
+  if (!(await a.isVisible('#ice-pair')) || (await a.textContent('#ice-pair')).includes('Ice B')) throw new Error('the faint 🤝 button is missing, or names a stranger');
+  await a.click('#ice-pair');
+  await a.waitForFunction(() => /friend/i.test(document.getElementById('toast')?.textContent || ''), null, { timeout: 3000 });
+  if (await a.isVisible('#ice-pair-panel')) throw new Error('a stranger got the menu');
+  if (shotDir) await a.screenshot({ path: `${shotDir}/pair-hint.png` });
+
+  step = 'a friend 4 m away can be asked (5 m reach)';
+  await b.evaluate(() => __mk.place(14, -2));
 
   step = 'friends: A asks B to skate hand in hand, B says yes';
   await a.evaluate(() => __mk.giftFriends(['Ice B']));
   await b.evaluate(() => __mk.giftFriends(['Ice A']));
   await a.waitForFunction(() => __mk.iceRink.pair.debug().near, null, { timeout: 10000 });
-  if (!(await a.isVisible('#ice-pair'))) throw new Error('no 🤝 button');
+  if (!(await a.textContent('#ice-pair')).includes('Ice B')) throw new Error('the 🤝 button does not name the friend');
   await a.click('#ice-pair');
   await a.waitForSelector('#ice-pair-panel button', { timeout: 3000 });
   if (shotDir) await a.screenshot({ path: shotDir + '/pair-menu.png' });
