@@ -24,7 +24,7 @@ export function createCookingClasses(game) {
       root: $('kimchi-panel'),
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
-      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook', !!medal); game.me.play(medal ? 'cheer' : 'wave'); },
       onJar: (score) => dish(kimchiJar(score, localName(KIMCHI_TEXT.item, 'en'))),
     });
   });
@@ -51,7 +51,7 @@ export function createCookingClasses(game) {
       root: $('japchae-panel'),
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
-      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook', !!medal); game.me.play(medal ? 'cheer' : 'wave'); },
       onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(JAPCHAE_TEXT.item, 'en'), icon: '🍝', g: 'japchae', q: score }),
     });
   });
@@ -62,7 +62,7 @@ export function createCookingClasses(game) {
       root: $('kimbap-panel'),
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
-      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook', !!medal); game.me.play(medal ? 'cheer' : 'wave'); },
       onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(KIMBAP_TEXT.item, 'en'), icon: '🍙', g: 'kimbap', q: score }),
     });
   });
@@ -78,7 +78,7 @@ export function createCookingClasses(game) {
       lines: c.lines,
       wallet,
       onSay: (line) => game.clerk && say(game.clerk, $('labels'), line),
-      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); game.me.play(medal ? 'cheer' : 'wave'); },
+      onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook', !!medal); game.me.play(medal ? 'cheer' : 'wave'); },
       onBox: (score) => dish({ kind: 'gift', sips: 1, name: localName(c.text.item, 'en'), icon: c.game.icon, g: c.game.id, q: score }),
     });
   });
