@@ -603,6 +603,8 @@ export const KO = {
   'shop.leave': '나가기',
   'shop.sit': '앉기',
   'shop.stand': '일어나기',
+  'rock.on': '흔들기',
+  'rock.off': '그만 흔들기',
   'shop.exit': '나가기',
   'shop.sample': '예시 매장 · 가상 브랜드',
   'shop.tryOn': '입어 보기',

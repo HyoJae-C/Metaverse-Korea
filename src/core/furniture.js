@@ -339,6 +339,11 @@ export const furnitureById = (id) => FURNITURE.find((f) => f.id === id) || photo
 // Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
 // shape interiors use (main.js sitDown). Long sofas and benches seat two side
 // by side, a bed lies two (Yozi 2026-11-16), floor cushions sit on the floor.
+// Pieces that rock (Yozi 2026-11-22): r, the rockers' radius, and y, the
+// height of their centre (game/rocking.js rolls the chair on them).
+const ROCKERS = { 'f-rocking': { r: 1.2, y: 1.22 } };
+// it.mesh: the piece as built (a home's piece gets it when the room is
+// laid; a shop's sample passes it), needed only by a rocking chair.
 export function furnitureSeats(it) {
   const f = furnitureById(it.id);
   const n = f?.lie || f?.seat;
@@ -355,7 +360,7 @@ export function furnitureSeats(it) {
   });
   return xs.map((lx) => {
     const [x, z] = at(lx, 0.05);
-    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}) };
+    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}), ...(ROCKERS[it.id] ? { rock: { piece: it, ...ROCKERS[it.id] } } : {}) };
   });
 }
 

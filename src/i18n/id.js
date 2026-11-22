@@ -603,6 +603,8 @@ export const ID = {
   'shop.leave': 'Keluar',
   'shop.sit': 'Duduk',
   'shop.stand': 'Berdiri',
+  'rock.on': 'Bergoyang',
+  'rock.off': 'Berhenti bergoyang',
   'shop.exit': 'Keluar',
   'shop.sample': 'Toko contoh · merek fiksi',
   'shop.tryOn': 'Coba pakai',

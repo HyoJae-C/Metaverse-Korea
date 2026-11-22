@@ -601,6 +601,8 @@ export const TH = {
   'shop.leave': 'ทางออก',
   'shop.sit': 'นั่ง',
   'shop.stand': 'ลุกขึ้น',
+  'rock.on': 'โยกเก้าอี้',
+  'rock.off': 'หยุดโยก',
   'shop.exit': 'ทางออก',
   'shop.sample': 'ร้านตัวอย่าง · แบรนด์สมมุติ',
   'shop.tryOn': 'ลองใส่',

@@ -603,6 +603,8 @@ export const ZH = {
   'shop.leave': '离开',
   'shop.sit': '坐下',
   'shop.stand': '站起来',
+  'rock.on': '摇一摇',
+  'rock.off': '停止摇晃',
   'shop.exit': '离开',
   'shop.sample': '示例商店 · 虚构品牌',
   'shop.tryOn': '试穿',

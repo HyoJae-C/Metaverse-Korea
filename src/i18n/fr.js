@@ -601,6 +601,8 @@ export const FR = {
   'shop.leave': 'Sortir',
   'shop.sit': 'S\'asseoir',
   'shop.stand': 'Se lever',
+  'rock.on': 'Se balancer',
+  'rock.off': 'Arrêter de se balancer',
   'shop.exit': 'Sortie',
   'shop.sample': 'Boutique exemple · marque fictive',
   'shop.tryOn': 'Essayer',
