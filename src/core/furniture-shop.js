@@ -299,7 +299,7 @@ export const SHOP_FURNITURE = [
     box(0.46, 0.2, 0.01, 0, 0.4, 0.255, '#c8b48a'); // speaker grille
     box(0.3, 0.06, 0.06, 0, 0.6, 0.27, '#c0c4ca'); // buttons
   }],
-  // --- Home appliances: 세운상가 (core/appliances.js) ---
+  // --- Home appliances: 테헤란로, Gangnam (core/appliances.js) ---
   ...APPLIANCES,
 ];
 

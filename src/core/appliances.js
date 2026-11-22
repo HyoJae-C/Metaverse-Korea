@@ -1,5 +1,5 @@
 // Home appliances (Yozi 2026-11-22: the basics every home has, a fridge and a
-// washing machine): sold at an electronics shop in Sewoon Sangga and placed
+// washing machine): sold at an appliance shop on Teheran-ro in Gangnam and placed
 // with Decorate like the Euljiro furniture (core/furniture-shop.js format).
 // Their doors open on hinges: every door is a group turned about its hinge
 // (userData.door: the angle it opens to), so game/appliances.js only turns

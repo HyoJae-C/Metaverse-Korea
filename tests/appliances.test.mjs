@@ -49,7 +49,7 @@ test('a full bag keeps the thing in the fridge', async () => {
   assert.equal(fridge.list().length, 1);
 });
 
-test('fridge, washer and microwave: shop furniture with doors on hinges, sold at Sewoon Electronics', async () => {
+test('fridge, washer and microwave: shop furniture with doors on hinges, sold at Teheran Appliance Mart', async () => {
   const { buildFurniture, furnitureById, isSmall } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const { fridgeSlots, FRIDGE_MAX } = await import('../src/core/appliances.js');
@@ -69,7 +69,7 @@ test('fridge, washer and microwave: shop furniture with doors on hinges, sold at
   const [w, d] = furnitureById('f-fridge').size;
   assert.equal(fridgeSlots().length, FRIDGE_MAX);
   for (const [x, , z] of fridgeSlots()) assert.ok(Math.abs(x) < w / 2 - 0.05 && Math.abs(z) < d / 2, `${x},${z}`);
-  const shop = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores.find((s) => s.id === 'sewoon-electronics');
+  const shop = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores.find((s) => s.id === 'teheran-appliances');
   assert.deepEqual(shop.products.map((p) => p.furniture), Object.keys(want));
   for (const p of shop.products) assert.ok(p.price > 0);
 });
