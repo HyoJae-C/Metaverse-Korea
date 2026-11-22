@@ -3030,3 +3030,17 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .farm-now-cell.thirsty { border-color: #5aa7e0; background: #eef7ff; }
 .farm-now-cell.ripe { border-color: #e0a422; background: #fff3cf; }
 .farm-now-water { opacity: 0.7; }
+/* A friend request waiting for an answer (ui/friend-ask-ui.js). */
+.friend-ask {
+  position: absolute; z-index: 6; left: 50%; transform: translateX(-50%);
+  top: calc(max(12px, env(safe-area-inset-top)) + 112px); /* under the top buttons (two rows on a phone, the toolbar on a PC) */
+  width: min(420px, calc(100vw - 24px)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--panel); border-radius: 18px; box-shadow: var(--shadow);
+}
+.friend-ask[hidden], #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .friend-ask { display: none; }
+.friend-ask-text { all: unset; flex: 1; min-width: 0; display: grid; cursor: pointer; }
+.friend-ask-text b { font-size: 14px; overflow-wrap: anywhere; }
+.friend-ask-text small { font-size: 12px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-ask-text small.here { color: #2f8a5c; font-weight: 700; }
+.friend-ask .chip { flex: none; width: auto; margin: 0; padding: 4px 12px; min-height: 34px; }

@@ -10,7 +10,8 @@
 // sent at all: the line goes only to the priest on this device
 // (core/confession-room.js), never into the chat log or any save.
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
-import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
+import { FRIEND_TEXT, FriendsUI } from '../ui/friends-ui.js';
+import { FriendAskCard } from '../ui/friend-ask-ui.js';
 import { NOTICE_LABEL, NoticeFeed, PinnedNotices, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
 import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
@@ -111,6 +112,7 @@ export function createChat(game) {
     $('person-name').textContent = name;
     refreshPersonFriend();
     $('person-menu').hidden = false;
+    if (friendBackend) refreshFriends(); // (the Add / Accept button follows the newest list)
   }
   function blockPerson(report) {
     if (!personFor) return;
@@ -333,34 +335,28 @@ export function createChat(game) {
       friendList = { friends: [], incoming: [], outgoing: [] };
       friendsUi.loaded.clear();
       refreshFriends.primed = false;
-      knownRequests = null;
       stopFriendWatch = want ? want.watch(onFriendMessage, () => refreshFriends()) : null;
       if (want) setTimeout(refreshFriends, 0);
     }
     return friendBackend;
   }
-  let knownRequests = null; // uids of requests already seen (null = first load)
+  // Several pushes close together (requests from several people) start
+  // several list() calls; only the newest answer counts, so an older one
+  // landing last can't put back a list that misses a request.
+  let refreshSeq = 0;
   async function refreshFriends() {
     const st = friendStore();
     if (!st) return;
+    const seq = ++refreshSeq;
     const r = await st.list();
+    if (seq !== refreshSeq) return;
     if (r.error || st !== friendBackend) { friendsUi.update(); return; }
     // Hide people I've blocked.
     const ok = (f) => !safety.isBlocked(null, f.name);
     friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
     game.net?.refilter?.(); // on the street only friends are shown (net/area.js)
-    const seen = new Set(friendList.incoming.map((f) => f.uid));
-    // A new request: say who, and if they're around me, where — and make
-    // them easy to spot (their name tag glows, a 👋 pops over their head).
-    if (knownRequests) {
-      for (const f of friendList.incoming) {
-        if (knownRequests.has(f.uid)) continue;
-        const at = locatePlayer(f.name);
-        if (at) game.others.ping(at.id);
-        game.shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }) + (at ? ' 📍 ' + whereText(at) : ''));
-      }
-    }
-    knownRequests = seen;
+    // A request stays on screen as a card with Accept on it (ui/friend-ask-ui.js).
+    friendAsk.update(friendList.incoming);
     if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
     // Fetch the newest lines of each chat once, for unread counts and previews.
     if (!refreshFriends.primed) {
@@ -439,8 +435,21 @@ export function createChat(game) {
       return body ? sendFriend(key, body) : false;
     },
   });
+  const friendAsk = new FriendAskCard($('hud'), {
+    accept: async (uid, name) => {
+      const st = friendStore();
+      if (!st) return 'none';
+      const r = await st.accept(uid);
+      friendsUi._result(r, name);
+      return r;
+    },
+    open: () => { closeChat(); friendsUi.show(null); },
+    locate: (name) => locatePlayer(name),
+    ping: (id) => game.others.ping(id),
+    sound: () => { try { game.sfx.pop?.(); } catch { /* sound not set up yet */ } },
+  });
   function refreshFriendBadge() {
-    const n = friendInbox?.totalUnread() || 0;
+    const n = (friendInbox?.totalUnread() || 0) + friendList.incoming.length; // (a request waits here too)
     $('chat-unread').hidden = !n;
     $('chat-unread').textContent = n > 99 ? '99+' : String(n);
     $('friends-dot').hidden = !(n || friendList.incoming.length);

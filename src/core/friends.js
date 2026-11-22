@@ -45,6 +45,14 @@ export function whereIs(from, to, forward) {
   return { m, dir: b > 0 ? 'right' : 'left' };
 }
 
+// Which friend request the on-screen card asks about: the oldest one I
+// haven't put off ("Later"), and how many more are waiting behind it.
+// incoming: [{ uid, name }] as list() gives it; skipped: a Set of uids.
+export function nextAsk(incoming, skipped = new Set()) {
+  const open = (incoming || []).filter((f) => f && !skipped.has(f.uid));
+  return open.length ? { ask: open[0], more: open.length - 1 } : null;
+}
+
 // Conversations held in memory: merges history and live messages without
 // doubles, and counts what I haven't read. readMarks: { key: last read id }
 // (kept by the caller so it survives a reload).
