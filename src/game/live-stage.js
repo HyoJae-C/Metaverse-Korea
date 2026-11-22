@@ -5,6 +5,14 @@
 import { t } from '../core/i18n.js';
 import { LIVE_PREFIX } from '../core/live-rules.js';
 
+// Closed for now (2026-11-22): the voice wasn't reaching listeners (STUN only,
+// no TURN relay). The door shows "Temporarily closed" (live.closed) and the
+// café is left out of missions and errands. Set false to open it again.
+export const LIVE_CAFE_CLOSED = true;
+export const LIVE_CAFE_ID = 'open-mic-live-cafe';
+// A store, or a store id (a saved errand's target).
+export const placeClosed = (s) => LIVE_CAFE_CLOSED && (typeof s === 'string' ? s === LIVE_CAFE_ID : s?.workshop === 'livecafe');
+
 export function createLiveStage(game) {
   let voice = null;
   let loading = null;

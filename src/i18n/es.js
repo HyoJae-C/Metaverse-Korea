@@ -867,6 +867,7 @@ export const ES = {
   "live.taken": "{name} está en el escenario. Espera tu turno.",
   "live.newbie": "Las cuentas nuevas pueden cantar desde el segundo día. Ya puedes escuchar.",
   "live.noVoice": "Este navegador no puede enviar ni reproducir voz en directo.",
+  "live.closed": "El Open Mic Live Café está cerrado temporalmente. ¡Hasta pronto!",
   "live.performing": "{name} está cantando",
   "live.muted": "(micro silenciado)",
   "live.hearOff": "Silenciar para mí",

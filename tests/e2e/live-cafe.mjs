@@ -1,4 +1,6 @@
 // End-to-end check: Sinchon's live café. Two players in the café; one steps
+// (While game/live-stage.js LIVE_CAFE_CLOSED is true the door only shows
+// "temporarily closed", so this check fails until the café opens again.)
 // up to the mic (a fake microphone) and sings, the other hears it; mute shows
 // on the listener's side; the listener joins the line; the singer steps down
 // and the voice stops. Someone outside the café never gets the voice.

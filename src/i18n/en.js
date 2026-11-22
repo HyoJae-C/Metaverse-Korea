@@ -873,6 +873,7 @@ export const EN = {
   "live.taken": "{name} is on stage now. Wait for your turn.",
   "live.newbie": "New accounts can sing from their second day. You can listen now.",
   "live.noVoice": "This browser can't send or play live voice.",
+  "live.closed": "The Open Mic Live Café is temporarily closed. See you again soon!",
   "live.performing": "{name} is singing",
   "live.muted": "(mic muted)",
   "live.hearOff": "Mute for me",

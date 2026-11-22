@@ -246,7 +246,7 @@ import { createDecor } from './game/decor.js';
 import { createClubs } from './game/clubs.js';
 import { createMusicCafe } from './game/music-cafe.js';
 import { createListeningBar, LISTEN_TEXT, nearestStation } from './game/listening-bar.js';
-import { createLiveStage } from './game/live-stage.js';
+import { createLiveStage, placeClosed } from './game/live-stage.js';
 import { createHatWorkshop } from './game/hat-workshop.js';
 import { createDelivery } from './game/delivery.js';
 import { createMissionSpot } from './game/mission-spot.js';
@@ -946,6 +946,7 @@ const busking = new BuskingZones(scene, $('labels'), region.busking || [], { fin
 // The main square (the first meeting zone): a guide who hands out errands
 // that end back here (광장 미션), and a big screen (전광판) for ads.
 const quests = new SquareQuests();
+if (quests.active?.kind === 'visit' && placeClosed(quests.active.target)) quests.drop(); // a saved errand to a place closed for now
 const square = zones.items[0] || null;
 let squareNpc = null, billboard = null;
 // New players start where they picked (region.json spawn.starts; Gwanghwamun Square
@@ -2906,6 +2907,8 @@ function enterStore(item, walkIn = null) {
   // Sunny Villa's door after the homes were joined (homes.json movedTo): a
   // notice that your home is now at Forest Lane Apartments.
   if (item.store.movedTo) { shop.toast(t('home.moved'), 7000); return; }
+  // A place closed for now (game/live-stage.js LIVE_CAFE_CLOSED): a note at the door.
+  if (placeClosed(item.store)) { shop.toast('🔒 ' + t('live.closed'), 6000); return; }
   // A home is the size of its level (core/home-stages.js): mine, or the
   // host's when visiting. A room built at another size is built again.
   if (item.store.category === 'home' && !item.homeSized) return decorGame.sizeHome(item).then((it) => {
@@ -6633,7 +6636,7 @@ function talkToGuide(npc = squareNpc) {
     const d = !atSquare && here?.store ? districtOfStore(here.store) : npc === welcomeNpc ? firstStop.district : null;
     const a = quests.start({
       route: npc === welcomeNpc ? firstStop.trip : null, // the first trip, from the welcome guide: one that fits where they started
-      stores: storefronts.items.filter((i) => i.store.category !== 'home' && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
+      stores: storefronts.items.filter((i) => i.store.category !== 'home' && !placeClosed(i.store) && (!d || (i.store.category !== 'info' && districtOfStore(i.store) === d))).map((i) => i.store.id),
       has: (kind) => (kind !== 'pet' || Object.keys(ITEMS).some((id) => ITEMS[id].pet && inventory.has(id))) // only if you have a pet
         && (atSquare || (kind !== 'dance' && kind !== 'coffee')), // (those two point back to Seongsu)
     });
