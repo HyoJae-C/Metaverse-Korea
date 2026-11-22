@@ -53,6 +53,8 @@ export function createDishUpgrade(game) {
   return {
     ui, seasoning, cooked,
     mission: () => claim('mission'),
+    // 1 seasoning for the first dish cooked with someone each day (core/together.js).
+    together: () => claim('together'),
     // 5 seasoning with the day's check-in (once a day; also on opening the game if you checked in already).
     daily: () => claim('daily'),
     // The action at a cooking class's kitchen.

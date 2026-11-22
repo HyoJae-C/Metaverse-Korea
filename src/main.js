@@ -15,7 +15,7 @@ import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './c
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { keepPending, retryPending } from './game/referral-retry.js';
-import { HighFives, hi5Msg, parseHi5, crowdBonus, TOGETHER_COINS, TOGETHER_RADIUS } from './core/together.js';
+import { HighFives, CookPairs, hi5Msg, parseHi5, crowdBonus, TOGETHER_RADIUS } from './core/together.js';
 import { parseContest } from './core/fish-contest.js';
 import { createFishContest } from './game/fish-contest.js';
 import { Billboard } from './core/billboard.js';
@@ -4329,7 +4329,7 @@ const grillUi = new GrillUI({
   root: $('grill-panel'),
   wallet,
   onSay: (line) => clerk && say(clerk, $('labels'), line),
-  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook'); },
+  onMedal: (medal, coins) => { if (coins) shop.toast(t('grill.medalToast', { coins })); missionEvent('cook'); togetherBonus('cook', !!medal); },
 });
 // Han River park: fishing at the pier and the railing, ramen at the kiosk.
 // The catch goes in a bag (mk.fish) and is sold at the fish market.
@@ -6673,13 +6673,21 @@ createMissionSpot(); // (the mission bar sits under the pinned notices)
 const onSquare = () => mode === 'street' && [[squareNpc?.ch.root, 14], [billboard?.root, 12]]
   .some(([o, r]) => o && Math.hypot(me.root.position.x - o.position.x, me.root.position.z - o.position.z) < r);
 
-// Doing something with another player close by pays a little extra.
-function togetherBonus(kind) {
+// Cooking with another player close by (core/together.js): a little extra
+// once a day for each person, up to 5 people, and a seasoning for the day's
+// first dish together. ok: a class ended with a medal (the ramen has none).
+// (kind: 'cook', the only one for now)
+const cookPairs = new CookPairs();
+function togetherBonus(kind, ok = true) {
+  if (!ok) return;
   const p = me.root.position;
   const friend = others.nearestFree(p.x, p.z, TOGETHER_RADIUS);
   if (!friend) return;
-  wallet.add(TOGETHER_COINS[kind], { k: 'ledger.together' }, { r: 'together' });
-  shop.toast(t('together.bonus', { name: friend.name, coins: TOGETHER_COINS[kind] }));
+  const { coins, first, day } = cookPairs.cooked(friend.name);
+  if (first) dishUpgrade.together();
+  if (!coins) return;
+  wallet.add(coins, { k: 'ledger.together' }, { r: 'cook', once: 'cook:' + day + ':' + friend.name });
+  shop.toast(t('together.bonus', { name: friend.name, coins }));
 }
 
 // High five (core/together.js): both press 🙌 next to each other.

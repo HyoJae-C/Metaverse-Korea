@@ -5,8 +5,11 @@
 // the other's message already waiting, so both sides finish on their own.
 // The first high five with each person pays a few coins, a few times a day.
 //
-// Together bonus: finishing the grill or ramen game with another player
-// close by pays a little extra (TOGETHER_COINS). Fishing has none.
+// Cooking together: finishing a dish (the grill, the ramen, a cooking class)
+// with another player close by pays a little extra, once a day for each
+// person and for up to COOK_PAID_PER_DAY people (Yozi 2026-11-22: paying
+// every dish made ~400k an hour). A class has to end with a medal. The first
+// dish together each day also gives a seasoning. Fishing has none.
 
 export const HI5_WINDOW = 6000; // ms
 export const HI5_COINS = 5000;
@@ -21,6 +24,34 @@ export function parseHi5(e) {
 }
 
 export const TOGETHER_COINS = { cook: 6000 };
+export const COOK_PAID_PER_DAY = 5;
+const COOK_KEY = 'mk.cookpair';
+
+// Who I've cooked with today. cooked(name) → { coins, first, day }: coins
+// for someone new today (up to COOK_PAID_PER_DAY people); first: my first
+// dish together today (the seasoning). The server takes each person once a
+// day too (reward 'cook', op id from the day and the name).
+export class CookPairs {
+  constructor(storage = globalThis.localStorage, today = () => new Date().toDateString()) {
+    this.storage = storage;
+    this.today = today;
+    let s = {};
+    try { s = JSON.parse(storage?.getItem(COOK_KEY) || '{}') || {}; } catch { /* ignore */ }
+    this.s = { day: s.day, with: Array.isArray(s.with) ? s.with : [], any: !!s.any };
+  }
+  cooked(name) {
+    if (this.s.day !== this.today()) this.s = { day: this.today(), with: [], any: false };
+    const first = !this.s.any;
+    this.s.any = true;
+    let coins = 0;
+    if (name && !this.s.with.includes(name) && this.s.with.length < COOK_PAID_PER_DAY) {
+      this.s.with.push(name);
+      coins = TOGETHER_COINS.cook;
+    }
+    try { this.storage?.setItem(COOK_KEY, JSON.stringify(this.s)); } catch { /* storage blocked */ }
+    return { coins, first, day: this.s.day };
+  }
+}
 
 export class HighFives {
   constructor(storage = globalThis.localStorage, today = () => new Date().toDateString(), now = () => Date.now()) {

@@ -26,6 +26,7 @@ export const DAILY_SEASONING = 5; // with the day's check-in
 export const START_SEASONING = 10;
 export const MISSION_SEASONING = 3;
 export const CLASS_SEASONING = 1;
+export const TOGETHER_SEASONING = 1; // the day's first dish cooked with someone (069_reward_check_cook_together.sql)
 // Chance (%) of reaching each level, from +1.
 export const CHANCE = [100, 97, 93, 89, 85, 80, 75, 70, 65, 60, 55, 52, 49, 46, 43, 40, 37, 34, 31, 28];
 export const gaugeStep = (target) => (target <= 10 ? 5 : 2);
