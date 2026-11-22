@@ -67,3 +67,10 @@ test('live map counts mode groups players close on screen', () => {
   // Zoomed in far enough, nobody is grouped.
   assert.equal(clusterPoints(pts, 4).length, 4);
 });
+
+test('going away (no input for 30 min) or coming back is reported soon', () => {
+  const last = { x: 0, z: 0, place: 'street', away: false, t: 0 };
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: true }, WHERE_PLACE_MS - 1), false);
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: true }, WHERE_PLACE_MS), true);
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: false }, WHERE_PLACE_MS), false);
+});

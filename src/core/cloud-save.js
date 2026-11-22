@@ -396,14 +396,22 @@ export class CloudSave {
   // Report where we are on the map, for operators' live view (net/where.js,
   // supabase/008_player_where.sql). Resolves false when the server can't
   // take it (not set up yet), true otherwise.
-  async reportWhere({ name, place, x, z }) {
+  // away (no input for 30 min) needs supabase/068_friends_online.sql; until
+  // it is run the report goes without it, as before.
+  async reportWhere({ name, place, x, z, away }) {
     if (!this.client || !this.user || PHONE_PREVIEW) return true; // signed in later: keep trying
-    const { error } = await this.client.rpc('report_where', {
+    const args = {
       p_name: String(name || '').slice(0, 16), p_place: String(place || '').slice(0, 48),
       p_x: Math.round(x * 10) / 10, p_z: Math.round(z * 10) / 10,
-    });
+    };
+    const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42501');
+    let { error } = await this.client.rpc('report_where', this._noAway || away == null ? args : { ...args, p_away: !!away });
+    if (missing(error) && !this._noAway && away != null) {
+      this._noAway = true;
+      ({ error } = await this.client.rpc('report_where', args));
+    }
     // PGRST202 / 42883: the function isn't there yet (SQL not run).
-    return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
+    return !missing(error);
   }
 
   // Report this play session, for the operator's retention numbers

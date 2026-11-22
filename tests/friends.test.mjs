@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL, Inbox, LocalFriends, convKey, cleanBody, whereIs } from '../src/core/friends.js';
+import { ALL, Inbox, LocalFriends, ONLINE_MS, convKey, cleanBody, whereIs } from '../src/core/friends.js';
 
 const memory = () => {
   const m = new Map();
@@ -71,4 +71,31 @@ test('a friend request sender is placed as the screen sees it', () => {
   // Turned to face +x: what was on the right is now ahead.
   assert.equal(whereIs(me, { x: 8, z: 0 }, { x: 3, z: 0 }).dir, 'ahead');
   assert.equal(whereIs(me, { x: 0, z: 8 }, { x: 1, z: 0 }).dir, 'right');
+});
+
+test('local friends: online friends show a dot unless they hide it', async () => {
+  const storage = memory();
+  const a = new LocalFriends('A', 'Mina', storage);
+  const b = new LocalFriends('B', 'Joon', storage);
+  const c = new LocalFriends('C', 'Sora', storage);
+  await a.add('Joon'); await b.add('Mina');
+  await a.add('Sora'); // only asked: not friends yet
+  const t0 = 1_000_000;
+  b.touch(t0); c.touch(t0);
+  let r = await a.online(t0 + 1000);
+  assert.deepEqual([...r.online], ['B']); // Sora isn't a friend yet
+  assert.equal(r.shown, true); // on by default
+  assert.equal((await a.online(t0 + ONLINE_MS + 1)).online.size, 0); // gone quiet: offline
+  b.touch(t0 + 2000);
+  assert.deepEqual((await b.setShown(false)), { shown: false });
+  r = await a.online(t0 + 3000);
+  assert.equal(r.online.size, 0); // Joon hid it
+  assert.equal((await b.online(t0 + 3000)).shown, false);
+  assert.deepEqual([...(await b.online(t0 + 3000)).online], ['A']); // hiding mine still shows theirs
+  await b.setShown(true);
+  assert.deepEqual([...(await a.online(t0 + 4000)).online], ['B']);
+  b.touch(t0 + 5000, true); // no input for 30 min: away (yellow), not online
+  r = await a.online(t0 + 6000);
+  assert.deepEqual([[...r.online], [...r.away]], [[], ['B']]);
+  for (const x of [a, b, c]) x.close();
 });
