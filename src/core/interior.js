@@ -1002,8 +1002,13 @@ export function buildInterior(store) {
     clerk = { x: sx - 1.4, z: d / 2 - 1.45, ry: Math.PI };
   } else if (store.category === 'home') {
     // Empty home: big windows on the back wall; the player decorates it.
+    // Flat and facing in, like the wall, so a camera turned round behind the
+    // back wall sees through them with it (a box frame stood in the room as
+    // a floating white slab, 2026-11-22).
     for (const wx of [-w / 4, w / 4]) {
-      box(2.6, 1.6, 0.08, wx, 1.9, -d / 2 + 0.05, '#fffaf0');
+      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.6), mat('#fffaf0'));
+      frame.position.set(wx, 1.9, -d / 2 + 0.05);
+      scene.add(frame);
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), new THREE.MeshBasicMaterial({ color: '#bfe3f5' }));
       pane.position.set(wx, 1.9, -d / 2 + 0.1);
       scene.add(pane);
