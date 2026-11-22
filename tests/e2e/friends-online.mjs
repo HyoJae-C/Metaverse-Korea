@@ -1,6 +1,6 @@
 // End-to-end check: friends online now (supabase/068_friends_online.sql,
 // LocalFriends.online() here). B has three friends: online, away (no input
-// for 30 min) and gone. The picker lists them 🟢, 🔴, ⚪ in that order, the
+// for 30 min) and gone. The picker lists them 🟢, 🟡, ⚪ in that order, the
 // 👥 panel shows the same dots, and B's switch
 // "Let friends see when I'm online" is on by default and can be turned off.
 // Local play, like friend-requests.mjs:
@@ -49,7 +49,7 @@ try {
   await page.waitForFunction(() => /Mina Online/.test(document.getElementById('chat-to')?.textContent || ''), null, { timeout: 10000 });
   await page.waitForFunction(() => [...document.querySelectorAll('#chat-to option')].some((o) => o.textContent.startsWith('🟢 Mina Online')), null, { timeout: 10000 });
   const opts = await page.$$eval('#chat-to option', (els) => els.map((e) => e.textContent));
-  const iOn = opts.findIndex((o) => o.startsWith('🟢 Mina Online')), iAway = opts.findIndex((o) => o.startsWith('🔴 Sora Idle')), iOff = opts.findIndex((o) => o === '⚪ Joon Gone');
+  const iOn = opts.findIndex((o) => o.startsWith('🟢 Mina Online')), iAway = opts.findIndex((o) => o.startsWith('🟡 Sora Idle')), iOff = opts.findIndex((o) => o === '⚪ Joon Gone');
   if (iOn < 0 || iAway < 0 || iOff < 0 || !(iOn < iAway && iAway < iOff)) throw new Error('picker options: ' + JSON.stringify(opts));
   if (shotDir) await page.screenshot({ path: shotDir + '/online-picker.png' });
 

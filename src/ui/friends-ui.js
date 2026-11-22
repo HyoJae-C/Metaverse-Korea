@@ -189,7 +189,7 @@ export class FriendsUI {
       const n = inbox?.unread(c.key) || 0;
       const text = el('span', 'fr-text');
       const name = el('b', 'fr-name', c.name);
-      if (c.key !== ALL && known) { // 🟢 online, 🔴 away, ⚪ offline
+      if (c.key !== ALL && known) { // 🟢 online, 🟡 away, ⚪ offline
         const st2 = online.has(c.key) ? 'on' : away.has(c.key) ? 'away' : 'off';
         const d = el('i', 'fr-dot fr-' + st2);
         d.title = st2 === 'off' ? '' : t(st2 === 'on' ? 'friends.online' : 'friends.away');

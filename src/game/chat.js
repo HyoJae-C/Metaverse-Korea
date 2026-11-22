@@ -372,7 +372,7 @@ export function createChat(game) {
     friendsUi.update();
   }
   // Which friends are in the game now, as dots in the picker and the 👥
-  // panel (supabase/068_friends_online.sql): 🟢 online, 🔴 away (no input for
+  // panel (supabase/068_friends_online.sql): 🟢 online, 🟡 away (no input for
   // 30 min, net/where.js), ⚪ offline. No realtime: one small request,
   // only while the chat bar or the panel is open, at most once a minute (and
   // straight away on opening, unless asked in the last 15 s).
@@ -503,11 +503,11 @@ export function createChat(game) {
     const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
     if (friendBackend) {
       opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-      // Online friends first (🟢), then away (🔴), then offline (⚪; 💌
+      // Online friends first (🟢), then away (🟡), then offline (⚪; 💌
       // before the server can tell, supabase/068_friends_online.sql).
       const fr = friendList.friends;
       for (const f of fr) if (friendsOnline.has(f.uid)) opts.push([f.uid, '🟢 ' + f.name + ' · ' + t('friends.online')]);
-      for (const f of fr) if (friendsAway.has(f.uid)) opts.push([f.uid, '🔴 ' + f.name + ' · ' + t('friends.away')]);
+      for (const f of fr) if (friendsAway.has(f.uid)) opts.push([f.uid, '🟡 ' + f.name + ' · ' + t('friends.away')]);
       const off = onlineShown == null ? '💌 ' : '⚪ ';
       for (const f of fr) if (!friendsOnline.has(f.uid) && !friendsAway.has(f.uid)) opts.push([f.uid, off + f.name]);
     }

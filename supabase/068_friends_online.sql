@@ -1,7 +1,7 @@
 -- 068: which of my friends are online now (Yozi 2026-11-22), shown as a dot
 -- in the chat bar's "send to" picker and the 👥 friends panel:
 --   🟢 online   in the game, touched the screen or keys in the last 30 min
---   🔴 away     in the game, but no tap, key or mouse for 30 min or more
+--   🟡 away     in the game, but no tap, key or mouse for 30 min or more
 --               (by input, not position: fishing on one spot is online)
 --   ⚪ offline  not in the game, or hides it
 --

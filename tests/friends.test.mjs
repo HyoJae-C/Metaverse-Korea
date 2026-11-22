@@ -94,7 +94,7 @@ test('local friends: online friends show a dot unless they hide it', async () =>
   assert.deepEqual([...(await b.online(t0 + 3000)).online], ['A']); // hiding mine still shows theirs
   await b.setShown(true);
   assert.deepEqual([...(await a.online(t0 + 4000)).online], ['B']);
-  b.touch(t0 + 5000, true); // no input for 30 min: away (red), not online
+  b.touch(t0 + 5000, true); // no input for 30 min: away (yellow), not online
   r = await a.online(t0 + 6000);
   assert.deepEqual([[...r.online], [...r.away]], [[], ['B']]);
   for (const x of [a, b, c]) x.close();

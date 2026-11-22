@@ -9,7 +9,7 @@ export const WHERE_MOVE_MS = 3000; // walking: at most this often
 export const WHERE_IDLE_MS = 20000; // standing still: a heartbeat
 export const WHERE_PLACE_MS = 1200; // entered / left a shop
 export const WHERE_MIN_MOVE = 2; // metres that count as moving
-// No tap, key, click or mouse move for this long = away (a red dot for
+// No tap, key, click or mouse move for this long = away (a yellow dot for
 // friends, supabase/068_friends_online.sql). By input, not by position, so
 // someone fishing or chatting on one spot is still "online".
 export const AWAY_MS = 30 * 60000;
