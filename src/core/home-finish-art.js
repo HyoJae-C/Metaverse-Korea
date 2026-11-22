@@ -45,14 +45,17 @@ const ART = {
     speckle(g, w, h, 120, 'rgba(190,165,120,0.18)', 2, 4);
     g.fillStyle = 'rgba(160,130,90,0.12)'; g.fillRect(0, 0, 2, h); // the sheets' seams
   }],
+  // Slats 0.3 m apart, bands of two (Yozi 2026-11-22: 0.1 m slats were dizzying).
   'wall-changho': [0.9, 128, 512, (g, w, h) => {
     g.fillStyle = '#f6efdc'; g.fillRect(0, 0, w, h); // paper behind
     g.fillStyle = '#8a6440';
-    for (let x = 4; x < w; x += 14) g.fillRect(x, 0, 4, h); // 띠살: the close vertical slats
-    for (const y of [70, 250, 430]) for (let k = 0; k < 3; k++) g.fillRect(0, y + k * 12, w, 4); // and three bands of three across
+    for (const x of [41, 84]) g.fillRect(x, 0, 4, h); // 띠살: the vertical slats
+    for (const y of [70, 250, 430]) for (let k = 0; k < 2; k++) g.fillRect(0, y + k * 14, w, 4); // and three bands of two across
     g.fillStyle = '#6e4c2e'; g.fillRect(0, 0, 6, h); g.fillRect(0, h - 10, w, 10); // the door's frame
   }],
-  'wall-maehwa': [2.2, 256, 512, (g, w, h) => {
+  // A 3.3 m strip: the same branches with plain paper beside them (Yozi
+  // 2026-11-22: more empty space).
+  'wall-maehwa': [3.3, 384, 512, (g, w, h) => {
     g.fillStyle = '#f3eee2'; g.fillRect(0, 0, w, h);
     speckle(g, w, h, 140, 'rgba(180,160,120,0.15)', 2, 7);
     const r = rand(11);
@@ -64,24 +67,29 @@ const ART = {
       else for (let i = 0; i < 3; i++) flower(g, x2 + (r() - 0.5) * 16, y2 + (r() - 0.5) * 16, 7, 'rgba(232,120,140,0.9)', '#f6d860');
     };
     branch(0, 360, -0.6, 90, 7, 3); // from the left edge, up and across
-    branch(w, 120, Math.PI + 0.5, 70, 5, 2); // a second spray, from the right
-    for (let i = 0; i < 10; i++) flower(g, 30 + r() * (w - 60), 80 + r() * 380, 5, 'rgba(232,120,140,0.75)', '#f6d860'); // loose petals
+    branch(256, 120, Math.PI + 0.5, 70, 5, 2); // a second spray, from the right
+    for (let i = 0; i < 4; i++) flower(g, 30 + r() * 196, 80 + r() * 380, 5, 'rgba(232,120,140,0.75)', '#f6d860'); // a few loose petals
   }],
-  'wall-flower70': [0.8, 128, 256, (g, w, h) => {
+  // Flowers 0.8 m apart in a half drop, drawn round (Yozi 2026-11-22: the
+  // old 0.4 m grid, stretched tall, was dizzying).
+  'wall-flower70': [1.6, 256, 512, (g, w, h) => {
     g.fillStyle = '#f6e2b0'; g.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 64) for (const [x, k] of [[32, 0], [96, 32]]) {
-      wrap(w, h, x, y + k, (fx, fy) => {
+    g.scale(1, 1.25); // 160 px a metre across, 128 up a 4 m wall: draw in across-pixels
+    const H = h / 1.25;
+    for (let y = 0; y < H - 1; y += H / 4) for (const [x, k] of [[64, 0], [192, H / 8]]) { // rows 0.8 m apart
+      wrap(w, H, x, y + k, (fx, fy) => {
         g.fillStyle = '#8a9a3a'; g.beginPath(); g.ellipse(fx + 14, fy + 12, 9, 4, 0.6, 0, Math.PI * 2); g.fill(); // a leaf
         flower(g, fx, fy, 22, '#d9653a', '#7a3a1a', 6);
         flower(g, fx, fy, 10, '#f2a04a', '#7a3a1a', 6);
       });
     }
   }],
-  'wall-check': [0.6, 128, 128, (g, w, h) => {
+  // A 1.2 m check (was 0.6 m), the bands as wide as before (Yozi 2026-11-22).
+  'wall-check': [1.2, 256, 512, (g, w, h) => {
     g.fillStyle = '#efe2c6'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(176,88,58,0.35)'; g.fillRect(0, 0, 40, h); g.fillRect(0, 0, w, 40);
-    g.fillStyle = 'rgba(176,88,58,0.25)'; g.fillRect(0, 0, 40, 40);
-    g.fillStyle = 'rgba(90,60,40,0.4)'; g.fillRect(70, 0, 3, h); g.fillRect(0, 70, w, 3); // a thin line between
+    g.fillStyle = 'rgba(176,88,58,0.35)'; for (const y of [0, 256]) g.fillRect(0, y, w, 24); // two bands across a 4 m wall
+    g.fillStyle = 'rgba(176,88,58,0.35)'; g.fillRect(0, 0, 40, h);
+    g.fillStyle = 'rgba(90,60,40,0.4)'; g.fillRect(148, 0, 3, h);
   }],
   'wall-greentile': [0.6, 128, 512, (g, w, h) => {
     g.fillStyle = '#f2eee0'; g.fillRect(0, 0, w, h); // plaster above
@@ -104,10 +112,11 @@ const ART = {
     g.fillStyle = '#b8c8b0'; g.fillRect(0, 0, w, h);
     speckle(g, w, h, 60, 'rgba(120,140,110,0.12)', 3, 17);
   }],
-  'wall-stripe': [0.6, 128, 64, (g, w, h) => {
+  // Stripes 1 m apart (were 0.6 m), each as wide as before (Yozi 2026-11-22).
+  'wall-stripe': [1.0, 256, 64, (g, w, h) => {
     g.fillStyle = '#efe6d6'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#d6c6a8'; g.fillRect(0, 0, 40, h);
-    g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(44, 0, 3, h); g.fillRect(124, 0, 3, h);
+    g.fillStyle = '#d6c6a8'; g.fillRect(0, 0, 48, h);
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(53, 0, 4, h); g.fillRect(250, 0, 4, h);
   }],
   // --- floors ---
   'floor-kongdam': [1.8, 256, 256, (g, w, h) => {
