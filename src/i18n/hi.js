@@ -603,6 +603,8 @@ export const HI = {
   'shop.leave': 'बाहर जाएँ',
   'shop.sit': 'बैठें',
   'shop.stand': 'खड़े हों',
+  'rock.on': 'झूलें',
+  'rock.off': 'झूलना बंद करें',
   'shop.exit': 'बाहर',
   'shop.sample': 'नमूना दुकान · काल्पनिक ब्रांड',
   'shop.tryOn': 'पहनकर देखें',

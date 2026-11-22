@@ -602,6 +602,8 @@ export const EN = {
   'shop.leave': 'Exit',
   'shop.sit': 'Sit down',
   'shop.stand': 'Stand up',
+  'rock.on': 'Rock',
+  'rock.off': 'Stop rocking',
   'shop.exit': 'Exit',
   'shop.sample': 'Sample store · fictional brand',
   'shop.tryOn': 'Try on',

@@ -1529,8 +1529,18 @@ function watchWeatherSetting() {
 }
 setTimeout(() => { cloud.onChange(watchWeatherSetting); watchWeatherSetting(); }, 4000);
 
+// Rocking chairs: rock back and forth while sat in one (game/rocking.js).
+// Downloaded the first time you sit in one, or someone near is rocking.
+const rocking = lazyPanel(() => import('./game/rocking.js').then(({ createRocking }) => createRocking({
+  get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
+  get me() { return me; }, get others() { return others; }, t, resend: () => { sendTimer = 0; },
+})), { tick: () => {}, state: () => {}, stop: () => {}, peer: () => {}, action: () => null });
+
 // ---------- Multiplayer ----------
-const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => { sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q); } };
+const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => {
+  sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q);
+  if (q.target.rk) rocking.ready().catch(() => {}); rocking.peer(q, dt);
+} };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you. Only operators see the badge (Yozi
@@ -6760,6 +6770,7 @@ function sitDown(seat) {
   if (seat.sunset) { cam.yaw = seat.ry + Math.PI; cam.pitch = 0.2; shop.toast(sunsetNote(t)); } // Mangwon's sunset steps: face the sunset (game/sunset-spot.js)
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
   else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
+  if (seat.rock) rocking.ready().catch(() => {}); // a rocking chair: the Rock button
 }
 function standUp() {
   if (!seated) return;
@@ -6770,6 +6781,7 @@ function standUp() {
   if (seated.duck != null) duckBoats.onStandUp();
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
   if (seated.bumper != null) bumper.onStandUp();
+  if (seated.rock) rocking.stop();
   seated = null;
   decorGame.unstick(true); // (a home: never up into a gap between other pieces, game/decor.js)
   sendTimer = 0;
@@ -7082,6 +7094,8 @@ function updateAction(p, tSec) {
       next = ballparkCams.action();
     } else if (interior.dome && !seated && ballparkCams.standingAction()) { // a foul ball coming down by you
       next = ballparkCams.standingAction();
+    } else if (seated?.rock && rocking.loaded) { // a rocking chair: Rock / Stop rocking (moving gets up)
+      next = rocking.action();
     } else if (seated) {
       next = { key: 'stand', label: '🧍 ' + t('shop.stand'), run: () => standUp() };
     } else if (nearStation(p, 'runway', 1.6) && !runwayUi.open) {
@@ -7458,6 +7472,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') botanic.update(p, dt); // Seoul Botanic Park: the greenhouse and its gardeners
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
+  rocking.tick(dt); // (sat in a rocking chair)
   if (!iceRink.loaded && mode === 'store' && interior?.iceRink) iceRink.ready().catch(() => {});
   iceRink.tick(dt, p, mx, my); // (on the ice it does the moving: no walking below)
   updateSurgery(dt);
@@ -7698,6 +7713,7 @@ renderer.setAnimationLoop((now) => {
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
     if (seated?.duck != null) { st.db = seated.duck + 1; st.dbs = seated.duckSeat || 0; } // in a duck boat
     bumper.state(st); // in a bumper car, or in line for one
+    rocking.state(st); // rocking in a rocking chair
     iceRink.state(st); // on the ice: the skates, and a jump's tricks
     zooVisit.camels.state(st); // on a zoo camel: others seat us on its saddle
     seoulDal.state(st); // in Seoul Dal's gondola, or holding a waiting ticket
@@ -7971,6 +7987,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     sitNear: (x, z, key) => { const all = (mode === 'street' ? [...streetSeats, ...hanParks.seats] : interior?.seats || []).filter((q) => !key || q[key]); let b = null, bd = Infinity; for (const q of all) { const d = Math.hypot(q.x - x, q.z - z); if (d < bd) { bd = d; b = q; } } if (b) { moveMeTo(activeScene, b.stand[0], b.stand[1], b.ry); sitDown(b); } return b && [b.x, b.z]; },
     seatInfo: () => seated && { x: +me.root.position.x.toFixed(2), y: +me.root.position.y.toFixed(3), z: +me.root.position.z.toFixed(2), ry: me.root.rotation.y, seat: [seated.x, seated.z, seated.y ?? null] },
     stand: () => standUp(),
+    rockSeat: () => { const s = interior?.seats?.find((q) => q.rock); return s && [s.x, s.z]; }, // the rocking chair here (game/rocking.js)
+    rockTip: () => { const s = interior?.seats?.find((q) => q.rock); const g = s?.rock.piece.mesh; return g ? [g.rotation.x, seated?.rock ? me.root.children.find((c) => c.isGroup && c.rotation.order === 'YXZ')?.rotation.x ?? null : null] : null; }, // [chair, my body] (radians)
     tarot: () => ({ seats: interior?.seats?.map((s) => [s.x, s.z, s.table ?? null, !!s.wait]), turn: tarot.tarotTurn, ticket: tarot.myTicket, readers: 1 + (interior?.readerNpcs?.length || 0), offer: tarot.tarotOffer() && { ...tarot.tarotOffer() }, state: tarotUi.loaded && tarotUi.state && { topic: tarotUi.state.topic, picked: [...tarotUi.state.picked], pair: tarotUi.state.pair && { ...tarotUi.state.pair } } }),
     bone: (n) => { const b = me.root.getObjectByName(n); if (!b) return null; const v = b.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); return [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)]; },
     bookShelf: (section) => bookUi.showShelf(section),

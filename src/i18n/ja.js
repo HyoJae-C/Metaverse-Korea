@@ -603,6 +603,8 @@ export const JA = {
   'shop.leave': '出る',
   'shop.sit': '座る',
   'shop.stand': '立つ',
+  'rock.on': 'ゆらゆら揺れる',
+  'rock.off': '揺れを止める',
   'shop.exit': '出る',
   'shop.sample': 'サンプル店舗・架空のブランド',
   'shop.tryOn': '試着する',

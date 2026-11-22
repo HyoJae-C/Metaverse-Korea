@@ -453,7 +453,7 @@ export function buildInterior(store) {
       products.push({ product, mesh: g, pos: front });
       const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [fd, fw] : [fw, fd];
       block(c.x, c.z, cx, cz);
-      triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry }));
+      triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry, mesh: g })); // (mesh: a rocking chair rocks)
       return;
     }
     const stand = new THREE.Group();

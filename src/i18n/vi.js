@@ -603,6 +603,8 @@ export const VI = {
   'shop.leave': 'Ra ngoài',
   'shop.sit': 'Ngồi xuống',
   'shop.stand': 'Đứng dậy',
+  'rock.on': 'Đung đưa',
+  'rock.off': 'Dừng đung đưa',
   'shop.exit': 'Ra ngoài',
   'shop.sample': 'Cửa hàng mẫu · thương hiệu hư cấu',
   'shop.tryOn': 'Mặc thử',

@@ -603,6 +603,8 @@ export const AR = {
   'shop.leave': 'خروج',
   'shop.sit': 'اجلس',
   'shop.stand': 'قِف',
+  'rock.on': 'تأرجح',
+  'rock.off': 'توقف عن التأرجح',
   'shop.exit': 'خروج',
   'shop.sample': 'متجر نموذجي · علامة خيالية',
   'shop.tryOn': 'جرّب',
