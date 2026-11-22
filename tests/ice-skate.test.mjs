@@ -231,6 +231,7 @@ test('the follower is at the leader\'s right hand, or just in front to be pushed
     assert.equal(s.ry, ry);
   }
   assert.ok(PAIR.hand < 1.2 && PAIR.push < 1.2, 'close enough to touch');
+  assert.ok(PAIR.near >= 5, 'two gliding skaters can catch the offer (3 m was too tight, Yozi 2026-11-22)');
 });
 
 test('pair poses: arms to each other, the pushed one crouches, the others keep skating', () => {

@@ -23,6 +23,9 @@ export const PAIR_TEXT = {
   declined: { en: '{name}: not now', ko: '{name}: 다음에요', ja: '{name}：また今度', zh: '{name}：下次吧', es: '{name}: ahora no', ar: '{name}: ليس الآن', vi: '{name}: để sau', hi: '{name}: अभी नहीं', fr: '{name} : pas maintenant', th: '{name}: ไว้ก่อน', id: '{name}: nanti saja' },
   together: { en: 'Skating with {name}', ko: '{name}와 함께 타요', ja: '{name}と一緒に滑ります', zh: '和{name}一起滑', es: 'Patinando con {name}', ar: 'تتزلج مع {name}', vi: 'Đang trượt cùng {name}', hi: '{name} के साथ स्केटिंग', fr: 'Tu patines avec {name}', th: 'สเกตกับ {name}', id: 'Meluncur bersama {name}' },
   letGo: { en: 'Let go', ko: '놓기', ja: '離す', zh: '松开', es: 'Soltar', ar: 'اترك', vi: 'Buông ra', hi: 'छोड़ें', fr: 'Lâcher', th: 'ปล่อย', id: 'Lepas' },
+  hintFar: { en: 'Skate closer to {name}, then tap again', ko: '{name}에게 더 가까이 가서 다시 눌러 보세요', ja: '{name}にもっと近づいて、もう一度押してね', zh: '再靠近{name}一点，然后再点一次', es: 'Acércate más a {name} y toca otra vez', ar: 'اقترب أكثر من {name} ثم اضغط مرة أخرى', vi: 'Lại gần {name} hơn rồi bấm lại', hi: '{name} के और पास जाएँ, फिर दोबारा दबाएँ', fr: 'Approche-toi de {name}, puis touche à nouveau', th: 'เข้าไปใกล้ {name} อีกนิด แล้วกดอีกครั้ง', id: 'Dekati {name}, lalu ketuk lagi' },
+  hintFriend: { en: 'Only friends can skate together. Add them as a friend first', ko: '친구끼리만 같이 탈 수 있어요. 먼저 친구가 되어 보세요', ja: '一緒に滑れるのは友だちだけ。まず友だちになろう', zh: '只有好友才能一起滑，先加为好友吧', es: 'Solo los amigos pueden patinar juntos. Primero hazte su amigo', ar: 'الأصدقاء فقط يتزلجون معًا. أضفه صديقًا أولًا', vi: 'Chỉ bạn bè mới trượt cùng nhau được. Hãy kết bạn trước', hi: 'केवल दोस्त साथ स्केट कर सकते हैं। पहले दोस्त बनाएँ', fr: 'Seuls les amis peuvent patiner ensemble. Deviens d\'abord son ami', th: 'เฉพาะเพื่อนเท่านั้นที่สเกตด้วยกันได้ เพิ่มเพื่อนก่อนนะ', id: 'Hanya teman yang bisa meluncur bersama. Berteman dulu' },
+  hintNone: { en: 'When a friend is on the ice, skate up to them and tap here', ko: '친구가 얼음 위에 오면 가까이 가서 여기를 눌러 보세요', ja: '友だちが氷の上に来たら、近づいてここを押してね', zh: '好友上冰后，靠近他再点这里', es: 'Cuando un amigo esté en el hielo, acércate y toca aquí', ar: 'عندما يكون صديق على الجليد، اقترب منه واضغط هنا', vi: 'Khi bạn bè lên sân băng, lại gần rồi bấm vào đây', hi: 'जब कोई दोस्त बर्फ़ पर हो, उसके पास जाकर यहाँ दबाएँ', fr: 'Quand un ami est sur la glace, approche-toi et touche ici', th: 'เมื่อเพื่อนอยู่บนลานน้ำแข็ง เข้าไปใกล้ ๆ แล้วกดที่นี่', id: 'Saat teman ada di atas es, dekati lalu ketuk di sini' },
   apart: { en: 'Skating on your own again', ko: '다시 혼자 타요', ja: 'またひとりで滑ります', zh: '又各滑各的了', es: 'De nuevo por tu cuenta', ar: 'تتزلج وحدك من جديد', vi: 'Lại trượt một mình', hi: 'फिर अकेले स्केटिंग', fr: 'De nouveau en solo', th: 'กลับมาสเกตคนเดียว', id: 'Meluncur sendiri lagi' },
 };
 const PANEL = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
@@ -37,6 +40,7 @@ export function createIcePair(game, rink) {
   let asked = null; // { to, kind, until }: my ask, waiting for a yes
   let invite = null; // { from, kind, until }: theirs, waiting for mine
   let near = null; // { id, name }: a friend close enough to ask
+  let why = null; // nobody to ask: { text, name } said when the button is tapped
   let nearAt = 0;
   let panel = null;
   const send = (verb, to, kind) => game.net?.sendEmote?.(pairMsg(verb, to, kind));
@@ -51,7 +55,7 @@ export function createIcePair(game, rink) {
   btn.style.cssText = 'position:fixed;left:calc(env(safe-area-inset-left,0px) + 12px);top:calc(env(safe-area-inset-top,0px) + 328px);z-index:6;height:32px;max-width:190px;overflow:hidden;text-overflow:ellipsis;padding:0 12px;border-radius:16px;border:2px solid rgba(255,255,255,.9);background:rgba(214,84,120,.85);color:#fff;font:800 13px system-ui,sans-serif;white-space:nowrap';
   btn.hidden = true;
   btn.addEventListener('pointerdown', (e) => e.stopPropagation());
-  btn.addEventListener('click', (e) => { e.stopPropagation(); btn.blur(); if (near) menu(near); });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); btn.blur(); if (near) menu(near); else if (why) toast(why.text, why); });
   (game.$('hud') || document.body).append(btn);
   function closePanel() { panel?.remove(); panel = null; }
   function showPanel(title, choices) {
@@ -102,17 +106,21 @@ export function createIcePair(game, rink) {
   }
   const letGo = () => end(true);
 
-  // Someone I could ask: a friend on skates on the ice, close by, not in a pair.
+  // Someone I could ask: a friend on skates on the ice, close by, not in a
+  // pair. With nobody to ask, why (the button says it when tapped): a
+  // friend too far away, a skater who is not a friend, or no one at all.
   function findNear(p) {
-    let best = null, bd = PAIR.near;
+    let best = null, bd = PAIR.near, far = null, fd = Infinity, stranger = false;
     for (const [id, o] of game.others.players) {
       if (o.hidden || o.target?.bk !== 1 || o.target.ip) continue;
       const r = o.ch.root.position, d = Math.hypot(r.x - p.x, r.z - p.z);
-      if (d >= bd || !onIce(r.x, r.z)) continue;
+      if (!onIce(r.x, r.z)) continue;
       const name = nameOf(id);
-      if (!game.isFriend?.(name) || game.isBlocked?.(id)) continue;
-      best = { id, name }; bd = d;
+      if (game.isBlocked?.(id)) continue;
+      if (!game.isFriend?.(name)) { if (d < PAIR.near) stranger = true; continue; }
+      if (d < bd) { best = { id, name }; bd = d; } else if (d < fd) { far = name; fd = d; }
     }
+    why = best ? null : far ? { text: PAIR_TEXT.hintFar, name: far } : { text: stranger ? PAIR_TEXT.hintFriend : PAIR_TEXT.hintNone };
     return best;
   }
 
@@ -124,9 +132,10 @@ export function createIcePair(game, rink) {
     if (invite && now > invite.until) { invite = null; closePanel(); }
     if (!pair) {
       if (now - nearAt > 300) { nearAt = now; near = rink.free() && !asked ? findNear(p) : null; }
-      const label = near ? '🤝 ' + near.name : '';
-      if (btn.textContent !== label) btn.textContent = label;
-      btn.hidden = !near;
+      // Always there on the ice, so it can be found: faint with nobody to ask.
+      const label = near ? '🤝 ' + near.name : '🤝';
+      if (btn.textContent !== label) { btn.textContent = label; btn.style.opacity = near ? '1' : '0.6'; }
+      btn.hidden = false;
       if (!near && panel && !invite) closePanel();
       return false;
     }

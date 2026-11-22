@@ -164,7 +164,7 @@ export function glidePose(kind, t) {
 // no sled). One leads (the one who asked) and skates as usual; the other
 // follows, held at a spot beside the leader (hand in hand) or just in front
 // (crouching, pushed along). Friends only; either lets go.
-export const PAIR = { near: 3, askFor: 15, hand: 0.82, push: 0.72, lost: 4 };
+export const PAIR = { near: 5, askFor: 15, hand: 0.82, push: 0.72, lost: 4 };
 // Between the two: "ice:ask:<to>:hand", "ice:yes:<to>:push", "ice:no:<to>", "ice:end:<to>".
 export const pairMsg = (verb, to, kind) => `ice:${verb}:${to}` + (kind ? `:${kind}` : '');
 export function parsePairMsg(e) {
