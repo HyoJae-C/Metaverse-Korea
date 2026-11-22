@@ -535,6 +535,7 @@ export const KO = {
   'home.putDown': '내려놓기',
   'home.remove': '치우기',
   'home.blocked': '다른 가구에 걸려요. 조금 옮겨서 다시 내려놓아요.',
+  'home.dividerGap': '파티션 옆에 지나갈 틈(80cm쯤)을 남겨 줘요.',
   'home.noRoom': "여기엔 놓을 공간이 부족해요",
   'home.lie': '눕기',
   'home.lampOn': '불 켜기',

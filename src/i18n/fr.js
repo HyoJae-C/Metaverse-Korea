@@ -533,6 +533,7 @@ export const FR = {
   'home.putDown': 'Poser',
   'home.remove': 'Retirer',
   'home.blocked': 'Quelque chose gêne. Déplace-toi un peu et pose-le à nouveau.',
+  'home.dividerGap': 'Laisse un passage pour contourner la cloison (environ 80 cm).',
   'home.noRoom': "Pas assez de place ici",
   'home.lie': 'S\'allonger',
   'home.lampOn': 'Allumer la lumière',

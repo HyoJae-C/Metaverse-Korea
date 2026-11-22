@@ -299,6 +299,88 @@ export const SHOP_FURNITURE = [
     box(0.46, 0.2, 0.01, 0, 0.4, 0.255, '#c8b48a'); // speaker grille
     box(0.3, 0.06, 0.06, 0, 0.6, 0.27, '#c0c4ca'); // buttons
   }],
+  // --- Two more shops (Yozi 2026-11-22 picked five): 느긋한 오후 (a low
+  // living-room table, a grandfather clock, a hammock) and 단장 드레스룸
+  // (a vanity with its stool, a clothes rack) ---
+  ['f-low-table', '☕', [1.1, 0.6], false, { en: 'Low coffee table', ko: '거실 좌탁', ja: 'リビングのローテーブル', zh: '客厅矮茶几' }, (g, part, box) => {
+    box(1.1, 0.05, 0.6, 0, 0.38, 0, '#d8b88a'); // light oak top
+    for (const x of [-0.48, 0.48]) for (const z of [-0.23, 0.23]) part(new THREE.CylinderGeometry(0.025, 0.02, 0.36, 8), '#a8865a', x, 0.18, z);
+    box(1.0, 0.025, 0.5, 0, 0.1, 0, '#c8a87a'); // the shelf underneath
+    for (const [x, c] of [[-0.25, '#e86a5a'], [-0.18, '#4a8ac8']]) box(0.28, 0.025, 0.2, x, 0.125 + (c === '#4a8ac8' ? 0.025 : 0), 0.05, c).rotation.y = c === '#4a8ac8' ? 0.2 : 0; // magazines
+    part(new THREE.CylinderGeometry(0.11, 0.09, 0.03, 16), '#2f3a3a', 0.3, 0.13, -0.05); // a little tray
+  }],
+  ['f-grand-clock', '🕰️', [0.5, 0.32], false, { en: 'Grandfather clock', ko: '괘종시계', ja: '振り子の大時計', zh: '落地摆钟' }, (g, part, box) => {
+    box(0.5, 0.12, 0.32, 0, 0.06, 0, '#4a2a18'); // plinth
+    box(0.4, 1.3, 0.26, 0, 0.77, 0, '#6a3a20'); // the long case
+    box(0.5, 0.5, 0.3, 0, 1.66, 0, '#6a3a20'); // the hood
+    part(new THREE.CylinderGeometry(0.25, 0.25, 0.3, 20, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI / 2), '#4a2a18', 0, 1.91, 0); // arched top
+    part(new THREE.CircleGeometry(0.19, 28), '#f6efdc', 0, 1.68, 0.152); // the face
+    part(new THREE.TorusGeometry(0.19, 0.018, 6, 28), '#c9a227', 0, 1.68, 0.152);
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; box(0.012, 0.03, 0.004, Math.sin(a) * 0.16, 1.68 + Math.cos(a) * 0.16, 0.156, '#3a2a1a').rotation.z = -a; }
+    box(0.012, 0.11, 0.004, 0.035, 1.71, 0.158, '#1a1a1a').rotation.z = -0.6; // ten past ten
+    box(0.012, 0.15, 0.004, -0.05, 1.73, 0.159, '#1a1a1a').rotation.z = 0.6;
+    box(0.26, 0.9, 0.01, 0, 0.82, 0.131, '#2a2024'); // the glass door, dark behind
+    box(0.3, 0.03, 0.012, 0, 1.28, 0.132, '#c9a227');
+    box(0.3, 0.03, 0.012, 0, 0.36, 0.132, '#c9a227');
+    // The brass pendulum swings, one beat a second (one sum each frame it is drawn).
+    const rod = part(new THREE.BoxGeometry(0.015, 0.62, 0.008).translate(0, -0.31, 0), '#c9a227', 0, 1.22, 0.142);
+    const bob = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.015, 20).rotateX(Math.PI / 2), rod.material);
+    bob.position.y = -0.62;
+    rod.add(bob);
+    rod.onBeforeRender = () => { rod.rotation.z = Math.sin(performance.now() * 0.00314) * 0.18; rod.updateMatrixWorld(true); };
+  }],
+  ['f-hammock', '🏝️', [0.9, 2.3], 'hammock', { en: 'Hammock on a stand', ko: '해먹', ja: 'スタンド付きハンモック', zh: '带支架的吊床' }, (g, part, box) => {
+    for (const s of [-1, 1]) {
+      box(0.07, 0.07, 1.0, 0, 0.035, 0.65 * s, '#9a6638'); // the stand: a beam and a post each end
+      box(0.07, 0.95, 0.07, 0, 0.5, 1.1 * s, '#9a6638').rotation.x = -0.35 * s; // (leaning in, so it stays on its footprint)
+      box(0.9, 0.06, 0.06, 0, 0.035, 1.1 * s, '#8a5a30'); // feet
+    }
+    // The cloth sags in the middle: eight strips on a curve, stripes of cream and sea blue.
+    const n = 8, len = 1.6;
+    for (let i = 0; i < n; i++) {
+      const z0 = -len / 2 + (i / n) * len, z1 = z0 + len / n, y = (z) => 0.42 + 0.35 * (2 * z / len) ** 2;
+      const strip = box(0.7, 0.02, Math.hypot(z1 - z0, y(z1) - y(z0)) + 0.01, 0, (y(z0) + y(z1)) / 2, (z0 + z1) / 2, i % 2 ? '#f3ead6' : '#3a8ab8');
+      strip.rotation.x = -Math.atan2(y(z1) - y(z0), z1 - z0);
+    }
+    for (const s of [-1, 1]) for (const x of [-0.3, 0, 0.3]) { // ropes up to the top of the stand
+      const a = new THREE.Vector3(x, 0.77, 0.8 * s), b = new THREE.Vector3(0, 0.94, 0.95 * s), mid = a.clone().add(b).multiplyScalar(0.5);
+      const rope = part(new THREE.CylinderGeometry(0.008, 0.008, a.distanceTo(b), 4), '#e8dcc0', mid.x, mid.y, mid.z);
+      rope.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+    }
+    part(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 12).scale(1, 1, 0.6), '#f2c14e', 0, 0.68, -0.62); // a pillow
+  }],
+  ['f-vanity', '💄', [0.9, 0.85], 'vanity', { en: 'Vanity with a stool', ko: '화장대와 의자', ja: 'スツール付きドレッサー', zh: '梳妆台和凳子' }, (g, part, box, glow) => {
+    box(0.9, 0.04, 0.42, 0, 0.72, -0.21, '#f6f0e8'); // white top
+    for (const x of [-0.4, 0.4]) box(0.04, 0.7, 0.04, x, 0.35, -0.04, '#e8dccb');
+    box(0.3, 0.16, 0.38, 0.27, 0.62, -0.21, '#f6f0e8'); // a drawer
+    part(new THREE.SphereGeometry(0.018, 8, 6), '#c9a227', 0.27, 0.62, -0.01);
+    for (const x of [-0.4, 0.4]) box(0.04, 0.7, 0.04, x, 0.35, -0.38, '#e8dccb');
+    const glass = part(new THREE.CircleGeometry(0.28, 28).scale(0.8, 1, 1), glow('#dde9f0'), 0, 1.2, -0.37); // the oval mirror
+    part(new THREE.TorusGeometry(0.28, 0.022, 6, 28).scale(0.8, 1, 1), '#e8b8b8', 0, 1.2, -0.375);
+    glass.renderOrder = 1;
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; part(new THREE.SphereGeometry(0.025, 8, 6), glow('#fff4d6'), Math.sin(a) * 0.26, 1.2 + Math.cos(a) * 0.32, -0.35); } // bulbs round the mirror
+    for (const [x, h, c] of [[-0.3, 0.12, '#e86a8a'], [-0.22, 0.08, '#f2c14e'], [-0.15, 0.1, '#b8d8e8']]) part(new THREE.CylinderGeometry(0.025, 0.025, h, 10), c, x, 0.74 + h / 2, -0.25); // bottles
+    part(new THREE.CylinderGeometry(0.17, 0.15, 0.08, 16), '#e8a8b0', 0, 0.45, 0.2); // the stool: a round pink cushion
+    part(new THREE.CylinderGeometry(0.03, 0.05, 0.41, 8), '#d8c8b0', 0, 0.205, 0.2);
+    part(new THREE.CylinderGeometry(0.15, 0.15, 0.02, 16), '#d8c8b0', 0, 0.01, 0.2);
+  }],
+  ['f-clothes-rack', '👗', [1.2, 0.5], false, { en: 'Clothes rack', ko: '옷걸이 행거', ja: 'ハンガーラック', zh: '衣架' }, (g, part, box) => {
+    for (const s of [-1, 1]) {
+      part(new THREE.CylinderGeometry(0.015, 0.015, 1.55, 8), '#c0c4ca', 0.58 * s, 0.8, 0); // chrome uprights
+      box(0.04, 0.03, 0.48, 0.58 * s, 0.02, 0, '#c0c4ca'); // feet
+    }
+    part(new THREE.CylinderGeometry(0.015, 0.015, 1.2, 8).rotateZ(Math.PI / 2), '#c0c4ca', 0, 1.56, 0); // the bar
+    box(1.12, 0.025, 0.4, 0, 0.18, 0, '#d8b88a'); // a shoe shelf
+    for (const [x, c] of [[-0.35, '#f6f0e8'], [-0.15, '#3a3530']]) for (const dx of [-0.045, 0.045]) box(0.07, 0.07, 0.24, x + dx, 0.23, 0, c); // two pairs of shoes
+    box(0.3, 0.16, 0.26, 0.3, 0.27, 0, '#c8a070'); // a shoe box
+    // Six things on hangers, side on like in a shop: shirts, a coat and a dress.
+    const hang = [[-0.45, 0.6, '#f6f0e8'], [-0.28, 0.62, '#4a6a9a'], [-0.1, 1.0, '#8a5a40'], [0.08, 0.6, '#e8a8b0'], [0.26, 0.95, '#2f3a3a'], [0.44, 0.6, '#f2c14e']];
+    for (const [x, len, c] of hang) {
+      part(new THREE.TorusGeometry(0.03, 0.006, 4, 10, Math.PI * 1.4).rotateY(Math.PI / 2), '#8a8f96', x, 1.56, 0); // the hook
+      box(0.012, 0.04, 0.4, x, 1.5, 0, '#a87444'); // wooden hanger
+      box(0.05, len, 0.4 - (len > 0.8 ? 0 : 0.04), x, 1.5 - len / 2, 0, c);
+    }
+  }],
   // --- Home appliances: 테헤란로, Gangnam (core/appliances.js) ---
   ...APPLIANCES,
 ];

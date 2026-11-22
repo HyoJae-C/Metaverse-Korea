@@ -3,8 +3,11 @@
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
-import { SHOP_FURNITURE } from './furniture-shop.js';
+import { SHOP_FURNITURE as SHOP_PIECES } from './furniture-shop.js';
 import { APPLIANCE_KIND } from './appliances.js';
+import { PARTITIONS } from './partitions.js';
+// The furniture shops' pieces, with the room dividers (core/partitions.js).
+const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
 import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
 import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
@@ -138,7 +141,8 @@ const LAMPS = [
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
 // The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
-const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 } };
+// hammock: one lies down; vanity: one sits on the stool in front, facing the mirror.
+const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 }, hammock: { lie: 1 }, vanity: { seat: true, seatAt: 0.2, faceMirror: true } };
 export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
 export const TANK_IDS = TANKS.map((t) => [t.id, t.emoji, t.name]);
 
@@ -360,8 +364,8 @@ export function furnitureSeats(it) {
     return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6, stand: at(lx, d / 2 + 0.55) };
   });
   return xs.map((lx) => {
-    const [x, z] = at(lx, 0.05);
-    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}), ...(ROCKERS[it.id] ? { rock: { piece: it, ...ROCKERS[it.id] } } : {}) };
+    const [x, z] = at(lx, f.seatAt ?? 0.05);
+    return { x, z, ry: it.ry + (f.faceMirror ? Math.PI : 0), stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}), ...(ROCKERS[it.id] ? { rock: { piece: it, ...ROCKERS[it.id] } } : {}) };
   });
 }
 
@@ -382,7 +386,7 @@ export function buildFurniture(id, { off = false } = {}) {
 
 // Small things can stand on a table, desk or chest (Yozi 2026-11-16): the
 // tops (height in metres) and the pieces small enough to go on them.
-export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7 };
+export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7, 'f-low-table': 0.405 };
 const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
   'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel', 'f-microwave']);
 export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);

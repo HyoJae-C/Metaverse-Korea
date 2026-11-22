@@ -533,6 +533,7 @@ export const TH = {
   'home.putDown': 'วางลง',
   'home.remove': 'นำออก',
   'home.blocked': 'มีของขวางอยู่ ขยับนิดหนึ่งแล้ววางใหม่',
+  'home.dividerGap': 'เว้นช่องให้เดินผ่านข้างฉากกั้นไว้ด้วยนะ (ประมาณ 80 ซม.)',
   'home.noRoom': "ที่นี่มีพื้นที่ไม่พอ",
   'home.lie': 'นอนลง',
   'home.lampOn': 'เปิดไฟ',
