@@ -4264,6 +4264,7 @@ const decorGame = createDecor({
   get action() { return action; }, set action(v) { action = v; }, get me() { return me; }, get seated() { return seated; }, $, STALE,
   inventory, shop, PLAYER_R, get fishBag() { return fishBag; }, // (fish tanks: core/fish-tank.js)
   photos, // (ride photos in frames: core/ride-photos.js)
+  bag, describeEntry, get held() { return held; }, setHeld: (h) => setHeld(h), get sfx() { return sfx; }, // (the fridge: game/appliances.js)
   onLayout: () => homeVisitsLoaded?.layoutChanged(), // (visitors see the change)
   onVisit: (v) => homeVisitsLoaded?.visitChanged(v),
   cloud, get wallet() { return wallet; }, refreshWallet: () => refreshWallet(),
@@ -7261,6 +7262,8 @@ function updateAction(p, tSec) {
       next = decorGame.lampAct(p);
     } else if (decorGame.tankAct(p)) { // a fish tank at home: put fish in or take them out
       next = decorGame.tankAct(p);
+    } else if (decorGame.applianceAct(p)) { // the fridge, washer or microwave at home
+      next = decorGame.applianceAct(p);
     } else if (decorGame.plantAct(p, false)) { // (a plant that has had its water today)
       next = decorGame.plantAct(p, false);
     } else if (picnic.action(p)) {
