@@ -868,6 +868,7 @@ export const VI = {
   "live.taken": "{name} đang ở trên sân khấu. Hãy chờ đến lượt bạn.",
   "live.newbie": "Tài khoản mới có thể hát từ ngày thứ hai. Bạn có thể nghe ngay bây giờ.",
   "live.noVoice": "Trình duyệt này không gửi hoặc phát được giọng nói trực tiếp.",
+  "live.closed": "Open Mic Live Café tạm thời đóng cửa. Hẹn sớm gặp lại!",
   "live.performing": "{name} đang hát",
   "live.muted": "(micro đã tắt tiếng)",
   "live.hearOff": "Tắt tiếng cho tôi",

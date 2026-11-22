@@ -93,3 +93,13 @@ test('taking turns: 5 minutes each while someone waits, the first in line goes n
   assert.equal(clock(65_000), '1:05');
   assert.equal(clock(-5), '0:00');
 });
+
+test('closed for now: the switch knows the café, by store and by id', async () => {
+  const { LIVE_CAFE_CLOSED, LIVE_CAFE_ID, placeClosed } = await import('../src/game/live-stage.js');
+  assert.equal(cafe.id, LIVE_CAFE_ID);
+  assert.equal(placeClosed(cafe), LIVE_CAFE_CLOSED);
+  assert.equal(placeClosed(LIVE_CAFE_ID), LIVE_CAFE_CLOSED);
+  assert.equal(placeClosed(stores.find((s) => s.workshop !== 'livecafe')), false);
+  const { EN: en } = await import('../src/i18n/en.js');
+  assert.ok(en['live.closed']);
+});

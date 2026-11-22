@@ -868,6 +868,7 @@ export const ID = {
   "live.taken": "{name} sedang di panggung. Tunggu giliranmu.",
   "live.newbie": "Akun baru bisa bernyanyi mulai hari kedua. Kamu bisa mendengarkan sekarang.",
   "live.noVoice": "Browser ini tidak bisa mengirim atau memutar suara langsung.",
+  "live.closed": "Open Mic Live Café tutup sementara. Sampai jumpa lagi!",
   "live.performing": "{name} sedang bernyanyi",
   "live.muted": "(mikrofon dibisukan)",
   "live.hearOff": "Bisukan untukku",

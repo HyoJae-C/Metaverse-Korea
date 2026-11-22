@@ -868,6 +868,7 @@ export const FR = {
   "live.taken": "{name} est sur scène. Attendez votre tour.",
   "live.newbie": "Les nouveaux comptes peuvent chanter dès le deuxième jour. Vous pouvez écouter dès maintenant.",
   "live.noVoice": "Ce navigateur ne peut pas envoyer ni lire la voix en direct.",
+  "live.closed": "L'Open Mic Live Café est temporairement fermé. À bientôt !",
   "live.performing": "{name} chante",
   "live.muted": "(micro coupé)",
   "live.hearOff": "Couper pour moi",

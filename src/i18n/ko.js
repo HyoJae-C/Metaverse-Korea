@@ -874,6 +874,7 @@ export const KO = {
   "live.taken": "지금 {name} 님이 무대에 있어요. 차례를 기다려 주세요.",
   "live.newbie": "새 계정은 둘째 날부터 노래할 수 있어요. 듣기는 지금 바로 돼요.",
   "live.noVoice": "이 브라우저는 실시간 음성을 보내거나 들을 수 없어요.",
+  "live.closed": "오픈마이크 라이브카페는 잠시 휴업 중이에요. 곧 다시 만나요!",
   "live.performing": "{name} 님이 노래하는 중",
   "live.muted": "(마이크 음소거)",
   "live.hearOff": "나만 소리 끄기",

@@ -4,6 +4,8 @@
 // and the voice stops. Someone outside the café never gets the voice.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/live-cafe.mjs http://localhost:4173/ [screenshot dir]
+// (While game/live-stage.js LIVE_CAFE_CLOSED is true the door only shows
+// "temporarily closed", so this check fails until the café opens again.)
 import { chromium } from 'playwright';
 const url = process.argv[2] || 'http://localhost:4173/';
 const S = process.argv[3] || null;

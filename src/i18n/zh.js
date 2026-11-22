@@ -874,6 +874,7 @@ export const ZH = {
   "live.taken": "{name} 正在台上。请等一等轮到你。",
   "live.newbie": "新账号从第二天起可以唱歌。现在就可以听。",
   "live.noVoice": "这个浏览器不能发送或播放实时语音。",
+  "live.closed": "开放麦现场咖啡馆暂时停业，很快再见！",
   "live.performing": "{name} 正在唱歌",
   "live.muted": "（麦克风已静音）",
   "live.hearOff": "只对我静音",

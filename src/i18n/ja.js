@@ -874,6 +874,7 @@ export const JA = {
   "live.taken": "今は{name}さんがステージにいます。順番を待ってね。",
   "live.newbie": "新しいアカウントは2日目から歌えます。聴くのは今すぐできます。",
   "live.noVoice": "このブラウザではライブ音声を送ったり聴いたりできません。",
+  "live.closed": "オープンマイク ライブカフェは一時休業中です。また近いうちに！",
   "live.performing": "{name}さんが歌っています",
   "live.muted": "（マイクミュート中）",
   "live.hearOff": "自分だけ消音",

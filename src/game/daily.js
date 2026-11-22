@@ -2,6 +2,7 @@
 import { Daily, REWARD, checkInPay, missionPay } from '../core/daily.js';
 import { NAME_ROMAN } from '../core/npcs.js';
 import { getLanguage, localName, t } from '../core/i18n.js';
+import { placeClosed } from './live-stage.js';
 
 // A small picture for each kind of mission, so the list reads at a glance.
 const MISSION_ICON = { talk: '👋', visit: '🛍️', pet: '🐾', sit: '☕', bike: '🚲', emote: '😊', square: '📜', fish: '🎣', job: '🧑‍🍳', cook: '🍳' };
@@ -10,7 +11,7 @@ export function createDaily(game) {
   const { $, leaveStore, npcs, setGuide, storefronts, wallet, zones } = game;
   game.daily = new Daily(wallet, {
     npcs: npcs.list.map((o) => o.name), // one person each (data/npc-names.js)
-    stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home'),
+    stores: storefronts.items.map((i) => i.store).filter((st) => st.category !== 'home' && !placeClosed(st)), // (a closed place: game/live-stage.js)
   });
   const storeById = (id) => storefronts.items.find((i) => i.store.id === id);
   function missionText(m) {
