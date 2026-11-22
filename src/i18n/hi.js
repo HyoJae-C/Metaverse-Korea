@@ -751,6 +751,7 @@ export const HI = {
   'friends.askMore': "+{n} और",
   'friends.later': "बाद में",
   'friends.online': "ऑनलाइन",
+  'friends.away': "दूर",
   'friends.showOnline': "दोस्तों को दिखाएँ कि मैं ऑनलाइन हूँ",
   'friends.showOnlineNote': "सिर्फ़ आपके दोस्त देख सकते हैं। बंद करने पर आप ऑफ़लाइन दिखेंगे।",
   'look.tee': 'टी-शर्ट का रंग',

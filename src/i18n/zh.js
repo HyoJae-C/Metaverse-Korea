@@ -757,6 +757,7 @@ export const ZH = {
   'friends.askMore': "还有 {n} 人",
   'friends.later': "稍后",
   'friends.online': "在线",
+  'friends.away': "离开",
   'friends.showOnline': "让好友看到我在线",
   'friends.showOnlineNote': "只有好友能看到。关闭后会显示为离线。",
   'look.tee': 'T恤颜色',

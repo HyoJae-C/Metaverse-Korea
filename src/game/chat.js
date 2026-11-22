@@ -371,12 +371,13 @@ export function createChat(game) {
     refreshPersonFriend();
     friendsUi.update();
   }
-  // Which friends are in the game now (green dots in the picker and the 👥
-  // panel; supabase/068_friends_online.sql). No realtime: one small request,
+  // Which friends are in the game now, as dots in the picker and the 👥
+  // panel (supabase/068_friends_online.sql): 🟢 online, 🔴 away (no input for
+  // 30 min, net/where.js), ⚪ offline. No realtime: one small request,
   // only while the chat bar or the panel is open, at most once a minute (and
   // straight away on opening, unless asked in the last 15 s).
   const ONLINE_ASK_MS = 60000, ONLINE_AGAIN_MS = 15000;
-  let friendsOnline = new Set(), onlineShown = null, onlineAskedAt = 0;
+  let friendsOnline = new Set(), friendsAway = new Set(), onlineShown = null, onlineAskedAt = 0;
   async function askOnline({ timer = false } = {}) {
     if (chatBar.hidden && !friendsUi.open) return;
     if (typeof document !== 'undefined' && document.hidden) return;
@@ -389,10 +390,12 @@ export function createChat(game) {
     if (st !== friendBackend) return;
     if (r.error) {
       if (r.error !== 'missing') return; // network: keep what we had
-      r.online = new Set(); r.shown = null; // SQL not run yet: no dots, no switch
+      r.online = new Set(); r.away = new Set(); r.shown = null; // SQL not run yet: no dots, no switch
     }
-    const same = r.shown === onlineShown && r.online.size === friendsOnline.size && [...r.online].every((u) => friendsOnline.has(u));
-    friendsOnline = r.online; onlineShown = r.shown;
+    r.away ||= new Set();
+    const eq = (a, b) => a.size === b.size && [...a].every((u) => b.has(u));
+    const same = r.shown === onlineShown && eq(r.online, friendsOnline) && eq(r.away, friendsAway);
+    friendsOnline = r.online; friendsAway = r.away; onlineShown = r.shown;
     if (!same) { renderChatTo(); friendsUi.update(); }
   }
   setInterval(() => askOnline({ timer: true }), ONLINE_ASK_MS);
@@ -459,6 +462,7 @@ export function createChat(game) {
     friends: () => friendList,
     refresh: () => refreshFriends(),
     online: () => friendsOnline,
+    away: () => friendsAway,
     onlineShown: () => onlineShown,
     setOnlineShown: (show) => setOnlineShown(show),
     askOnline: () => askOnline(),
@@ -499,10 +503,13 @@ export function createChat(game) {
     const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
     if (friendBackend) {
       opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-      // Friends online now first, with a green dot.
-      const on = friendList.friends.filter((f) => friendsOnline.has(f.uid));
-      for (const f of on) opts.push([f.uid, '🟢 ' + f.name + ' · ' + t('friends.online')]);
-      for (const f of friendList.friends) if (!friendsOnline.has(f.uid)) opts.push([f.uid, '💌 ' + f.name]);
+      // Online friends first (🟢), then away (🔴), then offline (⚪; 💌
+      // before the server can tell, supabase/068_friends_online.sql).
+      const fr = friendList.friends;
+      for (const f of fr) if (friendsOnline.has(f.uid)) opts.push([f.uid, '🟢 ' + f.name + ' · ' + t('friends.online')]);
+      for (const f of fr) if (friendsAway.has(f.uid)) opts.push([f.uid, '🔴 ' + f.name + ' · ' + t('friends.away')]);
+      const off = onlineShown == null ? '💌 ' : '⚪ ';
+      for (const f of fr) if (!friendsOnline.has(f.uid) && !friendsAway.has(f.uid)) opts.push([f.uid, off + f.name]);
     }
     sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
     sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;

@@ -751,6 +751,7 @@ export const VI = {
   'friends.askMore': "+{n} người nữa",
   'friends.later': "Để sau",
   'friends.online': "Đang online",
+  'friends.away': "Vắng mặt",
   'friends.showOnline': "Cho bạn bè thấy khi tôi online",
   'friends.showOnlineNote': "Chỉ bạn bè thấy được. Tắt đi để trông như đang offline.",
   'look.tee': 'Màu áo phông',

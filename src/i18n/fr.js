@@ -751,6 +751,7 @@ export const FR = {
   'friends.askMore': "+{n} autres",
   'friends.later': "Plus tard",
   'friends.online': "En ligne",
+  'friends.away': "Absent",
   'friends.showOnline': "Montrer à mes amis quand je suis en ligne",
   'friends.showOnlineNote': "Seuls tes amis le voient. Désactive-le pour paraître hors ligne.",
   'look.tee': 'Couleur du t-shirt',

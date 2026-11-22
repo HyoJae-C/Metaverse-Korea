@@ -751,6 +751,7 @@ export const ID = {
   'friends.askMore': "+{n} lagi",
   'friends.later': "Nanti",
   'friends.online': "Online",
+  'friends.away': "Sedang pergi",
   'friends.showOnline': "Tunjukkan ke teman saat aku online",
   'friends.showOnlineNote': "Hanya temanmu yang bisa melihat. Matikan agar terlihat offline.",
   'look.tee': 'Warna kaos',

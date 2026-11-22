@@ -180,7 +180,8 @@ export class FriendsUI {
       const at = (k) => Date.parse(inbox?.last(k)?.at || 0) || 0;
       convs.sort((a, b) => (a.key === ALL ? -1 : b.key === ALL ? 1 : at(b.key) - at(a.key)));
     }
-    const online = this.app.online?.() || new Set();
+    const online = this.app.online?.() || new Set(), away = this.app.away?.() || new Set();
+    const known = this.app.onlineShown?.() != null; // the server can tell (068 SQL run)
     const box = el('div', 'fr-list');
     for (const c of convs) {
       const row = el('button', 'fr-row fr-conv');
@@ -188,7 +189,12 @@ export class FriendsUI {
       const n = inbox?.unread(c.key) || 0;
       const text = el('span', 'fr-text');
       const name = el('b', 'fr-name', c.name);
-      if (online.has(c.key)) { const d = el('i', 'fr-on'); d.title = t('friends.online'); name.append(d); } // online now
+      if (c.key !== ALL && known) { // 🟢 online, 🔴 away, ⚪ offline
+        const st2 = online.has(c.key) ? 'on' : away.has(c.key) ? 'away' : 'off';
+        const d = el('i', 'fr-dot fr-' + st2);
+        d.title = st2 === 'off' ? '' : t(st2 === 'on' ? 'friends.online' : 'friends.away');
+        name.append(d);
+      }
       text.append(name, el('small', 'fr-last', last ? (last.from === this.app.me() ? L(FRIEND_TEXT.you) + ': ' : '') + this.app.clean(last.body) : ''));
       row.append(el('span', 'fr-avatar', c.icon), text, el('small', 'fr-time', last ? clock(last.at) : ''));
       if (n) row.append(el('b', 'fr-unread', String(n > 99 ? '99+' : n)));

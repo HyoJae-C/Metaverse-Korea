@@ -750,6 +750,7 @@ export const ES = {
   'friends.askMore': "+{n} más",
   'friends.later': "Luego",
   'friends.online': "En línea",
+  'friends.away': "Ausente",
   'friends.showOnline': "Que mis amigos vean cuando estoy en línea",
   'friends.showOnlineNote': "Solo lo ven tus amigos. Apágalo para aparecer desconectado.",
   'look.tee': 'Color de la camiseta',

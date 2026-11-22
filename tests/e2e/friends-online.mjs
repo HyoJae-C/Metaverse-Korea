@@ -1,7 +1,7 @@
 // End-to-end check: friends online now (supabase/068_friends_online.sql,
-// LocalFriends.online() here). B has two friends: one played a moment ago,
-// one went quiet long ago. The chat bar's "send to" picker lists the online
-// one first with a green dot, the 👥 panel shows the dot, and B's switch
+// LocalFriends.online() here). B has three friends: online, away (no input
+// for 30 min) and gone. The picker lists them 🟢, 🔴, ⚪ in that order, the
+// 👥 panel shows the same dots, and B's switch
 // "Let friends see when I'm online" is on by default and can be turned off.
 // Local play, like friend-requests.mjs:
 //   VITE_NET_PROVIDER=local npx vite build --outDir dist-local && npx vite preview --outDir dist-local --port 4174 &
@@ -32,10 +32,12 @@ try {
     const s = JSON.parse(localStorage.getItem('mkfriends.local'));
     const me = Object.keys(s.names).find((u) => s.names[u] === 'Friend B');
     s.seen = s.seen || {};
-    for (const [uid, name, ago] of [['e2e-on', 'Mina Online', 5000], ['e2e-off', 'Joon Away', 3600e3]]) {
+    s.away = s.away || {};
+    for (const [uid, name, ago, away] of [['e2e-on', 'Mina Online', 5000, false], ['e2e-away', 'Sora Idle', 5000, true], ['e2e-off', 'Joon Gone', 3600e3, false]]) {
       s.names[uid] = name;
       s.edges.push([uid, me], [me, uid]);
       s.seen[uid] = Date.now() - ago;
+      s.away[uid] = away;
     }
     localStorage.setItem('mkfriends.local', JSON.stringify(s));
     new BroadcastChannel('mk-friends').postMessage({ type: 'f', to: me });
@@ -47,15 +49,15 @@ try {
   await page.waitForFunction(() => /Mina Online/.test(document.getElementById('chat-to')?.textContent || ''), null, { timeout: 10000 });
   await page.waitForFunction(() => [...document.querySelectorAll('#chat-to option')].some((o) => o.textContent.startsWith('🟢 Mina Online')), null, { timeout: 10000 });
   const opts = await page.$$eval('#chat-to option', (els) => els.map((e) => e.textContent));
-  const iOn = opts.findIndex((o) => o.startsWith('🟢 Mina Online')), iOff = opts.findIndex((o) => o === '💌 Joon Away');
-  if (iOn < 0 || iOff < 0 || iOn > iOff) throw new Error('picker options: ' + JSON.stringify(opts));
+  const iOn = opts.findIndex((o) => o.startsWith('🟢 Mina Online')), iAway = opts.findIndex((o) => o.startsWith('🔴 Sora Idle')), iOff = opts.findIndex((o) => o === '⚪ Joon Gone');
+  if (iOn < 0 || iAway < 0 || iOff < 0 || !(iOn < iAway && iAway < iOff)) throw new Error('picker options: ' + JSON.stringify(opts));
   if (shotDir) await page.screenshot({ path: shotDir + '/online-picker.png' });
 
   step = 'the friends panel shows the dot and the switch';
   await page.click('#friends-btn');
   await page.waitForSelector('#friends-panel .fr-on', { timeout: 5000 });
-  const dotted = await page.$$eval('#friends-panel .fr-conv', (els) => els.filter((e) => e.querySelector('.fr-on')).map((e) => e.querySelector('.fr-name').textContent));
-  if (dotted.length !== 1 || !/Mina Online/.test(dotted[0])) throw new Error('dots on: ' + JSON.stringify(dotted));
+  const dots = await page.$$eval('#friends-panel .fr-conv', (els) => Object.fromEntries(els.map((e) => [e.querySelector('.fr-name').textContent, e.querySelector('.fr-dot')?.className || ''])));
+  if (!/fr-on/.test(dots['Mina Online']) || !/fr-away/.test(dots['Sora Idle']) || !/fr-off/.test(dots['Joon Gone']) || dots['All friends']) throw new Error('dots: ' + JSON.stringify(dots));
   const box = '#friends-panel .fr-online-switch input';
   if (!(await page.isChecked(box))) throw new Error('switch should be on by default');
   if (shotDir) await page.screenshot({ path: shotDir + '/online-panel.png' });

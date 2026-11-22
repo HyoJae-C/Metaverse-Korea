@@ -756,6 +756,7 @@ export const EN = {
   'friends.askMore': "+{n} more",
   'friends.later': "Later",
   'friends.online': "Online",
+  'friends.away': "Away",
   'friends.showOnline': "Let friends see when I'm online",
   'friends.showOnlineNote': "Only your friends see it. Turn it off to look offline.",
   'look.tee': 'T-shirt colour',

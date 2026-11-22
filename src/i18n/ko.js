@@ -757,6 +757,7 @@ export const KO = {
   'friends.askMore': "외 {n}명",
   'friends.later': "나중에",
   'friends.online': "접속 중",
+  'friends.away': "자리 비움",
   'friends.showOnline': "친구에게 내 접속 상태 보여 주기",
   'friends.showOnlineNote': "친구만 볼 수 있어요. 끄면 접속하지 않은 것처럼 보여요.",
   'look.tee': '티셔츠 색',

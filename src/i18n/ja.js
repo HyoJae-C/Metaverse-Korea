@@ -757,6 +757,7 @@ export const JA = {
   'friends.askMore': "ほか{n}人",
   'friends.later': "あとで",
   'friends.online': "オンライン",
+  'friends.away': "離席中",
   'friends.showOnline': "オンライン中をフレンドに表示",
   'friends.showOnlineNote': "見えるのはフレンドだけです。オフにするとオフラインに見えます。",
   'look.tee': 'Tシャツの色',

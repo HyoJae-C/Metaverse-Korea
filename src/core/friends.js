@@ -173,7 +173,7 @@ export class SupabaseFriends {
   async online() {
     const r = await this._rpc('friends_online');
     if (r.error) return { error: r.error };
-    return { online: new Set((r.data?.online || []).map(String)), shown: r.data?.shown !== false };
+    return { online: new Set((r.data?.online || []).map(String)), away: new Set((r.data?.away || []).map(String)), shown: r.data?.shown !== false };
   }
   async setShown(show) {
     const r = await this._rpc('set_online_shown', { p_show: !!show });
@@ -222,8 +222,8 @@ export class LocalFriends {
   _read() {
     try {
       const s = JSON.parse(this.storage.getItem(LOCAL_KEY) || '{}');
-      return { names: s.names || {}, edges: Array.isArray(s.edges) ? s.edges : [], msgs: Array.isArray(s.msgs) ? s.msgs : [], seq: s.seq || 0, seen: s.seen || {}, hidden: s.hidden || {} };
-    } catch { return { names: {}, edges: [], msgs: [], seq: 0, seen: {}, hidden: {} }; }
+      return { names: s.names || {}, edges: Array.isArray(s.edges) ? s.edges : [], msgs: Array.isArray(s.msgs) ? s.msgs : [], seq: s.seq || 0, seen: s.seen || {}, hidden: s.hidden || {}, away: s.away || {} };
+    } catch { return { names: {}, edges: [], msgs: [], seq: 0, seen: {}, hidden: {}, away: {} }; }
   }
   _write(s) {
     s.msgs = s.msgs.slice(-500);
@@ -297,18 +297,19 @@ export class LocalFriends {
     return { message };
   }
   // Online here = this tab said so in the last 90 s (see touch()).
-  touch(now = Date.now()) {
+  touch(now = Date.now(), away = false) {
     const s = this._read();
     s.seen = { ...(s.seen || {}), [this.uid]: now };
+    s.away = { ...(s.away || {}), [this.uid]: !!away };
     this._write(s);
   }
   async online(now = Date.now()) {
     this.touch(now);
     const s = this._read();
-    const seen = s.seen || {}, hidden = s.hidden || {};
-    const online = new Set(Object.keys(s.names).filter((u) => u !== this.uid && this._friends(s, this.uid, u)
-      && now - (seen[u] || 0) < ONLINE_MS && !hidden[u]));
-    return { online, shown: !hidden[this.uid] };
+    const seen = s.seen || {}, hidden = s.hidden || {}, away = s.away || {};
+    const here = Object.keys(s.names).filter((u) => u !== this.uid && this._friends(s, this.uid, u)
+      && now - (seen[u] || 0) < ONLINE_MS && !hidden[u]);
+    return { online: new Set(here.filter((u) => !away[u])), away: new Set(here.filter((u) => away[u])), shown: !hidden[this.uid] };
   }
   async setShown(show) {
     const s = this._read();

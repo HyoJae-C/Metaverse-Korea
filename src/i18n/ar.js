@@ -751,6 +751,7 @@ export const AR = {
   'friends.askMore': "+{n} آخرون",
   'friends.later': "لاحقًا",
   'friends.online': "متصل",
+  'friends.away': "بعيد",
   'friends.showOnline': "اسمح لأصدقائي برؤية أنني متصل",
   'friends.showOnlineNote': "لا يراه إلا أصدقاؤك. أوقفه لتظهر غير متصل.",
   'look.tee': 'لون القميص',

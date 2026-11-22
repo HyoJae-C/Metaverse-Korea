@@ -751,6 +751,7 @@ export const TH = {
   'friends.askMore': "อีก {n} คน",
   'friends.later': "ไว้ทีหลัง",
   'friends.online': "ออนไลน์",
+  'friends.away': "ไม่อยู่",
   'friends.showOnline': "ให้เพื่อนเห็นตอนฉันออนไลน์",
   'friends.showOnlineNote': "เฉพาะเพื่อนเท่านั้นที่เห็น ปิดไว้จะดูเหมือนออฟไลน์",
   'look.tee': 'สีเสื้อยืด',
