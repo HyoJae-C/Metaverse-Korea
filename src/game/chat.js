@@ -153,6 +153,7 @@ export function createChat(game) {
     if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
     if (game.silent) { chatInput.placeholder = L(SILENT_TEXT.placeholder); $('chat-to').hidden = true; return; } // the silent dharma hall: 🙏 only
     renderChatTo(); // (back from the confession room: the picker and its words)
+    askOnline(); // green dots by friends who are online
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
   function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
@@ -370,6 +371,40 @@ export function createChat(game) {
     refreshPersonFriend();
     friendsUi.update();
   }
+  // Which friends are in the game now (green dots in the picker and the 👥
+  // panel; supabase/068_friends_online.sql). No realtime: one small request,
+  // only while the chat bar or the panel is open, at most once a minute (and
+  // straight away on opening, unless asked in the last 15 s).
+  const ONLINE_ASK_MS = 60000, ONLINE_AGAIN_MS = 15000;
+  let friendsOnline = new Set(), onlineShown = null, onlineAskedAt = 0;
+  async function askOnline({ timer = false } = {}) {
+    if (chatBar.hidden && !friendsUi.open) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const st = friendStore();
+    if (!st?.online) return;
+    const now = Date.now();
+    if (now - onlineAskedAt < (timer ? ONLINE_ASK_MS - 2000 : ONLINE_AGAIN_MS)) return;
+    onlineAskedAt = now;
+    const r = await st.online();
+    if (st !== friendBackend) return;
+    if (r.error) {
+      if (r.error !== 'missing') return; // network: keep what we had
+      r.online = new Set(); r.shown = null; // SQL not run yet: no dots, no switch
+    }
+    const same = r.shown === onlineShown && r.online.size === friendsOnline.size && [...r.online].every((u) => friendsOnline.has(u));
+    friendsOnline = r.online; onlineShown = r.shown;
+    if (!same) { renderChatTo(); friendsUi.update(); }
+  }
+  setInterval(() => askOnline({ timer: true }), ONLINE_ASK_MS);
+  async function setOnlineShown(show) {
+    const st = friendStore();
+    if (!st?.setShown) return;
+    const was = onlineShown;
+    onlineShown = !!show;
+    friendsUi.update();
+    const r = await st.setShown(!!show);
+    if (r.error) { onlineShown = was; friendsUi.update(); game.shop.toast(friendsUi.errorText(r.error)); }
+  }
   // Someone in this area by name, and where they are from me as the screen
   // sees it: { id, m, dir }, or null.
   function locatePlayer(name) {
@@ -423,6 +458,10 @@ export function createChat(game) {
     me: () => friendBackend?.uid,
     friends: () => friendList,
     refresh: () => refreshFriends(),
+    online: () => friendsOnline,
+    onlineShown: () => onlineShown,
+    setOnlineShown: (show) => setOnlineShown(show),
+    askOnline: () => askOnline(),
     toast: (m) => game.shop.toast(m),
     clean: (s) => filterText(cleanFriendBody(s)),
     isBlocked: (uid, name) => safety.isBlocked(null, name),
@@ -460,7 +499,10 @@ export function createChat(game) {
     const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
     if (friendBackend) {
       opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-      for (const f of friendList.friends) opts.push([f.uid, '💌 ' + f.name]);
+      // Friends online now first, with a green dot.
+      const on = friendList.friends.filter((f) => friendsOnline.has(f.uid));
+      for (const f of on) opts.push([f.uid, '🟢 ' + f.name + ' · ' + t('friends.online')]);
+      for (const f of friendList.friends) if (!friendsOnline.has(f.uid)) opts.push([f.uid, '💌 ' + f.name]);
     }
     sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
     sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;

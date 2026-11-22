@@ -4,6 +4,7 @@
 // stay (they are kept on the server, see core/friends.js).
 
 import { L, fmt } from './pocha-ui.js';
+import { t } from '../core/i18n.js';
 import { ALL, MAX_BODY } from '../core/friends.js';
 
 export const FRIEND_TEXT = {
@@ -94,6 +95,7 @@ export class FriendsUI {
     this.render();
     if (key) this._load(key);
     else this.app.refresh();
+    this.app.askOnline?.();
   }
 
   async _load(key) {
@@ -178,13 +180,16 @@ export class FriendsUI {
       const at = (k) => Date.parse(inbox?.last(k)?.at || 0) || 0;
       convs.sort((a, b) => (a.key === ALL ? -1 : b.key === ALL ? 1 : at(b.key) - at(a.key)));
     }
+    const online = this.app.online?.() || new Set();
     const box = el('div', 'fr-list');
     for (const c of convs) {
       const row = el('button', 'fr-row fr-conv');
       const last = inbox?.last(c.key);
       const n = inbox?.unread(c.key) || 0;
       const text = el('span', 'fr-text');
-      text.append(el('b', 'fr-name', c.name), el('small', 'fr-last', last ? (last.from === this.app.me() ? L(FRIEND_TEXT.you) + ': ' : '') + this.app.clean(last.body) : ''));
+      const name = el('b', 'fr-name', c.name);
+      if (online.has(c.key)) { const d = el('i', 'fr-on'); d.title = t('friends.online'); name.append(d); } // online now
+      text.append(name, el('small', 'fr-last', last ? (last.from === this.app.me() ? L(FRIEND_TEXT.you) + ': ' : '') + this.app.clean(last.body) : ''));
       row.append(el('span', 'fr-avatar', c.icon), text, el('small', 'fr-time', last ? clock(last.at) : ''));
       if (n) row.append(el('b', 'fr-unread', String(n > 99 ? '99+' : n)));
       row.onclick = () => this.show(c.key);
@@ -216,7 +221,20 @@ export class FriendsUI {
       inp.value = '';
       this._result(await st.add(name), name);
     };
-    parts.push(form, el('p', 'fine', '🔒 ' + L(FRIEND_TEXT.keepNote)));
+    parts.push(form);
+    // Show my online status to friends (on by default). Hidden until the
+    // server can tell (supabase/068_friends_online.sql).
+    const shown = this.app.onlineShown?.();
+    if (shown != null) {
+      const sw = el('label', 'fr-online-switch');
+      const box2 = el('input');
+      box2.type = 'checkbox';
+      box2.checked = shown;
+      box2.onchange = () => this.app.setOnlineShown(box2.checked);
+      sw.append(box2, el('span', null, ' 🟢 ' + t('friends.showOnline')));
+      parts.push(sw, el('p', 'fine', t('friends.showOnlineNote')));
+    }
+    parts.push(el('p', 'fine', '🔒 ' + L(FRIEND_TEXT.keepNote)));
     this.root.replaceChildren(...parts);
   }
 
