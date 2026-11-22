@@ -43,3 +43,28 @@ test('the door boxed in: the door itself', () => {
   const col = new CollisionMap([box(-7, -5.5, 7, 5.5)]);
   assert.deepEqual(freeSpot(col, [1, 1], door, room, r), door);
 });
+
+// Room dividers (core/partitions.js) can't shut floor off from the door
+// (Yozi 2026-11-22): game/decor.js refuses one when shutInArea grows.
+test('shut-in floor: a closed-off corner counts, one with a body-wide gap does not', async () => {
+  const { shutInArea } = await import('../src/core/free-spot.js');
+  assert.equal(shutInArea(new CollisionMap([]), door, room, r), 0, 'an empty room');
+  // The back-left corner (x < -4, z < -3) closed off by two thin walls.
+  const closed = [box(-7, -3.1, -4, -2.9), box(-4.1, -5.5, -3.9, -2.9)];
+  assert.ok(shutInArea(new CollisionMap(closed), door, room, r) > 1, 'closed corner');
+  // The same with a 1 m gap where they'd meet: you walk in.
+  const gap = [box(-7, -3.1, -5, -2.9), box(-4.1, -5.5, -3.9, -2.9)];
+  assert.equal(shutInArea(new CollisionMap(gap), door, room, r), 0, '1 m gap');
+  // A 50 cm gap is too narrow for a body: still shut in.
+  const narrow = [box(-7, -3.1, -4.6, -2.9), box(-4.1, -5.5, -3.9, -2.9)];
+  assert.ok(shutInArea(new CollisionMap(narrow), door, room, r) > 1, '50 cm gap');
+});
+
+test('the dividers are shop furniture and solid', async () => {
+  const { PARTITIONS, isPartition } = await import('../src/core/partitions.js');
+  assert.equal(PARTITIONS.length, 3);
+  for (const [id] of PARTITIONS) {
+    assert.ok(isPartition(id));
+    assert.ok(furnitureCollider({ id, x: 0, z: 0, ry: 0 }), id + ' blocks');
+  }
+});

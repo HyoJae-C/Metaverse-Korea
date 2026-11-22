@@ -534,6 +534,7 @@ export const EN = {
   'home.putDown': 'Put down',
   'home.remove': 'Remove',
   'home.blocked': 'Something is in the way. Move a little and put it down again.',
+  'home.dividerGap': 'Leave a gap to walk round the divider (about 80 cm).',
   'home.noRoom': "Not enough room for this here",
   'home.lie': 'Lie down',
   'home.lampOn': 'Turn on the light',

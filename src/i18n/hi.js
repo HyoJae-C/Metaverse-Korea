@@ -535,6 +535,7 @@ export const HI = {
   'home.putDown': 'नीचे रखें',
   'home.remove': 'हटाएँ',
   'home.blocked': 'कुछ रास्ते में है। थोड़ा हटकर फिर से रखें।',
+  'home.dividerGap': 'पार्टीशन के पास से निकलने की जगह छोड़ें (लगभग 80 सेमी)।',
   'home.noRoom': "यहाँ इसके लिए जगह कम है",
   'home.lie': 'लेट जाएँ',
   'home.lampOn': 'बत्ती जलाएँ',

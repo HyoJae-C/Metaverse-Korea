@@ -535,6 +535,7 @@ export const VI = {
   'home.putDown': 'Đặt xuống',
   'home.remove': 'Cất đi',
   'home.blocked': 'Có đồ khác chắn đường. Dịch đi một chút rồi đặt lại nhé.',
+  'home.dividerGap': 'Hãy chừa khe để đi qua cạnh vách ngăn (khoảng 80 cm).',
   'home.noRoom': "Ở đây không đủ chỗ",
   'home.lie': 'Nằm xuống',
   'home.lampOn': 'Bật đèn',

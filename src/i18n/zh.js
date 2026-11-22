@@ -535,6 +535,7 @@ export const ZH = {
   'home.putDown': '放下',
   'home.remove': '移除',
   'home.blocked': '被别的家具挡住了。挪一挪再放下吧。',
+  'home.dividerGap': '请在隔断旁留出能走过去的空隙（约80厘米）。',
   'home.noRoom': "这里空间不够",
   'home.lie': '躺下',
   'home.lampOn': '开灯',

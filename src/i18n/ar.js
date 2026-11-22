@@ -535,6 +535,7 @@ export const AR = {
   'home.putDown': 'ضع',
   'home.remove': 'أزِل',
   'home.blocked': 'هناك شيء في الطريق. تحرّك قليلًا ثم ضعها مجددًا.',
+  'home.dividerGap': 'اترك فجوة للمرور بجانب الفاصل (نحو 80 سم).',
   'home.noRoom': "لا توجد مساحة كافية هنا",
   'home.lie': 'استلقِ',
   'home.lampOn': 'أشعل الضوء',

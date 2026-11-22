@@ -534,6 +534,7 @@ export const ES = {
   'home.putDown': 'Dejar',
   'home.remove': 'Quitar',
   'home.blocked': 'Hay algo en medio. Muévete un poco y vuelve a dejarlo.',
+  'home.dividerGap': 'Deja un hueco para pasar junto al separador (unos 80 cm).',
   'home.noRoom': "Aquí no hay espacio suficiente",
   'home.lie': 'Acostarse',
   'home.lampOn': 'Encender la luz',

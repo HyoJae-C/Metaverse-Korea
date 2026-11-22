@@ -12,7 +12,8 @@ import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
 import { OLD_HOME_LEVEL, fitsHome, homeRoom, readHomeLevel } from '../core/home-stages.js';
 import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
 import { createHomeFinish } from './home-finish.js';
-import { freeSpot as walkableSpot } from '../core/free-spot.js';
+import { freeSpot as walkableSpot, shutInArea } from '../core/free-spot.js';
+import { isPartition } from '../core/partitions.js';
 
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
@@ -104,10 +105,31 @@ export function createDecor(game) {
   function unstick(always = false) {
     const p = game.me?.root.position, col = game.interior?.collision, r = (game.PLAYER_R || 0.35) + 0.05;
     if (!decor || !p || !col || game.seated || (!always && !col.blocked(p.x, p.z, r))) return;
-    const { room, exit } = game.interior;
-    const door = exit ? [exit.x, exit.z - 1.4] : [0, room.d / 2 - 1]; // (where you come in: main.js enterStore)
-    const [x, z] = walkableSpot(col, [p.x, p.z], door, room, r);
+    const [x, z] = walkableSpot(col, [p.x, p.z], doorSpot(), game.interior.room, r);
     p.x = x; p.z = z;
+  }
+  function doorSpot() { // where you come in: main.js enterStore
+    const { room, exit } = game.interior;
+    return exit ? [exit.x, exit.z - 1.4] : [0, room.d / 2 - 1];
+  }
+  // A room divider never shuts anyone in (Yozi 2026-11-22: no getting stuck):
+  // it can't go down where it would cut off floor you can't walk round to
+  // from the door, so there's always a gap beside it (about 80 cm, a body and
+  // a little). Asked for any piece once the room has a divider (a wardrobe
+  // can't fill the gap either); without one, rooms work as before. Asked
+  // every frame while a piece is carried, so the answer is kept until it moves.
+  let shutKey = '', shutVal = false;
+  function shutsIn(it) {
+    if (it.y || !game.interior?.room || !(isPartition(it.id) || decor.items.some((o) => isPartition(o.id)))) return false;
+    const key = [it.id, it.x, it.z, it.ry, ...decor.items.flatMap((o) => (o === it ? [] : [o.id, o.x, o.z, o.ry]))].join();
+    if (key === shutKey) return shutVal;
+    const others = decor.items.filter((o) => o !== it).map(furnitureCollider).filter(Boolean);
+    const { room } = game.interior, r = (game.PLAYER_R || 0.35) + 0.05, door = doorSpot();
+    const before = shutInArea(new CollisionMap(decor.built.colliders.concat(others)), door, room, r);
+    const after = shutInArea(new CollisionMap(decor.built.colliders.concat(others, [furnitureCollider(it)])), door, room, r);
+    shutKey = key;
+    shutVal = after > before + 0.5; // (half a square metre: a corner already tucked behind a bed doesn't count)
+    return shutVal;
   }
   // Catalogue buttons show which pieces are already in the room.
   function markPlaced() {
@@ -241,7 +263,7 @@ export function createDecor(game) {
     footprint.scale.set(w + 0.1, 1, d + 0.1); // (a little wider than the piece, so it shows round it)
     footprint.position.set(it.x, (it.y || 0) + 0.02, it.z);
     footprint.rotation.y = it.ry;
-    const bad = pieceBlocked(it, decor.items) || outsideRoom(it, rw, rd); // (not you: put down on your toes, you step out of it)
+    const bad = pieceBlocked(it, decor.items) || outsideRoom(it, rw, rd) || shutsIn(it); // (not you: put down on your toes, you step out of it)
     footprint.material.color.copy(bad ? no : ok);
     footprint.userData.bad = bad;
   }
@@ -260,7 +282,7 @@ export function createDecor(game) {
         it.x = THREE.MathUtils.clamp(x0 + Math.cos(a) * r, -w / 2 + 0.8, w / 2 - 0.8);
         it.z = THREE.MathUtils.clamp(z0 + Math.sin(a) * r, -d / 2 + 0.8, d / 2 - 1.8);
         settle(it);
-        if (!pieceBlocked(it, decor.items, p) && !outsideRoom(it, w, d)) return true;
+        if (!pieceBlocked(it, decor.items, p) && !outsideRoom(it, w, d) && !shutsIn(it)) return true;
       }
     }
     it.x = x0; it.z = z0;
@@ -295,6 +317,7 @@ export function createDecor(game) {
   function putDown(force = false) {
     if (decor.carry) settle(decor.carry);
     if (!force && decor.carry && (pieceBlocked(decor.carry, decor.items) || outsideRoom(decor.carry, game.interior.room.w, game.interior.room.d))) { shop.toast(t('home.blocked')); return false; }
+    if (!force && decor.carry && shutsIn(decor.carry)) { shop.toast(t('home.dividerGap')); return false; }
     decor.carry = null;
     decor.riders = null;
     hideFootprint();
@@ -362,7 +385,8 @@ export function createDecor(game) {
     if (!it) return;
     const riders = it === decor.carry ? null : ridersOf(it, decor.items); // (carried: they follow in updateCarry)
     it.ry += Math.PI / 4;
-    if (it !== decor.carry && (pieceBlocked(it, decor.items, game.me.root.position) || outsideRoom(it, game.interior.room.w, game.interior.room.d))) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; } // (a carried piece is checked when put down)
+    if (it !== decor.carry && (pieceBlocked(it, decor.items, game.me.root.position) || outsideRoom(it, game.interior.room.w, game.interior.room.d))) { it.ry -= Math.PI / 4; shop.toast(t('home.blocked')); return; }
+    if (it !== decor.carry && shutsIn(it)) { it.ry -= Math.PI / 4; shop.toast(t('home.dividerGap')); return; } // (a carried piece is checked when put down)
     if (riders) placeRiders(it, riders);
     rebuildDecor();
   };

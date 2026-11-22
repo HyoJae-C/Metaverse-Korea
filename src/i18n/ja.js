@@ -535,6 +535,7 @@ export const JA = {
   'home.putDown': '置く',
   'home.remove': '片付ける',
   'home.blocked': 'ほかの家具にぶつかります。少し動いてからもう一度置いてください。',
+  'home.dividerGap': '間仕切りの横に通れるすき間（約80cm）を空けてください。',
   'home.noRoom': "ここには置く場所が足りません",
   'home.lie': '横になる',
   'home.lampOn': '明かりをつける',

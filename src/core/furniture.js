@@ -3,7 +3,10 @@
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
-import { SHOP_FURNITURE } from './furniture-shop.js';
+import { SHOP_FURNITURE as SHOP_PIECES } from './furniture-shop.js';
+import { PARTITIONS } from './partitions.js';
+// The furniture shops' pieces, with the room dividers (core/partitions.js).
+const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
 import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
 import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
