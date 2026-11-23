@@ -13,9 +13,23 @@ export const GAME_NAME = {
   ladders: R('Snakes & Ladders', '뱀사다리', 'ヘビとはしご', '蛇梯棋', 'Serpientes y escaleras', 'Ular Tangga', 'Rắn và thang', 'साँप-सीढ़ी', 'Serpents et échelles', 'บันไดงู', 'السلم والثعبان'),
   tower: R('Wobbly Tower', '탑 쌓기', 'ぐらぐらタワー', '摇摇积木塔', 'Torre tambaleante', 'Menara Goyang', 'Tháp lung lay', 'डगमग मीनार', 'Tour branlante', 'ตึกโยกเยก', 'البرج المتمايل'),
   bulldog: R('My Dog Doesn\'t Bite', '우리 개는 안 물어요', 'うちの犬はかまないよ', '我家狗不咬人', 'Mi perro no muerde', 'Anjingku Nggak Gigit', 'Chó nhà tôi không cắn', 'मेरा कुत्ता नहीं काटता', 'Mon chien ne mord pas', 'หมาบ้านเราไม่กัด', 'كلبي لا يعض'),
+  mafia: R('Mafia', '마피아', 'マフィアゲーム', '黑手党', 'Mafia', 'Mafia', 'Ma sói Mafia', 'माफिया', 'Mafia', 'มาเฟีย', 'المافيا'),
 };
 
 export const GAME_HOW = {
+  mafia: R(
+    'For 4 to 8 people. Everyone gets a secret role. At night the mafia remove one person, the doctor protects one and the police officer checks one. By day everyone talks in the chat and votes someone out. The town wins when no mafia is left; the mafia wins when they are as many as the rest.',
+    '4~8명이 해요. 모두 비밀 역할을 받아요. 밤에는 마피아가 한 명을 없애고, 의사는 한 명을 살리고, 경찰은 한 명을 조사해요. 낮에는 채팅으로 이야기하고 투표로 한 명을 내보내요. 마피아를 모두 내보내면 시민이 이기고, 마피아가 나머지와 같은 수가 되면 마피아가 이겨요.',
+    '4〜8人で遊びます。全員に秘密の役が配られます。夜はマフィアが一人を襲い、医者が一人を守り、警察が一人を調べます。昼はチャットで話し合い、投票で一人を追放します。マフィアが全員いなくなれば市民の勝ち、マフィアが残りと同数になればマフィアの勝ち。',
+    '4到8人玩。每人有一个秘密身份。夜里黑手党除掉一人，医生保护一人，警察查验一人。白天大家在聊天里讨论，投票让一人出局。黑手党全部出局则平民胜；黑手党人数与其他人相等则黑手党胜。',
+    'Para 4 a 8 personas. Cada uno recibe un papel secreto. De noche la mafia elimina a alguien, el médico protege a uno y el policía investiga a uno. De día todos hablan en el chat y votan para expulsar a alguien. Gana el pueblo si no queda mafia; gana la mafia si son tantos como el resto.',
+    'Untuk 4 sampai 8 orang. Semua mendapat peran rahasia. Malam hari mafia menyingkirkan satu orang, dokter melindungi satu orang, dan polisi memeriksa satu orang. Siang hari semua berdiskusi di chat dan memilih satu orang untuk dikeluarkan. Warga menang jika mafia habis; mafia menang jika jumlahnya sama dengan yang lain.',
+    'Dành cho 4 đến 8 người. Mỗi người nhận một vai bí mật. Ban đêm mafia loại một người, bác sĩ bảo vệ một người, cảnh sát điều tra một người. Ban ngày mọi người thảo luận trong chat rồi bỏ phiếu loại một người. Phe dân thắng khi không còn mafia; mafia thắng khi số mafia bằng số người còn lại.',
+    '4 से 8 लोगों के लिए। सबको एक गुप्त भूमिका मिलती है। रात में माफिया एक व्यक्ति को हटाता है, डॉक्टर एक को बचाता है और पुलिस एक की जाँच करती है। दिन में सब चैट में चर्चा करके मतदान से एक को बाहर करते हैं। माफिया खत्म हो जाए तो नागरिक जीतते हैं; माफिया बाकियों के बराबर हो जाए तो माफिया जीतता है।',
+    'Pour 4 à 8 personnes. Chacun reçoit un rôle secret. La nuit, la mafia élimine quelqu\'un, le médecin protège une personne et le policier en vérifie une. Le jour, tout le monde discute dans le chat puis vote pour éliminer quelqu\'un. Le village gagne quand il n\'y a plus de mafia ; la mafia gagne quand elle est aussi nombreuse que les autres.',
+    'เล่น 4 ถึง 8 คน ทุกคนได้บทบาทลับ กลางคืนมาเฟียกำจัดหนึ่งคน หมอปกป้องหนึ่งคน ตำรวจตรวจสอบหนึ่งคน กลางวันทุกคนคุยกันในแชตแล้วโหวตให้หนึ่งคนออก ชาวเมืองชนะเมื่อไม่เหลือมาเฟีย มาเฟียชนะเมื่อมีจำนวนเท่ากับคนที่เหลือ',
+    'من 4 إلى 8 أشخاص. يحصل كل لاعب على دور سري. في الليل تتخلص المافيا من شخص، ويحمي الطبيب شخصًا، ويتحقق الشرطي من شخص. في النهار يتناقش الجميع في الدردشة ويصوتون لإخراج شخص. يفوز المواطنون إذا لم يبقَ أحد من المافيا، وتفوز المافيا إذا تساوى عددها مع الباقين.',
+  ),
   omok: R(
     'Take turns placing a stone. Five in a row (across, down or diagonal) wins. Black goes first.',
     '번갈아 돌을 하나씩 놓아요. 가로·세로·대각선으로 다섯 개를 먼저 이으면 이겨요. 흑이 먼저 둬요.',

@@ -925,6 +925,7 @@ export class Mafia {
     this.dones = new Array(this.n).fill(false);
   }
 
+  get turn() { return -1; } // (nobody's turn: the phases run on the host's clock)
   living() { return this.alive.map((a, i) => (a ? i : -1)).filter((i) => i >= 0); }
   can(p, role) { return !this.over && this.alive[p] && this.roles[p] === role; }
   // Seconds the phase lasts on the host's clock.

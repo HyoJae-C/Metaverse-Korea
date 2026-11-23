@@ -19,7 +19,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, TOYS, FACES, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
+  GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -255,10 +255,16 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ lobby (host)
   choose(game) {
     this.leaveAll();
+    if (game === 'mafia') this.loadMafia();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0 }; // (ladders: the players lay the board out, unless the host says no)
     this.state = 'lobby';
     this.status = '';
     this.render();
+  }
+
+  // The mafia game's own screen and words (ui/board-mafia-ui.js), the first time it is wanted.
+  loadMafia() {
+    if (!this.mafia) import('./board-mafia-ui.js').then((m) => { this.mafia = m; this.render(); }).catch(() => {});
   }
 
   inviteOne(p) {
@@ -276,6 +282,7 @@ export class BoardGamesUI {
     const ready = lob.list.filter((q) => q.ready);
     for (const q of lob.list) if (!q.ready) this.net.send(bgReply(q.id, false)); // (stop waiting for them)
     const ids = [this.net.myId, ...ready.map((q) => q.id)];
+    if (lob.game === 'mafia' && ids.length < g.min) { this.status = this.mafia ? L(this.mafia.MAFIA_TEXT.need4) : ''; this.render(); return; } // (a game of talking: no computer players)
     while (ids.length < g.min) ids.push(BOT);
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
@@ -305,6 +312,7 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.dropView();
+    if (game === 'mafia') { this.play.phaseAt = performance.now(); this.play.stepSeen = 0; this.loadMafia(); }
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
@@ -460,6 +468,17 @@ export class BoardGamesUI {
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
     }
     const g = p.g;
+    if (p.game === 'mafia') {
+      if (p.stepSeen !== g.step) { p.stepSeen = g.step; p.phaseAt = performance.now(); this.onEvent('move', p.game); }
+      if (g.over && !p.done) {
+        p.done = true;
+        const won = (g.roles[p.seat] === 'mafia') === (g.winner === 'mafia');
+        this.onEvent(won ? 'win' : 'lose', p.game);
+        if (won) p.party = true;
+      }
+      this.render();
+      return;
+    }
     if (g.last?.ring != null) {
       this.status = tt(g.last.ring ? 'ringRight' : 'ringWrong', { name: p.names[seat], n: g.last.ring ? g.last.got : g.last.paid });
       this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
@@ -527,6 +546,14 @@ export class BoardGamesUI {
       const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
       const text = left <= TURN_WARN ? `⏳ ${Math.max(0, left)}` : '';
       if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    }
+    if (p?.game === 'mafia' && !p.g.over) {
+      // The phase's clock: everyone sees it run down, the host moves the game on.
+      const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
+      const clock = this.card.querySelector('[data-clock]');
+      if (clock && clock.textContent !== `⏳ ${left}`) clock.textContent = `⏳ ${left}`;
+      if (p.hostId === this.net.myId && now - p.phaseAt > p.g.seconds() * 1000 + 300) this.hostApply(0, ['n', p.g.step]);
+      return;
     }
     if (!p || p.g.over || p.hostId !== this.net.myId) return;
     // The computer players (the host runs them).
@@ -640,8 +667,19 @@ export class BoardGamesUI {
     }
     if (!near.length && !lob.list.length) c.append(el('div', 'bg-line', L(T.nobody)));
     c.append(row);
-    const seats = Math.max(g.min, 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0));
+    const here = 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0);
+    const seats = lob.game === 'mafia' ? here : Math.max(g.min, here);
     c.append(el('div', 'bg-line', tt('seats', { n: seats })));
+    if (lob.game === 'mafia' && this.mafia) {
+      // The host's choice: how long each person gets to talk (10, 15 or 20 seconds).
+      const r = el('button', 'bg-btn', fmt(L(this.mafia.MAFIA_TEXT.talkTime), { n: MAFIA_TALK[lob.opt] }));
+      r.type = 'button';
+      r.dataset.act = 'talktime';
+      r.onclick = () => { lob.opt = { 0: 3, 3: 1, 1: 0 }[lob.opt] ?? 0; this.render(); };
+      const line = el('div', 'bg-row');
+      line.append(r);
+      c.append(line);
+    }
     if (lob.game === 'omok' || lob.game === 'ladders') {
       // The host's choice: double threes allowed or not / a board of our own.
       const r = el('button', 'bg-btn', `${L(lob.game === 'omok' ? T.rule33 : T.ownBoard)}: ${L(lob.opt ? T.on : T.off)}`);
@@ -655,7 +693,7 @@ export class BoardGamesUI {
       c.append(line);
     }
     const act = el('div', 'bg-row');
-    if (g.max > 2 && seats < g.max) {
+    if (g.max > 2 && seats < g.max && lob.game !== 'mafia') {
       const add = el('button', 'bg-btn', '➕ ' + L(T.computer));
       add.type = 'button';
       add.onclick = () => this.addBot();
@@ -682,6 +720,7 @@ export class BoardGamesUI {
     const p = this.play;
     const g = p.g;
     c.append(el('h2', null, GAMES[p.game].icon + ' ' + L(GAME_NAME[p.game])));
+    if (p.game === 'mafia') { this.drawMafia(c); return; }
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
@@ -742,6 +781,30 @@ export class BoardGamesUI {
       row.append(back);
       c.append(row);
     }
+  }
+
+  // Mafia: its own screen (ui/board-mafia-ui.js), then the same ending as the other games.
+  drawMafia(c) {
+    const p = this.play, g = p.g;
+    if (this.mafia) this.mafia.drawMafia(c, { p, act: (a) => this.myMove(a), el, L, left: g.over ? 0 : Math.max(0, Math.ceil(g.seconds() - (performance.now() - p.phaseAt) / 1000)) });
+    if (this.status) c.append(el('div', 'bg-status', this.status));
+    p.party = false;
+    if (!g.over) return;
+    const row = el('div', 'bg-row');
+    row.style.justifyContent = 'center';
+    const ids = p.ids.filter((_, s) => !g.out[s] && !p.gone?.[s]);
+    if (p.hostId === this.net.myId && !p.closed && ids.length >= GAMES.mafia.min) {
+      const again = el('button', 'bg-btn bg-go', L(T.again));
+      again.type = 'button';
+      again.dataset.act = 'again';
+      again.onclick = () => this.begin('mafia', ids, this.net.myId, undefined, null, p.opt);
+      row.append(again);
+    }
+    const back = el('button', 'bg-btn', L(T.back));
+    back.type = 'button';
+    back.onclick = () => { this.leaveAll(); this.render(); };
+    row.append(back);
+    c.append(row);
   }
 
   headline() {
