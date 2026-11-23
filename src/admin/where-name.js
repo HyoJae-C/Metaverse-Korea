@@ -71,6 +71,7 @@ export const PLACES = [
   { name: 'Haneul Park', lm: 'skypark', r: 160 },
   { name: 'Nanji Camping Ground', lm: 'nanjicamp', r: 110 },
   { name: 'Dalmaji Park', lm: 'dalmaji', r: 90 },
+  { name: 'Seoul National Cemetery', lm: 'hyeonchung', r: 230 },
   // West: Gimpo, Mokdong, Magok
   { name: 'Gimpo Airport Terminal', lm: 'gimpoairport', r: 120 },
   { name: 'Mokdong Ice Rink', lm: 'mokdongrink', r: 50 },

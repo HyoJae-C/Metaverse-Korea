@@ -13,7 +13,7 @@ const bt = map.boatTaxi;
 
 test('every big road over the boat line is a bridge up off the water', () => {
   const names = map.bridges.map((b) => b.name).sort();
-  assert.deepEqual(names, ['동호로', '서강대교', '여의대로', '여의대방로', '잠수교', '한남대로'].sort());
+  assert.deepEqual(names, ['동작대로', '동호로', '서강대교', '여의대로', '여의대방로', '잠수교', '한남대로'].sort());
   for (const b of map.bridges) {
     assert.ok(Math.abs(deckHeight(b, b.mid) - (b.jamsu ? 5 : TOP)) < 0.01, `${b.name} is up over the channel`);
     assert.ok(deckHeight(b, 0) <= 0.3 && deckHeight(b, b.len) <= 0.3, `${b.name} comes down to its road at each end`);
