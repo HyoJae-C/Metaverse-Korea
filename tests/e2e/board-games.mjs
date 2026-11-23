@@ -62,7 +62,7 @@ async function join(name) {
     if (el) new MutationObserver(() => { if (!el.hidden && el.textContent) window.__toastSeen(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
   }));
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
-  await page.click('#next-btn');
+  await page.click('#next-btn', { timeout: 90000 }); // (a third browser starts while two others draw: room for a slow runner)
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
   // Building the world blocks the page, so a plain click can time out
@@ -71,7 +71,9 @@ async function join(name) {
   await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible', timeout: 90000 });
   await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
   await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
-  if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
+  // (pressed from inside the page, like Start: the world is still being built
+  // behind the welcome panel, and a plain click timed out on CI waiting for the page, 2026-11-24)
+  if (await page.isVisible('#welcome-panel')) await page.evaluate(() => document.getElementById('welcome-close')?.click());
   await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
   return page;
 }
