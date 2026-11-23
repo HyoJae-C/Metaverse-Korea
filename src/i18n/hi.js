@@ -236,6 +236,7 @@ export const HI = {
   'hair.bowl': "बाउल कट",
   'hair.drill': "ड्रिल कर्ल",
   'hair.fountain': "फ़व्वारा चोटी",
+  'hair.rooster': "मुर्गा मोहॉक",
   'salon.signature': 'सिग्नेचर',
   'eyeShape.big': 'बड़ी आँखें',
   'eyeShape.round': 'गोल आँखें',

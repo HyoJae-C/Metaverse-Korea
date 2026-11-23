@@ -236,6 +236,7 @@ export const AR = {
   'hair.bowl': "قصة الوعاء",
   'hair.drill': "تجاعيد لولبية",
   'hair.fountain': "تسريحة النافورة",
+  'hair.rooster': "موهوك عُرف الديك",
   'salon.signature': 'مميّزة',
   'eyeShape.big': 'عيون كبيرة',
   'eyeShape.round': 'عيون مستديرة',

@@ -235,6 +235,7 @@ export const ES = {
   'hair.bowl': "Corte tazón",
   'hair.drill': "Tirabuzones",
   'hair.fountain': "Coleta fuente",
+  'hair.rooster': "Cresta de gallo",
   'salon.signature': "Especialidad",
   'eyeShape.big': "Ojos grandes",
   'eyeShape.round': "Ojos redondos",
