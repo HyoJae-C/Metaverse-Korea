@@ -76,6 +76,15 @@ async function join(name) {
 }
 
 
+// Press the room's "Board games" button. The button is worked out once a
+// frame, so right after the panel closes it may still be the one from while
+// it was open (Sit down, a high five): wait until ours is back.
+async function openPanel(page) {
+  const has = () => [__mk.action(), ...(__mk.choices() || [])].some((l) => /Board games/.test(l || ''));
+  await page.waitForFunction(has, null, { timeout: 15000 });
+  await page.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /Board games/.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); });
+}
+
 const a = await join('Dice A');
 const b = await join('Dice B');
 const STAND = [-5.15, 2.4]; // behind a free chair at the café's third table (core/board-cafe-room.js)
@@ -89,7 +98,7 @@ try {
   await a.waitForFunction(() => /Board games/.test(__mk.action() || ''), null, { timeout: 10000 });
 
   step = 'A opens the panel and plays Omok against the computer';
-  await a.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /Board games/.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); });
+  await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
   await a.click('#bg-panel [data-game="omok"]');
   await a.click('#bg-panel [data-act="start"]');
@@ -101,7 +110,7 @@ try {
   await a.click('#bg-panel .bg-x');
 
   step = 'A invites B to Croc Teeth';
-  await a.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /Board games/.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); });
+  await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="croc"]');
   await a.click('#bg-panel [data-game="croc"]');
   await a.waitForFunction(() => [...document.querySelectorAll('#bg-panel .bg-btn')].some((x) => /Invite Dice B/.test(x.textContent)), null, { timeout: 15000 });
