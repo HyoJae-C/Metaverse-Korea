@@ -28,6 +28,7 @@ export const GAMES = {
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
+export const FACES = ['😏', '😱', '😇', '🤫', '😂', '👀']; // the faces a player can pull (the 'e' move)
 export const TOYS = [...ROULETTE, 'tower']; // press one spot in turn until it goes off
 
 // mulberry32: a small seeded random, the same on every device.

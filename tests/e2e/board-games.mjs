@@ -89,7 +89,7 @@ async function openPanel(page) {
 const a = await join('Dice A');
 const b = await join('Dice B');
 const STAND = [-5.15, 2.4]; // behind a free chair at the café's third table (core/board-cafe-room.js)
-let ok = false;
+let ok = false, c = null;
 try {
   step = 'both into the board game café';
   for (const page of [a, b]) await page.evaluate(() => __mk.enter('dice-and-tea'));
@@ -170,6 +170,13 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/tower.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'C walks in to watch';
+  c = await join('Dice C');
+  await c.evaluate(() => __mk.enter('dice-and-tea'));
+  await c.waitForFunction(() => __mk.room()?.id === 'dice-and-tea', null, { timeout: 30000 });
+  await c.evaluate(([x, z]) => __mk.place(x + 2.2, z + 0.4), STAND);
+  await a.waitForFunction(() => __mk.peers().length >= 2, null, { timeout: 30000 }).catch(() => {});
+
   step = 'A invites B to Croc Teeth';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="croc"]');
@@ -207,6 +214,10 @@ try {
   }
   await a.waitForSelector('#bg-panel [data-act="again"]', { timeout: 15000 });
   await b.waitForFunction(() => /💥/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
+  // C, who is not in the game, sees the croc on their table with its teeth pressed.
+  step = 'C watches the croc game on the table';
+  await c.waitForFunction(() => { const w = __mk.boardWatch()[0]; return w && w.kind === 'croc' && w.toy && w.pressed >= 1; }, null, { timeout: 15000 });
+  if (shotDir) { await c.evaluate(([x, z]) => { __mk.goto?.(x + 1.6, z + 1.6, Math.PI * 1.25); __mk.cam?.({ yaw: 0.8, pitch: 0.35, dist: 3.2 }); }, STAND); await c.waitForTimeout(700); await c.screenshot({ path: shotDir + '/watch-croc.png' }); }
   const pressed = await Promise.all([a, b].map((p) => p.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-spot')].map((x) => x.textContent === '·' ? 1 : 0).join(''))));
   if (pressed[0] !== pressed[1]) throw new Error(`different boards: ${pressed[0]} vs ${pressed[1]}`);
   if (shotDir) { await a.screenshot({ path: shotDir + '/croc-a.png' }); await b.screenshot({ path: shotDir + '/croc-b.png' }); }
@@ -225,7 +236,7 @@ try {
   for (const page of [a, b]) await page.waitForSelector('#bg-panel.on [data-hand="from"]', { timeout: 15000 });
   const drawer = async () => { for (const page of [a, b]) if (await page.evaluate(() => !!document.querySelector('#bg-panel [data-act="draw"]'))) return page; return null; };
   const thiefOver = (page) => page.evaluate(() => !document.querySelector('#bg-panel [data-hand="from"]'));
-  let faced = false;
+  let faced = false, watched = false;
   for (let k = 0; k < 80 && !(await thiefOver(a)); k++) {
     const mover = await drawer();
     if (!mover) { await a.waitForTimeout(200); continue; }
@@ -242,6 +253,12 @@ try {
       faced = true;
     }
     await mover.click('#bg-panel [data-act="draw"]:not([disabled])');
+    if (!watched) {
+      // C sees both hands of card backs on the table.
+      await c.waitForFunction(() => { const w = __mk.boardWatch()[0]; return w && w.kind === 'thief' && w.cards.length === 2 && w.cards.every((n) => n > 0); }, null, { timeout: 15000 });
+      if (shotDir) { await c.waitForTimeout(500); await c.screenshot({ path: shotDir + '/watch-thief.png' }); }
+      watched = true;
+    }
     for (const page of [a, b]) await page.waitForFunction((m) => { const f = document.querySelector('#bg-panel [data-hand="from"]'); return !f || f.querySelectorAll('.bg-card1').length !== m || !f.querySelector('.sel'); }, n, { timeout: 8000 });
   }
   for (const page of [a, b]) await page.waitForFunction(() => /🃏/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });

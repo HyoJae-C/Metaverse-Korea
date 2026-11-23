@@ -27,11 +27,63 @@ export function createBoardGames(game) {
   // At home (mine, or one I am visiting): the games whose sets stand in the room (core/board-game-sets.js).
   const homeSets = () => (game.home?.items || []).map((it) => ({ it, game: furnitureById(it.id)?.boardgame })).filter((s) => s.game);
   const here = () => cafe() || homeSets().length > 0;
+  const figureOf = (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } };
+  let tableOnce = null;
+  const getTable = () => (tableOnce ||= import('./board-table.js').then((m) => (table = m.createBoardTable(game))));
+
+  // Other people's games in this room, for those who are not in them: the
+  // cards and the toy on their table (game/board-table.js). The host sends
+  // every move to the room anyway, so the same rules are followed here from
+  // the start message on. Someone who walks in halfway sees the next game.
+  const watched = new Map(); // host id → { gid, kind, g, ids, faces, gone }
+  let watchQueue = Promise.resolve(), core = null;
+  const FACE_MS = 2600;
+  const showWatched = (host) => {
+    const w = watched.get(host);
+    if (!w || !table) return;
+    const g = w.g, gone = w.ids.map((_, s) => !!w.gone[s]), now = performance.now();
+    if (w.kind === 'thief') table.watchSync(host, { counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, over: g.over, faces: w.ids.map((_, s) => (w.faces[s]?.until > now ? core.FACES[w.faces[s].n] : '')), gone, canPick: false });
+    else table.watchSync(host, { pressed: g.pressed, bang: !!g.last?.bang, wobble: g.risk?.() ?? 0, placing: !!g.last?.placing, gone });
+  };
+  const unwatch = (host) => { if (watched.delete(host)) table?.unwatch(host); };
+  const watchMsg = (from, e) => {
+    watchQueue = watchQueue.then(async () => {
+      core ||= await import('../core/board-games.js');
+      const m = core.parseBg(e);
+      if (!m || !here()) return;
+      if (m.k === 'g') {
+        unwatch(from);
+        if (m.ids.includes(game.myId) || !(m.opt > 0) || !(m.game === 'thief' || core.TOYS.includes(m.game))) return;
+        await getTable();
+        if (!here()) return;
+        const g = core.newGame(m.game, m.ids.length, m.seed, m.opt);
+        const toy = m.game === 'thief' ? null : { kind: m.game, spots: g.spots, figure: m.game === 'pirate' ? figureOf(from) : null };
+        if (!table.watch(from, { ids: m.ids, table: m.opt, kind: m.game, names: m.ids.map((id) => (id === '~' ? '🤖' : '')), bot: '~', toy })) return;
+        watched.set(from, { gid: m.gid, kind: m.game, g, ids: m.ids, faces: [], gone: [] });
+        showWatched(from);
+        return;
+      }
+      const w = watched.get(from);
+      if (!w || m.gid !== w.gid) return;
+      if (m.k === 'c') { unwatch(from); return; }
+      if (m.k !== 'y') return;
+      if (m.act[0] === 'e') {
+        if (!(m.act[1] >= 0 && m.act[1] < core.FACES.length)) return;
+        w.faces[m.seat] = { n: m.act[1], until: performance.now() + FACE_MS };
+        setTimeout(() => showWatched(from), FACE_MS + 50);
+      } else {
+        if (!core.applyAction(w.g, m.seat, m.act)) return;
+        if (m.act[0] === 'l') w.gone[m.seat] = true;
+      }
+      showWatched(from);
+    }).catch((err) => console.error('board watch', err));
+  };
+
   const load = () => (loading ||= import('../ui/board-games-ui.js').then(async (m) => {
     const text = await import('../ui/board-games-text.js');
     const { BOARD_TRACKS } = await import('../ui/board-games-music.js');
     const { playBoardSound } = await import('../ui/board-games-sounds.js');
-    table = (await import('./board-table.js')).createBoardTable(game);
+    await getTable();
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
       // The café has every game; a home, the ones whose sets stand in it.
@@ -43,7 +95,7 @@ export function createBoardGames(game) {
       })) : []),
       table,
       // A player as a little figure (the host sits in the pirate's barrel).
-      figureOf: (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } },
+      figureOf,
       net: {
         myId: game.myId,
         nameOf: (id) => game.others.nameOf(id),
@@ -118,6 +170,7 @@ export function createBoardGames(game) {
       // that is open, so the panel is loaded already.
       const inv = /^bg:i:([\w-]{1,64}):([a-z]{1,12})$/.exec(e);
       if (inv) { if (inv[1] === game.myId && here()) showAsk(from, inv[2]); return true; }
+      if (/^bg:[gyc]:/.test(e) && here() && from !== game.myId) watchMsg(from, e);
       const m = ui && ui.parse(e);
       if (!m) return true;
       if (m.k === 'n' && m.to === game.myId) {
@@ -127,12 +180,13 @@ export function createBoardGames(game) {
       ui?.onMsg(from, m);
       return true;
     },
-    peerGone(id) { ui?.peerGone(id); },
+    peerGone(id) { ui?.peerGone(id); watchQueue = watchQueue.then(() => unwatch(id)); },
     // Playing at a table in the café: my eyes at my chair (game/board-table.js), and no standing up by walking.
     camera(dt) { table?.camera(dt); },
     get seated() { return !!table?.on; },
+    get watching() { return table?.watched || []; }, // (for the e2e tests)
     // Walked out of the room.
-    leftRoom() { closeAsk(); if (ui?.open || ui?.busy) ui.close(); },
+    leftRoom() { watchQueue = watchQueue.then(() => { for (const id of [...watched.keys()]) unwatch(id); }); closeAsk(); if (ui?.open || ui?.busy) ui.close(); },
     get panel() { return { get open() { return !!ui?.open; }, close() { ui?.close(); } }; },
   };
   return api;
