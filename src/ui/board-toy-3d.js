@@ -43,7 +43,7 @@ function crocToy(spots) {
   for (let i = 0; i < 5; i++) { const a = (-64 + i * 32) * Math.PI / 180; at.push([Math.sin(a) * 0.72, 1.1 + Math.cos(a) * 0.72]); }
   for (let i = 0; i < 4; i++) at.push([0.72, 0.9 - (3 - i) * 0.42]);
   const order = [3, 2, 1, 0, 4, 5, 6, 7, 8, 9, 10, 11, 12]; // left back → round the front → right back
-  const toothGeo = new THREE.CapsuleGeometry(0.105, 0.1, 4, 10);
+  const toothGeo = new THREE.CapsuleGeometry(0.135, 0.1, 4, 10); // (big: easy to see and to tap on a phone)
   const teeth = [];
   for (let i = 0; i < spots; i++) {
     const [x, z] = at[order[i % at.length]];
@@ -74,7 +74,7 @@ function crocToy(spots) {
   upper.rotation.x = OPEN;
   let bangAt = -1;
   return {
-    root, picks: teeth, cam: [2.7, 3.0, 5.0], look: [0, 0.55, 0.45],
+    root, picks: teeth, cam: [1.7, 3.5, 4.3], look: [0, 0.5, 0.55],
     press(i, now) { teeth[i].userData.at = now; },
     bang(now) { bangAt = now; },
     update(now, pressed) {
@@ -216,16 +216,18 @@ export function createToyView(kind, { spots, onPick }) {
   camera.lookAt(...toy.look);
   const pressed = new Set();
   let canPick = false, banged = false, raf = 0, w = 0, h = 0, gone = false;
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const ndc = new THREE.Vector2(), at = new THREE.Vector3();
   const hit = (e) => {
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera);
-    // A finger is wider than a tooth: take the nearest piece to the ray.
-    let best = null, bestD = 0.22;
+    // A finger is wider than a tooth, most of all on a phone: no need to hit
+    // it, the free piece nearest the tap on screen is the one (within a
+    // thumb's width).
+    let best = null, bestD = Math.max(48, r.width * 0.12);
     for (const m of toy.picks) {
       if (pressed.has(m.userData.spot)) continue;
-      const d = ray.ray.distanceToPoint(m.position);
+      at.copy(m.position).project(camera);
+      const d = Math.hypot((at.x - ndc.x) * r.width / 2, (at.y - ndc.y) * r.height / 2);
       if (d < bestD) { bestD = d; best = m; }
     }
     return best;
