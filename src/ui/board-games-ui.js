@@ -1106,16 +1106,14 @@ export class BoardGamesUI {
     const hold = this.hold = { at: performance.now() };
     const power = () => Math.min(1, (performance.now() - hold.at) / DICE_FULL);
     hold.power = power;
-    const paint = () => {
-      if (this.hold !== hold) return;
-      this.paintHold(this.card?.querySelector('[data-act="roll"]'));
-      hold.raf = requestAnimationFrame(paint);
-    };
+    // (on a timer, not animation frames: a page that is not in front gets none, and the gauge would stand still)
+    const paint = () => this.paintHold(this.card?.querySelector('[data-act="roll"]'));
+    hold.timer = setInterval(paint, 40);
     const done = (e) => {
       window.removeEventListener('pointerup', done);
       window.removeEventListener('pointercancel', done);
       if (this.hold !== hold) return;
-      cancelAnimationFrame(hold.raf);
+      clearInterval(hold.timer);
       this.hold = null;
       const b = this.card?.querySelector('[data-act="roll"]');
       if (b) { b.classList.remove('held'); b.style.removeProperty('--g'); }
