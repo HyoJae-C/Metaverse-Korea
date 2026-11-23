@@ -177,6 +177,15 @@ const OWN_BUILD = {
     box(g, 18, 0.04, 11.6, 0, 0.02, 0, C.stoneDark);
     import('./jogyesa-model.js').then(({ buildJogyesa }) => buildJogyesa(g));
   },
+  // Seonjeongneung's royal tombs (core/royal-tomb-model.js, loaded when you
+  // first walk in through the main gate): what stands at the tombs, at 50%.
+  royaltomb(g, l) { import('./royal-tomb-model.js').then((m) => m.buildRoyalTomb(g, l)); },
+  jeongjagak(g, l) { import('./royal-tomb-model.js').then((m) => m.buildJeongjagak(g, l)); },
+  hongsalmun(g, l) { import('./royal-tomb-model.js').then((m) => m.buildHongsalmun(g, l)); },
+  chamdo(g, l) { import('./royal-tomb-model.js').then((m) => m.buildChamdo(g, l)); },
+  bigak(g, l) { import('./royal-tomb-model.js').then((m) => m.buildBigak(g, l)); },
+  tombhall(g, l) { import('./royal-tomb-model.js').then((m) => m.buildTombHall(g, l)); },
+  oldginkgo(g, l) { import('./royal-tomb-model.js').then((m) => m.buildOldGinkgo(g, l)); },
   // Huwon, Changdeokgung's garden (core/huwon-model.js, loaded when you
   // first walk in through Donhwamun): its pavilions, and Buyongji's bank and island.
   jeongja(g, l) {

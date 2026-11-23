@@ -1335,3 +1335,22 @@ The Han River Boat Taxi calls at Oksu (`build-boat-taxi.mjs`, 8 m west of the
 real pier to clear Dongho Bridge, which `build-base.mjs` joins into one road
 across the river so it is raised for the boats).
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
+
+## Seonjeongneung (Gangnam-gu, 2026-11-24)
+
+`scripts/extract-seonjeongneung-osm.mjs` cuts OSM's lines for the royal tombs
+of Seolleung and Jeongneung (서울 선릉과 정릉) into
+`scripts/data/seonjeongneung-osm.json`; `scripts/build-seonjeongneung.mjs`
+writes `districts/seonjeongneung.json` (`--region` also places it in
+`region.json` and the Information Center in `stores.json`; `--check` prints
+the report; `--svg` draws the plan). The main gate by the ticket office is its
+(0, 0). The grounds are OSM's outline at 1/4 less the streets round it; what
+stands at the tombs (mounds, stone walls, shrine halls on their platforms, red
+gates, stele sheds, the stone path) is 50% on its real spot (Yozi): the whole
+tomb groups can't be 50%, the Seolleung group would need 94 m on a 70 m site.
+So the made-up hills behind the mounds are cut short of each shrine hall and
+fenced (blockers, you can't climb a tomb). The models are in
+`core/royal-tomb-model.js`, loaded when you walk in through the wall; a few
+visitors stand and stroll (`game/seonjeongneung-near.js`). Moves are in
+`meta.nudges`, made-up things in `meta.approx`.
+After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
