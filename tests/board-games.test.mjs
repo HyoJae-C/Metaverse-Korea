@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   GAMES, Omok, OMOK_SIZE, OneCard, attackOf, oneCardDeck, FruitBell, fruitDeck, BELL_TARGET,
-  Roulette, newGame, applyAction, rng, shuffle,
+  Roulette, newGame, applyAction, rng, shuffle, Mafia, MAFIA_PASS, packAct, unpackAct,
 } from '../src/core/board-games.js';
 
 test('board games: seeded random is the same everywhere', () => {
@@ -102,7 +102,49 @@ test('fruit bell: a whole game ends with one winner', () => {
     else g.flip(g.turn);
   }
   assert.ok(g.over);
-  assert.ok(g.winner >= 0);
+  assert.ok(g.winner >= -1);
+});
+
+test('fruit bell: the last card can still be rung; one player left with cards ends it; a tie is a draw', () => {
+  // The last card turned makes five: the game waits for the bell.
+  const g = new FruitBell({ players: 2, seed: 1 });
+  g.down = [[{ f: 'grape', n: 3 }], []];
+  g.up = [[], [{ f: 'grape', n: 2 }, { f: 'peach', n: 1 }, { f: 'grape', n: 2 }]];
+  g.turn = 0;
+  assert.ok(g.flip(0));
+  assert.ok(!g.over && g.final);
+  assert.ok(g.ring(1)); // right: takes all four
+  assert.ok(g.over);
+  assert.equal(g.winner, 1);
+
+  // Nobody rings it: the turn player passes (nothing left to turn) and the cards are counted.
+  const h = new FruitBell({ players: 2, seed: 1 });
+  h.down = [[{ f: 'grape', n: 3 }], []];
+  h.up = [[{ f: 'peach', n: 1 }, { f: 'peach', n: 1 }], [{ f: 'grape', n: 2 }]];
+  h.turn = 0;
+  h.flip(0);
+  assert.ok(h.final && !h.over);
+  assert.ok(h.flip(h.turn));
+  assert.ok(h.over);
+  assert.equal(h.winner, 0); // 3 cards to 1
+
+  // Not five on the last card: counted at once; the same number of cards is a draw.
+  const d = new FruitBell({ players: 2, seed: 1 });
+  d.down = [[{ f: 'grape', n: 1 }], []];
+  d.up = [[], [{ f: 'peach', n: 1 }]];
+  d.turn = 0;
+  d.flip(0);
+  assert.ok(d.over);
+  assert.equal(d.winner, -1);
+
+  // Three players, two run out of cards to turn: no flipping on alone.
+  const t = new FruitBell({ players: 3, seed: 1 });
+  t.down = [[{ f: 'grape', n: 1 }, { f: 'peach', n: 1 }, { f: 'peach', n: 2 }], [{ f: 'grape', n: 1 }], []];
+  t.up = [[], [], [{ f: 'strawberry', n: 1 }]];
+  t.turn = 1;
+  t.flip(1);
+  assert.ok(t.over); // only seat 0 could still turn
+  assert.equal(t.winner, 0);
 });
 
 test('one card: attacks stack and must be defended or drawn', () => {
@@ -147,7 +189,7 @@ test('board game messages round-trip and refuse junk', async () => {
   assert.deepEqual(parseBg(bgPass('g7', 2, ['r'])), { k: 'y', gid: 'g7', seat: 2, act: ['r'] });
   assert.deepEqual(parseBg(bgClose('g7')), { k: 'c', gid: 'g7' });
   assert.deepEqual(unpackAct(packAct(['c', '7♥', '♠'])), ['c', '7♥', '♠']);
-  assert.equal(parseBg('bg:x:g7:z.1'), null);
+  assert.equal(parseBg('bg:x:g7:w.1'), null);
   assert.equal(parseBg('darts:x'), null);
 });
 
@@ -357,4 +399,113 @@ test('snakes and ladders: the players lay the board out first, a share each, the
   while (h.setup && guard++ < 50) applyAction(h, h.turn, ['a', ...h.botPlace(Math.random)]);
   assert.ok(!h.setup && h.turn === 1);
   assert.ok(!newGame('ladders', 2, 5).setup); // the ready-made board
+});
+
+// ---------------------------------------------------------------- mafia
+const seatOf = (g, role) => g.roles.indexOf(role);
+const seatsOf = (g, role) => g.roles.map((r, i) => (r === role ? i : -1)).filter((i) => i >= 0);
+
+test('mafia: roles by table size, the same for one seed', () => {
+  for (const [n, mafia] of [[4, 1], [5, 1], [6, 2], [8, 2]]) {
+    const g = new Mafia({ players: n, seed: 3 });
+    assert.equal(seatsOf(g, 'mafia').length, mafia);
+    assert.equal(seatsOf(g, 'doctor').length, 1);
+    assert.equal(seatsOf(g, 'police').length, 1);
+    assert.equal(seatsOf(g, 'town').length, n - mafia - 2);
+    assert.deepEqual(g.roles, new Mafia({ players: n, seed: 3 }).roles);
+  }
+  assert.throws(() => new Mafia({ players: 3 }));
+  assert.throws(() => new Mafia({ players: 9 }));
+});
+
+test('mafia: a night (pick, save, ask), then talk, then the vote', () => {
+  const g = new Mafia({ players: 6, seed: 11 });
+  const [m1, m2] = seatsOf(g, 'mafia'), doc = seatOf(g, 'doctor'), cop = seatOf(g, 'police'), [t1, t2] = seatsOf(g, 'town');
+  assert.equal(g.phase, 'night');
+  assert.equal(g.seconds(), 20);
+  assert.ok(!g.kill(t1, t2)); // not the mafia
+  assert.ok(!g.kill(m1, m2)); // not one of their own
+  assert.ok(g.kill(m1, t1));
+  assert.ok(g.kill(m2, t2)); // (the last pick stands)
+  assert.ok(g.heal(doc, t1)); // the wrong one
+  assert.ok(!g.check(cop, cop));
+  assert.ok(g.check(cop, m1));
+  assert.ok(!g.check(cop, m2)); // one question a night
+  assert.deepEqual(g.checks, [{ round: 1, target: m1, mafia: true }]);
+  assert.ok(!g.next(0, 5)); // not this phase
+  assert.ok(g.next(0, 0));
+  assert.equal(g.phase, 'talk');
+  assert.deepEqual(g.last, { died: t2, saved: false });
+  assert.ok(!g.alive[t2]);
+  assert.equal(g.seconds(), 5 * 15);
+  assert.ok(!g.done(t2)); // the dead say nothing
+  for (const i of g.living()) assert.ok(g.done(i));
+  assert.equal(g.phase, 'vote'); // everyone done: on to the vote
+  assert.ok(!g.vote(t2, m1));
+  assert.ok(!g.vote(t1, t1));
+  assert.ok(g.vote(t1, m1));
+  assert.ok(!g.vote(t1, m2)); // once
+  assert.ok(g.vote(doc, m1));
+  assert.ok(g.vote(cop, m1));
+  assert.ok(g.vote(m1, t1));
+  assert.ok(g.vote(m2, MAFIA_PASS));
+  assert.equal(g.phase, 'night'); // everyone voted
+  assert.equal(g.last.voted, m1);
+  assert.ok(!g.alive[m1] && !g.over);
+  assert.equal(g.round, 2);
+});
+
+test('mafia: a save, a tied vote, and both ways of winning', () => {
+  const g = new Mafia({ players: 4, seed: 5 });
+  const m = seatOf(g, 'mafia'), doc = seatOf(g, 'doctor'), cop = seatOf(g, 'police'), t = seatOf(g, 'town');
+  g.kill(m, t); g.heal(doc, t);
+  g.next(0, g.step);
+  assert.deepEqual(g.last, { died: -1, saved: true });
+  g.next(0, g.step); // talk ran out
+  g.vote(m, t); g.vote(t, m);
+  g.next(0, g.step); // the others never voted
+  assert.equal(g.last.voted, -1);
+  assert.ok(g.last.tie);
+  assert.equal(g.living().length, 4);
+  // Night 2: the town player dies; then the mafia gets the doctor voted out: 1 mafia, 1 other.
+  g.kill(m, t); g.next(0, g.step);
+  g.next(0, g.step);
+  g.vote(m, doc); g.vote(cop, MAFIA_PASS); g.vote(doc, MAFIA_PASS);
+  assert.ok(g.over);
+  assert.equal(g.winner, 'mafia');
+  assert.ok(!g.next(0, g.step));
+
+  const h = new Mafia({ players: 5, seed: 9 });
+  const hm = seatOf(h, 'mafia');
+  h.next(0, h.step); h.next(0, h.step);
+  for (const i of h.living()) h.vote(i, i === hm ? MAFIA_PASS : hm);
+  assert.equal(h.winner, 'town');
+});
+
+test('mafia: someone leaving counts as gone; moves go through room messages', () => {
+  const g = newGame('mafia', 5, 21, 3);
+  assert.equal(g.talk, 20);
+  const m = seatOf(g, 'mafia'), t = seatsOf(g, 'town')[0];
+  assert.ok(applyAction(g, m, unpackAct(packAct(['k', t]))));
+  assert.equal(g.pick.kill, t);
+  applyAction(g, t, ['l']);
+  assert.equal(g.pick.kill, -1);
+  assert.ok(applyAction(g, 0, unpackAct(packAct(['n', 0]))));
+  assert.equal(g.last.died, -1);
+  applyAction(g, m, ['l']);
+  assert.equal(g.winner, 'town');
+});
+
+test('the joker game: the one picked from may shuffle once a turn', async () => {
+  const { Thief } = await import('../src/core/board-games.js');
+  const g = new Thief({ players: 2, seed: 12 });
+  const holder = g.from, picker = g.turn, before = g.hands[holder].slice();
+  assert.ok(!applyAction(g, picker, ['m'])); // not the one being picked from
+  g.select(picker, 0);
+  assert.ok(applyAction(g, holder, unpackAct(packAct(['m']))));
+  assert.equal(g.sel, -1); // the finger comes off
+  assert.deepEqual(g.hands[holder].slice().sort(), before.slice().sort());
+  assert.ok(!g.mix(holder)); // once
+  g.take(picker, 0);
+  if (!g.over) assert.ok(!g.mixed); // a new turn
 });

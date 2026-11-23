@@ -21,6 +21,10 @@ const ASK_MS = 28000; // a little under the host's 30 s wait (ui/board-games-ui.
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:56;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
+// Mafia is being built (special roles, ghost chat and its long table are to come): on the menu only with ?debug until then.
+const MAFIA_OPEN = false;
+const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
+
 export function createBoardGames(game) {
   let ui = null, table = null, loading = null, ask = null, askTimer = 0;
   const cafe = () => !!game.interior?.stations?.boardgames;
@@ -87,7 +91,7 @@ export function createBoardGames(game) {
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
       // The café has every game; a home, the ones whose sets stand in it.
-      games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'onecard') : [...new Set(homeSets().map((s) => s.game))]),
+      games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'onecard' && (id !== 'mafia' || MAFIA_OPEN || DEBUG)) : [...new Set(homeSets().map((s) => s.game))]),
       // The café sells the sets: the shop's own buying sheet (the money is asked for and written down there).
       sets: () => (BOARD_SETS_ON_SALE && cafe() ? (game.interior.store?.products || []).filter((pr) => furnitureById(pr.furniture)?.boardgame).map((pr) => ({
         id: furnitureById(pr.furniture).boardgame, label: game.priceLabel(pr.price), owned: !!game.owns?.(pr.furniture),

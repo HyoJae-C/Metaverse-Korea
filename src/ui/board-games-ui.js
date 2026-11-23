@@ -19,7 +19,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, TOYS, FACES, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
+  GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -32,7 +32,7 @@ const BOT = '~';
 const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
 const TURN_MS = 30000; // a turn nobody takes is played for them after this (the host's clock)
-const TURN_WARN = 10; // the last seconds are counted down on screen
+const TURN_WARN = 10; // the last seconds of the clock are red
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
@@ -110,7 +110,7 @@ const CSS = `
 #bg-panel .bg-card1 { width: 40px; height: 58px; border: 0; border-radius: 7px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 15px; font-weight: 800; line-height: 1.05; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; transition: transform .12s; }
 #bg-panel .bg-card1.red { color: #d43d3d; }
 #bg-panel .bg-card1.back { background: repeating-linear-gradient(45deg, #3f6fb5 0 6px, #5a8ad0 6px 12px); border: 2px solid #fff; box-sizing: border-box; }
-#bg-panel .bg-card1.joker { background: #fff3c4; font-size: 24px; }
+#bg-panel .bg-card1.joker { background: #2b2230; font-size: 36px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #2b2230; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
 #bg-panel .bg-card1:disabled { cursor: default; }
 #bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
@@ -160,7 +160,8 @@ const el = (tag, cls, text) => {
 };
 const between = ([a, b], rand) => a + (b - a) * rand();
 // Faces to pull at each other (bluffing over the joker, gloating over a win).
-const FACE_MS = 2600, FACE_GAP = 1200;
+const FACE_MS = 2600, FACE_GAP = 1500; // (Yozi 2026-11-23: 1.2 s was spammed, 3 s felt too long)
+const FACE_BURST = 10, FACE_BURST_MS = 25000, FACE_REST = 15000; // ten faces inside 25 seconds (as fast as they go, or nearly): the buttons rest for 15 (Yozi 2026-11-23)
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
@@ -255,10 +256,16 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ lobby (host)
   choose(game) {
     this.leaveAll();
+    if (game === 'mafia') this.loadMafia();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0 }; // (ladders: the players lay the board out, unless the host says no)
     this.state = 'lobby';
     this.status = '';
     this.render();
+  }
+
+  // The mafia game's own screen and words (ui/board-mafia-ui.js), the first time it is wanted.
+  loadMafia() {
+    if (!this.mafia) import('./board-mafia-ui.js').then((m) => { this.mafia = m; this.render(); }).catch(() => {});
   }
 
   inviteOne(p) {
@@ -276,6 +283,7 @@ export class BoardGamesUI {
     const ready = lob.list.filter((q) => q.ready);
     for (const q of lob.list) if (!q.ready) this.net.send(bgReply(q.id, false)); // (stop waiting for them)
     const ids = [this.net.myId, ...ready.map((q) => q.id)];
+    if (lob.game === 'mafia' && ids.length < g.min) { this.status = this.mafia ? L(this.mafia.MAFIA_TEXT.need4) : ''; this.render(); return; } // (a game of talking: no computer players)
     while (ids.length < g.min) ids.push(BOT);
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
@@ -305,6 +313,7 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.dropView();
+    if (game === 'mafia') { this.play.phaseAt = performance.now(); this.play.stepSeen = 0; this.loadMafia(); }
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
@@ -401,7 +410,8 @@ export class BoardGamesUI {
     if (this.host?.id === id) { this.status = tt('closed', { name: this.host.name }); this.host = null; this.state = 'menu'; this.render(); }
     const p = this.play;
     if (!p || p.g.over) return;
-    if (p.hostId === id) { this.status = tt('closed', { name: this.nameFor(id) }); p.g.over = true; p.closed = true; this.render(); }
+    if (p.hostId === id && p.game === 'mafia') { if (!p.g.out[p.ids.indexOf(id)]) this.applyNow(p.ids.indexOf(id), ['l']); } // (the game goes on under a new host: after())
+    else if (p.hostId === id) { this.status = tt('closed', { name: this.nameFor(id) }); p.g.over = true; p.closed = true; this.render(); }
     else if (p.hostId === this.net.myId) this.seatLeft(id);
   }
 
@@ -420,9 +430,26 @@ export class BoardGamesUI {
 
   myFace(n) {
     const now = performance.now();
-    if (!this.play || now - (this.faceAt || 0) < FACE_GAP) return;
+    if (!this.play || now - (this.faceAt || 0) < FACE_GAP || now < (this.faceRest || 0)) return;
     this.faceAt = now;
+    // Too many in a row: the buttons rest a while.
+    this.faceLog = (this.faceLog || []).filter((t) => now - t < FACE_BURST_MS);
+    this.faceLog.push(now);
+    if (this.faceLog.length >= FACE_BURST) { this.faceLog = []; this.faceRest = now + FACE_REST; setTimeout(() => this.render(), FACE_REST + 50); }
     this.myMove(['e', n]);
+  }
+
+  // I drew the joker: the phone buzzes; where the browser has no vibration
+  // (iPhone Safari, a computer) my own screen flashes red for a moment instead.
+  jokerJolt() {
+    let buzzed = false;
+    try { buzzed = typeof navigator.vibrate === 'function' && navigator.vibrate([140, 70, 140]); } catch { /* (not allowed here) */ }
+    if (buzzed) return;
+    const f = el('div', 'bg-jolt');
+    f.style.cssText = 'position:fixed;inset:0;z-index:99;pointer-events:none;background:#e8402a;opacity:.45;transition:opacity .5s';
+    document.body.append(f);
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.opacity = '0'; }));
+    setTimeout(() => f.remove(), 700);
   }
 
   // My own move: the host applies it at once, a guest sends it to the host.
@@ -441,6 +468,7 @@ export class BoardGamesUI {
       this.showFace(seat, act[1]);
       return;
     }
+    if (act[0] === 'n' && p.ids[seat] !== p.hostId) return; // (mafia: only the host's clock moves the game on)
     if (!applyAction(p.g, seat, act)) return;
     if (p.ids.some((id) => id !== BOT && id !== this.net.myId)) this.net.send(bgPass(p.gid, seat, act));
     this.after(seat, act);
@@ -454,17 +482,35 @@ export class BoardGamesUI {
 
   after(seat, act) {
     const p = this.play;
-    if (act[0] !== 's') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
+    if (act[0] !== 's' && act[0] !== 'm') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
     if (act[0] === 'l') {
       (p.gone ||= [])[seat] = true;
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
     }
     const g = p.g;
+    if (p.game === 'mafia') {
+      if (act[0] === 'l' && p.ids[seat] === p.hostId && !g.over) {
+        // The host left a game of mafia: it goes on, and the next person still at the table keeps the clock
+        // (every screen holds the whole game, so every screen picks the same one).
+        const next = p.ids.findIndex((_, s) => !g.out[s]);
+        if (next >= 0) { p.hostId = p.ids[next]; p.phaseAt = performance.now(); }
+      }
+      if (p.stepSeen !== g.step) { p.stepSeen = g.step; p.phaseAt = performance.now(); this.onEvent('move', p.game); }
+      if (g.over && !p.done) {
+        p.done = true;
+        const won = (g.roles[p.seat] === 'mafia') === (g.winner === 'mafia');
+        this.onEvent(won ? 'win' : 'lose', p.game);
+        if (won) p.party = true;
+      }
+      this.render();
+      return;
+    }
     if (g.last?.ring != null) {
       this.status = tt(g.last.ring ? 'ringRight' : 'ringWrong', { name: p.names[seat], n: g.last.ring ? g.last.got : g.last.paid });
       this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
     } else if (act[0] === 't') {
       const l = g.last;
+      if (l.p === p.seat && l.card === 'JB') this.jokerJolt(); // (only the one who drew it feels it)
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
       this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
@@ -476,6 +522,7 @@ export class BoardGamesUI {
       this.startWalk(l);
       this.onEvent('dice', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
+    else if (act[0] === 'm') { this.status = seat === p.seat ? '' : tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
     else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
@@ -500,7 +547,8 @@ export class BoardGamesUI {
     const p = this.play;
     if (p) {
       const humans = p.ids.some((id) => id !== BOT && id !== me);
-      if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
+      if (p.hostId === me && p.game === 'mafia' && !p.g.over) { if (humans) this.net.send(bgPass(p.gid, p.seat, ['l'])); } // (mafia goes on without its host)
+      else if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
       else if (!p.g.over) this.net.send(bgReply(p.hostId, false));
     }
     if (this.play) this.onGame(null);
@@ -523,10 +571,14 @@ export class BoardGamesUI {
     }
     const p = this.play;
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
-    if (p && this.clockEl?.isConnected) {
-      const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
-      const text = left <= TURN_WARN ? `⏳ ${Math.max(0, left)}` : '';
-      if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    this.paintClock();
+    if (p?.game === 'mafia' && !p.g.over) {
+      // The phase's clock: everyone sees it run down, the host moves the game on.
+      const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
+      const clock = this.card.querySelector('[data-clock]');
+      if (clock && clock.textContent !== `⏳ ${left}`) clock.textContent = `⏳ ${left}`;
+      if (p.hostId === this.net.myId && now - p.phaseAt > p.g.seconds() * 1000 + 300) this.hostApply(p.seat, ['n', p.g.step]);
+      return;
     }
     if (!p || p.g.over || p.hostId !== this.net.myId) return;
     // The computer players (the host runs them).
@@ -554,6 +606,16 @@ export class BoardGamesUI {
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
     this.moveFor(turn);
+  }
+
+  // The turn's clock (painted with the card too, so it is never blank between ticks).
+  paintClock() {
+    const p = this.play, now = performance.now();
+    if (!p || !this.clockEl?.isConnected) return;
+    const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
+    const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
+    if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    this.clockEl.style.color = left <= TURN_WARN ? '' : '#8a7a66'; // (red for the last seconds)
   }
 
   // A move made by the host for a seat: the computer's, or a person's whose time ran out.
@@ -640,8 +702,19 @@ export class BoardGamesUI {
     }
     if (!near.length && !lob.list.length) c.append(el('div', 'bg-line', L(T.nobody)));
     c.append(row);
-    const seats = Math.max(g.min, 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0));
+    const here = 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0);
+    const seats = lob.game === 'mafia' ? here : Math.max(g.min, here);
     c.append(el('div', 'bg-line', tt('seats', { n: seats })));
+    if (lob.game === 'mafia' && this.mafia) {
+      // The host's choice: how long each person gets to talk (10, 15 or 20 seconds).
+      const r = el('button', 'bg-btn', fmt(L(this.mafia.MAFIA_TEXT.talkTime), { n: MAFIA_TALK[lob.opt] }));
+      r.type = 'button';
+      r.dataset.act = 'talktime';
+      r.onclick = () => { lob.opt = { 0: 3, 3: 1, 1: 0 }[lob.opt] ?? 0; this.render(); };
+      const line = el('div', 'bg-row');
+      line.append(r);
+      c.append(line);
+    }
     if (lob.game === 'omok' || lob.game === 'ladders') {
       // The host's choice: double threes allowed or not / a board of our own.
       const r = el('button', 'bg-btn', `${L(lob.game === 'omok' ? T.rule33 : T.ownBoard)}: ${L(lob.opt ? T.on : T.off)}`);
@@ -655,7 +728,7 @@ export class BoardGamesUI {
       c.append(line);
     }
     const act = el('div', 'bg-row');
-    if (g.max > 2 && seats < g.max) {
+    if (g.max > 2 && seats < g.max && lob.game !== 'mafia') {
       const add = el('button', 'bg-btn', '➕ ' + L(T.computer));
       add.type = 'button';
       add.onclick = () => this.addBot();
@@ -682,6 +755,7 @@ export class BoardGamesUI {
     const p = this.play;
     const g = p.g;
     c.append(el('h2', null, GAMES[p.game].icon + ' ' + L(GAME_NAME[p.game])));
+    if (p.game === 'mafia') { this.drawMafia(c); return; }
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
@@ -702,12 +776,15 @@ export class BoardGamesUI {
     c.append(el('div', 'bg-status', this.headline()));
     this.clockEl = el('div', 'bg-clock');
     c.append(this.clockEl);
+    this.paintClock();
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
       FACES.forEach((f, n) => {
         const b = el('button', null, f);
         b.type = 'button';
         b.dataset.face = String(n);
+        b.disabled = performance.now() < (this.faceRest || 0);
+        if (b.disabled) b.style.opacity = '.35';
         b.onclick = () => this.myFace(n);
         faces.append(b);
       });
@@ -742,6 +819,30 @@ export class BoardGamesUI {
       row.append(back);
       c.append(row);
     }
+  }
+
+  // Mafia: its own screen (ui/board-mafia-ui.js), then the same ending as the other games.
+  drawMafia(c) {
+    const p = this.play, g = p.g;
+    if (this.mafia) this.mafia.drawMafia(c, { p, act: (a) => this.myMove(a), el, L, left: g.over ? 0 : Math.max(0, Math.ceil(g.seconds() - (performance.now() - p.phaseAt) / 1000)) });
+    if (this.status) c.append(el('div', 'bg-status', this.status));
+    p.party = false;
+    if (!g.over) return;
+    const row = el('div', 'bg-row');
+    row.style.justifyContent = 'center';
+    const ids = p.ids.filter((_, s) => !g.out[s] && !p.gone?.[s]);
+    if (p.hostId === this.net.myId && !p.closed && ids.length >= GAMES.mafia.min) {
+      const again = el('button', 'bg-btn bg-go', L(T.again));
+      again.type = 'button';
+      again.dataset.act = 'again';
+      again.onclick = () => this.begin('mafia', ids, this.net.myId, undefined, null, p.opt);
+      row.append(again);
+    }
+    const back = el('button', 'bg-btn', L(T.back));
+    back.type = 'button';
+    back.onclick = () => { this.leaveAll(); this.render(); };
+    row.append(back);
+    c.append(row);
   }
 
   headline() {
@@ -842,6 +943,7 @@ export class BoardGamesUI {
       grid.append(pile);
     });
     c.append(grid);
+    if (g.final && !g.over) c.append(el('div', 'bg-status', L(T.lastBell))); // (the last card made five: the bell first)
     if (g.over || g.out[p.seat]) return;
     const row = el('div', 'bg-row');
     row.style.justifyContent = 'center';
@@ -1050,7 +1152,7 @@ export class BoardGamesUI {
     const suit = joker ? '' : card.slice(-1);
     const b = el('button', 'bg-card1' + (joker ? ' joker' : suit === '♥' || suit === '♦' ? ' red' : '') + cls);
     b.type = 'button';
-    if (joker) b.textContent = '🃏';
+    if (joker) b.textContent = '💀';
     else b.append(el('span', null, card.slice(0, -1)), el('span', null, suit));
     return b;
   }
@@ -1110,6 +1212,17 @@ export class BoardGamesUI {
         fan.dataset.hand = 'from';
         fan.classList.add('mine');
         scene.append(fan);
+        if (!g.mixed && g.hands[p.seat].length > 1) {
+          // Once a turn I may shuffle, so they cannot follow a card.
+          const mix = el('button', 'bg-btn', L(T.shuffle));
+          mix.type = 'button';
+          mix.dataset.act = 'mix';
+          mix.onclick = () => this.myMove(['m']);
+          const row = el('div', 'bg-row');
+          row.style.justifyContent = 'center';
+          row.append(mix);
+          scene.append(row);
+        }
         c.append(scene);
         return;
       }

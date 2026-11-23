@@ -170,6 +170,47 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/tower.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'mafia: needs four people; a night, the talk and the vote on the host\'s screen';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="mafia"]');
+  await a.click('#bg-panel [data-game="mafia"]');
+  await a.waitForSelector('#bg-panel [data-act="talktime"]', { timeout: 15000 });
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForFunction(() => /at least 4/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/mafia-lobby.png' });
+  // Three more seats, played from here through the host (as their moves would arrive).
+  await a.evaluate(() => { const u = window.__bgUi; u.begin('mafia', [u.net.myId, 'm-one', 'm-two', 'm-three'], u.net.myId, 8); });
+  await a.waitForSelector('#bg-panel .mf[data-phase="night"]', { timeout: 15000 });
+  const mf = () => a.evaluate(() => { const g = window.__bgUi.play.g; return { roles: g.roles, phase: g.phase, alive: g.alive, step: g.step, over: g.over, winner: g.winner }; });
+  const others = (act) => a.evaluate((x) => { const u = window.__bgUi; u.hostApply(x[0], x[1]); }, act);
+  let st = await mf();
+  const mafia = st.roles.indexOf('mafia'), doctor = st.roles.indexOf('doctor'), town = st.roles.indexOf('town');
+  if (await a.locator('#bg-panel .mf-role').count() !== 1) throw new Error('my role is not shown');
+  // Only my own role shows among the people (and never someone else's while the game runs).
+  const shown = await a.evaluate(() => [...document.querySelectorAll('#bg-panel .mf-who')].filter((b) => /🔪|💉|🔍|🙂/.test(b.textContent)).map((b) => +b.dataset.seat));
+  if (shown.length !== 1 || shown[0] !== 0) throw new Error(`roles shown for seats ${shown}`);
+  if (shotDir) await a.screenshot({ path: shotDir + '/mafia-night.png' });
+  // Night 1: the mafia goes for the townsperson, the doctor saves them: a quiet morning.
+  if (mafia === 0) await a.click(`#bg-panel .mf-who[data-seat="${town}"]`); else await others([mafia, ['k', town]]);
+  if (doctor === 0) await a.click(`#bg-panel .mf-who[data-seat="${town}"]`); else await others([doctor, ['h', town]]);
+  await others([0, ['n', st.step]]);
+  await a.waitForSelector('#bg-panel .mf[data-phase="talk"]', { timeout: 8000 });
+  await a.waitForFunction(() => /doctor saved/.test(document.querySelector('#bg-panel .mf-news')?.textContent || ''), null, { timeout: 8000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/mafia-talk.png' });
+  await a.click('#bg-panel [data-act="mf-done"]');
+  for (const s of [1, 2, 3]) await others([s, ['z']]);
+  await a.waitForSelector('#bg-panel .mf[data-phase="vote"]', { timeout: 8000 });
+  // Everyone but the mafia votes the mafia out: the town wins and every role shows.
+  if (mafia === 0) await a.click('#bg-panel [data-act="mf-pass"]'); else await a.click(`#bg-panel .mf-who[data-seat="${mafia}"]`);
+  if (shotDir) await a.screenshot({ path: shotDir + '/mafia-vote.png' });
+  for (const s of [1, 2, 3]) await others([s, ['v', s === mafia ? 9 : mafia]]);
+  await a.waitForFunction(() => /town wins/i.test(document.querySelector('#bg-panel .mf-phase')?.textContent || ''), null, { timeout: 8000 });
+  st = await mf();
+  if (st.winner !== 'town') throw new Error('the town should have won: ' + JSON.stringify(st));
+  if (await a.evaluate(() => [...document.querySelectorAll('#bg-panel .mf-who')].filter((b) => /🔪|💉|🔍|🙂/.test(b.textContent)).length) !== 4) throw new Error('every role shows at the end');
+  if (shotDir) await a.screenshot({ path: shotDir + '/mafia-end.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'C walks in to watch';
   c = await join('Dice C');
   await c.evaluate(() => __mk.enter('dice-and-tea'));
@@ -247,6 +288,13 @@ try {
     // The holder sees which of their cards is being eyed.
     await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
     if (!faced) {
+      // The holder shuffles (once a turn): the finger comes off, and the picker points again.
+      await other.click('#bg-panel [data-act="mix"]');
+      await mover.waitForFunction(() => /shuffled/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
+      if (await other.locator('#bg-panel [data-act="mix"]').count()) throw new Error('a second shuffle in one turn is offered');
+      await mover.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:last-child').click());
+      await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
+      await mover.waitForFunction(() => /⏳/.test(document.querySelector('#bg-panel .bg-clock')?.textContent || ''), null, { timeout: 5000 }); // the turn's clock shows
       await other.click('#bg-panel [data-face="1"]');
       await mover.waitForFunction(() => /😱/.test(document.querySelector('#bg-panel .bg-pop')?.textContent || ''), null, { timeout: 8000 });
       if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-picker.png' }); await other.screenshot({ path: shotDir + '/thief-holder.png' }); }
@@ -263,6 +311,20 @@ try {
   }
   for (const page of [a, b]) await page.waitForFunction(() => /🃏/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-end.png' });
+
+  step = 'mafia: the host leaves and the game goes on under the next player';
+  for (const page of [a, b]) await page.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
+  const [idA, idB] = await Promise.all([a, b].map((page) => page.evaluate(() => window.__bgUi.net.myId)));
+  await b.evaluate((host) => { const u = window.__bgUi; u.host = { id: host, name: 'Dice A', game: 'mafia' }; u.state = 'waiting'; u.show(); }, idA);
+  await a.evaluate((guest) => { const u = window.__bgUi; u.show(); u.begin('mafia', [u.net.myId, guest, 'm-one', 'm-two'], u.net.myId, 4); }, idB);
+  await b.waitForSelector('#bg-panel .mf[data-phase="night"]', { timeout: 15000 });
+  await a.click('#bg-panel .bg-x'); // the host closes the game on their side
+  await b.waitForFunction((me) => window.__bgUi.play?.hostId === me && window.__bgUi.play.g.out[0] && !window.__bgUi.play.closed, idB, { timeout: 15000 });
+  // The new host's clock moves the night on.
+  await b.evaluate(() => { const u = window.__bgUi; u.play.phaseAt -= 21000; });
+  await b.waitForFunction(() => window.__bgUi.play.g.over || window.__bgUi.play.g.phase === 'talk', null, { timeout: 8000 });
+  if (shotDir) await b.screenshot({ path: shotDir + '/mafia-new-host.png' });
+  await b.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
 
   step = 'B walks out: A is told';
   await b.evaluate(() => __mk.place(0, 0));
