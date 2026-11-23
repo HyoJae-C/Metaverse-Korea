@@ -591,7 +591,7 @@ export const VI = {
   'home.visitSoon': 'Tính năng ghé nhà đang được chuẩn bị. Thử lại sau nhé.',
   'home.ofName': 'Nhà của {name}',
   'home.friend': 'Bạn bè',
-  'home.visitFull': 'Nhà của {name} đã đầy (tối đa 4 người).',
+  'home.visitFull': 'Nhà của {name} đã đầy (tối đa {n} người).',
   'home.notHome': '{name} không còn ở nhà.',
   'home.hostLeft': '{name} đã ra ngoài nên bạn cũng ra theo.',
   'home.kicked': 'Bạn đã rời nhà của {name}.',

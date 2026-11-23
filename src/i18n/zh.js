@@ -591,7 +591,7 @@ export const ZH = {
   'home.visitSoon': '串门功能正在准备中，请稍后再试。',
   'home.ofName': '{name}的家',
   'home.friend': '好友',
-  'home.visitFull': '{name}的家满了（最多4人）。',
+  'home.visitFull': '{name}的家满了（最多{n}人）。',
   'home.notHome': '{name}已经不在家了。',
   'home.hostLeft': '{name}出门了，你也一起出来了。',
   'home.kicked': '你离开了{name}的家。',

@@ -591,7 +591,7 @@ export const KO = {
   'home.visitSoon': '집 방문을 준비하고 있어요. 나중에 다시 해 봐요.',
   'home.ofName': '{name}의 집',
   'home.friend': '친구',
-  'home.visitFull': '{name}의 집이 가득 찼어요 (최대 4명).',
+  'home.visitFull': '{name}의 집이 가득 찼어요 (최대 {n}명).',
   'home.notHome': '{name}님이 집에 없어요.',
   'home.hostLeft': '{name}님이 나가서 같이 나왔어요.',
   'home.kicked': '{name}의 집에서 나왔어요.',

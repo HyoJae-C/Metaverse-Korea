@@ -589,7 +589,7 @@ export const TH = {
   'home.visitSoon': 'กำลังเตรียมระบบไปเที่ยวบ้าน ลองใหม่ภายหลัง',
   'home.ofName': 'บ้านของ {name}',
   'home.friend': 'เพื่อน',
-  'home.visitFull': 'บ้านของ {name} เต็มแล้ว (สูงสุด 4 คน)',
+  'home.visitFull': 'บ้านของ {name} เต็มแล้ว (สูงสุด {n} คน)',
   'home.notHome': '{name} ไม่อยู่บ้านแล้ว',
   'home.hostLeft': '{name} ออกไปแล้ว คุณเลยออกมาด้วย',
   'home.kicked': 'คุณออกจากบ้านของ {name} แล้ว',

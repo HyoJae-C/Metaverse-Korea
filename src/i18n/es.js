@@ -590,7 +590,7 @@ export const ES = {
   'home.visitSoon': 'Las visitas a casas se están preparando. Inténtalo más tarde.',
   'home.ofName': 'Casa de {name}',
   'home.friend': 'Amigo',
-  'home.visitFull': 'La casa de {name} está llena (4 personas como máximo).',
+  'home.visitFull': 'La casa de {name} está llena ({n} personas como máximo).',
   'home.notHome': '{name} ya no está en casa.',
   'home.hostLeft': '{name} salió, así que tú también saliste.',
   'home.kicked': 'Saliste de la casa de {name}.',

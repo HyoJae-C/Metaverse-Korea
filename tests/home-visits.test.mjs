@@ -1,7 +1,8 @@
 // Home visits: the room messages between the host's game and visitors.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { homeRoom, kickMsg, layoutMsg, parseVisitMsg, MAX_PEOPLE } from '../src/game/home-visits.js';
+import { homeRoom, kickMsg, layoutMsg, parseVisitMsg } from '../src/game/home-visits.js';
+import { homePeople } from '../src/core/home-stages.js';
 
 test('a layout goes over the room and comes back the same (rounded)', () => {
   const m = layoutMsg([['bed', -5.8, -4.25, 0], ['sofa', 0.123456, 1.987654, Math.PI]]);
@@ -20,8 +21,8 @@ test('kicks, junk and other emotes', () => {
   assert.equal(parseVisitMsg(null), null);
 });
 
-test('one room per host, at most four people', () => {
+test('one room per host; 3 / 5 / 7 / 7 people by home level', () => {
   assert.equal(homeRoom('another-seoul', 'h1'), 'another-seoul-home-h1');
   assert.notEqual(homeRoom('another-seoul', 'h1'), homeRoom('another-seoul', 'h2'));
-  assert.equal(MAX_PEOPLE, 4);
+  assert.deepEqual([1, 2, 3, 4].map(homePeople), [3, 5, 7, 7]);
 });
