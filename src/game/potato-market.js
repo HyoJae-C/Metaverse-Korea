@@ -166,7 +166,7 @@ export function createPotatoMarket(game) {
       case 'gone': return t('potato.gone');
       case 'own': return t('potato.own');
       case 'poor': return t('pet.noCoins', { n: res.short || '' });
-      case 'young': return t('potato.young', { h: rules?.minHours || MARKET.minHours });
+      case 'young': return t('potato.young', { days: rules?.minDays ?? MARKET.minDays, missions: rules?.minMissions ?? MARKET.minMissions });
       case 'closed': return t('potato.closed');
       case 'price': return t('potato.price', { min: res.min, max: res.max });
       case 'noref': return t('potato.noref', { name });
