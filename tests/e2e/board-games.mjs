@@ -102,6 +102,9 @@ try {
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
   await a.click('#bg-panel [data-game="omok"]');
+  await a.click('#bg-panel [data-act="rule33"]'); // the host turns the 3-3 rule on
+  await a.waitForSelector('#bg-panel [data-act="rule33"][aria-pressed="true"]');
+  if (shotDir) await a.screenshot({ path: shotDir + '/omok-lobby.png' });
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel canvas.bg-omok');
   const box = await a.locator('#bg-panel canvas.bg-omok').boundingBox();

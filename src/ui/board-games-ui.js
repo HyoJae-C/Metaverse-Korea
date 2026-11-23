@@ -233,7 +233,7 @@ export class BoardGamesUI {
     while (ids.length < g.min) ids.push(BOT);
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
-    this.begin(lob.game, ids, this.net.myId);
+    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.opt || 0);
   }
 
   addBot() {
@@ -246,11 +246,11 @@ export class BoardGamesUI {
   }
 
   // Start (or restart) a game. Only the host calls this with a new seed.
-  begin(game, ids, hostId, seed = Math.floor(this.rand() * 1e9), gid = null) {
+  begin(game, ids, hostId, seed = Math.floor(this.rand() * 1e9), gid = null, opt = 0) {
     const humans = ids.filter((id) => id !== BOT && id !== this.net.myId);
     gid ||= (seed % 1e9).toString(36);
-    if (hostId === this.net.myId && humans.length) this.net.send(bgGo(gid, game, seed, ids));
-    this.play = { gid, game, g: newGame(game, ids.length, seed), ids, seat: ids.indexOf(this.net.myId), hostId, seed, names: ids.map((id) => this.nameFor(id)) };
+    if (hostId === this.net.myId && humans.length) this.net.send(bgGo(gid, game, seed, ids, opt));
+    this.play = { gid, game, opt, g: newGame(game, ids.length, seed, opt), ids, seat: ids.indexOf(this.net.myId), hostId, seed, names: ids.map((id) => this.nameFor(id)) };
     this.host = null;
     this.state = 'play';
     this.status = '';
@@ -302,11 +302,11 @@ export class BoardGamesUI {
       return;
     }
     if (m.k === 'g' && this.host && from === this.host.id && m.ids.includes(me)) {
-      this.begin(m.game, m.ids, from, m.seed, m.gid);
+      this.begin(m.game, m.ids, from, m.seed, m.gid, m.opt);
       return;
     }
     if (m.k === 'g' && this.play && from === this.play.hostId && m.ids.includes(me) && this.play.g.over) {
-      this.begin(m.game, m.ids, from, m.seed, m.gid); // the host's "Play again"
+      this.begin(m.game, m.ids, from, m.seed, m.gid, m.opt); // the host's "Play again"
       return;
     }
     const p = this.play;
@@ -525,6 +525,18 @@ export class BoardGamesUI {
     c.append(row);
     const seats = Math.max(g.min, 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0));
     c.append(el('div', 'bg-line', tt('seats', { n: seats })));
+    if (lob.game === 'omok') {
+      // The host's choice: double threes allowed or not.
+      const r = el('button', 'bg-btn', `${L(T.rule33)}: ${L(lob.opt ? T.on : T.off)}`);
+      r.type = 'button';
+      r.dataset.act = 'rule33';
+      r.setAttribute('aria-pressed', lob.opt ? 'true' : 'false');
+      if (lob.opt) r.style.background = '#c9ecc0';
+      r.onclick = () => { lob.opt = lob.opt ? 0 : 1; this.render(); };
+      const line = el('div', 'bg-row');
+      line.append(r);
+      c.append(line);
+    }
     const act = el('div', 'bg-row');
     if (g.max > 2 && seats < g.max) {
       const add = el('button', 'bg-btn', '➕ ' + L(T.computer));
@@ -592,7 +604,7 @@ export class BoardGamesUI {
         again.onclick = () => {
           const ids = p.ids.map((id, s) => (p.gone?.[s] ? null : id)).filter(Boolean);
           while (ids.length < GAMES[p.game].min) ids.push(BOT);
-          this.begin(p.game, ids, this.net.myId);
+          this.begin(p.game, ids, this.net.myId, undefined, null, p.opt);
         };
         row.append(again);
       }
@@ -660,8 +672,10 @@ export class BoardGamesUI {
       const gx = Math.round(((e.clientX - r.left) / r.width) * (N + 1)) - 1;
       const gy = Math.round(((e.clientY - r.top) / r.height) * (N + 1)) - 1;
       if (g.canPlay(p.seat, gx, gy)) this.myMove(['o', gx, gy]);
+      else if (g.no33 && !g.over && g.turn === p.seat && g.at(gx, gy) === -1 && g.doubleThree(gx, gy, p.seat)) { this.status = L(T.no33Here); this.render(); }
     };
     c.append(cv);
+    if (g.no33) c.append(el('div', 'bg-sub', L(T.rule33)));
   }
 
   drawBell(c) {

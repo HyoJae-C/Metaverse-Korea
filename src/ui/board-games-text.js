@@ -188,5 +188,9 @@ export const T = {
   snakeDown: R('🐍 Down the snake to {to}!', '🐍 뱀 타고 {to}번으로 미끄덩!', '🐍 ヘビで{to}へ！', '🐍 被蛇滑到{to}！', '🐍 ¡Baja por la serpiente hasta {to}!', '🐍 Turun ular ke {to}!', '🐍 Trượt rắn xuống ô {to}!', '🐍 साँप से {to} पर!', '🐍 Glisse sur le serpent jusqu\'à {to} !', '🐍 ไหลตามงูลงไป {to}!', '🐍 نزل مع الثعبان إلى {to}!'),
   again6: R('A 6: one more roll!', '6이라 한 번 더!', '6なのでもう一回！', '掷出6，再来一次！', '¡Un 6: otra tirada!', 'Dapat 6: lempar lagi!', 'Ra 6: gieo thêm lần nữa!', '6 आया: एक बार और!', 'Un 6 : on rejoue !', 'ได้ 6 ทอยอีกครั้ง!', 'الرقم 6: رمية أخرى!'),
   wobble: R('Wobble {n}%', '흔들림 {n}%', 'ぐらつき {n}%', '摇晃 {n}%', 'Tambaleo {n}%', 'Goyang {n}%', 'Lung lay {n}%', 'डगमग {n}%', 'Tangage {n}%', 'โยก {n}%', 'تمايل {n}%'),
+  rule33: R('Double three (3-3) not allowed', '33 금지', '三三禁止', '禁止三三', 'Doble tres (3-3) prohibido', 'Tiga ganda (3-3) dilarang', 'Cấm đôi ba (3-3)', 'दोहरा तीन (3-3) मना', 'Double trois (3-3) interdit', 'ห้ามสามคู่ (3-3)', 'ممنوع الثلاثة المزدوجة (3-3)'),
+  on: R('ON', '켬', 'オン', '开', 'SÍ', 'NYALA', 'BẬT', 'चालू', 'OUI', 'เปิด', 'تشغيل'),
+  off: R('OFF', '끔', 'オフ', '关', 'NO', 'MATI', 'TẮT', 'बंद', 'NON', 'ปิด', 'إيقاف'),
+  no33Here: R('Not there: that makes a double three (3-3).', '거긴 33이라 둘 수 없어요.', 'そこは三三で打てません。', '那里是三三，不能下。', 'Ahí no: forma un doble tres (3-3).', 'Jangan di situ: itu tiga ganda (3-3).', 'Không được: nước đó tạo đôi ba (3-3).', 'वहाँ नहीं: दोहरा तीन (3-3) बनता है।', 'Pas là : cela fait un double trois (3-3).', 'ตรงนั้นไม่ได้ เป็นสามคู่ (3-3)', 'ليس هنا: هذا يصنع ثلاثة مزدوجة (3-3).'),
   free: R('Free at the café', '카페에서는 무료', 'カフェでは無料', '在咖啡馆免费', 'Gratis en el café', 'Gratis di kafe', 'Miễn phí ở quán', 'कैफ़े में मुफ़्त', 'Gratuit au café', 'ที่คาเฟ่เล่นฟรี', 'مجانًا في المقهى'),
 };

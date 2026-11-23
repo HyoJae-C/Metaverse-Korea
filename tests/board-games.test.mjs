@@ -140,7 +140,7 @@ test('board game messages round-trip and refuse junk', async () => {
   const { parseBg, bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, unpackAct, packAct } = await import('../src/core/board-games.js');
   assert.deepEqual(parseBg(bgInvite('abc', 'croc')), { k: 'i', to: 'abc', game: 'croc' });
   assert.deepEqual(parseBg(bgReply('h1', true)), { k: 'a', to: 'h1' });
-  assert.deepEqual(parseBg(bgGo('g7', 'omok', 123, ['h1', '~'])), { k: 'g', gid: 'g7', game: 'omok', seed: 123, ids: ['h1', '~'] });
+  assert.deepEqual(parseBg(bgGo('g7', 'omok', 123, ['h1', '~'])), { k: 'g', gid: 'g7', game: 'omok', seed: 123, ids: ['h1', '~'], opt: 0 });
   assert.equal(parseBg(bgGo('g7', 'omok', 1, ['a', 'b', 'c'])), null); // omok is for 2
   assert.equal(parseBg(bgGo('g7', 'croc', 1, ['a', 'a'])), null);
   assert.deepEqual(parseBg(bgMove('g7', ['o', 7, 3])), { k: 'x', gid: 'g7', act: ['o', 7, 3] });
@@ -261,4 +261,41 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
     falls[a.last.placing ? 1 : 0]++;
   }
   assert.ok(falls[0] > 0 && falls[1] > 0);
+});
+
+test('omok: with the 3-3 rule on, a move that makes two open threes is refused (five still wins)', async () => {
+  const { Omok, newGame, parseBg, bgGo } = await import('../src/core/board-games.js');
+  const set = (g, list, p) => { for (const [x, y] of list) g.board[y * 15 + x] = p; };
+  const g = newGame('omok', 2, 1, 1);
+  assert.ok(g.no33);
+  // Black has two in a row across and two down, meeting at (7,7).
+  set(g, [[5, 7], [6, 7], [7, 5], [7, 6]], 0);
+  assert.ok(g.doubleThree(7, 7, 0));
+  assert.ok(!g.canPlay(0, 7, 7));
+  assert.ok(!g.play(0, 7, 7));
+  assert.ok(!g.doubleThree(8, 7, 0)); // one three only
+  assert.ok(g.canPlay(0, 8, 7));
+  // A three with a gap counts too: X_XX across.
+  const h = new Omok({ no33: true });
+  set(h, [[4, 7], [6, 7], [7, 5], [7, 6]], 0);
+  assert.ok(h.doubleThree(7, 7, 0));
+  // A three shut on one side by white is not open.
+  const k = new Omok({ no33: true });
+  set(k, [[5, 7], [6, 7], [7, 5], [7, 6]], 0);
+  set(k, [[4, 7]], 1);
+  assert.ok(!k.doubleThree(7, 7, 0));
+  // Five beats the rule; with the rule off anything goes.
+  const f = new Omok({ no33: true });
+  set(f, [[3, 7], [4, 7], [5, 7], [6, 7], [7, 5], [7, 6], [7, 8]], 0);
+  assert.ok(f.play(0, 7, 7));
+  assert.equal(f.winner, 0);
+  const off = newGame('omok', 2, 1);
+  set(off, [[5, 7], [6, 7], [7, 5], [7, 6]], 0);
+  assert.ok(off.play(0, 7, 7));
+  // The computer never plays one, and the start message carries the choice.
+  const b = new Omok({ no33: true });
+  set(b, [[5, 7], [6, 7], [7, 5], [7, 6]], 0);
+  assert.notDeepEqual(b.botMove(() => 0), [7, 7]);
+  assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'], 1)).opt, 1);
+  assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'])).opt, 0);
 });

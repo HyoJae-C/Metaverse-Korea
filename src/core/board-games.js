@@ -55,9 +55,12 @@ export function shuffle(list, rand) {
 export const OMOK_SIZE = 15;
 
 export class Omok {
-  constructor({ players = 2 } = {}) {
+  // no33: a move that makes two open threes at once is not allowed, for
+  // either colour (the host chooses, Yozi 2026-11-23).
+  constructor({ players = 2, no33 = false } = {}) {
     if (players !== 2) throw new Error('omok is for 2');
     this.n = 2;
+    this.no33 = !!no33;
     this.board = new Array(OMOK_SIZE * OMOK_SIZE).fill(-1);
     this.turn = 0; // player 0 is black and goes first
     this.winner = -1;
@@ -67,7 +70,37 @@ export class Omok {
   }
 
   canPlay(p, x, y) {
-    return !this.over && p === this.turn && x >= 0 && y >= 0 && x < OMOK_SIZE && y < OMOK_SIZE && this.board[y * OMOK_SIZE + x] < 0;
+    return !this.over && p === this.turn && x >= 0 && y >= 0 && x < OMOK_SIZE && y < OMOK_SIZE && this.board[y * OMOK_SIZE + x] < 0
+      && !(this.no33 && this.doubleThree(x, y, p));
+  }
+
+  // Would a stone at (x, y) make two or more open threes (a three that one
+  // more stone turns into an open four: _XXXX_)? A move that makes five is
+  // always fine.
+  doubleThree(x, y, p) {
+    const i = y * OMOK_SIZE + x;
+    if (this.board[i] >= 0) return false;
+    this.board[i] = p;
+    let threes = 0;
+    if (!this.fiveFrom(x, y, p)) {
+      for (const [dx, dy] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+        // The line through the stone, five cells each way: X mine, _ empty, O the rest.
+        let line = '';
+        for (let s = -5; s <= 5; s++) { const v = this.at(x + dx * s, y + dy * s); line += v === p ? 'X' : v === -1 ? '_' : 'O'; }
+        let open = false;
+        for (let k = 0; k < line.length && !open; k++) {
+          if (line[k] !== '_') continue;
+          const t = line.slice(0, k) + 'X' + line.slice(k + 1);
+          // An open four made with that stone, and holding the new stone (index 5).
+          for (let a = Math.max(1, k - 3); a <= Math.min(k, line.length - 5) && !open; a++) {
+            if (t.slice(a, a + 4) === 'XXXX' && t[a - 1] === '_' && t[a + 4] === '_' && a <= 5 && a + 3 >= 5) open = true;
+          }
+        }
+        if (open) threes++;
+      }
+    }
+    this.board[i] = -1;
+    return threes >= 2;
   }
 
   // Returns true if the move was taken.
@@ -110,7 +143,7 @@ export class Omok {
     let best = null; let bestScore = -1;
     for (let y = 0; y < OMOK_SIZE; y++) {
       for (let x = 0; x < OMOK_SIZE; x++) {
-        if (this.board[y * OMOK_SIZE + x] >= 0) continue;
+        if (this.board[y * OMOK_SIZE + x] >= 0 || (this.no33 && this.doubleThree(x, y, p))) continue;
         const s = this.cellScore(x, y, p) * 1.1 + this.cellScore(x, y, 1 - p) + rand() * 0.5
           - (Math.abs(x - 7) + Math.abs(y - 7)) * 0.05;
         if (s > bestScore) { bestScore = s; best = [x, y]; }
@@ -729,8 +762,9 @@ export class Tower {
 }
 
 // One way to make any game, used by the table screen.
-export function newGame(id, players, seed) {
-  if (id === 'omok') return new Omok({ players });
+// opt: a game's own choice, a small number (omok: 1 = no double threes).
+export function newGame(id, players, seed, opt = 0) {
+  if (id === 'omok') return new Omok({ players, no33: opt === 1 });
   if (id === 'onecard') return new OneCard({ players, seed });
   if (id === 'fruitbell') return new FruitBell({ players, seed });
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
@@ -766,7 +800,7 @@ export function applyAction(game, p, a) {
 // Room messages (game.net.sendEmote), all starting with "bg:":
 //   bg:i:<to>:<game>            the host invites <to>
 //   bg:a:<host> / bg:n:<host>   yes / no (or "I left") back to the host
-//   bg:g:<gid>:<game>:<seed>:<ids>   the start, to everyone: the line-up in
+//   bg:g:<gid>:<game>:<seed>:<ids>[:<opt>]   the start, to everyone: the line-up in
 //                               seat order, host first; "~" is a computer
 //   bg:x:<gid>:<act>            a player's move, to the host
 //   bg:y:<gid>:<seat>:<act>     the host passes a move on, to everyone
@@ -785,12 +819,12 @@ export function parseBg(e) {
   const k = p[1];
   if (k === 'i' && p.length === 4 && BG_ID.test(p[2]) && GAMES[p[3]]) return { k, to: p[2], game: p[3] };
   if ((k === 'a' || k === 'n') && p.length === 3 && BG_ID.test(p[2])) return { k, to: p[2] };
-  if (k === 'g' && p.length === 6 && BG_ID.test(p[2]) && GAMES[p[3]] && /^\d{1,10}$/.test(p[4])) {
+  if (k === 'g' && (p.length === 6 || (p.length === 7 && /^\d$/.test(p[6]))) && BG_ID.test(p[2]) && GAMES[p[3]] && /^\d{1,10}$/.test(p[4])) {
     const ids = p[5].split(',');
     const g = GAMES[p[3]];
     if (ids.length < g.min || ids.length > g.max || ids.some((id) => id !== '~' && !BG_ID.test(id))) return null;
     if (new Set(ids.filter((id) => id !== '~')).size !== ids.filter((id) => id !== '~').length) return null;
-    return { k, gid: p[2], game: p[3], seed: +p[4], ids };
+    return { k, gid: p[2], game: p[3], seed: +p[4], ids, opt: +(p[6] || 0) };
   }
   if (k === 'x' && p.length === 4 && BG_ID.test(p[2]) && unpackAct(p[3])) return { k, gid: p[2], act: unpackAct(p[3]) };
   if (k === 'y' && p.length === 5 && BG_ID.test(p[2]) && /^\d$/.test(p[3]) && unpackAct(p[4])) return { k, gid: p[2], seat: +p[3], act: unpackAct(p[4]) };
@@ -799,7 +833,7 @@ export function parseBg(e) {
 }
 export const bgInvite = (to, game) => `bg:i:${to}:${game}`;
 export const bgReply = (host, yes) => `bg:${yes ? 'a' : 'n'}:${host}`;
-export const bgGo = (gid, game, seed, ids) => `bg:g:${gid}:${game}:${seed}:${ids.join(',')}`;
+export const bgGo = (gid, game, seed, ids, opt = 0) => `bg:g:${gid}:${game}:${seed}:${ids.join(',')}${opt ? ':' + opt : ''}`;
 export const bgMove = (gid, act) => `bg:x:${gid}:${packAct(act)}`;
 export const bgPass = (gid, seat, act) => `bg:y:${gid}:${seat}:${packAct(act)}`;
 export const bgClose = (gid) => `bg:c:${gid}`;
