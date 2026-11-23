@@ -233,6 +233,7 @@ import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
 import { RINK_FENCE } from './core/bumper-cars.js';
 import { createArcade } from './game/arcade.js';
+import { createBoardGames, BOARD_GAMES_OPEN } from './game/board-games.js';
 import { createBasketball } from './game/basketball.js';
 import { createFolkYard } from './game/folk-yard.js';
 import { createBalloonClown, restoreBalloon, balloonKind } from './game/balloon-clown.js';
@@ -1696,7 +1697,7 @@ async function joinRoom(room, roomScene, area = null) {
       homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
@@ -1729,6 +1730,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseKpop(e)) { kpop.onMsg(parseKpop(e)); return; }
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
+      if (boardGames.onMsg(id, e)) return; // board games at the café (game/board-games.js)
       if (arcadeGame.onBrawlMsg(id, e)) return; // the fighting game with someone in the room (game/arcade.js)
       if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
@@ -3383,6 +3385,7 @@ function leaveStore(walkOut = false) {
   clearMeal();
   closeHome();
   homeVisitsLoaded?.left();
+  boardGames.leftRoom();
   closeHatWorkshop(false);
   interior.confession?.reset();
   interior.onLeave?.(); // (a room's own goodbye, e.g. Modu Sky's lift down)
@@ -4208,7 +4211,7 @@ addEventListener('keydown', (e) => {
 onLanguageChange(() => { chooser.sig = ''; });
 // Space is also the karaoke tap and the key for a focused button, so only
 // treat it as "act" when no game or sheet is taking keys.
-const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, farm.ui, seedShop.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, farmLogUi, stampUi, museumUi].some((g) => g?.open)
+const spaceBusy = () => { try { return [basketUi, ...Object.values(folkYard.uis), pochaUi, jobUi, karaokeUi, runwayUi, photoUi, clawUi, battingUi, bowlingUi, climbUi, aimUi, fightUi, galleryUi, hauntUi, dartsUi, duckUi, emblemUi, infoUi, saunaUi, gymUi, bookUi, academyUi, boardUi, loveLockUi, wishUi, templeLanterns.ui, bukchonUi, orderUi, grillUi, fishingUi, marketUi, fishBait.ui, dishUpgrade.ui, farm.ui, seedShop.ui, resaleUi, potatoMarket, ramenUi, kimchiUi, japchaeUi, kimbapUi, tteokUi, bibimbapUi, kimchiSellUi, tarotUi, counterUi, bagUi, dexUi, recipes.ui, fishBookUi, farmLogUi, stampUi, museumUi, boardGames.panel].some((g) => g?.open)
   || !$('map-panel').hidden || !$('settings-panel').hidden || !$('notes-panel').hidden || helpBook.open; } catch { return true; } };
 addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target?.isContentEditable) return;
@@ -4817,6 +4820,8 @@ const arcadeGame = createArcade({
   renderer, lowSpec,
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
+// Board games at the board game café: the panel loads on first use. (game/board-games.js)
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
@@ -7169,6 +7174,8 @@ function updateAction(p, tSec) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
+    } else if (nearStation(p, 'boardgames', 1.1)) {
+      next = boardGames.panel.open ? null : { key: 'boardgames', label: '🎲 ' + L(BOARD_GAMES_OPEN), run: () => boardGames.open() };
     } else if (nearStation(p, 'darts', 1.6)) {
       next = arcadeGame.camOn() ? null : { key: 'darts', label: '🎯 ' + L(ARCADE_OPEN.darts) + (freshInvite() ? ' ⚔️' : ''), run: () => openArcade('darts') };
     } else if (duckBoats.boardAction(p)) {

@@ -1,0 +1,154 @@
+// End-to-end check: the board game café (game/board-games.js). A opens the
+// panel at a free table and puts a stone down against the computer; then A
+// invites B to Croc Teeth, B says yes on the card, they take turns until the
+// croc snaps, and both screens show the same teeth pressed and the same
+// result. B walking out closes B's panel.
+//   npm run build && npx vite preview --port 4173 &
+//   node tests/e2e/board-games.mjs http://localhost:4173/ [screenshot dir]
+// Realtime runs on a fake server in this script (fake-realtime.mjs).
+import { chromium } from 'playwright';
+import { useFakeRealtime, summary, log as rtLog } from './fake-realtime.mjs';
+
+const url = process.argv[2] || 'http://localhost:4173/';
+const bridge = process.argv.includes('--bridge');
+const shotDir = process.argv.slice(3).find((a) => !a.startsWith('--')) || null;
+const pages = [];
+// Each player gets a browser of their own (as in multiplayer.mjs): two
+// contexts in one browser share its GPU process, and with software GL the
+// second player's start-up queued behind the first one's frames until the
+// HUD wait timed out on CI (from 2026-11-13, as the city grew).
+const launch = () => chromium.launch({ executablePath: process.env.CHROME || process.env.E2E_CHROMIUM || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browsers = [];
+const ROOM = 'e2e' + Math.random().toString(36).slice(2, 10);
+const errors = [];
+const logs = [];
+let step = 'joining';
+
+async function join(name) {
+  const browser = await launch();
+  browsers.push(browser);
+  const ctx = await browser.newContext({ viewport: { width: 900, height: 640 } });
+  if (!bridge) await useFakeRealtime(ctx, name);
+  const page = await ctx.newPage();
+  if (bridge) {
+    await page.exposeFunction('__bcSend', (ch, data) => {
+      for (const p of pages) if (p !== page) p.evaluate(([c, d]) => window.__bcDeliver?.(c, d), [ch, data]).catch(() => {});
+    });
+    await page.addInitScript(() => {
+      const Real = window.BroadcastChannel, open = new Set();
+      window.__bcDeliver = (c, d) => { for (const ch of open) if (ch.name === c && !ch.closed) ch._got({ data: d }); };
+      window.BroadcastChannel = class extends EventTarget {
+        constructor(name) { super(); this.name = name; this.real = new Real(name); this.real.onmessage = (e) => this._got(e); open.add(this); }
+        _got(e) { this.onmessage?.(e); this.dispatchEvent(new MessageEvent('message', { data: e.data })); }
+        postMessage(d) { this.real.postMessage(d); if (!this.name.includes('active-tab')) window.__bcSend(this.name, JSON.parse(JSON.stringify(d))); }
+        close() { this.closed = true; open.delete(this); this.real.close(); }
+      };
+    });
+  }
+  pages.push(page);
+  page.on('pageerror', (e) => errors.push(`${name}: ${e.message}`));
+  // Warnings and errors are printed if the test fails (a realtime join that
+  // timed out, a rate limit); with E2E_LOG=1, every console line as it comes.
+  page.on('console', (m) => {
+    const line = `${name} ${m.type()}: ${m.text().slice(0, 200)}`;
+    if (process.env.E2E_LOG) console.log(line);
+    else if (m.type() === 'error' || m.type() === 'warning') logs.push(line);
+  });
+  // Every toast the game shows (gift sent, nobody here, turned down...).
+  await page.exposeFunction('__toastSeen', (t) => logs.push(`${name} toast: ${t}`));
+  await page.addInitScript(() => addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('toast');
+    if (el) new MutationObserver(() => { if (!el.hidden && el.textContent) window.__toastSeen(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
+  }));
+  await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
+  await page.click('#next-btn');
+  await page.fill('#nickname', '');
+  await page.type('#nickname', name);
+  // Building the world blocks the page, so a plain click can time out
+  // waiting for it to come back: press the button from inside the page on
+  // the next tick and wait for the HUD, with room for a slow runner.
+  await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible', timeout: 90000 });
+  await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
+  await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
+  if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
+  await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
+  return page;
+}
+
+
+const a = await join('Dice A');
+const b = await join('Dice B');
+const STAND = [-5.15, 2.4]; // behind a free chair at the café's third table (core/board-cafe-room.js)
+let ok = false;
+try {
+  step = 'both into the board game café';
+  for (const page of [a, b]) await page.evaluate(() => __mk.enter('dice-and-tea'));
+  for (const page of [a, b]) await page.waitForFunction(() => __mk.room()?.id === 'dice-and-tea', null, { timeout: 30000 });
+  await a.evaluate(([x, z]) => __mk.place(x, z), STAND);
+  await b.evaluate(([x, z]) => __mk.place(x + 1, z + 1.5), STAND);
+  await a.waitForFunction(() => /Board games/.test(__mk.action() || ''), null, { timeout: 10000 });
+
+  step = 'A opens the panel and plays Omok against the computer';
+  await a.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /Board games/.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); });
+  await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="omok"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel canvas.bg-omok');
+  const box = await a.locator('#bg-panel canvas.bg-omok').boundingBox();
+  await a.mouse.click(box.x + box.width * 8 / 16, box.y + box.height * 8 / 16); // the centre point
+  await a.waitForFunction(() => /Your turn/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/omok.png' });
+  await a.click('#bg-panel .bg-x');
+
+  step = 'A invites B to Croc Teeth';
+  await a.evaluate(() => { const i = (__mk.choices() || []).findIndex((l) => /Board games/.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); });
+  await a.waitForSelector('#bg-panel.on [data-game="croc"]');
+  await a.click('#bg-panel [data-game="croc"]');
+  await a.waitForFunction(() => [...document.querySelectorAll('#bg-panel .bg-btn')].some((x) => /Invite Dice B/.test(x.textContent)), null, { timeout: 15000 });
+  await a.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-btn')].find((x) => /Invite Dice B/.test(x.textContent)).click());
+  await b.waitForSelector('#bg-ask', { timeout: 15000 });
+  if (shotDir) await b.screenshot({ path: shotDir + '/invite.png' });
+  await b.evaluate(() => document.querySelector('#bg-ask button').click());
+  await a.waitForFunction(() => /Dice B is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
+  await a.click('#bg-panel [data-act="start"]');
+  await b.waitForSelector('#bg-panel.on .bg-croc', { timeout: 15000 });
+
+  step = 'they take turns until the croc snaps; both screens agree';
+  const pressedOn = (page) => page.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-spot')].filter((x) => x.textContent === '·').length);
+  const isOver = (page) => page.evaluate(() => !!document.querySelector('#bg-panel [data-act="again"]') || /💥/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''));
+  for (let k = 0; k < 14 && !(await isOver(a)); k++) {
+    let mover = null;
+    for (const page of [a, b]) if (await page.evaluate(() => /Your turn/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''))) mover = page;
+    if (!mover) { await a.waitForTimeout(300); continue; }
+    const n = await pressedOn(a);
+    await mover.evaluate(() => document.querySelector('#bg-panel .bg-spot:not(:disabled)')?.click());
+    // Both screens move on (or the croc snapped).
+    for (const page of [a, b]) await page.waitForFunction((m) => [...document.querySelectorAll('#bg-panel .bg-spot')].filter((x) => x.textContent === '·').length > m || /💥/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), n, { timeout: 8000 });
+  }
+  await a.waitForSelector('#bg-panel [data-act="again"]', { timeout: 15000 });
+  await b.waitForFunction(() => /💥/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
+  const pressed = await Promise.all([a, b].map((p) => p.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-spot')].map((x) => x.textContent === '·' ? 1 : 0).join(''))));
+  if (pressed[0] !== pressed[1]) throw new Error(`different boards: ${pressed[0]} vs ${pressed[1]}`);
+  if (shotDir) { await a.screenshot({ path: shotDir + '/croc-a.png' }); await b.screenshot({ path: shotDir + '/croc-b.png' }); }
+
+  step = 'B walks out: A is told';
+  await b.evaluate(() => __mk.place(0, 0));
+  await b.evaluate(() => __mk.enter('lucky-piggy-tarot'));
+  await b.waitForFunction(() => !document.querySelector('#bg-panel.on'), null, { timeout: 15000 });
+  ok = true;
+} catch (e) {
+  errors.push(`assertion at "${step}": ${e.message.split('\n')[0]}`);
+  for (const [n, page] of [['A', a], ['B', b]]) {
+    const st = await page.evaluate(() => ({ room: __mk.room()?.id, near: __mk.near(), action: __mk.action(), panel: document.querySelector('#bg-panel')?.textContent?.slice(0, 300) })).catch((x) => x.message);
+    errors.push(`${n} state: ${JSON.stringify(st)}`);
+  }
+  errors.push(...logs.slice(-40));
+  if (!bridge) errors.push(...rtLog.slice(-30));
+  if (shotDir) { await a.screenshot({ path: shotDir + '/fail-a.png' }); await b.screenshot({ path: shotDir + '/fail-b.png' }); }
+}
+if (errors.length && ok) ok = !errors.some((x) => !x.includes('toast'));
+for (const br of browsers) await br.close();
+for (const e of errors) console.log(e);
+console.log(ok ? 'PASS' : 'FAIL');
+if (!bridge) console.log(summary());
+process.exit(ok ? 0 : 1);
