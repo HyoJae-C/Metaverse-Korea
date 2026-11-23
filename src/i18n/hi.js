@@ -591,7 +591,7 @@ export const HI = {
   'home.visitSoon': 'घर जाने की सुविधा तैयार हो रही है। बाद में फिर कोशिश करें।',
   'home.ofName': '{name} का घर',
   'home.friend': 'दोस्त',
-  'home.visitFull': '{name} का घर भर गया है (अधिकतम 4 लोग)।',
+  'home.visitFull': '{name} का घर भर गया है (अधिकतम {n} लोग)।',
   'home.notHome': '{name} अब घर पर नहीं हैं।',
   'home.hostLeft': '{name} बाहर चले गए, इसलिए आप भी बाहर आ गए।',
   'home.kicked': 'आप {name} के घर से निकल गए।',

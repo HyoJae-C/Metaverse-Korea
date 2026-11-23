@@ -591,7 +591,7 @@ export const JA = {
   'home.visitSoon': '家への訪問は準備中です。あとでもう一度試してください。',
   'home.ofName': '{name}の家',
   'home.friend': 'フレンド',
-  'home.visitFull': '{name}の家はいっぱいです（最大4人）。',
+  'home.visitFull': '{name}の家はいっぱいです（最大{n}人）。',
   'home.notHome': '{name}さんはもう家にいません。',
   'home.hostLeft': '{name}さんが出かけたので、一緒に外に出ました。',
   'home.kicked': '{name}の家を出ました。',

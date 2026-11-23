@@ -7,13 +7,14 @@
 // small multiplayer room; otherwise you're alone in it, as before.
 // At the door, "Visit a home" lists the homes you may walk into right now.
 // The host's game sends its furniture to the visitors over the room, checks
-// each visitor with the server, and keeps the room to MAX_PEOPLE. Only the
+// each visitor with the server, and keeps the room to its home level's size
+// (core/home-stages.js homePeople). Only the
 // host can move furniture. When the host goes out, visitors go out too.
 import { isPhotoId, okSrc, photoOfFrame } from '../core/ride-photos.js';
 import { setPhotoSrc } from '../core/furniture.js';
 import { cleanName } from '../core/identity.js';
+import { homePeople, readHomeLevel, OLD_HOME_LEVEL } from '../core/home-stages.js';
 
-export const MAX_PEOPLE = 4; // host included (realtime messages grow with the square)
 const BEAT_MS = 60000; // the server forgets a home after 2 minutes without a beat
 const HOST_WAIT_MS = 6000; // a visitor who finds nobody home goes back out
 
@@ -67,7 +68,7 @@ export function createHomeVisits(game) {
   }
   const people = () => game.others.players.size + 1;
   async function guestCame(id) {
-    if (people() > MAX_PEOPLE) { game.net.sendEmote(kickMsg(id)); return; }
+    if (people() > homePeople(readHomeLevel())) { game.net.sendEmote(kickMsg(id)); return; }
     const r = await cloud.call('home_guest_ok', { p_guest_net: id });
     if (!hosting) return;
     if (r.data === false) { game.net.sendEmote(kickMsg(id)); return; }
@@ -118,7 +119,7 @@ export function createHomeVisits(game) {
     guest.timer = setTimeout(() => {
       if (my !== token || !guest) return;
       if (game.others.nameOf(guest.host.net) == null) { shop.toast(t('home.notHome', { name: guest.host.name })); game.leaveStore(); }
-      else if (people() > MAX_PEOPLE) { shop.toast(t('home.visitFull', { name: guest.host.name })); game.leaveStore(); }
+      else if (people() > homePeople(guest.host.level || OLD_HOME_LEVEL)) { shop.toast(t('home.visitFull', { name: guest.host.name, n: homePeople(guest.host.level || OLD_HOME_LEVEL) })); game.leaveStore(); }
     }, HOST_WAIT_MS);
   }
 

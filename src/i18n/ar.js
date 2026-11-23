@@ -591,7 +591,7 @@ export const AR = {
   'home.visitSoon': 'زيارات البيوت قيد التجهيز. حاول لاحقًا.',
   'home.ofName': 'بيت {name}',
   'home.friend': 'صديق',
-  'home.visitFull': 'بيت {name} ممتلئ (4 أشخاص كحد أقصى).',
+  'home.visitFull': 'بيت {name} ممتلئ ({n} أشخاص كحد أقصى).',
   'home.notHome': '{name} لم يعد في البيت.',
   'home.hostLeft': 'خرج {name}، فخرجت أنت أيضًا.',
   'home.kicked': 'غادرت بيت {name}.',

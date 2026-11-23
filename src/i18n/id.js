@@ -591,7 +591,7 @@ export const ID = {
   'home.visitSoon': 'Kunjungan rumah sedang disiapkan. Coba lagi nanti.',
   'home.ofName': 'Rumah {name}',
   'home.friend': 'Teman',
-  'home.visitFull': 'Rumah {name} penuh (maksimal 4 orang).',
+  'home.visitFull': 'Rumah {name} penuh (maksimal {n} orang).',
   'home.notHome': '{name} sudah tidak di rumah.',
   'home.hostLeft': '{name} keluar, jadi kamu ikut keluar.',
   'home.kicked': 'Kamu keluar dari rumah {name}.',
