@@ -509,3 +509,106 @@ test('the joker game: the one picked from may shuffle once a turn', async () => 
   g.take(picker, 0);
   if (!g.over) assert.ok(!g.mixed); // a new turn
 });
+
+test('the skull game: the one picked from may push one card up, change it, or put it back', async () => {
+  const { Thief } = await import('../src/core/board-games.js');
+  const g = new Thief({ players: 3, seed: 7 });
+  const holder = g.from, picker = g.turn, before = g.hands.map((h) => h.slice());
+  assert.equal(g.tip, -1);
+  assert.ok(!applyAction(g, picker, ['u', 0])); // only the one being picked from
+  assert.ok(applyAction(g, holder, unpackAct(packAct(['u', 1]))));
+  assert.equal(g.tip, 1);
+  assert.ok(!applyAction(g, holder, ['u', 1])); // already up
+  assert.ok(applyAction(g, holder, ['u', 0])); // one card at a time: the other comes down
+  assert.equal(g.tip, 0);
+  assert.ok(!applyAction(g, holder, ['u', g.hands[holder].length])); // no such card
+  assert.ok(applyAction(g, holder, unpackAct(packAct(['u'])))); // back down
+  assert.equal(g.tip, -1);
+  assert.deepEqual(g.hands, before); // it never moves a card
+  g.suggest(holder, 0);
+  g.select(picker, 1);
+  assert.equal(g.tip, 0); // pointing elsewhere leaves it up
+  g.mix(holder);
+  assert.equal(g.tip, -1); // a shuffle puts it down
+  g.suggest(holder, 0);
+  g.take(picker, 0);
+  assert.equal(g.tip, -1); // a new turn starts with nothing pushed up
+});
+
+test('snakes and ladders with a roll limit: everyone gets the same rolls, then the furthest ahead wins, and all are ranked', async () => {
+  const { Ladders, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction } = await import('../src/core/board-games.js');
+  // The option is one digit: the board laid out by the players, and the place of the limit.
+  assert.deepEqual(LADDERS_ROLLS, [0, 20, 30, 50]);
+  assert.equal(laddersOpt(false, 0), 0);
+  assert.equal(laddersOpt(true, 0), 1);
+  assert.equal(laddersOpt(false, 2), 4);
+  assert.equal(laddersOpt(true, 3), 7);
+  for (const [opt, setup, max] of [[0, false, 0], [1, true, 0], [4, false, 30], [5, true, 30], [2, false, 20], [7, true, 50]]) {
+    const g = newGame('ladders', 2, 9, opt);
+    assert.equal(g.setup, setup, 'opt ' + opt);
+    assert.equal(g.max, max, 'opt ' + opt);
+  }
+  // Every game with a limit ends, nobody rolls more than the limit, and the places follow the squares.
+  let byRolls = 0, byFinish = 0, shared = 0;
+  for (let seed = 1; seed <= 600; seed++) {
+    const players = 2 + (seed % 3), max = [5, 20, 30, 50][seed % 4];
+    const g = new Ladders({ players, seed, max });
+    let guard = 0;
+    while (!g.over) {
+      const t = g.turn;
+      assert.ok(g.canRoll(t), 'the player to move has a roll left');
+      assert.ok(g.roll(t));
+      assert.ok(++guard <= players * max, 'no more rolls than the limit allows');
+    }
+    assert.ok(g.used.every((u) => u <= max));
+    assert.equal(g.used.reduce((a, b) => a + b, 0), g.rolls);
+    const home = g.pos.indexOf(LADDERS_END);
+    if (home >= 0) { byFinish++; assert.equal(g.winner, home); assert.equal(g.ranks[home], 1); }
+    else { byRolls++; assert.ok(g.used.every((u) => u === max), 'the game ran until every roll was used'); }
+    // Places: 1 + how many are further ahead; the same square shares one.
+    for (let s = 0; s < players; s++) assert.equal(g.ranks[s], 1 + g.pos.filter((q) => q > g.pos[s]).length);
+    const firsts = g.ranks.filter((r) => r === 1).length;
+    if (firsts > 1) { shared++; assert.equal(g.winner, -1); } else assert.equal(g.ranks[g.winner], 1);
+    assert.equal(g.roll(g.turn), false); // over is over
+  }
+  assert.ok(byRolls > 50 && byFinish > 50, `both endings happen (${byRolls} by rolls, ${byFinish} by reaching the end)`);
+  assert.ok(shared > 0, 'a shared first place happens');
+
+  // A 6 on a player's last roll does not buy another, and the turn skips players who are out of rolls.
+  let seen = false;
+  for (let seed = 1; seed <= 400 && !seen; seed++) {
+    const g = new Ladders({ players: 2, seed, max: 3 });
+    while (!g.over) {
+      const t = g.turn, lastOne = g.rollsLeft(t) === 1;
+      g.roll(t);
+      if (lastOne && g.last.dice === 6 && !g.over) { seen = true; assert.notEqual(g.turn, t); assert.equal(g.rollsLeft(t), 0); }
+    }
+  }
+  assert.ok(seen, 'a 6 on a last roll came up');
+
+  // Someone leaves and the ones left have no rolls: the game ends with the places, the leaver unplaced.
+  const g = new Ladders({ players: 3, seed: 4, max: 2 });
+  g.used[0] = 2; g.used[1] = 2; g.pos = [10, 30, 5]; g.turn = 2;
+  g.leave(2);
+  assert.ok(g.over);
+  assert.deepEqual(g.ranks, [2, 1, 0]);
+  assert.equal(g.winner, 1);
+  // Two left when one walks out: the other is first.
+  const h = new Ladders({ players: 2, seed: 4, max: 20 });
+  h.leave(0);
+  assert.ok(h.over);
+  assert.deepEqual(h.ranks, [0, 1]);
+  assert.equal(h.winner, 1);
+  // Without a limit nothing changes: no roll count ends the game.
+  const free = new Ladders({ players: 2, seed: 3 });
+  assert.equal(free.rollsLeft(0), Infinity);
+  for (let k = 0; k < 400 && !free.over; k++) free.roll(free.turn);
+  assert.ok(free.over && free.pos.includes(LADDERS_END));
+  assert.equal(free.ranks[free.winner], 1);
+  // Two screens stay the same through the wire actions.
+  const a = newGame('ladders', 3, 31, 2), b = newGame('ladders', 3, 31, 2);
+  while (!a.over) { const t = a.turn; assert.ok(applyAction(a, t, ['d'])); assert.ok(applyAction(b, t, ['d'])); }
+  assert.deepEqual(a.pos, b.pos);
+  assert.deepEqual(a.ranks, b.ranks);
+  assert.ok(b.over);
+});

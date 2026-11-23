@@ -46,7 +46,7 @@ export function createBoardGames(game) {
     const w = watched.get(host);
     if (!w || !table) return;
     const g = w.g, gone = w.ids.map((_, s) => !!w.gone[s]), now = performance.now();
-    if (w.kind === 'thief') table.watchSync(host, { counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, over: g.over, faces: w.ids.map((_, s) => (w.faces[s]?.until > now ? core.FACES[w.faces[s].n] : '')), gone, canPick: false });
+    if (w.kind === 'thief') table.watchSync(host, { counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, tip: g.tip, over: g.over, faces: w.ids.map((_, s) => (w.faces[s]?.until > now ? core.FACES[w.faces[s].n] : '')), gone, canPick: false });
     else table.watchSync(host, { pressed: g.pressed, bang: !!g.last?.bang, wobble: g.risk?.() ?? 0, placing: !!g.last?.placing, gone });
   };
   const unwatch = (host) => { if (watched.delete(host)) table?.unwatch(host); };
