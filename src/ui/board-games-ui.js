@@ -434,6 +434,19 @@ export class BoardGamesUI {
     this.myMove(['e', n]);
   }
 
+  // I drew the joker: the phone buzzes; where the browser has no vibration
+  // (iPhone Safari, a computer) my own screen flashes red for a moment instead.
+  jokerJolt() {
+    let buzzed = false;
+    try { buzzed = typeof navigator.vibrate === 'function' && navigator.vibrate([140, 70, 140]); } catch { /* (not allowed here) */ }
+    if (buzzed) return;
+    const f = el('div', 'bg-jolt');
+    f.style.cssText = 'position:fixed;inset:0;z-index:99;pointer-events:none;background:#e8402a;opacity:.45;transition:opacity .5s';
+    document.body.append(f);
+    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.opacity = '0'; }));
+    setTimeout(() => f.remove(), 700);
+  }
+
   // My own move: the host applies it at once, a guest sends it to the host.
   myMove(act) {
     const p = this.play;
@@ -492,7 +505,7 @@ export class BoardGamesUI {
       this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
     } else if (act[0] === 't') {
       const l = g.last;
-      if (l.p === p.seat && l.card === 'JB') { try { navigator.vibrate?.([140, 70, 140]); } catch { /* (no vibration on this device) */ } } // (only the one who drew it feels it)
+      if (l.p === p.seat && l.card === 'JB') this.jokerJolt(); // (only the one who drew it feels it)
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
       this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
