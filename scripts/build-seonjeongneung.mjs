@@ -52,7 +52,7 @@ export const SJN = {
   hillGap: 2.5, // m kept between a hill's foot and the shrine hall's platform
   chamdoW: 1.6, // m: the stone path (about 3.2 m in Seoul, halved)
   infoBox: [10, 6], // m: the Information Center (game size, in the history hall's place)
-  tree: 3.9, // m between trees in the wood (it is a dense wood)
+  tree: 6, // m between the crowns of the wood's mass
 };
 
 // The district's anchor: the main gate by the ticket office (삼릉공원 입구).
@@ -129,7 +129,11 @@ function tomb(id, name, d, jjC, jjHalf) {
   const r = ring.reduce((s, q) => s + Math.hypot(q[0] - c[0], q[1] - c[1]), 0) / ring.length;
   const wall = LP(d.wall);
   const rw = wall.reduce((s, q) => Math.max(s, Math.hypot(q[0] - c[0], q[1] - c[1])), 0);
-  const ry = facing(c, jjC); // the tomb faces its shrine hall
+  // The tomb faces the way its curved wall opens (OSM's wall is the three
+  // closed sides): from the middle of the wall's back to between its two ends.
+  const wm = wall.slice(1, -1), wb = [wm.reduce((a, q) => a + q[0], 0) / wm.length, wm.reduce((a, q) => a + q[1], 0) / wm.length];
+  const ry = facing(wb, [(wall[0][0] + wall.at(-1)[0]) / 2, (wall[0][1] + wall.at(-1)[1]) / 2]);
+  const offHall = Math.abs(((facing(c, jjC) - ry + Math.PI * 3) % (Math.PI * 2)) - Math.PI) * 180 / Math.PI;
   const fx = Math.sin(ry), fz = Math.cos(ry);
   const toHall = Math.hypot(jjC[0] - c[0], jjC[1] - c[1]);
   // The hill's foot in front: OSM's embankment (the 1/4 hill) twice as far
@@ -153,7 +157,18 @@ function tomb(id, name, d, jjC, jjHalf) {
   };
   things.push({ name: name.en + ' hill', p: hillP, hill: true });
   blockers.push({ p: R1(hillP), low: true, why: name.en + ': its hill, fenced (you look at the tomb from below)' });
-  lm.push({ type: 'royaltomb', x: r1(c[0]), z: r1(c[1]), ry: r2(ry), mound: r1(2 * r * S), wall: r1(rw * S), hill: { front: r1(front), side: r1(side), back: r1(back), h: SJN.hillH, p: R1(hillP).map(([x, z]) => [r1(x - c[0]), r1(z - c[1])]) }, ...(SCREEN[id] ? {} : { screen: 0 }), inner: 1 });
+  // The curved wall at 50% about the mound; where that would stand outside
+  // the hill (Seolleung's is by the grounds' west wall) it is drawn in.
+  let wallIn = 0;
+  const wallP = wall.map(([x, z]) => {
+    let f = S;
+    while (f > 1 && (!inside(hillP, c[0] + (x - c[0]) * f, c[1] + (z - c[1]) * f) || ringDist(c[0] + (x - c[0]) * f, c[1] + (z - c[1]) * f, hillP) < 1)) f -= 0.02;
+    wallIn = Math.max(wallIn, (S - f) * Math.hypot(x - c[0], z - c[1]));
+    return [r1((x - c[0]) * f), r1((z - c[1]) * f)];
+  });
+  if (wallIn > 0.1) nudges.push({ what: name.en + ' curved wall', m: r1(wallIn), real: r1(wallIn * 4), why: 'at 50% it would cross the grounds\' wall, so that side is drawn in to stand on the hill' });
+  lm.push({ type: 'royaltomb', x: r1(c[0]), z: r1(c[1]), ry: r2(ry), mound: r1(2 * r * S), wall: r1(rw * S), hill: { front: r1(front), side: r1(side), back: r1(back), h: SJN.hillH, p: R1(hillP).map(([x, z]) => [r1(x - c[0]), r1(z - c[1])]) }, wallP, ...(SCREEN[id] ? {} : { screen: 0 }), inner: 1 });
+  t.offHall = Math.round(offHall);
   return t;
 }
 
@@ -326,23 +341,50 @@ const areas = [
 const ginkgo = L(osm.ginkgo);
 lm.push({ type: 'oldginkgo', x: r1(ginkgo[0]), z: r1(ginkgo[1]), why: 'the 500-year-old ginkgo, a natural monument (OSM 3734588276); about 9 m tall here', inner: 1 });
 blockers.push({ p: R1(rect(ginkgo[0], ginkgo[1], 1.4, 1.4, 0)) });
-const trees = [];
+// The wood: drawn whole, as one mass of crowns you can't walk into (Yozi
+// 2026-11-24: the wood isn't what you come for, so it is light). Its patches
+// are the grounds less the lawns, the paths, the stone paths, the tombs, the
+// halls, the ginkgo and the way in; each patch is a blocker, so you keep to
+// the paths and lawns as in the real park.
+const ringOf = (p) => [...p, p[0]];
+const circle = (c, r) => ringOf(Array.from({ length: 12 }, (_, i) => [c[0] + Math.cos(i * Math.PI / 6) * r, c[1] + Math.sin(i * Math.PI / 6) * r]));
+const woodCuts = [
+  ...lawns.map((P) => [ringOf(P)]), ...lawns.flatMap((P) => band(ringOf(P), 1.2)),
+  ...roads.filter((r) => r.k === 'walk').flatMap((r) => band(r.p, r.w / 2 + 1.3)),
+  ...groups.flatMap((g) => band(g.chamdoLine, 3)),
+  ...things.map((t) => [ringOf(t.p)]), ...things.flatMap((t) => band(ringOf(t.p), t.hill ? 1.4 : 2.4)),
+  [circle(ginkgo, 6)], [circle(ENTR, 8)],
+];
+const woodBase = polygonClipping.difference([INNER], ...band(ringOf(OUTLINE), 2.2));
+// (one cut at a time, rounded to the centimetre: polygon-clipping trips over
+// many nearly-touching bands at once)
+const cm = (G) => G.map((P) => P.map((r) => r.map(([x, z]) => [Math.round(x * 100) / 100, Math.round(z * 100) / 100])));
+let woodLeft = cm(woodBase);
+for (const c of woodCuts) { try { woodLeft = cm(polygonClipping.difference(woodLeft, cm([c])[0])); } catch { woodLeft = cm(polygonClipping.difference(woodLeft, cm([c.map((r) => r.map(([x, z]) => [x + 0.013, z - 0.007]))])[0])); } }
+const woods = woodLeft
+  .map((P) => R1(simplify(open(P[0]), 0.4)))
+  .filter((p) => p.length > 2 && Math.abs(area(p)) > 30); // (slivers between two paths stay open)
+const crowns = []; // [x, z, radius]
 {
   const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
-  const xs = OUTLINE.map((q) => q[0]), zs = OUTLINE.map((q) => q[1]);
-  const lines = roads.map((r) => ({ p: r.p, w: r.w }));
-  const chamdos = groups.map((g) => g.chamdoLine);
-  for (let z = Math.min(...zs); z < Math.max(...zs); z += SJN.tree) for (let x = Math.min(...xs); x < Math.max(...xs); x += SJN.tree) {
-    const jx = x + (hash(x, z) - 0.5) * 2.8, jz = z + (hash(z, x) - 0.5) * 2.8;
-    if (!inPark(jx, jz) || ringDist(jx, jz, OUTLINE) < 2.2) continue;
-    if (lawns.some((P) => inside(P, jx, jz) || ringDist(jx, jz, P) < 1.2)) continue;
-    if (lines.some((L2) => lineDist(jx, jz, L2.p) < L2.w / 2 + 1.3) || chamdos.some((C) => lineDist(jx, jz, C) < 3)) continue;
-    if (things.some((t) => inside(t.p, jx, jz) || ringDist(jx, jz, t.p) < (t.hill ? 1.4 : 2.4))) continue;
-    if (Math.hypot(jx - ginkgo[0], jz - ginkgo[1]) < 6 || Math.hypot(jx - ENTR[0], jz - ENTR[1]) < 8) continue;
-    trees.push([r1(jx), r1(jz)]);
+  const add = (P, x, z) => { // a crown as wide as its room: it hangs at most 0.6 m over the patch's edge
+    const d = ringDist(x, z, P);
+    if (!inside(P, x, z) || d < 1) return;
+    const r = Math.min(4.4, d + 0.6);
+    if (crowns.some(([cx, cz, cr]) => Math.hypot(cx - x, cz - z) < Math.max(r, cr) * 0.75)) return;
+    crowns.push([r1(x), r1(z), r1(r)]);
+  };
+  for (const P of woods) {
+    const xs = P.map((q) => q[0]), zs = P.map((q) => q[1]);
+    for (let z = Math.min(...zs); z < Math.max(...zs) + SJN.tree; z += SJN.tree) for (let x = Math.min(...xs); x < Math.max(...xs) + SJN.tree; x += SJN.tree) add(P, x + (hash(x, z) - 0.5) * 2, z + (hash(z, x) - 0.5) * 2);
+    for (let i = 0; i < P.length; i++) { // and a row just inside its edge, so the mass reaches it
+      const a = P[i], q = P[(i + 1) % P.length], len = Math.hypot(q[0] - a[0], q[1] - a[1]) || 1, nx = -(q[1] - a[1]) / len, nz = (q[0] - a[0]) / len;
+      for (let t = 1; t < len; t += 3.2) for (const sg of [1, -1]) add(P, a[0] + (q[0] - a[0]) * t / len + nx * 1.6 * sg, a[1] + (q[1] - a[1]) * t / len + nz * 1.6 * sg);
+    }
   }
+  for (const P of woods) blockers.push({ p: P, low: true, why: 'the wood' });
 }
-lm.push({ type: 'shrinetrees', x: 0, z: 0, spots: trees });
+lm.push({ type: 'woodmass', x: 0, z: 0, crowns, patches: woods, why: 'the wood drawn whole: one mass of crowns over each patch between the paths and lawns (where the trees stand is made up)' });
 
 // --- Visitors, names and signs ------------------------------------------------
 // Where a few people stand looking at the tombs (game/seonjeongneung-near.js).
@@ -411,9 +453,9 @@ const map = {
 };
 
 // --- Checks ------------------------------------------------------------------------
-const report = { OFFSET, outlinePts: OUTLINE.length, areaRaw: Math.round(Math.abs(area(RAW))), area: Math.round(Math.abs(area(OUTLINE))), trees: trees.length, paths: roads.filter((r) => r.k === 'walk').length, blockers: blockers.length };
+const report = { OFFSET, outlinePts: OUTLINE.length, areaRaw: Math.round(Math.abs(area(RAW))), area: Math.round(Math.abs(area(OUTLINE))), crowns: crowns.length, woods: woods.length, paths: roads.filter((r) => r.k === 'walk').length, blockers: blockers.length };
 report.areaLost = `${Math.round((1 - report.area / report.areaRaw) * 100)}% (the streets OSM's outline runs to)`;
-report.tombs = tombs.map((t) => `${t.id}: hill cut ${t.cutBack} m² at the wall, mound ${r1(t.mound)} m across, wall ${r1(t.wall)} m, hill front ${r1(t.hill.front)} m (50% would be ${r1(t.real.front / 2)}), to hall ${r1(t.real.toHall / 4)} m`);
+report.tombs = tombs.map((t) => `${t.id}: hill cut ${t.cutBack} m² at the wall, mound ${r1(t.mound)} m across, wall ${r1(t.wall)} m, hill front ${r1(t.hill.front)} m (50% would be ${r1(t.real.front / 2)}), to hall ${r1(t.real.toHall / 4)} m, faces ${t.offHall}° off its hall`);
 report.halls = groups.map((g) => `${g.id}: platform ${r1(g.pd.w)} x ${r1(g.pd.d)} m, hall ${r1(g.hd.w)} x ${r1(g.hd.d)} m, path ${r1(lineLen(g.chamdoLine))} m`);
 report.nudges = nudges.map((n) => `${n.what} ${n.m} m (${n.real} m in Seoul)`);
 report.gateOffWall = r1(wallLine.off);

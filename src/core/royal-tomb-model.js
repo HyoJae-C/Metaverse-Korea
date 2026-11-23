@@ -107,54 +107,103 @@ function official(g, x, y, z, ry, military) {
   else { box(o, 0.24, 0.24, 0.26, 0, 1.55, 0, C.granite); box(o, 0.12, 0.36, 0.08, 0, 0.9, 0.22, C.stoneLight); } // hat, tablet
   o.position.set(x, y, z); o.rotation.y = ry; g.add(o);
 }
-function animal(g, x, y, z, ry, kind) { // sheep, tiger or horse
-  const o = new THREE.Group(), L = kind === 'horse' ? 0.95 : 0.7, Hh = kind === 'horse' ? 0.45 : 0.32;
-  box(o, 0.32, 0.12, L + 0.1, 0, 0.06, 0, C.stoneDark);
-  box(o, 0.3, Hh, L, 0, 0.12 + Hh / 2 + 0.12, 0, C.granite); // body
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(o, 0.09, 0.14, 0.09, sx * 0.1, 0.19, sz * (L / 2 - 0.08), C.granite);
-  const hh = kind === 'horse' ? 0.36 : 0.26;
-  box(o, 0.22, hh, 0.26, 0, 0.24 + Hh + hh / 2 - 0.04, L / 2 + 0.06, C.stoneLight); // head
-  if (kind === 'sheep') for (const sx of [-1, 1]) box(o, 0.07, 0.1, 0.12, sx * 0.13, 0.24 + Hh + hh - 0.04, L / 2, C.stoneDark); // horns
+// The stone animals, from Yozi's photos (2026-11-24), at 50%: each stands
+// on a slab, facing +z.
+//   sheep  stocky, standing, the stone left in between its legs, a horn
+//          curled round each side of the head, the head held low
+//   horse  standing, taller, the neck forward and the head hanging
+//   tiger  crouching: the round haunch high, the back sloping down to a big
+//          round head held low, bulging eyes
+function animal(g, x, y, z, ry, kind) {
+  const o = new THREE.Group();
+  if (kind === 'tiger') {
+    box(o, 0.42, 0.06, 0.8, 0, 0.03, 0, C.stoneDark);
+    const back = box(o, 0.34, 0.3, 0.56, 0, 0.27, -0.04, C.granite); back.rotation.x = 0.28; // the back, sloping down to the head
+    cyl(o, 0.2, 0.22, 0.34, 0, 0.06, -0.22, C.granite, 8); // the haunch
+    for (const sx of [-1, 1]) box(o, 0.1, 0.2, 0.12, sx * 0.12, 0.16, 0.2, C.granite); // forelegs
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 6), mat(C.stoneLight)); head.position.set(0, 0.3, 0.34); o.add(head);
+    for (const sx of [-1, 1]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4), mat(C.stone)); e.position.set(sx * 0.08, 0.36, 0.5); o.add(e); box(o, 0.07, 0.06, 0.04, sx * 0.12, 0.47, 0.3, C.stoneLight); } // eyes, ears
+    box(o, 0.2, 0.07, 0.08, 0, 0.22, 0.5, C.stone); // the jaw
+  } else {
+    const horse = kind === 'horse', L = horse ? 0.82 : 0.72, W = horse ? 0.26 : 0.3, leg = horse ? 0.3 : 0.2, Hb = horse ? 0.26 : 0.26, top = 0.06 + leg + Hb;
+    box(o, W + 0.14, 0.06, L + 0.16, 0, 0.03, 0, C.stoneDark);
+    box(o, W, Hb, L, 0, 0.06 + leg + Hb / 2, 0, C.granite); // body
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(o, 0.1, leg, 0.13, sx * (W / 2 - 0.05), 0.06 + leg / 2, sz * (L / 2 - 0.09), C.granite);
+    box(o, W * 0.45, leg * 0.8, L - 0.3, 0, 0.06 + leg * 0.4, 0, C.stoneDark); // the stone left under the belly
+    if (horse) {
+      const neck = box(o, 0.17, 0.3, 0.2, 0, top - 0.02, L / 2 + 0.04, C.granite); neck.rotation.x = 0.7;
+      const head = box(o, 0.15, 0.3, 0.16, 0, top - 0.17, L / 2 + 0.2, C.stoneLight); head.rotation.x = 0.25; // hanging
+      for (const sx of [-1, 1]) box(o, 0.04, 0.07, 0.04, sx * 0.05, top + 0.08, L / 2 + 0.1, C.stoneLight); // ears
+      box(o, 0.05, 0.08, 0.3, 0, top + 0.02, L / 2 - 0.14, C.stoneDark); // mane
+      box(o, 0.07, 0.32, 0.06, 0, top - 0.2, -L / 2 - 0.02, C.stoneDark); // tail
+    } else {
+      box(o, 0.22, 0.24, 0.26, 0, top - 0.1, L / 2 + 0.1, C.stoneLight); // the head, low
+      box(o, 0.16, 0.14, 0.12, 0, top - 0.19, L / 2 + 0.27, C.stoneLight); // muzzle
+      for (const sx of [-1, 1]) { const h = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.035, 4, 8), mat(C.stoneDark)); h.rotation.y = Math.PI / 2; h.position.set(sx * 0.13, top - 0.08, L / 2 + 0.08); o.add(h); } // the curled horns
+    }
+  }
   o.position.set(x, y, z); o.rotation.y = ry; g.add(o);
 }
 export function buildRoyalTomb(g, l) {
   const H = hill(g, l), r = l.mound / 2, Rw = l.wall * 0.85;
-  // the mound: a stone screen (병풍석) and a railing (난간석) round a grass dome
+  // The mound (Yozi's photos, 2026-11-24): a twelve-sided stone screen
+  // (병풍석) with a cap stone jutting at each corner, the grass dome on it,
+  // and a twelve-post railing (난간석) round it. Queen Jeonghyeon's has the
+  // railing only (l.screen 0).
+  const S12 = 12, sh = l.screen !== 0 ? 0.62 : 0.12;
   const dome = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2), mat(C.grass));
-  dome.scale.y = 0.62; dome.position.set(0, H + 0.42, 0); g.add(dome);
-  if (l.screen !== 0) cyl(g, r + 0.04, r + 0.08, 0.44, 0, H, 0, C.stone, 16); // (Queen Jeonghyeon's mound has none)
-  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; cyl(g, 0.07, 0.07, 0.64, Math.cos(a) * (r + 0.9), H, Math.sin(a) * (r + 0.9), C.stoneLight, 6); }
-  const rail = new THREE.Mesh(new THREE.TorusGeometry(r + 0.9, 0.05, 4, 24), mat(C.stoneLight));
-  rail.rotation.x = Math.PI / 2; rail.position.set(0, H + 0.52, 0); g.add(rail);
-  // the curved wall: round the back, its two ends reaching forward to the mound's front
-  const wallPts = [[-Rw, r * 0.6]];
-  for (let i = 0; i <= 10; i++) { const a = Math.PI + (i / 10) * Math.PI; wallPts.push([Math.cos(a) * Rw, Math.sin(a) * Rw * 0.85 - 0.3]); }
-  wallPts.push([Rw, r * 0.6]);
+  dome.scale.y = 0.7; dome.position.set(0, H + sh, 0); g.add(dome);
+  if (l.screen !== 0) {
+    cyl(g, r + 0.05, r + 0.05, sh - 0.1, 0, H, 0, C.stone, S12);
+    cyl(g, r + 0.14, r + 0.14, 0.1, 0, H + sh - 0.1, 0, C.stoneLight, S12); // the cap course
+    cyl(g, r + 0.3, r + 0.3, 0.08, 0, H, 0, C.stoneDark, S12); // the foot course
+    for (let i = 0; i < S12; i++) { const a = ((i + 0.5) / S12) * Math.PI * 2; box(g, 0.3, 0.16, 0.42, Math.sin(a) * (r + 0.22), H + sh - 0.13, Math.cos(a) * (r + 0.22), C.stoneLight, a); } // the corner stones (인석)
+  } else cyl(g, r + 0.05, r + 0.1, sh, 0, H, 0, C.stoneDark, S12);
+  const Rr = r + 0.85;
+  for (let i = 0; i < S12; i++) {
+    const a = ((i + 0.5) / S12) * Math.PI * 2, a1 = ((i + 1.5) / S12) * Math.PI * 2, am = (a + a1) / 2;
+    const x = Math.sin(a) * Rr, z = Math.cos(a) * Rr, len = 2 * Rr * Math.sin(Math.PI / S12), Rm = Rr * Math.cos(Math.PI / S12);
+    box(g, 0.2, 0.62, 0.2, x, H + 0.31, z, C.stoneLight, a); cyl(g, 0.13, 0.09, 0.16, x, H + 0.62, z, C.stone, 6); // post and its round head
+    box(g, len - 0.16, 0.1, 0.12, Math.sin(am) * Rm, H + 0.4, Math.cos(am) * Rm, C.stone, am); // the rail
+    box(g, 0.14, 0.34, 0.14, Math.sin(am) * Rm, H + 0.17, Math.cos(am) * Rm, C.stoneDark, am); // the short post under it
+  }
+  // the curved wall (곡장) on three sides, open to the front: OSM's own line at 50%
+  const cw = Math.cos(-l.ry), sw = Math.sin(-l.ry);
+  const wallPts = l.wallP ? l.wallP.map(([x, z]) => [x * cw + z * sw, -x * sw + z * cw]) : [[-Rw, r * 0.6], [-Rw, -Rw * 0.8], [Rw, -Rw * 0.8], [Rw, r * 0.6]];
   for (let i = 1; i < wallPts.length; i++) {
     const [x0, z0] = wallPts[i - 1], [x1, z1] = wallPts[i], len = Math.hypot(x1 - x0, z1 - z0), a = -Math.atan2(z1 - z0, x1 - x0);
-    box(g, len + 0.1, 1.0, 0.42, (x0 + x1) / 2, H + 0.5, (z0 + z1) / 2, C.wall, a);
-    box(g, len + 0.25, 0.16, 0.66, (x0 + x1) / 2, H + 1.06, (z0 + z1) / 2, '#4a4f57', a);
+    box(g, len + 0.1, 0.9, 0.4, (x0 + x1) / 2, H + 0.45, (z0 + z1) / 2, C.wall, a);
+    box(g, len + 0.25, 0.16, 0.66, (x0 + x1) / 2, H + 0.96, (z0 + z1) / 2, '#4a4f57', a);
   }
-  // sheep and tigers round the mound, facing out
-  [[-0.35, 'tiger'], [0.35, 'tiger'], [-0.55, 'sheep'], [0.55, 'sheep'], [-0.75, 'tiger'], [0.75, 'tiger'], [-0.9, 'sheep'], [0.9, 'sheep']].forEach(([f, kind]) => {
-    const a = Math.PI * (1.5 + f), R = r + 1.7;
-    animal(g, Math.cos(a) * R, H, Math.sin(a) * R, Math.atan2(Math.cos(a), Math.sin(a)), kind);
+  // Stone sheep and tigers (2 pairs each), turn about, between the mound and
+  // the wall, facing out.
+  const Ra = Math.min(r + 1.9, (r + 0.85 + Math.min(...wallPts.map(([x, z]) => Math.hypot(x, z)))) / 2 + 0.3);
+  [[-0.3, 'sheep'], [0.3, 'sheep'], [-0.52, 'tiger'], [0.52, 'tiger'], [-0.74, 'sheep'], [0.74, 'sheep'], [-0.93, 'tiger'], [0.93, 'tiger']].forEach(([f, kind]) => {
+    const a = Math.PI * (1.5 + f * 0.82);
+    animal(g, Math.cos(a) * Ra, H, Math.sin(a) * Ra, Math.atan2(Math.cos(a), Math.sin(a)), kind);
   });
-  // in front of the mound, stepping out towards the hall (spaced to fit the hill's top)
-  const room = Math.max(4, l.hill.front - (2.6 + 4.2) - r - 0.6), k = Math.min(1, room / 6.2);
-  const F = (d) => r + 0.6 + d * k;
-  box(g, 1.3, 0.12, 0.8, 0, H + 0.42, F(0.7), C.stoneLight); // the offering table (혼유석) on its drums
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) cyl(g, 0.12, 0.12, 0.36, sx * 0.45, H, F(0.7) + sz * 0.22, C.stoneDark, 6);
-  for (const sx of [-1, 1]) { cyl(g, 0.13, 0.15, 1.3, sx * (r + 0.9), H, F(0.3), C.stoneLight, 8); cyl(g, 0.17, 0.13, 0.2, sx * (r + 0.9), H + 1.3, F(0.3), C.stone, 8); } // pillars (망주석)
-  // the lantern (장명등)
-  box(g, 0.6, 0.3, 0.6, 0, H + 0.15, F(2.6), C.stoneDark);
-  box(g, 0.32, 0.5, 0.32, 0, H + 0.55, F(2.6), C.stone);
-  box(g, 0.55, 0.45, 0.55, 0, H + 1.02, F(2.6), C.stoneLight);
-  box(g, 0.75, 0.16, 0.75, 0, H + 1.32, F(2.6), C.stoneDark);
-  box(g, 0.2, 0.22, 0.2, 0, H + 1.5, F(2.6), C.stone);
+  // In front, stepping down towards the hall (spaced to fit the hill's
+  // top). Upper tier: the offering table before the mound, a pillar at each
+  // side. Middle: the lantern on the axis, the civil officials facing each
+  // other across it, a horse behind each. Lower: the military officials and
+  // their horses. A long stone course marks each step.
+  const room = Math.max(4, l.hill.front - (2.6 + 4.2) - r - 0.6), k = Math.min(1, room / 6.6);
+  const F = (d) => r + 0.9 + d * k;
+  // (the rows as wide as the hill's top has room for: Seolleung's is cut by the grounds' wall)
+  const hp = l.hill.p.map(([x, z]) => [x * cw + z * sw, -x * sw + z * cw]);
+  const on = (x, z) => { let in_ = false; for (let i = 0, j = hp.length - 1; i < hp.length; j = i++) { const [xi, zi] = hp[i], [xj, zj] = hp[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) in_ = !in_; } return in_; };
+  let half = Math.min(4.6, r + 2);
+  while (half > 2.2 && ![-1, 1].every((sx) => on(sx * (half * 0.93 + 2), F(3.5)) && on(sx * (half * 0.93 + 2), F(5.8)))) half -= 0.2;
+  box(g, 1.5, 0.16, 0.95, 0, H + 0.3, F(0.75), C.stoneLight); // the offering table (혼유석) on its drum stones
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) cyl(g, 0.17, 0.17, 0.3, sx * 0.5, H, F(0.75) + sz * 0.26, C.stoneDark, 8);
+  for (const sx of [-1, 1]) { box(g, 0.34, 0.14, 0.34, sx * half * 0.78, H + 0.07, F(0.6), C.stoneDark); cyl(g, 0.11, 0.15, 1.25, sx * half * 0.78, H + 0.14, F(0.6), C.stoneLight, 8); cyl(g, 0.15, 0.11, 0.14, sx * half * 0.78, H + 1.39, F(0.6), C.stone, 8); cyl(g, 0.02, 0.1, 0.16, sx * half * 0.78, H + 1.53, F(0.6), C.stoneLight, 8); } // pillars (망주석)
+  for (const d of [1.9, 4.3]) box(g, half * 2 + 0.8, 0.07, 0.3, 0, H + 0.035, F(d), C.stoneDark); // the steps' stone courses (장대석)
+  const lz = F(2.9); // the lantern (장명등): eight-sided, roofed
+  cyl(g, 0.34, 0.4, 0.26, 0, H, lz, C.stoneDark, 8); cyl(g, 0.2, 0.24, 0.42, 0, H + 0.26, lz, C.stone, 8);
+  cyl(g, 0.3, 0.3, 0.4, 0, H + 0.68, lz, C.stoneLight, 8); cyl(g, 0.16, 0.5, 0.26, 0, H + 1.08, lz, C.stoneDark, 8); cyl(g, 0.05, 0.12, 0.26, 0, H + 1.34, lz, C.stone, 8);
   for (const sx of [-1, 1]) {
-    official(g, sx * 1.9, H, F(3.6), 0, false); animal(g, sx * 2.9, H, F(3.6), 0, 'horse');
-    official(g, sx * 1.9, H, F(5.6), 0, true); animal(g, sx * 2.9, H, F(5.6), 0, 'horse');
+    official(g, sx * half * 0.62, H, F(3.1), -sx * Math.PI / 2, false); animal(g, sx * half * 0.93, H, F(3.5), -sx * Math.PI / 2, 'horse');
+    official(g, sx * half * 0.62, H, F(5.4), -sx * Math.PI / 2, true); animal(g, sx * half * 0.93, H, F(5.8), -sx * Math.PI / 2, 'horse');
   }
   done(g);
 }
@@ -181,6 +230,10 @@ export function buildJeongjagak(g, l) {
   // gabled roofs: the main hall's along its width, the porch's along its length
   roof(g, hw + 1.4, mainD + 1.4, 1.35, B + P + 0.24, { hip: false, lift: 0.3, seg: 4, rows: 3 }, 0, mainZ);
   roof(g, porchD + 1.2, porchW + 1.2, 1.1, B + P + 0.2, { hip: false, lift: 0.25, seg: 3, rows: 3 }, 0, porchZ + 0.15, Math.PI / 2);
+  { // the red board under the porch's gable (풍판), what you see from the stone path
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.08, 3), mat(C.redDark));
+    t.rotation.x = -Math.PI / 2; t.scale.x = (porchW * 0.5) / (0.62 * 0.866); t.position.set(0, B + P + 0.24 + 0.36, porchZ + porchD / 2 + 0.45); g.add(t);
+  }
   done(g);
 }
 

@@ -179,6 +179,7 @@ const OWN_BUILD = {
   },
   // Seonjeongneung's royal tombs (core/royal-tomb-model.js, loaded when you
   // first walk in through the main gate): what stands at the tombs, at 50%.
+  woodmass(g, l) { import('./wood-mass.js').then((m) => m.buildWoodMass(g, l)); },
   royaltomb(g, l) { import('./royal-tomb-model.js').then((m) => m.buildRoyalTomb(g, l)); },
   jeongjagak(g, l) { import('./royal-tomb-model.js').then((m) => m.buildJeongjagak(g, l)); },
   hongsalmun(g, l) { import('./royal-tomb-model.js').then((m) => m.buildHongsalmun(g, l)); },

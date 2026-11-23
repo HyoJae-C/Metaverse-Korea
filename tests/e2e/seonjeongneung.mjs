@@ -74,6 +74,15 @@ for (const [i, h] of halls.entries()) {
   const left = Math.hypot(p1[0] - tx, p1[1] - tz);
   assert(left > t.mound / 2 + 2, `can't climb ${i ? 'Jeongneung' : 'Seolleung'}'s hill (stopped ${left.toFixed(1)} m from the mound)`);
 }
+// each mound from beside its hill: the stone screen, the railing, the wall, the figures
+for (const [i, t] of tombs.entries()) {
+  // (the camera's spot is in the middle of the figures, on the fenced hill: looking only)
+  await page.evaluate(([x, z]) => __mk.goto(x, z, 0), W(t.x + Math.sin(t.ry) * 4, t.z + Math.cos(t.ry) * 4));
+  await page.waitForTimeout(1200);
+  await page.evaluate((a) => __mk.cam({ yaw: a + 0.5, pitch: 0.62, dist: 15 }), t.ry);
+  await page.waitForTimeout(1200);
+  await shot(`${n++}-mound-${i + 1}`);
+}
 const info = await page.evaluate(() => __mk.renderInfo?.());
 if (info) console.log('draw calls inside', info.calls, 'triangles', info.triangles);
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), W(-80, -50));
