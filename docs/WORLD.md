@@ -1335,3 +1335,23 @@ The Han River Boat Taxi calls at Oksu (`build-boat-taxi.mjs`, 8 m west of the
 real pier to clear Dongho Bridge, which `build-base.mjs` joins into one road
 across the river so it is raised for the boats).
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
+
+## Seoul National Cemetery (국립서울현충원, 2026-11-24)
+
+`scripts/build-hyeonchungwon.mjs` writes `districts/hyeonchungwon.json`: the
+cemetery in Dongjak-gu at 1/4 on OSM's outline, with Hyeonchungmun on its real
+spot (the anchor). The gate, the Memorial Tower and the court between them are
+at 50% about the gate's middle (Yozi), so the tower stands 21 m behind its
+real spot and the court covers most of plots 16 and 18. The ground is SRTM
+above the valley floor at 1/4 (level from the main gate to the court); every
+OSM road, path and stair inside is one network (`hyeonchung` landmark trails:
+roads under 14°, paths under 18°). The hill is a blocker; ways, the court, the
+terrace and the lawn are decks through it (`game/hyeonchungwon-walk.js`, first
+download; heights in `core/hyeonchung-ground.js`). The gate, tower, fountain,
+woods and headstones load near (`game/hyeonchungwon-park.js`): plain white
+stones in rows on OSM's plot outlines, no names; the presidents' graves and
+single graves are not drawn. A place of remembrance: nothing to play or win.
+Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
+note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
+has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
+After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.

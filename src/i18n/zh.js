@@ -472,6 +472,7 @@ export const ZH = {
   'hud.bike': '交通工具',
   'stairs.noBike': "🚲 楼梯上不能骑车。点“交通工具”下车，再走下去。",
   'cheongwadae.note': "🏛️ 青瓦台已重新成为总统办公的安保设施，游客不能入内。请在正门外参观。",
+  'hyeonchung.note': "🕊️ 国立首尔显忠院：1955年作为国军墓地建成，1965年成为国立墓地。这里是追思之地，请安静步行。",
   'bike.offShort': '下车',
   'bike.off': '下车',
   'car.off': '下车',
