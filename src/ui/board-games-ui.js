@@ -32,7 +32,7 @@ const BOT = '~';
 const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
 const TURN_MS = 30000; // a turn nobody takes is played for them after this (the host's clock)
-const TURN_WARN = 10; // the last seconds are counted down on screen
+const TURN_WARN = 10; // the last seconds of the clock are red
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
@@ -568,8 +568,9 @@ export class BoardGamesUI {
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
     if (p && this.clockEl?.isConnected) {
       const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
-      const text = left <= TURN_WARN || (p.game === 'thief' && left < 99) ? `⏳ ${Math.max(0, left)}` : ''; // (the joker game shows the whole turn's clock: Yozi 2026-11-23)
+      const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
       if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+      this.clockEl.style.color = left <= TURN_WARN ? '' : '#8a7a66'; // (red for the last seconds)
     }
     if (p?.game === 'mafia' && !p.g.over) {
       // The phase's clock: everyone sees it run down, the host moves the game on.
