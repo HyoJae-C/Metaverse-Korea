@@ -18,6 +18,7 @@
 // for the keyboard and the tests. The chat stays in reach while you play:
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
+import { suitArt } from './board-card-suits.js';
 import {
   GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
@@ -110,6 +111,9 @@ const CSS = `
 #bg-panel .bg-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 14px 4px 6px; }
 #bg-panel .bg-card1 { width: 40px; height: 58px; border: 0; border-radius: 7px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 15px; font-weight: 800; line-height: 1.05; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; transition: transform .12s; }
 #bg-panel .bg-card1.red { color: #d43d3d; }
+#bg-panel .bg-suit { display: block; line-height: 0; }
+#bg-panel .bg-suit svg { width: 19px; height: 19px; display: block; margin-top: 2px; }
+#bg-panel .bg-fan.big .bg-suit svg { width: 24px; height: 24px; }
 #bg-panel .bg-card1.back { background: repeating-linear-gradient(45deg, #3f6fb5 0 6px, #5a8ad0 6px 12px); border: 2px solid #fff; box-sizing: border-box; }
 #bg-panel .bg-card1.joker { background: #2b2230; font-size: 36px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #2b2230; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
@@ -1165,7 +1169,7 @@ export class BoardGamesUI {
     const b = el('button', 'bg-card1' + (joker ? ' joker' : suit === '♥' || suit === '♦' ? ' red' : '') + cls);
     b.type = 'button';
     if (joker) b.textContent = '💀';
-    else b.append(el('span', null, card.slice(0, -1)), el('span', null, suit));
+    else b.append(el('span', null, card.slice(0, -1)), suitArt(suit));
     return b;
   }
 
