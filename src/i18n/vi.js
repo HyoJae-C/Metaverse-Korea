@@ -681,6 +681,7 @@ export const VI = {
   'name.cancel': 'Hủy',
   'start.defaultName': 'Lữ khách',
   'hud.online': '{n} người trực tuyến',
+  'hud.today': 'Hôm nay {n} người ghé thăm',
   'tab.elsewhere': 'Bạn đang chơi ở một thẻ khác',
   'tab.elsewhereHint': 'Modu Seoul đang mở ở một thẻ khác của trình duyệt này nên bạn đang xuất hiện ở đó. Hãy đóng thẻ này, hoặc chơi ở đây.',
   'tab.playHere': 'Chơi ở đây',

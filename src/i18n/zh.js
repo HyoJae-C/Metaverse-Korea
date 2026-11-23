@@ -687,6 +687,7 @@ export const ZH = {
   "name.cancel": "取消",
   'start.defaultName': 'Traveler',
   'hud.online': '{n}人在线',
+  'hud.today': '今日{n}人来访',
   'tab.elsewhere': '你正在另一个标签页中游玩',
   'tab.elsewhereHint': '此浏览器的另一个标签页已打开 Modu Seoul，你的角色正在那里。关闭此标签页，或在这里继续。',
   'tab.playHere': '在这里玩',

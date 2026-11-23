@@ -80,11 +80,14 @@ try {
   // (net/online.js live_count), not the people around us, so it doesn't drop
   // when we part. Test rooms never report a spot, so the two of us aren't in
   // that count: it is whoever is on the live site (often nobody at night).
-  // Only operators see the badge, so for these test accounts it stays hidden.
+  // The "now" part shows from 5 people up (operators always); today's
+  // visitors show when the server knows them (072).
   await a.waitForFunction(() => __mk.near() === 0, null, { timeout: 15000 });
-  const badge = await a.evaluate(() => { const o = document.querySelector('#online'); return { all: __mk.onlineAll(), hidden: o.hidden, n: +(o.textContent.match(/\d+/)?.[0] || 0) }; });
+  const badge = await a.evaluate(() => { const o = document.querySelector('#online'); return { all: __mk.onlineAll(), today: __mk.onlineToday(), hidden: o.hidden, now: o.textContent.includes('🟢'), visits: o.textContent.includes('👣') }; });
   if (!(badge.all >= 1)) throw new Error(`online count should come from the server (got ${badge.all})`);
-  if (!badge.hidden) throw new Error(`online badge should be for operators only (${JSON.stringify(badge)})`);
+  const wantNow = badge.all >= 5, wantVisits = badge.today > 0;
+  if (badge.hidden === (wantNow || wantVisits) || badge.now !== wantNow || badge.visits !== wantVisits) throw new Error(`online badge: "now" from 5 people, today's visitors when known (${JSON.stringify(badge)})`);
+  if (wantVisits && badge.today < badge.all) throw new Error(`today's visitors can't be fewer than now (${JSON.stringify(badge)})`);
   await b.evaluate(([x, z]) => __mk.goto(x + 3, z), [ax, az]);
   await a.waitForFunction(() => __mk.near() === 1, null, { timeout: 15000 });
   // On the live street only friends see each other (test rooms show

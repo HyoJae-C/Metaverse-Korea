@@ -681,6 +681,7 @@ export const HI = {
   'name.cancel': 'रद्द करें',
   'start.defaultName': 'यात्री',
   'hud.online': '{n} ऑनलाइन',
+  'hud.today': 'आज {n} लोग आए',
   'tab.elsewhere': 'आप किसी दूसरे टैब में खेल रहे हैं',
   'tab.elsewhereHint': 'Modu Seoul इस ब्राउज़र के किसी दूसरे टैब में खुला है, इसलिए आप वहीं दिख रहे हैं। यह टैब बंद करें, या यहीं खेलें।',
   'tab.playHere': 'यहाँ खेलें',

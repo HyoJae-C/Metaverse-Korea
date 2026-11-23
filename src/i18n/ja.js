@@ -687,6 +687,7 @@ export const JA = {
   "name.cancel": "キャンセル",
   'start.defaultName': 'Traveler',
   'hud.online': '{n}人がオンライン',
+  'hud.today': '今日{n}人が来訪',
   'tab.elsewhere': '別のタブでプレイ中です',
   'tab.elsewhereHint': 'このブラウザの別のタブでModu Seoulが開いているため、そちらでプレイしています。このタブを閉じるか、ここでプレイしてください。',
   'tab.playHere': 'ここでプレイ',

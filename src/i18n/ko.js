@@ -687,6 +687,7 @@ export const KO = {
   "name.cancel": "취소",
   'start.defaultName': '여행자',
   'hud.online': '{n}명 접속 중',
+  'hud.today': '오늘 {n}명 방문',
   'tab.elsewhere': '다른 탭에서 플레이 중이에요',
   'tab.elsewhereHint': '이 브라우저의 다른 탭에서 모두서울이 열려 있어 그 탭의 캐릭터로 접속 중이에요. 이 탭을 닫거나, 여기서 계속하세요.',
   'tab.playHere': '여기서 플레이',
