@@ -185,6 +185,26 @@ const OWN_BUILD = {
   pondisle(g, l) {
     import('./huwon-model.js').then(({ buildPondIsle }) => buildPondIsle(g, l));
   },
+  // Cheong Wa Dae from the street (core/bluehouse-model.js, loaded when the
+  // city is built): the main hall, the gate, the grounds' fence, the
+  // fountain. A low slab goes in now under the hall and the gate, so the far
+  // culling knows where they stand.
+  bluehouse(g, l) {
+    box(g, 4, 0.05, 4, 0, 0.025, 0, C.stone);
+    import('./bluehouse-model.js').then(({ buildBlueHouse }) => buildBlueHouse(g, l));
+  },
+  bluegate(g, l) {
+    box(g, l.w, 0.05, 1, 0, 0.025, 0, C.stone);
+    import('./bluehouse-model.js').then(({ buildBlueGate }) => buildBlueGate(g, l));
+  },
+  bhfence(g, l) {
+    import('./bluehouse-model.js').then(({ buildFence }) => buildFence(g, l));
+  },
+  bhfountain(g, l) {
+    let tick = null;
+    import('./bluehouse-model.js').then(({ buildFountain }) => { tick = buildFountain(g, l); });
+    return (t) => tick?.(t);
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the

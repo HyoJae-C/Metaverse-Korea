@@ -471,6 +471,7 @@ export const KO = {
   'hud.signsOff': '간판 한국어로 보기',
   'hud.bike': '탈것',
   'stairs.noBike': "🚲 계단은 탈것으로 못 내려가요. 탈것 버튼을 눌러 내린 뒤 걸어 내려가요.",
+  'cheongwadae.note': "🏛️ 청와대는 다시 대통령이 일하는 보안 시설이라 들어갈 수 없어요. 정문 밖에서 구경해 주세요.",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',
   'car.off': '차에서 내리기',

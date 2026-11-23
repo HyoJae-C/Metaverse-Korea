@@ -471,6 +471,7 @@ export const ID = {
   'hud.signsOff': 'Papan nama dalam bahasa Korea',
   'hud.bike': 'Kendaraan',
   'stairs.noBike': "🚲 Kendaraan tidak bisa lewat tangga. Ketuk Kendaraan untuk turun, lalu jalan kaki ke bawah.",
+  'cheongwadae.note': "🏛️ Cheong Wa Dae kembali menjadi kantor presiden, fasilitas keamanan: pengunjung tidak bisa masuk. Silakan menikmatinya dari luar gerbang.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',
