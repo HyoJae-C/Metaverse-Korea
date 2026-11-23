@@ -62,7 +62,7 @@ async function join(name) {
     if (el) new MutationObserver(() => { if (!el.hidden && el.textContent) window.__toastSeen(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
   }));
   await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
-  await page.click('#next-btn');
+  await page.click('#next-btn', { timeout: 90000 }); // (a third browser on a busy runner is slow to come up)
   await page.fill('#nickname', '');
   await page.type('#nickname', name);
   // Building the world blocks the page, so a plain click can time out
@@ -71,7 +71,8 @@ async function join(name) {
   await page.waitForSelector('#start-btn:not([disabled])', { state: 'visible', timeout: 90000 });
   await page.evaluate(() => setTimeout(() => document.getElementById('start-btn').click(), 0));
   await page.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
-  if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
+  // (pressed from inside the page: the panel may close itself, or the page be busy, while a click waits for it)
+  await page.evaluate(() => { const w = document.getElementById('welcome-panel'); if (w && !w.hidden) document.getElementById('welcome-close')?.click(); });
   await page.waitForFunction(() => window.__mk, null, { timeout: 60000 }); // (the test hooks come a moment after the HUD)
   return page;
 }
@@ -183,6 +184,9 @@ try {
     await a.evaluate(([f, t]) => { const u = window.__bgUi, g = u.play.g, free = (k) => { while (g.taken().has(k)) k++; return k; }; u.ladderTap(free(f)); u.ladderTap(free(t)); }, [from, to]);
   }
   if (shotDir) { await a.waitForTimeout(300); await a.screenshot({ path: shotDir + '/ladders-setup.png' }); }
+  // The computer is kept in the lower rows for this step (a ladder never ends on the last square, so it cannot
+  // finish from there in one go): with lucky dice it once won while A had rolled once, and nothing was left to test.
+  await a.evaluate(() => { window.__ladHold = setInterval(() => { const u = window.__bgUi, g = u?.play?.g; if (!g || u.play.game !== 'ladders' || g.over || g.setup) return; g.pos.forEach((at, s) => { const top = s === u.play.seat ? 40 : 20; if (at > top) g.pos[s] = top; }); }, 40); }); // (A too: the step ends on A's last roll, not at the top)
   for (let k = 0; k < 6; k++) {
     await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 30000 }); // (the computer may roll a 6 or two first)
     if (k === 1) {
@@ -220,6 +224,7 @@ try {
   if (!end.status) throw new Error('no end line after the last roll');
   if (await a.locator('#bg-panel .bg-rolls').count()) throw new Error('the rolls left still show after the game is over');
   if (shotDir) { await a.waitForTimeout(1800); await a.screenshot({ path: shotDir + '/ladders-ranks.png' }); }
+  await a.evaluate(() => clearInterval(window.__ladHold));
   await a.click('#bg-panel .bg-x');
 
   step = 'A takes blocks out of the 3D tower against the computer';
