@@ -1084,6 +1084,8 @@ export const ID = {
   "wrap.button": "Bungkus kado",
   "wrap.bagFull": "Tasmu penuh. Kosongkan tempat untuk kotak kado dulu.",
   "wrap.poor": "Kamu perlu 🪙 {n}.",
+  "gift.young": "🎁 Kamu bisa mengirim hadiah setelah akunmu berumur {minDays} hari dan sudah menyelesaikan {minMissions} misi harian. Sekarang: {days} hari, {missions} misi.",
+  "gift.offline": "🎁 Tidak bisa terhubung ke server, jadi tidak ada yang terkirim. Koinmu sudah kembali. Coba lagi sebentar lagi.",
   "wrap.bought": "🎀 {item} sudah dibungkus dan ada di tasmu. Berikan ke teman dari tas!",
   "wrap.boughtLetter": "🎀 {item} sudah dibungkus bersama suratmu dan ada di tasmu. Berikan ke teman dari tas!",
   "wrap.paperMax": "Kamu bisa membawa sampai {n} lembar kertas surat.",

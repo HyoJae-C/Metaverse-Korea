@@ -18,6 +18,7 @@
 // for the keyboard and the tests. The chat stays in reach while you play:
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
+import { suitArt } from './board-card-suits.js';
 import {
   GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
@@ -110,6 +111,9 @@ const CSS = `
 #bg-panel .bg-hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 14px 4px 6px; }
 #bg-panel .bg-card1 { width: 40px; height: 58px; border: 0; border-radius: 7px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 15px; font-weight: 800; line-height: 1.05; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; transition: transform .12s; }
 #bg-panel .bg-card1.red { color: #d43d3d; }
+#bg-panel .bg-suit { display: block; line-height: 0; }
+#bg-panel .bg-suit svg { width: 19px; height: 19px; display: block; margin-top: 2px; }
+#bg-panel .bg-fan.big .bg-suit svg { width: 24px; height: 24px; }
 #bg-panel .bg-card1.back { background: repeating-linear-gradient(45deg, #3f6fb5 0 6px, #5a8ad0 6px 12px); border: 2px solid #fff; box-sizing: border-box; }
 #bg-panel .bg-card1.joker { background: #2b2230; font-size: 36px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #2b2230; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
@@ -144,6 +148,9 @@ const CSS = `
 #bg-panel .bg-point { position: absolute; left: 50%; top: -34px; margin-left: -14px; font-size: 28px; line-height: 1; animation: bg-bob .7s ease-in-out infinite alternate; }
 @keyframes bg-bob { to { transform: translateY(6px); } }
 #bg-panel .bg-mine { margin-top: 6px; }
+#bg-panel .bg-fp.open { background: #b97b45; }
+#bg-panel .bg-fp.open .bg-sub { color: #fff; opacity: .95; }
+#bg-panel .bg-open .bg-fan { padding: 20px 0 4px; }
 #bg-panel .bg-mine .bg-sub { color: #fff; opacity: .9; }
 #bg-panel .bg-sub { text-align: center; font-size: 13px; opacity: .75; margin-top: 6px; }
 #bg-panel .bg-faces { display: flex; justify-content: center; gap: 6px; margin: 6px 0 0; }
@@ -1165,7 +1172,7 @@ export class BoardGamesUI {
     const b = el('button', 'bg-card1' + (joker ? ' joker' : suit === '♥' || suit === '♦' ? ' red' : '') + cls);
     b.type = 'button';
     if (joker) b.textContent = '💀';
-    else b.append(el('span', null, card.slice(0, -1)), el('span', null, suit));
+    else b.append(el('span', null, card.slice(0, -1)), suitArt(suit));
     return b;
   }
 
@@ -1221,6 +1228,21 @@ export class BoardGamesUI {
       box.append(el('div', 'bg-head' + (face ? ' pull' : ''), face ? FACES[face.n] : p.ids[s] === BOT ? '🤖' : '🙂'), el('div', 'bg-sub', p.names[s]));
       return box;
     };
+    if (!g.over && !g.hands[p.seat].length && !p.gone?.[p.seat]) {
+      // I am out safe: I watch the rest of the game with every hand open (Yozi 2026-11-24).
+      scene.classList.add('open');
+      scene.append(el('div', 'bg-sub', L(T.safeWatch)));
+      p.ids.forEach((_, s) => {
+        if (s === p.seat || !g.hands[s].length) return;
+        const row = el('div', 'bg-open');
+        row.dataset.open = String(s);
+        row.append(el('div', 'bg-sub', (g.turn === s ? '👉 ' : g.from === s ? '🎯 ' : '') + p.names[s]));
+        row.append(fanOf(g.hands[s], { faces: true, sel: g.from === s ? g.sel : -1, point: g.from === s }));
+        scene.append(row);
+      });
+      c.append(scene);
+      return;
+    }
     if (!g.over) {
       const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
       // Across the table: whoever I am dealing with. I am being picked from:

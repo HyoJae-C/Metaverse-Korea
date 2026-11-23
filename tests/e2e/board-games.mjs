@@ -130,6 +130,11 @@ try {
   await a.waitForSelector('#bg-panel canvas.bg-thief3d', { timeout: 15000 });
   await a.waitForTimeout(1200);
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-four.png' });
+  // Out safe (no cards left): I see the other three hands, face up.
+  await a.evaluate(() => { const u = window.__bgUi; u.play.g.hands[u.play.seat] = []; u.render(); });
+  await a.waitForFunction(() => document.querySelectorAll('#bg-panel [data-open] .bg-card1:not(.back)').length > 3, null, { timeout: 5000 });
+  if (await a.locator('#bg-panel [data-open] .bg-card1.back').count()) throw new Error('a player who is out safe still sees card backs');
+  if (shotDir) await a.screenshot({ path: shotDir + '/thief-safe-open.png' });
   await a.click('#bg-panel .bg-x');
 
   step = 'A rolls the dice at Snakes & Ladders against the computer';
@@ -295,6 +300,8 @@ try {
       await mover.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:last-child').click());
       await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
       await mover.waitForFunction(() => /⏳/.test(document.querySelector('#bg-panel .bg-clock')?.textContent || ''), null, { timeout: 5000 }); // the turn's clock shows
+      // The cards show the café's animal suits (a drawing each), not hearts and spades.
+      if (!(await other.locator('#bg-panel [data-hand="from"] .bg-card1:not(.joker) .bg-suit[data-suit] svg').count())) throw new Error('the cards have no animal suit');
       await other.click('#bg-panel [data-face="1"]');
       await mover.waitForFunction(() => /😱/.test(document.querySelector('#bg-panel .bg-pop')?.textContent || ''), null, { timeout: 8000 });
       if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-picker.png' }); await other.screenshot({ path: shotDir + '/thief-holder.png' }); }

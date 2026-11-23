@@ -1087,6 +1087,8 @@ export const ZH = {
   "wrap.button": "礼品包装",
   "wrap.bagFull": "包满了。先给礼盒腾个位置吧。",
   "wrap.poor": "需要 🪙 {n}。",
+  "gift.young": "🎁 注册满{minDays}天并完成{minMissions}个每日任务后才能送礼物。现在：注册{days}天，任务{missions}个。",
+  "gift.offline": "🎁 无法连接服务器，所以没有送出。钱已退回，请稍后再试。",
   "wrap.bought": "🎀 {item}已包装好放进包里。从包里拿出来送给朋友吧！",
   "wrap.boughtLetter": "🎀 {item}已和信一起包装好放进包里。从包里拿出来送给朋友吧！",
   "wrap.paperMax": "信纸最多能带{n}张。",

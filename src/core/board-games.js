@@ -23,7 +23,7 @@ export const GAMES = {
   croc: { min: 2, max: 6, icon: '🐊', price: 20000, spots: 13 },
   pirate: { min: 2, max: 6, icon: '🏴‍☠️', price: 20000, spots: 24 },
   bulldog: { min: 2, max: 6, icon: '🐶', price: 20000, spots: 12 },
-  thief: { min: 2, max: 6, icon: '🕵️', price: 30000 },
+  thief: { min: 2, max: 6, icon: '💀', price: 30000 },
   ladders: { min: 2, max: 4, icon: '🐍', price: 30000 },
   tower: { min: 2, max: 6, icon: '🧱', price: 30000, spots: 30 },
   mafia: { min: 4, max: 8, icon: '🌙', price: 30000 },
