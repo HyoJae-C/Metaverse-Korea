@@ -453,6 +453,7 @@ export function createToyView(kind, { spots, onPick, figure = null }) {
     dispose() {
       gone = true;
       cancelAnimationFrame(raf);
+      figure?.removeFromParent(); // (a game character's shapes are shared: not ours to dispose)
       scene.traverse((o) => { o.geometry?.dispose(); o.material?.dispose?.(); });
       renderer.dispose();
       renderer.forceContextLoss?.();

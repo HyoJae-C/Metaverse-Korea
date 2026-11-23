@@ -123,6 +123,15 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/pirate-host.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'Catch the Thief with three computers: the table in 3D, seen from my seat';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="thief"]');
+  await a.evaluate(() => { const u = window.__bgUi; u.begin('thief', [u.net.myId, '~', '~', '~'], u.net.myId, 5); });
+  await a.waitForSelector('#bg-panel canvas.bg-thief3d', { timeout: 15000 });
+  await a.waitForTimeout(1200);
+  if (shotDir) await a.screenshot({ path: shotDir + '/thief-four.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'A rolls the dice at Snakes & Ladders against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="ladders"]');

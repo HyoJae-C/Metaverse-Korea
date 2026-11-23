@@ -115,6 +115,10 @@ const CSS = `
 #bg-panel .bg-card1:disabled { cursor: default; }
 #bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
 #bg-panel .bg-who { text-align: center; }
+#bg-panel .bg-fp.has3d { background: #b97b45; padding-top: 0; }
+#bg-panel .bg-fp.has3d canvas.bg-thief3d { border-radius: 0; margin: 0 -8px; width: calc(100% + 16px); max-height: 40vh; background: linear-gradient(#f6e7c8, #ecd6ae); }
+#bg-panel .bg-fp.has3d .bg-who, #bg-panel .bg-fp.has3d [data-hand="from"]:not(.mine) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; }
+#bg-panel .bg-fp.has3d .bg-row { margin-top: 8px; }
 #bg-panel .bg-head { font-size: 56px; line-height: 1.05; transition: transform .15s; }
 #bg-panel .bg-head.pull { transform: scale(1.35); }
 #bg-panel .bg-fan { display: flex; justify-content: center; padding: 22px 0 10px; }
@@ -299,6 +303,15 @@ export class BoardGamesUI {
       import('./board-toy-3d.js').then((m) => {
         if (this.play !== p) return;
         this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]), figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null }); // (the host sits in the pirate's barrel)
+        this.render();
+      }).catch(() => {});
+    }
+    if (game === 'thief') {
+      // Seen from my seat, in 3D (the flat cards show until it is here, or with no WebGL).
+      const p = this.play;
+      import('./board-thief-3d.js').then((m) => {
+        if (this.play !== p || p.seat < 0) return;
+        this.view = m.createThiefView({ n: ids.length, seat: p.seat, figures: ids.map((id, s) => (s === p.seat ? null : this.figureOf?.(id) ?? null)), names: p.names, onPick: (i) => this.myMove(['s', i]) });
         this.render();
       }).catch(() => {});
     }
@@ -1017,7 +1030,15 @@ export class BoardGamesUI {
     // Seen from my seat (Yozi 2026-11-23): the other player sits across the
     // table holding their cards up in a fan, their face (and the faces they
     // pull) above it; my own cards are fanned in my hands at the bottom.
-    const scene = el('div', 'bg-fp');
+    const scene = el('div', 'bg-fp' + (this.view ? ' has3d' : ''));
+    if (this.view) {
+      this.view.sync({
+        counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, over: g.over,
+        faces: p.ids.map((_, s) => (p.faces?.[s] ? FACES[p.faces[s].n] : '')), gone: p.ids.map((_, s) => !!p.gone?.[s]),
+        canPick: !g.over && g.turn === p.seat,
+      });
+      scene.append(this.view.el);
+    }
     // A hand of cards as a fan: each card turned a little more, on an arc.
     const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false }) => {
       const fan = el('div', 'bg-fan' + (big ? ' big' : ''));
@@ -1053,6 +1074,7 @@ export class BoardGamesUI {
         // Their finger hovers over my cards: I hold them up and see which one.
         const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true });
         fan.dataset.hand = 'from';
+        fan.classList.add('mine');
         scene.append(fan);
         c.append(scene);
         return;
