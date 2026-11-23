@@ -866,7 +866,7 @@ export class BoardGamesUI {
     const box = el('div', 'bg-toy bg-' + p.game + (this.view ? ' has3d' : ''));
     const bang = g.last?.bang;
     if (this.view) {
-      this.view.sync({ pressed: g.pressed, bang: !!bang, canPick: !g.over && turnOf(g) === p.seat });
+      this.view.sync({ pressed: g.pressed, bang: !!bang, canPick: !g.over && turnOf(g) === p.seat, wobble: g.risk?.() ?? 0, placing: !!g.last?.placing });
       box.append(this.view.el);
       if (bang) {
         box.append(el('div', 'bg-shout', L(SHOUT[p.game])));

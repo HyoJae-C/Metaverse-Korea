@@ -644,7 +644,8 @@ export class Ladders {
 // 탑 쌓기 (a block tower): ten layers of three blocks, each layer turned a
 // quarter from the one below. Take one block out in turn (it goes on top).
 // A layer stands on its middle block or on both its side blocks: leave it
-// less than that and the tower falls. Even a safe block may bring it down:
+// less than that and the tower falls. Even a safe block may bring it down,
+// as it comes out or as it goes on top:
 // the tower wobbles a little more (1 to 4%) with every block taken (risk()), and the game's
 // seeded dice decide, the same on every screen. Who knocks it over loses.
 // Spot = layer * 3 + place (0 and 2 the sides, 1 the middle), layer 0 at the
@@ -688,14 +689,18 @@ export class Tower {
 
   press(p, spot) {
     if (this.over || p !== this.turn || this.pressed.includes(spot) || spot < 0 || spot >= this.spots) return false;
-    // (two throws every time, so every screen's dice stay in step)
-    const fall = this.rand() < this.risk(), more = TOWER_RISK_STEPS[Math.floor(this.rand() * TOWER_RISK_STEPS.length)];
-    const bang = !this.stands(spot) || fall;
+    // Two chances to fall, each half the wobble: taking the block out, and
+    // putting it on top (Yozi 2026-11-23). (Three throws every time, so
+    // every screen's dice stay in step.)
+    const half = this.risk() / 2;
+    const pull = !this.stands(spot) || this.rand() < half, place = this.rand() < half;
+    const more = TOWER_RISK_STEPS[Math.floor(this.rand() * TOWER_RISK_STEPS.length)];
+    const bang = pull || place;
     this.pressed.push(spot);
     // The first time round the table is safe (Yozi 2026-11-23: with four
     // players it fell on the second round): wobble builds from the next block.
     if (this.pressed.length >= this.n) this.wobble = Math.round((this.wobble + more) * 100) / 100;
-    this.last = { p, spot, bang };
+    this.last = { p, spot, bang, placing: bang && !pull }; // (placing: it fell as the block went on top)
     if (bang) { this.loser = p; this.over = true; return true; }
     this.turn = this.nextIn(p);
     return true;

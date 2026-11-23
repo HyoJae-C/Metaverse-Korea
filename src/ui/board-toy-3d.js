@@ -227,13 +227,20 @@ function towerToy(spots) {
     stack.add(m);
     blocks.push(m);
   }
-  let taken = 0, bangAt = -1;
+  let taken = 0, bangAt = -1, sway = 0;
   return {
-    root, picks: blocks, cam: [5.6, 4.9, 5.6], look: [0, 2.05, 0],
-    press(i, now) {
+    root, picks: blocks, cam: [6.3, 5.5, 6.3], look: [0, 2.3, 0],
+    // The block goes on top a little askew, more so the more the tower
+    // wobbles (looks only: what falls is decided by the rules).
+    press(i, now, wobble = 0) {
       const m = blocks[i];
+      const top = seat(LAYERS + Math.floor(taken / 3), taken % 3);
+      const r = (k) => { const v = Math.sin((i + 1) * 12.9898 + k * 78.233) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; }; // (-1..1, the same on every screen)
+      const off = 0.015 + wobble * 0.45;
+      top.x += r(1) * off; top.z += r(2) * off; top.turn += r(3) * (0.03 + wobble * 1.1);
       m.userData.at = now;
-      m.userData.top = seat(LAYERS + Math.floor(taken / 3), taken % 3);
+      m.userData.top = top;
+      sway = wobble;
       taken++;
     },
     bang(now) {
@@ -245,8 +252,8 @@ function towerToy(spots) {
     },
     update(now, pressed) {
       const fell = bangAt >= 0 && now >= bangAt;
-      stack.rotation.z = fell ? 0 : Math.sin(now / 520) * 0.0035 * pressed.size;
-      stack.rotation.x = fell ? 0 : Math.cos(now / 610) * 0.0025 * pressed.size;
+      stack.rotation.z = fell ? 0 : Math.sin(now / 520) * (0.004 + sway * 0.16);
+      stack.rotation.x = fell ? 0 : Math.cos(now / 610) * (0.003 + sway * 0.12);
       for (const m of blocks) {
         const u = m.userData, h = u.home;
         m.material.color.set(u.hot && !pressed.has(u.spot) ? '#ffe08a' : u.tone);
@@ -335,10 +342,10 @@ export function createToyView(kind, { spots, onPick }) {
     el,
     // The game as it stands: which spots are pressed, whether the last one
     // was the bad one, and whether it is my turn.
-    sync({ pressed: list, bang, canPick: can }) {
+    sync({ pressed: list, bang, canPick: can, wobble = 0, placing = false }) {
       const now = performance.now();
-      for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now); }
-      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? 300 : 380)); } // (after the tooth sinks / the block slides out / the bone lands)
+      for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now, wobble); }
+      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : 380)); } // (after the tooth sinks / the block slides out, or lands on top / the bone lands)
       canPick = can && !banged;
     },
     dispose() {

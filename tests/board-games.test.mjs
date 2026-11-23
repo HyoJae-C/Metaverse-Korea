@@ -243,7 +243,8 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
   assert.ok(g.over && g.last.bang);
   assert.equal(g.loser, 1);
   // Whole games, bots only: the same on two devices, and always an end.
-  for (const seed of [1, 2, 3, 4, 5]) {
+  const falls = [0, 0]; // taking a block out / putting it on top
+  for (let seed = 1; seed <= 40; seed++) {
     const a = newGame('tower', 3, seed), b = newGame('tower', 3, seed);
     assert.ok(a instanceof Tower);
     let guard = 0;
@@ -256,5 +257,8 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
     assert.ok(a.over && a.loser >= 0);
     assert.equal(b.loser, a.loser);
     assert.deepEqual(b.pressed, a.pressed);
+    assert.equal(b.last.placing, a.last.placing);
+    falls[a.last.placing ? 1 : 0]++;
   }
+  assert.ok(falls[0] > 0 && falls[1] > 0);
 });
