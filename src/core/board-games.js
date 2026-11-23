@@ -23,6 +23,7 @@ export const GAMES = {
   pirate: { min: 2, max: 6, icon: '🏴‍☠️', price: 20000, spots: 24 },
   bulldog: { min: 2, max: 6, icon: '🐶', price: 20000, spots: 12 },
   thief: { min: 2, max: 6, icon: '🕵️', price: 30000 },
+  ladders: { min: 2, max: 4, icon: '🐍', price: 30000 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
@@ -583,6 +584,60 @@ export class Thief {
   botMove(rand = Math.random) { return Math.floor(rand() * this.hands[this.from].length); }
 }
 
+// ---------------------------------------------------------------- ladders
+// 뱀사다리 (snakes and ladders): an 8 x 8 board of our own, 64 squares.
+// Roll one dice and walk; the foot of a ladder takes you up, a snake's head
+// takes you down to its tail. First to the last square wins (a roll that is
+// more than needed still gets there, so games stay short). A 6 rolls again.
+// The dice come from the game's seed, so every screen rolls the same.
+export const LADDERS_SIZE = 8;
+export const LADDERS_END = LADDERS_SIZE * LADDERS_SIZE;
+export const LADDERS_UP = { 3: 18, 8: 25, 21: 40, 29: 46, 36: 53, 43: 58 };
+export const LADDERS_DOWN = { 62: 39, 55: 34, 49: 31, 44: 23, 27: 9, 16: 5 };
+
+export class Ladders {
+  constructor({ players = 2, seed = 1 } = {}) {
+    if (players < GAMES.ladders.min || players > GAMES.ladders.max) throw new Error('bad player count');
+    this.n = players;
+    this.rand = rng(seed);
+    this.pos = new Array(players).fill(0); // 0 = not on the board yet
+    this.out = new Array(players).fill(false);
+    this.turn = 0;
+    this.rolls = 0;
+    this.winner = -1;
+    this.over = false;
+    this.last = null;
+  }
+
+  roll(p) {
+    if (this.over || p !== this.turn) return false;
+    const dice = 1 + Math.floor(this.rand() * 6);
+    const from = this.pos[p];
+    const mid = Math.min(LADDERS_END, from + dice);
+    const to = LADDERS_UP[mid] ?? LADDERS_DOWN[mid] ?? mid;
+    this.pos[p] = to;
+    this.rolls++;
+    this.last = { p, dice, from, mid, to, via: to > mid ? 'ladder' : to < mid ? 'snake' : null };
+    if (to === LADDERS_END) { this.winner = p; this.over = true; return true; }
+    if (dice !== 6) this.turn = this.nextIn(p);
+    return true;
+  }
+
+  nextIn(p) {
+    let t = p;
+    do t = (t + 1) % this.n; while (this.out[t]);
+    return t;
+  }
+
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    this.out[p] = true;
+    const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
+    if (left.length < 2) { this.over = true; this.winner = left[0] ?? -1; return; }
+    if (this.turn === p) this.turn = this.nextIn(p);
+  }
+}
+
 // One way to make any game, used by the table screen.
 export function newGame(id, players, seed) {
   if (id === 'omok') return new Omok({ players });
@@ -590,20 +645,22 @@ export function newGame(id, players, seed) {
   if (id === 'fruitbell') return new FruitBell({ players, seed });
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
   if (id === 'thief') return new Thief({ players, seed });
+  if (id === 'ladders') return new Ladders({ players, seed });
   throw new Error('unknown game ' + id);
 }
 
 // Apply one action message to a game. Actions are tiny arrays so they fit a
 // room message: ['o', x, y] omok, ['c', card, suit] / ['d'] one card,
 // ['f'] flip / ['r'] ring, ['p', spot] roulette, ['s', i] point at / ['t', i]
-// take a card in the joker game, ['l'] leave. (['e', n] is a face a player
+// take a card in the joker game, ['d'] roll the dice in snakes and ladders,
+// ['l'] leave. (['e', n] is a face a player
 // pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
   if (!Array.isArray(a)) return false;
   switch (a[0]) {
     case 'o': return game instanceof Omok && game.play(p, a[1] | 0, a[2] | 0);
     case 'c': return game instanceof OneCard && game.put(p, String(a[1]), a[2] ?? null);
-    case 'd': return game instanceof OneCard && game.draw(p);
+    case 'd': return game instanceof Ladders ? game.roll(p) : game instanceof OneCard && game.draw(p);
     case 'f': return game instanceof FruitBell && game.flip(p);
     case 'r': return game instanceof FruitBell && game.ring(p, a[1] ?? game.flips);
     case 'p': return game instanceof Roulette && game.press(p, a[1] | 0);

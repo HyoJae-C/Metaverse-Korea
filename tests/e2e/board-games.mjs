@@ -1,5 +1,6 @@
 // End-to-end check: the board game café (game/board-games.js). A opens the
-// panel at a free table and puts a stone down against the computer; then A
+// panel at a free table and puts a stone down against the computer, and rolls
+// a few dice at Snakes & Ladders; then A
 // invites B to Croc Teeth, B says yes on the card, they take turns until the
 // croc snaps (a line of chat typed in the game card reaches the other
 // player), and both screens show the same teeth pressed and the same result. B walking out closes B's panel.
@@ -107,6 +108,21 @@ try {
   await a.mouse.click(box.x + box.width * 8 / 16, box.y + box.height * 8 / 16); // the centre point
   await a.waitForFunction(() => /Your turn/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
   if (shotDir) await a.screenshot({ path: shotDir + '/omok.png' });
+  await a.click('#bg-panel .bg-x');
+
+  step = 'A rolls the dice at Snakes & Ladders against the computer';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="ladders"]');
+  await a.click('#bg-panel [data-game="ladders"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel canvas.bg-ladders');
+  for (let k = 0; k < 6; k++) {
+    await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 15000 });
+    await a.click('#bg-panel [data-act="roll"]');
+    await a.waitForFunction(() => +document.querySelector('#bg-panel .bg-dice')?.dataset.dice > 0, null, { timeout: 8000 });
+  }
+  await a.waitForTimeout(1200);
+  if (shotDir) await a.screenshot({ path: shotDir + '/ladders.png' });
   await a.click('#bg-panel .bg-x');
 
   step = 'A invites B to Croc Teeth';

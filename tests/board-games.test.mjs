@@ -190,3 +190,37 @@ test('the joker game: someone leaving hands their cards round, and the game stil
   while (!g.over && guard++ < 2000) { assert.ok(applyAction(g, g.turn, ['s', 0])); assert.ok(applyAction(g, g.turn, ['t', 0])); }
   assert.ok(g.over && g.loser >= 0 && g.loser !== 1);
 });
+
+test('snakes and ladders: same dice everywhere, ladders up, snakes down, a 6 rolls again, someone wins', async () => {
+  const { Ladders, LADDERS_UP, LADDERS_DOWN, LADDERS_END, newGame, applyAction } = await import('../src/core/board-games.js');
+  // No ladder or snake starts where another ends, and none starts on the last square.
+  const starts = [...Object.keys(LADDERS_UP), ...Object.keys(LADDERS_DOWN)].map(Number);
+  const ends = [...Object.values(LADDERS_UP), ...Object.values(LADDERS_DOWN)];
+  assert.equal(new Set(starts).size, starts.length);
+  for (const e of ends) assert.ok(!starts.includes(e) && e >= 1 && e < LADDERS_END);
+  for (const [a, b] of Object.entries(LADDERS_UP)) assert.ok(b > +a);
+  for (const [a, b] of Object.entries(LADDERS_DOWN)) assert.ok(b < +a);
+  for (const players of [2, 4]) {
+    const g = newGame('ladders', players, 77), h = new Ladders({ players, seed: 77 });
+    let guard = 0;
+    while (!g.over && guard++ < 3000) {
+      const p = g.turn;
+      assert.ok(!applyAction(g, (p + 1) % players, ['d'])); // not your turn
+      assert.ok(applyAction(g, p, ['d']));
+      h.roll(p);
+      const l = g.last;
+      assert.equal(l.mid, Math.min(LADDERS_END, l.from + l.dice));
+      assert.equal(l.to, LADDERS_UP[l.mid] ?? LADDERS_DOWN[l.mid] ?? l.mid);
+      if (!g.over) assert.equal(g.turn === p, l.dice === 6);
+    }
+    assert.ok(g.over && g.winner >= 0);
+    assert.equal(g.pos[g.winner], LADDERS_END);
+    assert.deepEqual(g.pos, h.pos);
+  }
+  const g = new Ladders({ players: 3, seed: 2 });
+  g.leave(0);
+  assert.equal(g.turn, 1);
+  g.leave(2);
+  assert.ok(g.over);
+  assert.equal(g.winner, 1);
+});

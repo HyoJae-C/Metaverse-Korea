@@ -18,7 +18,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, ROULETTE, OMOK_SIZE, FRUIT_EMOJI, newGame, applyAction,
+  GAMES, ROULETTE, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_UP, LADDERS_DOWN, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -30,6 +30,9 @@ const tt = (k, v) => fmt(L(T[k]), v);
 const BOT = '~';
 const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
+const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
+const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
+const WALK_STEP = 150; // ms a piece takes for one square
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
 const CSS = `
@@ -54,6 +57,8 @@ const CSS = `
 #bg-panel .bg-seat.on { background: #ffd36b; }
 #bg-panel .bg-seat.gone { opacity: .45; text-decoration: line-through; }
 #bg-panel canvas.bg-omok { display: block; margin: 0 auto; width: min(100%, 420px); aspect-ratio: 1; touch-action: manipulation; border-radius: 8px; }
+#bg-panel canvas.bg-ladders { display: block; margin: 0 auto; width: min(100%, 420px, 50vh); border-radius: 10px; }
+#bg-panel .bg-dice { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 30px; line-height: 1; }
 #bg-panel .bg-fruits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 #bg-panel .bg-pile { background: #f6ecd8; border-radius: 12px; padding: 8px; text-align: center; }
 #bg-panel .bg-pile.on { outline: 3px solid #ffb800; }
@@ -391,6 +396,11 @@ export class BoardGamesUI {
       const l = g.last;
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
       this.onEvent('move');
+    } else if (act[0] === 'd' && p.game === 'ladders') {
+      const l = g.last;
+      this.status = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      this.startWalk(l);
+      this.onEvent('move');
     } else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l') this.onEvent('move');
     if (g.over && !p.done) {
@@ -454,6 +464,7 @@ export class BoardGamesUI {
     if (p.game === 'omok') { const [x, y] = g.botMove(this.rand); this.hostApply(turn, ['o', x, y]); }
     else if (p.game === 'fruitbell') this.hostApply(turn, ['f']);
     else if (ROULETTE.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
+    else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100; } // (lets the piece finish walking)
     else if (p.game === 'thief') {
       // Point at a card, think again, then take it.
       if (g.sel < 0) { this.hostApply(turn, ['s', g.botMove(this.rand)]); this.timer = 0; } else this.hostApply(turn, ['t', g.sel]);
@@ -544,7 +555,7 @@ export class BoardGamesUI {
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
-      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : n;
+      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.pos[s]}` : n;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -556,6 +567,7 @@ export class BoardGamesUI {
     if (p.game === 'omok') this.drawOmok(c);
     else if (p.game === 'fruitbell') this.drawBell(c);
     else if (p.game === 'thief') this.drawThief(c);
+    else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
@@ -681,6 +693,122 @@ export class BoardGamesUI {
     c.append(bell);
   }
 
+  // Snakes and ladders: the board is drawn on a canvas; a piece that just
+  // moved walks there square by square, then rides its ladder or snake.
+  startWalk(l) {
+    const p = this.play;
+    const path = [];
+    for (let k = l.from + 1; k <= l.mid; k++) path.push(k);
+    if (l.to !== l.mid) path.push(l.to);
+    p.walk = { seat: l.p, from: l.from, path, at: performance.now() };
+    clearInterval(this.walkTimer);
+    this.walkTimer = setInterval(() => {
+      const w = this.play?.walk;
+      if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
+      this.paintLadders(this.ladCv);
+      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP) { this.play.walk = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
+    }, 50);
+  }
+
+  drawLadders(c) {
+    const p = this.play;
+    const g = p.g;
+    const cv = el('canvas', 'bg-ladders');
+    cv.width = 480; cv.height = 520;
+    this.ladCv = cv;
+    this.paintLadders(cv);
+    c.append(cv);
+    const row = el('div', 'bg-row');
+    row.style.cssText = 'justify-content:center;align-items:center';
+    const dice = el('span', 'bg-dice', g.last ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
+    dice.dataset.dice = String(g.last?.dice ?? 0);
+    row.append(dice);
+    if (!g.over && !g.out[p.seat]) {
+      const roll = el('button', 'bg-btn bg-go', L(T.roll));
+      roll.type = 'button';
+      roll.dataset.act = 'roll';
+      roll.disabled = turnOf(g) !== p.seat;
+      roll.onclick = () => this.myMove(['d']);
+      row.append(roll);
+    }
+    c.append(row);
+  }
+
+  paintLadders(cv) {
+    const p = this.play;
+    if (!p) return;
+    const g = p.g;
+    const N = LADDERS_SIZE, S = cv.width / N, H = N * S;
+    const x = cv.getContext('2d');
+    // (square 1 is bottom left; rows run left-right, then right-left)
+    const at = (k) => {
+      if (k <= 0) return [S * 0.5, H + 20];
+      const r = Math.floor((k - 1) / N), i = (k - 1) % N;
+      return [((r % 2 ? N - 1 - i : i) + 0.5) * S, H - (r + 0.5) * S];
+    };
+    x.clearRect(0, 0, cv.width, cv.height);
+    x.textAlign = 'left'; x.textBaseline = 'top';
+    for (let k = 1; k <= LADDERS_END; k++) {
+      const [cx, cy] = at(k);
+      x.fillStyle = k === LADDERS_END ? '#ffd36b' : Math.round((cx + cy) / S) % 2 ? '#f6ecd8' : '#e9f3df';
+      x.fillRect(cx - S / 2, cy - S / 2, S, S);
+      x.fillStyle = 'rgba(43,34,48,.55)';
+      x.font = '600 13px system-ui, sans-serif';
+      x.fillText(k === LADDERS_END ? '🏁' : String(k), cx - S / 2 + 4, cy - S / 2 + 4);
+    }
+    x.lineCap = 'round';
+    for (const [a, b] of Object.entries(LADDERS_UP)) {
+      const [x1, y1] = at(+a), [x2, y2] = at(b);
+      const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len * 8, ny = (x2 - x1) / len * 8;
+      x.strokeStyle = '#a8703a'; x.lineWidth = 4;
+      for (const m of [1, -1]) { x.beginPath(); x.moveTo(x1 + nx * m, y1 + ny * m); x.lineTo(x2 + nx * m, y2 + ny * m); x.stroke(); }
+      x.lineWidth = 3;
+      for (let t = 14; t < len - 6; t += 16) {
+        const px = x1 + (x2 - x1) * t / len, py = y1 + (y2 - y1) * t / len;
+        x.beginPath(); x.moveTo(px + nx, py + ny); x.lineTo(px - nx, py - ny); x.stroke();
+      }
+    }
+    const SNAKE = ['#4caf6a', '#e06aa0', '#5a8ad0', '#e39b3a', '#8d6ad0', '#3fb0a8'];
+    Object.entries(LADDERS_DOWN).forEach(([a, b], n) => {
+      const [x1, y1] = at(+a), [x2, y2] = at(b);
+      const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
+      x.strokeStyle = SNAKE[n % SNAKE.length]; x.lineWidth = 9;
+      x.beginPath(); x.moveTo(x1, y1);
+      const waves = Math.max(2, Math.round(len / 60));
+      for (let t = 1; t <= 24; t++) {
+        const f = t / 24, w = Math.sin(f * Math.PI * waves) * 12 * (1 - f * 0.4);
+        x.lineTo(x1 + (x2 - x1) * f + nx * w, y1 + (y2 - y1) * f + ny * w);
+      }
+      x.stroke();
+      x.fillStyle = SNAKE[n % SNAKE.length];
+      x.beginPath(); x.arc(x1, y1, 10, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#fff';
+      for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 2.6, 0, Math.PI * 2); x.fill(); }
+      x.fillStyle = '#2b2230';
+      for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 1.3, 0, Math.PI * 2); x.fill(); }
+    });
+    // The pieces (several on one square stand side by side).
+    const w = p.walk;
+    const spot = g.pos.map((k, s) => {
+      if (!w || w.seat !== s) return at(k);
+      const f = Math.min(w.path.length, (performance.now() - w.at) / WALK_STEP);
+      const i = Math.floor(f), t = f - i;
+      const a = at(i === 0 ? w.from : w.path[i - 1]), b = at(w.path[Math.min(i, w.path.length - 1)]);
+      const ride = i === w.path.length - 1 && Math.abs(w.path[i] - (w.path[i - 1] ?? w.from)) > 6; // (a ladder or a snake: no hop)
+      return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - (ride ? 0 : Math.sin(t * Math.PI) * 10)];
+    });
+    g.pos.forEach((k, s) => {
+      if (g.out[s] || p.gone?.[s]) return;
+      const same = g.pos.filter((v, q) => v === k && q < s && !(w && (w.seat === q || w.seat === s))).length;
+      const [cx, cy] = [spot[s][0] + (k <= 0 ? s * 30 : same * 9), spot[s][1] + (k <= 0 ? 0 : 6)];
+      x.fillStyle = 'rgba(0,0,0,.2)';
+      x.beginPath(); x.ellipse(cx, cy + 11, 11, 4, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = PAWN[s]; x.strokeStyle = '#fff'; x.lineWidth = 2.5;
+      x.beginPath(); x.arc(cx, cy, 11, 0, Math.PI * 2); x.fill(); x.stroke();
+      if (s === p.seat) { x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill(); }
+    });
+  }
+
   cardFace(card, cls = '') {
     const joker = card === 'JB';
     const suit = joker ? '' : card.slice(-1);
@@ -713,7 +841,7 @@ export class BoardGamesUI {
       if (myTurn) {
         const row = el('div', 'bg-row');
         row.style.justifyContent = 'center';
-        const draw = el('button', 'bg-btn bg-go', L(T.draw));
+        const draw = el('button', 'bg-btn bg-go', L(T.drawCard));
         draw.type = 'button';
         draw.dataset.act = 'draw';
         draw.disabled = g.sel < 0;

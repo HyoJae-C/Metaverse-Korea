@@ -10,6 +10,7 @@ export const GAME_NAME = {
   croc: R('Croc Teeth', '악어 이빨', 'ワニの歯', '鳄鱼牙齿', 'Dientes de cocodrilo', 'Gigi Buaya', 'Răng cá sấu', 'मगरमच्छ के दाँत', 'Dents de croco', 'ฟันจระเข้', 'أسنان التمساح'),
   pirate: R('Barrel Pirate', '통 속 해적', 'たるの海賊', '木桶海盗', 'Pirata en el barril', 'Bajak Laut di Tong', 'Cướp biển trong thùng', 'पीपे में समुद्री डाकू', 'Pirate dans le tonneau', 'โจรสลัดในถัง', 'قرصان البرميل'),
   thief: R('Catch the Thief', '도둑잡기', 'ババ抜き', '抽鬼牌', 'Atrapa al ladrón', 'Tangkap Pencuri', 'Bắt kẻ trộm', 'चोर पकड़ो', 'Attrape le voleur', 'จับขโมย', 'أمسك اللص'),
+  ladders: R('Snakes & Ladders', '뱀사다리', 'ヘビとはしご', '蛇梯棋', 'Serpientes y escaleras', 'Ular Tangga', 'Rắn và thang', 'साँप-सीढ़ी', 'Serpents et échelles', 'บันไดงู', 'السلم والثعبان'),
   bulldog: R('My Dog Doesn\'t Bite', '우리 개는 안 물어요', 'うちの犬はかまないよ', '我家狗不咬人', 'Mi perro no muerde', 'Anjingku Nggak Gigit', 'Chó nhà tôi không cắn', 'मेरा कुत्ता नहीं काटता', 'Mon chien ne mord pas', 'หมาบ้านเราไม่กัด', 'كلبي لا يعض'),
 };
 
@@ -65,6 +66,19 @@ export const GAME_HOW = {
     'Les paires de même valeur sont défaussées. À ton tour, touche une carte du joueur suivant, puis Piocher. Plus de cartes : tu es sauvé. Celui qui garde le joker perd. Regarde bien sa tête !',
     'ไพ่แต้มเดียวกันสองใบทิ้งได้เลย ถึงตาคุณให้แตะไพ่ของคนถัดไปหนึ่งใบแล้วกด จั่ว ไพ่หมดก็รอด ใครเหลือโจ๊กเกอร์คนสุดท้ายแพ้ คอยดูสีหน้าเขาด้วย!',
     'الأزواج من الرقم نفسه تُرمى. في دورك اختر ورقة من اللاعب التالي ثم اضغط «اسحب». من تنفد أوراقه ينجو. من يبقى معه الجوكر يخسر. راقب وجهه!',
+  ),
+  ladders: R(
+    'Roll the dice and walk. A ladder takes you up, a snake takes you down. A 6 rolls again. First to square 64 wins.',
+    '주사위를 굴려 나온 만큼 가요. 사다리를 만나면 올라가고, 뱀을 만나면 내려가요. 6이 나오면 한 번 더. 64번 칸에 먼저 도착하면 이겨요.',
+    'サイコロを振って進みます。はしごは上へ、ヘビは下へ。6が出たらもう一回。64のマスに先に着いたら勝ち。',
+    '掷骰子前进。遇到梯子往上爬，遇到蛇往下滑。掷出6再掷一次。先到第64格的人获胜。',
+    'Tira el dado y avanza. Una escalera te sube, una serpiente te baja. Con un 6 tiras otra vez. Gana quien llegue primero a la casilla 64.',
+    'Lempar dadu dan maju. Tangga membawamu naik, ular membawamu turun. Dapat 6, lempar lagi. Yang pertama sampai di kotak 64 menang.',
+    'Gieo xúc xắc rồi đi. Gặp thang thì leo lên, gặp rắn thì tụt xuống. Ra 6 được gieo thêm lần nữa. Ai tới ô 64 trước thì thắng.',
+    'पासा फेंकें और आगे बढ़ें। सीढ़ी ऊपर ले जाती है, साँप नीचे। 6 आए तो फिर से फेंकें। जो पहले खाना 64 पर पहुँचे वह जीतता है।',
+    'Lance le dé et avance. Une échelle te fait monter, un serpent te fait descendre. Un 6 fait rejouer. Le premier à la case 64 gagne.',
+    'ทอยลูกเต๋าแล้วเดิน เจอบันไดได้ขึ้น เจองูต้องลง ได้ 6 ทอยอีกครั้ง ใครถึงช่อง 64 ก่อนชนะ',
+    'ارمِ النرد وتقدّم. السلم يرفعك والثعبان ينزلك. الرقم 6 يمنحك رمية أخرى. أول من يصل إلى المربع 64 يفوز.',
   ),
   croc: R(
     'Press one tooth each, in turn. One of them makes the croc snap shut: whoever presses it loses!',
@@ -143,7 +157,7 @@ export const T = {
   out: R('out', '탈락', '脱落', '出局', 'fuera', 'keluar', 'bị loại', 'बाहर', 'éliminé', 'ตกรอบ', 'خارج'),
   black: R('Black', '흑', '黒', '黑', 'Negras', 'Hitam', 'Đen', 'काला', 'Noirs', 'ดำ', 'الأسود'),
   white: R('White', '백', '白', '白', 'Blancas', 'Putih', 'Trắng', 'सफ़ेद', 'Blancs', 'ขาว', 'الأبيض'),
-  draw: R('Draw', '뽑기', '引く', '抽牌', 'Robar', 'Ambil', 'Rút', 'खींचें', 'Piocher', 'จั่ว', 'اسحب'),
+  drawCard: R('Draw', '뽑기', '引く', '抽牌', 'Robar', 'Ambil', 'Rút', 'खींचें', 'Piocher', 'จั่ว', 'اسحب'),
   pickFrom: R('Tap one of {name}\'s cards, then Draw.', '{name}님 카드 한 장을 고르고 「뽑기」를 눌러요.', '{name}さんのカードを1枚選んで「引く」。', '选{name}的一张牌，再点“抽牌”。', 'Toca una carta de {name} y luego Robar.', 'Ketuk satu kartu {name}, lalu Ambil.', 'Chạm một lá của {name} rồi bấm Rút.', '{name} का एक पत्ता चुनें, फिर «खींचें»।', 'Touche une carte de {name}, puis Piocher.', 'แตะไพ่ของ {name} หนึ่งใบแล้วกด จั่ว', 'اختر ورقة من {name} ثم اضغط «اسحب».'),
   choosing: R('{name} is choosing a card from {from}…', '{name}님이 {from}님 카드를 고르는 중…', '{name}さんが{from}さんのカードを選んでいます…', '{name}正在挑{from}的牌…', '{name} está eligiendo una carta de {from}…', '{name} sedang memilih kartu {from}…', '{name} đang chọn bài của {from}…', '{name}, {from} का पत्ता चुन रहे हैं…', '{name} choisit une carte de {from}…', '{name} กำลังเลือกไพ่ของ {from}…', '{name} يختار ورقة من {from}…'),
   choosingMine: R('{name} is choosing one of YOUR cards. Pull a face!', '{name}님이 내 카드를 고르는 중! 표정으로 속여 봐요.', '{name}さんがあなたのカードを選んでいます！表情でだまそう。', '{name}正在挑你的牌！用表情骗骗对方。', '¡{name} está eligiendo una de TUS cartas! Pon una cara.', '{name} sedang memilih kartuMU! Pasang ekspresi.', '{name} đang chọn bài của BẠN! Làm mặt đánh lừa đi.', '{name} आपका पत्ता चुन रहे हैं! चेहरा बनाइए।', '{name} choisit une de TES cartes ! Fais une tête.', '{name} กำลังเลือกไพ่ของคุณ! ทำหน้าหลอกเลย', '{name} يختار إحدى أوراقك! اصنع وجهًا.'),
@@ -154,5 +168,10 @@ export const T = {
   jokerThem: R('🃏 {name} is left with the joker! Everyone else wins.', '🃏 {name}님이 조커를 들고 남았어요! 나머지 모두 승리.', '🃏 {name}さんにジョーカーが残りました！ほかの全員の勝ち。', '🃏 鬼牌留在{name}手里！其他人都赢了。', '🃏 ¡{name} se quedó con el comodín! Ganan todos los demás.', '🃏 {name} tersisa dengan joker! Yang lain menang.', '🃏 {name} còn lại với joker! Mọi người còn lại thắng.', '🃏 जोकर {name} के पास रह गया! बाकी सब जीते।', '🃏 {name} reste avec le joker ! Tous les autres gagnent.', '🃏 {name} เหลือโจ๊กเกอร์! คนอื่นชนะหมด', '🃏 بقي الجوكر مع {name}! الجميع غيره فازوا.'),
   safe: R('safe', '탈출', '上がり', '安全', 'a salvo', 'aman', 'an toàn', 'सुरक्षित', 'sauvé', 'รอด', 'نجا'),
   myHand: R('Your cards', '내 카드', '自分の手札', '我的牌', 'Tus cartas', 'Kartumu', 'Bài của bạn', 'आपके पत्ते', 'Tes cartes', 'ไพ่ของคุณ', 'أوراقك'),
+  roll: R('🎲 Roll', '🎲 굴리기', '🎲 振る', '🎲 掷骰子', '🎲 Tirar', '🎲 Lempar', '🎲 Gieo', '🎲 फेंकें', '🎲 Lancer', '🎲 ทอย', '🎲 ارمِ'),
+  rolled: R('{name} rolled {n}.', '{name}님 {n}!', '{name}さんは{n}。', '{name}掷出了{n}。', '{name} sacó un {n}.', '{name} dapat {n}.', '{name} gieo được {n}.', '{name} को {n} आया।', '{name} a fait {n}.', '{name} ทอยได้ {n}', '{name} حصل على {n}.'),
+  ladderUp: R('🪜 Up the ladder to {to}!', '🪜 사다리 타고 {to}번으로!', '🪜 はしごで{to}へ！', '🪜 爬梯子到{to}！', '🪜 ¡Sube la escalera hasta {to}!', '🪜 Naik tangga ke {to}!', '🪜 Leo thang lên ô {to}!', '🪜 सीढ़ी से {to} पर!', '🪜 Monte l\'échelle jusqu\'à {to} !', '🪜 ขึ้นบันไดไป {to}!', '🪜 صعد السلم إلى {to}!'),
+  snakeDown: R('🐍 Down the snake to {to}!', '🐍 뱀 타고 {to}번으로 미끄덩!', '🐍 ヘビで{to}へ！', '🐍 被蛇滑到{to}！', '🐍 ¡Baja por la serpiente hasta {to}!', '🐍 Turun ular ke {to}!', '🐍 Trượt rắn xuống ô {to}!', '🐍 साँप से {to} पर!', '🐍 Glisse sur le serpent jusqu\'à {to} !', '🐍 ไหลตามงูลงไป {to}!', '🐍 نزل مع الثعبان إلى {to}!'),
+  again6: R('A 6: one more roll!', '6이라 한 번 더!', '6なのでもう一回！', '掷出6，再来一次！', '¡Un 6: otra tirada!', 'Dapat 6: lempar lagi!', 'Ra 6: gieo thêm lần nữa!', '6 आया: एक बार और!', 'Un 6 : on rejoue !', 'ได้ 6 ทอยอีกครั้ง!', 'الرقم 6: رمية أخرى!'),
   free: R('Free at the café', '카페에서는 무료', 'カフェでは無料', '在咖啡馆免费', 'Gratis en el café', 'Gratis di kafe', 'Miễn phí ở quán', 'कैफ़े में मुफ़्त', 'Gratuit au café', 'ที่คาเฟ่เล่นฟรี', 'مجانًا في المقهى'),
 };
