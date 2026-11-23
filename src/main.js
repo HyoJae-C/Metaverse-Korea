@@ -60,6 +60,7 @@ import { StampStands } from './core/stamp-stands.js';
 import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-fan.js';
 import { createPalaceView } from './game/palace-view.js';
+import { createCheongwadaeNote } from './game/cheongwadae-note.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
@@ -5403,6 +5404,7 @@ function palaceAct(p) {
   return null;
 }
 const palaceView = createPalaceView({ cam, at: palaceAt, steering: () => manualCamT > 0 }); // (game/palace-view.js: look up at the roofs)
+const cheongwadaeNote = createCheongwadaeNote({ landmarks: map.landmarks, toast: (m) => shop.toast(m), text: () => t('cheongwadae.note'), busy: () => spaceBusy() }); // (game/cheongwadae-note.js: a security facility, no way in)
 let anotherTower;
 const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { return interior; }, landmarks: map.landmarks, bubble: (text) => showBubble(myLabel, $('labels'), text, 2500) }); // (game/prayer.js: at the temples' altars and the cathedral's)
 const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
@@ -5413,6 +5415,7 @@ let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);
   palaceView.tick(p, dt);
+  if (mode === 'street') cheongwadaeNote.tick(p);
   if (mode === 'street') { buddhaView.tick(p, dt); towerLook.tick(cam, p, dt); }
   // At the fan dance's edge: please step back a little (once each time you come up).
   if (palaceShow?.nearFan(p.x, p.z)) { if (!fanNoted && !spaceBusy()) { fanNoted = true; shop.toast('🪭 ' + L(PALACE_TEXT.back)); } }

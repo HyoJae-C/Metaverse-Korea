@@ -469,6 +469,7 @@ export const FR = {
   'hud.signsOff': 'Enseignes en coréen',
   'hud.bike': 'Véhicule',
   'stairs.noBike': "🚲 Pas de véhicule dans l'escalier. Touche Véhicule pour descendre, puis va à pied.",
+  'cheongwadae.note': "🏛️ Cheong Wa Dae est redevenu le bureau du président, un site sécurisé : on ne peut pas y entrer. Admire-le depuis l'extérieur du portail.",
   'bike.offShort': 'Descendre',
   'bike.off': 'Descendre du vélo',
   'car.off': 'Sortir de la voiture',

@@ -897,6 +897,35 @@ Inside the wall the camera drops and looks up (`game/palace-view.js`), more
 so in the courts, until the player steers it. Visitors in rented hanbok
 stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
 
+## Cheong Wa Dae from the street (Jongno-gu)
+
+Cheong Wa Dae is the president's office again (since 2025-12-29), a security
+facility, so it is built to be looked at from the street only (Yozi,
+2026-11-23): the fountain plaza, Sarangchae, the main gate and the main hall
+behind its lawn with Bugaksan's woods round it. No guard posts, nothing of the
+inside, and the fence shuts the grounds all round (a test floods from the gate
+and checks the lawn and forecourt can't be reached). Coming up to the gate a
+note says visitors can't go in (`game/cheongwadae-note.js`, key
+`cheongwadae.note`), and an info board in the gate recess says the same.
+
+`scripts/build-cheongwadae.mjs` writes it into the Gyeongbokgung district from
+OSM (`scripts/data/cheongwadae-osm.json`); run it after
+`build-gyeongbokgung.mjs` (`--svg F` draws an overlay). Everything it writes
+is marked `cw: 1`, so it can be run again.
+
+- On its real place at 1/4; the main hall and the gate are 50% (twice the map
+  across, half the real height; `CW.HALL`), the rest 1/4.
+- Hyoja-ro, Cheongwadae-ro, Samcheong-ro and Changuimun-ro are OSM's lines
+  (within 10 m; game road widths push them up to about 5 m). The old
+  hand-drawn Hyoja-ro (130 m too far west) is now `자하문로`, the hand-drawn
+  Cheongwadae-ro is gone and the hand-drawn x = 125 road lost the Samcheong-ro
+  name; all marked `approx` with a `why`.
+- Made up (`approx`): the lawn, forecourt and drive, Sarangchae's outline past
+  the part OSM has, and the short Hyoja-ro link to the old road. How far
+  things moved is in `meta.cheongwadae.moved`.
+- Models: `core/bluehouse-model.js` (hall with blue tiles, gate, fence,
+  fountain with its phoenix).
+
 ## Bosingak (Jongno)
 
 The bell pavilion stands on the south side of Jongno in the Gyeongbokgung
