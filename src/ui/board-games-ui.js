@@ -517,7 +517,7 @@ export class BoardGamesUI {
       this.startWalk(l);
       this.onEvent('dice', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
-    else if (act[0] === 'm') { this.status = tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
+    else if (act[0] === 'm') { this.status = seat === p.seat ? '' : tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
     else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
@@ -566,12 +566,7 @@ export class BoardGamesUI {
     }
     const p = this.play;
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
-    if (p && this.clockEl?.isConnected) {
-      const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
-      const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
-      if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
-      this.clockEl.style.color = left <= TURN_WARN ? '' : '#8a7a66'; // (red for the last seconds)
-    }
+    this.paintClock();
     if (p?.game === 'mafia' && !p.g.over) {
       // The phase's clock: everyone sees it run down, the host moves the game on.
       const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
@@ -606,6 +601,16 @@ export class BoardGamesUI {
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
     this.moveFor(turn);
+  }
+
+  // The turn's clock (painted with the card too, so it is never blank between ticks).
+  paintClock() {
+    const p = this.play, now = performance.now();
+    if (!p || !this.clockEl?.isConnected) return;
+    const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
+    const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
+    if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    this.clockEl.style.color = left <= TURN_WARN ? '' : '#8a7a66'; // (red for the last seconds)
   }
 
   // A move made by the host for a seat: the computer's, or a person's whose time ran out.
@@ -766,6 +771,7 @@ export class BoardGamesUI {
     c.append(el('div', 'bg-status', this.headline()));
     this.clockEl = el('div', 'bg-clock');
     c.append(this.clockEl);
+    this.paintClock();
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
       FACES.forEach((f, n) => {
