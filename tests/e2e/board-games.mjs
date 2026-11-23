@@ -128,7 +128,7 @@ try {
   }
   if (shotDir) { await a.waitForTimeout(300); await a.screenshot({ path: shotDir + '/ladders-setup.png' }); }
   for (let k = 0; k < 6; k++) {
-    await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 15000 });
+    await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 30000 }); // (the computer may roll a 6 or two first)
     await a.click('#bg-panel [data-act="roll"]');
     if (k === 0 && shotDir) { await a.waitForTimeout(350); await a.screenshot({ path: shotDir + '/ladders-dice.png' }); }
     await a.waitForFunction(() => +document.querySelector('#bg-panel .bg-dice')?.dataset.dice > 0, null, { timeout: 8000 });

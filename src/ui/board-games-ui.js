@@ -292,6 +292,12 @@ export class BoardGamesUI {
     this.render();
   }
 
+  // Time since the last move, for the computer players' thinking. By the
+  // clock, not by counting ticks: on a slow device the tick comes late, and
+  // the computer then took several times as long over a move.
+  get timer() { return performance.now() - (this.t0 ?? 0); }
+  set timer(v) { this.t0 = performance.now() - v; }
+
   dropView() { this.view?.dispose(); this.view = null; }
 
   nameFor(id) {
@@ -485,7 +491,6 @@ export class BoardGamesUI {
     if (!p || p.g.over || p.hostId !== this.net.myId) return;
     // The computer players (the host runs them).
     const g = p.g;
-    this.timer += 250;
     if (p.game === 'fruitbell' && g.bellRight()) {
       p.bellAt ??= between(BOT_BELL, this.rand);
       if (this.timer >= p.bellAt) {
