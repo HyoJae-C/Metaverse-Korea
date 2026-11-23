@@ -33,6 +33,7 @@ const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
 const TURN_MS = 30000; // a turn nobody takes is played for them after this (the host's clock)
 const TURN_WARN = 10; // the last seconds of the clock are red
+const TICK_FROM = 5; // the last seconds of a clock tick
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
@@ -57,7 +58,7 @@ const CSS = `
 #bg-panel .bg-go { background: #ffd36b; }
 #bg-panel .bg-line { padding: 6px 0; }
 #bg-panel .bg-status { min-height: 22px; margin: 8px 0; text-align: center; }
-#bg-panel .bg-clock { text-align: center; font-size: 18px; font-weight: 800; color: #e8402a; }
+#bg-panel .bg-clock { float: right; font-size: 16px; font-weight: 800; color: #e8402a; }
 #bg-panel .bg-seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
 #bg-panel .bg-seat { padding: 4px 10px; border-radius: 999px; background: #efe4cf; font-size: 13px; }
 #bg-panel .bg-seat.on { background: #ffd36b; }
@@ -123,6 +124,12 @@ const CSS = `
 #bg-panel.mini .bg-seats { margin-bottom: 4px; }
 #bg-panel.mini .bg-fp { padding: 2px 6px 6px; }
 #bg-panel.mini .bg-fan { padding: 16px 0 6px; }
+#bg-panel.mini .bg-status { min-height: 0; margin: 4px 0 0; font-size: 13px; line-height: 1.25; }
+#bg-panel.mini .bg-fan.mine { padding-top: 36px; }
+#bg-panel.mini .bg-mine { margin-top: 0; }
+#bg-panel.mini .bg-mine .bg-fan { padding-top: 6px; }
+#bg-panel .bg-pickrow { display: flex; align-items: center; justify-content: center; gap: 12px; }
+#bg-panel .bg-pickrow .bg-btn { flex: none; }
 #bg-panel .bg-fp.has3d { background: #b97b45; padding-top: 0; }
 #bg-panel .bg-fp.has3d canvas.bg-thief3d { border-radius: 0; margin: 0 -8px; width: calc(100% + 16px); max-height: 40vh; background: linear-gradient(#f6e7c8, #ecd6ae); }
 #bg-panel .bg-fp.has3d .bg-who, #bg-panel .bg-fp.has3d [data-hand="from"]:not(.mine) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; }
@@ -576,7 +583,7 @@ export class BoardGamesUI {
       // The phase's clock: everyone sees it run down, the host moves the game on.
       const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
       const clock = this.card.querySelector('[data-clock]');
-      if (clock && clock.textContent !== `⏳ ${left}`) clock.textContent = `⏳ ${left}`;
+      if (clock && clock.textContent !== `⏳ ${left}`) { clock.textContent = `⏳ ${left}`; if (left >= 1 && left <= TICK_FROM) this.onEvent('tick', p.game, { mine: true, n: left }); }
       if (p.hostId === this.net.myId && now - p.phaseAt > p.g.seconds() * 1000 + 300) this.hostApply(p.seat, ['n', p.g.step]);
       return;
     }
@@ -614,7 +621,10 @@ export class BoardGamesUI {
     if (!p || !this.clockEl?.isConnected) return;
     const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
     const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
-    if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    if (this.clockEl.textContent !== text) {
+      this.clockEl.textContent = text;
+      if (left >= 1 && left <= TICK_FROM) this.onEvent('tick', p.game, { mine: turnOf(p.g) === p.seat, n: left }); // (the last seconds tick: Yozi 2026-11-24)
+    }
     this.clockEl.style.color = left <= TURN_WARN ? '' : '#8a7a66'; // (red for the last seconds)
   }
 
@@ -754,8 +764,12 @@ export class BoardGamesUI {
   drawPlay(c) {
     const p = this.play;
     const g = p.g;
-    c.append(el('h2', null, GAMES[p.game].icon + ' ' + L(GAME_NAME[p.game])));
+    const title = el('h2', null, GAMES[p.game].icon + ' ' + L(GAME_NAME[p.game]));
+    c.append(title);
     if (p.game === 'mafia') { this.drawMafia(c); return; }
+    // The turn's clock sits in the title, so a phone never has to scroll to it (Yozi 2026-11-24).
+    this.clockEl = el('span', 'bg-clock');
+    title.append(this.clockEl);
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
@@ -774,8 +788,6 @@ export class BoardGamesUI {
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
-    this.clockEl = el('div', 'bg-clock');
-    c.append(this.clockEl);
     this.paintClock();
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
@@ -1175,9 +1187,9 @@ export class BoardGamesUI {
       if (this.view) scene.append(this.view.el);
     }
     // A hand of cards as a fan: each card turned a little more, on an arc.
-    const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false }) => {
+    const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false, less = 0 }) => {
       const fan = el('div', 'bg-fan' + (big ? ' big' : ''));
-      const n = cards.length, w = big ? 50 : 40, room = Math.min(420, (this.card.clientWidth || 480) - 64);
+      const n = cards.length, w = big ? 50 : 40, room = Math.min(420, (this.card.clientWidth || 480) - 64) - less;
       const step = n > 1 ? Math.min(w - 8, (room - w) / (n - 1)) : 0, turn = Math.min(6, 44 / Math.max(1, n - 1));
       cards.forEach((card, i) => {
         const b = faces ? this.cardFace(card) : el('button', 'bg-card1 back');
@@ -1194,6 +1206,15 @@ export class BoardGamesUI {
       });
       return fan;
     };
+    // A hand's one button: under it in the big panel; beside it at a café
+    // table, where the panel stays short so the face across the table shows (Yozi 2026-11-24).
+    const BESIDE = 124;
+    const beside = (fan, button) => {
+      const row = el('div', p.world ? 'bg-pickrow' : 'bg-row');
+      row.style.justifyContent = 'center';
+      if (p.world) { fan.replaceWith(row); row.append(fan); } else scene.append(row);
+      row.append(button);
+    };
     const who = (s) => {
       const box = el('div', 'bg-who');
       const face = p.faces?.[s];
@@ -1208,43 +1229,38 @@ export class BoardGamesUI {
       scene.append(who(mine ? g.turn : from));
       if (mine) {
         // Their finger hovers over my cards: I hold them up and see which one.
-        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true });
+        const canMix = !g.mixed && g.hands[p.seat].length > 1;
+        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true, less: p.world && canMix ? BESIDE : 0 });
         fan.dataset.hand = 'from';
         fan.classList.add('mine');
         scene.append(fan);
-        if (!g.mixed && g.hands[p.seat].length > 1) {
+        if (canMix) {
           // Once a turn I may shuffle, so they cannot follow a card.
           const mix = el('button', 'bg-btn', L(T.shuffle));
           mix.type = 'button';
           mix.dataset.act = 'mix';
           mix.onclick = () => this.myMove(['m']);
-          const row = el('div', 'bg-row');
-          row.style.justifyContent = 'center';
-          row.append(mix);
-          scene.append(row);
+          beside(fan, mix);
         }
         c.append(scene);
         return;
       }
-      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null });
+      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null, less: p.world && myTurn ? BESIDE : 0 });
       fan.dataset.hand = 'from';
       scene.append(fan);
       if (myTurn) {
-        const row = el('div', 'bg-row');
-        row.style.justifyContent = 'center';
         const draw = el('button', 'bg-btn bg-go', L(T.drawCard));
         draw.type = 'button';
         draw.dataset.act = 'draw';
         draw.disabled = g.sel < 0;
         draw.onclick = () => this.myMove(['t', g.sel]);
-        row.append(draw);
-        scene.append(row);
+        beside(fan, draw);
       }
       }
     }
     if (g.hands[p.seat].length) {
       const table = el('div', 'bg-mine');
-      table.append(el('div', 'bg-sub', L(T.myHand)));
+      if (!p.world) table.append(el('div', 'bg-sub', L(T.myHand)));
       const hand = fanOf(g.hands[p.seat], { faces: true });
       hand.dataset.hand = 'mine';
       table.append(hand);

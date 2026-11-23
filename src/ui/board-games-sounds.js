@@ -5,13 +5,14 @@
 // with the panel.
 //
 // playBoardSound(sfx, kind, game, info): kind is what happened ('move',
-// 'pair', 'ring', 'wrong', 'dice', 'bang', 'win', 'lose'); info.placing: the
+// 'pair', 'ring', 'wrong', 'dice', 'bang', 'win', 'lose', 'tick'); info.placing: the
 // tower fell as the block went on top (the crash comes later).
 export function playBoardSound(sfx, kind, game, info = {}) {
   if (!sfx?.on || !sfx._ctx()) return;
   const tone = (...a) => sfx._tone(...a), hiss = (...a) => sfx._hiss(...a);
   const card = (at = 0) => hiss(at, 0.09, 0.09, 5200, 1800);
   const stone = (at = 0) => { tone(430, at, 0.07, 0.22, 'triangle', 170); hiss(at, 0.03, 0.05, 2600, 900); };
+  if (kind === 'tick') { tone(info.n % 2 ? 1500 : 1150, 0, 0.035, info.mine ? 0.16 : 0.06, 'square', info.n % 2 ? 900 : 700); return; } // (the clock's last seconds; quieter when it is not my turn)
   if (kind === 'win') { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, i === 3 ? 0.5 : 0.16, 0.14, 'triangle')); return; }
   if (kind === 'lose') { [392, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.28, 0.12, 'sine')); return; }
   if (kind === 'dice') { for (let i = 0; i < 7; i++) { const at = i * 0.095 + (i % 2) * 0.025; tone(520 + ((i * 197) % 520), at, 0.05, 0.1 + (i % 3) * 0.03, 'triangle', 300); hiss(at, 0.025, 0.04, 3200, 1500); } return; }
