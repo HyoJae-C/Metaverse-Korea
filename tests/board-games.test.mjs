@@ -234,7 +234,10 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
   assert.ok(g.press(0, 1)); // the first block never falls: no wobble yet
   assert.equal(g.last.bang, false);
   assert.ok(!g.stands(0) && !g.stands(2)); // the sides hold that layer now
-  assert.ok(TOWER_RISK_STEPS.includes(g.risk())); // 1 to 4% more for each block
+  assert.equal(g.risk(), 0); // the first round is safe
+  const w = new Tower({ players: 2, seed: 3 });
+  w.press(0, 1); w.press(1, 4);
+  assert.ok(TOWER_RISK_STEPS.includes(w.risk())); // then 1 to 4% more for each block
   assert.ok(!g.press(1, 1)); // taken
   assert.ok(g.press(1, 0));
   assert.ok(g.over && g.last.bang);

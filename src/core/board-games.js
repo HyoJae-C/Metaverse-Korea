@@ -692,7 +692,9 @@ export class Tower {
     const fall = this.rand() < this.risk(), more = TOWER_RISK_STEPS[Math.floor(this.rand() * TOWER_RISK_STEPS.length)];
     const bang = !this.stands(spot) || fall;
     this.pressed.push(spot);
-    this.wobble = Math.round((this.wobble + more) * 100) / 100;
+    // The first time round the table is safe (Yozi 2026-11-23: with four
+    // players it fell on the second round): wobble builds from the next block.
+    if (this.pressed.length >= this.n) this.wobble = Math.round((this.wobble + more) * 100) / 100;
     this.last = { p, spot, bang };
     if (bang) { this.loser = p; this.over = true; return true; }
     this.turn = this.nextIn(p);
