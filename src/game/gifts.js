@@ -29,9 +29,11 @@ export function createGifts(game) {
     const itemId = product.item || product.outfit;
     const it = itemId && ITEMS[itemId];
     if (it?.secs) return null; // limited-time clothes: not a gift (they'd run out)
-    // A lamp, a pot plant or other furniture: the friend gets the piece itself
-    // for their home (not a souvenir in the bag), with a receipt like clothes.
-    const home = product.furniture && ITEMS[product.furniture]?.furniture ? product.furniture : null;
+    // Anything for a home (furniture, a pot plant, a lamp, wallpaper or a
+    // floor; the same test the shop's buy button uses): the friend gets the
+    // piece itself, not a souvenir in the bag, with a receipt like clothes.
+    // (Wallpaper and floors used to arrive as a bag souvenir, 2026-11-23.)
+    const home = product.furniture && ITEMS[product.furniture] ? product.furniture : null;
     if (home) return howToGet(store) === 'soon' ? null : { coins: coinsFor(product.price), icon: ITEMS[home].emoji || '🪴', name, item: home };
     if (it?.wear) return it.price > 0 ? { coins: it.price, icon: it.emoji || '👕', name, item: itemId } : null;
     const how = howToGet(store);
@@ -142,7 +144,7 @@ export function createGifts(game) {
       // The receipt: once the giver's game has told the server (a few tries).
       for (const ms of [8000, 30000, 90000]) setTimeout(() => game.giftReceipts?.sync(inventory, game.receipts, ITEMS).catch(() => {}), ms);
       if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();
-      shop.toast(fmt(L(ITEMS[g.item]?.furniture ? GIFT_TEXT.gotHome : GIFT_TEXT.gotItem), { item, name: c.name }));
+      shop.toast(fmt(L(ITEMS[g.item]?.wear ? GIFT_TEXT.gotItem : GIFT_TEXT.gotHome), { item, name: c.name }));
     } else {
       if (!bag.add(g.entry)) { game.net.sendEmote(giftMsg('no', c.from, gid, 'full')); shop.toast(fmt(L(GIFT_TEXT.mineFull), { name: c.name })); return; }
       shop.toast(fmt(L(GIFT_TEXT.gotBag), { item, name: c.name }));

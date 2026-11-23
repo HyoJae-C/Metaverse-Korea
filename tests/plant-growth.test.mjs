@@ -79,3 +79,13 @@ test('furniture received as a gift gets its receipt', async () => {
   assert.equal(n, 1);
   assert.deepEqual(got[0].slice(0, 3), ['plant-dragon', 600, 'op-1']);
 });
+
+test('wallpaper, floors and lamps received as a gift get their receipt too', async () => {
+  const lamp = Object.keys(ITEMS).find((id) => ITEMS[id].lamp);
+  const ids = ['wall-white', 'floor-marble', lamp];
+  const rows = ids.map((item, i) => ({ item, price: 60000, op: 'op-' + i }));
+  const wallet = { server: true, flush: async () => true, client: { rpc: async (fn) => ({ data: fn === 'my_gifts' ? rows : null }) } };
+  const got = [], r = new GiftReceipts({ wallet, storage: store() });
+  assert.equal(await r.sync({ has: (id) => ids.includes(id) }, { paid: () => 0, record: (...a) => got.push(a) }, ITEMS), 3);
+  assert.deepEqual(got.map((a) => a[0]), ids);
+});
