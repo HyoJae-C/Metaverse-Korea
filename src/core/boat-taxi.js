@@ -190,7 +190,7 @@ export function boatPose(route, lens, piers, s, dir, boatW = 4, o = BOAT_TAXI) {
       const d = Math.abs(s - p.s);
       if (d >= 110) continue;
       const k = d <= 15 ? 1 : 1 - (d - 15) / 95, f = k * k * (3 - 2 * k);
-      const ux = Math.cos(p.ry) * (boatW + 0.6), uz = -Math.sin(p.ry) * (boatW + 0.6); // (the deck's river side)
+      const ux = Math.cos(p.ry) * (boatW + 1.2), uz = -Math.sin(p.ry) * (boatW + 1.2); // (the deck's river side; 1.2 m clear of the boat at the berth, so two boats at one pier are over 5 m apart)
       ox += (ux - ox) * f; oz += (uz - oz) * f;
     }
     x += ox; z += oz;

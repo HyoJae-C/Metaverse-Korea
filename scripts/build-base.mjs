@@ -221,6 +221,26 @@ export function buildBase({ region, maps, data }) {
     }
   }
 
+  // One bridge, one road: two base roads that end on the water within 16 m
+  // of each other (a bridge whose name changes halfway, like Dongho Bridge:
+  // Dongho-ro and Nonhyeon-ro) are joined, so the bridge is whole from bank
+  // to bank (core/han-bridges.js raises a road that crosses the boat line).
+  for (let again = true; again;) {
+    again = false;
+    for (let i = 0; i < roads.length && !again; i++) for (let j = 0; j < roads.length && !again; j++) {
+      if (i === j || roads[i].k !== roads[j].k) continue;
+      const a = roads[i].p.at(-1);
+      for (const rev of [false, true]) {
+        const q = rev ? roads[j].p.slice().reverse() : roads[j].p, b = q[0];
+        if (Math.hypot(a[0] - b[0], a[1] - b[1]) > 16 || !inRawWater(a) || !inRawWater(b)) continue;
+        roads[i] = { ...roads[i], p: roads[i].p.concat(q) };
+        roads.splice(j, 1);
+        again = true;
+        break;
+      }
+    }
+  }
+
   // --- Water and green -----------------------------------------------------
   const boxes = [];
   for (const d of parts) for (const b of mapParts(d.map, d.offset || [0, 0])) if (Number.isFinite(b.x0)) boxes.push([[[b.x0 - BOX_PAD, b.z0 - BOX_PAD], [b.x1 + BOX_PAD, b.z0 - BOX_PAD], [b.x1 + BOX_PAD, b.z1 + BOX_PAD], [b.x0 - BOX_PAD, b.z1 + BOX_PAD]]]);

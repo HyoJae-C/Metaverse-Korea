@@ -9,9 +9,9 @@
 //
 // Only the real piers in districts that are built are used (Yozi
 // 2026-11-18: Mangwon, Yeouido, Apgujeong, Seoul Forest, Ttukseom, Jamsil;
-// Magok added 2026-11-23 with the Seoul Botanic Park; no Oksu yet). To add
-// one when its district is built (Oksu, way 1418419418, is already in the OSM
-// file), add a line to PIERS in west-to-east order and run this again.
+// Magok added 2026-11-23 with the Seoul Botanic Park, Oksu the same day with
+// Dalmaji Park). To add one when its district is built, add a line to PIERS
+// in west-to-east order and run this again.
 //
 // Each pier: the real terminal's footprint (its centre and size at 1/4,
 // turned along the river), a gangway straight to the nearest bank of the
@@ -41,6 +41,10 @@ export const PIERS = [
   { id: 'yeouido', osm: 1441742055, name: { ko: '여의도', en: 'Yeouido', ja: '汝矣島', zh: '汝矣岛' } },
   // (really in Jamwon Han River Park, by Hannam Bridge's south end)
   { id: 'apgujeong', osm: 1418419409, name: { ko: '압구정', en: 'Apgujeong', ja: '狎鴎亭', zh: '狎鸥亭' } },
+  // (below Oksu Station, for Dalmaji Park: added 2026-11-23 with the park)
+  // (8 m west along the bank of the real spot, which is right beside Dongho
+  // Bridge's north end: there the boat's bow would lie under the bridge's ramp)
+  { id: 'oksu', osm: 1418419418, west: 8, name: { ko: '옥수', en: 'Oksu', ja: '玉水', zh: '玉水' } },
   { id: 'seoul-forest', osm: 1458956838, name: { ko: '서울숲', en: 'Seoul Forest', ja: 'ソウルの森', zh: '首尔林' } },
   { id: 'ttukseom', osm: 1418419412, name: { ko: '뚝섬', en: 'Ttukseom', ja: 'トゥクソム', zh: '纛岛' } },
   { id: 'jamsil', osm: 1418419415, name: { ko: '잠실', en: 'Jamsil', ja: '蚕室', zh: '蚕室' } },
@@ -161,7 +165,8 @@ export async function buildBoatTaxi() {
     const along = [-out[1], out[0]];
     // Off the bank by at least BANK_GAP of water.
     const need = w / 2 + BANK_GAP, push = Math.max(0, need - bank.d);
-    const c = [cx + out[0] * push, cz + out[1] * push];
+    const wk = pr.west ? (along[0] < 0 ? pr.west : -pr.west) : 0; // (along the bank, to the west)
+    const c = [cx + out[0] * push + along[0] * wk, cz + out[1] * push + along[1] * wk];
     const ry = Math.atan2(along[0], along[1]); // the deck's long side (local z) along the river
     const corner = (u, v) => [c[0] + along[0] * u + out[0] * v, c[1] + along[1] * u + out[1] * v];
     const dock = [corner(-l / 2, -w / 2), corner(l / 2, -w / 2), corner(l / 2, w / 2), corner(-l / 2, w / 2)].map(pt);
@@ -173,7 +178,7 @@ export async function buildBoatTaxi() {
       id: pr.id, name: pr.name, osm: pr.osm,
       at: pt(c), ry: Math.round(ry * 1000) / 1000, l, w, gap: r1(gap),
       off: r1(Math.hypot(c[0] - cx, c[1] - cz)), // from the real terminal's middle (m)
-      ...(push > 0.05 ? { why: `Moved ${r1(push)} m out from the real spot, so the deck clears the bank by ${BANK_GAP} m.` } : {}),
+      ...(pr.west ? { why: `Moved ${pr.west} m west along the bank from the real spot, clear of the bridge beside it.` } : push > 0.05 ? { why: `Moved ${r1(push)} m out from the real spot, so the deck clears the bank by ${BANK_GAP} m.` } : {}),
       dock, gang, berth: pt(berth), board: pt(corner(0, w / 2 - 1)), // where you stand to get on
       land: pt(corner(0, -w / 2 - gap - INLAND + 0.6)), // the gangway's foot, on the bank
     };

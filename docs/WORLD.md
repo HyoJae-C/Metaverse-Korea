@@ -1319,3 +1319,19 @@ domestic terminal reads 김포국제공항. The terminals, runways and planes lo
 where OSM has them. What is made up is listed in the district's
 `meta.approx`. The Seoul Botanic Park (Magok) is a separate district east of
 x -5,280.
+
+## Oksu: Dalmaji Park (2026-11-23)
+
+`scripts/build-oksu.mjs` writes `districts/oksu.json`: Dalmaji Park
+(달맞이근린공원), the wooded hill over the Han by Oksu Station, at 1/4 on
+OSM's wood outline, its height from SRTM above Ttukseom-ro at 1/4 (peak
+14.5 m: halfway between SRTM's 13 m and the 16 m the articles give). Every OSM footway, path and stair in the wood is one network
+(`dalmaji` landmark trails): where two meet they share a height, paths stay
+under about 20° and stairs under about 33°. Ways and the two photo islands
+are decks through the hill's blocker (`game/oksu-walk.js`, first download);
+woods, railings, lamps, gazebos and forsythia (yellow in spring by the real
+date) load near (`game/oksu-park.js`). Made-up things are in `meta.approx`.
+The Han River Boat Taxi calls at Oksu (`build-boat-taxi.mjs`, 8 m west of the
+real pier to clear Dongho Bridge, which `build-base.mjs` joins into one road
+across the river so it is raised for the boats).
+After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.

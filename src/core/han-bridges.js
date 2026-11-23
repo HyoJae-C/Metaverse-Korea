@@ -102,6 +102,25 @@ export function raiseHanBridges(map, route, paths = [route]) {
         }
       }
     }
+    // (A boat that crosses at a slant is under the deck's edge well before
+    // its middle line: Dongho Bridge by the Oksu pier, 2026-11-23. So every
+    // spot of the boats' lines under the deck counts, not only the crossing.)
+    const half = ((r.w || 14) + 1) / 2 + 2;
+    for (const path of paths) {
+      for (let j = 1; j < path.length; j++) {
+        const [px, pz] = path[j - 1], L = Math.hypot(path[j][0] - px, path[j][1] - pz), n = Math.max(1, Math.ceil(L / 2));
+        for (let k = 0; k < n; k++) {
+          const x = px + (path[j][0] - px) * k / n, z = pz + (path[j][1] - pz) * k / n;
+          for (let i = 1; i < r.p.length; i++) {
+            const dx = r.p[i][0] - r.p[i - 1][0], dz = r.p[i][1] - r.p[i - 1][1], l2 = dx * dx + dz * dz;
+            if (!l2) continue;
+            const t = ((x - r.p[i - 1][0]) * dx + (z - r.p[i - 1][1]) * dz) / l2;
+            if (t < 0 || t > 1) continue;
+            if (Math.abs((x - r.p[i - 1][0]) * dz - (z - r.p[i - 1][1]) * dx) / Math.sqrt(l2) <= half) hits.push(lens[i - 1] + t * (lens[i] - lens[i - 1]) - a);
+          }
+        }
+      }
+    }
     const first = Math.min(...hits.filter((h) => h > 0 && h < blen)), last = Math.max(...hits.filter((h) => h > 0 && h < blen));
     const ramp = [Math.max(14, Math.min(RAMP, blen / 3, (first - 6) / 0.8)), Math.max(14, Math.min(RAMP, blen / 3, (blen - last - 6) / 0.8))];
     bridges.push({ name, en: r.n?.en || '', w: (r.w || 14) + 1, pts, len: blen, top: TOP, ramp, low: jamsu ? JAMSU.low : 0, jamsu, mid: sc - a, d: r.d });
