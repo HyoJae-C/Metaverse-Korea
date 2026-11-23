@@ -8,6 +8,7 @@
 import { localName, getLanguage } from '../core/i18n.js';
 import { createCharacter } from '../core/character.js';
 import { furnitureById } from '../core/furniture.js';
+import { BOARD_SETS_ON_SALE } from '../core/board-game-sets.js';
 
 const L = (o) => localName(o, getLanguage());
 export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', hi: 'बोर्ड गेम', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
@@ -36,7 +37,7 @@ export function createBoardGames(game) {
       // The café has every game; a home, the ones whose sets stand in it.
       games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'onecard') : [...new Set(homeSets().map((s) => s.game))]),
       // The café sells the sets: the shop's own buying sheet (the money is asked for and written down there).
-      sets: () => (cafe() ? (game.interior.store?.products || []).filter((pr) => furnitureById(pr.furniture)?.boardgame).map((pr) => ({
+      sets: () => (BOARD_SETS_ON_SALE && cafe() ? (game.interior.store?.products || []).filter((pr) => furnitureById(pr.furniture)?.boardgame).map((pr) => ({
         id: furnitureById(pr.furniture).boardgame, label: game.priceLabel(pr.price), owned: !!game.owns?.(pr.furniture),
         buy: () => { ui.close(); game.shop.store = game.interior.store; game.shop.openProduct(pr); },
       })) : []),

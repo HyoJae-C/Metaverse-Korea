@@ -38,19 +38,28 @@ await page.evaluate(() => __mk.place(-5.15, 2.4)); // behind a free chair at the
 const acts = (re) => page.evaluate((src) => { const r = new RegExp(src); const i = (__mk.choices() || []).findIndex((l) => r.test(l)); if (i >= 0) __mk.pick(i); else __mk.act(); }, re);
 await page.waitForFunction(() => [__mk.action(), ...(__mk.choices() || [])].some((l) => /Board games/.test(l || '')), null, { timeout: 15000 });
 await acts('Board games');
-await page.waitForSelector('#bg-panel.on [data-set="croc"]', { timeout: 20000 });
-assert(await page.locator('#bg-panel [data-set]').count() === 8, 'eight sets on sale in the panel');
-assert(/✓/.test(await page.textContent('#bg-panel [data-set="omok"]')), 'the one I own is ticked');
-if (S) await page.screenshot({ path: `${S}/home-sets-on-sale.png` });
-await page.click('#bg-panel [data-set="croc"]');
-await page.waitForSelector('#product-panel:not([hidden])', { timeout: 10000 });
-if (S) { await wait(400); await page.screenshot({ path: `${S}/home-set-buy-sheet.png` }); }
-const buy = await page.evaluate(() => [...document.querySelectorAll('#product-panel button')].filter((b) => !b.hidden && b.offsetParent && /40,000/.test(b.textContent)).map((b) => b.id)[0]);
-assert(!!buy, 'the croc toy costs 40,000');
-await page.click('#' + buy);
-await page.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 }).catch(() => {});
-await page.waitForFunction(() => __mk.owns('bg-croc'), null, { timeout: 8000 }).catch(() => {});
-assert(await page.evaluate(() => __mk.owns('bg-croc')), 'bought: the croc set is mine');
+await page.waitForSelector('#bg-panel.on', { timeout: 20000 });
+await wait(800);
+// The sets are off sale for now (core/board-game-sets.js BOARD_SETS_ON_SALE): then the panel lists none.
+const onSale = await page.locator('#bg-panel [data-set]').count();
+if (!onSale) {
+  assert(true, 'the sets are not on sale for now');
+  await page.evaluate(() => window.__bgUi?.close?.());
+} else {
+  await page.waitForSelector('#bg-panel.on [data-set="croc"]', { timeout: 20000 });
+  assert(await page.locator('#bg-panel [data-set]').count() === 8, 'eight sets on sale in the panel');
+  assert(/✓/.test(await page.textContent('#bg-panel [data-set="omok"]')), 'the one I own is ticked');
+  if (S) await page.screenshot({ path: `${S}/home-sets-on-sale.png` });
+  await page.click('#bg-panel [data-set="croc"]');
+  await page.waitForSelector('#product-panel:not([hidden])', { timeout: 10000 });
+  if (S) { await wait(400); await page.screenshot({ path: `${S}/home-set-buy-sheet.png` }); }
+  const buy = await page.evaluate(() => [...document.querySelectorAll('#product-panel button')].filter((b) => !b.hidden && b.offsetParent && /40,000/.test(b.textContent)).map((b) => b.id)[0]);
+  assert(!!buy, 'the croc toy costs 40,000');
+  await page.click('#' + buy);
+  await page.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => __mk.owns('bg-croc'), null, { timeout: 8000 }).catch(() => {});
+  assert(await page.evaluate(() => __mk.owns('bg-croc')), 'bought: the croc set is mine');
+}
 if (!(await page.isHidden('#product-panel'))) await page.keyboard.press('Escape');
 
 // Home: by the tower set, start a game.

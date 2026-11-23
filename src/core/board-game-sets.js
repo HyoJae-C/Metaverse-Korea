@@ -5,6 +5,9 @@
 // and friends gather at a home easily (Yozi). Each is a low play table with
 // the game laid out on it; shapes and names are our own.
 // [furniture id, game id (core/board-games.js), emoji, price (won), name, build(box)]
+// Off for now (Yozi 2026-11-23): people should meet outside at the café for a
+// while, so the café doesn't sell the sets. Set to true to sell them again.
+export const BOARD_SETS_ON_SALE = false;
 const WOOD = '#b98a58', LEG = '#7a5232';
 const N = (en, ko, ja, zh) => ({ en, ko, ja, zh });
 // box(sx, sy, sz, x, y, z, colour); the table top is at 0.42.
