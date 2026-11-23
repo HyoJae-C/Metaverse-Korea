@@ -31,6 +31,8 @@ const tt = (k, v) => fmt(L(T[k]), v);
 const BOT = '~';
 const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
+const TURN_MS = 30000; // a turn nobody takes is played for them after this (the host's clock)
+const TURN_WARN = 10; // the last seconds are counted down on screen
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
@@ -54,6 +56,7 @@ const CSS = `
 #bg-panel .bg-go { background: #ffd36b; }
 #bg-panel .bg-line { padding: 6px 0; }
 #bg-panel .bg-status { min-height: 22px; margin: 8px 0; text-align: center; }
+#bg-panel .bg-clock { text-align: center; font-size: 18px; font-weight: 800; color: #e8402a; }
 #bg-panel .bg-seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
 #bg-panel .bg-seat { padding: 4px 10px; border-radius: 999px; background: #efe4cf; font-size: 13px; }
 #bg-panel .bg-seat.on { background: #ffd36b; }
@@ -257,6 +260,7 @@ export class BoardGamesUI {
     gid ||= (seed % 1e9).toString(36);
     if (hostId === this.net.myId && humans.length) this.net.send(bgGo(gid, game, seed, ids, opt));
     this.play = { gid, game, opt, g: newGame(game, ids.length, seed, opt), ids, seat: ids.indexOf(this.net.myId), hostId, seed, names: ids.map((id) => this.nameFor(id)) };
+    this.play.turnAt = performance.now();
     this.host = null;
     this.onGame(game);
     this.state = 'play';
@@ -392,6 +396,7 @@ export class BoardGamesUI {
 
   after(seat, act) {
     const p = this.play;
+    if (act[0] !== 's') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
     if (act[0] === 'l') {
       (p.gone ||= [])[seat] = true;
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
@@ -456,6 +461,11 @@ export class BoardGamesUI {
     }
     const p = this.play;
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
+    if (p && this.clockEl?.isConnected) {
+      const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
+      const text = left <= TURN_WARN ? `⏳ ${Math.max(0, left)}` : '';
+      if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    }
     if (!p || p.g.over || p.hostId !== this.net.myId) return;
     // The computer players (the host runs them).
     const g = p.g;
@@ -469,10 +479,25 @@ export class BoardGamesUI {
       }
     } else if (p.game === 'fruitbell') p.bellAt = null;
     const turn = turnOf(g);
-    if (turn < 0 || p.ids[turn] !== BOT) return;
+    if (turn < 0) return;
+    if (p.ids[turn] !== BOT) {
+      // A person who lets the clock run out: the move is made for them, so
+      // one player stepping away cannot hold the table up.
+      if (now - p.turnAt > TURN_MS + 1500) {
+        if (p.game === 'thief' && g.sel < 0) this.hostApply(turn, ['s', g.botMove(this.rand)]);
+        this.moveFor(turn);
+      }
+      return;
+    }
     p.thinkAt ??= between(BOT_THINK, this.rand);
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
+    this.moveFor(turn);
+  }
+
+  // A move made by the host for a seat: the computer's, or a person's whose time ran out.
+  moveFor(turn) {
+    const p = this.play, g = p.g;
     if (p.game === 'omok') { const [x, y] = g.botMove(this.rand); this.hostApply(turn, ['o', x, y]); }
     else if (p.game === 'fruitbell') this.hostApply(turn, ['f']);
     else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
@@ -595,6 +620,8 @@ export class BoardGamesUI {
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
+    this.clockEl = el('div', 'bg-clock');
+    c.append(this.clockEl);
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
       FACES.forEach((f, n) => {
