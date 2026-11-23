@@ -48,20 +48,45 @@ export function createWrapGifts(game) {
   const sheets = () => bag.list()[letterAt()]?.sips || 0;
 
   // ---- In the shop ----
-  const canWrap = (product) => !!game.gifts.giftFor(game.gifts.storeNow(), product);
+  let paying = false; // (waiting for the server to take a box's payment)
+  const canWrap = (product) => {
+    const ok = !!game.gifts.giftFor(game.gifts.storeNow(), product);
+    if (ok) game.gifts.gate?.check();
+    return ok;
+  };
+  // A box is a gift: only accounts that may send gifts wrap one (core/gift-gate.js).
   function wrap(store, product) {
+    if (!game.gifts.giftFor(store, product)) return;
+    const gate = game.gifts.gate;
+    if (gate) gate.gate(t, (m) => shop.toast(m, 4500), () => wrapNow(store, product));
+    else wrapNow(store, product);
+  }
+  function wrapNow(store, product) {
     const g = game.gifts.giftFor(store, product);
     if (!g) return;
     if (bag.full) { shop.toast(t('wrap.bagFull')); return; }
     const pay = (lt) => {
       if (bag.full) { shop.toast(t('wrap.bagFull')); return; }
-      if (!game.wallet.spend(g.coins, { name: localName(g.name, 'en').slice(0, 40), at: WRAP_AT })) { shop.toast(t('wrap.poor', { n: g.coins })); return; }
+      if (paying) return;
+      const note = { name: localName(g.name, 'en').slice(0, 40), at: WRAP_AT };
+      if (!game.wallet.spend(g.coins, note)) { shop.toast(t('wrap.poor', { n: g.coins })); return; }
       game.refreshWallet();
-      const box = { kind: 'wrap', w: newWrapId(), s: store.id, p: product.id, c: g.coins, op: game.wallet.lastOp || null };
-      if (lt && useSheet()) box.lt = lt;
-      bag.add(box);
-      game.sfx.pop?.();
-      shop.toast(t(box.lt ? 'wrap.boughtLetter' : 'wrap.bought', { item: nameOf(g) }));
+      const op = game.wallet.lastOp || null;
+      // The box goes in the bag once the server has taken the payment: its
+      // receipt is that payment (Yozi 2026-11-24: never a gift with no receipt).
+      paying = true;
+      const boxed = (ok) => {
+        paying = false;
+        if (!ok) return;
+        if (bag.full) { game.wallet.refund(g.coins, op, note); game.refreshWallet(); shop.toast(t('wrap.bagFull')); return; }
+        const box = { kind: 'wrap', w: newWrapId(), s: store.id, p: product.id, c: g.coins, op };
+        if (lt && useSheet()) box.lt = lt;
+        bag.add(box);
+        game.sfx.pop?.();
+        shop.toast(t(box.lt ? 'wrap.boughtLetter' : 'wrap.bought', { item: nameOf(g) }));
+      };
+      if (game.gifts.paidFor) game.gifts.paidFor(op, g.coins, note.name, boxed);
+      else boxed(true);
     };
     shop.closeProduct();
     if (!sheets()) { pay(''); return; }

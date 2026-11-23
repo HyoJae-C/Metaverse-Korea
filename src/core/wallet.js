@@ -149,6 +149,7 @@ export class Wallet {
     this.client = null;
     this.welcomed = 0; // welcome money the server gave on opening
     this.lastOp = null; // the id of the last change (for a refund later)
+    this._said = new Map(); // op id → what the server said ('ok', 'poor', 'young'…), the last 100
     // The share second-hand shops pay for clothes (core/resale.js): the
     // server's when it has one, null when its SQL (017_resale.sql) isn't run.
     this.resellPct = RESELL_PCT;
@@ -384,6 +385,15 @@ export class Wallet {
     this._notify();
   }
 
+  // What the server said about payment `op` once it has it: 'ok', or why
+  // not ('poor', 'young': a gift from an account not allowed to send one,
+  // supabase/073), or 'offline' (not reached). No server wallet: 'ok'.
+  async verdict(op) {
+    if (!this.s) return 'ok';
+    if (!op || !(await this.flush())) return 'offline';
+    return this._said.get(String(op)) || 'offline'; // (no answer kept for it: not sure, so not paid)
+  }
+
   // Send the waiting ops now. Resolves true when the server has all of them.
   async flush() {
     if (!this.s || !this.client) return false;
@@ -410,6 +420,8 @@ export class Wallet {
     // payment it refused): a line for the difference, so the budget book
     // adds up to the balance.
     const got = new Map((Array.isArray(data.results) ? data.results : []).map((r) => [String(r?.id), Number(r?.n)]));
+    for (const r of Array.isArray(data.results) ? data.results : []) if (r?.id) this._said.set(String(r.id), r.status ? String(r.status) : Number(r.n) ? 'ok' : 'no');
+    while (this._said.size > 100) this._said.delete(this._said.keys().next().value);
     for (const o of ops) {
       const n = got.get(o.id);
       if (!Number.isFinite(n)) continue;

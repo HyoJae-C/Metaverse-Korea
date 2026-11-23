@@ -428,3 +428,30 @@ test('signed in but the server wallet did not answer: asks again soon instead of
   assert.deepEqual([w.log.at(-1).n, w.log.at(-1).note?.k], [WELCOME_COINS - 5003850, 'ledger.sync'], 'the change is in the book');
   assert.equal(w._reTimer, null, 'no more retries');
 });
+
+test('a gift waits for the server to take its payment (never a gift with no receipt)', async () => {
+  assert.equal(await fresh().verdict('x'), 'ok', 'no server wallet: nothing to wait for');
+  fresh();
+  const srv = fakeServer();
+  const w = new Wallet(cfg);
+  await w.connect(srv.cloud);
+  assert.ok(w.spend(1000, null, { ask: false }));
+  assert.equal(await w.verdict(w.lastOp), 'ok');
+  // The server refuses it (073: an account that may not send gifts yet).
+  const apply = srv.client.rpc;
+  srv.client.rpc = async (fn, args) => {
+    if (fn !== 'wallet_apply') return apply(fn, args);
+    const r = await apply(fn, args);
+    r.data.results = r.data.results.map((x) => ({ ...x, n: 0, status: 'young' }));
+    return r;
+  };
+  assert.ok(w.spend(1000, null, { ask: false }));
+  assert.equal(await w.verdict(w.lastOp), 'young');
+  srv.client.rpc = apply;
+  srv.down = true;
+  assert.ok(w.spend(1000, null, { ask: false }));
+  assert.equal(await w.verdict(w.lastOp), 'offline');
+  srv.down = false; // (back up, so the retries stop)
+  assert.equal(await w.flush(), true);
+  clearTimeout(w._timer);
+});

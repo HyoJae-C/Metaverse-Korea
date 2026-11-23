@@ -17,7 +17,8 @@ import { ITEMS } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { SPRAYS, onSale } from '../core/perfume.js';
 import { coinsFor, goodsKind, howToGet, itemSoon } from '../ui/shop-ui.js';
-import { getLanguage, localName } from '../core/i18n.js';
+import { getLanguage, localName, t } from '../core/i18n.js';
+import { GiftGate } from '../core/gift-gate.js';
 import { heldFor } from '../ui/counter-ui.js';
 
 export function createGifts(game) {
@@ -71,8 +72,31 @@ export function createGifts(game) {
   const isFriend = (name) => chat?.friendStatus?.(name) === 'friend';
   let street = false; // the picker was opened at a street stand
   // The button shows with anyone here, so a player learns gifts are for friends.
-  const canGift = (product) => !!giftFor(storeNow(), product) && peopleHere().length > 0;
+  // Only accounts 7 days old with 35 daily missions send gifts (core/gift-gate.js).
+  const gate = new GiftGate({ wallet: () => game.wallet });
+  const canGift = (product) => {
+    const ok = !!giftFor(storeNow(), product) && peopleHere().length > 0;
+    if (ok) gate.check(); // (asked while the card is open, so the tap needn't wait)
+    return ok;
+  };
+  let paying = false; // (waiting for the server to take a gift's payment)
+  // Did the server take gift payment `op`? ok(true) when it did. Not allowed
+  // ('young'): the server moved no coins; said why. Not reached: given back.
+  function paidFor(op, coins, name, ok) {
+    game.wallet.verdict(op).then((v) => {
+      refreshWallet();
+      if (v === 'ok') { ok(true); return; }
+      if (v === 'offline') { game.wallet.refund(coins, op, { name, at: GIFT_TEXT.refund }); refreshWallet(); shop.toast(t('gift.offline'), 4000); ok(false); return; }
+      gate.w = undefined; // (ask again: the server says no)
+      gate.gate(t, (m) => shop.toast(m, 4500), () => shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })));
+      ok(false);
+    }, () => ok(false));
+  }
   function startGift(store, product) {
+    if (!giftFor(store, product)) return;
+    gate.gate(t, (m) => shop.toast(m, 4500), () => openPicker(store, product));
+  }
+  function openPicker(store, product) {
     const g = giftFor(store, product);
     if (!g) return;
     const name = localName(g.name, getLanguage());
@@ -87,12 +111,22 @@ export function createGifts(game) {
       const why = gifts.why(to.id);
       if (why) { shop.toast(fmt(L(GIFT_TEXT[why]), { name: to.name, n: GIFTS_PER_DAY })); return; }
       if (!game.others.players.has(to.id)) { shop.toast(L(GIFT_TEXT.nobody)); return; }
+      if (paying) return;
       if (!game.wallet.spend(g.coins, { name: g.name, at: GIFT_TEXT.ledger })) { shop.toast(fmt(L(DINE_TEXT.poor), { n: g.coins })); return; }
       refreshWallet();
-      const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins, paid: game.wallet.lastOp });
-      game.net.sendEmote(giftMsg('offer', to.id, gid, store.id, product.id));
-      game.sfx.pop?.();
-      shop.toast(fmt(L(GIFT_TEXT.sent), { name: to.name }));
+      const paid = game.wallet.lastOp;
+      // The offer goes only once the server has taken the payment, so a
+      // friend never gets something with no receipt (Yozi 2026-11-24).
+      paying = true;
+      paidFor(paid, g.coins, g.name, (ok) => {
+        paying = false;
+        if (!ok) return;
+        if (!game.others.players.has(to.id)) { refundGift({ coins: g.coins, paid, name: to.name, store: store.id, product: product.id }, 'gone'); return; }
+        const gid = gifts.send({ to: to.id, name: to.name, store: store.id, product: product.id, coins: g.coins, paid });
+        game.net.sendEmote(giftMsg('offer', to.id, gid, store.id, product.id));
+        game.sfx.pop?.();
+        shop.toast(fmt(L(GIFT_TEXT.sent), { name: to.name }));
+      });
     });
   }
   function refundGift(g, reason) {
@@ -166,5 +200,5 @@ export function createGifts(game) {
     if (stale.length) showGiftCards();
     if (giftUi.open && !game.interior && !street) giftUi.close();
   }, 1000);
-  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById, storeNow };
+  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById, storeNow, gate, paidFor };
 }
