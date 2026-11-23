@@ -837,7 +837,7 @@ export const ID = {
   "potato.bought": "Terbeli! Sudah ada di lemarimu.",
   "potato.gone": "Baru saja dibeli orang lain.",
   "potato.own": "Itu ada di tikarmu sendiri.",
-  "potato.young": "Akun baru bisa memakai Potato Market setelah {h} jam.",
+  "potato.young": "Kamu bisa memakai Potato Market setelah akunmu berumur {days} hari dan sudah menyelesaikan {missions} misi harian.",
   "potato.offline": "Belum bisa terhubung ke Potato Market. Coba lagi sebentar lagi.",
   "potato.closed": "Potato Market segera buka. Masuk untuk berjual beli di sini.",
   "potato.onMat": "Di tikarku ({n}/{max})",

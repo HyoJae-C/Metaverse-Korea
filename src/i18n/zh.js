@@ -843,7 +843,7 @@ export const ZH = {
   "potato.bought": "买到了！已放进衣柜。",
   "potato.gone": "刚刚被别人买走了。",
   "potato.own": "这是你自己摊上的衣服。",
-  "potato.young": "新账号{h}小时后才能使用土豆市场。",
+  "potato.young": "注册满{days}天并完成{missions}个每日任务后才能使用土豆市场。",
   "potato.offline": "现在连不上土豆市场，请稍后再试。",
   "potato.closed": "土豆市场即将开放。登录后就能在这里买卖。",
   "potato.onMat": "我的地摊 ({n}/{max})",

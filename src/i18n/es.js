@@ -836,7 +836,7 @@ export const ES = {
   "potato.bought": "¡Comprado! Está en tu armario.",
   "potato.gone": "Alguien acaba de comprarlo.",
   "potato.own": "Eso está en tu propia manta.",
-  "potato.young": "Las cuentas nuevas pueden usar el Potato Market después de {h} horas.",
+  "potato.young": "Podrás usar el Potato Market cuando tu cuenta tenga {days} días y hayas hecho {missions} misiones diarias.",
   "potato.offline": "Ahora no se puede conectar con el Potato Market. Inténtalo en un momento.",
   "potato.closed": "El Potato Market abre pronto. Inicia sesión para comerciar aquí.",
   "potato.onMat": "En mi manta ({n}/{max})",
