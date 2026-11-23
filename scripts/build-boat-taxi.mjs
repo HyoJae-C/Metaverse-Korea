@@ -9,14 +9,14 @@
 //
 // Only the real piers in districts that are built are used (Yozi
 // 2026-11-18: Mangwon, Yeouido, Apgujeong, Seoul Forest, Ttukseom, Jamsil;
-// no Magok or Oksu yet). To add one when its district is built (Oksu, way
-// 1418419418, is already in the OSM file; Magok needs a wider export), add a
-// line to PIERS in west-to-east order and run this again.
+// Magok added 2026-11-23 with the Seoul Botanic Park; no Oksu yet). To add
+// one when its district is built (Oksu, way 1418419418, is already in the OSM
+// file), add a line to PIERS in west-to-east order and run this again.
 //
 // Each pier: the real terminal's footprint (its centre and size at 1/4,
 // turned along the river), a gangway straight to the nearest bank of the
 // joined map, and a berth for the boat on the river side of it. The line is
-// the real ferry route (Jamsil -> Apgujeong -> Yeouido -> Mangwon) cut at the
+// the real ferry route (Jamsil -> Apgujeong -> Yeouido -> Mangwon -> Magok) cut at the
 // two end piers, with each berth spliced in.
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { toGame } from '../src/core/seoul-grid.js';
 import { loadRegionMap } from '../src/core/districts.js';
 import { pointInPoly } from '../src/core/collision.js';
+import { BOAT_TAXI, timetable, boatAt, boatPose, lineLengths } from '../src/core/boat-taxi.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const R = path.join(HERE, '../public/regions/another-seoul');
@@ -32,6 +33,8 @@ const osm = JSON.parse(readFileSync(path.join(HERE, 'data/hangang-bus-osm.json')
 
 // West to east, the way the line runs.
 export const PIERS = [
+  // (across Olympic-daero from the Seoul Botanic Park's north-east corner)
+  { id: 'magok', osm: 1418419406, name: { ko: '마곡', en: 'Magok', ja: '麻谷', zh: '麻谷' } },
   { id: 'mangwon', osm: 1418419420, name: { ko: '망원', en: 'Mangwon', ja: '望遠', zh: '望远' } },
   // (way 1441742055: the unnamed terminal the route lines end at; the named
   // node 13149390539 is 20 m off it, on the same pier)
@@ -52,6 +55,8 @@ const GANG_W = 2.2; // the gangway's width
 const INLAND = 2.5; // the gangway's landing runs this far onto the bank (keeps park props off it)
 const SPLICE = 22; // route points this close (along it) to a berth are replaced by it
 const ALONG = 7; // m of line each side of a berth, alongside the deck
+const KEEP = 12; // m the line keeps off the banks (a boat heading west sails 7 m to its side)
+const KEEP_BERTH = 60; // m along the line from a berth, where it comes in to the bank
 
 const r1 = (v) => Math.round(v * 10) / 10;
 const pt = (p) => [r1(p[0]), r1(p[1])];
@@ -89,6 +94,27 @@ function simplify(p, tol) {
   }
   keep.push(p.at(-1));
   return keep;
+}
+
+// The west end's share of the waits at the two ends (core/boat-taxi.js
+// timetable): the most even one with no two boats closer than APART m all
+// round. (By a pier the boat heading west comes in beside the berth, off its
+// 7 m passing lane, so where the line bends there two boats passing could touch.)
+const APART = 5; // m between two boats' middles (a boat is 4 m wide)
+export function westShare(piers, route, o = BOAT_TAXI) {
+  const lens = lineLengths(route);
+  const closest = (west) => {
+    const tt = timetable(piers, o, west);
+    if (tt.end < o.minEnd) return -Infinity;
+    let min = Infinity;
+    for (let t = 0; t < tt.round; t += 0.5) {
+      const ps = [...Array(tt.boats).keys()].map((b) => { const st = boatAt(tt, piers, b, t); return boatPose(route, lens, piers, st.s, st.dir); });
+      for (let a = 0; a < ps.length; a++) for (let b = a + 1; b < ps.length; b++) min = Math.min(min, Math.hypot(ps[a].x - ps[b].x, ps[a].z - ps[b].z));
+    }
+    return min;
+  };
+  for (let d = 0; d <= 0.45; d += 0.01) for (const w of d ? [0.5 - d, 0.5 + d] : [0.5]) if (closest(w) > APART) return Math.round(w * 100) / 100;
+  throw new Error('no split of the end waits keeps the boats apart');
 }
 
 export async function buildBoatTaxi() {
@@ -176,11 +202,31 @@ export async function buildBoatTaxi() {
     if (!done) keep.push(...put);
     line = keep;
   });
+  // Off the banks: where the line runs closer than KEEP m to one (away from
+  // the berths), a point is put in there, moved out to KEEP m.
+  const berthAt = () => { const l = lineLengths(line); return piers.map((p) => l[line.findIndex((q) => q[0] === p.berth[0] && q[1] === p.berth[1])]); };
+  for (let pass = 0; pass < 50; pass++) {
+    const l = lineLengths(line), bs = berthAt();
+    let worst = null;
+    for (let i = 0; i + 1 < line.length; i++) {
+      const len = l[i + 1] - l[i];
+      for (let t = 2; t < len - 2; t += 2) {
+        if (bs.some((b) => Math.abs(l[i] + t - b) < KEEP_BERTH)) continue;
+        const x = line[i][0] + ((line[i + 1][0] - line[i][0]) * t) / len, z = line[i][1] + ((line[i + 1][1] - line[i][1]) * t) / len;
+        const b = bankOf(x, z);
+        if (b.d < KEEP && (!worst || b.d < worst.b.d)) worst = { i, x, z, b };
+      }
+    }
+    if (!worst) break;
+    const { i, x, z, b } = worst;
+    line.splice(i + 1, 0, pt([x - b.u[0] * (KEEP - b.d), z - b.u[1] * (KEEP - b.d)]));
+  }
   let s = 0;
   const route = line;
   const at = route.map((q, i) => (i ? (s += Math.hypot(q[0] - route[i - 1][0], q[1] - route[i - 1][1])) : 0));
   for (const p of piers) p.s = r1(at[route.findIndex((q) => q[0] === p.berth[0] && q[1] === p.berth[1])]);
   return {
+    west: westShare(piers, route),
     note: "Han River Boat Taxi (한강보트택시): the real Han River Bus (한강버스) piers that are in built districts and its real route at 1/4 (scripts/build-boat-taxi.mjs). dock: the pier's deck; gang: the gangway to the bank; berth: where the boat ties up; s: metres along route.",
     credit: '© OpenStreetMap contributors',
     piers, route,
@@ -191,5 +237,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const out = await buildBoatTaxi();
   writeFileSync(path.join(R, 'boat-taxi.json'), JSON.stringify(out) + '\n');
   for (const p of out.piers) console.log(p.id.padEnd(13), 'at', p.at.join(', '), 'l', p.l, 'w', p.w, 'gap', p.gap, 'off', p.off, 's', p.s, p.why || '');
-  console.log('route', out.route.length, 'points,', Math.round(out.piers.at(-1).s), 'm');
+  console.log('route', out.route.length, 'points,', Math.round(out.piers.at(-1).s), 'm; west end waits', out.west, 'of the two ends\' waits');
 }

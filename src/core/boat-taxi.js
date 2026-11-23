@@ -92,22 +92,26 @@ export function hopAt(h, t, o = BOAT_TAXI) {
 
 // The timetable of one round: legs [{ t0, t1, dir, at (the pier it waits at) | from, to, h (a hop) }],
 // the round's length, how many boats go round, and the wait at each end.
-export function timetable(piers, o = BOAT_TAXI) {
+// west: the west end's share of the two ends' waits (boat-taxi.json "west",
+// scripts/build-boat-taxi.mjs: chosen so no two boats pass each other by a
+// pier, where the one heading west comes in beside the berth).
+export function timetable(piers, o = BOAT_TAXI, west = 0.5) {
   const n = piers.length;
   const hops = [];
   for (let i = 0; i + 1 < n; i++) hops.push(hop(piers[i + 1].s - piers[i].s, o));
   const sail = hops.reduce((a, h) => a + h.time, 0) + (n - 2) * o.dwell; // one way, with the stops on the way
   const boats = Math.ceil((2 * sail + 2 * o.minEnd) / o.every);
-  const round = boats * o.every, end = (round - 2 * sail) / 2;
+  const round = boats * o.every, both = round - 2 * sail;
+  const endW = both * west, endE = both - endW, end = Math.min(endW, endE);
   const legs = [];
   let t = 0;
   const leg = (x, len) => { legs.push({ ...x, t0: t, t1: t + len }); t += len; };
-  leg({ at: 0, dir: 1 }, end);
+  leg({ at: 0, dir: 1 }, endW);
   for (let i = 0; i + 1 < n; i++) {
     leg({ from: i, to: i + 1, dir: 1, h: hops[i] }, hops[i].time);
     if (i + 1 < n - 1) leg({ at: i + 1, dir: 1 }, o.dwell);
   }
-  leg({ at: n - 1, dir: -1 }, end);
+  leg({ at: n - 1, dir: -1 }, endE);
   for (let i = n - 1; i > 0; i--) {
     leg({ from: i, to: i - 1, dir: -1, h: hops[i - 1] }, hops[i - 1].time);
     if (i - 1 > 0) leg({ at: i - 1, dir: -1 }, o.dwell);

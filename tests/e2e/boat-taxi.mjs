@@ -50,7 +50,7 @@ const wl = await page.evaluate(() => __mk.action());
 console.log('waiting:', wl);
 assert(/Apgujeong/.test(wl || ''), 'the button says where and when');
 // Bring the next eastbound boat to 4 s away (the same timetable as the game's).
-const tt = timetable(data.piers), yi = data.piers.indexOf(y);
+const tt = timetable(data.piers, undefined, data.west), yi = data.piers.indexOf(y);
 const nb = nextBoat(tt, yi, 1, Date.now() / 1000);
 if (nb.wait > 4) await page.evaluate((s) => __mk.boatTaxi.skewClock(s), nb.wait - 4);
 for (let i = 0; i < 30 && !(await page.evaluate(() => __mk.boatTaxi.busy)); i++) await page.waitForTimeout(1000);
