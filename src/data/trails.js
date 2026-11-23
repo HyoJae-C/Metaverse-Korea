@@ -1,6 +1,7 @@
 // Stamp trails (스탬프 코스): a few tour stamps (data/stamps.js) walked as one
 // course. Finishing a course (every stamp in it, in any order) pays its
-// reward once. To add a course, add an entry here.
+// reward once. To add a course, add an entry here, and its row in
+// reward_once_ids in a new supabase/ file (tests/reward-once-ids.test.mjs).
 //   stamps: the stamp ids, in the order the course is meant to be walked.
 export const TRAILS = [
   {
