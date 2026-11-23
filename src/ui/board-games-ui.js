@@ -159,8 +159,8 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, onGame, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, figureOf, rand });
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -298,7 +298,7 @@ export class BoardGamesUI {
       const p = this.play;
       import('./board-toy-3d.js').then((m) => {
         if (this.play !== p) return;
-        this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]) });
+        this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]), figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null }); // (the host sits in the pirate's barrel)
         this.render();
       }).catch(() => {});
     }
@@ -444,7 +444,7 @@ export class BoardGamesUI {
     } else if (act[0] === 'd' && p.game === 'ladders') {
       const l = g.last;
       // (said once the dice has stopped tumbling, not before)
-      const said = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      const said = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.past ? ' ' + L(T.pastEnd) : '') + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
       this.status = '';
       setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, DICE_MS);
       this.startWalk(l);
@@ -822,10 +822,10 @@ export class BoardGamesUI {
     if (l.to !== l.mid) path.push(l.to);
     const now = performance.now();
     p.dice = { n: l.dice, at: now };
-    p.walk = { seat: l.p, from: l.from, path, at: now + DICE_MS }; // (the piece waits for the dice)
+    p.walk = path.length ? { seat: l.p, from: l.from, path, at: now + DICE_MS } : null; // (the piece waits for the dice; none to walk when it rolled past the end)
     clearInterval(this.walkTimer);
     this.walkTimer = setInterval(() => {
-      const w = this.play?.walk;
+      const w = this.play?.walk || (this.play?.dice && { at: this.play.dice.at + DICE_MS, path: [] });
       if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
       this.paintLadders(this.ladCv);
       if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + RIDE_MS + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }

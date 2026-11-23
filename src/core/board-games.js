@@ -659,6 +659,9 @@ export class Ladders {
     this.down = custom ? {} : { ...LADDERS_DOWN };
     // What each player still has to put down: [ladders, snakes].
     this.stock = Array.from({ length: players }, () => (custom ? [...LADDERS_SHARE[players]] : [0, 0]));
+    // The finish wants the exact number the first time; a player who has
+    // rolled past it once gets in with any roll that reaches (Yozi 2026-11-23).
+    this.tried = new Array(players).fill(false);
   }
 
   // Squares a ladder or snake already starts or ends on.
@@ -709,11 +712,13 @@ export class Ladders {
     if (this.over || this.setup || p !== this.turn) return false;
     const dice = 1 + Math.floor(this.rand() * 6);
     const from = this.pos[p];
-    const mid = Math.min(LADDERS_END, from + dice);
-    const to = this.up[mid] ?? this.down[mid] ?? mid;
+    const past = from + dice > LADDERS_END && !this.tried[p]; // too many, the first time: stay put
+    if (past) this.tried[p] = true;
+    const mid = past ? from : Math.min(LADDERS_END, from + dice);
+    const to = past ? from : this.up[mid] ?? this.down[mid] ?? mid;
     this.pos[p] = to;
     this.rolls++;
-    this.last = { p, dice, from, mid, to, via: to > mid ? 'ladder' : to < mid ? 'snake' : null };
+    this.last = { p, dice, from, mid, to, past, via: to > mid ? 'ladder' : to < mid ? 'snake' : null };
     if (to === LADDERS_END) { this.winner = p; this.over = true; return true; }
     if (dice !== 6) this.turn = this.nextIn(p);
     return true;

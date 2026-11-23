@@ -203,13 +203,15 @@ test('snakes and ladders: same dice everywhere, ladders up, snakes down, a 6 rol
   for (const players of [2, 4]) {
     const g = newGame('ladders', players, 77), h = new Ladders({ players, seed: 77 });
     let guard = 0;
+    const pasts = {};
     while (!g.over && guard++ < 3000) {
       const p = g.turn;
       assert.ok(!applyAction(g, (p + 1) % players, ['d'])); // not your turn
       assert.ok(applyAction(g, p, ['d']));
       h.roll(p);
       const l = g.last;
-      assert.equal(l.mid, Math.min(LADDERS_END, l.from + l.dice));
+      if (l.past) { assert.ok(l.from + l.dice > LADDERS_END && l.to === l.from); pasts[l.p] = (pasts[l.p] || 0) + 1; assert.equal(pasts[l.p], 1, 'rolling past the end holds a player back only once'); }
+      else assert.equal(l.mid, Math.min(LADDERS_END, l.from + l.dice));
       assert.equal(l.to, LADDERS_UP[l.mid] ?? LADDERS_DOWN[l.mid] ?? l.mid);
       if (!g.over) assert.equal(g.turn === p, l.dice === 6);
     }

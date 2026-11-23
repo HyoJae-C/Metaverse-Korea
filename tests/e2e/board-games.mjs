@@ -113,6 +113,16 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/omok.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'the host sits in the pirate barrel';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="pirate"]');
+  await a.click('#bg-panel [data-game="pirate"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel canvas.bg-toy3d');
+  await a.waitForTimeout(600);
+  if (shotDir) await a.screenshot({ path: shotDir + '/pirate-host.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'A rolls the dice at Snakes & Ladders against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="ladders"]');

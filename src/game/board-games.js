@@ -6,6 +6,7 @@
 //
 // game: { myId, net, others, me, interior, safety, sfx, music }
 import { localName, getLanguage } from '../core/i18n.js';
+import { createCharacter } from '../core/character.js';
 
 const L = (o) => localName(o, getLanguage());
 export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', hi: 'बोर्ड गेम', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
@@ -27,6 +28,8 @@ export function createBoardGames(game) {
     const { playBoardSound } = await import('../ui/board-games-sounds.js');
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
+      // A player as a little figure (the host sits in the pirate's barrel).
+      figureOf: (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } },
       net: {
         myId: game.myId,
         nameOf: (id) => game.others.nameOf(id),
