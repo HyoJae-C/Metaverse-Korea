@@ -161,7 +161,11 @@ try {
       // Held down, the roll button fills its gauge; let go and the dice is thrown that hard (the number stays chance).
       await a.hover('#bg-panel [data-act="roll"]');
       await a.mouse.down();
-      await a.waitForFunction(() => +document.querySelector('#bg-panel [data-act="roll"]')?.dataset.power >= 5, null, { timeout: 5000 });
+      // (the gauge goes by the clock, not by frames: a slow runner draws few of them)
+      await a.waitForFunction(() => window.__bgUi.hold?.power() >= 0.6, null, { timeout: 20000, polling: 100 }).catch(async (e) => {
+        throw new Error('the gauge did not fill: ' + JSON.stringify(await a.evaluate(() => { const u = window.__bgUi, b = document.querySelector('#bg-panel [data-act="roll"]'); return { hold: !!u.hold, power: u.hold?.power(), button: b && { disabled: b.disabled, cls: b.className, power: b.dataset.power } }; })) + ' ' + e.message);
+      });
+      if (!(await a.evaluate(() => +document.querySelector('#bg-panel [data-act="roll"]')?.dataset.power >= 5))) throw new Error('the held button shows no gauge');
       if (shotDir) await a.screenshot({ path: shotDir + '/ladders-gauge.png' });
       await a.mouse.up();
       const pw = await a.evaluate(() => window.__bgUi.play.dicePw);

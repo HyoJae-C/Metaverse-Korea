@@ -1093,7 +1093,7 @@ export class BoardGamesUI {
       roll.onpointerdown = (e) => { if (!roll.disabled && e.button === 0) this.holdDice(); };
       roll.oncontextmenu = (e) => e.preventDefault();
       roll.append(el('i', 'bg-gauge'));
-      if (this.hold) roll.classList.add('held');
+      if (this.hold) this.paintHold(roll); // (drawn again while it is held)
       row.append(roll);
     }
     c.append(row);
@@ -1105,10 +1105,10 @@ export class BoardGamesUI {
     if (this.hold) return;
     const hold = this.hold = { at: performance.now() };
     const power = () => Math.min(1, (performance.now() - hold.at) / DICE_FULL);
+    hold.power = power;
     const paint = () => {
       if (this.hold !== hold) return;
-      const b = this.card?.querySelector('[data-act="roll"]');
-      if (b) { b.classList.add('held'); b.style.setProperty('--g', `${Math.round(power() * 100)}%`); b.dataset.power = String(Math.round(power() * DICE_POWER)); }
+      this.paintHold(this.card?.querySelector('[data-act="roll"]'));
       hold.raf = requestAnimationFrame(paint);
     };
     const done = (e) => {
@@ -1124,6 +1124,14 @@ export class BoardGamesUI {
     window.addEventListener('pointerup', done);
     window.addEventListener('pointercancel', done);
     paint();
+  }
+
+  paintHold(b) {
+    if (!b || !this.hold) return;
+    const k = this.hold.power();
+    b.classList.add('held');
+    b.style.setProperty('--g', `${Math.round(k * 100)}%`);
+    b.dataset.power = String(Math.round(k * DICE_POWER));
   }
 
   // A square tapped while laying the board out (also what the tests call).
