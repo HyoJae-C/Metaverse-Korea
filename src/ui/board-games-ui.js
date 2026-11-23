@@ -161,7 +161,7 @@ const el = (tag, cls, text) => {
 const between = ([a, b], rand) => a + (b - a) * rand();
 // Faces to pull at each other (bluffing over the joker, gloating over a win).
 const FACE_MS = 2600, FACE_GAP = 1500; // (Yozi 2026-11-23: 1.2 s was spammed, 3 s felt too long)
-const FACE_BURST = 5, FACE_BURST_MS = 12000, FACE_REST = 10000; // five faces inside 12 seconds: the buttons rest for 10 (fewer room messages)
+const FACE_BURST = 10, FACE_BURST_MS = 25000, FACE_REST = 10000; // ten faces inside 25 seconds (as fast as they go, or nearly): the buttons rest for 10 (Yozi 2026-11-23)
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
