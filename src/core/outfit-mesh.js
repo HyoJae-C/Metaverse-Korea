@@ -215,10 +215,11 @@ function torso(out, o) {
     plate(out, sx > 0 ? pts : mirror(pts), { z: front(0.0), depth: 0.014, role: o.lapel, w: chestW, lean: 0.16, pivot: 0.95 });
   }
   if (o.buttons) { // buttons down the front (a coat, a cardigan, a suit)
+    // double: two rows (a double-breasted trench coat)
     const n = o.buttons.n ?? 2, x = o.buttons.x ?? 0.075;
     for (let i = 0; i < n; i++) {
       const y = (o.buttons.top ?? 0.84) - i * (o.buttons.gap ?? 0.09);
-      if (y > (o.coat ? 0.3 : o.hem + 0.03)) box(out, [x, y, front(0.012)], [0.032, 0.032, 0.014], o.buttons.role, y > 0.7 ? chestW : [['spine', 1]]);
+      if (y > (o.coat ? 0.3 : o.hem + 0.03)) for (const bx of o.buttons.double ? [x, -x] : [x]) box(out, [bx, y, front(0.012)], [0.032, 0.032, 0.014], o.buttons.role, y > 0.7 ? chestW : [['spine', 1]]);
     }
   }
   if (o.flaps) for (const sx of [-1, 1]) { // a denim jacket's chest pockets with buttoned flaps

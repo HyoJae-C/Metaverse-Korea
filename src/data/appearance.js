@@ -203,6 +203,14 @@ export const ACCESSORIES = {
     { id: 'beanie-cream', shape: 'beanie', emoji: '🧶', color: 0xefe6d2 },
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
+    // Pop-up A (Seongsu): autumn season hats, limited-time (Yozi 2026-11-23:
+    // three colours each, by her choice). band: the fedora's ribbon.
+    { id: 'fedora-brown', shape: 'fedora', emoji: '🎩', color: 0x6b4a32, band: 0x2b2230 },
+    { id: 'fedora-beige', shape: 'fedora', emoji: '🎩', color: 0xcdb48e, band: 0x5a3f2c },
+    { id: 'fedora-charcoal', shape: 'fedora', emoji: '🎩', color: 0x4a4b52, band: 0x1d1d22 },
+    { id: 'beret-burgundy', shape: 'beret', emoji: '🎨', color: 0x7a2838 },
+    { id: 'beret-camel', shape: 'beret', emoji: '🎨', color: 0xc49a6c },
+    { id: 'beret-olive', shape: 'beret', emoji: '🎨', color: 0x6b7a45 },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
     // Modu Ballpark's team caps (the team shop).
     ...TEAM_LIST.map((t) => ({ id: 'cap-' + t.id, shape: 'cap', emoji: '🧢', color: parseInt(t.color.slice(1), 16) })),

@@ -693,6 +693,22 @@ function addHat(look, head) {
       const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
       stalk.position.set(0.02, 0.38, -0.02);
       head.add(top, stalk);
+    } else if (hat === 'fedora') {
+      // 중절모: a pinched crown with a ribbon band on a wide brim, the brim
+      // turned down a little at the front.
+      const crown = new THREE.Mesh(geo('fedoraCrown', () => new THREE.CylinderGeometry(0.21, 0.26, 0.25, 18)), m);
+      crown.scale.set(1, 1, 0.92);
+      crown.position.set(0, 0.345, -0.02);
+      const dent = new THREE.Mesh(geo('fedoraDent', () => new THREE.SphereGeometry(0.19, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5)), m);
+      dent.scale.set(1.05, 0.22, 0.9);
+      dent.position.set(0, 0.465, -0.02);
+      const band = new THREE.Mesh(geo('fedoraBand', () => new THREE.CylinderGeometry(0.258, 0.262, 0.05, 18)), mat(head1.band ?? 0x2b2230));
+      band.scale.set(1, 1, 0.92);
+      band.position.set(0, 0.25, -0.02);
+      const brim = new THREE.Mesh(geo('fedoraBrim', () => new THREE.CylinderGeometry(0.37, 0.37, 0.025, 24)), m);
+      brim.position.set(0, 0.22, -0.02);
+      brim.rotation.x = 0.06;
+      head.add(crown, dent, band, brim);
     } else if (hat === 'towel') {
       // 양머리: a towel band round the head with a rolled "sheep ear" each side.
       const cap = new THREE.Mesh(

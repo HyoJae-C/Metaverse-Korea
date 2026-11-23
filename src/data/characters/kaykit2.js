@@ -38,6 +38,9 @@ const SUIT = { outfit: { dress: true, hem: 0.6, sleeve: 0.84, cuff: 'top', panel
 // Club), all on the basic model so the face stays the same.
 // A wool overcoat down to the knees, open over a knit (accent).
 const OVERCOAT = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', lapel: 'accent3', buttons: { role: 'stitch', n: 3, x: 0.09, top: 0.82, gap: 0.14 }, bulk: 0.018 }, colors: { accent: 0x2b2b31 } };
+// A trench coat (Pop-up A, the autumn season): down to the knees, double-
+// breasted, a belt round the waist (accent2), a white shirt in the V.
+const TRENCH = { outfit: { hem: 0.6, coat: 0.2, sleeve: 0.84, cuff: 'top', panel: 'accent', collar: 'top', lapel: 'accent3', belt: 'accent2', buttons: { role: 'stitch', n: 3, x: 0.07, top: 0.84, gap: 0.12, double: true }, bulk: 0.018 }, colors: { accent: 0xf4f1ea } };
 // A varsity jacket (과잠): wool body, sleeves in another colour (accent2),
 // ribbed collar, cuffs and snap placket (accent).
 const VARSITY = { outfit: { hem: 0.56, sleeve: 0.84, arms: 'accent2', cuff: 'accent', collar: 'accent', placket: 'accent', bulk: 0.016 } };
@@ -165,6 +168,11 @@ export default {
     }),
     ...variants('rogue', '🧥', OVERCOAT, {
       'coat-camel': { top: 0xdcbc8e, accent: 0x2b2b31 }, 'coat-charcoal': { top: 0x7a7c84, accent: 0xe9e4d8 },
+    }),
+    ...variants('rogue', '🧥', TRENCH, {
+      'trench-beige': { top: 0xc9ad84, accent2: 0xb39670, stitch: 0x5a4632 },
+      'trench-brown': { top: 0x7a5638, accent2: 0x684830, stitch: 0x2e2118 },
+      'trench-navy': { top: 0x2f3a5c, accent2: 0x27304c, stitch: 0x15192a },
     }),
     ...variants('rogue', '🧥', VARSITY, {
       'varsity-navy': { top: 0x44589a, accent: 0xf3ecdc, accent2: 0xf3ecdc },

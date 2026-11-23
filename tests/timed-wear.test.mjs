@@ -15,7 +15,8 @@ test('animal onesies are limited-time (one number for all), cheaper than other c
     assert.equal(ITEMS[id].secs, TIMED_SECS, id);
     assert.equal(ITEMS[id].price, 50000, id);
   }
-  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id)), 'only the onesies for now');
+  // (and Pop-up A's autumn line, tests/popup-a.test.mjs)
+  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id) || /^(acc-(fedora|beret)|outfit-trench)-/.test(id)), 'only the onesies and the autumn pop-up');
 });
 
 test('a limited item is gone 7 days after buying; days left count down', () => {
@@ -54,11 +55,16 @@ test('limited items can\'t be sold back or put on a Potato Market mat', () => {
   assert.deepEqual(listable(owned, ITEMS, receipts).map((r) => r.id), ['outfit-knit-grey']);
 });
 
-test('the server knows every limited item and its time (supabase/058)', () => {
-  const sql = readFileSync(new URL('../supabase/058_timed_clothes.sql', import.meta.url), 'utf8');
-  const rows = Object.fromEntries([...sql.matchAll(/\('([a-z0-9-]+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
+test('the server knows every limited item and its time (supabase/058, 059, 070)', () => {
+  const rowsOf = (f) => {
+    const sql = readFileSync(new URL('../supabase/' + f, import.meta.url), 'utf8');
+    return Object.fromEntries([...sql.matchAll(/\('([a-z0-9-]+)', (\d+)\)/g)].map((m) => [m[1], Number(m[2])]));
+  };
   const timed = Object.fromEntries(Object.entries(ITEMS).filter(([, it]) => it.secs).map(([id, it]) => [id, it.secs]));
+  // 059 lists the Christmas accessories ahead of the game (PR #818).
+  const rows = { ...rowsOf('058_timed_clothes.sql'), ...rowsOf('070_autumn_popup_timed.sql') };
   assert.deepEqual(rows, timed);
+  for (const id of Object.keys(rowsOf('059_christmas_timed.sql'))) assert.ok(!ITEMS[id] || ITEMS[id].secs === TIMED_SECS, id);
 });
 
 test('a bag worn but not in the closet is found; owned ones and free looks are not', async () => {

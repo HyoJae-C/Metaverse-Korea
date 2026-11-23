@@ -559,6 +559,7 @@ const HAT_CROWNS = {
   towel: { c: [0, 0.04, -0.01], r: [0.35, 0.35, 0.35], y0: 0.11 },
   bucket: { c: [0, 0.1, -0.02], r: [0.28, 0.28, 0.28], y0: 0.21 },
   beret: { c: [0.04, 0.24, -0.02], r: [0.36, 0.14, 0.36], y0: 0.2 },
+  fedora: { c: [0, 0.1, -0.02], r: [0.27, 0.32, 0.26], y0: 0.2 },
 };
 const TUCK = 0.94; // how far inside the crown the hair goes
 const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out

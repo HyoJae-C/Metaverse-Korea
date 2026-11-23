@@ -183,6 +183,13 @@ export function productModel(kind, color, product = null) {
     case 'beret':
       add(new THREE.SphereGeometry(0.17, 14, 8).scale(1, 0.32, 1), 0, 0.06);
       break;
+    case 'fedora': { // crown, ribbon band and brim
+      const a = accessory('head', product?.tryOn?.head);
+      add(new THREE.CylinderGeometry(0.1, 0.125, 0.1, 14), 0, 0.07);
+      add(new THREE.CylinderGeometry(0.127, 0.128, 0.025, 14), 0, 0.035, 0, mat('#' + (a?.band ?? 0x2b2230).toString(16).padStart(6, '0')));
+      add(new THREE.CylinderGeometry(0.21, 0.21, 0.012, 20), 0, 0.02);
+      break;
+    }
     case 'skirt': { // the skirt itself, in its pattern (core/skirt-mesh.js)
       const sk = skirtDisplay(product?.skirt);
       if (sk) g.add(sk);
