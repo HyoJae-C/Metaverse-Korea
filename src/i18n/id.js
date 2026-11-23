@@ -681,6 +681,7 @@ export const ID = {
   "name.cancel": "Batal",
   'start.defaultName': 'Pelancong',
   'hud.online': '{n} online',
+  'hud.today': '{n} pengunjung hari ini',
   'tab.elsewhere': 'Kamu sedang bermain di tab lain',
   'tab.elsewhereHint': 'Modu Seoul terbuka di tab lain pada browser ini, jadi kamu tampil di sana. Tutup tab ini, atau main di sini.',
   'tab.playHere': 'Main di sini',

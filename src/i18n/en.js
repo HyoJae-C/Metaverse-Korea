@@ -686,6 +686,7 @@ export const EN = {
   "name.cancel": "Cancel",
   'start.defaultName': 'Traveler',
   'hud.online': '{n} online',
+  'hud.today': '{n} visited today',
   'tab.elsewhere': 'You\'re playing in another tab',
   'tab.elsewhereHint': 'Modu Seoul is open in another tab of this browser, so you\'re shown there. Close this tab, or play here instead.',
   'tab.playHere': 'Play here',

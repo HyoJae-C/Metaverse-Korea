@@ -8,8 +8,11 @@
 // cost grew with the square of the players and hit Supabase's presence limit
 // first when many people arrive at once.
 //
-// Without that SQL the old presence room is used. onCount(n) is called with
-// the number of people online (you included). Returns stop(), or null when
+// live_counts (supabase/072_today_count.sql) answers that number and how many
+// accounts played since midnight Korea time in the same request; without it
+// live_count is asked and today stays 0. Without either the old presence
+// room is used. onCount(n, today) is called with the number of people online
+// (you included) and today's visitors (0 when unknown). Returns stop(), or null when
 // the provider can't count (the local test adapter), in which case the game
 // counts the people around you instead.
 export const ONLINE_POLL_MS = 60000;
@@ -18,19 +21,26 @@ export async function watchOnline(provider, cfg, id, onCount, { pollMs = ONLINE_
   if (provider !== 'supabase' || !cfg?.url || !cfg?.key) return null;
   const { sharedClient, isMissingFunction } = await import('./adapters/supabase.js');
   const client = sharedClient(cfg.url, cfg.key); // the same websocket as the rooms
+  let both = true; // live_counts is there (072); else just live_count
   const ask = async () => {
+    if (both) {
+      const { data, error } = await client.rpc('live_counts');
+      if (!error) return { n: Number(data?.now), today: Number(data?.today) || 0 };
+      if (!isMissingFunction(error)) return {};
+      both = false;
+    }
     const { data, error } = await client.rpc('live_count');
     if (error) return { missing: isMissingFunction(error) };
-    return { n: Number(data) };
+    return { n: Number(data), today: 0 };
   };
   const first = await ask().catch(() => ({}));
   if (!first.missing) {
     let stopped = false;
-    if (Number.isFinite(first.n)) onCount(Math.max(1, first.n));
+    if (Number.isFinite(first.n)) onCount(Math.max(1, first.n), first.today ? Math.max(1, first.n, first.today) : 0);
     const timer = setInterval(async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
       const r = await ask().catch(() => ({}));
-      if (!stopped && Number.isFinite(r.n)) onCount(Math.max(1, r.n));
+      if (!stopped && Number.isFinite(r.n)) onCount(Math.max(1, r.n), r.today ? Math.max(1, r.n, r.today) : 0);
     }, pollMs);
     return () => { stopped = true; clearInterval(timer); };
   }

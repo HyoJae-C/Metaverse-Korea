@@ -681,6 +681,7 @@ export const TH = {
   'name.cancel': 'ยกเลิก',
   'start.defaultName': 'นักเดินทาง',
   'hud.online': 'ออนไลน์ {n} คน',
+  'hud.today': 'วันนี้มีผู้เยี่ยมชม {n} คน',
   'tab.elsewhere': 'คุณกำลังเล่นอยู่ในแท็บอื่น',
   'tab.elsewhereHint': 'Modu Seoul เปิดอยู่ในอีกแท็บของเบราว์เซอร์นี้ คุณจึงปรากฏตัวที่นั่น ปิดแท็บนี้ หรือเล่นที่นี่แทน',
   'tab.playHere': 'เล่นที่นี่',

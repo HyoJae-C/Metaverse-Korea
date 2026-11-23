@@ -681,6 +681,7 @@ export const FR = {
   'name.cancel': 'Annuler',
   'start.defaultName': 'Voyageur',
   'hud.online': '{n} en ligne',
+  'hud.today': '{n} visiteurs aujourd’hui',
   'tab.elsewhere': 'Tu joues dans un autre onglet',
   'tab.elsewhereHint': 'Modu Seoul est ouvert dans un autre onglet de ce navigateur, c\'est donc là que tu apparais. Ferme cet onglet, ou joue plutôt ici.',
   'tab.playHere': 'Jouer ici',

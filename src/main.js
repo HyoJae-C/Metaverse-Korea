@@ -1549,26 +1549,38 @@ const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => pla
 } };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
-// can count, the people around you. Only operators see the badge (Yozi
-// 2026-11-21: a small number puts new players off); everyone still counts,
-// since the send rate uses it.
-let onlineAll = 0;
+// can count, the people around you. The badge shows today's visitors (real
+// accounts since midnight KST, supabase/072_today_count.sql) and, from 5
+// people up, how many are on right now (Yozi 2026-11-23: a tiny "now" number
+// puts new players off, and we never pad it). Operators always see "now".
+// Everyone still counts, since the send rate uses it.
+let onlineAll = 0, onlineToday = 0;
 let onlineOp = !!import.meta.env?.DEV, onlineOpFor = null;
+const ONLINE_SHOW_FROM = 5;
 const refreshOnline = () => {
   const n = onlineAll || others.players.size + 1;
-  $('online').hidden = !onlineOp;
-  // Phones show just "🟢 5" (style.css hides .on-long); the full words stay
-  // in the tooltip and for screen readers.
-  const full = t('hud.online', { n });
-  $('online').title = full;
-  $('online').setAttribute('aria-label', full);
-  $('online').replaceChildren('🟢 ', Object.assign(document.createElement('span'), { className: 'on-long', textContent: full }), Object.assign(document.createElement('span'), { className: 'on-short', textContent: String(n), ariaHidden: 'true' }));
+  const parts = [];
+  if (onlineToday > 0) parts.push(['👣', onlineToday, t('hud.today', { n: onlineToday })]);
+  if (onlineOp || n >= ONLINE_SHOW_FROM) parts.push(['🟢', n, t('hud.online', { n })]);
+  const el = $('online');
+  el.hidden = !parts.length;
+  // Phones show just "👣 28 · 🟢 6" (style.css hides .on-long); the full
+  // words stay in the tooltip and for screen readers.
+  const full = parts.map((p) => p[2]).join(' · ');
+  el.title = full;
+  el.setAttribute('aria-label', full);
+  el.replaceChildren(...parts.flatMap(([ico, num, words], i) => [
+    ...(i ? [' · '] : []),
+    `${ico} `,
+    Object.assign(document.createElement('span'), { className: 'on-long', textContent: words }),
+    Object.assign(document.createElement('span'), { className: 'on-short', textContent: String(num), ariaHidden: 'true' }),
+  ]));
 };
 onLanguageChange(refreshOnline);
 let stopOnline = null;
 // Its own id, not myId: the online count is open to everyone, and myId must
 // stay unseen until it is claimed for chat (claimChatId below).
-watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n) => { onlineAll = n; refreshOnline(); })
+watchOnline(config.netProvider, config.net, crypto.randomUUID?.() || String(Math.random()).slice(2), (n, today = 0) => { onlineAll = n; onlineToday = today; refreshOnline(); })
   .then((stop) => { stopOnline = stop; if (tabParked) stop?.(); }).catch(() => {});
 // Is this account an operator? (am_operator, supabase/009_admin.sql) Asked
 // again only when the signed-in account changes.
@@ -7957,6 +7969,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     chatState: () => ({ privateChannel: !!net?.chatReady, user: !!cloud.user, guest: !!cloud.guest }),
     near: () => others.players.size, // people in my area cells (not the global count)
     onlineAll: () => onlineAll, // the server's count of everyone on the map (0: none yet)
+    onlineToday: () => onlineToday, // accounts seen since midnight KST (0: unknown)
     enter: (id) => enterStore(storefronts.get(id)),
     openBeauty: (kind) => openBeauty(kind), // (the mirror panel without walking to the chair)
     seoulDal: () => ({ busy: seoulDal.busy, y: +me.root.position.y.toFixed(2), at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], coins: wallet.coins }),

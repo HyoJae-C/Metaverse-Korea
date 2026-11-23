@@ -681,6 +681,7 @@ export const AR = {
   "name.cancel": "إلغاء",
   'start.defaultName': 'مسافر',
   'hud.online': '{n} متصل',
+  'hud.today': '{n} زائر اليوم',
   'tab.elsewhere': 'أنت تلعب في علامة تبويب أخرى',
   'tab.elsewhereHint': 'Modu Seoul مفتوح في علامة تبويب أخرى في هذا المتصفح، لذا تظهر هناك. أغلق هذه العلامة أو العب هنا.',
   'tab.playHere': 'العب هنا',
