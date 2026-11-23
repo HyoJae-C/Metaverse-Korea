@@ -400,7 +400,7 @@ export function buildInterior(store) {
   // own count of spots, so a floor after the doors doesn't land on a wall.
   const finishShop = (store.products || []).some((p) => p.model === 'finish');
   let doorSlot = 0, spotSlot = 0;
-  (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
+  (isDining(store) || counterMenu || store.workshop === 'boardcafe' ? [] : shown).forEach((product, i) => { // (the board game café sells its sets from the games panel: no stands among the tables)
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
       const spot = new THREE.Group();

@@ -33,6 +33,7 @@ export const PLACES = [
   { name: 'Gwanghwamun Gate', lm: 'gwanghwamun', r: 25 },
   { name: 'Gwanghwamun Gate', lm: 'palacehalls', r: 0 }, { name: 'Gwanghwamun Gate', lm: 'cloister', r: 0 }, // (the palace's and Changdeokgung's halls: their own box/district names it)
   { name: 'Gyeongbokgung Palace', lm: 'yeongjegyo', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'rankstones', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'pavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'hexpavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'amisan', r: 30 },
+  { name: 'Cheong Wa Dae', lm: 'bluehouse', r: 60 }, { name: 'Cheong Wa Dae', lm: 'bluegate', r: 30 }, { name: 'Cheong Wa Dae', lm: 'bhfountain', r: 20 }, { name: 'Cheong Wa Dae', lm: 'bhfence', r: 0 }, // (the street side: scripts/build-cheongwadae.mjs)
   { name: 'Gyeongbokgung Palace', box: [-2001, -1331, -1639, -885] },
   { name: 'Gwanghwamun Square', lm: 'statue', kind: 'king', r: 60 }, { name: 'Gwanghwamun Square', lm: 'statue', kind: 'admiral', r: 60 },
   { name: 'Bosingak', lm: 'bosingak', r: 25 },

@@ -113,6 +113,25 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/omok.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'the host sits in the pirate barrel';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="pirate"]');
+  await a.click('#bg-panel [data-game="pirate"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel canvas.bg-toy3d');
+  await a.waitForTimeout(600);
+  if (shotDir) await a.screenshot({ path: shotDir + '/pirate-host.png' });
+  await a.click('#bg-panel .bg-x');
+
+  step = 'Catch the Thief with three computers: the table in 3D, seen from my seat';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="thief"]');
+  await a.evaluate(() => { const u = window.__bgUi; u.begin('thief', [u.net.myId, '~', '~', '~'], u.net.myId, 5); });
+  await a.waitForSelector('#bg-panel canvas.bg-thief3d', { timeout: 15000 });
+  await a.waitForTimeout(1200);
+  if (shotDir) await a.screenshot({ path: shotDir + '/thief-four.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'A rolls the dice at Snakes & Ladders against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="ladders"]');
@@ -162,10 +181,14 @@ try {
   await b.evaluate(() => document.querySelector('#bg-ask button').click());
   await a.waitForFunction(() => /Dice B is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
   await a.click('#bg-panel [data-act="start"]');
-  await b.waitForSelector('#bg-panel.on .bg-croc', { timeout: 15000 });
+  await b.waitForSelector('#bg-panel.on .bg-croc', { state: 'attached', timeout: 15000 });
 
   step = 'the 3D croc shows, and chat works from inside the game card';
-  for (const page of [a, b]) await page.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
+  for (const page of [a, b]) await page.waitForSelector('#bg-panel canvas.bg-toy3d', { state: 'attached', timeout: 15000 });
+  // They sit at a table in the café: the one whose turn it is has the big panel, the other a small one and the toy on the table.
+  await b.waitForSelector('#bg-panel.mini', { timeout: 8000 });
+  await a.waitForFunction(() => !document.querySelector('#bg-panel.mini'), null, { timeout: 8000 });
+  if (shotDir) { await b.waitForTimeout(800); await b.screenshot({ path: shotDir + '/croc-table.png' }); }
   await a.fill('#bg-panel .bg-chat input', 'good luck');
   await a.press('#bg-panel .bg-chat input', 'Enter');
   for (const page of [a, b]) await page.waitForFunction(() => /good luck/.test(document.querySelector('#bg-panel .bg-chat-lines')?.textContent || ''), null, { timeout: 15000 });

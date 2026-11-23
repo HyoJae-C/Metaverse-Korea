@@ -471,6 +471,7 @@ export const JA = {
   'hud.signsOff': '看板を韓国語で表示',
   'hud.bike': '乗り物',
   'stairs.noBike': "🚲 階段は乗り物では通れないよ。「乗り物」ボタンで降りて歩いて下りよう。",
+  'cheongwadae.note': "🏛️ 青瓦台は再び大統領が執務する保安施設なので、中には入れません。正門の外から見学してね。",
   'bike.offShort': '降りる',
   'bike.off': '自転車を降りる',
   'car.off': '車を降りる',

@@ -470,6 +470,7 @@ export const ES = {
   'hud.signsOff': 'Letreros en coreano',
   'hud.bike': 'Vehículo',
   'stairs.noBike': "🚲 No se puede bajar las escaleras en vehículo. Toca Vehículo para bajarte y baja a pie.",
+  'cheongwadae.note': "🏛️ Cheong Wa Dae vuelve a ser la oficina del presidente, una instalación de seguridad: no se puede entrar. Disfrútala desde fuera de la puerta.",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',
   'car.off': 'Salir del coche',

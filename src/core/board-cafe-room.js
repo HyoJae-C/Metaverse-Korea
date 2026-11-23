@@ -1,8 +1,8 @@
 // The board game café's room (stores.json workshop 'boardcafe'): a tall
-// shelf of game boxes along the back wall, a counter by the door, and four
-// tables with a game laid out on each (a go-style board with stones, a bell
-// with fruit cards, a croc, a barrel). People already sit and play at two of
-// them, so the room is never empty.
+// shelf of game boxes along the back wall, a counter by the door, and six
+// tables. People already sit and play at the first (a go-style board with
+// stones), so the room is never empty; the other five are free for players
+// to sit down at (game/board-table.js), a boxed game at a corner of some.
 //
 // stations.boardgames: where you stand to open the board games panel
 // (game/board-games.js); one by each free chair. Comes with the room builder
@@ -14,7 +14,7 @@ const SEAT_H = 0.42; // (same chair height as core/interior.js)
 const TABLE_H = 0.72;
 const BOX_COLORS = ['#e8574a', '#f2b43c', '#4f9a5c', '#3f7fd0', '#8b5cc7', '#f08aa8', '#2fa7a0', '#f2e3c4'];
 
-export const BOARD_CAFE_TABLES = [[-3.6, -0.8], [2.4, -0.8], [-3.6, 2.4], [2.4, 2.4]]; // (an aisle up the middle from the door) // room metres
+export const BOARD_CAFE_TABLES = [[-3.6, -0.8], [2.4, -0.8], [-3.6, 2.4], [2.4, 2.4], [-3.6, -3.7], [2.4, -3.7]]; // (the last two, by the shelf, came when games moved to the tables: more places to sit, Yozi 2026-11-23) // (an aisle up the middle from the door) // room metres
 
 export function decorateBoardCafe(store, { scene, block, stations, seats, w, d }) {
   const parts = new Map();
@@ -67,17 +67,16 @@ export function decorateBoardCafe(store, { scene, block, stations, seats, w, d }
     if (t === 0) { // go-style board with stones
       put('#e8c27a', cube, tx, TABLE_H + 0.05, tz, 0.5, 0.06, 0.5);
       for (let i = 0; i < 9; i++) put(i % 2 ? '#fbfaf6' : '#1d1b22', ball, tx - 0.16 + (i % 3) * 0.12, TABLE_H + 0.09, tz - 0.12 + Math.floor(i / 3) * 0.12, 0.025, 0.012, 0.025);
-    } else if (t === 1) { // the bell and fruit cards
-      put('#f2c230', ball, tx, TABLE_H + 0.06, tz, 0.08, 0.06, 0.08);
-      put('#c99412', cyl, tx, TABLE_H + 0.03, tz, 0.09, 0.02, 0.09);
-      for (let i = 0; i < 4; i++) put('#ffffff', cube, tx + Math.cos(i * 1.57) * 0.3, TABLE_H + 0.03, tz + Math.sin(i * 1.57) * 0.25, 0.12, 0.01, 0.16, i * 1.57);
+    } else if (t === 1) { // a boxed game at a corner (the middle is for the game people play)
+      put('#f2c230', cube, tx + 0.42, TABLE_H + 0.07, tz - 0.36, 0.2, 0.07, 0.14);
+      put('#fffdf4', cube, tx + 0.42, TABLE_H + 0.105, tz - 0.36, 0.2, 0.02, 0.14);
     } else if (t === 2) { // the croc: a green body, a pale jaw
-      put('#4f9a5c', cube, tx, TABLE_H + 0.08, tz, 0.5, 0.1, 0.2);
-      put('#fffdf4', cube, tx + 0.18, TABLE_H + 0.12, tz, 0.16, 0.03, 0.18);
-      put('#2b2b2e', ball, tx + 0.1, TABLE_H + 0.15, tz + 0.06, 0.02, 0.02, 0.02);
-    } else { // the barrel with swords
-      put('#8a5a33', cyl, tx, TABLE_H + 0.13, tz, 0.13, 0.22, 0.13);
-      for (let i = 0; i < 5; i++) put('#c0c4ca', cube, tx + Math.cos(i * 1.25) * 0.13, TABLE_H + 0.17, tz + Math.sin(i * 1.25) * 0.13, 0.12, 0.012, 0.02, -i * 1.25);
+      // (boxed up at a corner: the middle is where a game people play is set out, game/board-table.js)
+      put('#4f9a5c', cube, tx + 0.42, TABLE_H + 0.07, tz - 0.36, 0.2, 0.07, 0.14);
+      put('#fffdf4', cube, tx + 0.42, TABLE_H + 0.105, tz - 0.36, 0.2, 0.02, 0.14);
+    } else if (t === 3) { // the barrel with swords
+      put('#8a5a33', cube, tx + 0.42, TABLE_H + 0.07, tz - 0.36, 0.2, 0.07, 0.14);
+      put('#f2e3c4', cube, tx + 0.42, TABLE_H + 0.105, tz - 0.36, 0.2, 0.02, 0.14);
     }
     for (const [sx, sz, ry] of [[-0.95, 0, Math.PI / 2], [0.95, 0, -Math.PI / 2], [0, -0.8, 0], [0, 0.8, Math.PI]]) {
       const x = tx + sx, z = tz + sz;
@@ -85,8 +84,8 @@ export function decorateBoardCafe(store, { scene, block, stations, seats, w, d }
       put('#5a3a28', cube, x, SEAT_H / 2 - 0.03, z, 0.06, SEAT_H, 0.06);
       const seat = { x, z, ry, stand: [x + Math.sin(ry) * -0.6, z + Math.cos(ry) * -0.6] };
       seats.push(seat);
-      // People already playing at the first two tables.
-      if (t < 2 && (sx !== 0 || (t === 0 && sz > 0))) patrons.push({ x, z, ry, sit: true });
+      // People already playing at the first table (the others are for the players: game/board-table.js).
+      if (t === 0 && (sx !== 0 || sz > 0)) patrons.push({ x, z, ry, sit: true });
       else stations.boardgames.push({ x: seat.stand[0], z: seat.stand[1], ry });
     }
   });

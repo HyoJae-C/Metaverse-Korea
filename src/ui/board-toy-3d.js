@@ -281,7 +281,7 @@ function towerToy(spots) {
 // The pirate in his barrel: three rings of slots round a wooden barrel that
 // turns slowly, so every slot comes past. A sword slides into the slot you
 // pick; the wrong one and the pirate shoots out of the top, spinning.
-function pirateToy(spots) {
+function pirateToy(spots, figure) {
   const root = new THREE.Group();
   const WOOD = lam('#b9793f'), DARK = lam('#7a4a2b'), IRON = lam('#55504e'), SKIN = lam('#f2c79a'), RED = lam('#d43d3d'), INK = lam('#2b2230');
   const ball = new THREE.SphereGeometry(1, 22, 16), box = new THREE.BoxGeometry(1, 1, 1);
@@ -336,6 +336,16 @@ function pirateToy(spots) {
   add(man, ball, lam('#b8433f'), 0, 0.14, 0.38, 0.14, 0.04, 0.05); // a grin
   const mouth = add(man, ball, INK, 0, 0.12, 0.38, 0.12, 0.13, 0.05); // his mouth, wide open
   mouth.visible = false;
+  if (figure) {
+    // The host sits in the barrel instead (a game character, 1.2 m tall,
+    // head about 0.6): the pirate's head makes way, the bandana stays.
+    const keep = new Set(man.children.slice(2, 4));
+    for (const c of man.children) c.visible = keep.has(c);
+    man.children[2].position.y = 0.52; man.children[3].position.y = 0.58;
+    figure.scale.setScalar(1.3);
+    figure.position.y = -0.87;
+    man.add(figure);
+  }
   const REST = TALL + 0.05;
   let bangAt = -1;
   const camDir = new THREE.Vector2(0, 1);
@@ -363,13 +373,19 @@ function pirateToy(spots) {
       man.position.set(0, REST + h + (up ? 0 : Math.exp(-(t - 1.1) * 3) * Math.abs(Math.sin((t - 1.1) * 9)) * 0.25), 0);
       man.rotation.set(0, up ? t * 14 : 0, up ? Math.sin(t * 12) * 0.3 : 0);
       eye.scale.setScalar(0.09);
-      mouth.visible = true;
+      mouth.visible = !figure;
       root.position.x = t < 0.5 ? Math.sin(t * 60) * 0.06 * (1 - t / 0.5) : 0;
     },
   };
 }
 
-export function createToyView(kind, { spots, onPick }) {
+// The toy alone (its shapes, press(i, now, wobble), bang(at), update(now, pressed)):
+// also stood on a real table in the café (game/board-table.js).
+export const createToyModel = (kind, spots, figure = null) => (kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : kind === 'pirate' ? pirateToy(spots, figure) : dogToy(spots));
+// How long after the press the bad one shows (the tooth sinks / the block slides out, or lands on top / the bone lands).
+export const bangDelay = (kind, placing) => (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : kind === 'pirate' ? 260 : 380);
+
+export function createToyView(kind, { spots, onPick, figure = null }) {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
   const el = renderer.domElement;
@@ -379,7 +395,7 @@ export function createToyView(kind, { spots, onPick }) {
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.6);
   sun.position.set(2, 5, 4);
   scene.add(sun);
-  const toy = kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : kind === 'pirate' ? pirateToy(spots) : dogToy(spots);
+  const toy = createToyModel(kind, spots, figure);
   scene.add(toy.root);
   const camera = new THREE.PerspectiveCamera(34, 4 / 3, 0.1, 50);
   camera.position.set(...toy.cam);
@@ -437,12 +453,13 @@ export function createToyView(kind, { spots, onPick }) {
     sync({ pressed: list, bang, canPick: can, wobble = 0, placing = false }) {
       const now = performance.now();
       for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now, wobble); }
-      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : kind === 'pirate' ? 260 : 380)); } // (after the tooth sinks / the block slides out, or lands on top / the bone lands)
+      if (bang && !banged) { banged = true; toy.bang(now + bangDelay(kind, placing)); }
       canPick = can && !banged;
     },
     dispose() {
       gone = true;
       cancelAnimationFrame(raf);
+      figure?.removeFromParent(); // (a game character's shapes are shared: not ours to dispose)
       scene.traverse((o) => { o.geometry?.dispose(); o.material?.dispose?.(); });
       renderer.dispose();
       renderer.forceContextLoss?.();
