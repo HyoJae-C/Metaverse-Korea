@@ -141,6 +141,10 @@ try {
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="ladders"]');
   await a.click('#bg-panel [data-game="ladders"]');
+  // The host picks how many rolls each player gets: 30 unless they say otherwise; the button goes round 50, no limit, 20, 30.
+  const rollsShown = () => a.getAttribute('#bg-panel [data-act="rolls"]', 'data-rolls');
+  if ((await rollsShown()) !== '30') throw new Error('the roll limit does not start at 30: ' + (await rollsShown()));
+  for (const want of ['50', '0', '20', '30']) { await a.click('#bg-panel [data-act="rolls"]'); if ((await rollsShown()) !== want) throw new Error(`the roll limit button shows ${await rollsShown()}, not ${want}`); }
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel canvas.bg-ladders');
   // First the board is laid out: A puts down a ladder, then a snake, with two taps each; the computer does its own.
@@ -153,12 +157,37 @@ try {
   if (shotDir) { await a.waitForTimeout(300); await a.screenshot({ path: shotDir + '/ladders-setup.png' }); }
   for (let k = 0; k < 6; k++) {
     await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 30000 }); // (the computer may roll a 6 or two first)
-    await a.click('#bg-panel [data-act="roll"]');
+    if (k === 1) {
+      // Held down, the roll button fills its gauge; let go and the dice is thrown that hard (the number stays chance).
+      await a.hover('#bg-panel [data-act="roll"]');
+      await a.mouse.down();
+      await a.waitForFunction(() => +document.querySelector('#bg-panel [data-act="roll"]')?.dataset.power >= 5, null, { timeout: 5000 });
+      if (shotDir) await a.screenshot({ path: shotDir + '/ladders-gauge.png' });
+      await a.mouse.up();
+      const pw = await a.evaluate(() => window.__bgUi.play.dicePw);
+      if (!(pw >= 5)) throw new Error('a held roll was not thrown hard: ' + pw);
+    } else await a.click('#bg-panel [data-act="roll"]');
+    if (k === 0 && (await a.evaluate(() => window.__bgUi.play.dicePw)) !== 0) throw new Error('a quick tap is not a soft throw');
     if (k === 0 && shotDir) { await a.waitForTimeout(350); await a.screenshot({ path: shotDir + '/ladders-dice.png' }); }
     await a.waitForFunction(() => +document.querySelector('#bg-panel .bg-dice')?.dataset.dice > 0, null, { timeout: 8000 });
   }
   await a.waitForTimeout(1200);
   if (shotDir) await a.screenshot({ path: shotDir + '/ladders.png' });
+  // My rolls left show beside the clock (30 each, and I have rolled 6 times or more).
+  const left = +(await a.getAttribute('#bg-panel .bg-rolls', 'data-rolls'));
+  if (!(left >= 1 && left <= 24)) throw new Error('the rolls left do not show beside the clock: ' + left);
+  // Nearly out of rolls (set by hand, to save fifty dice): my last roll ends the game and everyone is placed.
+  await a.waitForFunction(() => { const u = window.__bgUi, g = u.play.g; return !g.over && g.turn === u.play.seat; }, null, { timeout: 30000 });
+  await a.evaluate(() => { const u = window.__bgUi, g = u.play.g; g.used = g.used.map((_, s) => (s === u.play.seat ? g.max - 1 : g.max)); u.render(); });
+  if ((await a.getAttribute('#bg-panel .bg-rolls', 'data-rolls')) !== '1') throw new Error('the last roll is not shown as 1 left');
+  await a.click('#bg-panel [data-act="roll"]');
+  await a.waitForSelector('#bg-panel .bg-ranks [data-rank="1"]', { timeout: 8000 });
+  const end = await a.evaluate(() => { const g = window.__bgUi.play.g; return { over: g.over, ranks: g.ranks, pos: g.pos, rows: [...document.querySelectorAll('#bg-panel .bg-ranks [data-rank]')].map((r) => +r.dataset.rank), status: document.querySelector('#bg-panel .bg-status')?.textContent || '' }; });
+  if (!end.over || end.rows.length !== 2 || end.rows[0] !== 1) throw new Error('the game did not end with both players placed: ' + JSON.stringify(end));
+  if ((end.pos[0] > end.pos[1]) !== (end.ranks[0] < end.ranks[1]) && end.pos[0] !== end.pos[1]) throw new Error('the places do not follow the squares: ' + JSON.stringify(end));
+  if (!end.status) throw new Error('no end line after the last roll');
+  if (await a.locator('#bg-panel .bg-rolls').count()) throw new Error('the rolls left still show after the game is over');
+  if (shotDir) { await a.waitForTimeout(1800); await a.screenshot({ path: shotDir + '/ladders-ranks.png' }); }
   await a.click('#bg-panel .bg-x');
 
   step = 'A takes blocks out of the 3D tower against the computer';
@@ -293,6 +322,20 @@ try {
     // The holder sees which of their cards is being eyed.
     await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
     if (!faced) {
+      // The holder pushes one card up ("take this one"): both see which, the picker not what it is.
+      await other.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:first-child').click());
+      await mover.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.back.tip:first-child', { timeout: 8000 });
+      await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.tip:first-child', { timeout: 8000 });
+      if (!/👆/.test(await mover.evaluate(() => document.querySelector('#bg-panel .bg-status')?.textContent || ''))) throw new Error('the picker is not told a card was pushed up');
+      if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-tip-picker.png' }); await other.screenshot({ path: shotDir + '/thief-tip-holder.png' }); }
+      // Another card instead: only one stands up. Tapped again, it goes back down.
+      await other.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:nth-child(2)').click());
+      await mover.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.tip:nth-child(2)', { timeout: 8000 });
+      if ((await mover.locator('#bg-panel [data-hand="from"] .bg-card1.tip').count()) !== 1) throw new Error('more than one card is pushed up');
+      await other.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:nth-child(2)').click());
+      await mover.waitForFunction(() => !document.querySelector('#bg-panel [data-hand="from"] .bg-card1.tip'), null, { timeout: 8000 });
+      await other.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:first-child').click());
+      await mover.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.tip', { timeout: 8000 });
       // The holder shuffles (once a turn): the finger comes off, and the picker points again.
       await other.click('#bg-panel [data-act="mix"]');
       await mover.waitForFunction(() => /shuffled/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
