@@ -61,6 +61,7 @@ import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-fan.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createCheongwadaeNote } from './game/cheongwadae-note.js';
+import { createCityHallNear } from './game/city-hall-near.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
@@ -887,6 +888,7 @@ const naksanY = ridgeDistrict ? ridgeGround(ridgeDistrict.ridge, ridgeDistrict.o
 const naksan = createNaksanNear({ district: ridgeDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, buildings: map.buildings, groundY: naksanY, randomLook });
 // Euljiro 3-ga's neon alley: its signs, wires and people load when you come near (game/neon-alley-near.js).
 const neonAlley = createNeonAlleyNear({ scene, labels: $('labels'), roadGraph, randomLook });
+const cityHall = createCityHallNear({ scene, labels: $('labels'), areas: map.areas, randomLook }); // (the people on Seoul Plaza's lawn: game/city-hall.js)
 // Inwangsan and Bugaksan, with the city wall on their crest (the Gyeongbokgung map's
 // `northwall` landmark, core/north-ground.js); the hills load when you come near (game/north-wall-near.js).
 const northY = northGround(map.landmarks);
@@ -3629,7 +3631,7 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // grass, off the paths, clear of trees, benches and sculptures.
 // (lawn: an open picnic lawn with no trees, Yeouido's: one laid at an angle keeps its outline, mats lie square with it)
 const streetLawns = map.areas.filter((a) => ((a.k === 'park' && a.trees) || a.lawn) && !a.noMat).map((a) => { // (noMat: not in a temple)
-  if (a.lawn) return lawnFrom(a.p);
+  if (a.lawn) return lawnFrom(a.p, !!a.oval); // (oval: mats stay inside its outline, not its box)
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });
@@ -6912,7 +6914,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z) || cityHall.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
   if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss, 📊 Scoreboard)
@@ -7023,7 +7025,7 @@ function updateAction(p, tSec) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
-      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z);
+      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z) || cityHall.nearest(p.x, p.z);
       if (n) next = npcAct(n, p);
     }
   } else {
@@ -7813,7 +7815,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
   if (mode === 'street') for (const o of [...farm.staffNear(), ...seedShop.staffNear()]) placeLabels(o, camera, w, h); // (the farm stand's farmer, the seed shop's keeper)
   if (mode === 'street') for (const o of botanic.staffNear()) placeLabels(o, camera, w, h); // (the greenhouse's gardeners)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); oksu.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); cityHall.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); oksu.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -7983,6 +7985,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     gimpo, // Gimpo Airport (game/gimpo-walk.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
+    cityHall, // Seoul Plaza's people (game/city-hall-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     stage: () => interior?.stageShow?.state ?? null, // the Opera Theater's show (core/stage-show.js)
