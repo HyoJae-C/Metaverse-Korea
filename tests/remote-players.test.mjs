@@ -54,3 +54,11 @@ test('a jump puts the player at their new spot at once; walking still glides', (
   others.state('c', { x: 26, z: 3, ry: 1, s: 0.5, tp: 1 }); // walking on from there
   assert.equal(p.ch.root.position.x, 25);
 });
+
+test('nearbyFree leaves seated people out unless asked (a board game invite reaches a friend on a chair)', () => {
+  const at = (x, extra = {}) => ({ hidden: false, name: 'p' + x, target: { x, z: 0, ...extra }, ch: { root: { position: { x, z: 0 } } } });
+  const fake = { players: new Map([['a', at(1)], ['b', at(2, { sit: 1 })], ['c', at(3, { bk: 1 })]]) };
+  const near = RemotePlayers.prototype.nearbyFree;
+  assert.deepEqual(near.call(fake, 0, 0, 12).map((p) => p.id), ['a']);
+  assert.deepEqual(near.call(fake, 0, 0, 12, { seated: true }).map((p) => p.id), ['a', 'b']);
+});

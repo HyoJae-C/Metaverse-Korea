@@ -103,7 +103,7 @@ export function createBoardGames(game) {
       net: {
         myId: game.myId,
         nameOf: (id) => game.others.nameOf(id),
-        nearby: () => game.others.nearbyFree(game.me.root.position.x, game.me.root.position.z, 12).filter((p) => !game.safety.isBlocked(p.id, p.name)),
+        nearby: () => game.others.nearbyFree(game.me.root.position.x, game.me.root.position.z, 12, { seated: true }).filter((p) => !game.safety.isBlocked(p.id, p.name)),
         send: (msg) => game.net?.sendEmote(msg),
         here,
       },
