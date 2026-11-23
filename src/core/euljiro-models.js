@@ -321,6 +321,22 @@ export const EULJIRO_BUILD = {
   ongseong,
   // Namsangol's gate: two posts, a beam and a small tiled roof over a gap
   // in the wall.
+  // Namsangol's Seoul Millennium Time Capsule Plaza: the capsule's round
+  // stone lid in the middle of its sunken ring (l.r), stones round the rim.
+  timecapsule(g, l) {
+    const stone = new THREE.MeshLambertMaterial({ color: '#b9b4a8', flatShading: true });
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.35, 0.35, 16), stone);
+    lid.position.y = 0.175;
+    g.add(lid);
+    const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.2, 10), new THREE.MeshLambertMaterial({ color: '#8d877a', flatShading: true }));
+    knob.position.y = 0.45;
+    g.add(knob);
+    for (let i = 0; i < 16; i++) {
+      if (i % 4 === 2) continue; // (ways in)
+      const a = (i / 16) * Math.PI * 2;
+      box(g, 1.3, 0.4, 0.5, Math.cos(a) * l.r, 0.2, Math.sin(a) * l.r, '#a8a295').rotation.y = -a + Math.PI / 2;
+    }
+  },
   hanokgate(g) {
     for (const sx of [-1, 1]) box(g, 0.45, 3.4, 0.45, sx * 2.6, 1.7, 0, '#6b4630');
     box(g, 5.8, 0.45, 0.6, 0, 3.3, 0, '#6b4630');

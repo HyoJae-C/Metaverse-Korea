@@ -6,6 +6,10 @@
 // The locals are already there when you walk in: Grandma, Minjun and
 // Seoyeon sit round the yut mat waiting for a fourth, Grandpa Kim keeps the
 // tuho jar, a boy kicks a jegi by the stool and Suni waits on the seesaw.
+//
+// Yutnori with people: whoever opens the mat can invite the people standing
+// round it (core/yut-net.js); the invited get a card here, and their panel
+// waits for the host's start. Seats nobody takes stay with the locals.
 import { FOLK_GAMES, makeJegi, setNeolTilt } from '../core/folk-props.js';
 import { FOLK_YARD, FOLK_GAMES_ON, propToWorld } from '../data/folk-yard.js';
 import { folkLabel as FL, lineText } from '../ui/folk-labels.js';
@@ -15,9 +19,14 @@ import { JEGI_GAME } from '../core/jegi-game.js';
 import { NEOL_GAME } from '../core/neol-game.js';
 import { makeNpc, say } from '../core/npcs.js';
 import { t } from '../core/i18n.js';
+import { parseYut, yutReply } from '../core/yut-net.js';
 
 const NEAR = 60; // metres: closer than this, the locals are drawn
 const YUT_PAID_KEY = 'mk.folk.yutPaid';
+const YUT_NEAR = 9; // metres from the mat: close enough to be asked to a game, and to stay in one
+const ASK_MS = 28000; // the invite card (a little under the host's 30 s wait, ui/yut-ui.js)
+const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:56;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
+const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 const LOOKS = {
   elder: { model: 'basic', tee: null, hair: 'ash', dye: 'silver', pants: 'charcoal', shirt: 'cream', hairStyle: 'bun' },
   young: { model: 'basic', tee: null },
@@ -38,7 +47,7 @@ export function createFolkYard(game) {
   const { $, scene, shop, wallet, randomLook, dayKey } = game;
   const lm = FOLK_GAMES_ON ? game.map.landmarks.find((l) => l.type === 'folkyard') || null : null; // (hidden for now: see data/folk-yard.js)
   const uis = {};
-  if (!lm) return { uis, act: () => null, tick() {}, hideLabels() {}, relabel() {}, closeAll() {}, get open() { return false; } };
+  if (!lm) return { uis, act: () => null, tick() {}, hideLabels() {}, relabel() {}, closeAll() {}, onMsg: () => false, peerGone() {}, get open() { return false; } };
 
   // The props.
   const props = {};
@@ -107,7 +116,16 @@ export function createFolkYard(game) {
   const onClose = () => { game.action = game.STALE; };
   // The game panels (and their text, folk-text.js) are downloaded the first
   // time one is opened (core/lazy-panel.js).
-  uis.yut = lazyPanel(() => import('../ui/yut-ui.js').then(({ YutUI }) => new YutUI({ root: $('yut-panel'), onSay: speak('yut'), onWin: yutWin, onClose })));
+  // People round the mat (to ask to a game of yutnori), not counting anyone I blocked.
+  const matAt = () => propToWorld(lm, 'yut', [0, 0]);
+  const nearMat = (x, z) => { const [mx, mz] = matAt(); return Math.hypot(x - mx, z - mz) < YUT_NEAR; };
+  const yutNet = {
+    myId: game.myId,
+    nameOf: (id) => game.others?.nameOf(id),
+    nearby: () => { const [mx, mz] = matAt(); return (game.others?.nearbyFree(mx, mz, YUT_NEAR, { seated: true }) || []).filter((p) => !game.safety?.isBlocked(p.id, p.name)); },
+    send: (msg) => game.net?.sendEmote(msg),
+  };
+  uis.yut = lazyPanel(() => import('../ui/yut-ui.js').then(({ YutUI }) => new YutUI({ root: $('yut-panel'), onSay: speak('yut'), onWin: yutWin, onClose, net: yutNet })), { busy: false });
   uis.tuho = lazyPanel(() => import('../ui/tuho-ui.js').then(({ TuhoUI }) => new TuhoUI({ root: $('tuho-panel'), onSay: speak('tuho'), onMedal: payMedal(TUHO_GAME), onClose })));
   uis.jegi = lazyPanel(() => import('../ui/jegi-ui.js').then(({ JegiUI }) => new JegiUI({ root: $('jegi-panel'), onSay: speak('jegi'), onMedal: payMedal(JEGI_GAME), onClose })));
   uis.neol = lazyPanel(() => import('../ui/neol-ui.js').then(({ NeolUI }) => new NeolUI({ root: $('neol-panel'), onSay: speak('neol'), onMedal: payMedal(NEOL_GAME), onClose })));
@@ -147,7 +165,9 @@ export function createFolkYard(game) {
     if (u) {
       const id = Object.keys(uis).find((k) => uis[k] === u);
       const s = stands[id];
-      if (game.mode !== 'street' || Math.hypot(p.x - s.at[0], p.z - s.at[1]) > s.r + 3) u.close();
+      // (a game of yutnori with people: anywhere round the mat will do)
+      const away = id === 'yut' && u.busy ? !nearMat(p.x, p.z) : Math.hypot(p.x - s.at[0], p.z - s.at[1]) > s.r + 3;
+      if (game.mode !== 'street' || away) u.close();
     }
     const near = Math.hypot(dx, dz) < NEAR;
     jegi.visible = near;
@@ -174,5 +194,60 @@ export function createFolkYard(game) {
     for (const o of Object.values(people)) { const n = NAMES[o.id](); o.tag.textContent = n; }
   }
 
-  return { uis, act, tick, hideLabels, relabel, closeAll, stands, props: Object.values(props), get open() { return !!openUi(); } };
+  // An invite to yutnori: a card with Play / No thanks.
+  let ask = null, askFrom = null, askTimer = 0;
+  function closeAsk() { clearTimeout(askTimer); ask?.remove(); ask = null; askFrom = null; }
+  function showAsk(from) {
+    const name = game.others?.nameOf(from) || '?';
+    closeAsk();
+    ask = document.createElement('div');
+    ask.id = 'yut-ask';
+    ask.style.cssText = ASK_CSS;
+    askFrom = from;
+    const h = document.createElement('div');
+    h.textContent = FL('yut.ask').replace('{name}', name);
+    ask.append(h);
+    const answer = (yes) => {
+      closeAsk();
+      const me = game.me?.root.position;
+      if (yes && me && game.mode === 'street' && nearMat(me.x, me.z)) { closeAll(); uis.yut.join({ id: from, name }); } else yutNet.send(yutReply(from, false));
+    };
+    for (const [label, yes, bg] of [[FL('yut.yes'), true, '#ffd36b'], [FL('yut.no'), false, '#eee']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      b.style.cssText = ASK_BTN + ';background:' + bg;
+      b.onclick = () => answer(yes);
+      ask.append(b);
+    }
+    document.body.append(ask);
+    game.sfx?.tock?.(0.6, 900);
+    askTimer = setTimeout(() => { if (askFrom === from) answer(false); }, ASK_MS);
+  }
+  // A room message: true when it was one of ours.
+  function onMsg(from, e) {
+    const m = parseYut(e);
+    if (!m) return false;
+    const name = game.others?.nameOf(from);
+    if (name == null || game.safety?.isBlocked(from, name)) return true;
+    if (m.k === 'i') {
+      if (m.to !== game.myId) return true;
+      const me = game.me?.root.position;
+      // Not by the mat, or already playing: no.
+      if (!me || game.mode !== 'street' || !nearMat(me.x, me.z) || uis.yut.busy || ask) yutNet.send(yutReply(from, false));
+      else showAsk(from);
+      return true;
+    }
+    if (m.k === 'n' && m.host === game.myId && askFrom === from) closeAsk(); // (the invite was taken back)
+    if (uis.yut.loaded) uis.yut.onNet(from, m);
+    return true;
+  }
+  function peerGone(id) {
+    if (askFrom === id) closeAsk();
+    if (uis.yut.loaded) uis.yut.peerGone(id);
+  }
+
+  const api = { uis, act, tick, hideLabels, relabel, closeAll, onMsg, peerGone, stands, props: Object.values(props), get open() { return !!openUi(); } };
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug')) window.__folkYard = api; // (for the e2e tests)
+  return api;
 }

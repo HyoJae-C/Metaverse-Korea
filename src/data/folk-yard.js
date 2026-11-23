@@ -1,27 +1,30 @@
 // The folk games yard in Namsangol Hanok Village (Jung-gu): where the four
 // games' props stand and who is already there. Metres from the yard's
-// centre (the "folkyard" landmark in districts/euljiro.json), before the
-// yard's turn: every prop is turned half round (ry = PI) so you play facing
-// the hanok houses at the back, with the gate behind you. The middle lane
-// from the gate (|x| < 4) stays empty, so you walk straight in.
+// centre (the "folkyard" landmark in districts/euljiro.json: a 24 x 14 m
+// yard round the real folk games ground, south of the hanok quarter,
+// scripts/build-namsangol.mjs), x east, z south. You play facing north, to
+// the hanok houses. Pigeumjeong, the little pavilion, stands on its real spot
+// in the yard (about [-4.8, -0.5]); the north side (z < -2.5) stays empty
+// from the west edge, where you walk in from Cheonugak's plaza.
 //
 // The props' solid parts (SOLID) go into euljiro.json's blockers through
-// scripts/build-euljiro.mjs, which places the yard at the plaza's centre.
+// scripts/build-namsangol.mjs.
 
-// The yard is hidden for now (Yozi, 2026-11-10: hardly anyone goes in): no
-// props, no locals, no "Play" buttons, and no solid parts on the plaza. The
-// code stays as it is. To bring it back, set this to true and run
-// node scripts/build-euljiro.mjs (it puts the props' blockers back).
-export const FOLK_GAMES_ON = false;
+// The yard was hidden on 2026-11-10 (Yozi: hardly anyone went in) and opened
+// again on 2026-11-23 with yutnori for friends (Yozi: "남산골 오픈하고 윷놀이
+// 넣어주자", all four games). Off means no props, no locals, no "Play"
+// buttons and no solid parts on the plaza; after changing it, run
+// node scripts/build-namsangol.mjs (it adds or drops the props' blockers).
+export const FOLK_GAMES_ON = true;
 
 export const FOLK_YARD = {
-  ry: Math.PI,
+  ry: 0,
   // Each game's prop, at [x, z] from the yard's centre.
   props: {
-    yut: [-12, 2],
-    tuho: [9, 4],
-    jegi: [16, -3],
-    neol: [-19, -3],
+    yut: [-8.5, 2.5],
+    tuho: [2, 1],
+    jegi: [9, -3.5],
+    neol: [8, 4],
   },
   // The locals, in the prop's own frame (before ry), so they stay with it.
   // sit: on a floor cushion round the yut mat; on: standing on the board.
@@ -37,7 +40,7 @@ export const FOLK_YARD = {
   speaker: { yut: 'grandma', tuho: 'teacher', jegi: 'teacher', neol: 'suni' },
   // Inside this box (yard metres) you are in the yard: the first step in
   // says its name.
-  box: [-24, -10, 24, 10],
+  box: [-12, -7, 12, 7],
   // Yutnori pays for a win, a few wins a day (the rest are just for fun).
   yutWin: 5000,
   yutWinsPerDay: 3,
