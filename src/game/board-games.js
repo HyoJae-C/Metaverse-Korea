@@ -111,7 +111,7 @@ export function createBoardGames(game) {
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
       // The café has every game; a home, the ones whose sets stand in it.
-      games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'onecard' && (id !== 'mafia' || MAFIA_OPEN || DEBUG)) : [...new Set(homeSets().map((s) => s.game))]),
+      games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'mafia' || MAFIA_OPEN || DEBUG) : [...new Set(homeSets().map((s) => s.game))]),
       // The café sells the sets: the shop's own buying sheet (the money is asked for and written down there).
       sets: () => (BOARD_SETS_ON_SALE && cafe() ? (game.interior.store?.products || []).filter((pr) => furnitureById(pr.furniture)?.boardgame).map((pr) => ({
         id: furnitureById(pr.furniture).boardgame, label: game.priceLabel(pr.price), owned: !!game.owns?.(pr.furniture),

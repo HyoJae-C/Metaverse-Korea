@@ -227,6 +227,31 @@ try {
   await a.evaluate(() => clearInterval(window.__ladHold));
   await a.click('#bg-panel .bg-x');
 
+  step = 'One Card against the computer: a card that fits goes on the pile, else a card is drawn; a 7 asks for a suit';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="onecard"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="onecard"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel .oc-hand .oc-card', { timeout: 15000 });
+  // The cards carry the café's animal suits, and seven are dealt.
+  if ((await a.locator('#bg-panel .oc-hand .oc-card').count()) !== 7) throw new Error('One Card did not deal seven cards');
+  if (!(await a.locator('#bg-panel .oc-hand .oc-card:not(.joker) svg').count())) throw new Error('One Card has no animal suits');
+  for (let k = 0; k < 6; k++) {
+    await a.waitForFunction(() => { const g = window.__bgUi.play?.g; return g && (g.over || g.turn === window.__bgUi.play.seat); }, null, { timeout: 30000 });
+    if (await a.evaluate(() => window.__bgUi.play.g.over)) break;
+    const before = await a.evaluate(() => { const g = window.__bgUi.play.g; return { hand: g.hands[window.__bgUi.play.seat].length, pile: g.pile.length, can: g.playable(window.__bgUi.play.seat).length }; });
+    if (before.can) {
+      await a.click('#bg-panel .oc-hand .oc-card.can');
+      if (await a.locator('#bg-panel .oc-suits').count()) await a.click('#bg-panel .oc-suits [data-suit="♥"]'); // (a 7: hearts next)
+      await a.waitForFunction((n) => window.__bgUi.play.g.pile.length > n, before.pile, { timeout: 8000 });
+    } else {
+      await a.click('#bg-panel [data-act="draw"]');
+      await a.waitForFunction((n) => { const g = window.__bgUi.play.g; return g.over || g.hands[window.__bgUi.play.seat].length > n || g.out[window.__bgUi.play.seat]; }, before.hand, { timeout: 8000 });
+    }
+    if (k === 1 && shotDir) await a.screenshot({ path: shotDir + '/onecard.png' });
+  }
+  await a.click('#bg-panel .bg-x');
+
   step = 'A takes blocks out of the 3D tower against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="tower"]');

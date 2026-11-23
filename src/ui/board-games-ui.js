@@ -199,7 +199,7 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, gate = (go) => go(), table = null, sets = null, rand = Math.random }) {
+  constructor({ net, games = () => Object.keys(GAMES), onEvent = () => {}, onGame = () => {}, figureOf = null, gate = (go) => go(), table = null, sets = null, rand = Math.random }) {
     Object.assign(this, { net, games, onEvent, onGame, figureOf, gate, table, sets, rand }); // (gate(go): the café's pass, game/board-games.js; go() once a new game may start)
     if (!document.getElementById('bg-css')) {
       const st = el('style');
@@ -286,6 +286,7 @@ export class BoardGamesUI {
     if (!paid) { this.gate(() => this.choose(game, true)); return; } // (a new game: the café's pass may have run out since the last)
     this.leaveAll();
     if (game === 'mafia') this.loadMafia();
+    if (game === 'onecard') this.loadOneCard();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0, rolls: LADDERS_ROLLS.indexOf(30) }; // (ladders: the players lay the board out, unless the host says no; 30 rolls each, unless the host picks another limit)
     this.state = 'lobby';
     this.status = '';
@@ -293,6 +294,11 @@ export class BoardGamesUI {
   }
 
   // The mafia game's own screen and words (ui/board-mafia-ui.js), the first time it is wanted.
+  // One Card's screen and words (ui/board-onecard-ui.js), fetched when someone first plays it.
+  loadOneCard() {
+    if (!this.onecard) import('./board-onecard-ui.js').then((m) => { this.onecard = m; this.render(); }).catch(() => {});
+  }
+
   loadMafia() {
     if (!this.mafia) import('./board-mafia-ui.js').then((m) => { this.mafia = m; this.render(); }).catch(() => {});
   }
@@ -342,6 +348,7 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.dropView();
+    if (game === 'onecard') this.loadOneCard();
     if (game === 'mafia') { this.play.phaseAt = performance.now(); this.play.stepSeen = 0; this.loadMafia(); }
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
@@ -551,6 +558,9 @@ export class BoardGamesUI {
       setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, p.diceMs);
       this.startWalk(l);
       this.onEvent('dice', p.game, { power: p.dicePw });
+    } else if (p.game === 'onecard' && (act[0] === 'c' || act[0] === 'd')) {
+      this.status = this.onecard?.saidOneCard(g, p.names, L) || '';
+      this.onEvent(g.last?.bust ? 'wrong' : 'move', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
     else if (act[0] === 'm') { this.status = seat === p.seat ? '' : tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
     else if (act[0] === 'u') { if (seat !== p.seat && g.turn === p.seat) this.status = g.tip < 0 ? '' : tt('tipped', { name: p.names[seat] }); this.render(); return; } // (a card pushed up: the clock keeps running)
@@ -660,7 +670,11 @@ export class BoardGamesUI {
     else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
     else if (p.game === 'ladders' && g.setup) { const m = g.botPlace(this.rand); this.hostApply(turn, m ? ['a', ...m] : ['l']); }
     else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100 + DICE_MS; } // (lets the piece finish walking)
-    else if (p.game === 'thief') {
+    else if (p.game === 'onecard') {
+      // The computer plays what it can; a person whose time ran out just draws.
+      const m = p.ids[turn] === BOT ? g.botMove() : { draw: true };
+      this.hostApply(turn, m.draw ? ['d'] : ['c', m.card, m.suit]);
+    } else if (p.game === 'thief') {
       // Point at a card, think again, then take it.
       if (g.sel < 0) { this.hostApply(turn, ['s', g.botMove(this.rand)]); this.timer = 0; } else this.hostApply(turn, ['t', g.sel]);
     }
@@ -816,6 +830,7 @@ export class BoardGamesUI {
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
       let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
+      if (p.game === 'onecard' && !out) label += ` · ${g.hands[s].length}`;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -827,6 +842,7 @@ export class BoardGamesUI {
     if (p.game === 'omok') this.drawOmok(c);
     else if (p.game === 'fruitbell') this.drawBell(c);
     else if (p.game === 'thief') this.drawThief(c);
+    else if (p.game === 'onecard') this.onecard?.drawOneCard(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
