@@ -153,6 +153,33 @@ lists **districts** joined into one map (`src/core/districts.js`):
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
+## Gangnam Station (2026-11-24)
+
+`districts/gangnam.json` (`node scripts/build-gangnam.mjs`, then
+`build-base.mjs` and `build-closed.mjs`): Gangnam-daero on its real line at
+1/4 from the Gangnam Station crossroads north past Sinnonhyeon to Nonhyeon
+Station (461 m in the game), with the first stretch of Teheran-ro,
+Seocho-daero, Bongeunsa-ro, Sapyeong-daero, Hakdong-ro and Sinbanpo-ro; the
+base map carries them on. Data: `scripts/data/gangnam-osm.json` (the middle
+line between each road's two carriageways, from the Korea extract).
+
+- It was built to spread shops out, not to add any (Yozi): the two cosmetic
+  clinics came from Seongsu, three clothes shops and four furniture showrooms
+  from Euljiro, the appliance mart from Samseong. `GROUPS` in the script says
+  which shop stands where; a moved shop's `why` says where it came from.
+  `build-seongsu.mjs` lists them in `MOVED_AWAY` so it no longer places them.
+- Shops stand in three places only: the crossroads (big screens, clothes, the
+  appliance mart), the avenue by Sinnonhyeon (clinics) and Hakdong-ro east of
+  Nonhyeon Station (the real Nonhyeon furniture street). The rows between are
+  plain offices.
+- Only Gangnam Station (Line 2, exits 10 and 11) has stairs and trains.
+  Sinnonhyeon and Nonhyeon are names on the map.
+- The six big screens are `region.json` "screens" lines marked
+  `[build-gangnam screen]`; the script rewrites them and the station's exits.
+- A `links` road fills Teheran-ro between Yeoksam and Seolleung, which is
+  over 200 m from any district and so not in the base map.
+- Apgujeong (Dosan Park, the way down to the Han) is the next step, not built.
+
 ## The base map: all of Seoul's big roads (2026-11-14)
 
 Under the hand-built districts lies one base layer,

@@ -23,6 +23,7 @@ export const STATION_THEMES = {
   'ddp-station': ['shop', 'culture'],
   'dongmyo-station': ['shop'],
   'itaewon-station': ['shop'],
+  'gangnam-station': ['shop'], // the big screens, clinics, the Nonhyeon furniture street
   'samseong-station': ['shop', 'culture'], // COEX, Bongeunsa
   'jamsil-station': ['park', 'shop'], // the lake, Another Land, the tower
   'mongchontoseong-station': ['park', 'culture'], // Olympic Park
