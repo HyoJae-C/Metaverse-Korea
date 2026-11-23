@@ -49,10 +49,14 @@ const LP = (p) => p.map(L);
 const R1 = (p) => p.map(([x, z]) => [r1(x), r1(z)]);
 
 export const OKSU = {
-  pathMax: 0.34, // a path's climb: at most this rise per metre (about 19°)
-  stairMax: 0.62, // the stairs (about 32°)
+  pathMax: 0.33, // a path's climb: at most this rise per metre (about 18°; 20° after rounding)
+  stairMax: 0.6, // the stairs (about 31°; 33° after rounding)
   trailW: 2.4, // m: the ways up (game-size, like Haneul Park's stairs)
   roadW: 12, // m: Ttukseom-ro
+  // The peak's height (game m). SRTM gives 13 m above the road (road ~23 m,
+  // peak ~75 m above the sea); articles give ~80 m, about 16 m above a
+  // ~15 m road. Yozi 2026-11-23: halfway between, 14.5 m.
+  peakH: 14.5,
   islandSize: [5, 4], // m: a photo island's deck (game-size)
 };
 
@@ -147,7 +151,11 @@ const rawAt = (x, z) => { const u = (x - BX0) / RES, v = (z - BZ0) / RES; const 
 const roadY = resample(roadLine, 3).filter(([x, z]) => polyDist(x, z, foot) < 25).map(([x, z]) => realY(x, z)).sort((a, b) => a - b);
 const BASE = roadY[Math.floor(roadY.length / 2)];
 const FADE = 6; // m inside the outline over which the ground comes down to 0
-const hRaw = (x, z) => Math.max(0, (rawAt(x, z) - BASE) / 4);
+const hSrtm = (x, z) => Math.max(0, (rawAt(x, z) - BASE) / 4);
+let srtmPeak = 0;
+for (let x = BX0; x <= BX1; x += 1) for (let z = BZ0; z <= BZ1; z += 1) if (inPoly(x, z, foot)) srtmPeak = Math.max(srtmPeak, hSrtm(x, z) * Math.min(1, polyDist(x, z, foot) / 6));
+const LIFT = OKSU.peakH / srtmPeak; // (the whole hill scaled, so its shape stays SRTM's)
+const hRaw = (x, z) => hSrtm(x, z) * LIFT;
 const hFoot = (x, z) => (inPoly(x, z, foot) ? hRaw(x, z) * Math.min(1, polyDist(x, z, foot) / FADE) : 0);
 let peak = { y: 0 };
 for (let x = BX0; x <= BX1; x += 1) for (let z = BZ0; z <= BZ1; z += 1) { const y = hFoot(x, z); if (y > peak.y) peak = { x, z, y }; }

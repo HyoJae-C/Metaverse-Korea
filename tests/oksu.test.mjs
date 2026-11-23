@@ -42,7 +42,7 @@ test('every way up is on its OSM line (within 1 m)', () => {
 });
 
 test("the hill: its relief above the road at 1/4 (10-20 m), walkable everywhere you can go, 0 at its foot", () => {
-  assert.ok(l.peak.y > 10 && l.peak.y < 20, `peak ${l.peak.y} m (real ~80 m above the sea, the road ~20 m on SRTM)`);
+  assert.ok(Math.abs(l.peak.y - 14.5) < 0.2, `peak ${l.peak.y} m (Yozi 2026-11-23: halfway between SRTM 13 m and the articles 16 m)`);
   let worst = 0;
   for (const [x, z] of l.foot) worst = Math.max(worst, dalmajiHeight(l, x, z));
   assert.ok(worst < 0.5, `the foot meets the ground (${worst.toFixed(2)} m)`);

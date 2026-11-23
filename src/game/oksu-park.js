@@ -10,9 +10,10 @@
 //   Photo Island A and B (포토아일랜드): decks out over the slope with a
 //     railing round three sides, facing the Han; B has its little roof.
 //   The wood: round trees in the season's colours and some pines.
-//   Forsythia (개나리) along the stairs on the river side: yellow in spring
-//     (the real date, core/weather-roll.js seasonAt), green the rest of the
-//     year, so the flowers are something to come back for.
+//   Forsythia (개나리) along the stairs on the river side, only in spring
+//     when they bloom yellow (the real date, core/weather-roll.js seasonAt);
+//     the rest of the year there are none (Yozi 2026-11-23), so the flowers
+//     are something to come back for.
 //   Gazebos (정자), the toilet, the exercise bars and the park's name stone
 //     by the entrance stairs.
 //
@@ -258,8 +259,12 @@ export function buildOksuPark({ scene, l, y, lowSpec = false }) {
     group.userData.counts.trees = round.length + pines.length;
   }
 
-  { // Forsythia (개나리) beside the stairs and decks near the look-outs and
-    // the entrance: yellow in spring, green the rest of the year.
+  const bloom = forsythiaInBloom();
+  group.userData.bloom = bloom;
+  group.userData.counts.forsythia = 0;
+  if (bloom) { // Forsythia (개나리) beside the stairs and decks near the
+    // look-outs and the entrance, in spring only (Yozi 2026-11-23: none the
+    // rest of the year).
     const spots = [];
     const hubs = islands.map((i) => i.ring[0]).concat([W([0, 0])]);
     for (const t of trails) {
@@ -271,14 +276,11 @@ export function buildOksuPark({ scene, l, y, lowSpec = false }) {
         spots.push([bx, y(bx, bz) - 0.05, bz, hash(z, x) * 6, 1 + hash(bx, bz) * 0.4, 0.8 + hash(bz, bx) * 0.4, 1 + hash(bx, bz) * 0.4]);
       }, side > 0 ? 0.4 : 1.1);
     }
-    const bloom = forsythiaInBloom();
     const yellows = ['#f6cf1e', '#f9dc3c', '#efc012', '#fbe35a'].map((c) => new THREE.Color(c));
-    const leaves = ['#6e9f3e', '#7aab48', '#62913a'].map((c) => new THREE.Color(c));
     // (arching sprays: a squashed ball with its ends drooping)
     const geo = new THREE.IcosahedronGeometry(0.7, 1).scale(1.25, 0.75, 1.1).translate(0, 0.45, 0);
-    group.add(instanced(geo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), spots, 'forsythia', (m, i) => m.setColorAt(i, bloom ? yellows[i % yellows.length] : leafColor(leaves[i % leaves.length], leafHash(i, 4), MIX.bush))));
+    group.add(instanced(geo, new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), spots, 'forsythia', (m, i) => m.setColorAt(i, yellows[i % yellows.length])));
     group.userData.counts.forsythia = spots.length;
-    group.userData.bloom = bloom;
   }
 
   { // Gazebos (정자): a wooden floor on posts and a four-sided roof.
