@@ -8011,6 +8011,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     seats: () => (mode === 'street' ? streetSeats : interior?.seats || []).length, // (on the street: picnic mats come last)
     sit: (i) => sitDown((mode === 'street' ? streetSeats : interior.seats)[i]),
     seated: () => !!seated,
+    boardWatch: () => boardGames.watching, // other people's board games I can see on their tables (game/board-games.js)
     bodyProfile: (px = 0.25) => { const v = new THREE.Vector3(), bins = {}; me.root.updateMatrixWorld(true); me.root.traverse((m) => { if (!m.isSkinnedMesh || !m.visible) return; const n = m.geometry.attributes.position.count; for (let i = 0; i < n; i++) { m.getVertexPosition(i, v); m.localToWorld(v); me.root.worldToLocal(v); const k = Math.round(v.z * 50) / 50; const b = bins[k] || (bins[k] = [9, -9]); if (Math.abs(v.x) < px && v.y < 0.7) { b[0] = Math.min(b[0], +v.y.toFixed(3)); b[1] = Math.max(b[1], +v.y.toFixed(3)); } } }); return bins; },
     sitNear: (x, z, key) => { const all = (mode === 'street' ? [...streetSeats, ...hanParks.seats] : interior?.seats || []).filter((q) => !key || q[key]); let b = null, bd = Infinity; for (const q of all) { const d = Math.hypot(q.x - x, q.z - z); if (d < bd) { bd = d; b = q; } } if (b) { moveMeTo(activeScene, b.stand[0], b.stand[1], b.ry); sitDown(b); } return b && [b.x, b.z]; },
     seatInfo: () => seated && { x: +me.root.position.x.toFixed(2), y: +me.root.position.y.toFixed(3), z: +me.root.position.z.toFixed(2), ry: me.root.rotation.y, seat: [seated.x, seated.z, seated.y ?? null] },

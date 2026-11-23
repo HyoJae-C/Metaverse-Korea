@@ -19,7 +19,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
+  GAMES, TOYS, FACES, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -160,7 +160,6 @@ const el = (tag, cls, text) => {
 };
 const between = ([a, b], rand) => a + (b - a) * rand();
 // Faces to pull at each other (bluffing over the joker, gloating over a win).
-export const FACES = ['😏', '😱', '😇', '🤫', '😂', '👀'];
 const FACE_MS = 2600, FACE_GAP = 1200;
 // What the toys shout when you find the bad spot.
 const SHOUT = {
