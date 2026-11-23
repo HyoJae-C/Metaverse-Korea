@@ -295,6 +295,8 @@ try {
       await mover.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:last-child').click());
       await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
       await mover.waitForFunction(() => /⏳/.test(document.querySelector('#bg-panel .bg-clock')?.textContent || ''), null, { timeout: 5000 }); // the turn's clock shows
+      // The cards show the café's animal suits (a drawing each), not hearts and spades.
+      if (!(await other.locator('#bg-panel [data-hand="from"] .bg-card1:not(.joker) .bg-suit[data-suit] svg').count())) throw new Error('the cards have no animal suit');
       await other.click('#bg-panel [data-face="1"]');
       await mover.waitForFunction(() => /😱/.test(document.querySelector('#bg-panel .bg-pop')?.textContent || ''), null, { timeout: 8000 });
       if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-picker.png' }); await other.screenshot({ path: shotDir + '/thief-holder.png' }); }
