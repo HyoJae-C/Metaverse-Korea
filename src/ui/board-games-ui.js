@@ -160,7 +160,7 @@ const el = (tag, cls, text) => {
 };
 const between = ([a, b], rand) => a + (b - a) * rand();
 // Faces to pull at each other (bluffing over the joker, gloating over a win).
-const FACE_MS = 2600, FACE_GAP = 1200;
+const FACE_MS = 2600, FACE_GAP = 3000; // (one face at a time: wait until the last one is gone, Yozi 2026-11-23)
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
@@ -930,6 +930,7 @@ export class BoardGamesUI {
       grid.append(pile);
     });
     c.append(grid);
+    if (g.final && !g.over) c.append(el('div', 'bg-status', L(T.lastBell))); // (the last card made five: the bell first)
     if (g.over || g.out[p.seat]) return;
     const row = el('div', 'bg-row');
     row.style.justifyContent = 'center';

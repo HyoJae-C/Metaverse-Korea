@@ -102,7 +102,49 @@ test('fruit bell: a whole game ends with one winner', () => {
     else g.flip(g.turn);
   }
   assert.ok(g.over);
-  assert.ok(g.winner >= 0);
+  assert.ok(g.winner >= -1);
+});
+
+test('fruit bell: the last card can still be rung; one player left with cards ends it; a tie is a draw', () => {
+  // The last card turned makes five: the game waits for the bell.
+  const g = new FruitBell({ players: 2, seed: 1 });
+  g.down = [[{ f: 'grape', n: 3 }], []];
+  g.up = [[], [{ f: 'grape', n: 2 }, { f: 'peach', n: 1 }, { f: 'grape', n: 2 }]];
+  g.turn = 0;
+  assert.ok(g.flip(0));
+  assert.ok(!g.over && g.final);
+  assert.ok(g.ring(1)); // right: takes all four
+  assert.ok(g.over);
+  assert.equal(g.winner, 1);
+
+  // Nobody rings it: the turn player passes (nothing left to turn) and the cards are counted.
+  const h = new FruitBell({ players: 2, seed: 1 });
+  h.down = [[{ f: 'grape', n: 3 }], []];
+  h.up = [[{ f: 'peach', n: 1 }, { f: 'peach', n: 1 }], [{ f: 'grape', n: 2 }]];
+  h.turn = 0;
+  h.flip(0);
+  assert.ok(h.final && !h.over);
+  assert.ok(h.flip(h.turn));
+  assert.ok(h.over);
+  assert.equal(h.winner, 0); // 3 cards to 1
+
+  // Not five on the last card: counted at once; the same number of cards is a draw.
+  const d = new FruitBell({ players: 2, seed: 1 });
+  d.down = [[{ f: 'grape', n: 1 }], []];
+  d.up = [[], [{ f: 'peach', n: 1 }]];
+  d.turn = 0;
+  d.flip(0);
+  assert.ok(d.over);
+  assert.equal(d.winner, -1);
+
+  // Three players, two run out of cards to turn: no flipping on alone.
+  const t = new FruitBell({ players: 3, seed: 1 });
+  t.down = [[{ f: 'grape', n: 1 }, { f: 'peach', n: 1 }, { f: 'peach', n: 2 }], [{ f: 'grape', n: 1 }], []];
+  t.up = [[], [], [{ f: 'strawberry', n: 1 }]];
+  t.turn = 1;
+  t.flip(1);
+  assert.ok(t.over); // only seat 0 could still turn
+  assert.equal(t.winner, 0);
 });
 
 test('one card: attacks stack and must be defended or drawn', () => {

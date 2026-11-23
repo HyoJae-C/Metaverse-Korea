@@ -374,6 +374,7 @@ export class FruitBell {
     this.last = null;
     this.flips = 0; // cards turned so far: a ring says which table it saw
     this.rungAt = -1; // the table a right ring already took
+    this.final = false; // the last call for the bell (advance())
   }
 
   // Fruit totals over the top face-up card of everyone still in.
@@ -392,7 +393,9 @@ export class FruitBell {
   flip(p) {
     if (this.over || p !== this.turn || this.out[p]) return false;
     const c = this.down[p].pop();
-    if (!c) return false;
+    // (the last call for the bell, and I have nothing left to turn: that was the game)
+    if (!c) { if (!this.final) return false; this.final = false; this.finishByCount(); return true; }
+    this.final = false;
     this.up[p].push(c);
     this.flips++;
     this.last = { p, flip: c };
@@ -400,22 +403,36 @@ export class FruitBell {
     return true;
   }
 
+  // Who turns a card next. A game needs two people who still have cards to
+  // turn: with one or none left it ends, the one with the most cards winning.
+  // But the last card turned may have made five, and then the bell comes
+  // first (`final`): the game waits for a ring, or for the turn player to
+  // pass by turning (or by having nothing to turn; the host's clock does it
+  // for them), and only then is it counted. (Before 2026-11-23 it ended the
+  // moment the last card was turned, so that five could never be rung.)
   advance(from) {
-    // Next player who still has a card to flip. If nobody does, the one with
-    // the most cards in total wins.
-    for (let k = 1; k <= this.n; k++) {
-      const t = (from + k) % this.n;
-      if (!this.out[t] && this.down[t].length) { this.turn = t; return; }
+    const can = (t) => !this.out[t] && this.down[t].length > 0;
+    const left = [];
+    for (let k = 1; k <= this.n; k++) { const t = (from + k) % this.n; if (can(t)) left.push(t); }
+    if (left.length >= 2) { this.turn = left[0]; return; }
+    if (this.bellRight() && this.rungAt !== this.flips) {
+      this.final = true;
+      this.turn = left.length ? left[0] : this.out[from] ? this.out.findIndex((o) => !o) : from;
+      return;
     }
     this.finishByCount();
   }
 
   cardsOf(p) { return this.down[p].length + this.up[p].length; }
 
+  // The most cards wins; the same number at the top is a draw (winner -1).
   finishByCount() {
-    let best = -1;
-    for (let p = 0; p < this.n; p++) if (!this.out[p] && (best < 0 || this.cardsOf(p) > this.cardsOf(best))) best = p;
-    this.winner = best;
+    const alive = [];
+    for (let p = 0; p < this.n; p++) if (!this.out[p]) alive.push(p);
+    const top = Math.max(...alive.map((p) => this.cardsOf(p)));
+    const best = alive.filter((p) => this.cardsOf(p) === top);
+    this.winner = best.length === 1 ? best[0] : -1;
+    this.final = false;
     this.over = true;
   }
 
@@ -452,7 +469,9 @@ export class FruitBell {
     for (let p = 0; p < this.n; p++) if (!this.out[p] && !this.cardsOf(p)) this.out[p] = true;
     const alive = this.out.map((o, p) => (o ? -1 : p)).filter((p) => p >= 0);
     if (alive.length === 1) { this.winner = alive[0]; this.over = true; return; }
-    if (this.out[this.turn] || !this.down[this.turn].length) this.advance(this.turn);
+    // Whose turn now; and with fewer than two people left who can turn a card, the game is counted (advance()).
+    const turners = alive.filter((p) => this.down[p].length > 0).length;
+    if (this.out[this.turn] || !this.down[this.turn].length || turners < 2) this.advance(this.out[this.turn] || !this.down[this.turn].length ? this.turn : (this.turn + this.n - 1) % this.n);
   }
 
   leave(p) {
