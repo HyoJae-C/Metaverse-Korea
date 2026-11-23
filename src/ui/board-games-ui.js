@@ -115,6 +115,14 @@ const CSS = `
 #bg-panel .bg-card1:disabled { cursor: default; }
 #bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
 #bg-panel .bg-who { text-align: center; }
+#bg-panel.mini { align-items: flex-end; background: none; pointer-events: none; }
+#bg-panel.mini .bg-card { pointer-events: auto; width: min(440px, calc(100vw - 16px)); max-height: 52vh; margin-bottom: 8px; padding: 10px 12px; background: rgba(255,250,240,.96); }
+#bg-panel.mini h2 { font-size: 15px; margin-bottom: 4px; }
+#bg-panel.mini .bg-x { top: 6px; right: 6px; width: 30px; height: 30px; }
+#bg-panel.mini .bg-chat, #bg-panel.mini .bg-who { display: none; }
+#bg-panel.mini .bg-seats { margin-bottom: 4px; }
+#bg-panel.mini .bg-fp { padding: 2px 6px 6px; }
+#bg-panel.mini .bg-fan { padding: 16px 0 6px; }
 #bg-panel .bg-fp.has3d { background: #b97b45; padding-top: 0; }
 #bg-panel .bg-fp.has3d canvas.bg-thief3d { border-radius: 0; margin: 0 -8px; width: calc(100% + 16px); max-height: 40vh; background: linear-gradient(#f6e7c8, #ecd6ae); }
 #bg-panel .bg-fp.has3d .bg-who, #bg-panel .bg-fp.has3d [data-hand="from"]:not(.mine) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; }
@@ -163,8 +171,8 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, onGame, figureOf, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, table = null, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, figureOf, table, rand });
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -272,7 +280,8 @@ export class BoardGamesUI {
     while (ids.length < g.min) ids.push(BOT);
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
-    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.opt || 0);
+    // Catch the Thief is played at a real table in the café when one is free (its number is the option).
+    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' ? this.table?.pick(ids.length) || 0 : lob.opt || 0);
   }
 
   addBot() {
@@ -306,7 +315,10 @@ export class BoardGamesUI {
         this.render();
       }).catch(() => {});
     }
-    if (game === 'thief') {
+    this.table?.end();
+    if (game === 'thief' && opt > 0 && this.table?.start({ ids, seat: this.play.seat, table: opt, names: this.play.names, bot: BOT, onPick: (i) => this.myMove(['s', i]) })) {
+      this.play.world = true; // at a table in the café: the panel is only my own hand
+    } else if (game === 'thief') {
       // Seen from my seat, in 3D (the flat cards show until it is here, or with no WebGL).
       const p = this.play;
       import('./board-thief-3d.js').then((m) => {
@@ -492,6 +504,7 @@ export class BoardGamesUI {
     }
     if (this.play) this.onGame(null);
     this.play = null;
+    this.table?.end();
     this.dropView();
     this.state = 'menu';
     this.status = '';
@@ -559,6 +572,7 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ drawing
   render() {
     if (!this.open) return;
+    this.root.classList.toggle('mini', this.state === 'play' && !!this.play?.world);
     const c = this.card;
     const typing = document.activeElement === this.chatInput;
     c.replaceChildren();
@@ -1030,14 +1044,14 @@ export class BoardGamesUI {
     // Seen from my seat (Yozi 2026-11-23): the other player sits across the
     // table holding their cards up in a fan, their face (and the faces they
     // pull) above it; my own cards are fanned in my hands at the bottom.
-    const scene = el('div', 'bg-fp' + (this.view ? ' has3d' : ''));
-    if (this.view) {
-      this.view.sync({
+    const scene = el('div', 'bg-fp' + (this.view ? ' has3d' : '') + (p.world ? ' world' : ''));
+    if (this.view || p.world) {
+      (p.world ? this.table : this.view).sync({
         counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, over: g.over,
         faces: p.ids.map((_, s) => (p.faces?.[s] ? FACES[p.faces[s].n] : '')), gone: p.ids.map((_, s) => !!p.gone?.[s]),
         canPick: !g.over && g.turn === p.seat,
       });
-      scene.append(this.view.el);
+      if (this.view) scene.append(this.view.el);
     }
     // A hand of cards as a fan: each card turned a little more, on an arc.
     const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false }) => {
@@ -1069,6 +1083,7 @@ export class BoardGamesUI {
       const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
       // Across the table: whoever I am dealing with. I am being picked from:
       // the picker; otherwise the one holding the cards being picked.
+      if (p.world && !mine && !myTurn) { /* (not my business just now: only my own cards, below) */ } else {
       scene.append(who(mine ? g.turn : from));
       if (mine) {
         // Their finger hovers over my cards: I hold them up and see which one.
@@ -1092,6 +1107,7 @@ export class BoardGamesUI {
         draw.onclick = () => this.myMove(['t', g.sel]);
         row.append(draw);
         scene.append(row);
+      }
       }
     }
     if (g.hands[p.seat].length) {

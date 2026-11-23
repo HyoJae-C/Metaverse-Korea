@@ -15,11 +15,11 @@ import * as THREE from 'three';
 
 const lam = (color) => new THREE.MeshLambertMaterial({ color });
 const R = 1.05; // seats' distance from the middle of the table
-const CARD_W = 0.2, CARD_H = 0.29;
+export const CARD_W = 0.2, CARD_H = 0.29;
 const HAND_Y = 0.79, EYE_Y = 1.08;
 
 // A card back: our own stripes (the same as the flat cards on the panel).
-function backTexture() {
+export function backTexture() {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 96;
   const x = c.getContext('2d');
@@ -35,7 +35,7 @@ function backTexture() {
 }
 
 // Words or an emoji floating over a head.
-function label(text, { size = 44, bg = 'rgba(255,255,255,.9)', pad = 14 } = {}) {
+export function label(text, { size = 44, bg = 'rgba(255,255,255,.9)', pad = 14 } = {}) {
   const c = document.createElement('canvas');
   const x = c.getContext('2d');
   const font = `700 ${size}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;

@@ -4,7 +4,7 @@
 // panel, the rules and their words (ui/board-games-ui.js) load the first time
 // someone opens a game or is invited to one.
 //
-// game: { myId, net, others, me, interior, safety, sfx, music }
+// game: { myId, net, others, me, interior, safety, sfx, music, myLook, camera, canvas, scene, seated, sit, stand, seatFree }
 import { localName, getLanguage } from '../core/i18n.js';
 import { createCharacter } from '../core/character.js';
 
@@ -20,14 +20,16 @@ const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%)
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
 export function createBoardGames(game) {
-  let ui = null, loading = null, ask = null, askTimer = 0;
+  let ui = null, table = null, loading = null, ask = null, askTimer = 0;
   const here = () => !!game.interior?.stations?.boardgames;
   const load = () => (loading ||= import('../ui/board-games-ui.js').then(async (m) => {
     const text = await import('../ui/board-games-text.js');
     const { BOARD_TRACKS } = await import('../ui/board-games-music.js');
     const { playBoardSound } = await import('../ui/board-games-sounds.js');
+    table = (await import('./board-table.js')).createBoardTable(game);
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
+      table,
       // A player as a little figure (the host sits in the pirate's barrel).
       figureOf: (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } },
       net: {
@@ -106,6 +108,9 @@ export function createBoardGames(game) {
       return true;
     },
     peerGone(id) { ui?.peerGone(id); },
+    // Playing at a table in the café: my eyes at my chair (game/board-table.js), and no standing up by walking.
+    camera(dt) { table?.camera(dt); },
+    get seated() { return !!table?.on; },
     // Walked out of the room.
     leftRoom() { closeAsk(); if (ui?.open || ui?.busy) ui.close(); },
     get panel() { return { get open() { return !!ui?.open; }, close() { ui?.close(); } }; },
