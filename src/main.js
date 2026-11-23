@@ -270,6 +270,7 @@ import { hillGround } from './core/hill-ground.js';
 import { createHanBridges } from './game/han-bridges.js';
 import { createNamsanWalk } from './game/namsan-walk.js';
 import { createNanjiWalk } from './game/nanji-walk.js';
+import { createOksuWalk } from './game/oksu-walk.js';
 import { createMokdongNear } from './game/mokdong-near.js';
 import { createBotanicNear } from './game/botanic-near.js';
 import { createGimpoWalk } from './game/gimpo-walk.js';
@@ -895,6 +896,8 @@ const hanBridges = createHanBridges({ scene, bridges: map.bridges }); // the Han
 const namsanWalk = createNamsanWalk({ landmarks: map.landmarks, collision, scene, roads: map.roads, buildings: map.buildings, seats: streetSeats });
 // Haneul Park's hill and the Nanji Campground (game/nanji-walk.js): the ways up are decks, the fields and tents load near.
 const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec });
+// Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
+const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
 const mokdong = createMokdongNear({ landmarks: map.landmarks, scene });
 // Gimpo Airport: the roof deck you walk on (first download); the terminals, runways and planes load near (game/gimpo-walk.js).
@@ -904,7 +907,7 @@ const namsanCable = createNamsanCable({
   get me() { return me; }, get mode() { return mode; }, get wallet() { return wallet; }, get shop() { return shop; },
   t, L, fmt, missionEvent: (k, id) => missionEvent(k, id), resend: () => { sendTimer = 0; }, clearAction: () => { action = STALE; },
 }, { landmarks: map.landmarks, low: storefronts.get('namsan-sky-cable')?.door, top: namsanWalk.station, topOut: namsanWalk.stationOut });
-const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) || nanji.y(x, z) || gimpo.y(x, z) || hanBridges.y(x, z) });
+const npcs = new StreetNpcs(scene, $('labels'), roadGraph, zones.items.map((z) => ({ id: z.zone.id, names: z.zone.npc, x: z.x, z: z.z })), undefined, { groundY: (x, z) => slopeY(x, z) || namsanWalk.y(x, z) || naksanY(x, z) || northY(x, z) || nanji.y(x, z) || oksu.y(x, z) || gimpo.y(x, z) || hanBridges.y(x, z) });
 // Busking zones (region.json "busking"), e.g. Hongdae Walking Street: a singer, K-pop dancers, a crowd, a song.
 // Gyeongbokgung performances: the fan dance and the king on the lawns either side of the courts, and
 // the Bukcheong lion dance on the square in front of Gwanghwamun
@@ -3477,7 +3480,7 @@ const subway = createSubway(subwayStations, {
   enterStore, leaveStore, moveMeTo, findFreeSpot, goSolo, clearAction: () => { action = STALE; },
   onArrive: (k) => subwayArrived(k),
   onNoBikeStairs: noBikeStairs,
-  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || terraceY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z) || nanji.y(p.x, p.z) || gimpo.y(p.x, p.z) || hanBridges.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, Bongeunsa's Buddha terrace, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan, Bugaksan/Inwangsan, Haneul Park or a Han bridge
+  streetY: (p, px0, pz0) => { const y = updateStream(p, px0, pz0); return y || skateY || basketball.basketY || hillY(map.landmarks, p.x, p.z) || yardY(map.landmarks, p.x, p.z) || terraceY(map.landmarks, p.x, p.z) || buskingGroundY(map.landmarks, p.x, p.z) || bukchonY(p.x, p.z) || slopeY(p.x, p.z) || namsanWalk.y(p.x, p.z) || naksanY(p.x, p.z) || northY(p.x, p.z) || nanji.y(p.x, p.z) || oksu.y(p.x, p.z) || gimpo.y(p.x, p.z) || hanBridges.y(p.x, p.z); }, // down by a stream, in the skate park, up a park hill, Myeongdong Cathedral's hill, Bongeunsa's Buddha terrace, the busking bank, Bukchon's hill, Gyeongnidan-gil, the Namsan trail, Naksan, Bugaksan/Inwangsan, Haneul Park, Dalmaji Park or a Han bridge
 });
 const { stationStores, GATE_TEXT, METRO_TEXT, stationIndex, boardTrain, pickStop, metroGetOff, endMetro, passGate, gateFree, updateSubway } = subway;
 
@@ -5383,7 +5386,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => mokdong.group, () => farm.group, () => seedShop.group, () => botanic.group, () => gimpo.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => oksu.group, () => mokdong.group, () => farm.group, () => seedShop.group, () => botanic.group, () => gimpo.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -7791,7 +7794,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
   if (mode === 'street') for (const o of [...farm.staffNear(), ...seedShop.staffNear()]) placeLabels(o, camera, w, h); // (the farm stand's farmer, the seed shop's keeper)
   if (mode === 'street') for (const o of botanic.staffNear()) placeLabels(o, camera, w, h); // (the greenhouse's gardeners)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); oksu.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -7956,6 +7959,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     tandemRent, // Seoul Forest's tandem rental (game/tandem-rental-near.js)
     boatTaxi, // the Han River Boat Taxi (game/boat-taxi-near.js)
     nanji, // Haneul Park and the Nanji Campground (game/nanji-walk.js)
+    oksu, // Dalmaji Park by Oksu Station (game/oksu-walk.js)
     gimpo, // Gimpo Airport (game/gimpo-walk.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
