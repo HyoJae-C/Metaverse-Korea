@@ -21,7 +21,7 @@ import { backTexture, label, CARD_W, CARD_H } from '../ui/board-thief-3d.js';
 const TABLE_TOP = 0.75; // (core/board-cafe-room.js: the table's top)
 const TOY_SIZE = { croc: 0.11, bulldog: 0.1, pirate: 0.12, tower: 0.1 }; // the panel's toys, shrunk to stand on the table
 
-const FREE_TABLES = [2, 3]; // (people already play at the first two: core/board-cafe-room.js)
+const FREE_TABLES = [1, 2, 3, 4, 5]; // (people already play at the first: core/board-cafe-room.js)
 const ORDER = { 2: [0, 1], 3: [0, 2, 1], 4: [0, 2, 1, 3] }; // chairs (west, east, north, south) by seat: two sit face to face, more go round
 const HOME = 9, FLOOR_R = 1.0; // (the table number that means "the set in this home"; how far from it people sit)
 const EYE = 1.2, HAND = 0.79, REACH = 0.45, SMALL = 0.75; // (eyes a little above the head, to look down over the fans at the faces)
