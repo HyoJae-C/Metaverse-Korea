@@ -56,3 +56,25 @@ test('walking back and forth on a cell border: leave/appear is spaced out too, t
   c.advance(3000);
   assert.deepEqual(sent, [{ name: 'a' }, { name: 'a' }, null]);
 });
+
+// Supabase allows 5 presence updates per client in any 30 s, track and
+// untrack alike; more and it closes the channel (Yozi 2026-11-23: flipping
+// hairstyles in the salon still made a friend vanish with a 3 s gap).
+test('a minute of flipping hairstyles never sends more than 4 presence updates in any 30 s', () => {
+  const c = clock(), at = [];
+  const p = createPresenceThrottle(() => at.push(c.now()), { gap: 3000, ...c });
+  p.now({ look: 'join' });
+  for (let t = 0; t < 60000; t += 250) { p.track({ look: t }); c.advance(250); }
+  c.advance(60000);
+  for (let i = 0; i < at.length; i++) assert.ok(at.filter((x) => x >= at[i] && x < at[i] + 30000).length <= 4, 'too many near ' + at[i] + ': ' + at);
+  assert.ok(at.length >= 8, 'still updates now and then: ' + at);
+});
+
+test('the last look still goes out once the window allows it', () => {
+  const c = clock(), sent = [];
+  const p = createPresenceThrottle((x) => sent.push(x), { gap: 3000, ...c });
+  for (let i = 0; i < 40; i++) { p.track({ look: i }); c.advance(500); } // 20 s of flipping
+  c.advance(40000);
+  assert.deepEqual(sent.at(-1), { look: 39 });
+  assert.ok(sent.length <= 5);
+});

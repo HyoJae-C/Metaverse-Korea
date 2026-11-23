@@ -19,6 +19,11 @@
 // database calls still go to the real project: they are plain HTTP requests,
 // not realtime messages.
 //
+// Like the real server, a client that sends more than 5 presence updates
+// (track or untrack) in 30 s on one channel is cut off: the channel gets a
+// system error and is closed, so everyone else sees that player vanish
+// (ClientPresenceRateLimitReached; the salon bug of 2026-11-23).
+//
 // E2E_REAL_REALTIME=1 skips all of this and uses the real server (to check a
 // change against Supabase itself; it costs realtime messages).
 const topics = new Map(); // topic -> Map(sock -> { joinRef, key, presence, tracked, ref })
@@ -30,7 +35,8 @@ const say = (...a) => {
   if (log.length > 400) log.shift();
   if (process.env.FAKE_RT_VERBOSE) console.log('[fake-rt]', line);
 };
-export const stats = { sockets: 0, joins: 0, broadcasts: 0, chats: 0 };
+export const stats = { sockets: 0, joins: 0, broadcasts: 0, chats: 0, presenceCuts: 0 };
+const PRESENCE_LIMIT = 5, PRESENCE_WINDOW = 30000; // per client and channel (Supabase's default, every plan)
 
 function members(topic) {
   let m = topics.get(topic);
@@ -118,6 +124,16 @@ function serve(name, joinDelay) {
       if (event === 'presence') {
         reply();
         if (!mem || mem.joinRef !== joinRef) return;
+        const now = Date.now();
+        mem.calls = (mem.calls || []).filter((t) => now - t < PRESENCE_WINDOW).concat(now);
+        if (mem.calls.length > PRESENCE_LIMIT) {
+          stats.presenceCuts++;
+          say(name, 'ClientPresenceRateLimitReached', topic.replace('realtime:', ''));
+          send(sock, [joinRef, null, topic, 'system', { status: 'error', extension: 'system', message: 'ClientPresenceRateLimitReached: Too many presence messages per second' }]);
+          send(sock, [joinRef, null, topic, 'phx_close', {}]);
+          leave(topic);
+          return;
+        }
         if (payload.event === 'track') {
           const was = mem.tracked ? meta(mem) : null;
           mem.tracked = payload.payload;
