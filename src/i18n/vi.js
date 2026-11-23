@@ -236,6 +236,7 @@ export const VI = {
   'hair.bowl': "Tóc úp nồi",
   'hair.drill': "Tóc xoăn lò xo",
   'hair.fountain': "Tóc vòi phun",
+  'hair.rooster': "Mohican mào gà",
   'salon.signature': 'Đặc trưng',
   'eyeShape.big': 'Mắt to',
   'eyeShape.round': 'Mắt tròn',

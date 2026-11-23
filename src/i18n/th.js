@@ -236,6 +236,7 @@ export const TH = {
   'hair.bowl': "ทรงกะลาครอบ",
   'hair.drill': "ลอนเกลียวสว่าน",
   'hair.fountain': "ทรงน้ำพุ",
+  'hair.rooster': "โมฮอว์กหงอนไก่",
   'salon.signature': 'ซิกเนเจอร์',
   'eyeShape.big': 'ตาโต',
   'eyeShape.round': 'ตากลม',

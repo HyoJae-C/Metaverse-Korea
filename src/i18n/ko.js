@@ -239,6 +239,7 @@ export const KO = {
   "hair.bowl": "바가지 머리",
   "hair.drill": "드릴 웨이브",
   "hair.fountain": "분수머리",
+  "hair.rooster": "닭벼슬 모히칸",
   "salon.signature": "시그니처",
   "eyeShape.big": "큰 눈",
   "eyeShape.round": "동그란 눈",

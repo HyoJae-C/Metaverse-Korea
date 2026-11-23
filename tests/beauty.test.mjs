@@ -20,9 +20,9 @@ test('you pay for each change; going back to your own is free', () => {
   assert.equal(beautyCost(LIPS, {}, { lip: 'cherry' }), 0); // the mirror is a free tester: you buy a lipstick (core/lipstick.js)
 });
 
-test('thirty-three hairstyles, ten lip tints, fourteen lens colours, two eye shapes per clinic', () => {
-  assert.equal(HAIR_STYLES.length, 33);
-  assert.equal(new Set(HAIR_STYLES).size, 33);
+test('thirty-four hairstyles, ten lip tints, fourteen lens colours, two eye shapes per clinic', () => {
+  assert.equal(HAIR_STYLES.length, 34);
+  assert.equal(new Set(HAIR_STYLES).size, 34);
   assert.equal(LIP_FAMILIES.mixed.length, 10);
   for (const shades of Object.values(LIP_FAMILIES)) for (const k of shades) assert.ok(PALETTES.lip[k] != null, k);
   assert.ok(Object.keys(PALETTES.eyes).length >= 14);
@@ -64,7 +64,7 @@ test('each colour lip shop sells only its own family, Petal Lip the mixed ten', 
   assert.equal(menuFor('salon', null), SALON);
 });
 
-test('salons by concept: three signature styles each, the basic cuts everywhere', () => {
+test('salons by concept: three signature styles each (four at the quirky one), the basic cuts everywhere', () => {
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const salons = stores.filter((s) => s.workshop === 'salon');
   // Salons are spread over the areas: Seongsu, Hongdae, Seodaemun (by the
@@ -77,9 +77,9 @@ test('salons by concept: three signature styles each, the basic cuts everywhere'
   assert.deepEqual(count, { seongsu: 2, hongdae: 4, seodaemun: 1, itaewon: 1, euljiro: 1 });
   const seen = new Set();
   for (const s of salons) {
-    assert.equal(s.hairStyles.length, 3, s.id);
+    assert.equal(s.hairStyles.length, s.id === 'byeollan-hair' ? 4 : 3, s.id); // (Byeollan's 4th: the rooster mohawk)
     const [o] = menuFor('salon', s);
-    assert.deepEqual(o.choices.slice(0, 3), s.hairStyles, `${s.id}: signatures first`);
+    assert.deepEqual(o.choices.slice(0, s.hairStyles.length), s.hairStyles, `${s.id}: signatures first`);
     for (const h of BASIC_HAIR) assert.ok(o.choices.includes(h), `${s.id} ${h}`);
     for (const h of s.hairStyles) {
       assert.ok(HAIR_STYLES.includes(h) && !BASIC_HAIR.includes(h), `${s.id} ${h}`);

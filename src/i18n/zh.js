@@ -239,6 +239,7 @@ export const ZH = {
   "hair.bowl": "锅盖头",
   "hair.drill": "螺旋卷",
   "hair.fountain": "喷泉头",
+  "hair.rooster": "鸡冠莫西干",
   "salon.signature": "招牌",
   "eyeShape.big": "大眼睛",
   "eyeShape.round": "圆眼睛",

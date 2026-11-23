@@ -19,7 +19,7 @@ import { TEAM_LIST } from './ballpark-teams.js';
 // Hairstyles from the hair salon (built in core/hair-styles.js).
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
   'slick', 'buzz', 'comma', 'dandy', 'asperm', 'side', 'center', 'hippie', 'wave', 'hime', 'hush', 'mohawk', 'spiky', 'mullet', 'wolf', 'manbun', 'layered', 'afro', 'braids', 'dreads',
-  'bowl', 'drill', 'fountain'];
+  'bowl', 'drill', 'fountain', 'rooster'];
 // Plain hairstyles anyone can pick on the start screen (the rest are cut at
 // the hair salon). With none picked, the model's own hair stays.
 // Hairstyles only the game's own people wear (no salon cuts them): a monk's

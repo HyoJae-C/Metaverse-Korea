@@ -239,6 +239,7 @@ export const JA = {
   "hair.bowl": "ボウルカット",
   "hair.drill": "縦ロール",
   "hair.fountain": "噴水ヘア",
+  "hair.rooster": "ニワトリモヒカン",
   "salon.signature": "看板スタイル",
   "eyeShape.big": "大きな目",
   "eyeShape.round": "丸い目",

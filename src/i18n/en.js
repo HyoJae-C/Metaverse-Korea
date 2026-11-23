@@ -238,6 +238,7 @@ export const EN = {
   "hair.bowl": "Bowl cut",
   "hair.drill": "Drill curls",
   "hair.fountain": "Fountain top",
+  "hair.rooster": "Rooster mohawk",
   "salon.signature": "Signature",
   "eyeShape.big": "Big eyes",
   "eyeShape.round": "Round eyes",

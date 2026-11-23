@@ -236,6 +236,7 @@ export const ID = {
   'hair.bowl': "Potongan mangkuk",
   'hair.drill': "Ikal spiral",
   'hair.fountain': "Kuncir air mancur",
+  'hair.rooster': "Mohawk jengger ayam",
   'salon.signature': 'Andalan',
   'eyeShape.big': 'Mata besar',
   'eyeShape.round': 'Mata bulat',
