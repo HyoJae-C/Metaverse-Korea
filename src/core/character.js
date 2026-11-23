@@ -693,22 +693,36 @@ function addHat(look, head) {
       const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
       stalk.position.set(0.02, 0.38, -0.02);
       head.add(top, stalk);
-    } else if (hat === 'fedora') {
-      // 중절모: a pinched crown with a ribbon band on a wide brim, the brim
-      // turned down a little at the front.
-      const crown = new THREE.Mesh(geo('fedoraCrown', () => new THREE.CylinderGeometry(0.21, 0.26, 0.25, 18)), m);
-      crown.scale.set(1, 1, 0.92);
-      crown.position.set(0, 0.345, -0.02);
-      const dent = new THREE.Mesh(geo('fedoraDent', () => new THREE.SphereGeometry(0.19, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5)), m);
-      dent.scale.set(1.05, 0.22, 0.9);
-      dent.position.set(0, 0.465, -0.02);
-      const band = new THREE.Mesh(geo('fedoraBand', () => new THREE.CylinderGeometry(0.258, 0.262, 0.05, 18)), mat(head1.band ?? 0x2b2230));
-      band.scale.set(1, 1, 0.92);
-      band.position.set(0, 0.25, -0.02);
-      const brim = new THREE.Mesh(geo('fedoraBrim', () => new THREE.CylinderGeometry(0.37, 0.37, 0.025, 24)), m);
-      brim.position.set(0, 0.22, -0.02);
-      brim.rotation.x = 0.06;
-      head.add(crown, dent, band, brim);
+    } else if (hat === 'newsboy') {
+      // 빵모자 (newsboy cap): a soft, puffy crown of eight panels over a band,
+      // a button on top and a short curved peak.
+      const crown = new THREE.Mesh(geo('newsboyCrown', () => new THREE.SphereGeometry(0.38, 20, 12)), m);
+      crown.scale.set(1, 0.42, 1);
+      crown.position.set(0, 0.24, -0.02);
+      crown.rotation.x = -0.08;
+      const band = new THREE.Mesh(geo('newsboyBand', () => new THREE.CylinderGeometry(0.31, 0.32, 0.07, 20)), m);
+      band.position.set(0, 0.17, -0.01);
+      const button = new THREE.Mesh(geo('newsboyButton', () => new THREE.SphereGeometry(0.03, 8, 6)), m);
+      button.position.set(0, 0.405, -0.03);
+      const peak = new THREE.Mesh(geo('newsboyPeak', () => new THREE.CylinderGeometry(0.2, 0.2, 0.022, 18, 1, false, -Math.PI / 2, Math.PI)), m);
+      peak.scale.set(1, 1, 0.7);
+      peak.position.set(0, 0.15, 0.26);
+      peak.rotation.x = 0.22;
+      head.add(crown, band, button, peak);
+    } else if (hat === 'flatcap') {
+      // 헌팅캡 (flat cap): low and close, rising at the back and sloping
+      // down over a short peak at the front.
+      const crown = new THREE.Mesh(geo('flatcapCrown', () => new THREE.SphereGeometry(0.35, 20, 12)), m);
+      crown.scale.set(1.02, 0.5, 1.1);
+      crown.position.set(0, 0.2, -0.03);
+      crown.rotation.x = 0.16;
+      const band = new THREE.Mesh(geo('flatcapBand', () => new THREE.CylinderGeometry(0.315, 0.32, 0.05, 20)), m);
+      band.position.set(0, 0.15, -0.01);
+      const peak = new THREE.Mesh(geo('flatcapPeak', () => new THREE.CylinderGeometry(0.19, 0.19, 0.02, 18, 1, false, -Math.PI / 2, Math.PI)), m);
+      peak.scale.set(1, 1, 0.55);
+      peak.position.set(0, 0.14, 0.28);
+      peak.rotation.x = 0.3;
+      head.add(crown, band, peak);
     } else if (hat === 'towel') {
       // 양머리: a towel band round the head with a rolled "sheep ear" each side.
       const cap = new THREE.Mesh(

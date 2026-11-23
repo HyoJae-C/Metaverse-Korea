@@ -16,7 +16,7 @@ test('animal onesies are limited-time (one number for all), cheaper than other c
     assert.equal(ITEMS[id].price, 50000, id);
   }
   // (and Pop-up A's autumn line, tests/popup-a.test.mjs)
-  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id) || /^(acc-(fedora|beret)|outfit-trench)-/.test(id)), 'only the onesies and the autumn pop-up');
+  assert.ok(Object.entries(ITEMS).filter(([, it]) => it.secs).every(([id]) => ONESIES.includes(id) || /^(acc-(newsboy|flatcap)|outfit-trench)-/.test(id)), 'only the onesies and the autumn pop-up');
 });
 
 test('a limited item is gone 7 days after buying; days left count down', () => {
