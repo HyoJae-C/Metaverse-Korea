@@ -1,5 +1,5 @@
-// Who may send gifts: an account at least 7 days old with 3 hours of play
-// (Yozi 2026-11-24; supabase/073_gift_age.sql). The server says, through
+// Who may send gifts: an account at least 7 days old that has done 35 daily
+// missions (Yozi 2026-11-24; supabase/073_gift_age.sql). The server says, through
 // gift_wait(); the answer is kept for a few minutes. The server also refuses
 // the payment itself, so this is only so the player is told before paying.
 // No server (offline, or 073 not run yet): not held back here.
@@ -43,7 +43,7 @@ export class GiftGate {
     if (this.now() - this.at >= KEEP_MS) this.check(); // (refresh for next time)
     const w = this.w;
     if (!w || w.ok) return null;
-    return t('gift.young', { minDays: w.min_days, minHours: w.min_hours, days: w.days, hours: w.hours });
+    return t('gift.young', { minDays: w.min_days, minMissions: w.min_missions, days: w.days, missions: w.missions });
   }
   // Run go() if I may send gifts, else show the reason with toast(text).
   gate(t, toast, go) {

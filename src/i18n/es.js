@@ -1083,7 +1083,7 @@ export const ES = {
   "wrap.button": "Envolver para regalo",
   "wrap.bagFull": "Tu bolsa está llena. Haz sitio para la caja primero.",
   "wrap.poor": "Necesitas 🪙 {n}.",
-  "gift.young": "🎁 Podrás enviar regalos cuando tu cuenta tenga {minDays} días y hayas jugado {minHours} horas. Ahora: {days} días, {hours} horas jugadas.",
+  "gift.young": "🎁 Podrás enviar regalos cuando tu cuenta tenga {minDays} días y hayas hecho {minMissions} misiones diarias. Ahora: {days} días, {missions} misiones.",
   "wrap.bought": "🎀 {item} está envuelto y en tu bolsa. ¡Dáselo a un amigo desde la bolsa!",
   "wrap.boughtLetter": "🎀 {item} está envuelto con tu carta y en tu bolsa. ¡Dáselo a un amigo desde la bolsa!",
   "wrap.paperMax": "Puedes llevar hasta {n} hojas de carta.",

@@ -72,7 +72,7 @@ export function createGifts(game) {
   const isFriend = (name) => chat?.friendStatus?.(name) === 'friend';
   let street = false; // the picker was opened at a street stand
   // The button shows with anyone here, so a player learns gifts are for friends.
-  // Only accounts 7 days old with 3 hours of play send gifts (core/gift-gate.js).
+  // Only accounts 7 days old with 35 daily missions send gifts (core/gift-gate.js).
   const gate = new GiftGate({ wallet: () => game.wallet });
   const canGift = (product) => {
     const ok = !!giftFor(storeNow(), product) && peopleHere().length > 0;
