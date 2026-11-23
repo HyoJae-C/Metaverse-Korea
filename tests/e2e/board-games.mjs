@@ -316,7 +316,7 @@ try {
     }
     for (const page of [a, b]) await page.waitForFunction((m) => { const f = document.querySelector('#bg-panel [data-hand="from"]'); return !f || f.querySelectorAll('.bg-card1').length !== m || !f.querySelector('.sel'); }, n, { timeout: 8000 });
   }
-  for (const page of [a, b]) await page.waitForFunction(() => /🃏/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
+  for (const page of [a, b]) await page.waitForFunction(() => /💀/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 }); // (the end line: who is left with the skull; it was 🃏 before the game was renamed)
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-end.png' });
 
   step = 'mafia: the host leaves and the game goes on under the next player';
