@@ -1088,6 +1088,7 @@ export const KO = {
   "wrap.bagFull": "가방이 꽉 찼어요. 선물 상자 자리를 먼저 비워 주세요.",
   "wrap.poor": "🪙 {n}이(가) 필요해요.",
   "gift.young": "🎁 선물은 가입 {minDays}일이 지나고 일일 미션을 {minMissions}개 이상 하면 보낼 수 있어요. 지금: 가입 {days}일, 미션 {missions}개.",
+  "gift.offline": "🎁 서버에 연결하지 못해서 보내지 않았어요. 돈은 돌려받았어요. 잠시 뒤 다시 해 주세요.",
   "wrap.bought": "🎀 {item}을(를) 포장해서 가방에 넣었어요. 가방에서 꺼내 친구에게 건네 보세요!",
   "wrap.boughtLetter": "🎀 {item}을(를) 편지와 함께 포장해서 가방에 넣었어요. 가방에서 꺼내 친구에게 건네 보세요!",
   "wrap.paperMax": "편지지는 {n}장까지 들고 다닐 수 있어요.",

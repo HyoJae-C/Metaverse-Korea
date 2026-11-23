@@ -1087,6 +1087,7 @@ export const EN = {
   "wrap.bagFull": "Your bag is full. Make room for the gift box first.",
   "wrap.poor": "You need 🪙 {n} for this.",
   "gift.young": "🎁 You can send gifts once your account is {minDays} days old and you have done {minMissions} daily missions. You now: {days} days, {missions} missions.",
+  "gift.offline": "🎁 Couldn't reach the server, so nothing was sent. Your coins are back. Try again in a moment.",
   "wrap.bought": "🎀 {item} is gift-wrapped and in your bag. Hand it to a friend from the bag!",
   "wrap.boughtLetter": "🎀 {item} is wrapped with your letter and in your bag. Hand it to a friend from the bag!",
   "wrap.paperMax": "You can carry up to {n} sheets of letter paper.",
