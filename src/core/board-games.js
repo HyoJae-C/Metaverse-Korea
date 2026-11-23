@@ -111,6 +111,7 @@ export class Omok {
     if (!this.canPlay(p, x, y)) return false;
     this.board[y * OMOK_SIZE + x] = p;
     this.moves++;
+    this.lastMove = [x, y];
     const line = this.fiveFrom(x, y, p);
     if (line) { this.winner = p; this.line = line; this.over = true; }
     else if (this.moves === OMOK_SIZE * OMOK_SIZE) this.over = true; // a full board is a draw

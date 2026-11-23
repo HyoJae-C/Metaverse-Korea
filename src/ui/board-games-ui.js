@@ -424,7 +424,10 @@ export class BoardGamesUI {
       this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
       const l = g.last;
-      this.status = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      // (said once the dice has stopped tumbling, not before)
+      const said = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      this.status = '';
+      setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, DICE_MS);
       this.startWalk(l);
       this.onEvent('dice', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
@@ -729,6 +732,9 @@ export class BoardGamesUI {
         x.stroke();
       }
     }
+    if (g.lastMove) { // the stone just played: a red dot on it
+      x.beginPath(); x.arc((g.lastMove[0] + 1) * px, (g.lastMove[1] + 1) * px, 4, 0, Math.PI * 2); x.fillStyle = '#e8402a'; x.fill();
+    }
     cv.onclick = (e) => {
       const r = cv.getBoundingClientRect();
       const gx = Math.round(((e.clientX - r.left) / r.width) * (N + 1)) - 1;
@@ -823,7 +829,7 @@ export class BoardGamesUI {
       };
       return;
     }
-    const dice = el('span', 'bg-dice', g.last ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
+    const dice = el('span', 'bg-dice', g.last?.dice && !(p.dice && performance.now() - p.dice.at < DICE_MS) ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
     dice.dataset.dice = String(g.last?.dice ?? 0);
     row.append(dice);
     if (!g.over && !g.out[p.seat]) {
