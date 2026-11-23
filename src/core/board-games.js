@@ -562,6 +562,7 @@ export class Thief {
     for (let p = 0; p < players; p++) this.dropPairs(p);
     this.turn = 0;
     this.sel = -1; // the card the turn player points at
+    this.tip = -1; // the card the holder pushes up: "take this one" (true or a bluff)
     this.loser = -1;
     this.over = false;
     this.last = null;
@@ -598,6 +599,7 @@ export class Thief {
   settle(turn) {
     const left = this.holders();
     this.sel = -1;
+    this.tip = -1;
     this.mixed = false; // (the holder may shuffle once each turn)
     if (left.length <= 1) {
       this.over = true;
@@ -622,6 +624,17 @@ export class Thief {
     this.hands[p] = shuffle(this.hands[p], this.rand);
     this.mixed = true;
     this.sel = -1;
+    this.tip = -1;
+    return true;
+  }
+
+  // The one being picked from pushes one card up, as if to say "take this
+  // one" (Yozi 2026-11-24). Everyone sees which card stands up, nobody what
+  // it is. One card at a time; i = -1 puts it back down.
+  suggest(p, i) {
+    if (this.over || p !== this.from) return false;
+    if (i < -1 || i >= this.hands[p].length || i === this.tip) return false;
+    this.tip = i;
     return true;
   }
 
@@ -673,11 +686,22 @@ export const LADDERS_DOWN = { 62: 39, 55: 34, 49: 31, 44: 23, 27: 9, 16: 5 };
 // squares in different rows, up to LADDERS_REACH rows apart. Then the dice.
 export const LADDERS_SHARE = { 2: [3, 3], 3: [2, 2], 4: [1, 1] }; // by players: [ladders, snakes] each
 export const LADDERS_REACH = 4;
+// A game can be given an end (Yozi 2026-11-24: with enough snakes a game need
+// never finish): each player gets this many rolls, a 6's extra roll included,
+// and when they are all used whoever is furthest ahead wins. 0 = no limit.
+// The host picks one by its place in this list.
+export const LADDERS_ROLLS = [0, 20, 30, 50];
+// A ladders game's option as one small number: 1 = the players lay the board
+// out themselves, plus twice the place of the roll limit in LADDERS_ROLLS.
+export const laddersOpt = (custom, rolls = 0) => (custom ? 1 : 0) + 2 * (LADDERS_ROLLS[rolls] ? rolls : 0);
 const ladderRow = (k) => Math.floor((k - 1) / LADDERS_SIZE);
 
 export class Ladders {
-  constructor({ players = 2, seed = 1, custom = false } = {}) {
+  constructor({ players = 2, seed = 1, custom = false, max = 0 } = {}) {
     if (players < GAMES.ladders.min || players > GAMES.ladders.max) throw new Error('bad player count');
+    this.max = Math.max(0, max | 0); // rolls each player gets (0: as many as it takes)
+    this.used = new Array(players).fill(0); // rolls each player has made
+    this.ranks = null; // when the game is over: each seat's place (1 = first; the same square shares a place; 0 = left the game)
     this.n = players;
     this.rand = rng(seed);
     this.pos = new Array(players).fill(0); // 0 = not on the board yet
@@ -741,8 +765,23 @@ export class Ladders {
     return null;
   }
 
+  // Rolls a player still has (Infinity when the game has no limit).
+  rollsLeft(p) { return this.max ? Math.max(0, this.max - this.used[p]) : Infinity; }
+  canRoll(p) { return !this.out[p] && this.rollsLeft(p) > 0; }
+
+  // The game is over: everyone still in is placed by how far they got. The
+  // one who reached the last square (first) is ahead of all; the same square
+  // shares a place, and a shared first place has no single winner.
+  finish(first = -1) {
+    this.over = true;
+    const score = (s) => (s === first ? LADDERS_END + 1 : this.pos[s]);
+    this.ranks = this.pos.map((_, s) => (this.out[s] ? 0 : 1 + this.pos.filter((__, t) => !this.out[t] && score(t) > score(s)).length));
+    const top = this.ranks.map((r, s) => (r === 1 ? s : -1)).filter((s) => s >= 0);
+    this.winner = top.length === 1 ? top[0] : -1;
+  }
+
   roll(p) {
-    if (this.over || this.setup || p !== this.turn) return false;
+    if (this.over || this.setup || p !== this.turn || !this.canRoll(p)) return false;
     const dice = 1 + Math.floor(this.rand() * 6);
     const from = this.pos[p];
     const past = from + dice > LADDERS_END && !this.tried[p]; // too many, the first time: stay put
@@ -751,16 +790,23 @@ export class Ladders {
     const to = past ? from : this.up[mid] ?? this.down[mid] ?? mid;
     this.pos[p] = to;
     this.rolls++;
+    this.used[p]++;
     this.last = { p, dice, from, mid, to, past, via: to > mid ? 'ladder' : to < mid ? 'snake' : null };
-    if (to === LADDERS_END) { this.winner = p; this.over = true; return true; }
-    if (dice !== 6) this.turn = this.nextIn(p);
+    if (to === LADDERS_END) { this.finish(p); return true; }
+    if (dice === 6 && this.canRoll(p)) return true; // (a 6 rolls again, while they have a roll left)
+    const next = this.nextIn(p);
+    if (next < 0) this.finish(); // (every roll has been used: the furthest ahead wins)
+    else this.turn = next;
     return true;
   }
 
+  // The next player after p who can still roll (p again, if they are the only one); nobody: -1.
   nextIn(p) {
-    let t = p;
-    do t = (t + 1) % this.n; while (this.out[t]);
-    return t;
+    for (let k = 1; k <= this.n; k++) {
+      const t = (p + k) % this.n;
+      if (this.canRoll(t)) return t;
+    }
+    return -1;
   }
 
   leave(p) {
@@ -768,8 +814,12 @@ export class Ladders {
     this.out[p] = true;
     this.stock[p] = [0, 0]; // (what they had not put down stays in the box)
     const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
-    if (left.length < 2) { this.over = true; this.winner = left[0] ?? -1; return; }
-    if (this.setup) { if (this.turn === p || this.stock.every((k) => k[0] + k[1] === 0)) this.nextPlacer(p); } else if (this.turn === p) this.turn = this.nextIn(p);
+    if (left.length < 2) { this.finish(); return; }
+    if (this.setup) { if (this.turn === p || this.stock.every((k) => k[0] + k[1] === 0)) this.nextPlacer(p); } else if (this.turn === p) {
+      const next = this.nextIn(p);
+      if (next < 0) this.finish(); // (the ones left have no rolls)
+      else this.turn = next;
+    }
   }
 }
 
@@ -863,14 +913,14 @@ export class Tower {
 
 // One way to make any game, used by the table screen.
 // opt: a game's own choice, a small number (omok: 1 = no double threes for
-// Black; ladders: 1 = the players lay the board out themselves).
+// Black; ladders: laddersOpt, the board laid out by the players and the roll limit).
 export function newGame(id, players, seed, opt = 0) {
   if (id === 'omok') return new Omok({ players, no33: opt === 1 });
   if (id === 'onecard') return new OneCard({ players, seed });
   if (id === 'fruitbell') return new FruitBell({ players, seed });
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
   if (id === 'thief') return new Thief({ players, seed });
-  if (id === 'ladders') return new Ladders({ players, seed, custom: opt === 1 });
+  if (id === 'ladders') return new Ladders({ players, seed, custom: (opt & 1) === 1, max: LADDERS_ROLLS[opt >> 1] || 0 });
   if (id === 'tower') return new Tower({ players, seed });
   if (id === 'mafia') return new Mafia({ players, seed, talk: MAFIA_TALK[opt] || MAFIA_TALK[0] });
   throw new Error('unknown game ' + id);
@@ -898,6 +948,7 @@ export function applyAction(game, p, a) {
     case 's': return game instanceof Thief && game.select(p, a[1] | 0);
     case 't': return game instanceof Thief && game.take(p, a[1] | 0);
     case 'm': return game instanceof Thief && game.mix(p);
+    case 'u': return game instanceof Thief && game.suggest(p, a[1] == null ? -1 : a[1] | 0);
     case 'a': return game instanceof Ladders && game.place(p, a[1] | 0, a[2] | 0, a[3] | 0);
     case 'k': return game instanceof Mafia && game.kill(p, a[1] | 0);
     case 'h': return game instanceof Mafia && game.heal(p, a[1] | 0);
@@ -1064,7 +1115,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclsteakhqzvnm]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
+  if (!/^[ofrpdclsteakhqzvnmu]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

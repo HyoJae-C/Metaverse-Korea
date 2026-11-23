@@ -128,7 +128,7 @@ export function createBoardTable(game) {
       }
       return o;
   }
-  function syncOf(o, { counts, from, turn, sel, faces = [], gone = [], over = false, canPick = false, pressed = null, bang = false, wobble = 0, placing = false }) {
+  function syncOf(o, { counts, from, turn, sel, tip = -1, faces = [], gone = [], over = false, canPick = false, pressed = null, bang = false, wobble = 0, placing = false }) {
       if (pressed) {
         // A toy game: the same presses on the toy on the table.
         o.toyState = { pressed, bang, wobble, placing, gone };
@@ -165,7 +165,7 @@ export function createBoardTable(game) {
           p.faceText = text;
         }
       }
-      o.state = { from: over ? -1 : from, turn, sel, canPick: canPick && !over, over };
+      o.state = { from: over ? -1 : from, turn, sel, tip, canPick: canPick && !over, over };
     }
   // Put a game's things away.
   function drop(o) {
@@ -192,7 +192,7 @@ export function createBoardTable(game) {
         if (p.ch) p.ch.root.rotation.y = p.yaw;
         const k = p.cards.length, step = Math.min(CARD_W * 0.62, 0.8 / Math.max(1, k - 1)), turn = Math.min(0.11, 0.8 / Math.max(1, k - 1));
         p.cards.forEach((m, i) => {
-          const d = i - (k - 1) / 2, up = st.from === p.s && st.sel === i ? 0.12 : 0;
+          const d = i - (k - 1) / 2, up = st.from === p.s ? (st.sel === i ? 0.12 : st.tip === i ? 0.07 : 0) : 0;
           m.userData.lift += (up - m.userData.lift) * Math.min(1, dt * 12);
           m.position.set(-d * step, -(Math.abs(d) ** 1.6) * 0.012 + m.userData.lift, i * 0.004);
           m.rotation.z = d * turn;
