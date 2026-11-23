@@ -181,10 +181,14 @@ try {
   await b.evaluate(() => document.querySelector('#bg-ask button').click());
   await a.waitForFunction(() => /Dice B is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
   await a.click('#bg-panel [data-act="start"]');
-  await b.waitForSelector('#bg-panel.on .bg-croc', { timeout: 15000 });
+  await b.waitForSelector('#bg-panel.on .bg-croc', { state: 'attached', timeout: 15000 });
 
   step = 'the 3D croc shows, and chat works from inside the game card';
-  for (const page of [a, b]) await page.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
+  for (const page of [a, b]) await page.waitForSelector('#bg-panel canvas.bg-toy3d', { state: 'attached', timeout: 15000 });
+  // They sit at a table in the café: the one whose turn it is has the big panel, the other a small one and the toy on the table.
+  await b.waitForSelector('#bg-panel.mini', { timeout: 8000 });
+  await a.waitForFunction(() => !document.querySelector('#bg-panel.mini'), null, { timeout: 8000 });
+  if (shotDir) { await b.waitForTimeout(800); await b.screenshot({ path: shotDir + '/croc-table.png' }); }
   await a.fill('#bg-panel .bg-chat input', 'good luck');
   await a.press('#bg-panel .bg-chat input', 'Enter');
   for (const page of [a, b]) await page.waitForFunction(() => /good luck/.test(document.querySelector('#bg-panel .bg-chat-lines')?.textContent || ''), null, { timeout: 15000 });

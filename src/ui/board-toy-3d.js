@@ -379,6 +379,12 @@ function pirateToy(spots, figure) {
   };
 }
 
+// The toy alone (its shapes, press(i, now, wobble), bang(at), update(now, pressed)):
+// also stood on a real table in the café (game/board-table.js).
+export const createToyModel = (kind, spots, figure = null) => (kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : kind === 'pirate' ? pirateToy(spots, figure) : dogToy(spots));
+// How long after the press the bad one shows (the tooth sinks / the block slides out, or lands on top / the bone lands).
+export const bangDelay = (kind, placing) => (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : kind === 'pirate' ? 260 : 380);
+
 export function createToyView(kind, { spots, onPick, figure = null }) {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
@@ -389,7 +395,7 @@ export function createToyView(kind, { spots, onPick, figure = null }) {
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.6);
   sun.position.set(2, 5, 4);
   scene.add(sun);
-  const toy = kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : kind === 'pirate' ? pirateToy(spots, figure) : dogToy(spots);
+  const toy = createToyModel(kind, spots, figure);
   scene.add(toy.root);
   const camera = new THREE.PerspectiveCamera(34, 4 / 3, 0.1, 50);
   camera.position.set(...toy.cam);
@@ -447,7 +453,7 @@ export function createToyView(kind, { spots, onPick, figure = null }) {
     sync({ pressed: list, bang, canPick: can, wobble = 0, placing = false }) {
       const now = performance.now();
       for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now, wobble); }
-      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : kind === 'pirate' ? 260 : 380)); } // (after the tooth sinks / the block slides out, or lands on top / the bone lands)
+      if (bang && !banged) { banged = true; toy.bang(now + bangDelay(kind, placing)); }
       canPick = can && !banged;
     },
     dispose() {

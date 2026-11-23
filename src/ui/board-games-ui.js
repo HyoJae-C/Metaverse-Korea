@@ -119,7 +119,7 @@ const CSS = `
 #bg-panel.mini .bg-card { pointer-events: auto; width: min(440px, calc(100vw - 16px)); max-height: 52vh; margin-bottom: 8px; padding: 10px 12px; background: rgba(255,250,240,.96); }
 #bg-panel.mini h2 { font-size: 15px; margin-bottom: 4px; }
 #bg-panel.mini .bg-x { top: 6px; right: 6px; width: 30px; height: 30px; }
-#bg-panel.mini .bg-chat, #bg-panel.mini .bg-who { display: none; }
+#bg-panel.mini .bg-chat, #bg-panel.mini .bg-who, #bg-panel.mini .bg-toy { display: none; }
 #bg-panel.mini .bg-seats { margin-bottom: 4px; }
 #bg-panel.mini .bg-fp { padding: 2px 6px 6px; }
 #bg-panel.mini .bg-fan { padding: 16px 0 6px; }
@@ -281,7 +281,7 @@ export class BoardGamesUI {
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
     // Catch the Thief is played at a real table in the café when one is free (its number is the option).
-    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' ? this.table?.pick(ids.length) || 0 : lob.opt || 0);
+    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' || TOYS.includes(lob.game) ? this.table?.pick(ids.length) || 0 : lob.opt || 0);
   }
 
   addBot() {
@@ -309,13 +309,15 @@ export class BoardGamesUI {
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
+      // At a table in the café when one is free: the toy stands on it, and the panel is big only on my turn.
+      if (opt > 0 && this.table?.start({ ids, seat: p.seat, table: opt, names: p.names, bot: BOT, toy: { kind: game, spots: p.g.spots, figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null } })) p.world = true;
       import('./board-toy-3d.js').then((m) => {
         if (this.play !== p) return;
         this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]), figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null }); // (the host sits in the pirate's barrel)
         this.render();
       }).catch(() => {});
     }
-    this.table?.end();
+    if (!this.play.world) this.table?.end();
     if (game === 'thief' && opt > 0 && this.table?.start({ ids, seat: this.play.seat, table: opt, names: this.play.names, bot: BOT, onPick: (i) => this.myMove(['s', i]) })) {
       this.play.world = true; // at a table in the café: the panel is only my own hand
     } else if (game === 'thief') {
@@ -572,7 +574,9 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ drawing
   render() {
     if (!this.open) return;
-    this.root.classList.toggle('mini', this.state === 'play' && !!this.play?.world);
+    // At a café table the panel is small, out of the way of the view; a toy game's grows on my turn (Yozi 2026-11-23).
+    const pw = this.state === 'play' && this.play?.world ? this.play : null;
+    this.root.classList.toggle('mini', !!pw && !(TOYS.includes(pw.game) && !pw.g.over && turnOf(pw.g) === pw.seat));
     const c = this.card;
     const typing = document.activeElement === this.chatInput;
     c.replaceChildren();
@@ -1126,6 +1130,7 @@ export class BoardGamesUI {
     const g = p.g;
     const box = el('div', 'bg-toy bg-' + p.game + (this.view ? ' has3d' : ''));
     const bang = g.last?.bang;
+    if (p.world) this.table.sync({ pressed: g.pressed, bang: !!bang, wobble: g.risk?.() ?? 0, placing: !!g.last?.placing, gone: p.ids.map((_, s) => !!p.gone?.[s]) });
     if (this.view) {
       this.view.sync({ pressed: g.pressed, bang: !!bang, canPick: !g.over && turnOf(g) === p.seat, wobble: g.risk?.() ?? 0, placing: !!g.last?.placing });
       box.append(this.view.el);

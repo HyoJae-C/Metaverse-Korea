@@ -72,12 +72,12 @@ export function decorateBoardCafe(store, { scene, block, stations, seats, w, d }
       put('#c99412', cyl, tx, TABLE_H + 0.03, tz, 0.09, 0.02, 0.09);
       for (let i = 0; i < 4; i++) put('#ffffff', cube, tx + Math.cos(i * 1.57) * 0.3, TABLE_H + 0.03, tz + Math.sin(i * 1.57) * 0.25, 0.12, 0.01, 0.16, i * 1.57);
     } else if (t === 2) { // the croc: a green body, a pale jaw
-      put('#4f9a5c', cube, tx, TABLE_H + 0.08, tz, 0.5, 0.1, 0.2);
-      put('#fffdf4', cube, tx + 0.18, TABLE_H + 0.12, tz, 0.16, 0.03, 0.18);
-      put('#2b2b2e', ball, tx + 0.1, TABLE_H + 0.15, tz + 0.06, 0.02, 0.02, 0.02);
+      // (boxed up at a corner: the middle is where a game people play is set out, game/board-table.js)
+      put('#4f9a5c', cube, tx + 0.42, TABLE_H + 0.07, tz - 0.36, 0.2, 0.07, 0.14);
+      put('#fffdf4', cube, tx + 0.42, TABLE_H + 0.105, tz - 0.36, 0.2, 0.02, 0.14);
     } else { // the barrel with swords
-      put('#8a5a33', cyl, tx, TABLE_H + 0.13, tz, 0.13, 0.22, 0.13);
-      for (let i = 0; i < 5; i++) put('#c0c4ca', cube, tx + Math.cos(i * 1.25) * 0.13, TABLE_H + 0.17, tz + Math.sin(i * 1.25) * 0.13, 0.12, 0.012, 0.02, -i * 1.25);
+      put('#8a5a33', cube, tx + 0.42, TABLE_H + 0.07, tz - 0.36, 0.2, 0.07, 0.14);
+      put('#f2e3c4', cube, tx + 0.42, TABLE_H + 0.105, tz - 0.36, 0.2, 0.02, 0.14);
     }
     for (const [sx, sz, ry] of [[-0.95, 0, Math.PI / 2], [0.95, 0, -Math.PI / 2], [0, -0.8, 0], [0, 0.8, Math.PI]]) {
       const x = tx + sx, z = tz + sz;

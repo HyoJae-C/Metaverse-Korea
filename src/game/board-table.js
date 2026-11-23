@@ -17,6 +17,9 @@ import { createCharacter } from '../core/character.js';
 import { BOARD_CAFE_TABLES } from '../core/board-cafe-room.js';
 import { backTexture, label, CARD_W, CARD_H } from '../ui/board-thief-3d.js';
 
+const TABLE_TOP = 0.75; // (core/board-cafe-room.js: the table's top)
+const TOY_SIZE = { croc: 0.11, bulldog: 0.1, pirate: 0.12, tower: 0.1 }; // the panel's toys, shrunk to stand on the table
+
 const FREE_TABLES = [2, 3]; // (people already play at the first two: core/board-cafe-room.js)
 const ORDER = { 2: [0, 1], 3: [0, 2, 1], 4: [0, 2, 1, 3] }; // chairs (west, east, north, south) by seat: two sit face to face, more go round
 const EYE = 1.2, HAND = 0.79, REACH = 0.45, SMALL = 0.75; // (eyes a little above the head, to look down over the fans at the faces)
@@ -56,7 +59,7 @@ export function createBoardTable(game) {
       return free.length ? free[0] + 1 : 0;
     },
     // A game starts: sit down and set the table. False: not here (the panel shows it all instead).
-    start({ ids, seat, table, names = [], bot, onPick }) {
+    start({ ids, seat, table, names = [], bot, onPick, toy = null }) {
       api.end();
       const chairs = chairsOf(table - 1), order = ORDER[ids.length];
       if (!order || chairs.length !== 4 || seat < 0) return false;
@@ -88,12 +91,39 @@ export function createBoardTable(game) {
       game.scene.add(group);
       on = { chair: mine, seat, people, group, geo, mat, y0, onPick, state: { from: -1, turn: -1, sel: -1, canPick: false, over: false }, look: null, want: new THREE.Vector3(), flying: [] };
       addEventListener('pointerdown', tap, true);
+      if (toy) {
+        // A toy game: the toy itself stands in the middle of the table.
+        const o = on, [tx, tz] = BOARD_CAFE_TABLES[table - 1];
+        o.toyKind = toy.kind; o.toyFigure = toy.figure || null; o.pressed = new Set(); o.center = [tx, tz];
+        import('../ui/board-toy-3d.js').then((m) => {
+          if (on !== o) return;
+          o.toy = m.createToyModel(toy.kind, toy.spots, toy.figure || null);
+          o.bangDelay = m.bangDelay;
+          const stand = new THREE.Group(); // (the toy moves its own root when it jumps)
+          stand.scale.setScalar(TOY_SIZE[toy.kind] || 0.1);
+          stand.position.set(tx, TABLE_TOP, tz);
+          stand.rotation.y = Math.atan2(mine.x - tx, mine.z - tz) + (toy.kind === 'tower' ? Math.PI / 4 : 0); // (its front to my chair)
+          stand.add(o.toy.root);
+          o.group.add(stand);
+          if (o.toyState) api.sync(o.toyState);
+        }).catch((e) => console.error('board table toy', e));
+      }
       return true;
     },
     // The game as it stands (the same as ui/board-thief-3d.js takes).
-    sync({ counts, from, turn, sel, faces = [], gone = [], over = false, canPick = false }) {
+    sync({ counts, from, turn, sel, faces = [], gone = [], over = false, canPick = false, pressed = null, bang = false, wobble = 0, placing = false }) {
       const o = on;
       if (!o) return;
+      if (pressed) {
+        // A toy game: the same presses on the toy on the table.
+        o.toyState = { pressed, bang, wobble, placing, gone };
+        for (const p of o.people) if (p.ch) p.ch.root.visible = !gone[p.s];
+        if (!o.toy) return;
+        const now = performance.now();
+        for (const i of pressed) if (!o.pressed.has(i)) { o.pressed.add(i); o.toy.press(i, now, wobble); }
+        if (bang && !o.banged) { o.banged = true; o.toy.bang(now + o.bangDelay(o.toyKind, placing)); }
+        return;
+      }
       const st = o.state;
       const handAt = (s, out) => (s === o.seat ? out.copy(game.me.root.position).setY(o.y0 + 0.5) : out.copy(o.people[s].hand.position));
       if (st.from >= 0 && st.turn >= 0 && o.people[st.from].count > 0 && counts[st.from] === o.people[st.from].count - 1) {
@@ -155,6 +185,15 @@ export function createBoardTable(game) {
         f.m.position.lerpVectors(f.a, f.b, e).y += Math.sin(e * Math.PI) * 0.18;
         f.m.rotation.set(-0.3, e * 5, 0);
       }
+      if (o.toyKind) {
+        // A toy game: I watch the toy.
+        o.toy?.update(now, o.pressed);
+        cam.position.set(me.position.x - Math.sin(o.chair.ry) * 0.15, o.y0 + EYE, me.position.z - Math.cos(o.chair.ry) * 0.15);
+        cam.up.set(0, 1, 0);
+        cam.lookAt(o.center[0], TABLE_TOP + (o.toyKind === 'tower' ? 0.2 : 0.05), o.center[1]);
+        me.visible = false;
+        return;
+      }
       // Where my eyes go: who I pick from, who picks from me, or the two who are at it.
       const w = o.want;
       const tx = BOARD_CAFE_TABLES.reduce((b, t) => (Math.hypot(t[0] - o.chair.x, t[1] - o.chair.z) < Math.hypot(b[0] - o.chair.x, b[1] - o.chair.z) ? t : b));
@@ -175,6 +214,7 @@ export function createBoardTable(game) {
       if (!o) return;
       on = null;
       removeEventListener('pointerdown', tap, true);
+      if (o.toy) { o.toyFigure?.removeFromParent(); o.toy.root.traverse((m) => { m.geometry?.dispose(); m.material?.dispose?.(); }); } // (the figure in the barrel is a game character, its shapes shared: taken out first)
       game.scene.remove(o.group);
       o.geo.dispose();
       for (const m of new Set(o.mat)) { m.map?.dispose(); m.dispose(); }
