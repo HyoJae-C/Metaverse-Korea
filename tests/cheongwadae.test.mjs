@@ -45,7 +45,8 @@ test('Hyoja-ro, Cheongwadae-ro, Samcheong-ro and Changuimun-ro are on their real
   }
   for (const r of map.roads.filter((r) => r.cw && r.approx)) assert.ok(r.why, 'a made-up link says why');
   assert.ok(!map.roads.some((r) => r.n?.ko === '청와대로' && !r.cw), 'the hand-drawn Cheongwadae-ro is gone');
-  assert.ok(!map.roads.some((r) => r.n?.ko === '효자로' && !r.cw), 'the hand-drawn Hyoja-ro is renamed');
+  assert.ok(!map.roads.some((r) => (r.n?.ko === '효자로' || r.n?.ko === '자하문로') && !r.cw), 'the hand-drawn Hyoja-ro (x -200) is gone');
+  assert.ok(!map.buildings.some((b) => !b.cw && b.p.every(([x]) => x === -250 || x === -214)), 'and so is the row of blocks beside it');
   for (const [k, v] of Object.entries(map.meta.cheongwadae.moved)) assert.ok(v <= 10, `${k} moved ${v} m`);
 });
 

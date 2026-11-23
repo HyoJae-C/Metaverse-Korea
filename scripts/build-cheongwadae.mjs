@@ -8,9 +8,9 @@
 // What is built is what a visitor sees from the street (Yozi, 2026-11-23):
 //
 //   - Hyoja-ro, Cheongwadae-ro and Changuimun-ro on their real lines. The
-//     hand-drawn Hyoja-ro (130 m west of the real one) is renamed
-//     Jahamun-ro, which it stands in for, and the hand-drawn Cheongwadae-ro
-//     at the foot of Bugaksan (240 m north of the real one) goes.
+//     hand-drawn Hyoja-ro (130 m west of the real one, beside the base map's
+//     real Jahamun-ro) and the hand-drawn Cheongwadae-ro at the foot of
+//     Bugaksan (240 m north of the real one) go (Yozi: like the real map).
 //   - The fountain plaza at the Hyoja-dong junction, Sarangchae beside it.
 //   - The grounds' fence on OSM's line (a low stone wall with railings you
 //     see through), the main gate in its recess on Cheongwadae-ro, the big
@@ -87,11 +87,7 @@ for (const r of gb.roads) if (r.n?.ko === '삼청로' && r.p.every(([x]) => x ==
   r.approx = 1;
   r.why = 'hand-drawn between the palace and Bukchon; was named Samcheong-ro, whose real line (scripts/build-cheongwadae.mjs) is about 50 m west';
 }
-for (const r of gb.roads) if (r.n?.ko === '효자로' && r.p.every(([x]) => x === -200)) {
-  r.n = N('자하문로', 'Jahamun-ro', '紫霞門路', '紫霞门路');
-  r.approx = 1;
-  r.why = 'hand-drawn; stands in for the real Jahamun-ro, about 55 m east (the real Hyoja-ro is scripts/build-cheongwadae.mjs)';
-}
+gb.roads = gb.roads.filter((r) => !((r.n?.ko === '효자로' || r.n?.ko === '자하문로') && r.p.every(([x]) => x === -200)));
 
 // ---------- The palace wall (to keep the roads off it) ----------
 const palace = gb.landmarks.find((l) => l.type === 'wall' && l.gb).p;
@@ -131,15 +127,21 @@ const HYOJA = N('효자로', 'Hyoja-ro', '孝子路', '孝子路'), CHEONG = N('
 const hyP = path_([1147603101, 636449776, 1147603094, 1147603093, 799583673]);
 const hy = road('hyoja', HYOJA, [[hyP[0][0], 20], ...hyP]);
 const hyW = road('hyoja', HYOJA, path_([799583672, 1147356354, 799583675]));
-// (on to the game's Jahamun-ro, the hand-drawn road 55 m west of the real one)
-ROADS.push({ k: 'tertiary', w: W, p: [hyW.at(-1), [-200, r1(hyW.at(-1)[1])]], n: HYOJA, approx: 1, why: 'joins the game\'s Jahamun-ro (hand-drawn, x -200)', cw: 1 });
+// Jahamun-ro: from Sajik-ro (the game's, z 20) up past Hyoja-ro's west end to the mouth of Jahamun tunnel,
+// where it stops (the tunnel under the wall is not built; Changuimun-ro goes on over the pass).
+// Jahamun-ro itself is the base map's (base.json: OSM's line, 14 m wide, up to its tunnel's mouth): Hyoja-ro's west
+// stretch ends on it, at the real junction.
+const BASE = JSON.parse(readFileSync(path.join(R, 'base.json'), 'utf8')).roads;
+const baseLocal = (ko) => BASE.filter((r) => r.n?.ko === ko).map((r) => ({ ...r, p: r.p.map(([x, z]) => [x - OX, z - OZ]) }));
+const JAHAMUN = baseLocal('자하문로').find((r) => r.p.some(([x, z]) => Math.hypot(x + 142, z + 221) < 10));
+{ let k = 0; const e = hyW.at(-1); JAHAMUN.p.forEach((q, i) => { if (Math.hypot(q[0] - e[0], q[1] - e[1]) < Math.hypot(JAHAMUN.p[k][0] - e[0], JAHAMUN.p[k][1] - e[1])) k = i; }); note('hyoja', Math.hypot(JAHAMUN.p[k][0] - e[0], JAHAMUN.p[k][1] - e[1])); hyW[hyW.length - 1] = [r1(JAHAMUN.p[k][0]), r1(JAHAMUN.p[k][1])]; }
 // Cheongwadae-ro: along the palace's north wall, past Sinmumun and the main gate, down to Samcheong-ro.
 const cr = road('cheongwadae', CHEONG, path_([799583674, 840875189, -840875185, 840875186, 1505423769].map((id, i) => (i === 0 ? -id : id))));
 // Samcheong-ro: on down the palace's east wall to Yulgok-ro (the game's, z 20), so the three roads go round the palace.
 const sp = path_([196079109]);
 road('samcheong', N('삼청로', 'Samcheong-ro', '三清路', '三清路'), [cr.at(-1), ...sp.slice(1), [sp.at(-1)[0], 20]]);
 // Changuimun-ro: from the junction up the grounds' west side to Changuimun.
-{ // (it ends where it meets the game's Jahamun-ro, x -200, below Changuimun: the real one runs on beside the gate)
+{ // (it ends at x -200, short of Changuimun's gate and the wall: the real one runs on beside the gate)
   const P = path_([1147356351, 1532894887, 1532894488, 222018530]), k = P.findIndex(([x]) => x < -200);
   const [a, b] = [P[k - 1], P[k]], t = (-200 - a[0]) / (b[0] - a[0]);
   road('changuimun', CHANGUI, [...P.slice(0, k), [-200, a[1] + (b[1] - a[1]) * t]]);
@@ -308,11 +310,45 @@ gb.areas = gb.areas.flatMap((a) => {
   const out = polygonClipping.difference([[...a.p, a.p[0]]], ring(plaza), ring(recess));
   return out.map((poly) => ({ ...a, p: open(poly[0]), ...(poly.length > 1 ? { holes: poly.slice(1).map(open) } : {}) })); // (the plaza is inside it: a hole)
 });
+// Jahamun-ro's west side (Seochon): the hand-drawn row of blocks that lined the old road (x -250..-214) goes, and a
+// row of plain buildings lines the real road instead (made up: one row, like every street; from Sajik-ro to below the wall).
+// The park round the palace stops at the road (east of it are the city blocks of Hyoja-dong, west Seochon).
+gb.buildings = gb.buildings.filter((b) => b.cw || !(b.h === 7 && b.p.length === 4 && b.p.every(([x]) => x === -250 || x === -214)));
+{
+  const JP = JAHAMUN.p, west = [[-400, 40], [JP[0][0], 40], ...JP, [JP.at(-1)[0], -500], [-400, -500]];
+  gb.areas = gb.areas.flatMap((a) => {
+    if (!a.gb || a.k !== 'park' || a.cw) return [a];
+    const out = polygonClipping.difference([[[...a.p, a.p[0]], ...(a.holes || []).map((h) => [...h, h[0]])]], [[...west, west[0]]]);
+    return out.map((poly) => { const { holes, ...rest } = a; return { ...rest, p: open(poly[0]), ...(poly.length > 1 ? { holes: poly.slice(1).map(open) } : {}) }; });
+  });
+  const others = [...gb.roads.filter((r) => r.k !== 'walk'), ...baseLocal('사직로')];
+  const solid = [...gb.buildings, ...gb.blockers].map((b) => b.p).filter(Boolean);
+  const clearOf = (q) => others.every((r) => q.every(([x, z]) => nearest(x, z, r.p)[0] > r.w / 2 + 1.5))
+    && solid.every((P) => !q.some(([x, z]) => inside(P, x, z)) && !P.some(([x, z]) => inside(q, x, z)));
+  const D = dense(JP, 1), along = [0];
+  for (let i = 1; i < D.length; i++) along.push(along[i - 1] + Math.hypot(D[i][0] - D[i - 1][0], D[i][1] - D[i - 1][1]));
+  const LEN = 14, GAP = 5, DEEP = 11, OFF = JAHAMUN.w / 2 + 2.5;
+  let row = 0;
+  for (let s0 = 8; s0 + LEN < along.at(-1); s0 += LEN + GAP) {
+    const i = along.findIndex((v) => v >= s0 + LEN / 2), [x, z] = D[i];
+    if (z < -325) break; // (the tunnel's mouth and the wall)
+    const a = D[Math.max(0, i - 3)], b = D[Math.min(D.length - 1, i + 3)], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
+    let nx = -uz, nz = ux;
+    if (nx > 0) { nx = -nx; nz = -nz; } // (west)
+    const q = [[-LEN / 2, OFF], [LEN / 2, OFF], [LEN / 2, OFF + DEEP], [-LEN / 2, OFF + DEEP]].map(([u, v]) => [r1(x + ux * u + nx * v), r1(z + uz * u + nz * v)]);
+    if (!clearOf(q)) continue;
+    gb.buildings.push({ h: 7, p: q, cw: 1, approx: 1, why: 'a plain building along Jahamun-ro (made up; Seochon)' });
+    solid.push(q);
+    row++;
+  }
+  console.log('jahamun-ro row', row);
+}
 gb.meta.cheongwadae = {
   why: 'Cheong Wa Dae from the street only: a security facility (the president\'s office since 2025-12-29), no way in; the main hall and the gate at 50%, the rest at 1/4 (Yozi 2026-11-23). scripts/build-cheongwadae.mjs',
   hall: { real: [r1(HC[0]), r1(HC[1])], scale: S, size: [r1(HB.w * S), r1(HB.d * S)] },
   moved: Object.fromEntries(Object.entries(moved).map(([k, v]) => [k, r1(v)])),
-  approx: ['the lawn, the forecourt and the drive (not in OSM)', 'Sarangchae\'s outline beyond OSM\'s one part', 'the link from Hyoja-ro to the game\'s Jahamun-ro (x -200)'],
+  approx: ['the lawn, the forecourt and the drive (not in OSM)', 'Sarangchae\'s outline beyond OSM\'s one part', 'Changuimun-ro stops short of the gate (x -200)', 'the row of buildings along Jahamun-ro\'s west side'],
 };
 const pretty = (o) => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']');
 writeFileSync(FILE, pretty(gb) + '\n');

@@ -916,12 +916,15 @@ is marked `cw: 1`, so it can be run again.
 - On its real place at 1/4; the main hall and the gate are 50% (twice the map
   across, half the real height; `CW.HALL`), the rest 1/4.
 - Hyoja-ro, Cheongwadae-ro, Samcheong-ro and Changuimun-ro are OSM's lines
-  (within 10 m; game road widths push them up to about 5 m). The old
-  hand-drawn Hyoja-ro (130 m too far west) is now `자하문로`, the hand-drawn
-  Cheongwadae-ro is gone and the hand-drawn x = 125 road lost the Samcheong-ro
-  name; all marked `approx` with a `why`.
+  (within 10 m; game road widths push them up to about 5 m). Jahamun-ro is
+  the base map's (already OSM's line); Hyoja-ro ends on it at the real
+  junction. The old hand-drawn Hyoja-ro (130 m too far west, beside the real
+  Jahamun-ro) and its row of blocks are gone, as is the hand-drawn
+  Cheongwadae-ro; the hand-drawn x = 125 road lost the Samcheong-ro name
+  (`approx`, `why`). The park round the palace stops at Jahamun-ro.
 - Made up (`approx`): the lawn, forecourt and drive, Sarangchae's outline past
-  the part OSM has, and the short Hyoja-ro link to the old road. How far
+  the part OSM has, and one row of plain buildings along Jahamun-ro's west
+  side (Seochon). How far
   things moved is in `meta.cheongwadae.moved`.
 - Models: `core/bluehouse-model.js` (hall with blue tiles, gate, fence,
   fountain with its phoenix).
