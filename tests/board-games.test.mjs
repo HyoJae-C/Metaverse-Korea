@@ -305,3 +305,16 @@ test('omok: with the 3-3 rule on, Black may not make two open threes (five still
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'], 1)).opt, 1);
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'])).opt, 0);
 });
+
+test('board game tunes: every game on the menu has a playable recipe', async () => {
+  const { BOARD_TRACKS } = await import('../src/ui/board-games-music.js');
+  for (const id of Object.keys(GAMES)) {
+    const tr = BOARD_TRACKS[id];
+    assert.ok(tr, `${id} has a tune`);
+    assert.ok(tr.bpm >= 50 && tr.bpm <= 150 && tr.swing >= 1 && tr.swing < 2);
+    assert.equal(tr.bass.length, tr.chords.length);
+    assert.ok(Array.isArray(tr.kick) && Array.isArray(tr.snare) && tr.scale.length >= 5);
+    assert.ok(tr.walk || tr.octaveBass || Array.isArray(tr.bassHits));
+    for (const m of [...tr.chords.flat(), ...tr.bass, ...tr.scale]) assert.ok(Number.isInteger(m) && m >= 24 && m <= 96);
+  }
+});

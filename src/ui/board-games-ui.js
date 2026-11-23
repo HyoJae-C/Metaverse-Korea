@@ -11,6 +11,7 @@
 // net: { myId, nameOf(id), nearby(): [{ id, name }], send(msg), here(): still at the table's room }
 // games: () => the game ids this table has (all of them at the café).
 // onEvent(kind): 'move' | 'win' | 'lose' | 'bang' | 'ring', for sounds.
+// onGame(id | null): a game started / the table was left, for its music.
 //
 // The croc and the bulldog are little 3D toys (ui/board-toy-3d.js, loaded
 // when one of them starts); their buttons stay in the page, out of sight,
@@ -124,8 +125,8 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, rand });
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -252,6 +253,7 @@ export class BoardGamesUI {
     if (hostId === this.net.myId && humans.length) this.net.send(bgGo(gid, game, seed, ids, opt));
     this.play = { gid, game, opt, g: newGame(game, ids.length, seed, opt), ids, seat: ids.indexOf(this.net.myId), hostId, seed, names: ids.map((id) => this.nameFor(id)) };
     this.host = null;
+    this.onGame(game);
     this.state = 'play';
     this.status = '';
     this.timer = 0;
@@ -427,6 +429,7 @@ export class BoardGamesUI {
       if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
       else if (!p.g.over) this.net.send(bgReply(p.hostId, false));
     }
+    if (this.play) this.onGame(null);
     this.play = null;
     this.dropView();
     this.state = 'menu';

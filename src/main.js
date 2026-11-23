@@ -4821,7 +4821,7 @@ const arcadeGame = createArcade({
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 // Board games at the board game café: the panel loads on first use. (game/board-games.js)
-const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx });
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
