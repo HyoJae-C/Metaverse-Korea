@@ -98,6 +98,8 @@ test('a delivery run counts for the part-time shifts challenge', () => {
 test('visiting a paid place pays its fare on top: the cable car mission is ₩45,000', async () => {
   const { CABLE } = await import('../src/core/cablecar.js');
   assert.equal(VISIT_FARE['namsan-sky-cable'], CABLE.fare);
+  const { BOARD_PASS } = await import('../src/core/board-pass.js');
+  assert.equal(VISIT_FARE[BOARD_PASS.store], BOARD_PASS.fee); // (the board game café's pass)
   assert.equal(missionPay({ type: 'visit', target: 'namsan-sky-cable' }), 45000);
   assert.equal(missionPay({ type: 'visit', target: 'a' }), 30000);
   assert.equal(missionPay({ type: 'fish', need: 30, hard: true }), 30000);
