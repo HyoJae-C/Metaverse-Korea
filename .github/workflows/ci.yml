@@ -38,6 +38,9 @@ jobs:
           node tests/e2e/board-games.mjs http://localhost:4173/
           # Board game sets for the home: bought at the café, a game started by one at home.
           node tests/e2e/board-home.mjs http://localhost:4173/
+          # Two players in a hair salon: flipping styles for 40 s must not get
+          # the flipper cut off by the presence limit (both would vanish).
+          node tests/e2e/salon-peers.mjs http://localhost:4173/
           # Memory budget: iPhone Safari closes the page past its canvas limit.
           node tests/e2e/memory.mjs http://localhost:4173/
           # Returning players' saves (a drink in hand, an errand done…) still load.

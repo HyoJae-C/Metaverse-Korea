@@ -24,17 +24,32 @@ export function sendRate({ peers = 0, base, budget, min }) {
 // offs on 2026-11-20 after the look fix). So untracking goes through here too:
 // a null payload means "not in this room's presence", and only the latest
 // wish is sent once the gap is over.
+// Supabase's own rule is stricter than a gap, though: at most 5 presence
+// updates per client in any 30 s (track and untrack both count; docs
+// "ClientPresenceRateLimitReached"). A 3 s gap still allowed 10, so someone
+// flipping through hairstyles in the salon chair for half a minute was cut
+// off again (Yozi 2026-11-23: "at the salon, when a friend changes hair the
+// other one vanishes": both screens lose each other, since the closed
+// channel neither sends nor receives). So on top of the gap, at most `max`
+// updates (4, one spare) go out in any `per` ms; a fresh join counts too.
 // send(payload) does the track (or the untrack, for null); now() and timers
 // are injectable for tests.
-export function createPresenceThrottle(send, { gap = 3000, now = () => Date.now(), later = setTimeout, cancel = clearTimeout } = {}) {
-  let last = -Infinity, pending = null, waiting = false, timer = null;
+export const PRESENCE_MAX = 4, PRESENCE_PER = 30000;
+export function createPresenceThrottle(send, { gap = 3000, max = PRESENCE_MAX, per = PRESENCE_PER, now = () => Date.now(), later = setTimeout, cancel = clearTimeout } = {}) {
+  let pending = null, waiting = false, timer = null;
+  const sent = []; // when the last `max` updates went out
+  const stamp = () => { sent.push(now()); if (sent.length > max) sent.shift(); };
+  // The earliest time the next update may go out.
+  const nextAt = () => Math.max(sent.length ? sent[sent.length - 1] + gap : -Infinity, sent.length >= max ? sent[sent.length - max] + per : -Infinity);
   const flush = () => {
     timer = null;
     if (!waiting) return;
+    const wait = nextAt() - now();
+    if (wait > 0) { timer = later(flush, wait); return; } // (a join went out meanwhile)
     const p = pending;
     pending = null;
     waiting = false;
-    last = now();
+    stamp();
     send(p);
   };
   return {
@@ -42,7 +57,7 @@ export function createPresenceThrottle(send, { gap = 3000, now = () => Date.now(
       pending = payload;
       waiting = true;
       if (timer) return;
-      const wait = last + gap - now();
+      const wait = nextAt() - now();
       if (wait <= 0) flush();
       else timer = later(flush, wait);
     },
@@ -53,7 +68,7 @@ export function createPresenceThrottle(send, { gap = 3000, now = () => Date.now(
       timer = null;
       pending = null;
       waiting = false;
-      last = now();
+      stamp();
       send(payload);
     },
     // Untracked (listen-only) or gone: drop anything waiting.
