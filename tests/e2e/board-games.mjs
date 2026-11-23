@@ -305,6 +305,20 @@ try {
   for (const page of [a, b]) await page.waitForFunction(() => /🃏/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-end.png' });
 
+  step = 'mafia: the host leaves and the game goes on under the next player';
+  for (const page of [a, b]) await page.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
+  const [idA, idB] = await Promise.all([a, b].map((page) => page.evaluate(() => window.__bgUi.net.myId)));
+  await b.evaluate((host) => { const u = window.__bgUi; u.host = { id: host, name: 'Dice A', game: 'mafia' }; u.state = 'waiting'; u.show(); }, idA);
+  await a.evaluate((guest) => { const u = window.__bgUi; u.show(); u.begin('mafia', [u.net.myId, guest, 'm-one', 'm-two'], u.net.myId, 4); }, idB);
+  await b.waitForSelector('#bg-panel .mf[data-phase="night"]', { timeout: 15000 });
+  await a.click('#bg-panel .bg-x'); // the host closes the game on their side
+  await b.waitForFunction((me) => window.__bgUi.play?.hostId === me && window.__bgUi.play.g.out[0] && !window.__bgUi.play.closed, idB, { timeout: 15000 });
+  // The new host's clock moves the night on.
+  await b.evaluate(() => { const u = window.__bgUi; u.play.phaseAt -= 21000; });
+  await b.waitForFunction(() => window.__bgUi.play.g.over || window.__bgUi.play.g.phase === 'talk', null, { timeout: 8000 });
+  if (shotDir) await b.screenshot({ path: shotDir + '/mafia-new-host.png' });
+  await b.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
+
   step = 'B walks out: A is told';
   await b.evaluate(() => __mk.place(0, 0));
   await b.evaluate(() => __mk.enter('lucky-piggy-tarot'));

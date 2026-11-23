@@ -966,9 +966,10 @@ export class Mafia {
     return true;
   }
 
-  // The host's clock ran out on phase number `step`.
+  // The host's clock ran out on phase number `step`. (Who the host is can
+  // change when one leaves, so the panel checks the sender, not the rules.)
   next(p, step) {
-    if (this.over || p !== 0 || step !== this.step) return false;
+    if (this.over || !(p >= 0 && p < this.n) || step !== this.step) return false;
     this.advance();
     return true;
   }

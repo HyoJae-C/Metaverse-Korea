@@ -409,7 +409,8 @@ export class BoardGamesUI {
     if (this.host?.id === id) { this.status = tt('closed', { name: this.host.name }); this.host = null; this.state = 'menu'; this.render(); }
     const p = this.play;
     if (!p || p.g.over) return;
-    if (p.hostId === id) { this.status = tt('closed', { name: this.nameFor(id) }); p.g.over = true; p.closed = true; this.render(); }
+    if (p.hostId === id && p.game === 'mafia') { if (!p.g.out[p.ids.indexOf(id)]) this.applyNow(p.ids.indexOf(id), ['l']); } // (the game goes on under a new host: after())
+    else if (p.hostId === id) { this.status = tt('closed', { name: this.nameFor(id) }); p.g.over = true; p.closed = true; this.render(); }
     else if (p.hostId === this.net.myId) this.seatLeft(id);
   }
 
@@ -449,6 +450,7 @@ export class BoardGamesUI {
       this.showFace(seat, act[1]);
       return;
     }
+    if (act[0] === 'n' && p.ids[seat] !== p.hostId) return; // (mafia: only the host's clock moves the game on)
     if (!applyAction(p.g, seat, act)) return;
     if (p.ids.some((id) => id !== BOT && id !== this.net.myId)) this.net.send(bgPass(p.gid, seat, act));
     this.after(seat, act);
@@ -469,6 +471,12 @@ export class BoardGamesUI {
     }
     const g = p.g;
     if (p.game === 'mafia') {
+      if (act[0] === 'l' && p.ids[seat] === p.hostId && !g.over) {
+        // The host left a game of mafia: it goes on, and the next person still at the table keeps the clock
+        // (every screen holds the whole game, so every screen picks the same one).
+        const next = p.ids.findIndex((_, s) => !g.out[s]);
+        if (next >= 0) { p.hostId = p.ids[next]; p.phaseAt = performance.now(); }
+      }
       if (p.stepSeen !== g.step) { p.stepSeen = g.step; p.phaseAt = performance.now(); this.onEvent('move', p.game); }
       if (g.over && !p.done) {
         p.done = true;
@@ -519,7 +527,8 @@ export class BoardGamesUI {
     const p = this.play;
     if (p) {
       const humans = p.ids.some((id) => id !== BOT && id !== me);
-      if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
+      if (p.hostId === me && p.game === 'mafia' && !p.g.over) { if (humans) this.net.send(bgPass(p.gid, p.seat, ['l'])); } // (mafia goes on without its host)
+      else if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
       else if (!p.g.over) this.net.send(bgReply(p.hostId, false));
     }
     if (this.play) this.onGame(null);
@@ -552,7 +561,7 @@ export class BoardGamesUI {
       const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
       const clock = this.card.querySelector('[data-clock]');
       if (clock && clock.textContent !== `⏳ ${left}`) clock.textContent = `⏳ ${left}`;
-      if (p.hostId === this.net.myId && now - p.phaseAt > p.g.seconds() * 1000 + 300) this.hostApply(0, ['n', p.g.step]);
+      if (p.hostId === this.net.myId && now - p.phaseAt > p.g.seconds() * 1000 + 300) this.hostApply(p.seat, ['n', p.g.step]);
       return;
     }
     if (!p || p.g.over || p.hostId !== this.net.myId) return;

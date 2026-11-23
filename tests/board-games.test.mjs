@@ -390,7 +390,6 @@ test('mafia: a night (pick, save, ask), then talk, then the vote', () => {
   assert.ok(g.check(cop, m1));
   assert.ok(!g.check(cop, m2)); // one question a night
   assert.deepEqual(g.checks, [{ round: 1, target: m1, mafia: true }]);
-  assert.ok(!g.next(1, 0)); // only the host's clock
   assert.ok(!g.next(0, 5)); // not this phase
   assert.ok(g.next(0, 0));
   assert.equal(g.phase, 'talk');
