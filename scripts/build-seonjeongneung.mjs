@@ -120,6 +120,10 @@ function hall(name, ring, kind, extra = {}) {
 // The front of a footprint: the side facing `to`.
 const facing = (from, to) => Math.atan2(to[0] - from[0], to[1] - from[1]); // (ry: +z turned to face `to`)
 
+// The stone screen (병풍석, carved with the twelve zodiac guardians) round the
+// mound: King Seongjong's and King Jungjong's mounds have one; Queen
+// Jeonghyeon's has only the railing (난간석) (Cultural Heritage Administration).
+const SCREEN = { seolleung: 1, jeonghyeon: 0, jeongneung: 1 };
 function tomb(id, name, d, jjC, jjHalf) {
   const ring = open(LP(d.tomb)), c = centroid(ring);
   const r = ring.reduce((s, q) => s + Math.hypot(q[0] - c[0], q[1] - c[1]), 0) / ring.length;
@@ -149,7 +153,7 @@ function tomb(id, name, d, jjC, jjHalf) {
   };
   things.push({ name: name.en + ' hill', p: hillP, hill: true });
   blockers.push({ p: R1(hillP), low: true, why: name.en + ': its hill, fenced (you look at the tomb from below)' });
-  lm.push({ type: 'royaltomb', x: r1(c[0]), z: r1(c[1]), ry: r2(ry), mound: r1(2 * r * S), wall: r1(rw * S), hill: { front: r1(front), side: r1(side), back: r1(back), h: SJN.hillH, p: R1(hillP).map(([x, z]) => [r1(x - c[0]), r1(z - c[1])]) }, inner: 1 });
+  lm.push({ type: 'royaltomb', x: r1(c[0]), z: r1(c[1]), ry: r2(ry), mound: r1(2 * r * S), wall: r1(rw * S), hill: { front: r1(front), side: r1(side), back: r1(back), h: SJN.hillH, p: R1(hillP).map(([x, z]) => [r1(x - c[0]), r1(z - c[1])]) }, ...(SCREEN[id] ? {} : { screen: 0 }), inner: 1 });
   return t;
 }
 
@@ -368,7 +372,7 @@ lm.push({ type: 'tombvisitors', x: 0, z: 0, spots: visitors, walks, inner: 1 });
 
 approx.push(
   { what: 'tomb hills', why: `OSM has each hill's front foot, not its height: ${SJN.hillH} m here (about 7 m in Seoul, halved). The hills are twice the 1/4 hill round the mound, kept ${SJN.hillGap} m short of the shrine hall's platform (meta.tombs).` },
-  { what: 'stone figures and lanterns', why: 'Not in OSM: the sheep and tigers inside the curved wall, the civil and military officials, the stone lantern and the offering table laid out as at every Joseon royal tomb, from Yozi\'s photos.' },
+  { what: 'stone figures and lanterns', why: 'Not in OSM: the sheep and tigers inside the curved wall, the civil and military officials, the stone lantern and the offering table kinds and counts as the public records give them (each mound: 2 pairs of stone sheep and of tigers, a pair of pillars, an offering table; a lantern, a pair of civil officials and of military officials, each with a horse), the set laid down in the Gukjo Orye-ui; their exact places along each mound are not in OSM, laid out from one aerial photo.' },
   { what: 'wall height and coping', why: `${SJN.wallH} m stone wall with a tiled top on the OSM outline; the real fence varies.` },
   { what: 'Information Center', why: 'Every district has one: put in the place of the history hall (선릉·정릉 역사문화관), game size.' },
   { what: 'the way in from the gate', why: 'A short paved way from the gate to the first fork (OSM has the gate and the ticket office, not a path between them).' },

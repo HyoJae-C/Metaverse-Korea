@@ -67,6 +67,8 @@ test('the mounds, shrine halls and stele sheds are twice their 1/4 size (50%), o
     assert.ok(l, 'a red gate within 15 m of its OSM spot (60 m in Seoul)');
   }
   assert.equal(lms('bigak').length, 2);
+  // a stone screen round the kings' mounds, only the railing round Queen Jeonghyeon's
+  assert.deepEqual(tombs.map((t) => t.screen !== 0).sort(), [false, true, true]);
 });
 
 test('the hills are fenced, keep off the shrine halls and stay inside the wall', () => {

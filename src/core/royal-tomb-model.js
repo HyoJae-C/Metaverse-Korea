@@ -122,7 +122,7 @@ export function buildRoyalTomb(g, l) {
   // the mound: a stone screen (병풍석) and a railing (난간석) round a grass dome
   const dome = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 9, 0, Math.PI * 2, 0, Math.PI / 2), mat(C.grass));
   dome.scale.y = 0.62; dome.position.set(0, H + 0.42, 0); g.add(dome);
-  cyl(g, r + 0.04, r + 0.08, 0.44, 0, H, 0, C.stone, 16);
+  if (l.screen !== 0) cyl(g, r + 0.04, r + 0.08, 0.44, 0, H, 0, C.stone, 16); // (Queen Jeonghyeon's mound has none)
   for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; cyl(g, 0.07, 0.07, 0.64, Math.cos(a) * (r + 0.9), H, Math.sin(a) * (r + 0.9), C.stoneLight, 6); }
   const rail = new THREE.Mesh(new THREE.TorusGeometry(r + 0.9, 0.05, 4, 24), mat(C.stoneLight));
   rail.rotation.x = Math.PI / 2; rail.position.set(0, H + 0.52, 0); g.add(rail);

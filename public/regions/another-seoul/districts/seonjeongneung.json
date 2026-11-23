@@ -78,7 +78,7 @@
    },
    {
     "what": "stone figures and lanterns",
-    "why": "Not in OSM: the sheep and tigers inside the curved wall, the civil and military officials, the stone lantern and the offering table laid out as at every Joseon royal tomb, from Yozi's photos."
+    "why": "Not in OSM: the sheep and tigers inside the curved wall, the civil and military officials, the stone lantern and the offering table kinds and counts as the public records give them (each mound: 2 pairs of stone sheep and of tigers, a pair of pillars, an offering table; a lantern, a pair of civil officials and of military officials, each with a horse), the set laid down in the Gukjo Orye-ui; their exact places along each mound are not in OSM, laid out from one aerial photo."
    },
    {
     "what": "wall height and coping",
@@ -1098,6 +1098,7 @@
      [-14.5, 8]
     ]
    },
+   "screen": 0,
    "inner": 1
   },
   {
