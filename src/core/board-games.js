@@ -111,6 +111,7 @@ export class Omok {
     if (!this.canPlay(p, x, y)) return false;
     this.board[y * OMOK_SIZE + x] = p;
     this.moves++;
+    this.lastMove = [x, y];
     const line = this.fiveFrom(x, y, p);
     if (line) { this.winner = p; this.line = line; this.over = true; }
     else if (this.moves === OMOK_SIZE * OMOK_SIZE) this.over = true; // a full board is a draw
@@ -633,8 +634,16 @@ export const LADDERS_END = LADDERS_SIZE * LADDERS_SIZE;
 export const LADDERS_UP = { 3: 18, 8: 25, 21: 40, 29: 46, 36: 53, 43: 58 };
 export const LADDERS_DOWN = { 62: 39, 55: 34, 49: 31, 44: 23, 27: 9, 16: 5 };
 
+// With `custom` on (the host's choice), the board starts empty and the
+// players lay it out first (Yozi 2026-11-23): each gets a share of ladders
+// and snakes (LADDERS_SHARE) and they take turns putting one down, any two
+// squares in different rows, up to LADDERS_REACH rows apart. Then the dice.
+export const LADDERS_SHARE = { 2: [3, 3], 3: [2, 2], 4: [1, 1] }; // by players: [ladders, snakes] each
+export const LADDERS_REACH = 4;
+const ladderRow = (k) => Math.floor((k - 1) / LADDERS_SIZE);
+
 export class Ladders {
-  constructor({ players = 2, seed = 1 } = {}) {
+  constructor({ players = 2, seed = 1, custom = false } = {}) {
     if (players < GAMES.ladders.min || players > GAMES.ladders.max) throw new Error('bad player count');
     this.n = players;
     this.rand = rng(seed);
@@ -645,14 +654,63 @@ export class Ladders {
     this.winner = -1;
     this.over = false;
     this.last = null;
+    this.setup = !!custom; // still laying the board out
+    this.up = custom ? {} : { ...LADDERS_UP };
+    this.down = custom ? {} : { ...LADDERS_DOWN };
+    // What each player still has to put down: [ladders, snakes].
+    this.stock = Array.from({ length: players }, () => (custom ? [...LADDERS_SHARE[players]] : [0, 0]));
+  }
+
+  // Squares a ladder or snake already starts or ends on.
+  taken() { return new Set([...Object.entries(this.up), ...Object.entries(this.down)].flat().map(Number)); }
+
+  // Can a ladder (kind 0) or a snake (kind 1) go between squares a and b?
+  // (Either order: a ladder climbs from the lower, a snake bites at the higher.)
+  canPlace(p, kind, a, b) {
+    if (!this.setup || this.over || p !== this.turn || (kind !== 0 && kind !== 1) || !(this.stock[p][kind] > 0)) return false;
+    if (!Number.isInteger(a) || !Number.isInteger(b) || Math.min(a, b) < 2 || Math.max(a, b) >= LADDERS_END) return false;
+    const rows = Math.abs(ladderRow(a) - ladderRow(b));
+    if (rows < 1 || rows > LADDERS_REACH) return false;
+    const t = this.taken();
+    return !t.has(a) && !t.has(b);
+  }
+
+  place(p, kind, a, b) {
+    if (!this.canPlace(p, kind, a, b)) return false;
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    if (kind === 0) this.up[lo] = hi; else this.down[hi] = lo;
+    this.stock[p][kind]--;
+    this.last = { p, placed: kind, from: kind === 0 ? lo : hi, to: kind === 0 ? hi : lo };
+    this.nextPlacer(p);
+    return true;
+  }
+
+  // The next player with something left to put down; nobody: the game starts.
+  nextPlacer(p) {
+    for (let k = 1; k <= this.n; k++) {
+      const t = (p + k) % this.n;
+      if (!this.out[t] && this.stock[t][0] + this.stock[t][1] > 0) { this.turn = t; return; }
+    }
+    this.setup = false;
+    this.turn = this.out[0] ? this.nextIn(0) : 0;
+  }
+
+  // The computer's piece: any place that is allowed.
+  botPlace(rand = Math.random) {
+    const p = this.turn, kind = this.stock[p][0] > 0 && (this.stock[p][1] === 0 || rand() < 0.5) ? 0 : 1;
+    for (let tries = 0; tries < 400; tries++) {
+      const a = 2 + Math.floor(rand() * (LADDERS_END - 2)), b = 2 + Math.floor(rand() * (LADDERS_END - 2));
+      if (this.canPlace(p, kind, a, b)) return [kind, a, b];
+    }
+    return null;
   }
 
   roll(p) {
-    if (this.over || p !== this.turn) return false;
+    if (this.over || this.setup || p !== this.turn) return false;
     const dice = 1 + Math.floor(this.rand() * 6);
     const from = this.pos[p];
     const mid = Math.min(LADDERS_END, from + dice);
-    const to = LADDERS_UP[mid] ?? LADDERS_DOWN[mid] ?? mid;
+    const to = this.up[mid] ?? this.down[mid] ?? mid;
     this.pos[p] = to;
     this.rolls++;
     this.last = { p, dice, from, mid, to, via: to > mid ? 'ladder' : to < mid ? 'snake' : null };
@@ -670,9 +728,10 @@ export class Ladders {
   leave(p) {
     if (this.over || this.out[p]) return;
     this.out[p] = true;
+    this.stock[p] = [0, 0]; // (what they had not put down stays in the box)
     const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
     if (left.length < 2) { this.over = true; this.winner = left[0] ?? -1; return; }
-    if (this.turn === p) this.turn = this.nextIn(p);
+    if (this.setup) { if (this.turn === p || this.stock.every((k) => k[0] + k[1] === 0)) this.nextPlacer(p); } else if (this.turn === p) this.turn = this.nextIn(p);
   }
 }
 
@@ -765,14 +824,15 @@ export class Tower {
 }
 
 // One way to make any game, used by the table screen.
-// opt: a game's own choice, a small number (omok: 1 = no double threes).
+// opt: a game's own choice, a small number (omok: 1 = no double threes for
+// Black; ladders: 1 = the players lay the board out themselves).
 export function newGame(id, players, seed, opt = 0) {
   if (id === 'omok') return new Omok({ players, no33: opt === 1 });
   if (id === 'onecard') return new OneCard({ players, seed });
   if (id === 'fruitbell') return new FruitBell({ players, seed });
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
   if (id === 'thief') return new Thief({ players, seed });
-  if (id === 'ladders') return new Ladders({ players, seed });
+  if (id === 'ladders') return new Ladders({ players, seed, custom: opt === 1 });
   if (id === 'tower') return new Tower({ players, seed });
   throw new Error('unknown game ' + id);
 }
@@ -780,7 +840,8 @@ export function newGame(id, players, seed, opt = 0) {
 // Apply one action message to a game. Actions are tiny arrays so they fit a
 // room message: ['o', x, y] omok, ['c', card, suit] / ['d'] one card,
 // ['f'] flip / ['r'] ring, ['p', spot] roulette, ['s', i] point at / ['t', i]
-// take a card in the joker game, ['d'] roll the dice in snakes and ladders,
+// take a card in the joker game, ['d'] roll the dice / ['a', kind, from, to]
+// put a ladder (0) or snake (1) down in snakes and ladders,
 // ['l'] leave. (['e', n] is a face a player
 // pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
@@ -794,6 +855,7 @@ export function applyAction(game, p, a) {
     case 'p': return (game instanceof Roulette || game instanceof Tower) && game.press(p, a[1] | 0);
     case 's': return game instanceof Thief && game.select(p, a[1] | 0);
     case 't': return game instanceof Thief && game.take(p, a[1] | 0);
+    case 'a': return game instanceof Ladders && game.place(p, a[1] | 0, a[2] | 0, a[3] | 0);
     case 'l': game.leave(p); return true;
     default: return false;
   }
@@ -813,7 +875,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclste]$/.test(p[0]) || p.length > 3) return null;
+  if (!/^[ofrpdclstea]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

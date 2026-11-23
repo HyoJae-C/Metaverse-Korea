@@ -305,3 +305,54 @@ test('omok: with the 3-3 rule on, Black may not make two open threes (five still
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'], 1)).opt, 1);
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'])).opt, 0);
 });
+
+test('board game tunes: every game on the menu has a playable recipe', async () => {
+  const { BOARD_TRACKS } = await import('../src/ui/board-games-music.js');
+  for (const id of Object.keys(GAMES)) {
+    const tr = BOARD_TRACKS[id];
+    assert.ok(tr, `${id} has a tune`);
+    assert.ok(tr.bpm >= 50 && tr.bpm <= 150 && tr.swing >= 1 && tr.swing < 2);
+    assert.equal(tr.bass.length, tr.chords.length);
+    assert.ok(Array.isArray(tr.kick) && Array.isArray(tr.snare) && tr.scale.length >= 5);
+    assert.ok(tr.walk || tr.octaveBass || Array.isArray(tr.bassHits));
+    for (const m of [...tr.chords.flat(), ...tr.bass, ...tr.scale]) assert.ok(Number.isInteger(m) && m >= 24 && m <= 96);
+  }
+});
+
+test('snakes and ladders: the players lay the board out first, a share each, then roll', async () => {
+  const { Ladders, LADDERS_SHARE, LADDERS_END, newGame, applyAction, unpackAct, packAct } = await import('../src/core/board-games.js');
+  assert.deepEqual(unpackAct(packAct(['a', 1, 40, 12])), ['a', 1, 40, 12]);
+  const g = newGame('ladders', 2, 5, 1);
+  assert.ok(g.setup);
+  assert.deepEqual(g.stock, [[3, 3], [3, 3]]);
+  assert.ok(!applyAction(g, 0, ['d'])); // no dice yet
+  assert.ok(!applyAction(g, 1, ['a', 0, 3, 20])); // not your turn
+  assert.ok(!applyAction(g, 0, ['a', 0, 3, 6])); // same row
+  assert.ok(!applyAction(g, 0, ['a', 0, 3, 60])); // too far
+  assert.ok(!applyAction(g, 0, ['a', 0, 1, 20]) && !applyAction(g, 0, ['a', 1, 64, 40])); // not the first or last square
+  assert.ok(applyAction(g, 0, ['a', 0, 20, 3])); // either order: a ladder goes up
+  assert.equal(g.up[3], 20);
+  assert.equal(g.turn, 1);
+  assert.ok(!applyAction(g, 1, ['a', 1, 20, 30])); // that square is taken
+  assert.ok(applyAction(g, 1, ['a', 1, 22, 41])); // a snake comes down
+  assert.equal(g.down[41], 22);
+  // The computer fills the rest; then the dice work and somebody wins.
+  let guard = 0;
+  while (g.setup && guard++ < 50) { const m = g.botPlace(Math.random); assert.ok(m); assert.ok(applyAction(g, g.turn, ['a', ...m])); }
+  assert.ok(!g.setup);
+  assert.equal(Object.keys(g.up).length, 6);
+  assert.equal(Object.keys(g.down).length, 6);
+  assert.equal(g.turn, 0);
+  guard = 0;
+  while (!g.over && guard++ < 5000) assert.ok(applyAction(g, g.turn, ['d']));
+  assert.ok(g.over && g.pos[g.winner] === LADDERS_END);
+  // Shares by table size; someone leaving mid-layout does not hold it up.
+  for (const n of [2, 3, 4]) assert.deepEqual(new Ladders({ players: n, custom: true }).stock[0], LADDERS_SHARE[n]);
+  const h = new Ladders({ players: 3, custom: true });
+  h.leave(0);
+  assert.equal(h.turn, 1);
+  guard = 0;
+  while (h.setup && guard++ < 50) applyAction(h, h.turn, ['a', ...h.botPlace(Math.random)]);
+  assert.ok(!h.setup && h.turn === 1);
+  assert.ok(!newGame('ladders', 2, 5).setup); // the ready-made board
+});

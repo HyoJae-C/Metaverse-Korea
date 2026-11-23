@@ -4,7 +4,7 @@
 // panel, the rules and their words (ui/board-games-ui.js) load the first time
 // someone opens a game or is invited to one.
 //
-// game: { myId, net, others, me, interior, safety, sfx, shop }
+// game: { myId, net, others, me, interior, safety, sfx, music }
 import { localName, getLanguage } from '../core/i18n.js';
 
 const L = (o) => localName(o, getLanguage());
@@ -23,6 +23,9 @@ export function createBoardGames(game) {
   const here = () => !!game.interior?.stations?.boardgames;
   const load = () => (loading ||= import('../ui/board-games-ui.js').then(async (m) => {
     const text = await import('../ui/board-games-text.js');
+    const { BOARD_TRACKS } = await import('../ui/board-games-music.js');
+    const { playBoardSound } = await import('../ui/board-games-sounds.js');
+    let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
       net: {
         myId: game.myId,
@@ -31,14 +34,21 @@ export function createBoardGames(game) {
         send: (msg) => game.net?.sendEmote(msg),
         here,
       },
-      onEvent: (k) => {
+      // Each game has a tune (only heard with music on); leaving puts the
+      // earlier song back, unless something else changed it meanwhile.
+      onGame: (id) => {
+        const music = game.music, tune = id && BOARD_TRACKS[id];
+        if (!music) return;
+        if (tune) { if (!Object.values(BOARD_TRACKS).includes(music.track)) songBefore = music.track; music.setTrack(tune); }
+        else if (songBefore) { if (Object.values(BOARD_TRACKS).includes(music.track)) music.setTrack(songBefore); songBefore = null; }
+      },
+      onEvent: (k, id, info) => {
         if (k === 'win') game.me.play('cheer');
-        if (k === 'bang') game.sfx.tock(1, 220);
-        else if (k === 'ring') game.sfx.tock(0.8, 1600);
-        else game.sfx.tock(0.5, 900);
+        playBoardSound(game.sfx, k, id, info);
       },
     });
     ui.text = text;
+    if (new URLSearchParams(location.search).has('debug')) window.__bgUi = ui; // (for the e2e tests)
     return ui;
   }).catch((e) => { loading = null; throw e; }));
 

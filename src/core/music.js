@@ -54,8 +54,10 @@ export class Music {
   }
 
   // Switch songs (see data/tracks.js); starts the new one from its first bar.
+  // (A recipe of the caller's own, an object, is played as it is: the board
+  // games bring theirs, ui/board-games-music.js.)
   setTrack(id) {
-    const next = trackById(id);
+    const next = typeof id === 'object' && id ? id : trackById(id);
     if (next === this.track) return;
     this.track = next;
     this.step = 0;

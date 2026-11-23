@@ -119,9 +119,18 @@ try {
   await a.click('#bg-panel [data-game="ladders"]');
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel canvas.bg-ladders');
+  // First the board is laid out: A puts down a ladder, then a snake, with two taps each; the computer does its own.
+  for (const [piece, from, to] of [[0, 10, 30], [1, 50, 28], [0, 12, 35], [1, 60, 44], [0, 6, 21], [1, 38, 19]]) {
+    await a.waitForSelector(`#bg-panel [data-piece="${piece}"]:not([disabled])`, { timeout: 15000 });
+    await a.click(`#bg-panel [data-piece="${piece}"]`);
+    // (a square the computer took in the meantime: the next free one in that row)
+    await a.evaluate(([f, t]) => { const u = window.__bgUi, g = u.play.g, free = (k) => { while (g.taken().has(k)) k++; return k; }; u.ladderTap(free(f)); u.ladderTap(free(t)); }, [from, to]);
+  }
+  if (shotDir) { await a.waitForTimeout(300); await a.screenshot({ path: shotDir + '/ladders-setup.png' }); }
   for (let k = 0; k < 6; k++) {
-    await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 15000 });
+    await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 30000 }); // (the computer may roll a 6 or two first)
     await a.click('#bg-panel [data-act="roll"]');
+    if (k === 0 && shotDir) { await a.waitForTimeout(350); await a.screenshot({ path: shotDir + '/ladders-dice.png' }); }
     await a.waitForFunction(() => +document.querySelector('#bg-panel .bg-dice')?.dataset.dice > 0, null, { timeout: 8000 });
   }
   await a.waitForTimeout(1200);

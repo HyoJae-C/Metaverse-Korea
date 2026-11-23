@@ -10,7 +10,8 @@
 //
 // net: { myId, nameOf(id), nearby(): [{ id, name }], send(msg), here(): still at the table's room }
 // games: () => the game ids this table has (all of them at the café).
-// onEvent(kind): 'move' | 'win' | 'lose' | 'bang' | 'ring', for sounds.
+// onEvent(kind, game, info): 'move' | 'pair' | 'dice' | 'ring' | 'wrong' | 'bang' | 'win' | 'lose', for sounds.
+// onGame(id | null): a game started / the table was left, for its music.
 //
 // The croc and the bulldog are little 3D toys (ui/board-toy-3d.js, loaded
 // when one of them starts); their buttons stay in the page, out of sight,
@@ -18,7 +19,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_UP, LADDERS_DOWN, newGame, applyAction,
+  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -30,9 +31,13 @@ const tt = (k, v) => fmt(L(T[k]), v);
 const BOT = '~';
 const INVITE_WAIT = 30000; // an invite nobody answers is dropped after this
 const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
+const TURN_MS = 30000; // a turn nobody takes is played for them after this (the host's clock)
+const TURN_WARN = 10; // the last seconds are counted down on screen
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
+const RIDE_MS = 650; // ms to climb a ladder or slide down a snake
+const DICE_MS = 750; // ms the dice tumbles in the middle of the board before the piece walks
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
 const CSS = `
@@ -52,6 +57,7 @@ const CSS = `
 #bg-panel .bg-go { background: #ffd36b; }
 #bg-panel .bg-line { padding: 6px 0; }
 #bg-panel .bg-status { min-height: 22px; margin: 8px 0; text-align: center; }
+#bg-panel .bg-clock { text-align: center; font-size: 18px; font-weight: 800; color: #e8402a; }
 #bg-panel .bg-seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
 #bg-panel .bg-seat { padding: 4px 10px; border-radius: 999px; background: #efe4cf; font-size: 13px; }
 #bg-panel .bg-seat.on { background: #ffd36b; }
@@ -66,6 +72,18 @@ const CSS = `
 #bg-panel .bg-fcard { height: 74px; margin: 6px auto; width: 64px; border-radius: 8px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); display: flex; flex-wrap: wrap; align-content: center; justify-content: center; font-size: 18px; line-height: 1.1; }
 #bg-panel .bg-fcard.back { background: repeating-linear-gradient(45deg, #e07a5f 0 6px, #f2a07b 6px 12px); }
 #bg-panel .bg-bell { display: block; margin: 10px auto 0; width: 120px; height: 120px; border-radius: 50%; border: 0; background: radial-gradient(circle at 40% 35%, #fff2a8, #f2c230 60%, #c99412); font-size: 30px; box-shadow: 0 6px 0 #9b7210; }
+#bg-panel .bg-fcard.new { animation: bg-flip .32s ease-out; }
+@keyframes bg-flip { from { transform: translateY(-26px) rotateY(180deg) scale(1.15); background: #f2a07b; color: transparent; } 55% { color: transparent; } to { transform: none; } }
+#bg-panel .bg-pile.got { animation: bg-got .6s ease-out; }
+@keyframes bg-got { 30% { transform: scale(1.08); background: #ffe28a; } }
+#bg-panel .bg-pile.oops { animation: bg-oops .45s; }
+@keyframes bg-oops { 20%, 60% { transform: translateX(-7px); background: #ffc9bd; } 40%, 80% { transform: translateX(7px); } }
+#bg-panel .bg-bell.rung { animation: bg-rung .5s; }
+@keyframes bg-rung { 15% { transform: translateY(6px) rotate(-9deg); } 35% { transform: rotate(8deg); } 55% { transform: rotate(-5deg); } 75% { transform: rotate(3deg); } }
+#bg-panel .bg-omok-wrap { position: relative; width: min(100%, 420px); margin: 0 auto; }
+#bg-panel .bg-drop { position: absolute; width: 5.4%; aspect-ratio: 1; margin: -2.7% 0 0 -2.7%; border-radius: 50%; pointer-events: none; animation: bg-drop .38s ease-out forwards; }
+@keyframes bg-drop { from { transform: scale(2.1); opacity: .9; box-shadow: 0 10px 14px rgba(0,0,0,.35); } 70% { transform: scale(.92); opacity: 1; } to { transform: scale(1); opacity: 0; box-shadow: 0 0 0 9px rgba(232,64,42,0); } }
+@media (prefers-reduced-motion: reduce) { #bg-panel .bg-fcard.new, #bg-panel .bg-pile.got, #bg-panel .bg-pile.oops, #bg-panel .bg-bell.rung, #bg-panel .bg-drop { animation: none; } #bg-panel .bg-drop { display: none; } }
 #bg-panel .bg-bell:active { transform: translateY(4px); box-shadow: 0 2px 0 #9b7210; }
 #bg-panel .bg-toy { position: relative; margin: 6px auto; max-width: 420px; }
 #bg-panel .bg-spots { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 14px; border-radius: 22px; }
@@ -78,6 +96,9 @@ const CSS = `
 #bg-panel .bg-shout { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 34px; font-weight: 900; color: #e8402a; text-shadow: 0 2px 0 #fff; pointer-events: none; animation: bg-shout .5s ease-out; }
 @keyframes bg-shout { from { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } to { transform: scale(1); } }
 #bg-panel .bg-card.bang { animation: bg-flash .45s; }
+#bg-panel .bg-party { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: 18px; }
+#bg-panel .bg-party i { position: absolute; top: -16px; width: 9px; height: 14px; border-radius: 2px; animation: bg-fall 1.9s ease-in forwards; }
+@keyframes bg-fall { to { transform: translateY(560px) rotate(540deg); opacity: 0; } }
 @keyframes bg-flash { 0%, 100% { background: #fffaf0; } 30% { background: #ffd0c4; } }
 #bg-panel .bg-chat { margin-top: 12px; border-top: 2px dashed #eadbbd; padding-top: 8px; }
 #bg-panel .bg-chat-lines { max-height: 84px; overflow-y: auto; font-weight: 500; font-size: 14px; line-height: 1.35; scrollbar-width: thin; }
@@ -92,6 +113,19 @@ const CSS = `
 #bg-panel .bg-card1.joker { background: #fff3c4; font-size: 24px; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
 #bg-panel .bg-card1:disabled { cursor: default; }
+#bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
+#bg-panel .bg-who { text-align: center; }
+#bg-panel .bg-head { font-size: 56px; line-height: 1.05; transition: transform .15s; }
+#bg-panel .bg-head.pull { transform: scale(1.35); }
+#bg-panel .bg-fan { display: flex; justify-content: center; padding: 22px 0 10px; }
+#bg-panel .bg-fan .bg-card1 { flex: none; transform-origin: 50% 120%; transform: translateY(var(--drop, 0)) rotate(var(--tilt, 0)); }
+#bg-panel .bg-fan.big .bg-card1 { width: 50px; height: 72px; }
+#bg-panel .bg-fan .bg-card1.sel { box-shadow: 0 0 0 3px #ffb800, 0 8px 12px rgba(0,0,0,.35); z-index: 2; }
+#bg-panel .bg-fan .bg-card1 { position: relative; }
+#bg-panel .bg-point { position: absolute; left: 50%; top: -34px; margin-left: -14px; font-size: 28px; line-height: 1; animation: bg-bob .7s ease-in-out infinite alternate; }
+@keyframes bg-bob { to { transform: translateY(6px); } }
+#bg-panel .bg-mine { margin-top: 6px; }
+#bg-panel .bg-mine .bg-sub { color: #fff; opacity: .9; }
 #bg-panel .bg-sub { text-align: center; font-size: 13px; opacity: .75; margin-top: 6px; }
 #bg-panel .bg-faces { display: flex; justify-content: center; gap: 6px; margin: 6px 0 0; }
 #bg-panel .bg-faces button { border: 0; background: #f3e6cc; border-radius: 50%; width: 38px; height: 38px; font-size: 20px; padding: 0; }
@@ -119,13 +153,14 @@ const FACE_MS = 2600, FACE_GAP = 1200;
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
+  pirate: { en: 'YARRR!', ko: '으악!', ja: 'うわあ！', zh: '哇啊！', es: '¡ARRR!', fr: 'ARRR !', th: 'ว้าก!', vi: 'ÁÁÁ!', id: 'ARRR!', hi: 'अरे!', ar: 'آآآه!' },
   tower: { en: 'CRASH!', ko: '와르르!', ja: 'ガラガラ！', zh: '哗啦！', es: '¡CATAPLUM!', fr: 'PATATRAS !', th: 'โครม!', vi: 'RẦM!', id: 'BRUK!', hi: 'धड़ाम!', ar: 'طاخ!' },
   bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', hi: 'भौं! भौं!', ar: 'هَو! هَو!' },
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, rand });
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -209,7 +244,7 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ lobby (host)
   choose(game) {
     this.leaveAll();
-    this.lobby = { game, list: [] };
+    this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0 }; // (ladders: the players lay the board out, unless the host says no)
     this.state = 'lobby';
     this.status = '';
     this.render();
@@ -251,12 +286,14 @@ export class BoardGamesUI {
     gid ||= (seed % 1e9).toString(36);
     if (hostId === this.net.myId && humans.length) this.net.send(bgGo(gid, game, seed, ids, opt));
     this.play = { gid, game, opt, g: newGame(game, ids.length, seed, opt), ids, seat: ids.indexOf(this.net.myId), hostId, seed, names: ids.map((id) => this.nameFor(id)) };
+    this.play.turnAt = performance.now();
     this.host = null;
+    this.onGame(game);
     this.state = 'play';
     this.status = '';
     this.timer = 0;
     this.dropView();
-    if (game === 'croc' || game === 'bulldog' || game === 'tower') {
+    if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
       import('./board-toy-3d.js').then((m) => {
@@ -267,6 +304,12 @@ export class BoardGamesUI {
     }
     this.render();
   }
+
+  // Time since the last move, for the computer players' thinking. By the
+  // clock, not by counting ticks: on a slow device the tick comes late, and
+  // the computer then took several times as long over a move.
+  get timer() { return performance.now() - (this.t0 ?? 0); }
+  set timer(v) { this.t0 = performance.now() - v; }
 
   dropView() { this.view?.dispose(); this.view = null; }
 
@@ -385,6 +428,7 @@ export class BoardGamesUI {
 
   after(seat, act) {
     const p = this.play;
+    if (act[0] !== 's') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
     if (act[0] === 'l') {
       (p.gone ||= [])[seat] = true;
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
@@ -392,23 +436,29 @@ export class BoardGamesUI {
     const g = p.g;
     if (g.last?.ring != null) {
       this.status = tt(g.last.ring ? 'ringRight' : 'ringWrong', { name: p.names[seat], n: g.last.ring ? g.last.got : g.last.paid });
-      this.onEvent('ring');
+      this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
     } else if (act[0] === 't') {
       const l = g.last;
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
-      this.onEvent('move');
+      this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
       const l = g.last;
-      this.status = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      // (said once the dice has stopped tumbling, not before)
+      const said = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
+      this.status = '';
+      setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, DICE_MS);
       this.startWalk(l);
-      this.onEvent('move');
-    } else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
-    else if (act[0] !== 'l') this.onEvent('move');
+      this.onEvent('dice', p.game);
+    } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
+    else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
+    else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
       p.done = true;
-      if (g.last?.bang || (p.game === 'thief' && g.loser === p.seat)) this.onEvent('bang');
-      else if (g.winner === p.seat || (p.game === 'thief' && g.loser >= 0)) this.onEvent('win');
-      else if (g.winner >= 0) this.onEvent('lose');
+      // Who is glad about it: the winner, or everyone but the one who lost.
+      const lostIt = g.loser === p.seat || (g.winner >= 0 && g.winner !== p.seat), wonIt = !lostIt && p.seat >= 0 && (g.winner === p.seat || g.loser >= 0);
+      if (g.last?.bang) this.onEvent('bang', p.game, { placing: !!g.last.placing });
+      const late = g.last?.bang ? (g.last.placing ? 1500 : 1000) : p.game === 'ladders' ? DICE_MS + 900 : 0; // (after the crash, or the last walk)
+      setTimeout(() => { if (this.play !== p) return; if (wonIt) { this.onEvent('win', p.game); p.party = true; this.render(); } else if (lostIt) this.onEvent('lose', p.game); }, late);
     }
     this.timer = 0;
     this.render();
@@ -427,6 +477,7 @@ export class BoardGamesUI {
       if (p.hostId === me) { if (humans) this.net.send(bgClose(p.gid)); }
       else if (!p.g.over) this.net.send(bgReply(p.hostId, false));
     }
+    if (this.play) this.onGame(null);
     this.play = null;
     this.dropView();
     this.state = 'menu';
@@ -445,10 +496,14 @@ export class BoardGamesUI {
     }
     const p = this.play;
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
+    if (p && this.clockEl?.isConnected) {
+      const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
+      const text = left <= TURN_WARN ? `⏳ ${Math.max(0, left)}` : '';
+      if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    }
     if (!p || p.g.over || p.hostId !== this.net.myId) return;
     // The computer players (the host runs them).
     const g = p.g;
-    this.timer += 250;
     if (p.game === 'fruitbell' && g.bellRight()) {
       p.bellAt ??= between(BOT_BELL, this.rand);
       if (this.timer >= p.bellAt) {
@@ -458,14 +513,30 @@ export class BoardGamesUI {
       }
     } else if (p.game === 'fruitbell') p.bellAt = null;
     const turn = turnOf(g);
-    if (turn < 0 || p.ids[turn] !== BOT) return;
+    if (turn < 0) return;
+    if (p.ids[turn] !== BOT) {
+      // A person who lets the clock run out: the move is made for them, so
+      // one player stepping away cannot hold the table up.
+      if (now - p.turnAt > TURN_MS + 1500) {
+        if (p.game === 'thief' && g.sel < 0) this.hostApply(turn, ['s', g.botMove(this.rand)]);
+        this.moveFor(turn);
+      }
+      return;
+    }
     p.thinkAt ??= between(BOT_THINK, this.rand);
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
+    this.moveFor(turn);
+  }
+
+  // A move made by the host for a seat: the computer's, or a person's whose time ran out.
+  moveFor(turn) {
+    const p = this.play, g = p.g;
     if (p.game === 'omok') { const [x, y] = g.botMove(this.rand); this.hostApply(turn, ['o', x, y]); }
     else if (p.game === 'fruitbell') this.hostApply(turn, ['f']);
     else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
-    else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100; } // (lets the piece finish walking)
+    else if (p.game === 'ladders' && g.setup) { const m = g.botPlace(this.rand); this.hostApply(turn, m ? ['a', ...m] : ['l']); }
+    else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100 + DICE_MS; } // (lets the piece finish walking)
     else if (p.game === 'thief') {
       // Point at a card, think again, then take it.
       if (g.sel < 0) { this.hostApply(turn, ['s', g.botMove(this.rand)]); this.timer = 0; } else this.hostApply(turn, ['t', g.sel]);
@@ -525,11 +596,11 @@ export class BoardGamesUI {
     c.append(row);
     const seats = Math.max(g.min, 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0));
     c.append(el('div', 'bg-line', tt('seats', { n: seats })));
-    if (lob.game === 'omok') {
-      // The host's choice: double threes allowed or not.
-      const r = el('button', 'bg-btn', `${L(T.rule33)}: ${L(lob.opt ? T.on : T.off)}`);
+    if (lob.game === 'omok' || lob.game === 'ladders') {
+      // The host's choice: double threes allowed or not / a board of our own.
+      const r = el('button', 'bg-btn', `${L(lob.game === 'omok' ? T.rule33 : T.ownBoard)}: ${L(lob.opt ? T.on : T.off)}`);
       r.type = 'button';
-      r.dataset.act = 'rule33';
+      r.dataset.act = lob.game === 'omok' ? 'rule33' : 'ownboard';
       r.setAttribute('aria-pressed', lob.opt ? 'true' : 'false');
       if (lob.opt) r.style.background = '#c9ecc0';
       r.onclick = () => { lob.opt = lob.opt ? 0 : 1; this.render(); };
@@ -568,7 +639,7 @@ export class BoardGamesUI {
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
-      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.pos[s]}` : n;
+      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -583,6 +654,8 @@ export class BoardGamesUI {
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
+    this.clockEl = el('div', 'bg-clock');
+    c.append(this.clockEl);
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
       FACES.forEach((f, n) => {
@@ -593,6 +666,15 @@ export class BoardGamesUI {
         faces.append(b);
       });
       c.append(faces);
+    }
+    if (p.party) {
+      // I won: paper falls over the card, once.
+      p.party = false;
+      const party = el('div', 'bg-party');
+      const COLOURS = ['#ffd36b', '#e8402a', '#2f7de1', '#27a35a', '#e06aa0', '#8d6ad0'];
+      for (let i = 0; i < 36; i++) { const b = document.createElement('i'); b.style.cssText = `left:${(i * 37) % 100}%;background:${COLOURS[i % 6]};animation-delay:${(i % 9) * 0.07}s;transform:rotate(${i * 40}deg)`; party.append(b); }
+      this.card.append(party);
+      setTimeout(() => party.remove(), 2800);
     }
     if (g.over) {
       const row = el('div', 'bg-row');
@@ -629,6 +711,7 @@ export class BoardGamesUI {
     }
     const turn = turnOf(g);
     let whose = turn === p.seat ? L(T.yourTurn) : tt('theirTurn', { name: p.names[turn] });
+    if (p.game === 'ladders' && g.setup) whose = turn === p.seat ? L(T.placeHow) : tt('placing', { name: p.names[turn] });
     if (p.game === 'thief') {
       const from = g.from;
       whose = turn === p.seat ? tt('pickFrom', { name: p.names[from] }) : from === p.seat ? tt('choosingMine', { name: p.names[turn] }) : tt('choosing', { name: p.names[turn], from: p.names[from] });
@@ -667,6 +750,9 @@ export class BoardGamesUI {
         x.stroke();
       }
     }
+    if (g.lastMove) { // the stone just played: a red dot on it
+      x.beginPath(); x.arc((g.lastMove[0] + 1) * px, (g.lastMove[1] + 1) * px, 4, 0, Math.PI * 2); x.fillStyle = '#e8402a'; x.fill();
+    }
     cv.onclick = (e) => {
       const r = cv.getBoundingClientRect();
       const gx = Math.round(((e.clientX - r.left) / r.width) * (N + 1)) - 1;
@@ -674,19 +760,38 @@ export class BoardGamesUI {
       if (g.canPlay(p.seat, gx, gy)) this.myMove(['o', gx, gy]);
       else if (!g.over && g.turn === p.seat && g.at(gx, gy) === -1 && g.banned(gx, gy, p.seat)) { this.status = L(T.no33Here); this.render(); }
     };
-    c.append(cv);
+    const wrap = el('div', 'bg-omok-wrap');
+    wrap.append(cv);
+    if (g.lastMove && this.fresh(g.lastMove)) { // the stone drops onto the board
+      const d = el('div', 'bg-drop');
+      d.style.left = ((g.lastMove[0] + 1) / (N + 1)) * 100 + '%';
+      d.style.top = ((g.lastMove[1] + 1) / (N + 1)) * 100 + '%';
+      d.style.background = g.at(g.lastMove[0], g.lastMove[1]) === 0 ? '#1d1b22' : '#fbfaf6';
+      wrap.append(d);
+    }
+    c.append(wrap);
     if (g.no33) c.append(el('div', 'bg-sub', L(T.rule33)));
+  }
+
+  // True the first time a move is drawn, so its little motion plays once and
+  // not again on every redraw.
+  fresh(move) {
+    const p = this.play;
+    if (!move || p.drawn === move) return false;
+    p.drawn = move;
+    return true;
   }
 
   drawBell(c) {
     const p = this.play;
     const g = p.g;
+    const l = this.fresh(g.last) ? g.last : null;
     const grid = el('div', 'bg-fruits');
     p.names.forEach((n, s) => {
-      const pile = el('div', 'bg-pile' + (turnOf(g) === s ? ' on' : '') + (g.out[s] ? ' gone' : ''));
+      const pile = el('div', 'bg-pile' + (turnOf(g) === s ? ' on' : '') + (g.out[s] ? ' gone' : '') + (l?.ring != null && l.p === s ? (l.ring ? ' got' : ' oops') : ''));
       pile.append(el('div', null, n));
       const top = g.up[s][g.up[s].length - 1];
-      const card = el('div', 'bg-fcard' + (top ? '' : ' back'), top ? FRUIT_EMOJI[top.f].repeat(top.n) : '');
+      const card = el('div', 'bg-fcard' + (top ? '' : ' back') + (l?.flip && l.p === s ? ' new' : ''), top ? FRUIT_EMOJI[top.f].repeat(top.n) : '');
       pile.append(card, el('small', null, g.out[s] ? L(T.out) : tt('cards', { n: g.down[s].length })));
       grid.append(pile);
     });
@@ -701,7 +806,7 @@ export class BoardGamesUI {
     flip.onclick = () => this.myMove(['f']);
     row.append(flip);
     c.append(row);
-    const bell = el('button', 'bg-bell', L(T.ring));
+    const bell = el('button', 'bg-bell' + (l?.ring != null ? ' rung' : ''), L(T.ring));
     bell.type = 'button';
     bell.dataset.act = 'ring';
     bell.onpointerdown = (e) => { e.preventDefault(); this.myMove(['r', g.flips]); };
@@ -715,13 +820,15 @@ export class BoardGamesUI {
     const path = [];
     for (let k = l.from + 1; k <= l.mid; k++) path.push(k);
     if (l.to !== l.mid) path.push(l.to);
-    p.walk = { seat: l.p, from: l.from, path, at: performance.now() };
+    const now = performance.now();
+    p.dice = { n: l.dice, at: now };
+    p.walk = { seat: l.p, from: l.from, path, at: now + DICE_MS }; // (the piece waits for the dice)
     clearInterval(this.walkTimer);
     this.walkTimer = setInterval(() => {
       const w = this.play?.walk;
       if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
       this.paintLadders(this.ladCv);
-      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP) { this.play.walk = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
+      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + RIDE_MS + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
     }, 50);
   }
 
@@ -735,7 +842,31 @@ export class BoardGamesUI {
     c.append(cv);
     const row = el('div', 'bg-row');
     row.style.cssText = 'justify-content:center;align-items:center';
-    const dice = el('span', 'bg-dice', g.last ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
+    if (g.setup) {
+      // Laying the board out: choose a ladder or a snake, then two squares.
+      if (g.over || g.turn !== p.seat) return;
+      const have = g.stock[p.seat];
+      p.pick ||= { kind: have[0] > 0 ? 0 : 1, first: 0 };
+      if (!(have[p.pick.kind] > 0)) p.pick.kind = 1 - p.pick.kind;
+      ['🪜', '🐍'].forEach((icon, kind) => {
+        const b = el('button', 'bg-btn' + (p.pick.kind === kind ? ' bg-go' : ''), `${icon} ×${have[kind]}`);
+        b.type = 'button';
+        b.dataset.piece = String(kind);
+        b.disabled = !(have[kind] > 0);
+        b.onclick = () => { p.pick = { kind, first: 0 }; this.status = ''; this.render(); };
+        row.append(b);
+      });
+      c.append(row);
+      cv.style.cursor = 'pointer';
+      cv.onclick = (e) => {
+        const r = cv.getBoundingClientRect(), N = LADDERS_SIZE;
+        const col = Math.floor(((e.clientX - r.left) / r.width) * N), up = N - 1 - Math.floor(((e.clientY - r.top) / r.width) * N);
+        if (col < 0 || col >= N || up < 0 || up >= N) return;
+        this.ladderTap(up * N + (up % 2 ? N - 1 - col : col) + 1);
+      };
+      return;
+    }
+    const dice = el('span', 'bg-dice', g.last?.dice && !(p.dice && performance.now() - p.dice.at < DICE_MS) ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
     dice.dataset.dice = String(g.last?.dice ?? 0);
     row.append(dice);
     if (!g.over && !g.out[p.seat]) {
@@ -747,6 +878,20 @@ export class BoardGamesUI {
       row.append(roll);
     }
     c.append(row);
+  }
+
+  // A square tapped while laying the board out (also what the tests call).
+  ladderTap(k) {
+    const p = this.play, g = p?.g;
+    if (!g?.setup || g.turn !== p.seat || !p.pick) return;
+    if (!p.pick.first) {
+      if (g.taken().has(k) || k < 2 || k >= LADDERS_END) { this.status = L(T.placeBad); this.render(); return; }
+      p.pick.first = k; this.status = ''; this.render(); return;
+    }
+    const { kind, first } = p.pick;
+    if (k === first) { p.pick.first = 0; this.render(); return; }
+    if (!g.canPlace(p.seat, kind, first, k)) { p.pick.first = 0; this.status = L(T.placeBad); this.render(); return; }
+    this.myMove(['a', kind, first, k]);
   }
 
   paintLadders(cv) {
@@ -772,7 +917,7 @@ export class BoardGamesUI {
       x.fillText(k === LADDERS_END ? '🏁' : String(k), cx - S / 2 + 4, cy - S / 2 + 4);
     }
     x.lineCap = 'round';
-    for (const [a, b] of Object.entries(LADDERS_UP)) {
+    for (const [a, b] of Object.entries(g.up)) {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
       const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len * 8, ny = (x2 - x1) / len * 8;
       x.strokeStyle = '#a8703a'; x.lineWidth = 4;
@@ -784,7 +929,7 @@ export class BoardGamesUI {
       }
     }
     const SNAKE = ['#4caf6a', '#e06aa0', '#5a8ad0', '#e39b3a', '#8d6ad0', '#3fb0a8'];
-    Object.entries(LADDERS_DOWN).forEach(([a, b], n) => {
+    Object.entries(g.down).forEach(([a, b], n) => {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
       const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
       x.strokeStyle = SNAKE[n % SNAKE.length]; x.lineWidth = 9;
@@ -802,14 +947,23 @@ export class BoardGamesUI {
       x.fillStyle = '#2b2230';
       for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 1.3, 0, Math.PI * 2); x.fill(); }
     });
+    if (g.setup && p.pick?.first) { const [hx, hy] = at(p.pick.first); x.strokeStyle = '#ffb800'; x.lineWidth = 5; x.strokeRect(hx - S / 2 + 3, hy - S / 2 + 3, S - 6, S - 6); }
     // The pieces (several on one square stand side by side).
     const w = p.walk;
     const spot = g.pos.map((k, s) => {
       if (!w || w.seat !== s) return at(k);
-      const f = Math.min(w.path.length, (performance.now() - w.at) / WALK_STEP);
-      const i = Math.floor(f), t = f - i;
+      // (the last step of a ride, up a ladder or down a snake, takes longer)
+      const rides = w.path.length && Math.abs(w.path[w.path.length - 1] - (w.path[w.path.length - 2] ?? w.from)) > 1 && (g.up[w.path[w.path.length - 2] ?? w.from] || g.down[w.path[w.path.length - 2] ?? w.from]);
+      const el2 = performance.now() - w.at, walked = (w.path.length - (rides ? 1 : 0)) * WALK_STEP;
+      const f = Math.max(0, Math.min(w.path.length, rides && el2 > walked ? w.path.length - 1 + (el2 - walked) / RIDE_MS : el2 / WALK_STEP));
+      const i = Math.min(Math.floor(f), Math.max(0, w.path.length - 1)), t = f - i;
       const a = at(i === 0 ? w.from : w.path[i - 1]), b = at(w.path[Math.min(i, w.path.length - 1)]);
-      const ride = i === w.path.length - 1 && Math.abs(w.path[i] - (w.path[i - 1] ?? w.from)) > 6; // (a ladder or a snake: no hop)
+      const ride = rides && i === w.path.length - 1; // (a ladder or a snake: no hop)
+      if (ride && b[1] > a[1]) { // down a snake: along its wiggle, the same curve it is drawn with
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]), waves = Math.max(2, Math.round(len / 60));
+        const e = t * t * (3 - 2 * t), wv = Math.sin(e * Math.PI * waves) * 12 * (1 - e * 0.4);
+        return [a[0] + (b[0] - a[0]) * e - (b[1] - a[1]) / len * wv, a[1] + (b[1] - a[1]) * e + (b[0] - a[0]) / len * wv];
+      }
       return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - (ride ? 0 : Math.sin(t * Math.PI) * 10)];
     });
     g.pos.forEach((k, s) => {
@@ -822,6 +976,27 @@ export class BoardGamesUI {
       x.beginPath(); x.arc(cx, cy, 11, 0, Math.PI * 2); x.fill(); x.stroke();
       if (s === p.seat) { x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill(); }
     });
+    // The dice, thrown into the middle of the board: it tumbles, bounces,
+    // and comes to rest on the number rolled.
+    const d = p.dice;
+    if (d) {
+      const now = performance.now(), t = Math.min(1, (now - d.at) / DICE_MS), rest = t >= 1;
+      const face = rest ? d.n : 1 + (Math.floor(now / 70) * 5 + d.n) % 6;
+      const k = 1 - t, D = 92;
+      const cx = cv.width / 2 + Math.sin(t * 9) * 60 * k * k - 90 * k * k, cy = H / 2 - Math.abs(Math.sin(t * Math.PI * 3)) * 70 * k;
+      x.save();
+      x.globalAlpha = rest ? Math.max(0, 1 - Math.max(0, now - d.at - DICE_MS - 900) / 300) : 1;
+      x.translate(cx, cy);
+      x.rotate(k * k * 7);
+      x.fillStyle = 'rgba(0,0,0,.18)';
+      x.beginPath(); x.roundRect(-D / 2 + 5, -D / 2 + 9, D, D, 16); x.fill();
+      x.fillStyle = '#fff'; x.strokeStyle = '#d9cbb0'; x.lineWidth = 3;
+      x.beginPath(); x.roundRect(-D / 2, -D / 2, D, D, 16); x.fill(); x.stroke();
+      x.fillStyle = face === 1 ? '#e8402a' : '#2b2230';
+      const o = D * 0.27, PIPS = [[[0, 0]], [[-1, -1], [1, 1]], [[-1, -1], [0, 0], [1, 1]], [[-1, -1], [1, -1], [-1, 1], [1, 1]], [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]]];
+      for (const [px, py] of PIPS[face - 1]) { x.beginPath(); x.arc(px * o, py * o, face === 1 ? 12 : 8, 0, Math.PI * 2); x.fill(); }
+      x.restore();
+    }
   }
 
   cardFace(card, cls = '') {
@@ -839,20 +1014,52 @@ export class BoardGamesUI {
   drawThief(c) {
     const p = this.play;
     const g = p.g;
-    if (!g.over) {
-      const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
-      c.append(el('div', 'bg-sub', p.names[from]));
-      const fan = el('div', 'bg-hand');
-      fan.dataset.hand = 'from';
-      g.hands[from].forEach((card, i) => {
-        const b = mine ? this.cardFace(card, g.sel === i ? ' sel' : '') : el('button', 'bg-card1 back' + (g.sel === i ? ' sel' : ''));
+    // Seen from my seat (Yozi 2026-11-23): the other player sits across the
+    // table holding their cards up in a fan, their face (and the faces they
+    // pull) above it; my own cards are fanned in my hands at the bottom.
+    const scene = el('div', 'bg-fp');
+    // A hand of cards as a fan: each card turned a little more, on an arc.
+    const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false }) => {
+      const fan = el('div', 'bg-fan' + (big ? ' big' : ''));
+      const n = cards.length, w = big ? 50 : 40, room = Math.min(420, (this.card.clientWidth || 480) - 64);
+      const step = n > 1 ? Math.min(w - 8, (room - w) / (n - 1)) : 0, turn = Math.min(6, 44 / Math.max(1, n - 1));
+      cards.forEach((card, i) => {
+        const b = faces ? this.cardFace(card) : el('button', 'bg-card1 back');
         b.type = 'button';
         b.dataset.card = String(i);
-        b.disabled = !myTurn;
-        if (myTurn) b.onclick = () => this.myMove(['s', i]);
+        const k = i - (n - 1) / 2;
+        b.style.marginLeft = i ? `${step - w}px` : '0';
+        b.style.setProperty('--tilt', `${k * turn}deg`);
+        b.style.setProperty('--drop', `${Math.abs(k) ** 1.6 * (big ? 2.2 : 1.6) - (sel === i ? 20 : 0)}px`);
+        if (sel === i) { b.classList.add('sel'); if (point) b.append(el('span', 'bg-point', '👇')); }
+        b.disabled = !onTap;
+        if (onTap) b.onclick = () => onTap(i);
         fan.append(b);
       });
-      c.append(fan);
+      return fan;
+    };
+    const who = (s) => {
+      const box = el('div', 'bg-who');
+      const face = p.faces?.[s];
+      box.append(el('div', 'bg-head' + (face ? ' pull' : ''), face ? FACES[face.n] : p.ids[s] === BOT ? '🤖' : '🙂'), el('div', 'bg-sub', p.names[s]));
+      return box;
+    };
+    if (!g.over) {
+      const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
+      // Across the table: whoever I am dealing with. I am being picked from:
+      // the picker; otherwise the one holding the cards being picked.
+      scene.append(who(mine ? g.turn : from));
+      if (mine) {
+        // Their finger hovers over my cards: I hold them up and see which one.
+        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true });
+        fan.dataset.hand = 'from';
+        scene.append(fan);
+        c.append(scene);
+        return;
+      }
+      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null });
+      fan.dataset.hand = 'from';
+      scene.append(fan);
       if (myTurn) {
         const row = el('div', 'bg-row');
         row.style.justifyContent = 'center';
@@ -862,16 +1069,18 @@ export class BoardGamesUI {
         draw.disabled = g.sel < 0;
         draw.onclick = () => this.myMove(['t', g.sel]);
         row.append(draw);
-        c.append(row);
+        scene.append(row);
       }
-      if (mine) return;
     }
-    if (!g.hands[p.seat].length) return;
-    c.append(el('div', 'bg-sub', L(T.myHand)));
-    const hand = el('div', 'bg-hand');
-    hand.dataset.hand = 'mine';
-    for (const card of g.hands[p.seat]) { const b = this.cardFace(card); b.disabled = true; hand.append(b); }
-    c.append(hand);
+    if (g.hands[p.seat].length) {
+      const table = el('div', 'bg-mine');
+      table.append(el('div', 'bg-sub', L(T.myHand)));
+      const hand = fanOf(g.hands[p.seat], { faces: true });
+      hand.dataset.hand = 'mine';
+      table.append(hand);
+      scene.append(table);
+    }
+    if (scene.childNodes.length) c.append(scene);
   }
 
   drawToy(c) {
