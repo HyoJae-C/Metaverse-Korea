@@ -398,6 +398,7 @@ const map = {
       { what: 'headstones', why: 'Rows of plain white stones on a 2.6 x 2 m grid inside each OSM plot: the real rows and their number are not in OSM. No names, no single graves.' },
       { what: 'lawn in front of the gate (겨레얼마당)', why: `The ground between OSM's roads from the fountain to the forecourt (${Math.round(Math.abs(area(lawn)))} m²), level and open to walk on; OSM has no outline for it.` },
       { what: 'entrance', why: 'The ground round the main gate, the visitor office and the fountain is drawn level (the real ground there is within about 1 m).' },
+      { what: 'bank at the edge road', why: 'The hill fades to 0 over 4 m at its foot, but a road keeps its own height: where the ring road runs on the foot (9 places on the Hyeonchung-ro side, where the foot is cut 16 m back from the street) a bank of 0.7 to 3.2 m is left. Kept as an exception (Yozi 2026-11-24): fix later if needed by lowering those stretches.' },
     ],
     parts: [{ box: box(outline) }],
   },

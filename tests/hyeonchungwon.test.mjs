@@ -126,7 +126,7 @@ test('burial plots: inside OSM plots, off the court, no presidential graves, pla
 });
 
 test('made-up things are listed with why', () => {
-  for (const what of ['50%', 'plots cut', 'forecourt', 'shapes', 'Fountain', 'headstones', 'lawn', 'entrance']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what) && a.why), what);
+  for (const what of ['50%', 'plots cut', 'forecourt', 'shapes', 'Fountain', 'headstones', 'lawn', 'entrance', 'bank']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what) && a.why), what);
 });
 
 test('the walk: decks on the ways and the court, solids after them, height on the grounds, the note at the main gate', () => {
