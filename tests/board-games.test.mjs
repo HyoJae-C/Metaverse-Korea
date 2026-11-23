@@ -453,3 +453,17 @@ test('mafia: someone leaving counts as gone; moves go through room messages', ()
   applyAction(g, m, ['l']);
   assert.equal(g.winner, 'town');
 });
+
+test('the joker game: the one picked from may shuffle once a turn', async () => {
+  const { Thief } = await import('../src/core/board-games.js');
+  const g = new Thief({ players: 2, seed: 12 });
+  const holder = g.from, picker = g.turn, before = g.hands[holder].slice();
+  assert.ok(!applyAction(g, picker, ['m'])); // not the one being picked from
+  g.select(picker, 0);
+  assert.ok(applyAction(g, holder, unpackAct(packAct(['m']))));
+  assert.equal(g.sel, -1); // the finger comes off
+  assert.deepEqual(g.hands[holder].slice().sort(), before.slice().sort());
+  assert.ok(!g.mix(holder)); // once
+  g.take(picker, 0);
+  if (!g.over) assert.ok(!g.mixed); // a new turn
+});

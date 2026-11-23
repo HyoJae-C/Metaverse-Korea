@@ -288,6 +288,13 @@ try {
     // The holder sees which of their cards is being eyed.
     await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
     if (!faced) {
+      // The holder shuffles (once a turn): the finger comes off, and the picker points again.
+      await other.click('#bg-panel [data-act="mix"]');
+      await mover.waitForFunction(() => /shuffled/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
+      if (await other.locator('#bg-panel [data-act="mix"]').count()) throw new Error('a second shuffle in one turn is offered');
+      await mover.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:last-child').click());
+      await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
+      if (!(await mover.evaluate(() => /⏳/.test(document.querySelector('#bg-panel .bg-clock')?.textContent || '')))) throw new Error('the turn clock is not shown');
       await other.click('#bg-panel [data-face="1"]');
       await mover.waitForFunction(() => /😱/.test(document.querySelector('#bg-panel .bg-pop')?.textContent || ''), null, { timeout: 8000 });
       if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-picker.png' }); await other.screenshot({ path: shotDir + '/thief-holder.png' }); }

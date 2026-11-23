@@ -266,8 +266,20 @@ export function createBoardTable(game) {
       else if (st.from === o.seat) spot(st.turn, w).setY(face);
       else { spot(st.from, w).add(spot(st.turn, tmp)).multiplyScalar(0.5).setY(face); }
       if (!o.look) o.look = w.clone(); else o.look.lerp(w, Math.min(1, dt * 4));
+      // I turn to whoever I am dealing with, so they see me look at them (my own body is hidden from me).
+      let ry = o.chair.ry;
+      if (!st.over && st.from >= 0 && st.turn >= 0 && (st.turn === o.seat || st.from === o.seat)) { spot(st.turn === o.seat ? st.from : st.turn, tmp); ry = Math.atan2(tmp.x - me.position.x, tmp.z - me.position.z); }
+      me.rotation.y += Math.atan2(Math.sin(ry - me.rotation.y), Math.cos(ry - me.rotation.y)) * Math.min(1, dt * 5);
       // (a little lower than the face: the small panel covers the bottom of the screen)
-      cam.position.set(me.position.x - Math.sin(o.chair.ry) * 0.15, o.y0 + o.at.eye, me.position.z - Math.cos(o.chair.ry) * 0.15);
+      // On a tall phone screen the view is narrow: sit further back and a little higher, so the whole table is in it (Yozi 2026-11-23).
+      const tall = cam.aspect < 1, eyeY = o.y0 + o.at.eye + (tall ? 0.12 : 0);
+      if (tall) {
+        // Back from whoever I look at (not only from the table: a neighbour sits to my side), and a wider view.
+        const dx = o.look.x - me.position.x, dz = o.look.z - me.position.z, d = Math.hypot(dx, dz) || 1, back = Math.min(1.1, 0.35 + (1 - cam.aspect) * 1.3);
+        cam.position.set(me.position.x - (dx / d) * back, eyeY, me.position.z - (dz / d) * back);
+        if (o.fov == null) o.fov = cam.fov;
+        if (cam.fov !== Math.max(o.fov, 68)) { cam.fov = Math.max(o.fov, 68); cam.updateProjectionMatrix(); }
+      } else cam.position.set(me.position.x - Math.sin(o.chair.ry) * 0.15, eyeY, me.position.z - Math.cos(o.chair.ry) * 0.15);
       cam.up.set(0, 1, 0);
       cam.lookAt(o.look.x, o.look.y - 0.3, o.look.z);
       me.visible = false;
@@ -280,6 +292,7 @@ export function createBoardTable(game) {
       removeEventListener('pointerdown', tap, true);
       drop(o);
       game.me.root.visible = true;
+      if (o.fov != null) { game.camera.fov = o.fov; game.camera.updateProjectionMatrix(); }
       if (game.seated === o.chair) game.stand();
     },
   };

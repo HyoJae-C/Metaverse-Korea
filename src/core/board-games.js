@@ -579,6 +579,7 @@ export class Thief {
   settle(turn) {
     const left = this.holders();
     this.sel = -1;
+    this.mixed = false; // (the holder may shuffle once each turn)
     if (left.length <= 1) {
       this.over = true;
       this.loser = left.length === 1 && this.hands[left[0]].some(isJoker) ? left[0] : -1;
@@ -592,6 +593,16 @@ export class Thief {
     const q = this.from;
     if (i < 0 || i >= this.hands[q].length) return false;
     this.sel = i;
+    return true;
+  }
+
+  // The one being picked from shuffles their hand, once a turn (Yozi
+  // 2026-11-23): the picker cannot follow where the joker went.
+  mix(p) {
+    if (this.over || p !== this.from || this.mixed || this.hands[p].length < 2) return false;
+    this.hands[p] = shuffle(this.hands[p], this.rand);
+    this.mixed = true;
+    this.sel = -1;
     return true;
   }
 
@@ -849,7 +860,7 @@ export function newGame(id, players, seed, opt = 0) {
 // Apply one action message to a game. Actions are tiny arrays so they fit a
 // room message: ['o', x, y] omok, ['c', card, suit] / ['d'] one card,
 // ['f'] flip / ['r'] ring, ['p', spot] roulette, ['s', i] point at / ['t', i]
-// take a card in the joker game, ['d'] roll the dice / ['a', kind, from, to]
+// take a card / ['m'] shuffle my hand in the joker game, ['d'] roll the dice / ['a', kind, from, to]
 // put a ladder (0) or snake (1) down in snakes and ladders,
 // ['k', seat] the mafia's pick / ['h', seat] the doctor's / ['q', seat] the
 // police officer's at night, ['z'] done talking, ['v', seat or 9] a vote,
@@ -867,6 +878,7 @@ export function applyAction(game, p, a) {
     case 'p': return (game instanceof Roulette || game instanceof Tower) && game.press(p, a[1] | 0);
     case 's': return game instanceof Thief && game.select(p, a[1] | 0);
     case 't': return game instanceof Thief && game.take(p, a[1] | 0);
+    case 'm': return game instanceof Thief && game.mix(p);
     case 'a': return game instanceof Ladders && game.place(p, a[1] | 0, a[2] | 0, a[3] | 0);
     case 'k': return game instanceof Mafia && game.kill(p, a[1] | 0);
     case 'h': return game instanceof Mafia && game.heal(p, a[1] | 0);
@@ -1033,7 +1045,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclsteakhqzvn]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
+  if (!/^[ofrpdclsteakhqzvnm]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

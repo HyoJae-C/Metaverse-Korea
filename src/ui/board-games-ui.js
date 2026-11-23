@@ -110,7 +110,7 @@ const CSS = `
 #bg-panel .bg-card1 { width: 40px; height: 58px; border: 0; border-radius: 7px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 15px; font-weight: 800; line-height: 1.05; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; transition: transform .12s; }
 #bg-panel .bg-card1.red { color: #d43d3d; }
 #bg-panel .bg-card1.back { background: repeating-linear-gradient(45deg, #3f6fb5 0 6px, #5a8ad0 6px 12px); border: 2px solid #fff; box-sizing: border-box; }
-#bg-panel .bg-card1.joker { background: #fff3c4; font-size: 24px; }
+#bg-panel .bg-card1.joker { background: #2b2230; font-size: 36px; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; border-color: #2b2230; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
 #bg-panel .bg-card1:disabled { cursor: default; }
 #bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
@@ -464,7 +464,7 @@ export class BoardGamesUI {
 
   after(seat, act) {
     const p = this.play;
-    if (act[0] !== 's') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
+    if (act[0] !== 's' && act[0] !== 'm') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
     if (act[0] === 'l') {
       (p.gone ||= [])[seat] = true;
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
@@ -492,6 +492,7 @@ export class BoardGamesUI {
       this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
     } else if (act[0] === 't') {
       const l = g.last;
+      if (l.p === p.seat && l.card === 'JB') { try { navigator.vibrate?.([140, 70, 140]); } catch { /* (no vibration on this device) */ } } // (only the one who drew it feels it)
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
       this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
@@ -503,6 +504,7 @@ export class BoardGamesUI {
       this.startWalk(l);
       this.onEvent('dice', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
+    else if (act[0] === 'm') { this.status = tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
     else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
@@ -553,7 +555,7 @@ export class BoardGamesUI {
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
     if (p && this.clockEl?.isConnected) {
       const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
-      const text = left <= TURN_WARN ? `⏳ ${Math.max(0, left)}` : '';
+      const text = left <= TURN_WARN || (p.game === 'thief' && left < 99) ? `⏳ ${Math.max(0, left)}` : ''; // (the joker game shows the whole turn's clock: Yozi 2026-11-23)
       if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
     }
     if (p?.game === 'mafia' && !p.g.over) {
@@ -1122,7 +1124,7 @@ export class BoardGamesUI {
     const suit = joker ? '' : card.slice(-1);
     const b = el('button', 'bg-card1' + (joker ? ' joker' : suit === '♥' || suit === '♦' ? ' red' : '') + cls);
     b.type = 'button';
-    if (joker) b.textContent = '🃏';
+    if (joker) b.textContent = '💀';
     else b.append(el('span', null, card.slice(0, -1)), el('span', null, suit));
     return b;
   }
@@ -1182,6 +1184,17 @@ export class BoardGamesUI {
         fan.dataset.hand = 'from';
         fan.classList.add('mine');
         scene.append(fan);
+        if (!g.mixed && g.hands[p.seat].length > 1) {
+          // Once a turn I may shuffle, so they cannot follow a card.
+          const mix = el('button', 'bg-btn', L(T.shuffle));
+          mix.type = 'button';
+          mix.dataset.act = 'mix';
+          mix.onclick = () => this.myMove(['m']);
+          const row = el('div', 'bg-row');
+          row.style.justifyContent = 'center';
+          row.append(mix);
+          scene.append(row);
+        }
         c.append(scene);
         return;
       }
