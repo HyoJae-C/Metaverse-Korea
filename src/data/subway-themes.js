@@ -14,6 +14,7 @@ export const STATION_THEMES = {
   'gyeongbokgung-station': ['culture'],
   'anguk-station': ['culture'], // Bukchon
   'gwanghwamun-station': ['culture'],
+  'city-hall-station': ['culture', 'park'],
   'sinchon-station': ['shop'],
   'hongik-univ-station': ['shop'],
   'mangwon-station': ['park'], // Mangwon Han River Park, the sunset

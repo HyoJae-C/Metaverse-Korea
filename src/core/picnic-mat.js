@@ -92,10 +92,12 @@ const inPoly = (x, z, p) => {
 };
 const inLawn = (l, x, z) => x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1 && (!l.p || inPoly(x, z, l.p));
 // A map area (an outline) as a lawn. A four-cornered one keeps its outline
-// and the angle of its first edge (folded into ±45°, so a square lawn has 0).
-export function lawnFrom(p) {
+// and the angle of its first edge (folded into ±45°, so a square lawn has 0);
+// with `outline`, any shape (Seoul Plaza's oval) keeps its outline, mats lying square.
+export function lawnFrom(p, outline = false) {
   const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]);
   const l = { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
+  if (outline && p.length !== 4) return { ...l, p };
   if (p.length !== 4) return l;
   const q = Math.PI / 2, t = Math.atan2(-(p[1][1] - p[0][1]), p[1][0] - p[0][0]);
   const a = Math.round((((t + q / 2) % q + q) % q - q / 2) * 1e4) / 1e4;
