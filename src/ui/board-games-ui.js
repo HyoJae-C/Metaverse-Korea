@@ -100,6 +100,19 @@ const CSS = `
 #bg-panel .bg-card1.joker { background: #fff3c4; font-size: 24px; }
 #bg-panel .bg-card1.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px #ffb800, 0 6px 10px rgba(0,0,0,.3); }
 #bg-panel .bg-card1:disabled { cursor: default; }
+#bg-panel .bg-fp { border-radius: 16px; padding: 10px 8px 12px; background: linear-gradient(#f6e7c8 0 46%, #c98d55 46% 48%, #b97b45 48% 100%); overflow: hidden; }
+#bg-panel .bg-who { text-align: center; }
+#bg-panel .bg-head { font-size: 56px; line-height: 1.05; transition: transform .15s; }
+#bg-panel .bg-head.pull { transform: scale(1.35); }
+#bg-panel .bg-fan { display: flex; justify-content: center; padding: 22px 0 10px; }
+#bg-panel .bg-fan .bg-card1 { flex: none; transform-origin: 50% 120%; transform: translateY(var(--drop, 0)) rotate(var(--tilt, 0)); }
+#bg-panel .bg-fan.big .bg-card1 { width: 50px; height: 72px; }
+#bg-panel .bg-fan .bg-card1.sel { box-shadow: 0 0 0 3px #ffb800, 0 8px 12px rgba(0,0,0,.35); z-index: 2; }
+#bg-panel .bg-fan .bg-card1 { position: relative; }
+#bg-panel .bg-point { position: absolute; left: 50%; top: -34px; margin-left: -14px; font-size: 28px; line-height: 1; animation: bg-bob .7s ease-in-out infinite alternate; }
+@keyframes bg-bob { to { transform: translateY(6px); } }
+#bg-panel .bg-mine { margin-top: 6px; }
+#bg-panel .bg-mine .bg-sub { color: #fff; opacity: .9; }
 #bg-panel .bg-sub { text-align: center; font-size: 13px; opacity: .75; margin-top: 6px; }
 #bg-panel .bg-faces { display: flex; justify-content: center; gap: 6px; margin: 6px 0 0; }
 #bg-panel .bg-faces button { border: 0; background: #f3e6cc; border-radius: 50%; width: 38px; height: 38px; font-size: 20px; padding: 0; }
@@ -950,20 +963,52 @@ export class BoardGamesUI {
   drawThief(c) {
     const p = this.play;
     const g = p.g;
-    if (!g.over) {
-      const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
-      c.append(el('div', 'bg-sub', p.names[from]));
-      const fan = el('div', 'bg-hand');
-      fan.dataset.hand = 'from';
-      g.hands[from].forEach((card, i) => {
-        const b = mine ? this.cardFace(card, g.sel === i ? ' sel' : '') : el('button', 'bg-card1 back' + (g.sel === i ? ' sel' : ''));
+    // Seen from my seat (Yozi 2026-11-23): the other player sits across the
+    // table holding their cards up in a fan, their face (and the faces they
+    // pull) above it; my own cards are fanned in my hands at the bottom.
+    const scene = el('div', 'bg-fp');
+    // A hand of cards as a fan: each card turned a little more, on an arc.
+    const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false }) => {
+      const fan = el('div', 'bg-fan' + (big ? ' big' : ''));
+      const n = cards.length, w = big ? 50 : 40, room = Math.min(420, (this.card.clientWidth || 480) - 64);
+      const step = n > 1 ? Math.min(w - 8, (room - w) / (n - 1)) : 0, turn = Math.min(6, 44 / Math.max(1, n - 1));
+      cards.forEach((card, i) => {
+        const b = faces ? this.cardFace(card) : el('button', 'bg-card1 back');
         b.type = 'button';
         b.dataset.card = String(i);
-        b.disabled = !myTurn;
-        if (myTurn) b.onclick = () => this.myMove(['s', i]);
+        const k = i - (n - 1) / 2;
+        b.style.marginLeft = i ? `${step - w}px` : '0';
+        b.style.setProperty('--tilt', `${k * turn}deg`);
+        b.style.setProperty('--drop', `${Math.abs(k) ** 1.6 * (big ? 2.2 : 1.6) - (sel === i ? 20 : 0)}px`);
+        if (sel === i) { b.classList.add('sel'); if (point) b.append(el('span', 'bg-point', '👇')); }
+        b.disabled = !onTap;
+        if (onTap) b.onclick = () => onTap(i);
         fan.append(b);
       });
-      c.append(fan);
+      return fan;
+    };
+    const who = (s) => {
+      const box = el('div', 'bg-who');
+      const face = p.faces?.[s];
+      box.append(el('div', 'bg-head' + (face ? ' pull' : ''), face ? FACES[face.n] : p.ids[s] === BOT ? '🤖' : '🙂'), el('div', 'bg-sub', p.names[s]));
+      return box;
+    };
+    if (!g.over) {
+      const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
+      // Across the table: whoever I am dealing with. I am being picked from:
+      // the picker; otherwise the one holding the cards being picked.
+      scene.append(who(mine ? g.turn : from));
+      if (mine) {
+        // Their finger hovers over my cards: I hold them up and see which one.
+        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true });
+        fan.dataset.hand = 'from';
+        scene.append(fan);
+        c.append(scene);
+        return;
+      }
+      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null });
+      fan.dataset.hand = 'from';
+      scene.append(fan);
       if (myTurn) {
         const row = el('div', 'bg-row');
         row.style.justifyContent = 'center';
@@ -973,16 +1018,18 @@ export class BoardGamesUI {
         draw.disabled = g.sel < 0;
         draw.onclick = () => this.myMove(['t', g.sel]);
         row.append(draw);
-        c.append(row);
+        scene.append(row);
       }
-      if (mine) return;
     }
-    if (!g.hands[p.seat].length) return;
-    c.append(el('div', 'bg-sub', L(T.myHand)));
-    const hand = el('div', 'bg-hand');
-    hand.dataset.hand = 'mine';
-    for (const card of g.hands[p.seat]) { const b = this.cardFace(card); b.disabled = true; hand.append(b); }
-    c.append(hand);
+    if (g.hands[p.seat].length) {
+      const table = el('div', 'bg-mine');
+      table.append(el('div', 'bg-sub', L(T.myHand)));
+      const hand = fanOf(g.hands[p.seat], { faces: true });
+      hand.dataset.hand = 'mine';
+      table.append(hand);
+      scene.append(table);
+    }
+    if (scene.childNodes.length) c.append(scene);
   }
 
   drawToy(c) {
