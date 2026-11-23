@@ -55,8 +55,8 @@ export function shuffle(list, rand) {
 export const OMOK_SIZE = 15;
 
 export class Omok {
-  // no33: a move that makes two open threes at once is not allowed, for
-  // either colour (the host chooses, Yozi 2026-11-23).
+  // no33: black (who goes first) may not make two open threes at once; white
+  // may (the host turns the rule on or off, Yozi 2026-11-23).
   constructor({ players = 2, no33 = false } = {}) {
     if (players !== 2) throw new Error('omok is for 2');
     this.n = 2;
@@ -71,8 +71,11 @@ export class Omok {
 
   canPlay(p, x, y) {
     return !this.over && p === this.turn && x >= 0 && y >= 0 && x < OMOK_SIZE && y < OMOK_SIZE && this.board[y * OMOK_SIZE + x] < 0
-      && !(this.no33 && this.doubleThree(x, y, p));
+      && !this.banned(x, y, p);
   }
+
+  // A double three that the rule forbids this player.
+  banned(x, y, p) { return this.no33 && p === 0 && this.doubleThree(x, y, p); }
 
   // Would a stone at (x, y) make two or more open threes (a three that one
   // more stone turns into an open four: _XXXX_)? A move that makes five is
@@ -143,7 +146,7 @@ export class Omok {
     let best = null; let bestScore = -1;
     for (let y = 0; y < OMOK_SIZE; y++) {
       for (let x = 0; x < OMOK_SIZE; x++) {
-        if (this.board[y * OMOK_SIZE + x] >= 0 || (this.no33 && this.doubleThree(x, y, p))) continue;
+        if (this.board[y * OMOK_SIZE + x] >= 0 || this.banned(x, y, p)) continue;
         const s = this.cellScore(x, y, p) * 1.1 + this.cellScore(x, y, 1 - p) + rand() * 0.5
           - (Math.abs(x - 7) + Math.abs(y - 7)) * 0.05;
         if (s > bestScore) { bestScore = s; best = [x, y]; }

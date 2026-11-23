@@ -672,7 +672,7 @@ export class BoardGamesUI {
       const gx = Math.round(((e.clientX - r.left) / r.width) * (N + 1)) - 1;
       const gy = Math.round(((e.clientY - r.top) / r.height) * (N + 1)) - 1;
       if (g.canPlay(p.seat, gx, gy)) this.myMove(['o', gx, gy]);
-      else if (g.no33 && !g.over && g.turn === p.seat && g.at(gx, gy) === -1 && g.doubleThree(gx, gy, p.seat)) { this.status = L(T.no33Here); this.render(); }
+      else if (!g.over && g.turn === p.seat && g.at(gx, gy) === -1 && g.banned(gx, gy, p.seat)) { this.status = L(T.no33Here); this.render(); }
     };
     c.append(cv);
     if (g.no33) c.append(el('div', 'bg-sub', L(T.rule33)));

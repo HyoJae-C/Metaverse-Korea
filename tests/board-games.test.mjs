@@ -263,7 +263,7 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
   assert.ok(falls[0] > 0 && falls[1] > 0);
 });
 
-test('omok: with the 3-3 rule on, a move that makes two open threes is refused (five still wins)', async () => {
+test('omok: with the 3-3 rule on, Black may not make two open threes (five still wins); White may', async () => {
   const { Omok, newGame, parseBg, bgGo } = await import('../src/core/board-games.js');
   const set = (g, list, p) => { for (const [x, y] of list) g.board[y * 15 + x] = p; };
   const g = newGame('omok', 2, 1, 1);
@@ -296,6 +296,12 @@ test('omok: with the 3-3 rule on, a move that makes two open threes is refused (
   const b = new Omok({ no33: true });
   set(b, [[5, 7], [6, 7], [7, 5], [7, 6]], 0);
   assert.notDeepEqual(b.botMove(() => 0), [7, 7]);
+  // White is free to.
+  const w = new Omok({ no33: true });
+  set(w, [[5, 7], [6, 7], [7, 5], [7, 6]], 1);
+  w.turn = 1;
+  assert.ok(w.doubleThree(7, 7, 1) && !w.banned(7, 7, 1));
+  assert.ok(w.play(1, 7, 7));
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'], 1)).opt, 1);
   assert.equal(parseBg(bgGo('g7', 'omok', 5, ['a', 'b'])).opt, 0);
 });
