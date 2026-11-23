@@ -5,6 +5,7 @@ import { loadTimed, saveTimed, startTimed, dueTimed, daysLeft } from '../core/ti
 import { ITEMS, isWorn, unownedWorn } from '../core/inventory.js';
 import { saveLook } from '../core/look-editor.js';
 import { t, getLanguage, localName } from '../core/i18n.js';
+import { BODY_SKINS } from '../core/bike-garage.js';
 
 export function createTimedWear(game) {
   const { inventory, receipts, setLook, shop } = game;
@@ -35,7 +36,15 @@ export function createTimedWear(game) {
       game.refreshItems?.();
     }
   }
-  setTimeout(() => tick(), 0);
+  // The Christmas sleigh bike skin (core/bike-garage.js BODY_SKINS) runs
+  // out the same way.
+  function tickRides(now = Date.now()) {
+    for (const id of game.garage?.expireBodies(now) || []) {
+      game.reRide?.();
+      shop.toast(t('timed.gone', { name: localName(BODY_SKINS[id].name, getLanguage()) }));
+    }
+  }
+  setTimeout(() => { tick(); tickRides(); }, 0);
   // Once, after the save and any returned clothes have come in: a bag or a
   // hat worn but not in the closet comes off (it had no Take off button).
   setTimeout(() => {
@@ -45,7 +54,7 @@ export function createTimedWear(game) {
     saveLook(game.myLook);
     setLook(game.myLook);
   }, 15000);
-  setInterval(() => tick(), 5000);
+  setInterval(() => { tick(); tickRides(); }, 5000);
   return {
     // (main.js: a limited item was just bought)
     bought(id) {

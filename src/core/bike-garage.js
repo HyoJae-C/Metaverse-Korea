@@ -61,6 +61,14 @@ export function skinPrice(kind, id) {
   return shop === 'hangul' ? base + 30000 : shop && shop !== 'pedal' ? base + 15000 : base;
 }
 
+// Body skins: the whole bike drawn as something else, for a season. The
+// Christmas sleigh (Pedal Lab, Seongsu) turns a bike into Santa's sleigh,
+// limited-time like the Christmas accessories: gone `secs` after buying.
+// Bikes only (boards, skates and scooters keep their own shape).
+export const BODY_SKINS = {
+  sleigh: { price: 50000, secs: 7 * 24 * 3600, color: '#c8102e', icon: '🛷', name: { en: 'Christmas sleigh', ko: '크리스마스 썰매', ja: 'クリスマスのそり', zh: '圣诞雪橇', es: 'Trineo de Navidad' } },
+};
+
 // Upgrades for a ride you own, three steps each, small on purpose:
 // tune (Bike Research Lab) makes it a little faster, kit (RIDE WITH ME)
 // makes it wear out more slowly.
@@ -69,18 +77,20 @@ export const TUNE_STEP = 0.25; // speed per tune step (a ride step is ~1.2)
 export const KIT_WEAR = [1, 0.75, 0.5, 0.3]; // wear by kit step
 export const UPGRADE_PRICE = { tune: [60000, 110000, 170000], kit: [40000, 80000, 120000] };
 
-// What others need to draw your ride: "type.tier.colour.pattern" (- = none).
-export function rideCode({ type, tier, color, pattern }) {
-  return [type, tier, color || '-', pattern || '-'].join('.');
+// What others need to draw your ride: "type.tier.colour.pattern" (- = none),
+// and ".body" after it when a body skin is on (older games ignore it).
+export function rideCode({ type, tier, color, pattern, body }) {
+  return [type, tier, color || '-', pattern || '-', ...(body ? [body] : [])].join('.');
 }
 export function parseRide(code) {
-  const [type, tier, color, pattern] = String(code || '').split('.');
+  const [type, tier, color, pattern, body] = String(code || '').split('.');
   if (!RIDE_TYPES.includes(type)) return null;
   const tr = Math.max(0, Math.min(type === 'inline' ? 3 : 2, Number(tier) | 0)); // (inline 3: the ice rink's skates, core/rides.js)
   return {
     type, tier: tr,
     color: /^#[0-9a-f]{6}$/i.test(color || '') ? color : null,
     pattern: SKIN_PATTERNS.includes(pattern) ? pattern : null,
+    ...(type === 'bike' && Object.hasOwn(BODY_SKINS, body || '') ? { body } : {}),
   };
 }
 
@@ -106,9 +116,15 @@ function clean(raw) {
   const use = own.includes(raw?.use) ? raw.use : 'basic';
   const colors = Array.isArray(raw?.colors) ? raw.colors.filter((c) => SKIN_COLORS[c]) : [];
   const patterns = Array.isArray(raw?.patterns) ? raw.patterns.filter((p) => SKIN_PATTERNS.includes(p)) : [];
+  // Body skins you have: { id: end time in ms }.
+  const bodies = {};
+  for (const [id, end] of Object.entries(raw?.bodies && typeof raw.bodies === 'object' ? raw.bodies : {})) {
+    if (Object.hasOwn(BODY_SKINS, id) && Number.isFinite(end)) bodies[id] = end;
+  }
   const skin = {
     color: colors.includes(raw?.skin?.color) ? raw.skin.color : null,
     pattern: patterns.includes(raw?.skin?.pattern) ? raw.skin.pattern : null,
+    body: bodies[raw?.skin?.body] ? raw.skin.body : null,
   };
   const steps = (o) => {
     const out = {};
@@ -118,7 +134,7 @@ function clean(raw) {
     }
     return out;
   };
-  return { own, use, dur, colors, patterns, skin, tune: steps(raw?.tune), kit: steps(raw?.kit) };
+  return { own, use, dur, colors, patterns, bodies, skin, tune: steps(raw?.tune), kit: steps(raw?.kit) };
 }
 
 export class Garage {
@@ -155,9 +171,42 @@ export class Garage {
   speedOf(id) { return wornSpeed(bikeModel(id).speed + this.level('tune', id) * TUNE_STEP, this.durability(id)); }
   // How the ride in use looks: its type and tier, the skin colour (or the
   // model's own) and pattern.
-  rideSpec() {
+  // A body skin (the sleigh) shows on bikes only; it is red unless you
+  // picked a colour.
+  rideSpec(now = Date.now()) {
     const m = this.current;
-    return { type: m.type, tier: m.tier, color: SKIN_COLORS[this.s.skin.color] || m.color, pattern: this.s.skin.pattern };
+    const body = m.type === 'bike' && this.hasBody(this.s.skin.body, now) ? this.s.skin.body : null;
+    return { type: m.type, tier: m.tier, color: SKIN_COLORS[this.s.skin.color] || (body ? BODY_SKINS[body].color : m.color), pattern: this.s.skin.pattern, ...(body ? { body } : {}) };
+  }
+  // Body skins (BODY_SKINS): owned until their end time.
+  hasBody(id, now = Date.now()) { return !!id && Number.isFinite(this.s.bodies[id]) && now < this.s.bodies[id]; }
+  bodyEnd(id) { return this.s.bodies[id] ?? null; }
+  // 'bought', 'owned', 'poor' or 'unknown'. Buying puts it on.
+  buyBody(id, wallet, now = Date.now()) {
+    const b = BODY_SKINS[id];
+    if (!b) return 'unknown';
+    if (this.hasBody(id, now)) return 'owned';
+    if (!wallet.spend(b.price)) return 'poor';
+    this.s.bodies[id] = now + b.secs * 1000;
+    this.s.skin.body = id;
+    this._save();
+    return 'bought';
+  }
+  // Put an owned body skin on (id) or take it off (null).
+  setBody(id, now = Date.now()) {
+    if (id !== null && !this.hasBody(id, now)) return false;
+    this.s.skin.body = id;
+    this._save();
+    return true;
+  }
+  // Body skins whose time is up leave the garage: their ids.
+  expireBodies(now = Date.now()) {
+    const gone = Object.keys(this.s.bodies).filter((id) => now >= this.s.bodies[id]);
+    if (!gone.length) return gone;
+    for (const id of gone) delete this.s.bodies[id];
+    if (gone.includes(this.s.skin.body)) this.s.skin.body = null;
+    this._save();
+    return gone;
   }
   hasSkin(kind, id) { return (kind === 'color' ? this.s.colors : this.s.patterns).includes(id); }
   // kind 'color' | 'pattern'. Buying also puts it on. 'bought', 'owned',

@@ -3,9 +3,10 @@
 // riverside-market, dining). Its own file so the street doesn't need the
 // whole interior builder, which loads only when a room is first entered.
 import * as THREE from 'three';
-import { accessory } from '../data/appearance.js';
+import { accessory, shapeOf } from '../data/appearance.js';
 import { buildFurniture } from './furniture.js';
 import { makeEars, makePaw } from './animal-wear.js';
+import { makeXmas } from './xmas-wear.js';
 import { skirtDisplay } from './skirt-mesh.js';
 
 const mats = {};
@@ -199,6 +200,14 @@ export function productModel(kind, color, product = null) {
     case 'paws': { // a pair of paw gloves
       const a = accessory('hand', product?.tryOn?.hand);
       if (a) for (const s of [-1, 1]) { const p = makePaw(a); p.scale.multiplyScalar(1.6); p.position.set(0.09 * s, 0.11, 0); g.add(p); }
+      break;
+    }
+    case 'xmas': { // a Christmas accessory (Santa Pop-up) on a little stand
+      const t = product?.tryOn || {};
+      const a = accessory(t.head ? 'head' : 'face', t.head || t.face);
+      add(new THREE.CylinderGeometry(0.02, 0.06, 0.12, 10), 0, 0.06, 0, mat('#fffaf0'));
+      const x = a && makeXmas(shapeOf(a), a);
+      if (x) { x.scale.setScalar(0.5); x.position.y = t.face ? 0.2 : 0.08; g.add(x); }
       break;
     }
     case 'ribbon':

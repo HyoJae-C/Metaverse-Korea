@@ -973,7 +973,7 @@ export const FR = {
   "bait.desc": "Reste {n}. Tenez-le et mettez-le sur l'hameçon : les ★3+ mordent {p}% du temps.",
   "bait.hi1": "Un bon appât, une bonne touche !",
   "bait.hi2": "La marée est bonne aujourd'hui !",
-  "timed.gone": "⌛ {name} était à durée limitée : son temps est écoulé, il a quitté ta penderie.",
+  "timed.gone": "⌛ {name} était à durée limitée : son temps est écoulé, il a disparu.",
   "timed.left": "⌛ Encore {d} jours",
   "sauna.towelBack": "🐑 Une journée est passée : le jjimjilbang a récupéré sa serviette mouton.",
   "matFood.put": "Poser à manger sur la nappe",

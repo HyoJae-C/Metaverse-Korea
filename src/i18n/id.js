@@ -973,7 +973,7 @@ export const ID = {
   "bait.desc": "Sisa {n}. Pegang dan pasang di kail: ★3+ menyambar {p}% dari waktu.",
   "bait.hi1": "Umpan bagus, tarikan pun mantap!",
   "bait.hi2": "Pasangnya bagus hari ini!",
-  "timed.gone": "⌛ {name} berbatas waktu: masanya habis, jadi hilang dari lemarimu.",
+  "timed.gone": "⌛ {name} berbatas waktu: masanya habis, jadi sudah hilang.",
   "timed.left": "⌛ Sisa {d} hari",
   "sauna.towelBack": "🐑 Sudah sehari, jadi jjimjilbang mengambil kembali handuk dombanya.",
   "matFood.put": "Taruh makanan di tikar",

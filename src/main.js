@@ -2840,6 +2840,7 @@ const saunaTowel = createSaunaTowel({
 const timedWear = createTimedWear({
   get myLook() { return myLook; }, set myLook(v) { myLook = v; },
   inventory, receipts, setLook, shop, refreshItems: () => refreshItems(),
+  garage, reRide: () => { if (riding === 1) me.setBike(1, garage.rideSpec()); },
 });
 // Gifts for friends in the same shop, friends only. (game/gifts.js)
 giftsGame = createGifts({
