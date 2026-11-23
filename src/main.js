@@ -6915,6 +6915,7 @@ function moreActions(p, door) {
   if (interior.hanRiver) out.push(...fishContest.acts(p)); // a fishing contest with a friend in the park
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
+  { const bg = boardGames.homeAct(p); if (bg) out.push(bg); } // a board game set at home: also when a visitor stands nearer (game/board-games.js)
   out.push(...decorGame.pieceActs(p)); // my home: carry or put away the piece in front (game/decor.js)
   return out;
 }

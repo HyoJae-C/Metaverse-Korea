@@ -16,11 +16,13 @@ await useFakeRealtime(ctx, 'boardhome');
 await ctx.addInitScript(() => {
   if (localStorage.getItem('mk.home.forest-lane-apt')) return;
   localStorage.setItem('mk.items', JSON.stringify(['bg-omok', 'bg-tower']));
+  localStorage.setItem('mk.homeVisit', 'all');
   localStorage.setItem('mk.home.forest-lane-apt', JSON.stringify([{ id: 'bg-omok', x: -2, z: -3, ry: 0 }, { id: 'bg-tower', x: 1.5, z: -3, ry: 0 }]));
 });
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
-await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=e2ebh' + Math.random().toString(36).slice(2, 8));
+const ROOM = 'e2ebh' + Math.random().toString(36).slice(2, 8);
+await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
 await page.click('#next-btn').catch(() => {});
 await page.fill('#nickname', 'Tester').catch(() => {});
 await page.click('#start-btn', { timeout: 90000 }).catch(() => {});
@@ -67,6 +69,43 @@ await page.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
 assert(!(await page.$('#bg-panel.mini')), 'at home the game is in the big panel');
 if (S) { await wait(600); await page.screenshot({ path: `${S}/home-tower-game.png` }); }
 await page.click('#bg-panel .bg-x');
+
+// A visitor comes in: the host asks them to Omok at the set, they say yes, and both have the board.
+const ctx2 = await browser.newContext({ viewport: { width: 960, height: 640 } });
+await useFakeRealtime(ctx2, 'boardhome2');
+const g = await ctx2.newPage();
+g.on('pageerror', (e) => errors.push('guest: ' + e.message));
+await g.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=' + ROOM);
+await g.click('#next-btn').catch(() => {});
+await g.fill('#nickname', 'Guest G').catch(() => {});
+await g.click('#start-btn', { timeout: 90000 }).catch(() => {});
+await g.waitForSelector('#hud:not([hidden])', { timeout: 180000 });
+if (await g.isVisible('#welcome-panel')) await g.click('#welcome-close');
+await g.waitForFunction(() => window.__mk, null, { timeout: 60000 });
+await page.waitForFunction(() => __mk.homeVisit().hosting, null, { timeout: 30000 });
+const hostId = (await page.evaluate(() => __mk.homeVisit())).me;
+await g.evaluate((id) => __mk.homeStub([{ net_id: id, name: 'Tester', friend: false, level: 1 }]), hostId);
+await g.evaluate(() => __mk.openHomes());
+await g.waitForSelector('#visit-panel .visit-list button', { timeout: 10000 });
+await g.click('#visit-panel .visit-list button');
+await g.waitForFunction((id) => __mk.homeVisit().guest === id, hostId, { timeout: 30000 });
+await g.waitForFunction(() => __mk.decor() === 2, null, { timeout: 20000 });
+await g.evaluate(() => __mk.goto(-2, -1.6, Math.PI));
+await g.waitForTimeout(800);
+assert(!(await g.evaluate(() => [__mk.action(), ...(__mk.choices() || [])].some((l) => /🎲/.test(l || '')))), 'a guest by the set gets no "Play" (the host asks)');
+await page.evaluate(() => __mk.goto(-2, -1.9, Math.PI));
+await page.waitForFunction(() => [__mk.action(), ...(__mk.choices() || [])].some((l) => /🎲.*Omok/.test(l || '')), null, { timeout: 15000 }).catch(async (e) => { console.log('host choices:', await page.evaluate(() => JSON.stringify([__mk.action(), ...(__mk.choices() || [])]))); throw e; });
+await acts('🎲');
+await page.waitForFunction(() => [...document.querySelectorAll('#bg-panel .bg-btn')].some((x) => /Invite Guest G/.test(x.textContent)), null, { timeout: 15000 }).catch(async (e) => { console.log('panel:', await page.evaluate(() => document.querySelector('#bg-panel')?.textContent?.slice(0, 300)), await page.evaluate(() => JSON.stringify(__mk.others?.() ?? null))); throw e; });
+await page.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-btn')].find((x) => /Invite Guest G/.test(x.textContent)).click());
+await g.waitForSelector('#bg-ask', { timeout: 15000 });
+if (S) await g.screenshot({ path: `${S}/home-invite.png` });
+await g.evaluate(() => document.querySelector('#bg-ask button').click());
+await page.waitForFunction(() => /Guest G is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
+await page.click('#bg-panel [data-act="start"]');
+for (const p of [page, g]) await p.waitForSelector('#bg-panel.on canvas.bg-omok', { timeout: 15000 });
+assert(true, 'host and visitor are both at the Omok board');
+if (S) { await g.waitForTimeout(500); await g.screenshot({ path: `${S}/home-omok-guest.png` }); }
 assert(errors.length === 0, 'no page errors: ' + errors.join(' | '));
 await browser.close();
 console.log(process.exitCode ? 'FAIL' : 'PASS');
