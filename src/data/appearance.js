@@ -203,6 +203,14 @@ export const ACCESSORIES = {
     { id: 'beanie-cream', shape: 'beanie', emoji: '🧶', color: 0xefe6d2 },
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
+    // Pop-up A (Seongsu): autumn season caps in the trench coats' colours,
+    // limited-time (Yozi 2026-11-23): a newsboy cap (빵모자) and a flat cap (헌팅캡).
+    { id: 'newsboy-beige', shape: 'newsboy', emoji: '🧢', color: 0xc9ad84 },
+    { id: 'newsboy-brown', shape: 'newsboy', emoji: '🧢', color: 0x7a5638 },
+    { id: 'newsboy-navy', shape: 'newsboy', emoji: '🧢', color: 0x2f3a5c },
+    { id: 'flatcap-beige', shape: 'flatcap', emoji: '🧢', color: 0xc9ad84 },
+    { id: 'flatcap-brown', shape: 'flatcap', emoji: '🧢', color: 0x7a5638 },
+    { id: 'flatcap-navy', shape: 'flatcap', emoji: '🧢', color: 0x2f3a5c },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
     // Modu Ballpark's team caps (the team shop).
     ...TEAM_LIST.map((t) => ({ id: 'cap-' + t.id, shape: 'cap', emoji: '🧢', color: parseInt(t.color.slice(1), 16) })),
