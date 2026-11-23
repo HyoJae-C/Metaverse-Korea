@@ -10,6 +10,8 @@
 //  - omok      오목: five in a row on a 15×15 board, 2 players.
 //  - onecard   원카드: Korean "one card" (match suit or rank, attack cards), 2-4.
 //  - fruitbell 과일 종치기: flip cards; ring when one fruit shows exactly 5, 2-4.
+//  - thief     도둑잡기: pair up and discard, draw from your neighbour; whoever
+//    is left holding the joker loses, 2-6.
 //  - croc / pirate / bulldog: press one spot each in turn; whoever finds the
 //    hidden one loses (악어 이빨 / 통 속 해적 / 잠꾸러기 불독), 2-6.
 
@@ -20,6 +22,7 @@ export const GAMES = {
   croc: { min: 2, max: 6, icon: '🐊', price: 20000, spots: 13 },
   pirate: { min: 2, max: 6, icon: '🏴‍☠️', price: 20000, spots: 24 },
   bulldog: { min: 2, max: 6, icon: '🐶', price: 20000, spots: 12 },
+  thief: { min: 2, max: 6, icon: '🕵️', price: 30000 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
@@ -473,18 +476,128 @@ export class Roulette {
   }
 }
 
+// ---------------------------------------------------------------- thief
+// 도둑잡기 (the joker game): 52 cards and one joker, all dealt out. Pairs of
+// the same number are thrown away at once. On your turn you take one card,
+// unseen, from the next player who still holds cards; a new pair is thrown
+// away. Out of cards and you are safe. Whoever is left with the joker loses.
+//
+// Picking is two steps (Yozi 2026-11-23): 's' points at a card (everyone
+// sees which one is lifted, so its holder can bluff with a face), 't' takes
+// it. Every screen holds every hand, as with the other games here: nothing
+// is won, so there is nothing worth peeking for.
+export class Thief {
+  constructor({ players = 2, seed = 1 } = {}) {
+    if (players < 2 || players > 6) throw new Error('the joker game is for 2-6');
+    this.n = players;
+    this.rand = rng(seed);
+    const deck = oneCardDeck().filter((c) => c !== 'JC');
+    const cards = shuffle(deck, this.rand);
+    this.hands = Array.from({ length: players }, () => []);
+    cards.forEach((c, i) => this.hands[i % players].push(c));
+    this.out = new Array(players).fill(false); // left the table
+    this.pairs = new Array(players).fill(0);
+    for (let p = 0; p < players; p++) this.dropPairs(p);
+    this.turn = 0;
+    this.sel = -1; // the card the turn player points at
+    this.loser = -1;
+    this.over = false;
+    this.last = null;
+    this.settle(0);
+  }
+
+  // Throw away every pair in a hand; returns the numbers thrown.
+  dropPairs(p) {
+    const h = this.hands[p];
+    const thrown = [];
+    for (let i = 0; i < h.length; i++) {
+      if (isJoker(h[i])) continue;
+      const j = h.findIndex((c, k) => k > i && !isJoker(c) && cardRank(c) === cardRank(h[i]));
+      if (j < 0) continue;
+      thrown.push(cardRank(h[i]));
+      h.splice(j, 1);
+      h.splice(i, 1);
+      i--;
+    }
+    this.pairs[p] += thrown.length;
+    return thrown;
+  }
+
+  holding(p) { return !this.out[p] && this.hands[p].length > 0; }
+  holders() { const l = []; for (let p = 0; p < this.n; p++) if (this.holding(p)) l.push(p); return l; }
+  nextHolder(p) {
+    for (let k = 1; k <= this.n; k++) { const q = (p + k) % this.n; if (this.holding(q)) return q; }
+    return -1;
+  }
+  // Who the turn player takes from.
+  get from() { return this.over ? -1 : this.nextHolder(this.turn); }
+
+  // After anything changes: is it over, and whose turn is it?
+  settle(turn) {
+    const left = this.holders();
+    this.sel = -1;
+    if (left.length <= 1) {
+      this.over = true;
+      this.loser = left.length === 1 && this.hands[left[0]].some(isJoker) ? left[0] : -1;
+      return;
+    }
+    this.turn = this.holding(turn) ? turn : this.nextHolder(turn);
+  }
+
+  select(p, i) {
+    if (this.over || p !== this.turn) return false;
+    const q = this.from;
+    if (i < 0 || i >= this.hands[q].length) return false;
+    this.sel = i;
+    return true;
+  }
+
+  take(p, i) {
+    if (this.over || p !== this.turn) return false;
+    const q = this.from;
+    const h = this.hands[q];
+    if (i < 0 || i >= h.length) return false;
+    const [card] = h.splice(i, 1);
+    const mine = this.hands[p];
+    mine.splice(Math.floor(this.rand() * (mine.length + 1)), 0, card); // slipped in anywhere
+    const thrown = this.dropPairs(p);
+    this.last = { p, from: q, card, pair: thrown[0] ?? null };
+    this.settle(this.nextHolder(p) < 0 ? p : (p + 1) % this.n);
+    return true;
+  }
+
+  // Someone walks off: their cards are dealt round the others, so every
+  // number can still find its pair.
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    const cards = this.hands[p];
+    this.hands[p] = [];
+    this.out[p] = true;
+    const rest = this.holders();
+    if (rest.length) cards.forEach((c, i) => this.hands[rest[i % rest.length]].push(c));
+    for (const q of rest) this.dropPairs(q);
+    this.last = null;
+    this.settle(this.turn);
+  }
+
+  botMove(rand = Math.random) { return Math.floor(rand() * this.hands[this.from].length); }
+}
+
 // One way to make any game, used by the table screen.
 export function newGame(id, players, seed) {
   if (id === 'omok') return new Omok({ players });
   if (id === 'onecard') return new OneCard({ players, seed });
   if (id === 'fruitbell') return new FruitBell({ players, seed });
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
+  if (id === 'thief') return new Thief({ players, seed });
   throw new Error('unknown game ' + id);
 }
 
 // Apply one action message to a game. Actions are tiny arrays so they fit a
 // room message: ['o', x, y] omok, ['c', card, suit] / ['d'] one card,
-// ['f'] flip / ['r'] ring, ['p', spot] roulette, ['l'] leave.
+// ['f'] flip / ['r'] ring, ['p', spot] roulette, ['s', i] point at / ['t', i]
+// take a card in the joker game, ['l'] leave. (['e', n] is a face a player
+// pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
   if (!Array.isArray(a)) return false;
   switch (a[0]) {
@@ -494,6 +607,8 @@ export function applyAction(game, p, a) {
     case 'f': return game instanceof FruitBell && game.flip(p);
     case 'r': return game instanceof FruitBell && game.ring(p, a[1] ?? game.flips);
     case 'p': return game instanceof Roulette && game.press(p, a[1] | 0);
+    case 's': return game instanceof Thief && game.select(p, a[1] | 0);
+    case 't': return game instanceof Thief && game.take(p, a[1] | 0);
     case 'l': game.leave(p); return true;
     default: return false;
   }
@@ -508,12 +623,12 @@ export function applyAction(game, p, a) {
 //   bg:x:<gid>:<act>            a player's move, to the host
 //   bg:y:<gid>:<seat>:<act>     the host passes a move on, to everyone
 //   bg:c:<gid>                  the host closed the game
-// <act> is an action with dots: o.7.7, f, r, p.5, d, c.7♥.♠, l.
+// <act> is an action with dots: o.7.7, f, r, p.5, d, c.7♥.♠, s.3, t.3, e.2, l.
 export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdcl]$/.test(p[0]) || p.length > 3) return null;
+  if (!/^[ofrpdclste]$/.test(p[0]) || p.length > 3) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

@@ -46,7 +46,7 @@ export function createBoardGames(game) {
   async function showAsk(from, gameId) {
     const name = game.others.nameOf(from);
     const u = await load();
-    if (!here() || u.busy) { game.net?.sendEmote(`bg:n:${from}`); return; }
+    if (!here() || u.busy || !u.text.GAME_NAME[gameId]) { game.net?.sendEmote(`bg:n:${from}`); return; }
     closeAsk();
     ask = document.createElement('div');
     ask.id = 'bg-ask';
@@ -81,7 +81,7 @@ export function createBoardGames(game) {
       if (name == null || game.safety.isBlocked(from, name)) return true;
       // An invite (the panel loads for it); everything else is for a game
       // that is open, so the panel is loaded already.
-      const inv = /^bg:i:([\w-]{1,64}):(omok|onecard|fruitbell|croc|pirate|bulldog)$/.exec(e);
+      const inv = /^bg:i:([\w-]{1,64}):([a-z]{1,12})$/.exec(e);
       if (inv) { if (inv[1] === game.myId && here()) showAsk(from, inv[2]); return true; }
       const m = ui && ui.parse(e);
       if (!m) return true;

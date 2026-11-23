@@ -150,3 +150,43 @@ test('board game messages round-trip and refuse junk', async () => {
   assert.equal(parseBg('bg:x:g7:z.1'), null);
   assert.equal(parseBg('darts:x'), null);
 });
+
+test('the joker game: pairs go at once, two steps to take a card, the joker holder loses', async () => {
+  const { Thief, cardRank, isJoker } = await import('../src/core/board-games.js');
+  for (const players of [2, 3, 6]) {
+    const g = new Thief({ players, seed: 20 + players });
+    // 53 cards: what is held plus two for every pair thrown.
+    const held = () => g.hands.reduce((n, h) => n + h.length, 0);
+    assert.equal(held() + g.pairs.reduce((a, b) => a + b, 0) * 2, 53);
+    for (const h of g.hands) assert.equal(new Set(h.filter((c) => !isJoker(c)).map(cardRank)).size, h.filter((c) => !isJoker(c)).length); // no pair left in a hand
+    let guard = 0;
+    while (!g.over && guard++ < 2000) {
+      const p = g.turn, q = g.from;
+      assert.notEqual(q, p);
+      assert.ok(!g.take((p + 1) % players === p ? p : (p + 1) % players, 0) || players === 1); // not your turn
+      assert.ok(!g.select(p, 99));
+      assert.ok(g.select(p, 0));
+      assert.equal(g.sel, 0);
+      const n = g.hands[q].length;
+      assert.ok(g.take(p, g.botMove(() => 0.5)));
+      assert.equal(g.hands[q].length, n - 1);
+      assert.equal(g.sel, -1);
+    }
+    assert.ok(g.over, `${players} players finish`);
+    assert.ok(g.loser >= 0);
+    assert.deepEqual(g.hands[g.loser], ['JB']);
+    assert.equal(g.pairs.reduce((a, b) => a + b, 0), 26);
+  }
+});
+
+test('the joker game: someone leaving hands their cards round, and the game still ends', async () => {
+  const { Thief, applyAction, newGame } = await import('../src/core/board-games.js');
+  const g = newGame('thief', 4, 5);
+  assert.ok(g instanceof Thief);
+  applyAction(g, 1, ['l']);
+  assert.equal(g.hands[1].length, 0);
+  assert.equal(g.hands.reduce((n, h) => n + h.length, 0) + g.pairs.reduce((a, b) => a + b, 0) * 2, 53);
+  let guard = 0;
+  while (!g.over && guard++ < 2000) { assert.ok(applyAction(g, g.turn, ['s', 0])); assert.ok(applyAction(g, g.turn, ['t', 0])); }
+  assert.ok(g.over && g.loser >= 0 && g.loser !== 1);
+});

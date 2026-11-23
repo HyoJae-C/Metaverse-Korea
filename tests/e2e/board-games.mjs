@@ -146,6 +146,42 @@ try {
   if (pressed[0] !== pressed[1]) throw new Error(`different boards: ${pressed[0]} vs ${pressed[1]}`);
   if (shotDir) { await a.screenshot({ path: shotDir + '/croc-a.png' }); await b.screenshot({ path: shotDir + '/croc-b.png' }); }
 
+  step = 'the joker game: choose a card (it lifts on both screens), then draw; a face pops up for the other player';
+  for (const page of [a, b]) await page.evaluate(() => document.querySelector('#bg-panel.on .bg-x')?.click());
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="thief"]');
+  await a.click('#bg-panel [data-game="thief"]');
+  await a.waitForFunction(() => [...document.querySelectorAll('#bg-panel .bg-btn')].some((x) => /Invite Dice B/.test(x.textContent)), null, { timeout: 15000 });
+  await a.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-btn')].find((x) => /Invite Dice B/.test(x.textContent)).click());
+  await b.waitForSelector('#bg-ask', { timeout: 15000 });
+  await b.evaluate(() => document.querySelector('#bg-ask button').click());
+  await a.waitForFunction(() => /Dice B is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
+  await a.click('#bg-panel [data-act="start"]');
+  for (const page of [a, b]) await page.waitForSelector('#bg-panel.on [data-hand="from"]', { timeout: 15000 });
+  const drawer = async () => { for (const page of [a, b]) if (await page.evaluate(() => !!document.querySelector('#bg-panel [data-act="draw"]'))) return page; return null; };
+  const thiefOver = (page) => page.evaluate(() => !document.querySelector('#bg-panel [data-hand="from"]'));
+  let faced = false;
+  for (let k = 0; k < 80 && !(await thiefOver(a)); k++) {
+    const mover = await drawer();
+    if (!mover) { await a.waitForTimeout(200); continue; }
+    const other = mover === a ? b : a;
+    const n = await mover.evaluate(() => document.querySelectorAll('#bg-panel [data-hand="from"] .bg-card1').length);
+    if (await mover.evaluate(() => !document.querySelector('#bg-panel [data-act="draw"]').disabled)) throw new Error('Draw is on before a card is chosen');
+    await mover.evaluate(() => document.querySelector('#bg-panel [data-hand="from"] .bg-card1:last-child').click());
+    // The holder sees which of their cards is being eyed.
+    await other.waitForSelector('#bg-panel [data-hand="from"] .bg-card1.sel', { timeout: 8000 });
+    if (!faced) {
+      await other.click('#bg-panel [data-face="1"]');
+      await mover.waitForFunction(() => /😱/.test(document.querySelector('#bg-panel .bg-pop')?.textContent || ''), null, { timeout: 8000 });
+      if (shotDir) { await mover.screenshot({ path: shotDir + '/thief-picker.png' }); await other.screenshot({ path: shotDir + '/thief-holder.png' }); }
+      faced = true;
+    }
+    await mover.click('#bg-panel [data-act="draw"]:not([disabled])');
+    for (const page of [a, b]) await page.waitForFunction((m) => { const f = document.querySelector('#bg-panel [data-hand="from"]'); return !f || f.querySelectorAll('.bg-card1').length !== m || !f.querySelector('.sel'); }, n, { timeout: 8000 });
+  }
+  for (const page of [a, b]) await page.waitForFunction(() => /🃏/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/thief-end.png' });
+
   step = 'B walks out: A is told';
   await b.evaluate(() => __mk.place(0, 0));
   await b.evaluate(() => __mk.enter('lucky-piggy-tarot'));
