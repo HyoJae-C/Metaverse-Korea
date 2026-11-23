@@ -21,7 +21,7 @@ export function playBoardSound(sfx, kind, game, info = {}) {
   if (kind === 'bang') {
     if (game === 'croc') { tone(170, 0.14, 0.25, 0.3, 'sawtooth', 55); hiss(0.14, 0.12, 0.22, 2400, 500); }
     else if (game === 'bulldog') { for (const at of [0.38, 0.62, 0.95]) { tone(390, at, 0.16, 0.26, 'sawtooth', 230); hiss(at, 0.1, 0.1, 1800, 700); } }
-    else if (game === 'pirate') { tone(220, 0, 0.35, 0.22, 'sine', 900); hiss(0, 0.2, 0.12, 1500, 4500); }
+    else if (game === 'pirate') { tone(220, 0.26, 0.4, 0.22, 'sine', 950); hiss(0.26, 0.22, 0.12, 1500, 4500); tone(300, 1.35, 0.1, 0.16, 'triangle', 140); } // (pop, whoosh, and he lands)
     else if (game === 'tower') { const t0 = info.placing ? 0.76 : 0.3; for (let i = 0; i < 12; i++) { const at = t0 + i * 0.07 + (i % 3) * 0.02; tone(150 + ((i * 83) % 260), at, 0.09, 0.2 - i * 0.012, 'triangle', 90); hiss(at, 0.05, 0.1 - i * 0.006, 2200, 600); } }
     else { tone(220, 0, 0.3, 0.2, 'sawtooth', 110); }
     return;

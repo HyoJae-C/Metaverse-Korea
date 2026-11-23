@@ -124,6 +124,7 @@ const FACE_MS = 2600, FACE_GAP = 1200;
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
+  pirate: { en: 'YARRR!', ko: '으악!', ja: 'うわあ！', zh: '哇啊！', es: '¡ARRR!', fr: 'ARRR !', th: 'ว้าก!', vi: 'ÁÁÁ!', id: 'ARRR!', hi: 'अरे!', ar: 'آآآه!' },
   tower: { en: 'CRASH!', ko: '와르르!', ja: 'ガラガラ！', zh: '哗啦！', es: '¡CATAPLUM!', fr: 'PATATRAS !', th: 'โครม!', vi: 'RẦM!', id: 'BRUK!', hi: 'धड़ाम!', ar: 'طاخ!' },
   bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', hi: 'भौं! भौं!', ar: 'هَو! هَو!' },
 };
@@ -262,7 +263,7 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.dropView();
-    if (game === 'croc' || game === 'bulldog' || game === 'tower') {
+    if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
       import('./board-toy-3d.js').then((m) => {

@@ -1,4 +1,4 @@
-// The croc, the bulldog and the block tower as little 3D toys inside the board games panel
+// The croc, the bulldog, the barrel pirate and the block tower as little 3D toys inside the board games panel
 // (ui/board-games-ui.js). Looks matter for these two (Yozi 2026-11-23): you
 // press a tooth and it sinks; the wrong one and the jaw snaps shut and the
 // whole toy jumps. You hand the sleeping bulldog a bone and it lands in his
@@ -278,6 +278,97 @@ function towerToy(spots) {
   };
 }
 
+// The pirate in his barrel: three rings of slots round a wooden barrel that
+// turns slowly, so every slot comes past. A sword slides into the slot you
+// pick; the wrong one and the pirate shoots out of the top, spinning.
+function pirateToy(spots) {
+  const root = new THREE.Group();
+  const WOOD = lam('#b9793f'), DARK = lam('#7a4a2b'), IRON = lam('#55504e'), SKIN = lam('#f2c79a'), RED = lam('#d43d3d'), INK = lam('#2b2230');
+  const ball = new THREE.SphereGeometry(1, 22, 16), box = new THREE.BoxGeometry(1, 1, 1);
+  const add = (parent, geo, mat, x, y, z, sx = 1, sy = sx, sz = sx) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.scale.set(sx, sy, sz);
+    parent.add(m);
+    return m;
+  };
+  const R = 0.95, TALL = 2.0, ROWS = 3, PER = Math.ceil(spots / ROWS);
+  add(root, new THREE.CylinderGeometry(2.1, 2.1, 0.08, 40), lam('#3f6fb5'), 0, -0.04, 0); // a sea-blue mat
+  const barrel = new THREE.Group();
+  root.add(barrel);
+  // A barrel with a belly: wide in the middle, narrower at both ends.
+  const profile = [];
+  for (let i = 0; i <= 10; i++) { const t = i / 10; profile.push(new THREE.Vector2(R * (0.84 + 0.16 * Math.sin(t * Math.PI)), t * TALL)); }
+  barrel.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 28), WOOD));
+  add(barrel, new THREE.CylinderGeometry(R * 0.84, R * 0.84, 0.04, 28), DARK, 0, TALL - 0.02, 0);
+  for (const y of [0.22, TALL - 0.22]) add(barrel, new THREE.TorusGeometry(R * 0.9, 0.05, 8, 32).rotateX(Math.PI / 2), IRON, 0, y, 0);
+  const slots = [], swords = [];
+  const HILT = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c', '#8d6ad0', '#e06aa0'];
+  for (let i = 0; i < spots; i++) {
+    const row = Math.floor(i / PER), a = ((i % PER) + row * 0.5) / PER * Math.PI * 2;
+    const y = 0.55 + row * 0.45, r = R * (0.84 + 0.16 * Math.sin((y / TALL) * Math.PI));
+    const hold = new THREE.Group(); // (looks outwards from the barrel's middle)
+    hold.position.set(0, y, 0);
+    hold.rotation.y = a;
+    barrel.add(hold);
+    const slot = add(hold, box, new THREE.MeshLambertMaterial({ color: '#3a2415' }), 0, 0, r + 0.005, 0.2, 0.07, 0.03);
+    slot.userData.spot = i;
+    slots.push(slot);
+    const sword = new THREE.Group();
+    add(sword, box, lam('#dfe6ee'), 0, 0, 0.1, 0.11, 0.025, 0.9); // blade
+    add(sword, box, lam('#e2b84a'), 0, 0, 0.58, 0.3, 0.06, 0.06); // guard
+    add(sword, box, lam(HILT[i % HILT.length]), 0, 0, 0.72, 0.08, 0.08, 0.24); // grip
+    sword.visible = false;
+    hold.add(sword);
+    sword.userData = { r };
+    swords.push(sword);
+  }
+  // The pirate, peeking out of the top.
+  const man = new THREE.Group();
+  root.add(man);
+  add(man, ball, lam('#2f5aa8'), 0, -0.25, 0, 0.5, 0.45, 0.4); // striped shirt, mostly in the barrel
+  add(man, ball, SKIN, 0, 0.3, 0, 0.42);
+  add(man, new THREE.SphereGeometry(1, 22, 12, 0, Math.PI * 2, 0, Math.PI / 2.1), RED, 0, 0.36, 0, 0.44); // bandana
+  add(man, ball, RED, 0.4, 0.42, -0.1, 0.12); // its knot
+  add(man, ball, INK, -0.16, 0.34, 0.37, 0.1, 0.1, 0.05); // eye patch
+  add(man, box, INK, 0, 0.42, 0.36, 0.72, 0.03, 0.03).rotation.z = 0.25; // its strap
+  const eye = add(man, ball, INK, 0.16, 0.34, 0.38, 0.055);
+  add(man, ball, lam('#b8433f'), 0, 0.14, 0.38, 0.14, 0.04, 0.05); // a grin
+  const mouth = add(man, ball, INK, 0, 0.12, 0.38, 0.12, 0.13, 0.05); // his mouth, wide open
+  mouth.visible = false;
+  const REST = TALL + 0.05;
+  let bangAt = -1;
+  const camDir = new THREE.Vector2(0, 1);
+  return {
+    root, picks: slots, cam: [0, 4.0, 7.4], look: [0, 1.55, 0],
+    // Only slots on the side facing you can be picked; `at` gets the slot's place in the world.
+    pickPoint(m, at) { m.getWorldPosition(at); const l = Math.hypot(at.x, at.z) || 1; return (at.x * camDir.x + at.z * camDir.y) / l > 0.2; },
+    press(i, now) { swords[i].userData.at = now; swords[i].visible = true; },
+    bang(now) { bangAt = now; },
+    update(now, pressed) {
+      const popped = bangAt >= 0 && now >= bangAt;
+      if (!popped) barrel.rotation.y = now / 2600; // (one turn in about 16 s)
+      slots.forEach((m, i) => {
+        m.material.color.set(pressed.has(i) ? '#1d120a' : m.userData.hot ? '#ffd36b' : '#3a2415');
+        m.scale.set(m.userData.hot && !pressed.has(i) ? 0.3 : 0.2, m.userData.hot && !pressed.has(i) ? 0.12 : 0.07, 0.03);
+        const sw = swords[i];
+        if (!sw.visible) return;
+        const k = ease(Math.min(1, (now - (sw.userData.at ?? -1e9)) / 260));
+        sw.position.z = sw.userData.r + 0.9 - 0.75 * k;
+      });
+      if (!popped) { man.position.set(0, REST + Math.sin(now / 500) * 0.03, 0); man.rotation.set(0, Math.sin(now / 900) * 0.5, 0); return; }
+      // Up he goes, spinning; then he lands back and wobbles.
+      const t = (now - bangAt) / 1000, up = t < 1.1;
+      const h = up ? 1.5 * Math.sin((t / 1.1) * Math.PI) : 0;
+      man.position.set(0, REST + h + (up ? 0 : Math.exp(-(t - 1.1) * 3) * Math.abs(Math.sin((t - 1.1) * 9)) * 0.25), 0);
+      man.rotation.set(0, up ? t * 14 : 0, up ? Math.sin(t * 12) * 0.3 : 0);
+      eye.scale.setScalar(0.09);
+      mouth.visible = true;
+      root.position.x = t < 0.5 ? Math.sin(t * 60) * 0.06 * (1 - t / 0.5) : 0;
+    },
+  };
+}
+
 export function createToyView(kind, { spots, onPick }) {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
@@ -288,7 +379,7 @@ export function createToyView(kind, { spots, onPick }) {
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.6);
   sun.position.set(2, 5, 4);
   scene.add(sun);
-  const toy = kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : dogToy(spots);
+  const toy = kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : kind === 'pirate' ? pirateToy(spots) : dogToy(spots);
   scene.add(toy.root);
   const camera = new THREE.PerspectiveCamera(34, 4 / 3, 0.1, 50);
   camera.position.set(...toy.cam);
@@ -305,7 +396,8 @@ export function createToyView(kind, { spots, onPick }) {
     let best = null, bestD = Math.max(48, r.width * 0.12);
     for (const m of toy.picks) {
       if (pressed.has(m.userData.spot)) continue;
-      at.copy(m.userData.pick ?? m.position).project(camera);
+      if (toy.pickPoint) { if (!toy.pickPoint(m, at)) continue; } else at.copy(m.userData.pick ?? m.position);
+      at.project(camera);
       const d = Math.hypot((at.x - ndc.x) * r.width / 2, (at.y - ndc.y) * r.height / 2);
       if (d < bestD) { bestD = d; best = m; }
     }
@@ -345,7 +437,7 @@ export function createToyView(kind, { spots, onPick }) {
     sync({ pressed: list, bang, canPick: can, wobble = 0, placing = false }) {
       const now = performance.now();
       for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now, wobble); }
-      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : 380)); } // (after the tooth sinks / the block slides out, or lands on top / the bone lands)
+      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? (placing ? 760 : 300) : kind === 'pirate' ? 260 : 380)); } // (after the tooth sinks / the block slides out, or lands on top / the bone lands)
       canPick = can && !banged;
     },
     dispose() {
