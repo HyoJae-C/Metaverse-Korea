@@ -19,6 +19,7 @@ export const DISTRICT_NAME = {
   seodaemun: { en: 'Seodaemun (Sinchon)', ko: '서대문 (신촌)', ja: '西大門（新村）', zh: '西大门（新村）', es: 'Seodaemun (Sinchon)', id: 'Seodaemun (Sinchon)', ar: 'سوديمون (سينتشون)', vi: 'Seodaemun (Sinchon)', hi: 'सोदेमुन (सिनचोन)', fr: 'Seodaemun (Sinchon)', th: 'ซอแดมุน (ชินชน)' },
   hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', ar: 'هونغداي', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด' },
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
+  gangnam: { en: 'Gangnam Station', ko: '강남역', ja: '江南駅', zh: '江南站', es: 'Estación de Gangnam', id: 'Stasiun Gangnam', ar: 'محطة غانغنام', vi: 'Ga Gangnam', hi: 'गंगनम स्टेशन', fr: 'Gare de Gangnam', th: 'สถานีคังนัม' },
   samseong: { en: 'Samseong-dong', ko: '삼성동', ja: '三成洞', zh: '三成洞', es: 'Samseong-dong', id: 'Samseong-dong', ar: 'سامسونغ دونغ', vi: 'Samseong-dong', hi: 'सामसोंग-दोंग', fr: 'Samseong-dong', th: 'ซัมซอง-ดง' },
   yeouido: { en: 'Yeouido', ko: '여의도', ja: '汝矣島', zh: '汝矣岛', es: 'Yeouido', id: 'Yeouido', ar: 'يويدو', vi: 'Yeouido', hi: 'योइदो', fr: 'Yeouido', th: 'ยออีโด' },
   'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
