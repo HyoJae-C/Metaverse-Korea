@@ -36,6 +36,7 @@ const TURN_WARN = 10; // the last seconds are counted down on screen
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
+const RIDE_MS = 650; // ms to climb a ladder or slide down a snake
 const DICE_MS = 750; // ms the dice tumbles in the middle of the board before the piece walks
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
@@ -71,6 +72,18 @@ const CSS = `
 #bg-panel .bg-fcard { height: 74px; margin: 6px auto; width: 64px; border-radius: 8px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); display: flex; flex-wrap: wrap; align-content: center; justify-content: center; font-size: 18px; line-height: 1.1; }
 #bg-panel .bg-fcard.back { background: repeating-linear-gradient(45deg, #e07a5f 0 6px, #f2a07b 6px 12px); }
 #bg-panel .bg-bell { display: block; margin: 10px auto 0; width: 120px; height: 120px; border-radius: 50%; border: 0; background: radial-gradient(circle at 40% 35%, #fff2a8, #f2c230 60%, #c99412); font-size: 30px; box-shadow: 0 6px 0 #9b7210; }
+#bg-panel .bg-fcard.new { animation: bg-flip .32s ease-out; }
+@keyframes bg-flip { from { transform: translateY(-26px) rotateY(180deg) scale(1.15); background: #f2a07b; color: transparent; } 55% { color: transparent; } to { transform: none; } }
+#bg-panel .bg-pile.got { animation: bg-got .6s ease-out; }
+@keyframes bg-got { 30% { transform: scale(1.08); background: #ffe28a; } }
+#bg-panel .bg-pile.oops { animation: bg-oops .45s; }
+@keyframes bg-oops { 20%, 60% { transform: translateX(-7px); background: #ffc9bd; } 40%, 80% { transform: translateX(7px); } }
+#bg-panel .bg-bell.rung { animation: bg-rung .5s; }
+@keyframes bg-rung { 15% { transform: translateY(6px) rotate(-9deg); } 35% { transform: rotate(8deg); } 55% { transform: rotate(-5deg); } 75% { transform: rotate(3deg); } }
+#bg-panel .bg-omok-wrap { position: relative; width: min(100%, 420px); margin: 0 auto; }
+#bg-panel .bg-drop { position: absolute; width: 5.4%; aspect-ratio: 1; margin: -2.7% 0 0 -2.7%; border-radius: 50%; pointer-events: none; animation: bg-drop .38s ease-out forwards; }
+@keyframes bg-drop { from { transform: scale(2.1); opacity: .9; box-shadow: 0 10px 14px rgba(0,0,0,.35); } 70% { transform: scale(.92); opacity: 1; } to { transform: scale(1); opacity: 0; box-shadow: 0 0 0 9px rgba(232,64,42,0); } }
+@media (prefers-reduced-motion: reduce) { #bg-panel .bg-fcard.new, #bg-panel .bg-pile.got, #bg-panel .bg-pile.oops, #bg-panel .bg-bell.rung, #bg-panel .bg-drop { animation: none; } #bg-panel .bg-drop { display: none; } }
 #bg-panel .bg-bell:active { transform: translateY(4px); box-shadow: 0 2px 0 #9b7210; }
 #bg-panel .bg-toy { position: relative; margin: 6px auto; max-width: 420px; }
 #bg-panel .bg-spots { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding: 14px; border-radius: 22px; }
@@ -747,19 +760,38 @@ export class BoardGamesUI {
       if (g.canPlay(p.seat, gx, gy)) this.myMove(['o', gx, gy]);
       else if (!g.over && g.turn === p.seat && g.at(gx, gy) === -1 && g.banned(gx, gy, p.seat)) { this.status = L(T.no33Here); this.render(); }
     };
-    c.append(cv);
+    const wrap = el('div', 'bg-omok-wrap');
+    wrap.append(cv);
+    if (g.lastMove && this.fresh(g.lastMove)) { // the stone drops onto the board
+      const d = el('div', 'bg-drop');
+      d.style.left = ((g.lastMove[0] + 1) / (N + 1)) * 100 + '%';
+      d.style.top = ((g.lastMove[1] + 1) / (N + 1)) * 100 + '%';
+      d.style.background = g.at(g.lastMove[0], g.lastMove[1]) === 0 ? '#1d1b22' : '#fbfaf6';
+      wrap.append(d);
+    }
+    c.append(wrap);
     if (g.no33) c.append(el('div', 'bg-sub', L(T.rule33)));
+  }
+
+  // True the first time a move is drawn, so its little motion plays once and
+  // not again on every redraw.
+  fresh(move) {
+    const p = this.play;
+    if (!move || p.drawn === move) return false;
+    p.drawn = move;
+    return true;
   }
 
   drawBell(c) {
     const p = this.play;
     const g = p.g;
+    const l = this.fresh(g.last) ? g.last : null;
     const grid = el('div', 'bg-fruits');
     p.names.forEach((n, s) => {
-      const pile = el('div', 'bg-pile' + (turnOf(g) === s ? ' on' : '') + (g.out[s] ? ' gone' : ''));
+      const pile = el('div', 'bg-pile' + (turnOf(g) === s ? ' on' : '') + (g.out[s] ? ' gone' : '') + (l?.ring != null && l.p === s ? (l.ring ? ' got' : ' oops') : ''));
       pile.append(el('div', null, n));
       const top = g.up[s][g.up[s].length - 1];
-      const card = el('div', 'bg-fcard' + (top ? '' : ' back'), top ? FRUIT_EMOJI[top.f].repeat(top.n) : '');
+      const card = el('div', 'bg-fcard' + (top ? '' : ' back') + (l?.flip && l.p === s ? ' new' : ''), top ? FRUIT_EMOJI[top.f].repeat(top.n) : '');
       pile.append(card, el('small', null, g.out[s] ? L(T.out) : tt('cards', { n: g.down[s].length })));
       grid.append(pile);
     });
@@ -774,7 +806,7 @@ export class BoardGamesUI {
     flip.onclick = () => this.myMove(['f']);
     row.append(flip);
     c.append(row);
-    const bell = el('button', 'bg-bell', L(T.ring));
+    const bell = el('button', 'bg-bell' + (l?.ring != null ? ' rung' : ''), L(T.ring));
     bell.type = 'button';
     bell.dataset.act = 'ring';
     bell.onpointerdown = (e) => { e.preventDefault(); this.myMove(['r', g.flips]); };
@@ -796,7 +828,7 @@ export class BoardGamesUI {
       const w = this.play?.walk;
       if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
       this.paintLadders(this.ladCv);
-      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
+      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + RIDE_MS + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
     }, 50);
   }
 
@@ -920,10 +952,18 @@ export class BoardGamesUI {
     const w = p.walk;
     const spot = g.pos.map((k, s) => {
       if (!w || w.seat !== s) return at(k);
-      const f = Math.max(0, Math.min(w.path.length, (performance.now() - w.at) / WALK_STEP));
-      const i = Math.floor(f), t = f - i;
+      // (the last step of a ride, up a ladder or down a snake, takes longer)
+      const rides = w.path.length && Math.abs(w.path[w.path.length - 1] - (w.path[w.path.length - 2] ?? w.from)) > 1 && (g.up[w.path[w.path.length - 2] ?? w.from] || g.down[w.path[w.path.length - 2] ?? w.from]);
+      const el2 = performance.now() - w.at, walked = (w.path.length - (rides ? 1 : 0)) * WALK_STEP;
+      const f = Math.max(0, Math.min(w.path.length, rides && el2 > walked ? w.path.length - 1 + (el2 - walked) / RIDE_MS : el2 / WALK_STEP));
+      const i = Math.min(Math.floor(f), Math.max(0, w.path.length - 1)), t = f - i;
       const a = at(i === 0 ? w.from : w.path[i - 1]), b = at(w.path[Math.min(i, w.path.length - 1)]);
-      const ride = i === w.path.length - 1 && Math.abs(w.path[i] - (w.path[i - 1] ?? w.from)) > 6; // (a ladder or a snake: no hop)
+      const ride = rides && i === w.path.length - 1; // (a ladder or a snake: no hop)
+      if (ride && b[1] > a[1]) { // down a snake: along its wiggle, the same curve it is drawn with
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]), waves = Math.max(2, Math.round(len / 60));
+        const e = t * t * (3 - 2 * t), wv = Math.sin(e * Math.PI * waves) * 12 * (1 - e * 0.4);
+        return [a[0] + (b[0] - a[0]) * e - (b[1] - a[1]) / len * wv, a[1] + (b[1] - a[1]) * e + (b[0] - a[0]) / len * wv];
+      }
       return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - (ride ? 0 : Math.sin(t * Math.PI) * 10)];
     });
     g.pos.forEach((k, s) => {
