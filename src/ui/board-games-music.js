@@ -38,6 +38,6 @@ const CHEERFUL = {
 
 export const BOARD_TRACKS = {
   omok: CALM, thief: SILLY,
-  croc: SUSPENSE, pirate: SUSPENSE, bulldog: SUSPENSE, tower: SUSPENSE,
+  croc: SUSPENSE, pirate: SUSPENSE, bulldog: SUSPENSE, tower: SUSPENSE, mafia: SUSPENSE,
   fruitbell: CHEERFUL, ladders: CHEERFUL, onecard: CHEERFUL,
 };

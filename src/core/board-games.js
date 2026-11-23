@@ -14,6 +14,7 @@
 //    is left holding the joker loses, 2-6.
 //  - croc / pirate / bulldog: press one spot each in turn; whoever finds the
 //    hidden one loses (악어 이빨 / 통 속 해적 / 잠꾸러기 불독), 2-6.
+//  - mafia     마피아: night and day, the town votes the mafia out, 4-8.
 
 export const GAMES = {
   omok: { min: 2, max: 2, icon: '⚫', price: 30000 },
@@ -25,6 +26,7 @@ export const GAMES = {
   thief: { min: 2, max: 6, icon: '🕵️', price: 30000 },
   ladders: { min: 2, max: 4, icon: '🐍', price: 30000 },
   tower: { min: 2, max: 6, icon: '🧱', price: 30000, spots: 30 },
+  mafia: { min: 4, max: 8, icon: '🌙', price: 30000 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
@@ -840,6 +842,7 @@ export function newGame(id, players, seed, opt = 0) {
   if (id === 'thief') return new Thief({ players, seed });
   if (id === 'ladders') return new Ladders({ players, seed, custom: opt === 1 });
   if (id === 'tower') return new Tower({ players, seed });
+  if (id === 'mafia') return new Mafia({ players, seed, talk: MAFIA_TALK[opt] || MAFIA_TALK[0] });
   throw new Error('unknown game ' + id);
 }
 
@@ -848,6 +851,9 @@ export function newGame(id, players, seed, opt = 0) {
 // ['f'] flip / ['r'] ring, ['p', spot] roulette, ['s', i] point at / ['t', i]
 // take a card in the joker game, ['d'] roll the dice / ['a', kind, from, to]
 // put a ladder (0) or snake (1) down in snakes and ladders,
+// ['k', seat] the mafia's pick / ['h', seat] the doctor's / ['q', seat] the
+// police officer's at night, ['z'] done talking, ['v', seat or 9] a vote,
+// ['n', step] the host moves the game on when the clock runs out in mafia,
 // ['l'] leave. (['e', n] is a face a player
 // pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
@@ -862,8 +868,152 @@ export function applyAction(game, p, a) {
     case 's': return game instanceof Thief && game.select(p, a[1] | 0);
     case 't': return game instanceof Thief && game.take(p, a[1] | 0);
     case 'a': return game instanceof Ladders && game.place(p, a[1] | 0, a[2] | 0, a[3] | 0);
+    case 'k': return game instanceof Mafia && game.kill(p, a[1] | 0);
+    case 'h': return game instanceof Mafia && game.heal(p, a[1] | 0);
+    case 'q': return game instanceof Mafia && game.check(p, a[1] | 0);
+    case 'z': return game instanceof Mafia && game.done(p);
+    case 'v': return game instanceof Mafia && game.vote(p, a[1] | 0);
+    case 'n': return game instanceof Mafia && game.next(p, a[1] | 0);
     case 'l': game.leave(p); return true;
     default: return false;
+  }
+}
+
+// ---------------------------------------------------------------- mafia
+// 마피아 (Yozi 2026-11-23): 4 to 8 people, no computer players (it is a game
+// of talking). One mafia for 4-5, two for 6-8; one doctor, one police
+// officer, the rest townspeople. It starts at night:
+//  night  the mafia pick someone (with two, the last pick stands), the doctor
+//         picks someone to save, the officer asks about one person and gets
+//         the answer at once. The host's clock ends the night ('n').
+//  talk   who died is told; everyone alive talks (alive × `talk` seconds, or
+//         until everyone alive pressed "done").
+//  vote   everyone alive votes for someone or passes (9). Most votes goes
+//         out; a tie, or nobody voted for, and nobody goes.
+// The town wins when no mafia is left; the mafia when they are as many as
+// the others. A role is shown when the game is over, not at a death.
+//
+// As with the other games here every screen holds the whole game (the roles
+// come from the seed): the screen shows a player only their own, and nothing
+// is won, so there is nothing worth digging in the page for.
+export const MAFIA_TALK = [15, 10, 15, 20]; // seconds each, by the host's option digit (0: not chosen)
+export const MAFIA_NIGHT = 20, MAFIA_VOTE = 20, MAFIA_PASS = 9;
+export class Mafia {
+  constructor({ players = 4, seed = 1, talk = 15 } = {}) {
+    if (players < GAMES.mafia.min || players > GAMES.mafia.max) throw new Error('mafia is for 4-8');
+    this.n = players;
+    this.talk = talk;
+    const mafia = players >= 6 ? 2 : 1;
+    const roles = [...new Array(mafia).fill('mafia'), 'doctor', 'police'];
+    while (roles.length < players) roles.push('town');
+    this.roles = shuffle(roles, rng(seed));
+    this.alive = new Array(players).fill(true);
+    this.out = new Array(players).fill(false); // left the table
+    this.phase = 'night';
+    this.round = 1;
+    this.step = 0; // goes up with every change of phase (the host's 'n' names the one it ends)
+    this.checks = []; // what the officer learned: { round, target, mafia }
+    this.winner = null; // 'town' | 'mafia'
+    this.over = false;
+    this.last = null; // { died, saved } after a night, { voted, tie } after a vote
+    this.clear();
+  }
+
+  clear() {
+    this.pick = { kill: -1, heal: -1, check: -1 };
+    this.votes = new Array(this.n).fill(-1);
+    this.dones = new Array(this.n).fill(false);
+  }
+
+  living() { return this.alive.map((a, i) => (a ? i : -1)).filter((i) => i >= 0); }
+  can(p, role) { return !this.over && this.alive[p] && this.roles[p] === role; }
+  // Seconds the phase lasts on the host's clock.
+  seconds() { return this.phase === 'night' ? MAFIA_NIGHT : this.phase === 'vote' ? MAFIA_VOTE : this.living().length * this.talk; }
+
+  kill(p, t) {
+    if (this.phase !== 'night' || !this.can(p, 'mafia') || !this.alive[t] || this.roles[t] === 'mafia') return false;
+    this.pick.kill = t;
+    return true;
+  }
+
+  heal(p, t) {
+    if (this.phase !== 'night' || !this.can(p, 'doctor') || !this.alive[t]) return false;
+    this.pick.heal = t;
+    return true;
+  }
+
+  // One question a night; the answer is kept for the officer's screen.
+  check(p, t) {
+    if (this.phase !== 'night' || !this.can(p, 'police') || !this.alive[t] || t === p || this.pick.check >= 0) return false;
+    this.pick.check = t;
+    this.checks.push({ round: this.round, target: t, mafia: this.roles[t] === 'mafia' });
+    return true;
+  }
+
+  done(p) {
+    if (this.phase !== 'talk' || this.over || !this.alive[p] || this.dones[p]) return false;
+    this.dones[p] = true;
+    if (this.living().every((i) => this.dones[i])) this.advance();
+    return true;
+  }
+
+  vote(p, t) {
+    if (this.phase !== 'vote' || this.over || !this.alive[p] || this.votes[p] >= 0) return false;
+    if (t !== MAFIA_PASS && (!this.alive[t] || t === p)) return false;
+    this.votes[p] = t;
+    if (this.living().every((i) => this.votes[i] >= 0)) this.advance();
+    return true;
+  }
+
+  // The host's clock ran out on phase number `step`.
+  next(p, step) {
+    if (this.over || p !== 0 || step !== this.step) return false;
+    this.advance();
+    return true;
+  }
+
+  advance() {
+    this.step++;
+    if (this.phase === 'night') {
+      const t = this.pick.kill, saved = t >= 0 && t === this.pick.heal;
+      if (t >= 0 && !saved) this.alive[t] = false;
+      this.last = { died: t >= 0 && !saved ? t : -1, saved };
+      this.phase = 'talk';
+    } else if (this.phase === 'talk') {
+      this.phase = 'vote';
+    } else {
+      const count = new Array(this.n).fill(0);
+      for (const i of this.living()) if (this.votes[i] >= 0 && this.votes[i] !== MAFIA_PASS) count[this.votes[i]]++;
+      const top = Math.max(...count), tops = count.filter((c) => c === top).length;
+      const voted = top > 0 && tops === 1 ? count.indexOf(top) : -1;
+      if (voted >= 0) this.alive[voted] = false;
+      this.last = { voted, tie: top > 0 && tops > 1, count };
+      this.phase = 'night';
+      this.round++;
+    }
+    this.clear();
+    this.judge();
+  }
+
+  judge() {
+    const mafia = this.living().filter((i) => this.roles[i] === 'mafia').length, rest = this.living().length - mafia;
+    if (mafia === 0) this.winner = 'town';
+    else if (mafia >= rest) this.winner = 'mafia';
+    if (this.winner) { this.over = true; this.phase = 'over'; }
+  }
+
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    this.out[p] = true;
+    this.alive[p] = false;
+    if (this.pick.kill === p) this.pick.kill = -1;
+    if (this.pick.heal === p) this.pick.heal = -1;
+    for (let i = 0; i < this.n; i++) if (this.votes[i] === p) this.votes[i] = -1;
+    this.judge();
+    if (this.over) return;
+    // (the ones still here may all be done already)
+    if (this.phase === 'talk' && this.living().every((i) => this.dones[i])) this.advance();
+    else if (this.phase === 'vote' && this.living().every((i) => this.votes[i] >= 0)) this.advance();
   }
 }
 
@@ -881,7 +1031,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclstea]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
+  if (!/^[ofrpdclsteakhqzvn]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {
