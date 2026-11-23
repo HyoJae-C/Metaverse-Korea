@@ -66,8 +66,12 @@ await acts('🎲');
 await page.waitForSelector('#bg-panel.on [data-act="start"]', { timeout: 20000 });
 await page.click('#bg-panel [data-act="start"]');
 await page.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
-assert(!(await page.$('#bg-panel.mini')), 'at home the game is in the big panel');
+assert(!(await page.$('#bg-panel.mini')), 'my turn: the big panel');
+assert(await page.evaluate(() => __mk.seated?.() ?? true), 'sitting on the floor by the set');
 if (S) { await wait(600); await page.screenshot({ path: `${S}/home-tower-game.png` }); }
+await page.evaluate(() => document.querySelector('#bg-panel .bg-spot[data-spot="28"]').click());
+await page.waitForSelector('#bg-panel.mini', { timeout: 8000 }).catch(() => {});
+if (S) { await wait(500); await page.evaluate(() => { document.getElementById('bg-panel').style.visibility = 'hidden'; }); await wait(200); await page.screenshot({ path: `${S}/home-tower-floor.png` }); await page.evaluate(() => { document.getElementById('bg-panel').style.visibility = ''; }); }
 await page.click('#bg-panel .bg-x');
 
 // A visitor comes in: the host asks them to Omok at the set, they say yes, and both have the board.

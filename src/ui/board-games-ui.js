@@ -281,7 +281,7 @@ export class BoardGamesUI {
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
     // Catch the Thief is played at a real table in the café when one is free (its number is the option).
-    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' || TOYS.includes(lob.game) ? this.table?.pick(ids.length) || 0 : lob.opt || 0);
+    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' || TOYS.includes(lob.game) ? this.table?.pick(ids.length, lob.game) || 0 : lob.opt || 0);
   }
 
   addBot() {
@@ -310,7 +310,7 @@ export class BoardGamesUI {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
       // At a table in the café when one is free: the toy stands on it, and the panel is big only on my turn.
-      if (opt > 0 && this.table?.start({ ids, seat: p.seat, table: opt, names: p.names, bot: BOT, toy: { kind: game, spots: p.g.spots, figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null } })) p.world = true;
+      if (opt > 0 && this.table?.start({ ids, seat: p.seat, table: opt, kind: game, names: p.names, bot: BOT, toy: { kind: game, spots: p.g.spots, figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null } })) p.world = true;
       import('./board-toy-3d.js').then((m) => {
         if (this.play !== p) return;
         this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]), figure: game === 'pirate' ? this.figureOf?.(hostId) ?? null : null }); // (the host sits in the pirate's barrel)
@@ -318,7 +318,7 @@ export class BoardGamesUI {
       }).catch(() => {});
     }
     if (!this.play.world) this.table?.end();
-    if (game === 'thief' && opt > 0 && this.table?.start({ ids, seat: this.play.seat, table: opt, names: this.play.names, bot: BOT, onPick: (i) => this.myMove(['s', i]) })) {
+    if (game === 'thief' && opt > 0 && this.table?.start({ ids, seat: this.play.seat, table: opt, kind: game, names: this.play.names, bot: BOT, onPick: (i) => this.myMove(['s', i]) })) {
       this.play.world = true; // at a table in the café: the panel is only my own hand
     } else if (game === 'thief') {
       // Seen from my seat, in 3D (the flat cards show until it is here, or with no WebGL).
