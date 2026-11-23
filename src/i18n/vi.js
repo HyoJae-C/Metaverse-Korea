@@ -472,6 +472,7 @@ export const VI = {
   'hud.bike': 'Phương tiện',
   'stairs.noBike': "🚲 Không đi xe xuống cầu thang được. Bấm Phương tiện để xuống xe rồi đi bộ xuống.",
   'cheongwadae.note': "🏛️ Cheong Wa Dae lại là nơi làm việc của tổng thống, một cơ sở an ninh: khách không thể vào. Hãy ngắm từ bên ngoài cổng nhé.",
+  'hyeonchung.note': "🕊️ Nghĩa trang Quốc gia Seoul: thành lập năm 1955 là nghĩa trang quân đội, trở thành nghĩa trang quốc gia từ năm 1965. Đây là nơi tưởng niệm. Xin hãy đi lại nhẹ nhàng.",
   'bike.offShort': 'Xuống xe',
   'bike.off': 'Xuống xe đạp',
   'car.off': 'Xuống ô tô',
