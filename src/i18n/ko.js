@@ -844,7 +844,7 @@ export const KO = {
   "potato.bought": "샀어요! 옷장에 넣었어요.",
   "potato.gone": "방금 다른 사람이 사 갔어요.",
   "potato.own": "내 돗자리에 있는 옷이에요.",
-  "potato.young": "새 계정은 {h}시간 뒤부터 감자마켓을 쓸 수 있어요.",
+  "potato.young": "감자마켓은 가입 {days}일이 지나고 일일 미션을 {missions}개 이상 하면 쓸 수 있어요.",
   "potato.offline": "지금은 감자마켓에 연결할 수 없어요. 잠시 후 다시 해 주세요.",
   "potato.closed": "감자마켓은 곧 열려요. 로그인하면 여기서 사고팔 수 있어요.",
   "potato.onMat": "내 돗자리 ({n}/{max})",

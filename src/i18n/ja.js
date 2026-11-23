@@ -844,7 +844,7 @@ export const JA = {
   "potato.bought": "買いました！クローゼットに入れました。",
   "potato.gone": "たった今ほかの人が買いました。",
   "potato.own": "自分のござの服です。",
-  "potato.young": "新しいアカウントは{h}時間後からポテトマーケットを使えます。",
+  "potato.young": "ポテトマーケットは登録から{days}日たち、デイリーミッションを{missions}回以上こなすと使えます。",
   "potato.offline": "今はポテトマーケットにつながりません。少ししてからもう一度どうぞ。",
   "potato.closed": "ポテトマーケットはもうすぐオープン。ログインするとここで売り買いできます。",
   "potato.onMat": "自分のござ ({n}/{max})",

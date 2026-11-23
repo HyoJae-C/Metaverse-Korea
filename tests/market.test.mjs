@@ -10,13 +10,18 @@ const sql = readFileSync(new URL('../supabase/034_player_market.sql', import.met
 const hoodie = WEARABLES['outfit-hoodie-black'];
 
 test('the rules Yozi picked, the same on the server', () => {
-  assert.deepEqual(MARKET, { minPct: 10, maxPct: 100, feePct: 5, days: 3, openMax: 6, minHours: 24 });
+  assert.deepEqual(MARKET, { minPct: 10, maxPct: 100, feePct: 5, days: 3, openMax: 6, minDays: 7, minMissions: 35 });
   assert.match(sql, /market_min_pct int not null default 10/);
   assert.match(sql, /market_max_pct int not null default 100/);
   assert.match(sql, /market_fee_pct int not null default 5/);
   assert.match(sql, /market_days int not null default 3/);
   assert.match(sql, /market_open_max int not null default 6/);
-  assert.match(sql, /market_min_hours int not null default 24/);
+  // Who may list or buy: the gift rule (074 → 073), 7 days and 35 daily missions.
+  const age = readFileSync(new URL('../supabase/074_market_age.sql', import.meta.url), 'utf8');
+  const gift = readFileSync(new URL('../supabase/073_gift_age.sql', import.meta.url), 'utf8');
+  assert.match(age, /select public\.gift_ready\(p_uid\)/);
+  assert.match(gift, /gift_min_days int not null default 7/);
+  assert.match(gift, /gift_min_missions int not null default 35/);
 });
 
 test('prices: 10% to 100% of the new price, the seller gets it less 5% (fee rounded up)', () => {
@@ -99,7 +104,7 @@ test('closed without a server wallet or before 034 is run', async () => {
   w.client = { rpc: async () => ({ error: { code: 'PGRST202', message: 'not found' } }) };
   const m = new MarketClient(w);
   assert.equal(await m.info(), null);
-  w.client = { rpc: async () => ({ data: { min_pct: 10, max_pct: 100, fee_pct: 5, days: 3, open_max: 6, min_hours: 24, unit: 'krw' } }) };
+  w.client = { rpc: async () => ({ data: { min_pct: 10, max_pct: 100, fee_pct: 5, days: 3, open_max: 6, min_hours: 24, min_days: 7, min_missions: 35, unit: 'krw' } }) };
   assert.deepEqual(await m.info(), MARKET);
 });
 
