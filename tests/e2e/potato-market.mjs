@@ -37,7 +37,7 @@ await page.evaluate(() => {
   const ok = (data) => Promise.resolve({ data });
   w.s = { uid: 'me', u: 1, unit: 'krw', base: w.coins, ver: 1, ads: 0, adsDay: '', queue: [] };
   w.client = { rpc(fn, a = {}) {
-    if (fn === 'market_info') return ok({ min_pct: 10, max_pct: 100, fee_pct: 5, days: 3, open_max: 6, min_hours: 24, unit: 'krw' });
+    if (fn === 'market_info') return ok({ min_pct: 10, max_pct: 100, fee_pct: 5, days: 3, open_max: 6, min_hours: 24, min_days: 7, min_missions: 35, unit: 'krw' });
     if (fn === 'market_browse') {
       const sellers = [...new Set(L.filter((l) => l.status === 'open').map((l) => l.seller))];
       return ok(L.filter((l) => l.status === 'open').map((l) => ({ id: l.id, item: l.item, list: l.list, price: l.price, mat: sellers.indexOf(l.seller) + 1, name: l.name, mine: l.seller === 'me' })));

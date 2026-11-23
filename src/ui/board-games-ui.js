@@ -20,7 +20,7 @@
 // (it sends through the game's own chat bar, so the same rules apply).
 import { suitArt } from './board-card-suits.js';
 import {
-  GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
+  GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -40,6 +40,11 @@ const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
 const RIDE_MS = 650; // ms to climb a ladder or slide down a snake
 const DICE_MS = 750; // ms the dice tumbles in the middle of the board before the piece walks
+// The roll button held down fills a gauge; let go and the dice is thrown that
+// hard: it tumbles longer and bounces more. The number is as random as ever
+// (Yozi 2026-11-24). A quick tap is a soft throw.
+const DICE_FULL = 1000, DICE_POWER = 9; // ms held for a full gauge; the hardest throw (0-9, sent with the roll)
+const diceMsOf = (pw) => (pw == null ? DICE_MS : 550 + 100 * Math.max(0, Math.min(DICE_POWER, pw | 0)));
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
 const CSS = `
@@ -57,9 +62,16 @@ const CSS = `
 #bg-panel .bg-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 #bg-panel .bg-btn { border: 0; border-radius: 12px; padding: 10px 14px; background: #eee3cf; }
 #bg-panel .bg-go { background: #ffd36b; }
+#bg-panel [data-act="roll"] { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#bg-panel .bg-gauge { position: absolute; left: 0; bottom: 0; height: 6px; width: var(--g, 0%); background: linear-gradient(90deg, #5bd17a, #ffb800 60%, #ff5a3c); pointer-events: none; }
+#bg-panel [data-act="roll"].held { transform: scale(.96); }
+#bg-panel [data-act="roll"].held .bg-gauge { height: 100%; opacity: .55; }
 #bg-panel .bg-line { padding: 6px 0; }
 #bg-panel .bg-status { min-height: 22px; margin: 8px 0; text-align: center; }
 #bg-panel .bg-clock { float: right; font-size: 16px; font-weight: 800; color: #e8402a; }
+#bg-panel .bg-rolls { float: right; margin-right: 12px; font-size: 16px; font-weight: 800; color: #8a7a66; }
+#bg-panel .bg-ranks { margin: 4px auto 8px; width: fit-content; text-align: left; line-height: 1.6; }
+#bg-panel .bg-ranks .me { font-weight: 800; }
 #bg-panel .bg-seats { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 8px; }
 #bg-panel .bg-seat { padding: 4px 10px; border-radius: 999px; background: #efe4cf; font-size: 13px; }
 #bg-panel .bg-seat.on { background: #ffd36b; }
@@ -145,6 +157,8 @@ const CSS = `
 #bg-panel .bg-fan.big .bg-card1 { width: 50px; height: 72px; }
 #bg-panel .bg-fan .bg-card1.sel { box-shadow: 0 0 0 3px #ffb800, 0 8px 12px rgba(0,0,0,.35); z-index: 2; }
 #bg-panel .bg-fan .bg-card1 { position: relative; }
+#bg-panel .bg-fan .bg-card1.tip { box-shadow: 0 0 0 3px #35c46a, 0 6px 10px rgba(0,0,0,.3); z-index: 1; }
+#bg-panel .bg-fan .bg-card1.tip.sel { box-shadow: 0 0 0 3px #ffb800, 0 0 0 6px #35c46a, 0 8px 12px rgba(0,0,0,.35); z-index: 2; }
 #bg-panel .bg-point { position: absolute; left: 50%; top: -34px; margin-left: -14px; font-size: 28px; line-height: 1; animation: bg-bob .7s ease-in-out infinite alternate; }
 @keyframes bg-bob { to { transform: translateY(6px); } }
 #bg-panel .bg-mine { margin-top: 6px; }
@@ -271,7 +285,7 @@ export class BoardGamesUI {
   choose(game) {
     this.leaveAll();
     if (game === 'mafia') this.loadMafia();
-    this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0 }; // (ladders: the players lay the board out, unless the host says no)
+    this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0, rolls: LADDERS_ROLLS.indexOf(30) }; // (ladders: the players lay the board out, unless the host says no; 30 rolls each, unless the host picks another limit)
     this.state = 'lobby';
     this.status = '';
     this.render();
@@ -302,7 +316,7 @@ export class BoardGamesUI {
     if (lob.bots) while (ids.length < Math.min(g.max, ids.length + lob.bots)) { ids.push(BOT); lob.bots--; }
     this.lobby = null;
     // Catch the Thief is played at a real table in the café when one is free (its number is the option).
-    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' || TOYS.includes(lob.game) ? this.table?.pick(ids.length, lob.game) || 0 : lob.opt || 0);
+    this.begin(lob.game, ids, this.net.myId, undefined, null, lob.game === 'thief' || TOYS.includes(lob.game) ? this.table?.pick(ids.length, lob.game) || 0 : lob.game === 'ladders' ? laddersOpt(lob.opt, lob.rolls) : lob.opt || 0);
   }
 
   addBot() {
@@ -496,7 +510,8 @@ export class BoardGamesUI {
 
   after(seat, act) {
     const p = this.play;
-    if (act[0] !== 's' && act[0] !== 'm') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? DICE_MS + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
+    if (act[0] === 'd' && p.game === 'ladders') { p.diceMs = diceMsOf(act[1]); p.dicePw = act[1] == null ? 2 : Math.max(0, Math.min(DICE_POWER, act[1] | 0)); }
+    if (act[0] !== 's' && act[0] !== 'm' && act[0] !== 'u') p.turnAt = performance.now() + (act[0] === 'd' && p.game === 'ladders' ? p.diceMs + 1200 : 0); // (a new turn's clock; pointing at a card does not buy time)
     if (act[0] === 'l') {
       (p.gone ||= [])[seat] = true;
       if (seat !== p.seat) this.status = tt('left', { name: p.names[seat] });
@@ -532,11 +547,12 @@ export class BoardGamesUI {
       // (said once the dice has stopped tumbling, not before)
       const said = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.past ? ' ' + L(T.pastEnd) : '') + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
       this.status = '';
-      setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, DICE_MS);
+      setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, p.diceMs);
       this.startWalk(l);
-      this.onEvent('dice', p.game);
+      this.onEvent('dice', p.game, { power: p.dicePw });
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
     else if (act[0] === 'm') { this.status = seat === p.seat ? '' : tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
+    else if (act[0] === 'u') { if (seat !== p.seat && g.turn === p.seat) this.status = g.tip < 0 ? '' : tt('tipped', { name: p.names[seat] }); this.render(); return; } // (a card pushed up: the clock keeps running)
     else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
@@ -544,7 +560,7 @@ export class BoardGamesUI {
       // Who is glad about it: the winner, or everyone but the one who lost.
       const lostIt = g.loser === p.seat || (g.winner >= 0 && g.winner !== p.seat), wonIt = !lostIt && p.seat >= 0 && (g.winner === p.seat || g.loser >= 0);
       if (g.last?.bang) this.onEvent('bang', p.game, { placing: !!g.last.placing });
-      const late = g.last?.bang ? (g.last.placing ? 1500 : 1000) : p.game === 'ladders' ? DICE_MS + 900 : 0; // (after the crash, or the last walk)
+      const late = g.last?.bang ? (g.last.placing ? 1500 : 1000) : p.game === 'ladders' ? (p.diceMs || DICE_MS) + 900 : 0; // (after the crash, or the last walk)
       setTimeout(() => { if (this.play !== p) return; if (wonIt) { this.onEvent('win', p.game); p.party = true; this.render(); } else if (lostIt) this.onEvent('lose', p.game); }, late);
     }
     this.timer = 0;
@@ -744,6 +760,18 @@ export class BoardGamesUI {
       line.append(r);
       c.append(line);
     }
+    if (lob.game === 'ladders') {
+      // The host's choice: how many rolls each player gets before the game is called (Yozi 2026-11-24).
+      const n = LADDERS_ROLLS[lob.rolls];
+      const r = el('button', 'bg-btn', n ? tt('rollsEach', { n }) : L(T.rollsNoLimit));
+      r.type = 'button';
+      r.dataset.act = 'rolls';
+      r.dataset.rolls = String(n);
+      r.onclick = () => { lob.rolls = (lob.rolls + 1) % LADDERS_ROLLS.length; this.render(); };
+      const line = el('div', 'bg-row');
+      line.append(r);
+      c.append(line);
+    }
     const act = el('div', 'bg-row');
     if (g.max > 2 && seats < g.max && lob.game !== 'mafia') {
       const add = el('button', 'bg-btn', '➕ ' + L(T.computer));
@@ -777,6 +805,12 @@ export class BoardGamesUI {
     // The turn's clock sits in the title, so a phone never has to scroll to it (Yozi 2026-11-24).
     this.clockEl = el('span', 'bg-clock');
     title.append(this.clockEl);
+    if (p.game === 'ladders' && g.max && !g.setup && !g.over) {
+      // The rolls I have left, beside the clock.
+      const left = el('span', 'bg-rolls', `🎲 ${g.rollsLeft(p.seat)}`);
+      left.dataset.rolls = String(g.rollsLeft(p.seat));
+      title.append(left);
+    }
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
@@ -795,6 +829,16 @@ export class BoardGamesUI {
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
+    if (p.game === 'ladders' && g.over && g.ranks?.filter((r) => r > 0).length > 1) {
+      // Everyone's place, first to last (the same square shares a place).
+      const list = el('div', 'bg-ranks');
+      g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, s]) => {
+        const row = el('div', s === p.seat ? 'me' : null, `${['🥇', '🥈', '🥉'][r - 1] || r + '.'} ${PAWN_DOT[s]} ${p.names[s]} · ${g.pos[s] === LADDERS_END ? '🏁' : g.pos[s]}`);
+        row.dataset.rank = String(r);
+        list.append(row);
+      });
+      c.append(list);
+    }
     this.paintClock();
     if (!g.over && p.ids.some((id) => id !== BOT && id !== this.net.myId)) {
       const faces = el('div', 'bg-faces');
@@ -872,15 +916,17 @@ export class BoardGamesUI {
       if (g.last?.bang) return g.loser === p.seat ? L(T.bangMe) : tt('bangThem', { name: p.names[g.loser] });
       if (TOYS.includes(p.game)) return this.status;
       if (p.game === 'thief') return g.loser < 0 ? this.status : g.loser === p.seat ? L(T.jokerMe) : tt('jokerThem', { name: p.names[g.loser] });
-      if (g.winner < 0) return L(T.draw);
-      return g.winner === p.seat ? L(T.won) : tt('winner', { name: p.names[g.winner] });
+      const end = g.winner < 0 ? L(T.draw) : g.winner === p.seat ? L(T.won) : tt('winner', { name: p.names[g.winner] });
+      // Snakes and ladders called on rolls: say why it stopped.
+      if (p.game === 'ladders' && g.max && g.used.every((u, s) => g.out[s] || u >= g.max) && !g.pos.includes(LADDERS_END)) return `${L(T.rollsOut)} ${end}`;
+      return end;
     }
     const turn = turnOf(g);
     let whose = turn === p.seat ? L(T.yourTurn) : tt('theirTurn', { name: p.names[turn] });
     if (p.game === 'ladders' && g.setup) whose = turn === p.seat ? L(T.placeHow) : tt('placing', { name: p.names[turn] });
     if (p.game === 'thief') {
       const from = g.from;
-      whose = turn === p.seat ? tt('pickFrom', { name: p.names[from] }) : from === p.seat ? tt('choosingMine', { name: p.names[turn] }) : tt('choosing', { name: p.names[turn], from: p.names[from] });
+      whose = turn === p.seat ? tt('pickFrom', { name: p.names[from] }) : from === p.seat ? `${tt('choosingMine', { name: p.names[turn] })} ${L(T.tipHint)}` : tt('choosing', { name: p.names[turn], from: p.names[from] });
     }
     return this.status ? `${this.status} · ${whose}` : whose;
   }
@@ -988,11 +1034,12 @@ export class BoardGamesUI {
     for (let k = l.from + 1; k <= l.mid; k++) path.push(k);
     if (l.to !== l.mid) path.push(l.to);
     const now = performance.now();
-    p.dice = { n: l.dice, at: now };
-    p.walk = path.length ? { seat: l.p, from: l.from, path, at: now + DICE_MS } : null; // (the piece waits for the dice; none to walk when it rolled past the end)
+    const ms = p.diceMs || DICE_MS;
+    p.dice = { n: l.dice, at: now, ms, pw: p.dicePw ?? 2 };
+    p.walk = path.length ? { seat: l.p, from: l.from, path, at: now + ms } : null; // (the piece waits for the dice; none to walk when it rolled past the end)
     clearInterval(this.walkTimer);
     this.walkTimer = setInterval(() => {
-      const w = this.play?.walk || (this.play?.dice && { at: this.play.dice.at + DICE_MS, path: [] });
+      const w = this.play?.walk || (this.play?.dice && { at: this.play.dice.at + this.play.dice.ms, path: [] });
       if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
       this.paintLadders(this.ladCv);
       if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + RIDE_MS + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
@@ -1033,7 +1080,7 @@ export class BoardGamesUI {
       };
       return;
     }
-    const dice = el('span', 'bg-dice', g.last?.dice && !(p.dice && performance.now() - p.dice.at < DICE_MS) ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
+    const dice = el('span', 'bg-dice', g.last?.dice && !(p.dice && performance.now() - p.dice.at < p.dice.ms) ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
     dice.dataset.dice = String(g.last?.dice ?? 0);
     row.append(dice);
     if (!g.over && !g.out[p.seat]) {
@@ -1041,10 +1088,48 @@ export class BoardGamesUI {
       roll.type = 'button';
       roll.dataset.act = 'roll';
       roll.disabled = turnOf(g) !== p.seat;
-      roll.onclick = () => this.myMove(['d']);
+      // Held down, its gauge fills; let go to throw. (A key press or a script's click: a soft throw.)
+      roll.onclick = (e) => { if (e.detail === 0 && !this.hold) this.myMove(['d', 0]); };
+      roll.onpointerdown = (e) => { if (!roll.disabled && e.button === 0) this.holdDice(); };
+      roll.oncontextmenu = (e) => e.preventDefault();
+      roll.append(el('i', 'bg-gauge'));
+      if (this.hold) this.paintHold(roll); // (drawn again while it is held)
       row.append(roll);
     }
     c.append(row);
+  }
+
+  // The roll button is held: the gauge fills until the finger lifts, anywhere
+  // on the screen (the panel may be drawn again meanwhile), then the dice goes.
+  holdDice() {
+    if (this.hold) return;
+    const hold = this.hold = { at: performance.now() };
+    const power = () => Math.min(1, (performance.now() - hold.at) / DICE_FULL);
+    hold.power = power;
+    // (on a timer, not animation frames: a page that is not in front gets none, and the gauge would stand still)
+    const paint = () => this.paintHold(this.card?.querySelector('[data-act="roll"]'));
+    hold.timer = setInterval(paint, 40);
+    const done = (e) => {
+      window.removeEventListener('pointerup', done);
+      window.removeEventListener('pointercancel', done);
+      if (this.hold !== hold) return;
+      clearInterval(hold.timer);
+      this.hold = null;
+      const b = this.card?.querySelector('[data-act="roll"]');
+      if (b) { b.classList.remove('held'); b.style.removeProperty('--g'); }
+      if (e.type === 'pointerup' && this.play?.game === 'ladders') this.myMove(['d', Math.round(power() * DICE_POWER)]);
+    };
+    window.addEventListener('pointerup', done);
+    window.addEventListener('pointercancel', done);
+    paint();
+  }
+
+  paintHold(b) {
+    if (!b || !this.hold) return;
+    const k = this.hold.power();
+    b.classList.add('held');
+    b.style.setProperty('--g', `${Math.round(k * 100)}%`);
+    b.dataset.power = String(Math.round(k * DICE_POWER));
   }
 
   // A square tapped while laying the board out (also what the tests call).
@@ -1147,14 +1232,14 @@ export class BoardGamesUI {
     // and comes to rest on the number rolled.
     const d = p.dice;
     if (d) {
-      const now = performance.now(), t = Math.min(1, (now - d.at) / DICE_MS), rest = t >= 1;
+      const now = performance.now(), t = Math.min(1, (now - d.at) / d.ms), rest = t >= 1, hard = 0.6 + d.pw / DICE_POWER; // (a harder throw flies wider, bounces more and spins more)
       const face = rest ? d.n : 1 + (Math.floor(now / 70) * 5 + d.n) % 6;
       const k = 1 - t, D = 92;
-      const cx = cv.width / 2 + Math.sin(t * 9) * 60 * k * k - 90 * k * k, cy = H / 2 - Math.abs(Math.sin(t * Math.PI * 3)) * 70 * k;
+      const cx = cv.width / 2 + (Math.sin(t * 9) * 60 * k * k - 90 * k * k) * hard, cy = H / 2 - Math.abs(Math.sin(t * Math.PI * (2 + Math.round(d.pw / 3)))) * 70 * k * hard;
       x.save();
-      x.globalAlpha = rest ? Math.max(0, 1 - Math.max(0, now - d.at - DICE_MS - 900) / 300) : 1;
+      x.globalAlpha = rest ? Math.max(0, 1 - Math.max(0, now - d.at - d.ms - 900) / 300) : 1;
       x.translate(cx, cy);
-      x.rotate(k * k * 7);
+      x.rotate(k * k * 7 * hard);
       x.fillStyle = 'rgba(0,0,0,.18)';
       x.beginPath(); x.roundRect(-D / 2 + 5, -D / 2 + 9, D, D, 16); x.fill();
       x.fillStyle = '#fff'; x.strokeStyle = '#d9cbb0'; x.lineWidth = 3;
@@ -1187,14 +1272,14 @@ export class BoardGamesUI {
     const scene = el('div', 'bg-fp' + (this.view ? ' has3d' : '') + (p.world ? ' world' : ''));
     if (this.view || p.world) {
       (p.world ? this.table : this.view).sync({
-        counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, over: g.over,
+        counts: g.hands.map((h) => h.length), from: g.over ? -1 : g.from, turn: g.turn, sel: g.sel, tip: g.tip, over: g.over,
         faces: p.ids.map((_, s) => (p.faces?.[s] ? FACES[p.faces[s].n] : '')), gone: p.ids.map((_, s) => !!p.gone?.[s]),
         canPick: !g.over && g.turn === p.seat,
       });
       if (this.view) scene.append(this.view.el);
     }
     // A hand of cards as a fan: each card turned a little more, on an arc.
-    const fanOf = (cards, { faces, sel = -1, big = false, onTap = null, point = false, less = 0 }) => {
+    const fanOf = (cards, { faces, sel = -1, tip = -1, big = false, onTap = null, point = false, less = 0 }) => {
       const fan = el('div', 'bg-fan' + (big ? ' big' : ''));
       const n = cards.length, w = big ? 50 : 40, room = Math.min(420, (this.card.clientWidth || 480) - 64) - less;
       const step = n > 1 ? Math.min(w - 8, (room - w) / (n - 1)) : 0, turn = Math.min(6, 44 / Math.max(1, n - 1));
@@ -1205,7 +1290,8 @@ export class BoardGamesUI {
         const k = i - (n - 1) / 2;
         b.style.marginLeft = i ? `${step - w}px` : '0';
         b.style.setProperty('--tilt', `${k * turn}deg`);
-        b.style.setProperty('--drop', `${Math.abs(k) ** 1.6 * (big ? 2.2 : 1.6) - (sel === i ? 20 : 0)}px`);
+        b.style.setProperty('--drop', `${Math.abs(k) ** 1.6 * (big ? 2.2 : 1.6) - (sel === i ? 20 : tip === i ? 13 : 0)}px`);
+        if (tip === i) { b.classList.add('tip'); b.dataset.tip = '1'; }
         if (sel === i) { b.classList.add('sel'); if (point) b.append(el('span', 'bg-point', '👇')); }
         b.disabled = !onTap;
         if (onTap) b.onclick = () => onTap(i);
@@ -1237,7 +1323,7 @@ export class BoardGamesUI {
         const row = el('div', 'bg-open');
         row.dataset.open = String(s);
         row.append(el('div', 'bg-sub', (g.turn === s ? '👉 ' : g.from === s ? '🎯 ' : '') + p.names[s]));
-        row.append(fanOf(g.hands[s], { faces: true, sel: g.from === s ? g.sel : -1, point: g.from === s }));
+        row.append(fanOf(g.hands[s], { faces: true, sel: g.from === s ? g.sel : -1, tip: g.from === s ? g.tip : -1, point: g.from === s }));
         scene.append(row);
       });
       c.append(scene);
@@ -1252,7 +1338,8 @@ export class BoardGamesUI {
       if (mine) {
         // Their finger hovers over my cards: I hold them up and see which one.
         const canMix = !g.mixed && g.hands[p.seat].length > 1;
-        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, big: true, point: true, less: p.world && canMix ? BESIDE : 0 });
+        // I may push one card up ("take this one"): tap it, tap it again to put it back.
+        const fan = fanOf(g.hands[p.seat], { faces: true, sel: g.sel, tip: g.tip, big: true, point: true, onTap: (i) => this.myMove(i === g.tip ? ['u'] : ['u', i]), less: p.world && canMix ? BESIDE : 0 });
         fan.dataset.hand = 'from';
         fan.classList.add('mine');
         scene.append(fan);
@@ -1267,7 +1354,7 @@ export class BoardGamesUI {
         c.append(scene);
         return;
       }
-      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null, less: p.world && myTurn ? BESIDE : 0 });
+      const fan = fanOf(g.hands[from], { faces: false, sel: g.sel, tip: g.tip, big: true, onTap: myTurn ? (i) => this.myMove(['s', i]) : null, less: p.world && myTurn ? BESIDE : 0 });
       fan.dataset.hand = 'from';
       scene.append(fan);
       if (myTurn) {

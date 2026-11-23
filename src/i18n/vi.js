@@ -837,7 +837,7 @@ export const VI = {
   "potato.bought": "Đã mua! Đồ đã vào tủ của bạn.",
   "potato.gone": "Ai đó vừa mua mất rồi.",
   "potato.own": "Món này ở trên chiếu của bạn.",
-  "potato.young": "Tài khoản mới dùng được chợ Khoai Tây sau {h} giờ.",
+  "potato.young": "Bạn dùng được chợ Khoai Tây khi tài khoản đủ {days} ngày và đã làm {missions} nhiệm vụ hằng ngày.",
   "potato.offline": "Hiện không kết nối được chợ Khoai Tây. Vui lòng thử lại sau giây lát.",
   "potato.closed": "Chợ Khoai Tây sắp mở. Đăng nhập để mua bán ở đây.",
   "potato.onMat": "Trên chiếu của tôi ({n}/{max})",

@@ -15,7 +15,8 @@ export function playBoardSound(sfx, kind, game, info = {}) {
   if (kind === 'tick') { tone(info.n % 2 ? 1500 : 1150, 0, 0.035, info.mine ? 0.16 : 0.06, 'square', info.n % 2 ? 900 : 700); return; } // (the clock's last seconds; quieter when it is not my turn)
   if (kind === 'win') { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, i === 3 ? 0.5 : 0.16, 0.14, 'triangle')); return; }
   if (kind === 'lose') { [392, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.28, 0.12, 'sine')); return; }
-  if (kind === 'dice') { for (let i = 0; i < 7; i++) { const at = i * 0.095 + (i % 2) * 0.025; tone(520 + ((i * 197) % 520), at, 0.05, 0.1 + (i % 3) * 0.03, 'triangle', 300); hiss(at, 0.025, 0.04, 3200, 1500); } return; }
+  if (kind === 'dice') { for (let i = 0, n = 5 + Math.round((info.power ?? 2) * 0.9); i < n; i++) { // (a harder throw rattles longer)
+    const at = i * 0.095 + (i % 2) * 0.025; tone(520 + ((i * 197) % 520), at, 0.05, 0.1 + (i % 3) * 0.03, 'triangle', 300); hiss(at, 0.025, 0.04, 3200, 1500); } return; }
   if (kind === 'ring') { tone(1760, 0, 0.9, 0.16); tone(2637, 0, 0.7, 0.09); tone(3520, 0.01, 0.4, 0.05); return; }
   if (kind === 'wrong') { tone(1760, 0, 0.25, 0.1); tone(300, 0.12, 0.3, 0.12, 'sawtooth', 190); return; }
   if (kind === 'pair') { card(); card(0.09); tone(880, 0.12, 0.12, 0.1, 'triangle'); tone(1320, 0.22, 0.2, 0.1, 'triangle'); return; }
