@@ -12,17 +12,18 @@
 // kind 'home', note 'home:<level>'); keep the prices here and in
 // home_level_settings the same.
 export const HOME_LEVELS = [
-  { level: 1, w: 9, d: 8, h: 3.6, price: 0, people: 3 },
-  { level: 2, w: 14, d: 11, h: 4, price: 1000000, people: 5 },
-  { level: 3, w: 18, d: 13, h: 4, price: 2500000, people: 7 },
-  { level: 4, w: 22, d: 15, h: 4.2, price: 8000000, people: 7 },
+  { level: 1, w: 9, d: 8, h: 3.6, price: 0, people: 4 },
+  { level: 2, w: 14, d: 11, h: 4, price: 1000000, people: 6 },
+  { level: 3, w: 18, d: 13, h: 4, price: 2500000, people: 8 },
+  { level: 4, w: 22, d: 15, h: 4.2, price: 8000000, people: 8 },
 ];
 export const HOME_LEVEL_KEY = 'mk.homeLevel'; // (an mk.* key: rides in the account save)
 export const MAX_HOME_LEVEL = HOME_LEVELS.length;
 export const homeLevelOf = (n) => HOME_LEVELS[Math.min(MAX_HOME_LEVEL, Math.max(1, Math.floor(Number(n)) || 1)) - 1];
 export const nextHomeLevel = (n) => HOME_LEVELS[homeLevelOf(n).level] || null;
 // How many people fit in a home at this level for a visit, host included
-// (game/home-visits.js; Yozi 2026-11-23: 3 / 5 / 7, level 4 stays at 7).
+// (game/home-visits.js; Yozi 2026-11-23: 3 / 5 / 7 guests plus the host,
+// level 4 stays at level 3's).
 export const homePeople = (n) => homeLevelOf(n).people;
 // The room's size for a home store at this level (core/interior.js roomOf).
 export const homeRoom = (n) => { const l = homeLevelOf(n); return { w: l.w, d: l.d, h: l.h }; };

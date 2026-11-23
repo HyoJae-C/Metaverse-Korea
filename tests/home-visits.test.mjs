@@ -21,8 +21,8 @@ test('kicks, junk and other emotes', () => {
   assert.equal(parseVisitMsg(null), null);
 });
 
-test('one room per host; 3 / 5 / 7 / 7 people by home level', () => {
+test('one room per host; 4 / 6 / 8 / 8 people (host included) by home level', () => {
   assert.equal(homeRoom('another-seoul', 'h1'), 'another-seoul-home-h1');
   assert.notEqual(homeRoom('another-seoul', 'h1'), homeRoom('another-seoul', 'h2'));
-  assert.deepEqual([1, 2, 3, 4].map(homePeople), [3, 5, 7, 7]);
+  assert.deepEqual([1, 2, 3, 4].map(homePeople), [4, 6, 8, 8]);
 });
