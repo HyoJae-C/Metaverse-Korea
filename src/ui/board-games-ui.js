@@ -148,6 +148,9 @@ const CSS = `
 #bg-panel .bg-point { position: absolute; left: 50%; top: -34px; margin-left: -14px; font-size: 28px; line-height: 1; animation: bg-bob .7s ease-in-out infinite alternate; }
 @keyframes bg-bob { to { transform: translateY(6px); } }
 #bg-panel .bg-mine { margin-top: 6px; }
+#bg-panel .bg-fp.open { background: #b97b45; }
+#bg-panel .bg-fp.open .bg-sub { color: #fff; opacity: .95; }
+#bg-panel .bg-open .bg-fan { padding: 20px 0 4px; }
 #bg-panel .bg-mine .bg-sub { color: #fff; opacity: .9; }
 #bg-panel .bg-sub { text-align: center; font-size: 13px; opacity: .75; margin-top: 6px; }
 #bg-panel .bg-faces { display: flex; justify-content: center; gap: 6px; margin: 6px 0 0; }
@@ -1225,6 +1228,21 @@ export class BoardGamesUI {
       box.append(el('div', 'bg-head' + (face ? ' pull' : ''), face ? FACES[face.n] : p.ids[s] === BOT ? '🤖' : '🙂'), el('div', 'bg-sub', p.names[s]));
       return box;
     };
+    if (!g.over && !g.hands[p.seat].length && !p.gone?.[p.seat]) {
+      // I am out safe: I watch the rest of the game with every hand open (Yozi 2026-11-24).
+      scene.classList.add('open');
+      scene.append(el('div', 'bg-sub', L(T.safeWatch)));
+      p.ids.forEach((_, s) => {
+        if (s === p.seat || !g.hands[s].length) return;
+        const row = el('div', 'bg-open');
+        row.dataset.open = String(s);
+        row.append(el('div', 'bg-sub', (g.turn === s ? '👉 ' : g.from === s ? '🎯 ' : '') + p.names[s]));
+        row.append(fanOf(g.hands[s], { faces: true, sel: g.from === s ? g.sel : -1, point: g.from === s }));
+        scene.append(row);
+      });
+      c.append(scene);
+      return;
+    }
     if (!g.over) {
       const from = g.from, mine = from === p.seat, myTurn = g.turn === p.seat;
       // Across the table: whoever I am dealing with. I am being picked from:

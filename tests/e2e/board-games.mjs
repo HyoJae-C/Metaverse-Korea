@@ -130,6 +130,11 @@ try {
   await a.waitForSelector('#bg-panel canvas.bg-thief3d', { timeout: 15000 });
   await a.waitForTimeout(1200);
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-four.png' });
+  // Out safe (no cards left): I see the other three hands, face up.
+  await a.evaluate(() => { const u = window.__bgUi; u.play.g.hands[u.play.seat] = []; u.render(); });
+  await a.waitForFunction(() => document.querySelectorAll('#bg-panel [data-open] .bg-card1:not(.back)').length > 3, null, { timeout: 5000 });
+  if (await a.locator('#bg-panel [data-open] .bg-card1.back').count()) throw new Error('a player who is out safe still sees card backs');
+  if (shotDir) await a.screenshot({ path: shotDir + '/thief-safe-open.png' });
   await a.click('#bg-panel .bg-x');
 
   step = 'A rolls the dice at Snakes & Ladders against the computer';
