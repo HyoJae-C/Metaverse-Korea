@@ -4821,7 +4821,7 @@ const arcadeGame = createArcade({
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 // Board games at the board game café: the panel loads on first use. (game/board-games.js)
-const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music });
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw) });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
@@ -6915,6 +6915,7 @@ function moreActions(p, door) {
   if (interior.hanRiver) out.push(...fishContest.acts(p)); // a fishing contest with a friend in the park
   const near = (interior.products || []).map((pr) => ({ pr, d: Math.hypot(p.x - pr.pos.x, p.z - pr.pos.z) })).filter((o) => o.d < 1.9).sort((a, b) => a.d - b.d);
   for (const { pr } of near.slice(0, 3)) out.push(lookAct(pr));
+  { const bg = boardGames.homeAct(p); if (bg) out.push(bg); } // a board game set at home: also when a visitor stands nearer (game/board-games.js)
   out.push(...decorGame.pieceActs(p)); // my home: carry or put away the piece in front (game/decor.js)
   return out;
 }
@@ -7282,6 +7283,8 @@ function updateAction(p, tSec) {
       next = decorGame.tankAct(p);
     } else if (decorGame.applianceAct(p)) { // the fridge, washer or microwave at home
       next = decorGame.applianceAct(p);
+    } else if (boardGames.homeAct(p)) { // a board game set at home: ask the visitors to a game (game/board-games.js)
+      next = boardGames.homeAct(p);
     } else if (decorGame.plantAct(p, false)) { // (a plant that has had its water today)
       next = decorGame.plantAct(p, false);
     } else if (picnic.action(p)) {
@@ -7480,7 +7483,7 @@ renderer.setAnimationLoop((now) => {
   if (!!ride !== document.body.classList.contains('on-ride')) document.body.classList.toggle('on-ride', !!ride); // (no name tags or bubbles while you ride: just the ride)
   namsanCable.update();
   if (seated?.street && (mode !== 'street' || Math.hypot(p.x - seated.x, p.z - seated.z) > 1)) seated = null; // moved off the bench (a warp, a shop)
-  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
+  if (seated && !seated.surgery && seated.duck == null && seated.bumper == null && seated.camel == null && !boardGames.seated && mag > 0.3) standUp(); // (get off a duck boat, a bumper car or a camel with its button)
   updateDucks(dt);
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
   boatTaxi.update(p, dt); // (carries me down the river on the boat)
@@ -7629,6 +7632,7 @@ renderer.setAnimationLoop((now) => {
 
   firstPerson.update(p, !!seated); // (in your eyes, when on)
   seoulDal.camera(camera); // (in Seoul Dal's gondola, in the air: the view out)
+  boardGames.camera(dt); // (a card game at a café table: in your eyes at your chair)
   arcadeGame.camera(dt); // (playing darts or bowling: at the throw line or behind the ball)
   surgeryView(); // (on the operating table: in your eyes, looking up at the team)
   if (ride?.kind === 'coaster') coasterCamera(dt); // (its own view: behind you on the track, or your seat)

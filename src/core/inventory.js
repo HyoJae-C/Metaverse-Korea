@@ -3,7 +3,7 @@
 // the developer master code (typed in chat) adds every item.
 
 import { WEARABLES } from '../data/wearables.js';
-import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS, PLANT_IDS } from './furniture.js';
+import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS, PLANT_IDS, BOARD_SET_IDS } from './furniture.js';
 import { FINISHES } from './home-finish.js';
 
 const PET_DESC = {
@@ -82,6 +82,13 @@ const PLANT_DESC = {
   zh: '在首尔植物园买的盆栽。在家里点“装饰”就能摆放。',
 };
 const plants = () => Object.fromEntries(PLANT_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: PLANT_DESC, furniture: true }]));
+const BOARD_SET_DESC = {
+  en: 'A board game set from the board game café. Put it in your home with Decorate, then ask your visitors to a game at it.',
+  ko: '보드게임 카페에서 산 세트예요. 내 집에서 "꾸미기"로 놓으면, 놀러 온 사람에게 같이 하자고 할 수 있어요.',
+  ja: 'ボードゲームカフェで買ったセット。家の「模様替え」で置くと、遊びに来た人を誘えます。',
+  zh: '在桌游咖啡馆买的套装。在家里用“装饰”摆好，就能邀请来访的人一起玩。',
+};
+const boardSets = () => Object.fromEntries(BOARD_SET_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: BOARD_SET_DESC, furniture: true }]));
 const tanks = () => Object.fromEntries(TANK_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: TANK_DESC, furniture: true }]));
 const lamps = () => Object.fromEntries(LAMP_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: LAMP_DESC, lamp: true }]));
 function plushies(defs) {
@@ -184,6 +191,8 @@ export const ITEMS = {
   ...tanks(),
   // Pot plants from the greenhouse shop in Seoul Botanic Park (house-plants.js).
   ...plants(),
+  // Board game sets from the board game café (board-game-sets.js).
+  ...boardSets(),
   // Pets: adopted for money (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the
