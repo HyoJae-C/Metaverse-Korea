@@ -272,14 +272,20 @@ export function createBoardTable(game) {
       me.rotation.y += Math.atan2(Math.sin(ry - me.rotation.y), Math.cos(ry - me.rotation.y)) * Math.min(1, dt * 5);
       // (a little lower than the face: the small panel covers the bottom of the screen)
       // On a tall phone screen the view is narrow: sit further back and a little higher, so the whole table is in it (Yozi 2026-11-23).
-      const tall = cam.aspect < 1, eyeY = o.y0 + o.at.eye + (tall ? 0.12 : 0);
+      const tall = cam.aspect < 1;
       if (tall) {
-        // Back from whoever I look at (not only from the table: a neighbour sits to my side), and a wider view.
-        const dx = o.look.x - me.position.x, dz = o.look.z - me.position.z, d = Math.hypot(dx, dz) || 1, back = Math.min(1.1, 0.35 + (1 - cam.aspect) * 1.3);
-        cam.position.set(me.position.x - (dx / d) * back, eyeY, me.position.z - (dz / d) * back);
+        // A tall phone screen is narrow. Before a card is chosen: back from whoever I look at (a neighbour sits
+        // to my side), with a wider view, so the table is in it. Once a card is pointed at, up close as on a
+        // wide screen until it is drawn (Yozi 2026-11-23).
+        const close = st.sel >= 0 && !st.over;
+        o.zoom = (o.zoom ?? 0) + ((close ? 1 : 0) - (o.zoom ?? 0)) * Math.min(1, dt * 4);
+        const far = 1 - o.zoom, dx = o.look.x - me.position.x, dz = o.look.z - me.position.z, d = Math.hypot(dx, dz) || 1;
+        const back = 0.15 + far * Math.min(0.95, 0.2 + (1 - cam.aspect) * 1.3);
+        cam.position.set(me.position.x - (dx / d) * back, o.y0 + o.at.eye + far * 0.12, me.position.z - (dz / d) * back);
         if (o.fov == null) o.fov = cam.fov;
-        if (cam.fov !== Math.max(o.fov, 68)) { cam.fov = Math.max(o.fov, 68); cam.updateProjectionMatrix(); }
-      } else cam.position.set(me.position.x - Math.sin(o.chair.ry) * 0.15, eyeY, me.position.z - Math.cos(o.chair.ry) * 0.15);
+        const fov = o.fov + far * Math.max(0, 68 - o.fov);
+        if (Math.abs(cam.fov - fov) > 0.05) { cam.fov = fov; cam.updateProjectionMatrix(); }
+      } else cam.position.set(me.position.x - Math.sin(o.chair.ry) * 0.15, o.y0 + o.at.eye, me.position.z - Math.cos(o.chair.ry) * 0.15);
       cam.up.set(0, 1, 0);
       cam.lookAt(o.look.x, o.look.y - 0.3, o.look.z);
       me.visible = false;
