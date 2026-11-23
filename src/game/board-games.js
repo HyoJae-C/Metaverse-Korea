@@ -24,6 +24,7 @@ export function createBoardGames(game) {
   const load = () => (loading ||= import('../ui/board-games-ui.js').then(async (m) => {
     const text = await import('../ui/board-games-text.js');
     const { BOARD_TRACKS } = await import('../ui/board-games-music.js');
+    const { playBoardSound } = await import('../ui/board-games-sounds.js');
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
       net: {
@@ -41,12 +42,9 @@ export function createBoardGames(game) {
         if (tune) { if (!Object.values(BOARD_TRACKS).includes(music.track)) songBefore = music.track; music.setTrack(tune); }
         else if (songBefore) { if (Object.values(BOARD_TRACKS).includes(music.track)) music.setTrack(songBefore); songBefore = null; }
       },
-      onEvent: (k) => {
+      onEvent: (k, id, info) => {
         if (k === 'win') game.me.play('cheer');
-        if (k === 'dice') { for (let i = 0; i < 7; i++) setTimeout(() => game.sfx.tock(0.35 + (i % 3) * 0.12, 520 + ((i * 197) % 520)), i * 95 + (i % 2) * 25); return; } // (the dice rattling to a stop)
-        if (k === 'bang') game.sfx.tock(1, 220);
-        else if (k === 'ring') game.sfx.tock(0.8, 1600);
-        else game.sfx.tock(0.5, 900);
+        playBoardSound(game.sfx, k, id, info);
       },
     });
     ui.text = text;

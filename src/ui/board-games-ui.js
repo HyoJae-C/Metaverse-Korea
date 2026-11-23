@@ -10,7 +10,7 @@
 //
 // net: { myId, nameOf(id), nearby(): [{ id, name }], send(msg), here(): still at the table's room }
 // games: () => the game ids this table has (all of them at the café).
-// onEvent(kind): 'move' | 'win' | 'lose' | 'bang' | 'ring', for sounds.
+// onEvent(kind, game, info): 'move' | 'pair' | 'dice' | 'ring' | 'wrong' | 'bang' | 'win' | 'lose', for sounds.
 // onGame(id | null): a game started / the table was left, for its music.
 //
 // The croc and the bulldog are little 3D toys (ui/board-toy-3d.js, loaded
@@ -80,6 +80,9 @@ const CSS = `
 #bg-panel .bg-shout { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 34px; font-weight: 900; color: #e8402a; text-shadow: 0 2px 0 #fff; pointer-events: none; animation: bg-shout .5s ease-out; }
 @keyframes bg-shout { from { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } to { transform: scale(1); } }
 #bg-panel .bg-card.bang { animation: bg-flash .45s; }
+#bg-panel .bg-party { position: absolute; inset: 0; overflow: hidden; pointer-events: none; border-radius: 18px; }
+#bg-panel .bg-party i { position: absolute; top: -16px; width: 9px; height: 14px; border-radius: 2px; animation: bg-fall 1.9s ease-in forwards; }
+@keyframes bg-fall { to { transform: translateY(560px) rotate(540deg); opacity: 0; } }
 @keyframes bg-flash { 0%, 100% { background: #fffaf0; } 30% { background: #ffd0c4; } }
 #bg-panel .bg-chat { margin-top: 12px; border-top: 2px dashed #eadbbd; padding-top: 8px; }
 #bg-panel .bg-chat-lines { max-height: 84px; overflow-y: auto; font-weight: 500; font-size: 14px; line-height: 1.35; scrollbar-width: thin; }
@@ -395,24 +398,26 @@ export class BoardGamesUI {
     const g = p.g;
     if (g.last?.ring != null) {
       this.status = tt(g.last.ring ? 'ringRight' : 'ringWrong', { name: p.names[seat], n: g.last.ring ? g.last.got : g.last.paid });
-      this.onEvent('ring');
+      this.onEvent(g.last.ring ? 'ring' : 'wrong', p.game);
     } else if (act[0] === 't') {
       const l = g.last;
       this.status = l.p === p.seat && l.card === 'JB' ? L(T.drewJoker) : l.pair ? tt('pairGone', { name: p.names[l.p], r: l.pair }) : tt('drewOnly', { name: p.names[l.p] });
-      this.onEvent('move');
+      this.onEvent(l.pair ? 'pair' : 'move', p.game);
     } else if (act[0] === 'd' && p.game === 'ladders') {
       const l = g.last;
       this.status = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
       this.startWalk(l);
-      this.onEvent('dice');
-    } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move'); }
+      this.onEvent('dice', p.game);
+    } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
     else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
-    else if (act[0] !== 'l') this.onEvent('move');
+    else if (act[0] !== 'l' && !g.last?.bang) this.onEvent('move', p.game);
     if (g.over && !p.done) {
       p.done = true;
-      if (g.last?.bang || (p.game === 'thief' && g.loser === p.seat)) this.onEvent('bang');
-      else if (g.winner === p.seat || (p.game === 'thief' && g.loser >= 0)) this.onEvent('win');
-      else if (g.winner >= 0) this.onEvent('lose');
+      // Who is glad about it: the winner, or everyone but the one who lost.
+      const lostIt = g.loser === p.seat || (g.winner >= 0 && g.winner !== p.seat), wonIt = !lostIt && p.seat >= 0 && (g.winner === p.seat || g.loser >= 0);
+      if (g.last?.bang) this.onEvent('bang', p.game, { placing: !!g.last.placing });
+      const late = g.last?.bang ? (g.last.placing ? 1500 : 1000) : p.game === 'ladders' ? DICE_MS + 900 : 0; // (after the crash, or the last walk)
+      setTimeout(() => { if (this.play !== p) return; if (wonIt) { this.onEvent('win', p.game); p.party = true; this.render(); } else if (lostIt) this.onEvent('lose', p.game); }, late);
     }
     this.timer = 0;
     this.render();
@@ -599,6 +604,15 @@ export class BoardGamesUI {
         faces.append(b);
       });
       c.append(faces);
+    }
+    if (p.party) {
+      // I won: paper falls over the card, once.
+      p.party = false;
+      const party = el('div', 'bg-party');
+      const COLOURS = ['#ffd36b', '#e8402a', '#2f7de1', '#27a35a', '#e06aa0', '#8d6ad0'];
+      for (let i = 0; i < 36; i++) { const b = document.createElement('i'); b.style.cssText = `left:${(i * 37) % 100}%;background:${COLOURS[i % 6]};animation-delay:${(i % 9) * 0.07}s;transform:rotate(${i * 40}deg)`; party.append(b); }
+      this.card.append(party);
+      setTimeout(() => party.remove(), 2800);
     }
     if (g.over) {
       const row = el('div', 'bg-row');
