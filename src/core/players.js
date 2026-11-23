@@ -199,10 +199,11 @@ export class RemotePlayers {
   }
 
   // Everyone visible within r metres who is not riding or seated, closest first.
-  nearbyFree(x, z, r) {
+  // seated: true also counts people sitting down (a board game is played from a chair).
+  nearbyFree(x, z, r, { seated = false } = {}) {
     const out = [];
     for (const [id, p] of this.players) {
-      if (p.hidden || !p.target || p.target.bk || p.target.fl || p.target.sit) continue; // (riding, a flying operator: game/sky-flight.js, or sitting or lying down: the seat beside them comes first)
+      if (p.hidden || !p.target || p.target.bk || p.target.fl || (p.target.sit && !seated)) continue; // (riding, a flying operator: game/sky-flight.js, or sitting or lying down: the seat beside them comes first)
       const d = Math.hypot(p.ch.root.position.x - x, p.ch.root.position.z - z);
       if (d < r) out.push({ id, name: p.name, d });
     }
