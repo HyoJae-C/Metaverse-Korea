@@ -99,26 +99,30 @@ try {
   await a.waitForFunction(() => /Board games/.test(__mk.action() || ''), null, { timeout: 10000 });
 
   step = 'the café\'s pass: watching is free, a game asks for 5,000 for three hours, once';
-  // Without a pass the table's button asks for the money first; "no" leaves the panel shut.
+  // Looking at the menu is free; without a pass, picking a game asks for the money first, and "no" starts nothing.
   await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="omok"]');
   await a.waitForSelector('.spend-ask:not([hidden]) .primary', { timeout: 10000 });
   if (!/5,000/.test(await a.evaluate(() => document.querySelector('.spend-ask')?.textContent || ''))) throw new Error('the pass is not asked for at 5,000');
   await a.click('.spend-ask .chip');
   await a.waitForTimeout(400);
-  if (await a.evaluate(() => document.querySelector('#bg-panel')?.classList.contains('on'))) throw new Error('the panel opened without a pass');
+  if (await a.locator('#bg-panel [data-act="start"]').count()) throw new Error('a game was set up without a pass');
   const before = await a.evaluate(() => __mk.wallet.coins);
-  await openPanel(a);
-  await a.click('.spend-ask .primary');
-  await a.waitForSelector('#bg-panel.on', { timeout: 15000 });
+  await a.click('#bg-panel [data-game="omok"]');
+  await a.click('.spend-ask:not([hidden]) .primary');
+  await a.waitForSelector('#bg-panel [data-act="start"]', { timeout: 15000 });
   const paid = before - (await a.evaluate(() => __mk.wallet.coins));
   if (paid !== 5000) throw new Error('the pass cost ' + paid);
   // With the pass: no second question (walking out and back in is the same browser's pass).
-  await a.evaluate(() => window.__bgUi.close());
+  await a.click('#bg-panel .bg-x');
   await openPanel(a);
-  await a.waitForSelector('#bg-panel.on', { timeout: 15000 });
+  await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="omok"]');
+  await a.waitForSelector('#bg-panel [data-act="start"]', { timeout: 15000 });
   if (await a.locator('.spend-ask:not([hidden])').count()) throw new Error('the pass is asked for twice');
   if ((await a.evaluate(() => __mk.wallet.coins)) !== before - 5000) throw new Error('the pass was paid twice');
-  await a.evaluate(() => window.__bgUi.close());
+  await a.click('#bg-panel .bg-x');
   // (the other players of this test hold a pass already)
   await b.evaluate(() => localStorage.setItem('mk.boardPass', JSON.stringify({ until: Date.now() + 3600000 })));
 

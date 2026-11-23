@@ -176,7 +176,8 @@ export function createBoardGames(game) {
     async open(gameId = null) {
       const at = game.interior;
       const u = await load().catch((e) => { console.error('board games', e); return null; });
-      if (u && game.interior === at) gate(() => { if (game.interior !== at) return; closeAsk(); u.show(); if (gameId && !u.busy) u.choose(gameId); });
+      // (looking at the menu is free; picking a game asks for the café's pass: ui.choose → gate)
+      if (u && game.interior === at) { closeAsk(); u.show(); if (gameId && !u.busy) u.choose(gameId); }
     },
     // At home, by one of my board game sets: ask the people here to a game (the host only).
     homeAct(p) {
