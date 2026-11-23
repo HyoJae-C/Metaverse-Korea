@@ -11,6 +11,7 @@ export const GAME_NAME = {
   pirate: R('Barrel Pirate', '통 속 해적', 'たるの海賊', '木桶海盗', 'Pirata en el barril', 'Bajak Laut di Tong', 'Cướp biển trong thùng', 'पीपे में समुद्री डाकू', 'Pirate dans le tonneau', 'โจรสลัดในถัง', 'قرصان البرميل'),
   thief: R('Catch the Thief', '도둑잡기', 'ババ抜き', '抽鬼牌', 'Atrapa al ladrón', 'Tangkap Pencuri', 'Bắt kẻ trộm', 'चोर पकड़ो', 'Attrape le voleur', 'จับขโมย', 'أمسك اللص'),
   ladders: R('Snakes & Ladders', '뱀사다리', 'ヘビとはしご', '蛇梯棋', 'Serpientes y escaleras', 'Ular Tangga', 'Rắn và thang', 'साँप-सीढ़ी', 'Serpents et échelles', 'บันไดงู', 'السلم والثعبان'),
+  tower: R('Wobbly Tower', '탑 쌓기', 'ぐらぐらタワー', '摇摇积木塔', 'Torre tambaleante', 'Menara Goyang', 'Tháp lung lay', 'डगमग मीनार', 'Tour branlante', 'ตึกโยกเยก', 'البرج المتمايل'),
   bulldog: R('My Dog Doesn\'t Bite', '우리 개는 안 물어요', 'うちの犬はかまないよ', '我家狗不咬人', 'Mi perro no muerde', 'Anjingku Nggak Gigit', 'Chó nhà tôi không cắn', 'मेरा कुत्ता नहीं काटता', 'Mon chien ne mord pas', 'หมาบ้านเราไม่กัด', 'كلبي لا يعض'),
 };
 
@@ -79,6 +80,19 @@ export const GAME_HOW = {
     'Lance le dé et avance. Une échelle te fait monter, un serpent te fait descendre. Un 6 fait rejouer. Le premier à la case 64 gagne.',
     'ทอยลูกเต๋าแล้วเดิน เจอบันไดได้ขึ้น เจองูต้องลง ได้ 6 ทอยอีกครั้ง ใครถึงช่อง 64 ก่อนชนะ',
     'ارمِ النرد وتقدّم. السلم يرفعك والثعبان ينزلك. الرقم 6 يمنحك رمية أخرى. أول من يصل إلى المربع 64 يفوز.',
+  ),
+  tower: R(
+    'Take one block out in turn; it goes on top. A layer needs its middle block or both side blocks. The tower wobbles more with every block. Knock it over and you lose.',
+    '돌아가며 블록을 하나씩 빼서 위에 올려요. 한 층에는 가운데 블록이나 양옆 블록 두 개가 남아 있어야 해요. 뺄수록 탑이 더 흔들려요. 무너뜨린 사람이 져요.',
+    '順番にブロックを1本抜いて上にのせます。各段には真ん中の1本か両はしの2本が必要。抜くほどタワーはぐらぐら。倒した人の負け。',
+    '轮流抽出一块积木放到顶上。每层要留下中间那块或两边两块。抽得越多塔越晃。把塔弄倒的人输。',
+    'Por turnos, saca un bloque y ponlo arriba. Cada piso necesita su bloque central o los dos laterales. La torre se tambalea más con cada bloque. Quien la tire, pierde.',
+    'Bergantian ambil satu balok dan taruh di atas. Tiap lapis butuh balok tengah atau dua balok samping. Makin banyak diambil, menara makin goyang. Yang merobohkannya kalah.',
+    'Lần lượt rút một khối và đặt lên trên. Mỗi tầng cần khối giữa hoặc hai khối bên. Rút càng nhiều tháp càng lung lay. Ai làm đổ thì thua.',
+    'बारी-बारी से एक ब्लॉक निकालकर ऊपर रखें। हर परत में बीच का ब्लॉक या दोनों किनारे के ब्लॉक रहने चाहिए। जितने निकलें, मीनार उतनी डगमगाती है। जो गिरा दे वह हारता है।',
+    'À tour de rôle, retire un bloc et pose-le en haut. Chaque étage a besoin de son bloc central ou de ses deux blocs de côté. La tour tangue un peu plus à chaque bloc. Qui la fait tomber a perdu.',
+    'ผลัดกันดึงบล็อกออกหนึ่งชิ้นแล้ววางไว้บนสุด แต่ละชั้นต้องเหลือชิ้นกลางหรือชิ้นริมทั้งสอง ยิ่งดึงตึกยิ่งโยก ใครทำล้มคนนั้นแพ้',
+    'اسحبوا قطعة بالتناوب وضعوها في الأعلى. كل طابق يحتاج قطعته الوسطى أو القطعتين الجانبيتين. يزداد تمايل البرج مع كل قطعة. من يُسقطه يخسر.',
   ),
   croc: R(
     'Press one tooth each, in turn. One of them makes the croc snap shut: whoever presses it loses!',
@@ -173,5 +187,6 @@ export const T = {
   ladderUp: R('🪜 Up the ladder to {to}!', '🪜 사다리 타고 {to}번으로!', '🪜 はしごで{to}へ！', '🪜 爬梯子到{to}！', '🪜 ¡Sube la escalera hasta {to}!', '🪜 Naik tangga ke {to}!', '🪜 Leo thang lên ô {to}!', '🪜 सीढ़ी से {to} पर!', '🪜 Monte l\'échelle jusqu\'à {to} !', '🪜 ขึ้นบันไดไป {to}!', '🪜 صعد السلم إلى {to}!'),
   snakeDown: R('🐍 Down the snake to {to}!', '🐍 뱀 타고 {to}번으로 미끄덩!', '🐍 ヘビで{to}へ！', '🐍 被蛇滑到{to}！', '🐍 ¡Baja por la serpiente hasta {to}!', '🐍 Turun ular ke {to}!', '🐍 Trượt rắn xuống ô {to}!', '🐍 साँप से {to} पर!', '🐍 Glisse sur le serpent jusqu\'à {to} !', '🐍 ไหลตามงูลงไป {to}!', '🐍 نزل مع الثعبان إلى {to}!'),
   again6: R('A 6: one more roll!', '6이라 한 번 더!', '6なのでもう一回！', '掷出6，再来一次！', '¡Un 6: otra tirada!', 'Dapat 6: lempar lagi!', 'Ra 6: gieo thêm lần nữa!', '6 आया: एक बार और!', 'Un 6 : on rejoue !', 'ได้ 6 ทอยอีกครั้ง!', 'الرقم 6: رمية أخرى!'),
+  wobble: R('Wobble {n}%', '흔들림 {n}%', 'ぐらつき {n}%', '摇晃 {n}%', 'Tambaleo {n}%', 'Goyang {n}%', 'Lung lay {n}%', 'डगमग {n}%', 'Tangage {n}%', 'โยก {n}%', 'تمايل {n}%'),
   free: R('Free at the café', '카페에서는 무료', 'カフェでは無料', '在咖啡馆免费', 'Gratis en el café', 'Gratis di kafe', 'Miễn phí ở quán', 'कैफ़े में मुफ़्त', 'Gratuit au café', 'ที่คาเฟ่เล่นฟรี', 'مجانًا في المقهى'),
 };

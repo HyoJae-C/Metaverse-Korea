@@ -224,3 +224,37 @@ test('snakes and ladders: same dice everywhere, ladders up, snakes down, a 6 rol
   assert.ok(g.over);
   assert.equal(g.winner, 1);
 });
+
+test('the block tower: a layer needs its middle or both sides; it wobbles more each block; someone knocks it over', async () => {
+  const { Tower, TOWER_RISK_STEP, TOWER_GRACE, newGame, applyAction } = await import('../src/core/board-games.js');
+  const g = new Tower({ players: 2, seed: 3 });
+  assert.equal(g.risk(), 0);
+  assert.ok(g.stands(1) && g.stands(0));
+  assert.ok(!g.press(1, 0)); // not your turn
+  assert.ok(g.press(0, 1)); // the first block never falls: no wobble yet
+  assert.equal(g.last.bang, false);
+  assert.ok(!g.stands(0) && !g.stands(2)); // the sides hold that layer now
+  assert.equal(g.risk(), 0);
+  const w = new Tower({ players: 2, seed: 3 });
+  w.pressed = [1, 4, 7].slice(0, TOWER_GRACE);
+  assert.equal(w.risk(), TOWER_RISK_STEP);
+  assert.ok(!g.press(1, 1)); // taken
+  assert.ok(g.press(1, 0));
+  assert.ok(g.over && g.last.bang);
+  assert.equal(g.loser, 1);
+  // Whole games, bots only: the same on two devices, and always an end.
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const a = newGame('tower', 3, seed), b = newGame('tower', 3, seed);
+    assert.ok(a instanceof Tower);
+    let guard = 0;
+    while (!a.over && guard++ < 40) {
+      const spot = a.botMove(() => 0.3);
+      const p = a.turn;
+      assert.ok(applyAction(a, p, ['p', spot]));
+      assert.ok(applyAction(b, p, ['p', spot]));
+    }
+    assert.ok(a.over && a.loser >= 0);
+    assert.equal(b.loser, a.loser);
+    assert.deepEqual(b.pressed, a.pressed);
+  }
+});

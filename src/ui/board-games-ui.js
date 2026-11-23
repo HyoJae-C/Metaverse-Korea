@@ -18,7 +18,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, ROULETTE, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_UP, LADDERS_DOWN, newGame, applyAction,
+  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_UP, LADDERS_DOWN, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -119,6 +119,7 @@ const FACE_MS = 2600, FACE_GAP = 1200;
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
+  tower: { en: 'CRASH!', ko: '와르르!', ja: 'ガラガラ！', zh: '哗啦！', es: '¡CATAPLUM!', fr: 'PATATRAS !', th: 'โครม!', vi: 'RẦM!', id: 'BRUK!', hi: 'धड़ाम!', ar: 'طاخ!' },
   bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', hi: 'भौं! भौं!', ar: 'هَو! هَو!' },
 };
 
@@ -255,7 +256,7 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.dropView();
-    if (game === 'croc' || game === 'bulldog') {
+    if (game === 'croc' || game === 'bulldog' || game === 'tower') {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
       const p = this.play;
       import('./board-toy-3d.js').then((m) => {
@@ -463,7 +464,7 @@ export class BoardGamesUI {
     p.thinkAt = null;
     if (p.game === 'omok') { const [x, y] = g.botMove(this.rand); this.hostApply(turn, ['o', x, y]); }
     else if (p.game === 'fruitbell') this.hostApply(turn, ['f']);
-    else if (ROULETTE.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
+    else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
     else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100; } // (lets the piece finish walking)
     else if (p.game === 'thief') {
       // Point at a card, think again, then take it.
@@ -609,7 +610,7 @@ export class BoardGamesUI {
     if (g.over) {
       if (p.closed) return this.status;
       if (g.last?.bang) return g.loser === p.seat ? L(T.bangMe) : tt('bangThem', { name: p.names[g.loser] });
-      if (ROULETTE.includes(p.game)) return this.status;
+      if (TOYS.includes(p.game)) return this.status;
       if (p.game === 'thief') return g.loser < 0 ? this.status : g.loser === p.seat ? L(T.jokerMe) : tt('jokerThem', { name: p.names[g.loser] });
       if (g.winner < 0) return L(T.draw);
       return g.winner === p.seat ? L(T.won) : tt('winner', { name: p.names[g.winner] });
@@ -868,14 +869,14 @@ export class BoardGamesUI {
       this.view.sync({ pressed: g.pressed, bang: !!bang, canPick: !g.over && turnOf(g) === p.seat });
       box.append(this.view.el);
       if (bang) {
-        box.append(el('div', 'bg-shout', p.game === 'croc' ? L(SHOUT.croc) : L(SHOUT.bulldog)));
+        box.append(el('div', 'bg-shout', L(SHOUT[p.game])));
         if (!p.flashed) { p.flashed = true; this.card.classList.remove('bang'); void this.card.offsetWidth; this.card.classList.add('bang'); }
       }
     }
-    const face = { croc: bang ? '🐊💥' : '🐊', pirate: bang ? '🏴‍☠️💥' : '🏴‍☠️', bulldog: bang ? '🐶💢' : '🐶💤' }[p.game];
+    const face = { croc: bang ? '🐊💥' : '🐊', pirate: bang ? '🏴‍☠️💥' : '🏴‍☠️', bulldog: bang ? '🐶💢' : '🐶💤', tower: bang ? '🧱💥' : '🧱' }[p.game];
     box.append(el('div', 'bg-face' + (bang ? ' bang' : ''), face));
     const spots = el('div', 'bg-spots');
-    const icon = { croc: '🦷', pirate: '🗡️', bulldog: '🦴' }[p.game];
+    const icon = { croc: '🦷', pirate: '🗡️', bulldog: '🦴', tower: '🧱' }[p.game];
     for (let i = 0; i < g.spots; i++) {
       const b = el('button', 'bg-spot', g.pressed.includes(i) ? (p.game === 'pirate' ? '🗡️' : '·') : (p.game === 'pirate' ? '' : icon));
       b.type = 'button';
@@ -886,6 +887,7 @@ export class BoardGamesUI {
     }
     box.append(spots);
     c.append(box);
+    if (p.game === 'tower' && !g.over) { const w = el('div', 'bg-sub', tt('wobble', { n: Math.round(g.risk() * 100) })); w.dataset.wobble = '1'; c.append(w); }
   }
 }
 

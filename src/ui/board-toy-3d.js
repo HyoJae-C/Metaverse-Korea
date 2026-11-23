@@ -1,4 +1,4 @@
-// The croc and the bulldog as little 3D toys inside the board games panel
+// The croc, the bulldog and the block tower as little 3D toys inside the board games panel
 // (ui/board-games-ui.js). Looks matter for these two (Yozi 2026-11-23): you
 // press a tooth and it sinks; the wrong one and the jaw snaps shut and the
 // whole toy jumps. You hand the sleeping bulldog a bone and it lands in his
@@ -199,6 +199,78 @@ function dogToy(spots) {
   };
 }
 
+// The block tower: ten layers of three wooden blocks, seen from a corner so
+// one end of every block shows. A block taken slides out towards you and
+// hops on top; when the tower goes, every block tumbles.
+function towerToy(spots) {
+  const root = new THREE.Group();
+  const LEN = 1.5, W = 0.5, H = 0.3, LAYERS = spots / 3;
+  const WOOD = ['#e9c58c', '#dcb276', '#f0d3a0'];
+  const geo = new THREE.BoxGeometry(LEN, H * 0.94, W * 0.94);
+  const table = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.1, 40), lam('#b98a5a'));
+  table.position.y = -0.05;
+  root.add(table);
+  const stack = new THREE.Group(); // (the blocks sway together)
+  root.add(stack);
+  // Where a block sits: layer, place across (0..2); odd layers are turned.
+  const seat = (layer, k) => ({ x: layer % 2 ? (k - 1) * W : 0, y: (layer + 0.5) * H, z: layer % 2 ? 0 : (k - 1) * W, turn: layer % 2 ? Math.PI / 2 : 0 });
+  const blocks = [];
+  for (let i = 0; i < spots; i++) {
+    const layer = Math.floor(i / 3), k = i % 3, s = seat(layer, k);
+    const tone = WOOD[(i * 7 + layer) % 3];
+    const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: tone }));
+    m.position.set(s.x, s.y, s.z);
+    m.rotation.y = s.turn;
+    Object.assign(m.userData, { spot: i, tone, home: s, out: layer % 2 ? [0, 0, 1] : [1, 0, 0] });
+    // Taps aim at the end that faces the camera.
+    m.userData.pick = new THREE.Vector3(s.x + m.userData.out[0] * LEN / 2, s.y, s.z + m.userData.out[2] * LEN / 2);
+    stack.add(m);
+    blocks.push(m);
+  }
+  let taken = 0, bangAt = -1;
+  return {
+    root, picks: blocks, cam: [5.6, 4.9, 5.6], look: [0, 2.05, 0],
+    press(i, now) {
+      const m = blocks[i];
+      m.userData.at = now;
+      m.userData.top = seat(LAYERS + Math.floor(taken / 3), taken % 3);
+      taken++;
+    },
+    bang(now) {
+      bangAt = now;
+      for (const m of blocks) {
+        const a = Math.atan2(m.position.z, m.position.x) + (Math.sin(m.userData.spot * 12.9898) * 43758.5453 % 1) * 2;
+        m.userData.fall = { vx: Math.cos(a) * (0.6 + (m.userData.spot % 5) * 0.25), vz: Math.sin(a) * (0.6 + (m.userData.spot % 3) * 0.3), spin: 2 + (m.userData.spot % 4), rest: H / 2 + (m.userData.spot % 3) * H * 0.9 };
+      }
+    },
+    update(now, pressed) {
+      const fell = bangAt >= 0 && now >= bangAt;
+      stack.rotation.z = fell ? 0 : Math.sin(now / 520) * 0.0035 * pressed.size;
+      stack.rotation.x = fell ? 0 : Math.cos(now / 610) * 0.0025 * pressed.size;
+      for (const m of blocks) {
+        const u = m.userData, h = u.home;
+        m.material.color.set(u.hot && !pressed.has(u.spot) ? '#ffe08a' : u.tone);
+        if (pressed.has(u.spot) && u.top) {
+          // Slide out, then an arc up to its place on top.
+          const t = now - (u.at ?? -1e9);
+          const a = ease(Math.min(1, t / 320)), b = ease(Math.min(1, Math.max(0, (t - 320) / 420)));
+          const ox = h.x + u.out[0] * LEN * 1.05 * a, oz = h.z + u.out[2] * LEN * 1.05 * a;
+          m.position.set(ox + (u.top.x - ox) * b, h.y + (u.top.y - h.y) * b + Math.sin(b * Math.PI) * 0.5, oz + (u.top.z - oz) * b);
+          m.rotation.y = h.turn + (u.top.turn - h.turn) * b;
+          if (b >= 1) u.rest = u.top;
+        }
+        if (!fell) continue;
+        const t = (now - bangAt) / 1000, f = u.fall, from = u.rest ?? (pressed.has(u.spot) ? null : h);
+        if (!from) continue; // (the block that did it is still in the hand)
+        const drop = from.y - 3.2 * t * t, down = drop <= f.rest;
+        const tl = down ? Math.sqrt(Math.max(0, from.y - f.rest) / 3.2) : t; // (it stops where it lands)
+        m.position.set(from.x + f.vx * tl, down ? f.rest : drop, from.z + f.vz * tl);
+        m.rotation.set(down ? 0 : f.spin * tl, from.turn + f.spin * 0.6 * tl, down ? 0 : f.spin * 0.7 * tl);
+      }
+    },
+  };
+}
+
 export function createToyView(kind, { spots, onPick }) {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
@@ -209,7 +281,7 @@ export function createToyView(kind, { spots, onPick }) {
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.6);
   sun.position.set(2, 5, 4);
   scene.add(sun);
-  const toy = kind === 'croc' ? crocToy(spots) : dogToy(spots);
+  const toy = kind === 'croc' ? crocToy(spots) : kind === 'tower' ? towerToy(spots) : dogToy(spots);
   scene.add(toy.root);
   const camera = new THREE.PerspectiveCamera(34, 4 / 3, 0.1, 50);
   camera.position.set(...toy.cam);
@@ -226,7 +298,7 @@ export function createToyView(kind, { spots, onPick }) {
     let best = null, bestD = Math.max(48, r.width * 0.12);
     for (const m of toy.picks) {
       if (pressed.has(m.userData.spot)) continue;
-      at.copy(m.position).project(camera);
+      at.copy(m.userData.pick ?? m.position).project(camera);
       const d = Math.hypot((at.x - ndc.x) * r.width / 2, (at.y - ndc.y) * r.height / 2);
       if (d < bestD) { bestD = d; best = m; }
     }
@@ -266,7 +338,7 @@ export function createToyView(kind, { spots, onPick }) {
     sync({ pressed: list, bang, canPick: can }) {
       const now = performance.now();
       for (const i of list) if (!pressed.has(i)) { pressed.add(i); toy.press(i, now); }
-      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : 380)); } // (after the tooth sinks / the bone lands)
+      if (bang && !banged) { banged = true; toy.bang(now + (kind === 'croc' ? 140 : kind === 'tower' ? 300 : 380)); } // (after the tooth sinks / the block slides out / the bone lands)
       canPick = can && !banged;
     },
     dispose() {

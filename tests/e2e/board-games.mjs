@@ -125,6 +125,20 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/ladders.png' });
   await a.click('#bg-panel .bg-x');
 
+  step = 'A takes blocks out of the 3D tower against the computer';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="tower"]');
+  await a.click('#bg-panel [data-game="tower"]');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
+  await a.waitForTimeout(400);
+  if (shotDir) await a.screenshot({ path: shotDir + '/tower-start.png' });
+  await a.evaluate(() => document.querySelector('#bg-panel .bg-spot[data-spot="28"]').click()); // the middle of the top layer
+  await a.waitForFunction(() => document.querySelectorAll('#bg-panel .bg-spot:disabled').length >= 1 && !!document.querySelector('#bg-panel [data-wobble]') || /💥/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });
+  await a.waitForTimeout(1500);
+  if (shotDir) await a.screenshot({ path: shotDir + '/tower.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'A invites B to Croc Teeth';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="croc"]');

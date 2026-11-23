@@ -24,9 +24,11 @@ export const GAMES = {
   bulldog: { min: 2, max: 6, icon: '🐶', price: 20000, spots: 12 },
   thief: { min: 2, max: 6, icon: '🕵️', price: 30000 },
   ladders: { min: 2, max: 4, icon: '🐍', price: 30000 },
+  tower: { min: 2, max: 6, icon: '🧱', price: 30000, spots: 30 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
+export const TOYS = [...ROULETTE, 'tower']; // press one spot in turn until it goes off
 
 // mulberry32: a small seeded random, the same on every device.
 export function rng(seed) {
@@ -638,6 +640,84 @@ export class Ladders {
   }
 }
 
+// ---------------------------------------------------------------- tower
+// 탑 쌓기 (a block tower): ten layers of three blocks, each layer turned a
+// quarter from the one below. Take one block out in turn (it goes on top).
+// A layer stands on its middle block or on both its side blocks: leave it
+// less than that and the tower falls. Even a safe block may bring it down:
+// after the first few, the tower wobbles more with every block taken (risk()), and the game's
+// seeded dice decide, the same on every screen. Who knocks it over loses.
+// Spot = layer * 3 + place (0 and 2 the sides, 1 the middle), layer 0 at the
+// bottom. Same shape as Roulette (press, pressed, last.bang, loser), so the
+// table screen treats it as one more toy.
+export const TOWER_LAYERS = 10;
+export const TOWER_GRACE = 3; // the first blocks never bring it down
+export const TOWER_RISK_STEP = 0.04; // then more wobble for every block taken
+export const TOWER_RISK_MAX = 0.6;
+
+export class Tower {
+  constructor({ players = 2, seed = 1 } = {}) {
+    const g = GAMES.tower;
+    if (players < g.min || players > g.max) throw new Error('bad player count');
+    this.game = 'tower';
+    this.n = players;
+    this.spots = g.spots;
+    this.rand = rng(seed);
+    this.pressed = [];
+    this.turn = 0;
+    this.out = new Array(players).fill(false);
+    this.loser = -1;
+    this.over = false;
+    this.last = null;
+  }
+
+  free() {
+    const f = [];
+    for (let i = 0; i < this.spots; i++) if (!this.pressed.includes(i)) f.push(i);
+    return f;
+  }
+
+  // Would the layer still stand with this block gone?
+  stands(spot) {
+    const base = spot - (spot % 3);
+    const has = (k) => base + k !== spot && !this.pressed.includes(base + k);
+    return has(1) || (has(0) && has(2));
+  }
+
+  risk() { return Math.min(TOWER_RISK_MAX, Math.max(0, this.pressed.length - TOWER_GRACE + 1) * TOWER_RISK_STEP); }
+
+  press(p, spot) {
+    if (this.over || p !== this.turn || this.pressed.includes(spot) || spot < 0 || spot >= this.spots) return false;
+    const bang = !this.stands(spot) || this.rand() < this.risk();
+    this.pressed.push(spot);
+    this.last = { p, spot, bang };
+    if (bang) { this.loser = p; this.over = true; return true; }
+    this.turn = this.nextIn(p);
+    return true;
+  }
+
+  nextIn(p) {
+    let t = p;
+    do t = (t + 1) % this.n; while (this.out[t]);
+    return t;
+  }
+
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    this.out[p] = true;
+    if (this.out.filter((o) => !o).length < 2) { this.over = true; return; }
+    if (this.turn === p) this.turn = this.nextIn(p);
+  }
+
+  // The computer takes a block the layer can spare (any block if none is left).
+  botMove(rand = Math.random) {
+    const f = this.free();
+    const ok = f.filter((i) => this.stands(i));
+    const from = ok.length ? ok : f;
+    return from[Math.floor(rand() * from.length)];
+  }
+}
+
 // One way to make any game, used by the table screen.
 export function newGame(id, players, seed) {
   if (id === 'omok') return new Omok({ players });
@@ -646,6 +726,7 @@ export function newGame(id, players, seed) {
   if (ROULETTE.includes(id)) return new Roulette({ game: id, players, seed });
   if (id === 'thief') return new Thief({ players, seed });
   if (id === 'ladders') return new Ladders({ players, seed });
+  if (id === 'tower') return new Tower({ players, seed });
   throw new Error('unknown game ' + id);
 }
 
@@ -663,7 +744,7 @@ export function applyAction(game, p, a) {
     case 'd': return game instanceof Ladders ? game.roll(p) : game instanceof OneCard && game.draw(p);
     case 'f': return game instanceof FruitBell && game.flip(p);
     case 'r': return game instanceof FruitBell && game.ring(p, a[1] ?? game.flips);
-    case 'p': return game instanceof Roulette && game.press(p, a[1] | 0);
+    case 'p': return (game instanceof Roulette || game instanceof Tower) && game.press(p, a[1] | 0);
     case 's': return game instanceof Thief && game.select(p, a[1] | 0);
     case 't': return game instanceof Thief && game.take(p, a[1] | 0);
     case 'l': game.leave(p); return true;
