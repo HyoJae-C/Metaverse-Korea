@@ -43,12 +43,14 @@ export function createBoardGames(game) {
       },
       onEvent: (k) => {
         if (k === 'win') game.me.play('cheer');
+        if (k === 'dice') { for (let i = 0; i < 7; i++) setTimeout(() => game.sfx.tock(0.35 + (i % 3) * 0.12, 520 + ((i * 197) % 520)), i * 95 + (i % 2) * 25); return; } // (the dice rattling to a stop)
         if (k === 'bang') game.sfx.tock(1, 220);
         else if (k === 'ring') game.sfx.tock(0.8, 1600);
         else game.sfx.tock(0.5, 900);
       },
     });
     ui.text = text;
+    if (new URLSearchParams(location.search).has('debug')) window.__bgUi = ui; // (for the e2e tests)
     return ui;
   }).catch((e) => { loading = null; throw e; }));
 

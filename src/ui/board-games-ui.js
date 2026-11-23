@@ -19,7 +19,7 @@
 // the card has the last few chat lines and a box to type in at the bottom
 // (it sends through the game's own chat bar, so the same rules apply).
 import {
-  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_UP, LADDERS_DOWN, newGame, applyAction,
+  GAMES, TOYS, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -34,6 +34,7 @@ const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
 const WALK_STEP = 150; // ms a piece takes for one square
+const DICE_MS = 750; // ms the dice tumbles in the middle of the board before the piece walks
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
 const CSS = `
@@ -210,7 +211,7 @@ export class BoardGamesUI {
   // ------------------------------------------------------------ lobby (host)
   choose(game) {
     this.leaveAll();
-    this.lobby = { game, list: [] };
+    this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0 }; // (ladders: the players lay the board out, unless the host says no)
     this.state = 'lobby';
     this.status = '';
     this.render();
@@ -403,8 +404,9 @@ export class BoardGamesUI {
       const l = g.last;
       this.status = tt('rolled', { name: p.names[l.p], n: l.dice }) + (l.via ? ' ' + tt(l.via === 'ladder' ? 'ladderUp' : 'snakeDown', { to: l.to }) : '') + (l.dice === 6 && !g.over ? ' ' + L(T.again6) : '');
       this.startWalk(l);
-      this.onEvent('move');
-    } else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
+      this.onEvent('dice');
+    } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move'); }
+    else if (act[0] === 's') { this.render(); return; } // (pointing at a card: no sound, the clock keeps running)
     else if (act[0] !== 'l') this.onEvent('move');
     if (g.over && !p.done) {
       p.done = true;
@@ -468,7 +470,8 @@ export class BoardGamesUI {
     if (p.game === 'omok') { const [x, y] = g.botMove(this.rand); this.hostApply(turn, ['o', x, y]); }
     else if (p.game === 'fruitbell') this.hostApply(turn, ['f']);
     else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
-    else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100; } // (lets the piece finish walking)
+    else if (p.game === 'ladders' && g.setup) { const m = g.botPlace(this.rand); this.hostApply(turn, m ? ['a', ...m] : ['l']); }
+    else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100 + DICE_MS; } // (lets the piece finish walking)
     else if (p.game === 'thief') {
       // Point at a card, think again, then take it.
       if (g.sel < 0) { this.hostApply(turn, ['s', g.botMove(this.rand)]); this.timer = 0; } else this.hostApply(turn, ['t', g.sel]);
@@ -528,11 +531,11 @@ export class BoardGamesUI {
     c.append(row);
     const seats = Math.max(g.min, 1 + lob.list.filter((q) => q.ready).length + (lob.bots || 0));
     c.append(el('div', 'bg-line', tt('seats', { n: seats })));
-    if (lob.game === 'omok') {
-      // The host's choice: double threes allowed or not.
-      const r = el('button', 'bg-btn', `${L(T.rule33)}: ${L(lob.opt ? T.on : T.off)}`);
+    if (lob.game === 'omok' || lob.game === 'ladders') {
+      // The host's choice: double threes allowed or not / a board of our own.
+      const r = el('button', 'bg-btn', `${L(lob.game === 'omok' ? T.rule33 : T.ownBoard)}: ${L(lob.opt ? T.on : T.off)}`);
       r.type = 'button';
-      r.dataset.act = 'rule33';
+      r.dataset.act = lob.game === 'omok' ? 'rule33' : 'ownboard';
       r.setAttribute('aria-pressed', lob.opt ? 'true' : 'false');
       if (lob.opt) r.style.background = '#c9ecc0';
       r.onclick = () => { lob.opt = lob.opt ? 0 : 1; this.render(); };
@@ -571,7 +574,7 @@ export class BoardGamesUI {
     const seats = el('div', 'bg-seats');
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
-      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.pos[s]}` : n;
+      let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -632,6 +635,7 @@ export class BoardGamesUI {
     }
     const turn = turnOf(g);
     let whose = turn === p.seat ? L(T.yourTurn) : tt('theirTurn', { name: p.names[turn] });
+    if (p.game === 'ladders' && g.setup) whose = turn === p.seat ? L(T.placeHow) : tt('placing', { name: p.names[turn] });
     if (p.game === 'thief') {
       const from = g.from;
       whose = turn === p.seat ? tt('pickFrom', { name: p.names[from] }) : from === p.seat ? tt('choosingMine', { name: p.names[turn] }) : tt('choosing', { name: p.names[turn], from: p.names[from] });
@@ -718,13 +722,15 @@ export class BoardGamesUI {
     const path = [];
     for (let k = l.from + 1; k <= l.mid; k++) path.push(k);
     if (l.to !== l.mid) path.push(l.to);
-    p.walk = { seat: l.p, from: l.from, path, at: performance.now() };
+    const now = performance.now();
+    p.dice = { n: l.dice, at: now };
+    p.walk = { seat: l.p, from: l.from, path, at: now + DICE_MS }; // (the piece waits for the dice)
     clearInterval(this.walkTimer);
     this.walkTimer = setInterval(() => {
       const w = this.play?.walk;
       if (!w || !this.open || !this.ladCv?.isConnected) { clearInterval(this.walkTimer); return; }
       this.paintLadders(this.ladCv);
-      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP) { this.play.walk = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
+      if (performance.now() - w.at > (w.path.length + 1) * WALK_STEP + 400) { this.play.walk = null; this.play.dice = null; clearInterval(this.walkTimer); this.paintLadders(this.ladCv); }
     }, 50);
   }
 
@@ -738,6 +744,30 @@ export class BoardGamesUI {
     c.append(cv);
     const row = el('div', 'bg-row');
     row.style.cssText = 'justify-content:center;align-items:center';
+    if (g.setup) {
+      // Laying the board out: choose a ladder or a snake, then two squares.
+      if (g.over || g.turn !== p.seat) return;
+      const have = g.stock[p.seat];
+      p.pick ||= { kind: have[0] > 0 ? 0 : 1, first: 0 };
+      if (!(have[p.pick.kind] > 0)) p.pick.kind = 1 - p.pick.kind;
+      ['🪜', '🐍'].forEach((icon, kind) => {
+        const b = el('button', 'bg-btn' + (p.pick.kind === kind ? ' bg-go' : ''), `${icon} ×${have[kind]}`);
+        b.type = 'button';
+        b.dataset.piece = String(kind);
+        b.disabled = !(have[kind] > 0);
+        b.onclick = () => { p.pick = { kind, first: 0 }; this.status = ''; this.render(); };
+        row.append(b);
+      });
+      c.append(row);
+      cv.style.cursor = 'pointer';
+      cv.onclick = (e) => {
+        const r = cv.getBoundingClientRect(), N = LADDERS_SIZE;
+        const col = Math.floor(((e.clientX - r.left) / r.width) * N), up = N - 1 - Math.floor(((e.clientY - r.top) / r.width) * N);
+        if (col < 0 || col >= N || up < 0 || up >= N) return;
+        this.ladderTap(up * N + (up % 2 ? N - 1 - col : col) + 1);
+      };
+      return;
+    }
     const dice = el('span', 'bg-dice', g.last ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
     dice.dataset.dice = String(g.last?.dice ?? 0);
     row.append(dice);
@@ -750,6 +780,20 @@ export class BoardGamesUI {
       row.append(roll);
     }
     c.append(row);
+  }
+
+  // A square tapped while laying the board out (also what the tests call).
+  ladderTap(k) {
+    const p = this.play, g = p?.g;
+    if (!g?.setup || g.turn !== p.seat || !p.pick) return;
+    if (!p.pick.first) {
+      if (g.taken().has(k) || k < 2 || k >= LADDERS_END) { this.status = L(T.placeBad); this.render(); return; }
+      p.pick.first = k; this.status = ''; this.render(); return;
+    }
+    const { kind, first } = p.pick;
+    if (k === first) { p.pick.first = 0; this.render(); return; }
+    if (!g.canPlace(p.seat, kind, first, k)) { p.pick.first = 0; this.status = L(T.placeBad); this.render(); return; }
+    this.myMove(['a', kind, first, k]);
   }
 
   paintLadders(cv) {
@@ -775,7 +819,7 @@ export class BoardGamesUI {
       x.fillText(k === LADDERS_END ? '🏁' : String(k), cx - S / 2 + 4, cy - S / 2 + 4);
     }
     x.lineCap = 'round';
-    for (const [a, b] of Object.entries(LADDERS_UP)) {
+    for (const [a, b] of Object.entries(g.up)) {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
       const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len * 8, ny = (x2 - x1) / len * 8;
       x.strokeStyle = '#a8703a'; x.lineWidth = 4;
@@ -787,7 +831,7 @@ export class BoardGamesUI {
       }
     }
     const SNAKE = ['#4caf6a', '#e06aa0', '#5a8ad0', '#e39b3a', '#8d6ad0', '#3fb0a8'];
-    Object.entries(LADDERS_DOWN).forEach(([a, b], n) => {
+    Object.entries(g.down).forEach(([a, b], n) => {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
       const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
       x.strokeStyle = SNAKE[n % SNAKE.length]; x.lineWidth = 9;
@@ -805,11 +849,12 @@ export class BoardGamesUI {
       x.fillStyle = '#2b2230';
       for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 1.3, 0, Math.PI * 2); x.fill(); }
     });
+    if (g.setup && p.pick?.first) { const [hx, hy] = at(p.pick.first); x.strokeStyle = '#ffb800'; x.lineWidth = 5; x.strokeRect(hx - S / 2 + 3, hy - S / 2 + 3, S - 6, S - 6); }
     // The pieces (several on one square stand side by side).
     const w = p.walk;
     const spot = g.pos.map((k, s) => {
       if (!w || w.seat !== s) return at(k);
-      const f = Math.min(w.path.length, (performance.now() - w.at) / WALK_STEP);
+      const f = Math.max(0, Math.min(w.path.length, (performance.now() - w.at) / WALK_STEP));
       const i = Math.floor(f), t = f - i;
       const a = at(i === 0 ? w.from : w.path[i - 1]), b = at(w.path[Math.min(i, w.path.length - 1)]);
       const ride = i === w.path.length - 1 && Math.abs(w.path[i] - (w.path[i - 1] ?? w.from)) > 6; // (a ladder or a snake: no hop)
@@ -825,6 +870,27 @@ export class BoardGamesUI {
       x.beginPath(); x.arc(cx, cy, 11, 0, Math.PI * 2); x.fill(); x.stroke();
       if (s === p.seat) { x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill(); }
     });
+    // The dice, thrown into the middle of the board: it tumbles, bounces,
+    // and comes to rest on the number rolled.
+    const d = p.dice;
+    if (d) {
+      const now = performance.now(), t = Math.min(1, (now - d.at) / DICE_MS), rest = t >= 1;
+      const face = rest ? d.n : 1 + (Math.floor(now / 70) * 5 + d.n) % 6;
+      const k = 1 - t, D = 92;
+      const cx = cv.width / 2 + Math.sin(t * 9) * 60 * k * k - 90 * k * k, cy = H / 2 - Math.abs(Math.sin(t * Math.PI * 3)) * 70 * k;
+      x.save();
+      x.globalAlpha = rest ? Math.max(0, 1 - Math.max(0, now - d.at - DICE_MS - 900) / 300) : 1;
+      x.translate(cx, cy);
+      x.rotate(k * k * 7);
+      x.fillStyle = 'rgba(0,0,0,.18)';
+      x.beginPath(); x.roundRect(-D / 2 + 5, -D / 2 + 9, D, D, 16); x.fill();
+      x.fillStyle = '#fff'; x.strokeStyle = '#d9cbb0'; x.lineWidth = 3;
+      x.beginPath(); x.roundRect(-D / 2, -D / 2, D, D, 16); x.fill(); x.stroke();
+      x.fillStyle = face === 1 ? '#e8402a' : '#2b2230';
+      const o = D * 0.27, PIPS = [[[0, 0]], [[-1, -1], [1, 1]], [[-1, -1], [0, 0], [1, 1]], [[-1, -1], [1, -1], [-1, 1], [1, 1]], [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]], [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]]];
+      for (const [px, py] of PIPS[face - 1]) { x.beginPath(); x.arc(px * o, py * o, face === 1 ? 12 : 8, 0, Math.PI * 2); x.fill(); }
+      x.restore();
+    }
   }
 
   cardFace(card, cls = '') {
