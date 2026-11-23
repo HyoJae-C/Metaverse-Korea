@@ -16,7 +16,7 @@
 import { noteText } from './wallet.js';
 import { serverBuy } from './resale.js';
 
-export const MARKET = { minPct: 10, maxPct: 100, feePct: 5, days: 3, openMax: 6, minHours: 24 };
+export const MARKET = { minPct: 10, maxPct: 100, feePct: 5, days: 3, openMax: 6, minDays: 7, minMissions: 35 }; // (min*: who may list or buy, as for gifts: supabase/074)
 const SEEN = 'mk.marketSeen'; // sold listings already told about
 
 // What a seller may ask for clothes whose new price is `list`.
@@ -98,7 +98,7 @@ export class MarketClient {
   async info() {
     const { data, error } = await this._rpc('market_info');
     if (error || !data || data.unit !== 'krw' || !(data.max_pct > 0)) { this.rules = null; return null; }
-    this.rules = { minPct: data.min_pct, maxPct: data.max_pct, feePct: data.fee_pct, days: data.days, openMax: data.open_max, minHours: data.min_hours };
+    this.rules = { minPct: data.min_pct, maxPct: data.max_pct, feePct: data.fee_pct, days: data.days, openMax: data.open_max, minDays: data.min_days ?? MARKET.minDays, minMissions: data.min_missions ?? MARKET.minMissions };
     return this.rules;
   }
   async browse() {
