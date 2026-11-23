@@ -26,7 +26,7 @@ export const HARD_PER_DAY = 2;
 const ALIAS = { delivery: 'job' };
 // Places a visit costs money at: the mission pays the fare on top, so going
 // there is never a loss (core/cablecar.js CABLE.fare; a test keeps them equal).
-export const VISIT_FARE = { 'namsan-sky-cable': 15000 };
+export const VISIT_FARE = { 'namsan-sky-cable': 15000, 'dice-and-tea': 5000 }; // (the board game café's pass: core/board-pass.js)
 
 // Local calendar date, YYYY-MM-DD.
 export function dayKey(d = new Date()) {

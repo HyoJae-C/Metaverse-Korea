@@ -98,6 +98,30 @@ try {
   await b.evaluate(([x, z]) => __mk.place(x + 1, z + 1.5), STAND);
   await a.waitForFunction(() => /Board games/.test(__mk.action() || ''), null, { timeout: 10000 });
 
+  step = 'the café\'s pass: watching is free, a game asks for 5,000 for three hours, once';
+  // Without a pass the table's button asks for the money first; "no" leaves the panel shut.
+  await openPanel(a);
+  await a.waitForSelector('.spend-ask:not([hidden]) .primary', { timeout: 10000 });
+  if (!/5,000/.test(await a.evaluate(() => document.querySelector('.spend-ask')?.textContent || ''))) throw new Error('the pass is not asked for at 5,000');
+  await a.click('.spend-ask .chip');
+  await a.waitForTimeout(400);
+  if (await a.evaluate(() => document.querySelector('#bg-panel')?.classList.contains('on'))) throw new Error('the panel opened without a pass');
+  const before = await a.evaluate(() => __mk.wallet.coins);
+  await openPanel(a);
+  await a.click('.spend-ask .primary');
+  await a.waitForSelector('#bg-panel.on', { timeout: 15000 });
+  const paid = before - (await a.evaluate(() => __mk.wallet.coins));
+  if (paid !== 5000) throw new Error('the pass cost ' + paid);
+  // With the pass: no second question (walking out and back in is the same browser's pass).
+  await a.evaluate(() => window.__bgUi.close());
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on', { timeout: 15000 });
+  if (await a.locator('.spend-ask:not([hidden])').count()) throw new Error('the pass is asked for twice');
+  if ((await a.evaluate(() => __mk.wallet.coins)) !== before - 5000) throw new Error('the pass was paid twice');
+  await a.evaluate(() => window.__bgUi.close());
+  // (the other players of this test hold a pass already)
+  await b.evaluate(() => localStorage.setItem('mk.boardPass', JSON.stringify({ until: Date.now() + 3600000 })));
+
   step = 'A opens the panel and plays Omok against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="omok"]', { timeout: 20000 });
@@ -251,6 +275,7 @@ try {
 
   step = 'C walks in to watch';
   c = await join('Dice C');
+  await c.evaluate(() => localStorage.setItem('mk.boardPass', JSON.stringify({ until: Date.now() + 3600000 })));
   await c.evaluate(() => __mk.enter('dice-and-tea'));
   await c.waitForFunction(() => __mk.room()?.id === 'dice-and-tea', null, { timeout: 30000 });
   await c.evaluate(([x, z]) => __mk.place(x + 2.2, z + 0.4), STAND);

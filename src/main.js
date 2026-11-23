@@ -4837,7 +4837,7 @@ const arcadeGame = createArcade({
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 // Board games at the board game café: the panel loads on first use. (game/board-games.js)
-const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw) });
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw), get wallet() { return wallet; }, t, toast: (m) => shop.toast(m) });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
@@ -7193,6 +7193,8 @@ function updateAction(p, tSec) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
+    } else if (nearStation(p, 'boardPass', 1.7)) {
+      next = boardGames.passAct(); // (the café's three-hour pass, at its counter)
     } else if (nearStation(p, 'boardgames', 1.1)) {
       next = boardGames.panel.open ? null : { key: 'boardgames', label: '🎲 ' + L(BOARD_GAMES_OPEN), run: () => boardGames.open() };
     } else if (nearStation(p, 'darts', 1.6)) {

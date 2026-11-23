@@ -55,6 +55,7 @@ export function decorateBoardCafe(store, { scene, block, stations, seats, w, d }
   put('#f2e3c4', cube, cx, 1.02, cz, 1.9, 0.04, 0.7);
   for (let i = 0; i < 4; i++) put(BOX_COLORS[i], cube, cx - 0.6 + i * 0.3, 1.16, cz, 0.24, 0.24, 0.3);
   block(cx, cz, 1.9, 0.7);
+  stations.boardPass = [{ x: cx, z: cz }]; // (where the three-hour pass is sold: core/board-pass.js)
 
   // Four tables, four chairs each; a game on every table.
   stations.boardgames = [];
