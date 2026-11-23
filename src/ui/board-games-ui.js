@@ -11,6 +11,12 @@
 // net: { myId, nameOf(id), nearby(): [{ id, name }], send(msg), here(): still at the table's room }
 // games: () => the game ids this table has (all of them at the café).
 // onEvent(kind): 'move' | 'win' | 'lose' | 'bang' | 'ring', for sounds.
+//
+// The croc and the bulldog are little 3D toys (ui/board-toy-3d.js, loaded
+// when one of them starts); their buttons stay in the page, out of sight,
+// for the keyboard and the tests. The chat stays in reach while you play:
+// the card has the last few chat lines and a box to type in at the bottom
+// (it sends through the game's own chat bar, so the same rules apply).
 import {
   GAMES, ROULETTE, OMOK_SIZE, FRUIT_EMOJI, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
@@ -27,7 +33,7 @@ const BOT_THINK = [650, 1300]; // ms a computer player takes for a move
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
 
 const CSS = `
-#bg-panel { position: fixed; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(20,14,10,.45); font: 600 15px system-ui, sans-serif; color: #2b2230; }
+#bg-panel { position: fixed; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(20,14,10,.25); font: 600 15px system-ui, sans-serif; color: #2b2230; }
 #bg-panel.on { display: flex; }
 #bg-panel .bg-card { position: relative; width: min(520px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; background: #fffaf0; border-radius: 18px; padding: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.35); box-sizing: border-box; }
 #bg-panel h2 { margin: 0 34px 10px 0; font-size: 20px; }
@@ -62,6 +68,18 @@ const CSS = `
 #bg-panel .bg-spot:disabled { opacity: .3; cursor: default; }
 #bg-panel .bg-face { text-align: center; font-size: 64px; line-height: 1; transition: transform .25s; }
 #bg-panel .bg-face.bang { transform: scale(1.35) rotate(-8deg); }
+#bg-panel canvas.bg-toy3d { display: block; width: 100%; aspect-ratio: 4 / 3; max-height: 46vh; border-radius: 16px; background: radial-gradient(circle at 50% 35%, #fff6dc, #f1dcb4); touch-action: manipulation; }
+#bg-panel .bg-toy.has3d .bg-spots, #bg-panel .bg-toy.has3d .bg-face { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); padding: 0; }
+#bg-panel .bg-shout { position: absolute; left: 0; right: 0; top: 8px; text-align: center; font-size: 34px; font-weight: 900; color: #e8402a; text-shadow: 0 2px 0 #fff; pointer-events: none; animation: bg-shout .5s ease-out; }
+@keyframes bg-shout { from { transform: scale(.3); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } to { transform: scale(1); } }
+#bg-panel .bg-card.bang { animation: bg-flash .45s; }
+@keyframes bg-flash { 0%, 100% { background: #fffaf0; } 30% { background: #ffd0c4; } }
+#bg-panel .bg-chat { margin-top: 12px; border-top: 2px dashed #eadbbd; padding-top: 8px; }
+#bg-panel .bg-chat-lines { max-height: 84px; overflow-y: auto; font-weight: 500; font-size: 14px; line-height: 1.35; scrollbar-width: thin; }
+#bg-panel .bg-chat-lines div { padding: 1px 0; overflow-wrap: anywhere; }
+#bg-panel .bg-chat form { display: flex; gap: 6px; margin-top: 6px; }
+#bg-panel .bg-chat input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 8px 12px; border-radius: 999px; border: 2px solid #eadbbd; background: #fff; }
+#bg-panel .bg-chat button { border: 0; border-radius: 999px; padding: 0 14px; background: #ffd36b; }
 #bg-panel .bg-croc .bg-spots { background: #4f9a5c; }
 #bg-panel .bg-croc .bg-spot { background: #fffdf4; border-radius: 6px 6px 18px 18px; }
 #bg-panel .bg-pirate .bg-spots { background: repeating-linear-gradient(90deg, #8a5a33 0 18px, #7a4c2a 18px 20px); border-radius: 40%; }
@@ -77,6 +95,11 @@ const el = (tag, cls, text) => {
   return e;
 };
 const between = ([a, b], rand) => a + (b - a) * rand();
+// What the toys shout when you find the bad spot.
+const SHOUT = {
+  croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
+  bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', hi: 'भौं! भौं!', ar: 'هَو! هَو!' },
+};
 
 export class BoardGamesUI {
   constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, rand = Math.random }) {
@@ -100,6 +123,44 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.tick = setInterval(() => this.onTick(), 250);
+    this.makeChat();
+  }
+
+  // The chat, inside the card: the game's last chat lines (copied as they
+  // come) and a box that sends through the game's own chat bar.
+  makeChat() {
+    const log = document.getElementById('chat-log'), bar = document.getElementById('chat-bar'), real = document.getElementById('chat-input');
+    if (!log || !bar || !real || document.getElementById('chat-btn')?.hidden) return;
+    const box = el('div', 'bg-chat');
+    const lines = el('div', 'bg-chat-lines');
+    const form = el('form');
+    const inp = el('input');
+    inp.type = 'text';
+    inp.maxLength = real.maxLength > 0 ? real.maxLength : 80;
+    inp.autocomplete = 'off';
+    inp.enterKeyHint = 'send';
+    inp.placeholder = '💬 ' + (real.placeholder || '');
+    for (const ev of ['keydown', 'keyup']) inp.addEventListener(ev, (e) => e.stopPropagation()); // don't walk while typing
+    const send = el('button', null, '➤');
+    send.type = 'submit';
+    form.append(inp, send);
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      if (!inp.value.trim()) return;
+      real.value = inp.value;
+      inp.value = '';
+      bar.requestSubmit();
+    };
+    const copy = () => {
+      lines.replaceChildren(...[...log.querySelectorAll('.chat-line')].slice(-6).map((l) => el('div', null, l.textContent)));
+      lines.scrollTop = lines.scrollHeight;
+    };
+    this.chatWatch = new MutationObserver(copy);
+    this.chatWatch.observe(log, { childList: true });
+    copy();
+    box.append(lines, form);
+    this.chatBox = box;
+    this.chatInput = inp;
   }
 
   get open() { return this.root.classList.contains('on'); }
@@ -118,6 +179,7 @@ export class BoardGamesUI {
 
   destroy() {
     this.close();
+    this.chatWatch?.disconnect();
     clearInterval(this.tick);
     this.root.remove();
   }
@@ -171,8 +233,20 @@ export class BoardGamesUI {
     this.state = 'play';
     this.status = '';
     this.timer = 0;
+    this.dropView();
+    if (game === 'croc' || game === 'bulldog') {
+      // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
+      const p = this.play;
+      import('./board-toy-3d.js').then((m) => {
+        if (this.play !== p) return;
+        this.view = m.createToyView(game, { spots: p.g.spots, onPick: (i) => this.myMove(['p', i]) });
+        this.render();
+      }).catch(() => {});
+    }
     this.render();
   }
+
+  dropView() { this.view?.dispose(); this.view = null; }
 
   nameFor(id) {
     if (id === BOT) return L(T.computer);
@@ -302,6 +376,7 @@ export class BoardGamesUI {
       else if (!p.g.over) this.net.send(bgReply(p.hostId, false));
     }
     this.play = null;
+    this.dropView();
     this.state = 'menu';
     this.status = '';
   }
@@ -343,6 +418,7 @@ export class BoardGamesUI {
   render() {
     if (!this.open) return;
     const c = this.card;
+    const typing = document.activeElement === this.chatInput;
     c.replaceChildren();
     const x = el('button', 'bg-x', '✕');
     x.type = 'button';
@@ -353,6 +429,7 @@ export class BoardGamesUI {
     else if (this.state === 'lobby') this.drawLobby(c);
     else if (this.state === 'waiting') this.drawWaiting(c);
     else if (this.state === 'play') this.drawPlay(c);
+    if (this.chatBox) { c.append(this.chatBox); if (typing) this.chatInput.focus(); }
   }
 
   drawMenu(c) {
@@ -539,8 +616,16 @@ export class BoardGamesUI {
   drawToy(c) {
     const p = this.play;
     const g = p.g;
-    const box = el('div', 'bg-toy bg-' + p.game);
+    const box = el('div', 'bg-toy bg-' + p.game + (this.view ? ' has3d' : ''));
     const bang = g.last?.bang;
+    if (this.view) {
+      this.view.sync({ pressed: g.pressed, bang: !!bang, canPick: !g.over && turnOf(g) === p.seat });
+      box.append(this.view.el);
+      if (bang) {
+        box.append(el('div', 'bg-shout', p.game === 'croc' ? L(SHOUT.croc) : L(SHOUT.bulldog)));
+        if (!p.flashed) { p.flashed = true; this.card.classList.remove('bang'); void this.card.offsetWidth; this.card.classList.add('bang'); }
+      }
+    }
     const face = { croc: bang ? '🐊💥' : '🐊', pirate: bang ? '🏴‍☠️💥' : '🏴‍☠️', bulldog: bang ? '🐶💢' : '🐶💤' }[p.game];
     box.append(el('div', 'bg-face' + (bang ? ' bang' : ''), face));
     const spots = el('div', 'bg-spots');

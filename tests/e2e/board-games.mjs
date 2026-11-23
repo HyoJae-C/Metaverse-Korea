@@ -1,8 +1,8 @@
 // End-to-end check: the board game café (game/board-games.js). A opens the
 // panel at a free table and puts a stone down against the computer; then A
 // invites B to Croc Teeth, B says yes on the card, they take turns until the
-// croc snaps, and both screens show the same teeth pressed and the same
-// result. B walking out closes B's panel.
+// croc snaps (a line of chat typed in the game card reaches the other
+// player), and both screens show the same teeth pressed and the same result. B walking out closes B's panel.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/board-games.mjs http://localhost:4173/ [screenshot dir]
 // Realtime runs on a fake server in this script (fake-realtime.mjs).
@@ -121,6 +121,12 @@ try {
   await a.waitForFunction(() => /Dice B is in/.test(document.querySelector('#bg-panel')?.textContent || ''), null, { timeout: 15000 });
   await a.click('#bg-panel [data-act="start"]');
   await b.waitForSelector('#bg-panel.on .bg-croc', { timeout: 15000 });
+
+  step = 'the 3D croc shows, and chat works from inside the game card';
+  for (const page of [a, b]) await page.waitForSelector('#bg-panel canvas.bg-toy3d', { timeout: 15000 });
+  await a.fill('#bg-panel .bg-chat input', 'good luck');
+  await a.press('#bg-panel .bg-chat input', 'Enter');
+  for (const page of [a, b]) await page.waitForFunction(() => /good luck/.test(document.querySelector('#bg-panel .bg-chat-lines')?.textContent || ''), null, { timeout: 15000 });
 
   step = 'they take turns until the croc snaps; both screens agree';
   const pressedOn = (page) => page.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-spot')].filter((x) => x.textContent === '·').length);
