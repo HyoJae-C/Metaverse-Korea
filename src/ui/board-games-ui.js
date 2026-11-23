@@ -160,7 +160,8 @@ const el = (tag, cls, text) => {
 };
 const between = ([a, b], rand) => a + (b - a) * rand();
 // Faces to pull at each other (bluffing over the joker, gloating over a win).
-const FACE_MS = 2600, FACE_GAP = 2000; // (a little slower than the first 1.2 s; 3 s felt too long: Yozi 2026-11-23)
+const FACE_MS = 2600, FACE_GAP = 1500; // (Yozi 2026-11-23: 1.2 s was spammed, 3 s felt too long)
+const FACE_BURST = 5, FACE_BURST_MS = 12000, FACE_REST = 10000; // five faces inside 12 seconds: the buttons rest for 10 (fewer room messages)
 // What the toys shout when you find the bad spot.
 const SHOUT = {
   croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
@@ -429,8 +430,12 @@ export class BoardGamesUI {
 
   myFace(n) {
     const now = performance.now();
-    if (!this.play || now - (this.faceAt || 0) < FACE_GAP) return;
+    if (!this.play || now - (this.faceAt || 0) < FACE_GAP || now < (this.faceRest || 0)) return;
     this.faceAt = now;
+    // Too many in a row: the buttons rest a while.
+    this.faceLog = (this.faceLog || []).filter((t) => now - t < FACE_BURST_MS);
+    this.faceLog.push(now);
+    if (this.faceLog.length >= FACE_BURST) { this.faceLog = []; this.faceRest = now + FACE_REST; setTimeout(() => this.render(), FACE_REST + 50); }
     this.myMove(['e', n]);
   }
 
@@ -778,6 +783,8 @@ export class BoardGamesUI {
         const b = el('button', null, f);
         b.type = 'button';
         b.dataset.face = String(n);
+        b.disabled = performance.now() < (this.faceRest || 0);
+        if (b.disabled) b.style.opacity = '.35';
         b.onclick = () => this.myFace(n);
         faces.append(b);
       });
