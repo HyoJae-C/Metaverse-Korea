@@ -11,8 +11,9 @@ const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
 import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
 import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
+import { BOARD_SETS, BOARD_SET_IDS } from './board-game-sets.js';
 
-export { PLANT_IDS };
+export { PLANT_IDS, BOARD_SET_IDS };
 
 const mat = matCache();
 
@@ -246,6 +247,8 @@ export const FURNITURE = [
   ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
   // Pot plants from the greenhouse shop in Seoul Botanic Park (core/house-plants.js): only once bought.
   ...[...PLANTS, ...THEME_PLANTS].map(([id, emoji, size, , name, make]) => ({ id, emoji, item: id, size, name, build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z)); } })),
+  // Board game sets from the board game café (core/board-game-sets.js): only once bought; the host starts a game at one.
+  ...BOARD_SETS.map((s) => ({ id: s.id, emoji: s.emoji, item: s.id, size: s.size, name: s.name, boardgame: s.game, build(g) { s.build((...a) => box(g, ...a)); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],

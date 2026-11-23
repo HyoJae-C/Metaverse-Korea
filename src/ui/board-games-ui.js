@@ -171,8 +171,8 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, table = null, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, onGame, figureOf, table, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, table = null, sets = null, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, figureOf, table, sets, rand });
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -605,6 +605,22 @@ export class BoardGamesUI {
       list.append(b);
     }
     c.append(list);
+    // The café also sells each game as a set for your home (sets(): [{ id, label, owned, buy() }]).
+    const sets = this.sets?.() || [];
+    if (sets.length) {
+      c.append(el('p', 'bg-how', '🏠 ' + L(T.homeSets)));
+      const row = el('div', 'bg-row');
+      for (const s of sets) {
+        const b = el('button', 'bg-btn', `${GAMES[s.id].icon} ${s.owned ? '✓' : s.label}`);
+        b.type = 'button';
+        b.dataset.set = s.id;
+        b.title = L(GAME_NAME[s.id]);
+        b.setAttribute('aria-label', `${L(GAME_NAME[s.id])} ${s.owned ? '✓' : s.label}`);
+        b.onclick = () => s.buy();
+        row.append(b);
+      }
+      c.append(row);
+    }
     if (this.status) c.append(el('div', 'bg-status', this.status));
   }
 

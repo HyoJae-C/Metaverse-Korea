@@ -4821,7 +4821,7 @@ const arcadeGame = createArcade({
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 // Board games at the board game café: the panel loads on first use. (game/board-games.js)
-const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)) });
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw) });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
@@ -7282,6 +7282,8 @@ function updateAction(p, tSec) {
       next = decorGame.tankAct(p);
     } else if (decorGame.applianceAct(p)) { // the fridge, washer or microwave at home
       next = decorGame.applianceAct(p);
+    } else if (boardGames.homeAct(p)) { // a board game set at home: ask the visitors to a game (game/board-games.js)
+      next = boardGames.homeAct(p);
     } else if (decorGame.plantAct(p, false)) { // (a plant that has had its water today)
       next = decorGame.plantAct(p, false);
     } else if (picnic.action(p)) {

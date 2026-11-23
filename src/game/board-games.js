@@ -7,6 +7,7 @@
 // game: { myId, net, others, me, interior, safety, sfx, music, myLook, camera, canvas, scene, seated, sit, stand, seatFree }
 import { localName, getLanguage } from '../core/i18n.js';
 import { createCharacter } from '../core/character.js';
+import { furnitureById } from '../core/furniture.js';
 
 const L = (o) => localName(o, getLanguage());
 export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', hi: 'बोर्ड गेम', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
@@ -21,7 +22,10 @@ const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px sys
 
 export function createBoardGames(game) {
   let ui = null, table = null, loading = null, ask = null, askTimer = 0;
-  const here = () => !!game.interior?.stations?.boardgames;
+  const cafe = () => !!game.interior?.stations?.boardgames;
+  // At home (mine, or one I am visiting): the games whose sets stand in the room (core/board-game-sets.js).
+  const homeSets = () => (game.home?.items || []).map((it) => ({ it, game: furnitureById(it.id)?.boardgame })).filter((s) => s.game);
+  const here = () => cafe() || homeSets().length > 0;
   const load = () => (loading ||= import('../ui/board-games-ui.js').then(async (m) => {
     const text = await import('../ui/board-games-text.js');
     const { BOARD_TRACKS } = await import('../ui/board-games-music.js');
@@ -29,6 +33,13 @@ export function createBoardGames(game) {
     table = (await import('./board-table.js')).createBoardTable(game);
     let songBefore = null; // what was playing before the game's own tune
     ui = new m.BoardGamesUI({
+      // The café has every game; a home, the ones whose sets stand in it.
+      games: () => (cafe() ? Object.keys(text.GAME_NAME).filter((id) => id !== 'onecard') : [...new Set(homeSets().map((s) => s.game))]),
+      // The café sells the sets: the shop's own buying sheet (the money is asked for and written down there).
+      sets: () => (cafe() ? (game.interior.store?.products || []).filter((pr) => furnitureById(pr.furniture)?.boardgame).map((pr) => ({
+        id: furnitureById(pr.furniture).boardgame, label: game.priceLabel(pr.price), owned: !!game.owns?.(pr.furniture),
+        buy: () => { ui.close(); game.shop.store = game.interior.store; game.shop.openProduct(pr); },
+      })) : []),
       table,
       // A player as a little figure (the host sits in the pirate's barrel).
       figureOf: (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } },
@@ -82,12 +93,20 @@ export function createBoardGames(game) {
     askTimer = setTimeout(closeAsk, ASK_MS);
   }
 
-  return {
+  const api = {
     // The room's button: open the panel.
-    async open() {
+    async open(gameId = null) {
       const at = game.interior;
       const u = await load().catch((e) => { console.error('board games', e); return null; });
-      if (u && game.interior === at) { closeAsk(); u.show(); }
+      if (u && game.interior === at) { closeAsk(); u.show(); if (gameId && !u.busy) u.choose(gameId); }
+    },
+    // At home, by one of my board game sets: ask the people here to a game (the host only).
+    homeAct(p) {
+      const d = game.home;
+      if (!d || d.guest || d.editing || d.carry || ui?.open) return null;
+      let best = null, bd = 1.5;
+      for (const s of homeSets()) { const dist = Math.hypot(p.x - s.it.x, p.z - s.it.z); if (dist < bd) { bd = dist; best = s; } }
+      return best && { key: 'bg:' + best.game, label: `🎲 ${L(furnitureById(best.it.id).name)} · ${L(ASK.yes)}`, run: () => api.open(best.game) };
     },
     // A room message: true when it was one of ours.
     onMsg(from, e) {
@@ -115,4 +134,5 @@ export function createBoardGames(game) {
     leftRoom() { closeAsk(); if (ui?.open || ui?.busy) ui.close(); },
     get panel() { return { get open() { return !!ui?.open; }, close() { ui?.close(); } }; },
   };
+  return api;
 }

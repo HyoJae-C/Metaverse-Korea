@@ -36,6 +36,8 @@ jobs:
           node tests/e2e/fish-contest.mjs http://localhost:4173/
           # Board games at the café: Omok against the computer, Croc Teeth between two players.
           node tests/e2e/board-games.mjs http://localhost:4173/
+          # Board game sets for the home: bought at the café, a game started by one at home.
+          node tests/e2e/board-home.mjs http://localhost:4173/
           # Memory budget: iPhone Safari closes the page past its canvas limit.
           node tests/e2e/memory.mjs http://localhost:4173/
           # Returning players' saves (a drink in hand, an errand done…) still load.
