@@ -37,6 +37,7 @@ import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
 import { ROOM_DOME } from './dome-outside.js';
 import { ACTIVITY_ROOMS, decorateActivityRoom } from './activity-rooms.js';
 import { decorateLiveCafe } from './live-cafe-room.js';
+import { decorateBoardCafe } from './board-cafe-room.js';
 import { decorateCactusHouse } from './cactus-house.js';
 import { makeRide, makeSkate1 } from './rides.js';
 import { RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS } from './bike-garage.js';
@@ -1431,6 +1432,9 @@ export function buildInterior(store) {
     } else if (store.workshop === 'cactus-house') {
       // Seoul Botanic Park's Cactus & Succulent House (core/cactus-house.js).
       decorateCactusHouse(store, { scene, block, mat, w, d });
+    } else if (store.workshop === 'boardcafe') {
+      // The board game café: a shelf of games and four tables (core/board-cafe-room.js).
+      decorateBoardCafe(store, { scene, block, stations, seats, w, d });
     } else if (store.workshop === 'livecafe') {
       // Sinchon's live café: a stage with a mic for players (core/live-cafe-room.js).
       barkeep = decorateLiveCafe(store, { scene, box, block, mat, stations, seats, w, d }).barkeep;
