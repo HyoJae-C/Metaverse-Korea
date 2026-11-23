@@ -1084,6 +1084,7 @@ export const VI = {
   "wrap.button": "Gói quà",
   "wrap.bagFull": "Túi của bạn đã đầy. Hãy chừa chỗ cho hộp quà trước.",
   "wrap.poor": "Bạn cần 🪙 {n}.",
+  "gift.young": "🎁 Bạn có thể tặng quà khi tài khoản đủ {minDays} ngày và đã chơi {minHours} giờ. Hiện tại: {days} ngày, đã chơi {hours} giờ.",
   "wrap.bought": "🎀 {item} đã được gói và ở trong túi. Lấy ra từ túi để tặng bạn bè nhé!",
   "wrap.boughtLetter": "🎀 {item} đã được gói cùng lá thư và ở trong túi. Lấy ra từ túi để tặng bạn bè nhé!",
   "wrap.paperMax": "Bạn mang được tối đa {n} tờ giấy viết thư.",

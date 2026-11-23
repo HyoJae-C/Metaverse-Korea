@@ -48,8 +48,19 @@ export function createWrapGifts(game) {
   const sheets = () => bag.list()[letterAt()]?.sips || 0;
 
   // ---- In the shop ----
-  const canWrap = (product) => !!game.gifts.giftFor(game.gifts.storeNow(), product);
+  const canWrap = (product) => {
+    const ok = !!game.gifts.giftFor(game.gifts.storeNow(), product);
+    if (ok) game.gifts.gate?.check();
+    return ok;
+  };
+  // A box is a gift: only accounts that may send gifts wrap one (core/gift-gate.js).
   function wrap(store, product) {
+    if (!game.gifts.giftFor(store, product)) return;
+    const gate = game.gifts.gate;
+    if (gate) gate.gate(t, (m) => shop.toast(m, 4500), () => wrapNow(store, product));
+    else wrapNow(store, product);
+  }
+  function wrapNow(store, product) {
     const g = game.gifts.giftFor(store, product);
     if (!g) return;
     if (bag.full) { shop.toast(t('wrap.bagFull')); return; }

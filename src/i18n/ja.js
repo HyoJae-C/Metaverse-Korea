@@ -1087,6 +1087,7 @@ export const JA = {
   "wrap.button": "ギフト包装する",
   "wrap.bagFull": "バッグがいっぱいです。先にギフトボックスの場所を空けてね。",
   "wrap.poor": "🪙 {n} が必要です。",
+  "gift.young": "🎁 プレゼントは登録から{minDays}日たち、{minHours}時間以上遊ぶと贈れます。今：登録{days}日、プレイ{hours}時間。",
   "wrap.bought": "🎀 {item}を包んでバッグに入れました。バッグから出して友だちに渡そう！",
   "wrap.boughtLetter": "🎀 {item}を手紙と一緒に包んでバッグに入れました。バッグから出して友だちに渡そう！",
   "wrap.paperMax": "便箋は{n}枚まで持てます。",

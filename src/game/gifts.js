@@ -17,7 +17,8 @@ import { ITEMS } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { SPRAYS, onSale } from '../core/perfume.js';
 import { coinsFor, goodsKind, howToGet, itemSoon } from '../ui/shop-ui.js';
-import { getLanguage, localName } from '../core/i18n.js';
+import { getLanguage, localName, t } from '../core/i18n.js';
+import { GiftGate } from '../core/gift-gate.js';
 import { heldFor } from '../ui/counter-ui.js';
 
 export function createGifts(game) {
@@ -71,8 +72,18 @@ export function createGifts(game) {
   const isFriend = (name) => chat?.friendStatus?.(name) === 'friend';
   let street = false; // the picker was opened at a street stand
   // The button shows with anyone here, so a player learns gifts are for friends.
-  const canGift = (product) => !!giftFor(storeNow(), product) && peopleHere().length > 0;
+  // Only accounts 7 days old with 3 hours of play send gifts (core/gift-gate.js).
+  const gate = new GiftGate({ wallet: () => game.wallet });
+  const canGift = (product) => {
+    const ok = !!giftFor(storeNow(), product) && peopleHere().length > 0;
+    if (ok) gate.check(); // (asked while the card is open, so the tap needn't wait)
+    return ok;
+  };
   function startGift(store, product) {
+    if (!giftFor(store, product)) return;
+    gate.gate(t, (m) => shop.toast(m, 4500), () => openPicker(store, product));
+  }
+  function openPicker(store, product) {
     const g = giftFor(store, product);
     if (!g) return;
     const name = localName(g.name, getLanguage());
@@ -166,5 +177,5 @@ export function createGifts(game) {
     if (stale.length) showGiftCards();
     if (giftUi.open && !game.interior && !street) giftUi.close();
   }, 1000);
-  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById, storeNow };
+  return { answerGift, dropGifts, onGiftMsg, canGift, startGift, peopleHere, giftFor, productById, storeNow, gate };
 }
