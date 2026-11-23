@@ -259,10 +259,17 @@ export class CookClassUI {
   r_checks(st) {
     const on = new Set();
     for (const c of st.items) {
-      const b = chip(c.emoji + ' ' + this.L('i.' + c.id), () => {
+      // A ticked one shows it (green, ✓): with no mark players thought their
+      // taps did nothing and the step couldn't be finished (iPhone, 2026-11-17).
+      const mark = el('span', 'check-mark', '');
+      const b = chip('', () => {
         if (on.has(c.id)) on.delete(c.id); else { on.add(c.id); if (c.pts < 0) this.say('hmm'); }
         b.classList.toggle('on', on.has(c.id));
-      });
+        b.setAttribute('aria-pressed', String(on.has(c.id)));
+        mark.textContent = on.has(c.id) ? '✓ ' : '';
+      }, 'chip cook-check');
+      b.setAttribute('aria-pressed', 'false');
+      b.append(mark, c.emoji + ' ' + this.L('i.' + c.id));
       this.body.append(b);
     }
     this.actions.append(chip('✅ ' + this.L('done'), () => {

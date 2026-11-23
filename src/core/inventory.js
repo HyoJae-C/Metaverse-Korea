@@ -3,7 +3,8 @@
 // the developer master code (typed in chat) adds every item.
 
 import { WEARABLES } from '../data/wearables.js';
-import { LAMP_IDS, SHOP_FURNITURE_IDS } from './furniture.js';
+import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS, PLANT_IDS } from './furniture.js';
+import { FINISHES } from './home-finish.js';
 
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
@@ -33,6 +34,14 @@ function outfits(defs) {
 }
 // Is this item on (every part of its wear matches the look)? A null part
 // doesn't count, except a skirt: trousers are only on when no skirt is.
+// Bags, hats, glasses and the like worn but not in the closet (no button to
+// take them off there): ids whose wear the look has, but which aren't
+// owned. Only items whose `off` empties accessory slots (a look's free hats,
+// e.g. the sauna towel, aren't items and are never matched).
+const ACC_SLOTS = new Set(['head', 'neck', 'face', 'ear', 'back', 'hand']);
+export const unownedWorn = (look, items, has) => Object.entries(items).filter(([id, it]) => it.wear && it.off
+  && Object.keys(it.wear).length && Object.keys(it.wear).every((k) => ACC_SLOTS.has(k))
+  && Object.values(it.off).every((v) => v == null) && !has(id) && isWorn(it, look)).map(([id]) => id);
 export const isWorn = (it, look) => !!it?.wear && Object.entries(it.wear).every(([k, v]) => (v == null ? k !== 'skirt' || !look?.skirt : look?.[k] === v));
 const PLUSH_DESC = {
   en: 'A prize from the claw machine. Put it in your home: Decorate at home, then pick it.',
@@ -53,6 +62,27 @@ const FURNITURE_DESC = {
   zh: '在乙支路家具街买的家具。在家里点“装饰”就能摆放。',
 };
 const homeFurniture = () => Object.fromEntries(SHOP_FURNITURE_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: FURNITURE_DESC, furniture: true }]));
+const TANK_DESC = {
+  en: 'A fish tank from the KONEXT Aquarium shop. Put it in your home with Decorate, then walk up to it to put in fish from your fish bag.',
+  ko: '코넥스트 아쿠아리움 가게에서 산 어항이에요. 내 집에서 "꾸미기"로 놓고, 다가가서 물고기 가방의 물고기를 넣어 보세요.',
+  ja: 'コネクスト アクアリウムの店で買った水槽。家の「模様替え」で置いて、近づくと魚袋の魚を入れられます。',
+  zh: '在KONEXT水族馆商店买的鱼缸。在家里点“装饰”摆好，走近就能放入鱼袋里的鱼。',
+};
+const FINISH_DESC = {
+  en: 'Wallpaper, flooring or a door from the wallpaper shops on the Euljiro furniture street. At home, tap Decorate and pick it; Basic puts the room back.',
+  ko: '을지로 가구거리 벽지 가게에서 산 벽지·바닥재·문이에요. 내 집에서 "꾸미기"를 누르고 고르면 바뀌고, "기본"을 누르면 원래대로 돌아가요.',
+  ja: '乙支路の家具通りの壁紙店で買った壁紙・床材。家の「模様替え」で選ぶと変わり、「ベーシック」で元に戻ります。',
+  zh: '在乙支路家具街壁纸店买的壁纸或地板。在家里点“装饰”选择即可更换，点“基本”恢复原样。',
+};
+const finishes = () => Object.fromEntries(FINISHES.map((f) => [f.id, { emoji: f.emoji, name: f.name, desc: FINISH_DESC, finish: f.kind }]));
+const PLANT_DESC = {
+  en: 'A pot plant from Seoul Botanic Park. Put it in your home: Decorate at home, then pick it.',
+  ko: '서울식물원에서 산 화분이에요. 내 집에서 "꾸미기"를 누르고 골라서 놓을 수 있어요.',
+  ja: 'ソウル植物園で買った鉢植え。家の「模様替え」で置けます。',
+  zh: '在首尔植物园买的盆栽。在家里点“装饰”就能摆放。',
+};
+const plants = () => Object.fromEntries(PLANT_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: PLANT_DESC, furniture: true }]));
+const tanks = () => Object.fromEntries(TANK_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: TANK_DESC, furniture: true }]));
 const lamps = () => Object.fromEntries(LAMP_IDS.map(([id, emoji, name]) => [id, { emoji, name, desc: LAMP_DESC, lamp: true }]));
 function plushies(defs) {
   const out = {};
@@ -149,6 +179,11 @@ export const ITEMS = {
   ...lamps(),
   // Furniture from the furniture shops on Euljiro (furniture-shop.js).
   ...homeFurniture(),
+  // Wallpaper and flooring from the wallpaper shops on Euljiro (home-finish.js).
+  ...finishes(),
+  ...tanks(),
+  // Pot plants from the greenhouse shop in Seoul Botanic Park (house-plants.js).
+  ...plants(),
   // Pets: adopted for money (price), or by code only (no price).
   // Adopted at animal cafés (stores.json "adopt"): the Maltese and the poodle
   // at the retriever café, the two cats at the cat café, and the price is the

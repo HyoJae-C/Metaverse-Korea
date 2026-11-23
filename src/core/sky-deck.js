@@ -15,12 +15,18 @@
 // over Ttukseom (the real show's own drones and pictures, drone-sky.js), at
 // the same times as the shows (Yozi 2026-11-15).
 //
+// The same room is Namsan Tower's deck (stores.json "deck": "namsan", Yozi
+// 2026-11-19): the same octagon and lift, its own painting from Namsan
+// (SITES.namsan: the Han to the south, Modu Tower and the drones to the east,
+// Yeouido and the fireworks to the south-west, the palaces and Bugaksan to
+// the north), no glass floor (the real deck has none).
+//
 // Loaded with the room builder (core/interior.js), not in the first download.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Batch } from './cathedral-hall.js';
 import * as droneShow from './drone-show.js';
-import { CYCLE_MS, SHOW_FROM, FIREWORKS, DRONES, cycleNumber, cycleMs, showOf, smooth } from './show-clock.js';
+import { FIREWORKS, DRONES, cycleMs, showStarts, smooth } from './show-clock.js';
 
 const SEAT_H = 0.38; // the same seat height as every chair in the game
 const A = 12; // the octagon's apothem: the centre to the middle of a wall
@@ -52,6 +58,12 @@ export const bearingOf = (phi) => (((180 - (phi * 180) / Math.PI) % 360) + 360) 
 const dirOf = (phi) => [Math.sin(phi), Math.cos(phi)];
 // Inside the octagon by at least `r`.
 export const insideDeck = (x, z, r = 0) => WALLS.every((p) => x * Math.sin(p) + z * Math.cos(p) <= A - r);
+// The wall (φ) that looks out on painting bearing `bear` when the painting is
+// turned by `turn` degrees (0: the lift wall, which has no glass).
+export const wallFor = (bear, turn = 0) => {
+  const k = ((Math.round((180 + turn - bear) / 45) % 8) + 8) % 8;
+  return WALLS[k];
+};
 
 // The glass floor (by the west wall) and the benches.
 export const SKYDECK_LAYOUT = {
@@ -93,11 +105,15 @@ export function skyAt(now, out = { top: new THREE.Color(), hor: new THREE.Color(
 }
 
 // The show in the sky at `now`: { kind: FIREWORKS | DRONES, t: seconds in } or null.
+// (From showStarts, so an operator's extra show is seen here too.)
 export function showAt(now) {
-  const n = cycleNumber(now), kind = showOf(n);
-  if (!(kind in SHOW_LEN)) return null;
-  const t = (now - (n * CYCLE_MS + SHOW_FROM)) / 1000;
-  return t >= 0 && t < SHOW_LEN[kind] ? { kind, t } : null;
+  for (const kind of [FIREWORKS, DRONES]) {
+    for (const start of showStarts(now, kind)) {
+      const t = (now - start) / 1000;
+      if (t >= 0 && t < SHOW_LEN[kind]) return { kind, t };
+    }
+  }
+  return null;
 }
 
 // ---- The painting -----------------------------------------------------------
@@ -107,7 +123,6 @@ const E_TOP = 9, E_BOT = -56; // what it covers, up and down
 const EYE = 1.3; // about a chibi's eye height
 const yOf = (e) => R * Math.tan((e * Math.PI) / 180);
 const Y_TOP = yOf(E_TOP), Y_BOT = yOf(E_BOT);
-const HIGH = 480; // metres: how far above the city the deck stands (real)
 
 // The real Han near Jamsil, roughly (metres east, north of the tower): a
 // band ~900 m wide. Made simple: this is a painting.
@@ -118,11 +133,12 @@ function segDist(px, py, [ax, ay], [bx, by]) {
   const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
   return Math.hypot(px - ax - t * dx, py - ay - t * dy);
 }
-// What the ground is at (x east, y north) metres from the tower.
-export function groundAt(x, y) {
-  for (let i = 1; i < RIVER.length; i++) if (segDist(x, y, RIVER[i - 1], RIVER[i]) < 450) return 'water';
-  for (const [[cx, cy], r] of LAKES) if (Math.hypot(x - cx, y - cy) < r) return 'water';
-  for (const [[cx, cy], r] of PARKS) if (Math.hypot(x - cx, y - cy) < r) return 'park';
+// What the ground is at (x east, y north) metres from the deck's tower.
+export function groundAt(x, y, site = SITES.modu) {
+  const { river, lakes, parks } = site;
+  for (let i = 1; i < river.length; i++) if (segDist(x, y, river[i - 1], river[i]) < 450) return 'water';
+  for (const [[cx, cy], r] of lakes) if (Math.hypot(x - cx, y - cy) < r) return 'water';
+  for (const [[cx, cy], r] of parks) if (Math.hypot(x - cx, y - cy) < r) return 'park';
   return 'city';
 }
 
@@ -150,14 +166,102 @@ const RIDGES = [
 // Tall clusters: [bearing from, to, distance from, to (m), tallest m].
 const TOWERS = [[232, 268, 2500, 6000, 230], [292, 300, 9500, 11500, 120], [272, 283, 13500, 15500, 160], [55, 75, 9000, 12000, 120]];
 
+// ---- What each deck sees ----------------------------------------------------
+// high: metres above the city; river/lakes/parks: the ground (metres east,
+// north of the tower); ridges, towers: as above; marks: landmarks drawn as
+// thin rects { b, w (degrees wide), D, lo, hi (metres up), col, k (haze ×)
+// or k0 (haze) }, red: a red light on top, dots: lit windows at night; bridges: x lines across the river (from y0 to
+// y1); turn: degrees the painting is turned so the lift wall hides the
+// dullest side (painting bearing b shows at room bearing b - turn); ground:
+// the colour far below; plaques: [bearing, along the wall, en, ko, note].
+const NS_TOP = 262 * 1.6; // Namsan's top as Modu Sky draws it (exaggerated)
+export const SITES = {
+  modu: {
+    high: 480, river: RIVER, lakes: LAKES, parks: PARKS, ridges: RIDGES, towers: TOWERS, view: VIEW, drone: DRONE_VIEW,
+    marks: [
+      { b: VIEW.namsan - 0.08, w: 0.16, D: 10800, lo: NS_TOP, hi: NS_TOP + 236 * 1.4, col: '#e8e2d8', k: 0.8, red: true }, // Namsan's tower
+      { b: VIEW.namsan - 0.25, w: 0.5, D: 10800, lo: NS_TOP + 150, hi: NS_TOP + 180, col: '#e8e2d8', k: 0.8 }, // its deck
+      { b: VIEW.yeouido - 0.1, w: 0.22, D: 15000, lo: 0, hi: 300, col: '#d8b45a', k0: 0.5 }, // 63 Building, far
+    ],
+    bridges: { xs: [-20000, -16500, -13800, -12000, -10200, -8200, -6200, -4300, -2600, -900, 1300, 4200, 7400], y0: -1500, y1: 4500 },
+    turn: 0, ground: '#9ea392', glass: true, burst: 1, seed: 20261115,
+    sign: ['MODU SKY', '모두 스카이 · 117F'],
+    lift: { floors: 117, from: 0, top: 500, up: 8, down: 6, name: 'MODU SKY', marks: [['🎡', 60], ['🏢', 250], ['🗼', 480]] },
+    plaques: [
+      [270, 0.55, 'Yeouido', '여의도', '14 km · fireworks nights'],
+      [270, -0.35, 'Namsan', '남산', '11 km'],
+      [315, 0.2, 'Ttukseom', '뚝섬', '4.5 km · drone show nights'],
+      [0, 0, 'Han River', '한강', '1.3 km'],
+      [135, 0, 'Seokchon Lake', '석촌호수', 'right below'],
+    ],
+  },
+};
+
+// From Namsan Tower's deck (about 350 m above the city, on the hill in the
+// middle of Seoul; real places, metres east and north of the tower, from
+// their published coordinates, rounded: this is a painting).
+const NAMSAN_VIEW = {
+  yeouido: 242, // the fireworks over the river, 5.4 km
+  sixty3: 230, // 63 Building, 5.5 km
+  ttukseom: 109, // the drone show, 7.6 km
+  modu: 113, // Modu Tower in Jamsil, 11 km
+  river: 180, // the Han, 3 km south
+  palace: 343, // Gyeongbokgung and Bugaksan, 3.3–4.9 km north
+};
+SITES.namsan = {
+  high: 350,
+  view: NAMSAN_VIEW,
+  // The Han, west to east: Gayang, Seongsan, Yanghwa, Seogang, Mapo, Hangang,
+  // Dongjak, Banpo, Hannam, Seongsu, Yeongdong, Jamsil bridges' middles.
+  river: [[-14000, 3200], [-11500, 2100], [-8840, 310], [-7600, -900], [-5490, -1350], [-4780, -2240], [-2660, -3800], [-730, -4200], [690, -3900], [2100, -2600], [4100, -1470], [6160, -1910], [9330, -2900], [11600, -1800], [16000, -400]],
+  lakes: [],
+  // Namsan's own woods right below, Yongsan Park, the palaces, Seoul Forest.
+  parks: [[[0, 0], 1000], [[-730, -3130], 600], [[-990, 3150], 450], [[250, 3100], 450], [[4400, -800], 500]],
+  ridges: [
+    [338, 382, 12000, 836, 6], // Bukhansan
+    [340, 354, 4900, 342, 2], // Bugaksan
+    [316, 332, 4500, 338, 2], // Inwangsan
+    [298, 310, 4600, 296, 1], // Ansan
+    [20, 45, 15000, 620, 4], // Suraksan and Buramsan
+    [70, 88, 10000, 295, 2], // Achasan
+    [118, 140, 17000, 520, 3], // Namhansanseong
+    [150, 166, 14500, 618, 2], // Cheonggyesan
+    [180, 202, 12000, 632, 3], // Gwanaksan
+  ],
+  towers: [[222, 240, 4500, 6500, 200], [138, 160, 5500, 8500, 160], [108, 120, 9500, 12000, 120], [330, 360, 1500, 3200, 120], [0, 20, 1500, 3200, 120], [215, 245, 1500, 3000, 150], [255, 280, 2500, 4500, 120]],
+  marks: [
+    { b: 112.7, w: 0.56, D: 10950, lo: 0, hi: 555 * 0.8, col: '#dfe5ec', k0: 0.3, dots: 40 }, // Modu Tower: its wide foot (drawn a little wide, so it reads)
+    { b: 112.82, w: 0.32, D: 10950, lo: 555 * 0.8, hi: 555 * 1.25, col: '#dfe5ec', k0: 0.3, dots: 16 }, // its narrower top
+    { b: 112.93, w: 0.1, D: 10950, lo: 555 * 1.25, hi: 555 * 1.4, col: '#dfe5ec', k0: 0.3, red: true }, // its spire
+    { b: NAMSAN_VIEW.sixty3 - 0.3, w: 0.63, D: 5500, lo: 0, hi: 249 * 1.2, col: '#d8b45a', k0: 0.35 }, // 63 Building, gold
+  ],
+  bridges: { xs: [-8840, -7600, -5490, -4780, -3640, -2660, -730, 690, 2100, 3000, 4100, 6160, 7300, 9330, 9900], y0: -6000, y1: 800 },
+  drone: { e: 2.5, r: 80, scale: 0.3, dot: 0.6 },
+  turn: -120, // the lift wall faces north-east (Dongdaemun, nothing famous), the glass the rest
+  ground: '#7e9a6a', glass: false, burst: 1.5, seed: 20261119,
+  sign: ['NAMSAN TOWER', '남산타워 전망대'],
+  lift: { floors: 0, from: 0, top: 135, up: 6, down: 5, name: 'NAMSAN TOWER', marks: [['🌲', 15], ['🏢', 70], ['🗼', 135]] },
+  plaques: [
+    [180, 0, 'Han River', '한강', '3 km'],
+    [240, -0.3, 'Yeouido · 63', '여의도 · 63빌딩', '5.5 km · fireworks nights'],
+    [105, 0.3, 'Modu Tower', '모두타워', '11 km'],
+    [105, -0.35, 'Ttukseom', '뚝섬', '7.6 km · drone show nights'],
+    [150, 0, 'Gangnam', '강남', '7 km'],
+    [330, 0.3, 'Gyeongbokgung', '경복궁', '3.3 km'],
+    [330, -0.35, 'Bukhansan', '북한산', '12 km'],
+  ],
+};
+export const siteOf = (store) => SITES[store?.deck] || SITES.modu;
+
 // Draws the painting (alpha above the skyline) and collects night lights
 // as { b, e } pairs. W: canvas width (4096, 2048 on small phones).
-export function paintView(W = 4096) {
+export function paintView(W = 4096, site = SITES.modu) {
+  const HIGH = site.high;
   const Hc = W / 8;
   const c = document.createElement('canvas');
   c.width = W; c.height = Hc;
   const g = c.getContext('2d');
-  const rand = rng(20261115);
+  const rand = rng(site.seed);
   const lights = [];
   let farLights = 0;
   const colOf = (b) => ((((b / 360 + 0.5) % 1) + 1) % 1) * W;
@@ -186,7 +290,7 @@ export function paintView(W = 4096) {
       const D = HIGH / Math.tan(-e), k = hazeOf(D);
       for (let i = 0; i < gw; i++) {
         const b = ((i + 0.5) / gw - 0.5) * 2 * Math.PI;
-        const kind = groundAt(Math.sin(b) * D, Math.cos(b) * D);
+        const kind = groundAt(Math.sin(b) * D, Math.cos(b) * D, site);
         const col = kind === 'water' ? WATER : kind === 'park' ? PARK : LAND;
         const o = (j * gw + i) * 4;
         for (let ch = 0; ch < 3; ch++) img.data[o + ch] = col[ch] + (HAZE[ch] - col[ch]) * k;
@@ -199,7 +303,7 @@ export function paintView(W = 4096) {
   }
 
   // 2. Mountains, far ones first (exaggerated a little, so they read).
-  for (const [b0, b1, D, top, peaks] of [...RIDGES].sort((p, q) => q[2] - p[2])) {
+  for (const [b0, b1, D, top, peaks] of [...site.ridges].sort((p, q) => q[2] - p[2])) {
     const k = hazeOf(D) * 0.9, fill = mixRgb(hexRgb(D > 9000 ? '#7d8f8a' : '#6f8a62'), k);
     const span = b1 - b0, steps = Math.ceil(span * 2);
     for (let s = 0; s <= steps; s++) {
@@ -215,9 +319,9 @@ export function paintView(W = 4096) {
     const step = Math.max(0.12, (60 / D) * (180 / Math.PI)); // about one building per 60 m round
     for (let b = rand() * step; b < 360; b += step * (0.6 + rand() * 0.8)) {
       const rad = (b * Math.PI) / 180;
-      if (groundAt(Math.sin(rad) * D, Math.cos(rad) * D) !== 'city') continue;
+      if (groundAt(Math.sin(rad) * D, Math.cos(rad) * D, site) !== 'city') continue;
       let tall = 15 + rand() * rand() * 70;
-      for (const [t0, t1, d0, d1, top] of TOWERS) if (b >= t0 && b <= t1 && D >= d0 && D <= d1 && rand() < 0.5) tall = Math.max(tall, top * (0.4 + rand() * 0.6));
+      for (const [t0, t1, d0, d1, top] of site.towers) if (b >= t0 && b <= t1 && D >= d0 && D <= d1 && rand() < 0.5) tall = Math.max(tall, top * (0.4 + rand() * 0.6));
       if (D < 2500 && rand() < 0.15) tall = 60 + rand() * 50; // apartment blocks nearby
       const wDeg = ((20 + rand() * 30) / D) * (180 / Math.PI);
       const base = BUILD[Math.floor(rand() * BUILD.length)];
@@ -232,16 +336,17 @@ export function paintView(W = 4096) {
     }
   }
 
-  // 4. Landmarks: Namsan's tower, far 63 Building (gold), the bridges.
-  const tw = mixRgb(hexRgb('#e8e2d8'), hazeOf(10800) * 0.8);
-  rect(VIEW.namsan - 0.08, 0.16, depOf(10800, 262 * 1.6), depOf(10800, 262 * 1.6 + 236 * 1.4), tw);
-  rect(VIEW.namsan - 0.25, 0.5, depOf(10800, 262 * 1.6 + 150), depOf(10800, 262 * 1.6 + 180), tw);
-  rect(VIEW.yeouido - 0.1, 0.22, depOf(15000), depOf(15000, 300), mixRgb(hexRgb('#d8b45a'), 0.5));
-  lights.push({ b: VIEW.namsan, e: depOf(10800, 262 * 1.6 + 236 * 1.4), red: true });
+  // 4. Landmarks (site.marks), the bridges.
+  for (const m of site.marks) {
+    rect(m.b, m.w, depOf(m.D, m.lo), depOf(m.D, m.hi), mixRgb(hexRgb(m.col), m.k0 ?? hazeOf(m.D) * m.k));
+    if (m.red) lights.push({ b: m.b + m.w / 2, e: depOf(m.D, m.hi), red: true });
+    for (let i = 0; i < (m.dots || 0); i++) lights.push({ b: m.b + m.w * rand(), e: depOf(m.D, m.lo + (m.hi - m.lo) * rand()) }); // its lit windows
+  }
   // Bridges: thin pale lines across the river, with lamps along them.
-  for (const x of [-20000, -16500, -13800, -12000, -10200, -8200, -6200, -4300, -2600, -900, 1300, 4200, 7400]) {
-    for (let y = -1500; y < 4500; y += 60) {
-      if (groundAt(x, y) !== 'water') continue;
+  const BR = site.bridges;
+  for (const x of BR.xs) {
+    for (let y = BR.y0; y < BR.y1; y += 60) {
+      if (groundAt(x, y, site) !== 'water') continue;
       const D = Math.hypot(x, y), b = ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360;
       rect(b, Math.max(0.05, (40 / D) * 57.3), depOf(D), depOf(D, 12), mixRgb(hexRgb('#e6e2da'), hazeOf(D)));
       if (lights.length < 9400 && (y / 60) % 4 === 0) lights.push({ b, e: depOf(D, 14), warm: true });
@@ -313,7 +418,7 @@ function plaqueTexture(en, ko, km) {
   return t;
 }
 
-function signTexture() {
+function signTexture([title, sub]) {
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 256;
   const g = c.getContext('2d');
@@ -321,10 +426,10 @@ function signTexture() {
   g.textAlign = 'center'; g.textBaseline = 'middle';
   g.fillStyle = '#ffffff';
   g.font = '900 104px "Helvetica Neue", Arial, system-ui, sans-serif';
-  g.fillText('MODU SKY', 512, 104);
+  g.fillText(title, 512, 104, 980);
   g.fillStyle = '#e9c46a';
   g.font = '700 44px "Helvetica Neue", Arial, system-ui, sans-serif';
-  g.fillText('모두 스카이 · 117F', 512, 196);
+  g.fillText(sub, 512, 196, 980);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -336,8 +441,12 @@ function signTexture() {
 // the height and little marks you pass on the way (a Ferris wheel, a tall
 // building, Namsan's tower top, each with its height): pictures and
 // numbers, so every language reads it. A tap skips it.
-export const LIFT = { floors: 117, top: 500, up: 8, down: 6 }; // floors, metres, seconds
-export const LIFT_MARKS = [['🎡', 60], ['🏢', 250], ['🗼', 480]]; // [mark, metres]: a Ferris wheel, a tall building, Namsan's tower top
+// (Each deck's lift is its site's: floors (0: none shown), metres from..top,
+// seconds up and down, the name, the marks [mark, metres]. Modu Sky's: a
+// Ferris wheel, a tall building, Namsan's tower top; Namsan's: the treetops,
+// a tall block, the deck.)
+export const LIFT = SITES.modu.lift;
+export const LIFT_MARKS = LIFT.marks;
 // How far along the ride is (0–1) after `k` of its time (0–1): eases in
 // and out, steady in the middle like a real lift.
 export const liftAlong = (k) => {
@@ -346,12 +455,12 @@ export const liftAlong = (k) => {
   if (x > 1 - e) return 1 - ((1 - x) * (1 - x)) / (2 * e * (1 - e));
   return (x - e / 2) / (1 - e);
 };
-export const liftFloor = (along) => Math.max(1, Math.round(1 + (LIFT.floors - 1) * along));
+export const liftFloor = (along, L = LIFT) => Math.max(1, Math.round(1 + (L.floors - 1) * along));
 
-function liftRide(dir = 'up') {
+function liftRide(dir = 'up', L = LIFT) {
   if (typeof document === 'undefined' || !document.body?.appendChild) return;
   document.querySelector('.skydeck-lift')?.remove();
-  const up = dir === 'up', LEN = (up ? LIFT.up : LIFT.down) * 1000;
+  const up = dir === 'up', LEN = (up ? L.up : L.down) * 1000;
   const el = (tag, css, text) => { const e = document.createElement(tag); if (css) e.style.cssText = css; if (text) e.textContent = text; return e; };
   const o = el('div', 'position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;gap:clamp(24px,7vw,64px);'
     + 'background:linear-gradient(#0d1322,#1d2a44);color:#fff;font-family:system-ui,sans-serif;transition:opacity .5s;cursor:pointer');
@@ -362,8 +471,8 @@ function liftRide(dir = 'up') {
   gauge.append(el('div', 'position:absolute;left:76px;top:0;bottom:0;width:4px;border-radius:2px;background:rgba(255,255,255,.18)'));
   const fill = el('div', 'position:absolute;left:76px;bottom:0;width:4px;border-radius:2px;background:#e9c46a');
   gauge.append(fill);
-  const marks = LIFT_MARKS.map(([m, at]) => {
-    const e = el('div', `position:absolute;right:42px;bottom:calc(${(at / LIFT.top) * 100}% - 11px);display:flex;align-items:center;gap:4px;white-space:nowrap;font:600 12px system-ui,sans-serif;color:#b9c4d6;line-height:22px;opacity:.35;transition:opacity .4s,transform .4s;transform-origin:right center`);
+  const marks = L.marks.map(([m, at]) => {
+    const e = el('div', `position:absolute;right:42px;bottom:calc(${((at - L.from) / (L.top - L.from)) * 100}% - 11px);display:flex;align-items:center;gap:4px;white-space:nowrap;font:600 12px system-ui,sans-serif;color:#b9c4d6;line-height:22px;opacity:.35;transition:opacity .4s,transform .4s;transform-origin:right center`);
     e.append(el('span', 'font-size:18px', m), el('span', '', `${at} m`));
     gauge.append(e);
     return [e, at];
@@ -373,7 +482,7 @@ function liftRide(dir = 'up') {
   const right = el('div', 'display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:6ch');
   const floor = el('div', 'font:900 clamp(52px,12vw,84px)/1 system-ui,sans-serif;font-variant-numeric:tabular-nums');
   const metres = el('div', 'font:700 22px system-ui,sans-serif;color:#b9c4d6;font-variant-numeric:tabular-nums');
-  const name = el('div', 'margin-top:10px;font:700 15px system-ui,sans-serif;letter-spacing:.2em;color:#e9c46a', `${up ? '▲' : '▼'} MODU SKY`);
+  const name = el('div', 'margin-top:10px;font:700 15px system-ui,sans-serif;letter-spacing:.2em;color:#e9c46a', `${up ? '▲' : '▼'} ${L.name}`);
   right.append(floor, metres, name);
   o.append(gauge, right);
   document.body.appendChild(o);
@@ -384,9 +493,9 @@ function liftRide(dir = 'up') {
   const tick = () => {
     if (done) return;
     const k = (performance.now() - t0) / LEN, a = liftAlong(k), along = up ? a : 1 - a;
-    const m = Math.round(along * LIFT.top);
-    floor.textContent = `${liftFloor(along)}F`;
-    metres.textContent = `${m} m`;
+    const m = Math.round(L.from + along * (L.top - L.from));
+    floor.textContent = L.floors ? `${liftFloor(along, L)}F` : `${m}`;
+    metres.textContent = L.floors ? `${m} m` : 'm';
     fill.style.height = `${along * 100}%`;
     car.style.bottom = `${along * 100}%`;
     for (const [e, at] of marks) { const on = m >= at - 1; e.style.opacity = on ? '1' : '.35'; e.style.transform = on ? 'scale(1.15)' : 'none'; }
@@ -403,6 +512,7 @@ const C = {
 };
 
 export function buildSkyDeck(store, ROOM, EXIT) {
+  const site = siteOf(store), V = site.view;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#1d2747');
   const hemi = new THREE.HemisphereLight(0xfff6e8, 0x40465a, 1.2);
@@ -410,16 +520,18 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   const colliders = [];
   const poly = (p) => colliders.push({ p });
   const b = new Batch();
-  const Lo = SKYDECK_LAYOUT, G = Lo.glass;
+  const Lo = SKYDECK_LAYOUT, G = site.glass ? Lo.glass : null;
   const Rv = A / Math.cos(Math.PI / 8); // the corners
   const corner = (k) => [Math.sin(WALLS[k] - Math.PI / 8) * Rv, Math.cos(WALLS[k] - Math.PI / 8) * Rv];
 
   // The floor: the octagon with the glass floor cut out of it.
   const shape = new THREE.Shape();
   for (let k = 0; k <= 8; k++) { const [x, z] = corner(k % 8); if (k) shape.lineTo(x, -z); else shape.moveTo(x, -z); }
-  const hole = new THREE.Path();
-  hole.moveTo(G.x0, -G.z0); hole.lineTo(G.x1, -G.z0); hole.lineTo(G.x1, -G.z1); hole.lineTo(G.x0, -G.z1); hole.lineTo(G.x0, -G.z0);
-  shape.holes.push(hole);
+  if (G) {
+    const hole = new THREE.Path();
+    hole.moveTo(G.x0, -G.z0); hole.lineTo(G.x1, -G.z0); hole.lineTo(G.x1, -G.z1); hole.lineTo(G.x0, -G.z1); hole.lineTo(G.x0, -G.z0);
+    shape.holes.push(hole);
+  }
   b.add(new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2), C.floor);
   b.add(new THREE.RingGeometry(4.2, 4.5, 8, 1, Math.PI / 8).rotateX(-Math.PI / 2), C.floorRing, 0, 0.005, 0);
   // The ceiling (seen from below), and a ring of light under it.
@@ -462,20 +574,24 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     b.box(0.02, 2.4, 0.07, x, 1.2, A - 0.05, '#5d6470');
     b.box(1.7, 0.12, 0.08, x, 2.46, A - 0.05, C.frame);
   }
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: signTexture() }));
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: signTexture(site.sign) }));
   sign.position.set(0, 3.45, A - 0.06);
   sign.rotation.y = Math.PI;
   scene.add(sign);
 
   // The glass floor: a frame round it, the pane, and the street far below.
-  const gx = (G.x0 + G.x1) / 2, gz = (G.z0 + G.z1) / 2, gw = G.x1 - G.x0, gd = G.z1 - G.z0;
-  for (const [w, d, x, z] of [[gw + 0.2, 0.1, gx, G.z0], [gw + 0.2, 0.1, gx, G.z1], [0.1, gd, G.x1, gz]]) b.box(w, 0.02, d, x, 0.01, z, C.glassFrame);
-  const below = new THREE.Mesh(new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: belowTexture() }));
-  below.position.set(gx, -40, gz);
-  scene.add(below);
-  const glassFloor = new THREE.Mesh(new THREE.PlaneGeometry(gw, gd).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.12, depthWrite: false }));
-  glassFloor.position.set(gx, 0.002, gz);
-  scene.add(glassFloor);
+  let below = null, gx = 0, gz = 0;
+  if (G) {
+    gx = (G.x0 + G.x1) / 2; gz = (G.z0 + G.z1) / 2;
+    const gw = G.x1 - G.x0, gd = G.z1 - G.z0;
+    for (const [w, d, x, z] of [[gw + 0.2, 0.1, gx, G.z0], [gw + 0.2, 0.1, gx, G.z1], [0.1, gd, G.x1, gz]]) b.box(w, 0.02, d, x, 0.01, z, C.glassFrame);
+    below = new THREE.Mesh(new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: belowTexture() }));
+    below.position.set(gx, -40, gz);
+    scene.add(below);
+    const glassFloor = new THREE.Mesh(new THREE.PlaneGeometry(gw, gd).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#cfe8ff', transparent: true, opacity: 0.12, depthWrite: false }));
+    glassFloor.position.set(gx, 0.002, gz);
+    scene.add(glassFloor);
+  }
   // Benches facing the view (two seats each).
   const seats = [];
   for (const { phi, x, z } of Lo.benches) {
@@ -487,13 +603,8 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   }
 
   // Plaques on the rail: what's out there.
-  const plaques = [
-    [3 * Math.PI / 2, 0.55, 'Yeouido', '여의도', '14 km · fireworks nights'],
-    [3 * Math.PI / 2, -0.35, 'Namsan', '남산', '11 km'],
-    [5 * Math.PI / 4, 0.2, 'Ttukseom', '뚝섬', '4.5 km · drone show nights'],
-    [Math.PI, 0, 'Han River', '한강', '1.3 km'],
-    [Math.PI / 4, 0, 'Seokchon Lake', '석촌호수', 'right below'],
-  ];
+  // (each on the glass wall nearest its bearing, the painting's turn allowed for)
+  const plaques = site.plaques.map(([bear, ...rest]) => [wallFor(bear, site.turn), ...rest]).filter(([phi]) => phi > 0.1);
   for (const [phi, along, en, ko, km] of plaques) {
     const [sx, sz] = dirOf(phi), rl = 2 * (A - 0.45) * Math.tan(Math.PI / 8);
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.2), new THREE.MeshBasicMaterial({ map: plaqueTexture(en, ko, km) }));
@@ -511,7 +622,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
 
   // ---- The view ----
   const small = typeof navigator !== 'undefined' && (navigator.deviceMemory || 8) <= 4;
-  const { canvas, lights } = paintView(small ? 2048 : 4096);
+  const { canvas, lights } = paintView(small ? 2048 : 4096, site);
   const viewTex = new THREE.CanvasTexture(canvas);
   viewTex.colorSpace = THREE.SRGBColorSpace;
   viewTex.wrapS = THREE.RepeatWrapping;
@@ -529,7 +640,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   sky.position.y = EYE;
   sky.renderOrder = -3;
   // Under the sky: the ground far below, where the painting stops.
-  const floorBelow = new THREE.Mesh(new THREE.CircleGeometry(R + 4, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#9ea392', depthWrite: false, fog: false }));
+  const floorBelow = new THREE.Mesh(new THREE.CircleGeometry(R + 4, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: site.ground, depthWrite: false, fog: false }));
   floorBelow.position.y = EYE + Y_BOT - 0.5;
   floorBelow.renderOrder = -2.5;
   // Lit windows at night.
@@ -558,11 +669,15 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   const sparks = new THREE.Points(sparkGeo, sparkMat);
   sparks.visible = false;
   sparks.frustumCulled = false;
-  scene.add(sky, floorBelow, city, cityLights, disc, sparks);
+  // All of the view turns together (site.turn): painting bearing b shows at room bearing b - turn.
+  const viewG = new THREE.Group();
+  viewG.rotation.y = (site.turn * Math.PI) / 180;
+  viewG.add(sky, floorBelow, city, cityLights, disc, sparks);
+  scene.add(viewG);
 
   // ---- Each frame ----
   const look = { top: new THREE.Color(), hor: new THREE.Color(), city: new THREE.Color() };
-  const below0 = new THREE.Color('#9ea392');
+  const below0 = new THREE.Color(site.ground);
   let lastFrame = -1e9, lastPaint = -1e9;
   const paintSky = (now) => {
     skyAt(now, look);
@@ -577,7 +692,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     skyGeo.attributes.color.needsUpdate = true;
     cityMat.color.copy(look.city);
     floorBelow.material.color.copy(below0).multiply(look.city);
-    below.material.color.copy(look.city).lerp(_b.set('#ffffff'), 0.15);
+    if (below) below.material.color.copy(look.city).lerp(_b.set('#ffffff'), 0.15);
     lightMat.opacity = look.lights;
     hemi.intensity = 1.2 * look.room;
     // The sun rises in the east, sets in the west (over Yeouido); the moon at night.
@@ -601,7 +716,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   const PER = 40;
   const fireworks = (dt) => {
     if (bursts.length < SPARKS / PER && Math.random() < dt * 1.6) {
-      bursts.push({ b: VIEW.yeouido + (Math.random() - 0.5) * 5, e: 1 + Math.random() * 3, age: 0, size: 1.2 + Math.random() * 1.4, c: burstColors[Math.floor(Math.random() * burstColors.length)], c2: burstColors[Math.floor(Math.random() * burstColors.length)] });
+      bursts.push({ b: V.yeouido + (Math.random() - 0.5) * 5 * site.burst, e: 1 + Math.random() * 3 * site.burst, age: 0, size: (1.2 + Math.random() * 1.4) * site.burst, c: burstColors[Math.floor(Math.random() * burstColors.length)], c2: burstColors[Math.floor(Math.random() * burstColors.length)] });
     }
     for (let i = bursts.length - 1; i >= 0; i--) if ((bursts[i].age += dt) > 2.4) bursts.splice(i, 1);
     sc.fill(0);
@@ -620,11 +735,12 @@ export function buildSkyDeck(store, ROOM, EXIT) {
   // Its code comes only when a show is near while you're up here.
   const droneG = new THREE.Group();
   droneG.visible = false;
-  scene.add(droneG);
+  viewG.add(droneG);
+  const DV = site.drone;
   let droneSky = null, droneLoading = false;
   const placeDrones = (SKY) => {
-    const yaw = (-VIEW.ttukseom * Math.PI) / 180, k = DRONE_VIEW.scale;
-    const centre = new THREE.Vector3(...onCylinder(VIEW.ttukseom, DRONE_VIEW.e, DRONE_VIEW.r));
+    const yaw = (-V.ttukseom * Math.PI) / 180, k = DV.scale;
+    const centre = new THREE.Vector3(...onCylinder(V.ttukseom, DV.e, DV.r));
     const local = new THREE.Vector3(SKY.x, SKY.y, SKY.z).multiplyScalar(k).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     droneG.position.copy(centre.sub(local));
     droneG.rotation.y = yaw;
@@ -640,7 +756,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
         m.useShow(droneShow);
         placeDrones(droneShow.SKY);
         droneSky = m.createDroneSky(droneG, { count: 900 });
-        droneSky.points.material.size = DRONE_VIEW.dot; // (far away: smaller dots)
+        droneSky.points.material.size = DV.dot; // (far away: smaller dots)
       }).catch(() => {}).finally(() => { droneLoading = false; }); // (offline: try again later)
     }
     droneG.visible = !!(near && droneSky);
@@ -649,7 +765,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
 
   const animate = (dt) => {
     const t = performance.now(), now = Date.now();
-    if (t - lastFrame > 1500) { liftRide('up'); lastPaint = -1e9; } // just walked in: the ride up
+    if (t - lastFrame > 1500) { liftRide('up', site.lift); lastPaint = -1e9; } // just walked in: the ride up
     lastFrame = t;
     if (t - lastPaint > 500) { paintSky(now); lastPaint = t; }
     const show = showAt(now);
@@ -669,7 +785,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     const [sx, sz] = dirOf(phi);
     return { x: sx * (A - 1) + Math.cos(phi) * along, z: sz * (A - 1) - Math.sin(phi) * along, ry: phi };
   });
-  visitors.push({ x: gx + 0.4, z: gz - 0.9, ry: 3 * Math.PI / 2 }); // on the glass floor, looking west
+  if (G) visitors.push({ x: gx + 0.4, z: gz - 0.9, ry: 3 * Math.PI / 2 }); // on the glass floor, looking west
 
   return {
     scene, products: [], colliders, clerk: null, turntable: null, room: ROOM, exit: EXIT,
@@ -677,7 +793,7 @@ export function buildSkyDeck(store, ROOM, EXIT) {
     stations: { visitors },
     animate,
     camBlocked: (x, z) => !insideDeck(x, z, 0.3),
-    onLeave: () => liftRide('down'), // (main.js leaveStore: the ride down)
+    onLeave: () => liftRide('down', site.lift), // (main.js leaveStore: the ride down)
     skyDeck: true,
   };
 }

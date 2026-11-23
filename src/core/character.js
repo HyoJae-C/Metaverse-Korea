@@ -25,6 +25,14 @@ const mat = (hex) => (matCache[hex] ||= new THREE.MeshLambertMaterial({ color: h
 const TUBE_COLORS = [0xff6b6b, 0xffd93d, 0x4fc3f7, 0xff9bb3];
 const FOOT_Y = 0.08; // the foot bone's height above the sole, standing
 const qHand = new THREE.Quaternion(), qRoot = new THREE.Quaternion();
+// A floating balloon's knot, in the rig's metres: up by the head on the
+// right (-x), just behind the shoulder line (the dog rises ~0.4 m above it).
+const FLOAT_AT = new THREE.Vector3(-0.5, 1.12, -0.05);
+const STRING_MAT = new THREE.LineBasicMaterial({ color: 0xd9d4ca });
+// The open umbrella against the left hand: dx/dy/dz from the hand to the pole's
+// foot (the hand grips the pole partway up), tilt leans the canopy over the head.
+// x/y/z: where it stands before the model has loaded.
+const UMB_AT = { dx: 0.055, dy: -0.25, dz: 0, tilt: 0.22, x: 0.4, y: 0.6, z: 0.05 };
 export function createCharacter(rawLook) {
   const look = sanitizeLook(rawLook);
   const o = {
@@ -129,9 +137,12 @@ export function createCharacter(rawLook) {
   const _fv = new THREE.Vector3();
   let act = null; // current body emote
   let activityName = null; // looping pose: gym, fishing, dancing
+  let strideFn = null; // on skates, a pose in place of the stride (see setStride)
   let movesFn = null; // a scripted move (basketball shots): () => bone offsets, see setMoves
   let model = null; // set once the pack model has loaded
   let held = null; // a cup or other thing in the right hand
+  let string = null; // the line from the hand up to a floating balloon
+  let floatT = Math.random() * 10; // (floating balloons don't all bob together)
   let openBook = null; // the book lying open on the table while reading
   let umbrella = null; // open umbrella over the head
   let tube = null; // a swim ring (the pool)
@@ -142,6 +153,19 @@ export function createCharacter(rawLook) {
     if (held.userData.onHead) { // (a balloon crown: worn, not held)
       held.scale.setScalar(1);
       headAcc.add(held);
+      return;
+    }
+    if (held.userData.floats) { // (a balloon dog: up by the head, on a string from the hand)
+      held.scale.setScalar(1);
+      held.position.set(FLOAT_AT.x, FLOAT_AT.y, FLOAT_AT.z);
+      held.rotation.set(0, 0, 0);
+      rig.add(held);
+      if (!string) {
+        string = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(6, 3)), STRING_MAT);
+        string.frustumCulled = false;
+        rig.add(string);
+      }
+      string.visible = !!model?.hand;
       return;
     }
     if (model?.hand) {
@@ -173,9 +197,10 @@ export function createCharacter(rawLook) {
       return;
     }
     model = m; blob.visible = true;
+    if (umbrella) m.setUmbrella?.(true);
     for (const f of footProps.splice(0)) f(m);
     addGloves(look, m);
-    m.setActivity(activityName); m.setMoves?.(movesFn); attachHeld(); wearMascot();
+    m.setActivity(activityName); m.setMoves?.(movesFn); m.setStride?.(strideFn); attachHeld(); wearMascot();
   });
   tryModel();
   const towel = accessory('neck', look.neck);
@@ -267,6 +292,9 @@ export function createCharacter(rawLook) {
       blob.position.y = 0.07 - Math.max(0, air);
       blob.scale.setScalar(Math.max(0.45, 1 - air * 0.25));
     },
+    // Rocking in a rocking chair (game/rocking.js): the whole body tipped
+    // forward by rx (radians) and moved by (y, z), in the root's own frame.
+    setRock(rx = 0, y = 0, z = 0) { rig.rotation.set(rx, 0, 0); rig.position.set(0, y, z); },
     // speed01: 0 idle … 1 running; sit: seated pose (on a café chair)
     animate(dt, speed01, sit = false) {
       if (model) {
@@ -281,12 +309,37 @@ export function createCharacter(rawLook) {
             skates[i].position.set(_fv.x, Math.max(RIDE_CLEAR, _fv.y - FOOT_Y - SKATE_LIFT), _fv.z);
           });
         }
+        if (umbrella && model.hands?.[0]) {
+          // The pole's grip follows the left hand; the umbrella stays upright, leaning a little over the head.
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hands[0].getWorldPosition(_fv));
+          const U = globalThis.__umbAt || UMB_AT; // debug: tune live
+          umbrella.position.set(_fv.x + U.dx, _fv.y + U.dy, _fv.z + U.dz);
+          umbrella.rotation.z = U.tilt;
+        }
         if (held?.parent === model.hand) {
           // Keep the cup upright whatever the hand does: local = hand⁻¹ · body.
           rig.updateWorldMatrix(true, true);
           model.hand.getWorldQuaternion(qHand);
           rig.getWorldQuaternion(qRoot);
           held.quaternion.copy(qHand.invert().multiply(qRoot));
+        } else if (held?.parent === rig && held.userData.floats && model.hand) {
+          // A floating balloon bobs and sways, trails back a little while
+          // walking, and its string runs from the hand up to the knot.
+          floatT += dt;
+          const k = Math.min(1, dt * 4);
+          held.position.x = FLOAT_AT.x + Math.sin(floatT * 1.1) * 0.03;
+          held.position.y = FLOAT_AT.y + Math.sin(floatT * 1.7) * 0.035;
+          held.position.z += (FLOAT_AT.z - speed01 * 0.18 - held.position.z) * k;
+          held.rotation.z = Math.sin(floatT * 1.3) * 0.08;
+          held.rotation.x += (-speed01 * 0.2 - held.rotation.x) * k;
+          rig.updateWorldMatrix(true, true);
+          rig.worldToLocal(model.hand.getWorldPosition(_fv));
+          const a = string.geometry.attributes.position;
+          a.setXYZ(0, _fv.x, _fv.y, _fv.z);
+          a.setXYZ(1, held.position.x, held.position.y, held.position.z);
+          a.needsUpdate = true;
+          string.visible = held.visible;
         }
         return;
       }
@@ -342,12 +395,15 @@ export function createCharacter(rawLook) {
       }
     },
     // An open umbrella over the head (rainy days), or none.
+    // Held in the left hand, raised beside the head (the right hand stays
+    // free for a cup); the pole stays clear of the face.
     setUmbrella(on) {
       if (!!umbrella === !!on) return;
+      model?.setUmbrella?.(!!on);
       if (on) {
         umbrella = makeUmbrella();
-        umbrella.position.set(0.16, 0.62, 0.05);
-        umbrella.rotation.z = -0.08;
+        umbrella.position.set(UMB_AT.x, UMB_AT.y, UMB_AT.z);
+        umbrella.rotation.z = UMB_AT.tilt;
         rig.add(umbrella);
       } else { umbrella.removeFromParent(); umbrella = null; }
     },
@@ -356,6 +412,7 @@ export function createCharacter(rawLook) {
       if ((held?.name || null) === (kind ? 'held:' + kind : null)) return;
       held?.removeFromParent();
       held = kind ? makeHeld(kind) : null;
+      if (string) string.visible = false;
       attachHeld();
     },
     // The held thing's 3D object (the fishing rig moves the rod's parts).
@@ -391,6 +448,8 @@ export function createCharacter(rawLook) {
     // the dances use), laid over the idle or running clip. null stops it.
     // Used for basketball shots (core/basketball-game.js shotMove).
     setMoves(fn) { movesFn = fn || null; model?.setMoves?.(movesFn); },
+    // On skates: fn(stroke, dt) → bone offsets in place of the stride (the ice rink's glides), or null.
+    setStride(fn) { strideFn = fn || null; model?.setStride?.(strideFn); },
     // Wind in the hair (the roller coaster): k 0 still .. 1 full speed.
     setWind(k) {
       if (model) { model.setWind?.(k); return; }
@@ -634,6 +693,36 @@ function addHat(look, head) {
       const stalk = new THREE.Mesh(geo('beretStalk', () => new THREE.CylinderGeometry(0.015, 0.02, 0.06, 6)), m);
       stalk.position.set(0.02, 0.38, -0.02);
       head.add(top, stalk);
+    } else if (hat === 'newsboy') {
+      // 빵모자 (newsboy cap): a soft, puffy crown of eight panels over a band,
+      // a button on top and a short curved peak.
+      const crown = new THREE.Mesh(geo('newsboyCrown', () => new THREE.SphereGeometry(0.38, 20, 12)), m);
+      crown.scale.set(1, 0.42, 1);
+      crown.position.set(0, 0.24, -0.02);
+      crown.rotation.x = -0.08;
+      const band = new THREE.Mesh(geo('newsboyBand', () => new THREE.CylinderGeometry(0.31, 0.32, 0.07, 20)), m);
+      band.position.set(0, 0.17, -0.01);
+      const button = new THREE.Mesh(geo('newsboyButton', () => new THREE.SphereGeometry(0.03, 8, 6)), m);
+      button.position.set(0, 0.405, -0.03);
+      const peak = new THREE.Mesh(geo('newsboyPeak', () => new THREE.CylinderGeometry(0.2, 0.2, 0.022, 18, 1, false, -Math.PI / 2, Math.PI)), m);
+      peak.scale.set(1, 1, 0.7);
+      peak.position.set(0, 0.15, 0.26);
+      peak.rotation.x = 0.22;
+      head.add(crown, band, button, peak);
+    } else if (hat === 'flatcap') {
+      // 헌팅캡 (flat cap): low and close, rising at the back and sloping
+      // down over a short peak at the front.
+      const crown = new THREE.Mesh(geo('flatcapCrown', () => new THREE.SphereGeometry(0.35, 20, 12)), m);
+      crown.scale.set(1.02, 0.5, 1.1);
+      crown.position.set(0, 0.2, -0.03);
+      crown.rotation.x = 0.16;
+      const band = new THREE.Mesh(geo('flatcapBand', () => new THREE.CylinderGeometry(0.315, 0.32, 0.05, 20)), m);
+      band.position.set(0, 0.15, -0.01);
+      const peak = new THREE.Mesh(geo('flatcapPeak', () => new THREE.CylinderGeometry(0.19, 0.19, 0.02, 18, 1, false, -Math.PI / 2, Math.PI)), m);
+      peak.scale.set(1, 1, 0.55);
+      peak.position.set(0, 0.14, 0.28);
+      peak.rotation.x = 0.3;
+      head.add(crown, band, peak);
     } else if (hat === 'towel') {
       // 양머리: a towel band round the head with a rolled "sheep ear" each side.
       const cap = new THREE.Mesh(

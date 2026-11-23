@@ -126,3 +126,52 @@ test('the lift counts every floor, slowly, up and down', async () => {
   const room = roomOf(deck), d = buildSkyDeck(deck, room, exitOf(room));
   assert.equal(typeof d.onLeave, 'function', 'the ride down when leaving');
 });
+
+// Namsan Tower's deck (Yozi 2026-11-19): the same room, its own view.
+const nDeck = stores.find((s) => s.id === 'namsan-deck');
+
+test('Namsan Tower\'s deck is the same room at the foot of the tower on the summit, free, its view from Namsan', async () => {
+  const { SITES, siteOf, wallFor } = await import('../src/core/sky-deck.js');
+  assert.ok(nDeck, 'in stores.json');
+  assert.equal(nDeck.workshop, 'skydeck');
+  assert.equal(siteOf(nDeck), SITES.namsan);
+  assert.equal(siteOf(deck), SITES.modu);
+  assert.equal(roomOf(nDeck), ROOM_SKYDECK);
+  assert.ok(!nDeck.price && nDeck.products.length === 0, 'free, like Modu Sky');
+  for (const k of ['en', 'ko', 'ja', 'zh']) assert.ok(nDeck.name[k] && nDeck.tagline[k], k);
+  // The door: on the summit plaza beside the tower (itaewon.json namsan: the tower at -1488.8, -182.8, the plaza 56 m up).
+  const d = Math.hypot(nDeck.at[0] + 1488.8, nDeck.at[1] + 182.8);
+  // (on the terrace, in front of the foot building's door: core/namsan-tower.js, game/namsan-walk.js)
+  const { NAMSAN_WALK: W } = await import('../src/game/namsan-walk.js');
+  assert.ok(d > W.footR + 0.5 && d < W.terrace.at(-1)[0] - 0.5, `the door ${d.toFixed(1)} m from the tower, on its terrace in front of the door`);
+  assert.ok(nDeck.at[0] > -1488.8 && Math.abs(nDeck.at[1] + 182.8) < 0.5, 'east of the tower, where its door is');
+  assert.ok(Math.abs(nDeck.y - 56 - W.terrace.at(-1)[1]) < 0.1, 'at the terrace\'s height');
+  // What's out there, in its real directions from Namsan.
+  const S = SITES.namsan;
+  assert.equal(groundAt(0, -3800, S), 'water', 'the Han, south');
+  assert.equal(groundAt(0, 0, S), 'park', 'Namsan\'s woods below');
+  assert.equal(groundAt(0, 2000, S), 'city', 'downtown, north');
+  assert.ok(S.view.modu > 100 && S.view.modu < 125 && S.view.yeouido > 225 && S.view.yeouido < 255 && S.view.palace > 330);
+  // Every plaque is on a glass wall (not the lift wall), and the lift wall hides none of the famous views.
+  for (const [b] of S.plaques) assert.ok(wallFor(b, S.turn) > 0.1, `plaque at ${b}° on glass`);
+  for (const b of Object.values(S.view)) assert.notEqual(wallFor(b, S.turn), 0, `${b}° not behind the lift`);
+  assert.equal(wallFor(0, 0), Math.PI, 'Modu Sky: north is the wall across from the lift');
+});
+
+test('Namsan\'s deck: walk from the lift to every bench and window; no glass floor; people at the windows', async () => {
+  const room = roomOf(nDeck), exit = exitOf(room);
+  const d = buildSkyDeck(nDeck, room, exit);
+  const col = new CollisionMap(d.colliders);
+  const start = { x: exit.x, z: exit.z - 1.4 };
+  for (const s of d.seats) assert.ok(reachable(col, room, start, { x: s.stand[0], z: s.stand[1] }), 'bench');
+  for (let k = 1; k < 8; k++) {
+    const phi = (k * Math.PI) / 4, r = 12 - 1.0;
+    assert.ok(reachable(col, room, start, { x: Math.sin(phi) * r, z: Math.cos(phi) * r }), `window ${k}`);
+  }
+  assert.ok(d.stations.visitors.length >= 6);
+  for (const v of d.stations.visitors) assert.ok(!col.blocked(v.x, v.z, 0.25) && insideDeck(v.x, v.z, 0.5));
+  assert.ok(!d.scene.children.some((o) => o.material?.opacity === 0.12), 'no glass floor');
+  const { SITES } = await import('../src/core/sky-deck.js');
+  const L = SITES.namsan.lift;
+  assert.ok(L.up >= 5 && L.down >= 4 && L.top > L.from && L.marks.every(([, m]) => m > L.from && m <= L.top));
+});

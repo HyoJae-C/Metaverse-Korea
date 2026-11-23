@@ -45,6 +45,14 @@ export function whereIs(from, to, forward) {
   return { m, dir: b > 0 ? 'right' : 'left' };
 }
 
+// Which friend request the on-screen card asks about: the oldest one I
+// haven't put off ("Later"), and how many more are waiting behind it.
+// incoming: [{ uid, name }] as list() gives it; skipped: a Set of uids.
+export function nextAsk(incoming, skipped = new Set()) {
+  const open = (incoming || []).filter((f) => f && !skipped.has(f.uid));
+  return open.length ? { ask: open[0], more: open.length - 1 } : null;
+}
+
 // Conversations held in memory: merges history and live messages without
 // doubles, and counts what I haven't read. readMarks: { key: last read id }
 // (kept by the caller so it survives a reload).
@@ -159,6 +167,18 @@ export class SupabaseFriends {
     if (!r.data?.ok) return { error: r.data?.error || 'network' };
     return { message: { id: r.data.id, from: this.uid, to, name: '', body: b, at: r.data.at } };
   }
+  // Which friends are in the game now (supabase/068_friends_online.sql):
+  // { online: Set of uids, shown: is mine shown to them } or { error }.
+  // 'missing' until that SQL is run: the game then shows no dots or switch.
+  async online() {
+    const r = await this._rpc('friends_online');
+    if (r.error) return { error: r.error };
+    return { online: new Set((r.data?.online || []).map(String)), away: new Set((r.data?.away || []).map(String)), shown: r.data?.shown !== false };
+  }
+  async setShown(show) {
+    const r = await this._rpc('set_online_shown', { p_show: !!show });
+    return r.error ? { error: r.error } : { shown: r.data !== false };
+  }
   // My private channel: the server pushes new messages ('m') and friend-list
   // changes ('f'). If it can't be joined, we look for news once a minute.
   watch(onMessage, onChange) {
@@ -186,6 +206,8 @@ export class SupabaseFriends {
 // ---------- This browser only ----------
 // Everyone is a tab of this browser, known by the id and name it plays with.
 
+// A friend counts as online when seen this recently (the server uses 90 s too).
+export const ONLINE_MS = 90000;
 const LOCAL_KEY = 'mkfriends.local'; // not "mk.": stays out of the cloud save
 
 export class LocalFriends {
@@ -200,8 +222,8 @@ export class LocalFriends {
   _read() {
     try {
       const s = JSON.parse(this.storage.getItem(LOCAL_KEY) || '{}');
-      return { names: s.names || {}, edges: Array.isArray(s.edges) ? s.edges : [], msgs: Array.isArray(s.msgs) ? s.msgs : [], seq: s.seq || 0 };
-    } catch { return { names: {}, edges: [], msgs: [], seq: 0 }; }
+      return { names: s.names || {}, edges: Array.isArray(s.edges) ? s.edges : [], msgs: Array.isArray(s.msgs) ? s.msgs : [], seq: s.seq || 0, seen: s.seen || {}, hidden: s.hidden || {}, away: s.away || {} };
+    } catch { return { names: {}, edges: [], msgs: [], seq: 0, seen: {}, hidden: {}, away: {} }; }
   }
   _write(s) {
     s.msgs = s.msgs.slice(-500);
@@ -274,6 +296,27 @@ export class LocalFriends {
     this._ping({ type: 'm', message, targets: to ? [to] : friends });
     return { message };
   }
+  // Online here = this tab said so in the last 90 s (see touch()).
+  touch(now = Date.now(), away = false) {
+    const s = this._read();
+    s.seen = { ...(s.seen || {}), [this.uid]: now };
+    s.away = { ...(s.away || {}), [this.uid]: !!away };
+    this._write(s);
+  }
+  async online(now = Date.now()) {
+    this.touch(now);
+    const s = this._read();
+    const seen = s.seen || {}, hidden = s.hidden || {}, away = s.away || {};
+    const here = Object.keys(s.names).filter((u) => u !== this.uid && this._friends(s, this.uid, u)
+      && now - (seen[u] || 0) < ONLINE_MS && !hidden[u]);
+    return { online: new Set(here.filter((u) => !away[u])), away: new Set(here.filter((u) => away[u])), shown: !hidden[this.uid] };
+  }
+  async setShown(show) {
+    const s = this._read();
+    s.hidden = { ...(s.hidden || {}), [this.uid]: !show };
+    this._write(s);
+    return { shown: !!show };
+  }
   close() { this.bc?.close(); this.bc = null; }
   watch(onMessage, onChange) {
     if (!this.bc) return () => {};
@@ -282,6 +325,8 @@ export class LocalFriends {
       if (d?.type === 'f' && d.to === this.uid) onChange({});
     };
     this.bc.addEventListener('message', h);
-    return () => this.bc.removeEventListener('message', h);
+    this.touch(); // other tabs see this one as online while it plays
+    const beat = setInterval(() => this.touch(), ONLINE_MS / 3);
+    return () => { clearInterval(beat); this.bc?.removeEventListener('message', h); };
   }
 }

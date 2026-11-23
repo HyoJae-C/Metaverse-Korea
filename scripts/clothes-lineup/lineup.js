@@ -17,8 +17,8 @@ r.setSize(W, H);
 const cam = new THREE.OrthographicCamera(-n * sp / 2, n * sp / 2, fy + fh, fy, 0.1, 50);
 cam.position.set(0, 0, 10); cam.lookAt(0, 0, 0);
 const chars = ids.map((id, i) => {
-  const [model, shirt = 'cream', pants = 'denim', shoes = null, hairStyle = null, hair = 'espresso'] = id.split(':');
-  const c = createCharacter({ model, shirt, pants, shoes: shoes || null, hairStyle: hairStyle || null, hair, skin: 'fair' });
+  const [model, shirt = 'cream', pants = 'denim', shoes = null, hairStyle = null, hair = 'espresso', back = null, head = null] = id.split(':');
+  const c = createCharacter({ model, shirt, pants, shoes: shoes || null, hairStyle: hairStyle || null, hair, skin: 'fair', back: back || null, head: head || null });
   c.root.position.x = (i - (n - 1) / 2) * sp; c.root.rotation.y = yaw;
   s.add(c.root); return c;
 });

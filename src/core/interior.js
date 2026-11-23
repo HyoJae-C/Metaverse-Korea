@@ -6,6 +6,8 @@ import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
 import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
+import { finishSample } from './home-finish-art.js';
+import { finishById } from './home-finish.js';
 import { RING, BOARD_ORDER } from './arcade.js';
 import { barStyleOf, decorateBar, seatPatron } from './bar-styles.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
@@ -17,8 +19,11 @@ import { POOL_ROOM } from './pool.js';
 import { SHELF_SECTIONS } from './books.js';
 import { buildHauntedHouse } from './haunted.js';
 import { buildCathedralHall, ROOM_CATHEDRAL } from './cathedral-hall.js';
+import { buildOperaHall, ROOM_OPERA } from './opera-hall.js';
+import { buildConcertHall, ROOM_CONCERT } from './concert-hall.js';
 import { buildConfessionRoom, ROOM_CONFESSION } from './confession-room.js';
 import { buildDharmaHall, ROOM_DHARMA } from './dharma-hall.js';
+import { buildIceRinkHall, ROOM_RINK } from './ice-rink-hall.js';
 import { buildSkyDeck, ROOM_SKYDECK } from './sky-deck.js';
 import { buildAquarium, AQUA_ROOM } from './aquarium.js';
 import { SEA_ROOM, ZOO_PARK_ROOM, ZOO_PARK_EXIT } from './zoo-rooms.js';
@@ -32,6 +37,8 @@ import { buildMemorial, ROOM_MEMORIAL } from './war-memorial.js';
 import { ROOM_DOME } from './dome-outside.js';
 import { ACTIVITY_ROOMS, decorateActivityRoom } from './activity-rooms.js';
 import { decorateLiveCafe } from './live-cafe-room.js';
+import { decorateBoardCafe } from './board-cafe-room.js';
+import { decorateCactusHouse } from './cactus-house.js';
 import { makeRide, makeSkate1 } from './rides.js';
 import { RIDE_SHOPS, RIDE_TYPES, SKIN_COLORS } from './bike-garage.js';
 
@@ -71,11 +78,13 @@ export const ROOM_SIZES = {
   zoosea: SEA_ROOM, // the zoo's Sea Animals hall (see zoo-sea-hall.js)
   zoo: ZOO_PARK_ROOM, // Children's Grand Park's zoo, the grounds (see zoo-park.js)
   cathedral: ROOM_CATHEDRAL, // inside Myeongdong Cathedral (see cathedral-hall.js)
+  opera: ROOM_OPERA, concert: ROOM_CONCERT, // the Opera Theater in Seoul Arts Center's Opera House (see opera-hall.js)
   confession: ROOM_CONFESSION, // its confession room, alone (see confession-room.js)
   dharmahall: ROOM_DHARMA, // inside Jogyesa's and Bongeunsa's Daeungjeon: the silent hall (see dharma-hall.js)
+  icerink: ROOM_RINK, // Mokdong Ice Rink: the ice, the boards and the stands (see ice-rink-hall.js)
   skydeck: ROOM_SKYDECK, // Modu Sky, the deck at the top of Modu Tower (see sky-deck.js)
 };
-export const roomOf = (store) => ROOM_SIZES[store.size] || ROOM_SIZES.medium;
+export const roomOf = (store) => store.roomDims || ROOM_SIZES[store.size] || ROOM_SIZES.medium; // (roomDims: a home's size by its level, core/home-stages.js)
 export const exitOf = (room) => ({ x: 0, z: (room.z1 ?? room.d / 2) - 0.9 });
 // A room's walkable box (most rooms are centred on 0).
 export const roomBox = (room) => ({ x0: room.x0 ?? -room.w / 2, x1: room.x1 ?? room.w / 2, z0: room.z0 ?? -room.d / 2, z1: room.z1 ?? room.d / 2 });
@@ -222,8 +231,11 @@ export function buildInterior(store) {
   if (store.workshop === 'dome') return domeBuilder(store, ROOM, EXIT);
   if (store.workshop === 'haunted-house') return buildHauntedHouse(store, ROOM, EXIT);
   if (store.workshop === 'cathedral') return buildCathedralHall(store, ROOM, EXIT);
+  if (store.workshop === 'opera') return buildOperaHall(store, ROOM, EXIT);
+  if (store.workshop === 'concert') return buildConcertHall(store, ROOM, EXIT);
   if (store.workshop === 'confession') return buildConfessionRoom(store, ROOM, EXIT);
   if (store.workshop === 'dharmahall') return buildDharmaHall(store, ROOM, EXIT);
+  if (store.workshop === 'icerink') return buildIceRinkHall(store, ROOM, EXIT);
   if (store.workshop === 'skydeck') return buildSkyDeck(store, ROOM, EXIT);
   if (store.workshop === 'aquarium') return buildAquarium(store, ROOM, EXIT);
   if (store.workshop === 'zoo-sea') return zooBuilders.buildSeaHall(store, ROOM, EXIT);
@@ -253,6 +265,7 @@ export function buildInterior(store) {
   // Walls face inward (single-sided, so the camera can see in from outside).
   const wallMat = new THREE.MeshLambertMaterial({ color: store.colors.accent, side: THREE.FrontSide });
   const trimMat = mat(store.colors.awning);
+  const homeWalls = []; // (a home's wallpaper goes on these: core/home-finish-art.js)
   const wall = (len, x, z, ry) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(len, h), wallMat);
     m.position.set(x, h / 2, z);
@@ -263,6 +276,7 @@ export function buildInterior(store) {
     trim.rotation.y = ry;
     trim.position.add(new THREE.Vector3(Math.sin(ry) * 0.01, 0, Math.cos(ry) * 0.01));
     scene.add(trim);
+    homeWalls.push({ mesh: m, len, trim });
   };
   wall(w, 0, -d / 2, 0);
   wall(d, -w / 2, 0, Math.PI / 2);
@@ -310,6 +324,55 @@ export function buildInterior(store) {
     p: [[x - sx / 2, z - sz / 2], [x + sx / 2, z - sz / 2], [x + sx / 2, z + sz / 2], [x - sx / 2, z + sz / 2]],
   });
 
+  // A cooking class's little kitchen in the back right corner, where dishes
+  // are made tastier (음식을 더 맛있게 만들기, game/dish-upgrade.js): a
+  // counter with a stove and a simmering pot, a chopping board, a shelf of
+  // seasoning jars and a sign. Returns where you stand to use it.
+  const tastierKitchen = () => {
+    const kx = w / 2 - 3.1, kz = -d / 2 + 0.45, cw = 3.2; // (clear of the potted plant in the corner)
+    box(cw, 0.86, 0.8, kx, 0.43, kz, '#f3ece0'); // the counter
+    box(cw + 0.04, 0.05, 0.84, kx, 0.885, kz, '#8a5a3a'); // its wooden top
+    box(0.7, 0.06, 0.5, kx - 0.7, 0.94, kz, '#2b2b2e'); // the stove
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.18, 0.24, 16), mat('#b0b4ba'));
+    pot.position.set(kx - 0.7, 1.09, kz);
+    scene.add(pot);
+    const soup = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.01, 16), mat('#d8642c'));
+    soup.position.set(kx - 0.7, 1.2, kz);
+    scene.add(soup);
+    for (let k = 0; k < 3; k++) { // a little steam
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.07 + k * 0.02, 8, 6), mat('#ffffff', { transparent: true, opacity: 0.45 - k * 0.1, depthWrite: false }));
+      puff.position.set(kx - 0.7 + (k - 1) * 0.06, 1.32 + k * 0.16, kz);
+      scene.add(puff);
+    }
+    box(0.5, 0.03, 0.34, kx + 0.25, 0.925, kz, '#d9b382'); // chopping board
+    box(0.3, 0.02, 0.05, kx + 0.25, 0.95, kz + 0.06, '#c0c4c8'); // knife
+    box(cw, 0.04, 0.3, kx, 1.75, -d / 2 + 0.17, '#8a5a3a'); // shelf
+    ['#c8321f', '#f0b429', '#3f8f3f', '#7a4a2a', '#f3e7c9'].forEach((c, k) => {
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.18, 10), mat(c));
+      jar.position.set(kx - 1.2 + k * 0.6, 1.86, -d / 2 + 0.17);
+      scene.add(jar);
+    });
+    const c = document.createElement('canvas');
+    c.width = 1024; c.height = 220;
+    const g = c.getContext('2d');
+    g.fillStyle = '#b0282e'; g.fillRect(0, 0, 1024, 220);
+    g.fillStyle = '#fff6dc'; g.fillRect(10, 10, 1004, 200);
+    g.fillStyle = '#b0282e';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    fitText(g, '✨ 음식을 더 맛있게 만들기!', 100, 960, 900);
+    g.fillText('✨ 음식을 더 맛있게 만들기!', 512, 92);
+    g.fillStyle = '#7a5a3a';
+    fitText(g, 'Make your dishes tastier', 52, 900);
+    g.fillText('Make your dishes tastier', 512, 172);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const sign = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.77), new THREE.MeshBasicMaterial({ map: tex }));
+    sign.position.set(kx, 2.5, -d / 2 + 0.03);
+    scene.add(sign);
+    block(kx, kz, cw, 0.8);
+    return { x: kx, z: kz + 1.05 };
+  };
+
   // Product displays along the back and side walls.
   const products = [];
   // Back wall first, then the side walls; scaled to the room.
@@ -331,6 +394,12 @@ export function buildInterior(store) {
     ? Array.from({ length: Math.min(spots.length, store.displays | 0) }, (_, i) => store.products[i % store.products.length])
     : store.products;
   const triedSeats = []; // seats on furniture for sale (below)
+  // Wallpaper shops: the two door samples hang on the back wall, in its two
+  // corners, where you look as you come in (Yozi 2026-11-18: by the way out
+  // they were behind you and nobody saw them). The other samples keep their
+  // own count of spots, so a floor after the doors doesn't land on a wall.
+  const finishShop = (store.products || []).some((p) => p.model === 'finish');
+  let doorSlot = 0, spotSlot = 0;
   (isDining(store) || counterMenu ? [] : shown).forEach((product, i) => {
     if (counterSpots) { // on the counter: just the drink, no table
       const [x, z, ry] = counterSpots[i % counterSpots.length];
@@ -345,11 +414,33 @@ export function buildInterior(store) {
       products.push({ product, mesh: spot, pos: front });
       return;
     }
-    const [x, z, ry] = spots[i % spots.length];
+    const isDoor = product.model === 'finish' && finishById(product.furniture)?.kind === 'door';
+    const [x, z, ry] = spots[(finishShop ? (isDoor ? 0 : spotSlot++) : i) % spots.length];
     // Euljiro furniture (shop pieces, not lamps): on the floor at its real
     // size, back to the wall, as it would stand at home (Yozi 2026-11-16: on
     // a table you can't tell how big it is). Sofas, beds and chairs can be
     // tried: sit or lie on them.
+    // Wallpaper shops: a wall panel or a patch of floor for each, back to
+    // the wall (core/home-finish-art.js).
+    if (isDoor) { // on the back wall, one in each corner (the corner plants make way)
+      const g = finishSample(product.furniture), dx = (doorSlot++ % 2 ? 1 : -1) * (w / 2 - 1.05);
+      g.position.set(dx, 0, -d / 2 + 0.04);
+      scene.add(g);
+      products.push({ product, mesh: g, pos: new THREE.Vector3(dx, 0, -d / 2 + 1.2) });
+      return;
+    }
+    if (product.model === 'finish') {
+      const g = finishSample(product.furniture);
+      const lz = -(ry === 0 ? bz + d / 2 : w / 2 - sx) + 0.35 + (finishById(product.furniture)?.kind === 'wall' ? 0 : 0.6);
+      const c = new THREE.Vector3(0, 0, lz).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      g.position.copy(c);
+      g.rotation.y = ry;
+      scene.add(g);
+      const front = new THREE.Vector3(0, 0, lz + 1.3).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
+      products.push({ product, mesh: g, pos: front });
+      if (finishById(product.furniture)?.kind === 'wall') { const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [0.5, 1.7] : [1.7, 0.5]; block(c.x, c.z, cx, cz); } // (a floor sample can be walked on)
+      return;
+    }
     const piece = product.model === 'furniture' && furnitureById(product.furniture)?.item ? furnitureById(product.furniture) : null;
     if (piece) {
       const [fw, fd] = piece.size;
@@ -363,7 +454,7 @@ export function buildInterior(store) {
       products.push({ product, mesh: g, pos: front });
       const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [fd, fw] : [fw, fd];
       block(c.x, c.z, cx, cz);
-      triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry }));
+      triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry, mesh: g })); // (mesh: a rocking chair rocks)
       return;
     }
     const stand = new THREE.Group();
@@ -912,8 +1003,13 @@ export function buildInterior(store) {
     clerk = { x: sx - 1.4, z: d / 2 - 1.45, ry: Math.PI };
   } else if (store.category === 'home') {
     // Empty home: big windows on the back wall; the player decorates it.
+    // Flat and facing in, like the wall, so a camera turned round behind the
+    // back wall sees through them with it (a box frame stood in the room as
+    // a floating white slab, 2026-11-22).
     for (const wx of [-w / 4, w / 4]) {
-      box(2.6, 1.6, 0.08, wx, 1.9, -d / 2 + 0.05, '#fffaf0');
+      const frame = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.6), mat('#fffaf0'));
+      frame.position.set(wx, 1.9, -d / 2 + 0.05);
+      scene.add(frame);
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), new THREE.MeshBasicMaterial({ color: '#bfe3f5' }));
       pane.position.set(wx, 1.9, -d / 2 + 0.1);
       scene.add(pane);
@@ -1333,6 +1429,12 @@ export function buildInterior(store) {
         star.position.set(-w / 2 + 0.6 + ((k * 37) % 100) / 100 * (w - 1.2), 1.4 + ((k * 53) % 100) / 100 * 1.2, -d / 2 + 0.03);
         scene.add(star);
       }
+    } else if (store.workshop === 'cactus-house') {
+      // Seoul Botanic Park's Cactus & Succulent House (core/cactus-house.js).
+      decorateCactusHouse(store, { scene, block, mat, w, d });
+    } else if (store.workshop === 'boardcafe') {
+      // The board game café: a shelf of games and four tables (core/board-cafe-room.js).
+      decorateBoardCafe(store, { scene, block, stations, seats, w, d });
     } else if (store.workshop === 'livecafe') {
       // Sinchon's live café: a stage with a mic for players (core/live-cafe-room.js).
       barkeep = decorateLiveCafe(store, { scene, box, block, mat, stations, seats, w, d }).barkeep;
@@ -1806,6 +1908,7 @@ export function buildInterior(store) {
       if (kind === 'japchae') stations.japchae = spots;
       else stations[kind] = rolls;
       stations.classTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      stations.tastier = [tastierKitchen()];
       if (kind === 'tteok') {
         // A wooden steamer (시루) on a stand, pine needles peeking out.
         const siru = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.5, 18), mat('#9a6a45'));
@@ -1866,6 +1969,7 @@ export function buildInterior(store) {
       }
       stations.kimchi = spots;
       stations.kimchiTeacher = { x: -tw / 2 - 0.7, z: tz, ry: Math.PI / 2 };
+      stations.tastier = [tastierKitchen()];
       // Salt sack at the far end.
       const sack = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.55, 12), mat('#efe6d2'));
       sack.position.set(tw / 2 + 0.7, 0.28, tz - 0.4);
@@ -2041,7 +2145,7 @@ export function buildInterior(store) {
     }
   }
   // Plants in the corners.
-  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7], ...(store.category === 'culture' ? [] : [[-w / 2 + 0.7, d / 2 - 0.9]])]) { // (a gallery's show board is by the door)
+  if (store.category !== 'home' && !store.cinema && store.workshop !== 'photo-show') for (const [px, pz] of [...(finishShop ? [] : [[-w / 2 + 0.7, -d / 2 + 0.7], [w / 2 - 0.7, -d / 2 + 0.7]]), ...(store.category === 'culture' ? [] : [[-w / 2 + 0.7, d / 2 - 0.9]])]) { // (a gallery's show board is by the door; a wallpaper shop's back corners hold its doors)
     box(0.5, 0.5, 0.5, px, 0.25, pz, '#c98b4f');
     const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat('#8fcf7a'));
     leaf.position.set(px, 1.0, pz);
@@ -2147,5 +2251,6 @@ export function buildInterior(store) {
     block(0, tvz + 0.3, 7, 0.9);
     tv = { x: 0, z: tvz + 1.6, screen: glow, width: 4.9 };
   }
-  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit };
+  const home = store.category === 'home' ? { homeWalls, homeFloor: floor, homeDoor: door } : null; // (wallpaper and flooring: core/home-finish-art.js)
+  return { scene, products, colliders, seats, clerk, trainer, barkeep, turntable, tv, stations, animate, see, camBlocked, room: ROOM, exit: EXIT, noExit, ...home };
 }

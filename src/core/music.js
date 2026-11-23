@@ -18,9 +18,10 @@ function tuneSteps(tr) {
 // iPhones mute Web Audio when the ring/silent switch is on, unless the page
 // says it plays media. Newer Safari has navigator.audioSession; older ones
 // switch over once an <audio> element is playing, so a silent one loops.
-let unlocked = false;
+// (Coming back to Safari from another app pauses that element: play it again.)
+let unlocked = false, silentLoop = null;
 export function playThroughSilentSwitch() {
-  if (unlocked) return;
+  if (unlocked) { if (silentLoop?.paused) silentLoop.play().catch(() => {}); return; }
   unlocked = true;
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* not supported */ }
   if (!/iP(hone|ad|od)|Macintosh/.test(navigator.userAgent) || !('ontouchend' in document)) return;
@@ -36,7 +37,8 @@ export function playThroughSilentSwitch() {
     const a = new Audio(URL.createObjectURL(new Blob([b], { type: 'audio/wav' })));
     a.loop = true;
     a.setAttribute('playsinline', '');
-    a.play().catch(() => { unlocked = false; });
+    silentLoop = a;
+    a.play().catch(() => { unlocked = false; silentLoop = null; });
   } catch { unlocked = false; }
 }
 
@@ -52,8 +54,10 @@ export class Music {
   }
 
   // Switch songs (see data/tracks.js); starts the new one from its first bar.
+  // (A recipe of the caller's own, an object, is played as it is: the board
+  // games bring theirs, ui/board-games-music.js.)
   setTrack(id) {
-    const next = trackById(id);
+    const next = typeof id === 'object' && id ? id : trackById(id);
     if (next === this.track) return;
     this.track = next;
     this.step = 0;
@@ -79,7 +83,21 @@ export class Music {
     this.noise = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = this.noise.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    // A phone stops the sound when you switch apps or lock the screen
+    // (iPhones leave it "interrupted") and nothing starts it again by itself:
+    // wake it when you come back, and on the next tap or key, since Safari
+    // only lets sound start from one.
+    const wake = () => this.wake();
+    for (const ev of ['pointerdown', 'touchend', 'keydown', 'pageshow', 'focus']) addEventListener(ev, wake, { passive: true });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
     return true;
+  }
+
+  // Music is on but the sound is not running: start it again.
+  wake() {
+    if (!this.on || !this.ctx || this.ctx.state === 'running') return;
+    playThroughSilentSwitch();
+    this.ctx.resume().catch(() => {}); // (refused outside a tap: the next tap tries again)
   }
 
   async setOn(on) {
@@ -91,7 +109,7 @@ export class Music {
     this.master.gain.setValueAtTime(this.master.gain.value, t);
     if (on) {
       playThroughSilentSwitch();
-      await this.ctx.resume().catch(() => {}); // refused on iOS at times: silent, not an error
+      await Promise.race([this.ctx.resume().catch(() => {}), new Promise((r) => setTimeout(r, 400))]); // refused on iOS at times, or never answered outside a tap: silent, not an error (wake() tries again)
       this.master.gain.linearRampToValueAtTime(0.32, t + 1.5);
       if (!this.timer) {
         this.nextTime = this.ctx.currentTime + 0.1;
@@ -121,6 +139,7 @@ export class Music {
 
   _playStep(s, t) {
     const tr = this.track, BEAT = 60 / tr.bpm;
+    if (tr.silent) return; // (the Opera Theater: core/concert-player.js plays instead)
     const bar = Math.floor(s / 8) % tr.chords.length;
     const e = s % 8;
     const chord = tr.chords[bar], root = tr.bass[bar];

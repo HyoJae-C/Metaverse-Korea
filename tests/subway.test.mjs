@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
+import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, footprintOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const stations = region.subway.stations;
@@ -81,6 +81,13 @@ test('station exits are clear of roads and buildings', () => {
     return Math.hypot(px - ax - t * dx, pz - az - t * dz);
   };
   const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c; } return c; };
+  const cross = (a, b, c, d) => {
+    const o = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+    return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+  };
+  const edges = (p) => p.map((q, i) => [q, p[(i + 1) % p.length]]);
+  const segHitsPoly = (a, b, p) => inPoly(a[0], a[1], p) || inPoly(b[0], b[1], p) || edges(p).some(([c, d]) => cross(a, b, c, d));
+  const polysOverlap = (p, q) => p.some(([x, z]) => inPoly(x, z, q)) || q.some(([x, z]) => inPoly(x, z, p)) || edges(p).some(([a, b]) => edges(q).some(([c, d]) => cross(a, b, c, d)));
   const roads = [], solids = [];
   for (const d of region.districts) {
     const m = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url)));
@@ -99,9 +106,27 @@ test('station exits are clear of roads and buildings', () => {
     for (const e of st.exits) {
       for (const [x, z] of blockersOf(e).flatMap((w) => w.p).concat(holeOf(e))) {
         for (const r of roads) for (let i = 1; i < r.p.length; i++) assert.ok(segDist(x, z, r.p[i - 1], r.p[i]) > r.w / 2 + 0.5, `${st.id} exit ${e.n} on ${r.n?.en || r.k}`);
-        for (const p of solids) assert.ok(!inPoly(x, z, p), `${st.id} exit ${e.n} in a building or water`);
       }
+      // The whole entrance (walls, plus the 3 m in front of the mouth), not just
+      // its corners: a small building or a road's centre line can sit inside it
+      // with every corner clear.
+      const box = footprintOf(e, 0).p;
+      for (const r of roads) for (let i = 1; i < r.p.length; i++) assert.ok(!segHitsPoly(r.p[i - 1], r.p[i], box), `${st.id} exit ${e.n} on ${r.n?.en || r.k}`);
+      for (const p of solids) assert.ok(!polysOverlap(box, p), `${st.id} exit ${e.n} in a building or water`);
     }
+  }
+});
+
+test('Anguk (Line 3, 328): exits 2 and 3 within 15 m of the real ones, either side of Bukchon-ro', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 2: [37.577107, 126.986126], 3: [37.577014, 126.986385] }; // OSM 3403538920, 3403538921
+  const st = stations.find((s) => s.id === 'anguk-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [2, 3]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    const off = Math.hypot(e.at[0] - x, e.at[1] - z);
+    assert.ok(off <= 15, `exit ${e.n} is ${off.toFixed(1)} m off`);
+    if (off > 3) assert.ok(e.why, `exit ${e.n}: say why it is off`);
   }
 });
 
@@ -172,7 +197,8 @@ test('the loop follows the map: every station once, starting at Seongsu, clockwi
   assert.ok(f === 1 || f === loop.length - 1);
   // A new station is placed by where it is: one near Gyeongbokgung lands next to it.
   const g = list.find((s) => s.id === 'gyeongbokgung-station');
-  const extra = { id: 'test-station', exits: [{ at: [stationAt(g)[0] + 60, stationAt(g)[1] + 120] }] };
+  // (north-west of it, away from Gwanghwamun Station: 60 m east and 120 m south is nearer to that one, and lands by it since Ichon joined the loop)
+  const extra = { id: 'test-station', exits: [{ at: [stationAt(g)[0] - 60, stationAt(g)[1] - 40] }] };
   const loop2 = loopOrder([...list, extra]);
   const k = loop2.indexOf(extra), n = loop2.length;
   assert.ok([loop2[(k + 1) % n].id, loop2[(k - 1 + n) % n].id].includes('gyeongbokgung-station'));
@@ -232,4 +258,19 @@ test('Yeouinaru (Line 5, 527): exits within 15 m of the real 2 and 3, on the riv
     const v = toUV(e.at)[1];
     assert.ok(v > PATH + 4 && v < PATH + 8, `exit ${e.n} on the pavement`);
   }
+});
+
+test('Ichon (Line 4, 430): exits within 15 m of the real 2 and 3, either side of Seobinggo-ro by the art museum, a short walk from the weekend farm', async () => {
+  const { toGame } = await import('../src/core/seoul-grid.js');
+  const real = { 2: [37.52215, 126.975636], 3: [37.52191, 126.975449] }; // OSM 3403175975, 3403175976
+  const st = stations.find((s) => s.id === 'ichon-station');
+  assert.deepEqual(st.exits.map((e) => e.n).sort(), [2, 3]);
+  for (const e of st.exits) {
+    const [x, z] = toGame(...real[e.n]);
+    assert.ok(Math.hypot(e.at[0] - x, e.at[1] - z) <= 15, `exit ${e.n}`);
+  }
+  const d = region.districts.find((q) => q.id === 'itaewon');
+  const farm = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url))).landmarks.find((l) => l.type === 'farm');
+  const far = Math.hypot(farm.x + d.offset[0] - st.exits[0].at[0], farm.z + d.offset[1] - st.exits[0].at[1]);
+  assert.ok(far > 150 && far < 260, `the farm is ${far} m from exit 2`);
 });

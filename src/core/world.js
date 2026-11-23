@@ -1,7 +1,29 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { glowAtNight } from './weather.js';
+import { SEASON, MIX, leafColor, leafHash, ginkgoColor } from './season.js';
+
+const GINKGO_STREET = 0.55, GINKGO_PARK = 0.12; // shares of the street and park round trees that are ginkgos
+const GINKGO_TRUNK = [1.6, 1.45]; // a ginkgo's trunk against a round tree's: thicker, taller
+// A ginkgo's crown (Yozi 2026-11-20, from a photo of an old ginkgo): a wide,
+// lumpy crown of four clumps spreading out over a thick trunk. Four plain
+// icosahedra: 80 triangles, the same as a round tree's crown.
+function ginkgoCrown() {
+  return mergeGeometries([
+    [0, 3.0, 0, 1.45, 1.15, 1.0], // the big middle clump
+    [1.3, 2.55, 0.4, 1.05, 1.05, 0.9], // spreading out to one side, lower
+    [-1.25, 2.65, -0.4, 1.1, 1.05, 0.9], // and the other
+    [0.1, 4.3, 0.1, 1.15, 1.0, 0.95], // the top
+  ].map(([x, y, z, r, w, h]) => {
+    const g = new THREE.IcosahedronGeometry(r, 0);
+    g.deleteAttribute('uv');
+    g.deleteAttribute('normal');
+    const soft = mergeVertices(g); // (shared corners: soft shading like the round trees, not facets)
+    soft.computeVertexNormals();
+    return soft.scale(w, h, w).rotateY(x * 2).translate(x, y, z);
+  }));
+}
 
 const ROAD_Y = { walk: 0.06, default: 0.04 };
 const RAIL_DECK_Y = 9; // Line 2 runs on a viaduct through Seongsu
@@ -60,7 +82,7 @@ export function buildWorld(map, scene, opts = {}) {
   group.name = 'world';
 
   const bounds = computeBounds(map);
-  let obstacles = [], treeSpots = [];
+  let obstacles = [], treeSpots = [], ginkgoSpots = [];
   group.add(makeGround(bounds, opts.holes));
   // Land not built yet: one flat grey mesh just over the ground, under
   // everything else (core/districts.js closed).
@@ -87,11 +109,12 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   const majors = new Set(['motorway', 'trunk', 'primary', 'secondary']);
+  const drawn = map.roads.filter((r) => !r.bridge); // (a Han bridge's stretch over the river is its deck: game/han-bridges.js)
   const roadSets = {
-    walk: map.roads.filter((r) => r.k === 'walk' && !r.bike),
-    bike: map.roads.filter((r) => r.bike),
-    minor: map.roads.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
-    major: map.roads.filter((r) => majors.has(r.k) && !r.base),
+    walk: drawn.filter((r) => r.k === 'walk' && !r.bike),
+    bike: drawn.filter((r) => r.bike),
+    minor: drawn.filter((r) => r.k !== 'walk' && !majors.has(r.k)),
+    major: drawn.filter((r) => majors.has(r.k) && !r.base),
   };
   const roadMesh = (list, color, y) => {
     const m = makeRibbons(list, color, y);
@@ -106,7 +129,7 @@ export function buildWorld(map, scene, opts = {}) {
   roadMesh(roadSets.minor, COLORS.road, ROAD_Y.default);
   roadMesh(roadSets.major, COLORS.roadMajor, ROAD_Y.default + 0.005);
   // The base map's big roads, all over the city: in tiles, with plain joints.
-  for (const list of tiles(map.roads.filter((r) => majors.has(r.k) && r.base), (r) => r.p[r.p.length >> 1])) roadMesh(list, COLORS.roadMajor, ROAD_Y.default + 0.005);
+  for (const list of tiles(drawn.filter((r) => majors.has(r.k) && r.base), (r) => r.p[r.p.length >> 1])) roadMesh(list, COLORS.roadMajor, ROAD_Y.default + 0.005);
 
   const { walls, roofs } = makeBuildings(map.buildings.filter((b) => !b.hanok));
   if (walls) group.add(walls);
@@ -119,9 +142,20 @@ export function buildWorld(map, scene, opts = {}) {
   if (opts.collision) {
     // Landmarks with a "clear" radius (a rose garden, benches, sculptures) keep the trees off.
     const clear = (map.landmarks || []).filter((l) => l.clear && Number.isFinite(l.x)).map((l) => [l.x, l.z, l.clear]);
+    // Namsan and the streets up to it (Yozi 2026-11-17: as few trees as can
+    // be on the way to its trail): none within 40 m of the hill's foot.
+    for (const l of map.landmarks || []) {
+      if (l.type !== 'namsan' || !l.rad?.length || !Number.isFinite(l.x)) continue;
+      const tx = l.x + (l.px || 0), tz = l.z + (l.pz || 0), n = l.rad.length;
+      clear.push((x, z, r) => {
+        const a = ((Math.atan2(z - tz, x - tx) / (Math.PI * 2)) % 1 + 1) % 1 * n, i = Math.floor(a), f = a - i;
+        const foot = l.rad[i % n] * (1 - f) + l.rad[(i + 1) % n] * f;
+        return Math.hypot(x - tx, z - tz) < foot + 40 + r;
+      });
+    }
     // (None along Gyeongnidan-gil, map "gy": the trees stand at y 0 and it is on a slope.)
-    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
-    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; }
+    const trees = makeStreetTrees(map.roads.filter((r) => !r.gy && !r.hill && !r.base && !r.bridge), opts.collision, lowSpec ? 900 : 2500, map.areas, clear);
+    if (trees) { group.add(...trees); obstacles = trees.obstacles; treeSpots = trees.spots; ginkgoSpots = trees.ginkgos; }
   }
 
   // Snow settles on whatever faces the sky (core/snow-cover.js); not on
@@ -138,7 +172,7 @@ export function buildWorld(map, scene, opts = {}) {
   }
 
   scene.add(group);
-  return { group, bounds, obstacles, treeSpots };
+  return { group, bounds, obstacles, treeSpots, ginkgoSpots };
 }
 
 export function computeBounds(map) {
@@ -291,6 +325,12 @@ function makeRibbons(roads, color, y) {
     pos.push(x, y, z);
     return pos.length / 3 - 1;
   };
+  // Push a triangle wound counter-clockwise seen from above (front face up).
+  const upTri = (a, b, c) => {
+    const ax = pos[a * 3], az = pos[a * 3 + 2];
+    const cross = (pos[b * 3 + 2] - az) * (pos[c * 3] - ax) - (pos[b * 3] - ax) * (pos[c * 3 + 2] - az);
+    if (cross > 0) idx.push(a, b, c); else if (cross < 0) idx.push(a, c, b);
+  };
   for (const r of roads) {
     const hw = r.w / 2;
     const p = r.p;
@@ -317,7 +357,10 @@ function makeRibbons(roads, color, y) {
         const [ax, az] = side(p[i - 1], p[i]), [bx, bz] = side(p[i], p[i + 1]);
         const c = pushV(x, z);
         const l1 = pushV(x + ax, z + az), l2 = pushV(x + bx, z + bz), r1 = pushV(x - ax, z - az), r2 = pushV(x - bx, z - bz);
-        idx.push(c, l2, l1, c, l1, l2, c, r2, r1, c, r1, r2); // (both windings: whichever side the bend opens on)
+        // Only the upward-facing winding of each wedge: drawing both (one up,
+        // one down) on the same vertices summed their normals to zero, and the
+        // bend showed as black streaks that shimmered with the camera.
+        upTri(c, l2, l1); upTri(c, r2, r1);
         continue;
       }
       const c = pushV(x, z);
@@ -334,7 +377,10 @@ function makeRibbons(roads, color, y) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setIndex(idx);
-  geo.computeVertexNormals();
+  // Roads are flat: every normal points straight up.
+  const up = new Float32Array(pos.length);
+  for (let i = 1; i < up.length; i += 3) up[i] = 1;
+  geo.setAttribute('normal', new THREE.BufferAttribute(up, 3));
   return new THREE.Mesh(
     geo,
     new THREE.MeshLambertMaterial({ color, polygonOffset: true, polygonOffsetFactor: -1 }),
@@ -519,20 +565,23 @@ function makeRail(rails) {
 // Decorative round street trees along the edges of vehicle roads, and a
 // loose grove in parks marked "trees" (e.g. Seoul Forest): round trees big
 // and small, tall pointed ones, and bushes in between. These are scenery,
-// not map data: placed where nothing else is in the way (clear: [x, z, r]
+// not map data: placed where nothing else is in the way (clear: [x, z, r] or (x, z, r) => inside,
 // circles kept free, e.g. a rose garden).
 function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const spots = []; // [x, z, scale] round trees
   const pines = []; // [x, z, scale] pointed trees (parks)
   const bushes = []; // [x, z, scale] (parks)
   const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
-  const isClear = (x, z, r) => clear.every(([cx, cz, cr]) => (x - cx) ** 2 + (z - cz) ** 2 > (cr + r) ** 2);
+  const isClear = (x, z, r) => clear.every((c) => (typeof c === 'function' ? !c(x, z, r) : (x - c[0]) ** 2 + (z - c[1]) ** 2 > (c[2] + r) ** 2)); // (a function: inside an outline, e.g. Namsan's foot)
   // Wooded parks: a jittered grid, ~12 m apart, off the paths.
   const PARK = 12;
   // Round crowns in the parks: mostly green, some ginkgo yellow.
   const parkGreens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d, 0x6fb85f].map((h) => new THREE.Color(h));
   const yellows = [0xf2c94c, 0xe8b730, 0xf5d76e].map((h) => new THREE.Color(h));
-  const crownColor = (h) => (h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
+  // (In autumn, core/season.js: the parks are the most colourful. h is
+  // hashed again, as callers pass the same h that picked pine or not.)
+  const crownColor = (h) => (SEASON === 'autumn' ? leafColor(parkGreens[Math.floor(h * 1000) % parkGreens.length], leafHash(h * 7.13), MIX.park)
+    : h < 0.22 ? yellows[Math.floor(h * 100) % yellows.length] : parkGreens[Math.floor(h * 1000) % parkGreens.length]);
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
@@ -636,15 +685,28 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   const pos = new THREE.Vector3();
   const up = new THREE.Vector3(0, 1, 0);
   const greens = [0x8fcf7a, 0x7cc46e, 0xa3d98a, 0x95c97d].map((h) => new THREE.Color(h));
+  const bushGreens = [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h));
+  // The season's colours (core/season.js): street trees and bushes take
+  // theirs here; the parks' round trees picked theirs above.
+  // Ginkgos (은행나무), the most common street tree in Seoul: a taller,
+  // slimmer crown of their own, bright yellow in autumn. About half the
+  // street trees, and a few in the parks.
+  spots.forEach((t, i) => {
+    t[4] = leafHash(t[0] * 1.7, t[1] * 0.3) < (i < parkRound ? GINKGO_PARK : GINKGO_STREET);
+    if (t[4]) t[3] = ginkgoColor(greens[i % greens.length], leafHash(t[0], t[1]));
+    else if (!t[3]) t[3] = leafColor(greens[i % greens.length], leafHash(t[0], t[1]), MIX.street);
+  });
+  bushes.forEach((b, i) => { b[3] = leafColor(bushGreens[i % bushGreens.length], leafHash(b[0], b[1]), MIX.bush); });
   const out = [];
   const trunkMat = new THREE.MeshLambertMaterial({ color: 0xa47a55 });
   const tint = new THREE.MeshLambertMaterial({ color: 0xffffff });
   // instanced(list, geometry, material, colours?)
-  const instanced = (list, geo, material, colors, yScale = 1) => {
+  const instanced = (list, geo, material, colors, yScale = 1, trunkFat = false) => {
     const mesh = new THREE.InstancedMesh(geo, material, list.length);
     list.forEach(([x, z, s], i) => {
       q.setFromAxisAngle(up, i * 1.7);
-      m.compose(pos.set(x, 0, z), q, sc.set(s, s * yScale, s));
+      const k = trunkFat && list[i][4] ? GINKGO_TRUNK : null; // (a ginkgo's trunk: the same mesh, thicker and taller)
+      m.compose(pos.set(x, 0, z), q, k ? sc.set(s * k[0], s * k[1], s * k[0]) : sc.set(s, s * yScale, s));
       mesh.setMatrixAt(i, m);
       if (colors) mesh.setColorAt(i, list[i][3] || colors[i % colors.length]);
     });
@@ -652,10 +714,12 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     mesh.castShadow = true;
     out.push(mesh);
   };
-  if (spots.length) {
-    instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat);
-    instanced(spots, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
-  }
+  const round = spots.filter((t) => !t[4]), ginkgos = spots.filter((t) => t[4]);
+  // One trunk mesh for every leafy tree (ginkgos' scaled up per instance),
+  // so the ginkgos add only their crowns' draw calls.
+  if (spots.length) instanced(spots, new THREE.CylinderGeometry(0.16, 0.22, 1.6, 6).translate(0, 0.8, 0), trunkMat, null, 1, true);
+  if (round.length) instanced(round, new THREE.IcosahedronGeometry(1.25, 1).translate(0, 2.5, 0), tint, greens);
+  if (ginkgos.length) instanced(ginkgos, ginkgoCrown(), tint, greens);
   if (pines.length) {
     const pine = mergeGeometries([
       new THREE.ConeGeometry(1.35, 2.2, 7).translate(0, 2.1, 0),
@@ -665,10 +729,11 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     instanced(pines, new THREE.CylinderGeometry(0.14, 0.2, 1.2, 6).translate(0, 0.6, 0), trunkMat);
     instanced(pines, pine, tint, [0x5f9e5a, 0x6fae62, 0x4f8f4f].map((h) => new THREE.Color(h)), 1.1);
   }
-  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, [0x7fbf68, 0x6db35c, 0x93c97a].map((h) => new THREE.Color(h)), 0.8);
+  if (bushes.length) instanced(bushes, new THREE.IcosahedronGeometry(0.8, 1).translate(0, 0.5, 0), tint, bushGreens, 0.8);
   // What stands on the park lawns, for things put down on the grass (picnic
   // mats): [x, z, r] trunks and bushes.
   out.spots = spots.map(([x, z]) => [x, z]); // every leafy tree, for posters
+  out.ginkgos = ginkgos.map(([x, z, sz]) => [x, z, sz]); // for shaking and their fallen nuts (game/ginkgo.js)
   out.obstacles = [...spots.slice(0, parkRound).map(([x, z, s]) => [x, z, 0.35 * s]), ...pines.map(([x, z, s]) => [x, z, 0.5 * s]), ...bushes.map(([x, z, s]) => [x, z, 0.75 * s])];
   return out;
 }

@@ -48,3 +48,15 @@ export function clusterPoints(pts, radius) {
   }
   return groups.sort((a, b) => b.items.length - a.items.length);
 }
+
+// Phone, tablet or PC: the device class of each player's latest play session
+// (supabase/071_live_devices.sql). Empty before that SQL runs or when unknown.
+export const DEVICE_ICON = { desktop: '💻', phone: '📱', tablet: '📟' };
+export const DEVICE_LABEL = { desktop: 'PC', phone: 'phone', tablet: 'tablet' };
+export function deviceSummary(list) {
+  const n = { desktop: 0, phone: 0, tablet: 0 };
+  let any = false;
+  for (const p of list) if (p.device in n) { n[p.device]++; any = true; }
+  if (!any) return '';
+  return ' · ' + Object.keys(n).filter((k) => n[k]).map((k) => `${DEVICE_ICON[k]} ${n[k]}`).join(' · ');
+}

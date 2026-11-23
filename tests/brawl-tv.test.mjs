@@ -27,7 +27,7 @@ test('brawl tv: the screen plays the very match the player played, a moment late
     const after = JSON.stringify(packMatch(view.match));
     if (after !== before) { assert.equal(after, at[seen], 'tick ' + seen); seen++; }
   }
-  assert.ok(seen > 1900, 'kept up (' + seen + ')');
+  assert.ok(seen > 2000 - BATCH * 2 - 10, 'kept up (' + seen + ')'); // (the screen stays a batch and a bit behind)
   assert.deepEqual(view.info, { b: 'p2', n: ['Ann', 'Ben'] });
   assert.equal(view.from, 'p1');
 });

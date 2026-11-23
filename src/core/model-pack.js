@@ -13,9 +13,10 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
-import { buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
+import { buildBlush, buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
-import { addSkirt } from './skirt-mesh.js';
+import { addSkirt, printMaterial } from './skirt-mesh.js';
+import { makeEars } from './animal-wear.js';
 import { skirtById } from '../data/skirts.js';
 
 // Kick scooter and inline skate strokes, added to the idle clip per bone
@@ -248,6 +249,8 @@ function makeBarbell() {
   return g;
 }
 // A small dumbbell for curls, held in each hand (hand bones scale things up 1.8x).
+// The left arm holding an open umbrella (bone rotations, set over the clip).
+const UMB_ARM = { arm: [-1.0, 0, 0], fore: [0, 0, -1.2] };
 // Hairdresser's scissors, held in the right hand while snipping.
 function makeScissors() {
   const g = new THREE.Group();
@@ -298,7 +301,8 @@ function dyedMaterial(id, src, look) {
     }
   }
   // Under a skirt the legs are bare: the trousers cells take the skin's.
-  const bareLegs = !!(wear?.outfit && skirtById(look.skirt));
+  // (A dress has its own skirt: the model's "skirt".)
+  const bareLegs = !!(wear?.outfit && skirtById(look.skirt || PACK.models[id]?.skirt));
   if (!paint.length && shirt == null) return null;
   const key = [id, look.dye, look.eyes, look.tone, shirt || wear ? look.shirt : '', wear ? look.pants : '', wear ? look.shoes : '', bareLegs ? 'legs' : ''].join('|');
   if (dyed.has(key)) return dyed.get(key);
@@ -402,6 +406,17 @@ function headFacts(id, geo) {
   bald.boundingSphere = geo.boundingSphere;
   const eyes = [];
   for (let i = 0; i < pos.count; i++) if (is(i, A.eyes)) eyes.push(i);
+  // The cheeks (blush): out from under each eye, halfway down to the mouth,
+  // on the face's surface there.
+  let ex = 0;
+  for (const i of eyes) ex += Math.abs(pos.getX(i));
+  ex = eyes.length ? ex / eyes.length : 0.3;
+  const cheeks = [-1, 1].map((sd) => {
+    const cx = sd * ex * 1.25, cy = (ey + mouth.y) / 2 - 0.04;
+    let cz = -Infinity;
+    for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getX(i) - cx) < 0.1 && Math.abs(pos.getY(i) - cy) < 0.1) cz = Math.max(cz, pos.getZ(i));
+    return new THREE.Vector3(cx, cy, Number.isFinite(cz) ? cz : mouth.z - 0.1);
+  });
   // The nose: the bump in the middle of the face, between the eyes and mouth.
   const nose = [];
   for (let i = 0; i < pos.count; i++) {
@@ -409,7 +424,7 @@ function headFacts(id, geo) {
     if (Math.abs(x) < 0.2 && y > mouth.y + 0.05 && y < ey - 0.02 && z > mouth.z + 0.02 && !is(i, A.eyes)) nose.push(i);
   }
   const cx = nose.length ? nose.reduce((a, i) => a + pos.getX(i), 0) / nose.length : 0; // the face's middle
-  const info = { ey, mouth, bald, eyes, nose, cx, shaped: new Map() };
+  const info = { ey, mouth, bald, eyes, nose, cx, cheeks, shaped: new Map() };
   headInfo.set(id, info);
   return info;
 }
@@ -526,6 +541,7 @@ function faceExtras(id, headMesh, headBone, look) {
   if (look.lip && PALETTES.lip[look.lip] != null) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
+  if (look.blush && PALETTES.blush[look.blush] != null) extras.add(buildBlush(PALETTES.blush[look.blush], facts.cheeks, geo));
   headBone.add(extras);
   return hair;
 }
@@ -543,6 +559,8 @@ const HAT_CROWNS = {
   towel: { c: [0, 0.04, -0.01], r: [0.35, 0.35, 0.35], y0: 0.11 },
   bucket: { c: [0, 0.1, -0.02], r: [0.28, 0.28, 0.28], y0: 0.21 },
   beret: { c: [0.04, 0.24, -0.02], r: [0.36, 0.14, 0.36], y0: 0.2 },
+  newsboy: { c: [0, 0.16, -0.02], r: [0.36, 0.26, 0.36], y0: 0.14 },
+  flatcap: { c: [0, 0.14, -0.03], r: [0.34, 0.24, 0.37], y0: 0.13 },
 };
 const TUCK = 0.94; // how far inside the crown the hair goes
 const TUCK_BAND = 0.14, TUCK_BULGE = 0.5; // below the edge: over what height, and how far out
@@ -724,7 +742,10 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   // The trouser cut and the shoe kind this look wears (core/outfit-mesh.js):
   // straight legs under a skirt; a suit's own shoes are leather.
   const wearDef = PACK.models[id].wear;
-  const cut = look.skirt || wearDef?.outfit?.dress || wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans';
+  // A dress's own skirt (the model's "skirt") is worn like one; onesies
+  // pick their own cut (outfit.cut).
+  const skirtId = look.skirt || PACK.models[id].skirt || null;
+  const cut = skirtId || wearDef?.outfit?.dress ? 'slacks' : wearDef?.outfit?.cut || (wearDef?.colors?.bottom != null ? 'slacks' : PANTS_CUT[look.pants] || 'jeans');
   const shoeKind = LOAFERS.has(look.shoes) || (!look.shoes && wearDef?.outfit?.dress) ? 'loafer' : 'sneaker';
   const picked = (name) => {
     const [, part, kind] = /^Outfit_(Legs|Shoes)_(\w+)$/.exec(name) || [];
@@ -741,11 +762,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     if (/head/i.test(o.name)) headMesh = o;
     else if (/body/i.test(o.name)) bodyMesh = o;
   });
+  // A printed dress: its top in the skirt's print (core/outfit-mesh.js o.print).
+  if (wearDef?.outfit?.print && PACK.models[id].skirt) {
+    const pm = printMaterial(PACK.models[id].skirt);
+    if (pm) m.traverse((o) => { if (o.isMesh && /^Outfit_Print/.test(o.name)) o.material = pm; });
+  }
   // A skirt over the everyday clothes (its own mesh and patterned material).
   const outfit = PACK.models[id].wear?.outfit;
-  const skirtMesh = outfit && look.skirt ? addSkirt(m, look.skirt, outfit) : null;
+  const skirtMesh = outfit && skirtId ? addSkirt(m, skirtId, outfit) : null;
   // Under a skirt the walk and run clips take smaller steps (SKIRT_STRIDE).
-  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(look.skirt).length] ?? 1 : 1;
+  const skirtStride = skirtMesh ? SKIRT_STRIDE[skirtById(skirtId).length] ?? 1 : 1;
   m.updateMatrixWorld(true);
 
   // Move hats, glasses and bags onto the model's head and chest bones,
@@ -773,6 +799,16 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       cap.scale.set(1.04, 0.98, 1.06);
       headAcc.add(cap);
     }
+    // An animal onesie's hood: the animal's ears (or a dinosaur's spikes)
+    // on top, in the onesie's colours (core/animal-wear.js). A hat goes
+    // over the hood instead.
+    const ears = PACK.models[id].ears;
+    if (ears && !look.head) {
+      const c = PACK.models[id].wear?.colors || {};
+      const g = makeEars({ animal: ears, color: c.top, inner: c.accent ?? c.top, hood: true });
+      g.name = 'hoodEars';
+      headAcc.add(g);
+    }
     if (chestBone && bodyMesh) {
       // Chibi torso: ~0.42 m wide, 0.36 m deep, scarf sits at ~0.6 m.
       bodyMesh.computeBoundingBox();
@@ -788,7 +824,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   }
 
   let styledHair = null; // (setWind blows its locks back)
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.eyeShape || look.nose || look.jaw)) {
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.blush || look.eyeShape || look.nose || look.jaw)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)
@@ -840,7 +876,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let emote = null; // { key, t, dur }
   let boardY = 0.11;
   let activity = null; // a looping pose while doing something (gym, fishing, dancing)
+  let extStride = null; // on skates: (stroke, dt) => another pose for the stride bones (the ice rink's glides)
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
+  let umbrellaUp = false; // left hand up by the head, holding the umbrella's pole
   let pullT = 0;
   let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
@@ -860,8 +898,12 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
     setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    // Raise the left hand beside the head to hold an open umbrella.
+    setUmbrella(on) { umbrellaUp = !!on; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
     setMoves(fn) { extMoves = fn || null; },
+    // On skates, a pose in place of the stride: fn(stroke, dt) → bone offsets like STRIDE's, or null.
+    setStride(fn) { extStride = fn || null; },
     // Wind in the hair, 0..1 (the roller coaster).
     setWind(k) { if (!locks.length || (k < 0.01 && windK < 0.01)) { windK = k; return; } windK = k; if (k < 0.01) blow(0); },
     play(name) {
@@ -946,6 +988,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         if (strideAmp > 0.01) strideT += dt * S.rate * Math.PI * 2;
         else strideT = 0;
         stroke = S.pose(strideT, strideAmp);
+        if (extStride && skates) stroke = extStride(stroke, dt) || stroke;
       }
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
       // (Sitting on a chair, by the sit flag or the 'sit' activity (NPCs): up
@@ -1069,6 +1112,15 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         for (const [side, c] of [['L', Math.max(0, ph)], ['R', Math.max(0, -ph)]]) {
           const f = dBones['fore' + side], r = C['fore' + side], amt = 0.15 + 0.85 * c;
           if (f) f.rotation.set(f.rotation.x + r[0] * amt, f.rotation.y + r[1] * amt, f.rotation.z + r[2] * amt);
+        }
+      }
+      if (umbrellaUp && !moves) { // the umbrella: upper arm out and forward, forearm up, the hand beside the head
+        const U = globalThis.__umb || UMB_ARM; // debug: tune live
+        const a = dBones.armL, f = dBones.foreL;
+        for (const [b, r] of [[a, U.arm], [f, U.fore]]) {
+          if (!b) continue;
+          if (lRest.has(b)) b.quaternion.copy(lRest.get(b)); // from rest: steady while walking
+          b.rotation.set(b.rotation.x + r[0], b.rotation.y + r[1], b.rotation.z + r[2]);
         }
       }
       if (extMoves) moves = extMoves() || moves; // basketball shots and other scripted moves

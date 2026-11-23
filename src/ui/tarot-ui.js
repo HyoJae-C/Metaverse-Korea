@@ -102,7 +102,7 @@ export class TarotUI {
   }
 
   start(topic) {
-    if (!this.wallet.spend(TAROT_COST, { name: T.title })) { this.render(tt('noCoins', { n: TAROT_COST })); return; }
+    if (!this.wallet.spend(TAROT_COST, { name: T.title })) { if (!this.wallet.justDeclined) this.render(tt('noCoins', { n: TAROT_COST })); return; }
     this.state = { topic, deck: shuffleDeck(this.rand), picked: [], taken: [] };
     this.render();
   }
@@ -134,7 +134,7 @@ export class TarotUI {
       const topic = this.inviting.topic;
       this.inviting = null;
       // Dutch pay: each pays half (the friend paid when joining).
-      if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { this.send('no', from); this.render(tt('noCoins', { n: TAROT_HALF })); return false; }
+      if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { this.send('no', from); if (!this.wallet.justDeclined) this.render(tt('noCoins', { n: TAROT_HALF })); return false; }
       const seed = Math.floor(this.rand() * 1e9);
       this.state = { topic, deck: shuffleDeck(seeded(seed)), picked: [], taken: [], pair: { host: true, other: from, a: this.myName(), b: name } };
       this.send('deal', from, topic, seed);
@@ -158,7 +158,7 @@ export class TarotUI {
 
   accept() {
     if (!this.offer || this.offer.accepted) return;
-    if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { this.render(tt('noCoins', { n: TAROT_HALF })); return; }
+    if (!this.wallet.spend(TAROT_HALF, { name: T.title })) { if (!this.wallet.justDeclined) this.render(tt('noCoins', { n: TAROT_HALF })); return; }
     this.offer.paid = this.wallet.lastOp;
     this.offer.accepted = true;
     this.send('join', this.offer.from);

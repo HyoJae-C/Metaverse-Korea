@@ -22,7 +22,8 @@ those.
 ## Frame rate and heat
 
 The game draws at most 60 frames a second (30 with Battery saver in
-Settings), and steps down resolution and shadows by itself when the frame
+Settings; on phones, 30 while standing still with hands off the screen for
+2 s, and for good on a phone that can't hold 45), and steps down resolution and shadows by itself when the frame
 rate stays low (`src/core/graphics-quality.js`). Anything big added to the
 street that is not in `FarCull` (main.js) is drawn even 2 km away behind the
 fog: the zoo alone cost ~1,500 draw calls a frame from Bukchon until it was

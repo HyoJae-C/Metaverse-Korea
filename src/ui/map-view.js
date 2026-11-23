@@ -109,7 +109,9 @@ const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h
 // Labels that would cover another label or a marker are left out; each label
 // tries below its marker first, then right, above and left. `taken` holds the
 // boxes already in use ({ x, y, w, h }) and grows as labels are placed.
-const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹', bongeunsa: '🪷' };
+const PARK_ICON = { flowergarden: '🌷', hill: '🍦', greenhouse: '🦋', rosegarden: '🌹', skatepark: '🛹', bongeunsa: '🪷', farm: '🌱', seedshop: '🌰' };
+// Places you come back to every day show their name from further out than a park's corners do (Yozi 2026-11-21).
+const FAR_LABEL = new Set(['farm', 'seedshop']);
 export function placeLabel(taken, { sx, sy, w, h, gap }, bounds) {
   const spots = [
     [sx - w / 2, sy + gap], // below
@@ -475,11 +477,13 @@ export class MapView {
     }
 
     // Named park spots (map landmarks with a label: Seoul Forest's gardens, hill…), when zoomed in.
-    if (this.view.scale > 0.9 * dpr) {
+    if (this.view.scale > 0.3 * dpr) {
+      const near = this.view.scale > 0.9 * dpr;
       for (const l of this.map.landmarks || []) {
-        if (!l.label) continue;
+        if (!l.label || !(near || FAR_LABEL.has(l.type))) continue;
         const [sx, sy] = this.toScreen(l.x, l.z);
-        if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: 0, weight: 700, size: 11, color: '#2f6b3f', pri: 4 });
+        const far = FAR_LABEL.has(l.type); // (those may sit beside their spot, and win a tight place over shop names)
+        if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: far ? 6 * dpr : 0, weight: 700, size: far ? 12 : 11, color: '#2f6b3f', pri: far ? 2 : 4 });
       }
     }
     // Players

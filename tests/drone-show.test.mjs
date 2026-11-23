@@ -5,7 +5,7 @@ import { fireworksAt } from '../src/core/fireworks-show.js';
 import { CYCLE_MS, NIGHT_FROM, SHOW_FROM, DRONES, cycleNumber, cycleMs, showOf } from '../src/core/show-clock.js';
 import { paradeAt } from '../src/core/lantern-parade.js';
 import { WATER } from '../src/core/duck-boat.js';
-import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf, routineTurn } from '../src/core/drone-sky.js';
+import { program, SHAPE_NAMES, useShow, PHOTO_TIME, LAST_LINE_SECONDS, helloOf, routineOf, routineTurn, patternOf, PATTERN_KEYS } from '../src/core/drone-sky.js';
 import { PIC_W, PIC_H } from '../src/core/drone-pictures.js';
 import * as show from '../src/core/drone-show.js';
 import { STAMPS } from '../src/data/stamps.js';
@@ -68,7 +68,7 @@ test('the drones fly in front of the bridge, past where the duck boats go', () =
 test('the program: Yozi\'s lines, in order, inside the show', () => {
   useShow(show);
   const R1 = [DRONE(), show.nextDroneShow(DRONE() + 1000)].find((t) => routineOf(t) === 1);
-  const steps = program(R1);
+  const steps = program(R1, 1, null, 'A');
   const words = steps.filter((s) => s.lines).map((s) => s.lines.map((l) => (Array.isArray(l) ? l.join('') : l)).join('/'));
   const order = ['MODU/SEOUL', '모 두/서 울', 'K O R E A', '안녕하세요', 'HELLO', '라면', '먹고갈래?', '뚝섬에서', '사 랑', '행 복', '그리고 . . .', '너 ♡'];
   let at = -1;
@@ -134,7 +134,7 @@ test('routines 1 and 2 can take turns, routine 2 first; photo pause and end at t
   const third = show.nextDroneShow(second + 1000);
   assert.deepEqual([routineTurn(first), routineTurn(second), routineTurn(third)], [2, 1, 2]);
   const after = (start) => {
-    const words = program(start, routineTurn(start)).filter((s) => s.lines).map((s) => s.lines.join('/'));
+    const words = program(start, routineTurn(start), null, 'A').filter((s) => s.lines).map((s) => s.lines.join('/'));
     const i = words.indexOf('라면');
     return words.slice(i, i + 3);
   };
@@ -152,11 +152,98 @@ test('routines 1 and 2 can take turns, routine 2 first; photo pause and end at t
 test('routine 2 is paused for now: every show is routine 1 (Yozi 2026-11-12)', () => {
   useShow(show);
   for (let k = 0; k < 4; k++) assert.equal(routineOf(DRONE(k)), 1);
-  const words = program(DRONE()).filter((s) => s.lines).map((s) => s.lines.join('/'));
+  const words = program(DRONE(), routineOf(DRONE()), null, 'A').filter((s) => s.lines).map((s) => s.lines.join('/'));
   assert.ok(words.includes('먹고갈래?') && words.includes('뚝섬에서'));
 });
 
 test('every show gets its own number', () => {
   const n = [0, 1, 2].map((k) => show.showNumber(DRONE(k)));
   assert.deepEqual([n[1] - n[0], n[2] - n[1]], [1, 1]);
+});
+
+test('event patterns: Christmas, the year\'s end, New Year and Chuseok on their days only, photo time unchanged', async () => {
+  const { eventOf, EVENTS, EVENT_MOVES, MID_SECONDS, MAX_SCENE, midOf } = await import('../src/core/drone-events.js');
+  useShow(show);
+  const kst = (y, m, d) => Date.UTC(y, m - 1, d, 14, 10); // 23:10 KST
+  const key = (y, m, d) => eventOf(kst(y, m, d))?.key ?? null;
+  assert.deepEqual([key(2026, 12, 19), key(2026, 12, 20), key(2026, 12, 25)], [null, 'christmas', 'christmas']);
+  assert.deepEqual([key(2026, 12, 26), key(2026, 12, 31), key(2027, 1, 1), key(2027, 1, 5), key(2027, 1, 6)], ['goodbye', 'goodbye', 'newyear', 'newyear', null]);
+  assert.deepEqual([key(2027, 9, 13), key(2027, 9, 14), key(2027, 9, 15), key(2027, 9, 16), key(2027, 9, 17)], [null, 'chuseok', 'chuseok', 'chuseok', null]);
+  assert.equal(key(2028, 10, 3), 'chuseok');
+  assert.equal(key(2026, 11, 22), null, 'an ordinary day');
+  // each event has drone shows in its days (the shows come every other day)
+  const showsIn = (from, to) => { let k = 0; for (let t = from; t <= to; t += 86400e3) if (showOf(cycleNumber(t)) === DRONES) k++; return k; };
+  assert.equal(showsIn(kst(2026, 12, 20), kst(2026, 12, 25)), 3);
+  assert.equal(showsIn(kst(2026, 12, 26), kst(2026, 12, 31)), 3);
+  assert.equal(showsIn(kst(2027, 1, 1), kst(2027, 1, 5)), 3);
+  assert.equal(showsIn(kst(2027, 9, 14), kst(2027, 9, 16)), 2);
+  const W = (lines, o) => ({ lines, ...o }), P = (shape, o) => ({ shape, ...o });
+  for (const k of Object.keys(EVENTS)) {
+    const event = { key: k, year: 2026 };
+    const mid = midOf(event, { W, P, C: {} });
+    assert.equal(mid.reduce((a, [d]) => a + d, 0), MID_SECONDS, k);
+    // (Yozi 2026-11-21: a scene over 15 seconds gets boring)
+    assert.equal(MAX_SCENE, 15);
+    for (const [d, s] of mid) assert.ok(d <= MAX_SCENE && d >= (s.shape ? 10 : 6), `${k}: ${s.shape || s.lines} stays ${d} s`);
+    const steps = program(DRONE(), 1, event, 'A');
+    assert.equal(steps.find((s) => s.photo).at, PHOTO_TIME[0], `${k}: the photo time`);
+    assert.equal(steps.at(-2).at, program(DRONE(), 1, null, 'A').at(-2).at, `${k}: the last line`);
+    const shown = steps.filter((s) => s.at >= 0);
+    for (let i = 1; i < shown.length; i++) assert.ok(shown[i].at - shown[i - 1].at <= 60, `${k}: no scene over a minute`);
+    for (const s of steps) if (s.shape) { assert.ok(SHAPE_NAMES.includes(s.shape), s.shape); assert.equal(typeof s.move === 'function' || s.move === undefined, true); }
+    for (const s of steps) if (s.lines) for (const l of s.lines) for (const seg of [].concat(l)) assert.ok(String(seg).length <= 10, `${k}: "${seg}" fits the sky`);
+  }
+  for (const name of Object.keys(EVENT_MOVES)) assert.ok(SHAPE_NAMES.includes(name), name);
+  // the year is the show's own
+  const words = (y, m, d) => program(kst(y, m, d)).filter((s) => s.lines).map((s) => [].concat(...s.lines).join(''));
+  assert.ok(words(2026, 12, 30).includes('GOODBYE2026'));
+  assert.ok(words(2027, 1, 1).includes('HAPPYNEW YEAR') && words(2027, 1, 1).includes('2027'));
+  assert.ok(words(2026, 12, 24).includes('MERRYCHRISTMAS'));
+  assert.ok(!words(2026, 11, 22).includes('MERRYCHRISTMAS'));
+});
+
+test('after the opening no scene stays over 15 seconds, but the photo pause (Yozi 2026-11-21)', async () => {
+  const { EVENTS } = await import('../src/core/drone-events.js');
+  useShow(show);
+  for (const event of [null, ...Object.keys(EVENTS).map((key) => ({ key, year: 2026 }))]) {
+    const steps = program(DRONE(), 1, event, 'A').filter((s) => s.at >= 144);
+    for (let i = 0; i + 1 < steps.length; i++) {
+      const d = steps[i + 1].at - steps[i].at;
+      assert.ok(d <= 15 || (steps[i].photo && d === 45), `${event?.key ?? 'everyday'}: ${steps[i].shape || steps[i].lines || 'a move'} stays ${d} s`);
+    }
+  }
+  assert.equal(LAST_LINE_SECONDS, 15);
+  const shown = program(DRONE()).filter((s) => s.at >= 0 && s.at < SHOW_SECONDS);
+  assert.ok(shown.length >= 95, `${shown.length} scenes in the 20 minutes`);
+});
+
+test('the patterns take turns, one per show; each keeps the photo time and the 15-second rule', async () => {
+  const { PATTERNS, PATTERN_MOVES } = await import('../src/core/drone-patterns.js');
+  useShow(show);
+  assert.deepEqual(PATTERN_KEYS, ['A', ...Object.keys(PATTERNS)]);
+  assert.ok(PATTERN_KEYS.length >= 3);
+  // A on 2026-11-22 23:10 KST, then the next ones, then A again
+  const first = Date.UTC(2026, 10, 22, 14, 10);
+  let t = first; const turn = [];
+  for (let k = 0; k <= PATTERN_KEYS.length; k++) { turn.push(patternOf(t)); t = show.nextDroneShow(t + 1000); }
+  assert.deepEqual(turn, [...PATTERN_KEYS, 'A']);
+  const nameOf = (s) => s.shape || (s.lines ? s.lines.join('/') : 'a move');
+  const mids = new Set();
+  for (const key of PATTERN_KEYS) {
+    const steps = program(DRONE(), 1, null, key);
+    assert.equal(steps.find((s) => s.photo).at, PHOTO_TIME[0], `${key}: the photo time`);
+    assert.equal(steps.at(-2).at, program(DRONE(), 1, null, 'A').at(-2).at, `${key}: the last line`);
+    const after = steps.filter((s) => s.at >= 144);
+    for (let i = 0; i + 1 < after.length; i++) { const d = after[i + 1].at - after[i].at; assert.ok(d <= 15 || (after[i].photo && d === 45), `${key}: ${nameOf(after[i])} stays ${d} s`); }
+    for (const s of steps) if (s.shape) assert.ok(SHAPE_NAMES.includes(s.shape), `${key}: ${s.shape}`);
+    for (const s of steps) if (s.lines) for (const l of s.lines) for (const seg of [].concat(l)) assert.ok(String(seg).length <= 10, `${key}: "${seg}" fits the sky`);
+    mids.add(steps.filter((s) => s.at >= 144 && s.at < 700).map(nameOf).join(','));
+    // the opening is the same in every pattern
+    assert.deepEqual(steps.filter((s) => s.at >= 0 && s.at < 144).map(nameOf), program(DRONE(), 1, null, 'A').filter((s) => s.at >= 0 && s.at < 144).map(nameOf));
+  }
+  assert.equal(mids.size, PATTERN_KEYS.length, 'every pattern has its own middle');
+  for (const name of Object.keys(PATTERN_MOVES)) assert.ok(SHAPE_NAMES.includes(name), name);
+  // an event day shows the event, whatever the turn
+  const xmas = program(Date.UTC(2026, 11, 24, 14, 10)).filter((s) => s.lines).map((s) => [].concat(...s.lines).join(''));
+  assert.ok(xmas.includes('MERRYCHRISTMAS'));
 });

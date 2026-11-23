@@ -51,7 +51,7 @@ try {
   st = await mk('seoulDal');
   if (!(st.y > 129)) throw new Error('not at the top: ' + JSON.stringify(st));
   console.log('top:', await mk('action'), JSON.stringify(st));
-  // The stamp tour's Seoul Dal stamp: only up here, once (🪙10,000).
+  // The stamp tour's Seoul Dal stamp: only up here, once (🪙30,000).
   if (!(await mk('action'))?.startsWith('🔖')) throw new Error('no stamp at the top: ' + (await mk('action')));
   if (shotDir) await page.screenshot({ path: `${shotDir}/stamp-1-button.png` });
   await mk('act'); await wait(1500);

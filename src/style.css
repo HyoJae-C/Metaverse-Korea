@@ -239,6 +239,13 @@ html.android.ui-hidden #hud .tools { display: none !important; } /* (its bar; th
 }
 .ui-eye[aria-pressed='true'] { background: var(--mint); }
 html:not(.ui-hidden) .in-store .ui-eye, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-eye { display: none; }
+/* A hall with a show (the Opera Theater, the Concert Hall): the eye is there
+   too, under the hall's name, to watch with a clean screen. */
+html:not(.ui-hidden) body.in-store.in-show .ui-eye { display: grid; }
+body.in-show .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 64px); }
+body.in-store.in-show .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 50px); top: calc(max(12px, env(safe-area-inset-top)) + 62px); } /* (off the hall's name) */
+body.in-store.in-show .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 52px); top: calc(max(12px, env(safe-area-inset-top)) + 64px); }
+body.in-store.in-show:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 104px); }
 /* (Buttons hidden: the minimap hides too, so the eye stays put and the map button shows.) */
 html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 128px); }
 /* The map button beside the eye (moved out of the tool row by
@@ -252,7 +259,7 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12
 .tool.corner-map span { font-size: 22px; }
 .corner-map small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .corner-map { display: none; }
-.in-store .corner-map { left: max(12px, env(safe-area-inset-left, 0px)); }
+html:not(.ui-hidden) .in-store .corner-map { left: max(12px, env(safe-area-inset-left, 0px)); } /* (no eye there then) */
 @media (max-width: 700px), (max-height: 500px) {
   html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-eye { top: calc(max(12px, env(safe-area-inset-top)) + 24px); left: calc(max(12px, env(safe-area-inset-left, 0px)) + 96px); }
 }
@@ -264,17 +271,10 @@ html:not(.ui-hidden) body:has(.minimap:not([hidden])) .corner-map, #hud:has(.she
   width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 19px;
   background: rgba(255, 250, 240, 0.75); box-shadow: var(--shadow);
 }
-/* Touch screens (Yozi): 📷 beside the eye, the map button under it. */
-body:has(.corner-map) .ui-shot { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); top: max(12px, env(safe-area-inset-top)); }
-body:not(.in-store) .tool.corner-map { left: calc(max(12px, env(safe-area-inset-left, 0px)) - 2px); top: calc(max(12px, env(safe-area-inset-top)) + 50px); }
-html:not(.ui-hidden) .in-store .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
-html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 180px); }
-@media (max-height: 500px) {
-  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 96px); }
-}
-@media (max-width: 700px) { /* (phones: the pinned notice sits under the minimap; the eye's spot is back when it goes) */
-  html:not(.ui-hidden) body:has(.minimap:not([hidden])) .ui-shot { display: none; }
-}
+/* The 📷 shows only while the eye has hidden the buttons (Yozi 2026-11-21:
+   a clean view is when you take one); on touch screens the map button takes
+   its old spot beside the eye. */
+html:not(.ui-hidden) .ui-shot, #hud:has(.sheet:not([hidden]), .overlay:not([hidden])) .ui-shot { display: none; }
 .shot-flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
 .shot-flash.on { animation: shot-flash 0.45s ease-out; }
 @keyframes shot-flash { from { opacity: 0.85; } to { opacity: 0; } }
@@ -758,6 +758,8 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
   box-shadow: 0 2px 0 rgba(176, 120, 20, 0.25); font-size: 13px; font-weight: 600; overflow-wrap: anywhere;
 }
 .notice-pin[hidden] { display: none; }
+/* A panel is open: the notices step aside so they don't cover its title (they sat on top at the same z-index). */
+body:has(.sheet:not([hidden]):not(.person-menu)) .notice-pin, body:has(#map-panel:not([hidden])) .notice-pin { visibility: hidden; }
 .notice-pin-row { max-height: 4.2em; overflow-y: auto; line-height: 1.4; }
 .notice-pin-row + .notice-pin-row { border-top: 1px dashed #e0a82e; padding-top: 4px; }
 .notice-pin-row b { color: #b05a00; font-weight: 800; }
@@ -783,6 +785,22 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
   /* Phones: under the top-right chips, left of the tool buttons. */
   .notice-pin { top: calc(max(12px, env(safe-area-inset-top)) + 62px); right: 80px; width: auto; min-width: 0; font-size: 12px; }
   .notice-pin.folded { right: auto; }
+}
+/* Phones (Yozi 2026-11-21): the notices fold down by the chat tab in the
+   bottom left (game/mission-spot.js puts them right of it), so the top-left
+   corner is free for the mission bar. Open, they sit just above the tab and
+   the chat lines step up over them (--pin-lift). */
+@media (max-width: 760px) and (pointer: coarse) {
+  #notice-pin {
+    top: auto; right: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 172px);
+    left: calc(max(12px, env(safe-area-inset-left, 0px)) + 60px);
+    width: auto; max-width: calc(100vw - 150px); translate: none;
+  }
+  /* Open: right above the chat tab, clear of the action button below. */
+  #notice-pin:not(.folded) { bottom: calc(env(safe-area-inset-bottom, 0px) + 202px); left: max(12px, env(safe-area-inset-left, 0px)); max-width: calc(100vw - 96px); z-index: 3; } /* (under the action button, z 4: its tap always wins) */
+  #notice-pin.folded .notice-pin-fold { height: 24px; padding: 0 9px; font-size: 12px; line-height: 20px; }
+  .chat-log { bottom: calc(env(safe-area-inset-bottom, 0px) + 200px + var(--pin-lift, 0px)); }
+  html.android #notice-pin { translate: 0 calc(-1 * var(--tool-bar, 0px)); }
 }
 .chat-line .chat-tag { font-size: 11px; font-weight: 800; color: #3c6fd6; margin-right: 4px; }
 .chat-bar {
@@ -824,6 +842,12 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .fr-text { display: grid; min-width: 0; flex: 1; }
 .fr-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fr-request .fr-name { flex: 1; min-width: 0; }
+.fr-dot { display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; vertical-align: middle; }
+.fr-on { background: #3fbf62; box-shadow: 0 0 0 2px rgba(63, 191, 98, 0.25); }
+.fr-away { background: #f2b630; box-shadow: 0 0 0 2px rgba(242, 182, 48, 0.3); }
+.fr-off { background: #b9b9b9; }
+.fr-online-switch { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; cursor: pointer; }
+.fr-online-switch input { width: 18px; height: 18px; margin: 0; }
 .fr-request { flex-wrap: wrap; }
 .fr-request .fr-text { flex: 1 1 120px; }
 .fr-where.here { color: #2f8a5c; font-weight: 700; }
@@ -875,11 +899,21 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   bottom: max(170px, calc(env(safe-area-inset-bottom) + 160px));
   width: min(560px, calc(100vw - 24px));
   background: var(--panel); border-radius: 22px; padding: 10px 12px; box-shadow: var(--shadow); z-index: 4;
+  /* Stops below the 꾸미기 button so it never covers it (short phones scroll). */
+  max-height: calc(100vh - max(170px, calc(env(safe-area-inset-bottom) + 160px)) - max(12px, env(safe-area-inset-top)) - 150px);
+  max-height: calc(100dvh - max(170px, calc(env(safe-area-inset-bottom) + 160px)) - max(12px, env(safe-area-inset-top)) - 150px);
+  overflow-y: auto;
 }
-.decor-bar .fine { margin: 0 0 8px; font-size: 12px; }
+.decor-bar > .sheet-x { position: sticky; top: 0; float: right; margin: 0 -4px 4px 8px; z-index: 3; box-shadow: 0 1px 6px rgba(74, 63, 53, 0.18); font-size: 16px; font-weight: 800; }
+.decor-bar .fine { margin: 0 0 8px; padding: 0 30px; font-size: 12px; }
 .visit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 .visit-row .chip { padding: 5px 10px; font-size: 12px; }
 .visit-row .chip.on { background: var(--accent); color: #fff; }
+/* Wallpaper and floors (game/home-finish.js): one row each, scroll sideways if many. */
+.finish-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+.finish-row > span { flex: none; }
+.finish-chip { flex: none; display: inline-flex; align-items: center; gap: 5px; }
+.finish-swatch { width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
 .visit-list { display: grid; gap: 8px; margin-top: 10px; max-height: 50vh; overflow-y: auto; }
 .visit-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #fff; font-weight: 800; text-align: left; }
 .visit-list small { font-weight: 700; color: var(--ink-soft); }
@@ -893,10 +927,16 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
   display: grid; place-items: center; gap: 2px; padding: 6px 2px;
 }
 .decor-item span { font-size: 26px; line-height: 1; }
+.decor-photo img { width: 40px; aspect-ratio: 4 / 3; object-fit: cover; border: 2px solid #fbf8f1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
 .decor-item small { font-size: 11px; font-weight: 700; color: var(--ink-soft); text-align: center; line-height: 1.15; overflow-wrap: anywhere; }
 .decor-item { position: relative; }
 .decor-item.placed { background: #eef6e8; }
 .decor-item.placed::after { content: '✓'; position: absolute; top: 3px; right: 6px; font-size: 12px; font-weight: 800; color: #4f8a3c; }
+.decor-item.locked { opacity: 0.5; }
+.decor-item.locked::after { content: '🔒'; position: absolute; top: 3px; right: 5px; font-size: 11px; }
+.grow-chip { align-self: flex-start; }
+.grow-panel .grow-now { font-weight: 700; }
+.grow-panel .grow-buy { width: 100%; margin-top: 6px; }
 .piece-bar {
   position: absolute; left: 50%; transform: translateX(-50%);
   top: calc(max(12px, env(safe-area-inset-top)) + 140px);
@@ -969,6 +1009,7 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 
 /* Daily check-in and missions */
 .daily-chip { position: relative; }
+.tools .tool.daily-chip { font-size: 21px; }
 .daily-chip .dot { position: absolute; top: 2px; right: 2px; width: 9px; height: 9px; border-radius: 50%; background: #e0604d; box-shadow: 0 0 0 2px #fff; }
 /* Calm and easy to read: it's information, so soft colours, one accent
    (coral) for what to press, mint for what's done. */
@@ -1359,8 +1400,10 @@ body.beauty-mode #store-banner, body.beauty-mode #action-btn, body.beauty-mode #
 }
 .in-store .quest-chip { display: none; }
 /* The square errand: the chip plus a 🧭 "show the way" button beside it. */
+/* Top of the screen, under the pinned notices: game/mission-spot.js sets its
+   top, left and width from the notices box (these are only the first guess). */
 .quest-bar {
-  position: absolute; left: 50%; transform: translateX(-50%); bottom: max(172px, calc(env(safe-area-inset-bottom) + 162px));
+  position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(max(12px, env(safe-area-inset-top)) + 62px);
   display: flex; gap: 6px; align-items: center; max-width: min(92vw, 460px); z-index: 4;
 }
 .quest-bar .quest-chip { position: static; transform: none; min-width: 0; max-width: none; flex: 0 1 auto; }
@@ -1452,12 +1495,13 @@ body.lane-cam #store-banner, body.lane-cam .nametag.me { display: none; } /* bow
 .photo-count { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 20; padding: 10px 24px; border-radius: 999px; background: rgba(27, 27, 32, 0.6); color: #fff; font-size: 44px; font-weight: 900; pointer-events: none; }
 .photo-count[hidden] { display: none; }
 body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibility: hidden; }
-.delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 196px); bottom: auto; background: #ffefe0; }
+.delivery-chip { top: calc(max(12px, env(safe-area-inset-top)) + 106px); bottom: auto; left: max(12px, env(safe-area-inset-left, 0px)); transform: none; background: #ffefe0; } /* (under the mission bar: game/mission-spot.js) */
 /* Hanbok rental: the time left, beside the coins. */
 .rent-chip { background: #fde4ea; color: #7a1f33; font-weight: 800; }
 .rent-chip[hidden] { display: none; }
 /* Seoul Forest's tandem rental: the meter (game/tandem-rental.js). */
 .tandem-chip { background: #dff3e5; color: #1f5c38; }
+.contest-chip { background: #dcefff; color: #13406b; font-variant-numeric: tabular-nums; }
 /* Narrow phones: below the chip row, not in it (the row is full). In a shop
    the banner is there, and the product card shows the time instead. */
 @media (max-width: 480px) {
@@ -1513,7 +1557,7 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
 .info-row p { margin: 2px 0 0; font-size: 13px; }
 .info-row .chip { flex: none; }
 .info-hint {
-  position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px));
+  position: absolute; left: 50%; top: max(110px, calc(env(safe-area-inset-top) + 100px), calc(var(--top-notes-bottom, 0px) + 8px)); /* (below the notices and mission bar: game/mission-spot.js) */
   transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
   background: var(--panel); border-radius: var(--radius); padding: 12px 14px;
   box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 3; /* under the action button and sheets */
@@ -1711,6 +1755,13 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .bag-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 10px; }
 .bag-slot { position: relative; aspect-ratio: 1; border-radius: 12px; background: #fff; font-size: 24px; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px #eadfd2; }
 .bag-slot.empty { background: #f6f0e8; box-shadow: inset 0 0 0 1.5px #efe6da; }
+.bag-thumb { width: 86%; aspect-ratio: 4 / 3; object-fit: cover; border: 2px solid #fbf8f1; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); border-radius: 2px; }
+.bag-photo { display: block; width: min(100%, 300px); margin: 8px auto 4px; border: 8px solid #fbf8f1; border-bottom-width: 22px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); transform: rotate(-1.2deg); }
+.ride-photo-card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-2deg); z-index: 40; background: #fbf8f1; padding: 10px 10px 12px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35); border-radius: 3px; width: min(78vw, 340px); animation: ride-photo-in 0.5s ease-out; pointer-events: auto; }
+.ride-photo-card img { display: block; width: 100%; }
+.ride-photo-card p { margin: 10px 2px 0; font: 600 13px/1.3 system-ui, sans-serif; color: #5a4a3a; text-align: center; }
+.ride-photo-card .sheet-x { top: -12px; right: -12px; }
+@keyframes ride-photo-in { from { opacity: 0; transform: translate(-50%, -40%) rotate(-8deg) scale(0.8); } }
 .bag-slot.on { box-shadow: inset 0 0 0 3px var(--accent-dark, #e0694e); }
 .closet-bar { display: flex; gap: 6px; align-items: flex-start; margin-top: 10px; }
 .closet-kinds { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
@@ -1720,6 +1771,7 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .bag-slot.worn { background: #fff4e6; }
 .bag-slot.worn small { color: var(--accent-dark, #e0694e); font-size: 12px; }
 .bag-slot small { position: absolute; right: 4px; bottom: 2px; font-size: 10px; font-weight: 800; color: var(--ink-soft); }
+.bag-slot .bag-medal { position: absolute; left: 3px; top: 1px; font-size: 12px; }
 .closet-icon { position: relative; display: inline-grid; place-items: center; line-height: 1; }
 .closet-img { display: block; width: 1.15em; height: 1.15em; }
 .closet-dot { position: absolute; right: -0.28em; bottom: -0.18em; width: 0.42em; height: 0.42em; border-radius: 50%; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0, 0, 0, 0.18); }
@@ -1758,6 +1810,9 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .lock-shape { display: grid; justify-items: center; gap: 2px; padding: 8px 4px 6px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px #f1e8dc; font-weight: 700; }
 .lock-shape small { font-size: 12px; }
 .lock-shape.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; }
+.lock-who { display: flex; flex-wrap: wrap; gap: 6px; }
+.lock-who .chip.on { box-shadow: inset 0 0 0 2.5px #e2557f; background: #fff3f7; color: #7a1f33; }
+.lock-names { font-size: 15px; color: #c23b66; }
 /* Cheonggyecheon wish lanterns (ui/wish-ui.js) */
 .wish-colors { display: flex; flex-wrap: wrap; gap: 8px; }
 .wish-color { width: 36px; height: 36px; border-radius: 10px; background: var(--c); box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .12); }
@@ -1938,8 +1993,6 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .counter-buy.primary { flex: none; width: auto; min-width: 64px; margin: 0; padding: 8px 12px; font-size: 15px; }
 
 /* The KST label on the clock chip: dropped on narrow phones to save room. */
-#weather .kst { font-size: 0.75em; opacity: 0.7; }
-@media (max-width: 480px) { #weather .kst { display: none; } }
 
 /* Ride shop tabs, tier stars and skins */
 .ride-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; padding-bottom: 2px; }
@@ -2148,6 +2201,8 @@ html[lang='ar'] .install-steps { padding: 12px 34px 12px 14px; }
 .kimchi-dots i.on { background: #d8452f; }
 .kimchi-dots i.now { background: #f2a33a; }
 .kimchi-body { display: grid; gap: 8px; }
+.cook-check.on { background: #2f7a3a; color: #fff; border-color: #2f7a3a; } /* ticked (ui/cook-class-ui.js r_checks) */
+.check-mark { font-weight: 900; }
 .kimchi-verdict { display: grid; gap: 3px; padding: 10px 12px; border-radius: 14px; font-size: 14px; }
 .kimchi-verdict.good { background: #e3f4dd; color: #2f5d2a; }
 .kimchi-verdict.ok { background: #fff1c9; color: #6b5214; }
@@ -2332,6 +2387,13 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-pop-big.fish-stamp-sprite { width: 120px; }
 .fish-big.fish-stamp-sprite { width: 76px; }
 .fish-emoji.fish-stamp-sprite { width: 32px; flex: none; }
+.tank-panel h4 { margin: 4px 0 0; }
+.tank-panel p { margin: 0; }
+.tank-row { display: flex; align-items: center; gap: 8px; }
+.tank-row .tank-name { flex: 1; min-width: 0; }
+.tank-row small { color: #8a7a6a; }
+.tank-row .tank-note { flex: none; }
+.tank-row .chip { flex: none; }
 .bubble-fish.fish-stamp-sprite { display: block; width: 40px; }
 .trophy-pic .fish-stamp-sprite { width: 60px; }
 .fish-stamp-name { font-size: 12px; font-weight: 900; line-height: 1; }
@@ -2411,6 +2473,7 @@ html[lang='ar'] .gift-cards, html[lang='ar'] .gift-panel { direction: rtl; }
 .fish-odds { display: grid; gap: 2px; max-height: 52vh; overflow-y: auto; font-size: 15px; color: #2b2230; }
 .fish-odds-note { margin: 4px 0; font-size: 12.5px; line-height: 1.4; color: #5b5560; }
 .fish-lucky { margin: 0 0 6px; padding: 8px 12px; border-radius: 12px; background: #fff3c4; color: #6b4e00; font-size: 14px; font-weight: 700; box-shadow: inset 0 0 0 2px #e0a020; }
+.fish-double { background: #ffe0eb; color: #8a1840; box-shadow: inset 0 0 0 2px #d6336c; }
 .fish-odds-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 52px 46px 30px; align-items: center; gap: 4px; padding: 5px 2px; border-bottom: 1px solid #eee6da; }
 .fish-odds-row > :nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
 .fish-odds-row .fish-name { font-weight: 700; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -2761,6 +2824,15 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   .tools #bike-btn, .tools #chat-btn { position: fixed; right: 21px; z-index: 4; }
   .tools #chat-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 72px); }
   .tools #bike-btn { bottom: calc(max(44px, calc(env(safe-area-inset-bottom) + 36px)) + 126px); }
+  /* The 📒 notes button takes the free spot right of the map button (Yozi
+     2026-11-21); the bag (and ☕ / 📥 while you hold something) stays in the
+     row. While the minimap shows (no map button, the eye moves there) it goes
+     back to the row. */
+  html:not(.android) body:not(:has(.minimap:not([hidden]))) .tools #notes-btn {
+    position: fixed; z-index: 5; top: max(10px, calc(env(safe-area-inset-top) - 2px));
+    left: calc(max(12px, env(safe-area-inset-left, 0px)) + 106px);
+  }
+  html:not(.android) body.in-store:not(:has(.minimap:not([hidden]))) .tools #notes-btn { left: calc(max(12px, env(safe-area-inset-left, 0px)) + 54px); }
   /* The open emote wheel fans up over them. */
   #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 0; pointer-events: none; }
   /* Small phones (iPhone SE): the action button leans left, clear of ride. */
@@ -2795,12 +2867,11 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   html.android .tools .tool[aria-pressed='true'] { background: var(--mint); }
   html.android .tools .badge { top: 2px; right: calc(50% - 24px); }
   html.android #hud:has(.emote-wheel.open) :is(#bike-btn, #chat-btn) { opacity: 1; pointer-events: auto; }
-  html.android :is(.notice-pin, .install-nudge) { translate: none; }
+  html.android .install-nudge { translate: none; } /* (the notices still step under the map button, which stays at the top) */
   html.android :is(.joystick, .emote-wheel, .emotes, .action, .action-menu, .help, .revert, .honk-btn, .boost-btn,
-    .stamina, .chat-log, .chat-fold, .quest-bar, .quest-chip, .kpop-tv, .decor-bar, .person-menu) {
+    .stamina, .chat-log, .chat-fold, .kpop-tv, .decor-bar, .person-menu) {
     translate: 0 calc(-1 * var(--tool-bar));
   }
-  html.android .quest-bar .quest-chip { translate: none; } /* (the bar moves; its chips go with it) */
   @media (max-width: 360px) { html.android :is(.action, .action-menu) { left: 50%; } }
 }
 .online .on-short { display: none; }
@@ -2828,7 +2899,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
    notices) steps aside instead of showing through it, and the chat log moves
    right under the bar, where the keyboard can't cover it. */
 @media (pointer: coarse) {
-  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
+  body:has(#hud.chat-open) :is(.top-right, .minimap, .street-card, .notice-pin, .quest-bar, .delivery-chip, .zone-line, .help, .ui-eye, .ui-shot, .corner-map) { visibility: hidden; }
   html:not(.android) body:has(#hud.chat-open) .tools .tool:not(#chat-btn, #bike-btn) { visibility: hidden; }
   #hud.chat-open .chat-log {
     top: calc(env(safe-area-inset-top, 0px) + 12px + var(--chat-bar-h, 52px) + 8px); bottom: auto;
@@ -2836,7 +2907,7 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
   }
 }
 /* Start screen: button to the Google Form (index.html #survey-btn) */
-.survey-btn { display: flex; width: fit-content; max-width: 100%; margin: 12px auto 0; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; color: var(--ink); text-decoration: none; text-align: center; line-height: 1.3; white-space: normal; }
+.survey-btn { display: block; width: fit-content; max-width: 100%; margin: 6px auto 0; padding: 6px 8px; font-size: 12px; color: var(--muted, #7a6a5c); text-decoration: underline; text-underline-offset: 2px; text-align: center; line-height: 1.3; }
 
 /* The live café's voice panel (game/live-voice.js): singer or listener controls. */
 .live-panel {
@@ -2862,3 +2933,120 @@ html:is(:lang(ja), :lang(zh)) :is(h1, h2, .wallet-title, .primary, .daily-sub st
 .bait-row button { flex: none; width: auto; white-space: nowrap; font-size: 15px; padding: 8px 14px; border-radius: 14px; }
 .bait-row button.chip { box-shadow: none; opacity: 0.7; }
 .bait-free { font-weight: 700; opacity: 0.7; }
+/* The weekend farm (ui/farm-ui.js) */
+.farm-row { flex-wrap: wrap; }
+.farm-row .bait-text { flex-basis: 150px; }
+.farm-panel > button.primary { width: 100%; }
+/* The farmer's journal (ui/farm-journal-ui.js) */
+.farm-log-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; max-height: 38vh; overflow-y: auto; background: #f4efe4; border-radius: 16px; padding: 10px; }
+.farm-log-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 12px; background: #fffaf1; border: 1px dashed #d9c9b0; color: #8a7767; text-align: center; }
+.farm-log-cell b { font-size: 13px; }
+.farm-log-cell small { font-size: 11px; opacity: 0.8; }
+.farm-log-stamp { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; border: 3px solid #d9c9b0; filter: grayscale(1); opacity: 0.35; }
+.farm-log-cell.got { border-style: solid; color: #4c3b32; }
+.farm-log-cell.got .farm-log-stamp { filter: none; opacity: 1; border-color: #4c9a5f; background: #eaf6e4; transform: rotate(-6deg); }
+.farm-log-cell.fresh .farm-log-stamp { border-color: #e0a422; background: #fff3cf; }
+/* The dish upgrade panel (ui/dish-upgrade-ui.js) */
+.upgrade-have { font-weight: 700; margin: 6px 0; }
+.upgrade-list { max-height: 34vh; overflow-y: auto; }
+.upgrade-row { width: 100%; text-align: left; border: 2px solid transparent; font: inherit; color: inherit; cursor: pointer; }
+.upgrade-row.on { border-color: #e8b923; background: rgba(232, 185, 35, 0.16); }
+.upgrade-go { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 8px 0; }
+.upgrade-go button { width: auto; padding: 10px 26px; }
+.upgrade-odds summary { cursor: pointer; font-weight: 700; margin: 6px 0; }
+.upgrade-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.upgrade-table th, .upgrade-table td { padding: 3px 6px; text-align: center; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+.bag-slot .bag-lv { position: absolute; right: 3px; top: 1px; font-size: 11px; font-weight: 800; color: #c98a00; }
+.bag-seasoning { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; margin: 6px 0; border-radius: 12px; background: rgba(232, 185, 35, 0.14); }
+/* The recipe book as a stamp book (ui/recipe-book-ui.js), in the fish book's red-ink stamps. */
+.recipe-panel { background: #f4efe4; }
+.recipe-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); margin-top: 10px; }
+.recipe-cell { padding: 10px 4px 8px; gap: 5px; }
+.recipe-cell .fish-stamp-fish { font-size: 30px; }
+.recipe-cell .fish-stamp-name { font-size: 11px; }
+.recipe-cell.fresh .recipe-stamp { animation: stamp-in 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+/* A cooking-class dish's picture (ui/dish-icon.js) */
+.dish-icon { display: inline-block; width: 1.5em; aspect-ratio: 1; vertical-align: middle; background: url("/assets/food/dish-icons.webp?v=1") no-repeat; background-size: 500% 100%; }
+.bag-slot .dish-icon { width: 78%; }
+.fish-stamp .dish-icon { width: 40px; }
+/* 두근두근: the upgrade's suspense over the panel (ui/dish-upgrade-ui.js) */
+.upgrade-panel { position: relative; }
+.upgrade-stage { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: inherit; background: radial-gradient(circle at 50% 42%, #fff6d8, #f3e3c0 60%, #e8d2a6); overflow: hidden; }
+.upgrade-stage-dish { position: relative; z-index: 1; font-size: 64px; line-height: 1; animation: up-shake 0.5s ease-in-out infinite, up-glow 0.9s ease-in-out infinite; }
+.upgrade-stage-dish .dish-icon { width: 120px; display: block; }
+.upgrade-stage-lv { position: relative; z-index: 1; font-size: 26px; font-weight: 900; color: #8a5a10; }
+.upgrade-stage-text { position: relative; z-index: 1; margin: 0; font-weight: 800; color: #7a5a3a; animation: up-beat 0.9s ease-in-out infinite; }
+.upgrade-stage-bar { position: relative; z-index: 1; width: 60%; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.1); overflow: hidden; }
+.upgrade-stage-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f0b429, #e8590c); animation: up-fuse linear forwards; }
+.upgrade-stage-rays { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; margin: -260px 0 0 -260px; opacity: 0.25; background: repeating-conic-gradient(rgba(255, 200, 60, 0.55) 0 8deg, transparent 8deg 22deg); animation: up-spin 6s linear infinite; }
+.upgrade-stage.win .upgrade-stage-dish { animation: up-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both; filter: drop-shadow(0 0 18px #ffd34d); }
+.upgrade-stage.win .upgrade-stage-rays { opacity: 0.9; animation-duration: 2s; }
+.upgrade-stage.win .upgrade-stage-lv { font-size: 40px; color: #d97706; animation: up-pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1) both; }
+.upgrade-stage.win { background: radial-gradient(circle at 50% 42%, #fffbe6, #ffe08a 55%, #f5b94a); }
+.upgrade-stage.lose .upgrade-stage-dish { animation: up-sag 0.8s ease-out both; filter: grayscale(0.7); }
+.upgrade-stage.lose .upgrade-stage-rays { opacity: 0; }
+.upgrade-stage.lose { background: radial-gradient(circle at 50% 42%, #f3f1ee, #ddd8d0 60%, #c9c2b8); }
+.upgrade-stage.win .upgrade-stage-bar, .upgrade-stage.lose .upgrade-stage-bar { visibility: hidden; }
+@keyframes up-shake { 0%, 100% { transform: rotate(0) translateX(0); } 25% { transform: rotate(-6deg) translateX(-3px); } 75% { transform: rotate(6deg) translateX(3px); } }
+@keyframes up-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 190, 60, 0.4)); } 50% { filter: drop-shadow(0 0 16px rgba(255, 190, 60, 0.95)); } }
+@keyframes up-beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.15); } 30% { transform: scale(1); } 45% { transform: scale(1.1); } }
+@keyframes up-fuse { to { width: 100%; } }
+@keyframes up-spin { to { transform: rotate(360deg); } }
+@keyframes up-pop { from { transform: scale(0.4); } to { transform: scale(1.15); } }
+@keyframes up-sag { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(0.9) translateY(6px); opacity: 0.8; } }
+@media (prefers-reduced-motion: reduce) { .upgrade-stage * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+
+/* "Spend ₩…?" before a payment (game/spend-ask.js): above every panel. */
+.spend-ask { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px; background: rgba(74, 63, 53, 0.35); }
+.spend-ask[hidden] { display: none; }
+.spend-ask-card { width: min(320px, 100%); background: var(--panel); border-radius: 24px; padding: 22px 20px 18px; text-align: center; box-shadow: var(--shadow); display: grid; gap: 6px; }
+.spend-ask-card strong { font-size: 20px; }
+.spend-ask-card small { color: var(--ink-soft); }
+.spend-ask-btns { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 10px; align-items: center; }
+.spend-ask-btns .chip { padding: 12px 14px; }
+.spend-ask-btns .primary { padding: 12px; font-size: 17px; }
+.fc-rule-list { flex-direction: column; align-items: stretch; }
+.fc-rule-list .chip { text-align: start; white-space: normal; line-height: 1.3; padding: 8px 12px; }
+.fc-rule-list small { font-weight: 400; opacity: .8; }
+/* Fishing contest starts (game/fish-contest.js): a big VS banner on the two players' screens. */
+.fc-vs { position: fixed; left: 50%; top: 38%; transform: translate(-50%, -50%); z-index: 60; pointer-events: none; width: min(440px, calc(100vw - 32px)); padding: 16px 18px 12px; border-radius: 24px; text-align: center; color: #fff; background: linear-gradient(135deg, #2470c4, #e2465a); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); animation: fc-vs-in .3s ease-out; transition: opacity .4s; }
+#hud > .fc-vs { pointer-events: none; }
+.fc-vs[hidden] { display: none; }
+.fc-vs.fc-vs-out { opacity: 0; }
+.fc-vs-title { font-size: 15px; font-weight: 700; letter-spacing: .04em; opacity: .95; }
+.fc-vs-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin: 8px 0 4px; }
+.fc-vs-name { font-size: 20px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 2px 4px rgba(0, 0, 0, .3); }
+.fc-vs-me { text-align: end; }
+.fc-vs-them { text-align: start; }
+.fc-vs-x { font-size: 34px; font-weight: 900; font-style: italic; color: #ffe066; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.fc-vs-rule { font-size: 13px; opacity: .9; }
+.fc-vs-n { font-size: 52px; font-weight: 900; line-height: 1.1; margin-top: 4px; color: #ffe066; text-shadow: 0 3px 0 rgba(0, 0, 0, .3); }
+.fc-vs-tick { animation: fc-vs-in .3s ease-out; }
+@keyframes fc-vs-in { from { scale: 1.5; } }
+@media (prefers-reduced-motion: reduce) { .fc-vs, .fc-vs-tick { animation: none; } }
+
+.farm-row-off { opacity: 0.6; }
+.farm-now { display: flex; flex-direction: column; gap: 6px; background: #eaf6e4; border-radius: 16px; padding: 10px 12px; margin-bottom: 8px; color: #4c3b32; }
+.farm-now-title { font-size: 14px; }
+.farm-now > small { font-size: 12px; opacity: 0.85; }
+.farm-now-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.farm-now-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 58px; border-radius: 10px; background: #fffaf1; border: 1px solid #d9c9b0; font-size: 20px; line-height: 1.1; }
+.farm-now-cell small { font-size: 10px; white-space: nowrap; }
+.farm-now-cell.empty { border-style: dashed; color: #b9a995; background: transparent; }
+.farm-now-cell.thirsty { border-color: #5aa7e0; background: #eef7ff; }
+.farm-now-cell.ripe { border-color: #e0a422; background: #fff3cf; }
+.farm-now-water { opacity: 0.7; }
+/* A friend request waiting for an answer (ui/friend-ask-ui.js). */
+.friend-ask {
+  position: absolute; z-index: 6; left: 50%; transform: translateX(-50%);
+  top: calc(max(12px, env(safe-area-inset-top)) + 112px); /* under the top buttons (two rows on a phone, the toolbar on a PC) */
+  width: min(420px, calc(100vw - 24px)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--panel); border-radius: 18px; box-shadow: var(--shadow);
+}
+.friend-ask[hidden], #hud:has(.sheet:not([hidden]), .overlay:not([hidden]), .game-panel:not([hidden])) .friend-ask { display: none; }
+.friend-ask-text { all: unset; flex: 1; min-width: 0; display: grid; cursor: pointer; }
+.friend-ask-text b { font-size: 14px; overflow-wrap: anywhere; }
+.friend-ask-text small { font-size: 12px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-ask-text small.here { color: #2f8a5c; font-weight: 700; }
+.friend-ask .chip { flex: none; width: auto; margin: 0; padding: 4px 12px; min-height: 34px; }

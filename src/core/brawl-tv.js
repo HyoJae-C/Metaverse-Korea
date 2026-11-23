@@ -16,9 +16,9 @@ import { stepMatch, packMatch, unpackMatch } from './brawl.js';
 import { packInput, unpackInput } from './brawl-net.js';
 
 export const TV = 'brawltv:';
-export const BATCH = 20; // ticks in a batch of inputs (3 messages a second)
+export const BATCH = 60; // ticks in a batch of inputs (1 message a second: each one goes to everyone in the room)
 export const KEY_EVERY = 300; // ticks between whole matches (5 s)
-const BEHIND = 30; // ticks the screen stays behind what it has, to play evenly
+const BEHIND = 75; // ticks the screen stays behind what it has, to play evenly (a batch and the network)
 const enc = (n) => n.toString(36).padStart(2, '0');
 
 // Solo play advertises only a status, never inputs, HP or match snapshots.

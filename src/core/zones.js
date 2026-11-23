@@ -1,6 +1,9 @@
 // Meeting zones: big signposts with a code players can agree to meet at
 // ("see you at A-2!"), visible above the rooftops. A code is the gu's letter
 // and a number (zones.json "codes").
+// A zone marked "sign": false has no signpost, no map pin and no "you're at"
+// line: only its passers-by still stroll there (Seongsu had six signposts
+// within 200 m, Yozi 2026-11-18). Its code stays taken.
 import * as THREE from 'three';
 import { placeOf } from './districts.js';
 import { localName } from './i18n.js';
@@ -89,6 +92,7 @@ export class Zones {
       if (collision?.blocked(x, z, 0.5)) [x, z] = [ax, az];
       const group = new THREE.Group();
       group.position.set(x, 0, z);
+      if (zone.sign === false) { this.items.push({ zone, group, x, z, quiet: true }); continue; }
       scene.add(group);
 
       const pole = new THREE.Mesh(
@@ -126,10 +130,11 @@ export class Zones {
 
       this.items.push({ zone, group, board, boardMat, letter, x, z });
     }
+    this.signs = this.items.filter((it) => !it.quiet); // the ones on the street, the map and in search
   }
 
   setTranslated(on, lang) {
-    for (const it of this.items) {
+    for (const it of this.signs) {
       it.boardMat.map.dispose();
       it.boardMat.map = boardTexture(on ? localName(it.zone.name, lang) : it.zone.name.ko, it.zone.color);
       it.boardMat.needsUpdate = true;
@@ -139,7 +144,7 @@ export class Zones {
   // Face boards to the camera, bob letters, return the zone the player is in.
   update(camera, px, pz, t) {
     let inside = null, bestD = Infinity;
-    for (const it of this.items) {
+    for (const it of this.signs) {
       // The board hangs at the pole's middle, so the pole cut through its
       // name. Slide the board and the letter a little toward the camera so
       // both always sit in front of the pole and the beam.

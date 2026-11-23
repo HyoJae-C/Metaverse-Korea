@@ -95,16 +95,26 @@ export function nearYeouido(x, z) {
 // every 35-50 s. fans: the chance a shot also
 // sets off a row of low fans of sparks on the barges (the glowing fans on
 // the water in every festival photo).
+// The three acts used to look alike (all colours, all at one height), so
+// each has its own sky now (Yozi 2026-11-21: "반복되는 부분을 높낮이
+// 조절도 하고 색깔도 다양하게"): act 1 warm and low, act 2 cool and higher,
+// act 3 every colour from low to very high.
+// palette: the colours an act draws from (all of COLORS without one).
+// low, spread: a cluster's lowest shell and how far the others stack above
+// it (38 and 24 without). high: the chance one goes much higher (HIGH
+// without). vbase: the heights its volleys are fired at (42 without).
+const WARM = ['#ff4d5e', '#ff9a3c', '#ffd34d', '#ff7ae0', '#ff7a5c', '#ffffff'];
+const COOL = ['#4dd2ff', '#b07bff', '#7dff6b', '#3df0c8', '#5b8cff', '#ffffff', '#c8ff5a'];
 export const PHOTO_TIME = [330, 380];
 export const FINALE_TIME = 435;
 export const ACTS = [
   { from: 0, to: 12, gap: [1.3, 1.5], kinds: ['willow'], volley: [1, 3, 3], name: 'curtain up: a gold willow from each barge' },
   { from: 12, to: 70, gap: [1, 1.4], kinds: ['peony', 'peony', 'pistil', 'ring'], mono: true, cluster: [2, 3], volley: [0.2, 3, 5], fans: 0.06, name: 'opening: big flowers stacked' },
-  { from: 70, to: 150, gap: [0.8, 1.2], kinds: ['pistil', 'dahlia', 'kamuro', 'willow', 'double', 'peony', 'peony'], cluster: [1, 2, 2, 3], volley: [0.2, 3, 3], fans: 0.04, name: 'act 1: shapes' },
+  { from: 70, to: 150, gap: [0.8, 1.2], kinds: ['pistil', 'dahlia', 'kamuro', 'willow', 'double', 'peony', 'peony'], cluster: [1, 2, 2, 3], volley: [0.2, 3, 3], fans: 0.04, palette: WARM, low: 32, spread: 20, high: 0.08, vbase: [36, 40], name: 'act 1: shapes, warm and low' },
   { from: 150, to: 168, gap: [0.3, 0.5], kinds: ['small'], cluster: [3, 4, 5], volley: [0.4, 5, 7], name: 'crackle: a rush of small ones' },
-  { from: 168, to: 235, gap: [0.6, 1], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'peony'], cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.05, name: 'act 2: colours and spirals' },
+  { from: 168, to: 235, gap: [0.6, 1], kinds: ['rainbow', 'palm', 'spiral', 'ring', 'peony', 'peony'], cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.05, palette: COOL, low: 46, spread: 28, high: 0.25, vbase: [50, 58], name: 'act 2: spirals, cool and higher' },
   { from: 235, to: 270, gap: [0.8, 1.2], kinds: ['small', 'double', 'peony', 'rainbow'], cluster: [2, 3], volley: [1, 5, 7], together: true, fans: 0.35, name: 'highlight: every barge at once, fans on the water' },
-  { from: 270, to: PHOTO_TIME[0], gap: [0.6, 0.9], kinds: ['pistil', 'peony', 'kamuro', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro', 'peony'], cluster: [1, 2, 2, 3], volley: [0.3, 3, 5], fans: 0.04, name: 'act 3: everything' },
+  { from: 270, to: PHOTO_TIME[0], gap: [0.6, 0.9], kinds: ['pistil', 'peony', 'kamuro', 'rainbow', 'palm', 'dahlia', 'spiral', 'kamuro', 'peony'], cluster: [1, 2, 2, 3], volley: [0.3, 3, 5], fans: 0.04, low: 34, spread: 40, high: 0.35, vbase: [34, 48, 62], name: 'act 3: every colour, low to very high' },
   { from: PHOTO_TIME[0], to: PHOTO_TIME[1], gap: [1, 1.4], kinds: ['willow'], cluster: [1, 2], volley: [0.35, 3, 5], beats: false, name: 'photo time: gold willows' },
   { from: PHOTO_TIME[1], to: FINALE_TIME, gap: [1, 0.3], kinds: ['peony', 'ring', 'pistil', 'willow', 'kamuro', 'rainbow', 'palm', 'dahlia', 'small'], ramp: true, cluster: [1, 2, 3], volley: [0.3, 3, 5], fans: 0.08, name: 'build-up: faster and faster' },
   { from: FINALE_TIME, to: 497, gap: [0.35, 0.5], kinds: ['peony', 'willow', 'rainbow', 'peony', 'palm', 'pistil', 'ring'], big: true, cluster: [2, 3, 3], volley: [0.5, 5, 9], fans: 0.25, name: 'finale: the sky full' },
@@ -134,7 +144,7 @@ export function sweep(order, i, n) {
 const FAN_COLORS = ['#ffc861', '#ff9ac8', '#ffffff', '#ff9a3c'];
 
 export const KINDS = ['fan', 'peony', 'ring', 'pistil', 'dahlia', 'kamuro', 'willow', 'small', 'double', 'spiral', 'palm', 'rainbow'];
-export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c'];
+export const COLORS = ['#ff4d5e', '#ffd34d', '#4dd2ff', '#7dff6b', '#ff7ae0', '#ffffff', '#b07bff', '#ff9a3c', '#3df0c8', '#5b8cff', '#ff7a5c', '#c8ff5a']; // (the last four: teal, blue, coral, lime)
 export const GOLD = '#ffc861';
 // Colours that look good together in one burst: its stars start in the
 // first and turn into the second, a few in the second from the start
@@ -144,6 +154,8 @@ const PARTNERS = {
   '#ff4d5e': ['#b07bff', '#ffd34d', '#ffffff'], '#ffd34d': ['#ff9a3c', '#ff4d5e', '#7dff6b'], '#4dd2ff': ['#b07bff', '#ffffff', '#7dff6b'],
   '#7dff6b': ['#ffd34d', '#4dd2ff'], '#ff7ae0': ['#ffd34d', '#b07bff', '#ffffff'], '#ffffff': ['#ff7ae0', '#4dd2ff', '#b07bff'],
   '#b07bff': ['#4dd2ff', '#ff7ae0', '#ff4d5e'], '#ff9a3c': ['#ffd34d', '#ff4d5e', '#b07bff'],
+  '#3df0c8': ['#5b8cff', '#ffffff', '#c8ff5a'], '#5b8cff': ['#3df0c8', '#b07bff', '#ffffff'],
+  '#ff7a5c': ['#ffd34d', '#ff7ae0', '#ffffff'], '#c8ff5a': ['#3df0c8', '#ffd34d', '#4dd2ff'],
 };
 const partner = (c, r) => { const p = PARTNERS[c] || COLORS; return p[Math.floor(r() * p.length)]; };
 // How long a kind's sparks glow (seconds) and how wide it opens (metres).
@@ -164,22 +176,33 @@ function rng(seed) {
 // Every burst of the show that starts at `start` (ms), in time order:
 // { t (seconds: when it bursts), barge (0-2), du (metres along the river
 // from its barge), h (height), kind, color, color2, scale, seed }.
-const cache = new Map();
-export function program(start) {
+// acts: the pattern to play (ACTS without one; fireworks-patterns.js has
+// the others and picks the show's). More an act can say, for those:
+// pure: a burst's second colour comes from the act's palette too (a sky all
+// in one colour). orders: the ways its volleys go off (see sweep; any
+// without). shapes: the lines its volleys draw (0 flat, 1 V, 2 arch,
+// 3 staircase; any without).
+const caches = new WeakMap();
+export function program(start, acts = ACTS) {
+  if (!caches.has(acts)) caches.set(acts, new Map());
+  const cache = caches.get(acts);
   if (cache.has(start)) return cache.get(start);
   const r = rng(Math.floor(start / 1000));
   const out = [];
   let mono = null, nextBeat = 40;
-  for (const act of ACTS) {
+  for (const act of acts) {
+    const pal = act.palette || COLORS, hi = act.high ?? HIGH;
+    const heart = (c) => (act.pure ? pal[(pal.indexOf(c) + 1) % pal.length] : COLORS[(COLORS.indexOf(c) + 3) % COLORS.length] || '#ffffff');
+    const late = act.to - 0.01; // (a sweep's last shells stay in their act: only willows at photo time)
     let t = act.from + r() * 0.5;
     while (t < act.to) {
       const k = act.ramp ? (t - act.from) / (act.to - act.from) : r();
       let kind = act.kinds[Math.floor(r() * act.kinds.length)];
       if (KEEP[kind] && r() >= KEEP[kind]) kind = 'peony';
       if (act.mono && (!mono || r() < 0.08)) mono = COLORS[Math.floor(r() * COLORS.length)];
-      const color = kind === 'willow' || kind === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-      let color2 = color === GOLD ? color : r() < 0.75 ? partner(color, r) : color;
-      if (kind === 'pistil' && color2 === color) color2 = COLORS[(COLORS.indexOf(color) + 3) % COLORS.length] || '#ffffff'; // its heart is another colour
+      const color = kind === 'willow' || kind === 'kamuro' ? GOLD : act.mono ? mono : pal[Math.floor(r() * pal.length)];
+      let color2 = color === GOLD ? color : act.pure ? pal[Math.floor(r() * pal.length)] : r() < 0.75 ? partner(color, r) : color;
+      if (kind === 'pistil' && color2 === color) color2 = heart(color); // its heart is another colour
       const scale = (act.big ? 1.15 : 1) * (0.85 + r() * 0.3);
       const [vc, v0, v1] = act.volley || [0, 1, 1];
       // A "beat" every 35-50 s: the biggest volley the act has plus a row of
@@ -191,14 +214,15 @@ export function program(start) {
       let n2 = 1;
       if (n > 1) {
         // A volley: n shells at once, evenly along all three barges, in a
-        // flat line, a V or an arch, in one colour or two taking turns.
-        const span = BARGES.at(-1)[0] - BARGES[0][0] + 50, shape = Math.floor(r() * 3), base = kind === 'small' ? 30 : kind !== 'fan' && r() < HIGH ? 64 : 42;
-        const order = act.together || r() < 0.55 ? 0 : 1 + Math.floor(r() * 4);
+        // flat line, a V, an arch or a staircase (climbing to the left or
+        // the right), in one colour or two taking turns.
+        const span = BARGES.at(-1)[0] - BARGES[0][0] + 50, shape = act.shapes ? act.shapes[Math.floor(r() * act.shapes.length)] : Math.floor(r() * 4), vb = act.vbase || [42], base = kind === 'small' ? 30 : kind !== 'fan' && r() < hi ? 64 : vb[Math.floor(r() * vb.length)];
+        const order = act.orders ? act.orders[Math.floor(r() * act.orders.length)] : act.together || r() < 0.55 ? 0 : 1 + Math.floor(r() * 4), up = r() < 0.5;
         for (let i = 0; i < n; i++) {
-          const tt = Math.round((t + sweep(order, i, n)) * 100) / 100;
+          const tt = Math.min(late, Math.round((t + sweep(order, i, n)) * 100) / 100);
           const u = BARGES[0][0] - 25 + (span * i) / (n - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
           const m = Math.abs(i / (n - 1) - 0.5) * 2; // 0 in the middle, 1 at the ends
-          const h = base + [6, 4 + 16 * m, 20 - 16 * m][shape];
+          const h = base + [6, 4 + 16 * m, 20 - 16 * m, 2 + 22 * (up ? i : n - 1 - i) / (n - 1)][shape];
           out.push({ t: tt, barge, du: u - BARGES[barge][0], h, kind, color: i % 2 && kind !== 'pistil' ? color2 : color, color2: i % 2 && kind !== 'pistil' ? color : color2, scale, seed: Math.floor(r() * 1e9) });
         }
       } else {
@@ -212,13 +236,13 @@ export function program(start) {
           if (i > 0) {
             ki = act.kinds[Math.floor(r() * act.kinds.length)];
             if (KEEP[ki] && r() >= KEEP[ki]) ki = 'peony';
-            ci = ki === 'willow' || ki === 'kamuro' ? GOLD : act.mono ? mono : COLORS[Math.floor(r() * COLORS.length)];
-            c2i = ki === 'pistil' ? COLORS[(COLORS.indexOf(ci) + 3) % COLORS.length] || '#ffffff' : ci === GOLD ? ci : partner(ci, r);
+            ci = ki === 'willow' || ki === 'kamuro' ? GOLD : act.mono ? mono : pal[Math.floor(r() * pal.length)];
+            c2i = ki === 'pistil' ? heart(ci) : ci === GOLD ? ci : act.pure ? pal[Math.floor(r() * pal.length)] : partner(ci, r);
           }
-          const low = ki === 'small' ? 28 : 38, high = ki !== 'small' && i === many - 1 && r() < HIGH; // now and then the top one goes much higher, and bigger
+          const low = ki === 'small' ? 28 : act.low ?? 38, high = ki !== 'small' && i === many - 1 && r() < hi; // now and then the top one goes much higher, and bigger
           out.push({
-            t: Math.round((t + i * r() * 0.25) * 100) / 100, barge, du: du + (i ? (r() - 0.5) * 36 : 0),
-            h: low + (many > 1 ? (i / (many - 1)) * 24 : r() * 22) + r() * 5 + (high ? 24 : 0), kind: ki, color: ci, color2: c2i, scale: (i ? 0.85 + r() * 0.3 : scale) * (high ? 1.35 : 1), seed: Math.floor(r() * 1e9),
+            t: Math.min(late, Math.round((t + i * r() * 0.25) * 100) / 100), barge, du: du + (i ? (r() - 0.5) * 36 : 0),
+            h: low + (many > 1 ? (i / (many - 1)) * (act.spread ?? 24) : r() * ((act.spread ?? 24) - 2)) + r() * 5 + (high ? 24 : 0), kind: ki, color: ci, color2: c2i, scale: (i ? 0.85 + r() * 0.3 : scale) * (high ? 1.35 : 1), seed: Math.floor(r() * 1e9),
           });
         }
         n2 = many;
@@ -228,7 +252,7 @@ export function program(start) {
         const nf = 5 + Math.floor(r() * 3), fc = FAN_COLORS[Math.floor(r() * FAN_COLORS.length)], span = BARGES.at(-1)[0] - BARGES[0][0] + 30;
         const order = r() < 0.4 ? 0 : 1 + Math.floor(r() * 4);
         for (let i = 0; i < nf; i++) {
-          const tt = Math.round((t + sweep(order, i, nf)) * 100) / 100;
+          const tt = Math.min(late, Math.round((t + sweep(order, i, nf)) * 100) / 100);
           const u = BARGES[0][0] - 15 + (span * i) / (nf - 1), barge = BARGES.reduce((b, x, j) => (Math.abs(x[0] - u) < Math.abs(BARGES[b][0] - u) ? j : b), 0);
           out.push({ t: tt, barge, du: u - BARGES[barge][0], h: 4, kind: 'fan', color: fc, color2: fc, scale: 0.9 + r() * 0.2, seed: Math.floor(r() * 1e9) });
         }

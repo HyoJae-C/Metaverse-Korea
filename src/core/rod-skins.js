@@ -20,6 +20,9 @@ export const ROD_SKINS = [
 export const rodSkin = (id) => ROD_SKINS.find((s) => s.id === id) || ROD_SKINS[0];
 // The held kind for a skin ('rod' for the basic one, so older clients still see a rod).
 export const rodKind = (id) => (id && id !== 'basic' && ROD_SKINS.some((s) => s.id === id) ? 'rod:' + id : 'rod');
+// With a bait on the hook: 'rod:<skin>:<bait>' (held.js gives it a glowing
+// lure in the bait's colour; older clients still see the rod).
+export const baitedRod = (kind, bait) => (bait ? (kind === 'rod' ? 'rod:basic' : kind) + ':' + bait : kind);
 
 const KEY = 'mk.rodskins';
 export class RodSkins {

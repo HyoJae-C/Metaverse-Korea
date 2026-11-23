@@ -13,6 +13,7 @@
 // (core/collision.js).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { SEASON } from './season.js';
 
 export const HANOK = {
   base: 0.6, // stone base height
@@ -32,6 +33,8 @@ const PAL = {
   leaf: ['#6f8f45', '#5f7f3e', '#89a04a', '#c9762e', '#d9a23a', '#b8432f'],
   pine: '#3f6a3a', trunk: '#5e4330', fruit: '#f07a1a', jar: '#5a3422', jarLid: '#3d2418',
 };
+
+const AUTUMN_LEAF = ['#c9762e', '#d9a23a', '#b8432f', '#e0b23a', '#a8562c']; // (core/season.js: every round tree turns)
 
 // A small seeded random from the building's position (same look every visit).
 function rng(x, z) {
@@ -63,10 +66,10 @@ export function footprint(p) {
 function lot(b) {
   const f = footprint(b.p);
   if (!b.fr) return { cx: f.cx, cz: f.cz, L: f.w, D: f.d, ry: f.ry };
-  const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
-  const ex = Math.max(...xs) - Math.min(...xs), ez = Math.max(...zs) - Math.min(...zs);
-  const alongX = Math.abs(b.fr[0]) > Math.abs(b.fr[1]);
-  return { cx: f.cx, cz: f.cz, L: alongX ? ez : ex, D: alongX ? ex : ez, ry: Math.atan2(b.fr[0], b.fr[1]) };
+  // (sizes measured along the front and across it, so a lot turned to a
+  // street at any angle works too)
+  const [fx, fz] = b.fr, along = b.p.map(([x, z]) => -x * fz + z * fx), deep = b.p.map(([x, z]) => x * fx + z * fz);
+  return { cx: f.cx, cz: f.cz, L: Math.max(...along) - Math.min(...along), D: Math.max(...deep) - Math.min(...deep), ry: Math.atan2(fx, fz) };
 }
 
 function paint(g, c) {
@@ -188,7 +191,7 @@ class Kit {
 function wing(k, L, D, o, { doors = true, tall = 0 } = {}) {
   const B = o.base, W = o.wall + tall, top = B + W;
   k.box(o.baseC, L + 0.7, B, D + 0.7, 0, B / 2, 0);
-  k.box(o.wallC, L, W, D, 0, B + W / 2, 0);
+  k.box(o.wallC, L, W - 0.06, D, 0, B + (W - 0.06) / 2, 0); // (stops under the beam's top: two tops at one height flicker)
   // The lower wall: squared stones (사괴석) or brick, all round; brick houses
   // are brick up to the eaves at the back and the ends.
   k.faces(o.band, L, 1.1, D, 0, B + 0.55, 0);
@@ -255,7 +258,7 @@ function garden(k, x, z, w, d, r) {
   const n = Math.max(2, Math.round(w / 0.9));
   for (let i = 0; i < n; i++) {
     const s = 0.32 + r() * 0.18, bx = x - w / 2 + 0.45 + (i * (w - 0.9)) / Math.max(1, n - 1);
-    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.8, 1).translate(bx, 0.3 + s * 0.7, z + (r() - 0.5) * (d - 0.8)), pick(r, PAL.leaf));
+    k.add(k.body, new THREE.IcosahedronGeometry(s, 0).scale(1, 0.8, 1).translate(bx, 0.3 + s * 0.7, z + (r() - 0.5) * (d - 0.8)), pick(r, SEASON === 'autumn' ? AUTUMN_LEAF : PAL.leaf));
     if (r() < 0.5) k.box(pick(r, ['#e0566b', '#f2c94c', '#f7f2e8', '#c77dd8']), 0.14, 0.14, 0.14, bx + 0.2, 0.3 + s * 1.3, z);
   }
 }
@@ -348,15 +351,24 @@ function house(k, b, i) {
   o.visit = !!b.visit;
   k.at(cx, 0, cz, ry, () => {
     if (lv > 0.05) { k.box(o.stoneC, L, lv, D, 0, lv / 2, 0); k.faces('stone', L, lv, D, 0, lv / 2, 0); } // the stone terrace (축대) up the hill
+    if (k.far) { // seen from far off: its walls as one box under one plain roof, in its own colours
+      const hgt = o.base + o.wall;
+      k.box(o.wallC, L - 0.6, hgt, D - 0.6, 0, lv + hgt / 2, 0);
+      k.at(0, lv, 0, 0, () => k.roofAt(hgt, L + 2 * o.eave, D + 2 * o.eave, o.roofH, { hip: o.hip, lift: o.lift, color: o.roofC, end: o.wallC, seg: 2, rows: 1, ridgeEnds: false }));
+      return;
+    }
     k.at(0, lv, 0, 0, () => (b.h >= 6 ? shop(k, L, D, o, r) : home(k, L, D, o, r)));
   });
 }
 
-export function buildHanoks(buildings) {
+// far: the plain version shown from a distance (about a tenth of the
+// triangles): main.js swaps the two by distance, block by block.
+export function buildHanoks(buildings, { far = false } = {}) {
   const group = new THREE.Group();
   group.name = 'hanok';
   if (!buildings.length) return group;
   const k = new Kit();
+  k.far = far;
   buildings.forEach((b, i) => { if (b.p && b.p.length >= 4) house(k, b, i); });
   for (const [name, list, side] of [['walls', k.body, THREE.FrontSide], ['walls', k.roof, THREE.DoubleSide]]) {
     if (!list.length) continue;

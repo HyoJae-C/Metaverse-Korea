@@ -4,6 +4,7 @@
 // stay (they are kept on the server, see core/friends.js).
 
 import { L, fmt } from './pocha-ui.js';
+import { t } from '../core/i18n.js';
 import { ALL, MAX_BODY } from '../core/friends.js';
 
 export const FRIEND_TEXT = {
@@ -55,7 +56,6 @@ export const FRIEND_TEXT = {
   e_nofriends: { en: 'Add a friend first.', ko: '먼저 친구를 추가해 주세요.', ja: '先にフレンドを追加してください。', zh: '请先添加好友。', es: 'Primero añade un amigo.', id: 'Tambah teman dulu.', vi: 'Hãy thêm bạn trước.', hi: 'पहले कोई दोस्त जोड़ें।', fr: 'Ajoute d\'abord un ami.', th: 'เพิ่มเพื่อนก่อน', ar: 'أضف صديقًا أولًا.' },
   e_chat: { en: "You can't send chat right now (only players signed in with Google can chat).", ko: '지금은 채팅을 보낼 수 없어요 (구글로 로그인한 플레이어만 채팅할 수 있어요).', ja: '今はチャットを送れません（Googleでログインしたプレイヤーのみ）。', zh: '现在无法发送消息（只有用 Google 登录的玩家可以聊天）。', es: 'Ahora no puedes enviar mensajes (solo jugadores con Google).', id: 'Kamu belum bisa mengirim obrolan (hanya pemain yang masuk dengan Google).', vi: 'Hiện bạn chưa gửi được tin nhắn (chỉ người chơi đăng nhập Google).', hi: 'अभी आप चैट नहीं भेज सकते (सिर्फ़ Google से साइन-इन खिलाड़ी)।', fr: 'Tu ne peux pas chatter pour l\'instant (seuls les joueurs connectés avec Google peuvent chatter).', th: 'ตอนนี้ส่งแชทไม่ได้ (เฉพาะผู้เล่นที่เข้าสู่ระบบด้วย Google เท่านั้นที่แชทได้)', ar: 'لا يمكنك إرسال الدردشة الآن (فقط لمن سجّل الدخول بحساب Google).' },
   e_missing: { en: 'Friends are being set up. Please come back soon!', ko: '친구 기능을 준비하고 있어요. 조금만 기다려 주세요!', ja: 'フレンド機能を準備中です。', zh: '好友功能准备中。', es: 'Estamos preparando los amigos.', id: 'Fitur teman sedang disiapkan.', vi: 'Tính năng bạn bè đang được chuẩn bị.', hi: 'दोस्त फ़ीचर तैयार हो रहा है।', fr: 'Les amis sont en cours de mise en place. Reviens bientôt !', th: 'ระบบเพื่อนกำลังเตรียมพร้อม แวะมาใหม่เร็วๆ นี้นะ!', ar: 'نجهّز ميزة الأصدقاء.' },
-  newRequest: { en: '{name} wants to be friends. Open 💬 → 👥 to answer.', ko: '{name} 님이 친구 신청을 했어요. 💬 → 👥 에서 확인하세요.', ja: '{name}さんからフレンド申請が届きました。💬 → 👥 で確認できます。', zh: '{name} 想加你为好友。在 💬 → 👥 查看。', es: '{name} quiere ser tu amigo. Abre 💬 → 👥 para responder.', id: '{name} ingin berteman. Buka 💬 → 👥 untuk menjawab.', vi: '{name} muốn kết bạn. Mở 💬 → 👥 để trả lời.', hi: '{name} दोस्त बनना चाहते हैं। जवाब देने के लिए 💬 → 👥 खोलें।', fr: '{name} veut devenir ton ami. Ouvre 💬 → 👥 pour répondre.', th: '{name} อยากเป็นเพื่อนกับคุณ เปิด 💬 → 👥 เพื่อตอบ', ar: '{name} يريد صداقتك. افتح 💬 ← 👥 للرد.' },
 };
 const T = (k, v) => fmt(L(FRIEND_TEXT[k]), v);
 // "12 m to your right" from whereIs() (core/friends.js).
@@ -95,6 +95,7 @@ export class FriendsUI {
     this.render();
     if (key) this._load(key);
     else this.app.refresh();
+    this.app.askOnline?.();
   }
 
   async _load(key) {
@@ -179,13 +180,22 @@ export class FriendsUI {
       const at = (k) => Date.parse(inbox?.last(k)?.at || 0) || 0;
       convs.sort((a, b) => (a.key === ALL ? -1 : b.key === ALL ? 1 : at(b.key) - at(a.key)));
     }
+    const online = this.app.online?.() || new Set(), away = this.app.away?.() || new Set();
+    const known = this.app.onlineShown?.() != null; // the server can tell (068 SQL run)
     const box = el('div', 'fr-list');
     for (const c of convs) {
       const row = el('button', 'fr-row fr-conv');
       const last = inbox?.last(c.key);
       const n = inbox?.unread(c.key) || 0;
       const text = el('span', 'fr-text');
-      text.append(el('b', 'fr-name', c.name), el('small', 'fr-last', last ? (last.from === this.app.me() ? L(FRIEND_TEXT.you) + ': ' : '') + this.app.clean(last.body) : ''));
+      const name = el('b', 'fr-name', c.name);
+      if (c.key !== ALL && known) { // 🟢 online, 🟡 away, ⚪ offline
+        const st2 = online.has(c.key) ? 'on' : away.has(c.key) ? 'away' : 'off';
+        const d = el('i', 'fr-dot fr-' + st2);
+        d.title = st2 === 'off' ? '' : t(st2 === 'on' ? 'friends.online' : 'friends.away');
+        name.append(d);
+      }
+      text.append(name, el('small', 'fr-last', last ? (last.from === this.app.me() ? L(FRIEND_TEXT.you) + ': ' : '') + this.app.clean(last.body) : ''));
       row.append(el('span', 'fr-avatar', c.icon), text, el('small', 'fr-time', last ? clock(last.at) : ''));
       if (n) row.append(el('b', 'fr-unread', String(n > 99 ? '99+' : n)));
       row.onclick = () => this.show(c.key);
@@ -217,7 +227,20 @@ export class FriendsUI {
       inp.value = '';
       this._result(await st.add(name), name);
     };
-    parts.push(form, el('p', 'fine', '🔒 ' + L(FRIEND_TEXT.keepNote)));
+    parts.push(form);
+    // Show my online status to friends (on by default). Hidden until the
+    // server can tell (supabase/068_friends_online.sql).
+    const shown = this.app.onlineShown?.();
+    if (shown != null) {
+      const sw = el('label', 'fr-online-switch');
+      const box2 = el('input');
+      box2.type = 'checkbox';
+      box2.checked = shown;
+      box2.onchange = () => this.app.setOnlineShown(box2.checked);
+      sw.append(box2, el('span', null, ' 🟢 ' + t('friends.showOnline')));
+      parts.push(sw, el('p', 'fine', t('friends.showOnlineNote')));
+    }
+    parts.push(el('p', 'fine', '🔒 ' + L(FRIEND_TEXT.keepNote)));
     this.root.replaceChildren(...parts);
   }
 

@@ -10,7 +10,8 @@
 // sent at all: the line goes only to the priest on this device
 // (core/confession-room.js), never into the chat log or any save.
 import { ALL as FRIENDS_ALL, MAX_BODY as FRIEND_MAX_BODY, Inbox, LocalFriends, SupabaseFriends, cleanBody as cleanFriendText, convKey, whereIs } from '../core/friends.js';
-import { FRIEND_TEXT, FriendsUI, whereText } from '../ui/friends-ui.js';
+import { FRIEND_TEXT, FriendsUI } from '../ui/friends-ui.js';
+import { FriendAskCard } from '../ui/friend-ask-ui.js';
 import { NOTICE_LABEL, NoticeFeed, PinnedNotices, parseNoticeCommand, sendNotice, watchNotices } from '../core/announce.js';
 import { ITEMS, coinCode, eventCode, isEventCode, isMasterCode, redeemCode } from '../core/inventory.js';
 import { L, fmt } from '../ui/pocha-ui.js';
@@ -22,8 +23,18 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
+import { SHOW_NOW, startShowNow } from '../core/show-now.js';
 import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
+// Operator-only toasts for "/드론쇼" and "/불꽃놀이" (core/show-now.js).
+const SHOW_NOW_TEXT = {
+  drone: { en: 'Drone show: the drones are rising now. The show starts in 3 minutes.', ko: '드론쇼: 드론이 지금 떠올라. 3분 뒤 쇼 시작.' },
+  fireworks: { en: 'Fireworks: Yeouido\'s sky is darkening now. The first shells go up in 3 minutes.', ko: '불꽃놀이: 여의도 하늘이 지금 어두워져. 3분 뒤 첫 발.' },
+  off: { en: 'Show called off.', ko: '쇼 취소했어.' },
+  operator: { en: 'Operators only.', ko: '운영자만 쓸 수 있어.' },
+  setup: { en: 'Run supabase/061b_fireworks_now.sql first.', ko: '061b_fireworks_now.sql 먼저 실행해 줘.' },
+  failed: { en: 'Could not start the show.', ko: '쇼를 시작하지 못했어.' },
+};
 const NOTICE_TEXT = {
   empty: { en: 'Type the notice after /공지', ko: '/공지 뒤에 공지 내용을 적어 주세요', ja: '/공지 の後にお知らせを書いてください', zh: '请在 /공지 后输入公告内容' },
   operator: { en: 'Only operators can send notices', ko: '공지는 운영자만 보낼 수 있어요', ja: 'お知らせは運営者だけが送れます', zh: '只有运营者可以发送公告' },
@@ -101,6 +112,7 @@ export function createChat(game) {
     $('person-name').textContent = name;
     refreshPersonFriend();
     $('person-menu').hidden = false;
+    if (friendBackend) refreshFriends(); // (the Add / Accept button follows the newest list)
   }
   function blockPerson(report) {
     if (!personFor) return;
@@ -141,6 +153,7 @@ export function createChat(game) {
     if (game.confession) { chatInput.placeholder = game.confession.placeholder; $('chat-to').hidden = true; return; } // (no public-chat notice in there)
     if (game.silent) { chatInput.placeholder = L(SILENT_TEXT.placeholder); $('chat-to').hidden = true; return; } // the silent dharma hall: 🙏 only
     renderChatTo(); // (back from the confession room: the picker and its words)
+    askOnline(); // green dots by friends who are online
     if (!chatNoticeShown) { chatNoticeShown = true; if (mustSignInToChat()) chatSignInPrompt(); else addChatLine('ℹ️', t('chat.notice'), 'note'); }
   }
   function closeChat() { chatBar.hidden = true; chatInput.blur(); $('hud').classList.remove('chat-open'); chatLog.scrollTop = chatLog.scrollHeight; }
@@ -227,6 +240,12 @@ export function createChat(game) {
         saveLook(game.myLook);
         setLook(game.myLook);
         game.shop.toast(L(game.myLook.op ? OPERATOR_TEXT.on : OPERATOR_TEXT.off));
+      }
+      // Operators: "/드론쇼" or "/불꽃놀이" starts that show now for everyone; "…취소" calls it off.
+      if (code in SHOW_NOW) {
+        const cmd = SHOW_NOW[code], r = await startShowNow(cloud.client, cmd);
+        game.shop.toast(L(r.ok ? (r.start ? SHOW_NOW_TEXT[cmd.kind] : SHOW_NOW_TEXT.off) : SHOW_NOW_TEXT[r.error] || SHOW_NOW_TEXT.failed));
+        return;
       }
       // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,
       // /양탄자, /손오공, /착지.
@@ -317,34 +336,28 @@ export function createChat(game) {
       friendList = { friends: [], incoming: [], outgoing: [] };
       friendsUi.loaded.clear();
       refreshFriends.primed = false;
-      knownRequests = null;
       stopFriendWatch = want ? want.watch(onFriendMessage, () => refreshFriends()) : null;
       if (want) setTimeout(refreshFriends, 0);
     }
     return friendBackend;
   }
-  let knownRequests = null; // uids of requests already seen (null = first load)
+  // Several pushes close together (requests from several people) start
+  // several list() calls; only the newest answer counts, so an older one
+  // landing last can't put back a list that misses a request.
+  let refreshSeq = 0;
   async function refreshFriends() {
     const st = friendStore();
     if (!st) return;
+    const seq = ++refreshSeq;
     const r = await st.list();
+    if (seq !== refreshSeq) return;
     if (r.error || st !== friendBackend) { friendsUi.update(); return; }
     // Hide people I've blocked.
     const ok = (f) => !safety.isBlocked(null, f.name);
     friendList = { friends: r.friends.filter(ok), incoming: r.incoming.filter(ok), outgoing: r.outgoing };
     game.net?.refilter?.(); // on the street only friends are shown (net/area.js)
-    const seen = new Set(friendList.incoming.map((f) => f.uid));
-    // A new request: say who, and if they're around me, where — and make
-    // them easy to spot (their name tag glows, a 👋 pops over their head).
-    if (knownRequests) {
-      for (const f of friendList.incoming) {
-        if (knownRequests.has(f.uid)) continue;
-        const at = locatePlayer(f.name);
-        if (at) game.others.ping(at.id);
-        game.shop.toast(fmt(L(FRIEND_TEXT.newRequest), { name: f.name }) + (at ? ' 📍 ' + whereText(at) : ''));
-      }
-    }
-    knownRequests = seen;
+    // A request stays on screen as a card with Accept on it (ui/friend-ask-ui.js).
+    friendAsk.update(friendList.incoming);
     if (chatTo !== PUBLIC && chatTo !== FRIENDS_ALL && !friendList.friends.some((f) => f.uid === chatTo)) chatTo = PUBLIC;
     // Fetch the newest lines of each chat once, for unread counts and previews.
     if (!refreshFriends.primed) {
@@ -357,6 +370,43 @@ export function createChat(game) {
     refreshFriendBadge();
     refreshPersonFriend();
     friendsUi.update();
+  }
+  // Which friends are in the game now, as dots in the picker and the 👥
+  // panel (supabase/068_friends_online.sql): 🟢 online, 🟡 away (no input for
+  // 30 min, net/where.js), ⚪ offline. No realtime: one small request,
+  // only while the chat bar or the panel is open, at most once a minute (and
+  // straight away on opening, unless asked in the last 15 s).
+  const ONLINE_ASK_MS = 60000, ONLINE_AGAIN_MS = 15000;
+  let friendsOnline = new Set(), friendsAway = new Set(), onlineShown = null, onlineAskedAt = 0;
+  async function askOnline({ timer = false } = {}) {
+    if (chatBar.hidden && !friendsUi.open) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const st = friendStore();
+    if (!st?.online) return;
+    const now = Date.now();
+    if (now - onlineAskedAt < (timer ? ONLINE_ASK_MS - 2000 : ONLINE_AGAIN_MS)) return;
+    onlineAskedAt = now;
+    const r = await st.online();
+    if (st !== friendBackend) return;
+    if (r.error) {
+      if (r.error !== 'missing') return; // network: keep what we had
+      r.online = new Set(); r.away = new Set(); r.shown = null; // SQL not run yet: no dots, no switch
+    }
+    r.away ||= new Set();
+    const eq = (a, b) => a.size === b.size && [...a].every((u) => b.has(u));
+    const same = r.shown === onlineShown && eq(r.online, friendsOnline) && eq(r.away, friendsAway);
+    friendsOnline = r.online; friendsAway = r.away; onlineShown = r.shown;
+    if (!same) { renderChatTo(); friendsUi.update(); }
+  }
+  setInterval(() => askOnline({ timer: true }), ONLINE_ASK_MS);
+  async function setOnlineShown(show) {
+    const st = friendStore();
+    if (!st?.setShown) return;
+    const was = onlineShown;
+    onlineShown = !!show;
+    friendsUi.update();
+    const r = await st.setShown(!!show);
+    if (r.error) { onlineShown = was; friendsUi.update(); game.shop.toast(friendsUi.errorText(r.error)); }
   }
   // Someone in this area by name, and where they are from me as the screen
   // sees it: { id, m, dir }, or null.
@@ -374,6 +424,7 @@ export function createChat(game) {
     const name = friendName(m.from) || m.name || '?';
     if (safety.isBlocked(null, name)) return;
     if (!friendInbox.add({ ...m, name }).length) return;
+    game.onFriendLetter?.(name, m.body); // a wrapped gift's letter opens on screen (game/wrap-gifts.js)
     const key = convKey(m, friendBackend.uid);
     const reading = friendsUi.open && friendsUi.view === key;
     if (!reading) {
@@ -410,6 +461,11 @@ export function createChat(game) {
     me: () => friendBackend?.uid,
     friends: () => friendList,
     refresh: () => refreshFriends(),
+    online: () => friendsOnline,
+    away: () => friendsAway,
+    onlineShown: () => onlineShown,
+    setOnlineShown: (show) => setOnlineShown(show),
+    askOnline: () => askOnline(),
     toast: (m) => game.shop.toast(m),
     clean: (s) => filterText(cleanFriendBody(s)),
     isBlocked: (uid, name) => safety.isBlocked(null, name),
@@ -422,8 +478,21 @@ export function createChat(game) {
       return body ? sendFriend(key, body) : false;
     },
   });
+  const friendAsk = new FriendAskCard($('hud'), {
+    accept: async (uid, name) => {
+      const st = friendStore();
+      if (!st) return 'none';
+      const r = await st.accept(uid);
+      friendsUi._result(r, name);
+      return r;
+    },
+    open: () => { closeChat(); friendsUi.show(null); },
+    locate: (name) => locatePlayer(name),
+    ping: (id) => game.others.ping(id),
+    sound: () => { try { game.sfx.pop?.(); } catch { /* sound not set up yet */ } },
+  });
   function refreshFriendBadge() {
-    const n = friendInbox?.totalUnread() || 0;
+    const n = (friendInbox?.totalUnread() || 0) + friendList.incoming.length; // (a request waits here too)
     $('chat-unread').hidden = !n;
     $('chat-unread').textContent = n > 99 ? '99+' : String(n);
     $('friends-dot').hidden = !(n || friendList.incoming.length);
@@ -434,7 +503,13 @@ export function createChat(game) {
     const opts = [[PUBLIC, '🌐 ' + L(FRIEND_TEXT.everyone)]];
     if (friendBackend) {
       opts.push([FRIENDS_ALL, '👥 ' + L(FRIEND_TEXT.allFriends)]);
-      for (const f of friendList.friends) opts.push([f.uid, '💌 ' + f.name]);
+      // Online friends first (🟢), then away (🟡), then offline (⚪; 💌
+      // before the server can tell, supabase/068_friends_online.sql).
+      const fr = friendList.friends;
+      for (const f of fr) if (friendsOnline.has(f.uid)) opts.push([f.uid, '🟢 ' + f.name + ' · ' + t('friends.online')]);
+      for (const f of fr) if (friendsAway.has(f.uid)) opts.push([f.uid, '🟡 ' + f.name + ' · ' + t('friends.away')]);
+      const off = onlineShown == null ? '💌 ' : '⚪ ';
+      for (const f of fr) if (!friendsOnline.has(f.uid) && !friendsAway.has(f.uid)) opts.push([f.uid, off + f.name]);
     }
     sel.replaceChildren(...opts.map(([v, label]) => Object.assign(document.createElement('option'), { value: v, textContent: label })));
     sel.value = opts.some(([v]) => v === chatTo) ? chatTo : PUBLIC;
@@ -500,8 +575,10 @@ export function createChat(game) {
   // remembered on this device.
   const pinBox = $('notice-pin');
   const FOLD_KEY = 'noticePinFolded';
-  let pinFolded = false;
-  try { pinFolded = localStorage.getItem(FOLD_KEY) === '1'; } catch { /* no storage */ }
+  // A first visit starts folded: the first minute already has the welcome,
+  // the guide and the first mission on screen (UI check 2026-11-19).
+  let pinFolded = !!game.firstVisit;
+  try { const v = localStorage.getItem(FOLD_KEY); if (v != null) pinFolded = v === '1'; } catch { /* no storage */ }
   const setFolded = (v) => { pinFolded = v; try { localStorage.setItem(FOLD_KEY, v ? '1' : '0'); } catch { /* no storage */ } };
   // A pinned notice opens them again, but only one this device hasn't seen
   // (the ones still up come again on every start).
@@ -574,5 +651,12 @@ export function createChat(game) {
   cloud.onChange(() => friendStore());
   friendStore();
   renderChatTo();
-  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
+  // A wrapped gift's letter (game/wrap-gifts.js) goes as a friend message, so
+  // the server keeps it like any chat (admins can read it, a chat ban stops it).
+  const friendUid = (name) => friendList.friends.find((f) => f.name === name)?.uid || null;
+  const sendLetter = (uid, text) => {
+    const body = filterText(cleanFriendBody(text));
+    return body && !mustSignInToChat() ? sendFriend(uid, body) : false;
+  };
+  return { cleanChat, addChatLine, openPersonMenu, friendStatus, addFriend, friendUid, sendLetter, testFriends: (names) => { testFriends = new Set(names); game.net?.refilter?.(); }, debugNotice: (n) => noticeFeed.add(n), get friendBackend() { return friendBackend; } };
 }

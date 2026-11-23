@@ -41,8 +41,8 @@ test('the Euljiro furniture shops: every new piece is an item, sold in exactly o
   const { SHOP_FURNITURE_IDS, FURNITURE } = await import('../src/core/furniture.js');
   const { ITEMS } = await import('../src/core/inventory.js');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood'].includes(s.id));
-  assert.equal(shops.length, 7);
+  const shops = stores.filter((s) => ['eulji-somok', 'eulji-sarangbang', 'eulji-retro', 'eulji-sound', 'saebyeok-living', 'saebyeok-bedroom', 'gyeol-wood', 'kkotjam-beds', 'teheran-appliances', 'eulji-divider', 'neugeut-afternoon', 'danjang-dressroom'].includes(s.id));
+  assert.equal(shops.length, 12);
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, SHOP_FURNITURE_IDS.length);
   for (const [id] of SHOP_FURNITURE_IDS) {
@@ -65,17 +65,24 @@ test('the free basics are the worn ones', () => {
 test('each furniture shop sells three pieces', async () => {
   const { readFileSync } = await import('node:fs');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, 3, s.id);
+  // (Yozi 2026-11-22 picked five pieces: the dressing room sells its two.)
+  for (const s of stores.filter((st) => st.products?.some((p) => p.furniture?.startsWith('f-')))) assert.equal(s.products.length, s.id === 'danjang-dressroom' ? 2 : 3, s.id);
 });
 
 test('long sofas and benches seat two, beds lie two, cushions sit on the floor', async () => {
   const { furnitureSeats } = await import('../src/core/furniture.js');
   const n = (id) => furnitureSeats({ id, x: 0, z: 0, ry: 0 });
   for (const id of ['sofa', 'f-retro-sofa', 'f-modular', 'f-wood-bench']) assert.equal(n(id).length, 2, id);
-  for (const id of ['bed', 'f-fabric-bed']) { assert.equal(n(id).length, 2, id); assert.ok(n(id).every((s) => s.lie && s.bed), id); }
+  for (const id of ['bed', 'f-fabric-bed', 'f-flower-bed', 'f-cloud-bed', 'f-bear-bed']) { assert.equal(n(id).length, 2, id); assert.ok(n(id).every((s) => s.lie && s.bed), id); }
   assert.ok(n('f-bangseok').length === 2 && n('f-bangseok').every((s) => s.mat && s.cushion));
   for (const id of ['chair', 'f-steel-stool', 'f-beanbag', 'f-rocking']) assert.equal(n(id).length, 1, id);
   for (const id of ['table', 'f-najeon']) assert.equal(n(id).length, 0, id);
+  // A hammock lies one; at the vanity you sit on the stool in front, facing the mirror.
+  const [h] = n('f-hammock');
+  assert.ok(n('f-hammock').length === 1 && h.lie && h.bed);
+  const v = furnitureSeats({ id: 'f-vanity', x: 0, z: 0, ry: 0 });
+  assert.ok(v.length === 1 && Math.abs(v[0].ry - Math.PI) < 1e-9 && v[0].z > 0.1, 'stool in front, facing back');
+  for (const id of ['f-low-table', 'f-grand-clock', 'f-clothes-rack']) assert.equal(n(id).length, 0, id);
   // Turned a quarter: the two places stay side by side along the piece.
   const [a, b] = furnitureSeats({ id: 'sofa', x: 5, z: 5, ry: Math.PI / 2 });
   assert.ok(Math.abs(a.x - b.x) < 1e-9 && Math.abs(Math.abs(a.z - b.z) - 0.9) < 1e-9);
@@ -91,11 +98,41 @@ test('a piece set down right against you is refused, so you can always walk away
 
 test('both places on a bed against a wall can be reached from one side', async () => {
   const { furnitureSeats, furnitureById } = await import('../src/core/furniture.js');
-  for (const id of ['bed', 'f-fabric-bed']) {
+  for (const id of ['bed', 'f-fabric-bed', 'f-flower-bed', 'f-cloud-bed', 'f-bear-bed']) {
     const [w, d] = furnitureById(id).size;
     const seats = furnitureSeats({ id, x: 0, z: 0, ry: 0 });
     const side = { x: w / 2 + 0.5, z: 0.3 }; // standing beside it (the other side is the wall)
     for (const s of seats) assert.ok(Math.hypot(side.x - s.x, side.z - s.z) - (s.reach || 0) < 1.3, id); // (main.js nearestSeat: 1.3 m)
     for (const s of seats) assert.ok(s.stand[1] > d / 2, id + ': get up at the foot');
   }
+});
+
+test('small things stand on a table, go with it, and only bump into things on the same top', async () => {
+  const { topUnder, ridersOf, placeRiders, pieceBlocked, furnitureCollider, isSmall, TOPS } = await import('../src/core/furniture.js');
+  const table = { id: 'table', x: 2, z: 1, ry: 0 };
+  const lamp = { id: 'lamp-moon', x: 2.2, z: 1.1, ry: 0 };
+  assert.ok(isSmall('lamp-moon') && !isSmall('bed'));
+  assert.equal(topUnder(lamp, [table]).y, TOPS.table);
+  assert.equal(topUnder({ ...lamp, x: 4 }, [table]), null, 'off the table: the floor');
+  assert.equal(topUnder({ id: 'f-najeon', x: 2, z: 1, ry: 0 }, [table]), null, 'a wardrobe never goes on a table');
+  lamp.y = TOPS.table;
+  assert.ok(!pieceBlocked(lamp, [table]), 'on the table, not in its way');
+  assert.equal(furnitureCollider(lamp), null, 'the table blocks you, not the lamp on it');
+  const bear = { id: 'plush-bear-small', x: 2.25, z: 1.1, ry: 0, y: TOPS.table };
+  assert.ok(pieceBlocked(bear, [table, lamp]), 'two things in one spot on the table');
+  // Turn the table a quarter: the lamp turns with it.
+  const riders = ridersOf(table, [table, lamp]);
+  assert.equal(riders.length, 1);
+  table.ry = Math.PI / 2;
+  placeRiders(table, riders);
+  assert.ok(Math.abs(lamp.x - 2.1) < 1e-9 && Math.abs(lamp.z - 0.8) < 1e-9, `${lamp.x},${lamp.z}`);
+});
+
+test('a lamp switched off dims its glow', async () => {
+  const { buildFurniture } = await import('../src/core/furniture.js');
+  const colors = (g) => { const out = []; g.traverse((o) => { if (o.isMesh && o.material.isMeshBasicMaterial) out.push(o.material.color.getHex()); }); return out; };
+  const on = colors(buildFurniture('lamp-moon')), off = colors(buildFurniture('lamp-moon', { off: true }));
+  assert.ok(on.length && on.length === off.length);
+  assert.ok(off.every((c, i) => c < on[i]));
+  assert.deepEqual(colors(buildFurniture('lamp-moon')), on, 'the shared glow materials are untouched');
 });

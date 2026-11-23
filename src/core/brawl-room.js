@@ -6,7 +6,7 @@
 //
 // Counted from what the room already hears: the host of a match sends it to
 // the wall screens (core/brawl-tv.js: brawltv:s… with who they fight, then
-// brawltv:i… three times a second, brawltv:x at the end).
+// brawltv:i… once a second, brawltv:x at the end).
 export const MAX_VERSUS = 2;
 const QUIET_MS = 8000; // nothing heard for this long: that match is over (they left)
 

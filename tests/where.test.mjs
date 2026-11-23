@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { whereDue, startWhereReports, WHERE_MOVE_MS, WHERE_IDLE_MS, WHERE_PLACE_MS } from '../src/net/where.js';
-import { describePlace, agoText, fitView, clusterPoints } from '../src/admin/view.js';
+import { describePlace, agoText, fitView, clusterPoints, deviceSummary } from '../src/admin/view.js';
 
 const at = (x, z, place = 'street') => ({ x, z, place });
 
@@ -66,4 +66,18 @@ test('live map counts mode groups players close on screen', () => {
   assert.equal(clusterPoints([], 40).length, 0);
   // Zoomed in far enough, nobody is grouped.
   assert.equal(clusterPoints(pts, 4).length, 4);
+});
+
+test('going away (no input for 30 min) or coming back is reported soon', () => {
+  const last = { x: 0, z: 0, place: 'street', away: false, t: 0 };
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: true }, WHERE_PLACE_MS - 1), false);
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: true }, WHERE_PLACE_MS), true);
+  assert.equal(whereDue(last, { x: 0, z: 0, place: 'street', away: false }, WHERE_PLACE_MS), false);
+});
+
+test('live list counts players by device', () => {
+  assert.equal(deviceSummary([]), '');
+  assert.equal(deviceSummary([{ device: '' }, {}]), '', 'nothing before the SQL runs');
+  assert.equal(deviceSummary([{ device: 'desktop' }, { device: 'phone' }, { device: 'desktop' }, { device: '' }]), ' · 💻 2 · 📱 1');
+  assert.equal(deviceSummary([{ device: 'tablet' }]), ' · 📟 1');
 });

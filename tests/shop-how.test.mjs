@@ -35,10 +35,15 @@ test('things you could only carry around are not sold: those shops are coming so
   const stores = JSON.parse(await readFile(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8')).stores;
   const byId = (id) => stores.find((s) => s.id === id);
   // A candle shop, a stationery shop, a record shop: nothing to do with what they sell.
-  for (const id of ['scent-factory', 'stationery-den', 'indie-record', 'page-atlas', 'glow-lab']) {
+  for (const id of ['scent-factory', 'indie-record', 'page-atlas', 'glow-lab']) {
     assert.ok(comingSoon(byId(id)), id);
     assert.equal(howToGet(byId(id)), 'soon');
   }
+  // The stationery shop opened for its letter paper (a letter in a wrapped gift); its notebooks still aren't sold.
+  const den = byId('stationery-den');
+  assert.ok(!comingSoon(den));
+  assert.ok(!itemSoon(den, den.products.find((p) => p.id === 'letter-paper')));
+  assert.ok(itemSoon(den, den.products.find((p) => p.id === 'grid-note')));
   // Food, drinks, clothes, perfume, pets, ingredients: still sold.
   assert.ok(usable({ model: 'bowl' }) && usable({ model: 'cup' }) && usable({ model: 'tee', item: 'x' }) && usable({ model: 'bottle', perfume: 'sweet' }));
   assert.ok(!usable({ model: 'candle' }) && !usable({ model: 'cup', goods: true }));

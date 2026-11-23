@@ -35,6 +35,22 @@ export function wallNear(buildings, x, z, minLen = 8) {
   return best;
 }
 
+// Where a region.json screen goes on the wall wallNear found: kept inside the
+// wall's two ends and under its roof. A screen past the corner or over the
+// roof hangs in the air with nothing behind it (one by Jogyesa did, 2026-11-16).
+// Too tall for the building: shrunk whole, keeping its shape.
+// Returns { x, z, w, h, y } (the screen's middle on the wall, its size, its bottom).
+export const SCREEN_LOW = 3, SCREEN_ROOF = 2; // lowest bottom; gap kept under the roof
+export function screenSpot(wall, sc) {
+  let w = Math.min(sc.w || 20, wall.len - 2), h = sc.h || w / 2;
+  const room = wall.h - SCREEN_ROOF - SCREEN_LOW;
+  if (h > room) { w *= room / h; h = room; }
+  const y = Math.min(sc.y ?? 10, Math.max(SCREEN_LOW, wall.h - h - SCREEN_ROOF));
+  const t0 = (wall.x - wall.x1) * wall.ax + (wall.z - wall.z1) * wall.az; // how far along the wall
+  const t = Math.max(w / 2 + 0.5, Math.min(wall.len - w / 2 - 0.5, t0 + (sc.along || 0)));
+  return { x: wall.x1 + wall.ax * t, z: wall.z1 + wall.az * t, w, h, y };
+}
+
 function drawSoon(g, t) {
   const { width: W, height: H } = g.canvas;
   const sky = g.createLinearGradient(0, 0, W, H);

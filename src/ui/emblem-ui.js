@@ -95,7 +95,7 @@ export class EmblemUI {
     for (const tier of Object.keys(TIERS)) {
       this.root.append(el('strong', 'emblem-tier', `${L(TIERS[tier].name)} · 🪙 ${TIERS[tier].price}`));
       const grid = el('div', 'emblem-grid');
-      for (const it of list.filter((i) => i.tier === tier)) {
+      for (const it of list.filter((i) => i.tier === tier && (!i.retired || this.owned.has(kind, i.id)))) { // (retired: only for those who have it)
         const b = el('button', 'emblem-opt' + (this.pick === it.id ? ' picked' : ''));
         const sample = el('span');
         if (kind === 'emblem') styleNameTag(sample, '', { emblem: it.id });

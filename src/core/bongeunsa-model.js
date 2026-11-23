@@ -20,6 +20,7 @@ import { farFree } from './far-textures.js';
 import { statueFace } from './statue-face.js';
 import { gateKings } from './heavenly-kings.js';
 import { gateStep } from './temple-terrace.js';
+import { MIX, leafColor, leafHash } from './season.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -211,6 +212,7 @@ function gwaneum(g, [x, z], k = 1) {
 // A low wooded mound behind the temple: a squashed half ball with a few
 // chunky blob trees on it (they're only backdrop, so low-poly and baked in).
 const TREE = ['#4f8a45', '#5e9a4c', '#447a3e'];
+const TREE_C = TREE.map((c) => new THREE.Color(c));
 function hill(g, x, z, r, h) {
   const m = add(g, new THREE.SphereGeometry(1, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), '#86b066', x, 0, z);
   m.scale.set(r, h, r);
@@ -219,7 +221,7 @@ function hill(g, x, z, r, h) {
     const a = i * 2.4 + x, d = r * 0.7 * Math.sqrt((i + 0.5) / n);
     const tx = x + Math.cos(a) * d, tz = z + Math.sin(a) * d, ty = h * Math.sqrt(1 - (d / r) ** 2);
     const s = 1.6 + ((i * 7) % 5) * 0.25;
-    const crown = add(g, new THREE.IcosahedronGeometry(s, 0), TREE[i % 3], tx, ty + s * 1.1, tz);
+    const crown = add(g, new THREE.IcosahedronGeometry(s, 0), '#' + leafColor(TREE_C[i % 3], leafHash(tx, tz), MIX.wood).getHexString(), tx, ty + s * 1.1, tz); // (the season's colours, core/season.js)
     crown.scale.set(1, 1.15, 1);
   }
 }

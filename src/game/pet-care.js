@@ -33,7 +33,7 @@ export const petName = (id) => {
 };
 
 /**
- * g: { me, scene, activeScene, mode, riding, seated, clerk, inventory, wallet,
+ * g: { me, scene, activeScene, mode, riding, aboard, seated, clerk, inventory, wallet,
  * shop, sfx, fences (keep-out boxes, or null) } as getters, plus clearAction(), refreshQuestChip(),
  * refreshItems() and refreshWallet().
  */
@@ -103,8 +103,10 @@ export function createPetCare(g) {
     const me = g.me, activeScene = g.activeScene;
     if (pet.root.parent !== activeScene) { activeScene.add(pet.root); pet.place(p.x, p.z, me.root.rotation.y, p.y); }
     // Waits out of sight while you ride or are indoors. Sitting down (a bench,
-    // a picnic mat) it stays and sits by you.
-    const hidden = g.riding > 0 || g.indoors || g.seated?.duck != null; // (out on a duck boat too: it waits on the bank, not on the water)
+    // a picnic mat) it stays and sits by you. Aboard Seoul Dal, a boat taxi,
+    // the cable car or a park ride it waits too: a poop up in the gondola or
+    // on a boat would be carried off where you can't clean it, and fined.
+    const hidden = g.riding > 0 || g.indoors || g.aboard || g.seated?.duck != null; // (out on a duck boat too: it waits on the bank, not on the water)
     pet.fences = g.fences || null; // (kept out of the bumper car rink)
     const poop = pet.update(dt, { x: p.x, z: p.z, y: p.y, ry: me.root.rotation.y }, hidden, g.mode === 'street');
     if (g.mode !== 'street') pet.root.position.y = p.y; // up on the Namsan summit too, not 34 m under it

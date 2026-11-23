@@ -323,15 +323,29 @@ function corongParts() {
 }
 
 // Several InstancedMeshes sharing the same matrices (one per part).
+// Split along the stream (u = x) into CHUNK-metre groups, so the far
+// cull (core/enclosure.js FarCull) hides the stretches past the fog instead
+// of drawing a whole railing's lanterns from Namsan, 400 m away. Past
+// 250 m they are hidden even inside the fog (farMax).
+const CHUNK = 120;
 function instanced(parent, parts, mats4, colors = null) {
-  const out = [];
-  for (const [geo, m] of parts) {
-    const im = new THREE.InstancedMesh(geo, m, mats4.length);
-    mats4.forEach((M, i) => im.setMatrixAt(i, M));
-    if (colors && m.userData.tint) colors.forEach((c, i) => im.setColorAt(i, new THREE.Color(c)));
-    im.userData.noShadow = true;
-    parent.add(im);
-    out.push(im);
+  const out = [], bins = new Map(), v = new THREE.Vector3();
+  mats4.forEach((M, i) => {
+    const k = Math.floor(v.setFromMatrixPosition(M).x / CHUNK);
+    if (!bins.has(k)) bins.set(k, []);
+    bins.get(k).push(i);
+  });
+  for (const idx of bins.values()) {
+    const g = bins.size > 1 ? new THREE.Group() : parent;
+    if (g !== parent) { g.userData.farMax = 250; parent.add(g); } // (0.3 m lanterns: a dot or less past 250 m)
+    for (const [geo, m] of parts) {
+      const im = new THREE.InstancedMesh(geo, m, idx.length);
+      idx.forEach((j, i) => im.setMatrixAt(i, mats4[j]));
+      if (colors && m.userData.tint) idx.forEach((j, i) => im.setColorAt(i, new THREE.Color(colors[j])));
+      im.userData.noShadow = true;
+      g.add(im);
+      out.push(im);
+    }
   }
   return out;
 }

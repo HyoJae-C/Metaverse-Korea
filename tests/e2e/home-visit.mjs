@@ -88,9 +88,11 @@ try {
   const hostId = (await state(h)).me;
   const pieces = await h.evaluate(() => __mk.decor());
   if (pieces < 6) throw new Error('no starter room: ' + pieces);
+  const hostSize = await h.evaluate(() => __mk.roomSize()); // a new player's home: level 1 (core/home-stages.js)
+  if (String(hostSize) !== '9,8') throw new Error('a new home is not 9×8: ' + hostSize);
 
   step = 'guest picks it at the door';
-  await g.evaluate((id) => __mk.homeStub([{ net_id: id, name: 'Host H', friend: false }]), hostId);
+  await g.evaluate((id) => __mk.homeStub([{ net_id: id, name: 'Host H', friend: false, level: 1 }]), hostId);
   await g.evaluate(() => __mk.openHomes());
   await g.waitForSelector('#visit-panel .visit-list button', { timeout: 10000 });
   if (shotDir) await g.screenshot({ path: shotDir + '/visit-list.png' });
@@ -99,14 +101,60 @@ try {
   step = 'guest sees the furniture';
   await g.waitForFunction((n) => __mk.decor() === n, pieces, { timeout: 20000 });
   if (await g.isVisible('#decor-btn')) throw new Error('a guest can decorate');
+  if (String(await g.evaluate(() => __mk.roomSize())) !== String(hostSize)) throw new Error('the guest\'s room is not the host\'s size');
   if (shotDir) { await g.waitForTimeout(1500); await g.screenshot({ path: shotDir + '/visit-inside.png' }); }
 
-  step = 'host removes a piece, the guest sees it';
-  const tap = (p, sel) => p.evaluate((q) => document.querySelector(q).click(), sel); // (the pinned notice can sit over the Decorate button)
-  await tap(h, '#decor-btn');
-  await tap(h, '#decor-grid [data-id="plant"]');
-  await tap(h, '#piece-remove');
+  step = 'host carries a piece straight from the room (no Decorate)';
+  // Standing by a piece: "Carry" and "Remove" are on the action list
+  // (game/decor.js pieceActs); a guest by the same piece gets neither.
+  const by = (p, id) => p.evaluate((k) => { const [, x, z] = __mk.decorAt().find((i) => i[0] === k); __mk.goto(x + 0.9, z, -Math.PI / 2); return [x, z]; }, id);
+  const choices = (p) => p.evaluate(() => __mk.choices() || [__mk.action()]);
+  const plantAt = await by(h, 'plant');
+  await h.waitForFunction(() => (__mk.choices() || []).some((c) => c.startsWith('✋')), null, { timeout: 5000 });
+  await by(g, 'plant');
+  await g.waitForTimeout(800);
+  if ((await choices(g)).some((c) => c && /^(✋|🗑️)/.test(c))) throw new Error('a guest can move furniture: ' + (await choices(g)));
+  const pick = (p, mark) => p.evaluate((m) => { const i = (__mk.choices() || []).findIndex((c) => c.startsWith(m)); if (i < 0) throw new Error('no ' + m + ' in ' + __mk.choices()); __mk.pick(i); }, mark);
+  await pick(h, '✋');
+  if (!(await h.evaluate(() => __mk.decorAt().some((i) => i[0] === 'plant' && i[3])))) throw new Error('not carrying the plant');
+  if (await h.isVisible('#decor-bar')) throw new Error('the catalogue opened while carrying');
+  step = 'carried piece: squares on the floor, green where it fits, red over the sofa';
+  await h.waitForFunction(() => __mk.carrySpot().footprint, null, { timeout: 10000 });
+  if (!(await h.evaluate(() => __mk.carrySpot().grid))) throw new Error('no floor squares while carrying');
+  await h.evaluate(() => { const s = __mk.decorAt().find((i) => i[0] === 'sofa'); __mk.goto(s[1], s[2] - 0.85, 0); }); // (the plant goes 0.85 m ahead: its half plus a step)
+  await h.waitForFunction(() => __mk.carrySpot().footprint === 'red', null, { timeout: 10000 });
+  if (shotDir) { await h.evaluate(() => __mk.cam({ dist: 6, pitch: 0.9, yaw: __mk.camYaw() + 0.9 })); await h.waitForTimeout(600); await h.screenshot({ path: shotDir + '/carry-red.png' }); }
+  step = 'carried piece goes right up against a wall, green';
+  await h.evaluate(() => { const [w] = __mk.roomSize(); __mk.goto(w / 2 - 0.6, 0, Math.PI / 2); }); // facing the east wall, close to it
+  await h.waitForFunction(() => { const [w] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return Math.abs(p[1] - (w / 2 - 0.28)) < 0.02 && __mk.carrySpot().footprint === 'green'; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('not flush with the wall: ' + JSON.stringify(await h.evaluate(() => [__mk.roomSize(), __mk.decorAt().find((i) => i[0] === 'plant'), __mk.carrySpot()]))); });
+  step = 'flush with the door wall too, but not in front of the door';
+  await h.evaluate(() => { const [w, d] = __mk.roomSize(); __mk.goto(w / 2 - 1, d / 2 - 0.6, 0); }); // facing the door wall, away from the door
+  await h.waitForFunction(() => { const [, d] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return Math.abs(p[2] - (d / 2 - 0.28)) < 0.02 && __mk.carrySpot().footprint === 'green'; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('not flush with the door wall: ' + JSON.stringify(await h.evaluate(() => [__mk.roomSize(), __mk.decorAt().find((i) => i[0] === 'plant')]))); });
+  await h.evaluate(() => { const [, d] = __mk.roomSize(); __mk.goto(0, d / 2 - 0.6, 0); }); // at the door
+  await h.waitForFunction(() => { const [, d] = __mk.roomSize(), p = __mk.decorAt().find((i) => i[0] === 'plant'); return p[2] < d / 2 - 1.6; }, null, { timeout: 10000 })
+    .catch(async () => { throw new Error('in front of the door: ' + JSON.stringify(await h.evaluate(() => __mk.decorAt().find((i) => i[0] === 'plant')))); });
+  await h.evaluate(([x, z]) => __mk.goto(x + 0.9, z + 1.2, -Math.PI / 2), plantAt);
+  await h.waitForFunction(() => __mk.action()?.startsWith('📍'), null, { timeout: 5000 });
+  await h.waitForFunction(() => __mk.carrySpot().footprint === 'green', null, { timeout: 10000 });
+  if (shotDir) { await h.evaluate(() => __mk.cam({ dist: 6, pitch: 0.9, yaw: __mk.camYaw() + 0.9 })); await h.waitForTimeout(600); await h.screenshot({ path: shotDir + '/carry-green.png' }); }
+  await h.evaluate(() => __mk.act());
+  const moved = await h.evaluate(() => __mk.decorAt().find((i) => i[0] === 'plant'));
+  if (moved[3] || Math.hypot(moved[1] - plantAt[0], moved[2] - plantAt[1]) < 0.5) throw new Error('plant not put down somewhere new: ' + moved + ' was ' + plantAt);
+  if (await h.isVisible('#piece-bar')) throw new Error('piece bar still open after putting down');
+  if (Object.values(await h.evaluate(() => __mk.carrySpot())).some(Boolean)) throw new Error('squares or footprint left after putting down');
+  if ([moved[1], moved[2]].some((v) => Math.abs(v * 4 - Math.round(v * 4)) > 0.01)) throw new Error('not on the 25 cm step: ' + moved);
+  if (shotDir) await h.screenshot({ path: shotDir + '/piece-moved.png' });
+
+  step = 'host removes a piece from the room, the guest sees it';
+  await by(h, 'plant');
+  await h.waitForFunction(() => (__mk.choices() || []).some((c) => c.startsWith('🗑️')), null, { timeout: 5000 });
+  if (shotDir) { await h.evaluate(() => __mk.act()); await h.waitForTimeout(300); await h.screenshot({ path: shotDir + '/piece-choices.png' }); }
+  await pick(h, '🗑️');
+  if (await h.evaluate(() => __mk.decorAt().some((i) => i[0] === 'plant'))) throw new Error('plant not removed');
   await g.waitForFunction((n) => __mk.decor() === n, pieces - 1, { timeout: 10000 });
+  const tap = (p, sel) => p.evaluate((q) => document.querySelector(q).click(), sel); // (the pinned notice can sit over the Decorate button)
 
   step = 'host closes the home: the guest goes out';
   await tap(h, '#visit-row [data-visit="none"]');

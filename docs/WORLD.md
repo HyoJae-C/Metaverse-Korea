@@ -620,7 +620,10 @@ Yunjung-ro (Yeouiseo-ro) with cherry trees that are only pink in spring
 in its blocks, Yeouido Park, the National Assembly at the west end, and the 63
 tower at the east end (a blocker and a landmark, not walkable; 7 m west of its
 real spot so Yeouidong-ro passes it). The island is about 850 x 440 m, as the
-real one is at 1/4. The park's ★5 legend is the blobfish. Run the script
+real one is at 1/4. The park's ★5 legend is the blobfish. Mapo and Wonhyo
+Bridges (base map decks) land on the park's shore: the park's railing is left
+open where a deck crosses it, and its lamps and benches are kept off the deck
+(`clearBridges` in `game/han-parks.js`, for every street park). Run the script
 again after moving the island: it rewrites the river and the doors.
 
 ### Yeouido fireworks
@@ -938,6 +941,36 @@ like Bukchon; to bring it back, start from commit e4ebd13. Run the script
 again after moving the district: it also sets the Information Center's `at` in
 stores.json.
 
+## Changdeokgung and Huwon (Jongno-gu)
+
+`districts/changdeokgung.json`, built by `scripts/build-changdeokgung.mjs`
+from OpenStreetMap (`scripts/data/changdeokgung-osm.json`, made by
+`scripts/extract-changdeokgung-osm.mjs`). Donhwamun, the main gate, is the
+district's (0, 0) on its real spot, east of Bukchon and north of Jongmyo. Run
+it before `scripts/build-bukchon.mjs` (Bukchon keeps its streets and hanok off
+the palace and the forecourt), then `build-north-wall.mjs` and
+`build-closed.mjs`.
+
+Sizes (Yozi 2026-11-21): the site, the wall and the paths at 1/4; gates at
+50%; halls at 50% where they fit between the corridors, which stay at 1/4
+(most yards are tight, so most halls come out at 30%: `meta.halls`); each of
+Huwon's four gardens whole at 50% (pond, pavilions and halls together, twice
+the 1/4 map), moved along the valley so they stand clear of each other and of
+the wall in their real order (`meta.gardens`: Aeryeonji 17 m, Gwallamji 38 m).
+
+Made up or approximate, and marked so: Buyongji (not in OSM: drawn from the
+path round it and its recorded size, `approx` on its water); the doors cut in
+corridors so every yard can be walked into (`meta.doors`); the forecourt in
+front of Donhwamun, deeper than the real one because the game's Yulgok-ro is
+south of its real line. Left out: Uiduhap (no room by the wall at 50%), the
+hills (the garden is flat) and the yard walls inside the garden.
+
+The palace shares its planner with Gyeongbokgung (`scripts/lib/palace-plan.mjs`).
+The pavilions (`jeongja`) and Buyongji's island (`pondisle`) are drawn by
+`src/core/huwon-model.js`, loaded when you first walk in.
+`node scripts/build-changdeokgung.mjs --check` fails if any hall, yard,
+pavilion or garden cannot be walked to from the gate.
+
 ## Stamp courses
 
 `src/data/trails.js` groups tour stamps into courses (the Seoul City Wall
@@ -1038,3 +1071,219 @@ checks the track is on the island, the only way off is the bridge, every
 ride's gate is a walk from it and nothing that moves comes within 2 m of
 the track; `tests/themepark.test.mjs` checks the island lies on the map's
 island.
+
+## Haneul Park and the Nanji Campground (Mapo-gu)
+
+`scripts/build-nanji.mjs` writes `districts/nanji.json`, west of Mangwon,
+from OpenStreetMap (`scripts/data/nanji-osm.json`) and the real ground
+(SRTM, `scripts/data/nanji-dem.json`), all at the real 1/4.
+
+- **The hill** (하늘공원, the old Nanji landfill): its foot is the park's
+  OSM outline (about 280 × 310 m), less the bands of Gangbyeon-buk-ro and
+  Haneulgongwon-ro. Its height is its relief above the riverside at 1/4
+  (17.1 m), and the top is level. The shape comes from the DEM, in a 6 m
+  grid on the `skypark` landmark (`core/skypark-ground.js`).
+- **Ways up**: 하늘길 (north and south, under 20°), the south-east stairs and
+  the west steps (about 35°). All are on their OSM lines. The hill is a
+  blocker, and the top and the ways up are decks through it
+  (`game/nanji-walk.js`, in the first download, because it is how you walk).
+- **On the top** (`game/nanji-park.js`, loaded within 480 m): silver grass
+  (억새) over most of it, the pink muhly (핑크뮬리) field in the north-west
+  corner by the kochia (댑싸리) row, five wind turbines along the south, and
+  the bowl look-out. The fields change with `SEASON` (`FIELD_COLORS`:
+  green in summer, pink, silver and red in autumn, straw in winter).
+- **Bigger on purpose**: only the muhly field, about 3× the real one
+  (1,188 m²). The hill and the campground stay 1/4 (Yozi 2026-11-21).
+- **The campground** (난지캠핑장), inside its OSM outline: 18 tents, 2 fire
+  pits with 6 camp chairs each (sit with friends), the office (난지
+  안내센터, the info desk) and showers. The layout is made up.
+- **Made up**, listed in `meta.approx`: the muhly's size, the walk from
+  Gangbyeon-buk-ro, the top of the stairs (OSM ends them on the lower loop
+  road, not built), the turbines and the bowl (placed from the park's map),
+  and the campground's layout.
+- `tests/nanji.test.mjs` checks the real places, the slopes, that every way
+  up is walkable, and the made-up list. `tests/e2e/nanji.mjs` walks up
+  하늘길 and sits by a fire (`DAY=1` for daytime pictures).
+
+## Mokdong Ice Rink (Yangcheon-gu)
+
+`scripts/build-mokdong.mjs` writes `districts/mokdong.json` from
+OpenStreetMap (`scripts/data/mokdong-osm.json`), all at the real 1/4. The
+middle of the ice hall (37.530766, 126.879227) is the district's (0, 0).
+
+- **Real, within 1 m:** the rink's outline (the ice hall about 17 × 25 m, the
+  lobby in front), the baseball stadium and the main stadium next to it.
+  Gukhoe-daero and Mokdongdong-ro are within 10 m.
+- **Made up** (`meta.approx`): Gukhoe-daero as one road for its three
+  carriageways, the paved ground as one plaza, a small lawn, the Information
+  Center, and the stadiums' stands (you cannot go into the stadiums).
+- **An island for now:** the land between Mokdong and Yeouido is closed, so
+  you get here by taxi, the subway picker or the map.
+- **Outside** is drawn by `src/game/mokdong-site.js`, loaded when you come
+  near (`mokdong-near.js` is the small part in the first download).
+- **Inside** is a game room, bigger than the building on purpose
+  (`src/core/ice-rink-hall.js`, 56 × 40 m: a 46 × 25 m sheet of ice, stands,
+  the skate counter). Entry is free and the skates go on at the gate.
+- **Skating** (`src/core/ice-skate.js` the rules, `src/game/ice-rink.js` the
+  play, both loaded on the way in): you glide and carve, the action button
+  jumps, and arrows pressed in the air are the tricks. ← and → in turn
+  spin (← single 100, ← → double 300, ← → ← triple 700, ← → ← → quad 1,500;
+  begin with → to turn the other way; the same key twice is two singles); ↑↓ butterfly, ↓↑
+  backflip, ↑↑ cartwheel, ↓↓ death drop. A trick still turning when you land
+  is shaky (half) or a fall; landing just after it finishes is perfect
+  (×1.5). Clean landings in a row raise a combo up to ×3. A faster run-up
+  means a longer jump (0.75 s from a standstill, 1.1 s at full speed): a
+  triple from a standstill, a quad with a little speed. A new trick tapped
+  too late to do anything but fall is not started; raising a turn always is.
+  Let go and you coast: after a moment the arms open wide, and a long fast
+  glide becomes a spiral (one leg out behind); pushing, jumping or slowing
+  ends it. The commands are on a board by the gates (readable from both
+  sides) and in a list on the screen that its button opens and closes.
+  Points are a personal best on this device (no coins). Other skaters' jumps
+  are sent as a short code (`st.ik`) and played back.
+- **Skating as a pair** (`src/game/ice-pair.js`, friends only): the 🤝 button is
+  always there on the ice; within 5 m of a friend it names them and offers
+  "hold hands" or "push from behind" (otherwise a tap says what is missing:
+  come closer, be friends first, or no friend on the ice); the
+  friend says yes or no, as with the tandem bike. The one who asked leads
+  and steers; the other is carried at their right hand, or crouched just in
+  front on their own skates (there is no sled). Either can let go with the
+  action button; jumping is off while you are a pair, and stepping off the
+  ice or leaving ends it (within 4 s if the news is lost). The asking goes over emotes
+  (`ice:ask|yes|no|end:<to>`), and everyone else sees it from `st.ip`.
+
+## Seoul Arts Center (Seocho-gu)
+
+`scripts/build-arts-center.mjs` builds `districts/arts-center.json` from
+OpenStreetMap (`scripts/data/arts-center-osm.json`, cut from the Geofabrik
+extract on 2026-11-21). Its anchor is the crossing of Banpo-daero and
+Nambusunhwan-ro in front of the gate.
+
+- **Size**: the whole place (site, buildings, plaza, the gaps between them) at
+  50% of the real one, not 1/4 (Yozi 2026-11-21: Seocho is mostly offices
+  otherwise). Every OSM point is doubled about the anchor, so the layout keeps
+  its proportions (map rule 11: one scale for a whole place). The two roads in
+  front stay 1/4; the site grows south towards Umyeonsan, over real neighbours
+  that are not built. `meta.scale` says so.
+- **Estimated or made up** (`meta.approx`, roads with `approx: true`): the
+  heights (photos, not OSM), the flat ground (the real site climbs in
+  terraces), the doors' exact spots, and the walks from the gate to the plaza
+  and to the two doors. Buildings, fountain and footways are OSM's.
+- **Outside** (`src/core/arts-center-model.js`, landmark `artscenter`, loaded
+  with `import()` when the city is built): the Opera House as a round hall
+  under a roof like a gat (a brim and a crown) with its stage house behind,
+  the fan-shaped Music Hall, the museums as plain blocks, the music fountain
+  with moving jets, the lawn before the Opera House.
+- **Opera Theater** (stores.json `arts-opera-theater`, `front: "landmark"`,
+  room `opera`: `src/core/opera-hall.js`, loaded with the rooms): the stage
+  behind a red curtain, the orchestra pit with the conductor's podium, the
+  stalls and three horseshoe balconies. Some seats have people; the rest are
+  free. Walking only, like the cathedral.
+- **The show** (`src/core/stage-show.js`) runs on the real clock, so everyone
+  in the hall sees and hears the same bar. Each piece's turn is a short real
+  evening: the orchestra tunes to the oboe's A, the conductor walks in to
+  applause and bows, the lights go down and the curtain opens, the piece is
+  played and danced, applause and bows, the curtain closes. Then the next.
+- **The music** is not a recording. `src/data/opera-scores.js` holds the notes
+  (written by hand from the published scores; all four pieces are from before
+  1900 and out of copyright) and `src/core/concert-player.js` plays them live
+  with Web Audio as a small orchestra, into the game's music output. The
+  game's own track is the silent hidden track `concert` while inside. Nobody
+  sings: an instrument takes the singer's line. To add a piece, write a score
+  object there and put it in `OPERA_PROGRAM`.
+- **The Concert Hall** (`src/core/concert-hall.js`, room `concert`, store
+  `arts-concert-hall` at the Music Hall's door) is for classical music only:
+  a wooden hall with the orchestra on the platform (winds and brass on
+  risers), a grand piano, and seats all round, behind the stage too. No
+  curtain and no dancers. The same show runs it; for a piano piece
+  (`kind: 'piano'`) the pianist walks on instead of the conductor and the
+  orchestra sits still.
+- Its programme is `CONCERT_PROGRAM` in `src/data/concert-scores.js`, a
+  generated file: `node scripts/build-concert-scores.mjs` cuts the excerpts
+  out of the MIDI in `scripts/data/scores/`, which LilyPond made from
+  public-domain and CC BY editions (sources and thanks in
+  `docs/CREDITS-MUSIC.md`). To add a piece, add its MIDI and a row in that
+  script's `PIECES`. Each hall fetches its own programme when you walk in
+  (`stations.stage.load`).
+
+
+## Seoul Botanic Park (Magok, Gangseo-gu)
+
+`scripts/build-magok.mjs` writes `districts/magok.json` from OpenStreetMap
+(`scripts/data/magok-osm.json`, cut from the national extract). The middle of
+the real greenhouse (37.569369, 126.835027) is the district's (0, 0).
+
+- **Real, within 1 m, at 1/4:** the garden's outline (about 221 × 400 m; real
+  884 × 1,595 m), the lake (호수원), the wetland's water (습지원), the pond and
+  streams, the park's footways of 20 m or longer, and the outlines of the arts
+  centre, the forest school and the research greenhouse (plain and unnamed;
+  you cannot go in). Magokjungang 10-ro is within 10 m; the bigger roads round
+  the garden come from the base map.
+- **The greenhouse is the one size exception** (Yozi 2026-11-21: "땅 1/4, 온실
+  50% 오픈형"): 45.6 m across instead of 22.8 m, and its middle is 10 m
+  north-west of the real one so the glass stays 4 m off Magokdong-ro's kerb.
+  It is an open building on the street: no room, you walk in through two
+  doorways (`src/game/botanic-near.js` in the first download,
+  `src/game/botanic-site.js` loaded near).
+- **Made up** (`meta.approx`): the greenhouse's size, place, doors and the
+  path round it; its support building is left out; everything planted (trees,
+  flower beds, reeds outside; all of the inside); the Information Center (on
+  the real visitor centre's spot); Magokjungang 10-ro as one road.
+- **Inside the greenhouse** (`src/core/botanic-layout.js`): a lily pond, a
+  ring of low beds, a wide walk, tall beds against the glass, and four walks
+  through them. The half by the main door is tropical, the far half
+  Mediterranean. Merged per colour: the whole place is about 30 draw calls.
+- **Pot plants for the home** (`src/core/house-plants.js`, store
+  `seoul-botanic-greenhouse`): ten pieces of furniture sold from stands on the
+  beds' edge, bought through the usual product sheet (receipt as for any
+  furniture). Five everyday ones by the main door (₩12,000–45,000), five rare
+  ones at the far end of the main walk, each in front of the big one of the
+  same plant (₩100,000–600,000, Yozi 2026-11-21: rare ones may cost more). The orchid and the flytrap can stand on a table.
+- **The streams** are shut like the lake (Yozi 2026-11-21: no walking through
+  the water): open only where a path crosses.
+- **The garden's planting** (Yozi 2026-11-21: too bare for its size): about
+  350 trees, round flower beds and benches beside the paths, reeds by the
+  wetland, and a **flower field** in the theme garden between the pond and
+  the greenhouse (about 1,270 m2 in nine pieces between the paths, made up).
+  The field's flowers follow `SEASON` (`FIELD_FLOWERS` in
+  `src/game/botanic-site.js`: tulips, hydrangeas, cosmos, silver grass). The
+  real path over the lake has footbridge rails; a made-up lookout deck goes
+  9 m out over the lake; a white photo frame stands in the biggest field.
+- **The Cactus & Succulent House** (stores.json `botanic-cactus-house`, made
+  up): a shop door on the forest school's real building. Its room
+  (`src/core/cactus-house.js`, with the room builder) has a sand island of big
+  cacti; it sells four theme plants (`THEME_PLANTS` in
+  `src/core/house-plants.js`) that the greenhouse does not.
+- **Magongnaru Station** (Line 9, 905) at the garden's west edge: exits at the
+  real 3 and 4, moved onto open ground inside the garden
+  (`stationExits()` in the script). The stamp stand is outside the
+  greenhouse's main door. The land round Magok is still closed, and the boat
+  taxi's Magok pier is not built.
+- `tests/magok.test.mjs` checks the real outlines, the exception and its
+  notes, that every stand can be walked to from the door, and the shop.
+  `tests/e2e/botanic.mjs` walks in and buys a monstera (`DAY=1` for daytime
+  pictures).
+## Gimpo Airport (Gangseo-gu)
+
+`scripts/build-gimpo.mjs` (data `scripts/data/gimpo-osm.json`, OpenStreetMap)
+puts Gimpo International Airport on its real place at 1/4: the airfield's
+fence (about 1,006 x 913 m, a blocker you can't walk into, grass with the
+aprons paved), the two runways on their OSM centre lines and lengths (900
+and 800 m) but half the real width (22.5 and 30 m), and the domestic and
+international terminals on their OSM outlines (154 x 27 m and 153 x 33 m).
+Planes are MODU AIR (made up), about half size (22 m): five stand nose-in
+at the domestic terminal, and one takes off or lands every 20 minutes of
+real time, a takeoff and then its landing back at the same stand, none at
+night (`core/gimpo-flights.js`; Yozi 2026-11-21). The domestic terminal's
+roof deck (OSM has the real one) is a balcony along its airside edge, a walk
+across the roof and a stair down beside the front door (`game/gimpo-walk.js`:
+decks through the terminal and the fence); a board there counts down to the
+next flight. The international terminal (where visitors from abroad
+arrive) has lighter glass, its own sign and a door canopy on a kerb road off
+the access road, and two more MODU AIR planes parked at its jet bridges
+(they don't fly). Both terminals have window frames. The big sign on the
+domestic terminal reads 김포국제공항. The terminals, runways and planes load near
+(`game/gimpo-site.js`). Gimpo Airport Station (Line 5) has its four exits
+where OSM has them. What is made up is listed in the district's
+`meta.approx`. The Seoul Botanic Park (Magok) is a separate district east of
+x -5,280.

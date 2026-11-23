@@ -83,6 +83,8 @@ export const PALETTES = {
     mint: 0x7fdcb0, matcha: 0x8db255, emerald: 0x1f9e6e, olive: 0x6b7a2f, forest: 0x2f6b3f,
     ice: 0xb8d9f0, sky: 0x7fb8f0, teal: 0x2a9a9a, cobalt: 0x2f5fd6, navy: 0x2b3f7a,
   },
+  // Blush (볼 터치) from the lip shops' second tab (core/lipstick.js).
+  blush: { peach: 0xff9070, coral: 0xff6a5e, rose: 0xe86a8a, pink: 0xff7fb5, berry: 0xc94d70, lilac: 0xb987e0 },
   // Hat colours from the hat workshop.
   hat: {
     butter: 0xffd36e, sky: 0x86b8f0, coral: 0xff9b85, mint: 0x8fd3c7, lilac: 0xb9a6f0,
@@ -201,6 +203,14 @@ export const ACCESSORIES = {
     { id: 'beanie-cream', shape: 'beanie', emoji: '🧶', color: 0xefe6d2 },
     { id: 'beanie-mustard', shape: 'beanie', emoji: '🧶', color: 0xd9a43a },
     { id: 'beret-black', shape: 'beret', emoji: '🎨', color: 0x2b2230 },
+    // Pop-up A (Seongsu): autumn season caps in the trench coats' colours,
+    // limited-time (Yozi 2026-11-23): a newsboy cap (빵모자) and a flat cap (헌팅캡).
+    { id: 'newsboy-beige', shape: 'newsboy', emoji: '🧢', color: 0xc9ad84 },
+    { id: 'newsboy-brown', shape: 'newsboy', emoji: '🧢', color: 0x7a5638 },
+    { id: 'newsboy-navy', shape: 'newsboy', emoji: '🧢', color: 0x2f3a5c },
+    { id: 'flatcap-beige', shape: 'flatcap', emoji: '🧢', color: 0xc9ad84 },
+    { id: 'flatcap-brown', shape: 'flatcap', emoji: '🧢', color: 0x7a5638 },
+    { id: 'flatcap-navy', shape: 'flatcap', emoji: '🧢', color: 0x2f3a5c },
     { id: 'ribbon-red', shape: 'ribbon', emoji: '🎀', color: 0xe0405a },
     // Modu Ballpark's team caps (the team shop).
     ...TEAM_LIST.map((t) => ({ id: 'cap-' + t.id, shape: 'cap', emoji: '🧢', color: parseInt(t.color.slice(1), 16) })),
@@ -271,6 +281,7 @@ export const DEFAULT_LOOK = {
   hatColor: null, hatPatch: null, // set in the hat workshop
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip
+  blush: null, // blush from the lip shops
   eyeShape: null, nose: null, jaw: null, // cosmetic clinics
   eyes: null, tone: null, // clinic
   tee: null, // printed T-shirt (an item from the bag)
@@ -317,6 +328,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.nose === 'string' && NOSE_IDS.includes(raw.nose)) look.nose = raw.nose;
   if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
+  if (typeof raw.blush === 'string' && Object.hasOwn(PALETTES.blush, raw.blush)) look.blush = raw.blush;
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;

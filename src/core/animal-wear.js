@@ -15,16 +15,31 @@ const R = 0.37; // the band's radius
 // How much narrower the band is at height y: W at the top, and the ends
 // pulled in a further 7.5% at the bottom, hugging the sides of the head.
 const narrow = (y) => W * (1 - 0.075 * (1 - Math.min(1, Math.max(0, y) / R)));
+// a.hood: the ears of an animal onesie's hood (core/model-pack.js), sewn
+// on, with no band; they stand a little higher, on the hood's thickness.
 export function makeEars(a) {
   const g = new THREE.Group();
-  g.position.y = -0.015; // sits a little down the crown, not perched on top
-  const m = mat(a.color), inner = mat(a.inner), band = mat(a.band);
-  // The band: a thin arch over the crown from ear to ear, narrower than
-  // it is tall, most of all at the ends, which tuck in at the sides of the head.
-  const arch = new THREE.Mesh(geo('earBand', () => bandGeometry()), band);
-  arch.position.set(0, -0.01, 0.04);
-  arch.rotation.x = -0.18;
-  g.add(arch);
+  g.position.y = a.hood ? 0.02 : -0.015; // sits a little down the crown, not perched on top
+  const m = mat(a.color), inner = mat(a.inner);
+  if (!a.hood) {
+    // The band: a thin arch over the crown from ear to ear, narrower than
+    // it is tall, most of all at the ends, which tuck in at the sides of the head.
+    const arch = new THREE.Mesh(geo('earBand', () => bandGeometry()), mat(a.band));
+    arch.position.set(0, -0.01, 0.04);
+    arch.rotation.x = -0.18;
+    g.add(arch);
+  }
+  if (a.animal === 'dino') { // a row of soft spikes from the brow over the crown to the back
+    const spike = geo('dinoSpike', () => new THREE.ConeGeometry(0.075, 0.16, 4).rotateY(Math.PI / 4).scale(0.45, 1, 1));
+    for (const [z, y, k] of [[0.16, 0.3, 0.7], [0.02, 0.37, 1], [-0.14, 0.33, 0.95], [-0.28, 0.2, 0.8]]) {
+      const sp = new THREE.Mesh(spike, inner);
+      sp.position.set(0, y, z);
+      sp.rotation.x = -Math.atan2(z, 0.35); // (standing out from the round of the hood)
+      sp.scale.setScalar(k);
+      g.add(sp);
+    }
+    return g;
+  }
   for (const sgn of [-1, 1]) {
     const e = new THREE.Group();
     if (a.animal === 'cat') {
@@ -54,6 +69,13 @@ export function makeEars(a) {
       const patch = new THREE.Mesh(geo('dogEarIn', () => new THREE.SphereGeometry(0.07, 10, 8).scale(0.5, 1.2, 0.3)), inner);
       patch.position.set(-0.012 * sgn, -0.05, 0);
       e.add(patch);
+    } else if (a.animal === 'bear') {
+      // Round ears with a lighter middle, set wide on the crown.
+      e.position.set(0.25 * narrow(0.32) * sgn, 0.32, 0.0);
+      const outer = new THREE.Mesh(geo('bearEar', () => new THREE.SphereGeometry(0.105, 14, 10).scale(1, 0.95, 0.55)), m);
+      const mid = new THREE.Mesh(geo('bearEarIn', () => new THREE.SphereGeometry(0.06, 12, 8).scale(1, 0.95, 0.3)), inner);
+      mid.position.set(0, -0.005, 0.052);
+      e.add(outer, mid);
     } else { // panda: round ears
       e.position.set(0.24 * narrow(0.34) * sgn, 0.34, 0.01);
       const outer = new THREE.Mesh(geo('pandaEar', () => new THREE.SphereGeometry(0.1, 14, 10).scale(1, 1, 0.55)), m);

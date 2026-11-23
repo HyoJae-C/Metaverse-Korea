@@ -1,6 +1,6 @@
 // Stamp book (스탬프 노트): which tour stamps you have and the day you got
 // each. Saved under mk.stamps, so it follows you to other devices.
-export const STAMP_REWARD = 10000; // 🪙 for each new stamp; no prize for a full book (places keep being added)
+export const STAMP_REWARD = 30000; // 🪙 for each new stamp; no prize for a full book (places keep being added)
 export const STAMP_NEAR = 1.6; // metres from the stand to use it
 
 // The stamps that exist on this map: a stand beside a shop needs that shop.
@@ -10,13 +10,14 @@ export const STAMP_NEAR = 1.6; // metres from the stand to use it
 // start, with Yeongdeungpo, Seocho and Gangnam at the back. A stamp not
 // listed here goes at the end, in data/stamps.js order: place it here.
 export const STAMP_ORDER = [
-  'bukchon', 'seongsu', 'gyeongbokgung', 'suragan', // 북촌 · 성수 팝업 · 경복궁 · 수라간
+  'bukchon', 'seongsu', 'gyeongbokgung', 'suragan', // 북촌 · 성수 팝업 · 경복궁 · 김치만들기체험
   'jongmyo', 'hongdae', 'ddp', 'hangang', // 종묘 · 홍대 버스킹 · DDP · 뚝섬 한강공원
   'namsan', 'mangwon-market', 'heunginjimun', 'another-dome', // 남산타워 · 망원시장 · 흥인지문 · 모두야구장
-  'museum', 'hyojae', 'sungnyemun', 'grand-park', // 국립중앙미술관 · 효재대학교 · 숭례문 · 어린이대공원
+  'museum', 'hyojae', 'sungnyemun', 'grand-park', // 국립중앙미술관 · 효재대학교 · 숭례문 · 서울어른도대공원
   'seoul-forest', 'mangwon-pier', 'igansumun', 'yeonnam', // 서울숲 · 망원 한강공원 · 이간수문 · 경의선숲길
   'war-memorial', 'dongmyo-market', 'seokchon', 'yeouido', // 전쟁역사박물관 · 동묘 감자마켓 · 석촌호수 · 여의도 한강공원
   'drone-show', 'banpo-jamwon', 'konext', 'bongeunsa', // 드론쇼 · 반포 한강공원 · 코넥스트 · 봉은사
+  'botanic', // 서울식물원
 ];
 const rank = (s) => { const i = STAMP_ORDER.indexOf(s.id); return i < 0 ? STAMP_ORDER.length : i; };
 export const inNoteOrder = (stamps) => stamps.map((s, i) => [s, i]).sort((x, y) => rank(x[0]) - rank(y[0]) || x[1] - y[1]).map(([s]) => s);

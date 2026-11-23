@@ -140,6 +140,26 @@ function striped(rings, st, axis, from, to) {
 
 // ---- the garments ---------------------------------------------------------
 // o: the outfit's shape options (see OUTFITS in data/characters/kaykit2.js).
+// A onesie's tail and spikes: a mesh of their own (Outfit_Tail), so bags
+// and scarves, sized from the Body mesh, don't count them.
+function tails(out, o) {
+  const bulk = o.bulk || 0;
+  // A round pompom (a bear, a bunny) or a dinosaur's long tail on the
+  // seat, and the dinosaur's spikes down its back.
+  const back = (y) => -(y > 1.1 ? 0.2 : 0.215) - bulk + 0.01;
+  if (o.tail === 'pom') {
+    const r = (z, rr) => ({ c: [0, 0.5, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.03, 0.05), r(back(0.5) - 0.02, 0.08), r(back(0.5) - 0.07, 0.085), r(back(0.5) - 0.12, 0.06), r(back(0.5) - 0.145, 0.02)], { power: 2 });
+  } else if (o.tail === 'dino') {
+    const r = (z, y, rr) => ({ c: [0, y, z], u: [1, 0, 0], v: [0, 1, 0], ru: rr, rv: rr * 0.9, role: 'top', w: [['hips', 1]] });
+    sweep(out, [r(back(0.5) + 0.04, 0.5, 0.13), r(back(0.5) - 0.1, 0.46, 0.11), r(back(0.5) - 0.26, 0.38, 0.08), r(back(0.5) - 0.42, 0.27, 0.05), r(back(0.5) - 0.55, 0.17, 0.012)], { power: 2 });
+  }
+  if (o.spikes) for (const [y, k] of [[0.62, 0.8], [0.76, 1], [0.9, 1.05], [1.04, 1], [1.16, 0.75]]) {
+    const r = (dz, ru, rv) => ({ c: [0, y, back(y) + dz], u: [1, 0, 0], v: [0, 1, 0], ru, rv, role: o.spikes, w: chain(TORSO, y) });
+    sweep(out, [r(0.03, 0.016, 0.06 * k), r(-0.02, 0.014, 0.05 * k), r(-0.08 * k, 0.004, 0.008)], { power: 2 });
+  }
+}
+
 function torso(out, o) {
   const rings = [];
   const add = (y, rx, rz, role, z = 0.01) => rings.push({ c: [0, y, z], u: [1, 0, 0], v: [0, 0, 1], ru: rx, rv: rz, role, w: chain(TORSO, y) });
@@ -195,10 +215,11 @@ function torso(out, o) {
     plate(out, sx > 0 ? pts : mirror(pts), { z: front(0.0), depth: 0.014, role: o.lapel, w: chestW, lean: 0.16, pivot: 0.95 });
   }
   if (o.buttons) { // buttons down the front (a coat, a cardigan, a suit)
+    // double: two rows (a double-breasted trench coat)
     const n = o.buttons.n ?? 2, x = o.buttons.x ?? 0.075;
     for (let i = 0; i < n; i++) {
       const y = (o.buttons.top ?? 0.84) - i * (o.buttons.gap ?? 0.09);
-      if (y > (o.coat ? 0.3 : o.hem + 0.03)) box(out, [x, y, front(0.012)], [0.032, 0.032, 0.014], o.buttons.role, y > 0.7 ? chestW : [['spine', 1]]);
+      if (y > (o.coat ? 0.3 : o.hem + 0.03)) for (const bx of o.buttons.double ? [x, -x] : [x]) box(out, [bx, y, front(0.012)], [0.032, 0.032, 0.014], o.buttons.role, y > 0.7 ? chestW : [['spine', 1]]);
     }
   }
   if (o.flaps) for (const sx of [-1, 1]) { // a denim jacket's chest pockets with buttoned flaps
@@ -213,6 +234,17 @@ function torso(out, o) {
     box(out, [sx * 0.055, 1.07, front(0.006)], [0.016, 0.16, 0.014], o.strings, [['chest', 1]]);
     box(out, [sx * 0.055, 0.985, front(0.01)], [0.026, 0.026, 0.02], o.strings, [['chest', 1]]);
   }
+  // A onesie's tummy patch, a lighter oval on the front.
+  if (o.belly) {
+    const pts = [];
+    for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2; pts.push([Math.cos(a) * 0.14, 0.82 + Math.sin(a) * 0.17]); }
+    plate(out, pts, { z: front(-0.02), depth: 0.016, role: o.belly, w: [['spine', 0.6], ['chest', 0.4]], lean: 0.05, pivot: 0.8 });
+  }
+  // A belt round the waist (a dress: the skirt is tucked under it).
+  if (o.belt) sweep(out, [
+    { c: [0, 0.6, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.6) },
+    { c: [0, 0.66, 0.01], u: [1, 0, 0], v: [0, 0, 1], ru: 0.306 + bulk, rv: 0.234 + bulk, role: o.belt, w: chain(TORSO, 0.66) },
+  ], { power: 2.5 });
   if (o.pocket) plate(out, [[-0.15, 0.64], [0.15, 0.64], [0.15, 0.7], [0.1, 0.79], [-0.1, 0.79], [-0.15, 0.7]], { z: front(-0.012), depth: 0.024, role: o.pocket, w: [['spine', 1]] });
   if (o.badge) box(out, [0.1, 0.98, front(-0.012)], [0.09, 0.09, 0.02], o.badge, [['chest', 1]]); // a chest logo or number
   if (o.zip) box(out, [0, 0.82, front(0.012)], [0.018, 0.56, 0.02], o.zip, [['spine', 0.5], ['chest', 0.5]]);
@@ -364,15 +396,23 @@ export function buildOutfit(gltf, o, cellUv) {
   const bones = [];
   scene.traverse((b) => { if (b.isBone) bones.push(b); });
   const index = new Map(bones.map((b, i) => [b.name, i]));
-  const part = (draw) => {
+  // keep: which roles go in this mesh; uvAt: real texture coordinates (a
+  // printed top) instead of the role's atlas cell.
+  const part = (draw, keep = () => true, uvAt = null) => {
     const pos = [], nor = [], uv = [], si = [], sw = [];
     draw({
       tri(ps, ns, ws, role) {
-        const [u, v] = cellUv(role);
+        if (!keep(role)) return;
+        const cell = uvAt ? null : cellUv(role);
+        const uvs = uvAt ? ps.map(uvAt) : null;
+        if (uvs) { // a triangle across the wrap-round seam: its low side goes up by whole repeats
+          const top = Math.max(...uvs.map((q) => q[0]));
+          for (const q of uvs) if (top - q[0] > 0.5) q[0] += Math.round(top - q[0]);
+        }
         for (let k = 0; k < 3; k++) {
           pos.push(ps[k].x, ps[k].y, ps[k].z);
           nor.push(ns[k].x, ns[k].y, ns[k].z);
-          uv.push(u, v);
+          uv.push(...(cell || uvs[k]));
           const w = ws[k].slice(0, 4);
           for (let j = 0; j < 4; j++) { si.push(w[j] ? index.get(w[j][0]) ?? 0 : 0); sw.push(w[j] ? w[j][1] : 0); }
         }
@@ -387,10 +427,23 @@ export function buildOutfit(gltf, o, cellUv) {
     return geo;
   };
   // The torso is its own mesh ("Body": bags and scarves are sized from it).
+  // A printed top (o.print, a floral dress): the top's cloth is a mesh of
+  // its own with texture coordinates wrapped round the body and the arms,
+  // painted with the print (core/model-pack.js); the rest stays on the atlas.
+  const plain = o.print ? (r) => r !== 'top' : undefined;
+  const drawArms = (out) => { arm(out, o, 1); arm(out, o, -1); };
   const geos = {
-    Outfit_Body: part((out) => torso(out, o)),
-    Outfit_Limbs: part((out) => { arm(out, o, 1); arm(out, o, -1); }),
+    Outfit_Body: part((out) => torso(out, o), plain),
+    Outfit_Limbs: part(drawArms, plain),
   };
+  if (o.tail || o.spikes) geos.Outfit_Tail = part((out) => tails(out, o));
+  if (o.print) {
+    // Round the body and round each arm, a whole number of repeats (no
+    // seam), about as big as on the dress's skirt (core/skirt-mesh.js).
+    const round = (a, b, turns) => (Math.atan2(a, b) / (Math.PI * 2) + 0.5) * turns;
+    geos.Outfit_Print = part((out) => torso(out, o), (r) => r === 'top', (p) => [round(p.x, p.z - 0.01, 3), p.y * 3]);
+    geos.Outfit_Print_Sleeves = part(drawArms, (r) => r === 'top', (p) => [round(p.y - 1.107, p.z, 1), Math.abs(p.x) * 3]);
+  }
   // One mesh per trouser cut and per shoe kind: each character shows only
   // the ones its look picks (core/model-pack.js, attachModel).
   for (const cut of o.shorts ? ['jeans'] : LEG_CUTS) geos['Outfit_Legs_' + cut] = part((out) => { leg(out, o, 1, cut); leg(out, o, -1, cut); });

@@ -7,25 +7,32 @@
 //   e.collect([landmarks, scene], skip);   // objects that sit wholly inside
 //   e.update(player.position);             // each frame: 'enter' | 'leave' | null
 import * as THREE from 'three';
+import { inPoly } from './geom.js';
 
 // An object is drawn unless an enclosure hides it (you are outside its wall)
 // or it is past the fog (FarCull below).
 const show = (o) => { o.visible = !o.userData.encHidden && !o.userData.farHidden; };
 
 export class Enclosure {
-  constructor({ id, box, inset = 1, onFirstEnter = null }) {
+  // poly: the wall's own line ([[x, z], ...]) when the place is not a
+  // rectangle (Changdeokgung): inside means inside the box and the line.
+  constructor({ id, box, poly = null, inset = 1, onFirstEnter = null }) {
     this.id = id;
     const [ax, az, bx, bz] = box;
     this.box = { x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz) };
+    this.poly = poly;
     this.inset = inset;
     this.onFirstEnter = onFirstEnter;
     this.objects = new Set();
     this.inside = null; // unknown until the first update
     this.loaded = false;
   }
+  // m: a margin in from the box's edge (under 0: out from it, and then the
+  // wall's line is not asked: a landmark may stand on it, like a gate).
   contains(x, z, m = 0) {
     const b = this.box;
-    return x > b.x0 + m && x < b.x1 - m && z > b.z0 + m && z < b.z1 - m;
+    if (!(x > b.x0 + m && x < b.x1 - m && z > b.z0 + m && z < b.z1 - m)) return false;
+    return !this.poly || m < 0 || inPoly(x, z, this.poly);
   }
   adopt(list) {
     for (const o of list) if (o) { this.objects.add(o); o.userData.encHidden = !this.inside; show(o); }
@@ -39,7 +46,7 @@ export class Enclosure {
       if (skip.has(o) || this.objects.has(o) || !o.visible) continue;
       bb.setFromObject(o);
       if (bb.isEmpty()) continue;
-      if (this.contains(bb.min.x, bb.min.z, this.inset) && this.contains(bb.max.x, bb.max.z, this.inset)) found.push(o);
+      if (this.contains(bb.min.x, bb.min.z, this.inset) && this.contains(bb.max.x, bb.max.z, this.inset) && (!this.poly || (this.contains(bb.min.x, bb.max.z) && this.contains(bb.max.x, bb.min.z)))) found.push(o);
     }
     this.adopt(found);
     return found.length;
@@ -85,10 +92,13 @@ export class FarCull {
     if (!o || this.seen.has(o) || o.userData.farKeep) return; // (farKeep: a landmark meant to be seen over the fog, e.g. Modu Tower)
     this.seen.add(o);
     const bb = new THREE.Box3().setFromObject(o);
-    if (bb.isEmpty()) return;
+    if (bb.isEmpty()) { // still empty: a model loading (an ice cream sculpture) can say its size
+      if (o.userData.farR) { const c = o.getWorldPosition(new THREE.Vector3()); this.items.push({ o, x: c.x, z: c.z, r: o.userData.farR }); }
+      return;
+    }
     const c = bb.getCenter(new THREE.Vector3());
     const r = bb.getSize(new THREE.Vector3()).length() / 2;
-    if (r < 150) { this.items.push({ o, x: c.x, z: c.z, r }); return; }
+    if (r < 150) { this.items.push({ o, x: c.x, z: c.z, r, max: o.userData.farMax }); return; } // (farMax: small things hidden sooner, e.g. the stream's lanterns)
     this.boxes.push({ o, x0: bb.min.x, x1: bb.max.x, z0: bb.min.z, z1: bb.max.z });
     if (depth < 3) for (const k of o.children) this.add(k, depth + 1); // too big: its parts one by one
   }
@@ -105,7 +115,7 @@ export class FarCull {
     if (this.later.length) this.later = this.later.filter((get) => { const g = get(); if (!g) return true; for (const k of g.children) this.add(k); return false; }); // (its parts, not the group: its own update shows and hides the whole)
     const far = this.far();
     for (const it of this.items) {
-      const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > far;
+      const hide = Math.hypot(it.x - p.x, it.z - p.z) - it.r > (it.max ? Math.min(far, it.max) : far);
       if (hide !== !!it.o.userData.farHidden) { it.o.userData.farHidden = hide; show(it.o); }
     }
     for (const b of this.boxes) {

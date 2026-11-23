@@ -7,20 +7,36 @@
 // small multiplayer room; otherwise you're alone in it, as before.
 // At the door, "Visit a home" lists the homes you may walk into right now.
 // The host's game sends its furniture to the visitors over the room, checks
-// each visitor with the server, and keeps the room to MAX_PEOPLE. Only the
+// each visitor with the server, and keeps the room to its home level's size
+// (core/home-stages.js homePeople). Only the
 // host can move furniture. When the host goes out, visitors go out too.
+import { isPhotoId, okSrc, photoOfFrame } from '../core/ride-photos.js';
+import { setPhotoSrc } from '../core/furniture.js';
 import { cleanName } from '../core/identity.js';
+import { homePeople, readHomeLevel, OLD_HOME_LEVEL } from '../core/home-stages.js';
 
-export const MAX_PEOPLE = 4; // host included (realtime messages grow with the square)
 const BEAT_MS = 60000; // the server forgets a home after 2 minutes without a beat
 const HOST_WAIT_MS = 6000; // a visitor who finds nobody home goes back out
 
 // Room messages, sent as emotes: the layout from the host, or "out you go".
-export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x, z, ry]) => [id, +x.toFixed(2), +z.toFixed(2), +ry.toFixed(2)]));
+export const layoutMsg = (items) => 'hv:lay:' + JSON.stringify(items.map(([id, x, z, ry, y = 0, off = 0, fish = null, grown = 0]) => {
+  const a = [id, +x.toFixed(2), +z.toFixed(2), +ry.toFixed(2)];
+  if (y || off || fish || grown) a.push(+(+y).toFixed(3), off ? 1 : 0); // (only when it's on a table or a lamp is off: messages stay short)
+  if (fish || grown) a.push(fish || 0); // the fish in a tank (core/fish-tank.js)
+  if (grown) a.push(grown); // how far a pot plant has grown (core/plant-growth.js)
+  return a;
+}));
+// The host's wallpaper, floor and door (game/home-finish.js): [wall, floor, door] ids or null.
+export const finishMsg = (sel) => 'hv:fin:' + JSON.stringify([sel?.wall || null, sel?.floor || null, sel?.door || null]);
 export const kickMsg = (id) => 'hv:kick:' + id;
+// A ride photo in a frame (core/ride-photos.js): its picture, sent once to
+// the people in the room (the layout only names it).
+export const photoMsg = (id, src) => 'hv:ph:' + id + ':' + src;
 export function parseVisitMsg(e) {
   if (typeof e !== 'string' || !e.startsWith('hv:')) return null;
   if (e.startsWith('hv:kick:')) return { kick: e.slice(8) };
+  if (e.startsWith('hv:ph:')) { const id = e.slice(6, 42), src = e.slice(43); return isPhotoId(id) && e[42] === ':' && okSrc(src) ? { ph: { id, src } } : null; }
+  if (e.startsWith('hv:fin:')) { try { const [wall, floor, door] = JSON.parse(e.slice(7)); return { fin: { wall, floor, door } }; } catch { return null; } }
   if (e.startsWith('hv:lay:')) { try { const a = JSON.parse(e.slice(7)); return Array.isArray(a) ? { lay: a.slice(0, 80) } : null; } catch { return null; } }
   return null;
 }
@@ -52,18 +68,26 @@ export function createHomeVisits(game) {
   }
   const people = () => game.others.players.size + 1;
   async function guestCame(id) {
-    if (people() > MAX_PEOPLE) { game.net.sendEmote(kickMsg(id)); return; }
+    if (people() > homePeople(readHomeLevel())) { game.net.sendEmote(kickMsg(id)); return; }
     const r = await cloud.call('home_guest_ok', { p_guest_net: id });
     if (!hosting) return;
     if (r.data === false) { game.net.sendEmote(kickMsg(id)); return; }
+    sentPhotos.clear(); // (a newcomer needs the pictures too)
     sendLayout();
   }
   let layoutTimer = 0;
+  const sentPhotos = new Set();
   function sendLayout() {
     clearTimeout(layoutTimer);
     layoutTimer = setTimeout(() => {
       const items = decor.layout();
-      if (hosting && items && game.others.players.size) game.net.sendEmote(layoutMsg(items));
+      if (!hosting || !items || !game.others.players.size) return;
+      game.net.sendEmote(layoutMsg(items));
+      game.net.sendEmote(finishMsg(decor.finish?.current()));
+      for (const [id] of items) { // the pictures in the frames, once each
+        const p = game.photos?.get(photoOfFrame(id));
+        if (p && !sentPhotos.has(p.id)) { sentPhotos.add(p.id); game.net.sendEmote(photoMsg(p.id, p.src)); }
+      }
     }, 300);
   }
   // The visit setting changed while I'm home.
@@ -84,7 +108,7 @@ export function createHomeVisits(game) {
     closeList();
     const name = cleanName(host.name) || '?';
     const label = t('home.ofName', { name });
-    guest = { host: { net: host.net_id, name } };
+    guest = { host: { net: host.net_id, name, level: host.level } }; // (level: the host's home size, 053_home_levels.sql)
     game.enterStore({ ...front, store: { ...front.store, visitHost: guest.host, name: { en: label, ko: label } } });
   }
   function openGuest(store, built) {
@@ -95,7 +119,7 @@ export function createHomeVisits(game) {
     guest.timer = setTimeout(() => {
       if (my !== token || !guest) return;
       if (game.others.nameOf(guest.host.net) == null) { shop.toast(t('home.notHome', { name: guest.host.name })); game.leaveStore(); }
-      else if (people() > MAX_PEOPLE) { shop.toast(t('home.visitFull', { name: guest.host.name })); game.leaveStore(); }
+      else if (people() > homePeople(guest.host.level || OLD_HOME_LEVEL)) { shop.toast(t('home.visitFull', { name: guest.host.name, n: homePeople(guest.host.level || OLD_HOME_LEVEL) })); game.leaveStore(); }
     }, HOST_WAIT_MS);
   }
 
@@ -143,6 +167,7 @@ export function createHomeVisits(game) {
       token++;
       clearTimeout(guest?.timer);
       clearTimeout(layoutTimer);
+      sentPhotos.clear();
       guest = null;
       closeMine();
     },
@@ -156,6 +181,8 @@ export function createHomeVisits(game) {
       if (!m) return false;
       if (!guest || id !== guest.host.net) return true; // only the host's game speaks for the home
       if (m.lay) decor.showLayout(m.lay);
+      if (m.fin) decor.finish?.show(m.fin);
+      if (m.ph && setPhotoSrc(m.ph.id, m.ph.src)) decor.rebuildDecor();
       if (m.kick === game.myId || m.kick === '*') { shop.toast(t('home.kicked', { name: guest.host.name })); game.leaveStore(); }
       return true;
     },

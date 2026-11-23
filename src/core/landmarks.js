@@ -10,6 +10,7 @@ import { buildLakeshore } from './lakeshore.js';
 import { cableCarLandmark } from './cablecar.js';
 import { banpoBridge } from './banpo-bridge.js';
 import { namsanPoint, namsanGround } from './namsan-shape.js';
+import { namsanTower } from './namsan-tower.js';
 import { PARK_BUILD, avenue } from './park-art.js';
 import { sign } from './park-signs.js';
 import { farFree } from './far-textures.js';
@@ -129,6 +130,16 @@ const OWN_BUILD = {
     box(g, 15.5, 0.5, 33, 0, 0.25, -0.5, C.plinth);
     import('./cathedral-model.js').then(({ buildCathedral }) => buildCathedral(g));
   },
+  artscenter(g, l) {
+    // Seoul Arts Center: the Opera House under its hat, the Music Hall, the
+    // museums and the fountain (core/arts-center-model.js, loaded when the
+    // city is built). The Opera House's foot goes in now, so the far
+    // culling knows where the place stands; the fountain's jets move.
+    box(g, 6, 0.3, 6, l.opera.at[0], 0.15, l.opera.at[1], C.plinth);
+    let tick = null;
+    import('./arts-center-model.js').then(({ buildArtsCenter }) => { tick = buildArtsCenter(g, l); });
+    return (t) => tick?.(t);
+  },
   bongeunsa(g, l) {
     // Bongeunsa's halls, Beopwangru, its lanterns, pagoda, Haesu Gwaneum,
     // bell pavilion and Iljumun (core/bongeunsa-model.js, loaded when the
@@ -165,6 +176,14 @@ const OWN_BUILD = {
     // far culling knows where it stands.
     box(g, 18, 0.04, 11.6, 0, 0.02, 0, C.stoneDark);
     import('./jogyesa-model.js').then(({ buildJogyesa }) => buildJogyesa(g));
+  },
+  // Huwon, Changdeokgung's garden (core/huwon-model.js, loaded when you
+  // first walk in through Donhwamun): its pavilions, and Buyongji's bank and island.
+  jeongja(g, l) {
+    import('./huwon-model.js').then(({ buildJeongja }) => buildJeongja(g, l));
+  },
+  pondisle(g, l) {
+    import('./huwon-model.js').then(({ buildPondIsle }) => buildPondIsle(g, l));
   },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
@@ -291,12 +310,39 @@ const OWN_BUILD = {
     // top, with the look-out tower, is at (l.px, l.pz) from the foot's centre
     // (core/namsan-shape.js). Scenery: the map's blockers keep you off it,
     // except on its trail (l.trail, game/namsan-walk.js), drawn on the slope.
-    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat, spur: l.spur };
+    const sh = { rx: l.rx || 170, rz: l.rz || 110, h: l.h || 70, px: l.px || 0, pz: l.pz || 0, e: l.e, rad: l.rad, flat: l.flat, flatRad: l.flatRad, spur: l.spur, dem: l.dem };
     const trail = l.trail || [];
     // (finer where there is a trail, so the slope under it is close to the
     // true height it is walked at)
     const geo = trail.length ? new THREE.SphereGeometry(1, l.spur ? 128 : 48, l.spur ? 40 : 24, 0, Math.PI * 2, 0, Math.PI / 2) : new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2);
     const pos = geo.attributes.position;
+    const nearWtrail = (x, z, m, summit = false) => {
+      for (const p of summit ? [...(l.wtrail || []), trail] : l.wtrail || []) for (let i = 1; i < p.length; i++) {
+        const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+        if (Math.hypot(x - ax - dx * t, z - az - dz * t) < m) return true;
+      }
+      return false;
+    };
+    // The trails every metre with their heights; for a vertex: [its distance
+    // to the nearest, the lowest trail height within a little more than
+    // that] (on a steep trail, the low side decides).
+    const samples = [];
+    for (const p of [trail, ...(l.wtrail || [])]) for (let k = 1; k < p.length; k++) {
+      const [ax, az] = p[k - 1], [bx, bz] = p[k], n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
+      for (let j = 0; j <= n; j++) { const x = ax + (bx - ax) * j / n, z = az + (bz - az) * j / n; samples.push([x, z, namsanGround(sh, x, z)]); }
+    }
+    const C = TRAIL_CAP.band + 4, cells = new Map(), key = (i, j) => i * 100003 + j; // (in cells of C m: only the 3×3 round a vertex are looked at)
+    for (const q of samples) { const k = key(Math.floor(q[0] / C), Math.floor(q[1] / C)); if (!cells.has(k)) cells.set(k, []); cells.get(k).push(q); }
+    const nearest = (x, z) => {
+      let d0 = Infinity;
+      const near = [], ci = Math.floor(x / C), cj = Math.floor(z / C);
+      for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const q of cells.get(key(i, j)) || []) { const d = Math.hypot(q[0] - x, q[1] - z); if (d > C) continue; near.push([d, q[2]]); if (d < d0) d0 = d; }
+      if (d0 >= TRAIL_CAP.band) return null;
+      let y = Infinity;
+      for (const [d, qy] of near) if (d < d0 + 4 && qy < y) y = qy;
+      return [d0, y];
+    };
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const [hx, hy, hz] = namsanPoint(sh, x, z);
@@ -304,40 +350,24 @@ const OWN_BUILD = {
       // true slope where there is a trail, so the path is never buried.
       const n = Math.sin(i * 12.9898) * Math.sin(i * 4.1414);
       const bump = hy > 0.5 && hy < sh.h - 1 ? (trail.length ? -Math.abs(n) * 0.04 - 0.01 : n * 0.08) * hy : 0;
-      pos.setXYZ(i, hx, hy + bump, hz);
+      // (and a little under the city wall's trail and its verges, so the
+      // slope's big triangles never poke up through them: game/namsan-wall.js)
+      const sink = l.wtrail && hy > 0.5 && nearWtrail(hx, hz, (l.wpathW || 3) / 2 + 6, true) ? 0.5 : 0;
+      // Near a trail, never above it: a vertex is kept under the trail's
+      // height at its nearest point, rising only gently away from it, so a
+      // big triangle spanning the trail can't bury it (the Sowol-ro trail
+      // was up to 3 m under the slope: Yozi 2026-11-18).
+      let y1 = hy + bump - sink;
+      const q = hy > 0 && nearest(hx, hz);
+      if (q && q[0] < TRAIL_CAP.band) y1 = Math.min(y1, q[1] - TRAIL_CAP.under + TRAIL_CAP.rise * Math.max(0, q[0] - TRAIL_CAP.flat));
+      pos.setXYZ(i, hx, y1, hz);
     }
     geo.computeVertexNormals();
     g.add(new THREE.Mesh(geo, mat('#86b56f')));
-    // (the trails, and the city wall's stretches: scripts/build-namsan-wall.mjs, game/namsan-wall.js)
-    const lines = [trail, ...(l.wtrail || []), ...(l.wall?.runs || [])];
-    const near = (x, z, m) => {
-      for (const p of lines) for (let i = 1; i < p.length; i++) {
-        const [ax, az] = p[i - 1], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
-        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
-        if (Math.hypot(x - ax - dx * t, z - az - dz * t) < m) return true;
-      }
-      return false;
-    };
-    if (trail.length > 1) g.add(namsanTrailMesh(sh, trail, l.trailW || 3));
-    for (const run of l.wtrail || []) g.add(namsanTrailMesh(sh, run, l.wtrailW || 3));
-    // Trees on the slopes (one instanced mesh), none on the summit or the trail.
-    const tree = new THREE.ConeGeometry(4, 11, 6);
-    tree.translate(0, 5, 0);
-    const N = l.trees || 160;
-    const trees = new THREE.InstancedMesh(tree, mat('#4f8a4a'), N);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
-    let n = 0, seed = 7, tries = 0;
-    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-    while (n < N && tries++ < N * 20) {
-      const a = rnd() * Math.PI * 2, r = 0.2 + Math.sqrt(rnd()) * 0.75;
-      const [x, y, z] = namsanPoint(sh, Math.cos(a) * r, Math.sin(a) * r);
-      const s = 0.7 + rnd() * 0.7;
-      if (lines.some((p) => p.length) && near(x, z, 4 * s + (l.trailW || 3) / 2 + 1)) continue;
-      if (sh.flat && Math.hypot(x - sh.px, z - sh.pz) < sh.flat + 16) continue; // the summit plaza and the way to the cable car's upper station
-      trees.setMatrixAt(n++, m4.compose(new THREE.Vector3(x, y - 1.5, z), q, sc.set(s, s, s)));
-    }
-    trees.count = n;
-    g.add(trees);
+    // (the trails are drawn near, with the city wall: game/namsan-wall.js)
+    // (the city wall's trail is drawn with the wall, near: game/namsan-wall.js)
+    // (no trees on the slopes: nobody walks there, and they cost a frame's
+    // triangles from the trails. Yozi 2026-11-17)
     const tower = new THREE.Group();
     namsanTower(tower);
     tower.position.set(sh.px, sh.h - 1, sh.pz);
@@ -346,64 +376,13 @@ const OWN_BUILD = {
   },
 };
 
-// Namsan's trail: a packed-earth ribbon on the slope, a little above it,
-// with low wooden edging either side ([x, z] from the hill's foot centre).
-function namsanTrailMesh(sh, trail, w) {
-  const STEP = 2, pos = [], edge = [];
-  for (let i = 1; i < trail.length; i++) {
-    const [x1, z1] = trail[i - 1], [x2, z2] = trail[i], len = Math.hypot(x2 - x1, z2 - z1);
-    if (len < 0.01) continue;
-    const nx = -(z2 - z1) / len, nz = (x2 - x1) / len;
-    const n = Math.max(1, Math.ceil(len / STEP));
-    const e = Math.min(w / 2, 2) / len; // (a little past each end: no gaps at the bends)
-    const at = (t, s, up) => { const x = x1 + (x2 - x1) * t + nx * s, z = z1 + (z2 - z1) * t + nz * s; return [x, namsanGround(sh, x, z) + up, z]; };
-    for (let k = 0; k < n; k++) {
-      const t0 = k / n - (k === 0 ? e : 0), t1 = (k + 1) / n + (k === n - 1 ? e : 0);
-      const a = at(t0, w / 2, 0.12), b = at(t0, -w / 2, 0.12), c = at(t1, -w / 2, 0.12), d = at(t1, w / 2, 0.12);
-      pos.push(...a, ...d, ...b, ...b, ...d, ...c);
-      for (const s of [w / 2 + 0.1, -w / 2 - 0.1]) { // the edging: a thin low strip on each side
-        const p0 = at(k / n, s, 0.1), p1 = at((k + 1) / n, s, 0.1), q0 = at(k / n, s, 0.32), q1 = at((k + 1) / n, s, 0.32);
-        edge.push(...p0, ...p1, ...q0, ...q0, ...p1, ...q1);
-      }
-    }
-  }
-  const g = new THREE.Group();
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.computeVertexNormals();
-  const path = new THREE.Mesh(geo, mat('#d8c39a'));
-  path.name = 'namsan-trail';
-  g.add(path);
-  const eg = new THREE.BufferGeometry();
-  eg.setAttribute('position', new THREE.Float32BufferAttribute(edge, 3));
-  eg.computeVertexNormals();
-  g.add(new THREE.Mesh(eg, new THREE.MeshLambertMaterial({ color: '#8a5a36', side: THREE.DoubleSide })));
-  return g;
-}
 
-// The look-out tower on Namsan: a white shaft, a round deck with windows,
-// a red and white mast, and a ring of lights.
-export function namsanTower(g, y0 = 0) {
-  const cyl = (rt, rb, ht, y, c) => {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, ht, 16), mat(c));
-    m.position.y = y + ht / 2;
-    g.add(m);
-    return m;
-  };
-  cyl(12, 13, 2, y0, C.stone); // terrace on the summit
-  cyl(7, 8, 7, y0 + 2, C.white); // base building
-  cyl(2.2, 3.4, 42, y0 + 9, '#e9e6df'); // shaft
-  cyl(7.5, 6, 3, y0 + 49, C.white);
-  cyl(7.2, 7.2, 5, y0 + 52, '#3f5470'); // windows
-  cyl(6, 7.5, 2.5, y0 + 57, C.white);
-  for (let i = 0; i < 6; i++) cyl(0.9 - i * 0.08, 1 - i * 0.08, 3.5, y0 + 59.5 + i * 3.5, i % 2 ? '#f3eee4' : '#d0463b'); // mast
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.45, 6, 4), new THREE.MeshBasicMaterial({ color: '#ffe08a' }));
-    bulb.position.set(Math.cos(a) * 7.6, y0 + 55.5, Math.sin(a) * 7.6);
-    g.add(bulb);
-  }
-}
+// How the slope is kept under the trails (core/landmarks.js namsan): within
+// band m of a trail a vertex is at most `under` m below the trail's height,
+// plus `rise` m for each metre past `flat` m from the trail's middle.
+export const TRAIL_CAP = { band: 18, flat: 2.5, under: 0.35, rise: 0.08 };
+
+// (The look-out tower itself: core/namsan-tower.js.)
 
 // The busking zone on Hongdae Walking Street (layout in core/busking-layout.js):
 // long low stone steps for the audience on the west side, the words BUSKING

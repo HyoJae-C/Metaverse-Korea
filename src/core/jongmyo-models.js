@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
+import { SEASON, MIX, leafColor, leafHash } from './season.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: true }));
@@ -169,7 +170,7 @@ const BUILD = {
     const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.22, 0.34, 4, 6).translate(0, 2, 0), mat('#6b4a32'), n);
     const pines = l.spots.filter((_, i) => i % 3 === 0), leafy = l.spots.filter((_, i) => i % 3 !== 0);
     const pineM = new THREE.InstancedMesh(new THREE.ConeGeometry(2.2, 4.6, 7).translate(0, 6, 0), mat('#3c6b3e'), pines.length);
-    const leafM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.8, 0).translate(0, 5.6, 0), mat('#5d8f4a'), leafy.length);
+    const leafM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.8, 0).translate(0, 5.6, 0), mat(SEASON === 'autumn' ? '#e6e6e6' : '#5d8f4a'), leafy.length); // (autumn: the instance colours show true, a little muted)
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
     const greens = ['#5d8f4a', '#6f9a52', '#4f8045', '#7aa35a'].map((c) => new THREE.Color(c));
     l.spots.forEach(([x, z], i) => {
@@ -181,7 +182,7 @@ const BUILD = {
     leafy.forEach(([x, z], i) => {
       const s = 0.85 + ((i * 29) % 9) / 20;
       leafM.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 0.7), sc.set(s, s * 0.9, s)));
-      leafM.setColorAt(i, greens[i % greens.length]);
+      leafM.setColorAt(i, leafColor(greens[i % greens.length], leafHash(i, 5), MIX.wood)); // (the season's colours, core/season.js; the pines stay green)
     });
     g.add(trunks, pineM, leafM);
   },

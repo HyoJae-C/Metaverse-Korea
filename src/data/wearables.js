@@ -30,6 +30,11 @@ export const RETIRED = new Set([
   ...['green', 'yellow', 'purple'].flatMap((c) => ['butterfly', 'chrysanthemum', 'double-coin'].map((k) => `acc-knot-${c}-${k}`)),
 ]);
 
+// secs: limited-time clothes, gone that many seconds after buying
+// (game/timed-wear.js). 7 days (Yozi 2026-11-20). The server drops them
+// from the account save too: change timed_items there (supabase/058) with it.
+export const TIMED_SECS = 7 * 24 * 3600;
+
 // price: listed in ₩1,000s (70 = ₩70,000).
 const item = (emoji, price, wear, off, desc, name, extra = {}) => ({ emoji, price: price * 1000, wear, off, desc, name, ...extra });
 // Trousers also take a skirt off (look.skirt), so a pair can be put back on.
@@ -74,6 +79,20 @@ export const WEARABLES = {
   'outfit-turtle-camel': item('👕', 50, { model: 'turtle-camel' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Camel turtleneck', ko: '카멜 터틀넥', ja: 'キャメルのタートルネック', zh: '驼色高领衫' }, { outfit: 'turtle-camel' }),
   'outfit-windbreaker-yellow': item('🧥', 75, { model: 'windbreaker-yellow' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow windbreaker', ko: '옐로 바람막이', ja: 'イエローのウィンドブレーカー', zh: '黄色防风夹克' }, { outfit: 'windbreaker-yellow' }),
   'outfit-vest-padded': item('🦺', 80, { model: 'vest-padded' }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Sky blue padded vest', ko: '하늘색 패딩 조끼', ja: '水色のダウンベスト', zh: '天蓝色羽绒背心' }, { outfit: 'vest-padded' }),
+  // Floral dresses (Bomnal Dresses): the dress has its own skirt, so a skirt comes off.
+  'outfit-dress-floral-navy': item('👗', 75, { model: 'dress-floral-navy', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Navy floral dress', ko: '네이비 꽃무늬 원피스', ja: 'ネイビーの花柄ワンピース', zh: '藏青色碎花连衣裙' }, { outfit: 'dress-floral-navy' }),
+  'outfit-dress-floral-yellow': item('👗', 75, { model: 'dress-floral-yellow', skirt: null }, { model: 'basic' }, WEAR_DESC.clothes, { en: 'Yellow floral dress', ko: '옐로 꽃무늬 원피스', ja: 'イエローの花柄ワンピース', zh: '黄色碎花连衣裙' }, { outfit: 'dress-floral-yellow' }),
+  // Animal onesies (Pogeun Onesies): hood with ears, a tummy and a tail.
+  // Limited-time (a test for seasonal sales): gone TIMED_SECS after you buy
+  // one (game/timed-wear.js), so cheaper, and never resold or gifted.
+  'outfit-onesie-bear': item('🐻', 50, { model: 'onesie-bear', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bear onesie', ko: '곰돌이 잠옷', ja: 'くまの着ぐるみパジャマ', zh: '小熊连体睡衣' }, { outfit: 'onesie-bear', secs: TIMED_SECS }),
+  'outfit-onesie-bunny': item('🐰', 50, { model: 'onesie-bunny', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Bunny onesie', ko: '토끼 잠옷', ja: 'うさぎの着ぐるみパジャマ', zh: '兔子连体睡衣' }, { outfit: 'onesie-bunny', secs: TIMED_SECS }),
+  'outfit-onesie-dino': item('🦖', 50, { model: 'onesie-dino', skirt: null }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Dinosaur onesie', ko: '공룡 잠옷', ja: '恐竜の着ぐるみパジャマ', zh: '恐龙连体睡衣' }, { outfit: 'onesie-dino', secs: TIMED_SECS }),
+  // Pop-up A (Seongsu), the autumn season: trench coats, limited-time like
+  // the onesies, ₩30,000 (Yozi 2026-11-23).
+  'outfit-trench-beige': item('🧥', 30, { model: 'trench-beige' }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Beige trench coat', ko: '베이지 트렌치코트', ja: 'ベージュのトレンチコート', zh: '米色风衣' }, { outfit: 'trench-beige', secs: TIMED_SECS }),
+  'outfit-trench-brown': item('🧥', 30, { model: 'trench-brown' }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Brown trench coat', ko: '브라운 트렌치코트', ja: 'ブラウンのトレンチコート', zh: '棕色风衣' }, { outfit: 'trench-brown', secs: TIMED_SECS }),
+  'outfit-trench-navy': item('🧥', 30, { model: 'trench-navy' }, { model: 'basic' }, WEAR_DESC.timed, { en: 'Navy trench coat', ko: '네이비 트렌치코트', ja: 'ネイビーのトレンチコート', zh: '藏青色风衣' }, { outfit: 'trench-navy', secs: TIMED_SECS }),
   // Trousers (a colour of look.pants).
   'pants-indigo': item('👖', 40, pants('indigo'), null, WEAR_DESC.swap, { en: 'Indigo jeans', ko: '인디고 청바지', ja: 'インディゴジーンズ', zh: '靛蓝牛仔裤' }),
   'pants-lightwash': item('👖', 40, pants('lightwash'), null, WEAR_DESC.swap, { en: 'Light-wash jeans', ko: '연청바지', ja: 'ライトウォッシュジーンズ', zh: '浅色牛仔裤' }),
@@ -115,6 +134,14 @@ export const WEARABLES = {
   'acc-beanie-cream': item('🧶', 20, { head: 'beanie-cream', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Cream knit beanie', ko: '크림 니트 비니', ja: 'クリームのニット帽', zh: '奶油色针织帽' }),
   'acc-beanie-mustard': item('🧶', 20, { head: 'beanie-mustard', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Mustard knit beanie', ko: '머스타드 니트 비니', ja: 'マスタードのニット帽', zh: '芥末黄针织帽' }),
   'acc-beret-black': item('🎨', 30, { head: 'beret-black', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Black beret', ko: '검정 베레모', ja: '黒いベレー帽', zh: '黑色贝雷帽' }),
+  // Pop-up A's autumn caps in the trench coats' colours: limited-time,
+  // ₩30,000 (Yozi 2026-11-23).
+  'acc-newsboy-beige': item('🧢', 30, { head: 'newsboy-beige', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Beige newsboy cap', ko: '베이지 빵모자', ja: 'ベージュのキャスケット', zh: '米色报童帽' }, { secs: TIMED_SECS }),
+  'acc-newsboy-brown': item('🧢', 30, { head: 'newsboy-brown', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Brown newsboy cap', ko: '브라운 빵모자', ja: 'ブラウンのキャスケット', zh: '棕色报童帽' }, { secs: TIMED_SECS }),
+  'acc-newsboy-navy': item('🧢', 30, { head: 'newsboy-navy', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Navy newsboy cap', ko: '네이비 빵모자', ja: 'ネイビーのキャスケット', zh: '藏青色报童帽' }, { secs: TIMED_SECS }),
+  'acc-flatcap-beige': item('🧢', 30, { head: 'flatcap-beige', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Beige flat cap', ko: '베이지 헌팅캡', ja: 'ベージュのハンチング', zh: '米色鸭舌帽' }, { secs: TIMED_SECS }),
+  'acc-flatcap-brown': item('🧢', 30, { head: 'flatcap-brown', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Brown flat cap', ko: '브라운 헌팅캡', ja: 'ブラウンのハンチング', zh: '棕色鸭舌帽' }, { secs: TIMED_SECS }),
+  'acc-flatcap-navy': item('🧢', 30, { head: 'flatcap-navy', hatPatch: null }, { head: null }, WEAR_DESC.timed, { en: 'Navy flat cap', ko: '네이비 헌팅캡', ja: 'ネイビーのハンチング', zh: '藏青色鸭舌帽' }, { secs: TIMED_SECS }),
   'acc-ribbon-red': item('🎀', 10, { head: 'ribbon-red', hatPatch: null }, { head: null }, WEAR_DESC.accessory, { en: 'Red hair ribbon', ko: '빨간 리본 핀', ja: '赤いリボン', zh: '红色发带蝴蝶结' }),
   'acc-glasses': item('👓', 30, { face: 'glasses' }, { face: null }, WEAR_DESC.accessory, { en: 'Brown round glasses', ko: '브라운 동그란 안경', ja: 'ブラウンの丸メガネ', zh: '棕色圆框眼镜' }),
   'acc-glasses-black': item('👓', 30, { face: 'glasses-black' }, { face: null }, WEAR_DESC.accessory, { en: 'Black round glasses', ko: '검정 동그란 안경', ja: '黒の丸メガネ', zh: '黑色圆框眼镜' }),

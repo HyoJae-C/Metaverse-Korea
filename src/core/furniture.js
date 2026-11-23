@@ -3,7 +3,16 @@
 // collision, and chairs and sofas have a seat you can sit on.
 import * as THREE from 'three';
 import { matCache, addBox } from './three-kit.js';
-import { SHOP_FURNITURE } from './furniture-shop.js';
+import { SHOP_FURNITURE as SHOP_PIECES } from './furniture-shop.js';
+import { APPLIANCE_KIND } from './appliances.js';
+import { PARTITIONS } from './partitions.js';
+// The furniture shops' pieces, with the room dividers (core/partitions.js).
+const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
+import { TANKS, buildTank } from './fish-tank-pieces.js';
+import { photoOfFrame } from './ride-photos.js';
+import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
+
+export { PLANT_IDS };
 
 const mat = matCache();
 
@@ -132,8 +141,10 @@ const LAMPS = [
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
 // The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
-const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 } };
+// hammock: one lies down; vanity: one sits on the stool in front, facing the mirror.
+const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 }, hammock: { lie: 1 }, vanity: { seat: true, seatAt: 0.2, faceMirror: true } };
 export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
+export const TANK_IDS = TANKS.map((t) => [t.id, t.emoji, t.name]);
 
 export const FURNITURE = [
   // The free basics every home starts with are worn hand-me-downs: faded,
@@ -228,8 +239,13 @@ export const FURNITURE = [
   // "furniture"): only once you've bought one. Shades glow (unlit material).
   ...LAMPS.map(([id, emoji, size, name, build]) => ({ id, emoji, item: id, size, name, build })),
   // The Euljiro furniture shops (core/furniture-shop.js): only once bought.
-  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name,
+  ...SHOP_FURNITURE.map(([id, emoji, size, seat, name, make]) => ({ id, emoji, item: id, size, ...SEAT_KIND[seat], name, ...(APPLIANCE_KIND[id] && { appliance: APPLIANCE_KIND[id] }), // (appliance: game/appliances.js)
     build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), (...a) => box(g, ...a), glow); } })),
+  // Fish tanks from the KONEXT Aquarium shop (core/fish-tank.js): only once
+  // bought; any home takes any tank that fits the room (Yozi 2026-11-18).
+  ...TANKS.map((t) => ({ id: t.id, emoji: t.emoji, item: t.id, size: t.size, name: t.name, tank: true, needsHomeLevel: t.needsHomeLevel, build(g) { buildTank(g, t); } })),
+  // Pot plants from the greenhouse shop in Seoul Botanic Park (core/house-plants.js): only once bought.
+  ...[...PLANTS, ...THEME_PLANTS].map(([id, emoji, size, , name, make]) => ({ id, emoji, item: id, size, name, build(g) { make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z)); } })),
   // Claw machine plushies (core/claw-game.js): only once you own the item.
   ...[
     ['plush-simurugi', '😑', '#fbf7f2', '#bfe6dc', { en: 'Simurugi plush', ko: '시무룩이 인형', ja: 'シムルギのぬいぐるみ', zh: '闷闷鬼玩偶' }],
@@ -279,11 +295,60 @@ export const FURNITURE = [
     } },
 ];
 
-export const furnitureById = (id) => FURNITURE.find((f) => f.id === id);
+// A ride photo in a frame (core/ride-photos.js): 'ph:<photo id>', made on
+// demand. Its picture comes from setPhotoSrc (my own photos, or the ones a
+// host sends to visitors); until then the print is blank.
+const PHOTO_NAME = { en: 'Jelly Flume photo', ko: '젤리 후룸라이드 사진', ja: 'ゼリー・フルームの写真', zh: '果冻激流勇进照片' };
+const photoSrcs = new Map(), photoTex = new Map(), photoDefs = new Map();
+export function setPhotoSrc(id, src) {
+  if (!id || !src || photoSrcs.get(id) === src) return false;
+  photoSrcs.set(id, src);
+  photoTex.get(id)?.dispose();
+  photoTex.delete(id);
+  return true;
+}
+export const hasPhotoSrc = (id) => photoSrcs.has(id);
+function photoMat(id) {
+  const src = photoSrcs.get(id);
+  if (!src) return mat('#efe9dc');
+  if (!photoTex.has(id)) {
+    const tex = new THREE.TextureLoader().load(src);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    photoTex.set(id, new THREE.MeshBasicMaterial({ map: tex }));
+  }
+  return photoTex.get(id);
+}
+function photoFrame(fid) {
+  const pid = photoOfFrame(fid);
+  if (!pid) return null;
+  if (!photoDefs.has(fid)) photoDefs.set(fid, { id: fid, emoji: '🖼️', size: [0.42, 0.24], name: PHOTO_NAME, photo: pid,
+    // A wooden frame on a little stand, the print with a white film border, leaning back a little.
+    build(g) {
+      const f = new THREE.Group();
+      f.position.set(0, 0.2, 0.02);
+      f.rotation.x = -0.14;
+      g.add(f);
+      box(f, 0.4, 0.32, 0.03, 0, 0, 0, '#7a4f2e');
+      box(f, 0.35, 0.27, 0.005, 0, 0, 0.017, '#fbf8f1'); // the print's white border
+      const pic = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.2325), photoMat(pid));
+      pic.position.set(0, 0.008, 0.021);
+      f.add(pic);
+      box(g, 0.04, 0.3, 0.03, 0, 0.15, -0.09, '#7a4f2e').rotation.x = 0.35; // the stand at the back
+      box(g, 0.34, 0.02, 0.07, 0, 0.01, 0.02, '#6a4226'); // the foot
+    } });
+  return photoDefs.get(fid);
+}
+
+export const furnitureById = (id) => FURNITURE.find((f) => f.id === id) || photoFrame(id);
 
 // Where people sit or lie on a placed piece ({ id, x, z, ry }): seats in the
 // shape interiors use (main.js sitDown). Long sofas and benches seat two side
 // by side, a bed lies two (Yozi 2026-11-16), floor cushions sit on the floor.
+// Pieces that rock (Yozi 2026-11-22): r, the rockers' radius, and y, the
+// height of their centre (game/rocking.js rolls the chair on them).
+const ROCKERS = { 'f-rocking': { r: 1.2, y: 1.22 } };
+// it.mesh: the piece as built (a home's piece gets it when the room is
+// laid; a shop's sample passes it), needed only by a rocking chair.
 export function furnitureSeats(it) {
   const f = furnitureById(it.id);
   const n = f?.lie || f?.seat;
@@ -299,20 +364,78 @@ export function furnitureSeats(it) {
     return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6, stand: at(lx, d / 2 + 0.55) };
   });
   return xs.map((lx) => {
-    const [x, z] = at(lx, 0.05);
-    return { x, z, ry: it.ry, stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}) };
+    const [x, z] = at(lx, f.seatAt ?? 0.05);
+    return { x, z, ry: it.ry + (f.faceMirror ? Math.PI : 0), stand: at(lx, d / 2 + 0.55), ...(f.floor ? { y: 0.08, mat: true, cushion: true } : {}), ...(ROCKERS[it.id] ? { rock: { piece: it, ...ROCKERS[it.id] } } : {}) };
   });
 }
 
-export function buildFurniture(id) {
+// Lamps can be switched off (Yozi 2026-11-16): their glowing parts dim.
+export const isLamp = (id) => id === 'lamp' || id.startsWith('lamp-');
+const dimmed = new Map();
+const dim = (m) => {
+  if (!dimmed.has(m)) { const d = m.clone(); d.color.multiplyScalar(0.32); dimmed.set(m, d); }
+  return dimmed.get(m);
+};
+export function buildFurniture(id, { off = false } = {}) {
   const def = furnitureById(id);
   const g = new THREE.Group();
   def?.build(g);
+  if (off && isLamp(id)) g.traverse((o) => { if (o.isMesh && o.material?.isMeshBasicMaterial) o.material = dim(o.material); });
   return g;
 }
 
-// Collision polygon for a placed piece, or null for walkable ones (rugs).
+// Small things can stand on a table, desk or chest (Yozi 2026-11-16): the
+// tops (height in metres) and the pieces small enough to go on them.
+export const TOPS = { table: 0.65, desk: 0.71, 'f-wood-table': 0.755, 'f-tea-table': 0.32, 'f-bandaji': 0.7, 'f-low-table': 0.405 };
+const SMALL = new Set(['lamp-lotus', 'lamp-moon', 'lamp-mushroom', 'lamp-star', 'lamp-neon-heart', 'lamp-neon-hi', 'lamp-desk', 'lamp-lava', 'lamp-bulb', 'lamp-candle',
+  'plush-simurugi', 'plush-mongle', 'plush-bear', 'plush-mandu', 'plush-bear-small', 'f-radio', 'f-gyeongdae', 'plant-orchid', 'plant-flytrap', 'plant-succulents', 'plant-barrel', 'f-microwave']);
+export const isSmall = (id) => SMALL.has(id) || !!photoOfFrame(id);
+// The piece's place in a surface's own frame (x right, z front).
+const localTo = (o, x, z) => { const c = Math.cos(o.ry), s = Math.sin(o.ry), dx = x - o.x, dz = z - o.z; return [dx * c - dz * s, dx * s + dz * c]; };
+// What a small piece at its x, z would stand on: { on, y } for the highest
+// top under its middle, or null (the floor).
+export function topUnder(item, items) {
+  if (!isSmall(item.id)) return null;
+  let best = null;
+  for (const o of items) {
+    if (o === item || o.y || !(o.id in TOPS)) continue;
+    const [w, d] = furnitureById(o.id).size, [lx, lz] = localTo(o, item.x, item.z);
+    if (Math.abs(lx) <= w / 2 - 0.08 && Math.abs(lz) <= d / 2 - 0.06 && (!best || TOPS[o.id] > best.y)) best = { on: o, y: TOPS[o.id] };
+  }
+  return best;
+}
+// The small pieces standing on a surface, in its own frame (they go with it
+// when it's carried or turned).
+export function ridersOf(surface, items) {
+  return items.filter((i) => i.y && topUnder(i, [surface])?.on === surface).map((it) => { const [lx, lz] = localTo(surface, it.x, it.z); return { it, lx, lz, dry: it.ry - surface.ry }; });
+}
+export function placeRiders(surface, riders) {
+  const c = Math.cos(surface.ry), s = Math.sin(surface.ry);
+  for (const r of riders) {
+    r.it.x = surface.x + r.lx * c + r.lz * s;
+    r.it.z = surface.z - r.lx * s + r.lz * c;
+    r.it.ry = surface.ry + r.dry;
+  }
+}
+
+// The footprint of a placed piece (null for walkable ones: rugs).
+function piecePoly(item) {
+  const def = furnitureById(item.id);
+  if (!def || def.walkable) return null;
+  const [w, d] = def.size;
+  const c = Math.cos(item.ry), s = Math.sin(item.ry);
+  return { p: [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([x, z]) => [item.x + x * c + z * s, item.z - x * s + z * c]) };
+}
+// True when a piece pokes through a wall of a w × d room (Yozi 2026-11-18:
+// any tank goes in any home it fits).
+export function outsideRoom(item, w, d) {
+  const me = piecePoly(item);
+  return !!me && me.p.some(([x, z]) => Math.abs(x) > w / 2 - 0.02 || Math.abs(z) > d / 2 - 0.02);
+}
+// Collision polygon for a placed piece, or null for walkable ones (rugs) and
+// things standing on a table (the table blocks you already).
 export function furnitureCollider(item) {
+  if (item.y) return null;
   const def = furnitureById(item.id);
   if (!def || def.walkable) return null;
   const [w, d] = def.size;
@@ -341,10 +464,11 @@ function polysOverlap(a, b) {
 // Room kept round a player when a piece is placed, carried or turned.
 export const WHO_R = 0.45;
 export function pieceBlocked(item, others, who = null) {
-  const me = furnitureCollider(item);
+  const me = piecePoly(item), lvl = item.y || 0;
   if (!me) return false;
-  if (others.some((o) => o !== item && o.id !== item.id && furnitureCollider(o) && polysOverlap(me.p, furnitureCollider(o).p))) return true;
-  if (who) {
+  // Pieces only bump into pieces at the same height: the floor, or the same top.
+  if (others.some((o) => o !== item && o.id !== item.id && (o.y || 0) === lvl && piecePoly(o) && polysOverlap(me.p, piecePoly(o).p))) return true;
+  if (who && !lvl) {
     const r = WHO_R; // (a little more than a player's radius, 0.35: a piece set down against you mustn't overlap you)
     if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;
   }

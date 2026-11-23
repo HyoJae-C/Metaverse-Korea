@@ -158,3 +158,34 @@ test('a deck lets you walk over what was there before, but not over what comes a
   assert.ok(col.blocked(5, 5, 0.3), 'a post put on the deck later still counts');
   assert.ok(col.blocked(8, 5, 0.3), 'beside the deck: still blocked');
 });
+
+test('a bridge of the base map that lands on a park is not walled off by its railing, lamps or benches', async () => {
+  const { loadRegionMap } = await import('../src/core/districts.js');
+  const { clearBridges } = await import('../src/game/han-parks.js');
+  const map = await loadRegionMap(region, async (f) => read(f));
+  const solid = new CollisionMap(map.buildings.filter((b) => !b.visit).concat(map.blockers));
+  for (const d of map.decks) solid.addDeck(d);
+  let landings = 0;
+  for (const { l, store } of streetParks) {
+    const c = Math.cos(l.ry || 0), s = Math.sin(l.ry || 0);
+    const toLocal = ([x, z]) => { const dx = x - l.x, dz = z - l.z; return [dx * c - dz * s, dx * s + dz * c]; };
+    const toWorld = ([x, z]) => [l.x + x * c + z * s, l.z - x * s + z * c];
+    const decks = map.decks.map((d) => d.map(toLocal));
+    const b = buildHanPark(store, clearBridges(l.layout || {}, decks));
+    const col = new CollisionMap(b.colliders.map((q) => ({ p: q.p.map(toWorld) })));
+    for (const d of decks) {
+      // The deck's middle at v (across the bank), or null where it isn't.
+      const mid = (v) => { const us = []; for (let i = 0; i < d.length; i++) { const [ax, az] = d[i], [bx, bz] = d[(i + 1) % d.length]; if ((az - v) * (bz - v) <= 0 && az !== bz) us.push(ax + ((v - az) / (bz - az)) * (bx - ax)); } return us.length > 1 ? (Math.min(...us) + Math.max(...us)) / 2 : null; };
+      const u0 = mid(0.15);
+      if (u0 == null || u0 < l.layout.rail[0] || u0 > l.layout.rail[1]) continue;
+      landings++;
+      for (let v = -8; v <= 5; v += 0.5) {
+        const u = mid(v);
+        if (u == null) continue;
+        const [x, z] = toWorld([u, v]);
+        assert.ok(!col.blocked(x, z, R) && !solid.blocked(x, z, R), `${store.id}: the bridge landing at u ${u0.toFixed(0)} is blocked at v ${v}`);
+      }
+    }
+  }
+  assert.ok(landings >= 2, `Mapo and Wonhyo Bridges land on Yeouido's park (${landings} landings)`);
+});

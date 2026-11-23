@@ -183,6 +183,15 @@ export function productModel(kind, color, product = null) {
     case 'beret':
       add(new THREE.SphereGeometry(0.17, 14, 8).scale(1, 0.32, 1), 0, 0.06);
       break;
+    case 'newsboy': // a puffy crown, button and peak
+      add(new THREE.SphereGeometry(0.16, 14, 8).scale(1, 0.42, 1), 0, 0.07);
+      add(new THREE.SphereGeometry(0.014, 6, 4), 0, 0.14);
+      add(new THREE.CylinderGeometry(0.09, 0.09, 0.01, 12, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 0.7), 0, 0.03, 0.12);
+      break;
+    case 'flatcap': // a low wedge over a short peak
+      add(new THREE.SphereGeometry(0.15, 14, 8).scale(1, 0.36, 1.08).rotateX(0.22), 0, 0.05);
+      add(new THREE.CylinderGeometry(0.085, 0.085, 0.01, 12, 1, false, -Math.PI / 2, Math.PI).scale(1, 1, 0.55), 0, 0.02, 0.13);
+      break;
     case 'skirt': { // the skirt itself, in its pattern (core/skirt-mesh.js)
       const sk = skirtDisplay(product?.skirt);
       if (sk) g.add(sk);

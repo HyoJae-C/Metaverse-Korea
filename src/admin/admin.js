@@ -8,8 +8,9 @@
 // with your operator account. Nothing here is linked from the game.
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config.js';
-import { loadRegionMap, districtBoxes, districtAt } from '../core/districts.js';
-import { describePlace, agoText, fitView, clusterPoints } from './view.js';
+import { loadRegionMap, districtBoxes } from '../core/districts.js';
+import { wherePlaces, whereText, districtName } from './where-name.js';
+import { describePlace, agoText, fitView, clusterPoints, DEVICE_ICON, DEVICE_LABEL, deviceSummary } from './view.js';
 import { createPanels } from './panels.js';
 import { createChatPanel } from './chat-panel.js';
 import { createExhibitPanel } from './exhibit-panel.js';
@@ -22,6 +23,7 @@ const cv = $('cv');
 const g = cv.getContext('2d');
 
 let map = null, boxes = [], stores = new Map();
+let placeNames = null; // the place names for the list (./where-name.js)
 let players = []; // { uid, player, place, px, pz, age_s, guest }
 let selected = null;
 let fetchedAt = 0; // when players came in (age_s counts from then)
@@ -153,8 +155,6 @@ function setLabels(v) {
   draw();
 }
 
-const DISTRICT_EN = { seodaemun: 'Seodaemun (Sinchon)', 'olympic-park': 'Olympic Park', 'banpo-jamwon': 'Banpo-Jamwon', yeouido: 'Yeouido', 'grand-park': "Children's Grand Park", samseong: 'Samseong-dong' };
-const districtName = (id) => DISTRICT_EN[id] || (id ? id.charAt(0).toUpperCase() + id.slice(1) : '');
 
 function fitAll() {
   const pts = players.length ? players.map((p) => [p.px, p.pz]) : null;
@@ -254,14 +254,20 @@ function renderList() {
     dot.className = 'dot'; dot.style.background = color;
     const sub = document.createElement('div');
     sub.className = 'muted';
-    sub.textContent = p.guest ? 'guest' : 'Google';
+    sub.textContent = (p.guest ? 'guest' : 'Google') + (DEVICE_LABEL[p.device] ? ` · ${DEVICE_LABEL[p.device]}` : '');
     name.append(dot, p.player, sub);
+    if (DEVICE_ICON[p.device]) {
+      const icon = document.createElement('span');
+      icon.className = 'dev'; icon.title = DEVICE_LABEL[p.device];
+      icon.textContent = ' ' + DEVICE_ICON[p.device];
+      name.insertBefore(icon, sub);
+    }
     const where = document.createElement('td');
     const d = describePlace(p.place, stores);
     where.textContent = d;
     const sub2 = document.createElement('div');
     sub2.className = 'muted';
-    sub2.textContent = `${districtName(districtAt(boxes, p.px, p.pz))} · ${Math.round(p.px)}, ${Math.round(p.pz)}`;
+    sub2.textContent = `${placeNames ? whereText(placeNames, p.px, p.pz) : ''} · ${Math.round(p.px)}, ${Math.round(p.pz)}`;
     where.append(sub2);
     const seen = document.createElement('td');
     seen.className = 'muted';
@@ -272,7 +278,7 @@ function renderList() {
   $('list').replaceChildren(...rows);
   const online = players.filter((p) => ageOf(p) <= 90).length;
   $('count').textContent = String(+$('within').value <= 90 ? players.length : online);
-  $('countLabel').textContent = +$('within').value <= 90 ? 'online' : `online · ${players.length} seen`;
+  $('countLabel').textContent = (+$('within').value <= 90 ? 'online' : `online · ${players.length} seen`) + deviceSummary(players);
 }
 
 // ---------- Data ----------
@@ -319,9 +325,10 @@ async function start() {
   resize();
   const json = (file) => fetch(`${BASE}regions/${REGION}/${file}`).then((r) => r.json());
   const region = await json('region.json');
-  const [m, st] = await Promise.all([loadRegionMap(region, json), json('stores.json').catch(() => null)]);
+  const [m, st, seoul] = await Promise.all([loadRegionMap(region, json), json('stores.json').catch(() => null), json('seoul.json').catch(() => null)]);
   map = m;
   boxes = districtBoxes(map);
+  placeNames = wherePlaces({ map, boxes, stores: st?.stores || [], stations: region.subway?.stations || [], gu: seoul?.gu || [] });
   for (const s of st?.stores || []) stores.set(s.id, s);
   fitAll();
 

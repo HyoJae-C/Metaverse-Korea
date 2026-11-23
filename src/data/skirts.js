@@ -133,5 +133,13 @@ export const DANCER_CHIMAS = Object.fromEntries(Array.from({ length: 20 }, (_, i
   'chima-dance-' + (i + 1), sk('chima', 'pleats', null, hsl(i * 18, 0.68, i % 2 ? 0.62 : 0.5)),
 ]));
 
-export const skirtById = (id) => (typeof id !== 'string' ? null
-  : Object.hasOwn(SKIRTS, id) ? SKIRTS[id] : Object.hasOwn(CHIMAS, id) ? CHIMAS[id] : Object.hasOwn(DANCER_CHIMAS, id) ? DANCER_CHIMAS[id] : null);
+// The skirts of the floral dresses (data/characters/kaykit2.js, DRESSES):
+// part of the dress model (its "skirt"; its bodice wears the same print),
+// never sold or worn on their own.
+export const DRESS_SKIRTS = {
+  'dress-floral-navy': sk('long', 'floral', null, 0x2f3c66, 0xf6f1e7),
+  'dress-floral-yellow': sk('long', 'floral', null, 0xf2cf5b, 0xffffff),
+};
+
+const TABLES = [SKIRTS, CHIMAS, DANCER_CHIMAS, DRESS_SKIRTS];
+export const skirtById = (id) => (typeof id !== 'string' ? null : TABLES.find((t) => Object.hasOwn(t, id))?.[id] ?? null);

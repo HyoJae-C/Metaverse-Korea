@@ -5,6 +5,7 @@ import { rodSkin } from './rod-skins.js';
 import { frisbeeColor } from './frisbee.js';
 import { shadeHex } from './lipstick.js';
 import { baitById } from './bait.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const mats = {};
 const mat = (c) => (mats[c] ||= new THREE.MeshLambertMaterial({ color: c }));
@@ -14,12 +15,15 @@ const glowMat = (c, k) => (mats[c + k] ||= new THREE.MeshLambertMaterial({ color
 // 'rod:gold' → 'rod' (any skin is still a rod).
 export const heldBase = (kind) => (typeof kind === 'string' ? kind.split(':')[0] : null);
 
-export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'bait'];
+export const HELD_KINDS = ['coffee', 'rod', 'book', 'food', 'glass', 'gift', 'perfume', 'spear', 'duckmold', 'balloon', 'lipstick', 'bait', 'blush'];
 // Bag goods that are held as themselves, not in a shopping bag: the held
 // kind is 'gift:<g>' (older clients still see 'gift', a shopping bag).
 export const GIFT_LOOKS = ['frisbee', 'mat', 'ramyeon', 'egg', 'kimchi', 'japchae', 'kimbap', 'tteok', 'bibimbap'];
 // (a frisbee also carries its colour: 'gift:frisbee.2')
-export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : 'gift:' + e.g);
+// (an upgraded dish carries its level from +5, when it looks bigger: 'gift:kimbap.12')
+export const giftKind = (e) => (!GIFT_LOOKS.includes(e?.g) ? 'gift' : e.g === 'frisbee' ? `gift:frisbee.${(e.q | 0) % 3}` : (e.lv | 0) >= 5 ? `gift:${e.g}.${Math.min(30, e.lv | 0)}` : 'gift:' + e.g);
+// How much bigger an upgraded dish is in the hand, every 5 levels (as core/dish-tier.js TIERS).
+const TIER_SCALE = [1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.7];
 export const COFFEE_SIPS = 5; // taps to finish a cup
 
 // Modu Land's food truck snacks (park-food.js): an ice cream cone, a
@@ -44,10 +48,15 @@ export function snackModel(id) {
   return g;
 }
 
-// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword or
-// a dog in the hand, a crown worn on the head ('balloon:crown'). Twisted
-// glossy sausages of latex, in metres (the crown in the head's own units).
+// Balloon art from Modu Land's clown (game/balloon-clown.js): a sword in
+// the hand, a dog floating on a string beside the head, a crown worn on the
+// head ('balloon:crown'). Twisted glossy sausages of latex, in metres (the
+// crown in the head's own units). In the hand at the side, the arm and the
+// shoulder hid them from the camera behind; so the sword leans out away
+// from the body, and the dog flies up where its shape shows.
 export const BALLOONS = ['sword', 'dog', 'crown'];
+export const SWORD_LEAN = 0.45; // radians out from upright
+const FLOAT_SCALE = 1.8; // the dog as big as it was in the hand (hands scale held things 1.8x)
 const glossy = (c) => (mats['b' + c] ||= new THREE.MeshPhongMaterial({ color: c, shininess: 90, specular: 0x666666 }));
 function sausage(g, c, len, r, x, y, z, rx = 0, rz = 0) {
   const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), glossy(c));
@@ -58,18 +67,31 @@ function sausage(g, c, len, r, x, y, z, rx = 0, rz = 0) {
 }
 function balloonLook(g, sub) {
   if (sub === 'sword') {
-    sausage(g, '#8fd0ff', 0.42, 0.018, 0, 0.3, 0); // the blade
-    sausage(g, '#ffe27a', 0.1, 0.02, 0, 0.06, 0, 0, Math.PI / 2); // the guard
-    sausage(g, '#ffe27a', 0.05, 0.02, 0, 0.02, 0); // the grip
+    // Leaning out from the right hand (held things stay upright in the
+    // body's frame, so +x is the character's left: lean towards -x).
+    const s = new THREE.Group();
+    s.rotation.z = SWORD_LEAN;
+    sausage(s, '#8fd0ff', 0.42, 0.018, 0, 0.3, 0); // the blade
+    sausage(s, '#ffe27a', 0.1, 0.02, 0, 0.06, 0, 0, Math.PI / 2); // the guard
+    sausage(s, '#ffe27a', 0.05, 0.02, 0, 0.02, 0); // the grip
+    g.add(s);
   } else if (sub === 'dog') {
+    // Floats on a string (core/character.js ties it to the hand): the
+    // group's origin is the knot, the dog above it, side on to the camera
+    // behind (nose to the character's right).
     const c = '#ff8fb8';
-    sausage(g, c, 0.08, 0.026, 0, 0.12, 0, Math.PI / 2); // body
-    for (const z of [-0.05, 0.05]) for (const x of [-0.025, 0.025]) sausage(g, c, 0.04, 0.02, x, 0.08, z); // legs
-    sausage(g, c, 0.03, 0.026, 0, 0.18, 0.07); // neck
-    sausage(g, c, 0.03, 0.024, 0, 0.21, 0.1, Math.PI / 2); // snout
-    for (const x of [-0.03, 0.03]) sausage(g, c, 0.035, 0.018, x, 0.24, 0.07, 0, x * 8); // ears
-    sausage(g, c, 0.035, 0.016, 0, 0.17, -0.08, -0.6); // tail
-    g.position.y = 0.0;
+    const d = new THREE.Group();
+    d.scale.setScalar(FLOAT_SCALE);
+    d.rotation.y = -Math.PI / 2;
+    d.position.y = -0.05 * FLOAT_SCALE; // the legs' feet at the knot
+    sausage(d, c, 0.08, 0.026, 0, 0.12, 0, Math.PI / 2); // body
+    for (const z of [-0.05, 0.05]) for (const x of [-0.025, 0.025]) sausage(d, c, 0.04, 0.02, x, 0.08, z); // legs
+    sausage(d, c, 0.03, 0.026, 0, 0.18, 0.07); // neck
+    sausage(d, c, 0.03, 0.024, 0, 0.21, 0.1, Math.PI / 2); // snout
+    for (const x of [-0.03, 0.03]) sausage(d, c, 0.035, 0.018, x, 0.24, 0.07, 0, x * 8); // ears
+    sausage(d, c, 0.035, 0.016, 0, 0.17, -0.08, -0.6); // tail
+    g.add(d);
+    g.userData.floats = true;
   } else {
     // The crown: a band round the head and five upright loops, a ball on each.
     const cols = ['#ff5f9e', '#ffe27a', '#8fe3c7', '#c9a8ff', '#8fd0ff'];
@@ -147,6 +169,13 @@ export function makeHeld(kind) {
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 6).rotateX(Math.PI / 2), o);
     beak.position.set(0, 0.268, 0.085);
     g.add(hinge, beak);
+  } else if (kind === 'baton') {
+    // A conductor's baton (core/stage-show.js).
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.007, 0.34, 6), mat('#fbfaf6'));
+    stick.position.y = 0.2;
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), mat('#b98a55'));
+    grip.position.y = 0.03; grip.scale.set(1, 1.6, 1);
+    g.add(stick, grip);
   } else if (kind === 'spear') {
     // A gate guard's spear (창) with a red tassel, held upright.
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.95, 8), mat('#6b4426'));
@@ -203,9 +232,17 @@ export function makeHeld(kind) {
     line.position.set(0, tipY - 0.5, tipZ);
     const wrap = new THREE.Group();
     wrap.scale.setScalar(0.55); // the hand scales held things up 1.8x
+    // The end of the line: a dark sinker, or with a bait on the hook
+    // ('rod:<skin>:<bait>') a glowing lure in the bait's colour, so you and
+    // everyone around see it's on (Yozi 2026-11-17).
+    const bait = baitById(String(g.name).split(':')[3]);
+    const lure = new THREE.Mesh(new THREE.SphereGeometry(bait ? 0.035 : 0.018, 10, 8), bait ? glowMat(bait.color, 0.7) : mat('#4a4a52'));
+    lure.position.y = -0.5;
+    if (bait) lure.scale.y = 1.5;
+    line.add(lure);
     wrap.add(rod, line);
     g.add(wrap);
-    g.userData.rod = { pivot: rod, segs, tip, reel, line };
+    g.userData.rod = { pivot: rod, segs, tip, reel, line, bait: bait?.color || null };
   } else if (kind === 'book') {
     // A hardback held upright: cover, pages and a spine band.
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.12), mat('#3f6e8c'));
@@ -235,6 +272,17 @@ export function makeHeld(kind) {
     bullet.position.y = 0.087;
     bullet.rotation.z = 0.12;
     g.add(tube, collar, bullet);
+  } else if (kind === 'blush') {
+    // A blush compact ('blush:<shade>'): a round case with the lid open,
+    // the colour in the pan.
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.012, 16), mat('#f3e6ee'));
+    base.position.y = 0.006;
+    const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.004, 16), mat(shadeHex(sub, 'blush')));
+    pan.position.y = 0.014;
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.008, 16), mat('#d4a73a'));
+    lid.position.set(0, 0.04, -0.035);
+    lid.rotation.x = -1.3;
+    g.add(base, pan, lid);
   } else if (kind === 'bait') {
     // A bait tin ('bait:<bait id>'): a round can with a lid in the bait's colour.
     const can = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 14), mat('#d8dde2'));
@@ -273,6 +321,155 @@ export function makeHeld(kind) {
   return g;
 }
 
+// Many small parts as one mesh per colour (a dish's pieces), cached by kind.
+const dishGeos = {};
+function dishParts(g, key, build) {
+  const byColor = (dishGeos[key] ||= (() => {
+    const out = {};
+    for (const [geo, color] of build()) (out[color] ||= []).push(geo);
+    for (const c in out) out[c] = mergeGeometries(out[c]);
+    return out;
+  })());
+  for (const [c, geo] of Object.entries(byColor)) g.add(new THREE.Mesh(geo, mat(c)));
+}
+// Kimbap: two rows of slices lying face up, each showing its rings:
+// black seaweed, white rice, and a middle of yellow pickled radish, orange
+// carrot, green spinach and pink ham.
+function kimbapParts() {
+  const out = [];
+  const fill = [['#ffd23a', 0.0075, 0], ['#ff8a3d', -0.0065, 0.0045], ['#4caf50', -0.001, -0.0075], ['#f28fa6', 0.002, 0.0075]];
+  const slot = [];
+  for (let k = 0; k < 4; k++) slot.push([-0.051 + k * 0.034, -0.018]);
+  for (let k = 0; k < 3; k++) slot.push([-0.034 + k * 0.034, 0.02]);
+  slot.forEach(([x, z], k) => {
+    const y = 0.0085 + (k % 2) * 0.001;
+    out.push([new THREE.CylinderGeometry(0.0175, 0.0175, 0.017, 18).translate(x, y, z), '#1d2b1f']);
+    out.push([new THREE.CylinderGeometry(0.015, 0.015, 0.0172, 18).translate(x, y + 0.0001, z), '#fbfaf3']);
+    for (const [c, dx, dz] of fill) out.push([new THREE.CylinderGeometry(0.0048, 0.0048, 0.0174, 7).translate(x + dx, y + 0.0002, z + dz), c]);
+  });
+  return out;
+}
+// Kimchi: one piece of napa cabbage kimchi lying cut side up: the leaves
+// nested like a cabbage's cross-section (closed rounded layers, the leafy
+// top edge a little ruffled), pale gold at the heart turning deep red at
+// the edges (vertex colours), with chilli flakes. Built once and shared.
+let kimchiGeo = null;
+function kimchiGeometry() {
+  if (kimchiGeo) return kimchiGeo;
+  const HEART = new THREE.Color('#ffcf66'), MID = new THREE.Color('#f04a1f'), EDGE = new THREE.Color('#b30d09');
+  // A cabbage leaf's outline: narrow stem end at the bottom, wide rounded
+  // leafy end at the top, ruffled along the top.
+  const leaf = (w, h, ruffle) => {
+    const s = new THREE.Shape(), N = 40;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * Math.PI * 2;
+      const up = Math.sin(t); // -1 bottom … 1 top
+      const x = Math.cos(t) * w * (0.62 + 0.38 * (up + 1) / 2);
+      let y = h / 2 + up * h / 2;
+      if (up > 0.2) y += Math.sin(t * 9) * ruffle * up;
+      if (i === 0) s.moveTo(x, y); else s.lineTo(x, y);
+    }
+    return s;
+  };
+  const parts = [];
+  const L = 6, H = 0.085, W = 0.038;
+  for (let k = 0; k < L; k++) {
+    const f = k / (L - 1); // 0 outer leaf … 1 heart
+    const w = W * (1 - f * 0.72), h = H * (1 - f * 0.55);
+    const depth = 0.01 + k * 0.0026;
+    const geo = new THREE.ExtrudeGeometry(leaf(w, h, 0.0045 * (1 - f * 0.6)), { depth, bevelEnabled: true, bevelThickness: 0.0022, bevelSize: 0.0014, bevelSegments: 2 });
+    geo.translate(0, f * 0.006, -depth / 2); // (inner leaves sit a little higher up the stem)
+    const pos = geo.attributes.position, col = [], c = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i) / H;
+      const red = Math.min(1, Math.max(0, y * 1.15 - 0.15 + (1 - f) * 0.5));
+      if (red < 0.5) c.copy(HEART).lerp(MID, red * 2); else c.copy(MID).lerp(EDGE, (red - 0.5) * 2);
+      col.push(c.r, c.g, c.b);
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.deleteAttribute('uv');
+    parts.push(geo);
+  }
+  for (let n = 0; n < 20; n++) { // chilli flakes on the cut face
+    const k = n % L, f = k / (L - 1), depth = 0.01 + k * 0.0026;
+    const a = n * 2.39, rw = W * (1 - f * 0.72) * 0.75, rh = H * (1 - f * 0.55);
+    const fl = new THREE.BoxGeometry(0.0034, 0.0034, 0.0012).toNonIndexed().rotateZ(n);
+    fl.translate(Math.cos(a) * rw * 0.85, rh * (0.45 + Math.sin(a) * 0.3) + f * 0.006, depth / 2 + 0.0025);
+    fl.deleteAttribute('uv');
+    fl.setAttribute('color', new THREE.Float32BufferAttribute(Array(fl.attributes.position.count).fill([0.5, 0.02, 0.02]).flat(), 3));
+    parts.push(fl);
+  }
+  kimchiGeo = mergeGeometries(parts).scale(1.4, 1.4, 1.4).rotateX(-1.48).rotateY(0.4); // (1.4: as big on a plate as the other dishes)
+  kimchiGeo.computeBoundingBox();
+  const bb = kimchiGeo.boundingBox;
+  kimchiGeo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2); // (centred, resting on the plate)
+  kimchiGeo.computeVertexNormals();
+  return kimchiGeo;
+}
+let kimchiMat = null;
+function kimchiLook(g) {
+  kimchiMat ||= new THREE.MeshLambertMaterial({ vertexColors: true });
+  g.add(new THREE.Mesh(kimchiGeometry(), kimchiMat));
+}
+// Japchae: a glossy tangle of glass noodles with carrot, spinach, beef,
+// egg strips and onion through it, and sesame on top.
+function japchaeParts() {
+  const out = [];
+  out.push([new THREE.SphereGeometry(0.045, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1.2, 0.5, 1), '#6a4528']); // the noodle mound
+  for (let k = 0; k < 26; k++) { // loose noodles curling over it
+    const a = k * 2.39, r = 0.012 + (k % 5) * 0.007;
+    const arc = new THREE.TorusGeometry(0.01 + (k % 3) * 0.004, 0.0012, 4, 12, Math.PI * 1.1).rotateX(Math.PI / 2 - 0.25 + (k % 4) * 0.12).rotateY(a);
+    out.push([arc.translate(Math.cos(a) * r, 0.014 + (k % 3) * 0.003, Math.sin(a) * r), k % 2 ? '#6e4a2c' : '#7d5634']);
+  }
+  let seed = 0;
+  const strip = (c, n, len, w, y0) => {
+    for (let k = 0; k < n; k++) {
+      const a = (seed += 2.39), r = 0.012 + (seed * 7 % 4) * 0.008;
+      out.push([new THREE.BoxGeometry(len, w, w).rotateY(a * 1.7).rotateZ(0.2).translate(Math.cos(a) * r, y0 + (k % 3) * 0.003, Math.sin(a) * r), c]);
+    }
+  };
+  strip('#ff8a3d', 5, 0.02, 0.003, 0.018); // carrot
+  strip('#3f9a46', 5, 0.02, 0.004, 0.018); // spinach
+  strip('#3d2416', 4, 0.018, 0.005, 0.017); // beef
+  strip('#ffd23a', 4, 0.02, 0.003, 0.019); // egg
+  strip('#f4ead0', 3, 0.018, 0.004, 0.017); // onion
+  for (let k = 0; k < 12; k++) { const a = k * 2.39, r = 0.004 + (k % 5) * 0.007; out.push([new THREE.SphereGeometry(0.0018, 4, 3).translate(Math.cos(a) * r, 0.028, Math.sin(a) * r), '#fff6dc']); }
+  return out;
+}
+// Songpyeon: little half-moon rice cakes (white, green mugwort, pink) on a
+// bed of pine needles.
+function songpyeonParts() {
+  const out = [];
+  for (let k = 0; k < 14; k++) { // pine needles
+    const a = k * 0.45;
+    out.push([new THREE.CylinderGeometry(0.0011, 0.0011, 0.055, 3).rotateZ(Math.PI / 2).rotateY(a).translate(0, 0.002, 0), k % 2 ? '#3f7a3a' : '#4f8f45']);
+  }
+  const cakes = [[-0.02, -0.012, 0.3, '#f8f4ea'], [0.003, -0.017, -0.2, '#9cc47a'], [0.024, -0.009, 0.5, '#f4bccb'], [-0.012, 0.012, -0.4, '#9cc47a'], [0.012, 0.014, 0.1, '#f8f4ea'], [0, 0, 0.9, '#f4bccb']];
+  cakes.forEach(([x, z, a, c], k) => {
+    const y = k === 5 ? 0.018 : 0.0085;
+    const cake = new THREE.SphereGeometry(0.012, 12, 8).scale(1.5, 0.75, 0.85);
+    const pos = cake.attributes.position; // (flatten one long side: a half moon)
+    for (let i = 0; i < pos.count; i++) if (pos.getZ(i) < 0) pos.setZ(i, pos.getZ(i) * 0.35);
+    out.push([cake.rotateY(a).translate(x, y, z), c]);
+  });
+  return out;
+}
+// Bibimbap: a brass bowl of rice with the toppings set round in wedges,
+// gochujang and a fried egg in the middle.
+function bibimbapParts() {
+  const out = [];
+  const bowl = [[0.03, 0], [0.04, 0.004], [0.058, 0.026], [0.066, 0.046], [0.068, 0.05], [0.064, 0.05], [0.055, 0.03], [0.03, 0.01]].map(([x, y]) => new THREE.Vector2(x, y));
+  out.push([new THREE.LatheGeometry(bowl, 22), '#c9a227']);
+  const tops = ['#3f9a46', '#ff8a3d', '#f4ead0', '#7a4a2a', '#5a3220', '#e8c45a'];
+  tops.forEach((c, k) => out.push([new THREE.CylinderGeometry(0.06, 0.06, 0.008, 6, 1, false, (k / 6) * Math.PI * 2, Math.PI / 3).translate(0, 0.047, 0), c]));
+  out.push([new THREE.CylinderGeometry(0.024, 0.026, 0.006, 16).translate(0, 0.053, 0), '#ffffff']); // the egg white
+  out.push([new THREE.SphereGeometry(0.011, 10, 6).scale(1, 0.55, 1).translate(0.003, 0.057, 0.002), '#ffb31a']); // the yolk
+  out.push([new THREE.SphereGeometry(0.009, 8, 5).scale(1, 0.6, 1).translate(-0.016, 0.058, -0.008), '#c4271d']); // gochujang
+  return out;
+}
+
+const DISH_LOOKS = { kimbap: kimbapParts, japchae: japchaeParts, tteok: songpyeonParts, bibimbap: bibimbapParts };
+
 // Bag goods as themselves in the hand (GIFT_LOOKS).
 function giftLook(g, sub) {
   g.name = 'held:gift:' + sub;
@@ -289,20 +486,10 @@ function giftLook(g, sub) {
     add(new THREE.BoxGeometry(0.032, 0.06, 0.07), '#ffd166', 0, 0.03, 0.02);
   } else if (sub === 'egg') { // one egg
     add(new THREE.SphereGeometry(0.03, 10, 8).scale(1, 1.3, 1), '#fff6e6', 0, 0.04);
-  } else if (sub === 'kimchi') { // a glass jar of homemade kimchi with a lid
-    add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 14), '#c8392b', 0, 0.05);
-    add(new THREE.CylinderGeometry(0.047, 0.047, 0.02, 14), '#2f6f4f', 0, 0.11);
-  } else if (sub === 'tteok') { // a little wooden box of songpyeon: white, green and pink half-moons
-    add(new THREE.BoxGeometry(0.11, 0.035, 0.11), '#b88a5a', 0, 0.018);
-    ['#f6f1e6', '#8fbf6a', '#f2b8c6'].forEach((c, k) => add(new THREE.SphereGeometry(0.022, 8, 6).scale(1.3, 0.7, 0.8), c, -0.03 + k * 0.03, 0.045));
-  } else if (sub === 'bibimbap') { // a brass bowl with coloured toppings and an egg on top
-    add(new THREE.CylinderGeometry(0.065, 0.045, 0.05, 16), '#c9a227', 0, 0.025);
-    add(new THREE.CylinderGeometry(0.06, 0.06, 0.008, 16), '#d9402c', 0, 0.052);
-    add(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 12), '#ffd23a', 0, 0.058);
-  } else { // japchae, kimbap: a homemade lunch box (dosirak) with a cloth knot
-    add(new THREE.BoxGeometry(0.1, 0.06, 0.13), sub === 'kimbap' ? '#2b3a2b' : '#c98a3e', 0, 0.03);
-    add(new THREE.BoxGeometry(0.105, 0.012, 0.135), '#f4d35e', 0, 0.066);
-    add(new THREE.SphereGeometry(0.02, 8, 6), '#f4d35e', 0, 0.08);
+  } else if (base === 'kimchi' || DISH_LOOKS[base]) { // a cooking class's dish, as the food itself (bigger once upgraded)
+    if (base === 'kimchi') kimchiLook(g); else dishParts(g, base, DISH_LOOKS[base]);
+    const k = TIER_SCALE[Math.floor(Math.min(30, +variant || 0) / 5)] || 1;
+    if (k !== 1) for (const m of g.children) { m.scale.multiplyScalar(k); m.position.multiplyScalar(k); }
   }
   g.traverse((m) => { if (m.isMesh) m.castShadow = true; });
   return g;

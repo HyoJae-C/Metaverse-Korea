@@ -1,6 +1,6 @@
 // Snowballs and snowmen in the street, once the snow has settled
 // (core/snow-cover.js). Gather snow into a ball, roll it bigger, push it
-// with friends, put a smaller ball on a bigger one for a snowman. The rules
+// with friends, put a ball on one as big or bigger for a snowman. The rules
 // are in core/snowballs.js; this file is the game and the models.
 //
 // Each ball belongs to the player who started it and travels in their state
@@ -173,7 +173,7 @@ function makeDuck() {
 }
 
 /**
- * game: getters { mode, me, others, myId, shop, scene, depth (0-1 snow on
+ * game: getters { mode, me, others, myId, shop, scene, covered (under a roof: no snow to gather), depth (0-1 snow on
  * the ground), snowing, onFoot (not riding or seated), look (ours) }, plus
  * send(msg), blocked(x, z, r), bubble(text), resendState(), clearAction(),
  * sfx(), snowNews() (the snow has settled: announce the duck maker),
@@ -197,6 +197,7 @@ export function createSnowman(game) {
   let holding = null, glued = null, acc = 0, prevP = null, prevRy = 0;
   // The snow duck maker in my hand, and my snow ducks: { x, z, ry }.
   let duckAt = 0, snowNews = false;
+  const ground = (x, z) => game.groundY?.(x, z) || 0; // up Namsan and the other hills: on the slope, not under it
   const mold = () => game.heldKind === 'duckmold'; // (from the bag: core/bag.js)
   const ducks = [];
   const duckDrawn = new Map(); // owner -> { s (their state), groups }
@@ -466,7 +467,7 @@ export function createSnowman(game) {
       const d = duckDrawn.get(id);
       if (d && d.s === s) continue;
       for (const g of d?.groups || []) g.removeFromParent();
-      const groups = parseDucks(s).map((k) => { const g = makeDuck(); g.position.set(k.x, 0, k.z); g.rotation.y = k.ry; game.scene.add(g); return g; });
+      const groups = parseDucks(s).map((k) => { const g = makeDuck(); g.position.set(k.x, ground(k.x, k.z), k.z); g.rotation.y = k.ry; game.scene.add(g); return g; });
       duckDrawn.set(id, { s, groups });
     }
     for (const [id, d] of duckDrawn) if (!now.has(id)) { for (const g of d.groups) g.removeFromParent(); duckDrawn.delete(id); }
@@ -540,7 +541,7 @@ export function createSnowman(game) {
       const o = balls().find((q) => q.owner === glued.owner && q.b.k === glued.k);
       return { key: `sb-let:${glued.owner}:${glued.k}:${o?.b.n}`, label: `✋ ${L(SNOW_TEXT.letGo)}${o ? stepTxt(o.b.n) : ''}`, run: () => letGo() };
     }
-    if (mold() && game.depth >= MIN_SNOW) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
+    if (mold() && game.depth >= MIN_SNOW && !game.covered) return { key: 'sb-duck:' + ducks.length, label: '🦆 ' + L(SNOW_TEXT.duck), run: () => makeDuckHere() };
     const o = nearest(p, (q) => !q.b.h);
     if (o) {
       const step = stepTxt(o.b.n);
@@ -554,7 +555,7 @@ export function createSnowman(game) {
       const icon = stageOf(o.b.n) >= CREW_STAGE ? '🤝' : '☃️'; // (they're not holding it: push it for them)
       return { key: `sb-r:${o.owner}:${o.b.k}:${o.b.n}`, label: `${icon} ${fill(L(SNOW_TEXT.help), { name })}${step}`, run: () => push(o) };
     }
-    if (game.depth >= MIN_SNOW && !balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5)) return { key: 'sb-make', label: '❄️ ' + L(SNOW_TEXT.make), run: () => make() };
+    if (game.depth >= MIN_SNOW && !game.covered && !balls().some(({ b }) => Math.hypot(b.x - p.x, b.z - p.z) - diameterOf(b.n) / 2 < REACH + 1.5)) return { key: 'sb-make', label: '❄️ ' + L(SNOW_TEXT.make), run: () => make() };
     return null;
   }
 
@@ -570,7 +571,7 @@ export function createSnowman(game) {
     const head = nearest(p, (q) => q.owner === game.myId && !q.b.h);
     if (!head) return out;
     for (const body of balls()) {
-      if (body.b === head.b || body.b.h || body.b.n <= head.b.n) continue;
+      if (body.b === head.b || body.b.h || !canTop(head.b.n, body.b.n)) continue;
       const gap = Math.hypot(body.b.x - head.b.x, body.b.z - head.b.z) - (diameterOf(body.b.n) + diameterOf(head.b.n)) / 2;
       if (gap > 2.2 || Math.hypot(body.b.x - p.x, body.b.z - p.z) - diameterOf(body.b.n) / 2 > 2.4) continue;
       out.push({ key: `sb-top:${body.owner}:${body.b.k}`, label: '⛄ ' + L(SNOW_TEXT.top), run: () => topOn(head, body) });
@@ -626,7 +627,7 @@ export function createSnowman(game) {
       let d = drawn.get(id);
       if (!d) {
         d = { m: makeBallModel(), x: b.x, z: b.z, n: 0, h: 0, ry: 0 };
-        d.m.group.position.set(b.x, 0, b.z);
+        d.m.group.position.set(b.x, ground(b.x, b.z), b.z);
         game.scene.add(d.m.group);
         drawn.set(id, d);
       }
@@ -641,7 +642,7 @@ export function createSnowman(game) {
         _q.setFromAxisAngle(_axis, step / (D / 2));
         d.m.spin.quaternion.premultiply(_q);
       }
-      d.m.group.position.set(d.x, 0, d.z);
+      d.m.group.position.set(d.x, ground(d.x, d.z), d.z);
       d.m.spin.position.y = D / 2;
       d.m.body.scale.setScalar(D);
       if (d.n !== b.n || d.h !== (b.h || 0) || d.ry !== (b.ry || 0) || d.t !== (b.t || null)) {

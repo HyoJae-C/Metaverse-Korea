@@ -4,6 +4,11 @@
 import { L, fmt } from './pocha-ui.js';
 import { CLOSET_KINDS, CLOSET_SORTS, sortCloset } from '../core/closet.js';
 import { t } from '../core/i18n.js';
+import { isDish, dishSlot, DISH_CAP } from '../core/bag.js';
+import { dishIcon, dishIconId } from './dish-icon.js';
+import { medalFor, medalIcon } from '../core/grill-game.js';
+const TIER_IDS = ['plain', 'jeongseong', 'dalin', 'myeongin', 'myeongjang', 'sura', 'cheonha']; // (core/dish-tier.js TIERS, every 5 levels)
+import { kimchiScore } from '../core/kimchi-market.js';
 
 // A piece's icon in the wardrobe: one colour emoji per kind (all tops 👕,
 // all bottoms 👖, skirts too), with a dot of the piece's own colour to tell
@@ -64,8 +69,8 @@ export const BAG_TEXT = {
   },
   tabCloset: { en: 'Wardrobe', ko: '옷장', ja: 'クローゼット', zh: '衣橱', es: 'Armario', ar: 'خزانة الملابس', vi: 'Tủ đồ', hi: 'अलमारी', fr: 'Garde-robe', th: 'ตู้เสื้อผ้า', id: 'Lemari' },
   closetEmpty: { en: 'No clothes yet. Buy some in a fashion shop and they will hang here.', ko: '아직 옷이 없어요. 옷 가게에서 사면 여기에 걸려요.', ja: 'まだ服がありません。服屋で買うとここに掛かります。', zh: '还没有衣服。在服装店买了就会挂在这里。', es: 'Aún no tienes ropa. Cómprala en una tienda de moda y aparecerá aquí.', ar: 'لا ملابس بعد. اشترِ من متجر أزياء وستظهر هنا.', vi: 'Chưa có quần áo. Mua ở cửa hàng thời trang thì sẽ treo ở đây.', hi: 'अभी कोई कपड़े नहीं। फ़ैशन दुकान से खरीदें, वे यहाँ टंगेंगे।', fr: 'Pas encore de vêtements. Achètes-en dans une boutique de mode et ils seront suspendus ici.', th: 'ยังไม่มีเสื้อผ้า ซื้อที่ร้านแฟชั่นแล้วจะแขวนไว้ที่นี่', id: 'Belum ada pakaian. Beli di toko fesyen dan akan tergantung di sini.' },
-  closetNote: { en: 'Clothes, perfume and lipstick don\'t use bag slots.', ko: '옷·향수·립스틱은 가방 칸을 차지하지 않아요.', ja: '服・香水・リップはバッグの枠を使いません。', zh: '衣服、香水和口红不占背包格子。', es: 'La ropa, el perfume y el labial no ocupan huecos de la bolsa.', ar: 'الملابس والعطور وأحمر الشفاه لا تشغل خانات الحقيبة.', vi: 'Quần áo, nước hoa và son không chiếm ô trong túi.', hi: 'कपड़े, परफ़्यूम और लिपस्टिक बैग के खाने नहीं लेते।', fr: 'Vêtements, parfums et rouges à lèvres n\'occupent pas de place dans le sac.', th: 'เสื้อผ้า น้ำหอม และลิปสติกไม่กินช่องกระเป๋า', id: 'Pakaian, parfum, dan lipstik tidak memakai slot tas.' },
-  beauty: { en: 'Perfume & lipstick', ko: '향수·립스틱', ja: '香水・リップ', zh: '香水·口红', es: 'Perfume y labial', ar: 'العطور وأحمر الشفاه', vi: 'Nước hoa & son', hi: 'परफ़्यूम और लिपस्टिक', fr: 'Parfums et rouges', th: 'น้ำหอม·ลิปสติก', id: 'Parfum & lipstik' },
+  closetNote: { en: 'Clothes, perfume and makeup don\'t use bag slots.', ko: '옷·향수·화장품은 가방 칸을 차지하지 않아요.', ja: '服・香水・コスメはバッグの枠を使いません。', zh: '衣服、香水和化妆品不占背包格子。', es: 'La ropa, el perfume y el maquillaje no ocupan huecos de la bolsa.', ar: 'الملابس والعطور ومستحضرات التجميل لا تشغل خانات الحقيبة.', vi: 'Quần áo, nước hoa và mỹ phẩm không chiếm ô trong túi.', hi: 'कपड़े, परफ़्यूम और मेकअप बैग के खाने नहीं लेते।', fr: 'Vêtements, parfums et maquillage n\'occupent pas de place dans le sac.', th: 'เสื้อผ้า น้ำหอม และเครื่องสำอางไม่กินช่องกระเป๋า', id: 'Pakaian, parfum, dan riasan tidak memakai slot tas.' },
+  beauty: { en: 'Perfume & makeup', ko: '향수·화장품', ja: '香水・コスメ', zh: '香水·化妆品', es: 'Perfume y maquillaje', ar: 'العطور ومستحضرات التجميل', vi: 'Nước hoa & mỹ phẩm', hi: 'परफ़्यूम और मेकअप', fr: 'Parfums et maquillage', th: 'น้ำหอม·เครื่องสำอาง', id: 'Parfum & riasan' },
   beautyPick: { en: 'Tap one to use it straight from here.', ko: '누르면 여기서 바로 쓸 수 있어요.', ja: '押すとここからすぐ使えます。', zh: '点一下就能直接在这里用。', es: 'Toca uno para usarlo desde aquí.', ar: 'اضغط على واحد لتستخدمه من هنا مباشرة.', vi: 'Chạm để dùng ngay tại đây.', hi: 'यहीं से इस्तेमाल करने के लिए टैप करें।', fr: 'Touche-en un pour l\'utiliser d\'ici.', th: 'แตะเพื่อใช้ได้เลยจากตรงนี้', id: 'Ketuk untuk langsung memakainya dari sini.' },
   toCloset: { en: '👗 {name} went into your wardrobe.', ko: '👗 {name}은(는) 옷장에 넣었어요.', ja: '👗 {name}はクローゼットにしまいました。', zh: '👗 {name}已放进衣橱。', es: '👗 {name} fue a tu armario.', ar: '👗 وُضع {name} في خزانة ملابسك.', vi: '👗 Đã cất {name} vào tủ đồ.', hi: '👗 {name} आपकी अलमारी में रख दिया।', fr: '👗 {name} est dans ta garde-robe.', th: '👗 ใส่ {name} ในตู้เสื้อผ้าแล้ว', id: '👗 {name} dimasukkan ke lemari.' },
   tabRides: { en: 'Rides', ko: '탈것', ja: '乗り物', zh: '车', es: 'Vehículos', ar: 'المركبات', vi: 'Xe', hi: 'सवारी', fr: 'Véhicules', th: 'ยานพาหนะ', id: 'Kendaraan' },
@@ -74,7 +79,7 @@ export const BAG_TEXT = {
 };
 
 export class BagUI {
-  // describe(entry) → { emoji, name, desc, canHold }
+  // describe(entry) → { emoji, name, desc, canHold, img? (a picture: a ride photo) }
   // extra() → nodes shown under the bag slots (the collection);
   // closet() → { ids (in the order bought), describe(id) → { emoji, name,
   // desc, worn, kind, price },
@@ -84,8 +89,10 @@ export class BagUI {
   // own), or null to leave the tab out (only the basic bike).
   // vanity: the wardrobe's perfume and lipsticks (bag.vanityList()):
   // { useLabel(entry), onUse(i), onHold(i), onDrop(i) }.
-  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity }) {
-    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity });
+  // more(entry, done, redraw) → extra buttons for a slot (a wrapped gift's);
+  // describe(e).keep: no throw-away button (it was paid for, game/wrap-gifts.js).
+  constructor({ root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning, more }) {
+    Object.assign(this, { root, bag, describe, holding, onHold, onDrop, extra, closet, rides, vanity, seasoning, more });
     this.vanSel = -1;
     this.sel = -1;
     this.tab = 'bag';
@@ -106,7 +113,8 @@ export class BagUI {
     x.setAttribute('aria-label', 'Close');
     x.onclick = () => this.hide();
     const head = el('div', 'bag-head');
-    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), { n: bag.size, cap: bag.cap })));
+    const food = this.tab === 'food'; // the food bag: dishes from the cooking classes (bag.js isDish)
+    head.append(el('strong', 'wallet-title', '🎒 ' + L(BAG_TEXT.title)), el('span', 'bag-count', fmt(L(BAG_TEXT.count), food ? { n: bag.dishCounts().size, cap: DISH_CAP } : { n: bag.size, cap: bag.cap })));
     // Tabs: your things (the bag's slots), the wardrobe (clothes you own) and the rides
     // you own (to switch without going back to a ride shop).
     const closet = this.closet ? this.closet() : null;
@@ -114,7 +122,7 @@ export class BagUI {
     if (this.tab === 'rides' && !rides) this.tab = 'bag';
     const tabs = el('div', 'bag-tabs');
     tabs.setAttribute('role', 'tablist');
-    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')]]) {
+    for (const [key, label] of [['bag', '🎒 ' + L(BAG_TEXT.tabItems)], ['closet', '👗 ' + L(BAG_TEXT.tabCloset) + ((closet?.ids.length || 0) + this.vanityCount() ? ` ${(closet?.ids.length || 0) + this.vanityCount()}` : '')], ['rides', '🛹 ' + L(BAG_TEXT.tabRides) + (rides?.count ? ` ${rides.count}` : '')], ['food', '🍱 ' + t('bag.tabFood') + (bag.dishes ? ` ${bag.dishCounts().size}` : '')]]) {
       if (key === 'closet' && !closet) continue;
       if (key === 'rides' && !rides) continue;
       const b = el('button', 'chip' + (this.tab === key ? ' on' : ''), label);
@@ -133,13 +141,29 @@ export class BagUI {
     }
     const grid = el('div', 'bag-grid');
     const items = bag.list();
-    if (this.sel >= items.length) this.sel = -1;
-    for (let i = 0; i < bag.cap; i++) {
-      const e = items[i];
-      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (i === this.sel ? ' on' : ''));
+    if (this.sel >= items.length || (this.sel >= 0 && isDish(items[this.sel]) !== food)) this.sel = -1;
+    // This tab's things with their place in the bag (a slot index means the same everywhere).
+    const here = items.map((e, i) => i).filter((i) => isDish(items[i]) === food);
+    // The food bag stacks a kind (at one upgrade level) in one slot: its entries, the best-made first.
+    const stacks = new Map();
+    if (food) for (const i of here) { const k = dishSlot(items[i]); stacks.set(k, [...(stacks.get(k) || []), i]); }
+    for (const list of stacks.values()) list.sort((a, b) => ((items[b].lv | 0) - (items[a].lv | 0)) || (kimchiScore(items[b]) - kimchiScore(items[a]))); // (the highest level, then the best made)
+    const slots = food ? [...stacks.values()] : here.map((i) => [i]);
+    const selKind = food && this.sel >= 0 ? dishSlot(items[this.sel]) : null;
+    for (let k = 0; k < (food ? DISH_CAP : bag.cap); k++) {
+      const i = slots[k]?.[0] ?? -1, e = items[i];
+      const b = el('button', 'bag-slot' + (e ? '' : ' empty') + (e && (food ? dishSlot(e) === selKind : i === this.sel) ? ' on' : ''));
       if (e) {
         const d = this.describe(e);
         b.textContent = d.emoji;
+        if (d.img) { const im = el('img', 'bag-thumb'); im.src = d.img; im.alt = ''; b.replaceChildren(im); } // (a ride photo: the picture itself)
+        if (food && dishIconId(e)) b.replaceChildren(dishIcon(dishIconId(e))); // (a picture of the dish, not an emoji)
+        if (food) { // (its best medal, and how many)
+          const m = medalFor(kimchiScore(e));
+          if (m) b.append(el('span', 'bag-medal', medalIcon(m)));
+          if (e.lv > 0) b.append(el('span', 'bag-lv', '+' + e.lv)); // (upgraded: game/dish-upgrade.js)
+          if (slots[k].length > 1) b.append(el('small', '', '×' + slots[k].length));
+        }
         b.title = d.name;
         b.setAttribute('aria-label', d.name);
         if (e.kind === 'coffee' || e.kind === 'glass') b.append(el('small', '', String(e.sips)));
@@ -150,21 +174,37 @@ export class BagUI {
     const info = el('div', 'bag-info');
     if (this.sel >= 0) {
       const e = items[this.sel], d = this.describe(e);
-      info.append(el('strong', '', `${d.emoji} ${d.name}`), el('small', 'fine', d.desc));
+      const title = el('strong', '', `${food && dishIconId(e) ? '' : d.emoji + ' '}${d.name}${food && e.lv > 0 ? ' +' + e.lv : ''}`);
+      if (food && dishIconId(e)) title.prepend(dishIcon(dishIconId(e)), ' ');
+      info.append(title, el('small', 'fine', d.desc));
+      if (d.img) { const im = el('img', 'bag-photo'); im.src = d.img; im.alt = d.name; info.append(im); } // (a ride photo, as a print)
+      if (food && (e.lv > 0 || e.by)) info.append(el('small', 'fine', [e.lv > 0 ? t('upgrade.tier.' + TIER_IDS[Math.floor(Math.min(30, e.lv) / 5)]) : '', e.by ? t('upgrade.made', { name: e.by }) : ''].filter(Boolean).join(' · ')));
+      if (food) { // (how many of each medal; holding or throwing away takes the best one)
+        const list = stacks.get(dishSlot(e)) || [], by = new Map();
+        for (const i of list) { const m = medalFor(kimchiScore(items[i])) || ''; by.set(m, (by.get(m) || 0) + 1); }
+        info.append(el('small', 'fine', `×${list.length} · ` + ['gold', 'silver', 'bronze', ''].filter((m) => by.has(m)).map((m) => (m ? medalIcon(m) : '🍽️') + by.get(m)).join(' ')));
+      }
       const row = el('div', 'bag-actions');
       if (d.canHold) {
         const h = el('button', 'chip', '✋ ' + L(this.holding() ? BAG_TEXT.swap : BAG_TEXT.hold));
         h.onclick = () => { const i = this.sel; this.sel = -1; this.onHold(i); };
         row.append(h);
       }
-      const t = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop));
-      t.onclick = () => {
+      if (this.more) row.append(...this.more(e, () => { this.sel = -1; this.hide(); }, () => { this.sel = -1; this.render(); }));
+      const drop = el('button', 'chip', '🗑️ ' + L(BAG_TEXT.drop)); // (not "t": that's the translator)
+      drop.onclick = () => {
         if (!confirm(fmt(L(BAG_TEXT.dropAsk), { name: d.name }))) return;
         const i = this.sel; this.sel = -1; this.onDrop(i);
       };
-      row.append(t);
+      if (!d.keep) row.append(drop);
       info.append(row);
-    } else info.append(el('small', 'fine', L(items.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
+    } else info.append(el('small', 'fine', food ? t(here.length ? 'bag.foodPick' : 'bag.foodEmpty') : L(here.length ? BAG_TEXT.pick : BAG_TEXT.empty)));
+    if (food && this.seasoning) { // 🧂 정성 양념: what upgrading a dish uses (game/dish-upgrade.js)
+      const n = this.seasoning();
+      const row = el('div', 'bag-seasoning');
+      row.append(el('b', '', `🧂 ${t('bag.seasoning')} ${n ?? '…'}`), el('small', 'fine', t('bag.seasoningNote')));
+      info.prepend(row);
+    }
     const more = this.extra ? this.extra() : []; // before replaceChildren detaches them
     root.replaceChildren(x, head, tabs, grid, info, el('p', 'fine bag-more', L(BAG_TEXT.more)), ...more);
   }

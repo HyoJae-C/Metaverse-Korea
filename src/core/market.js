@@ -36,7 +36,7 @@ export function clampPrice(price, range) {
 // What I can put on my mat: owned clothes with a receipt, not on the mat
 // already, as [{ id, paid, list }] (list: the new price prices are counted from).
 export function listable(owned, items, receipts, onMat = new Set()) {
-  return owned.filter((id) => items[id]?.wear && receipts.paid(id) > 0 && !onMat.has(id))
+  return owned.filter((id) => items[id]?.wear && !items[id].secs && receipts.paid(id) > 0 && !onMat.has(id))
     .map((id) => ({ id, paid: receipts.paid(id), list: receipts.get(id)?.list || items[id].price }))
     .filter((r) => r.list > 0);
 }

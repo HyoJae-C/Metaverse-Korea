@@ -25,6 +25,8 @@
 // water on (collision lets you walk a deck over a river's blocker).
 import { closedRects } from './closed-grid.js';
 import { inPoly } from './geom.js';
+import { raiseHanBridges } from './han-bridges.js';
+import { boatPose, lineLengths } from './boat-taxi.js';
 const LISTS = ['roads', 'buildings', 'rail', 'areas', 'blockers'];
 
 const shiftPoly = (p, dx, dz) => p.map(([x, z]) => [Math.round((x + dx) * 10) / 10, Math.round((z + dz) * 10) / 10]);
@@ -67,8 +69,19 @@ export function mergeDistricts(parts, links = [], water = [], closed = [], base 
 // Loads a region's map: a single file, or its districts joined together.
 export async function loadRegionMap(region, fetchJson) {
   if (!region.districts?.length) return liftStations(await fetchJson(region.mapFile || 'map.json'));
-  const [base, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, ...region.districts.map((d) => fetchJson(d.map))]);
-  return liftStations(mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base));
+  const [base, boats, ...maps] = await Promise.all([region.base ? fetchJson(region.base) : null, region.boatTaxi ? fetchJson(region.boatTaxi) : null, ...region.districts.map((d) => fetchJson(d.map))]);
+  const out = mergeDistricts(region.districts.map((d, i) => ({ ...d, map: maps[i] })), region.links || [], region.water || [], closedRects(region.closed), base);
+  // The Han River Boat Taxi (region.json "boatTaxi", scripts/build-boat-taxi.mjs):
+  // its piers and gangways are decks you walk on over the river.
+  if (boats) {
+    out.boatTaxi = boats;
+    for (const p of boats.piers) out.decks.push(p.dock, p.gang);
+    // The Han's bridges, up off the water so the boats pass under (core/han-bridges.js).
+    const lens = lineLengths(boats.route), west = [];
+    for (let s = 0; s <= lens.at(-1); s += 3) { const q = boatPose(boats.route, lens, boats.piers, s, -1); west.push([q.x, q.z]); }
+    out.bridges = raiseHanBridges(out, boats.route, [boats.route, west]);
+  }
+  return liftStations(out);
 }
 
 // Elevated stations that come from map data (e.g. OpenStreetMap) as
