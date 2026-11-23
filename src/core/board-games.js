@@ -645,14 +645,13 @@ export class Ladders {
 // quarter from the one below. Take one block out in turn (it goes on top).
 // A layer stands on its middle block or on both its side blocks: leave it
 // less than that and the tower falls. Even a safe block may bring it down:
-// after the first few, the tower wobbles more with every block taken (risk()), and the game's
+// the tower wobbles a little more (1 to 4%) with every block taken (risk()), and the game's
 // seeded dice decide, the same on every screen. Who knocks it over loses.
 // Spot = layer * 3 + place (0 and 2 the sides, 1 the middle), layer 0 at the
 // bottom. Same shape as Roulette (press, pressed, last.bang, loser), so the
 // table screen treats it as one more toy.
 export const TOWER_LAYERS = 10;
-export const TOWER_GRACE = 3; // the first blocks never bring it down
-export const TOWER_RISK_STEP = 0.04; // then more wobble for every block taken
+export const TOWER_RISK_STEPS = [0.01, 0.02, 0.03, 0.04]; // each block taken adds one of these, at random (Yozi 2026-11-23)
 export const TOWER_RISK_MAX = 0.6;
 
 export class Tower {
@@ -664,6 +663,7 @@ export class Tower {
     this.spots = g.spots;
     this.rand = rng(seed);
     this.pressed = [];
+    this.wobble = 0; // the chance that the next block brings it down
     this.turn = 0;
     this.out = new Array(players).fill(false);
     this.loser = -1;
@@ -684,12 +684,15 @@ export class Tower {
     return has(1) || (has(0) && has(2));
   }
 
-  risk() { return Math.min(TOWER_RISK_MAX, Math.max(0, this.pressed.length - TOWER_GRACE + 1) * TOWER_RISK_STEP); }
+  risk() { return Math.min(TOWER_RISK_MAX, this.wobble); }
 
   press(p, spot) {
     if (this.over || p !== this.turn || this.pressed.includes(spot) || spot < 0 || spot >= this.spots) return false;
-    const bang = !this.stands(spot) || this.rand() < this.risk();
+    // (two throws every time, so every screen's dice stay in step)
+    const fall = this.rand() < this.risk(), more = TOWER_RISK_STEPS[Math.floor(this.rand() * TOWER_RISK_STEPS.length)];
+    const bang = !this.stands(spot) || fall;
     this.pressed.push(spot);
+    this.wobble = Math.round((this.wobble + more) * 100) / 100;
     this.last = { p, spot, bang };
     if (bang) { this.loser = p; this.over = true; return true; }
     this.turn = this.nextIn(p);

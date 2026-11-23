@@ -226,7 +226,7 @@ test('snakes and ladders: same dice everywhere, ladders up, snakes down, a 6 rol
 });
 
 test('the block tower: a layer needs its middle or both sides; it wobbles more each block; someone knocks it over', async () => {
-  const { Tower, TOWER_RISK_STEP, TOWER_GRACE, newGame, applyAction } = await import('../src/core/board-games.js');
+  const { Tower, TOWER_RISK_STEPS, newGame, applyAction } = await import('../src/core/board-games.js');
   const g = new Tower({ players: 2, seed: 3 });
   assert.equal(g.risk(), 0);
   assert.ok(g.stands(1) && g.stands(0));
@@ -234,10 +234,7 @@ test('the block tower: a layer needs its middle or both sides; it wobbles more e
   assert.ok(g.press(0, 1)); // the first block never falls: no wobble yet
   assert.equal(g.last.bang, false);
   assert.ok(!g.stands(0) && !g.stands(2)); // the sides hold that layer now
-  assert.equal(g.risk(), 0);
-  const w = new Tower({ players: 2, seed: 3 });
-  w.pressed = [1, 4, 7].slice(0, TOWER_GRACE);
-  assert.equal(w.risk(), TOWER_RISK_STEP);
+  assert.ok(TOWER_RISK_STEPS.includes(g.risk())); // 1 to 4% more for each block
   assert.ok(!g.press(1, 1)); // taken
   assert.ok(g.press(1, 0));
   assert.ok(g.over && g.last.bang);
