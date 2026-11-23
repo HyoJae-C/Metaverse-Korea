@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { config } from '../config.js';
 import { loadRegionMap, districtBoxes } from '../core/districts.js';
 import { wherePlaces, whereText, districtName } from './where-name.js';
-import { describePlace, agoText, fitView, clusterPoints } from './view.js';
+import { describePlace, agoText, fitView, clusterPoints, DEVICE_ICON, DEVICE_LABEL, deviceSummary } from './view.js';
 import { createPanels } from './panels.js';
 import { createChatPanel } from './chat-panel.js';
 import { createExhibitPanel } from './exhibit-panel.js';
@@ -254,8 +254,14 @@ function renderList() {
     dot.className = 'dot'; dot.style.background = color;
     const sub = document.createElement('div');
     sub.className = 'muted';
-    sub.textContent = p.guest ? 'guest' : 'Google';
+    sub.textContent = (p.guest ? 'guest' : 'Google') + (DEVICE_LABEL[p.device] ? ` · ${DEVICE_LABEL[p.device]}` : '');
     name.append(dot, p.player, sub);
+    if (DEVICE_ICON[p.device]) {
+      const icon = document.createElement('span');
+      icon.className = 'dev'; icon.title = DEVICE_LABEL[p.device];
+      icon.textContent = ' ' + DEVICE_ICON[p.device];
+      name.insertBefore(icon, sub);
+    }
     const where = document.createElement('td');
     const d = describePlace(p.place, stores);
     where.textContent = d;
@@ -272,7 +278,7 @@ function renderList() {
   $('list').replaceChildren(...rows);
   const online = players.filter((p) => ageOf(p) <= 90).length;
   $('count').textContent = String(+$('within').value <= 90 ? players.length : online);
-  $('countLabel').textContent = +$('within').value <= 90 ? 'online' : `online · ${players.length} seen`;
+  $('countLabel').textContent = (+$('within').value <= 90 ? 'online' : `online · ${players.length} seen`) + deviceSummary(players);
 }
 
 // ---------- Data ----------
