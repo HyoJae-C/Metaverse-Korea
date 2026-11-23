@@ -36,8 +36,8 @@ test('boat-taxi.json is what the build script makes, in the region and joined to
   for (const p of data.piers) assert.ok(decks.has(JSON.stringify(p.dock)) && decks.has(JSON.stringify(p.gang)), `${p.id}: its deck and gangway are walkable`);
 });
 
-test('the piers: the real ones in built districts, west to east (Yozi 2026-11-18; Magok with the Seoul Botanic Park, 2026-11-23)', () => {
-  assert.deepEqual(data.piers.map((p) => p.id), ['magok', 'mangwon', 'yeouido', 'apgujeong', 'seoul-forest', 'ttukseom', 'jamsil']);
+test('the piers: the real ones in built districts, west to east (Yozi 2026-11-18; Magok with the Seoul Botanic Park and Oksu with Dalmaji Park, 2026-11-23)', () => {
+  assert.deepEqual(data.piers.map((p) => p.id), ['magok', 'mangwon', 'yeouido', 'apgujeong', 'oksu', 'seoul-forest', 'ttukseom', 'jamsil']);
   for (let i = 1; i < data.piers.length; i++) assert.ok(data.piers[i].s > data.piers[i - 1].s, 'in order along the line');
   assert.equal(BUILD_BOAT.l, 12);
   for (const p of data.piers) for (const k of ['ko', 'en', 'ja', 'zh']) assert.ok(p.name[k], `${p.id} ${k}`);
@@ -54,7 +54,7 @@ test('each pier is on its real Han River Bus terminal (within 15 m at 1/4)', () 
     assert.ok(p.l >= 10 && p.l <= 17 && p.w >= 4 && p.w <= 7, `${p.id}: about its real size at 1/4 (${p.l} x ${p.w})`);
   }
   const ids = new Set(PIERS.map((p) => p.osm));
-  assert.ok(!ids.has(1418419418), 'not Oksu yet (no district there)');
+  assert.ok(ids.has(1418419418), 'Oksu, now Dalmaji Park is there (Yozi 2026-11-23)');
 });
 
 test('each pier floats on the river, its gangway lands on open ground off the roads', () => {
@@ -155,7 +155,7 @@ test('the timetable: a boat every 2 minutes each way at every pier (Yozi 2026-11
     }
   }
   const whole = rideTime(tt, 0, piers.length - 1);
-  assert.ok(whole > 150 && whole < 240, `Mangwon to Jamsil ${Math.round(whole)} s aboard`);
+  assert.ok(whole > 150 && whole < 270, `Magok to Jamsil (8 piers) ${Math.round(whole)} s aboard`);
   assert.ok(Math.abs(rideTime(tt, 2, 3) - rideTime(tt, 3, 2)) < 1e-6);
 });
 
@@ -221,6 +221,30 @@ test('Magok: you can walk from the Seoul Botanic Park to the pier, through the G
   }
   const reach = ([x, z]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => seen.has(key(Math.round(x) + a, Math.round(z) + b)));
   assert.ok(reach(magok.board), 'you can walk from the greenhouse onto the pier');
+});
+
+test('Oksu: you can walk from Dalmaji Park\'s entrance stairs to the pier (2026-11-23)', () => {
+  const pier = data.piers.find((p) => p.id === 'oksu');
+  const [ox, oz] = region.districts.find((d) => d.id === 'oksu').offset;
+  const X0 = -950, X1 = -650, Z0 = -50, Z1 = 260;
+  const near = (p) => p.some(([x, z]) => x > X0 && x < X1 && z > Z0 && z < Z1);
+  const col = new CollisionMap(map.buildings.filter((b) => near(b.p)).concat((map.blockers || []).filter((b) => near(b.p))));
+  for (const d of map.decks) if (near(d)) col.addDeck(d);
+  let start = null;
+  for (let r = 0; r < 30 && !start; r += 2) for (let a = 0; a < 6.3 && !start; a += 0.3) { const x = Math.round(ox + r * Math.cos(a)), z = Math.round(oz + r * Math.sin(a)); if (!col.blocked(x, z, 0.35)) start = [x, z]; }
+  assert.ok(start, 'open ground at the foot of the stairs');
+  const key = (x, z) => x * 10000 + z, seen = new Set([key(...start)]), q = [start];
+  while (q.length) {
+    const [x, z] = q.pop();
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, nz = z + dz;
+      if (nx < X0 || nx > X1 || nz < Z0 || nz > Z1 || seen.has(key(nx, nz)) || col.blocked(nx, nz, 0.35)) continue;
+      seen.add(key(nx, nz)); q.push([nx, nz]);
+    }
+  }
+  const reach = ([x, z]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => seen.has(key(Math.round(x) + a, Math.round(z) + b)));
+  assert.ok(reach(pier.board), 'from the stairs onto the pier');
+  assert.ok(Math.hypot(pier.land[0] - ox, pier.land[1] - oz) < 200, `the pier is ${Math.round(Math.hypot(pier.land[0] - ox, pier.land[1] - oz))} m from the stairs`);
 });
 
 test('the Han in front of Nanji is water all across (scripts/han-gap-nanji.mjs)', async () => {
