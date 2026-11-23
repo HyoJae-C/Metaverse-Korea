@@ -212,7 +212,7 @@ export function createBoatTaxi(game, data) {
   });
 
   // The boats: all of them on the timetable, one InstancedMesh.
-  const tt = timetable(piers);
+  const tt = timetable(piers, undefined, data.west);
   const { geo, mat: boatMat } = buildBoat();
   const boats = new THREE.InstancedMesh(geo, boatMat, tt.boats);
   boats.name = 'boat-taxi-boats';

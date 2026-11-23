@@ -36,8 +36,8 @@ test('boat-taxi.json is what the build script makes, in the region and joined to
   for (const p of data.piers) assert.ok(decks.has(JSON.stringify(p.dock)) && decks.has(JSON.stringify(p.gang)), `${p.id}: its deck and gangway are walkable`);
 });
 
-test('the piers: the real ones in built districts, west to east (Yozi 2026-11-18)', () => {
-  assert.deepEqual(data.piers.map((p) => p.id), ['mangwon', 'yeouido', 'apgujeong', 'seoul-forest', 'ttukseom', 'jamsil']);
+test('the piers: the real ones in built districts, west to east (Yozi 2026-11-18; Magok with the Seoul Botanic Park, 2026-11-23)', () => {
+  assert.deepEqual(data.piers.map((p) => p.id), ['magok', 'mangwon', 'yeouido', 'apgujeong', 'seoul-forest', 'ttukseom', 'jamsil']);
   for (let i = 1; i < data.piers.length; i++) assert.ok(data.piers[i].s > data.piers[i - 1].s, 'in order along the line');
   assert.equal(BUILD_BOAT.l, 12);
   for (const p of data.piers) for (const k of ['ko', 'en', 'ja', 'zh']) assert.ok(p.name[k], `${p.id} ${k}`);
@@ -126,13 +126,13 @@ test('the piers in Han River parks: the railing opens for the gangway, nothing o
 
 test('the line is the real route, on the water all the way, through each berth', () => {
   const lens = lineLengths(data.route);
-  assert.ok(lens.at(-1) > 5000 && lens.at(-1) < 5600, `${lens.at(-1)} m from Mangwon to Jamsil`);
+  assert.ok(lens.at(-1) > 6300 && lens.at(-1) < 6900, `${lens.at(-1)} m from Magok to Jamsil`);
   for (let s = 0; s <= lens.at(-1); s += 4) { const d = pointAt(data.route, lens, s); assert.ok(inWater(d.x, d.z), `on the water at ${s} m (${d.x.toFixed(0)}, ${d.z.toFixed(0)})`); }
   for (const p of data.piers) { const d = pointAt(data.route, lens, p.s); assert.ok(Math.hypot(d.x - p.berth[0], d.z - p.berth[1]) < 0.2, `${p.id} berth on the line`); }
 });
 
 test('the timetable: a boat every 2 minutes each way at every pier (Yozi 2026-11-18), stopping at each', () => {
-  const { piers } = data, tt = timetable(piers);
+  const { piers } = data, tt = timetable(piers, undefined, data.west);
   const E = BOAT_TAXI.every;
   assert.equal(E, 120);
   assert.ok(tt.boats >= 2 && tt.boats <= 6, `${tt.boats} boats`);
@@ -160,7 +160,7 @@ test('the timetable: a boat every 2 minutes each way at every pier (Yozi 2026-11
 });
 
 test('the boats glide (no jumps), keep apart, and stay on the water all round', () => {
-  const { piers, route } = data, tt = timetable(piers), lens = lineLengths(route);
+  const { piers, route } = data, tt = timetable(piers, undefined, data.west), lens = lineLengths(route);
   const pose = (b, now) => { const st = boatAt(tt, piers, b, now); return { ...st, ...boatPose(route, lens, piers, st.s, st.dir) }; };
   const prev = [];
   for (let t = 0; t < tt.round; t += 0.5) {
@@ -194,5 +194,45 @@ test('on the way the boats keep facing along the river, and lie clear of every d
       if (prev != null && away) { let d = q.ry - prev; d = Math.atan2(Math.sin(d), Math.cos(d)); assert.ok(Math.abs(d) < 0.21, `turns ${(d * 57.3).toFixed(0)}° at s ${s} (dir ${dir})`); }
       prev = q.ry;
     }
+  }
+});
+
+test('Magok: you can walk from the Seoul Botanic Park to the pier, through the Gayang Underpass (2026-11-23)', () => {
+  const magok = data.piers.find((p) => p.id === 'magok');
+  const link = region.links.find((r) => r.n?.en === 'Gayang Underpass');
+  assert.ok(link, 'the walk to the pier');
+  assert.ok(Math.hypot(link.p.at(-1)[0] - magok.land[0], link.p.at(-1)[1] - magok.land[1]) < 1, 'it ends at the gangway');
+  // From the greenhouse to the boarding spot, round the closed land.
+  const X0 = -5100, X1 = -4550, Z0 = -1000, Z1 = -450;
+  const near = (p) => p.some(([x, z]) => x > X0 && x < X1 && z > Z0 && z < Z1);
+  const col = new CollisionMap(map.buildings.filter((b) => near(b.p)).concat((map.blockers || []).filter((b) => near(b.p))));
+  for (const d of map.decks) if (near(d)) col.addDeck(d);
+  const [ox, oz] = region.districts.find((d) => d.id === 'magok').offset;
+  let start = null;
+  for (let r = 0; r < 80 && !start; r += 2) for (let a = 0; a < 6.3 && !start; a += 0.3) { const x = Math.round(ox + r * Math.cos(a)), z = Math.round(oz + r * Math.sin(a)); if (!col.blocked(x, z, 0.35)) start = [x, z]; }
+  const key = (x, z) => x * 10000 + z, seen = new Set([key(...start)]), q = [start];
+  while (q.length) {
+    const [x, z] = q.pop();
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, nz = z + dz;
+      if (nx < X0 || nx > X1 || nz < Z0 || nz > Z1 || seen.has(key(nx, nz)) || col.blocked(nx, nz, 0.35)) continue;
+      seen.add(key(nx, nz)); q.push([nx, nz]);
+    }
+  }
+  const reach = ([x, z]) => [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => seen.has(key(Math.round(x) + a, Math.round(z) + b)));
+  assert.ok(reach(magok.board), 'you can walk from the greenhouse onto the pier');
+});
+
+test('the Han in front of Nanji is water all across (scripts/han-gap-nanji.mjs)', async () => {
+  const { buildNanjiGap, polyArea } = await import('../scripts/han-gap-nanji.mjs');
+  const gap = region.water.filter((w) => w.id === 'nanji-gap');
+  assert.deepEqual(JSON.parse(JSON.stringify(await buildNanjiGap())), gap, 'run node scripts/han-gap-nanji.mjs');
+  for (const w of gap) assert.ok(polyArea(w.p) < 20000, 'each piece under 20,000 m2 (build-base cuts its water round bigger ones)');
+  // Straight across from bank to bank, no dry line (x -4100 to -3800).
+  for (let x = -4100; x <= -3800; x += 25) {
+    const wet = [];
+    for (let z = -700; z <= -300; z += 1) wet.push(inWater(x, z));
+    const a = wet.indexOf(true), b = wet.lastIndexOf(true);
+    assert.ok(wet.slice(a, b + 1).every(Boolean), `dry land in the river at x ${x}`);
   }
 });

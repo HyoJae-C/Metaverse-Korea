@@ -35,7 +35,7 @@ await mk('place', ...y.board); await wait(3000); await mk('place', ...y.board); 
 await mk('act'); await wait(300);
 await page.click('.boat-taxi-panel .visit-list button:has-text("Apgujeong")');
 await page.click('.spend-ask:not([hidden]) .primary', { timeout: 5000 }); await wait(400); // ("Spend ₩3,000?")
-const tt = timetable(data.piers), yi = data.piers.indexOf(y);
+const tt = timetable(data.piers, undefined, data.west), yi = data.piers.indexOf(y);
 const nb = nextBoat(tt, yi, 1, Date.now() / 1000);
 if (nb.wait > 4) await page.evaluate((s) => __mk.boatTaxi.skewClock(s), nb.wait - 4);
 for (let i = 0; i < 30 && !(await page.evaluate(() => __mk.boatTaxi.busy)); i++) await wait(1000);

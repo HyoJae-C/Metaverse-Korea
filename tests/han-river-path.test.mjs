@@ -62,6 +62,7 @@ test('Sowol-ro joins Itaewon\'s Sowol-ro to Toegye-ro at Sungnyemun', () => {
 });
 
 test('the river water joins up with the parks\' water', () => {
-  assert.equal(region.water.length, 3); // Mangwon past Yeouido to x -1420, on past Banpo Bridge to Seongsu, and Jamsil Bridge east along Songpa
+  assert.equal(region.water.filter((w) => !w.id).length, 3); // Mangwon past Yeouido to x -1420, on past Banpo Bridge to Seongsu, and Jamsil Bridge east along Songpa
+  assert.ok(region.water.filter((w) => w.id).every((w) => w.id === 'nanji-gap')); // (and the Han in front of Nanji: scripts/han-gap-nanji.mjs)
   for (const w of region.water) assert.ok(w.p.length >= 4);
 });
