@@ -2575,8 +2575,8 @@
       "size": "medium",
       "season": "autumn",
       "at": [-35.1, 52.0],
-      "name": { "ko": "팝업 A", "en": "POP-UP A", "ja": "ポップアップA", "zh": "快闪店A" },
-      "tagline": { "en": "Season pop-up, now: autumn caps and trench coats", "ko": "시즌 팝업, 지금은 가을: 빵모자, 헌팅캡, 트렌치코트", "ja": "シーズンポップアップ、今は秋：キャスケット、ハンチング、トレンチコート", "zh": "季节快闪店，现在是秋季：报童帽、鸭舌帽、风衣" },
+      "name": { "ko": "가을 한정 팝업", "en": "AUTUMN POP-UP", "ja": "秋限定ポップアップ", "zh": "秋季限定快闪店" },
+      "tagline": { "en": "Autumn only: newsboy caps, flat caps and trench coats", "ko": "가을에만: 빵모자, 헌팅캡, 트렌치코트", "ja": "秋だけ：キャスケット、ハンチング、トレンチコート", "zh": "仅限秋季：报童帽、鸭舌帽、风衣" },
       "colors": { "sign": "#8a5a34", "awning": "#f3e2c4", "accent": "#fdf8ef" },
       "products": [
         {"id": "popa-trench-beige", "model": "tee", "color": "#c9ad84", "price": 30000, "item": "outfit-trench-beige", "name": {"en": "Beige trench coat", "ko": "베이지 트렌치코트", "ja": "ベージュのトレンチコート", "zh": "米色风衣"}, "desc": {"en": "Autumn season, limited time: gone 7 days after you buy it.", "ko": "가을 시즌 기간제: 산 뒤 7일이 지나면 사라져요.", "ja": "秋シーズンの期間限定：買ってから7日で消えます。", "zh": "秋季限定：购买7天后消失。"}, "tryOn": {"model": "trench-beige"}},
