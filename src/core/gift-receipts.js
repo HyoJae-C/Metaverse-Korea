@@ -72,7 +72,8 @@ export class GiftReceipts {
     if (!Array.isArray(rows)) return 0;
     let n = 0;
     for (const r of rows) {
-      if (!(items[r?.item]?.wear || items[r?.item]?.furniture) || !inventory.has(r.item) || receipts.paid(r.item) > 0 || !(Number(r.price) > 0)) continue;
+      const it = items[r?.item];
+      if (!(it?.wear || it?.furniture || it?.lamp || it?.finish || it?.plush) || !inventory.has(r.item) || receipts.paid(r.item) > 0 || !(Number(r.price) > 0)) continue;
       receipts.record(r.item, Number(r.price), String(r.op), null);
       n++;
     }
