@@ -80,6 +80,7 @@ export const AR = {
   'metro.tab.shop': 'تسوق',
   'metro.tab.park': 'حدائق ونهر',
   'metro.recent': 'الأخيرة',
+  'metro.progress': 'الوصول إلى {name}: {pct}% · باقٍ {s} ث',
   'ride.flume': 'اركب القناة المائية',
   'ride.gyro': 'اركب البندول الدوّار',
   'ride.go': 'انطلقنا! تمسّك جيدًا 🎶',

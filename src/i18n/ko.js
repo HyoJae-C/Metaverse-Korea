@@ -80,6 +80,7 @@ export const KO = {
   "metro.tab.shop": "쇼핑",
   "metro.tab.park": "공원·한강",
   "metro.recent": "최근",
+  "metro.progress": "{name} 도착까지 {pct}% · {s}초 남음",
   "ride.flume": "후룸라이드 타기",
   "ride.gyro": "자이로스윙 타기",
   "ride.go": "출발! 꼭 잡으세요 🎶",

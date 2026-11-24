@@ -80,6 +80,7 @@ export const ID = {
   'metro.tab.shop': 'Belanja',
   'metro.tab.park': 'Taman & sungai',
   'metro.recent': 'Terakhir',
+  'metro.progress': 'Tiba di {name}: {pct}% · {s} dtk lagi',
   'ride.flume': 'Naik arung jeram',
   'ride.gyro': 'Naik ayunan giro',
   'ride.go': 'Ayo berangkat! Pegangan yang erat 🎶',

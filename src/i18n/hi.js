@@ -80,6 +80,7 @@ export const HI = {
   'metro.tab.shop': 'शॉपिंग',
   'metro.tab.park': 'पार्क और नदी',
   'metro.recent': 'हाल के',
+  'metro.progress': '{name} पहुँचने में {pct}% · {s} सेकंड बाकी',
   'ride.flume': 'लॉग फ्लूम पर बैठें',
   'ride.gyro': 'जाइरो स्विंग की सवारी करें',
   'ride.go': 'चलो चलें! कसकर पकड़ो 🎶',

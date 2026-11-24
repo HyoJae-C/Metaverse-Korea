@@ -80,6 +80,7 @@ export const TH = {
   'metro.tab.shop': 'ช้อปปิ้ง',
   'metro.tab.park': 'สวนและแม่น้ำ',
   'metro.recent': 'ล่าสุด',
+  'metro.progress': 'ถึง{name} {pct}% · อีก {s} วินาที',
   'ride.flume': 'เล่นล่องแก่ง',
   'ride.gyro': 'เล่นไจโรสวิง',
   'ride.go': 'ออกตัวแล้ว! จับให้แน่นนะ 🎶',

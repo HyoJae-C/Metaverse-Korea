@@ -147,6 +147,7 @@ export function createSubway(stations, game) {
     flashFade();
     game.sfx.pop?.();
     renderMetro();
+    showProgress(Date.now());
     $('train-panel').hidden = false;
   }
   // The "where do you get off?" picker: recent stations on top, theme tabs,
@@ -209,8 +210,11 @@ export function createSubway(stations, game) {
     metro.dest = k;
     metro.chimed = false;
     const stops = stopsBetween(metro.from, k, metro.dir, stationStores.length);
-    metro.arriveAt = Math.max(Date.now(), metro.leaveAt) + stops * STOP_SECONDS * 1000;
+    metro.rideFrom = Math.max(Date.now(), metro.leaveAt);
+    metro.arriveAt = metro.rideFrom + stops * STOP_SECONDS * 1000;
+    metro.shown = null;
     renderMetro();
+    showProgress(Date.now());
   }
   // Off before the doors close: back onto the platform you boarded from.
   function metroGetOff() {
@@ -223,6 +227,23 @@ export function createSubway(stations, game) {
   function endMetro() {
     metro = null;
     $('train-panel').hidden = true;
+    $('train-progress').hidden = true;
+  }
+  // How far along the ride is (Yozi 2026-11-24: a long ride past many
+  // stations felt like the game had frozen): a bar and "{pct}% · {s} s to go".
+  function showProgress(now) {
+    const box = $('train-progress');
+    if (metro?.dest == null) { box.hidden = true; return; }
+    const span = metro.arriveAt - metro.rideFrom;
+    const pct = Math.round(100 * Math.min(1, Math.max(0, span > 0 ? (now - metro.rideFrom) / span : 1)));
+    const left = Math.max(0, Math.ceil((metro.arriveAt - now) / 1000));
+    const key = `${metro.dest}|${pct}|${left}|${getLanguage()}`;
+    if (metro.shown === key) return;
+    metro.shown = key;
+    box.hidden = false;
+    $('train-progress-fill').style.width = pct + '%';
+    box.firstElementChild.setAttribute('aria-valuenow', pct);
+    $('train-progress-text').textContent = t('metro.progress', { name: stationName(metro.dest), pct, s: left });
   }
   function arriveOnPlatform(k, t) {
     game.enterStore(exitFront(k, 0));
@@ -243,6 +264,7 @@ export function createSubway(stations, game) {
     const now = Date.now();
     const moving = now >= metro.leaveAt;
     game.interior.train.setMoving(moving);
+    showProgress(now);
     if (!metro.warned && now >= metro.leaveAt - 1600) { metro.warned = true; game.sfx.doorClose(); }
     if (!metro.departed && moving) { metro.departed = true; game.sfx.depart(); }
     let led;

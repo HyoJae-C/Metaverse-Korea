@@ -79,6 +79,7 @@ export const EN = {
   "metro.tab.shop": "Shopping",
   "metro.tab.park": "Parks & river",
   "metro.recent": "Recent",
+  "metro.progress": "Arriving at {name}: {pct}% · {s} s to go",
   "ride.flume": "Ride the log flume",
   "ride.gyro": "Ride the gyro swing",
   "ride.go": "Here we go! Hold on tight 🎶",
