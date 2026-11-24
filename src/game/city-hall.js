@@ -5,8 +5,14 @@
 // (Yozi: a place should not look empty). They are on this device only, like
 // the street's passers-by, and say hello when greeted.
 //
+// Also the civil service desk by the old hall's door: a clerk at a small
+// counter, where you change or decorate your name as at an information
+// centre (Yozi 2026-11-24: the centres are like neighbourhood offices, City
+// Hall does it too). The clerk's button opens the same name panel.
+//
 // Cheap on purpose: the sitters hold one pose (animated only while you are
 // within sight), nothing here has a light or a texture of its own.
+import * as THREE from 'three';
 import { makeNpc, say, placeLabels, PHRASES } from '../core/npcs.js';
 
 const HIDE = 80; // m from the lawn's middle: past this nobody here is drawn
@@ -46,14 +52,16 @@ export function createCityHall(game) {
     game.scene.add(o.ch.root);
     people.push(o);
   };
+  const staff = []; // the desk's clerk: not one of the people on the grass
   const api = {
-    people,
+    people, staff,
     nearest(x, z, max = 2.4) {
       let best = null, bd = max;
-      for (const o of people) { const d = Math.hypot(o.ch.root.position.x - x, o.ch.root.position.z - z); if (d < bd) { bd = d; best = o; } }
+      for (const o of [...staff, ...people]) { const d = Math.hypot(o.ch.root.position.x - x, o.ch.root.position.z - z); if (d < bd) { bd = d; best = o; } }
       return best;
     },
     greet(o, x, z) {
+      if (o.act) { o.ch.wave(); return; }
       o.talkT = 5;
       if (!o.sit) o.ch.root.rotation.y = Math.atan2(x - o.ch.root.position.x, z - o.ch.root.position.z);
       o.ch.wave();
@@ -61,7 +69,7 @@ export function createCityHall(game) {
     },
     update(p, dt, camera, w, h) {
       const show = Math.hypot(p.x - cx, p.z - cz) < HIDE;
-      for (const o of people) {
+      for (const o of [...staff, ...people]) {
         const r = o.ch.root;
         if (r.visible !== show) { r.visible = show; if (!show) { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; } }
         if (!show) continue;
@@ -79,6 +87,25 @@ export function createCityHall(game) {
         add(gx + Math.sin(a) * s.r, gz + Math.cos(a) * s.r, a + Math.PI, true); // facing the middle of the ring
       }
     } else add(cx + s.at[0] * hw, cz + s.at[1] * hd, Math.PI, !!s.sit); // facing north: the halls
+  }
+  // The desk: against the old hall's front wall, east of the steps; the clerk stands before it, facing the plaza.
+  if (game.desk) {
+    const [dx, dz] = game.desk;
+    const g = new THREE.Group();
+    const part = (w, h, d, x, y, z, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: c })); m.position.set(x, y, z); g.add(m); };
+    part(2.2, 1.0, 0.5, 0, 0.5, 0, '#8a6a48'); // the counter
+    part(2.3, 0.08, 0.6, 0, 1.04, 0, '#e8dcc0');
+    part(0.08, 1.5, 0.08, -1.0, 1.75, -0.1, '#5b4630'); part(0.08, 1.5, 0.08, 1.0, 1.75, -0.1, '#5b4630');
+    part(2.3, 0.5, 0.1, 0, 2.5, -0.1, '#2f6fb5'); // its blue board
+    g.position.set(dx, 0, dz);
+    game.scene.add(g);
+    const o = makeNpc(game.labels, game.text?.('cityhall.clerk') || 'City Hall desk', game.randomLook?.());
+    o.owner = api; o.home = 0;
+    o.act = () => ({ key: 'cityhall-desk', label: '🏷️ ' + (game.text?.('cityhall.desk') || 'Name desk'), run: () => { o.ch.wave(); game.openNames?.(); } });
+    o.ch.root.position.set(dx, 0, dz + 0.9);
+    game.scene.add(o.ch.root);
+    staff.push(o);
+    api.desk = g;
   }
   return api;
 }

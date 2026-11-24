@@ -71,6 +71,22 @@ await page.evaluate(() => __mk.cam({ yaw: 2.4, pitch: 0.25, dist: 6 }));
 await wait(1200);
 await shot('3-people-on-the-grass');
 
+// The name desk by the old hall's door: its clerk's button opens the name panel (as at an information centre).
+const desk = await page.evaluate(() => __mk.cityHall.desk);
+await page.evaluate(([x, z]) => __mk.goto(x + 0.3, z + 2.2, 0), desk);
+await wait(700);
+const deskLabel = await page.evaluate(() => document.getElementById('action-btn')?.textContent || '');
+assert(/🏷️/.test(deskLabel), `the desk's clerk offers the name panel (${deskLabel})`);
+await page.evaluate(() => __mk.cam({ yaw: 0, pitch: 0.15, dist: 7 }));
+await wait(1000);
+await shot('7-name-desk');
+await page.click('#action-btn');
+await page.waitForFunction(() => [...document.querySelectorAll('.rename-input, [data-tab], .panel:not([hidden])')].length > 0, null, { timeout: 15000 });
+const panelOpen = await page.evaluate(() => !!document.querySelector('.rename-input') || /Nickname Studio/.test(document.body.textContent));
+assert(panelOpen, 'the name panel opened');
+await page.click('[aria-label="Close"]:visible');
+await wait(400);
+
 // You cannot walk into the old hall (it is the library's outside only).
 const front = Math.max(...old.outline.map((q) => q[1])) + old.z + oz;
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [old.x + ox, front + 5]);
@@ -82,11 +98,11 @@ await page.evaluate(() => __mk.cam({ yaw: 0, pitch: 0.12, dist: 9 }));
 await wait(1200);
 await shot('4-old-hall-door');
 
-// The glass hall from its east end (the white panels and the oval room), and Daehanmun across the road.
-await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [hall.x + ox + 30, hall.z + oz + 14]);
-await page.evaluate(() => __mk.cam({ yaw: 0.9, pitch: 0.2, dist: 24 }));
+// The glass hall from Sejong-daero: its west end (white panels and blue diamonds, the oval lounge, the small screen).
+await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [hall.x + ox - 44, hall.z + oz + 2]);
+await page.evaluate(() => __mk.cam({ yaw: -Math.PI / 2, pitch: 0.22, dist: 18 }));
 await wait(2000);
-await shot('5-glass-hall-east-end');
+await shot('5-glass-hall-west-end');
 await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [gate.x + ox + 14, gate.z + oz]);
 await page.evaluate(() => __mk.cam({ yaw: Math.PI / 2, pitch: 0.15, dist: 12 }));
 await wait(2000);

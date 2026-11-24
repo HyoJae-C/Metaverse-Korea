@@ -1005,8 +1005,27 @@ over the real map). Everything it writes is marked `sp: 1`, so it can be run aga
   stand on it, loaded when you come within 170 m (`game/city-hall-near.js` →
   `game/city-hall.js`) and hidden past 80 m.
 - Models: `core/city-hall-model.js` (loaded by core/landmarks.js types
-  `cityhall` and `oldcityhall`). Screenshots and a walk-through:
+  `cityhall`, `oldcityhall` and `plazalawn`). Screenshots and a walk-through:
   `tests/e2e/city-hall.mjs`.
+- Looks (Yozi 2026-11-24): the old hall's clock has a blue face and its door
+  is under the clock tower; the new hall's two ends have the white panels
+  with blue diamonds, the oval lounge is on the west end, and a small screen
+  hangs low by its north corner (a made-up dusk picture, no real
+  advertisement). The planting by the halls is `trees: 'low'` (bushes and
+  small trees, below the old hall).
+- The lawn is drawn as grass (mown stripes) with the Korean peninsula in
+  lighter grass, north towards the halls (`plazalawn`; the picture's size
+  and place are by eye from one aerial photo).
+- Behind the new hall the Cheonggyecheon rows had three made-up towers of
+  89 to 108 m. Now the Korea Press Center (Seoul Shinmun) stands there on
+  OSM's outline at 1/4, 8.9 m north of its real spot (`approx`, `why`; 21 m
+  is an estimate from 20 floors), and the other made-up blocks behind the
+  place are capped at 30 m. Don't re-run `build-cheonggyecheon.mjs` alone:
+  it reshuffles its blocks.
+- The name desk: a clerk at a counter by the old hall's door opens the same
+  name panel as the information centres (`ui/emblem-ui.js`), which stay as
+  they are (Yozi: both). It comes with the people on the lawn
+  (`game/city-hall.js`, `desk`).
 
 ## Bosingak (Jongno)
 

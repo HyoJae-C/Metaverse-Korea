@@ -103,7 +103,7 @@ export const PLACES = [
 
 // Landmark types that are street furniture or part of a place named above
 // (a bench, a sign, a stretch of wall): no place of their own.
-export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark', 'tombvisitors', 'woodmass'];
+export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark', 'tombvisitors', 'woodmass', 'plazalawn'];
 
 // Rooms that sit on the street big enough to be a place (a park's
 // greenhouse, a museum); shops are named by the "In …" line instead.
