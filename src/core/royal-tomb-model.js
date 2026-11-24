@@ -213,7 +213,7 @@ export function buildRoyalTomb(g, l) {
 // forward, both under gabled roofs, on a stone platform with steps.
 export function buildJeongjagak(g, l) {
   const [bw, bd] = l.base, [hw, hd] = l.hall, B = 0.55, P = 1.75;
-  box(g, bw, B, bd, 0, B / 2, 0, C.stone);
+  box(g, bw, B - 0.04, bd, 0, (B - 0.04) / 2, 0, C.stone); // (its top under the cap course's: two faces at one height shimmer)
   box(g, bw + 0.2, 0.08, bd + 0.2, 0, B - 0.04, 0, C.stoneDark);
   for (const sx of [-0.25, 0.25]) for (let i = 0; i < 3; i++) box(g, 1.1, B - i * 0.18, 0.35, sx * bw, (B - i * 0.18) / 2, bd / 2 + 0.17 + i * 0.35, C.stoneLight); // the steps up, east and west
   const mainD = hd * 0.55, mainZ = -hd / 2 + mainD / 2, porchW = hw * 0.48, porchD = hd - mainD, porchZ = hd / 2 - porchD / 2;
