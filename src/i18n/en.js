@@ -475,6 +475,7 @@ export const EN = {
   'cityhall.desk': "Name desk: change or decorate my name",
   'cityhall.clerk': "City Hall desk",
   'hyeonchung.note': "🕊️ Seoul National Cemetery: founded in 1955 as the military cemetery, a national cemetery since 1965. This is a place of remembrance. Please walk quietly.",
+  'hyeonchung.noRide': "🚲 No bikes or cars in the cemetery. You can walk or run here.",
   'bike.offShort': 'Get off',
   'bike.off': 'Get off the bike',
   'car.off': 'Get out of the car',

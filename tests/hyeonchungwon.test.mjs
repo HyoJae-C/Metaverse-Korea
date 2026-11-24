@@ -254,3 +254,27 @@ test('the cemetery has its own quiet music while you are on the grounds, and you
   walk.update({ x: ox, z: oz }, 0.1);
   assert.equal(music.track.id, 'lofi', 'nothing starts if music is off');
 });
+
+test('on the grounds: you get off a bike or a car (a seat in a friend\'s stays), and anger and laughing give way to praying hands and a dove', async () => {
+  const { EMOTE_PACKS, emoteIn } = await import('../src/data/emotes.js');
+  let riding = 1; const said = [];
+  const walk = createHyeonchungwonWalk({ landmarks: hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })), riding: () => riding, getOff: () => { riding = 0; }, toast: (m) => said.push(m), text: () => 'note', noRide: () => 'no ride' });
+  walk.update({ x: ox + 2000, z: oz }, 0.1);
+  assert.ok(!walk.inside && riding === 1, 'outside you ride on');
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.ok(walk.inside && riding === 0 && said.includes('no ride'));
+  riding = 3;
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.equal(riding, 3, "a seat in someone's car is theirs to stop");
+  const basic = Object.fromEntries(EMOTE_PACKS[0].emotes.map((e) => [e.id, e]));
+  assert.equal(emoteIn('hyeonchung', basic.angry).emoji, '🙏');
+  assert.equal(emoteIn('hyeonchung', basic.laugh).emoji, '🕊️');
+  assert.equal(emoteIn('hyeonchung', basic.cry), basic.cry, 'the rest stay');
+});
+
+test('the court is the same on both sides of the line from the gate to the tower', () => {
+  const l = hc.landmarks.find((q) => q.type === 'hyeonchung'), t = l.tower.at, n = Math.hypot(t[0], t[1]), U = [t[0] / n, t[1] / n];
+  const q = l.court.map(([x, z]) => [x * U[0] + z * U[1], -x * U[1] + z * U[0]]);
+  for (const [u, v] of q) assert.ok(q.some(([a, b]) => Math.abs(a - u) < 0.35 && Math.abs(b + v) < 0.35), `corner ${u.toFixed(1)}, ${v.toFixed(1)} has its mirror`);
+  for (const k of [0, 1]) assert.ok(Math.abs(Math.abs(l.walls[k][0][0] * -U[1] + l.walls[k][0][1] * U[0]) - Math.abs(l.walls[1 - k][1][0] * -U[1] + l.walls[1 - k][1][1] * U[0])) < 0.35, 'the terrace walls too');
+});

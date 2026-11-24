@@ -476,6 +476,7 @@ export const JA = {
   'cityhall.desk': "窓口: 名前の変更・飾り付け",
   'cityhall.clerk': "市庁の窓口",
   'hyeonchung.note': "🕊️ 国立ソウル顕忠院：1955年に国軍墓地として造られ、1965年に国立墓地になりました。追悼の場所です。静かに歩いてください。",
+  'hyeonchung.noRide': "🚲 顕忠院の中では自転車や車に乗れません。歩くか走って回ってください。",
   'bike.offShort': '降りる',
   'bike.off': '自転車を降りる',
   'car.off': '車を降りる',

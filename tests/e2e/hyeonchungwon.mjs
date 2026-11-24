@@ -122,6 +122,20 @@ await shot('10-plots-east');
 await go([0, 10]);
 await cam({ yaw: front, pitch: 0.8, dist: 90 }, 2000);
 await shot('11-from-above');
+await go(l.tribute.at);
+await cam({ yaw: front, pitch: 1.45, dist: 85 }, 2000); // straight down on the tower: the court is the same on both sides, with trees round the terrace
+await shot('11b-tower-above');
+await cam({ yaw: front, pitch: 0.62, dist: 150 }, 2000);
+await shot('11c-tower-front');
+await cam({ yaw: front + Math.PI, pitch: 0.62, dist: 150 }, 2000);
+await shot('11d-tower-behind');
+await go([0, 0]);
+await cam({ yaw: front, pitch: 0.62, dist: 150 }, 2000);
+await shot('11e-gate-front');
+const lw = l.flats.find((f) => f.k === 'lawn').p, lc = [lw.reduce((q, v) => q + v[0], 0) / lw.length, lw.reduce((q, v) => q + v[1], 0) / lw.length];
+await go(lc);
+await cam({ yaw: front, pitch: 0.7, dist: 150 }, 2000);
+await shot('11f-lawn');
 await go([-60, 60]);
 await cam({ yaw: front, pitch: 1.0, dist: 260 }, 2500);
 await shot('12-whole');
@@ -129,7 +143,7 @@ await go([0, 10]);
 await cam({ yaw: front, pitch: 0.28, dist: 130 }, 2500);
 await shot('13-ridge');
 const counts = await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts);
-assert(counts?.woodTris > 500 && counts?.belt > 20, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
+assert(counts?.woodTris > 500 && counts?.belt > 60, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
 console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
 // The memorials: each stands by its way; you look at it from the way and cannot walk into it.
 for (const m of l.memorials || []) {

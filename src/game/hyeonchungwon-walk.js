@@ -19,6 +19,8 @@
 //   hc.group          what loaded (main.js FarCull), or null
 import { hyeonchungHeight, hyeonchungBox } from '../core/hyeonchung-ground.js';
 
+const inPolygonXZ = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
+
 export const HC_NEAR = 480; // m: past the fog (it ends at 420 m), so it is there before you see it
 
 // A box on the ground as a ring: middle (x, z), across w, deep d, turned ry.
@@ -63,9 +65,9 @@ export function ridgeSolids(k) {
   return out;
 }
 
-export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false, sky = null, music = null }) {
+export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false, sky = null, music = null, riding = null, getOff = null, noRide = null }) {
   const l = landmarks.find((q) => q.type === 'hyeonchung');
-  if (!l) return { y: () => 0, update() {}, tribute() {}, group: null, landmark: null };
+  if (!l) return { y: () => 0, update() {}, tribute() {}, group: null, landmark: null, inside: false };
   const [bx0, bz0, bx1, bz1] = hyeonchungBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
   const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : hyeonchungHeight(l, x - l.x, z - l.z));
@@ -86,6 +88,7 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
   // The note at the main gate: once each time you come up to it.
   const gx = l.x + l.mainGate.at[0], gz = l.z + l.mainGate.at[1], gr = l.note || 10;
   let shown = false, park = null, loading = false, flowers = 0;
+  let inside = false; // (on the grounds, on the street)
   let songBefore = null; // (the song that was on before you came onto the grounds)
   return {
     y,
@@ -94,6 +97,10 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
       const d = Math.hypot(p.x - gx, p.z - gz);
       if (d < gr) { if (!shown && toast && !busy()) { shown = true; toast(text()); } } else if (shown && d > gr * 2.5) shown = false;
       // The cemetery's own quiet music while you are on the grounds (only if music is on; your song comes back as you leave).
+      // On the grounds: no bikes or cars (you get off at the edge; a seat in a friend's car is theirs to stop). Running is fine: it is a big place.
+      inside = near(p) < 12 && inPolygonXZ(p.x - l.x, p.z - l.z, l.foot);
+      const r = riding?.();
+      if (inside && r && r !== 3) { getOff?.(); if (toast && noRide) toast(noRide()); }
       const mu = music?.();
       if (mu) {
         const inside = near(p) < 12;
@@ -108,6 +115,7 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
         .catch((e) => { loading = false; console.warn('hyeonchungwon', e); });
     },
     tribute() { flowers++; park?.tribute(); },
+    get inside() { return inside; },
     get park() { return park; },
     get group() { return park?.group || null; },
   };

@@ -476,6 +476,7 @@ export const KO = {
   'cityhall.desk': "민원 창구: 이름 바꾸기·꾸미기",
   'cityhall.clerk': "시청 민원 창구",
   'hyeonchung.note': "🕊️ 국립서울현충원: 1955년 국군묘지로 만들어졌고 1965년 국립묘지가 됐어요. 추모하는 곳이니 조용히 걸어 주세요.",
+  'hyeonchung.noRide': "🚲 현충원 안에서는 자전거·차를 탈 수 없어요. 걷거나 뛰어서 다녀요.",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',
   'car.off': '차에서 내리기',
