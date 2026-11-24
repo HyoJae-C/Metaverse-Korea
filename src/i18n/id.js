@@ -475,6 +475,7 @@ export const ID = {
   'cityhall.desk': "Loket: ganti atau hias namaku",
   'cityhall.clerk': "Loket Balai Kota",
   'hyeonchung.note': "🕊️ Taman Makam Nasional Seoul: didirikan pada 1955 sebagai makam militer, menjadi makam nasional sejak 1965. Ini tempat untuk mengenang. Mohon berjalan dengan tenang.",
+  'hyeonchung.noRide': "🚲 Sepeda dan mobil tidak boleh masuk taman makam. Di sini kamu bisa berjalan atau berlari.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',

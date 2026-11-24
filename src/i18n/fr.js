@@ -473,6 +473,7 @@ export const FR = {
   'cityhall.desk': "Guichet : changer ou décorer mon nom",
   'cityhall.clerk': "Guichet de l'hôtel de ville",
   'hyeonchung.note': "🕊️ Cimetière national de Séoul : fondé en 1955 comme cimetière militaire, cimetière national depuis 1965. C'est un lieu de recueillement. Merci de marcher en silence.",
+  'hyeonchung.noRide': "🚲 Pas de vélo ni de voiture dans le cimetière. Ici, on marche ou on court.",
   'bike.offShort': 'Descendre',
   'bike.off': 'Descendre du vélo',
   'car.off': 'Sortir de la voiture',

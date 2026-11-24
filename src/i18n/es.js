@@ -474,6 +474,7 @@ export const ES = {
   'cityhall.desk': "Ventanilla: cambiar o decorar mi nombre",
   'cityhall.clerk': "Ventanilla del Ayuntamiento",
   'hyeonchung.note': "🕊️ Cementerio Nacional de Seúl: fundado en 1955 como cementerio militar, cementerio nacional desde 1965. Es un lugar de recuerdo. Camina en silencio, por favor.",
+  'hyeonchung.noRide': "🚲 No se permiten bicis ni coches en el cementerio. Aquí puedes caminar o correr.",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',
   'car.off': 'Salir del coche',

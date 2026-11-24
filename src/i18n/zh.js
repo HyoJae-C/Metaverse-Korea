@@ -475,6 +475,7 @@ export const ZH = {
   'cityhall.desk': "服务窗口：改名、装饰名牌",
   'cityhall.clerk': "市政厅服务窗口",
   'hyeonchung.note': "🕊️ 国立首尔显忠院：1955年作为国军墓地建成，1965年成为国立墓地。这里是追思之地，请安静步行。",
+  'hyeonchung.noRide': "🚲 显忠院内不能骑车或开车，请步行或跑步。",
   'bike.offShort': '下车',
   'bike.off': '下车',
   'car.off': '下车',

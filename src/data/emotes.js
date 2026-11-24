@@ -31,7 +31,13 @@ export const EMOTE_PACKS = [
 // a book, praying hands and a dove instead.
 // In the temples' silent dharma halls (Yozi 2026-11-15) the only emote is
 // the praying hands: '*': null hides every other slot.
+// On the grounds of Seoul National Cemetery (Yozi 2026-11-24; out of doors,
+// keyed 'hyeonchung'): no anger or laughing; praying hands and a dove.
 export const ROOM_EMOTES = {
+  hyeonchung: {
+    angry: { id: 'hc-pray', emoji: '🙏', anim: 'bow' },
+    laugh: { id: 'hc-dove', emoji: '🕊️' },
+  },
   cathedral: {
     cry: { id: 'book', emoji: '📖' },
     angry: { id: 'pray', emoji: '🙏', anim: 'bow' },
