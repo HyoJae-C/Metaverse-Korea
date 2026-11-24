@@ -1431,7 +1431,8 @@ So the made-up hills behind the mounds are cut short of each shrine hall and
 fenced (blockers, you can't climb a tomb). The models are in
 `core/royal-tomb-model.js`, loaded when you walk in through the wall; a few
 visitors stand and stroll (`game/seonjeongneung-near.js`). The wood is drawn
-whole (`core/wood-mass.js`): crowns over patches you can't walk into. Moves are in
+whole (`core/wood-mass.js`): about 150 big crowns that reach the ground, one draw, over
+patches you can't walk into. Moves are in
 `meta.nudges`, made-up things in `meta.approx`.
 
 ## Seoul National Cemetery (국립서울현충원, 2026-11-24)

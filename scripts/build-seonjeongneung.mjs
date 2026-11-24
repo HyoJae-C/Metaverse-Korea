@@ -52,7 +52,7 @@ export const SJN = {
   hillGap: 2.5, // m kept between a hill's foot and the shrine hall's platform
   chamdoW: 1.6, // m: the stone path (about 3.2 m in Seoul, halved)
   infoBox: [10, 6], // m: the Information Center (game size, in the history hall's place)
-  tree: 6, // m between the crowns of the wood's mass
+  tree: 9, // m between the big crowns of the wood's mass (few and big: about 3,000 triangles, Yozi 2026-11-24)
 };
 
 // The district's anchor: the main gate by the ticket office (삼릉공원 입구).
@@ -370,8 +370,8 @@ const crowns = []; // [x, z, radius]
   const add = (P, x, z) => { // a crown as wide as its room: it hangs at most 0.6 m over the patch's edge
     const d = ringDist(x, z, P);
     if (!inside(P, x, z) || d < 1) return;
-    const r = Math.min(4.4, d + 0.6);
-    if (crowns.some(([cx, cz, cr]) => Math.hypot(cx - x, cz - z) < Math.max(r, cr) * 0.75)) return;
+    const r = Math.min(7, d + 0.6);
+    if (crowns.some(([cx, cz, cr]) => Math.hypot(cx - x, cz - z) < Math.max(r, cr) * 1.05)) return;
     crowns.push([r1(x), r1(z), r1(r)]);
   };
   for (const P of woods) {
@@ -379,7 +379,7 @@ const crowns = []; // [x, z, radius]
     for (let z = Math.min(...zs); z < Math.max(...zs) + SJN.tree; z += SJN.tree) for (let x = Math.min(...xs); x < Math.max(...xs) + SJN.tree; x += SJN.tree) add(P, x + (hash(x, z) - 0.5) * 2, z + (hash(z, x) - 0.5) * 2);
     for (let i = 0; i < P.length; i++) { // and a row just inside its edge, so the mass reaches it
       const a = P[i], q = P[(i + 1) % P.length], len = Math.hypot(q[0] - a[0], q[1] - a[1]) || 1, nx = -(q[1] - a[1]) / len, nz = (q[0] - a[0]) / len;
-      for (let t = 1; t < len; t += 3.2) for (const sg of [1, -1]) add(P, a[0] + (q[0] - a[0]) * t / len + nx * 1.6 * sg, a[1] + (q[1] - a[1]) * t / len + nz * 1.6 * sg);
+      for (let t = 1; t < len; t += 6) for (const sg of [1, -1]) add(P, a[0] + (q[0] - a[0]) * t / len + nx * 2.2 * sg, a[1] + (q[1] - a[1]) * t / len + nz * 2.2 * sg);
     }
   }
   for (const P of woods) blockers.push({ p: P, low: true, why: 'the wood' });
