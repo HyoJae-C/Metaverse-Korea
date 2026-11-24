@@ -1211,6 +1211,10 @@ a.setting-row { text-decoration: none; color: inherit; }
 .train-tab.on { background: var(--ink); color: #fff; }
 .train-panel #train-off { width: 100%; margin-top: 10px; }
 .train-panel #train-status { margin: 2px 0 8px; }
+.train-progress { display: grid; gap: 4px; margin: -2px 0 10px; flex: 0 0 auto; }
+.train-progress-bar { height: 10px; border-radius: 999px; background: rgba(0,0,0,0.1); overflow: hidden; }
+.train-progress-bar > i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width 0.25s linear; }
+.train-progress > small { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 
 .cloud-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 8px 44px; }
 .cloud-actions .chip { font-size: 13px; }

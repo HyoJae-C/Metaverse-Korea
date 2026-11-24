@@ -80,6 +80,7 @@ export const FR = {
   'metro.tab.shop': 'Shopping',
   'metro.tab.park': 'Parcs et fleuve',
   'metro.recent': 'Récents',
+  'metro.progress': 'Arrivée à {name} : {pct} % · encore {s} s',
   'ride.flume': 'Monter dans les bûches',
   'ride.gyro': 'Monter dans le pendule géant',
   'ride.go': 'C\'est parti ! Tiens-toi bien 🎶',

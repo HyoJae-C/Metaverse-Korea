@@ -79,6 +79,7 @@ export const ES = {
   'metro.tab.shop': 'Compras',
   'metro.tab.park': 'Parques y río',
   'metro.recent': 'Recientes',
+  'metro.progress': 'Llegada a {name}: {pct}% · faltan {s} s',
   'ride.flume': 'Subir a los troncos',
   'ride.gyro': 'Subir al péndulo gigante',
   'ride.go': '¡Allá vamos! Agárrate fuerte 🎶',

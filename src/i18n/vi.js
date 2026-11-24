@@ -80,6 +80,7 @@ export const VI = {
   'metro.tab.shop': 'Mua sắm',
   'metro.tab.park': 'Công viên & sông',
   'metro.recent': 'Gần đây',
+  'metro.progress': 'Đến {name}: {pct}% · còn {s} giây',
   'ride.flume': 'Đi thuyền gỗ vượt thác',
   'ride.gyro': 'Đi đu quay con lắc',
   'ride.go': 'Xuất phát! Bám chắc nhé 🎶',

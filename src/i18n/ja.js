@@ -80,6 +80,7 @@ export const JA = {
   "metro.tab.shop": "ショッピング",
   "metro.tab.park": "公園・漢江",
   "metro.recent": "最近",
+  "metro.progress": "{name}まで {pct}% · あと{s}秒",
   "ride.flume": "急流すべりに乗る",
   "ride.gyro": "ジャイロスイングに乗る",
   "ride.go": "出発！しっかりつかまってね 🎶",

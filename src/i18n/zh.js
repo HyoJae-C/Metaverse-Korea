@@ -80,6 +80,7 @@ export const ZH = {
   "metro.tab.shop": "购物",
   "metro.tab.park": "公园·汉江",
   "metro.recent": "最近",
+  "metro.progress": "到达{name}：{pct}% · 还有{s}秒",
   "ride.flume": "坐激流勇进",
   "ride.gyro": "坐大摆锤",
   "ride.go": "出发！抓紧哦 🎶",
