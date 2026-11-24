@@ -226,3 +226,31 @@ test('the Taegeukgi beside the forecourt, the verse as it is cut, the fountain i
   assert.ok(!hyeonchungSolids(l).some((p) => inPoly(l.tribute.at[0], l.tribute.at[1], p)), 'the tribute spot is free');
   for (const what of ['Taegeukgi', 'Fountain', 'wood inside']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what)));
 });
+
+test('memorials: on their OSM spots (within 15 m), off the ways and the court, solid, listed as made up', () => {
+  assert.ok(l.memorials.length >= 2);
+  for (const m of l.memorials) {
+    assert.ok(m.nudge <= 15, `${m.id} stands ${m.nudge} m from its OSM point`);
+    assert.ok(inPoly(m.at[0], m.at[1], l.foot) && !inPoly(m.at[0], m.at[1], l.court), `${m.id} is on the grounds, off the court`);
+    const n = wayNear(l, m.at[0], m.at[1]);
+    assert.ok(n && n.e > m.size[1] / 2 && n.e < m.size[1] / 2 + 2, `${m.id} stands just off its way (${n?.e.toFixed(1)} m)`);
+    assert.ok(hyeonchungSolids(l).some((p) => inPoly(m.at[0], m.at[1], p)), `${m.id} is solid`);
+    assert.ok(hc.meta.approx.some((a) => a.what.includes(m.n.en)), `${m.id} is listed as made up`);
+  }
+});
+
+test('the cemetery has its own quiet music while you are on the grounds, and your song comes back', async () => {
+  const { TRACKS } = await import('../src/data/tracks.js');
+  const tr = TRACKS.find((q) => q.id === 'hyeonchung');
+  assert.ok(tr.hidden && !tr.kick.length && !tr.snare.length, 'not in the record list, no drums');
+  assert.equal(tr.tune.reduce((s, q) => s + q[1], 0), tr.steps, 'the tune fills its bars');
+  const music = { on: true, track: { id: 'lofi' }, setTrack(id) { this.track = { id }; } };
+  const walk = createHyeonchungwonWalk({ landmarks: hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })), music: () => music });
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.equal(music.track.id, 'hyeonchung');
+  walk.update({ x: ox + 2000, z: oz }, 0.1);
+  assert.equal(music.track.id, 'lofi');
+  music.on = false;
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.equal(music.track.id, 'lofi', 'nothing starts if music is off');
+});

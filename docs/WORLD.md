@@ -1469,6 +1469,12 @@ before the decks so ways along it stay whole). Inside the grounds every slope th
 building is wood drawn whole (`hyeonchung-wood`, one mesh with a dark wall at
 its foot; single trees only at its edges), and two rows of tall trees stand
 along the court behind the gate (Yozi: in the photos trees close the view).
+Memorials (`landmark.memorials`, from Yozi's photos): the Tower of the Unknown
+Student Volunteer Soldiers and Chungyeoldae stand just off the way nearest
+their OSM points, at 50% of their estimated real size. A white chrysanthemum
+lies before every headstone (one flat instanced quad a stone, near tiles
+only). On the grounds the hidden track `hyeonchung` plays (an original slow
+tune, `data/tracks.js`), and your own song comes back as you leave.
 A sun and a moon always stand
 over the hill (sprites that follow you; the sun fades at night, the moon by
 day), after the verse "the sun and the moon will guard this hill".

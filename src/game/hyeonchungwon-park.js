@@ -206,6 +206,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   const water = l.water.map((w) => ({ ...w, box: boxOf(w.p) }));
   const builds = l.buildings.map((b) => ({ ...b, box: boxOf(b.p) }));
   const solids = hyeonchungSolids(l).map((p) => ({ p, box: boxOf(p) }));
+  const mems = (l.memorials || []).map((m) => { const c = Math.cos(m.ry), sn = Math.sin(m.ry), [w, d] = m.size, p = [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]].map(([u, v]) => [m.at[0] + u * c + v * sn, m.at[1] - u * sn + v * c]); return { p, box: boxOf(p) }; });
   const inAny = (list, x, z, m = 0) => list.some((q) => inBox(x, z, q.box, m) && (inPoly(x, z, q.p) || (m && ringDist(x, z, q.p) < m)));
   const offWay = (x, z, m) => { const n = wayNear(l, x, z); return !n || n.e > m; };
 
@@ -568,6 +569,60 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       B.box(x1 - x0 + 0.6, 0.3, z1 - z0 + 0.6, l.x + (x0 + x1) / 2, b.y + b.h + 0.15, l.z + (z0 + z1) / 2, C.tileDark);
     }
   }
+  for (const mm of l.memorials || []) { // The memorials (from Yozi's photos), at mm.s of their real size.
+    const k = mm.s, gy = LY(mm.at[0], mm.at[1]), m = frame(mm.at, mm.ry, gy), [fw, fd] = mm.size;
+    const arch = (w, h, t, d, x, z) => { // a round arch of cut stone: w across, h to its crown, piers t thick
+      const r = w / 2, sh = new THREE.Shape();
+      sh.moveTo(-r, 0); sh.lineTo(-r, h - r); sh.absarc(0, h - r, r, Math.PI, 0, true); sh.lineTo(r, 0); sh.lineTo(r - t, 0); sh.lineTo(r - t, h - r); sh.absarc(0, h - r, r - t, 0, Math.PI, false); sh.lineTo(-r + t, 0); sh.lineTo(-r, 0);
+      B.add(new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false, curveSegments: 5 }).translate(x, 0.2 * k, z - d / 2), C.granite, m);
+      for (const e of [1, -1]) for (let c = 1; c * 0.9 * k < h - r; c++) B.box(t + 0.03, 0.03, d + 0.03, x + e * (r - t / 2), 0.2 * k + c * 0.9 * k, z, C.joint, m); // (the piers' courses)
+    };
+    const plaque = (lines, w, h, x, yy, z, bg = '#1d1d22') => { const t = textLines(lines, w, h, { bg, fg: '#e6dfc8' }); t.position.set(x, yy, z); const hold = new THREE.Group(); hold.applyMatrix4(m); hold.add(t); group.add(hold); };
+    const burner = (x, z, sc, y0 = 0) => { // a bronze incense burner on three legs
+      for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) B.box(0.1 * sc, 0.34 * sc, 0.1 * sc, x + a * 0.2 * sc, 0.17 * sc + 0.2 * k + y0, z + b * 0.2 * sc, C.bronzeDark, m);
+      B.box(0.62 * sc, 0.4 * sc, 0.62 * sc, x, 0.52 * sc + 0.2 * k + y0, z, C.bronze, m);
+      B.box(0.74 * sc, 0.07 * sc, 0.74 * sc, x, 0.74 * sc + 0.2 * k + y0, z, C.bronzeDark, m);
+      for (const e of [1, -1]) B.box(0.07 * sc, 0.3 * sc, 0.07 * sc, x + e * 0.36 * sc, 0.88 * sc + 0.2 * k + y0, z, C.bronzeDark, m);
+    };
+    B.box(fw, 1.6, fd, 0, 0.2 * k - 0.8, 0, C.stone, m); // the paved floor (down into the slope)
+    if (mm.id === 'student-unknown') {
+      // Three round arches of granite: the tall one in the middle over the stele and the stone tomb, a lower one out to each side and forward.
+      arch(4.6 * k, 6 * k, 0.9 * k, 1.3 * k, 0, -1.2 * k);
+      for (const e of [1, -1]) arch(3 * k, 3.6 * k, 0.7 * k, 1.0 * k, e * 4.4 * k, 1.2 * k);
+      B.box(2 * k, 0.8 * k, 1.6 * k, 0, 0.2 * k + 0.4 * k, -1.2 * k, C.granite, m); // the stele's base
+      B.box(1.2 * k, 2.6 * k, 0.7 * k, 0, 0.2 * k + 0.8 * k + 1.3 * k, -1.3 * k, C.granite, m); // the stele
+      B.box(1.5 * k, 0.3 * k, 0.9 * k, 0, 0.2 * k + 3.55 * k, -1.3 * k, C.stone, m); // its cap
+      plaque(['無', '名', '勇', '士', '英', '顯'], 0.7 * k, 2.1 * k, 0, 0.2 * k + 0.8 * k + 1.3 * k, -1.3 * k + 0.36 * k);
+      B.box(2.6 * k, 0.6 * k, 1.5 * k, 0, 0.2 * k + 0.3 * k, 0.6 * k, C.stone, m); // the stone tomb before it
+      B.box(2.3 * k, 0.2 * k, 1.2 * k, 0, 0.2 * k + 0.7 * k, 0.6 * k, C.granite, m);
+      burner(0, 2.2 * k, 1.1 * k);
+    } else if (mm.id === 'chungyeoldae') {
+      // A broad flight of steps up to a walled terrace; on it the great stone with the black tablet "민족의 얼" between two
+      // beast heads over a carved base, a stone figure to the right, the bronze burner on its own block before the steps.
+      const steps = 7, rise = 0.32 * k, run = 0.62 * k, top = 0.2 * k + steps * rise, back = -fd / 2 + 4.4 * k;
+      for (let i = 0; i < steps; i++) B.box(fw - 2 * i * 0.3 * k, rise * (i + 1), run + 0.02, 0, 0.2 * k + (rise * (i + 1)) / 2, back + 1.6 * k + (steps - i - 0.5) * run, i % 2 ? C.stone : C.granite, m);
+      B.box(fw, top - 0.2 * k, 6 * k, 0, 0.2 * k + (top - 0.2 * k) / 2, back - 1.4 * k, C.granite, m); // the terrace
+      B.box(fw, 0.9 * k, 0.5 * k, 0, top + 0.45 * k, back - 1.0 * k, C.stone, m); // its low wall with carved panels
+      for (let i = 0; i < 8; i++) B.box(0.9 * k, 0.5 * k, 0.06, -fw / 2 + (i + 0.5) * (fw / 8), top + 0.45 * k, back - 1.0 * k + 0.26 * k, C.joint, m);
+      B.box(6.4 * k, 2.4 * k, 2.2 * k, 0, top + 0.9 * k + 1.2 * k, back - 2.4 * k, C.granite, m); // the carved base (beast faces)
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) B.box(1.2 * k, 0.9 * k, 0.1, -2.25 * k + i * 1.5 * k, top + 1.5 * k + j * 1.1 * k, back - 2.4 * k + 1.12 * k, C.stone, m);
+      B.box(5.2 * k, 2.6 * k, 1.5 * k, 0, top + 3.3 * k + 1.3 * k, back - 2.4 * k, C.dark, m); // the black tablet's stone
+      plaque(['민족의 얼'], 4.6 * k, 1.9 * k, 0, top + 3.3 * k + 1.3 * k, back - 2.4 * k + 0.76 * k, '#16161a');
+      for (const e of [1, -1]) { // the beast heads at its ends
+        B.box(1.5 * k, 1.5 * k, 1.5 * k, e * 3.3 * k, top + 3.9 * k, back - 2.3 * k, C.white, m);
+        B.box(1.2 * k, 0.8 * k, 1.0 * k, e * 4.2 * k, top + 3.6 * k, back - 2.0 * k, C.white, m);
+        B.box(0.3 * k, 0.7 * k, 0.3 * k, e * 3.1 * k, top + 4.9 * k, back - 2.3 * k, C.white, m);
+      }
+      const fx = fw / 2 - 1.5 * k; // the stone figure on its block, right
+      B.box(1.8 * k, 0.6 * k, 1.8 * k, fx, top + 0.3 * k, back + 0.2 * k, C.granite, m);
+      B.box(1.2 * k, 2.6 * k, 1.0 * k, fx, top + 0.6 * k + 1.3 * k, back + 0.2 * k, C.white, m);
+      B.box(0.9 * k, 0.9 * k, 0.9 * k, fx, top + 3.2 * k + 0.45 * k, back + 0.2 * k, C.white, m);
+      B.box(1.1 * k, 0.5 * k, 1.0 * k, fx, top + 4.1 * k + 0.25 * k, back + 0.2 * k, C.white, m);
+      B.box(2 * k, 1.2 * k, 2 * k, 0, 0.2 * k + 0.6 * k, fd / 2 - 1.0 * k, C.stone, m); // the burner's block
+      burner(0, fd / 2 - 1.0 * k, 1.8 * k, 1.2 * k);
+      B.box(0.5 * k, 0.9 * k, 0.4 * k, 1.9 * k, 0.2 * k + 0.45 * k, fd / 2 - 0.9 * k, C.bronzeDark, m); // (the small incense stand)
+    }
+  }
   group.add(B.mesh('hyeonchung-built'));
 
   // The wood inside the grounds, drawn whole (Yozi: in the photos the trees stand round the plots and behind the
@@ -653,7 +708,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
 
   { // The headstones: plain white, no names; by tile, so far ones are skipped.
     const [sw, sh, sd] = P.stone, tiles = new Map();
-    const ok = (x, z) => offWay(x, z, P.edge) && !flatAt(l, x, z) && !inAny(builds, x, z, 1) && !inAny(water, x, z, 0.8) && !inBelt(x, z);
+    const ok = (x, z) => offWay(x, z, P.edge) && !flatAt(l, x, z) && !inAny(builds, x, z, 1) && !inAny(water, x, z, 0.8) && !inBelt(x, z) && !inAny(mems, x, z, 1.5);
     let count = 0;
     for (const pl of plots) {
       for (const [x, z] of plotStones(pl, { step: lowSpec ? 2 : P.stones }, ok)) {
@@ -667,11 +722,25 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     const geo = new THREE.BoxGeometry(sw, sh, sd).translate(0, sh / 2, 0), mat = addSnowCover(new THREE.MeshLambertMaterial({ color: 0xf4f2ec }));
     const flat = new THREE.PlaneGeometry(sw, sh).translate(0, sh / 2, 0), flatMat = new THREE.MeshLambertMaterial({ color: 0xf4f2ec, side: THREE.DoubleSide });
     group.userData.stoneTiles = [];
+    const flowerGeo = new THREE.PlaneGeometry(0.34, 0.56).rotateX(-Math.PI / 2 + 0.12);
+    const flowerMat = (() => {
+      const c = document.createElement('canvas'); c.width = 48; c.height = 80;
+      const g = c.getContext('2d');
+      g.strokeStyle = '#4c7a3c'; g.lineWidth = 5; g.beginPath(); g.moveTo(24, 78); g.lineTo(24, 30); g.stroke();
+      g.fillStyle = '#4c7a3c'; g.beginPath(); g.ellipse(33, 56, 9, 4, -0.6, 0, 7); g.fill();
+      g.fillStyle = '#ffffff'; for (let i = 0; i < 10; i++) { g.beginPath(); g.ellipse(24 + Math.cos(i * 0.63) * 9, 19 + Math.sin(i * 0.63) * 9, 8, 5, i * 0.63, 0, 7); g.fill(); }
+      g.fillStyle = '#f3e6a8'; g.beginPath(); g.arc(24, 19, 5, 0, 7); g.fill();
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+      return new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.5, side: THREE.DoubleSide });
+    })();
     for (const [k, list] of tiles) {
       const [i, j] = k.split(',').map(Number);
       const mid = [l.x + (i + 0.5) * P.tile, l.z + (j + 0.5) * P.tile];
       const near = instanced(geo, mat, list, 'hyeonchung-stones-' + k), far = instanced(flat, flatMat, list, 'hyeonchung-stones-far-' + k);
       far.visible = false;
+      // A white chrysanthemum laid before every stone (Yozi: one from the maker for each of them). Seen near only.
+      const laid = instanced(flowerGeo, flowerMat, list.map(([x, yy, z, ry]) => [x + Math.sin(ry) * 0.42, yy + 0.05, z + Math.cos(ry) * 0.42, ry]), 'hyeonchung-laid-' + k);
+      near.add(laid);
       group.userData.stoneTiles.push({ mid, near, far });
       group.add(near, far);
     }
@@ -687,7 +756,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     for (let k = 0; k < want * 40 && round.length + pines.length < want; k++) {
       const x = fx0 + rnd() * (fx1 - fx0), z = fz0 + rnd() * (fz1 - fz0);
       if (!inPoly(x, z, l.foot) || ringDist(x, z, l.foot) < 1.5) continue;
-      if (flatAt(l, x, z) || inAny(plots, x, z, 1.5) || inAny(lawns, x, z, 1) || inAny(water, x, z, 1.5) || inAny(builds, x, z, 2.5) || inAny(solids, x, z, 3) || !offWay(x, z, P.treeClear)) continue;
+      if (flatAt(l, x, z) || inAny(plots, x, z, 1.5) || inAny(lawns, x, z, 1) || inAny(water, x, z, 1.5) || inAny(builds, x, z, 2.5) || inAny(solids, x, z, 3) || inAny(mems, x, z, 6) || !offWay(x, z, P.treeClear)) continue;
       if (inBox(x, z, courtBox, 4) && ringDist(x, z, l.court) < 4) continue;
       if (wood.deep(x, z)) continue; // (under the wood's own treetops)
       const sc = 0.85 + rnd() * 0.7;
@@ -704,7 +773,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
           for (const sgn of [1, -1]) {
             const x = ax + dx * t - dz * out * sgn + (rnd() - 0.5) * 0.8, z = az + dz * t + dx * out * sgn + (rnd() - 0.5) * 0.8;
             if (inPoly(x, z, l.court) || ringDist(x, z, l.court) < out - 0.6 || !behindGate(x, z)) continue;
-            if (flatAt(l, x, z) || inAny(water, x, z, 1) || inAny(builds, x, z, 2) || inAny(solids, x, z, 2) || !offWay(x, z, 1.6)) continue;
+            if (flatAt(l, x, z) || inAny(water, x, z, 1) || inAny(builds, x, z, 2) || inAny(solids, x, z, 2) || inAny(mems, x, z, 6) || !offWay(x, z, 1.6)) continue;
             const sc = 1.25 + rnd() * 0.5;
             ((belt + n) % 5 === 4 ? round : pines).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc * 1.1, sc]);
             belt++;

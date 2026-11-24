@@ -904,7 +904,7 @@ const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seat
 // Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
 const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Seoul National Cemetery (game/hyeonchungwon-walk.js): a place of remembrance; its roads, court and lawn are decks, the rest loads near.
-const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }) });
+const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }), music: () => music });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
 const mokdong = createMokdongNear({ landmarks: map.landmarks, scene });
 // Gimpo Airport: the roof deck you walk on (first download); the terminals, runways and planes load near (game/gimpo-walk.js).

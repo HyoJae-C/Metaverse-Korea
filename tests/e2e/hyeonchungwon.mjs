@@ -128,5 +128,12 @@ await shot('13-ridge');
 const counts = await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts);
 assert(counts?.woodTris > 500 && counts?.belt > 20, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
 console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
+// The memorials: each stands by its way; you look at it from the way and cannot walk into it.
+for (const m of l.memorials || []) {
+  const d = m.size[1] / 2 + 3.2;
+  await go([m.at[0] + Math.sin(m.ry) * d, m.at[1] + Math.cos(m.ry) * d]);
+  await cam({ yaw: m.ry, pitch: 0.16, dist: 7 });
+  await shot('14-memorial-' + m.id);
+}
 assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`);
 await browser.close();

@@ -37,6 +37,7 @@ export function hyeonchungSolids(l) {
   out.push(boxRing(l.altar.at[0], l.altar.at[1], 3.4, 3.2, l.altar.ry)); // (the burner and the stone, the verse wall behind, the flower table in front)
   for (const [a, b] of l.walls) { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); out.push(boxRing((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, len, 0.5, Math.atan2(-(b[1] - a[1]), b[0] - a[0]))); }
   if (l.flag) out.push(boxRing(l.flag.at[0], l.flag.at[1], 0.6, 0.6, 0));
+  for (const m of l.memorials || []) out.push(boxRing(m.at[0], m.at[1], m.size[0], m.size[1], m.ry));
   const f = l.fountain, n = 10;
   out.push(Array.from({ length: n }, (_, i) => [f.at[0] + Math.cos((i / n) * Math.PI * 2) * f.r, f.at[1] + Math.sin((i / n) * Math.PI * 2) * f.r]));
   return out;
@@ -62,7 +63,7 @@ export function ridgeSolids(k) {
   return out;
 }
 
-export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false, sky = null }) {
+export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false, sky = null, music = null }) {
   const l = landmarks.find((q) => q.type === 'hyeonchung');
   if (!l) return { y: () => 0, update() {}, tribute() {}, group: null, landmark: null };
   const [bx0, bz0, bx1, bz1] = hyeonchungBox(l);
@@ -85,12 +86,20 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
   // The note at the main gate: once each time you come up to it.
   const gx = l.x + l.mainGate.at[0], gz = l.z + l.mainGate.at[1], gr = l.note || 10;
   let shown = false, park = null, loading = false, flowers = 0;
+  let songBefore = null; // (the song that was on before you came onto the grounds)
   return {
     y,
     landmark: l,
     update(p, dt) {
       const d = Math.hypot(p.x - gx, p.z - gz);
       if (d < gr) { if (!shown && toast && !busy()) { shown = true; toast(text()); } } else if (shown && d > gr * 2.5) shown = false;
+      // The cemetery's own quiet music while you are on the grounds (only if music is on; your song comes back as you leave).
+      const mu = music?.();
+      if (mu) {
+        const inside = near(p) < 12;
+        if (inside && !songBefore && mu.on && mu.track.id !== 'hyeonchung') { songBefore = mu.track.id; mu.setTrack('hyeonchung'); }
+        else if (!inside && songBefore && near(p) > 40) { if (mu.track.id === 'hyeonchung') mu.setTrack(songBefore); songBefore = null; }
+      }
       if (park) { park.update(p, dt); return; }
       if (loading || !scene || near(p) > HC_NEAR) return;
       loading = true;
