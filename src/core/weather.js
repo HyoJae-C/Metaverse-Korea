@@ -76,6 +76,16 @@ export function glowAtNight(material, strength = 1, base = 0) {
   return e;
 }
 
+// Walls that go dark after dark, so their lit windows stand out (Yozi
+// 2026-11-24: like Euljiro's old buildings at night, white by day). No new
+// materials: the shared wall and roof materials' colour (it multiplies the
+// vertex tints) runs from 1 by day down to `night` at full night, on the
+// same curve as the windows. [material, night]
+const dimming = [];
+export function dimAtNight(material, night = 0.3) {
+  dimming.push([material, night]);
+}
+
 const SKY = {
   day: new THREE.Color(0xbfe3ff),
   dusk: new THREE.Color(0xffc9a8),
@@ -205,6 +215,7 @@ export class WeatherSystem {
     // Lit windows: on from dusk (a few stay dark: the texture says which).
     const glow = Math.max(0, n - 0.15) / 0.85;
     for (const [m, k, b] of glowing) m.emissiveIntensity = b + glow * (k - b);
+    for (const [m, k] of dimming) m.color.setScalar(1 - glow * (1 - k));
 
     // Snow on the ground: from the shared clock, so everyone sees the same
     // depth; with ?weather= forced it settles from the moment you arrive
