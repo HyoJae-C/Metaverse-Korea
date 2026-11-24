@@ -61,6 +61,9 @@ const done = (g) => { mergeStatic(g); g.traverse((o) => { if (o.isMesh) { o.cast
 function hill(g, l) {
   const H = l.hill.h, c = Math.cos(-l.ry), s = Math.sin(-l.ry);
   const ring = l.hill.p.map(([x, z]) => [x * c + z * s, -x * s + z * c]); // (into the tomb's own frame)
+  // (Wound so the faces look up: the outline may come either way round, and
+  // faces looking down are not drawn, which left the hill open from above.)
+  if (ring.reduce((sum, [x, z], k) => { const [x1, z1] = ring[(k + 1) % ring.length]; return sum + x * z1 - x1 * z; }, 0) > 0) ring.reverse();
   const RINGS = 7, pos = [], col = [];
   const top = new THREE.Color(C.grass), side = new THREE.Color(C.grassDark);
   const at = (k, t) => { // point k of the outline, t of the way out from the middle
