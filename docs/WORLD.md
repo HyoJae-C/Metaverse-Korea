@@ -1473,3 +1473,31 @@ Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
 note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
 has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
+
+Detail (2026-11-24, from Yozi's photos): Hyeonchungmun has tiled roofs with
+white ridges, a dancheong band, brackets and latticed wings; the tower is a
+cross-plan shaft of block courses on a round base, with the verse wall
+(`HC_VERSE`, the three lines as they are cut), the bronze burner and the 충혼
+stone before it; the fountain has two basins and bronze figures with a flag
+(it cannot be wider than the island of OSM's round road, 6.8 m, so it is tall
+instead: 8.4 m). One Taegeukgi stands on the lawn by the forecourt. Headstones
+are fewer and bigger (`HC_PARK.rows`/`stones`/`stone`; about a quarter fewer).
+Past the hill's foot the land you cannot enter is a wooded ridge
+(`landmark.ridge`: SRTM at 1/4 out to 90 m, 0 at streets, the entrance and
+the ways; one mesh of treetops; `ridgeSolids` closes it to walking, added
+before the decks so ways along it stay whole). Inside the grounds every slope that is not a plot, a lawn, a way or a
+building is wood drawn whole (`hyeonchung-wood`, one mesh whose treetops come down
+to the ground at its edges; single trees only at its edges), and two rows of tall trees stand
+along the court behind the gate (Yozi: in the photos trees close the view).
+Memorials (`landmark.memorials`, from Yozi's photos): the Tower of the Unknown
+Student Volunteer Soldiers, Chungyeoldae, the Altar for Patriots without
+Descendants and the Memorial to the Unknown Soldiers of the Korean
+Independence Army stand just off the way nearest their OSM points (the altar
+9.7 m from its point: Chungyeoldae at 50% covers its real spot), at 50% of
+their estimated real size. A white chrysanthemum
+lies before every headstone (one flat instanced quad a stone, near tiles
+only). On the grounds the hidden track `hyeonchung` plays (an original slow
+tune, `data/tracks.js`), and your own song comes back as you leave.
+A sun and a moon always stand
+over the hill (sprites that follow you; the sun fades at night, the moon by
+day), after the verse "the sun and the moon will guard this hill".

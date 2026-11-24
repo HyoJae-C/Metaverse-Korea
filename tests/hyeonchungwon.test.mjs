@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import { toGame } from '../src/core/seoul-grid.js';
 import { inPoly } from '../src/core/skypark-ground.js';
 import { hyeonchungHeight, wayNear, flatAt } from '../src/core/hyeonchung-ground.js';
-import { createHyeonchungwonWalk, hyeonchungSolids } from '../src/game/hyeonchungwon-walk.js';
-import { plotStones, HC_PARK } from '../src/game/hyeonchungwon-park.js';
+import { createHyeonchungwonWalk, hyeonchungSolids, ridgeSolids } from '../src/game/hyeonchungwon-walk.js';
+import { plotStones, HC_PARK, HC_VERSE } from '../src/game/hyeonchungwon-park.js';
 import { prayerSpots } from '../src/game/prayer.js';
 import { HC } from '../scripts/build-hyeonchungwon.mjs';
 
@@ -135,7 +135,7 @@ test('the walk: decks on the ways and the court, solids after them, height on th
   const landmarks = hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz }));
   const walk = createHyeonchungwonWalk({ landmarks, collision, toast: (m) => said.push(m), text: () => 'note' });
   assert.ok(decks.length > l.trails.length);
-  assert.equal(solid.length, hyeonchungSolids(l).length);
+  assert.equal(solid.length, hyeonchungSolids(l).length + ridgeSolids(l.ridge).length);
   assert.ok(solid.every((s) => s.low));
   const t = l.trails.filter((q) => !q.court).sort((a, b) => b.p[0][2] - a.p[0][2])[0], q = t.p[0];
   assert.ok(Math.abs(walk.y(q[0] + ox, q[1] + oz) - q[2]) < 0.05, 'on a hill road at its height');
@@ -168,4 +168,89 @@ test('Dongjak Station (Line 4) at the main gate: exits on their OSM spots, off t
     assert.ok(exits.some((p) => { const [x, z] = W([[p.lat, p.lon]])[0]; return Math.hypot(x - lx, z - lz) < 15; }), `exit ${e.n ?? e.no ?? ''} within 15 m of an OSM entrance`);
     assert.ok(!inPoly(lx, lz, l.foot), 'off the hill');
   }
+});
+
+test('the ridge behind: outside the hill, closed to walking, clear of every way, street and station exit', async () => {
+  const k = l.ridge;
+  const rs = ridgeSolids(k);
+  let cells = 0, top = 0;
+  for (let j = 0; j < k.h; j++) for (let i = 0; i < k.w; i++) {
+    const h = k.m[j * k.w + i];
+    if (!h) continue;
+    cells++; top = Math.max(top, h);
+    const x = k.x0 + i * k.cell, z = k.z0 + j * k.cell;
+    assert.ok(!inPoly(x, z, l.foot), `ridge at ${x}, ${z} is off the hill you walk on`);
+    assert.ok(rs.some((p) => inPoly(x, z, p)), `you cannot walk onto the ridge at ${x}, ${z}`);
+    assert.ok(i > 0 && j > 0 && i < k.w - 1 && j < k.h - 1, 'the ridge ends inside its grid');
+    for (const t of l.trails) for (const q of t.p) assert.ok(Math.hypot(q[0] - x, q[1] - z) > 2.5, `no ridge on the way ${t.id}`);
+  }
+  assert.ok(cells > 400 && top > 20 && top < 45, `${cells} cells, ${top} m at the highest`);
+  assert.ok(rs.length < 120, `${rs.length} rectangles`);
+  assert.ok(hc.meta.approx.some((a) => a.what.includes('ridge')));
+  // In the joined map with the walk's decks and solids: every way of the grounds, every street and every exit stays free.
+  const { loadRegionMap } = await import('../src/core/districts.js');
+  const { CollisionMap } = await import('../src/core/collision.js');
+  const map = await loadRegionMap(region, async (f) => read(f));
+  const solid = new CollisionMap(map.buildings.concat(map.blockers));
+  for (const d of map.decks) solid.addDeck(d);
+  createHyeonchungwonWalk({ landmarks: map.landmarks, collision: solid });
+  const bare = new CollisionMap(map.buildings.concat(map.blockers)); // (the same without the ridge)
+  for (const d of map.decks) bare.addDeck(d);
+  createHyeonchungwonWalk({ landmarks: map.landmarks.map((q) => (q.type === 'hyeonchung' ? { ...q, ridge: null } : q)), collision: bare });
+  for (const t of l.trails) for (const q of t.p) assert.ok(bare.blocked(q[0] + ox, q[1] + oz, 0.4) || !solid.blocked(q[0] + ox, q[1] + oz, 0.4), `the ridge leaves way ${t.id} free at ${q[0]}, ${q[1]}`);
+  const near = (x, z) => Math.abs(x - ox) < 420 && Math.abs(z - oz) < 420;
+  let n = 0;
+  for (const r of map.roads.filter((q) => q.base)) for (let i = 1; i < r.p.length; i++) { // (the streets round the cemetery; its own roads are the ways above)
+    const [ax, az] = r.p[i - 1], [bx, bz] = r.p[i], d = Math.hypot(bx - ax, bz - az);
+    for (let s = 0; s <= d; s += 3) {
+      const x = ax + ((bx - ax) * s) / (d || 1), z = az + ((bz - az) * s) / (d || 1);
+      if (!near(x, z)) continue;
+      n++;
+      const rad = (r.w || 6) / 2 + 2;
+      assert.ok(bare.blocked(x, z, rad) || !solid.blocked(x, z, rad), `no ridge on the road or its pavement at ${Math.round(x)}, ${Math.round(z)}`);
+    }
+  }
+  assert.ok(n > 150, `${n} road spots checked`);
+  for (const e of region.subway.stations.find((s) => s.id === 'dongjak-station').exits) {
+    const at = e.at || e.p || [e.x, e.z];
+    assert.ok(!rs.some((p) => p.some(([x, z]) => Math.hypot(x + ox - at[0], z + oz - at[1]) < 15)), 'no ridge within 15 m of a station exit');
+  }
+});
+
+test('the Taegeukgi beside the forecourt, the verse as it is cut, the fountain inside its round road', () => {
+  assert.ok(l.flag && !inPoly(l.flag.at[0], l.flag.at[1], l.court) && inPoly(l.flag.at[0], l.flag.at[1], l.flats.find((q) => q.k === 'lawn').p) && hyeonchungHeight(l, l.flag.at[0], l.flag.at[1]) === 0, 'the flagpole stands on level ground off the paved court');
+  assert.ok(hyeonchungSolids(l).some((p) => inPoly(l.flag.at[0], l.flag.at[1], p)), 'you cannot walk through the pole');
+  assert.deepEqual(HC_VERSE, ['여기는 민족의 얼이 서린 곳', '조국과 함께 영원히 가는 이들', '해와 달이 이 언덕을 보호하리라']);
+  const f = l.fountain;
+  for (const r of hc.roads) for (const [x, z] of r.p) assert.ok(Math.hypot(x - f.at[0], z - f.at[1]) - r.w / 2 > f.r - 0.3, 'the fountain leaves the round road free');
+  assert.ok(!hyeonchungSolids(l).some((p) => inPoly(l.tribute.at[0], l.tribute.at[1], p)), 'the tribute spot is free');
+  for (const what of ['Taegeukgi', 'Fountain', 'wood inside']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what)));
+});
+
+test('memorials: on their OSM spots (within 15 m), off the ways and the court, solid, listed as made up', () => {
+  assert.ok(l.memorials.length >= 2);
+  for (const m of l.memorials) {
+    assert.ok(m.nudge <= 15, `${m.id} stands ${m.nudge} m from its OSM point`);
+    assert.ok(inPoly(m.at[0], m.at[1], l.foot) && !inPoly(m.at[0], m.at[1], l.court), `${m.id} is on the grounds, off the court`);
+    const n = wayNear(l, m.at[0], m.at[1]);
+    assert.ok(n && n.e > m.size[1] / 2 && n.e < m.size[1] / 2 + 2, `${m.id} stands just off its way (${n?.e.toFixed(1)} m)`);
+    assert.ok(hyeonchungSolids(l).some((p) => inPoly(m.at[0], m.at[1], p)), `${m.id} is solid`);
+    assert.ok(hc.meta.approx.some((a) => a.what.includes(m.n.en)), `${m.id} is listed as made up`);
+  }
+});
+
+test('the cemetery has its own quiet music while you are on the grounds, and your song comes back', async () => {
+  const { TRACKS } = await import('../src/data/tracks.js');
+  const tr = TRACKS.find((q) => q.id === 'hyeonchung');
+  assert.ok(tr.hidden && !tr.kick.length && !tr.snare.length, 'not in the record list, no drums');
+  assert.equal(tr.tune.reduce((s, q) => s + q[1], 0), tr.steps, 'the tune fills its bars');
+  const music = { on: true, track: { id: 'lofi' }, setTrack(id) { this.track = { id }; } };
+  const walk = createHyeonchungwonWalk({ landmarks: hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })), music: () => music });
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.equal(music.track.id, 'hyeonchung');
+  walk.update({ x: ox + 2000, z: oz }, 0.1);
+  assert.equal(music.track.id, 'lofi');
+  music.on = false;
+  walk.update({ x: ox, z: oz }, 0.1);
+  assert.equal(music.track.id, 'lofi', 'nothing starts if music is off');
 });

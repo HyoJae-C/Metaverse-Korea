@@ -186,6 +186,30 @@ export const TRACKS = [
     scale: [], melodyFrom: 999, melody: 0,
   },
   {
+    // Seoul National Cemetery (not in the record list; game/hyeonchungwon-walk.js
+    // plays it while you are on the grounds): a slow, quiet hymn on soft
+    // voices, no drums and no words, 8 bars. An original tune.
+    id: 'hyeonchung',
+    hidden: true,
+    icon: '🕊️',
+    color: '#5b6b7a',
+    name: { en: 'In Remembrance', ko: '추모', ja: '追悼', zh: '追思' },
+    desc: {
+      en: 'A slow, quiet hymn for the cemetery. No drums and no words.',
+      ko: '현충원에 흐르는 느리고 조용한 추모곡. 드럼도 가사도 없어요.',
+      ja: '顕忠院に流れる、ゆっくりと静かな追悼の曲。ドラムも歌詞もありません。',
+      zh: '显忠院里缓慢而安静的追思曲，没有鼓，也没有歌词。',
+    },
+    bpm: 52, swing: 1, steps: 64, pad: true,
+    // D minor: Dm Bb F C | Dm Gm A Dm
+    chords: [[50, 57, 62, 65], [46, 53, 58, 62], [53, 57, 60, 65], [48, 55, 60, 64], [50, 57, 62, 65], [43, 55, 58, 62], [45, 52, 57, 61], [50, 57, 62, 65]],
+    bass: [38, 34, 41, 36, 38, 31, 33, 38], bassHits: [[0, 0, 3.6]],
+    tune: [[74, 4], [69, 4], [70, 2], [74, 2], [77, 4], [77, 3], [76, 1], [72, 4], [76, 4], [72, 4],
+      [74, 4], [77, 4], [79, 3], [77, 1], [74, 4], [76, 4], [73, 4], [74, 8]],
+    kick: [], snare: [], hat: null,
+    scale: [], melodyFrom: 999, melody: 0,
+  },
+  {
     // The Curve Runway's show music (not in the music cafe's record list):
     // a steady four-on-the-floor kick, a dark minor loop and a low pulsing
     // bass, tense like a fashion show's catwalk.

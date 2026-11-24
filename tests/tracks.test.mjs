@@ -10,7 +10,7 @@ test('every song is complete and described in each language', () => {
     for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(tr.name[l] && tr.desc[l], `${tr.id}.${l}`);
     if (tr.silent) continue; // (the concert halls: the orchestra plays instead, core/concert-player.js)
     const bars = (tr.steps || 64) / 8; // (the loop: 8 bars, or `steps` eighths)
-    assert.ok(tr.organ ? tr.chords.length === bars : tr.chords.length === 4, `${tr.id} has 4 bars (the organ: one chord per bar)`);
+    assert.ok(tr.tune ? tr.chords.length === bars : tr.chords.length === 4, `${tr.id} has 4 bars (a written tune, like the organ's: one chord per bar)`);
     assert.equal(tr.bass.length, tr.chords.length, `${tr.id} has a bass note per bar`);
     assert.ok(tr.bpm >= 40 && tr.bpm <= 160 && tr.swing >= 1 && tr.swing < 1.5, `${tr.id} tempo`);
     assert.ok(tr.organ || tr.walk || tr.octaveBass || tr.bassHits?.length, `${tr.id} has a bass line`);

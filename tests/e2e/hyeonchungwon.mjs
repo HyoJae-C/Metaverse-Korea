@@ -19,11 +19,12 @@ const browser = await chromium.launch({ executablePath: process.env.CHROME || '/
 const ctx = await browser.newContext({ viewport: { width: 960, height: 640 }, deviceScaleFactor: S ? 2 : 1 });
 await useFakeRealtime(ctx, 'hyeonchungwon');
 // DAY=1: the middle of a game day (cycles of 3 h from 0:00 UTC: core/show-clock.js).
-if (process.env.DAY) await ctx.addInitScript(() => {
-  const CYC = 180 * 60000, RD = Date, off = Math.floor(RD.now() / CYC) * CYC + 55 * 60000 - RD.now();
+// DAY=150: that minute of the cycle instead (150: night).
+if (process.env.DAY) await ctx.addInitScript((min) => {
+  const CYC = 180 * 60000, RD = Date, off = Math.floor(RD.now() / CYC) * CYC + min * 60000 - RD.now();
   class FD extends RD { constructor(...a) { if (a.length) super(...a); else super(RD.now() + off); } static now() { return RD.now() + off; } }
   window.Date = FD;
-});
+}, +process.env.DAY > 1 ? +process.env.DAY : 55);
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&weather=clear&room=e2ehc' + Math.random().toString(36).slice(2, 8));
@@ -50,6 +51,8 @@ await shot('1-main-gate');
 await go([l.fountain.at[0] + 9, l.fountain.at[1] - 6]);
 await cam({ yaw: Math.atan2(9, -6), pitch: 0.2, dist: 9 });
 await shot('2-fountain');
+await cam({ yaw: Math.atan2(9, -6), pitch: 0.05, dist: 5 });
+await shot('2b-fountain-close');
 // The lawn, looking at Hyeonchungmun.
 await go([fx * 34, fz * 34]);
 assert(Math.abs((await me()).y) < 0.05, 'the lawn is level');
@@ -58,14 +61,21 @@ await shot('3-gate-from-lawn');
 await go([fx * 12, fz * 12]);
 await cam({ yaw: front, pitch: 0.1, dist: 7 });
 await shot('4-gate-close');
+await go([fx * 9 + fz * 9, fz * 9 - fx * 9]);
+await cam({ yaw: front + 0.75, pitch: 0.05, dist: 6 });
+await shot('4b-gate-side');
 // Through the gate: walk from the forecourt to the corridor behind it.
 await go([fx * 9, fz * 9], 600);
+await cam({ yaw: front, pitch: 0.25, dist: 7 }, 1500);
 await page.keyboard.down('KeyW');
 await cam({ yaw: front, pitch: 0.25, dist: 7 }, 100);
-await page.waitForTimeout(6000);
+let through = await me(), u = -9;
+for (let k = 0; k < 16 && u <= 2.5; k++) { // (a slow machine walks slowly: up to 16 s)
+  await page.waitForTimeout(1000);
+  through = await me();
+  u = -((through.x - ox - l.x) * fx + (through.z - oz - l.z) * fz);
+}
 await page.keyboard.up('KeyW');
-const through = await me();
-const u = -((through.x - ox - l.x) * fx + (through.z - oz - l.z) * fz);
 assert(u > 2, `walked through the gate's open hall (${u.toFixed(1)} m past its middle)`);
 await shot('5-through-gate');
 // The terrace: up the stairs, at the altar.
@@ -84,6 +94,14 @@ await page.waitForTimeout(1500);
 assert(await page.evaluate(() => __mk.hyeonchungwon.group.getObjectByName('hyeonchung-flowers').visible), 'white chrysanthemums on the altar');
 await cam({ yaw: front + 2.4, pitch: 0.25, dist: 5 });
 await shot('7-tribute');
+await cam({ yaw: front, pitch: 0.12, dist: 4.5 }, 1200);
+await shot('7b-verse');
+await go([fx * 16, fz * 16]);
+await cam({ yaw: front, pitch: -0.2, dist: 14 }, 1500);
+await shot('7c-tower-sky');
+assert(await page.evaluate(() => ['hyeonchung-sun', 'hyeonchung-moon'].every((n) => { const o = __mk.hyeonchungwon.group.getObjectByName(n); return o && o.visible && o.material.opacity > 0.1; })), 'the sun and the moon stand over the ridge');
+await page.addStyleTag({ content: '#hud{opacity:0!important}' });
+await shot('7d-sun-moon');
 await cam({ yaw: front + Math.PI, pitch: 0.2, dist: 16 }, 1500);
 await shot('8-tower-from-behind');
 // A road between the plots, at the ground's height.
@@ -107,6 +125,19 @@ await shot('11-from-above');
 await go([-60, 60]);
 await cam({ yaw: front, pitch: 1.0, dist: 260 }, 2500);
 await shot('12-whole');
-console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts)));
+await go([0, 10]);
+await cam({ yaw: front, pitch: 0.28, dist: 130 }, 2500);
+await shot('13-ridge');
+const counts = await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts);
+assert(counts?.woodTris > 500 && counts?.belt > 20, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
+console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
+// The memorials: each stands by its way; you look at it from the way and cannot walk into it.
+for (const m of l.memorials || []) {
+  const d = m.size[1] / 2 + 2; // (on the way before it)
+  await go([m.at[0] + Math.sin(m.ry) * d, m.at[1] + Math.cos(m.ry) * d]);
+  await cam({ yaw: m.ry, pitch: 0.1, dist: 4.5 });
+  await shot('14-memorial-' + m.id);
+  if (S) { await cam({ yaw: m.ry, pitch: 1.25, dist: 20 }); await shot('14-memorial-' + m.id + '-above'); console.log(m.id, JSON.stringify(await me()), JSON.stringify(P([m.at[0] + Math.sin(m.ry) * d, m.at[1] + Math.cos(m.ry) * d]))); }
+}
 assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`);
 await browser.close();

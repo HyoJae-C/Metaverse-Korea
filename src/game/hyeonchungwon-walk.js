@@ -11,7 +11,8 @@
 // with import() when you come near. Small on purpose: this is in the first
 // download (it is how you walk).
 //
-//   const hc = createHyeonchungwonWalk({ landmarks, collision, scene, toast, text, busy });
+//   const hc = createHyeonchungwonWalk({ landmarks, collision, scene, toast, text, busy, sky });
+//     sky()           { dark 0-1, wet }: how the sun and the moon over the hill show
 //   hc.y(x, z)        ground height on the grounds (0 off them)
 //   hc.update(p, dt)  every frame on the street
 //   hc.tribute()      you paid your respects: white chrysanthemums on the altar
@@ -27,26 +28,49 @@ export function boxRing(x, z, w, d, ry) {
 }
 
 // What stands in the way (landmark metres): the gate's two wings, the tower,
-// the altar, the terrace's front wall, the fountain.
+// the altar, the terrace's front wall, the flagpole, the fountain.
 export function hyeonchungSolids(l) {
   const out = [], g = l.gate, t = l.tower, c = Math.cos(g.ry), s = Math.sin(g.ry);
   const wing = (g.w - g.w * 0.52) / 2; // (the hall in the middle is open: you walk through)
   for (const k of [-1, 1]) { const u = k * (g.w / 2 - wing / 2); out.push(boxRing(g.at[0] + u * c, g.at[1] - u * s, wing, g.d * 0.62, g.ry)); }
   out.push(boxRing(t.at[0], t.at[1], t.w + 1.2, t.w + 1.2, t.ry));
-  out.push(boxRing(l.altar.at[0], l.altar.at[1], 2.6, 1.2, l.altar.ry));
+  out.push(boxRing(l.altar.at[0], l.altar.at[1], 3.4, 3.2, l.altar.ry)); // (the burner and the stone, the verse wall behind, the flower table in front)
   for (const [a, b] of l.walls) { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); out.push(boxRing((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, len, 0.5, Math.atan2(-(b[1] - a[1]), b[0] - a[0]))); }
+  if (l.flag) out.push(boxRing(l.flag.at[0], l.flag.at[1], 0.6, 0.6, 0));
+  for (const m of l.memorials || []) out.push(boxRing(m.at[0], m.at[1], m.size[0], m.size[1], m.ry));
   const f = l.fountain, n = 10;
   out.push(Array.from({ length: n }, (_, i) => [f.at[0] + Math.cos((i / n) * Math.PI * 2) * f.r, f.at[1] + Math.sin((i / n) * Math.PI * 2) * f.r]));
   return out;
 }
 
-export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false }) {
+// The wooded ridge behind (l.ridge, seen only): where it stands you can't
+// walk. One rectangle for each run of its cells along a row. They go in
+// before the decks, so a way that runs along the ridge's foot stays whole.
+export function ridgeSolids(k) {
+  const out = [];
+  if (!k) return out;
+  const c = k.cell / 2;
+  for (let j = 0; j < k.h; j++) {
+    for (let i = 0; i < k.w;) {
+      if (!k.m[j * k.w + i]) { i++; continue; }
+      let e = i;
+      while (e < k.w && k.m[j * k.w + e]) e++;
+      const x0 = k.x0 + i * k.cell - c, x1 = k.x0 + (e - 1) * k.cell + c, z0 = k.z0 + j * k.cell - c, z1 = z0 + k.cell;
+      out.push([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+      i = e;
+    }
+  }
+  return out;
+}
+
+export function createHyeonchungwonWalk({ landmarks = [], collision = null, scene = null, lowSpec = false, toast = null, text = null, busy = () => false, sky = null, music = null }) {
   const l = landmarks.find((q) => q.type === 'hyeonchung');
   if (!l) return { y: () => 0, update() {}, tribute() {}, group: null, landmark: null };
   const [bx0, bz0, bx1, bz1] = hyeonchungBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
   const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : hyeonchungHeight(l, x - l.x, z - l.z));
   const W = ([x, z]) => [l.x + x, l.z + z];
+  collision?.add(ridgeSolids(l.ridge).map((p) => ({ p: p.map(W), low: true })));
   for (const f of l.flats) collision?.addDeck(f.p.map(W));
   for (const t of l.trails) {
     for (let i = 1; i < t.p.length; i++) {
@@ -62,17 +86,25 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
   // The note at the main gate: once each time you come up to it.
   const gx = l.x + l.mainGate.at[0], gz = l.z + l.mainGate.at[1], gr = l.note || 10;
   let shown = false, park = null, loading = false, flowers = 0;
+  let songBefore = null; // (the song that was on before you came onto the grounds)
   return {
     y,
     landmark: l,
     update(p, dt) {
       const d = Math.hypot(p.x - gx, p.z - gz);
       if (d < gr) { if (!shown && toast && !busy()) { shown = true; toast(text()); } } else if (shown && d > gr * 2.5) shown = false;
+      // The cemetery's own quiet music while you are on the grounds (only if music is on; your song comes back as you leave).
+      const mu = music?.();
+      if (mu) {
+        const inside = near(p) < 12;
+        if (inside && !songBefore && mu.on && mu.track.id !== 'hyeonchung') { songBefore = mu.track.id; mu.setTrack('hyeonchung'); }
+        else if (!inside && songBefore && near(p) > 40) { if (mu.track.id === 'hyeonchung') mu.setTrack(songBefore); songBefore = null; }
+      }
       if (park) { park.update(p, dt); return; }
       if (loading || !scene || near(p) > HC_NEAR) return;
       loading = true;
       import('./hyeonchungwon-park.js')
-        .then(({ buildHyeonchungwonPark }) => { park = buildHyeonchungwonPark({ scene, l, y, lowSpec }); if (flowers) park.tribute(); })
+        .then(({ buildHyeonchungwonPark }) => { park = buildHyeonchungwonPark({ scene, l, y, lowSpec, sky }); if (flowers) park.tribute(); })
         .catch((e) => { loading = false; console.warn('hyeonchungwon', e); });
     },
     tribute() { flowers++; park?.tribute(); },

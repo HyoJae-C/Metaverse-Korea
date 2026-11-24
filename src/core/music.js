@@ -156,6 +156,7 @@ export class Music {
     } else {
       for (const [at, iv, len] of tr.bassHits) if (e === at) this._bass(hz(root + iv), t, BEAT * len);
     }
+    if (tr.tune) for (const [at, m, len] of tuneSteps(tr)) if (at === s) this._pad(hz(m), t, (BEAT * len) / 2, 0.06); // (a written tune on a soft voice: the cemetery's)
     if (tr.kick.includes(e)) this._kick(t);
     if (tr.snare.includes(e)) tr.brush ? this._noise(t, 0.03, 0.22, 'bandpass', 3200) : this._snare(t);
     if (tr.rim?.includes(e)) this._noise(t, 0.06, 0.04, 'bandpass', 4200);
