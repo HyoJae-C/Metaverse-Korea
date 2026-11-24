@@ -375,8 +375,11 @@ const waySegs = trails.flatMap((t) => t.p.slice(1).map((q, i) => [t.p[i], q]));
 const MEMORIALS = [
   { id: 'student-unknown', osm: '학도의용군무명용사탑', size: [6.2, 4.2], n: NM('학도의용군 무명용사탑', 'Tower of the Unknown Student Volunteer Soldiers', '学徒義勇軍無名勇士塔', '学徒义勇军无名勇士塔') },
   { id: 'chungyeoldae', osm: '충열대', size: [8, 6.4], n: NM('충열대', 'Chungyeoldae (altar of the patriots)', '忠烈台', '忠烈台') },
+  { id: 'muhu-altar', osm: '무후선열제단', size: [11, 4.4], n: NM('무후선열제단', 'Altar for Patriots without Descendants', '無後先烈祭壇', '无后先烈祭坛') },
+  { id: 'independence-unknown', osm: '대한독립군 무명용사위령탑', size: [8, 4.6], n: NM('대한독립군 무명용사 위령탑', 'Memorial to the Unknown Soldiers of the Korean Independence Army', '大韓独立軍無名勇士慰霊塔', '大韩独立军无名勇士慰灵塔') },
 ];
-const memorials = MEMORIALS.map((m) => {
+const memorials = [];
+for (const m of MEMORIALS) {
   const poi = osm.pois.find((q) => q.tags.name === m.osm);
   const real = LP([[poi.lat, poi.lon]])[0];
   const gap = (x, z) => Math.min(...trails.flatMap((t) => t.p.slice(1).map((q, i) => segDist(x, z, t.p[i], q) - t.w / 2))); // m to the nearest way's edge
@@ -393,11 +396,12 @@ const memorials = MEMORIALS.map((m) => {
       if (gap(x, z) < m.size[1] / 2 + 0.6 || !inPoly(x, z, foot) || polyDist(x, z, foot) < half || inPoly(x, z, courtRing) || polyDist(x, z, courtRing) < half + 1 || inPoly(x, z, lawn)) continue;
       // (its ends must clear the ways too)
       if ([1, -1].some((e) => gap(x + dx * e * m.size[0] / 2, z + dz * e * m.size[0] / 2) < 0.3)) continue;
+      if (memorials.some((o) => Math.hypot(o.at[0] - x, o.at[1] - z) < (Math.max(...o.size) + Math.max(...m.size)) / 2 + 0.5)) continue; // (clear of the ones already set)
       best = { d, at: [x, z], n: [nx, nz] };
     }
   }
-  return { id: m.id, n: m.n, at: R1([best.at])[0], ry: r2(Math.atan2(-best.n[0], -best.n[1])), s: HC.memorialScale, size: m.size, nudge: r1(best.d) };
-});
+  memorials.push({ id: m.id, n: m.n, at: R1([best.at])[0], ry: r2(Math.atan2(-best.n[0], -best.n[1])), s: HC.memorialScale, size: m.size, nudge: r1(best.d) });
+}
 
 // The main gate on Hyeonchung-ro: on the entrance road (OSM 154112497), 9 m in from the street's middle.
 const ENTRY_WAY = 154112497;

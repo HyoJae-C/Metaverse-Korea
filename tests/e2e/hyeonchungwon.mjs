@@ -69,10 +69,13 @@ await go([fx * 9, fz * 9], 600);
 await cam({ yaw: front, pitch: 0.25, dist: 7 }, 1500);
 await page.keyboard.down('KeyW');
 await cam({ yaw: front, pitch: 0.25, dist: 7 }, 100);
-await page.waitForTimeout(6000);
+let through = await me(), u = -9;
+for (let k = 0; k < 16 && u <= 2.5; k++) { // (a slow machine walks slowly: up to 16 s)
+  await page.waitForTimeout(1000);
+  through = await me();
+  u = -((through.x - ox - l.x) * fx + (through.z - oz - l.z) * fz);
+}
 await page.keyboard.up('KeyW');
-const through = await me();
-const u = -((through.x - ox - l.x) * fx + (through.z - oz - l.z) * fz);
 assert(u > 2, `walked through the gate's open hall (${u.toFixed(1)} m past its middle)`);
 await shot('5-through-gate');
 // The terrace: up the stairs, at the altar.
@@ -130,10 +133,11 @@ assert(counts?.woodTris > 500 && counts?.belt > 20, `the wood round the plots ($
 console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
 // The memorials: each stands by its way; you look at it from the way and cannot walk into it.
 for (const m of l.memorials || []) {
-  const d = m.size[1] / 2 + 3.2;
+  const d = m.size[1] / 2 + 2; // (on the way before it)
   await go([m.at[0] + Math.sin(m.ry) * d, m.at[1] + Math.cos(m.ry) * d]);
-  await cam({ yaw: m.ry, pitch: 0.16, dist: 7 });
+  await cam({ yaw: m.ry, pitch: 0.1, dist: 4.5 });
   await shot('14-memorial-' + m.id);
+  if (S) { await cam({ yaw: m.ry, pitch: 1.25, dist: 20 }); await shot('14-memorial-' + m.id + '-above'); console.log(m.id, JSON.stringify(await me()), JSON.stringify(P([m.at[0] + Math.sin(m.ry) * d, m.at[1] + Math.cos(m.ry) * d]))); }
 }
 assert(!errors.length, `no page errors ${errors.slice(0, 3).join(' | ')}`);
 await browser.close();

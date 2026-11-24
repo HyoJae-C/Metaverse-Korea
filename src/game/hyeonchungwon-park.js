@@ -570,21 +570,23 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     }
   }
   for (const mm of l.memorials || []) { // The memorials (from Yozi's photos), at mm.s of their real size.
-    const k = mm.s, gy = LY(mm.at[0], mm.at[1]), m = frame(mm.at, mm.ry, gy), [fw, fd] = mm.size;
+    const k = mm.s, [fw, fd] = mm.size, fr = [Math.sin(mm.ry), Math.cos(mm.ry)];
+    // (level with the way before it, or with the ground under its middle where that is higher: on a slope its floor is a terrace)
+    const gy = Math.max(...[0, 0.5, 0.5 + 1 / fd].map((t) => LY(mm.at[0] + fr[0] * fd * t, mm.at[1] + fr[1] * fd * t))), m = frame(mm.at, mm.ry, gy);
     const arch = (w, h, t, d, x, z) => { // a round arch of cut stone: w across, h to its crown, piers t thick
       const r = w / 2, sh = new THREE.Shape();
       sh.moveTo(-r, 0); sh.lineTo(-r, h - r); sh.absarc(0, h - r, r, Math.PI, 0, true); sh.lineTo(r, 0); sh.lineTo(r - t, 0); sh.lineTo(r - t, h - r); sh.absarc(0, h - r, r - t, 0, Math.PI, false); sh.lineTo(-r + t, 0); sh.lineTo(-r, 0);
       B.add(new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: false, curveSegments: 5 }).translate(x, 0.2 * k, z - d / 2), C.granite, m);
       for (const e of [1, -1]) for (let c = 1; c * 0.9 * k < h - r; c++) B.box(t + 0.03, 0.03, d + 0.03, x + e * (r - t / 2), 0.2 * k + c * 0.9 * k, z, C.joint, m); // (the piers' courses)
     };
-    const plaque = (lines, w, h, x, yy, z, bg = '#1d1d22') => { const t = textLines(lines, w, h, { bg, fg: '#e6dfc8' }); t.position.set(x, yy, z); const hold = new THREE.Group(); hold.applyMatrix4(m); hold.add(t); group.add(hold); };
+    const plaque = (lines, w, h, x, yy, z, bg = '#1d1d22') => { const t = textLines(lines, w, h, { bg, fg: bg === '#ece8dd' ? '#2a2a2e' : '#e6dfc8' }); t.position.set(x, yy, z); const hold = new THREE.Group(); hold.applyMatrix4(m); hold.add(t); group.add(hold); };
     const burner = (x, z, sc, y0 = 0) => { // a bronze incense burner on three legs
       for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) B.box(0.1 * sc, 0.34 * sc, 0.1 * sc, x + a * 0.2 * sc, 0.17 * sc + 0.2 * k + y0, z + b * 0.2 * sc, C.bronzeDark, m);
       B.box(0.62 * sc, 0.4 * sc, 0.62 * sc, x, 0.52 * sc + 0.2 * k + y0, z, C.bronze, m);
       B.box(0.74 * sc, 0.07 * sc, 0.74 * sc, x, 0.74 * sc + 0.2 * k + y0, z, C.bronzeDark, m);
       for (const e of [1, -1]) B.box(0.07 * sc, 0.3 * sc, 0.07 * sc, x + e * 0.36 * sc, 0.88 * sc + 0.2 * k + y0, z, C.bronzeDark, m);
     };
-    B.box(fw, 1.6, fd, 0, 0.2 * k - 0.8, 0, C.stone, m); // the paved floor (down into the slope)
+    B.box(fw, 5, fd, 0, 0.2 * k - 2.5, 0, C.stone, m); // the paved floor (a terrace down into the slope)
     if (mm.id === 'student-unknown') {
       // Three round arches of granite: the tall one in the middle over the stele and the stone tomb, a lower one out to each side and forward.
       arch(4.6 * k, 6 * k, 0.9 * k, 1.3 * k, 0, -1.2 * k);
@@ -621,13 +623,61 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       B.box(2 * k, 1.2 * k, 2 * k, 0, 0.2 * k + 0.6 * k, fd / 2 - 1.0 * k, C.stone, m); // the burner's block
       burner(0, fd / 2 - 1.0 * k, 1.8 * k, 1.2 * k);
       B.box(0.5 * k, 0.9 * k, 0.4 * k, 1.9 * k, 0.2 * k + 0.45 * k, fd / 2 - 0.9 * k, C.bronzeDark, m); // (the small incense stand)
+    } else if (mm.id === 'muhu-altar') {
+      // A long wall of pale stone with carved reliefs to the left and right, a dark band along its top; in the middle an open
+      // hall under a dark flat roof on two white piers, rows of tablets inside, broad steps and a carved stone before it.
+      const W = fw / k, y0 = 0.2 * k, wallH = 5.2 * k, zb = -fd / 2 + 0.6 * k, slate = '#474b52';
+      B.box(fw, wallH, 0.6 * k, 0, y0 + wallH / 2, zb, C.granite, m);
+      B.box(fw + 0.1, 0.8 * k, 0.8 * k, 0, y0 + wallH + 0.3 * k, zb, slate, m);
+      for (const e of [1, -1]) { // the reliefs: a raised panel and figures in low relief on it
+        const cx = e * (W / 2 - 4.2) * k;
+        B.box(6.6 * k, 3.6 * k, 0.12, cx, y0 + 2.6 * k, zb + 0.34 * k, C.white, m);
+        for (let i = 0; i < 6; i++) {
+          const fx = cx + (-2.6 + i * 1.05) * k, lean = ((i * 37) % 5 - 2) * 0.12, fh = (1.9 + ((i * 53) % 4) * 0.25) * k;
+          B.box(0.6 * k, fh, 0.1, fx, y0 + 1.3 * k + fh / 2, zb + 0.42 * k, C.stone, new THREE.Matrix4().copy(m).multiply(new THREE.Matrix4().makeRotationZ(lean * 0.4)));
+          B.box(0.44 * k, 0.44 * k, 0.1, fx + lean * k, y0 + 1.5 * k + fh, zb + 0.42 * k, C.stone, m);
+        }
+      }
+      const hw = 9.6 * k, hd = 4.2 * k, hz = zb + hd / 2; // the hall
+      B.box(hw - 1.2 * k, wallH - 0.4 * k, 0.3 * k, 0, y0 + (wallH - 0.4 * k) / 2, zb + 0.4 * k, C.dark, m); // its shaded back
+      for (let r = 0; r < 3; r++) for (let i = 0; i < 9; i++) if (i !== 4) B.box(0.5 * k, 0.5 * k, 0.3 * k, (-3.2 + i * 0.8) * k, y0 + (1.5 + r * 0.7) * k, zb + (1.6 - r * 0.4) * k, C.cream, m); // rows of tablets
+      B.box(1.0 * k, 2.2 * k, 0.5 * k, 0, y0 + 1.9 * k, zb + 0.9 * k, C.ochre, m); // the main tablet
+      for (const e of [1, -1]) B.box(1.3 * k, wallH - 1.2 * k, 1.3 * k, e * (hw / 2 - 0.65 * k), y0 + (wallH - 1.2 * k) / 2, zb + hd - 0.7 * k, C.white, m); // the piers
+      B.box(hw + 1.2 * k, 1.5 * k, hd + 0.6 * k, 0, y0 + wallH - 0.45 * k, hz + 0.2 * k, slate, m); // the roof
+      for (let i = 0; i < 3; i++) B.box(hw + (2.4 - i * 0.8) * k, 0.3 * k * (3 - i) / 3 + 0.02, 0.7 * k, 0, y0 + 0.15 * k * (3 - i) / 3, zb + hd + (0.3 + i * 0.7) * k, i % 2 ? C.stone : C.granite, m); // steps
+      B.box(2.6 * k, 0.9 * k, 1.6 * k, 0, y0 + 0.45 * k, fd / 2 - 1.2 * k, C.granite, m); // the carved stone before the steps
+      B.box(2.2 * k, 0.7 * k, 0.3 * k, 0, y0 + 1.25 * k, fd / 2 - 1.8 * k, C.verse, m); // the dark tablet on it
+      for (const e of [1, -1]) { B.box(0.5 * k, 0.5 * k, 0.5 * k, e * 1.9 * k, y0 + 0.25 * k, fd / 2 - 1.9 * k, C.white, m); B.box(0.7 * k, 0.4 * k, 0.7 * k, e * 1.9 * k, y0 + 0.7 * k, fd / 2 - 1.9 * k, '#b0489a', m); } // potted chrysanthemums
+    } else if (mm.id === 'independence-unknown') {
+      // Two tall blades of white stone that curve apart towards the top, a slim pillar between them, a black altar block
+      // with a round stone before it, and a low carved wall to each side.
+      const y0 = 0.2 * k, H = 12 * k, dz = 1.0 * k;
+      const blade = (e, inner, wide, color, depth) => {
+        const pts = [], N = 7, xin = (t) => (1.0 + 2.3 * t ** 2.3) * k;
+        for (let i = 0; i <= N; i++) { const t = i / N; pts.push([xin(t) + inner, t * H * (0.93 + 0)]); }
+        for (let i = N; i >= 0; i--) { const t = i / N; pts.push([xin(t) + inner + wide * (1 - 0.42 * t) , t * H * (i === N ? 1 : 0.93 + 0.07 * t)]); }
+        const sh = new THREE.Shape(pts.map(([x, yy]) => new THREE.Vector2(e * x, yy)));
+        B.add(new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false }).translate(0, y0, -depth / 2), color, m);
+      };
+      for (const e of [1, -1]) { blade(e, 0, 2.5 * k, C.white, dz); blade(e, -0.02, 0.2 * k, C.dark, dz + 0.04); }
+      B.box(0.9 * k, H * 0.97, 0.9 * k, 0, y0 + (H * 0.97) / 2, 0, C.granite, m); // the pillar and its dark groove
+      B.box(0.16 * k, H * 0.97, 0.06, 0, y0 + (H * 0.97) / 2, 0.46 * k, C.dark, m);
+      plaque(['대', '한', '독', '립', '군', '무', '명', '용', '사', '위', '령', '탑'], 0.5 * k, 4.6 * k, 2.35 * k, y0 + 5.2 * k, dz / 2 + 0.03, '#ece8dd');
+      B.box(3.6 * k, 0.9 * k, 1.4 * k, 0, y0 + 0.45 * k, 1.5 * k, '#2c2c30', m); // the black altar block
+      B.add(new THREE.CylinderGeometry(0.5 * k, 0.5 * k, 0.8 * k, 10).translate(0, y0 + 0.4 * k, 2.5 * k), '#2c2c30', m);
+      for (const e of [1, -1]) { B.box(0.7 * k, 0.6 * k, 0.5 * k, e * 1.1 * k, y0 + 0.3 * k, 2.5 * k, C.white, m); B.box(0.8 * k, 0.45 * k, 0.8 * k, e * 1.1 * k, y0 + 0.85 * k, 2.5 * k, '#b0489a', m); }
+      for (const e of [1, -1]) { // the low carved walls
+        B.box(4.2 * k, 1.5 * k, 0.7 * k, e * 5.6 * k, y0 + 0.75 * k, -0.6 * k, C.granite, m);
+        B.box(3.6 * k, 1.0 * k, 0.1, e * 5.6 * k, y0 + 0.8 * k, -0.24 * k, C.white, m);
+        for (let i = 0; i < 5; i++) B.box(0.34 * k, (0.6 + ((i * 7) % 3) * 0.12) * k, 0.08, e * (4.3 + i * 0.65) * k, y0 + 0.8 * k, -0.2 * k, C.stone, m);
+      }
     }
   }
   group.add(B.mesh('hyeonchung-built'));
 
   // The wood inside the grounds, drawn whole (Yozi: in the photos the trees stand round the plots and behind the
   // gate and close the view). Every slope that is not a plot, a lawn, a way or a building is wood: one mesh of
-  // treetops over it with a dark wall round its foot. You only walk the ways, so nobody stands under it.
+  // treetops over it, coming down to the ground at its edges. You only walk the ways, so nobody stands under it.
   const wood = (() => {
     const W = P.wood, c = W.cell, [fx0, fz0, fx1, fz1] = boxOf(l.foot), w = Math.ceil((fx1 - fx0) / c) + 1, h = Math.ceil((fz1 - fz0) / c) + 1;
     const on = new Uint8Array(w * h);
@@ -652,7 +702,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   { // the wood's mesh
     const hash = (a, b) => { const s = Math.sin(a * 53.9 + b * 71.3) * 43758.5453; return s - Math.floor(s); };
     const { c, w, h, x0, z0 } = wood, pos = [], col = [];
-    const pines = ['#3f6f3a', '#467a40', '#39653a'].map((v) => new THREE.Color(v)), leaves = ['#5f9a4a', '#6fae55', '#4f8a43'].map((v) => new THREE.Color(v)), dark = new THREE.Color('#2f4a2c');
+    const pines = ['#3f6f3a', '#467a40', '#39653a'].map((v) => new THREE.Color(v)), leaves = ['#5f9a4a', '#6fae55', '#4f8a43'].map((v) => new THREE.Color(v));
     const top = (i, j) => [l.x + x0 + i * c + (hash(i, j + 9) - 0.5) * 1.6, LY(x0 + i * c, z0 + j * c) + P.wood.top[0] + P.wood.top[1] * hash(i, j), l.z + z0 + j * c + (hash(i + 9, j) - 0.5) * 1.6];
     const base = (i, j) => { const t = top(i, j); return [t[0], LY(x0 + i * c, z0 + j * c) + P.wood.foot - 2.2, t[2]]; };
     const put = (a, b, d, k) => { for (const v of [a, b, d]) { pos.push(...v); col.push(k.r, k.g, k.b); } };
@@ -667,8 +717,10 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       // the wall down to the ground on each side where the wood ends
       for (const [e, [di, dj]] of [[[0, 1], [0, -1]], [[1, 2], [1, 0]], [[2, 3], [0, 1]], [[3, 0], [-1, 0]]]) {
         if (wood.quad(i + di, j + dj)) continue;
-        const [a, b] = e.map((n) => q[n]), ta = top(...a), tb = top(...b), ga = base(...a), gb = base(...b);
-        put(ta, ga, gb, dark); put(ta, gb, tb, dark);
+        // (no dark wall: in Seonjeongneung it read as a strange green fence, Yozi 2026-11-24; the treetops come down to the ground, leaning out)
+        const [a, b] = e.map((n) => q[n]), ta = top(...a), tb = top(...b), lean = (g) => [g[0] + di * 1.4, g[1], g[2] + dj * 1.4], ga = lean(base(...a)), gb = lean(base(...b));
+        const kk = pines[(i + j * 3 + di + 2 * dj + 6) % 3];
+        put(ta, ga, gb, kk); put(ta, gb, tb, kk);
       }
     }
     const geo = new THREE.BufferGeometry();

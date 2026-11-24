@@ -1466,12 +1466,15 @@ Past the hill's foot the land you cannot enter is a wooded ridge
 (`landmark.ridge`: SRTM at 1/4 out to 90 m, 0 at streets, the entrance and
 the ways; one mesh of treetops; `ridgeSolids` closes it to walking, added
 before the decks so ways along it stay whole). Inside the grounds every slope that is not a plot, a lawn, a way or a
-building is wood drawn whole (`hyeonchung-wood`, one mesh with a dark wall at
-its foot; single trees only at its edges), and two rows of tall trees stand
+building is wood drawn whole (`hyeonchung-wood`, one mesh whose treetops come down
+to the ground at its edges; single trees only at its edges), and two rows of tall trees stand
 along the court behind the gate (Yozi: in the photos trees close the view).
 Memorials (`landmark.memorials`, from Yozi's photos): the Tower of the Unknown
-Student Volunteer Soldiers and Chungyeoldae stand just off the way nearest
-their OSM points, at 50% of their estimated real size. A white chrysanthemum
+Student Volunteer Soldiers, Chungyeoldae, the Altar for Patriots without
+Descendants and the Memorial to the Unknown Soldiers of the Korean
+Independence Army stand just off the way nearest their OSM points (the altar
+9.7 m from its point: Chungyeoldae at 50% covers its real spot), at 50% of
+their estimated real size. A white chrysanthemum
 lies before every headstone (one flat instanced quad a stone, near tiles
 only). On the grounds the hidden track `hyeonchung` plays (an original slow
 tune, `data/tracks.js`), and your own song comes back as you leave.
