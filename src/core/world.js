@@ -1,7 +1,7 @@
 // Builds the 3D street scene from a region's map.json.
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { glowAtNight } from './weather.js';
+import { glowAtNight, dimAtNight } from './weather.js';
 import { SEASON, MIX, leafColor, leafHash, ginkgoColor } from './season.js';
 
 const GINKGO_STREET = 0.55, GINKGO_PARK = 0.12; // shares of the street and park round trees that are ginkgos
@@ -47,6 +47,10 @@ export const COLORS = {
   rail: 0xb8bcc4,
   railTrack: 0x8a8f99,
 };
+
+// At full night the street walls and roofs keep this much of their colour
+// (weather.js dimAtNight), so the lit windows stand out.
+export const WALL_NIGHT = 0.3;
 
 // Warm, soft pastels for walls, with a matching roof colour for each.
 const WALL_TINTS = [
@@ -492,6 +496,7 @@ function makeBuildings(buildings) {
     g.computeVertexNormals();
     const wallMat = new THREE.MeshLambertMaterial({ map: makeWindowTexture(), vertexColors: true, emissive: 0xffffff, emissiveMap: makeWindowGlow() });
     glowAtNight(wallMat, 0.85);
+    dimAtNight(wallMat, WALL_NIGHT);
     walls = new THREE.Mesh(g, wallMat);
     walls.name = 'walls';
   }
@@ -501,7 +506,9 @@ function makeBuildings(buildings) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(rCol, 3));
     g.setIndex(rIdx);
     g.computeVertexNormals();
-    roofs = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    const roofMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    dimAtNight(roofMat, WALL_NIGHT);
+    roofs = new THREE.Mesh(g, roofMat);
     roofs.name = 'roofs';
   }
   return { walls, roofs };
