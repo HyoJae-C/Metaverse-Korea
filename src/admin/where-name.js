@@ -33,6 +33,7 @@ export const PLACES = [
   { name: 'Gwanghwamun Gate', lm: 'gwanghwamun', r: 25 },
   { name: 'Gwanghwamun Gate', lm: 'palacehalls', r: 0 }, { name: 'Gwanghwamun Gate', lm: 'cloister', r: 0 }, // (the palace's and Changdeokgung's halls: their own box/district names it)
   { name: 'Gyeongbokgung Palace', lm: 'yeongjegyo', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'rankstones', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'pavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'hexpavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'amisan', r: 30 },
+  { name: 'Seoul Plaza & City Hall', lm: 'cityhall', r: 70 }, { name: 'Seoul Plaza & City Hall', lm: 'oldcityhall', r: 70 }, // (scripts/build-city-hall.mjs)
   { name: 'Cheong Wa Dae', lm: 'bluehouse', r: 60 }, { name: 'Cheong Wa Dae', lm: 'bluegate', r: 30 }, { name: 'Cheong Wa Dae', lm: 'bhfountain', r: 20 }, { name: 'Cheong Wa Dae', lm: 'bhfence', r: 0 }, // (the street side: scripts/build-cheongwadae.mjs)
   { name: 'Gyeongbokgung Palace', box: [-2001, -1331, -1639, -885] },
   { name: 'Gwanghwamun Square', lm: 'statue', kind: 'king', r: 60 }, { name: 'Gwanghwamun Square', lm: 'statue', kind: 'admiral', r: 60 },
@@ -70,6 +71,7 @@ export const PLACES = [
   { name: 'Haneul Park', lm: 'skypark', r: 160 },
   { name: 'Nanji Camping Ground', lm: 'nanjicamp', r: 110 },
   { name: 'Dalmaji Park', lm: 'dalmaji', r: 90 },
+  { name: 'Seoul National Cemetery', lm: 'hyeonchung', r: 230 },
   // West: Gimpo, Mokdong, Magok
   { name: 'Gimpo Airport Terminal', lm: 'gimpoairport', r: 120 },
   { name: 'Mokdong Ice Rink', lm: 'mokdongrink', r: 50 },

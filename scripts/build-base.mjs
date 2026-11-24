@@ -146,11 +146,15 @@ export function buildBase({ region, maps, data }) {
   const runs = new SegGrid();
   for (const l of city.landmarks) for (const p of l.runs || l.wall?.runs || []) for (let i = 1; i < p.length; i++) runs.add([l.x + p[i - 1][0], l.z + p[i - 1][1]], [l.x + p[i][0], l.z + p[i][1]], l);
   const HILL_PAD = [[0, 0], [9, 0], [-9, 0], [0, 9], [0, -9]];
+  // A place a district draws bigger than 1/4 (Seoul Plaza at 37.5%: scripts/build-city-hall.mjs) covers the real
+  // lines of the roads round it: its meta.<place>.noBase polygons (district metres) keep base roads out.
+  const noBase = parts.flatMap((d) => Object.values(d.map.meta || {}).flatMap((m) => m?.noBase || []).map((p) => p.map(([x, z]) => [x + (d.offset?.[0] || 0), z + (d.offset?.[1] || 0)])));
   // (Is the point in or near a district's building or wall, or on a hill?)
   const streamLines = (city.streams || []).map((st) => ({ p: st.path.map(([x, z]) => [st.at[0] + x, st.at[1] + z]), r: (st.w || 20) / 2 + STREAM_PAD }));
   const inWall = (pt) => {
     if (hills.some((h) => HILL_PAD.some(([dx, dz]) => h(pt[0] + dx, pt[1] + dz)))) return true;
     if (runs.near(pt, 13, (s) => segDist(pt, s.a, s.b) < 13)) return true;
+    if (noBase.some((p) => inPolygon(pt[0], pt[1], p))) return true;
     if (walls.near(pt, NEAR_WALL, (s) => segDist(pt, s.a, s.b) < NEAR_WALL)) return true;
     // on or beside a sunken stream (Cheonggyecheon, core/stream.js): its trench, banks and bridges are the district's
     for (const st of streamLines) for (let i = 1; i < st.p.length; i++) if (segDist(pt, st.p[i - 1], st.p[i]) < st.r) return true;

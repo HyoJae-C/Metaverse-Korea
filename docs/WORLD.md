@@ -153,6 +153,33 @@ lists **districts** joined into one map (`src/core/districts.js`):
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
+## Gangnam Station (2026-11-24)
+
+`districts/gangnam.json` (`node scripts/build-gangnam.mjs`, then
+`build-base.mjs` and `build-closed.mjs`): Gangnam-daero on its real line at
+1/4 from the Gangnam Station crossroads north past Sinnonhyeon to Nonhyeon
+Station (461 m in the game), with the first stretch of Teheran-ro,
+Seocho-daero, Bongeunsa-ro, Sapyeong-daero, Hakdong-ro and Sinbanpo-ro; the
+base map carries them on. Data: `scripts/data/gangnam-osm.json` (the middle
+line between each road's two carriageways, from the Korea extract).
+
+- It was built to spread shops out, not to add any (Yozi): the two cosmetic
+  clinics came from Seongsu, three clothes shops and four furniture showrooms
+  from Euljiro, the appliance mart from Samseong. `GROUPS` in the script says
+  which shop stands where; a moved shop's `why` says where it came from.
+  `build-seongsu.mjs` lists them in `MOVED_AWAY` so it no longer places them.
+- Shops stand in three places only: the crossroads (big screens, clothes, the
+  appliance mart), the avenue by Sinnonhyeon (clinics) and Hakdong-ro east of
+  Nonhyeon Station (the real Nonhyeon furniture street). The rows between are
+  plain offices.
+- Only Gangnam Station (Line 2, exits 10 and 11) has stairs and trains.
+  Sinnonhyeon and Nonhyeon are names on the map.
+- The six big screens are `region.json` "screens" lines marked
+  `[build-gangnam screen]`; the script rewrites them and the station's exits.
+- A `links` road fills Teheran-ro between Yeoksam and Seolleung, which is
+  over 200 m from any district and so not in the base map.
+- Apgujeong (Dosan Park, the way down to the Han) is the next step, not built.
+
 ## The base map: all of Seoul's big roads (2026-11-14)
 
 Under the hand-built districts lies one base layer,
@@ -940,6 +967,47 @@ is marked `cw: 1`, so it can be run again.
 - Models: `core/bluehouse-model.js` (hall with blue tiles, gate, fence,
   fountain with its phoenix).
 
+## Seoul City Hall and Seoul Plaza (Jung-gu)
+
+The oval lawn, the 1926 stone hall (Seoul Metropolitan Library) and the glass
+new hall behind it, with City Hall station and Daehanmun across Sejong-daero.
+The whole place is 37.5% of real size (1.5 × the 1/4 map, Yozi 2026-11-24):
+at 1/4 the lawn would be 17 × 21 m, too small to feel like the plaza.
+Outsides only for now: no way into either hall.
+
+`scripts/build-city-hall.mjs` writes it into the Gyeongbokgung district from
+OSM (`scripts/data/city-hall-osm.json`), growing every shape from one fixed
+point (`CH.real` → `CH.game`, by Sejong-daero at the plaza's north-west
+corner). Run it after `build-cheonggyecheon.mjs` (`--svg F` draws the plan
+over the real map). Everything it writes is marked `sp: 1`, so it can be run again.
+
+- Because the place is bigger than the map round it, things are off their
+  real spots: `meta.cityhall.moved` (lawn 15 m, new hall 18 m, old hall 11 m,
+  Sogong-ro 21 m south). Sogong-ro and Eulji-ro go round the enlarged plaza
+  (`approx`, `why`) and Eulji-ro is back on its real line by Namdaemun-ro,
+  where the region's Eulji-ro link road now starts. Sejong-daero is the
+  region's link road, on its real line.
+- The real Eulji-ro, Sogong-ro and Sejong-daero 20-gil of the base map would
+  cross the plaza: `meta.cityhall.noBase` keeps base roads out
+  (`scripts/build-base.mjs` reads `noBase` from any district's meta).
+- Made up (`approx`): the 4 m lane behind and beside the new hall, Mugyo-ro
+  as a lane up to Cheonggyecheon-ro, the new hall's height (56 m real is an
+  estimate), the bit of wall just south of Daehanmun.
+- Deoksugung is not built: Daehanmun (50%, like the other palace gates, shut)
+  and the stone wall on OSM's outline all the way round, closed against the
+  plain block on the west, with trees inside. Nobody can get in (tested by a
+  flood from the lawn).
+- City Hall station (Line 1) has exits 4, 5 and 6 round the plaza
+  (`region.json`), each within 15 m of where growing puts the real one.
+  Exits 1 to 3 (Deoksugung side) are left out.
+- The lawn is a picnic lawn (`lawn: 1`; `oval: 1` keeps mats inside the
+  outline, `lawnFrom(p, true)` in core/picnic-mat.js). Seven people sit and
+  stand on it, loaded when you come within 170 m (`game/city-hall-near.js` →
+  `game/city-hall.js`) and hidden past 80 m.
+- Models: `core/city-hall-model.js` (loaded by core/landmarks.js types
+  `cityhall` and `oldcityhall`). Screenshots and a walk-through:
+  `tests/e2e/city-hall.mjs`.
+
 ## Bosingak (Jongno)
 
 The bell pavilion stands on the south side of Jongno in the Gyeongbokgung
@@ -1345,4 +1413,24 @@ date) load near (`game/oksu-park.js`). Made-up things are in `meta.approx`.
 The Han River Boat Taxi calls at Oksu (`build-boat-taxi.mjs`, 8 m west of the
 real pier to clear Dongho Bridge, which `build-base.mjs` joins into one road
 across the river so it is raised for the boats).
+After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
+
+## Seoul National Cemetery (국립서울현충원, 2026-11-24)
+
+`scripts/build-hyeonchungwon.mjs` writes `districts/hyeonchungwon.json`: the
+cemetery in Dongjak-gu at 1/4 on OSM's outline, with Hyeonchungmun on its real
+spot (the anchor). The gate, the Memorial Tower and the court between them are
+at 50% about the gate's middle (Yozi), so the tower stands 21 m behind its
+real spot and the court covers most of plots 16 and 18. The ground is SRTM
+above the valley floor at 1/4 (level from the main gate to the court); every
+OSM road, path and stair inside is one network (`hyeonchung` landmark trails:
+roads under 14°, paths under 18°). The hill is a blocker; ways, the court, the
+terrace and the lawn are decks through it (`game/hyeonchungwon-walk.js`, first
+download; heights in `core/hyeonchung-ground.js`). The gate, tower, fountain,
+woods and headstones load near (`game/hyeonchungwon-park.js`): plain white
+stones in rows on OSM's plot outlines, no names; the presidents' graves and
+single graves are not drawn. A place of remembrance: nothing to play or win.
+Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
+note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
+has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.

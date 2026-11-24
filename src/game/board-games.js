@@ -9,6 +9,7 @@ import { localName, getLanguage } from '../core/i18n.js';
 import { createCharacter } from '../core/character.js';
 import { furnitureById } from '../core/furniture.js';
 import { BOARD_SETS_ON_SALE } from '../core/board-game-sets.js';
+import { BOARD_PASS, passLeft, startPass } from '../core/board-pass.js';
 
 const L = (o) => localName(o, getLanguage());
 export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', hi: 'बोर्ड गेम', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
@@ -31,6 +32,25 @@ export function createBoardGames(game) {
   // At home (mine, or one I am visiting): the games whose sets stand in the room (core/board-game-sets.js).
   const homeSets = () => (game.home?.items || []).map((it) => ({ it, game: furnitureById(it.id)?.boardgame })).filter((s) => s.game);
   const here = () => cafe() || homeSets().length > 0;
+  // The café's pass (core/board-pass.js): paid at the counter, or asked for
+  // the moment a game is about to start without one. go() runs once it is held.
+  const won = (n) => n.toLocaleString('en-US');
+  const mins = () => Math.ceil(passLeft() / 60000);
+  const leftText = () => { const m = mins(); return game.t('boardPass.left', { h: Math.floor(m / 60), m: m % 60 }); };
+  const buyPass = (go) => {
+    const fee = BOARD_PASS.fee, note = { k: 'ledger.boardCafe' };
+    if (game.wallet.coins < fee) { game.toast(game.t('boardPass.poor', { n: won(fee) })); return; }
+    game.wallet.confirm(fee, note, () => {
+      if (passLeft() > 0) { go?.(); return; } // (asked twice, paid once)
+      if (!game.wallet.spend(fee, note, { ask: false })) return;
+      startPass(game.wallet.lastOp);
+      game.sfx?.tock?.(0.6, 1200);
+      game.toast(game.t('boardPass.got'));
+      go?.();
+    });
+  };
+  const gate = (go) => { if (!cafe() || passLeft() > 0) go(); else buyPass(go); };
+  let toldIn = null; // the room I was last told about the pass in
   const figureOf = (id) => { try { return createCharacter(id === game.myId ? game.myLook : game.others.lookOf(id)).root; } catch { return null; } };
   let tableOnce = null;
   const getTable = () => (tableOnce ||= import('./board-table.js').then((m) => (table = m.createBoardTable(game))));
@@ -100,6 +120,7 @@ export function createBoardGames(game) {
       table,
       // A player as a little figure (the host sits in the pirate's barrel).
       figureOf,
+      gate,
       net: {
         myId: game.myId,
         nameOf: (id) => game.others.nameOf(id),
@@ -137,7 +158,7 @@ export function createBoardGames(game) {
     const h = document.createElement('div');
     h.textContent = L(ASK.text).replace('{name}', name).replace('{game}', L(u.text.GAME_NAME[gameId]));
     ask.append(h);
-    for (const [label, run, bg] of [[L(ASK.yes), () => u.accept(from, gameId), '#ffd36b'], [L(ASK.no), () => game.net?.sendEmote(`bg:n:${from}`), '#eee']]) {
+    for (const [label, run, bg] of [[L(ASK.yes), () => gate(() => u.accept(from, gameId)), '#ffd36b'], [L(ASK.no), () => game.net?.sendEmote(`bg:n:${from}`), '#eee']]) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = label;
@@ -155,6 +176,7 @@ export function createBoardGames(game) {
     async open(gameId = null) {
       const at = game.interior;
       const u = await load().catch((e) => { console.error('board games', e); return null; });
+      // (looking at the menu is free; picking a game asks for the café's pass: ui.choose → gate)
       if (u && game.interior === at) { closeAsk(); u.show(); if (gameId && !u.busy) u.choose(gameId); }
     },
     // At home, by one of my board game sets: ask the people here to a game (the host only).
@@ -186,7 +208,17 @@ export function createBoardGames(game) {
     },
     peerGone(id) { ui?.peerGone(id); watchQueue = watchQueue.then(() => unwatch(id)); },
     // Playing at a table in the café: my eyes at my chair (game/board-table.js), and no standing up by walking.
-    camera(dt) { table?.camera(dt); },
+    camera(dt) {
+      table?.camera(dt);
+      // Just walked into the café without a pass: say where to pay, once each visit.
+      const at = game.interior;
+      if (at !== toldIn) { toldIn = at; if (cafe() && passLeft() <= 0) game.toast(game.t('boardPass.need', { n: won(BOARD_PASS.fee) })); }
+    },
+    // At the counter: buy the pass, or see how long is left.
+    passAct() {
+      if (ui?.open) return null;
+      return passLeft() > 0 ? { key: 'boardPass', label: leftText(), run: () => game.toast(leftText()) } : { key: 'boardPass', label: game.t('boardPass.buy', { n: won(BOARD_PASS.fee) }), run: () => buyPass() };
+    },
     get seated() { return !!table?.on; },
     get watching() { return table?.watched || []; }, // (for the e2e tests)
     // Walked out of the room.
