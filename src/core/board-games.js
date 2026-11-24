@@ -17,6 +17,8 @@
 //  - mafia     마피아: night and day, the town votes the mafia out, 4-8.
 //  - gimbap    김밥의 달인: two dice say how many fillings; press them in the
 //    order's order, fastest hands take the roll, 2-4 (our own game).
+//  - bingo     물고기 도감 빙고: fill a 5×5 or 4×4 board from the fish book's
+//    pictures, call one fish each in turn; lines win, 2-6.
 
 export const GAMES = {
   omok: { min: 2, max: 2, icon: '⚫', price: 30000 },
@@ -30,6 +32,7 @@ export const GAMES = {
   tower: { min: 2, max: 6, icon: '🧱', price: 30000, spots: 30 },
   mafia: { min: 4, max: 8, icon: '🌙', price: 30000 },
   gimbap: { min: 2, max: 4, icon: '🥢', price: 30000 },
+  bingo: { min: 2, max: 6, icon: '🐟', price: 30000 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
@@ -926,6 +929,7 @@ export function newGame(id, players, seed, opt = 0) {
   if (id === 'ladders') return new Ladders({ players, seed, custom: (opt & 1) === 1, max: LADDERS_ROLLS[opt >> 1] || 0 });
   if (id === 'tower') return new Tower({ players, seed });
   if (id === 'gimbap') return new Gimbap({ players, seed });
+  if (id === 'bingo') return new Bingo({ players, seed, size: BINGO_SIZES[opt] || BINGO_SIZES[0] });
   if (id === 'mafia') return new Mafia({ players, seed, talk: MAFIA_TALK[opt] || MAFIA_TALK[0] });
   throw new Error('unknown game ' + id);
 }
@@ -940,6 +944,8 @@ export function newGame(id, players, seed, opt = 0) {
 // ['n', step] the host moves the game on when the clock runs out in mafia,
 // ['d'] roll the two dice / ['b', round, ms] my roll is made, in so many
 // milliseconds / ['n', round] the host calls the round in the gimbap game,
+// ['g', board] my filled bingo board / ['w', fish] I call a fish / ['n'] the
+// host's clock ends the filling in bingo,
 // ['l'] leave. (['e', n] is a face a player
 // pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
@@ -962,7 +968,9 @@ export function applyAction(game, p, a) {
     case 'q': return game instanceof Mafia && game.check(p, a[1] | 0);
     case 'z': return game instanceof Mafia && game.done(p);
     case 'v': return game instanceof Mafia && game.vote(p, a[1] | 0);
-    case 'n': return game instanceof Gimbap ? game.close(p, a[1] | 0) : game instanceof Mafia && game.next(p, a[1] | 0);
+    case 'n': return game instanceof Gimbap ? game.close(p, a[1] | 0) : game instanceof Bingo ? game.close() : game instanceof Mafia && game.next(p, a[1] | 0);
+    case 'g': return game instanceof Bingo && game.setBoard(p, a[1]);
+    case 'w': return game instanceof Bingo && game.call(p, a[1] | 0);
     case 'l': game.leave(p); return true;
     default: return false;
   }
@@ -1201,6 +1209,142 @@ export class Gimbap {
   }
 }
 
+// ---------------------------------------------------------------- bingo
+// 물고기 도감 빙고 (Yozi 2026-11-24; the fish book's pictures). The game
+// draws a pool of fish out of the book's 56 (30 for a 5×5 board, 20 for a
+// 4×4: a little more than the cells, so a call is often, not always, on
+// your board). Everyone fills their own board from the pool at once, in
+// any order (or lets the rest fill at random), then in turn each calls one
+// fish of the pool nobody has called yet: it is marked on every board that
+// has it. Rows, columns and the two diagonals count; 3 lines on a 5×5 (2 on
+// a 4×4) is bingo. Whoever gets there on a call wins; two at once share it.
+// No hurry anywhere: a turn has the table's usual clock, and filling the
+// board has its own long one (BINGO_SETUP_S).
+//
+// A board travels as one string, a letter a fish (BINGO_ABC[fish index in
+// the book's picture sheet, core/fishing.js FISH_SHEET]). Every screen holds
+// every board, as with every game here (nothing is won, so a peek gains
+// nothing but a hollow win).
+export const BINGO_KINDS = 56; // the fish book's pictures (core/fishing.js FISH_SHEET)
+export const BINGO_SIZES = [5, 4]; // opt 0 / 1 (the host picks in the lobby)
+export const BINGO_POOL = { 5: 30, 4: 20 };
+export const BINGO_GOAL = { 5: 3, 4: 2 };
+export const BINGO_SETUP_S = { 5: 120, 4: 90 }; // seconds to fill a board; then the empty cells fill at random
+export const BINGO_ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123';
+export const bingoCode = (cells) => cells.map((f) => BINGO_ABC[f]).join('');
+export const bingoCells = (code) => (typeof code === 'string' ? [...code].map((ch) => BINGO_ABC.indexOf(ch)) : []);
+// Every line of an n×n board, as lists of cell indexes: rows, columns, the two diagonals.
+export function bingoLines(n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    out.push(Array.from({ length: n }, (_, k) => i * n + k));
+    out.push(Array.from({ length: n }, (_, k) => k * n + i));
+  }
+  out.push(Array.from({ length: n }, (_, k) => k * n + k));
+  out.push(Array.from({ length: n }, (_, k) => k * n + n - 1 - k));
+  return out;
+}
+export class Bingo {
+  constructor({ players = 2, seed = 1, size = 5 } = {}) {
+    if (players < GAMES.bingo.min || players > GAMES.bingo.max) throw new Error('bingo is for 2-6');
+    if (!BINGO_SIZES.includes(size)) throw new Error('bingo is 5×5 or 4×4');
+    this.n = players;
+    this.size = size;
+    this.goal = BINGO_GOAL[size];
+    this.rand = rng(seed);
+    this.pool = shuffle(Array.from({ length: BINGO_KINDS }, (_, i) => i), this.rand).slice(0, BINGO_POOL[size]).sort((a, b) => a - b);
+    this.first = Math.floor(this.rand() * players); // who calls first
+    this.lines = bingoLines(size);
+    this.boards = new Array(players).fill(null); // each: size² fish, cell by cell
+    this.out = new Array(players).fill(false);
+    this.called = []; // fish, in the order called
+    this.phase = 'setup'; // 'setup' | 'call'
+    this.caller = this.first;
+    this.winners = [];
+    this.winner = -1;
+    this.over = false;
+    this.last = null; // { p, fish, hit: [seats whose board has it] } after a call
+  }
+
+  get turn() { return this.phase === 'call' ? this.caller : -1; } // (filling the boards: everyone at once)
+
+  // My board, filled: size² different fish of the pool.
+  setBoard(p, code) {
+    if (this.over || this.phase !== 'setup' || !(p >= 0 && p < this.n) || this.out[p] || this.boards[p]) return false;
+    const cells = bingoCells(code);
+    if (!this.fits(cells)) return false;
+    this.boards[p] = cells;
+    if (this.boards.every((b, s) => b || this.out[s])) this.begin();
+    return true;
+  }
+
+  fits(cells) {
+    return cells.length === this.size * this.size && new Set(cells).size === cells.length && cells.every((f) => this.pool.includes(f));
+  }
+
+  // The host's clock ran out on the filling: whoever is not done gets the rest at random (the same everywhere).
+  close() {
+    if (this.over || this.phase !== 'setup') return false;
+    this.boards = this.boards.map((b, s) => b || (this.out[s] ? null : this.randomBoard(this.rand)));
+    this.begin();
+    return true;
+  }
+
+  begin() {
+    this.phase = 'call';
+    if (this.out[this.caller]) this.caller = this.nextIn(this.caller);
+  }
+
+  randomBoard(rand, keep = null) {
+    const cells = keep ? keep.slice() : new Array(this.size * this.size).fill(-1);
+    const rest = shuffle(this.pool.filter((f) => !cells.includes(f)), rand);
+    return cells.map((f) => (f >= 0 ? f : rest.pop()));
+  }
+
+  call(p, fish) {
+    if (this.over || this.phase !== 'call' || p !== this.caller || !this.pool.includes(fish) || this.called.includes(fish)) return false;
+    this.called.push(fish);
+    this.last = { p, fish, hit: this.boards.map((b, s) => (b && !this.out[s] && b.includes(fish) ? s : -1)).filter((s) => s >= 0) };
+    this.winners = this.boards.map((_, s) => s).filter((s) => !this.out[s] && this.linesOf(s) >= this.goal);
+    if (this.winners.length) { this.winner = this.winners.length === 1 ? this.winners[0] : -1; this.over = true; return true; }
+    this.caller = this.nextIn(this.caller);
+    return true;
+  }
+
+  marked(s) { return (this.boards[s] || []).map((f) => this.called.includes(f)); }
+  // The lines a board has done, as indexes into this.lines.
+  doneLines(s) { const m = this.marked(s); return m.length ? this.lines.map((l, i) => (l.every((c) => m[c]) ? i : -1)).filter((i) => i >= 0) : []; }
+  linesOf(s) { return this.doneLines(s).length; }
+
+  // The computer's call (and a call made for someone whose clock ran out): the fish that brings its own board
+  // nearest a line; with nothing of its own left, any fish.
+  botCall(s, rand = Math.random) {
+    const left = this.pool.filter((f) => !this.called.includes(f));
+    const b = this.boards[s] || [], m = this.marked(s);
+    let best = [], top = -1;
+    for (const f of left) {
+      const c = b.indexOf(f);
+      const v = c < 0 ? 0 : 1 + this.lines.filter((l) => l.includes(c)).reduce((a, l) => a + l.filter((k) => m[k]).length ** 2, 0);
+      if (v > top) { top = v; best = [f]; } else if (v === top) best.push(f);
+    }
+    return best[Math.floor(rand() * best.length)] ?? -1;
+  }
+
+  nextIn(p) {
+    let t = p;
+    do t = (t + 1) % this.n; while (this.out[t] && t !== p);
+    return t;
+  }
+
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    this.out[p] = true;
+    const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
+    if (left.length < 2) { this.winner = left[0] ?? -1; this.winners = left.slice(0, 1); this.over = true; return; }
+    if (this.phase === 'setup') { if (this.boards.every((b, s) => b || this.out[s])) this.begin(); } else if (this.caller === p) this.caller = this.nextIn(p);
+  }
+}
+
 // ---------------------------------------------------------------- messages
 // Room messages (game.net.sendEmote), all starting with "bg:":
 //   bg:i:<to>:<game>            the host invites <to>
@@ -1216,7 +1360,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclsteakhqzvnmub]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
+  if (!/^[ofrpdclsteakhqzvnmubgw]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

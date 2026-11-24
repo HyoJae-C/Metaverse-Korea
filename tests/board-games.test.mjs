@@ -189,7 +189,7 @@ test('board game messages round-trip and refuse junk', async () => {
   assert.deepEqual(parseBg(bgPass('g7', 2, ['r'])), { k: 'y', gid: 'g7', seat: 2, act: ['r'] });
   assert.deepEqual(parseBg(bgClose('g7')), { k: 'c', gid: 'g7' });
   assert.deepEqual(unpackAct(packAct(['c', '7♥', '♠'])), ['c', '7♥', '♠']);
-  assert.equal(parseBg('bg:x:g7:w.1'), null);
+  assert.equal(parseBg('bg:x:g7:j.1'), null); // (no such move)
   assert.equal(parseBg('darts:x'), null);
 });
 
@@ -680,4 +680,74 @@ test('away from the table: the message that a page went out of sight or came bac
   assert.deepEqual(parseBg(bgAway('g7', false)), { k: 'w', gid: 'g7', away: false });
   assert.equal(parseBg('bg:w:g7:2'), null);
   assert.equal(parseBg('bg:w:g7'), null);
+});
+
+test('fish book bingo: a pool a little bigger than the board, everyone fills theirs, one call each in turn, lines win (Yozi 2026-11-24)', async () => {
+  const { Bingo, BINGO_KINDS, BINGO_POOL, BINGO_GOAL, bingoCode, bingoCells, bingoLines, newGame, applyAction, unpackAct, packAct, parseBg, bgMove } = await import('../src/core/board-games.js');
+  const { FISH_SHEET } = await import('../src/core/fishing.js');
+  assert.equal(FISH_SHEET.length, BINGO_KINDS); // every fish in the book can be on a board
+  assert.equal(bingoLines(5).length, 12);
+  assert.equal(bingoLines(4).length, 10);
+  const all = Array.from({ length: BINGO_KINDS }, (_, i) => i);
+  assert.deepEqual(bingoCells(bingoCode(all)), all);
+
+  const g = newGame('bingo', 3, 41, 0);
+  assert.ok(g instanceof Bingo);
+  assert.equal(g.size, 5);
+  assert.equal(g.pool.length, BINGO_POOL[5]);
+  assert.equal(newGame('bingo', 2, 41, 1).size, 4);
+  assert.equal(newGame('bingo', 2, 41, 1).pool.length, BINGO_POOL[4]);
+  assert.equal(g.turn, -1); // everyone fills at once
+  const mine = g.pool.slice(0, 25);
+  // A board goes through the room message whole.
+  const msg = parseBg(bgMove('table-1', ['g', bingoCode(mine)]));
+  assert.deepEqual(msg.act, ['g', bingoCode(mine)]);
+  assert.equal(applyAction(g, 0, ['g', bingoCode(mine.slice(0, 24))]), false); // a cell short
+  assert.equal(applyAction(g, 0, ['g', bingoCode([...mine.slice(0, 24), mine[0]])]), false); // the same fish twice
+  const outside = all.find((f) => !g.pool.includes(f));
+  assert.equal(applyAction(g, 0, ['g', bingoCode([...mine.slice(0, 24), outside])]), false); // not in this game
+  assert.ok(applyAction(g, 0, unpackAct(packAct(['g', bingoCode(mine)]))));
+  assert.equal(applyAction(g, 0, ['g', bingoCode(mine)]), false); // once
+  assert.ok(applyAction(g, 1, ['g', bingoCode(g.pool.slice(5, 30))]));
+  assert.equal(g.phase, 'setup');
+  assert.ok(applyAction(g, 0, ['n'])); // the host's clock: seat 2 gets a board at random
+  assert.ok(g.fits(g.boards[2]));
+  assert.equal(g.phase, 'call');
+  assert.equal(g.turn, g.first);
+
+  // Calls: only the caller, only a fish of the pool nobody called.
+  const c = g.turn;
+  assert.equal(applyAction(g, (c + 1) % 3, ['w', g.pool[0]]), false);
+  assert.equal(applyAction(g, c, ['w', outside]), false);
+  assert.ok(applyAction(g, c, unpackAct(packAct(['w', mine[0]]))));
+  assert.ok(g.last.hit.includes(0));
+  assert.equal(applyAction(g, g.turn, ['w', mine[0]]), false); // called already
+  assert.equal(g.turn, (c + 1) % 3);
+
+  // Seat 0's first three rows: 3 lines, bingo (unless someone else gets there on the same call: then they share it).
+  for (const f of mine.slice(0, 15)) if (!g.over && !g.called.includes(f)) applyAction(g, g.turn, ['w', f]);
+  assert.ok(g.over);
+  assert.ok(g.winners.includes(0));
+  assert.ok(g.linesOf(0) >= BINGO_GOAL[5]);
+  if (g.winners.length > 1) assert.equal(g.winner, -1); else assert.equal(g.winner, 0);
+
+  // The same seed: the same pool and the same random boards everywhere.
+  const a = new Bingo({ players: 2, seed: 8, size: 4 }), b = new Bingo({ players: 2, seed: 8, size: 4 });
+  assert.deepEqual(a.pool, b.pool);
+  a.close(); b.close();
+  assert.deepEqual(a.boards, b.boards);
+  // The computer calls fish of its own board, nearest a line first, and a game always ends.
+  while (!a.over) { const f = a.botCall(a.turn, () => 0.5); assert.ok(a.call(a.turn, f)); }
+  assert.ok(a.winners.length >= 1);
+
+  // Someone leaves: while filling, the rest start without them; the last one left has it.
+  const d = new Bingo({ players: 3, seed: 3 });
+  d.setBoard(1, bingoCode(d.pool.slice(0, 25)));
+  d.setBoard(2, bingoCode(d.pool.slice(5, 30)));
+  d.leave(0);
+  assert.equal(d.phase, 'call');
+  assert.notEqual(d.turn, 0);
+  d.leave(d.turn);
+  assert.ok(d.over);
+  assert.equal(d.winners.length, 1);
 });
