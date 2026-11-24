@@ -51,6 +51,8 @@ export const HC_PARK = {
   sun: [-0.33, 0.17, 38], // to one side of the tower: turn and height (radians), size (m)
   moon: [0.33, 0.15, 30], // to the other
   canopy: 4.5, // m: the treetops over the ridge's ground
+  wood: { cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
+  belt: { out: [3, 6.8], step: 3.4, clear: 9 }, // the trees round the court behind the gate: rows (m out from the court's edge), m apart; no headstones this near the court
   flowers: 120, // s: the chrysanthemums stay on the altar
 };
 
@@ -568,6 +570,62 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   }
   group.add(B.mesh('hyeonchung-built'));
 
+  // The wood inside the grounds, drawn whole (Yozi: in the photos the trees stand round the plots and behind the
+  // gate and close the view). Every slope that is not a plot, a lawn, a way or a building is wood: one mesh of
+  // treetops over it with a dark wall round its foot. You only walk the ways, so nobody stands under it.
+  const wood = (() => {
+    const W = P.wood, c = W.cell, [fx0, fz0, fx1, fz1] = boxOf(l.foot), w = Math.ceil((fx1 - fx0) / c) + 1, h = Math.ceil((fz1 - fz0) / c) + 1;
+    const on = new Uint8Array(w * h);
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const x = fx0 + i * c, z = fz0 + j * c;
+      if (!inPoly(x, z, l.foot) || ringDist(x, z, l.foot) < 2) continue;
+      if (flatAt(l, x, z) || inBox(x, z, boxOf(l.court), W.clear + 3) && ringDist(x, z, l.court) < W.clear + 3) continue;
+      if (inAny(plots, x, z, W.clear) || inAny(lawns, x, z, W.clear) || inAny(water, x, z, W.clear) || inAny(builds, x, z, W.clear) || inAny(solids, x, z, W.clear) || !offWay(x, z, W.way)) continue;
+      on[j * w + i] = 1;
+    }
+    const at = (i, j) => (i < 0 || j < 0 || i >= w || j >= h ? 0 : on[j * w + i]);
+    const quad = (i, j) => at(i, j) && at(i + 1, j) && at(i, j + 1) && at(i + 1, j + 1);
+    // (deep in the wood: single trees there would be hidden)
+    const deep = (x, z) => { const i = Math.floor((x - fx0) / c), j = Math.floor((z - fz0) / c); return !!quad(i, j); };
+    return { c, w, h, x0: fx0, z0: fz0, at, quad, deep };
+  })();
+  // The court's sides behind the gate's front: two rows of tall trees stand there, so no headstones this near.
+  const beltU = (() => { const n = Math.hypot(l.tower.at[0] - l.gate.at[0], l.tower.at[1] - l.gate.at[1]) || 1; return [(l.tower.at[0] - l.gate.at[0]) / n, (l.tower.at[1] - l.gate.at[1]) / n]; })();
+  const courtBox0 = boxOf(l.court);
+  const behindGate = (x, z) => (x - l.gate.at[0]) * beltU[0] + (z - l.gate.at[1]) * beltU[1] > -1;
+  const inBelt = (x, z) => behindGate(x, z) && inBox(x, z, courtBox0, P.belt.clear) && !inPoly(x, z, l.court) && ringDist(x, z, l.court) < P.belt.clear;
+  { // the wood's mesh
+    const hash = (a, b) => { const s = Math.sin(a * 53.9 + b * 71.3) * 43758.5453; return s - Math.floor(s); };
+    const { c, w, h, x0, z0 } = wood, pos = [], col = [];
+    const pines = ['#3f6f3a', '#467a40', '#39653a'].map((v) => new THREE.Color(v)), leaves = ['#5f9a4a', '#6fae55', '#4f8a43'].map((v) => new THREE.Color(v)), dark = new THREE.Color('#2f4a2c');
+    const top = (i, j) => [l.x + x0 + i * c + (hash(i, j + 9) - 0.5) * 1.6, LY(x0 + i * c, z0 + j * c) + P.wood.top[0] + P.wood.top[1] * hash(i, j), l.z + z0 + j * c + (hash(i + 9, j) - 0.5) * 1.6];
+    const base = (i, j) => { const t = top(i, j); return [t[0], LY(x0 + i * c, z0 + j * c) + P.wood.foot - 2.2, t[2]]; };
+    const put = (a, b, d, k) => { for (const v of [a, b, d]) { pos.push(...v); col.push(k.r, k.g, k.b); } };
+    for (let j = 0; j < h - 1; j++) for (let i = 0; i < w - 1; i++) {
+      if (!wood.quad(i, j)) continue;
+      const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]];
+      const t = q.map(([a, b]) => top(a, b));
+      for (const [n, tri] of [[0, [0, 3, 2]], [1, [0, 2, 1]]]) {
+        const r = hash(i * 2 + n, j + 0.5), k = r < 0.65 ? pines[Math.floor(r * 40) % 3] : leafColor(leaves[Math.floor(r * 40) % 3], leafHash(i * h + j, 5 + n), MIX.wood);
+        put(t[tri[0]], t[tri[1]], t[tri[2]], k);
+      }
+      // the wall down to the ground on each side where the wood ends
+      for (const [e, [di, dj]] of [[[0, 1], [0, -1]], [[1, 2], [1, 0]], [[2, 3], [0, 1]], [[3, 0], [-1, 0]]]) {
+        if (wood.quad(i + di, j + dj)) continue;
+        const [a, b] = e.map((n) => q[n]), ta = top(...a), tb = top(...b), ga = base(...a), gb = base(...b);
+        put(ta, ga, gb, dark); put(ta, gb, tb, dark);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, addSnowCover(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+    mesh.name = 'hyeonchung-wood';
+    group.add(mesh);
+    group.userData.counts.woodTris = pos.length / 9;
+  }
+
   if (l.ridge) { // The wooded ridge behind the grounds (closed land): its treetops as one mesh.
     const k = l.ridge, c = k.cell, pos = [], col = [];
     const hash = (a, b) => { const s = Math.sin(a * 91.7 + b * 47.3) * 43758.5453; return s - Math.floor(s); };
@@ -595,7 +653,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
 
   { // The headstones: plain white, no names; by tile, so far ones are skipped.
     const [sw, sh, sd] = P.stone, tiles = new Map();
-    const ok = (x, z) => offWay(x, z, P.edge) && !flatAt(l, x, z) && !inAny(builds, x, z, 1) && !inAny(water, x, z, 0.8);
+    const ok = (x, z) => offWay(x, z, P.edge) && !flatAt(l, x, z) && !inAny(builds, x, z, 1) && !inAny(water, x, z, 0.8) && !inBelt(x, z);
     let count = 0;
     for (const pl of plots) {
       for (const [x, z] of plotStones(pl, { step: lowSpec ? 2 : P.stones }, ok)) {
@@ -631,9 +689,31 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       if (!inPoly(x, z, l.foot) || ringDist(x, z, l.foot) < 1.5) continue;
       if (flatAt(l, x, z) || inAny(plots, x, z, 1.5) || inAny(lawns, x, z, 1) || inAny(water, x, z, 1.5) || inAny(builds, x, z, 2.5) || inAny(solids, x, z, 3) || !offWay(x, z, P.treeClear)) continue;
       if (inBox(x, z, courtBox, 4) && ringDist(x, z, l.court) < 4) continue;
+      if (wood.deep(x, z)) continue; // (under the wood's own treetops)
       const sc = 0.85 + rnd() * 0.7;
       (rnd() < 0.72 ? pines : round).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc, sc]);
     }
+    // The belt: two rows of tall trees along the court's sides from the gate's wings back to the terrace.
+    let belt = 0;
+    for (const [n, out] of P.belt.out.entries()) {
+      const ring = l.court.concat([l.court[0]]);
+      let carry = n * P.belt.step / 2;
+      for (let i = 1; i < ring.length; i++) {
+        const [ax, az] = ring[i - 1], [bx, bz] = ring[i], len = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / len, dz = (bz - az) / len;
+        for (let t = carry; t < len; t += P.belt.step) {
+          for (const sgn of [1, -1]) {
+            const x = ax + dx * t - dz * out * sgn + (rnd() - 0.5) * 0.8, z = az + dz * t + dx * out * sgn + (rnd() - 0.5) * 0.8;
+            if (inPoly(x, z, l.court) || ringDist(x, z, l.court) < out - 0.6 || !behindGate(x, z)) continue;
+            if (flatAt(l, x, z) || inAny(water, x, z, 1) || inAny(builds, x, z, 2) || inAny(solids, x, z, 2) || !offWay(x, z, 1.6)) continue;
+            const sc = 1.25 + rnd() * 0.5;
+            ((belt + n) % 5 === 4 ? round : pines).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc * 1.1, sc]);
+            belt++;
+          }
+        }
+        carry = (carry + Math.ceil((len - carry) / P.belt.step) * P.belt.step) - len;
+      }
+    }
+    group.userData.counts.belt = belt;
     const trunk = new THREE.CylinderGeometry(0.14, 0.2, 2.4, 5, 1, true).translate(0, 1.2, 0);
     const crown = new THREE.IcosahedronGeometry(1.8, 0).translate(0, 3.3, 0);
     const cone = new THREE.ConeGeometry(1.4, 3.8, 6).translate(0, 3.7, 0);

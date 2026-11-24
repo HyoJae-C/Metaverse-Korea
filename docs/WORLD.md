@@ -1465,6 +1465,10 @@ are fewer and bigger (`HC_PARK.rows`/`stones`/`stone`; about a quarter fewer).
 Past the hill's foot the land you cannot enter is a wooded ridge
 (`landmark.ridge`: SRTM at 1/4 out to 90 m, 0 at streets, the entrance and
 the ways; one mesh of treetops; `ridgeSolids` closes it to walking, added
-before the decks so ways along it stay whole). A sun and a moon always stand
+before the decks so ways along it stay whole). Inside the grounds every slope that is not a plot, a lawn, a way or a
+building is wood drawn whole (`hyeonchung-wood`, one mesh with a dark wall at
+its foot; single trees only at its edges), and two rows of tall trees stand
+along the court behind the gate (Yozi: in the photos trees close the view).
+A sun and a moon always stand
 over the hill (sprites that follow you; the sun fades at night, the moon by
 day), after the verse "the sun and the moon will guard this hill".

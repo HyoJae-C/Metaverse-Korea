@@ -224,5 +224,5 @@ test('the Taegeukgi beside the forecourt, the verse as it is cut, the fountain i
   const f = l.fountain;
   for (const r of hc.roads) for (const [x, z] of r.p) assert.ok(Math.hypot(x - f.at[0], z - f.at[1]) - r.w / 2 > f.r - 0.3, 'the fountain leaves the round road free');
   assert.ok(!hyeonchungSolids(l).some((p) => inPoly(l.tribute.at[0], l.tribute.at[1], p)), 'the tribute spot is free');
-  for (const what of ['Taegeukgi', 'Fountain']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what)));
+  for (const what of ['Taegeukgi', 'Fountain', 'wood inside']) assert.ok(hc.meta.approx.some((a) => a.what.includes(what)));
 });
