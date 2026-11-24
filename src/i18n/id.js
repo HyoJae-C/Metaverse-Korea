@@ -472,6 +472,7 @@ export const ID = {
   'hud.bike': 'Kendaraan',
   'stairs.noBike': "🚲 Kendaraan tidak bisa lewat tangga. Ketuk Kendaraan untuk turun, lalu jalan kaki ke bawah.",
   'cheongwadae.note': "🏛️ Cheong Wa Dae kembali menjadi kantor presiden, fasilitas keamanan: pengunjung tidak bisa masuk. Silakan menikmatinya dari luar gerbang.",
+  'hyeonchung.note': "🕊️ Taman Makam Nasional Seoul: didirikan pada 1955 sebagai makam militer, menjadi makam nasional sejak 1965. Ini tempat untuk mengenang. Mohon berjalan dengan tenang.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',

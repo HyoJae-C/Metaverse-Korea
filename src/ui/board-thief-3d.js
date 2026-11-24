@@ -114,7 +114,7 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
     p.cards.forEach((m, i) => {
       const o = i - (k - 1) / 2;
       const picked = state.from === p.s && state.sel === i, hover = state.canPick && state.from === p.s && hot === i;
-      m.userData.lift += ((picked ? 0.13 : hover ? 0.05 : 0) - m.userData.lift) * Math.min(1, dt * 12);
+      m.userData.lift += ((picked ? 0.13 : state.from === p.s && state.tip === i ? 0.08 : hover ? 0.05 : 0) - m.userData.lift) * Math.min(1, dt * 12);
       m.position.set(-o * step, -(Math.abs(o) ** 1.6) * 0.012 + m.userData.lift, i * 0.004);
       m.rotation.z = o * turn;
     });
@@ -187,7 +187,7 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
     // The game as it stands. counts: cards in each hand; from/turn: who is
     // picked from and who picks; sel: the card pointed at; faces: an emoji
     // per seat (or none); gone: who has left the table.
-    sync({ counts, from, turn, sel, faces = [], gone: left = [], over = false, canPick = false }) {
+    sync({ counts, from, turn, sel, tip = -1, faces = [], gone: left = [], over = false, canPick = false }) {
       // A card that changed hands flies across (one hand a card shorter, the other got it or laid a pair down).
       if (state.from >= 0 && state.turn >= 0 && people[state.from].count > 0 && counts[state.from] === people[state.from].count - 1) {
         const m = new THREE.Mesh(cardGeo, BACK);
@@ -207,7 +207,7 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
           p.faceText = text;
         }
       }
-      state = { from, turn, sel, canPick: canPick && !over, over };
+      state = { from, turn, sel, tip, canPick: canPick && !over, over };
       if (!state.canPick) hot = -1;
       // Where my eyes go.
       const head = (s, y = HAND_Y) => at(s, R - 0.3).setY(y);

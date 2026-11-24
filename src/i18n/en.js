@@ -471,6 +471,7 @@ export const EN = {
   'hud.bike': 'Vehicle',
   'stairs.noBike': "🚲 No bikes on the stairs. Tap Vehicle to get off, then walk down.",
   'cheongwadae.note': "🏛️ Cheong Wa Dae is the president's office again, a security facility: visitors can't go in. Please enjoy it from outside the gate.",
+  'hyeonchung.note': "🕊️ Seoul National Cemetery: founded in 1955 as the military cemetery, a national cemetery since 1965. This is a place of remembrance. Please walk quietly.",
   'bike.offShort': 'Get off',
   'bike.off': 'Get off the bike',
   'car.off': 'Get out of the car',

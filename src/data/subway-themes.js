@@ -23,11 +23,13 @@ export const STATION_THEMES = {
   'ddp-station': ['shop', 'culture'],
   'dongmyo-station': ['shop'],
   'itaewon-station': ['shop'],
+  'gangnam-station': ['shop'], // the big screens, clinics, the Nonhyeon furniture street
   'samseong-station': ['shop', 'culture'], // COEX, Bongeunsa
   'jamsil-station': ['park', 'shop'], // the lake, Another Land, the tower
   'mongchontoseong-station': ['park', 'culture'], // Olympic Park
   'childrens-grand-park-station': ['park'],
   'ichon-station': ['culture', 'park'], // the art museum, Yongsan Family Park's weekend farm
+  'dongjak-station': ['culture'], // Seoul National Cemetery
   'magongnaru-station': ['park'], // Seoul Botanic Park
   'gimpo-airport-station': ['culture'], // planes from the roof deck
 };

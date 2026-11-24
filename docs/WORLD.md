@@ -153,6 +153,33 @@ lists **districts** joined into one map (`src/core/districts.js`):
   `"at": [x, z]` in map metres (hand-made districts) instead of a lat/lon
   `anchor` (maps drawn from real coordinates).
 
+## Gangnam Station (2026-11-24)
+
+`districts/gangnam.json` (`node scripts/build-gangnam.mjs`, then
+`build-base.mjs` and `build-closed.mjs`): Gangnam-daero on its real line at
+1/4 from the Gangnam Station crossroads north past Sinnonhyeon to Nonhyeon
+Station (461 m in the game), with the first stretch of Teheran-ro,
+Seocho-daero, Bongeunsa-ro, Sapyeong-daero, Hakdong-ro and Sinbanpo-ro; the
+base map carries them on. Data: `scripts/data/gangnam-osm.json` (the middle
+line between each road's two carriageways, from the Korea extract).
+
+- It was built to spread shops out, not to add any (Yozi): the two cosmetic
+  clinics came from Seongsu, three clothes shops and four furniture showrooms
+  from Euljiro, the appliance mart from Samseong. `GROUPS` in the script says
+  which shop stands where; a moved shop's `why` says where it came from.
+  `build-seongsu.mjs` lists them in `MOVED_AWAY` so it no longer places them.
+- Shops stand in three places only: the crossroads (big screens, clothes, the
+  appliance mart), the avenue by Sinnonhyeon (clinics) and Hakdong-ro east of
+  Nonhyeon Station (the real Nonhyeon furniture street). The rows between are
+  plain offices.
+- Only Gangnam Station (Line 2, exits 10 and 11) has stairs and trains.
+  Sinnonhyeon and Nonhyeon are names on the map.
+- The six big screens are `region.json` "screens" lines marked
+  `[build-gangnam screen]`; the script rewrites them and the station's exits.
+- A `links` road fills Teheran-ro between Yeoksam and Seolleung, which is
+  over 200 m from any district and so not in the base map.
+- Apgujeong (Dosan Park, the way down to the Han) is the next step, not built.
+
 ## The base map: all of Seoul's big roads (2026-11-14)
 
 Under the hand-built districts lies one base layer,
@@ -1351,6 +1378,26 @@ tomb groups can't be 50%, the Seolleung group would need 94 m on a 70 m site.
 So the made-up hills behind the mounds are cut short of each shrine hall and
 fenced (blockers, you can't climb a tomb). The models are in
 `core/royal-tomb-model.js`, loaded when you walk in through the wall; a few
-visitors stand and stroll (`game/seonjeongneung-near.js`). Moves are in
+visitors stand and stroll (`game/seonjeongneung-near.js`). The wood is drawn
+whole (`core/wood-mass.js`): crowns over patches you can't walk into. Moves are in
 `meta.nudges`, made-up things in `meta.approx`.
+
+## Seoul National Cemetery (국립서울현충원, 2026-11-24)
+
+`scripts/build-hyeonchungwon.mjs` writes `districts/hyeonchungwon.json`: the
+cemetery in Dongjak-gu at 1/4 on OSM's outline, with Hyeonchungmun on its real
+spot (the anchor). The gate, the Memorial Tower and the court between them are
+at 50% about the gate's middle (Yozi), so the tower stands 21 m behind its
+real spot and the court covers most of plots 16 and 18. The ground is SRTM
+above the valley floor at 1/4 (level from the main gate to the court); every
+OSM road, path and stair inside is one network (`hyeonchung` landmark trails:
+roads under 14°, paths under 18°). The hill is a blocker; ways, the court, the
+terrace and the lawn are decks through it (`game/hyeonchungwon-walk.js`, first
+download; heights in `core/hyeonchung-ground.js`). The gate, tower, fountain,
+woods and headstones load near (`game/hyeonchungwon-park.js`): plain white
+stones in rows on OSM's plot outlines, no names; the presidents' graves and
+single graves are not drawn. A place of remembrance: nothing to play or win.
+Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
+note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
+has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.

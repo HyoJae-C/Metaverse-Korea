@@ -1,5 +1,6 @@
 // Seoul stamp tour (서울 스탬프 투어): one stamp stand at each place.
-// To add a place, add one entry here. Nothing else needs to change.
+// To add a place, add one entry here, and its row in reward_once_ids in a
+// new supabase/ file (the server pays only real stamps; the test prints it).
 //   place: { store: 'id' } puts the stand beside that shop's door (and the
 //          stamp only exists once that shop is on the map),
 //          { store: 'id', room: true, at: [x, z], ry } puts it inside that
