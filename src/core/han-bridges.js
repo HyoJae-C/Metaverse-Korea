@@ -14,7 +14,7 @@ import { inPoly } from './geom.js';
 
 export const TOP = 5.5; // m: the deck's top over the river (underside 1.4 m lower)
 export const RAMP = 60; // m: up from each bank
-export const JAMSU = { top: 5, flat: 16, ramp: 34, low: 0.3 };
+export const JAMSU = { top: 5, flat: 16, ramp: 34, low: 0.3, end: 6 };
 const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary']);
 const LAND_GAP = 150; // m of land along it that still counts as one bridge (an island it crosses)
 const smooth = (k) => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
@@ -32,7 +32,8 @@ export function deckHeight(b, s) {
   if (s <= 0 || s >= b.len) return b.low;
   if (b.jamsu) {
     const d = Math.abs(s - b.mid) - JAMSU.flat;
-    return b.low + (JAMSU.top - b.low) * smooth(1 - d / JAMSU.ramp);
+    // (down to its road over the last JAMSU.end metres: no kerb at its ends)
+    return b.low * Math.min(1, s / JAMSU.end, (b.len - s) / JAMSU.end) + (JAMSU.top - b.low) * smooth(1 - d / JAMSU.ramp);
   }
   return b.low + (b.top - b.low) * Math.min(smooth(s / b.ramp[0]), smooth((b.len - s) / b.ramp[1]));
 }
@@ -136,8 +137,54 @@ export function raiseHanBridges(map, route, paths = [route]) {
   if (bridges.length) {
     map.landmarks = (map.landmarks || []).filter((l) => !(l.type === 'jamsu' && bridges.some((b) => b.jamsu))); // (its deck is drawn as a bridge now)
     for (const l of map.landmarks) if (l.type === 'seogang' && bridges.some((b) => b.name === '서강대교')) l.lift = TOP; // (only its arch, up on the deck: core/yeouido-models.js)
+    joinLandmarkBridges(map, bridges);
   }
   return bridges;
+}
+
+// A bridge landmark (core/banpo-bridge.js) on the same line as a raised
+// road was a second deck in the first (Yozi 2026-11-24, "뒤죽박죽"):
+//  - Dongjak Bridge: the subway's deck (6 m up, 10 m wide) 2-3 m beside the
+//    road's (5.5 m, 15 m): now one deck, the road's, with the subway's strip
+//    down the middle and its arches; the landmark is dropped.
+//  - Banpo Bridge over Jamsu: they really are two decks, one over the
+//    other, on the same piers. Jamsu's raised middle had piers of its own
+//    beside Banpo's: now Banpo's piers stand clear of it and carry it.
+const NEAR = 6; // m: a landmark's line this close to a bridge's all along is the same bridge
+function lineAt(pts, s) {
+  for (let i = 1; i < pts.length; i++) {
+    const L = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    if (s <= L || i === pts.length - 1) { const t = Math.min(1, s / (L || 1)); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; }
+    s -= L;
+  }
+  return pts[0];
+}
+// The nearest spot of a line to (x, z): [distance, s along it].
+export function onLine(pts, x, z) {
+  let best = [Infinity, 0], s0 = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, az] = pts[i - 1], dx = pts[i][0] - ax, dz = pts[i][1] - az, L2 = dx * dx + dz * dz, L = Math.sqrt(L2);
+    const t = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L2)) : 0;
+    const d = Math.hypot(ax + dx * t - x, az + dz * t - z);
+    if (d < best[0]) best = [d, s0 + t * L];
+    s0 += L;
+  }
+  return best;
+}
+function joinLandmarkBridges(map, bridges) {
+  const drop = new Set();
+  for (const l of map.landmarks) {
+    if (l.type !== 'banpobridge' || !l.pts) continue;
+    const line = l.pts.map(([x, z]) => [l.x + x, l.z + z]);
+    const b = bridges.find((o) => o.pts.every(([x, z]) => onLine(line, x, z)[0] < NEAR));
+    if (!b) continue;
+    if (b.jamsu) { b.under = true; l.lower = b; continue; }
+    b.track = !!l.mid; // (b.mid is where the boats cross it)
+    if (l.archColor) b.archColor = l.archColor;
+    b.arches = (l.arches || []).map((a) => a.map((s) => Math.round(onLine(b.pts, ...lineAt(line, s))[1] * 10) / 10)).filter(([s0, s1]) => s1 - s0 > 10);
+    drop.add(l);
+  }
+  if (drop.size) map.landmarks = map.landmarks.filter((l) => !drop.has(l));
 }
 
 // How high you stand at (x, z): on a bridge's deck, or 0.

@@ -3,7 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { loadRegionMap } from '../src/core/districts.js';
-import { bridgeY, deckHeight, TOP } from '../src/core/han-bridges.js';
+import * as THREE from 'three';
+import { bridgeY, deckHeight, onLine, TOP } from '../src/core/han-bridges.js';
+import { banpoBridge } from '../src/core/banpo-bridge.js';
 import { boatPose, lineLengths } from '../src/core/boat-taxi.js';
 
 const R = new URL('../public/regions/another-seoul/', import.meta.url);
@@ -59,5 +61,54 @@ test('you walk up a bridge: no step on the way', () => {
     }
     const [x, z] = b.pts[Math.floor(b.pts.length / 2)];
     assert.ok(bridgeY(map.bridges, x, z) >= 0, 'on it');
+  }
+});
+
+// Yozi 2026-11-24: the bridges were "뒤죽박죽": decks of boxes stepped where
+// they narrowed or bent, and two decks stood in each other.
+const meshes = (l) => { const g = new THREE.Group(); banpoBridge(g, l); return g.children; };
+const banpoLM = map.landmarks.find((l) => l.type === 'banpobridge' && l.w === 22);
+const abs = (l) => l.pts.map(([x, z]) => [l.x + x, l.z + z]);
+
+test('Dongjak Bridge is one deck: the road\'s, with the subway down the middle and its arches', () => {
+  const dj = map.bridges.find((b) => b.name === '동작대로');
+  assert.ok(dj.track, 'the subway strip');
+  assert.equal(dj.arches.length, 3);
+  for (const [s0, s1] of dj.arches) assert.ok(s0 > 0 && s1 < dj.len && s1 > s0, `arch ${s0}-${s1} on the deck`);
+  for (const l of map.landmarks.filter((o) => o.type === 'banpobridge' && o !== banpoLM)) {
+    const line = abs(l);
+    assert.ok(!dj.pts.every(([x, z]) => onLine(line, x, z)[0] < 6), 'no second deck along it');
+  }
+});
+
+test('Banpo Bridge carries Jamsu: no piers of Jamsu\'s own, Banpo\'s stand clear of its deck', () => {
+  const j = map.bridges.find((b) => b.jamsu);
+  assert.ok(j.under && banpoLM.lower === j);
+  assert.ok(deckHeight(j, 0.01) < 0.01 && deckHeight(j, j.len - 0.01) < 0.01, 'down to its road at the ends (no kerb)');
+  const piers = meshes(banpoLM).at(-1).geometry.attributes.position;
+  let feet = 0;
+  for (let i = 0; i < piers.count; i++) {
+    if (Math.abs(piers.getY(i)) > 0.01) continue;
+    const [d] = onLine(j.pts, piers.getX(i) + banpoLM.x, piers.getZ(i) + banpoLM.z);
+    assert.ok(d > j.w / 2 + 0.3, `a pier's foot ${d.toFixed(2)} m from Jamsu's middle`);
+    feet++;
+  }
+  assert.ok(feet > 20, 'piers under the river span');
+});
+
+test('a bridge deck\'s edge has no steps where it narrows or bends', () => {
+  const line = banpoLM.pts;
+  const deck = meshes(banpoLM)[0].geometry;
+  const pos = deck.attributes.position, nrm = deck.attributes.normal, edge = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    if (nrm.getY(i) < 0.9) continue; // (the top)
+    const [d, s] = onLine(line, pos.getX(i), pos.getZ(i)), k = Math.round(s);
+    edge.set(k, Math.max(edge.get(k) || 0, d));
+  }
+  const ks = [...edge.keys()].sort((a, b) => a - b);
+  assert.ok(ks.length > 40, 'sampled along it');
+  for (let i = 1; i < ks.length; i++) {
+    const step = Math.abs(edge.get(ks[i]) - edge.get(ks[i - 1])) / Math.max(1, ks[i] - ks[i - 1]);
+    assert.ok(step < 0.5, `half width jumps ${step.toFixed(2)} m at ${ks[i]} m`);
   }
 });
