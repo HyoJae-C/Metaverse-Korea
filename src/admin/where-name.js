@@ -84,7 +84,7 @@ export const PLACES = [
   { name: 'Sungnyemun Gate', lm: 'sungnyemun', r: 50 },
   { name: 'Heunginjimun Gate', lm: 'heunginjimun', r: 40 }, { name: 'Heunginjimun Gate', lm: 'ongseong', r: 0 },
   { name: 'Dongdaemun Design Plaza', lm: 'ddp', r: 90 },
-  { name: 'Namsangol Hanok Village', lm: 'hanokgate', r: 50 }, { name: 'Namsangol Hanok Village', lm: 'folkyard', r: 40 },
+  { name: 'Namsangol Hanok Village', lm: 'hanokgate', r: 50 }, { name: 'Namsangol Hanok Village', lm: 'folkyard', r: 40 }, { name: 'Namsangol Hanok Village', lm: 'timecapsule', r: 40 },
   { name: 'Dongdaemun Seed Shop', lm: 'seedshop', r: 20 },
   { name: 'Dongmyo Flea Market', lm: 'potatomarket', r: 50 }, { name: 'Dongmyo Flea Market', lm: 'fleastall', r: 25 },
   { name: 'Naksan Park', lm: 'naksanpin', r: 100 },

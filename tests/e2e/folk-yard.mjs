@@ -3,12 +3,17 @@
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/folk-yard.mjs http://localhost:4173/ [screenshot dir]
 import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
 import { FOLK_GAMES } from '../../src/core/folk-props.js';
 import { propToWorld } from '../../src/data/folk-yard.js';
 const url = process.argv[2] || 'http://localhost:4173/';
 const S = process.argv[3] || null;
 const assert = (ok, msg) => { if (!ok) { console.error('FAIL', msg); process.exitCode = 1; } };
-const YARD = { x: -1057 - 311, z: -594 + 183 }; // euljiro offset (region.json) + the yard in the district
+const here = (f) => JSON.parse(readFileSync(new URL('../../public/regions/another-seoul/' + f, import.meta.url)));
+const [OX, OZ] = here('region.json').districts.find((d) => d.id === 'euljiro').offset;
+const lm = (type) => here('districts/euljiro.json').landmarks.find((l) => l.type === type);
+const YARD = { x: OX + lm('folkyard').x, z: OZ + lm('folkyard').z }; // the yard in the district + its offset
+const GATE = { x: OX + lm('hanokgate').x, z: OZ + lm('hanokgate').z };
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await (await browser.newContext({ viewport: { width: 900, height: 640 }, deviceScaleFactor: S ? 2 : 1 })).newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
@@ -21,9 +26,9 @@ await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
 if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
 await page.evaluate(() => __mk.snow(0)); // no snow: "Make a snowball" would take the button
 // In through the gate.
-await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [YARD.x, YARD.z - 20]);
+await page.evaluate(([x, z]) => __mk.goto(x, z, 0), [GATE.x, GATE.z + 6]);
 await page.waitForTimeout(1500);
-await page.evaluate(([x, z]) => __mk.place(x, z), [YARD.x, YARD.z - 6]);
+await page.evaluate(([x, z]) => __mk.place(x, z), [YARD.x - 16, YARD.z - 6]);
 await page.waitForTimeout(800);
 if (S) { await page.evaluate(() => __mk.cam({ dist: 16, pitch: 0.55, yaw: Math.PI })); await page.waitForTimeout(1200); await page.screenshot({ path: S + '/yard.png' }); }
 const LABELS = { yut: '🎲 Play yutnori', tuho: '🏺 Play tuho', jegi: '🪶 Kick the jegi', neol: '🪵 Jump on the seesaw' };
@@ -40,7 +45,7 @@ for (const g of FOLK_GAMES) {
   await page.waitForSelector(`#${g.id}-panel:not([hidden])`, { timeout: 5000 }).catch(() => {});
   assert(await page.isVisible(`#${g.id}-panel`), g.id + ': the panel opens');
   if (S) await page.screenshot({ path: `${S}/${g.id}-panel.png` });
-  await page.evaluate(([x, z]) => __mk.place(x, z), [YARD.x, YARD.z - 6]);
+  await page.evaluate(([x, z]) => __mk.place(x, z), [YARD.x - 16, YARD.z - 6]);
   await page.waitForTimeout(500);
   assert(!(await page.isVisible(`#${g.id}-panel`)), g.id + ': walking away closes it');
 }

@@ -726,11 +726,22 @@ Its way in faces Eulji-ro, on a small plaza. West of it, in the corner
 between Jangchungdan-ro and Eulji-ro, is Dongdaemun History & Culture Park
 with a stretch of the Seoul City Wall and its water gate; the fashion malls
 stand across Jangchungdan-ro and east of DDP round Fashion Town Lane.
-Elsewhere one row of buildings along each street. Namsangol Hanok Village is
-a part of its own at its real place south of Toegye-ro by Chungmuro, at game
-size, with a walk up to Toegye-ro: a walled yard (`HANOK.yard` in the script)
-with the folk games yard in its middle (the `folkyard` landmark,
-docs/FOLK-GAMES.md).
+Elsewhere one row of buildings along each street.
+
+**Namsangol Hanok Village** is a part of its own south of Toegye-ro by
+Chungmuro, added by `scripts/build-namsangol.mjs` (run after
+`build-euljiro.mjs`, then `build-closed.mjs`). Redrawn 2026-11-24 on its real
+ground at 1/4 from OSM (`scripts/data/namsangol-osm.json`): 58 x 88 m, the
+gate on Toegye-ro 34-gil, Cheonugak and its plaza, the five hanok in the
+north-east, Seoul Namsan Gugakdang, the stream down the west side, Gwaneoji,
+the folk games yard on the real folk games ground (the `folkyard` landmark,
+docs/FOLK-GAMES.md), the Time Capsule Plaza and Mangbungnu. Before that it was
+a 104 x 55 m box at game size with five invented hanok.
+Not at 1/4: the hanok are game size (5-8 m, each within 3 m of its real
+middle), the Gugakdang is one hall, the folk yard is 24 x 14 m (the real
+ground is 9 x 9 m at 1/4). Marked `approx`: Cheonghakji pond (not in OSM),
+the straightened outer wall, the three paths and the four woods.
+`tests/namsangol.test.mjs` keeps these numbers.
 
 DDP's main door on Eulji-ro opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and

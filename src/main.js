@@ -1718,7 +1718,7 @@ async function joinRoom(room, roomScene, area = null) {
       homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); folkYard.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
@@ -1752,6 +1752,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (boardGames.onMsg(id, e)) return; // board games at the café (game/board-games.js)
+      if (folkYard.onMsg(id, e)) return; // yutnori with people in Namsangol's yard (game/folk-yard.js)
       if (arcadeGame.onBrawlMsg(id, e)) return; // the fighting game with someone in the room (game/arcade.js)
       if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
@@ -4892,6 +4893,7 @@ const folkYard = createFolkYard({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get action() { return action; }, set action(v) { action = v; },
   $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
+  myId, get net() { return net; }, get others() { return others; }, safety, sfx,
 });
 onLanguageChange(() => folkYard.relabel());
 // Modu Land's balloon clown on platform shoes. (game/balloon-clown.js)
