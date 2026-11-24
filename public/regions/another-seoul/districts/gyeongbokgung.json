@@ -261,7 +261,7 @@
           [16, 320.9]
         ]
       ],
-      "approx": ["Sogong-ro and Eulji-ro round the enlarged plaza (off their real lines: meta.cityhall.moved)", "the lane behind the new hall and Mugyo-ro as a lane", "the new hall's height (56 m real: an estimate)", "Deoksugung is its wall and Daehanmun only: trees inside, the palace is not built; the wall just south of the gate is off its real line"]
+      "approx": ["Sogong-ro and Eulji-ro round the enlarged plaza (off their real lines: meta.cityhall.moved)", "the lane behind the new hall and Mugyo-ro as a lane", "the new hall's height (56 m real: an estimate)", "the Press Center behind the hall is moved north and its height is an estimate; the two blocks east of it are made up (Cheonggyecheon rows), capped at 30 m", "Deoksugung is its wall and Daehanmun only: trees inside, the palace is not built; the wall just south of the gate is off its real line"]
     }
   },
   "roads": [
@@ -1318,17 +1318,7 @@
       "cg": 1
     },
     {
-      "h": 89,
-      "p": [
-        [18.8, 216.8],
-        [52.9, 219.7],
-        [51.7, 233.6],
-        [17.6, 230.8]
-      ],
-      "cg": 1
-    },
-    {
-      "h": 92,
+      "h": 30,
       "p": [
         [58.8, 220.2],
         [93.6, 223.1],
@@ -1338,7 +1328,7 @@
       "cg": 1
     },
     {
-      "h": 108,
+      "h": 30,
       "p": [
         [99.6, 223.6],
         [131.2, 226.2],
@@ -1669,6 +1659,33 @@
       "cw": 1,
       "approx": 1,
       "why": "a plain building along Jahamun-ro (made up; Seochon)"
+    },
+    {
+      "h": 21,
+      "p": [
+        [19.9, 219.3],
+        [21.4, 219.2],
+        [26.2, 219.1],
+        [26.3, 221.7],
+        [27.4, 221.7],
+        [27.8, 233.2],
+        [26.3, 233.2],
+        [26.4, 235.6],
+        [20.3, 235.8],
+        [20.3, 233.6],
+        [19.1, 233.6],
+        [18.7, 221.8],
+        [20, 221.8]
+      ],
+      "sp": 1,
+      "approx": 1,
+      "n": {
+        "ko": "한국프레스센터",
+        "en": "Korea Press Center",
+        "ja": "韓国プレスセンター",
+        "zh": "韩国新闻中心"
+      },
+      "why": "Korea Press Center (Seoul Shinmun) on OSM's outline at 1/4, 8.9 m north of its real spot (the enlarged hall and the lane behind it stand on the rest); height an estimate (20 floors)"
     }
   ],
   "rail": [],
@@ -2375,9 +2392,9 @@
         [41.2, 272.7],
         [41.2, 272.7]
       ],
-      "trees": true,
+      "trees": "low",
       "sp": 1,
-      "why": "trees beside the halls (OSM landuse=forest patches) at 37.5%"
+      "why": "planting beside the halls (OSM landuse=forest patches) at 37.5%; low (bushes and small trees under 3 m), so nothing stands taller than the old hall (Yozi 2026-11-24)"
     },
     {
       "k": "park",
@@ -2398,9 +2415,9 @@
         [60.2, 272.5],
         [57.2, 272.6]
       ],
-      "trees": true,
+      "trees": "low",
       "sp": 1,
-      "why": "trees beside the halls (OSM landuse=forest patches) at 37.5%"
+      "why": "planting beside the halls (OSM landuse=forest patches) at 37.5%; low (bushes and small trees under 3 m), so nothing stands taller than the old hall (Yozi 2026-11-24)"
     },
     {
       "k": "park",
@@ -2431,9 +2448,9 @@
         [18, 253.9],
         [18, 243.1]
       ],
-      "trees": true,
+      "trees": "low",
       "sp": 1,
-      "why": "trees beside the halls (OSM landuse=forest patches) at 37.5%"
+      "why": "planting beside the halls (OSM landuse=forest patches) at 37.5%; low (bushes and small trees under 3 m), so nothing stands taller than the old hall (Yozi 2026-11-24)"
     },
     {
       "k": "stone",
@@ -8102,6 +8119,18 @@
         "zh": "大汉门 (德寿宫)"
       },
       "sp": 1
+    },
+    {
+      "kind": "landmark",
+      "x": 23.1,
+      "z": 236.8,
+      "name": {
+        "ko": "한국프레스센터 (서울신문)",
+        "en": "Korea Press Center (Seoul Shinmun)",
+        "ja": "韓国プレスセンター (ソウル新聞)",
+        "zh": "韩国新闻中心 (首尔新闻)"
+      },
+      "sp": 1
     }
   ],
   "landmarks": [
@@ -9649,6 +9678,42 @@
         [-6.7, 263.5],
         [-6.7, 294.7]
       ]
+    },
+    {
+      "type": "plazalawn",
+      "x": 38.2,
+      "z": 295,
+      "ry": 0,
+      "sp": 1,
+      "clear": 0,
+      "outline": [
+        [-10.9, -10.2],
+        [-8.9, -13],
+        [-7, -14.6],
+        [-4.4, -15.7],
+        [-0.6, -15.7],
+        [2, -14.8],
+        [5.1, -12.9],
+        [8.4, -9.9],
+        [10.9, -6.4],
+        [12.1, -2.6],
+        [12.6, 2],
+        [12.3, 6.5],
+        [12, 8.8],
+        [10.8, 11],
+        [9.4, 13],
+        [6.9, 14.9],
+        [4, 15.6],
+        [0.6, 15.4],
+        [-2.9, 14],
+        [-5.8, 11.4],
+        [-8.9, 7.9],
+        [-10.8, 4.6],
+        [-11.7, 0.9],
+        [-12.7, -3.5],
+        [-12.5, -6.4]
+      ],
+      "why": "the lawn's grass with the Korean peninsula in lighter grass, north towards the halls (as on the real lawn; its size and place on the lawn are by eye)"
     },
     {
       "type": "sign",

@@ -20,7 +20,7 @@
 // (it sends through the game's own chat bar, so the same rules apply).
 import { suitArt } from './board-card-suits.js';
 import {
-  GAMES, TOYS, FACES, MAFIA_TALK, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
+  GAMES, TOYS, FACES, MAFIA_TALK, GIMBAP_GOAL, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -46,6 +46,9 @@ const DICE_MS = 750; // ms the dice tumbles in the middle of the board before th
 const DICE_FULL = 1000, DICE_POWER = 9; // ms held for a full gauge; the hardest throw (0-9, sent with the roll)
 const diceMsOf = (pw) => (pw == null ? DICE_MS : 550 + 100 * Math.max(0, Math.min(DICE_POWER, pw | 0)));
 const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell table
+// Gimbap: a computer takes [a start, then between these two for each press]; the round is called this long after
+// the first finish; and with nobody done, after [this, plus this for each press].
+const GIMBAP_BOT = [900, 620, 980], GIMBAP_GRACE = 1500, GIMBAP_WAIT = [8000, 3000];
 
 const CSS = `
 #bg-panel { position: fixed; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(20,14,10,.25); font: 600 15px system-ui, sans-serif; color: #2b2230; }
@@ -287,6 +290,7 @@ export class BoardGamesUI {
     this.leaveAll();
     if (game === 'mafia') this.loadMafia();
     if (game === 'onecard') this.loadOneCard();
+    if (game === 'gimbap') this.loadGimbap();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0, rolls: LADDERS_ROLLS.indexOf(30) }; // (ladders: the players lay the board out, unless the host says no; 30 rolls each, unless the host picks another limit)
     this.state = 'lobby';
     this.status = '';
@@ -297,6 +301,11 @@ export class BoardGamesUI {
   // One Card's screen and words (ui/board-onecard-ui.js), fetched when someone first plays it.
   loadOneCard() {
     if (!this.onecard) import('./board-onecard-ui.js').then((m) => { this.onecard = m; this.render(); }).catch(() => {});
+  }
+
+  // Gimbap Master's screen and words (ui/board-gimbap-ui.js), the same way.
+  loadGimbap() {
+    if (!this.gimbap) import('./board-gimbap-ui.js').then((m) => { this.gimbap = m; this.render(); }).catch(() => {});
   }
 
   loadMafia() {
@@ -349,6 +358,7 @@ export class BoardGamesUI {
     this.timer = 0;
     this.dropView();
     if (game === 'onecard') this.loadOneCard();
+    if (game === 'gimbap') this.loadGimbap();
     if (game === 'mafia') { this.play.phaseAt = performance.now(); this.play.stepSeen = 0; this.loadMafia(); }
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
@@ -504,7 +514,7 @@ export class BoardGamesUI {
       this.showFace(seat, act[1]);
       return;
     }
-    if (act[0] === 'n' && p.ids[seat] !== p.hostId) return; // (mafia: only the host's clock moves the game on)
+    if (act[0] === 'n' && p.ids[seat] !== p.hostId) return; // (mafia, gimbap: only the host's clock moves the game on)
     if (!applyAction(p.g, seat, act)) return;
     if (p.ids.some((id) => id !== BOT && id !== this.net.myId)) this.net.send(bgPass(p.gid, seat, act));
     this.after(seat, act);
@@ -558,6 +568,23 @@ export class BoardGamesUI {
       setTimeout(() => { if (this.play === p && g.last === l) { this.status = said; this.render(); } }, p.diceMs);
       this.startWalk(l);
       this.onEvent('dice', p.game, { power: p.dicePw });
+    } else if (p.game === 'gimbap' && act[0] === 'd') {
+      // The dice tumble, then the order shows: every screen starts its own player's clock there.
+      const ms = diceMsOf(act[1]);
+      p.dice = { at: performance.now(), ms, pw: act[1] == null ? 2 : Math.max(0, Math.min(DICE_POWER, act[1] | 0)) };
+      p.gbAt = performance.now() + ms;
+      p.gbFirst = 0;
+      p.gbBots = null;
+      this.status = '';
+      setTimeout(() => { if (this.play === p) this.render(); }, ms + 20);
+      this.onEvent('dice', p.game, { power: act[1] == null ? 2 : Math.max(0, Math.min(DICE_POWER, act[1] | 0)) });
+    } else if (p.game === 'gimbap' && (act[0] === 'b' || act[0] === 'n' || act[0] === 'l')) {
+      if (act[0] === 'b') p.gbFirst ||= performance.now();
+      if (g.phase === 'roll' && g.last && !g.last.roll && p.gbSaid !== g.last) {
+        p.gbSaid = g.last; // (the round was called)
+        this.status = this.gimbap?.saidGimbap(g, p.names, L) || '';
+        this.onEvent(g.last.won === p.seat ? 'pair' : g.last.won < 0 ? 'wrong' : 'ring', p.game);
+      }
     } else if (p.game === 'onecard' && (act[0] === 'c' || act[0] === 'd')) {
       this.status = this.onecard?.saidOneCard(g, p.names, L) || '';
       this.onEvent(g.last?.bust ? 'wrong' : 'move', p.game);
@@ -632,6 +659,16 @@ export class BoardGamesUI {
         if (bots.length) { this.hostApply(bots[Math.floor(this.rand() * bots.length)], ['r', g.flips]); return; }
       }
     } else if (p.game === 'fruitbell') p.bellAt = null;
+    if (p.game === 'gimbap' && g.phase === 'make') {
+      // The computers roll theirs at a steady hand's pace; the round is called a moment after the first one is
+      // done (time for a faster hand on a slower line to arrive), or when nobody manages it at all.
+      const t = now - p.gbAt, steps = g.order.length + 2;
+      p.gbBots ||= p.ids.map((id) => (id === BOT ? Math.round(GIMBAP_BOT[0] + steps * between(GIMBAP_BOT.slice(1), this.rand)) : 0));
+      const due = p.ids.findIndex((id, s) => id === BOT && !g.out[s] && g.times[s] < 0 && t >= p.gbBots[s]);
+      if (due >= 0) this.hostApply(due, ['b', g.round, p.gbBots[due]]);
+      else if ((p.gbFirst && now - p.gbFirst > GIMBAP_GRACE) || t > GIMBAP_WAIT[0] + steps * GIMBAP_WAIT[1]) this.hostApply(p.seat, ['n', g.round]);
+      return;
+    }
     const turn = turnOf(g);
     if (turn < 0) return;
     if (p.ids[turn] !== BOT) {
@@ -643,6 +680,7 @@ export class BoardGamesUI {
       }
       return;
     }
+    if (p.game === 'gimbap' && now - p.turnAt < 2600) return; // (time to read who took the last one)
     p.thinkAt ??= between(BOT_THINK, this.rand);
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
@@ -670,6 +708,7 @@ export class BoardGamesUI {
     else if (TOYS.includes(p.game)) this.hostApply(turn, ['p', g.botMove(this.rand)]);
     else if (p.game === 'ladders' && g.setup) { const m = g.botPlace(this.rand); this.hostApply(turn, m ? ['a', ...m] : ['l']); }
     else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100 + DICE_MS; } // (lets the piece finish walking)
+    else if (p.game === 'gimbap') this.hostApply(turn, ['d', 2]);
     else if (p.game === 'onecard') {
       // The computer plays what it can; a person whose time ran out just draws.
       const m = p.ids[turn] === BOT ? g.botMove() : { draw: true };
@@ -831,6 +870,7 @@ export class BoardGamesUI {
       const out = p.gone?.[s] || g.out?.[s];
       let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
       if (p.game === 'onecard' && !out) label += ` · ${g.hands[s].length}`;
+      if (p.game === 'gimbap') label += ` · ${g.score[s]}/${GIMBAP_GOAL}`;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -843,6 +883,7 @@ export class BoardGamesUI {
     else if (p.game === 'fruitbell') this.drawBell(c);
     else if (p.game === 'thief') this.drawThief(c);
     else if (p.game === 'onecard') this.onecard?.drawOneCard(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
+    else if (p.game === 'gimbap') this.gimbap?.drawGimbap(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
@@ -940,6 +981,7 @@ export class BoardGamesUI {
       return end;
     }
     const turn = turnOf(g);
+    if (turn < 0) return this.status; // (a race: nobody's turn)
     let whose = turn === p.seat ? L(T.yourTurn) : tt('theirTurn', { name: p.names[turn] });
     if (p.game === 'ladders' && g.setup) whose = turn === p.seat ? L(T.placeHow) : tt('placing', { name: p.names[turn] });
     if (p.game === 'thief') {
@@ -1102,19 +1144,25 @@ export class BoardGamesUI {
     dice.dataset.dice = String(g.last?.dice ?? 0);
     row.append(dice);
     if (!g.over && !g.out[p.seat]) {
-      const roll = el('button', 'bg-btn bg-go', L(T.roll));
-      roll.type = 'button';
-      roll.dataset.act = 'roll';
-      roll.disabled = turnOf(g) !== p.seat;
-      // Held down, its gauge fills; let go to throw. (A key press or a script's click: a soft throw.)
-      roll.onclick = (e) => { if (e.detail === 0 && !this.hold) this.myMove(['d', 0]); };
-      roll.onpointerdown = (e) => { if (!roll.disabled && e.button === 0) this.holdDice(); };
-      roll.oncontextmenu = (e) => e.preventDefault();
-      roll.append(el('i', 'bg-gauge'));
-      if (this.hold) this.paintHold(roll); // (drawn again while it is held)
-      row.append(roll);
+      row.append(this.rollButton());
     }
     c.append(row);
+  }
+
+  // The roll button of a game with dice (snakes and ladders, gimbap): mine to press on my turn.
+  rollButton() {
+    const p = this.play;
+    const roll = el('button', 'bg-btn bg-go', L(T.roll));
+    roll.type = 'button';
+    roll.dataset.act = 'roll';
+    roll.disabled = turnOf(p.g) !== p.seat;
+    // Held down, its gauge fills; let go to throw. (A key press or a script's click: a soft throw.)
+    roll.onclick = (e) => { if (e.detail === 0 && !this.hold) this.myMove(['d', 0]); };
+    roll.onpointerdown = (e) => { if (!roll.disabled && e.button === 0) this.holdDice(); };
+    roll.oncontextmenu = (e) => e.preventDefault();
+    roll.append(el('i', 'bg-gauge'));
+    if (this.hold) this.paintHold(roll); // (drawn again while it is held)
+    return roll;
   }
 
   // The roll button is held: the gauge fills until the finger lifts, anywhere
@@ -1135,7 +1183,7 @@ export class BoardGamesUI {
       this.hold = null;
       const b = this.card?.querySelector('[data-act="roll"]');
       if (b) { b.classList.remove('held'); b.style.removeProperty('--g'); }
-      if (e.type === 'pointerup' && this.play?.game === 'ladders') this.myMove(['d', Math.round(power() * DICE_POWER)]);
+      if (e.type === 'pointerup' && (this.play?.game === 'ladders' || this.play?.game === 'gimbap')) this.myMove(['d', Math.round(power() * DICE_POWER)]);
     };
     window.addEventListener('pointerup', done);
     window.addEventListener('pointercancel', done);

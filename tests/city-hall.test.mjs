@@ -207,6 +207,49 @@ test('the board on the plaza tells the story in four languages, and the map name
   const sign = map.landmarks.find((l) => l.type === 'sign' && l.sp);
   for (const k of ['ko', 'en', 'ja', 'zh']) assert.ok(sign.text[k] && sign.title[k], k);
   assert.ok(inside(paving.p, sign.x, sign.z) && !inside(lawn.p, sign.x, sign.z), 'on the paving beside the grass');
-  assert.equal(map.pois.filter((p) => p.sp).length, 4);
+  assert.equal(map.pois.filter((p) => p.sp).length, 5);
   for (const p of map.pois.filter((p) => p.sp)) for (const k of ['ko', 'en', 'ja', 'zh']) assert.ok(p.name[k]);
+});
+
+test('the planting by the halls is low (bushes and small trees), below the old hall', () => {
+  const beds = map.areas.filter((a) => a.sp && a.trees);
+  assert.ok(beds.length > 0);
+  for (const a of beds.filter((a) => inside(paving.p, ...mid(a.p)) || lineDist(...mid(a.p), foot(old)) < 25)) assert.equal(a.trees, 'low', 'low planting beside the halls');
+});
+
+test('the lawn has its grass picture (the peninsula) on the oval itself', () => {
+  const pic = lm('plazalawn');
+  assert.ok(pic && pic.why, 'marked with why: the picture\'s size and place are by eye');
+  const pts = pic.outline.map(([u, v]) => [pic.x + u, pic.z + v]);
+  assert.ok(Math.abs(area(pts) - area(lawn.p)) < 2, 'same outline as the lawn');
+});
+
+test('behind the new hall: the Press Center alone on its real block (marked moved), and no made-up tower above 30 m', () => {
+  const press = map.buildings.find((b) => b.sp && b.n?.ko === '한국프레스센터');
+  assert.ok(press && press.approx && press.why, 'marked approx with why');
+  assert.equal(press.h, 21);
+  const real = ring(one('press-center').pts.map(local));
+  const [rx, rz] = mid(real), [px, pz] = mid(press.p);
+  assert.ok(Math.abs(px - rx) < 0.2 && rz - pz > 0 && rz - pz < 10, `only moved north, under 10 m (${(rz - pz).toFixed(1)} m)`);
+  assert.ok(Math.abs(area(press.p) - area(real)) < 2, 'OSM\'s outline at 1/4');
+  for (const P of [foot(hall), foot(old)]) assert.ok(!press.p.some(([x, z]) => inside(P, x, z)) && !P.some(([x, z]) => inside(press.p, x, z)), 'clear of the halls');
+  for (const r of map.roads) for (const [x, z] of press.p) assert.ok(lineDist(x, z, r.p) >= r.w / 2 - 0.05, 'not on a road');
+  for (const b of map.buildings) {
+    if (b === press) continue;
+    assert.ok(!b.p.some(([x, z]) => inside(press.p, x, z)) && !press.p.some(([x, z]) => inside(b.p, x, z)), 'no building overlaps the Press Center');
+    const [cx, cz] = mid(b.p);
+    if (b.cg && cx > 10 && cx < 136 && cz > 205 && cz < 246) assert.ok(b.h <= 30, `a made-up block behind the hall is ${b.h} m`);
+  }
+});
+
+test('the name desk stands outside the old hall by its door, on the paving, and its words are in every language', async () => {
+  const world = lawn.p.map(([x, z]) => [x + ox, z + oz]);
+  const near = createCityHallNear({ areas: [{ ...lawn, p: world }], landmarks: [{ ...old, x: old.x + ox, z: old.z + oz }], scene: { add() {} }, labels: null });
+  const [dx, dz] = [near.desk[0] - ox, near.desk[1] - oz];
+  assert.ok(!inside(foot(old), dx, dz) && !inside(foot(old), dx, dz + 0.9), 'outside the hall');
+  assert.ok(lineDist(dx, dz, [...foot(old), foot(old)[0]]) < 1.5, 'against its front wall');
+  assert.ok(Math.abs(dx - (old.x + old.tower[0])) < 8, 'beside the door under the clock tower');
+  assert.ok(!inside(lawn.p, dx, dz));
+  const { STRINGS } = await import('../src/i18n/strings.js');
+  for (const [lang, S] of Object.entries(STRINGS)) for (const k of ['cityhall.desk', 'cityhall.clerk']) assert.ok(S[k], `${lang} ${k}`);
 });

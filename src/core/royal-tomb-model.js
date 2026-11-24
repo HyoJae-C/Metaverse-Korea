@@ -61,6 +61,9 @@ const done = (g) => { mergeStatic(g); g.traverse((o) => { if (o.isMesh) { o.cast
 function hill(g, l) {
   const H = l.hill.h, c = Math.cos(-l.ry), s = Math.sin(-l.ry);
   const ring = l.hill.p.map(([x, z]) => [x * c + z * s, -x * s + z * c]); // (into the tomb's own frame)
+  // (Wound so the faces look up: the outline may come either way round, and
+  // faces looking down are not drawn, which left the hill open from above.)
+  if (ring.reduce((sum, [x, z], k) => { const [x1, z1] = ring[(k + 1) % ring.length]; return sum + x * z1 - x1 * z; }, 0) > 0) ring.reverse();
   const RINGS = 7, pos = [], col = [];
   const top = new THREE.Color(C.grass), side = new THREE.Color(C.grassDark);
   const at = (k, t) => { // point k of the outline, t of the way out from the middle
@@ -213,7 +216,7 @@ export function buildRoyalTomb(g, l) {
 // forward, both under gabled roofs, on a stone platform with steps.
 export function buildJeongjagak(g, l) {
   const [bw, bd] = l.base, [hw, hd] = l.hall, B = 0.55, P = 1.75;
-  box(g, bw, B, bd, 0, B / 2, 0, C.stone);
+  box(g, bw, B - 0.04, bd, 0, (B - 0.04) / 2, 0, C.stone); // (its top under the cap course's: two faces at one height shimmer)
   box(g, bw + 0.2, 0.08, bd + 0.2, 0, B - 0.04, 0, C.stoneDark);
   for (const sx of [-0.25, 0.25]) for (let i = 0; i < 3; i++) box(g, 1.1, B - i * 0.18, 0.35, sx * bw, (B - i * 0.18) / 2, bd / 2 + 0.17 + i * 0.35, C.stoneLight); // the steps up, east and west
   const mainD = hd * 0.55, mainZ = -hd / 2 + mainD / 2, porchW = hw * 0.48, porchD = hd - mainD, porchZ = hd / 2 - porchD / 2;

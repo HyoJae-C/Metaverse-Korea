@@ -15,6 +15,8 @@
 //  - croc / pirate / bulldog: press one spot each in turn; whoever finds the
 //    hidden one loses (악어 이빨 / 통 속 해적 / 잠꾸러기 불독), 2-6.
 //  - mafia     마피아: night and day, the town votes the mafia out, 4-8.
+//  - gimbap    김밥의 달인: two dice say how many fillings; press them in the
+//    order's order, fastest hands take the roll, 2-4 (our own game).
 
 export const GAMES = {
   omok: { min: 2, max: 2, icon: '⚫', price: 30000 },
@@ -27,6 +29,7 @@ export const GAMES = {
   ladders: { min: 2, max: 4, icon: '🐍', price: 30000 },
   tower: { min: 2, max: 6, icon: '🧱', price: 30000, spots: 30 },
   mafia: { min: 4, max: 8, icon: '🌙', price: 30000 },
+  gimbap: { min: 2, max: 4, icon: '🥢', price: 30000 },
 };
 export const GAME_IDS = Object.keys(GAMES);
 export const ROULETTE = ['croc', 'pirate', 'bulldog'];
@@ -922,6 +925,7 @@ export function newGame(id, players, seed, opt = 0) {
   if (id === 'thief') return new Thief({ players, seed });
   if (id === 'ladders') return new Ladders({ players, seed, custom: (opt & 1) === 1, max: LADDERS_ROLLS[opt >> 1] || 0 });
   if (id === 'tower') return new Tower({ players, seed });
+  if (id === 'gimbap') return new Gimbap({ players, seed });
   if (id === 'mafia') return new Mafia({ players, seed, talk: MAFIA_TALK[opt] || MAFIA_TALK[0] });
   throw new Error('unknown game ' + id);
 }
@@ -934,6 +938,8 @@ export function newGame(id, players, seed, opt = 0) {
 // ['k', seat] the mafia's pick / ['h', seat] the doctor's / ['q', seat] the
 // police officer's at night, ['z'] done talking, ['v', seat or 9] a vote,
 // ['n', step] the host moves the game on when the clock runs out in mafia,
+// ['d'] roll the two dice / ['b', round, ms] my roll is made, in so many
+// milliseconds / ['n', round] the host calls the round in the gimbap game,
 // ['l'] leave. (['e', n] is a face a player
 // pulls: the screen shows it, the rules never see it.)
 export function applyAction(game, p, a) {
@@ -941,7 +947,8 @@ export function applyAction(game, p, a) {
   switch (a[0]) {
     case 'o': return game instanceof Omok && game.play(p, a[1] | 0, a[2] | 0);
     case 'c': return game instanceof OneCard && game.put(p, String(a[1]), a[2] ?? null);
-    case 'd': return game instanceof Ladders ? game.roll(p) : game instanceof OneCard && game.draw(p);
+    case 'd': return game instanceof Ladders || game instanceof Gimbap ? game.roll(p) : game instanceof OneCard && game.draw(p);
+    case 'b': return game instanceof Gimbap && game.done(p, a[1] | 0, a[2] | 0);
     case 'f': return game instanceof FruitBell && game.flip(p);
     case 'r': return game instanceof FruitBell && game.ring(p, a[1] ?? game.flips);
     case 'p': return (game instanceof Roulette || game instanceof Tower) && game.press(p, a[1] | 0);
@@ -955,7 +962,7 @@ export function applyAction(game, p, a) {
     case 'q': return game instanceof Mafia && game.check(p, a[1] | 0);
     case 'z': return game instanceof Mafia && game.done(p);
     case 'v': return game instanceof Mafia && game.vote(p, a[1] | 0);
-    case 'n': return game instanceof Mafia && game.next(p, a[1] | 0);
+    case 'n': return game instanceof Gimbap ? game.close(p, a[1] | 0) : game instanceof Mafia && game.next(p, a[1] | 0);
     case 'l': game.leave(p); return true;
     default: return false;
   }
@@ -1101,6 +1108,99 @@ export class Mafia {
   }
 }
 
+// ---------------------------------------------------------------- gimbap
+// 김밥의 달인 (Yozi 2026-11-24; our own game). In turn one player rolls two
+// dice: their sum (2-12) is how many fillings this roll of gimbap takes. The
+// order then shows that many of the twelve fillings, each once, in a row:
+// everyone presses seaweed, rice, then the fillings in that order, and the
+// fastest takes it. A small roll (2-5 fillings) counts 1, 6-9 counts 2,
+// 10-12 counts 3; the first to 7 wins.
+//
+// Speed is each player's own: a screen times its player from the moment the
+// order showed there and sends the time with 'b', so a slow line costs
+// nobody the round. The host's clock ends the round ('n') a moment after the
+// first finish, and the shortest time has it. (Nothing is won here, so a
+// made-up time gains nothing but a hollow win; one too short for the hand is
+// raised to the least a hand could do.)
+export const GIMBAP_FILLINGS = ['danmuji', 'spinach', 'carrot', 'egg', 'ham', 'burdock', 'tuna', 'cheese', 'cucumber', 'crab', 'fishcake', 'perilla'];
+export const GIMBAP_BASE = ['kim', 'rice']; // pressed first, every time
+export const GIMBAP_GOAL = 7;
+export const GIMBAP_PRESS_MS = 90; // the least one press takes
+export const gimbapWorth = (n) => (n >= 10 ? 3 : n >= 6 ? 2 : 1);
+export class Gimbap {
+  constructor({ players = 2, seed = 1 } = {}) {
+    if (players < GAMES.gimbap.min || players > GAMES.gimbap.max) throw new Error('gimbap is for 2-4');
+    this.n = players;
+    this.rand = rng(seed);
+    this.score = new Array(players).fill(0);
+    this.out = new Array(players).fill(false);
+    this.times = new Array(players).fill(-1); // ms each took this round (-1: not done)
+    this.roller = 0;
+    this.phase = 'roll'; // 'roll' | 'make'
+    this.round = 0;
+    this.dice = null;
+    this.order = []; // this round's fillings, as indexes into GIMBAP_FILLINGS
+    this.winner = -1;
+    this.over = false;
+    this.last = null; // { roll: true, p, dice } after the dice; { round, won, ms, worth, times, order } after a round
+  }
+
+  get turn() { return this.phase === 'roll' ? this.roller : -1; } // (making is a race: nobody's turn)
+  // What to press, in order: names from GIMBAP_BASE and GIMBAP_FILLINGS.
+  seq() { return [...GIMBAP_BASE, ...this.order.map((i) => GIMBAP_FILLINGS[i])]; }
+
+  roll(p) {
+    if (this.over || this.phase !== 'roll' || p !== this.roller) return false;
+    this.dice = [1 + Math.floor(this.rand() * 6), 1 + Math.floor(this.rand() * 6)];
+    this.order = shuffle(GIMBAP_FILLINGS.map((_, i) => i), this.rand).slice(0, this.dice[0] + this.dice[1]);
+    this.times.fill(-1);
+    this.phase = 'make';
+    this.round++;
+    this.last = { roll: true, p, dice: this.dice };
+    return true;
+  }
+
+  done(p, round, ms) {
+    if (this.over || this.phase !== 'make' || round !== this.round || !(p >= 0 && p < this.n) || this.out[p] || this.times[p] >= 0) return false;
+    this.times[p] = Math.max((this.order.length + GIMBAP_BASE.length) * GIMBAP_PRESS_MS, Math.min(600000, ms | 0));
+    if (this.times.every((t, s) => this.out[s] || t >= 0)) this.settle();
+    return true;
+  }
+
+  // The host's clock called the round (the panel checks it was the host).
+  close(p, round) {
+    if (this.over || this.phase !== 'make' || round !== this.round) return false;
+    this.settle();
+    return true;
+  }
+
+  settle() {
+    let won = -1;
+    this.times.forEach((t, s) => { if (t >= 0 && !this.out[s] && (won < 0 || t < this.times[won])) won = s; });
+    const worth = gimbapWorth(this.order.length);
+    if (won >= 0) this.score[won] += worth;
+    this.last = { round: this.round, won, ms: won >= 0 ? this.times[won] : -1, worth, times: this.times.slice(), order: this.order.slice() };
+    this.phase = 'roll';
+    if (won >= 0 && this.score[won] >= GIMBAP_GOAL) { this.winner = won; this.over = true; return; }
+    this.roller = this.nextIn(this.roller);
+  }
+
+  nextIn(p) {
+    let t = p;
+    do t = (t + 1) % this.n; while (this.out[t]);
+    return t;
+  }
+
+  leave(p) {
+    if (this.over || this.out[p]) return;
+    this.out[p] = true;
+    const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
+    if (left.length < 2) { this.winner = left[0] ?? -1; this.over = true; return; }
+    if (this.phase === 'roll') { if (this.roller === p) this.roller = this.nextIn(p); } else if (this.times.every((t, s) => this.out[s] || t >= 0)) this.settle();
+    if (!this.over && this.out[this.roller]) this.roller = this.nextIn(this.roller);
+  }
+}
+
 // ---------------------------------------------------------------- messages
 // Room messages (game.net.sendEmote), all starting with "bg:":
 //   bg:i:<to>:<game>            the host invites <to>
@@ -1115,7 +1215,7 @@ export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
 export function unpackAct(s) {
   const p = String(s).split('.');
-  if (!/^[ofrpdclsteakhqzvnmu]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
+  if (!/^[ofrpdclsteakhqzvnmub]$/.test(p[0]) || p.length > (p[0] === 'a' ? 4 : 3)) return null;
   return p.map((v, i) => (i === 0 || v === '' || !/^\d+$/.test(v) ? (v === '' ? null : v) : +v));
 }
 export function parseBg(e) {

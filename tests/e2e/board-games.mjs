@@ -252,6 +252,48 @@ try {
   }
   await a.click('#bg-panel .bg-x');
 
+  step = 'Gimbap Master against the computer: two dice, an order of that many fillings, pressed in order; a wrong press starts over';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="gimbap"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="gimbap"]');
+  await a.click('#bg-panel [data-act="start"]');
+  for (let k = 0; k < 2; k++) {
+    // Whoever rolls (I do first; then the computer), the order shows once the dice have stopped.
+    await a.waitForFunction(() => { const p = window.__bgUi.play, g = p?.g; return p?.game === 'gimbap' && (g.over || g.phase === 'make' || g.turn === p.seat); }, null, { timeout: 30000 });
+    if (await a.evaluate(() => window.__bgUi.play.g.phase === 'roll' && !window.__bgUi.play.g.over)) {
+      await a.waitForSelector('#bg-panel [data-act="roll"]:not([disabled])', { timeout: 15000 });
+      await a.hover('#bg-panel [data-act="roll"]');
+      await a.mouse.down();
+      await a.waitForTimeout(250);
+      await a.mouse.up();
+      // The two dice are little cubes that tumble before they show their faces.
+      await a.waitForSelector('#bg-panel .gb-cube.roll', { timeout: 5000 });
+      if (shotDir) { await a.waitForTimeout(250); await a.screenshot({ path: shotDir + '/gimbap-dice.png' }); }
+    }
+    await a.waitForSelector('#bg-panel .gb-order', { timeout: 15000 });
+    const seq = (await a.getAttribute('#bg-panel .gb-order', 'data-seq')).split(',');
+    const sum = await a.evaluate(() => { const d = window.__bgUi.play.g.dice; return d[0] + d[1]; });
+    if (seq.length !== sum + 2 || seq[0] !== 'kim' || seq[1] !== 'rice') throw new Error(`the order does not fit the dice (${sum}): ${seq}`);
+    if ((await a.locator('#bg-panel .gb-pad button').count()) !== 14) throw new Error('the pad does not have seaweed, rice and twelve fillings');
+    if (k === 0) {
+      // Two right, then a wrong one: back to the seaweed.
+      await a.dispatchEvent(`#bg-panel [data-gb="${seq[0]}"]`, 'pointerdown');
+      await a.dispatchEvent(`#bg-panel [data-gb="${seq[1]}"]`, 'pointerdown');
+      if ((await a.getAttribute('#bg-panel .gb-order', 'data-pos')) !== '2') throw new Error('two right presses did not count');
+      await a.dispatchEvent(`#bg-panel [data-gb="${seq[1]}"]`, 'pointerdown');
+      if ((await a.getAttribute('#bg-panel .gb-order', 'data-pos')) !== '0') throw new Error('a wrong press did not start the roll over');
+      if (shotDir) await a.screenshot({ path: shotDir + '/gimbap.png' });
+    }
+    for (const id of seq) await a.dispatchEvent(`#bg-panel [data-gb="${id}"]`, 'pointerdown');
+    // Mine is in (the computer is slower): the round is called and I have the roll.
+    await a.waitForFunction((r) => { const g = window.__bgUi.play.g; return g.over || (g.last && !g.last.roll && g.last.round === r); }, k + 1, { timeout: 15000 });
+    const res = await a.evaluate(() => { const p = window.__bgUi.play, g = p.g; return { won: g.last.won, seat: p.seat, score: g.score[p.seat], worth: g.last.worth, status: document.querySelector('#bg-panel .bg-status')?.textContent }; });
+    if (res.won !== res.seat || res.score < res.worth) throw new Error('the fastest hand did not take the roll: ' + JSON.stringify(res));
+    if (!res.status) throw new Error('nothing said about who took the roll');
+    if (k === 0 && shotDir) await a.screenshot({ path: shotDir + '/gimbap-result.png' });
+  }
+  await a.click('#bg-panel .bg-x');
+
   step = 'A takes blocks out of the 3D tower against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="tower"]');

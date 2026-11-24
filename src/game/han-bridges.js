@@ -11,7 +11,7 @@ export function createHanBridges({ scene, bridges = [] }) {
   group.name = 'han-bridges';
   for (const b of bridges) {
     const g = new THREE.Group();
-    banpoBridge(g, { pts: b.pts, w: b.w, top: b.top, ramp: b.ramp, pipes: false, y: (s) => deckHeight(b, s), deckColor: '#7f7c84' });
+    banpoBridge(g, { pts: b.pts, w: b.w, top: b.top, ramp: b.ramp, pipes: false, y: (s) => deckHeight(b, s), deckColor: '#7f7c84', piers: !b.under, mid: b.track, arches: b.arches, archColor: b.archColor }); // (under: Jamsu, carried by Banpo Bridge's piers; mid, arches: Dongjak Bridge's subway and arches)
     group.add(g);
   }
   if (bridges.length) scene.add(group);
