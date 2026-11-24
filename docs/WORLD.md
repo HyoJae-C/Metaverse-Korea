@@ -726,11 +726,22 @@ Its way in faces Eulji-ro, on a small plaza. West of it, in the corner
 between Jangchungdan-ro and Eulji-ro, is Dongdaemun History & Culture Park
 with a stretch of the Seoul City Wall and its water gate; the fashion malls
 stand across Jangchungdan-ro and east of DDP round Fashion Town Lane.
-Elsewhere one row of buildings along each street. Namsangol Hanok Village is
-a part of its own at its real place south of Toegye-ro by Chungmuro, at game
-size, with a walk up to Toegye-ro: a walled yard (`HANOK.yard` in the script)
-with the folk games yard in its middle (the `folkyard` landmark,
-docs/FOLK-GAMES.md).
+Elsewhere one row of buildings along each street.
+
+**Namsangol Hanok Village** is a part of its own south of Toegye-ro by
+Chungmuro, added by `scripts/build-namsangol.mjs` (run after
+`build-euljiro.mjs`, then `build-closed.mjs`). Redrawn 2026-11-24 on its real
+ground at 1/4 from OSM (`scripts/data/namsangol-osm.json`): 58 x 88 m, the
+gate on Toegye-ro 34-gil, Cheonugak and its plaza, the five hanok in the
+north-east, Seoul Namsan Gugakdang, the stream down the west side, Gwaneoji,
+the folk games yard on the real folk games ground (the `folkyard` landmark,
+docs/FOLK-GAMES.md), the Time Capsule Plaza and Mangbungnu. Before that it was
+a 104 x 55 m box at game size with five invented hanok.
+Not at 1/4: the hanok are game size (5-8 m, each within 3 m of its real
+middle), the Gugakdang is one hall, the folk yard is 24 x 14 m (the real
+ground is 9 x 9 m at 1/4). Marked `approx`: Cheonghakji pond (not in OSM),
+the straightened outer wall, the three paths and the four woods.
+`tests/namsangol.test.mjs` keeps these numbers.
 
 DDP's main door on Eulji-ro opens into DDP Hall (store `ddp-hall`, workshop
 `ddp-hall`, size `hall`): a bright lobby with design pieces, benches and
@@ -955,6 +966,47 @@ is marked `cw: 1`, so it can be run again.
   things moved is in `meta.cheongwadae.moved`.
 - Models: `core/bluehouse-model.js` (hall with blue tiles, gate, fence,
   fountain with its phoenix).
+
+## Seoul City Hall and Seoul Plaza (Jung-gu)
+
+The oval lawn, the 1926 stone hall (Seoul Metropolitan Library) and the glass
+new hall behind it, with City Hall station and Daehanmun across Sejong-daero.
+The whole place is 37.5% of real size (1.5 × the 1/4 map, Yozi 2026-11-24):
+at 1/4 the lawn would be 17 × 21 m, too small to feel like the plaza.
+Outsides only for now: no way into either hall.
+
+`scripts/build-city-hall.mjs` writes it into the Gyeongbokgung district from
+OSM (`scripts/data/city-hall-osm.json`), growing every shape from one fixed
+point (`CH.real` → `CH.game`, by Sejong-daero at the plaza's north-west
+corner). Run it after `build-cheonggyecheon.mjs` (`--svg F` draws the plan
+over the real map). Everything it writes is marked `sp: 1`, so it can be run again.
+
+- Because the place is bigger than the map round it, things are off their
+  real spots: `meta.cityhall.moved` (lawn 15 m, new hall 18 m, old hall 11 m,
+  Sogong-ro 21 m south). Sogong-ro and Eulji-ro go round the enlarged plaza
+  (`approx`, `why`) and Eulji-ro is back on its real line by Namdaemun-ro,
+  where the region's Eulji-ro link road now starts. Sejong-daero is the
+  region's link road, on its real line.
+- The real Eulji-ro, Sogong-ro and Sejong-daero 20-gil of the base map would
+  cross the plaza: `meta.cityhall.noBase` keeps base roads out
+  (`scripts/build-base.mjs` reads `noBase` from any district's meta).
+- Made up (`approx`): the 4 m lane behind and beside the new hall, Mugyo-ro
+  as a lane up to Cheonggyecheon-ro, the new hall's height (56 m real is an
+  estimate), the bit of wall just south of Daehanmun.
+- Deoksugung is not built: Daehanmun (50%, like the other palace gates, shut)
+  and the stone wall on OSM's outline all the way round, closed against the
+  plain block on the west, with trees inside. Nobody can get in (tested by a
+  flood from the lawn).
+- City Hall station (Line 1) has exits 4, 5 and 6 round the plaza
+  (`region.json`), each within 15 m of where growing puts the real one.
+  Exits 1 to 3 (Deoksugung side) are left out.
+- The lawn is a picnic lawn (`lawn: 1`; `oval: 1` keeps mats inside the
+  outline, `lawnFrom(p, true)` in core/picnic-mat.js). Seven people sit and
+  stand on it, loaded when you come within 170 m (`game/city-hall-near.js` →
+  `game/city-hall.js`) and hidden past 80 m.
+- Models: `core/city-hall-model.js` (loaded by core/landmarks.js types
+  `cityhall` and `oldcityhall`). Screenshots and a walk-through:
+  `tests/e2e/city-hall.mjs`.
 
 ## Bosingak (Jongno)
 

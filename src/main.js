@@ -61,6 +61,7 @@ import { StampUI, STAMP_TEXT } from './ui/stamp-ui.js';
 import { FAN_AT, FAN_KEEP, FAN_NOTE, ringPoly } from './core/palace-fan.js';
 import { createPalaceView } from './game/palace-view.js';
 import { createCheongwadaeNote } from './game/cheongwadae-note.js';
+import { createCityHallNear } from './game/city-hall-near.js';
 import { createTowerLook } from './game/tower-look.js';
 import { JongmyoShow } from './core/jongmyo-show.js';
 import { PungmulTroupe, PLAZA_SPOT } from './core/pungmul.js';
@@ -889,6 +890,7 @@ const naksanY = ridgeDistrict ? ridgeGround(ridgeDistrict.ridge, ridgeDistrict.o
 const naksan = createNaksanNear({ district: ridgeDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, buildings: map.buildings, groundY: naksanY, randomLook });
 // Euljiro 3-ga's neon alley: its signs, wires and people load when you come near (game/neon-alley-near.js).
 const neonAlley = createNeonAlleyNear({ scene, labels: $('labels'), roadGraph, randomLook });
+const cityHall = createCityHallNear({ scene, labels: $('labels'), areas: map.areas, randomLook }); // (the people on Seoul Plaza's lawn: game/city-hall.js)
 // Inwangsan and Bugaksan, with the city wall on their crest (the Gyeongbokgung map's
 // `northwall` landmark, core/north-ground.js); the hills load when you come near (game/north-wall-near.js).
 const northY = northGround(map.landmarks);
@@ -1717,7 +1719,7 @@ async function joinRoom(room, roomScene, area = null) {
       homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); folkYard.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
@@ -1751,6 +1753,7 @@ async function joinRoom(room, roomScene, area = null) {
       if (parseFilm(e)) { kpop.onMsg(parseFilm(e)); return; }
       if (parseKaraoke(e) != null) { if (karaokeUi.loaded || interior?.stations?.karaoke) karaokeUi.addScore(others.nameOf(id) || '?', parseKaraoke(e)); return; }
       if (boardGames.onMsg(id, e)) return; // board games at the café (game/board-games.js)
+      if (folkYard.onMsg(id, e)) return; // yutnori with people in Namsangol's yard (game/folk-yard.js)
       if (arcadeGame.onBrawlMsg(id, e)) return; // the fighting game with someone in the room (game/arcade.js)
       if (arcadeGame.onBowlMsg(id, e)) return; // bowling: the others' balls, lane screens, games with friends (game/arcade.js)
       if (parseDarts(e)) { const m = parseDarts(e); if (m.to === myId) onDartsMsg(id, m); return; }
@@ -3633,7 +3636,7 @@ const { clearMeal, dineAction, updateMeal, nearPeerMeal, stealBite, onBitten, or
 // grass, off the paths, clear of trees, benches and sculptures.
 // (lawn: an open picnic lawn with no trees, Yeouido's: one laid at an angle keeps its outline, mats lie square with it)
 const streetLawns = map.areas.filter((a) => ((a.k === 'park' && a.trees) || a.lawn) && !a.noMat).map((a) => { // (noMat: not in a temple)
-  if (a.lawn) return lawnFrom(a.p);
+  if (a.lawn) return lawnFrom(a.p, !!a.oval); // (oval: mats stay inside its outline, not its box)
   const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
 });
@@ -4841,7 +4844,7 @@ const arcadeGame = createArcade({
   link: (topic, onMsg) => import('./net/link.js').then((m) => m.openLink(config.netProvider, { ...config.net, accessToken: () => cloud.accessToken() }, topic, onMsg)),
 });
 // Board games at the board game café: the panel loads on first use. (game/board-games.js)
-const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw) });
+const boardGames = createBoardGames({ get interior() { return interior; }, get others() { return others; }, get me() { return me; }, get net() { return net; }, myId, safety, sfx, music, get myLook() { return myLook; }, camera, canvas, get scene() { return activeScene; }, get seated() { return seated; }, sit: (s) => sitDown(s), stand: () => standUp(), seatFree: (s) => !others.seatTaken?.(...peerSpot(s.x, s.z)), get home() { return mode === 'store' ? decorGame.decor : null; }, get shop() { return shop; }, owns: (id) => inventory.has(id), priceLabel: (krw) => '🪙 ' + coinsFor(krw), get wallet() { return wallet; }, t, toast: (m) => shop.toast(m) });
 const { onDartsMsg, arcade, galleryUi, hauntUi, battingUi, dartsUi, bowlingUi, climbUi, aimUi, fightUi, ARCADE_OPEN, openArcade, freshInvite } = arcadeGame;
 // Tarot cafés: readings, two readers, the waiting line. (game/tarot.js)
 const tarot = createTarot({
@@ -4891,6 +4894,7 @@ const folkYard = createFolkYard({
   get map() { return map; }, get mode() { return mode; }, get me() { return me; },
   get action() { return action; }, set action(v) { action = v; },
   $, STALE, scene, shop, wallet, randomLook, dayKey, refreshWallet: () => refreshWallet(),
+  myId, get net() { return net; }, get others() { return others; }, safety, sfx,
 });
 onLanguageChange(() => folkYard.relabel());
 // Modu Land's balloon clown on platform shoes. (game/balloon-clown.js)
@@ -6918,7 +6922,7 @@ function moreActions(p, door) {
     if (muralSpot(p)) out.push(muralAct());
     if (wishSpot(p)) out.push(wishAct());
     const bk = busking.nearBusker(p.x, p.z); if (bk) out.push(buskerAct(bk));
-    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
+    const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z) || cityHall.nearest(p.x, p.z); if (n) out.push(npcAct(n, p));
     return out;
   }
   if (seated?.dome) return ballparkCams.more(); // ("no thanks" next to the Kiss Cam's kiss, 📊 Scoreboard)
@@ -7029,7 +7033,7 @@ function updateAction(p, tSec) {
       const g = palaceShow.nearGuard(p.x, p.z);
       next = { key: 'guard:' + g.home.x, label: '👋 ' + t('npc.hi', { name: '수문장' }), run: () => palaceShow.greet(g, p.x, p.z) };
     } else {
-      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z);
+      const n = npcs.nearest(p.x, p.z) || hanbokNpcs?.nearest(p.x, p.z) || gyeongnidan.nearest(p.x, p.z) || naksan.nearest(p.x, p.z) || neonAlley.nearest(p.x, p.z) || cityHall.nearest(p.x, p.z);
       if (n) next = npcAct(n, p);
     }
   } else {
@@ -7199,6 +7203,8 @@ function updateAction(p, tSec) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
       next = { key: 'hauntGallery', label: '🏮 ' + L(ARCADE_OPEN.hauntGallery), run: () => openArcade('hauntGallery') };
+    } else if (nearStation(p, 'boardPass', 1.7)) {
+      next = boardGames.passAct(); // (the café's three-hour pass, at its counter)
     } else if (nearStation(p, 'boardgames', 1.1)) {
       next = boardGames.panel.open ? null : { key: 'boardgames', label: '🎲 ' + L(BOARD_GAMES_OPEN), run: () => boardGames.open() };
     } else if (nearStation(p, 'darts', 1.6)) {
@@ -7820,7 +7826,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') for (const o of nightCarts.staffNear()) placeLabels(o, camera, w, h); // (the night carts' sellers)
   if (mode === 'street') for (const o of [...farm.staffNear(), ...seedShop.staffNear()]) placeLabels(o, camera, w, h); // (the farm stand's farmer, the seed shop's keeper)
   if (mode === 'street') for (const o of botanic.staffNear()) placeLabels(o, camera, w, h); // (the greenhouse's gardeners)
-  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); oksu.update(p, dt); hyeonchungwon.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
+  if (mode === 'street') { loadPalaceShow(p); updateEnclosures(p, dt); palaceShow?.update(dt, p, camera, w, h, placeLabels); jongmyoShow?.update(dt, p, camera, w, h, placeLabels); pungmul?.update(dt, p, camera); updateJongmyo(p, dt); updateBosingak(p, dt, w, h); if (!mapUp) { npcs.update(dt, camera, w, h); hanbokNpcs?.update(dt, camera, w, h); } gyeongnidan.update(p, dt, camera, w, h); naksan.update(p, dt, camera, w, h); neonAlley.update(p, dt, camera, w, h); cityHall.update(p, dt, camera, w, h); northWall.update(p); namsanWalk.update(p); nanji.update(p, dt); oksu.update(p, dt); hyeonchungwon.update(p, dt); mokdong.update(p); gimpo.update(p, dt); potatoMarket.update(p, dt); lanternParade.update(p, dt); templeLanterns.update(p, dt, camera, w, h); templeMonks.update(p, dt); folkYard.tick(dt, p, camera, w, h, placeLabels); if (busking.update(dt, p, camera, w, h, placeLabels) === 'tip') buskTip(); }
   else {
     templeLanterns.painter?.hideTags(); // (indoors: no lantern names over the room)
     busking.hideLabels(); palaceShow?.hideLabels(); jongmyoShow?.hideLabels(); bosingakShow?.hideLabels(); folkYard.hideLabels(); folkYard.closeAll();
@@ -7991,6 +7997,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     gimpo, // Gimpo Airport (game/gimpo-walk.js)
     lanternParade, // the lantern parade (game/lantern-parade-near.js)
     templeLanterns, // lanterns on Jogyesa's canopy (game/temple-lanterns-near.js)
+    cityHall, // Seoul Plaza's people (game/city-hall-near.js)
     wallet, // (tests stand in for the server: wallet.s, wallet.client)
     enterDoor: (id) => roomTips.enter(storefronts.get(id)), // (through the door: a tip while a new room is built)
     stage: () => interior?.stageShow?.state ?? null, // the Opera Theater's show (core/stage-show.js)

@@ -199,8 +199,8 @@ const SHOUT = {
 };
 
 export class BoardGamesUI {
-  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, table = null, sets = null, rand = Math.random }) {
-    Object.assign(this, { net, games, onEvent, onGame, figureOf, table, sets, rand });
+  constructor({ net, games = () => Object.keys(GAMES).filter((id) => id !== 'onecard'), onEvent = () => {}, onGame = () => {}, figureOf = null, gate = (go) => go(), table = null, sets = null, rand = Math.random }) {
+    Object.assign(this, { net, games, onEvent, onGame, figureOf, gate, table, sets, rand }); // (gate(go): the café's pass, game/board-games.js; go() once a new game may start)
     if (!document.getElementById('bg-css')) {
       const st = el('style');
       st.id = 'bg-css';
@@ -282,7 +282,8 @@ export class BoardGamesUI {
   }
 
   // ------------------------------------------------------------ lobby (host)
-  choose(game) {
+  choose(game, paid = false) {
+    if (!paid) { this.gate(() => this.choose(game, true)); return; } // (a new game: the café's pass may have run out since the last)
     this.leaveAll();
     if (game === 'mafia') this.loadMafia();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0, rolls: LADDERS_ROLLS.indexOf(30) }; // (ladders: the players lay the board out, unless the host says no; 30 rolls each, unless the host picks another limit)
@@ -869,11 +870,12 @@ export class BoardGamesUI {
         const again = el('button', 'bg-btn bg-go', L(T.again));
         again.type = 'button';
         again.dataset.act = 'again';
-        again.onclick = () => {
+        again.onclick = () => this.gate(() => {
+          if (this.play !== p) return;
           const ids = p.ids.map((id, s) => (p.gone?.[s] ? null : id)).filter(Boolean);
           while (ids.length < GAMES[p.game].min) ids.push(BOT);
           this.begin(p.game, ids, this.net.myId, undefined, null, p.opt);
-        };
+        });
         row.append(again);
       }
       const back = el('button', 'bg-btn', L(T.back));
@@ -898,7 +900,7 @@ export class BoardGamesUI {
       const again = el('button', 'bg-btn bg-go', L(T.again));
       again.type = 'button';
       again.dataset.act = 'again';
-      again.onclick = () => this.begin('mafia', ids, this.net.myId, undefined, null, p.opt);
+      again.onclick = () => this.gate(() => { if (this.play === p) this.begin('mafia', ids, this.net.myId, undefined, null, p.opt); });
       row.append(again);
     }
     const back = el('button', 'bg-btn', L(T.back));

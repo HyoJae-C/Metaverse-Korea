@@ -21,8 +21,8 @@
 //   - Elsewhere one row of buildings along each street (Yozi, 2026-11-10),
 //     west to Changgyeonggung-ro (by Euljiro 4-ga) and north to
 //     Cheonggyecheon-ro's south road (scripts/cheonggyecheon-line.mjs).
-//   - Namsangol Hanok Village at its real place south of Toegye-ro by
-//     Chungmuro (a part of its own), at game size: five hanok round a yard.
+//   - Namsangol Hanok Village, south of Toegye-ro by Chungmuro, is a part
+//     of its own added afterwards by scripts/build-namsangol.mjs.
 //   - Sungnyemun on its lawn island where Toegye-ro starts, and Heunginjimun
 //     just north of Cheonggyecheon-ro: parts of their own.
 //
@@ -38,7 +38,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { folkBlockers, FOLK_GAMES_ON } from '../src/data/folk-yard.js';
 import { r1, name as N4, town, nearestOn, pointAt, lengthOf, strips, lineDist, inPoly } from './street-rows.mjs';
 import { SOUTH as CG_SOUTH, NORTH as CG_NORTH, zAt, BRIDGES, at as cgAt } from './cheonggyecheon-line.mjs';
 
@@ -218,34 +217,8 @@ const GROUPS = [
   [['stripS'], ['bitdam-hanji', 'dalbit-lighting', 'neon-golmok', 'mojeon-lamp', 'banjjak-bulbs'], { near: [-1240, -655] }],
 ];
 
-// ---------- Namsangol Hanok Village (its real place, by Chungmuro) ----------
-// Game size (104 x 55 m) round the real hanok village's middle, the gate on
-// the north side with a walk up to Toegye-ro.
-export const HANOK = { box: [-1420, -428, -1316, -373], gate: -1368, yard: [-1392, -421, -1344, -401] };
-const [hx0, hz0, hx1, hz1] = HANOK.box, g = HANOK.gate;
-const toegyeAtGate = toegyeAll.reduce((best, _, i, p) => {
-  if (!i) return best; const [a, b] = [p[i - 1], p[i]];
-  return (a[0] - g) * (b[0] - g) <= 0 ? r1(a[1] + ((b[1] - a[1]) * (g - a[0])) / (b[0] - a[0])) : best;
-}, null);
-roads.push({ k: 'walk', w: 6, p: [[g, toegyeAtGate + 8], [g, HANOK.yard[1]]] });
-// The five hanok, as they were drawn round the box (corner -128, 97 in the
-// old hand-made map).
-for (const [x0, z0, x1, z1] of [[-120, 130, -96, 144], [-88, 132, -64, 146], [-56, 130, -32, 144], [-122, 104, -108, 124], [-44, 104, -30, 124]]) {
-  const dx = hx0 + 128, dz = hz0 - 97;
-  allBuildings.push({ h: 5, hanok: 1, p: rect(x0 + dx, z0 + dz, x1 + dx, z1 + dz) });
-}
-areas.push({ k: 'plaza', p: rect(...HANOK.yard) }); // the folk games yard
-areas.push({ k: 'grass', p: rect(hx0 + 2, hz0 + 2, hx1 - 2, hz1 - 2) });
-// Namsangol's wall, a gap at the gate.
-blockers.push(
-  { p: rect(hx0, hz0 - 0.8, g - 3, hz0 + 0.8) }, { p: rect(g + 3, hz0 - 0.8, hx1, hz0 + 0.8) },
-  { p: rect(hx0 - 0.8, hz0, hx0 + 0.8, hz1) }, { p: rect(hx1 - 0.8, hz0, hx1 + 0.8, hz1) },
-  { p: rect(hx0, hz1 - 0.8, hx1, hz1 + 0.8) },
-);
-const [yx0, yz0, yx1, yz1] = HANOK.yard;
-const folkYardAt = { x: (yx0 + yx1) / 2, z: (yz0 + yz1) / 2 };
-landmarks.push({ type: 'wall', p: [[g + 3, hz0], [hx1, hz0], [hx1, hz1], [hx0, hz1], [hx0, hz0], [g - 3, hz0]], h: 2.6 });
-landmarks.push({ type: 'hanokgate', x: g, z: hz0 });
+// Namsangol Hanok Village (a part of its own, south of Toegye-ro by
+// Chungmuro) is added by scripts/build-namsangol.mjs, which runs after this.
 
 // The boards by the gates (facts checked 2026-11-07; the four boards and King Yeongjo's 1743 poem from Yozi, 2026-11-11).
 const HEUNGINJIMUN = {
@@ -269,7 +242,6 @@ const SUNGNYEMUN = {
 };
 
 landmarks.unshift({ type: 'ddp', x: DDP.x, z: DDP.z, outline: ddpOutline }); // (not "p": that would be moved as world points)
-landmarks.push({ type: 'folkyard', x: folkYardAt.x, z: folkYardAt.z }); // yutnori, tuho, jegichagi, neolttwigi
 
 const parkMid = [r1(PARK.reduce((m, q) => m + q[0], 0) / PARK.length), r1(PARK.reduce((m, q) => m + q[1], 0) / PARK.length)];
 pois.push(
@@ -277,7 +249,6 @@ pois.push(
   { kind: 'landmark', x: parkMid[0], z: parkMid[1], name: N('동대문역사문화공원', 'Dongdaemun History & Culture Park', '東大門歴史文化公園', '东大门历史文化公园') },
   { kind: 'landmark', x: WALL.x, z: WALL.z0 - 4, name: N('한양도성 성곽', 'Seoul City Wall', '漢陽都城の城壁', '汉阳都城城墙') },
   { kind: 'landmark', x: (MX0 + MX1) / 2, z: LANE_Z, name: N('동대문 패션타운', 'Dongdaemun Fashion Town', '東大門ファッションタウン', '东大门时装城') },
-  { kind: 'landmark', x: g, z: folkYardAt.z, name: N('남산골 한옥마을', 'Namsangol Hanok Village', '南山コル韓屋村', '南山谷韩屋村') },
 );
 
 // ---------- Sungnyemun (숭례문, Namdaemun) ----------
@@ -403,7 +374,7 @@ const map = {
   meta: {
     district: 'euljiro',
     parts: [],
-    source: 'OpenStreetMap streets at 1/4 (© OpenStreetMap contributors, ODbL; scripts/data/euljiro-osm.json); buildings and shops are fictional, DDP and Namsangol at game size. Built by scripts/build-euljiro.mjs',
+    source: 'OpenStreetMap streets at 1/4 (© OpenStreetMap contributors, ODbL; scripts/data/euljiro-osm.json); buildings and shops are fictional, DDP at game size. Built by scripts/build-euljiro.mjs',
   },
   roads: roads.map((r) => ({ ...r, p: L(r.p) })),
   buildings: allBuildings.map((b) => ({ ...b, p: L(b.p) })),
@@ -413,15 +384,12 @@ const map = {
   pois: pois.map(Lx),
   landmarks: landmarks.map((l) => (l.type === 'wall' ? { ...l, p: L(l.p) } : Lx(l))),
 };
-// The folk games' solid props, round the yard as the game places them.
-if (FOLK_GAMES_ON) map.blockers.push(...folkBlockers(map.landmarks.find((l) => l.type === 'folkyard'))); // (hidden for now: no solid props)
 // For the overlap check: the main part in strips (its north edge follows
 // the streets), and the three parts of their own.
 const inMain = (p) => p.every(([x, z]) => x + ox >= EDGE.west - 6 && x + ox <= EDGE.east + 3 && z + oz > -700 && z + oz < -400);
 const main = { buildings: map.buildings.filter((b) => inMain(b.p)), roads: map.roads.filter((r) => inMain(r.p)), areas: map.areas.filter((a) => inMain(a.p)) };
 map.meta.parts = [
   ...strips(main, 25, 'DDP, the park, the fashion malls and the streets round them'),
-  { why: 'Namsangol Hanok Village and its walk up to Toegye-ro', box: L([[hx0 - 1, toegyeAtGate + 8], [hx1 + 1, hz1 + 1]]).flat() },
   { why: 'Sungnyemun on its island', box: L([[GATE.ring[0], GATE.ring[1]], [GATE.ring[2], GATE.ring[3]]]).flat() },
   { why: `Heunginjimun on its island, north of the Cheonggyecheon strip (${HEUNG.why} m north of the real gate: the stream is game width)`, box: L([[HEUNG.ring[0] - HEUNG.w / 2, Math.max(...HEUNG.south) - 4.5], [HEUNG.ring[2] + HEUNG.w / 2, HEUNG.ring[3] - HEUNG.w / 2]]).flat() },
 ];
@@ -453,7 +421,7 @@ if (isMain) {
   setAt('ddp-hall', [DDP.x, r1(ddpSouth + 1.5)]);
   writeFileSync(path.join(R, 'stores.json'), stores);
   console.log(`euljiro: ${map.roads.length} roads, ${map.buildings.length} buildings; DDP's middle ${DDP.why} from the real one`);
-  console.log(`  park middle [${parkMid}], Igansumun [${IGANSUMUN}], DDP's way in [${DDP.x}, ${ddpSouth}], Namsangol gate [${g}, ${hz0}]`);
+  console.log(`  park middle [${parkMid}], Igansumun [${IGANSUMUN}], DDP's way in [${DDP.x}, ${ddpSouth}]`);
   for (const [k, v] of Object.entries(t.lots)) console.log('  ', k, v.length);
   for (const e of stationExits()) console.log(`  station exit ${e.n}: [${e.at}], ry ${e.ry} (${r1(Math.hypot(e.at[0] - e.real[0], e.at[1] - e.real[1]))} m from the real one)`);
 }

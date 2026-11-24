@@ -33,6 +33,7 @@ export const PLACES = [
   { name: 'Gwanghwamun Gate', lm: 'gwanghwamun', r: 25 },
   { name: 'Gwanghwamun Gate', lm: 'palacehalls', r: 0 }, { name: 'Gwanghwamun Gate', lm: 'cloister', r: 0 }, // (the palace's and Changdeokgung's halls: their own box/district names it)
   { name: 'Gyeongbokgung Palace', lm: 'yeongjegyo', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'rankstones', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'pavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'hexpavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'amisan', r: 30 },
+  { name: 'Seoul Plaza & City Hall', lm: 'cityhall', r: 70 }, { name: 'Seoul Plaza & City Hall', lm: 'oldcityhall', r: 70 }, // (scripts/build-city-hall.mjs)
   { name: 'Cheong Wa Dae', lm: 'bluehouse', r: 60 }, { name: 'Cheong Wa Dae', lm: 'bluegate', r: 30 }, { name: 'Cheong Wa Dae', lm: 'bhfountain', r: 20 }, { name: 'Cheong Wa Dae', lm: 'bhfence', r: 0 }, // (the street side: scripts/build-cheongwadae.mjs)
   { name: 'Gyeongbokgung Palace', box: [-2001, -1331, -1639, -885] },
   { name: 'Gwanghwamun Square', lm: 'statue', kind: 'king', r: 60 }, { name: 'Gwanghwamun Square', lm: 'statue', kind: 'admiral', r: 60 },
@@ -83,7 +84,7 @@ export const PLACES = [
   { name: 'Sungnyemun Gate', lm: 'sungnyemun', r: 50 },
   { name: 'Heunginjimun Gate', lm: 'heunginjimun', r: 40 }, { name: 'Heunginjimun Gate', lm: 'ongseong', r: 0 },
   { name: 'Dongdaemun Design Plaza', lm: 'ddp', r: 90 },
-  { name: 'Namsangol Hanok Village', lm: 'hanokgate', r: 50 }, { name: 'Namsangol Hanok Village', lm: 'folkyard', r: 40 },
+  { name: 'Namsangol Hanok Village', lm: 'hanokgate', r: 50 }, { name: 'Namsangol Hanok Village', lm: 'folkyard', r: 40 }, { name: 'Namsangol Hanok Village', lm: 'timecapsule', r: 40 },
   { name: 'Dongdaemun Seed Shop', lm: 'seedshop', r: 20 },
   { name: 'Dongmyo Flea Market', lm: 'potatomarket', r: 50 }, { name: 'Dongmyo Flea Market', lm: 'fleastall', r: 25 },
   { name: 'Naksan Park', lm: 'naksanpin', r: 100 },
