@@ -2071,6 +2071,8 @@ const shop = new ShopUI({
     if (left) interior.pets.remove(left);
   },
   owns: (id) => inventory.has(id),
+  howMany: (id) => inventory.count(id),
+  canBuyMore: (id) => inventory.canAdd(id),
   hasUmbrella: () => hasUmbrella(),
   onUmbrella: (product) => buyUmbrella(product),
   onOutfit: (product) => outfitAction(product.item || product.outfit),
@@ -2078,11 +2080,11 @@ const shop = new ShopUI({
   // Lighting shops: a lamp for your home (core/furniture.js), placed with Decorate.
   onFurniture: (product) => {
     const id = product.furniture;
-    if (!ITEMS[id] || inventory.has(id)) return;
+    if (!inventory.canAdd(id)) return; // (most home pieces can be bought again: a second chair)
     const coins = coinsFor(product.price), note = { name: product.name, at: (interior?.store || shop.store)?.name }; // (shop.store: a stand on the street, the greenhouse's pot plants)
     if (!wallet.spend(coins, note)) { shop.toast(fmt(L(DINE_TEXT.poor), { n: coins })); return; }
-    inventory.add(id);
-    receipts.record(id, coins, wallet.lastOp, note); // (every item keeps its server receipt)
+    inventory.addCopy(id);
+    receipts[inventory.count(id) > 1 ? 'recordCopy' : 'record'](id, coins, wallet.lastOp, note); // (every item keeps its server receipt, one per copy)
     refreshWallet();
     labelDecor();
     sfx.pop?.();

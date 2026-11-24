@@ -1,6 +1,6 @@
 // Home decorating: place furniture from a catalogue, then tap it again in the
 // catalogue (or walk up to it) to rotate, carry or put it away. One of each
-// piece for now, so rooms stay light. Saved in mk.home.<id>, which rides
+// free piece; bought pieces as many as you own (inventory.count). Saved in mk.home.<id>, which rides
 // along in the cloud save. A first home starts with a few basics.
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
@@ -14,18 +14,25 @@ import { TankStore, cleanList, isTank, tankById } from '../core/fish-tank.js';
 import { createHomeFinish } from './home-finish.js';
 import { freeSpot as walkableSpot, shutInArea } from '../core/free-spot.js';
 import { isPartition } from '../core/partitions.js';
+import { canHaveMany } from '../core/inventory.js';
 
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
   const MAX_PIECES = 60;
   let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
   const homeKey = (id) => 'mk.home.' + id;
+  // How many of a piece can stand in the room: free pieces and photos one
+  // each; a bought piece as many as I own (Yozi 2026-11-24: a second chair).
+  // Someone else's home: as many as their game sent, up to 20.
+  const many = (id) => { const item = furnitureById(id)?.item; return !!item && canHaveMany(item); };
+  const limitOf = (id, guest = decor?.guest) => (!many(id) ? 1 : guest ? 20 : Math.max(1, inventory.count(furnitureById(id).item)));
   // A layout from storage or from another game: known pieces with real
-  // numbers, one of each, at most MAX_PIECES.
-  function cleanLayout(a) {
+  // numbers, no more of each than limitOf, at most MAX_PIECES.
+  function cleanLayout(a, guest = false) {
     if (!Array.isArray(a)) return [];
     const list = a.map((i) => (Array.isArray(i) ? { id: i[0], x: i[1], z: i[2], ry: i[3], y: i[4], off: i[5], fish: i[6], g: i[7] } : i));
-    return list.filter((i, k) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && list.findIndex((j) => j?.id === i.id) === k).slice(0, MAX_PIECES)
+    const seen = {};
+    return list.filter((i) => furnitureById(i?.id) && [i.x, i.z, i.ry].every(Number.isFinite) && (seen[i.id] = (seen[i.id] || 0) + 1) <= limitOf(i.id, guest)).slice(0, MAX_PIECES)
       .map(({ id, x, z, ry, y, off, fish, g }) => ({ id, x, z, ry, ...(y > 0 && y < 1.5 ? { y } : {}), ...(off ? { off: true } : {}), // y: on a table (isSmall); off: a lamp switched off
         ...(isPlant(id) && g > 0 && g <= 100 ? { g: g | 0 } : {}), // g: watered days that show, on someone else's plant (mine: mk.plants)
         ...(isTank(id) && Array.isArray(fish) ? { fish: cleanList(id, fish) } : {}) })); // fish: in someone else's tank (my own come from mk.tanks)
@@ -134,8 +141,15 @@ export function createDecor(game) {
     return shutVal;
   }
   // Catalogue buttons show which pieces are already in the room.
+  // A piece I own more than one of shows how many are out: "1/2".
   function markPlaced() {
-    for (const b of $('decor-grid').children) b.classList.toggle('placed', !!decor?.items.some((i) => i.id === b.dataset.id));
+    for (const b of $('decor-grid').children) {
+      const n = decor?.items.filter((i) => i.id === b.dataset.id).length || 0, of = decor && !decor.guest ? limitOf(b.dataset.id) : 1;
+      b.classList.toggle('placed', n > 0 && n >= of);
+      const c = b.querySelector('b.decor-n') || b.appendChild(Object.assign(document.createElement('b'), { className: 'decor-n' }));
+      c.textContent = of > 1 ? `${n}/${of}` : '';
+      c.hidden = of <= 1;
+    }
   }
   function openHome(store, built) {
     for (const p of game.photos?.all() || []) setPhotoSrc(p.id, p.src); // (my photos in their frames)
@@ -156,7 +170,7 @@ export function createDecor(game) {
   }
   function showLayout(list) {
     if (!decor?.guest) return;
-    decor.items = cleanLayout(list);
+    decor.items = cleanLayout(list, true);
     rebuildDecor();
   }
   // What this home looks like, to send to visitors.
@@ -218,8 +232,11 @@ export function createDecor(game) {
     return [x, fit(step(p.z + sz * ahead), -rd / 2 + ez + gap, rd / 2 - ez - (byDoor ? DOOR_CLEAR : gap))];
   }
   function placePiece(id) {
-    const placed = decor.items.find((i) => i.id === id);
-    if (placed) { openPiece(placed, true); return; } // one of each: tap again to edit it
+    const placed = decor.items.filter((i) => i.id === id);
+    if (placed.length && placed.length >= limitOf(id)) { // all out: tap again to edit one (the next each tap)
+      openPiece(placed[(placed.indexOf(decor.piece) + 1) % placed.length], true);
+      return;
+    }
     const def = furnitureById(id);
     if (def?.item && !inventory.has(def.item)) return; // a prize you haven't won yet
     if (!fitsHome(def, readHomeLevel())) return shop.toast(t('home.needLevel', { n: def.needsHomeLevel })); // (a big fish tank: a bigger home first)
@@ -379,6 +396,7 @@ export function createDecor(game) {
       b.hidden = !!f.item && !inventory.has(f.item); // plushies: once you've won one
       b.classList.toggle('locked', !fitsHome(f, readHomeLevel())); // needs a bigger home
     }
+    markPlaced(); // (one more bought since: "1/2")
   }
   const finish = createHomeFinish(game); // wallpaper and flooring (game/home-finish.js)
   labelDecor();

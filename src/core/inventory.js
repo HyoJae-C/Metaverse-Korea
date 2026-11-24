@@ -5,6 +5,7 @@
 import { WEARABLES } from '../data/wearables.js';
 import { LAMP_IDS, SHOP_FURNITURE_IDS, TANK_IDS, PLANT_IDS, BOARD_SET_IDS } from './furniture.js';
 import { FINISHES } from './home-finish.js';
+import { APPLIANCE_KIND } from './appliances.js';
 
 const PET_DESC = {
   en: 'Tap Walk to take your pet along. Pets sometimes poop: clean it up quickly or you get a fine.',
@@ -214,25 +215,60 @@ export const ITEMS = {
 };
 
 const KEY = 'mk.items';
+const COPIES = 'mk.itemN'; // { id: extra copies } for home pieces owned more than once
+
+// Home pieces you can own more than one of (Yozi 2026-11-24: a second chair,
+// a second plant). Not fish tanks (their fish are kept per tank kind), not the
+// fridge, washer or microwave (one store and one wash per home: game/appliances.js),
+// and not wallpaper or floors (one of each covers the room).
+const ONE_ONLY = new Set([...TANK_IDS.map(([id]) => id), ...Object.keys(APPLIANCE_KIND)]);
+export const canHaveMany = (id) => !!(ITEMS[id]?.furniture || ITEMS[id]?.lamp) && !ONE_ONLY.has(id);
+const MAX_COPIES = 20; // of one piece (a home holds 60 pieces in all)
 
 export class Inventory {
   constructor() {
     try { this.ids = new Set(JSON.parse(localStorage.getItem(KEY) || '[]').filter((id) => ITEMS[id])); } catch { this.ids = new Set(); }
+    this.extra = {};
+    try {
+      for (const [id, n] of Object.entries(JSON.parse(localStorage.getItem(COPIES) || '{}') || {})) {
+        if (this.ids.has(id) && canHaveMany(id) && n >= 1) this.extra[id] = Math.min(MAX_COPIES - 1, Math.floor(n));
+      }
+    } catch { /* broken save */ }
   }
   has(id) { return this.ids.has(id); }
   list() { return [...this.ids]; }
+  // How many of this I own (0, 1, or more for home pieces).
+  count(id) { return this.ids.has(id) ? 1 + (this.extra[id] || 0) : 0; }
   // Returns the ids that were new.
   add(...ids) {
     const added = ids.filter((id) => ITEMS[id] && !this.ids.has(id));
     added.forEach((id) => this.ids.add(id));
-    try { localStorage.setItem(KEY, JSON.stringify([...this.ids])); } catch { /* storage blocked */ }
+    this._save();
     return added;
   }
-  // Take an item out (sold at a second-hand shop). Returns true if it was there.
-  remove(id) {
-    if (!this.ids.delete(id)) return false;
-    try { localStorage.setItem(KEY, JSON.stringify([...this.ids])); } catch { /* storage blocked */ }
+  // One more of a home piece (bought or given again). False if it can't be
+  // had twice, or there are already MAX_COPIES.
+  addCopy(id) {
+    if (!this.ids.has(id)) return this.add(id).length > 0;
+    if (!canHaveMany(id) || this.count(id) >= MAX_COPIES) return false;
+    this.extra[id] = (this.extra[id] || 0) + 1;
+    this._save();
     return true;
+  }
+  // May I get one more of this? (Not had yet, or a home piece below the cap.)
+  canAdd(id) { return !!ITEMS[id] && (!this.ids.has(id) || (canHaveMany(id) && this.count(id) < MAX_COPIES)); }
+  // Take one out (sold at a second-hand shop). Returns true if it was there.
+  remove(id) {
+    if (this.extra[id]) { if (!--this.extra[id]) delete this.extra[id]; this._save(); return true; }
+    if (!this.ids.delete(id)) return false;
+    this._save();
+    return true;
+  }
+  _save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify([...this.ids]));
+      if (Object.keys(this.extra).length) localStorage.setItem(COPIES, JSON.stringify(this.extra)); else localStorage.removeItem(COPIES);
+    } catch { /* storage blocked */ }
   }
 }
 

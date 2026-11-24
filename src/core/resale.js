@@ -33,7 +33,10 @@ export class Receipts {
     for (const [id, r] of Object.entries(raw)) {
       // Receipts from before won (no w) were in coins.
       const paid = Math.floor(Number(r?.paid) || 0) * (r?.w ? 1 : OLD_COIN_WON);
-      if (paid > 0) this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null, w: 1, ...(r.list > 0 ? { list: Math.floor(r.list) } : {}) };
+      if (!(paid > 0)) continue;
+      const more = (Array.isArray(r.more) ? r.more : []).filter((m) => Number(m?.paid) > 0).slice(0, 20)
+        .map((m) => ({ paid: Math.floor(Number(m.paid)), op: typeof m.op === 'string' ? m.op : null, bn: typeof m.bn === 'string' ? m.bn : null }));
+      this.map[id] = { paid, op: typeof r.op === 'string' ? r.op : null, bn: typeof r.bn === 'string' ? r.bn : null, w: 1, ...(r.list > 0 ? { list: Math.floor(r.list) } : {}), ...(more.length ? { more } : {}) };
     }
   }
   // The receipt for this item, or null (it can't be sold).
@@ -47,6 +50,19 @@ export class Receipts {
     this.map[id] = { paid: Math.floor(paid), op: op || null, bn: noteText(note), w: 1, ...(list > 0 ? { list: Math.floor(list) } : {}) };
     this._save();
   }
+  // A home piece owned more than once (inventory.addCopy) keeps a receipt for
+  // each copy: the first as above, the others in `more` (won, in won).
+  recordCopy(id, paid, op = null, note = null) {
+    if (!(paid > 0)) return;
+    const r = this.map[id];
+    if (!r) { this.record(id, paid, op, note); return; }
+    if (op && this.ops(id).includes(op)) return; // (this purchase is here already)
+    (r.more ||= []).push({ paid: Math.floor(paid), op: op || null, bn: noteText(note) });
+    this._save();
+  }
+  // How many receipts this item has, and their purchases' op ids.
+  copies(id) { return this.map[id] ? 1 + (this.map[id].more?.length || 0) : 0; }
+  ops(id) { const r = this.map[id]; return r ? [r.op, ...(r.more || []).map((m) => m.op)].filter(Boolean) : []; }
   forget(id) {
     if (!(id in this.map)) return;
     delete this.map[id];
