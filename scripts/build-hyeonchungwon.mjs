@@ -57,7 +57,7 @@ export const HC = {
   stairRun: 3, // m: the terrace's stairs
   stairW: 10,
   forecourt: [30, 9], // m: the paved court in front of the gate (across, deep)
-  towerH: 15.5, // m: 31 m at 50%
+  towerH: 15.5, fountainR: 3.4, fountainH: 8.4, flagH: 11, back: { cell: 10, reach: 90, edge: 35, street: 26, ease: 30 }, // m: 31 m at 50%
   gateH: 6.5, // m to the ridge (about 13 m at 50%)
   buildingH: 3.4, // m: OSM gives no heights; game-size
 };
@@ -359,7 +359,14 @@ for (const b of osm.buildings) {
 }
 // The Chungseong Fountain (충성분수대): OSM has its spot; the round road round it is OSM's.
 const fountainN = osm.pois.find((n) => n.tags.name === '충성분수대');
-const fountain = { at: R1([L([fountainN.lat, fountainN.lon])])[0], r: 3.4 };
+const fountain = { at: R1([L([fountainN.lat, fountainN.lon])])[0], r: HC.fountainR, h: HC.fountainH };
+// The Taegeukgi on a tall pole beside the forecourt (the real flags stand on the lawn's edge left of the gate).
+const flagAt = (() => { // on the lawn, 2.5 m out from the forecourt's front edge and 5 m in from its end
+  const e = lawn.map((p, i) => [p, lawn[(i + 1) % lawn.length]]).filter(([p, q]) => Math.hypot(q[0] - p[0], q[1] - p[1]) > 10).sort((m, n) => segDist(0, 0, ...m) - segDist(0, 0, ...n))[0];
+  const [p, q] = e, len = Math.hypot(q[0] - p[0], q[1] - p[1]), d = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+  return [1, -1].flatMap((s) => [5, len - 5].map((t) => [p[0] + d[0] * t - d[1] * 2.5 * s, p[1] + d[1] * t + d[0] * 2.5 * s])).find(([x, z]) => inPoly(x, z, lawn));
+})();
+const flag = { at: R1([flagAt])[0], h: HC.flagH, ry: r2(FRONT) };
 // The main gate on Hyeonchung-ro: on the entrance road (OSM 154112497), 9 m in from the street's middle.
 const ENTRY_WAY = 154112497;
 const mainGate = (() => {
@@ -374,12 +381,46 @@ const gm = [];
 for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) gm.push(Math.max(0, Math.round(hFoot(BX0 + i * CELL, BZ0 + j * CELL) * 10)));
 const grid = { x0: BX0, z0: BZ0, cell: CELL, w: gw, h: gh, m: gm };
 
+// --- The ridge behind ----------------------------------------------------------------
+// Past the grounds the land is closed (nothing built, you can't walk there).
+// It is drawn as the wooded ridge that stands round the cemetery (Seodalsan):
+// SRTM at 1/4 like the hill, out to BACK.reach m from the hill's foot, sinking
+// to 0 at its far edge, at the big streets, at the entrance and at any way
+// that runs along the foot. Seen only (game/hyeonchungwon-park.js draws it as
+// one mesh of treetops); nothing stands on it.
+const BACK = HC.back;
+const trailSegs = trails.flatMap((t) => t.p.slice(1).map((q, i) => [t.p[i], q]));
+function hBack(x, z) {
+  if (inPoly(x, z, foot)) return 0;
+  const dOut = polyDist(x, z, foot);
+  if (dOut > BACK.reach) return 0;
+  let k = smooth((BACK.reach - dOut) / BACK.edge);
+  let ds = Infinity;
+  for (const p of streets) for (let i = 1; i < p.length; i++) ds = Math.min(ds, segDist(x, z, p[i - 1], p[i]));
+  k *= smooth((ds - BACK.street) / BACK.ease);
+  if (!k) return 0;
+  k *= inPoly(x, z, ENTRANCE) ? 0 : smooth((polyDist(x, z, ENTRANCE) - 6) / 20);
+  let dt = Infinity;
+  for (const [p0, p1] of trailSegs) { if (Math.abs(p0[0] - x) > 14 && Math.abs(p1[0] - x) > 14) continue; dt = Math.min(dt, segDist(x, z, p0, p1)); }
+  k *= smooth((dt - 3) / 8);
+  if (!k) return 0;
+  let y = 0;
+  for (const [a, b] of [[0, 0], [8, 0], [-8, 0], [0, 8], [0, -8]]) y += realY(x + a, z + b) / 5; // (SRTM's cells, smoothed)
+  return Math.max(0, (y - HC.base) / 4 - HC.bias) * k;
+}
+const KX0 = Math.floor(fx0 - BACK.reach), KZ0 = Math.floor(fz0 - BACK.reach);
+const kw = Math.ceil((fx1 + BACK.reach - KX0) / BACK.cell) + 1, kh = Math.ceil((fz1 + BACK.reach - KZ0) / BACK.cell) + 1;
+const km = [];
+for (let j = 0; j < kh; j++) for (let i = 0; i < kw; i++) km.push(Math.round(hBack(KX0 + i * BACK.cell, KZ0 + j * BACK.cell)));
+const ridge = { x0: KX0, z0: KZ0, cell: BACK.cell, w: kw, h: kh, m: km }; // (whole metres)
+
 // --- The map -----------------------------------------------------------------------
 const N = (ko, en, ja, zh) => ({ ko, en, ja, zh });
 const roads = walks.map((w) => ({ k: 'walk', w: w.w, p: w.p, n: N('현충원 길', 'Cemetery road', '顕忠院の道', '显忠院道路') }));
 const landmark = {
   type: 'hyeonchung', x: 0, z: 0, grid, foot, trails, flats, court: courtRing, walls, gate, tower, altar, tribute, stairs: { w: HC.stairW, p: stairs.p },
   plots: plots.map(({ p, a }) => ({ p, a })), water, lawns, buildings: hillBuildings, fountain, mainGate,
+  ridge, flag,
   note: 10, // m: how near the main gate the note shows
   peak: { at: [r1(peak.x), r1(peak.z)], y: r1(peak.y) },
 };
@@ -394,7 +435,9 @@ const map = {
       { what: 'plots cut by the court', why: cutByCourt.map((c) => `${c.name} ${c.was} -> ${c.now} m²`).join(', ') },
       { what: 'forecourt, terrace, stairs, altar', why: "OSM has the court's outline, the gate and the tower only. The paved forecourt in front of the gate, the tower's terrace (1.2 m up), its stairs, the altar and the incense burner are laid out from Yozi's photos." },
       { what: 'gate and tower shapes', why: "From Yozi's photos (the gate: blue-green tiled roof on white columns with two low wings; the tower: a tall granite shaft on a stepped base): outlines and heights are approximate (tower 31 m real, 15.5 m here)." },
-      { what: 'Chungseong Fountain', why: 'OSM has its spot and the round road; the two green basins and the bronze figures with the flag are from Yozi\'s photo, game-size.' },
+      { what: 'Chungseong Fountain', why: `OSM has its spot and the round road; the two basins, the jets and the bronze figures with the flag are from Yozi's photos. ${HC.fountainR * 2} m across (it fills the island inside the round road) and ${HC.fountainH} m high.` },
+      { what: 'ridge behind the grounds', why: `The closed land within ${HC.back.reach} m of the hill is drawn as a wooded ridge (SRTM at 1/4, sinking to 0 at its far edge and at the streets). The real ridge is there, but its far slope is homes, not wood; you see it only, nothing stands on it.` },
+      { what: 'Taegeukgi', why: `One flag on a ${HC.flagH} m pole beside the forecourt; the real flags stand on the lawn's edge, their exact spots are not in OSM.` },
       { what: 'headstones', why: 'Rows of plain white stones on a 2.6 x 2 m grid inside each OSM plot: the real rows and their number are not in OSM. No names, no single graves.' },
       { what: 'lawn in front of the gate (겨레얼마당)', why: `The ground between OSM's roads from the fountain to the forecourt (${Math.round(Math.abs(area(lawn)))} m²), level and open to walk on; OSM has no outline for it.` },
       { what: 'entrance', why: 'The ground round the main gate, the visitor office and the fountain is drawn level (the real ground there is within about 1 m).' },

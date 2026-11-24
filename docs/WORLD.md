@@ -1453,3 +1453,18 @@ Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
 note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
 has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.
+
+Detail (2026-11-24, from Yozi's photos): Hyeonchungmun has tiled roofs with
+white ridges, a dancheong band, brackets and latticed wings; the tower is a
+cross-plan shaft of block courses on a round base, with the verse wall
+(`HC_VERSE`, the three lines as they are cut), the bronze burner and the 충혼
+stone before it; the fountain has two basins and bronze figures with a flag
+(it cannot be wider than the island of OSM's round road, 6.8 m, so it is tall
+instead: 8.4 m). One Taegeukgi stands on the lawn by the forecourt. Headstones
+are fewer and bigger (`HC_PARK.rows`/`stones`/`stone`; about a quarter fewer).
+Past the hill's foot the land you cannot enter is a wooded ridge
+(`landmark.ridge`: SRTM at 1/4 out to 90 m, 0 at streets, the entrance and
+the ways; one mesh of treetops; `ridgeSolids` closes it to walking, added
+before the decks so ways along it stay whole). A sun and a moon always stand
+over the hill (sprites that follow you; the sun fades at night, the moon by
+day), after the verse "the sun and the moon will guard this hill".
