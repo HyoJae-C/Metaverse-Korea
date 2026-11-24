@@ -294,6 +294,46 @@ try {
   }
   await a.click('#bg-panel .bg-x');
 
+  step = 'Fish Book Bingo against the computer on a 4×4: fill the board from the pool, then call fish in turn until a bingo';
+  await openPanel(a);
+  await a.waitForSelector('#bg-panel.on [data-game="bingo"]', { timeout: 20000 });
+  await a.click('#bg-panel [data-game="bingo"]');
+  await a.waitForSelector('#bg-panel [data-act="bingo-size"]', { timeout: 15000 });
+  await a.click('#bg-panel [data-act="bingo-size"]');
+  if ((await a.getAttribute('#bg-panel [data-act="bingo-size"]', 'data-size')) !== '4') throw new Error('the host could not pick a 4×4 board');
+  await a.click('#bg-panel [data-act="start"]');
+  await a.waitForSelector('#bg-panel .bb-pool button', { timeout: 15000 });
+  if ((await a.locator('#bg-panel .bb-pool button').count()) !== 20) throw new Error('a 4×4 game should have 20 fish');
+  // Two fish by hand (into the first cells), one taken back out, then the rest at random.
+  const pool = a.locator('#bg-panel .bb-pool button');
+  await pool.nth(0).click();
+  await pool.nth(1).click();
+  if ((await a.getAttribute('#bg-panel .bb-board', 'data-filled')) !== '2') throw new Error('tapping the pool did not fill the board');
+  await a.click('#bg-panel .bb-cell[data-cell="1"]');
+  if ((await a.getAttribute('#bg-panel .bb-board', 'data-filled')) !== '1') throw new Error('tapping a cell did not empty it');
+  if (shotDir) await a.screenshot({ path: shotDir + '/bingo-fill.png' });
+  await a.click('#bg-panel [data-act="bb-random"]');
+  if ((await a.getAttribute('#bg-panel .bb-board', 'data-filled')) !== '16') throw new Error('the rest did not fill');
+  await a.click('#bg-panel [data-act="bb-ready"]');
+  await a.waitForFunction(() => window.__bgUi.play?.g?.phase === 'call', null, { timeout: 15000 });
+  for (let k = 0; k < 30; k++) {
+    await a.waitForFunction(() => { const p = window.__bgUi.play, g = p.g; return g.over || g.turn === p.seat; }, null, { timeout: 30000 });
+    if (await a.evaluate(() => window.__bgUi.play.g.over)) break;
+    // My turn: a fish of my own board nobody called yet; picked, then called.
+    const f = await a.evaluate(() => { const p = window.__bgUi.play, g = p.g; return g.boards[p.seat].find((x) => !g.called.includes(x)) ?? g.pool.find((x) => !g.called.includes(x)); });
+    await a.click(`#bg-panel .bb-pool button[data-pool="${f}"]`);
+    await a.click('#bg-panel [data-act="bb-call"]');
+    await a.waitForFunction((x) => window.__bgUi.play.g.called.includes(x), f, { timeout: 10000 });
+    if (k === 1 && shotDir) await a.screenshot({ path: shotDir + '/bingo-call.png' });
+  }
+  // Every first line (before the bingo) was called out to the table.
+  const shouted = await a.evaluate(() => { const p = window.__bgUi.play; return !!p.bbShout || p.g.winners.length > 0 && p.g.boards.every((_, s) => p.g.winners.includes(s) || p.g.linesOf(s) === 0); });
+  if (!shouted) throw new Error('a first line was not called out');
+  const bingo = await a.evaluate(() => { const g = window.__bgUi.play.g; return { over: g.over, winners: g.winners, lines: g.winners.map((s) => g.linesOf(s)), status: document.querySelector('#bg-panel .bg-status')?.textContent }; });
+  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 2) || !bingo.status) throw new Error('the bingo did not end on two lines: ' + JSON.stringify(bingo));
+  if (shotDir) await a.screenshot({ path: shotDir + '/bingo-end.png' });
+  await a.click('#bg-panel .bg-x');
+
   step = 'A takes blocks out of the 3D tower against the computer';
   await openPanel(a);
   await a.waitForSelector('#bg-panel.on [data-game="tower"]');

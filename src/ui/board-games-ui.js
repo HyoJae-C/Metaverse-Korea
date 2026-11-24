@@ -20,7 +20,7 @@
 // (it sends through the game's own chat bar, so the same rules apply).
 import { suitArt } from './board-card-suits.js';
 import {
-  GAMES, TOYS, FACES, MAFIA_TALK, GIMBAP_GOAL, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
+  GAMES, TOYS, FACES, MAFIA_TALK, GIMBAP_GOAL, BINGO_SIZES, BINGO_SETUP_S, bingoCode, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
   bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
@@ -49,6 +49,8 @@ const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell tab
 // Gimbap: a computer takes [a start, then between these two for each press]; the round is called this long after
 // the first finish; and with nobody done, after [this, plus this for each press].
 const GIMBAP_BOT = [900, 620, 980], GIMBAP_GRACE = 1500, GIMBAP_WAIT = [8000, 3000];
+// Bingo: a computer fills its board this long after the start, and calls no sooner than this after the last call.
+const BINGO_BOT_FILL = 1500, BINGO_BOT_WAIT = 2200;
 
 const CSS = `
 #bg-panel { position: fixed; inset: 0; z-index: 55; display: none; align-items: center; justify-content: center; background: rgba(20,14,10,.25); font: 600 15px system-ui, sans-serif; color: #2b2230; }
@@ -291,6 +293,7 @@ export class BoardGamesUI {
     if (game === 'mafia') this.loadMafia();
     if (game === 'onecard') this.loadOneCard();
     if (game === 'gimbap') this.loadGimbap();
+    if (game === 'bingo') this.loadBingo();
     this.lobby = { game, list: [], opt: game === 'ladders' ? 1 : 0, rolls: LADDERS_ROLLS.indexOf(30) }; // (ladders: the players lay the board out, unless the host says no; 30 rolls each, unless the host picks another limit)
     this.state = 'lobby';
     this.status = '';
@@ -306,6 +309,11 @@ export class BoardGamesUI {
   // Gimbap Master's screen and words (ui/board-gimbap-ui.js), the same way.
   loadGimbap() {
     if (!this.gimbap) import('./board-gimbap-ui.js').then((m) => { this.gimbap = m; this.render(); }).catch(() => {});
+  }
+
+  // Fish Book Bingo's screen and words (ui/board-bingo-ui.js), the same way.
+  loadBingo() {
+    if (!this.bingo) import('./board-bingo-ui.js').then((m) => { this.bingo = m; this.render(); }).catch(() => {});
   }
 
   loadMafia() {
@@ -359,6 +367,7 @@ export class BoardGamesUI {
     this.dropView();
     if (game === 'onecard') this.loadOneCard();
     if (game === 'gimbap') this.loadGimbap();
+    if (game === 'bingo') { this.play.bbSetAt = performance.now(); this.loadBingo(); }
     if (game === 'mafia') { this.play.phaseAt = performance.now(); this.play.stepSeen = 0; this.loadMafia(); }
     if (TOYS.includes(game)) {
       // The 3D toy (the plain buttons show until it is here, or if there is no WebGL).
@@ -585,6 +594,21 @@ export class BoardGamesUI {
         this.status = this.gimbap?.saidGimbap(g, p.names, L) || '';
         this.onEvent(g.last.won === p.seat ? 'pair' : g.last.won < 0 ? 'wrong' : 'ring', p.game);
       }
+    } else if (p.game === 'bingo' && act[0] === 'w') {
+      this.status = this.bingo?.saidBingo(g, p.names, L, p.seat) || '';
+      // Someone made a new line: everyone hears it, "○○ 1 bingo!" (Yozi 2026-11-24), unless the game just ended.
+      const was = p.bbLines || [], now = p.names.map((_, s) => g.linesOf(s));
+      p.bbLines = now;
+      const up = now.map((n, s) => (n > (was[s] || 0) && !g.out[s] ? s : -1)).filter((s) => s >= 0);
+      if (up.length && !g.over && this.bingo) {
+        p.bbShout = { text: up.map((s) => this.bingo.lineUp(p.names[s], now[s], L)).join(' · '), until: performance.now() + 2600 };
+        setTimeout(() => { if (this.play === p) this.render(); }, 2700);
+        this.onEvent('ring', p.game);
+      } else this.onEvent(g.last?.hit.includes(p.seat) ? 'pair' : 'move', p.game);
+    } else if (p.game === 'bingo' && (act[0] === 'g' || act[0] === 'n') && g.phase === 'call' && !p.bbOn) {
+      p.bbOn = true; // (everyone's board is in: the calling starts)
+      this.status = '';
+      this.onEvent('ring', p.game);
     } else if (p.game === 'onecard' && (act[0] === 'c' || act[0] === 'd')) {
       this.status = this.onecard?.saidOneCard(g, p.names, L) || '';
       this.onEvent(g.last?.bust ? 'wrong' : 'move', p.game);
@@ -669,6 +693,14 @@ export class BoardGamesUI {
       else if ((p.gbFirst && now - p.gbFirst > GIMBAP_GRACE) || t > GIMBAP_WAIT[0] + steps * GIMBAP_WAIT[1]) this.hostApply(p.seat, ['n', g.round]);
       return;
     }
+    if (p.game === 'bingo' && g.phase === 'setup') {
+      // The computers fill theirs at random after a moment; the long clock fills whatever a person has not.
+      const t = now - p.bbSetAt;
+      const bot = p.ids.findIndex((id, s) => id === BOT && !g.out[s] && !g.boards[s]);
+      if (bot >= 0 && t > BINGO_BOT_FILL) this.hostApply(bot, ['g', bingoCode(g.randomBoard(this.rand))]);
+      else if (t > BINGO_SETUP_S[g.size] * 1000 + 300) this.hostApply(p.seat, ['n']);
+      return;
+    }
     const turn = turnOf(g);
     if (turn < 0) return;
     if (p.ids[turn] !== BOT) {
@@ -681,6 +713,7 @@ export class BoardGamesUI {
       return;
     }
     if (p.game === 'gimbap' && now - p.turnAt < 2600) return; // (time to read who took the last one)
+    if (p.game === 'bingo' && now - p.turnAt < BINGO_BOT_WAIT) return; // (a calm game: time to find the last call on your board)
     p.thinkAt ??= between(BOT_THINK, this.rand);
     if (this.timer < p.thinkAt) return;
     p.thinkAt = null;
@@ -691,8 +724,9 @@ export class BoardGamesUI {
   paintClock() {
     const p = this.play, now = performance.now();
     if (!p || !this.clockEl?.isConnected) return;
-    const left = p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
-    const text = left < 99 ? `⏳ ${Math.max(0, Math.min(TURN_MS / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
+    const setup = p.game === 'bingo' && !p.g.over && p.g.phase === 'setup' ? BINGO_SETUP_S[p.g.size] * 1000 : 0; // (bingo: filling the boards has its own long clock)
+    const left = setup ? Math.ceil((setup - (now - p.bbSetAt)) / 1000) : p.g.over || turnOf(p.g) < 0 ? 99 : Math.ceil((TURN_MS - (now - p.turnAt)) / 1000);
+    const text = left < 99 || setup ? `⏳ ${Math.max(0, Math.min((setup || TURN_MS) / 1000, left))}` : ''; // (every game shows the whole turn's clock: Yozi 2026-11-23)
     if (this.clockEl.textContent !== text) {
       this.clockEl.textContent = text;
       if (left >= 1 && left <= TICK_FROM) this.onEvent('tick', p.game, { mine: turnOf(p.g) === p.seat, n: left }); // (the last seconds tick: Yozi 2026-11-24)
@@ -709,6 +743,7 @@ export class BoardGamesUI {
     else if (p.game === 'ladders' && g.setup) { const m = g.botPlace(this.rand); this.hostApply(turn, m ? ['a', ...m] : ['l']); }
     else if (p.game === 'ladders') { this.hostApply(turn, ['d']); p.thinkAt = between(BOT_THINK, this.rand) + 1100 + DICE_MS; } // (lets the piece finish walking)
     else if (p.game === 'gimbap') this.hostApply(turn, ['d', 2]);
+    else if (p.game === 'bingo') this.hostApply(turn, ['w', g.botCall(turn, this.rand)]); // (a person whose time ran out: the best call for their own board)
     else if (p.game === 'onecard') {
       // The computer plays what it can; a person whose time ran out just draws.
       const m = p.ids[turn] === BOT ? g.botMove() : { draw: true };
@@ -814,6 +849,19 @@ export class BoardGamesUI {
       line.append(r);
       c.append(line);
     }
+    if (lob.game === 'bingo' && this.bingo) {
+      // The host's choice: a 5×5 board (the default) or a quicker 4×4.
+      const n = BINGO_SIZES[lob.opt] || BINGO_SIZES[0];
+      const r = el('button', 'bg-btn', fmt(L(this.bingo.BB.size), { n }));
+      r.type = 'button';
+      r.dataset.act = 'bingo-size';
+      r.dataset.size = String(n);
+      r.onclick = () => { lob.opt = (lob.opt + 1) % BINGO_SIZES.length; this.render(); };
+      const line = el('div', 'bg-row');
+      line.append(r, el('span', 'bg-how', this.bingo.sizeHow(n, L)));
+      line.style.alignItems = 'center';
+      c.append(line);
+    }
     if (lob.game === 'ladders') {
       // The host's choice: how many rolls each player gets before the game is called (Yozi 2026-11-24).
       const n = LADDERS_ROLLS[lob.rolls];
@@ -871,6 +919,7 @@ export class BoardGamesUI {
       let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
       if (p.game === 'onecard' && !out) label += ` · ${g.hands[s].length}`;
       if (p.game === 'gimbap') label += ` · ${g.score[s]}/${GIMBAP_GOAL}`;
+      if (p.game === 'bingo' && !out) label += g.phase === 'setup' ? (g.boards[s] ? ' · ✓' : ' · ✏️') : ` · ${g.linesOf(s)}/${g.goal}`;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -884,6 +933,7 @@ export class BoardGamesUI {
     else if (p.game === 'thief') this.drawThief(c);
     else if (p.game === 'onecard') this.onecard?.drawOneCard(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
     else if (p.game === 'gimbap') this.gimbap?.drawGimbap(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
+    else if (p.game === 'bingo') this.bingo?.drawBingo(c, { p, act: (a) => this.myMove(a), el, L, ui: this });
     else if (p.game === 'ladders') this.drawLadders(c);
     else this.drawToy(c);
     c.append(el('div', 'bg-status', this.headline()));
@@ -975,6 +1025,7 @@ export class BoardGamesUI {
       if (g.last?.bang) return g.loser === p.seat ? L(T.bangMe) : tt('bangThem', { name: p.names[g.loser] });
       if (TOYS.includes(p.game)) return this.status;
       if (p.game === 'thief') return g.loser < 0 ? this.status : g.loser === p.seat ? L(T.jokerMe) : tt('jokerThem', { name: p.names[g.loser] });
+      if (p.game === 'bingo' && g.winners.length > 1) return this.bingo?.bingoTogether(g, p.names, L) || L(T.draw);
       const end = g.winner < 0 ? L(T.draw) : g.winner === p.seat ? L(T.won) : tt('winner', { name: p.names[g.winner] });
       // Snakes and ladders called on rolls: say why it stopped.
       if (p.game === 'ladders' && g.max && g.used.every((u, s) => g.out[s] || u >= g.max) && !g.pos.includes(LADDERS_END)) return `${L(T.rollsOut)} ${end}`;
