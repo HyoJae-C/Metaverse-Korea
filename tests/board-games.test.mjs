@@ -612,3 +612,64 @@ test('snakes and ladders with a roll limit: everyone gets the same rolls, then t
   assert.deepEqual(a.ranks, b.ranks);
   assert.ok(b.over);
 });
+
+test('gimbap master: two dice say how many fillings, the shortest time takes the roll, big rolls count more (Yozi 2026-11-24)', async () => {
+  const { Gimbap, GIMBAP_FILLINGS, GIMBAP_GOAL, GIMBAP_PRESS_MS, gimbapWorth, newGame, applyAction, unpackAct, packAct } = await import('../src/core/board-games.js');
+  assert.equal(GIMBAP_FILLINGS.length, 12);
+  assert.deepEqual([2, 5, 6, 9, 10, 12].map(gimbapWorth), [1, 1, 2, 2, 3, 3]);
+  const g = newGame('gimbap', 3, 77);
+  assert.ok(g instanceof Gimbap);
+  assert.equal(g.turn, 0);
+  assert.equal(applyAction(g, 1, ['d']), false); // not the roller
+  assert.ok(applyAction(g, 0, unpackAct(packAct(['d', 5]))));
+  const n = g.dice[0] + g.dice[1];
+  assert.ok(n >= 2 && n <= 12);
+  assert.equal(g.order.length, n);
+  assert.equal(new Set(g.order).size, n); // every filling once at most
+  assert.deepEqual(g.seq().slice(0, 2), ['kim', 'rice']);
+  assert.equal(g.seq().length, n + 2);
+  assert.equal(g.turn, -1); // a race now
+  assert.equal(applyAction(g, 0, ['d']), false);
+  assert.equal(applyAction(g, 1, ['b', 9, 3000]), false); // another round's time
+  assert.ok(applyAction(g, 1, unpackAct(packAct(['b', 1, 3000]))));
+  assert.equal(applyAction(g, 1, ['b', 1, 100]), false); // once each
+  assert.ok(applyAction(g, 2, ['b', 1, 1])); // too fast for a hand: raised to the least possible
+  assert.equal(g.times[2], (n + 2) * GIMBAP_PRESS_MS);
+  assert.equal(g.phase, 'make'); // seat 0 is still at it
+  assert.ok(applyAction(g, 0, ['n', 1])); // the host's clock
+  assert.equal(g.last.won, g.times[2] < 3000 ? 2 : 1);
+  assert.equal(g.score[g.last.won], gimbapWorth(n));
+  assert.equal(g.turn, 1); // the next one rolls
+  assert.equal(applyAction(g, 0, ['n', 1]), false);
+
+  // Everyone done: the round ends by itself. Nobody done: nobody scores.
+  assert.ok(applyAction(g, 1, ['d']));
+  for (const s of [0, 1, 2]) assert.ok(applyAction(g, s, ['b', 2, 5000 + s]));
+  assert.equal(g.last.won, 0);
+  assert.ok(applyAction(g, 2, ['d']));
+  const before = g.score.slice();
+  assert.ok(applyAction(g, 0, ['n', 3]));
+  assert.equal(g.last.won, -1);
+  assert.deepEqual(g.score, before);
+
+  // First to the goal wins; the same seed gives the same dice and orders everywhere.
+  const a = new Gimbap({ players: 2, seed: 5 }), b = new Gimbap({ players: 2, seed: 5 });
+  while (!a.over) {
+    const r = a.turn;
+    assert.ok(a.roll(r)); assert.ok(b.roll(r));
+    assert.deepEqual(a.order, b.order);
+    assert.ok(a.done(0, a.round, 2000)); b.done(0, b.round, 2000);
+    assert.ok(a.close(0, a.round)); b.close(0, b.round);
+  }
+  assert.equal(a.winner, 0);
+  assert.ok(a.score[0] >= GIMBAP_GOAL);
+
+  // Someone leaves: the game goes on with the rest, and the last one left has it.
+  const c = new Gimbap({ players: 3, seed: 9 });
+  c.leave(0);
+  assert.equal(c.turn, 1);
+  c.roll(1); c.done(2, 1, 4000);
+  c.leave(1); // the only one still making is gone
+  assert.ok(c.over);
+  assert.equal(c.winner, 2);
+});

@@ -1,0 +1,181 @@
+// Gimbap Master's screen inside the board games panel (ui/board-games-ui.js
+// calls drawGimbap when the game is gimbap). The rules are core/board-games.js
+// (Gimbap): two dice say how many fillings; the order shows them in a row;
+// press seaweed, rice, then the fillings in that order. Each screen times its
+// own player from the moment the order shows (p.gbAt), so a slow line costs
+// nobody the round.
+import { GIMBAP_BASE, GIMBAP_FILLINGS, GIMBAP_GOAL, gimbapWorth } from '../core/board-games.js';
+import { GB, GB_NAME } from './board-gimbap-text.js';
+
+// [emoji, colour] of each thing that goes in. (No pictures of their own yet: a colour and an emoji tell them apart.)
+const LOOK = {
+  kim: ['⬛', '#1d2b22'], rice: ['🍚', '#f4f1e8'], danmuji: ['🟡', '#f6d21f'], spinach: ['🥬', '#2f8f3e'], carrot: ['🥕', '#f08a24'],
+  egg: ['🥚', '#ffe58a'], ham: ['🥓', '#f29aa6'], burdock: ['🪵', '#8a5a2b'], tuna: ['🐟', '#b9c6d8'], cheese: ['🧀', '#ffb52e'],
+  cucumber: ['🥒', '#8fd06a'], crab: ['🦀', '#ff6b57'], fishcake: ['🍢', '#d9a86a'], perilla: ['🍃', '#3d7a4a'],
+};
+const PAD = [...GIMBAP_BASE, ...GIMBAP_FILLINGS]; // my buttons, always in the same places
+
+const CSS = `
+#bg-panel .gb-dice { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 16px 0 12px; perspective: 520px; }
+#bg-panel .gb-tilt { display: block; width: 46px; height: 46px; transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(-24deg); }
+#bg-panel .gb-cube { display: block; position: relative; width: 46px; height: 46px; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)); }
+#bg-panel .gb-cube.roll { animation: gb-tumble var(--ms) cubic-bezier(.2,.7,.3,1) var(--at) both; }
+#bg-panel .gb-cube b { position: absolute; inset: 0; border-radius: 9px; background: #fffdf6; border: 1px solid #d8c9ad; box-sizing: border-box; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 6px; backface-visibility: hidden; }
+#bg-panel .gb-cube b i { width: 8px; height: 8px; border-radius: 50%; background: #2b2230; place-self: center; }
+#bg-panel .gb-cube b.one i { background: #e8402a; width: 11px; height: 11px; }
+@keyframes gb-tumble {
+  0% { transform: translateY(-46px) rotateX(calc(var(--rx) + var(--spin))) rotateY(calc(var(--ry) + var(--spin) * 1.5)); }
+  62% { transform: translateY(0) rotateX(calc(var(--rx) + 40deg)) rotateY(calc(var(--ry) + 60deg)); }
+  80% { transform: translateY(-9px) rotateX(calc(var(--rx) - 8deg)) rotateY(calc(var(--ry) - 10deg)); }
+  100% { transform: translateY(0) rotateX(var(--rx)) rotateY(var(--ry)); }
+}
+#bg-panel .gb-sum { font-size: 22px; font-weight: 800; }
+#bg-panel .gb-order { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; border-radius: 12px; background: #1d2b22; margin: 6px 0; }
+#bg-panel .gb-chip { position: relative; border-radius: 8px; background: #fffdf6; text-align: center; font-size: 22px; line-height: 1; padding: 6px 0 9px; overflow: hidden; }
+#bg-panel .gb-chip i, #bg-panel .gb-pad button i { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: var(--c); }
+#bg-panel .gb-chip.done { opacity: .35; }
+#bg-panel .gb-chip.next { box-shadow: 0 0 0 3px #ffb800; }
+#bg-panel .gb-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 8px 0 4px; }
+#bg-panel .gb-pad button { position: relative; border: 0; border-radius: 12px; background: #fff; box-shadow: 0 2px 0 #d8c9ad, 0 1px 4px rgba(0,0,0,.2); padding: 7px 2px 11px; min-height: 58px; overflow: hidden; font-size: 11px; font-weight: 700; line-height: 1.15; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; }
+#bg-panel .gb-pad button b { display: block; font-size: 24px; line-height: 1.1; font-weight: 400; }
+#bg-panel .gb-pad button:active { transform: translateY(2px); box-shadow: 0 0 0 #d8c9ad; }
+#bg-panel .gb-pad.oops { animation: gb-oops .3s; }
+@keyframes gb-oops { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+#bg-panel .gb-roll { width: 64px; height: 64px; margin: 6px auto; border-radius: 50%; border: 6px solid #1d2b22; background: #fffdf6; box-sizing: border-box; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 2px; padding: 8px; }
+#bg-panel .gb-roll i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+#bg-panel .gb-times { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; font-size: 13px; color: #6b5d4a; }
+#bg-panel .gb-times .won { color: #c2331d; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { #bg-panel .gb-cube.roll, #bg-panel .gb-pad.oops { animation: none; } }
+`;
+let styled = false;
+const secs = (ms) => (ms / 1000).toFixed(2);
+
+// A dice as a little cube (CSS 3D, no WebGL). Faces: front 1, back 6, right 3, left 4, top 5, bottom 2.
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const FACE_AT = { 1: 'translateZ(23px)', 6: 'rotateY(180deg) translateZ(23px)', 3: 'rotateY(90deg) translateZ(23px)', 4: 'rotateY(-90deg) translateZ(23px)', 5: 'rotateX(90deg) translateZ(23px)', 2: 'rotateX(-90deg) translateZ(23px)' };
+const TURN_TO = { 1: [0, 0], 6: [0, 180], 3: [0, -90], 4: [0, 90], 5: [-90, 0], 2: [90, 0] }; // the cube's turn that brings a face to the front
+// n: the face it shows (lands on). roll: { since, ms, power } while it tumbles (it picks the throw up where it is, if the card is drawn again).
+function cube(el, n, roll, k) {
+  const tilt = el('span', 'gb-tilt'), c = el('span', 'gb-cube' + (roll ? ' roll' : ''));
+  for (let f = 1; f <= 6; f++) {
+    const face = el('b', f === 1 ? 'one' : null);
+    face.style.transform = FACE_AT[f];
+    for (let i = 0; i < 9; i++) { const pip = el(PIPS[f].includes(i) ? 'i' : 'span'); face.append(pip); }
+    c.append(face);
+  }
+  c.style.setProperty('--rx', TURN_TO[n][0] + 'deg');
+  c.style.setProperty('--ry', TURN_TO[n][1] + 'deg');
+  if (roll) {
+    c.style.setProperty('--ms', roll.ms + 'ms');
+    c.style.setProperty('--at', -Math.round(roll.since) + 'ms');
+    c.style.setProperty('--spin', (k ? -1 : 1) * (540 + 180 * roll.power) + 'deg'); // (a harder throw turns more; the two turn opposite ways)
+  }
+  tilt.append(c);
+  return tilt;
+}
+
+// What the last round came to, in words (the panel's status line).
+export function saidGimbap(g, names, L) {
+  const l = g.last;
+  if (!l || l.roll) return '';
+  const fill = (row, v) => L(row).replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+  return l.won < 0 ? L(GB.nobody) : fill(GB.took, { name: names[l.won], t: secs(l.ms), w: l.worth });
+}
+
+// One press of my pad. Right: one further along (the last one sends my time). Wrong: from the seaweed again.
+function press(id, { p, act, ui }) {
+  const g = p.g, st = p.gb;
+  if (g.over || g.phase !== 'make' || !st || st.round !== g.round || st.sent) return;
+  const seq = g.seq();
+  if (id === seq[st.pos]) {
+    st.pos++;
+    st.oops = 0;
+    ui.onEvent('move', 'gimbap');
+    if (st.pos === seq.length) { st.sent = Math.max(1, Math.round(performance.now() - p.gbAt)); act(['b', g.round, st.sent]); }
+  } else {
+    st.pos = 0;
+    st.oops = performance.now();
+    ui.onEvent('wrong', 'gimbap');
+  }
+  ui.render();
+}
+
+// c: the card to draw into. p: the panel's game ({ g, seat, names, dice, gbAt }). act(a): my move.
+// ui: the panel (rollButton(), render(), onEvent()).
+export function drawGimbap(c, { p, act, el, L, ui }) {
+  if (!styled) { styled = true; const s = document.createElement('style'); s.textContent = CSS; document.head.append(s); }
+  const g = p.g, me = p.seat, now = performance.now();
+  const fill = (row, v) => L(row).replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+  const tumbling = !!p.dice && now - p.dice.at < p.dice.ms;
+  const chip = (id, cls = '') => {
+    const d = el('div', 'gb-chip' + cls, LOOK[id][0]);
+    d.dataset.item = id;
+    d.title = L(GB_NAME[id]);
+    const bar = el('i');
+    bar.style.setProperty('--c', LOOK[id][1]);
+    d.append(bar);
+    return d;
+  };
+
+  // The two dice, and what they add up to.
+  const dice = el('div', 'gb-dice');
+  dice.dataset.dice = g.dice && !tumbling ? g.dice.join(',') : '';
+  for (const k of [0, 1]) dice.append(cube(el, g.dice ? g.dice[k] : k ? 2 : 5, tumbling ? { since: now - p.dice.at, ms: p.dice.ms, power: p.dice.pw ?? 2 } : null, k));
+  if (g.dice && !tumbling) dice.append(el('span', 'gb-sum', `= ${g.dice[0] + g.dice[1]}`));
+  c.append(dice);
+
+  if (g.phase === 'make' && !tumbling) {
+    // The order: what goes in, first to last. What I have pressed fades; the next one is ringed.
+    if (p.gb?.round !== g.round) p.gb = { round: g.round, pos: 0, sent: 0, oops: 0 };
+    const st = p.gb, seq = g.seq(), n = g.order.length, playing = me >= 0 && !g.out[me];
+    c.append(el('div', 'bg-sub', (n >= 10 ? L(GB.big) + ' ' : n <= 3 ? L(GB.mini) + ' ' : '') + fill(GB.count, { n, w: gimbapWorth(n) })));
+    const order = el('div', 'gb-order');
+    order.dataset.seq = seq.join(',');
+    order.dataset.pos = String(st.pos);
+    seq.forEach((id, i) => order.append(chip(id, playing && i < st.pos ? ' done' : playing && i === st.pos && !st.sent ? ' next' : '')));
+    c.append(order);
+    if (!playing) { c.append(el('div', 'bg-sub', L(GB.making))); return; }
+    if (st.sent || g.times[me] >= 0) { const w = el('div', 'bg-sub', fill(GB.mine, { t: secs(g.times[me] >= 0 ? g.times[me] : st.sent) })); w.dataset.mine = '1'; c.append(w); return; }
+    c.append(el('div', 'bg-sub', L(st.oops && now - st.oops < 1500 ? GB.oops : GB.go)));
+    const pad = el('div', 'gb-pad' + (st.oops && now - st.oops < 300 ? ' oops' : ''));
+    for (const id of PAD) {
+      const b = el('button');
+      b.type = 'button';
+      b.dataset.gb = id;
+      b.append(el('b', null, LOOK[id][0]), document.createTextNode(L(GB_NAME[id])));
+      const bar = el('i');
+      bar.style.setProperty('--c', LOOK[id][1]);
+      b.append(bar);
+      // (on the way down, not on the click: every tenth of a second counts)
+      b.onpointerdown = (e) => { e.preventDefault(); press(id, { p, act, ui }); };
+      b.onclick = (e) => { if (e.detail === 0) press(id, { p, act, ui }); }; // (the keyboard)
+      pad.append(b);
+    }
+    c.append(pad);
+    return;
+  }
+
+  // Between rounds: the last roll of gimbap, cut open, and everyone's time.
+  const l = g.last && !g.last.roll ? g.last : null;
+  if (l && !tumbling) {
+    const res = el('div', 'gb-result');
+    res.dataset.won = String(l.won);
+    if (l.won >= 0) {
+      const roll = el('div', 'gb-roll');
+      for (const i of l.order) { const dot = el('i'); dot.style.setProperty('--c', LOOK[GIMBAP_FILLINGS[i]][1]); roll.append(dot); }
+      res.append(roll);
+    }
+    const times = el('div', 'gb-times');
+    l.times.map((t, s) => [t, s]).filter(([t]) => t >= 0).sort((a, b) => a[0] - b[0]).forEach(([t, s]) => times.append(el('span', s === l.won ? 'won' : null, `${p.names[s]} ${secs(t)}`)));
+    res.append(times);
+    c.append(res);
+  }
+  if (g.over || tumbling) return;
+  c.append(el('div', 'bg-sub', `${L(GB.rollHow)} (🏁 ${GIMBAP_GOAL})`));
+  if (me >= 0 && g.turn === me) {
+    const row = el('div', 'bg-row');
+    row.style.justifyContent = 'center';
+    row.append(ui.rollButton());
+    c.append(row);
+  }
+}

@@ -14,6 +14,7 @@ export const GAME_NAME = {
   tower: R('Wobbly Tower', '탑 쌓기', 'ぐらぐらタワー', '摇摇积木塔', 'Torre tambaleante', 'Menara Goyang', 'Tháp lung lay', 'डगमग मीनार', 'Tour branlante', 'ตึกโยกเยก', 'البرج المتمايل'),
   bulldog: R('My Dog Doesn\'t Bite', '우리 개는 안 물어요', 'うちの犬はかまないよ', '我家狗不咬人', 'Mi perro no muerde', 'Anjingku Nggak Gigit', 'Chó nhà tôi không cắn', 'मेरा कुत्ता नहीं काटता', 'Mon chien ne mord pas', 'หมาบ้านเราไม่กัด', 'كلبي لا يعض'),
   mafia: R('Mafia', '마피아', 'マフィアゲーム', '黑手党', 'Mafia', 'Mafia', 'Ma sói Mafia', 'माफिया', 'Mafia', 'มาเฟีย', 'المافيا'),
+  gimbap: R('Gimbap Master', '김밥의 달인', 'キンパの達人', '紫菜包饭达人', 'Maestro del gimbap', 'Jago Gimbap', 'Cao thủ gimbap', 'गिम्बाप उस्ताद', 'As du gimbap', 'เซียนคิมบับ', 'معلّم الكيمباب'),
 };
 
 export const GAME_HOW = {
@@ -146,6 +147,19 @@ export const GAME_HOW = {
     'Donne un os au bouledogue endormi chacun ton tour. L\'un d\'eux le réveille en aboyant : celui qui le donne perd !',
     'ผลัดกันยื่นกระดูกให้บูลด็อกที่หลับอยู่คนละชิ้น มีชิ้นหนึ่งที่ทำให้มันตื่นมาเห่า ใครยื่นชิ้นนั้นแพ้!',
     'أعطوا البلدوغ النائم عظمة واحدة بالتناوب. إحداها توقظه نابحًا: من يعطيها يخسر!',
+  ),
+  gimbap: R(
+    'Two dice say how many fillings go in. Press seaweed, rice, then the fillings in the order shown. The fastest takes the roll; big rolls count more. First to 7 wins.',
+    '주사위 두 개의 합만큼 재료가 들어가요. 김, 밥, 그다음 보이는 순서대로 재료를 눌러요. 제일 빠른 사람이 김밥을 가져가고, 큰 김밥은 더 많이 쳐요. 7줄 먼저 모으면 이겨요.',
+    'サイコロ2つの合計が具の数。のり、ごはん、そして見えている順に具を押します。いちばん速い人がキンパをもらい、大きいほど多く数えます。先に7本で勝ち。',
+    '两颗骰子的点数和就是配料的数量。先按紫菜、米饭，再按显示的顺序按配料。最快的人拿走这卷，大卷算得更多。先拿到7卷的人赢。',
+    'Dos dados dicen cuántos ingredientes lleva. Pulsa alga, arroz y luego los ingredientes en el orden mostrado. El más rápido se lleva el rollo; los grandes valen más. Gana quien llegue a 7.',
+    'Dua dadu menentukan jumlah isian. Tekan rumput laut, nasi, lalu isian sesuai urutan. Yang tercepat mendapat gulungannya; gulungan besar bernilai lebih. Yang pertama mencapai 7 menang.',
+    'Hai xúc xắc cho biết có bao nhiêu nhân. Bấm rong biển, cơm, rồi các nhân theo đúng thứ tự. Ai nhanh nhất lấy cuộn đó; cuộn to được tính nhiều hơn. Ai đạt 7 trước thì thắng.',
+    'दो पासे बताते हैं कि कितनी भरावन जाएगी। पहले समुद्री शैवाल, चावल, फिर दिखाए क्रम में भरावन दबाइए। सबसे तेज़ खिलाड़ी रोल ले जाता है; बड़े रोल ज़्यादा गिने जाते हैं। पहले 7 तक पहुँचने वाला जीतता है।',
+    'Deux dés donnent le nombre de garnitures. Appuie sur l\'algue, le riz, puis les garnitures dans l\'ordre affiché. Le plus rapide prend le rouleau ; les gros comptent plus. Le premier à 7 gagne.',
+    'ลูกเต๋าสองลูกบอกจำนวนไส้ กดสาหร่าย ข้าว แล้วกดไส้ตามลำดับที่เห็น คนที่เร็วที่สุดได้คิมบับไป ม้วนใหญ่นับแต้มมากกว่า ใครถึง 7 ก่อนชนะ',
+    'نردان يحددان عدد الحشوات. اضغط الأعشاب البحرية ثم الأرز ثم الحشوات بالترتيب الظاهر. الأسرع يأخذ اللفّة، واللفّات الكبيرة تُحسب أكثر. أول من يصل إلى 7 يفوز.',
   ),
 };
 
