@@ -251,6 +251,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       for (let i = 1; i < t.p.length; i++) {
         const a = t.p[i - 1], b = t.p[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]), rise = b[2] - a[2];
         if (len < 0.01) continue;
+        if ((inPoly((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, l.court) || (inPoly(a[0], a[1], l.court) && inPoly(b[0], b[1], l.court)))) continue; // (a way that crosses the court: the court's own paving is there)
         if (t.steps) {
           const n = Math.max(1, Math.round(Math.abs(rise) / 0.18)), ry = Math.atan2(b[0] - a[0], b[1] - a[1]);
           for (let k = 0; k < n; k++) { const f = (k + 0.5) / n; steps.push([l.x + a[0] + (b[0] - a[0]) * f, a[2] + rise * f + 0.02, l.z + a[1] + (b[1] - a[1]) * f, ry, t.w, 1, Math.max(len / n, 0.3) + 0.05]); }
@@ -293,7 +294,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     for (const f of l.flats) {
       if (f.k === 'lawn') flat(f.p, 0.05, C.lawn, 'hyeonchung-lawn');
       else if (f.k === 'court') flat(f.p, 0.06, C.paving, 'hyeonchung-court');
-      else flat(f.p, f.y + 0.02, C.pavingDark, 'hyeonchung-terrace', f.y);
+      else flat(f.p, f.y + 0.09, C.pavingDark, 'hyeonchung-terrace', f.y); // (just over a way's ribbon, 0.07: a real path runs along the terrace's edge and half under it)
     }
     for (const w of water) flat(w.p, w.y + 0.06, C.water, 'hyeonchung-water');
   }
