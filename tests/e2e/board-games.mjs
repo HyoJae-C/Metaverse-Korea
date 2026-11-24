@@ -507,9 +507,35 @@ try {
   for (const page of [a, b]) await page.waitForFunction(() => /💀/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 15000 }); // (the end line: who is left with the skull; it was 🃏 before the game was renamed)
   if (shotDir) await a.screenshot({ path: shotDir + '/thief-end.png' });
 
-  step = 'mafia: the host leaves and the game goes on under the next player';
+  step = 'away from the table: a hidden page shows 💤 at its seat; away is fine until my turn; my turn running out while away puts me out';
   for (const page of [a, b]) await page.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
   const [idA, idB] = await Promise.all([a, b].map((page) => page.evaluate(() => window.__bgUi.net.myId)));
+  await b.evaluate((host) => { const u = window.__bgUi; u.host = { id: host, name: 'Dice A', game: 'omok' }; u.state = 'waiting'; u.show(); }, idA);
+  await a.evaluate((guest) => { const u = window.__bgUi; u.show(); u.begin('omok', [u.net.myId, guest], u.net.myId, 5); }, idB);
+  await b.waitForFunction(() => window.__bgUi.play?.game === 'omok', null, { timeout: 15000 });
+  const sight = (page, hidden) => page.evaluate((h) => { Object.defineProperty(document, 'hidden', { value: h, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }, hidden);
+  await sight(b, true);
+  await a.waitForSelector('#bg-panel [data-away="1"]', { timeout: 8000 });
+  if (shotDir) await a.screenshot({ path: shotDir + '/away.png' });
+  await sight(b, false);
+  await a.waitForFunction(() => !document.querySelector('#bg-panel [data-away]'), null, { timeout: 8000 });
+  // Away again while it is A's turn: however long, B stays in. A plays; now B's turn runs out (the clock is wound on).
+  await sight(b, true);
+  await a.waitForSelector('#bg-panel [data-away="1"]', { timeout: 8000 });
+  await a.evaluate(() => { window.__bgUi.play.away[1] -= 120000; });
+  await a.waitForTimeout(700);
+  if (await a.evaluate(() => window.__bgUi.play.g.over)) throw new Error('a player away outside their turn was put out');
+  await a.evaluate(() => window.__bgUi.myMove(['o', 7, 7]));
+  await a.waitForFunction(() => window.__bgUi.play.g.turn === 1, null, { timeout: 8000 });
+  await a.evaluate(() => { window.__bgUi.play.turnAt -= 32000; });
+  await a.waitForFunction(() => window.__bgUi.play.g.over && window.__bgUi.play.gone?.[1], null, { timeout: 8000 });
+  if (await a.evaluate(() => window.__bgUi.play.g.board.filter((v) => v >= 0).length) !== 1) throw new Error('a move was played for the player who was away');
+  await b.waitForFunction(() => window.__bgUi.play?.gone?.[1], null, { timeout: 8000 });
+  await sight(b, false);
+  await b.waitForFunction(() => !window.__bgUi.play && !!document.querySelector('#bg-panel .bg-status')?.textContent, null, { timeout: 8000 });
+
+  step = 'mafia: the host leaves and the game goes on under the next player';
+  for (const page of [a, b]) await page.evaluate(() => { const u = window.__bgUi; u.leaveAll(); u.render(); });
   await b.evaluate((host) => { const u = window.__bgUi; u.host = { id: host, name: 'Dice A', game: 'mafia' }; u.state = 'waiting'; u.show(); }, idA);
   await a.evaluate((guest) => { const u = window.__bgUi; u.show(); u.begin('mafia', [u.net.myId, guest, 'm-one', 'm-two'], u.net.myId, 4); }, idB);
   await b.waitForSelector('#bg-panel .mf[data-phase="night"]', { timeout: 15000 });
