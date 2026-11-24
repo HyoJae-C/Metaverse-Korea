@@ -890,7 +890,7 @@ const naksanY = ridgeDistrict ? ridgeGround(ridgeDistrict.ridge, ridgeDistrict.o
 const naksan = createNaksanNear({ district: ridgeDistrict, scene, labels: $('labels'), roadGraph, roads: map.roads, buildings: map.buildings, groundY: naksanY, randomLook });
 // Euljiro 3-ga's neon alley: its signs, wires and people load when you come near (game/neon-alley-near.js).
 const neonAlley = createNeonAlleyNear({ scene, labels: $('labels'), roadGraph, randomLook });
-const cityHall = createCityHallNear({ scene, labels: $('labels'), areas: map.areas, randomLook }); // (the people on Seoul Plaza's lawn: game/city-hall.js)
+const cityHall = createCityHallNear({ scene, labels: $('labels'), areas: map.areas, landmarks: map.landmarks, randomLook, text: t, openNames: () => emblemUi.show() }); // (the people on Seoul Plaza's lawn: game/city-hall.js)
 // Inwangsan and Bugaksan, with the city wall on their crest (the Gyeongbokgung map's
 // `northwall` landmark, core/north-ground.js); the hills load when you come near (game/north-wall-near.js).
 const northY = northGround(map.landmarks);
@@ -6851,7 +6851,7 @@ const boardAct = (b) => (b.board === 'news'
 const stampAct = (it) => (stampBook.has(it.stamp.id)
   ? { key: 'stamp-note:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.open), run: () => pressStamp(it) }
   : { key: 'stamp:' + it.stamp.id, label: '🔖 ' + L(STAMP_TEXT.stamp) + ' · ' + L(it.stamp.name), run: () => pressStamp(it) });
-const npcAct = (n, p) => ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { (n.owner || npcs).greet(n, p.x, p.z); missionEvent('talk', n.name); } });
+const npcAct = (n, p) => n.act?.(p) || ({ key: 'npc:' + n.name, label: '👋 ' + t('npc.hi', { name: n.name }), run: () => { (n.owner || npcs).greet(n, p.x, p.z); missionEvent('talk', n.name); } });
 // Yozi's ice cream sculptures in Seoul Forest (core/park-art.js).
 const sculptureAct = (l) => ({ key: 'icecream:' + l.x + ',' + l.z, label: '🍦 ' + L(ICECREAM_TEXT.look), run: () => { me.play?.('wave'); shop.toast(fmt(L(ICECREAM_TEXT.about), { name: L(ICECREAM[l.model]) })); } });
 // An Information Center's game guide hands out and takes errands too, so

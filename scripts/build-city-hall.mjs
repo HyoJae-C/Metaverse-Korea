@@ -228,9 +228,11 @@ const WALLS = [wallNorth, wallSouth, wallWest];
 gb.roads.push(...ROADS.map((r) => ({ ...r, p: r.p.map(([x, z]) => [r1(x), r1(z)]) })));
 gb.areas.push({ k: 'plaza', p: paving, sp: 1, why: 'Seoul Plaza\'s paving and the walks round the old and the new hall (OSM ways 344644130, 768397716-20) at 37.5%, cut back from the roads' });
 gb.areas.push({ k: 'grass', p: lawn, sp: 1, lawn: 1, oval: 1, why: 'Seoul Plaza\'s oval lawn (OSM way 370019676) at 37.5%; a picnic lawn (lawn: mats and frisbee, main.js streetLawns; oval: inside its outline)' });
-for (const p of trees) gb.areas.push({ k: 'park', p, trees: true, sp: 1, why: 'trees beside the halls (OSM landuse=forest patches) at 37.5%' });
+for (const p of trees) gb.areas.push({ k: 'park', p, trees: 'low', sp: 1, why: 'planting beside the halls (OSM landuse=forest patches) at 37.5%; low (bushes and small trees under 3 m), so nothing stands taller than the old hall (Yozi 2026-11-24)' });
 gb.areas.push({ k: 'stone', p: [[r1(wallX + 0.7), r1(wallN)], [1, r1(wallN)], [1, r1(gate.z + gw / 2 + 5)], [r1(wallX + 0.7), r1(gate.z + gw / 2 + 5)]], sp: 1, approx: 1, why: 'the pavement in front of Daehanmun and the wall' });
 gb.landmarks.push(newHall, oldHall, gate, ...WALLS, wallTrees);
+// The lawn's grass and the Korean peninsula mown into it (Yozi 2026-11-24, from a photo): a picture over the flat green.
+gb.landmarks.push({ type: 'plazalawn', x: r1(lawnAt[0]), z: r1(lawnAt[1]), ry: 0, sp: 1, clear: 0, outline: lawn.map(([x, z]) => [r2(x - r1(lawnAt[0])), r2(z - r1(lawnAt[1]))]), why: 'the lawn\'s grass with the Korean peninsula in lighter grass, north towards the halls (as on the real lawn; its size and place on the lawn are by eye)' });
 gb.areas.push({ k: 'park', p: inPalace, trees: true, sp: 1, approx: 1, why: 'inside Deoksugung\'s wall: trees only (the palace is not built, and nobody can get in)' });
 const lawnS = lawn.reduce((a, b) => (b[1] > a[1] ? b : a));
 gb.landmarks.push({ type: 'sign', x: r1(lawnS[0] - 9), z: r1(lawnS[1] + 3.5), ry: 0, sp: 1,
@@ -251,6 +253,22 @@ gb.pois.push({ kind: 'landmark', x: newHall.x, z: r1(Math.max(...hallFoot.map((p
 gb.pois.push({ kind: 'landmark', x: oldHall.x, z: r1(Math.max(...libFoot.map((p) => p[1])) + 2), name: oldHall.name, sp: 1 });
 gb.pois.push({ kind: 'landmark', x: r1(wallX + 2), z: gate.z, name: N('대한문 (덕수궁)', 'Daehanmun (Deoksugung)', '大漢門 (徳寿宮)', '大汉门 (德寿宫)'), sp: 1 });
 
+// Behind the new hall: the Cheonggyecheon rows (scripts/build-cheonggyecheon.mjs, "cg") put three made-up towers of
+// 89-108 m there, four to five times the new hall (Yozi 2026-11-24: "isn't it about one building, Seoul Shinmun's?").
+// Really the Korea Press Center (Seoul Shinmun) stands right behind the hall, with more offices east of it. So: the
+// Press Center on OSM's outline at 1/4, moved north as far as the hall's own back was (clear of the lane), in place
+// of the block that stood there; the other blocks behind the place come down to 1/4 of real office heights.
+const BEHIND = { x0: 10, x1: 136, z0: 205, z1: 246, maxH: 30, pressH: 21 }; // pressH: 20 floors, about 84 m real (an estimate) / 4
+const pressReal = unclose(osm.elements.find((e) => e.kind === 'press-center').pts.map(local));
+const pressUp = Math.max(...pressReal.map((q) => q[1])) - (laneZ - CH.lane / 2 - 0.5);
+const press = pressReal.map(([x, z]) => [r1(x), r1(z - pressUp)]);
+const pressBox = [Math.min(...press.map((q) => q[0])) - 3, Math.max(...press.map((q) => q[0])) + 3, Math.min(...press.map((q) => q[1])) - 3, Math.max(...press.map((q) => q[1])) + 3];
+const mid = (P) => [P.reduce((t, q) => t + q[0], 0) / P.length, P.reduce((t, q) => t + q[1], 0) / P.length];
+gb.buildings = gb.buildings.filter((b) => !(b.cg && b.p.some(([x, z]) => x > pressBox[0] && x < pressBox[1] && z > pressBox[2] && z < pressBox[3])));
+for (const b of gb.buildings) { const [cx, cz] = mid(b.p); if (b.cg && cx > BEHIND.x0 && cx < BEHIND.x1 && cz > BEHIND.z0 && cz < BEHIND.z1 && b.h > BEHIND.maxH) b.h = BEHIND.maxH; }
+gb.buildings.push({ h: BEHIND.pressH, p: press, sp: 1, approx: 1, n: N('한국프레스센터', 'Korea Press Center', '韓国プレスセンター', '韩国新闻中心'), why: `Korea Press Center (Seoul Shinmun) on OSM's outline at 1/4, ${r1(pressUp)} m north of its real spot (the enlarged hall and the lane behind it stand on the rest); height an estimate (20 floors)` });
+gb.pois.push({ kind: 'landmark', x: r1(mid(press)[0]), z: r1(Math.max(...press.map((q) => q[1])) + 1), name: N('한국프레스센터 (서울신문)', 'Korea Press Center (Seoul Shinmun)', '韓国プレスセンター (ソウル新聞)', '韩国新闻中心 (首尔新闻)'), sp: 1 });
+
 // Base roads (scripts/build-base.mjs) keep out of the place: the real Sogong-ro, Eulji-ro and Sejong-daero 20-gil cross it.
 const keepOut = [[kerbX, laneZ - CH.lane / 2], [laneE + 3, laneZ - CH.lane / 2], [laneE + 3, euljiP[2][1]], [J[0] + 4, sogongZ - W / 2], [kerbX, sogongZ - W / 2]].map(([x, z]) => [r1(x), r1(z)]);
 gb.meta.cityhall = {
@@ -266,7 +284,7 @@ gb.meta.cityhall = {
     daehanmun: r1(Math.hypot(gate.x - gateReal[0], gate.z - gateReal[1])),
   },
   noBase: [keepOut],
-  approx: ['Sogong-ro and Eulji-ro round the enlarged plaza (off their real lines: meta.cityhall.moved)', 'the lane behind the new hall and Mugyo-ro as a lane', 'the new hall\'s height (56 m real: an estimate)', 'Deoksugung is its wall and Daehanmun only: trees inside, the palace is not built; the wall just south of the gate is off its real line'],
+  approx: ['Sogong-ro and Eulji-ro round the enlarged plaza (off their real lines: meta.cityhall.moved)', 'the lane behind the new hall and Mugyo-ro as a lane', 'the new hall\'s height (56 m real: an estimate)', 'the Press Center behind the hall is moved north and its height is an estimate; the two blocks east of it are made up (Cheonggyecheon rows), capped at 30 m', 'Deoksugung is its wall and Daehanmun only: trees inside, the palace is not built; the wall just south of the gate is off its real line'],
 };
 const STRIP_WHY = 'Seoul City Hall and Seoul Plaza';
 const mine = (k) => gb[k].filter((it) => it.sp);

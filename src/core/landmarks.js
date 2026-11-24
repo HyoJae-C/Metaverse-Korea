@@ -227,6 +227,9 @@ const OWN_BUILD = {
     box(g, 4, 0.05, 4, 0, 0.025, 0, C.stone);
     import('./city-hall-model.js').then(({ buildCityHall }) => buildCityHall(g, l));
   },
+  plazalawn(g, l) {
+    import('./city-hall-model.js').then(({ buildPlazaLawn }) => buildPlazaLawn(g, l));
+  },
   cathedralyard(g, l) {
     // Myeongdong Cathedral's hill: the yard's terrace, its walls and the
     // stairs up from Myeongdong-gil (core/cathedral-yard.js, loaded when the

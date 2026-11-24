@@ -470,6 +470,8 @@ export const FR = {
   'hud.bike': 'Véhicule',
   'stairs.noBike': "🚲 Pas de véhicule dans l'escalier. Touche Véhicule pour descendre, puis va à pied.",
   'cheongwadae.note': "🏛️ Cheong Wa Dae est redevenu le bureau du président, un site sécurisé : on ne peut pas y entrer. Admire-le depuis l'extérieur du portail.",
+  'cityhall.desk': "Guichet : changer ou décorer mon nom",
+  'cityhall.clerk': "Guichet de l'hôtel de ville",
   'hyeonchung.note': "🕊️ Cimetière national de Séoul : fondé en 1955 comme cimetière militaire, cimetière national depuis 1965. C'est un lieu de recueillement. Merci de marcher en silence.",
   'bike.offShort': 'Descendre',
   'bike.off': 'Descendre du vélo',

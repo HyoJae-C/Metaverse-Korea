@@ -471,6 +471,8 @@ export const ES = {
   'hud.bike': 'Vehículo',
   'stairs.noBike': "🚲 No se puede bajar las escaleras en vehículo. Toca Vehículo para bajarte y baja a pie.",
   'cheongwadae.note': "🏛️ Cheong Wa Dae vuelve a ser la oficina del presidente, una instalación de seguridad: no se puede entrar. Disfrútala desde fuera de la puerta.",
+  'cityhall.desk': "Ventanilla: cambiar o decorar mi nombre",
+  'cityhall.clerk': "Ventanilla del Ayuntamiento",
   'hyeonchung.note': "🕊️ Cementerio Nacional de Seúl: fundado en 1955 como cementerio militar, cementerio nacional desde 1965. Es un lugar de recuerdo. Camina en silencio, por favor.",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',

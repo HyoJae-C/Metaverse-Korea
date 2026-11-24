@@ -472,6 +472,8 @@ export const KO = {
   'hud.bike': '탈것',
   'stairs.noBike': "🚲 계단은 탈것으로 못 내려가요. 탈것 버튼을 눌러 내린 뒤 걸어 내려가요.",
   'cheongwadae.note': "🏛️ 청와대는 다시 대통령이 일하는 보안 시설이라 들어갈 수 없어요. 정문 밖에서 구경해 주세요.",
+  'cityhall.desk': "민원 창구: 이름 바꾸기·꾸미기",
+  'cityhall.clerk': "시청 민원 창구",
   'hyeonchung.note': "🕊️ 국립서울현충원: 1955년 국군묘지로 만들어졌고 1965년 국립묘지가 됐어요. 추모하는 곳이니 조용히 걸어 주세요.",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',

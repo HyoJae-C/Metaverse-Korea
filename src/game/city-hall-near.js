@@ -4,12 +4,15 @@
 // start (scripts/build-city-hall.mjs).
 const NEAR = 170; // m from the lawn's middle: before you can make anyone out
 
-// game: { scene, labels, areas, roadGraph, randomLook }
+// game: { scene, labels, areas, landmarks, randomLook, text, openNames }
 export function createCityHallNear(game) {
   const lawn = (game.areas || []).find((a) => a.oval && a.lawn);
   if (!lawn) return { update() {}, nearest: () => null, loaded: false };
   const xs = lawn.p.map((q) => q[0]), zs = lawn.p.map((q) => q[1]);
   const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+  // The name desk stands by the old hall's door (under its clock tower), just east of the steps.
+  const old = (game.landmarks || []).find((q) => q.type === 'oldcityhall');
+  const desk = old ? [old.x + (old.tower ? old.tower[0] : 0) + 5.6, old.z + Math.max(...old.outline.map((q) => q[1])) + 0.35] : null;
   let plaza = null, loading = false;
   return {
     // Every frame on the street.
@@ -18,11 +21,13 @@ export function createCityHallNear(game) {
       if (loading || Math.hypot(p.x - cx, p.z - cz) > NEAR) return;
       loading = true;
       import('./city-hall.js')
-        .then(({ createCityHall }) => { plaza = createCityHall({ ...game, lawn: lawn.p, centre: [cx, cz] }); })
+        .then(({ createCityHall }) => { plaza = createCityHall({ ...game, lawn: lawn.p, centre: [cx, cz], desk }); })
         .catch((e) => { loading = false; console.warn('city-hall', e); });
     },
     nearest: (x, z) => plaza?.nearest(x, z) || null, // someone to say hello to
     get loaded() { return !!plaza; },
     get people() { return plaza?.people || []; },
+    get staff() { return plaza?.staff || []; },
+    desk,
   };
 }
