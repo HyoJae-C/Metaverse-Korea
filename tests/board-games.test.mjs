@@ -673,3 +673,11 @@ test('gimbap master: two dice say how many fillings, the shortest time takes the
   assert.ok(c.over);
   assert.equal(c.winner, 2);
 });
+
+test('away from the table: the message that a page went out of sight or came back (Yozi 2026-11-24)', async () => {
+  const { parseBg, bgAway } = await import('../src/core/board-games.js');
+  assert.deepEqual(parseBg(bgAway('g7', true)), { k: 'w', gid: 'g7', away: true });
+  assert.deepEqual(parseBg(bgAway('g7', false)), { k: 'w', gid: 'g7', away: false });
+  assert.equal(parseBg('bg:w:g7:2'), null);
+  assert.equal(parseBg('bg:w:g7'), null);
+});

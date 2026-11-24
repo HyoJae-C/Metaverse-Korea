@@ -21,7 +21,7 @@
 import { suitArt } from './board-card-suits.js';
 import {
   GAMES, TOYS, FACES, MAFIA_TALK, GIMBAP_GOAL, OMOK_SIZE, FRUIT_EMOJI, LADDERS_SIZE, LADDERS_END, LADDERS_ROLLS, laddersOpt, newGame, applyAction,
-  bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, turnOf, parseBg,
+  bgInvite, bgReply, bgGo, bgMove, bgPass, bgClose, bgAway, turnOf, parseBg,
 } from '../core/board-games.js';
 import { localName, getLanguage } from '../core/i18n.js';
 import { T, GAME_NAME, GAME_HOW } from './board-games-text.js';
@@ -66,6 +66,7 @@ const CSS = `
 #bg-panel .bg-btn { border: 0; border-radius: 12px; padding: 10px 14px; background: #eee3cf; }
 #bg-panel .bg-go { background: #ffd36b; }
 #bg-panel [data-act="roll"] { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#bg-panel .bg-away { color: #c2331d; font-weight: 800; }
 #bg-panel .bg-gauge { position: absolute; left: 0; bottom: 0; height: 6px; width: var(--g, 0%); background: linear-gradient(90deg, #5bd17a, #ffb800 60%, #ff5a3c); pointer-events: none; }
 #bg-panel [data-act="roll"].held { transform: scale(.96); }
 #bg-panel [data-act="roll"].held .bg-gauge { height: 100%; opacity: .55; }
@@ -223,6 +224,9 @@ export class BoardGamesUI {
     this.status = '';
     this.timer = 0;
     this.tick = setInterval(() => this.onTick(), 250);
+    // My page out of sight / back in sight: the table is told (see onSight).
+    this.sight = () => this.onSight(document.hidden);
+    document.addEventListener('visibilitychange', this.sight);
     this.makeChat();
   }
 
@@ -281,6 +285,7 @@ export class BoardGamesUI {
     this.close();
     this.chatWatch?.disconnect();
     clearInterval(this.tick);
+    document.removeEventListener('visibilitychange', this.sight);
     this.root.remove();
   }
 
@@ -435,8 +440,14 @@ export class BoardGamesUI {
     }
     const p = this.play;
     if (!p || m.gid !== p.gid) return;
-    if (m.k === 'x' && p.hostId === me) {
+    if (m.k === 'w') {
       const seat = p.ids.indexOf(from);
+      if (seat < 0 || p.gone?.[seat] || p.g.over) return;
+      (p.away ||= [])[seat] = m.away ? performance.now() : 0;
+      this.render();
+    } else if (m.k === 'x' && p.hostId === me) {
+      const seat = p.ids.indexOf(from);
+      if (seat >= 0 && p.away?.[seat]) p.away[seat] = 0; // (a move: they are back)
       if (seat >= 0) this.hostApply(seat, m.act);
     } else if (m.k === 'y' && from === p.hostId && p.hostId !== me) {
       this.applyNow(m.seat, m.act);
@@ -445,6 +456,44 @@ export class BoardGamesUI {
       if (!p.g.over) { p.g.over = true; p.closed = true; }
       this.render();
     }
+  }
+
+  // Away from the table (Yozi 2026-11-24). My page went out of sight (another tab or app, the screen off): the
+  // others are told and see 💤 at my seat. Away is fine while it is not my turn; if my turn's clock runs out
+  // while I am away, the host puts me out (onTick) instead of playing the move for me. The host's own page
+  // keeps the game, and a hidden page may be frozen: a host away for a whole turn's clock ends the game for
+  // everyone (tickAway on the guests' screens), as when the host leaves.
+  onSight(hidden) {
+    const p = this.play, now = performance.now();
+    if (hidden) {
+      this.hiddenAt = p && !p.g.over && p.seat >= 0 && !p.gone?.[p.seat] && this.others(p) ? now : 0;
+      if (this.hiddenAt) this.net.send(bgAway(p.gid, true));
+      return;
+    }
+    const since = this.hiddenAt;
+    this.hiddenAt = 0;
+    if (!since || !p || this.play !== p) return;
+    if (p.gone?.[p.seat] || (p.hostId === this.net.myId && !p.g.over && now - since > TURN_MS)) {
+      // My turn ran out while I was away (or I kept the game and was gone too long): I am out.
+      this.leaveAll();
+      this.status = L(T.awayOut);
+      this.render();
+      return;
+    }
+    if (p.g.over) return;
+    this.net.send(bgAway(p.gid, false));
+    setTimeout(() => { if (this.play === p && !p.g.over && !document.hidden) this.net.send(bgAway(p.gid, false)); }, 1500); // (once more, should the first be lost)
+  }
+
+  // Is anyone else (a person) in this game?
+  others(p) { return p.ids.some((id, s) => id !== BOT && id !== this.net.myId && !p.gone?.[s]); }
+
+  // The host is away and a whole turn's clock has gone by: the game cannot go on without their page.
+  tickAway(now) {
+    const p = this.play;
+    if (!p?.away || p.g.over || p.hostId === this.net.myId) return;
+    const seat = p.ids.indexOf(p.hostId);
+    if (p.away[seat] && !p.gone?.[seat] && now - p.away[seat] > TURN_MS) { p.away[seat] = 0; this.peerGone(p.hostId); }
   }
 
   // Someone left the room (or the game).
@@ -640,6 +689,8 @@ export class BoardGamesUI {
     const p = this.play;
     if (p?.faces?.some((f) => f && f.until < now)) { p.faces = p.faces.map((f) => (f && f.until >= now ? f : null)); if (this.open) this.render(); }
     this.paintClock();
+    this.tickAway(now);
+    if (this.play !== p) return; // (an absent host: the game was closed)
     if (p?.game === 'mafia' && !p.g.over) {
       // The phase's clock: everyone sees it run down, the host moves the game on.
       const left = Math.max(0, Math.ceil(p.g.seconds() - (now - p.phaseAt) / 1000));
@@ -675,6 +726,7 @@ export class BoardGamesUI {
       // A person who lets the clock run out: the move is made for them, so
       // one player stepping away cannot hold the table up.
       if (now - p.turnAt > TURN_MS + 1500) {
+        if (p.away?.[turn]) { p.away[turn] = 0; this.seatLeft(p.ids[turn]); return; } // (away for their whole turn: out of the game)
         if (p.game === 'thief' && g.sel < 0) this.hostApply(turn, ['s', g.botMove(this.rand)]);
         this.moveFor(turn);
       }
@@ -874,6 +926,7 @@ export class BoardGamesUI {
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
+      if (p.away?.[s] && !out && !g.over) { const z = el('span', 'bg-away', ' 💤'); z.dataset.away = String(s); chip.append(z); } // (their page is out of sight)
       const face = p.faces?.[s];
       if (face) chip.append(el('span', 'bg-pop', FACES[face.n]));
       seats.append(chip);

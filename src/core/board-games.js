@@ -1210,6 +1210,7 @@ export class Gimbap {
 //   bg:x:<gid>:<act>            a player's move, to the host
 //   bg:y:<gid>:<seat>:<act>     the host passes a move on, to everyone
 //   bg:c:<gid>                  the host closed the game
+//   bg:w:<gid>:<1|0>            a player's page went out of sight (1) / is back (0), to everyone
 // <act> is an action with dots: o.7.7, f, r, p.5, d, c.7♥.♠, s.3, t.3, e.2, l.
 export const BG_ID = /^[\w-]{1,64}$/;
 export const packAct = (a) => a.map((v) => (v == null ? '' : String(v))).join('.');
@@ -1234,6 +1235,7 @@ export function parseBg(e) {
   if (k === 'x' && p.length === 4 && BG_ID.test(p[2]) && unpackAct(p[3])) return { k, gid: p[2], act: unpackAct(p[3]) };
   if (k === 'y' && p.length === 5 && BG_ID.test(p[2]) && /^\d$/.test(p[3]) && unpackAct(p[4])) return { k, gid: p[2], seat: +p[3], act: unpackAct(p[4]) };
   if (k === 'c' && p.length === 3 && BG_ID.test(p[2])) return { k, gid: p[2] };
+  if (k === 'w' && p.length === 4 && BG_ID.test(p[2]) && /^[01]$/.test(p[3])) return { k, gid: p[2], away: p[3] === '1' };
   return null;
 }
 export const bgInvite = (to, game) => `bg:i:${to}:${game}`;
@@ -1242,6 +1244,11 @@ export const bgGo = (gid, game, seed, ids, opt = 0) => `bg:g:${gid}:${game}:${se
 export const bgMove = (gid, act) => `bg:x:${gid}:${packAct(act)}`;
 export const bgPass = (gid, seat, act) => `bg:y:${gid}:${seat}:${packAct(act)}`;
 export const bgClose = (gid) => `bg:c:${gid}`;
+export const bgAway = (gid, away) => `bg:w:${gid}:${away ? 1 : 0}`;
+// Away from the table (Yozi 2026-11-24): a player whose page is out of sight (another tab, another app, the
+// screen off) may stay away as long as it is not their turn. When their turn comes they have the turn's clock
+// to come back; if it runs out while they are away they are out of the game, and the rest play on.
+// (ui/board-games-ui.js onSight, onTick.)
 
 // Whose turn it is in any game (-1 when nobody's: the bell is a race).
 export const turnOf = (g) => (g.over ? -1 : g.turn);

@@ -164,6 +164,7 @@ export const GAME_HOW = {
 };
 
 export const T = {
+  awayOut: R('Your turn ran out while you were away, so you are out of the game.', '자리를 비운 사이 내 차례 시간이 끝나서 게임에서 나왔어요.', '席を外している間に自分の番の時間が切れたので、ゲームから抜けました。', '你离开期间轮到你的时间用完了，已退出游戏。', 'Tu turno se acabó mientras estabas ausente y saliste de la partida.', 'Giliranmu habis saat kamu pergi, jadi kamu keluar dari permainan.', 'Lượt của bạn đã hết khi bạn vắng mặt nên bạn đã rời ván chơi.', 'आपकी गैरहाज़िरी में आपकी बारी का समय खत्म हो गया, इसलिए आप खेल से बाहर हैं।', 'Ton tour s\'est écoulé pendant ton absence : tu as quitté la partie.', 'หมดเวลาตาของคุณตอนที่คุณไม่อยู่ จึงออกจากเกมแล้ว', 'انتهى وقت دورك وأنت غائب فخرجت من اللعبة.'),
   title: R('Board games', '보드게임', 'ボードゲーム', '桌游', 'Juegos de mesa', 'Permainan papan', 'Board game', 'बोर्ड गेम', 'Jeux de société', 'บอร์ดเกม', 'ألعاب لوحية'),
   pick: R('Pick a game', '게임을 골라요', 'ゲームを選ぼう', '选一个游戏', 'Elige un juego', 'Pilih permainan', 'Chọn trò chơi', 'खेल चुनें', 'Choisis un jeu', 'เลือกเกม', 'اختر لعبة'),
   players: R('{a}-{b} players', '{a}~{b}명', '{a}〜{b}人', '{a}-{b}人', '{a}-{b} jugadores', '{a}-{b} pemain', '{a}-{b} người', '{a}-{b} खिलाड़ी', '{a} à {b} joueurs', '{a}-{b} คน', '{a}-{b} لاعبين'),
