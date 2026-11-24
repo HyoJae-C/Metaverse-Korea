@@ -56,6 +56,8 @@ export const HC = {
   terraceFront: 9, // m in front of the tower's middle where the terrace starts
   stairRun: 3, // m: the terrace's stairs
   stairW: 10,
+  wayW: 7.4, // m: the paved way from the gate to the tower (OSM's, at 50%: 15 m real)
+  star: [16.5, 10.5], // m: the tower's terrace, a five-pointed star: its points and its inner corners from the tower's middle (aerial photo: points 20-32 m real, 10-16 m at 50%)
   forecourt: [30, 9], // m: the paved court in front of the gate (across, deep)
   towerH: 15.5, fountainR: 3.4, fountainH: 8.4, flagH: 11, memorialScale: 0.5, back: { cell: 10, reach: 90, edge: 35, street: 26, ease: 30 }, // m: 31 m at 50%
   gateH: 6.5, // m to the ridge (about 13 m at 50%)
@@ -150,35 +152,24 @@ const gate0 = LP(open(gateB.p)).map(toUV);
 const gateBox0 = [Math.min(...gate0.map((q) => q[0])), Math.min(...gate0.map((q) => q[1])), Math.max(...gate0.map((q) => q[0])), Math.max(...gate0.map((q) => q[1]))];
 const gate = { at: [0, 0], ry: r2(FRONT), w: r1((gateBox0[3] - gateBox0[1]) * S), d: r1((gateBox0[2] - gateBox0[0]) * S), h: HC.gateH };
 const tower = { at: R1([T(tower0)])[0], ry: r2(FRONT), h: HC.towerH, w: r1(Math.hypot(...[0, 1].map((k) => bbox(LP(open(towerB.p)))[k + 2] - bbox(LP(open(towerB.p)))[k])) / Math.SQRT2 * S) };
+// The court as the aerial photo shows it (Naver, Yozi 2026-11-24), not OSM's
+// hole (which takes in the lawns and the wood round the tower too): the
+// paved way from the gate to the tower (OSM's strip, 15 m real) with open lawn
+// either side, a paved fan where the stairs go up, and the tower's terrace:
+// a five-pointed star about the tower, one point to the gate (under the fan).
+// The same on both sides of the line from the gate to the tower.
 const uT = AX * S; // the tower's u
+const uStair0 = uT - HC.terraceFront - HC.stairRun, uStair1 = uT - HC.terraceFront;
+const fanHalf = HC.stairW / 2 + 1.5;
+const starSide = [[-HC.terraceFront, fanHalf], ...[72, 108, 144, 180].map((a, i) => { const r = i % 2 ? HC.star[1] : HC.star[0], q = (a * Math.PI) / 180; return [-Math.cos(q) * r, Math.sin(q) * r]; })];
+const star = [...starSide, ...starSide.slice(0, -1).reverse().map(([u, v]) => [u, -v])].map(([u, v]) => uv(uT + u, v));
 const [fw, fd] = HC.forecourt;
-// The real court is laid out about the line from the gate to the tower; OSM's
-// outline of it is drawn a little askew (its back edge is 2 m off to one side).
-// Here it is made the same on both sides: at every corner's u, half of the
-// outline's width there, either side of the line (Yozi 2026-11-24).
-function mirrored(ring) {
-  const q = ring.map(toUV), sorted = q.map(([u]) => u).sort((m, n) => m - n), groups = [];
-  for (const u of sorted) { const g = groups[groups.length - 1]; if (g && u - g[g.length - 1] < 1.5) g.push(u); else groups.push([u]); } // (corners at nearly the same u are one corner line)
-  const half = (u) => {
-    const vs = [];
-    for (let i = 0; i < q.length; i++) { const a = q[i], b = q[(i + 1) % q.length]; if ((a[0] - u) * (b[0] - u) < 0) vs.push(a[1] + ((u - a[0]) / (b[0] - a[0])) * (b[1] - a[1])); }
-    return vs.length ? (Math.max(...vs) - Math.min(...vs)) / 2 : 0;
-  };
-  const side = [];
-  groups.forEach((g, k) => {
-    const u = g.reduce((m, n) => m + n, 0) / g.length;
-    if (k > 0) side.push([u, half(g[0] - 0.05)]);
-    if (k < groups.length - 1) side.push([u, half(g[g.length - 1] + 0.05)]);
-  });
-  return [...side.map(([u, w]) => uv(u, w)), ...side.reverse().map(([u, w]) => uv(u, -w))];
-}
-const holeSym = simplifyRing(mirrored(hole.map(T)), 0.15);
-const symOff = r1(Math.max(...hole.map(T).map(([x, z]) => polyDist(x, z, holeSym))));
 const courtAll = biggest(polygonClipping.union(
-  [closed(holeSym)],
+  [closed(rect(0, -HC.wayW / 2, uStair0 - 2, HC.wayW / 2))],
+  [closed(rect(uStair0 - 2.5, -fanHalf, uStair1 + 0.5, fanHalf))],
+  [closed(star)],
   [closed(rect(-gate.d / 2 - fd, -fw / 2, gate.d / 2 + 2, fw / 2))],
 ));
-const uStair0 = uT - HC.terraceFront - HC.stairRun, uStair1 = uT - HC.terraceFront;
 const BIG = 400;
 const cut = (poly, u0, u1) => polygonClipping.intersection([closed(poly)], [closed(rect(u0, -BIG, u1, BIG))]);
 const stairRect = rect(uStair0, -HC.stairW / 2, uStair1, HC.stairW / 2);
@@ -490,13 +481,13 @@ const map = {
     source: "scripts/build-hyeonchungwon.mjs, at 1/4 on the real place: the cemetery's outline, roads, paths, stairs, burial plots, water, lawns and buildings from OpenStreetMap (© OpenStreetMap contributors, ODbL; scripts/data/hyeonchungwon-osm.json); the ground from SRTM (scripts/data/hyeonchungwon-dem.json). Roads are game-size wide (3.2 m), buildings game-size high (OSM has no heights).",
     approx: [
       { what: 'Hyeonchungmun, the Memorial Tower and the court between them at 50%', why: `Yozi 2026-11-24: the whole court at 50% about the gate's middle (at 1/4 the tower is 3 m across). The gate is on its real spot; the tower stands ${r1(AX * (S - 1))} m behind its real one, and the court covers ${Math.round(Math.abs(area(courtRing)))} m² (OSM's court at 1/4: ${Math.round(Math.abs(area(hole)))} m²).` },
-      { what: 'court made the same on both sides', why: `OSM's outline of the court is up to ${symOff} m askew of the line from the gate to the tower; the real court is laid out about that line, so each side is half of OSM's width there.` },
+      { what: "the court's shape", why: `From the aerial photo (Naver, Yozi 2026-11-24): the paved way from the gate to the tower (${HC.wayW} m) with open lawn either side, and the tower's terrace as a five-pointed star (points ${HC.star[0]} m, inner corners ${HC.star[1]} m from the tower). OSM has no outline for these (its hole takes in the lawns and the wood); the star's sizes are read off the photo, +-2 m, and the real star is not quite regular.` },
       { what: 'plots cut by the court', why: cutByCourt.map((c) => `${c.name} ${c.was} -> ${c.now} m²`).join(', ') },
       { what: 'forecourt, terrace, stairs, altar', why: "OSM has the court's outline, the gate and the tower only. The paved forecourt in front of the gate, the tower's terrace (1.2 m up), its stairs, the altar and the incense burner are laid out from Yozi's photos." },
       { what: 'gate and tower shapes', why: "From Yozi's photos (the gate: blue-green tiled roof on white columns with two low wings; the tower: a tall granite shaft on a stepped base): outlines and heights are approximate (tower 31 m real, 15.5 m here)." },
       { what: 'Chungseong Fountain', why: `OSM has its spot and the round road; the two basins, the jets and the bronze figures with the flag are from Yozi's photos. ${HC.fountainR * 2} m across (it fills the island inside the round road) and ${HC.fountainH} m high.` },
       { what: 'ridge behind the grounds', why: `The closed land within ${HC.back.reach} m of the hill is drawn as a wooded ridge (SRTM at 1/4, sinking to 0 at its far edge and at the streets). The real ridge is there, but its far slope is homes, not wood; you see it only, nothing stands on it.` },
-      { what: 'wood inside the grounds and the trees round the court', why: 'Every slope that is not a plot, a lawn, a way or a building is drawn as wood (one mesh of treetops; the aerial photo shows wood round the plots, OSM has no outline for it). Two rows of tall trees stand along the court\'s sides, and a tree on every free spot between the ways within 22 m of the tower\'s terrace and of the gate, as in the photos (Yozi 2026-11-24: the wood stands round the tower and round the gate); their spots are made up, and no headstones are drawn within 9 m of the court (22 m there).' },
+      { what: 'wood inside the grounds and the trees round the court', why: 'Every slope that is not a plot, a lawn, a way or a building is drawn as wood (one mesh of treetops; the aerial photo shows wood round the plots, OSM has no outline for it). Round the court the trees are set out from the aerial photo (Naver, Yozi 2026-11-24): close round the tower\'s terrace and at the gate\'s sides, open lawn either side of the paved way with the wood round its rim, clumps along the rim of the lawn before the gate. Each tree\'s spot is made up, and no headstones are drawn within 22 m of the court.' },
       ...memorials.map((m) => ({ what: `memorial: ${m.n.en}`, why: `OSM has its point only. It stands ${m.nudge} m from that point, just off the way, facing the way (its real bearing is not in OSM), at ${HC.memorialScale * 100}% of its real size (estimated from Yozi's photo, not measured); its shape is from the photo.` })),
       { what: 'Taegeukgi', why: `One flag on a ${HC.flagH} m pole beside the forecourt; the real flags stand on the lawn's edge, their exact spots are not in OSM.` },
       { what: 'headstones', why: 'Rows of plain white stones on a 2.6 x 2 m grid inside each OSM plot: the real rows and their number are not in OSM. No names, no single graves.' },

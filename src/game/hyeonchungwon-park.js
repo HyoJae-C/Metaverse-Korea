@@ -52,7 +52,8 @@ export const HC_PARK = {
   moon: [0.33, 0.15, 30], // to the other
   canopy: 4.5, // m: the treetops over the ridge's ground
   wood: { cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
-  belt: { out: [3, 6.8], fill: 3.3, step: 3.4, clear: 9, backClear: 22 }, // (fill: a tree every so many m on all the free ground out to backClear round the tower's terrace and beside the gate, where the real wood closes in: no headstones within backClear there) the trees round the court behind the gate: rows (m out from the court's edge), m apart; no headstones this near the court
+  belt: { fill: 3.1, reach: 24, close: 1.8, lawn: 13, dots: 0.07, clear: 22 }, // the wood round the court: a tree every `fill` m on the free ground out to `reach` m; `close` to the terrace and the gate, `lawn` m back from the paved way (open lawn, with a tree on `dots` of its spots); no headstones within `clear` m of the court
+  rim: { step: 3, deep: 8, clump: 9, share: 0.5, court: 9 }, // the lawn before the gate: trees within `deep` m of its rim, in clumps (`share` of the `clump` m cells), none this near the court
   flowers: 120, // s: the chrysanthemums stay on the altar
 };
 
@@ -694,7 +695,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     const deep = (x, z) => { const i = Math.floor((x - fx0) / c), j = Math.floor((z - fz0) / c); return !!quad(i, j); };
     return { c, w, h, x0: fx0, z0: fz0, at, quad, deep };
   })();
-  // The court's sides behind the gate's front: two rows of tall trees stand there, so no headstones this near.
+  // Round the court behind the gate's front the wood stands, so no headstones this near.
   const beltU = (() => { const n = Math.hypot(l.tower.at[0] - l.gate.at[0], l.tower.at[1] - l.gate.at[1]) || 1; return [(l.tower.at[0] - l.gate.at[0]) / n, (l.tower.at[1] - l.gate.at[1]) / n]; })();
   const courtBox0 = boxOf(l.court);
   const beltAt = (x, z) => (x - l.gate.at[0]) * beltU[0] + (z - l.gate.at[1]) * beltU[1]; // m behind the gate's middle
@@ -702,7 +703,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   const behindGate = (x, z) => beltAt(x, z) > gateFront;
   const stairU = (l.stairs.p[0][0] - l.gate.at[0]) * beltU[0] + (l.stairs.p[0][1] - l.gate.at[1]) * beltU[1];
   const byTerrace = (x, z) => { const u = beltAt(x, z); return u > stairU || u < l.gate.d / 2 + 4; }; // (beside or behind the tower's terrace, or beside Hyeonchungmun: the wood closes in round both)
-  const inBelt = (x, z) => behindGate(x, z) && inBox(x, z, courtBox0, P.belt.backClear) && !inPoly(x, z, l.court) && ringDist(x, z, l.court) < (byTerrace(x, z) ? P.belt.backClear : P.belt.clear);
+  const inBelt = (x, z) => behindGate(x, z) && inBox(x, z, courtBox0, P.belt.clear) && !inPoly(x, z, l.court) && ringDist(x, z, l.court) < P.belt.clear;
   { // the wood's mesh
     const hash = (a, b) => { const s = Math.sin(a * 53.9 + b * 71.3) * 43758.5453; return s - Math.floor(s); };
     const { c, w, h, x0, z0 } = wood, pos = [], col = [];
@@ -818,40 +819,42 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       const sc = 0.85 + rnd() * 0.7;
       (rnd() < 0.72 ? pines : round).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc, sc]);
     }
-    // The belt: two rows of tall trees along the court's sides from the gate's wings back, from the forecourt back.
+    // The wood round the court, as the aerial photo shows it (Naver, Yozi 2026-11-24): it stands close round the tower's
+    // terrace and at the gate's sides; either side of the paved way from the gate to the tower is open lawn with a tree
+    // here and there, and the wood round its rim. A tall tree on every free spot between the ways.
     let belt = 0;
-    for (const [n, out] of P.belt.out.entries()) {
-      const ring = l.court.concat([l.court[0]]);
-      let carry = n * P.belt.step / 2;
-      for (let i = 1; i < ring.length; i++) {
-        const [ax, az] = ring[i - 1], [bx, bz] = ring[i], len = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / len, dz = (bz - az) / len;
-        for (let t = carry; t < len; t += P.belt.step) {
-          for (const sgn of [1, -1]) {
-            const x = ax + dx * t - dz * out * sgn + (rnd() - 0.5) * 0.8, z = az + dz * t + dx * out * sgn + (rnd() - 0.5) * 0.8;
-            if (inPoly(x, z, l.court) || ringDist(x, z, l.court) < out - 0.6 || !behindGate(x, z)) continue;
-            if (flatAt(l, x, z) || inAny(water, x, z, 1) || inAny(builds, x, z, 2) || inAny(solids, x, z, 2) || inAny(mems, x, z, 2.5) || !offWay(x, z, 1.1)) continue;
-            const sc = 1.25 + rnd() * 0.5;
-            ((belt + n) % 5 === 4 ? round : pines).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc * 1.1, sc]);
-            belt++;
-          }
-        }
-        carry = (carry + Math.ceil((len - carry) / P.belt.step) * P.belt.step) - len;
-      }
-    }
-    // Round the tower's terrace and beside the gate the wood closes in: a tall tree on every free spot between the ways, past the two rows.
-    const far = P.belt.out[P.belt.out.length - 1] + P.belt.fill * 0.75, [cx0, cz0, cx1, cz1] = courtBox;
-    for (let gz = cz0 - P.belt.backClear, j = 0; gz <= cz1 + P.belt.backClear; gz += P.belt.fill, j++) {
-      for (let gx = cx0 - P.belt.backClear + (j % 2) * P.belt.fill / 2; gx <= cx1 + P.belt.backClear; gx += P.belt.fill) {
-        const x = gx + (rnd() - 0.5) * 1.2, z = gz + (rnd() - 0.5) * 1.2;
-        if (!behindGate(x, z) || !byTerrace(x, z) || inPoly(x, z, l.court) || !inPoly(x, z, l.foot)) continue;
+    const B = P.belt, [cx0, cz0, cx1, cz1] = courtBox;
+    const cellHash = (a, b) => { const q = Math.sin(a * 91.7 + b * 37.3) * 43758.5453; return q - Math.floor(q); };
+    for (let gz = cz0 - B.reach, j = 0; gz <= cz1 + B.reach; gz += B.fill, j++) {
+      for (let gx = cx0 - B.reach + (j % 2) * B.fill / 2, i = 0; gx <= cx1 + B.reach; gx += B.fill, i++) {
+        const x = gx + (rnd() - 0.5) * 1.3, z = gz + (rnd() - 0.5) * 1.3;
+        if (!behindGate(x, z) || inPoly(x, z, l.court) || !inPoly(x, z, l.foot)) continue;
         const dc = ringDist(x, z, l.court);
-        if (dc < far || dc > P.belt.backClear) continue;
+        if (dc > B.reach) continue;
+        const near = byTerrace(x, z) ? B.close : cellHash(i, j) < B.dots && dc > B.close * 2.5 ? 0 : B.lawn; // (the open lawn beside the way)
+        if (dc < near) continue;
         if (flatAt(l, x, z) || inAny(water, x, z, 1) || inAny(builds, x, z, 2) || inAny(solids, x, z, 2) || inAny(mems, x, z, 2.5) || !offWay(x, z, 1.1)) continue;
         const sc = 1.2 + rnd() * 0.6;
         (belt % 4 === 3 ? round : pines).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc * 1.1, sc]);
         belt++;
       }
     }
+    // The lawn before the gate (겨레얼마당): open in the middle, trees in clumps along its rim (the same photo).
+    let rim = 0;
+    const lawnF = l.flats.find((f) => f.k === 'lawn');
+    if (lawnF) {
+      const [lx0, lz0, lx1, lz1] = boxOf(lawnF.p);
+      for (let gz = lz0, j = 0; gz <= lz1; gz += P.rim.step, j++) for (let gx = lx0, i = 0; gx <= lx1; gx += P.rim.step, i++) {
+        const x = gx + (rnd() - 0.5) * 1.4, z = gz + (rnd() - 0.5) * 1.4;
+        if (!inPoly(x, z, lawnF.p) || cellHash(Math.floor(x / P.rim.clump) + 7, Math.floor(z / P.rim.clump)) > P.rim.share) continue;
+        const de = ringDist(x, z, lawnF.p);
+        if (de < 1.2 || de > P.rim.deep || ringDist(x, z, l.court) < P.rim.court || inAny(solids, x, z, 2.5) || !offWay(x, z, 1.1)) continue;
+        const sc = 1.1 + rnd() * 0.6;
+        (rim % 3 === 2 ? pines : round).push([l.x + x, LY(x, z) - 0.1, l.z + z, rnd() * 6, sc, sc * 1.05, sc]);
+        rim++;
+      }
+    }
+    group.userData.counts.rim = rim;
     group.userData.counts.belt = belt;
     const trunk = new THREE.CylinderGeometry(0.14, 0.2, 2.4, 5, 1, true).translate(0, 1.2, 0);
     const crown = new THREE.IcosahedronGeometry(1.8, 0).translate(0, 3.3, 0);
