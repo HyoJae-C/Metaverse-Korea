@@ -97,12 +97,13 @@ export const PLACES = [
   { name: 'Bongeunsa Temple', lm: 'bongeunsa', r: 80 }, { name: 'Bongeunsa Temple', lm: 'maitreya', r: 30 },
   { name: 'KONEXT', lm: 'konext', r: 70 }, { name: 'KONEXT Aquarium', lm: 'aquarium', r: 25 },
   { name: 'Samseong Bridge', lm: 'samseongbridge', r: 25 },
+  { name: 'Seonjeongneung Royal Tombs', lm: 'royaltomb', r: 40 }, { name: 'Seonjeongneung Royal Tombs', lm: 'jeongjagak', r: 30 }, { name: 'Seonjeongneung Royal Tombs', lm: 'hongsalmun', r: 0 }, { name: 'Seonjeongneung Royal Tombs', lm: 'chamdo', r: 0 }, { name: 'Seonjeongneung Royal Tombs', lm: 'bigak', r: 0 }, { name: 'Seonjeongneung Royal Tombs', lm: 'tombhall', r: 0 }, { name: 'Seonjeongneung Royal Tombs', lm: 'oldginkgo', r: 0 }, // (the grounds: scripts/build-seonjeongneung.mjs)
   { name: 'Seoul Arts Center', lm: 'artscenter', r: 0 }, // (its district is the arts centre)
 ];
 
 // Landmark types that are street furniture or part of a place named above
 // (a bench, a sign, a stretch of wall): no place of their own.
-export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark'];
+export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark', 'tombvisitors', 'woodmass'];
 
 // Rooms that sit on the street big enough to be a place (a park's
 // greenhouse, a museum); shops are named by the "In …" line instead.

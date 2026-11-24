@@ -21,6 +21,7 @@ export const DISTRICT_NAME = {
   yeonnam: { en: 'Yeonnam-dong', ko: '연남동', ja: '延南洞', zh: '延南洞', es: 'Yeonnam-dong', id: 'Yeonnam-dong', ar: 'يونّام دونغ', vi: 'Yeonnam-dong', hi: 'योननाम-दोंग', fr: 'Yeonnam-dong', th: 'ยอนนัม-ดง' },
   gangnam: { en: 'Gangnam Station', ko: '강남역', ja: '江南駅', zh: '江南站', es: 'Estación de Gangnam', id: 'Stasiun Gangnam', ar: 'محطة غانغنام', vi: 'Ga Gangnam', hi: 'गंगनम स्टेशन', fr: 'Gare de Gangnam', th: 'สถานีคังนัม' },
   samseong: { en: 'Samseong-dong', ko: '삼성동', ja: '三成洞', zh: '三成洞', es: 'Samseong-dong', id: 'Samseong-dong', ar: 'سامسونغ دونغ', vi: 'Samseong-dong', hi: 'सामसोंग-दोंग', fr: 'Samseong-dong', th: 'ซัมซอง-ดง' },
+  seonjeongneung: { en: 'Seonjeongneung', ko: '선릉과 정릉', ja: '宣陵・靖陵', zh: '宣陵·靖陵', es: 'Seonjeongneung', id: 'Seonjeongneung', ar: 'سونجونغنيونغ', vi: 'Seonjeongneung', hi: 'सनजंगनेउंग', fr: 'Seonjeongneung', th: 'ซอนจองนึง' },
   yeouido: { en: 'Yeouido', ko: '여의도', ja: '汝矣島', zh: '汝矣岛', es: 'Yeouido', id: 'Yeouido', ar: 'يويدو', vi: 'Yeouido', hi: 'योइदो', fr: 'Yeouido', th: 'ยออีโด' },
   'banpo-jamwon': { en: 'Banpo-Jamwon', ko: '반포·잠원', ja: '盤浦・蚕院', zh: '盘浦·蚕院', es: 'Banpo-Jamwon', id: 'Banpo-Jamwon', ar: 'بانبو-جاموون', vi: 'Banpo-Jamwon', hi: 'बानपो-जामवॉन', fr: 'Banpo-Jamwon', th: 'บันโพ-จัมวอน' },
   mangwon: { en: 'Mangwon-dong', ko: '망원동', ja: '望遠洞', zh: '望远洞', es: 'Mangwon-dong', id: 'Mangwon-dong', ar: 'مانغوون دونغ', vi: 'Mangwon-dong', hi: 'मांगवॉन-दोंग', fr: 'Mangwon-dong', th: 'มังวอน-ดง' },

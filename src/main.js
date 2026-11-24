@@ -276,6 +276,7 @@ import { createOksuWalk } from './game/oksu-walk.js';
 import { createHyeonchungwonWalk } from './game/hyeonchungwon-walk.js';
 import { createMokdongNear } from './game/mokdong-near.js';
 import { createBotanicNear } from './game/botanic-near.js';
+import { createSeonjeongneungNear } from './game/seonjeongneung-near.js';
 import { createGimpoWalk } from './game/gimpo-walk.js';
 import { createGyeongnidanNear } from './game/gyeongnidan-near.js';
 import { createNaksanNear } from './game/naksan-near.js';
@@ -6138,6 +6139,8 @@ const botanic = createBotanicNear({
   look: (pr, store) => ({ ...lookAct(pr), run: () => { shop.store = store; shop.openProduct(pr.product); } }),
   onVisit: (store) => { missionEvent('visit', store.id); }, // (as walking into a shop does)
 });
+// Seonjeongneung's visitors (game/seonjeongneung-near.js): people at the tombs and on the paths.
+const royalTombs = createSeonjeongneungNear({ landmarks: map.landmarks, scene, makeNpc: (name) => makeNpc($('labels'), name) });
 const hanPark = () => (mode === 'store' && interior?.hanRiver ? interior : null) || (mode === 'street' ? hanParks.here() : null); // (`hanRiver`: Modu Land is `themepark`, no shared `park` flag)
 // Han River parks open to the street (stores.json "open"): the park lies on
 // the bank of the world's river. It is still its own room (core/park.js, all
@@ -7521,6 +7524,7 @@ renderer.setAnimationLoop((now) => {
   if (mode === 'street') hanParks.update(dt, p); // Han River parks laid on the street
   if (mode === 'street') nightCarts.update(dt, p); // the night food carts (Myeongdong)
   if (mode === 'street') botanic.update(p, dt); // Seoul Botanic Park: the greenhouse and its gardeners
+  if (mode === 'street') royalTombs.update(p, dt); // Seonjeongneung: its visitors
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
   rocking.tick(dt); // (sat in a rocking chair)
@@ -8100,6 +8104,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     iceRink, // Mokdong Ice Rink (game/ice-rink.js), for tests
     mokdong, // its outside (game/mokdong-near.js)
     botanic, // Seoul Botanic Park's greenhouse (game/botanic-near.js)
+    royalTombs, // Seonjeongneung's visitors (game/seonjeongneung-near.js)
     bumperBoard: () => bumper.board(),
     duck: () => { const duckRide = duckBoats.ride; return duckRide && { x: +duckRide.x.toFixed(2), z: +duckRide.z.toFixed(2), ry: +duckRide.ry.toFixed(2), kx: +duckRide.knock.vx.toFixed(2), kz: +duckRide.knock.vz.toFixed(2) }; },
     duckBoats: () => { const hp = hanPark(), f = hp?.frame; return hp?.ducks?.map((d) => { const [x, z] = f ? f.toWorld(d.g.position.x, d.g.position.z) : [d.g.position.x, d.g.position.z]; return [+x.toFixed(2), +z.toFixed(2), +d.g.rotation.z.toFixed(3)]; }); }, // (a park on the street: in the street's metres)
