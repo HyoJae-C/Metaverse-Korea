@@ -141,10 +141,10 @@ export function createWrapGifts(game) {
     const g = inside(e);
     if (!g) { shop.toast(t('wrap.gone')); return; }
     if (g.item) {
-      if (inventory.has(g.item)) { shop.toast(t('wrap.openHave', { item: nameOf(g) })); return; }
+      if (!inventory.canAdd(g.item)) { shop.toast(t('wrap.openHave', { item: nameOf(g) })); return; }
       bag.take(i);
-      inventory.add(g.item);
-      game.receipts.record(g.item, e.c, e.op, { name: localName(g.name, 'en').slice(0, 40), at: WRAP_AT });
+      inventory.addCopy(g.item); // (a home piece I have already: one more)
+      game.receipts[inventory.count(g.item) > 1 ? 'recordCopy' : 'record'](g.item, e.c, e.op, { name: localName(g.name, 'en').slice(0, 40), at: WRAP_AT });
       game.refreshItems();
     } else if (!bag.swap(i, g.entry)) return;
     game.sfx.pop?.();
@@ -203,8 +203,8 @@ export function createWrapGifts(game) {
     if (!ok || !g) { game.net.sendEmote(wrapMsg('no', c.from, wid, 'no')); return; }
     const item = nameOf(g);
     if (g.item) {
-      if (inventory.has(g.item)) { game.net.sendEmote(wrapMsg('no', c.from, wid, 'have')); shop.toast(t('wrap.mineHave', { item, name: c.name })); return; }
-      inventory.add(g.item);
+      if (!inventory.canAdd(g.item)) { game.net.sendEmote(wrapMsg('no', c.from, wid, 'have')); shop.toast(t('wrap.mineHave', { item, name: c.name })); return; }
+      inventory.addCopy(g.item); // (a home piece I have already: one more)
       for (const ms of [8000, 30000, 90000]) setTimeout(() => game.giftReceipts?.sync(inventory, game.receipts, ITEMS).catch(() => {}), ms); // (the receipt, once the giver's game has told the server)
       game.refreshItems();
     } else if (!bag.add(g.entry)) { game.net.sendEmote(wrapMsg('no', c.from, wid, 'full')); shop.toast(t('wrap.mineFull', { name: c.name })); return; }

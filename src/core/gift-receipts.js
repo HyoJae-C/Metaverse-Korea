@@ -73,8 +73,12 @@ export class GiftReceipts {
     let n = 0;
     for (const r of rows) {
       const it = items[r?.item];
-      if (!(it?.wear || it?.furniture || it?.lamp || it?.finish || it?.plush) || !inventory.has(r.item) || receipts.paid(r.item) > 0 || !(Number(r.price) > 0)) continue;
-      receipts.record(r.item, Number(r.price), String(r.op), null);
+      if (!(it?.wear || it?.furniture || it?.lamp || it?.finish || it?.plush) || !inventory.has(r.item) || !(Number(r.price) > 0)) continue;
+      // A home piece I have more than one of: a receipt for each copy.
+      const have = inventory.count?.(r.item) || 1;
+      if ((receipts.copies?.(r.item) ?? (receipts.paid(r.item) > 0 ? 1 : 0)) >= have || receipts.ops?.(r.item).includes(String(r.op))) continue;
+      if (receipts.paid(r.item) > 0) receipts.recordCopy(r.item, Number(r.price), String(r.op), null);
+      else receipts.record(r.item, Number(r.price), String(r.op), null);
       n++;
     }
     return n;

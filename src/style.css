@@ -934,6 +934,7 @@ button.fr-row { all: unset; box-sizing: border-box; display: flex; align-items: 
 .decor-item.placed::after { content: '✓'; position: absolute; top: 3px; right: 6px; font-size: 12px; font-weight: 800; color: #4f8a3c; }
 .decor-item.locked { opacity: 0.5; }
 .decor-item.locked::after { content: '🔒'; position: absolute; top: 3px; right: 5px; font-size: 11px; }
+.decor-item .decor-n { position: absolute; top: 3px; left: 5px; font-size: 10px; font-weight: 800; color: #4f8a3c; }
 .grow-chip { align-self: flex-start; }
 .grow-panel .grow-now { font-weight: 700; }
 .grow-panel .grow-buy { width: 100%; margin-top: 6px; }

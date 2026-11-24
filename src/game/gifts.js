@@ -173,8 +173,8 @@ export function createGifts(game) {
     if (!ok || !g) { game.net.sendEmote(giftMsg('no', c.from, gid, 'no')); return; }
     const item = localName(g.name, getLanguage());
     if (g.item) {
-      if (inventory.has(g.item)) { game.net.sendEmote(giftMsg('no', c.from, gid, 'have')); shop.toast(fmt(L(GIFT_TEXT.mineHave), { item, name: c.name })); return; }
-      inventory.add(g.item);
+      if (!inventory.canAdd(g.item)) { game.net.sendEmote(giftMsg('no', c.from, gid, 'have')); shop.toast(fmt(L(GIFT_TEXT.mineHave), { item, name: c.name })); return; }
+      inventory.addCopy(g.item); // (a home piece I have already: one more)
       // The receipt: once the giver's game has told the server (a few tries).
       for (const ms of [8000, 30000, 90000]) setTimeout(() => game.giftReceipts?.sync(inventory, game.receipts, ITEMS).catch(() => {}), ms);
       if (!$('wallet-panel').hidden || !$('bag-panel').hidden) refreshItems();

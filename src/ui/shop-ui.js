@@ -130,8 +130,8 @@ export class ShopUI {
   // onGift(product): pick a friend and send it (see ui/gift-ui.js).
   // onRent(product): rent a hanbok, or give it back; rentLeft(product): ms
   // left on this hanbok's rental (0: not renting it).
-  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture }) {
-    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture });
+  constructor({ cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture, howMany, canBuyMore }) {
+    Object.assign(this, { cart, onTryOn, onExit, onTake, onAdopt, owns, onAdd, hasUmbrella, onUmbrella, onOutfit, wearing, onBuy, onSniff, canGift, onGift, giftLabel, canWrap, onWrap, onRent, rentLeft, onFurniture, howMany, canBuyMore });
     this.$ = (id) => document.getElementById(id);
     this.store = null;
     this.$('product-close').onclick = () => this.closeProduct();
@@ -219,13 +219,14 @@ export class ShopUI {
       this.$('product-price').textContent = `🪙 ${outfit.price}`;
       if (!product.desc) this.$('product-desc').textContent = localName(outfit.desc, lang) || '';
     }
-    // Lamps and other things for your home: bought once, then placed with Decorate.
+    // Lamps and other things for your home, then placed with Decorate. Most
+    // can be bought again (a second chair: inventory.canHaveMany).
     const home = product.furniture && ITEMS[product.furniture] ? product.furniture : null;
     if (home) {
-      const mine = this.owns?.(home);
+      const mine = this.owns?.(home), more = mine && this.canBuyMore?.(home);
       ab.hidden = false;
-      ab.disabled = !!mine;
-      ab.textContent = mine ? '✅ ' + L(HOME_HAVE) : `🪙 ${coinsFor(product.price)} · ${L(HOME_BUY)}`;
+      ab.disabled = !!mine && !more;
+      ab.textContent = more ? `🪙 ${coinsFor(product.price)} · ${t('home.buyMore', { n: this.howMany?.(home) || 1 })}` : mine ? '✅ ' + L(HOME_HAVE) : `🪙 ${coinsFor(product.price)} · ${L(HOME_BUY)}`;
       ab.onclick = () => { this.onFurniture?.(product); this.openProduct(product); };
       this.$('product-price').textContent = `🪙 ${coinsFor(product.price)}`;
     }
