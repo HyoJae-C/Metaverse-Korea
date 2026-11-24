@@ -16,9 +16,19 @@ const LOOK = {
 const PAD = [...GIMBAP_BASE, ...GIMBAP_FILLINGS]; // my buttons, always in the same places
 
 const CSS = `
-#bg-panel .gb-dice { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 8px 0; }
-#bg-panel .gb-dice .bg-dice.spin { animation: gb-spin .28s linear infinite; }
-@keyframes gb-spin { to { transform: rotate(360deg); } }
+#bg-panel .gb-dice { display: flex; align-items: center; justify-content: center; gap: 22px; margin: 16px 0 12px; perspective: 520px; }
+#bg-panel .gb-tilt { display: block; width: 46px; height: 46px; transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(-24deg); }
+#bg-panel .gb-cube { display: block; position: relative; width: 46px; height: 46px; transform-style: preserve-3d; transform: rotateX(var(--rx)) rotateY(var(--ry)); }
+#bg-panel .gb-cube.roll { animation: gb-tumble var(--ms) cubic-bezier(.2,.7,.3,1) var(--at) both; }
+#bg-panel .gb-cube b { position: absolute; inset: 0; border-radius: 9px; background: #fffdf6; border: 1px solid #d8c9ad; box-sizing: border-box; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); padding: 6px; backface-visibility: hidden; }
+#bg-panel .gb-cube b i { width: 8px; height: 8px; border-radius: 50%; background: #2b2230; place-self: center; }
+#bg-panel .gb-cube b.one i { background: #e8402a; width: 11px; height: 11px; }
+@keyframes gb-tumble {
+  0% { transform: translateY(-46px) rotateX(calc(var(--rx) + var(--spin))) rotateY(calc(var(--ry) + var(--spin) * 1.5)); }
+  62% { transform: translateY(0) rotateX(calc(var(--rx) + 40deg)) rotateY(calc(var(--ry) + 60deg)); }
+  80% { transform: translateY(-9px) rotateX(calc(var(--rx) - 8deg)) rotateY(calc(var(--ry) - 10deg)); }
+  100% { transform: translateY(0) rotateX(var(--rx)) rotateY(var(--ry)); }
+}
 #bg-panel .gb-sum { font-size: 22px; font-weight: 800; }
 #bg-panel .gb-order { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 8px; border-radius: 12px; background: #1d2b22; margin: 6px 0; }
 #bg-panel .gb-chip { position: relative; border-radius: 8px; background: #fffdf6; text-align: center; font-size: 22px; line-height: 1; padding: 6px 0 9px; overflow: hidden; }
@@ -35,10 +45,34 @@ const CSS = `
 #bg-panel .gb-roll i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
 #bg-panel .gb-times { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; font-size: 13px; color: #6b5d4a; }
 #bg-panel .gb-times .won { color: #c2331d; font-weight: 800; }
-@media (prefers-reduced-motion: reduce) { #bg-panel .gb-dice .bg-dice.spin, #bg-panel .gb-pad.oops { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #bg-panel .gb-cube.roll, #bg-panel .gb-pad.oops { animation: none; } }
 `;
 let styled = false;
 const secs = (ms) => (ms / 1000).toFixed(2);
+
+// A dice as a little cube (CSS 3D, no WebGL). Faces: front 1, back 6, right 3, left 4, top 5, bottom 2.
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+const FACE_AT = { 1: 'translateZ(23px)', 6: 'rotateY(180deg) translateZ(23px)', 3: 'rotateY(90deg) translateZ(23px)', 4: 'rotateY(-90deg) translateZ(23px)', 5: 'rotateX(90deg) translateZ(23px)', 2: 'rotateX(-90deg) translateZ(23px)' };
+const TURN_TO = { 1: [0, 0], 6: [0, 180], 3: [0, -90], 4: [0, 90], 5: [-90, 0], 2: [90, 0] }; // the cube's turn that brings a face to the front
+// n: the face it shows (lands on). roll: { since, ms, power } while it tumbles (it picks the throw up where it is, if the card is drawn again).
+function cube(el, n, roll, k) {
+  const tilt = el('span', 'gb-tilt'), c = el('span', 'gb-cube' + (roll ? ' roll' : ''));
+  for (let f = 1; f <= 6; f++) {
+    const face = el('b', f === 1 ? 'one' : null);
+    face.style.transform = FACE_AT[f];
+    for (let i = 0; i < 9; i++) { const pip = el(PIPS[f].includes(i) ? 'i' : 'span'); face.append(pip); }
+    c.append(face);
+  }
+  c.style.setProperty('--rx', TURN_TO[n][0] + 'deg');
+  c.style.setProperty('--ry', TURN_TO[n][1] + 'deg');
+  if (roll) {
+    c.style.setProperty('--ms', roll.ms + 'ms');
+    c.style.setProperty('--at', -Math.round(roll.since) + 'ms');
+    c.style.setProperty('--spin', (k ? -1 : 1) * (540 + 180 * roll.power) + 'deg'); // (a harder throw turns more; the two turn opposite ways)
+  }
+  tilt.append(c);
+  return tilt;
+}
 
 // What the last round came to, in words (the panel's status line).
 export function saidGimbap(g, names, L) {
@@ -86,7 +120,7 @@ export function drawGimbap(c, { p, act, el, L, ui }) {
   // The two dice, and what they add up to.
   const dice = el('div', 'gb-dice');
   dice.dataset.dice = g.dice && !tumbling ? g.dice.join(',') : '';
-  for (const k of [0, 1]) dice.append(el('span', 'bg-dice' + (tumbling ? ' spin' : ''), g.dice && !tumbling ? '⚀⚁⚂⚃⚄⚅'[g.dice[k] - 1] : '🎲'));
+  for (const k of [0, 1]) dice.append(cube(el, g.dice ? g.dice[k] : k ? 2 : 5, tumbling ? { since: now - p.dice.at, ms: p.dice.ms, power: p.dice.pw ?? 2 } : null, k));
   if (g.dice && !tumbling) dice.append(el('span', 'gb-sum', `= ${g.dice[0] + g.dice[1]}`));
   c.append(dice);
 

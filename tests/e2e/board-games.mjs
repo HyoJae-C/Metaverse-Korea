@@ -266,6 +266,9 @@ try {
       await a.mouse.down();
       await a.waitForTimeout(250);
       await a.mouse.up();
+      // The two dice are little cubes that tumble before they show their faces.
+      await a.waitForSelector('#bg-panel .gb-cube.roll', { timeout: 5000 });
+      if (shotDir) { await a.waitForTimeout(250); await a.screenshot({ path: shotDir + '/gimbap-dice.png' }); }
     }
     await a.waitForSelector('#bg-panel .gb-order', { timeout: 15000 });
     const seq = (await a.getAttribute('#bg-panel .gb-order', 'data-seq')).split(',');

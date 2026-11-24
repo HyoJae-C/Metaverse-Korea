@@ -571,7 +571,7 @@ export class BoardGamesUI {
     } else if (p.game === 'gimbap' && act[0] === 'd') {
       // The dice tumble, then the order shows: every screen starts its own player's clock there.
       const ms = diceMsOf(act[1]);
-      p.dice = { at: performance.now(), ms };
+      p.dice = { at: performance.now(), ms, pw: act[1] == null ? 2 : Math.max(0, Math.min(DICE_POWER, act[1] | 0)) };
       p.gbAt = performance.now() + ms;
       p.gbFirst = 0;
       p.gbBots = null;
