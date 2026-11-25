@@ -7,6 +7,8 @@ import { createCharacter } from './character.js';
 import { randomLook } from '../data/appearance.js';
 import { showBubble } from './players.js';
 import { NAME_ROMAN, PER_ZONE, npcName } from '../data/npc-names.js';
+import { FAR_PEOPLE } from './far-people.js';
+const FAR2 = FAR_PEOPLE * FAR_PEOPLE;
 export { NAME_ROMAN };
 
 // Phrases: Korean, romanization (Revised Romanization), English.
@@ -180,6 +182,17 @@ export class StreetNpcs {
         if (o.tag.style.display !== 'none') { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; }
         continue;
       }
+      // Past FAR_PEOPLE nobody draws them (core/far-people.js): they keep
+      // walking, but their pose, height on the ground and name tag wait
+      // till they're near (every street NPC in the city was posed every
+      // frame, from kilometres away: far-draw-audit, 2026-11-25).
+      const cx = r.position.x - camera.position.x, cz = r.position.z - camera.position.z;
+      const far = cx * cx + cz * cz > FAR2;
+      if (far !== !!o.far) {
+        o.far = far;
+        if (far) { o.tag.style.display = 'none'; if (o.bubble) o.bubble.style.display = 'none'; }
+        else if (this.groundY) r.position.y = this.groundY(r.position.x, r.position.z);
+      }
       let moving = false;
       if (o.talkT > 0) {
         o.talkT -= dt;
@@ -201,11 +214,12 @@ export class StreetNpcs {
           const step = Math.min(d, o.speed * dt);
           r.position.x += (dx / d) * step;
           r.position.z += (dz / d) * step;
-          if (this.groundY) r.position.y = this.groundY(r.position.x, r.position.z);
+          if (this.groundY && !far) r.position.y = this.groundY(r.position.x, r.position.z);
           turnTo(r, Math.atan2(dx, dz), dt);
           moving = true;
         }
       }
+      if (far) continue;
       o.ch.animate(dt, moving ? o.speed / 12 : 0);
       placeLabels(o, camera, width, height);
     }

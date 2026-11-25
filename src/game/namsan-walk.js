@@ -136,6 +136,7 @@ export function createNamsanWalk({ landmarks = [], collision, scene = null, road
         .catch((e) => { loading = false; console.warn('namsan summit', e); });
     },
     get wallGroup() { return wall?.group || null; }, // (main.js FarCull)
+    get summitGroup() { return summit?.group || null; }, // (main.js FarCull: the plaza was drawn even from Magok, 3.5 km off)
     nearHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) < 2.2,
     awayFromHeart: (p) => Math.hypot(p.x - heartSpot[0], p.z - heartSpot[1]) > 4.5,
   };
