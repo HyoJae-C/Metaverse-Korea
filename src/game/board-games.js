@@ -22,8 +22,9 @@ const ASK_MS = 28000; // a little under the host's 30 s wait (ui/board-games-ui.
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:56;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
-// Mafia is being built (special roles, ghost chat and its long table are to come): on the menu only with ?debug until then.
-const MAFIA_OPEN = false;
+// Mafia is on the menu as a trial, marked 🧪 (Yozi 2026-11-26: "merge the mafia test version"); special roles,
+// ghost chat and its long table are still to come. (false: only with ?debug.)
+const MAFIA_OPEN = true;
 const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
 
 export function createBoardGames(game) {

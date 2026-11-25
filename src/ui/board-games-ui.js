@@ -51,6 +51,7 @@ const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell tab
 // Gimbap: a computer takes [a start, then between these two for each press]; the round is called this long after
 // the first finish; and with nobody done, after [this, plus this for each press].
 const GIMBAP_BOT = [900, 620, 980], GIMBAP_GRACE = 1500, GIMBAP_WAIT = [8000, 3000];
+const TRIAL = ['mafia']; // on the menu as a trial (🧪): played by few people yet, more to come (Yozi 2026-11-26)
 const medal = (r) => ['🥇', '🥈', '🥉'][r - 1] || r + '.';
 // Bingo: a computer fills its board this long after the start, and calls no sooner than this after the last call.
 const BINGO_BOT_FILL = 1500, BINGO_BOT_WAIT = 2200;
@@ -847,7 +848,7 @@ export class BoardGamesUI {
       const b = el('button', 'bg-game');
       b.type = 'button';
       b.dataset.game = id;
-      b.append(el('b', null, g.icon), document.createTextNode(L(GAME_NAME[id])), el('small', null, g.min === g.max ? L(T.two) : tt('players', { a: g.min, b: g.max })));
+      b.append(el('b', null, g.icon), document.createTextNode(L(GAME_NAME[id]) + (TRIAL.includes(id) ? ' 🧪' : '')), el('small', null, g.min === g.max ? L(T.two) : tt('players', { a: g.min, b: g.max })));
       b.onclick = () => this.choose(id);
       list.append(b);
     }
