@@ -12,7 +12,7 @@ export const LANGUAGES = [
   { code: 'fr', label: 'Français' },
   { code: 'vi', label: 'Tiếng Việt' },
   { code: 'th', label: 'ไทย' },
-  { code: 'hi', label: 'हिन्दी' },
+  { code: 'pt', label: 'Português' },
   { code: 'ar', label: 'العربية', rtl: true },
   { code: 'en', label: 'English' },
   { code: 'es', label: 'Español' },
@@ -28,7 +28,7 @@ export const PACKS = {
   fr: () => import('./fr.js').then((m) => m.FR),
   vi: () => import('./vi.js').then((m) => m.VI),
   th: () => import('./th.js').then((m) => m.TH),
-  hi: () => import('./hi.js').then((m) => m.HI),
+  pt: () => import('./pt.js').then((m) => m.PT),
   ar: () => import('./ar.js').then((m) => m.AR),
   es: () => import('./es.js').then((m) => m.ES),
 };

@@ -30,16 +30,16 @@ export const jobOf = (store) => (JOB_KINDS.includes(store?.job) ? store.job : nu
 // (others fall back to English, as in the other minigames).
 export const JOB_TEXT = {
   flavor: '알바급구!',
-  help: { en: 'HELP WANTED', ko: '알바 구해요', ja: 'アルバイト急募', zh: '急招兼职', es: 'SE BUSCA PERSONAL', id: 'DICARI PEKERJA', vi: 'CẦN TUYỂN GẤP', hi: 'तुरंत भर्ती', fr: 'ON RECRUTE', th: 'รับสมัครงาน', ar: 'مطلوب موظفون' },
+  help: { en: 'HELP WANTED', ko: '알바 구해요', ja: 'アルバイト急募', zh: '急招兼职', es: 'SE BUSCA PERSONAL', id: 'DICARI PEKERJA', vi: 'CẦN TUYỂN GẤP', fr: 'ON RECRUTE', pt: "PRECISA-SE", th: 'รับสมัครงาน', ar: 'مطلوب موظفون' },
   role: {
-    delivery: { en: 'Delivery rider', ko: '배달 라이더', ja: '配達ライダー', zh: '外卖骑手', es: 'Repartidor/a', id: 'Kurir antar', vi: 'Shipper giao hàng', hi: 'डिलीवरी राइडर', fr: 'Livreur', th: 'ไรเดอร์ส่งของ', ar: 'عامل توصيل' },
-    mart: { en: 'Convenience store clerk', ko: '편의점 점원', ja: 'コンビニ店員', zh: '便利店店员', es: 'Dependiente/a de tienda 24 h', id: 'Pegawai minimarket', vi: 'Nhân viên cửa hàng tiện lợi', hi: 'कन्वीनियंस स्टोर कर्मचारी', fr: 'Employé de supérette', th: 'พนักงานร้านสะดวกซื้อ', ar: 'موظف متجر صغير' },
-    serving: { en: 'Restaurant staff', ko: '식당 직원', ja: '飲食店スタッフ', zh: '餐厅员工', es: 'Personal de restaurante', id: 'Pegawai restoran', vi: 'Nhân viên nhà hàng', hi: 'रेस्टोरेंट कर्मचारी', fr: 'Employé de restaurant', th: 'พนักงานร้านอาหาร', ar: 'موظف مطعم' },
+    delivery: { en: 'Delivery rider', ko: '배달 라이더', ja: '配達ライダー', zh: '外卖骑手', es: 'Repartidor/a', id: 'Kurir antar', vi: 'Shipper giao hàng', fr: 'Livreur', pt: "Entregador", th: 'ไรเดอร์ส่งของ', ar: 'عامل توصيل' },
+    mart: { en: 'Convenience store clerk', ko: '편의점 점원', ja: 'コンビニ店員', zh: '便利店店员', es: 'Dependiente/a de tienda 24 h', id: 'Pegawai minimarket', vi: 'Nhân viên cửa hàng tiện lợi', fr: 'Employé de supérette', pt: "Atendente de loja de conveniência", th: 'พนักงานร้านสะดวกซื้อ', ar: 'موظف متجر صغير' },
+    serving: { en: 'Restaurant staff', ko: '식당 직원', ja: '飲食店スタッフ', zh: '餐厅员工', es: 'Personal de restaurante', id: 'Pegawai restoran', vi: 'Nhân viên nhà hàng', fr: 'Employé de restaurant', pt: "Funcionário de restaurante", th: 'พนักงานร้านอาหาร', ar: 'موظف مطعم' },
   },
-  pay: { en: 'Pay: up to 🪙 {n} a shift', ko: '시급: 한 번에 최대 🪙 {n}', ja: '給料：1回最大 🪙 {n}', zh: '报酬：每班最多 🪙 {n}', es: 'Paga: hasta 🪙 {n} por turno', id: 'Upah: maks 🪙 {n} per sif', vi: 'Lương: tối đa 🪙 {n} mỗi ca', hi: 'वेतन: हर शिफ़्ट 🪙 {n} तक', fr: 'Salaire : jusqu\'à 🪙 {n} par service', th: 'ค่าจ้าง: สูงสุด 🪙 {n} ต่อกะ', ar: 'الأجر: حتى 🪙 {n} للوردية' },
-  away: { en: '{m} m from here', ko: '여기서 {m}m', ja: 'ここから{m}m', zh: '距此{m}米', es: 'a {m} m de aquí', id: '{m} m dari sini', vi: 'cách đây {m} m', hi: 'यहाँ से {m} मी', fr: 'À {m} m d\'ici', th: 'ห่างจากที่นี่ {m} ม.', ar: 'على بعد {m} م' },
-  walkIn: { en: 'Walk in and talk to the staff!', ko: '가게에 들어와서 직원에게 말 걸어 주세요!', ja: 'お店に入ってスタッフに声をかけてね！', zh: '进店和店员说一声吧！', es: '¡Entra y habla con el personal!', id: 'Masuk dan sapa stafnya!', vi: 'Vào quán và nói chuyện với nhân viên nhé!', hi: 'अंदर आइए और स्टाफ़ से बात कीजिए!', fr: 'Entre et parle au personnel !', th: 'เดินเข้าไปคุยกับพนักงานเลย!', ar: 'ادخل وتحدّث إلى الموظفين!' },
-  sticker: { en: 'Part-timer wanted', ko: '아르바이트 구함', ja: 'アルバイト募集', zh: '招兼职', es: 'Se busca', id: 'Lowongan', vi: 'Tuyển nhân viên', hi: 'भर्ती', fr: 'Recherche employé à temps partiel', th: 'รับสมัครพาร์ตไทม์', ar: 'مطلوب' },
+  pay: { en: 'Pay: up to 🪙 {n} a shift', ko: '시급: 한 번에 최대 🪙 {n}', ja: '給料：1回最大 🪙 {n}', zh: '报酬：每班最多 🪙 {n}', es: 'Paga: hasta 🪙 {n} por turno', id: 'Upah: maks 🪙 {n} per sif', vi: 'Lương: tối đa 🪙 {n} mỗi ca', fr: 'Salaire : jusqu\'à 🪙 {n} par service', pt: "Pagamento: até 🪙 {n} por turno", th: 'ค่าจ้าง: สูงสุด 🪙 {n} ต่อกะ', ar: 'الأجر: حتى 🪙 {n} للوردية' },
+  away: { en: '{m} m from here', ko: '여기서 {m}m', ja: 'ここから{m}m', zh: '距此{m}米', es: 'a {m} m de aquí', id: '{m} m dari sini', vi: 'cách đây {m} m', fr: 'À {m} m d\'ici', pt: "A {m} m daqui", th: 'ห่างจากที่นี่ {m} ม.', ar: 'على بعد {m} م' },
+  walkIn: { en: 'Walk in and talk to the staff!', ko: '가게에 들어와서 직원에게 말 걸어 주세요!', ja: 'お店に入ってスタッフに声をかけてね！', zh: '进店和店员说一声吧！', es: '¡Entra y habla con el personal!', id: 'Masuk dan sapa stafnya!', vi: 'Vào quán và nói chuyện với nhân viên nhé!', fr: 'Entre et parle au personnel !', pt: "Entre e fale com a equipe!", th: 'เดินเข้าไปคุยกับพนักงานเลย!', ar: 'ادخل وتحدّث إلى الموظفين!' },
+  sticker: { en: 'Part-timer wanted', ko: '아르바이트 구함', ja: 'アルバイト募集', zh: '招兼职', es: 'Se busca', id: 'Lowongan', vi: 'Tuyển nhân viên', fr: 'Recherche employé à temps partiel', pt: "Procura-se ajudante", th: 'รับสมัครพาร์ตไทม์', ar: 'مطلوب' },
   // Game text.
   work: { en: 'Part-time job: {role}', ko: '알바하기: {role}', ja: 'アルバイト：{role}', zh: '打工：{role}' },
   shiftsLeft: { en: 'Shifts left today: {n}/{all}', ko: '오늘 남은 알바: {n}/{all}', ja: '今日の残りシフト：{n}/{all}', zh: '今天剩余班次：{n}/{all}' },
@@ -82,9 +82,9 @@ export const JOB_TEXT = {
 };
 
 export const DISTRICT_NAMES = {
-  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', vi: 'Seongsu', hi: 'सोंगसू', fr: 'Seongsu', th: 'ซองซู', ar: 'سونغسو' },
-  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', hi: 'होंगदे', fr: 'Hongdae', th: 'ฮงแด', ar: 'هونغدي' },
-  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', hi: 'इटेवॉन', fr: 'Itaewon', th: 'อิแทวอน', ar: 'إيتايوون' },
+  seongsu: { en: 'Seongsu', ko: '성수', ja: '聖水', zh: '圣水', es: 'Seongsu', id: 'Seongsu', vi: 'Seongsu', fr: 'Seongsu', pt: "Seongsu", th: 'ซองซู', ar: 'سونغسو' },
+  hongdae: { en: 'Hongdae', ko: '홍대', ja: '弘大', zh: '弘大', es: 'Hongdae', id: 'Hongdae', vi: 'Hongdae', fr: 'Hongdae', pt: "Hongdae", th: 'ฮงแด', ar: 'هونغدي' },
+  itaewon: { en: 'Itaewon', ko: '이태원', ja: '梨泰院', zh: '梨泰院', es: 'Itaewon', id: 'Itaewon', vi: 'Itaewon', fr: 'Itaewon', pt: "Itaewon", th: 'อิแทวอน', ar: 'إيتايوون' },
 };
 
 const pickL = (o, lang) => (o ? o[lang] || o.en : '');

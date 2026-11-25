@@ -18,7 +18,7 @@ const CHOC = '#7a4a2e';
 
 export { COASTER_NAME }; // (it lives in park-rides.js, so main.js can name the ride without this file)
 // The boarding spot's own sign ("this is where you get on").
-export const BOARD_SIGN = { ko: '타는 곳', en: 'BOARDING', ja: 'のりば', zh: '乘车处', es: 'EMBARQUE', id: 'NAIK DI SINI', vi: 'LÊN TÀU', hi: 'यहाँ से बैठें', fr: 'EMBARQUEMENT', th: 'ทางขึ้น', ar: 'الصعود' };
+export const BOARD_SIGN = { ko: '타는 곳', en: 'BOARDING', ja: 'のりば', zh: '乘车处', es: 'EMBARQUE', id: 'NAIK DI SINI', vi: 'LÊN TÀU', fr: 'EMBARQUEMENT', pt: "EMBARQUE", th: 'ทางขึ้น', ar: 'الصعود' };
 const WALK_UNDER = 1.9; // rail height you can walk under
 
 // The station's sign: Korean as built, or the player's language (translate).

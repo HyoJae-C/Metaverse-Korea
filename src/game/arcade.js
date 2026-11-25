@@ -10,15 +10,15 @@ const INVITE_MS = 28000; // a little under the host's 30 s wait (ui/darts-ui.js)
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const PLACE_SIZE = [1.1, 0.8, 0.62, 0.5]; // m tall: 1st, 2nd, 3rd, 4th
 const DARTS_PLACE = [
-  { en: '🥇 1st!', ko: '🥇 1등!', ja: '🥇 1位！', zh: '🥇 第1名！', es: '🥇 ¡1.º!', id: '🥇 Juara 1!', vi: '🥇 Hạng 1!', hi: '🥇 पहला!', fr: '🥇 1er !', th: '🥇 ที่ 1!', ar: '🥇 الأول!' },
-  { en: '🥈 2nd', ko: '🥈 2등', ja: '🥈 2位', zh: '🥈 第2名', es: '🥈 2.º', id: '🥈 Juara 2', vi: '🥈 Hạng 2', hi: '🥈 दूसरा', fr: '🥈 2e', th: '🥈 ที่ 2', ar: '🥈 الثاني' },
-  { en: '🥉 3rd', ko: '🥉 3등', ja: '🥉 3位', zh: '🥉 第3名', es: '🥉 3.º', id: '🥉 Juara 3', vi: '🥉 Hạng 3', hi: '🥉 तीसरा', fr: '🥉 3e', th: '🥉 ที่ 3', ar: '🥉 الثالث' },
-  { en: '4th', ko: '4등', ja: '4位', zh: '第4名', es: '4.º', id: 'Juara 4', vi: 'Hạng 4', hi: 'चौथा', fr: '4e', th: 'ที่ 4', ar: 'الرابع' },
+  { en: '🥇 1st!', ko: '🥇 1등!', ja: '🥇 1位！', zh: '🥇 第1名！', es: '🥇 ¡1.º!', id: '🥇 Juara 1!', vi: '🥇 Hạng 1!', fr: '🥇 1er !', pt: "🥇 1º!", th: '🥇 ที่ 1!', ar: '🥇 الأول!' },
+  { en: '🥈 2nd', ko: '🥈 2등', ja: '🥈 2位', zh: '🥈 第2名', es: '🥈 2.º', id: '🥈 Juara 2', vi: '🥈 Hạng 2', fr: '🥈 2e', pt: "🥈 2º", th: '🥈 ที่ 2', ar: '🥈 الثاني' },
+  { en: '🥉 3rd', ko: '🥉 3등', ja: '🥉 3位', zh: '🥉 第3名', es: '🥉 3.º', id: '🥉 Juara 3', vi: '🥉 Hạng 3', fr: '🥉 3e', pt: "🥉 3º", th: '🥉 ที่ 3', ar: '🥉 الثالث' },
+  { en: '4th', ko: '4등', ja: '4位', zh: '第4名', es: '4.º', id: 'Juara 4', vi: 'Hạng 4', fr: '4e', pt: "4º", th: 'ที่ 4', ar: 'الرابع' },
 ];
 // Rooftop Rumble is closed for now (server load, Yozi 2026-11-15): the
 // cabinets say so instead of opening. false opens them again.
 export const FIGHT_PAUSED = false;
-const FIGHT_PAUSED_TEXT = { en: '🥊 Rooftop Rumble is paused for a while due to server issues. Back soon!', ko: '🥊 옥상 격투왕은 서버 운영 문제로 당분간 쉬어요. 곧 다시 열게요!', ja: '🥊 格闘ゲームはサーバーの都合でしばらく休止します。まもなく再開！', zh: '🥊 格斗游戏因服务器问题暂停，很快恢复！', es: '🥊 Rooftop Rumble está en pausa por problemas del servidor. ¡Vuelve pronto!', id: '🥊 Rooftop Rumble dihentikan sementara karena masalah server. Segera kembali!', vi: '🥊 Rooftop Rumble tạm dừng do sự cố máy chủ. Sẽ sớm trở lại!', hi: '🥊 सर्वर की समस्या के कारण रूफ़टॉप रंबल कुछ समय के लिए बंद है। जल्द वापस!', fr: '🥊 Rooftop Rumble est en pause pour un problème de serveur. De retour bientôt !', th: '🥊 ศึกดาดฟ้าปิดชั่วคราวเพราะปัญหาเซิร์ฟเวอร์ เร็ว ๆ นี้จะกลับมา!', ar: '🥊 نزال السطح متوقف مؤقتًا بسبب مشكلة في الخادم. سيعود قريبًا!' };
+const FIGHT_PAUSED_TEXT = { en: '🥊 Rooftop Rumble is paused for a while due to server issues. Back soon!', ko: '🥊 옥상 격투왕은 서버 운영 문제로 당분간 쉬어요. 곧 다시 열게요!', ja: '🥊 格闘ゲームはサーバーの都合でしばらく休止します。まもなく再開！', zh: '🥊 格斗游戏因服务器问题暂停，很快恢复！', es: '🥊 Rooftop Rumble está en pausa por problemas del servidor. ¡Vuelve pronto!', id: '🥊 Rooftop Rumble dihentikan sementara karena masalah server. Segera kembali!', vi: '🥊 Rooftop Rumble tạm dừng do sự cố máy chủ. Sẽ sớm trở lại!', fr: '🥊 Rooftop Rumble est en pause pour un problème de serveur. De retour bientôt !', pt: "🥊 O Rooftop Rumble está pausado por um tempo por problemas no servidor. Volta logo!", th: '🥊 ศึกดาดฟ้าปิดชั่วคราวเพราะปัญหาเซิร์ฟเวอร์ เร็ว ๆ นี้จะกลับมา!', ar: '🥊 نزال السطح متوقف مؤقتًا بسبب مشكلة في الخادم. سيعود قريبًا!' };
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
 export function createArcade(game) {
@@ -212,8 +212,7 @@ export function createArcade(game) {
     es: '🥊 ¡{name} te reta a Rooftop Rumble!',
     id: '🥊 {name} menantangmu di Rooftop Rumble!',
     vi: '🥊 {name} thách bạn đấu Rooftop Rumble!',
-    hi: '🥊 {name} ने आपको रूफ़टॉप रंबल की चुनौती दी!',
-    fr: '🥊 {name} te défie à Rooftop Rumble !',
+    fr: '🥊 {name} te défie à Rooftop Rumble !', pt: "🥊 {name} desafia você no Rooftop Rumble!",
     th: '🥊 {name} ท้าคุณสู้ศึกดาดฟ้า!',
     ar: '🥊 {name} يتحداك في نزال السطح!',
   };
@@ -389,8 +388,7 @@ export function createArcade(game) {
     es: '🎳 ¡{name} quiere jugar a los bolos contigo! Ve a una pista para unirte.',
     id: '🎳 {name} mengajakmu main bowling! Pergi ke lintasan untuk ikut.',
     vi: '🎳 {name} rủ bạn chơi bowling! Đến một làn để tham gia.',
-    hi: '🎳 {name} आपके साथ बॉलिंग खेलना चाहते हैं! शामिल होने के लिए किसी लेन पर जाएँ।',
-    fr: '🎳 {name} veut jouer au bowling avec toi ! Va à une piste pour le rejoindre.',
+    fr: '🎳 {name} veut jouer au bowling avec toi ! Va à une piste pour le rejoindre.', pt: "🎳 {name} quer jogar boliche com você! Chegue perto de uma pista para entrar.",
     th: '🎳 {name} ชวนคุณเล่นโบว์ลิ่ง! เดินไปที่เลนเพื่อเข้าร่วม',
     ar: '🎳 {name} يريد أن يلعب البولينغ معك! اذهب إلى مسار لتنضم.',
   };
@@ -402,27 +400,26 @@ export function createArcade(game) {
     es: '🎯 ¡{name} te reta a los dardos!',
     id: '🎯 {name} menantangmu main dart!',
     vi: '🎯 {name} thách bạn chơi phi tiêu!',
-    hi: '🎯 {name} ने आपको डार्ट्स की चुनौती दी!',
-    fr: '🎯 {name} te défie aux fléchettes !',
+    fr: '🎯 {name} te défie aux fléchettes !', pt: "🎯 {name} desafia você nos dardos!",
     th: '🎯 {name} ท้าคุณปาเป้า!',
     ar: '🎯 {name} يتحداك في رمي السهام!',
   };
   const DARTS_ASK = {
-    yes: { en: '🤝 Play', ko: '🤝 같이 하기', ja: '🤝 一緒にやる', zh: '🤝 一起玩', es: '🤝 Jugar', id: '🤝 Main', vi: '🤝 Chơi', hi: '🤝 खेलें', fr: '🤝 Jouer', th: '🤝 เล่นด้วย', ar: '🤝 العب' },
-    no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
+    yes: { en: '🤝 Play', ko: '🤝 같이 하기', ja: '🤝 一緒にやる', zh: '🤝 一起玩', es: '🤝 Jugar', id: '🤝 Main', vi: '🤝 Chơi', fr: '🤝 Jouer', pt: "🤝 Jogar", th: '🤝 เล่นด้วย', ar: '🤝 العب' },
+    no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Không, cảm ơn', fr: 'Non merci', pt: "Não, obrigado", th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
   };
   const ARCADE_OPEN = {
-    batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', hi: 'बैटिंग', fr: 'Cage de batting', th: 'ตู้ตีเบสบอล', ar: 'قفص الضرب' },
-    gallery: { en: 'Balloon shooting', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', hi: 'गुब्बारा निशानेबाज़ी', fr: 'Tir aux ballons', th: 'ยิงลูกโป่ง', ar: 'رماية البالونات' },
-    hauntGallery: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', hi: 'भूत लालटेन', fr: 'Lanterne à fantômes', th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
-    bowling: { en: 'Bowl', ko: '볼링 치기', ja: 'ボウリングする', zh: '打保龄球', es: 'Jugar a los bolos', id: 'Main bowling', vi: 'Chơi bowling', hi: 'बॉलिंग खेलें', fr: 'Jouer au bowling', th: 'เล่นโบว์ลิ่ง', ar: 'العب البولينغ' },
-    climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', hi: 'चढ़ाई करें', fr: 'Grimper', th: 'ปีนผา', ar: 'تسلّق' },
-    aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', hi: 'NEON STRIKE खेलें', fr: 'Jouer à NEON STRIKE', th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
-    watch: { en: 'Watch the screens', ko: '스크린 보기', ja: 'スクリーンを見る', zh: '看大屏幕', es: 'Ver las pantallas', id: 'Tonton layar', vi: 'Xem màn hình', hi: 'स्क्रीन देखें', fr: 'Regarder les écrans', th: 'ดูจอ', ar: 'شاهد الشاشات' },
-    watchN: { en: 'Screen {n}', ko: '{n}번 보기', ja: '{n}番を見る', zh: '看{n}号', es: 'Pantalla {n}', id: 'Layar {n}', vi: 'Màn {n}', hi: 'स्क्रीन {n}', fr: 'Écran {n}', th: 'จอ {n}', ar: 'الشاشة {n}' },
-    unwatch: { en: 'Stop watching', ko: '그만 보기', ja: '見るのをやめる', zh: '不看了', es: 'Dejar de ver', id: 'Berhenti menonton', vi: 'Thôi xem', hi: 'देखना बंद करें', fr: 'Arrêter', th: 'เลิกดู', ar: 'توقف عن المشاهدة' },
-    fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', hi: 'रूफ़टॉप रंबल खेलें', fr: 'Jouer à Rooftop Rumble', th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
-    darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', hi: 'डार्ट्स खेलें', fr: 'Jouer aux fléchettes', th: 'เล่นปาเป้า', ar: 'العب السهام' },
+    batting: { en: 'Batting cage', ko: '야구 연습장', ja: 'バッティング', zh: '棒球击球', es: 'Jaula de bateo', id: 'Latihan memukul', vi: 'Tập đánh bóng', fr: 'Cage de batting', pt: "Gaiola de rebatidas", th: 'ตู้ตีเบสบอล', ar: 'قفص الضرب' },
+    gallery: { en: 'Balloon shooting', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', fr: 'Tir aux ballons', pt: "Tiro aos balões", th: 'ยิงลูกโป่ง', ar: 'رماية البالونات' },
+    hauntGallery: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', fr: 'Lanterne à fantômes', pt: "Lanterna fantasma", th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
+    bowling: { en: 'Bowl', ko: '볼링 치기', ja: 'ボウリングする', zh: '打保龄球', es: 'Jugar a los bolos', id: 'Main bowling', vi: 'Chơi bowling', fr: 'Jouer au bowling', pt: "Jogar boliche", th: 'เล่นโบว์ลิ่ง', ar: 'العب البولينغ' },
+    climbing: { en: 'Climb', ko: '클라이밍', ja: 'ボルダリング', zh: '攀岩', es: 'Escalar', id: 'Memanjat', vi: 'Leo tường', fr: 'Grimper', pt: "Escalar", th: 'ปีนผา', ar: 'تسلّق' },
+    aim: { en: 'Play NEON STRIKE', ko: '네온 스트라이크 하기', ja: 'NEON STRIKEをプレイ', zh: '玩 NEON STRIKE', es: 'Jugar NEON STRIKE', id: 'Main NEON STRIKE', vi: 'Chơi NEON STRIKE', fr: 'Jouer à NEON STRIKE', pt: "Jogar NEON STRIKE", th: 'เล่น NEON STRIKE', ar: 'العب NEON STRIKE' },
+    watch: { en: 'Watch the screens', ko: '스크린 보기', ja: 'スクリーンを見る', zh: '看大屏幕', es: 'Ver las pantallas', id: 'Tonton layar', vi: 'Xem màn hình', fr: 'Regarder les écrans', pt: "Ver as telas", th: 'ดูจอ', ar: 'شاهد الشاشات' },
+    watchN: { en: 'Screen {n}', ko: '{n}번 보기', ja: '{n}番を見る', zh: '看{n}号', es: 'Pantalla {n}', id: 'Layar {n}', vi: 'Màn {n}', fr: 'Écran {n}', pt: "Tela {n}", th: 'จอ {n}', ar: 'الشاشة {n}' },
+    unwatch: { en: 'Stop watching', ko: '그만 보기', ja: '見るのをやめる', zh: '不看了', es: 'Dejar de ver', id: 'Berhenti menonton', vi: 'Thôi xem', fr: 'Arrêter', pt: "Parar de assistir", th: 'เลิกดู', ar: 'توقف عن المشاهدة' },
+    fight: { en: 'Play Rooftop Rumble', ko: '옥상 격투왕 하기', ja: '屋上ランブルで遊ぶ', zh: '玩天台格斗王', es: 'Jugar Rooftop Rumble', id: 'Main Rooftop Rumble', vi: 'Chơi Rooftop Rumble', fr: 'Jouer à Rooftop Rumble', pt: "Jogar Rooftop Rumble", th: 'เล่นศึกดาดฟ้า', ar: 'العب نزال السطح' },
+    darts: { en: 'Play darts', ko: '다트 하기', ja: 'ダーツをする', zh: '玩飞镖', es: 'Jugar a los dardos', id: 'Main dart', vi: 'Chơi phi tiêu', fr: 'Jouer aux fléchettes', pt: "Jogar dardos", th: 'เล่นปาเป้า', ar: 'العب السهام' },
   };
   // A bowling group (invited, or waiting to start) lasts while you are in
   // the alley: walking round with the panel put away keeps it; leaving the

@@ -499,19 +499,19 @@ export const FLUME_POOL = { x: 58.6, z: -19.4, r: 3, sz: 1.4 };
 
 // The rides' names, on the signs over their gates and in their attendants'
 // name tags (the coaster's own sign is coaster-model.js).
-export const COASTER_NAME = { ko: '솜사탕 특급', en: 'Cotton Candy Express', ja: 'わたあめ特急', zh: '棉花糖特快', es: 'Expreso Algodón de Azúcar', id: 'Ekspres Gulali', vi: 'Tàu Lượn Kẹo Bông', hi: 'कॉटन कैंडी एक्सप्रेस', fr: 'Express Barbe à Papa', th: 'สายไหมเอ็กซ์เพรส', ar: 'قطار غزل البنات السريع' };
+export const COASTER_NAME = { ko: '솜사탕 특급', en: 'Cotton Candy Express', ja: 'わたあめ特急', zh: '棉花糖特快', es: 'Expreso Algodón de Azúcar', id: 'Ekspres Gulali', vi: 'Tàu Lượn Kẹo Bông', fr: 'Express Barbe à Papa', pt: "Expresso Algodão-Doce", th: 'สายไหมเอ็กซ์เพรส', ar: 'قطار غزل البنات السريع' };
 export const RIDE_NAME = {
-  carousel: { ko: '사탕 회전목마', en: 'Candy Carousel', ja: 'キャンディ・メリーゴーランド', zh: '糖果旋转木马', es: 'Carrusel de Caramelo', id: 'Komidi Putar Permen', vi: 'Vòng Quay Ngựa Kẹo', hi: 'कैंडी कैरोसेल', fr: 'Carrousel Bonbon', th: 'ม้าหมุนลูกกวาด', ar: 'دوّامة الحلوى' },
-  viking: { ko: '초코 바이킹', en: 'Choco Viking', ja: 'チョコ・バイキング', zh: '巧克力海盗船', es: 'Vikingo de Chocolate', id: 'Viking Cokelat', vi: 'Thuyền Viking Sô-cô-la', hi: 'चॉको वाइकिंग', fr: 'Drakkar Chocolat', th: 'ไวกิ้งช็อกโก', ar: 'سفينة الشوكولاتة' },
-  wheel: { ko: '무지개 관람차', en: 'Rainbow Wheel', ja: 'にじいろ観覧車', zh: '彩虹摩天轮', es: 'Noria Arcoíris', id: 'Bianglala Pelangi', vi: 'Đu Quay Cầu Vồng', hi: 'रेनबो व्हील', fr: 'Grande Roue Arc-en-ciel', th: 'ชิงช้าสวรรค์สายรุ้ง', ar: 'عجلة قوس قزح' },
-  drop: { ko: '롤리팝 드롭', en: 'Lollipop Drop', ja: 'ロリポップ・ドロップ', zh: '棒棒糖跳楼机', es: 'Caída Piruleta', id: 'Menara Lolipop', vi: 'Tháp Rơi Kẹo Mút', hi: 'लॉलीपॉप ड्रॉप', fr: 'Chute Sucette', th: 'ลูกอมดิ่งพสุธา', ar: 'برج المصاصة' },
-  swing: { ko: '슈가 회전그네', en: 'Sugar Swing', ja: 'シュガー・スイング', zh: '砂糖旋转秋千', es: 'Sillas Voladoras de Azúcar', id: 'Ayunan Gula', vi: 'Đu Quay Dây Đường', hi: 'शुगर स्विंग', fr: 'Chaises Volantes Sucre', th: 'ชิงช้าหมุนน้ำตาล', ar: 'أرجوحة السكر' },
-  teacups: { ko: '찻잔 파티', en: 'Teacup Party', ja: 'ティーカップ・パーティー', zh: '茶杯派对', es: 'Fiesta de las Tazas', id: 'Pesta Cangkir Teh', vi: 'Tiệc Tách Trà', hi: 'टीकप पार्टी', fr: 'Fête des Tasses', th: 'ปาร์ตี้ถ้วยชา', ar: 'حفلة فناجين الشاي' },
-  train: { ko: '캔디 기차', en: 'Candy Train', ja: 'キャンディ・トレイン', zh: '糖果小火车', es: 'Tren de Caramelo', id: 'Kereta Permen', vi: 'Tàu Hỏa Kẹo', hi: 'कैंडी ट्रेन', fr: 'Petit Train Bonbon', th: 'รถไฟลูกกวาด', ar: 'قطار الحلوى' },
-  gyro: { ko: '마카롱 자이로스윙', en: 'Macaron Gyro Swing', ja: 'マカロン・ジャイロスイング', zh: '马卡龙大摆锤', es: 'Péndulo Macarón', id: 'Ayunan Giro Makaron', vi: 'Đu Quay Con Lắc Macaron', hi: 'मैकरॉन जाइरो स्विंग', fr: 'Pendule Macaron', th: 'ไจโรสวิงมาการง', ar: 'بندول الماكرون' },
-  flume: { ko: '젤리 후룸라이드', en: 'Jelly Flume', ja: 'ゼリー・フルーム', zh: '果冻激流勇进', es: 'Troncos de Gelatina', id: 'Arung Jeram Jeli', vi: 'Thuyền Gỗ Thạch', hi: 'जेली फ्लूम', fr: 'Bûches Gelée', th: 'ล่องแก่งเยลลี่', ar: 'قناة الجيلي المائية' },
-  maze: { ko: '거울 미로', en: 'Mirror Maze', ja: 'ミラー迷路', zh: '镜子迷宫', es: 'Laberinto de Espejos', id: 'Labirin Cermin', vi: 'Mê Cung Gương', hi: 'शीशों की भूलभुलैया', fr: 'Labyrinthe des Miroirs', th: 'เขาวงกตกระจก', ar: 'متاهة المرايا' },
-  bumper: { ko: '젤리 범퍼카', en: 'Jelly Bumper Cars', ja: 'ゼリー・バンパーカー', zh: '果冻碰碰车', es: 'Autos Chocones de Gominola', id: 'Bom-bom Car Jeli', vi: 'Xe Điện Đụng Thạch', hi: 'जेली बंपर कार', fr: 'Autos Tamponneuses Gelée', th: 'รถบั๊มเยลลี่', ar: 'سيارات الجيلي المتصادمة' },
+  carousel: { ko: '사탕 회전목마', en: 'Candy Carousel', ja: 'キャンディ・メリーゴーランド', zh: '糖果旋转木马', es: 'Carrusel de Caramelo', id: 'Komidi Putar Permen', vi: 'Vòng Quay Ngựa Kẹo', fr: 'Carrousel Bonbon', pt: "Carrossel de Doces", th: 'ม้าหมุนลูกกวาด', ar: 'دوّامة الحلوى' },
+  viking: { ko: '초코 바이킹', en: 'Choco Viking', ja: 'チョコ・バイキング', zh: '巧克力海盗船', es: 'Vikingo de Chocolate', id: 'Viking Cokelat', vi: 'Thuyền Viking Sô-cô-la', fr: 'Drakkar Chocolat', pt: "Viking de Chocolate", th: 'ไวกิ้งช็อกโก', ar: 'سفينة الشوكولاتة' },
+  wheel: { ko: '무지개 관람차', en: 'Rainbow Wheel', ja: 'にじいろ観覧車', zh: '彩虹摩天轮', es: 'Noria Arcoíris', id: 'Bianglala Pelangi', vi: 'Đu Quay Cầu Vồng', fr: 'Grande Roue Arc-en-ciel', pt: "Roda Arco-Íris", th: 'ชิงช้าสวรรค์สายรุ้ง', ar: 'عجلة قوس قزح' },
+  drop: { ko: '롤리팝 드롭', en: 'Lollipop Drop', ja: 'ロリポップ・ドロップ', zh: '棒棒糖跳楼机', es: 'Caída Piruleta', id: 'Menara Lolipop', vi: 'Tháp Rơi Kẹo Mút', fr: 'Chute Sucette', pt: "Torre Pirulito", th: 'ลูกอมดิ่งพสุธา', ar: 'برج المصاصة' },
+  swing: { ko: '슈가 회전그네', en: 'Sugar Swing', ja: 'シュガー・スイング', zh: '砂糖旋转秋千', es: 'Sillas Voladoras de Azúcar', id: 'Ayunan Gula', vi: 'Đu Quay Dây Đường', fr: 'Chaises Volantes Sucre', pt: "Balanço de Açúcar", th: 'ชิงช้าหมุนน้ำตาล', ar: 'أرجوحة السكر' },
+  teacups: { ko: '찻잔 파티', en: 'Teacup Party', ja: 'ティーカップ・パーティー', zh: '茶杯派对', es: 'Fiesta de las Tazas', id: 'Pesta Cangkir Teh', vi: 'Tiệc Tách Trà', fr: 'Fête des Tasses', pt: "Festa das Xícaras", th: 'ปาร์ตี้ถ้วยชา', ar: 'حفلة فناجين الشاي' },
+  train: { ko: '캔디 기차', en: 'Candy Train', ja: 'キャンディ・トレイン', zh: '糖果小火车', es: 'Tren de Caramelo', id: 'Kereta Permen', vi: 'Tàu Hỏa Kẹo', fr: 'Petit Train Bonbon', pt: "Trem dos Doces", th: 'รถไฟลูกกวาด', ar: 'قطار الحلوى' },
+  gyro: { ko: '마카롱 자이로스윙', en: 'Macaron Gyro Swing', ja: 'マカロン・ジャイロスイング', zh: '马卡龙大摆锤', es: 'Péndulo Macarón', id: 'Ayunan Giro Makaron', vi: 'Đu Quay Con Lắc Macaron', fr: 'Pendule Macaron', pt: "Gyro Swing Macaron", th: 'ไจโรสวิงมาการง', ar: 'بندول الماكرون' },
+  flume: { ko: '젤리 후룸라이드', en: 'Jelly Flume', ja: 'ゼリー・フルーム', zh: '果冻激流勇进', es: 'Troncos de Gelatina', id: 'Arung Jeram Jeli', vi: 'Thuyền Gỗ Thạch', fr: 'Bûches Gelée', pt: "Jelly Flume", th: 'ล่องแก่งเยลลี่', ar: 'قناة الجيلي المائية' },
+  maze: { ko: '거울 미로', en: 'Mirror Maze', ja: 'ミラー迷路', zh: '镜子迷宫', es: 'Laberinto de Espejos', id: 'Labirin Cermin', vi: 'Mê Cung Gương', fr: 'Labyrinthe des Miroirs', pt: "Labirinto de Espelhos", th: 'เขาวงกตกระจก', ar: 'متاهة المرايا' },
+  bumper: { ko: '젤리 범퍼카', en: 'Jelly Bumper Cars', ja: 'ゼリー・バンパーカー', zh: '果冻碰碰车', es: 'Autos Chocones de Gominola', id: 'Bom-bom Car Jeli', vi: 'Xe Điện Đụng Thạch', fr: 'Autos Tamponneuses Gelée', pt: "Bate-Bate de Gelatina", th: 'รถบั๊มเยลลี่', ar: 'سيارات الجيلي المتصادمة' },
   coaster: COASTER_NAME,
 };
 // The food trucks on the lane from the plaza to the bumper cars, serving
@@ -519,13 +519,13 @@ export const RIDE_NAME = {
 // one snack, eaten from the hand (held 'food:<snack>'). Prices in won.
 export const FOOD_TRUCKS = [
   { id: 'icecream', x: 12.5, z: 8.2, color: '#8fd0ff', awning: '#fffaf3', price: 3000,
-    name: { ko: '아이스크림 콘', en: 'Ice Cream Cone', ja: 'ソフトクリーム', zh: '冰淇淋甜筒', es: 'Cono de helado', id: 'Es Krim Cone', vi: 'Kem ốc quế', hi: 'आइसक्रीम कोन', fr: 'Cornet de glace', th: 'ไอศกรีมโคน', ar: 'آيس كريم بالبسكويت' },
+    name: { ko: '아이스크림 콘', en: 'Ice Cream Cone', ja: 'ソフトクリーム', zh: '冰淇淋甜筒', es: 'Cono de helado', id: 'Es Krim Cone', vi: 'Kem ốc quế', fr: 'Cornet de glace', pt: "Casquinha de sorvete", th: 'ไอศกรีมโคน', ar: 'آيس كريم بالبسكويت' },
     truck: { ko: '말랑 아이스크림', en: 'Mallang Ice Cream', ja: 'マルラン・アイス', zh: '软软冰淇淋' } },
   { id: 'churro', x: 18.5, z: 9.7, color: '#ffad6b', awning: '#ff5a5f', price: 3500,
-    name: { ko: '츄러스', en: 'Churros', ja: 'チュロス', zh: '吉事果', es: 'Churros', id: 'Churros', vi: 'Churros', hi: 'चुरोस', fr: 'Churros', th: 'ชูโรส', ar: 'تشوروس' },
+    name: { ko: '츄러스', en: 'Churros', ja: 'チュロス', zh: '吉事果', es: 'Churros', id: 'Churros', vi: 'Churros', fr: 'Churros', pt: "Churros", th: 'ชูโรส', ar: 'تشوروس' },
     truck: { ko: '바삭 츄러스', en: 'Basak Churros', ja: 'バサク・チュロス', zh: '酥脆吉事果' } },
   { id: 'hotdog', x: 24.5, z: 11, color: '#ffe27a', awning: '#ff5f9e', price: 4000,
-    name: { ko: '핫도그', en: 'Hot Dog', ja: 'ホットドッグ', zh: '热狗', es: 'Perrito caliente', id: 'Hot Dog', vi: 'Xúc xích kẹp bánh mì', hi: 'हॉट डॉग', fr: 'Hot-dog', th: 'ฮอทดอก', ar: 'هوت دوج' },
+    name: { ko: '핫도그', en: 'Hot Dog', ja: 'ホットドッグ', zh: '热狗', es: 'Perrito caliente', id: 'Hot Dog', vi: 'Xúc xích kẹp bánh mì', fr: 'Hot-dog', pt: "Cachorro-quente", th: 'ฮอทดอก', ar: 'هوت دوج' },
     truck: { ko: '통통 핫도그', en: 'Tongtong Hot Dogs', ja: 'トントン・ホットドッグ', zh: '胖胖热狗' } },
 ];
 export const FOOD_TRUCK = { w: 4, d: 2.2 }; // the body, long side along x

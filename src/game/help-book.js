@@ -9,7 +9,7 @@ import { s2t } from '../i18n/hant.js';
 
 // Vite makes one small file per language from this pattern.
 const loadBook = (code) => import(`../help/${code}.js`).then((m) => m.HELP);
-export const HELP_LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'fr', 'id', 'vi', 'th', 'hi', 'ar'];
+export const HELP_LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'fr', 'id', 'vi', 'th', 'ar', 'pt'];
 export const helpFileFor = (lang) => {
   const code = lang === 'zht' ? 'zh' : lang;
   return HELP_LANGS.includes(code) ? code : 'en';

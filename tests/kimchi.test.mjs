@@ -8,7 +8,7 @@ import {
 import { medalFor } from '../src/core/grill-game.js';
 import { KT, KIMCHI_LINES } from '../src/ui/kimchi-text.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar'];
 const seq = (vals) => { let i = 0; return () => vals[i++ % vals.length]; };
 
 test('three cabbages: one perfect, one so-so, one poor', () => {
