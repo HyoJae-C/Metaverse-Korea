@@ -532,6 +532,11 @@ body.on-ride .nametag, body.on-ride .bubble { display: none !important; }
 .map-row-text { display: grid; min-width: 0; }
 .map-row-text strong { font-size: 14px; }
 .map-row-text small { color: var(--ink-soft); }
+.map-row-line { display: flex; gap: 6px; }
+.map-row-line > .map-row { flex: 1; min-width: 0; }
+.map-fav { flex: none; width: 42px; border-radius: 14px; background: #fff; font-size: 20px; color: #c4b49a; }
+.map-fav.on { color: #f0a800; }
+.map-fav-here { justify-self: start; border-radius: 999px; padding: 6px 12px; background: #fff3c4; color: #7a4b00; font-weight: 800; font-size: 13px; }
 @media (max-width: 700px) {
   .map-card { display: flex; flex-direction: column; }
   .map-card > .map-controls { position: static; padding: 0 14px 8px; }
