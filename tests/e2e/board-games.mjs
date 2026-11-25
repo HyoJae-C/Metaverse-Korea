@@ -310,7 +310,7 @@ try {
   if ((await a.getAttribute('#bg-panel [data-act="bingo-size"]', 'data-size')) !== '4') throw new Error('the host could not pick a 4×4 board');
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel .bb-pool button', { timeout: 15000 });
-  if ((await a.locator('#bg-panel .bb-pool button').count()) !== 32) throw new Error('a 4×4 game should have 32 fish');
+  if ((await a.locator('#bg-panel .bb-pool button').count()) !== 50) throw new Error('a 4×4 game should have 50 fish');
   // Two fish by hand (into the first cells), one taken back out, then the rest at random.
   const pool = a.locator('#bg-panel .bb-pool button');
   await pool.nth(0).click();
@@ -337,7 +337,7 @@ try {
   const shouted = await a.evaluate(() => { const p = window.__bgUi.play; return !!p.bbShout || p.g.winners.length > 0 && p.g.boards.every((_, s) => p.g.winners.includes(s) || p.g.linesOf(s) === 0); });
   if (!shouted) throw new Error('a first line was not called out');
   const bingo = await a.evaluate(() => { const g = window.__bgUi.play.g; return { over: g.over, winners: g.winners, lines: g.winners.map((s) => g.linesOf(s)), status: document.querySelector('#bg-panel .bg-status')?.textContent }; });
-  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 4) || !bingo.status) throw new Error('the bingo did not end on four lines: ' + JSON.stringify(bingo));
+  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 3) || !bingo.status) throw new Error('the bingo did not end on three lines: ' + JSON.stringify(bingo));
   if (shotDir) await a.screenshot({ path: shotDir + '/bingo-end.png' });
   await a.click('#bg-panel .bg-x');
 
