@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { inPolygon, toGame } from '../src/core/seoul-grid.js';
 import { wallNear } from '../src/core/wall-screen.js';
-import { OSM, ROADS, EXITS, GROUPS, WHY, HAKDONG, GANGNAM_DAERO, osmStreet } from '../scripts/build-gangnam.mjs';
+import { OSM, ROADS, EXITS, GROUPS, WHY, NEW_SHOPS, HAKDONG, GANGNAM_DAERO, osmStreet } from '../scripts/build-gangnam.mjs';
 import { lineDist, nearestOn, lengthOf } from '../scripts/street-rows.mjs';
 
 // Gangnam Station to Nonhyeon Station (scripts/build-gangnam.mjs): Gangnam-daero
@@ -61,8 +61,8 @@ test('Gangnam Station (Line 2): exits 10 and 11 on the pavement near the real on
 test('the shops moved here, none made new: clinics, clothes, the appliance mart and four furniture showrooms', () => {
   const moved = GROUPS.flatMap(([, ids]) => ids).filter((id) => id !== 'info-gangnam');
   assert.deepEqual(here.map((s) => s.id).sort(), [...moved, 'info-gangnam'].sort());
-  assert.equal(moved.length, 10);
-  for (const id of moved) assert.match(stores.find((s) => s.id === id).why, /Moved here|moved here/, id);
+  assert.equal(moved.length, 14);
+  for (const id of moved.filter((m) => !NEW_SHOPS.includes(m))) assert.match(stores.find((s) => s.id === id).why, /Moved here|moved here/, id);
   assert.deepEqual(Object.keys(WHY).sort(), [...moved].sort());
   // every shop's spot: on the pavement in front of a building, off the streets
   for (const s of here) {
@@ -78,13 +78,14 @@ test('the shops moved here, none made new: clinics, clothes, the appliance mart 
 test('shops gather in three places, with quiet buildings between', () => {
   const at = (id) => local(stores.find((s) => s.id === id).at);
   for (const id of ['wide-pants', 'tteugae-knit', 'cap-yard', 'teheran-appliances']) assert.ok(Math.hypot(...at(id)) < 50, `${id} by the crossroads`);
+  for (const id of ['fullpower-gaming', 'fullpower-gaming-room']) assert.ok(Math.hypot(at(id)[0] - at('teheran-appliances')[0], at(id)[1] - at('teheran-appliances')[1]) < 45, `${id} by the appliance mart`);
   const sinnonhyeon = nearestOn(local(OSM.exits.sinnonhyeon['3']), GANGNAM_DAERO).at;
   for (const id of ['bitna-clinic', 'saebom-clinic']) {
     const q = at(id);
     assert.ok(Math.hypot(q[0] - sinnonhyeon[0], q[1] - sinnonhyeon[1]) < 70 && lineDist(q, GANGNAM_DAERO) < 20, `${id} on the avenue by Sinnonhyeon`);
   }
   // the furniture showrooms: on Hakdong-ro, the real Nonhyeon furniture street, east of Gangnam-daero
-  for (const id of ['saebyeok-living', 'saebyeok-bedroom', 'kkotjam-beds', 'danjang-dressroom']) assert.ok(lineDist(at(id), HAKDONG) < 12, `${id} on Hakdong-ro`);
+  for (const id of ['saebyeok-living', 'saebyeok-bedroom', 'kkotjam-beds', 'danjang-dressroom', 'white-mood-living', 'white-mood-interior']) assert.ok(lineDist(at(id), HAKDONG) < 12, `${id} on Hakdong-ro`);
   assert.ok(map.buildings.length - here.length > 40, 'most buildings have no shop');
 });
 

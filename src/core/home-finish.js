@@ -39,6 +39,18 @@ export const FINISHES = [
   [D, 'door-white', '🚪', ['#f6f5f1', '#2a2a2e'], 90000, { en: 'White minimal door', ko: '화이트 미니멀 문', ja: '白いミニマルな扉', zh: '白色极简门' }],
   [D, 'door-arch', '🚪', ['#c89a66', '#c9a227'], 150000, { en: 'Arched oak door', ko: '아치 원목문', ja: 'アーチ型の無垢の扉', zh: '拱形实木门' }],
   [F, 'floor-marble', '🤍', ['#f0eeea', '#a8a6a4'], 140000, { en: 'Marble tiles', ko: '대리석 타일', ja: '大理石のタイル', zh: '大理石地砖' }],
+  // --- 화이트 무드 (Gangnam, Yozi 2026-11-25: white, a little dearer) ---
+  [W, 'wall-wainscot', '🤍', ['#f7f5f0', '#e4dfd6'], 90000, { en: 'White wainscot panels', ko: '화이트 웨인스코팅 패널', ja: '白い腰壁パネル', zh: '白色护墙板' }],
+  [W, 'wall-whitebrick', '🧱', ['#f4f2ee', '#dcd8d0'], 160000, { en: 'White painted brick', ko: '화이트 벽돌 벽', ja: '白いレンガの壁', zh: '白色砖墙' }],
+  [F, 'floor-whiteoak', '🪵', ['#e8dcc6', '#d2c2a4'], 140000, { en: 'White oak boards', ko: '화이트 오크 마루', ja: 'ホワイトオークの床', zh: '白橡木地板' }],
+  [F, 'floor-whitehex', '⬡', ['#f6f5f2', '#d8d4cc'], 200000, { en: 'White hexagon tiles', ko: '화이트 육각 타일', ja: '白い六角タイル', zh: '白色六角砖' }],
+  [D, 'door-glass-arch', '🚪', ['#f6f5f1', '#d8e8ee'], 160000, { en: 'White arched glass door', ko: '화이트 아치 유리문', ja: '白いアーチのガラス扉', zh: '白色拱形玻璃门' }],
+  // --- 게이밍 (Gangnam): black with cyan neon ---
+  [W, 'wall-hexpanel', '⬢', ['#23252c', '#2ee6ff'], 100000, { en: 'Black hexagon sound panels', ko: '블랙 육각 흡음 패널', ja: '黒い六角吸音パネル', zh: '黑色六角吸音板' }],
+  [W, 'wall-neonline', '⚡', ['#1c1d22', '#2ee6ff'], 150000, { en: 'Neon line wall', ko: '네온 라인 벽', ja: 'ネオンラインの壁', zh: '霓虹线条墙' }],
+  [F, 'floor-carbon', '⬛', ['#22242a', '#34373f'], 100000, { en: 'Carbon tiles', ko: '카본 타일', ja: 'カーボンタイル', zh: '碳纤维地砖' }],
+  [F, 'floor-carpettile', '🔲', ['#5a5d66', '#4a4d55'], 80000, { en: 'Grey carpet tiles', ko: '회색 카펫 타일', ja: 'グレーのタイルカーペット', zh: '灰色方块地毯' }],
+  [D, 'door-neon', '🚪', ['#1c1d22', '#2ee6ff'], 130000, { en: 'Black door with neon edge', ko: '네온 테두리 블랙 문', ja: 'ネオン縁の黒い扉', zh: '霓虹边黑门' }],
 ].map(([kind, id, emoji, swatch, price, name]) => ({ kind, id, emoji, swatch, price, name }));
 
 export const finishById = (id) => FINISHES.find((f) => f.id === id) || null;

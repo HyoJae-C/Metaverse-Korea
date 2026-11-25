@@ -11,15 +11,19 @@ import { ITEMS } from '../src/core/inventory.js';
 import { finishMsg, parseVisitMsg } from '../src/game/home-visits.js';
 
 const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-const SHOPS = ['hanok-jimulpo', 'eulji-retro-wall', 'saebyeok-interior'];
+const EULJI = ['hanok-jimulpo', 'eulji-retro-wall', 'saebyeok-interior'];
+// Gangnam (Yozi 2026-11-25): white mood and gaming, two walls, two floors and a door each.
+const GANGNAM = ['white-mood-interior', 'fullpower-gaming-room'];
+const SHOPS = [...EULJI, ...GANGNAM];
 
-test('three shops, three wallpapers, three floors and two doors each, every finish sold once with a price', () => {
+test('Euljiro: three wallpapers, three floors and two doors a shop; Gangnam: two, two and one; every finish sold once with a price', () => {
   const shops = stores.filter((s) => SHOPS.includes(s.id));
-  assert.equal(shops.length, 3);
+  assert.equal(shops.length, 5);
   for (const s of shops) {
-    assert.equal(s.district, 'euljiro', s.id);
+    const eulji = EULJI.includes(s.id);
+    assert.equal(s.district, eulji ? 'euljiro' : 'gangnam', s.id);
     const kinds = s.products.map((p) => FINISHES.find((f) => f.id === p.furniture)?.kind);
-    assert.deepEqual(kinds.sort(), ['door', 'door', 'floor', 'floor', 'floor', 'wall', 'wall', 'wall'], s.id);
+    assert.deepEqual(kinds.sort(), eulji ? ['door', 'door', 'floor', 'floor', 'floor', 'wall', 'wall', 'wall'] : ['door', 'floor', 'floor', 'wall', 'wall'], s.id);
   }
   const sold = shops.flatMap((s) => s.products);
   assert.equal(sold.length, FINISHES.length);
@@ -28,7 +32,8 @@ test('three shops, three wallpapers, three floors and two doors each, every fini
     assert.equal(p.length, 1, f.id);
     assert.equal(p[0].model, 'finish', f.id);
     assert.equal(p[0].price, f.price, f.id + ': the shop and the item agree');
-    assert.ok(f.price >= 50000 && f.price <= 150000, f.id + ': cheaper than furniture');
+    const white = stores.find((s) => s.id === 'white-mood-interior').products.some((q) => q.furniture === f.id);
+    assert.ok(f.price >= 50000 && f.price <= (white ? 200000 : 150000), f.id + ': cheaper than furniture (white mood a little dearer, Yozi 2026-11-25)');
     assert.ok(p[0].name.en && p[0].name.ko && p[0].desc.en && p[0].desc.ko, f.id);
     assert.ok(ITEMS[f.id]?.finish === f.kind, f.id + ' is an item (bought once, kept with a receipt)');
     for (const l of ['en', 'ko', 'ja', 'zh']) assert.ok(f.name[l], f.id + ' ' + l);
