@@ -31,7 +31,7 @@ export const APPLIANCES = [
   ['f-fridge', '🧊', [FW, FD], false, { en: 'Side-by-side fridge', ko: '양문형 냉장고', ja: '両開き冷蔵庫', zh: '对开门冰箱' }, (g, part, _box, glow) => {
     const shell = '#e3e7ea', liner = '#f7f9fa', doorC = '#c9ddd5'; // a soft sage front
     const back = -FD / 2, cab = FRONT - back;
-    box(g, FW, 0.06, cab, 0, 0.03, back + cab / 2, '#9aa3a8'); // plinth
+    box(g, FW - 0.01, 0.06, cab - 0.01, 0, 0.03, back + cab / 2, '#9aa3a8'); // plinth (tucked in from the sides)
     box(g, FW, 0.04, cab, 0, FH - 0.02, back + cab / 2, shell); // top
     box(g, FW, 0.04, cab, 0, 0.08, back + cab / 2, shell); // floor
     for (const s of [-1, 1]) box(g, 0.04, FH, cab, s * (FW / 2 - 0.02), FH / 2, back + cab / 2, shell); // sides
@@ -52,7 +52,7 @@ export const APPLIANCES = [
   ['f-washer', '🧺', [0.65, 0.68], false, { en: 'Front-loading washer', ko: '드럼 세탁기', ja: 'ドラム式洗濯機', zh: '滚筒洗衣机' }, (g, part, _box, glow) => {
     const front = 0.3;
     box(g, 0.64, 0.86, 0.64, 0, 0.45, front - 0.32, '#f4f5f7');
-    box(g, 0.64, 0.03, 0.03, 0, 0.02, front - 0.02, '#c0c4ca'); // kick plate
+    box(g, 0.63, 0.03, 0.03, 0, 0.02, front - 0.02, '#c0c4ca'); // kick plate
     box(g, 0.6, 0.12, 0.01, 0, 0.8, front + 0.005, '#d9dde2'); // control strip
     part(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 16).rotateX(Math.PI / 2), '#c0c4ca', 0.18, 0.8, front + 0.02); // dial
     box(g, 0.14, 0.05, 0.006, -0.12, 0.8, front + 0.012, glow('#7fd8ff')); // display

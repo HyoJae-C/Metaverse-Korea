@@ -156,17 +156,19 @@ export const FURNITURE = [
     build(g) {
       box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#a99278');
       box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#e8e2d4'); // yellowed mattress
-      box(g, 1.5, 0.05, 1.3, 0, 0.5, 0.33, '#9fb0b8'); // faded blanket
+      box(g, 1.52, 0.05, 1.3, 0, 0.5, 0.33, '#9fb0b8'); // faded blanket (a little wider than the mattress: no shared faces)
       box(g, 0.32, 0.055, 0.3, 0.42, 0.5, 0.55, '#c9a46a'); // a patch sewn on
       box(g, 0.6, 0.1, 0.35, -0.3, 0.55, -0.75, '#e6dcc6'); // flat pillow
-      box(g, 1.6, 0.8, 0.1, 0, 0.4, -1.03, '#8a6e52'); // headboard
+      box(g, 1.62, 0.8, 0.1, 0, 0.4, -1.03, '#8a6e52'); // headboard
       box(g, 0.5, 0.04, 0.11, 0.5, 0.62, -1.03, '#6e5640').rotation.z = 0.2; // a cracked board
     } },
   { id: 'sofa', emoji: '🛋️', size: [1.8, 0.8], seat: 2, name: { en: 'Old sofa', ko: '낡은 소파', ja: '古いソファ', zh: '旧沙发' },
     build(g) {
       box(g, 1.8, 0.36, 0.8, 0, 0.18, 0, '#b3877a');
       box(g, 1.8, 0.5, 0.2, 0, 0.55, -0.3, '#b3877a');
-      for (const s of [-1, 1]) box(g, 0.18, 0.5, 0.8, 0.81 * s, 0.33, 0, '#9e766a');
+      // The arms stand 1 cm proud of the seat and back on every side: faces
+      // in the same plane flicker (z-fighting, Yozi 2026-11-25).
+      for (const s of [-1, 1]) box(g, 0.19, 0.5, 0.82, 0.815 * s, 0.33, 0, '#9e766a');
       box(g, 0.5, 0.03, 0.45, -0.4, 0.37, 0.05, '#8c9c7a'); // a mismatched patch
       box(g, 0.08, 0.06, 0.08, 0.5, 0.39, 0.1, '#e8dcc0'); // stuffing poking out
       box(g, 0.3, 0.012, 0.22, 0.35, 0.367, -0.05, '#8f6a5e'); // a stain

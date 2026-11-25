@@ -8,21 +8,10 @@
 //
 // There are about 4 km of ways, so their pieces are kept in a grid of 16 m
 // squares: a point looks only at the pieces near it.
-import { inPoly, gridY, skyparkBox, SKYPARK_EASE } from './skypark-ground.js';
+import { inPoly, gridY, skyparkBox, footFade, SKYPARK_EASE } from './skypark-ground.js';
 
 const CELL = 16;
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-
-function ringDist(x, z, p) {
-  let d = Infinity;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [ax, az] = p[j], [bx, bz] = p[i], dx = bx - ax, dz = bz - az;
-    let t = ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1);
-    t = t < 0 ? 0 : t > 1 ? 1 : t;
-    d = Math.min(d, Math.hypot(x - ax - dx * t, z - az - dz * t));
-  }
-  return d;
-}
 
 const made = new WeakMap();
 function index(l) {
@@ -77,7 +66,7 @@ export function hyeonchungHeight(l, x, z) {
   if (x < x0 || x > x1 || z < z0 || z > z1) return 0;
   const f = flatAt(l, x, z);
   if (f) return f.y;
-  let y = inPoly(x, z, l.foot) ? gridY(l.grid, x, z) * Math.min(1, ringDist(x, z, l.foot) / 4) : 0;
+  let y = inPoly(x, z, l.foot) ? gridY(l.grid, x, z) * footFade(l.foot, x, z) : 0;
   const n = wayNear(l, x, z);
   if (n && n.e < SKYPARK_EASE) { const k = smooth(n.e / SKYPARK_EASE); y = n.y * (1 - k) + y * k; }
   return Math.max(0, y);

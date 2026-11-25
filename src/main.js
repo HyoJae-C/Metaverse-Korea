@@ -5435,7 +5435,8 @@ const prayer = createPrayer({ me, get mode() { return mode; }, get interior() { 
 const holyWater = createHolyWater({ me, get mode() { return mode; }, get interior() { return interior; }, toast: (x) => shop.toast(x) }); // (game/holy-water.js: the cathedral's fonts by the door)
 const moktak = createMoktak({ sfx, landmarks: map.landmarks }); // (game/moktak.js: the wooden fish heard in Jogyesa and Bongeunsa)
 const buddhaView = createBuddhaView({ cam, landmarks: map.landmarks, steering: () => manualCamT > 0 }); // (game/buddha-view.js: the whole Maitreya Buddha from its terrace)
-const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min, () => namsanWalk.lookUp); // (game/tower-look.js: tilt up to Modu Tower's top, and Namsan's: game/namsan-walk.js lookUp)
+const towerLooks = [...namsanWalk.lookUp, ...(hyeonchungwon.lookUp || [])]; // (Namsan's tower; the National Cemetery's gate and tower)
+const towerLook = createTowerLook(() => (anotherTower ||= landmarks.getObjectByName('another-tower'))?.position, buddhaView.min, () => towerLooks); // (game/tower-look.js: tilt up to Modu Tower's top, and Namsan's: game/namsan-walk.js lookUp)
 let fanNoted = false, pungmulNoted = false;
 function updateEnclosures(p, dt = 0) {
   farCull.update(dt, p);

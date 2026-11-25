@@ -112,7 +112,7 @@ export const SHOP_FURNITURE = [
     })();
     box(1.7, 0.3, 0.75, 0, 0.3, 0, check);
     box(1.7, 0.45, 0.16, 0, 0.62, -0.3, check);
-    for (const s of [-1, 1]) box(0.14, 0.32, 0.75, 0.78 * s, 0.48, 0, '#7a4a2a'); // wooden arms
+    for (const s of [-1, 1]) box(0.15, 0.32, 0.77, 0.785 * s, 0.48, 0, '#7a4a2a'); // wooden arms (1 cm proud of the seat: no flicker)
     for (const x of [-0.75, 0.75]) for (const z of [-0.3, 0.3]) part(new THREE.CylinderGeometry(0.025, 0.015, 0.16, 6), '#5a3418', x, 0.08, z).rotation.x = z > 0 ? 0.2 : -0.2; // splayed legs
   }],
   ['f-steel-stool', '🪑', [0.4, 0.4], true, { en: 'Steel stool', ko: '철제 원형 의자', ja: 'スチールの丸椅子', zh: '铁艺圆凳' }, (g, part) => {
@@ -178,7 +178,7 @@ export const SHOP_FURNITURE = [
     box(1.7, 0.32, 2.2, 0, 0.16, 0, '#b8b0a4');
     box(1.6, 0.2, 2.05, 0, 0.42, 0.04, '#ffffff');
     box(1.62, 0.07, 1.25, 0, 0.55, 0.45, '#9cb8a8'); // a duvet
-    box(1.62, 0.04, 0.3, 0, 0.6, -0.1, '#ffffff'); // folded back
+    box(1.63, 0.04, 0.3, 0, 0.6, -0.1, '#ffffff'); // folded back
     for (const x of [-0.4, 0.4]) box(0.6, 0.14, 0.38, x, 0.6, -0.75, '#f6f2ea');
     for (let i = 0; i < 4; i++) box(0.4, 0.9, 0.14, -0.6 + i * 0.4, 0.62, -1.06, '#a89c8c'); // a soft channel headboard
   }],
@@ -204,7 +204,7 @@ export const SHOP_FURNITURE = [
     box(1.6, 0.28, 2.1, 0, 0.14, 0, '#ffffff'); // a soft white base
     box(1.5, 0.18, 1.95, 0, 0.37, 0.03, '#ffffff');
     box(1.56, 0.1, 1.45, 0, 0.5, 0.3, '#a8d4f4'); // a sky blue duvet
-    box(1.56, 0.04, 0.26, 0, 0.56, -0.38, '#ffffff'); // folded back
+    box(1.57, 0.04, 0.26, 0, 0.56, -0.38, '#ffffff'); // folded back
     for (let i = 0; i < 9; i++) part(new THREE.CircleGeometry(i % 3 ? 0.035 : 0.05, 5), '#ffe066', -0.6 + (i % 3) * 0.6 + (i % 2) * 0.2, 0.552, -0.1 + Math.floor(i / 3) * 0.45).rotation.x = -Math.PI / 2; // little stars
     for (const x of [-0.38, 0.38]) part(new THREE.SphereGeometry(0.3, 14, 10), '#ffffff', x, 0.56, -0.74).scale.set(1, 0.32, 0.6); // round pillows
     // The headboard is a cloud: white puffs, the big one in the middle.
@@ -218,7 +218,7 @@ export const SHOP_FURNITURE = [
     box(1.6, 0.3, 2.1, 0, 0.15, 0, '#c98b4f'); // honey wood
     box(1.5, 0.18, 1.95, 0, 0.39, 0.03, '#ffffff');
     box(1.56, 0.1, 1.45, 0, 0.52, 0.3, '#ffe2a8'); // a honey yellow duvet
-    box(1.56, 0.04, 0.26, 0, 0.58, -0.38, '#ffffff');
+    box(1.57, 0.04, 0.26, 0, 0.58, -0.38, '#ffffff');
     for (let i = 0; i < 3; i++) part(new THREE.CircleGeometry(0.09, 16), '#c98b4f', -0.45 + i * 0.45, 0.572, 0.1 + (i % 2) * 0.45).rotation.x = -Math.PI / 2; // paw prints
     for (const x of [-0.38, 0.38]) box(0.6, 0.15, 0.36, x, 0.58, -0.74, '#fff6e6');
     // The headboard is a bear's face: a round head, two ears, a muzzle.
@@ -238,7 +238,7 @@ export const SHOP_FURNITURE = [
     for (let i = 0; i < 4; i++) box(1.6, 0.003, 0.012, 0, 0.756, -0.33 + i * 0.22, '#9a6638'); // board joins
     for (const s of [-1, 1]) {
       box(0.08, 0.68, 0.7, 0.66 * s, 0.34, 0, '#9a6638'); // slab legs
-      box(0.08, 0.06, 0.8, 0.66 * s, 0.03, 0, '#8a5a30');
+      box(0.09, 0.06, 0.8, 0.66 * s, 0.03, 0, '#8a5a30');
     }
     box(1.24, 0.06, 0.06, 0, 0.2, 0, '#9a6638'); // stretcher
   }],
@@ -353,7 +353,7 @@ export const SHOP_FURNITURE = [
   ['f-vanity', '💄', [0.9, 0.85], 'vanity', { en: 'Vanity with a stool', ko: '화장대와 의자', ja: 'スツール付きドレッサー', zh: '梳妆台和凳子' }, (g, part, box, glow) => {
     box(0.9, 0.04, 0.42, 0, 0.72, -0.21, '#f6f0e8'); // white top
     for (const x of [-0.4, 0.4]) box(0.04, 0.7, 0.04, x, 0.35, -0.04, '#e8dccb');
-    box(0.3, 0.16, 0.38, 0.27, 0.62, -0.21, '#f6f0e8'); // a drawer
+    box(0.29, 0.16, 0.37, 0.265, 0.62, -0.21, '#f6f0e8'); // a drawer (just inside the legs)
     part(new THREE.SphereGeometry(0.018, 8, 6), '#c9a227', 0.27, 0.62, -0.01);
     for (const x of [-0.4, 0.4]) box(0.04, 0.7, 0.04, x, 0.35, -0.38, '#e8dccb');
     const glass = part(new THREE.CircleGeometry(0.28, 28).scale(0.8, 1, 1), glow('#dde9f0'), 0, 1.2, -0.37); // the oval mirror

@@ -1568,6 +1568,12 @@ body.shooting #hud > :not(.photo-count):not(.emote-wheel):not(#emotes) { visibil
   box-shadow: 0 4px 0 rgba(74, 63, 53, 0.15); z-index: 3; /* under the action button and sheets */
 }
 .in-store .info-hint { display: none; }
+/* While the route bar is up (🚶 Auto, ✕), the card opens under it instead of
+   over it: a new player's high-five card hid it (Yozi 2026-11-25). */
+#guide:not([hidden]) ~ .info-hint { top: max(calc(max(12px, env(safe-area-inset-top)) + 162px), calc(var(--top-notes-bottom, 0px) + 8px)); }
+@media (pointer: coarse) {
+  #guide:not([hidden]) ~ .info-hint { top: max(calc(max(12px, env(safe-area-inset-top)) + 204px), calc(var(--top-notes-bottom, 0px) + 8px)); }
+}
 @media (max-width: 700px) {
   /* Hint cards stop short of the tool column, so Map, Chat and Bag stay tappable. */
   .help, .info-hint { left: 12px; right: 80px; width: auto; max-width: none; transform: none; }
