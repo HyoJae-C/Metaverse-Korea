@@ -136,6 +136,10 @@ try {
   if (shotDir) await a.screenshot({ path: shotDir + '/omok-lobby.png' });
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel canvas.bg-omok');
+  // B, not in the game, sees a 🎲 bubble over A's head (core/players.js); A sees none over B.
+  await b.waitForFunction(() => [...document.querySelectorAll('#labels .bubble')].some((el) => /🎲/.test(el.textContent)), null, { timeout: 15000 });
+  if (await a.evaluate(() => [...document.querySelectorAll('#labels .bubble')].some((el) => /🎲/.test(el.textContent)))) throw new Error('a 🎲 bubble over someone not in a game');
+  if (shotDir) await b.screenshot({ path: shotDir + '/dice-bubble.png' });
   const box = await a.locator('#bg-panel canvas.bg-omok').boundingBox();
   await a.mouse.click(box.x + box.width * 8 / 16, box.y + box.height * 8 / 16); // the centre point
   await a.waitForFunction(() => /Your turn/.test(document.querySelector('#bg-panel .bg-status')?.textContent || ''), null, { timeout: 8000 });

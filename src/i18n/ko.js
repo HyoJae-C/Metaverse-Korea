@@ -191,6 +191,7 @@ export const KO = {
   "beauty.saved": "새 모습으로 저장했어요!",
   "beauty.suits": "정말 잘 어울려요!",
   "book.reading": "📖 독서중...",
+  "boardGame.playing": "🎲 보드게임 중",
   "haircut.start": "예쁘게 잘라 드릴게요!",
   "salon.open": "스타일 고르기",
   "clinic.open": "상담 받기",

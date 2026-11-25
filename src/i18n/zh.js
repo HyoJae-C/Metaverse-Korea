@@ -191,6 +191,7 @@ export const ZH = {
   "beauty.saved": "新造型已保存！",
   "beauty.suits": "真的很适合你！",
   "book.reading": "📖 阅读中...",
+  "boardGame.playing": "🎲 桌游中",
   "haircut.start": "给你剪个漂亮的发型！",
   "salon.open": "选择发型",
   "clinic.open": "咨询医生",

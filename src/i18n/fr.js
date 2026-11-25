@@ -188,6 +188,7 @@ export const FR = {
   'beauty.saved': 'Nouveau look enregistré !',
   'beauty.suits': 'Ça te va vraiment bien !',
   'book.reading': '📖 Lecture...',
+  'boardGame.playing': '🎲 En pleine partie',
   'haircut.start': 'Je vais te faire une jolie coupe !',
   'salon.open': 'Choisir un style',
   'clinic.open': 'Consulter le médecin',

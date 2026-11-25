@@ -188,6 +188,7 @@ export const ID = {
   'beauty.saved': 'Penampilan baru tersimpan!',
   'beauty.suits': 'Cocok banget buatmu!',
   'book.reading': '📖 Sedang membaca...',
+  'boardGame.playing': '🎲 Sedang main board game',
   'haircut.start': 'Aku potong rambutmu jadi cantik!',
   'salon.open': 'Pilih gaya',
   'clinic.open': 'Konsultasi dengan dokter',
