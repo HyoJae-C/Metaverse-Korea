@@ -17,7 +17,7 @@ import { playFetch, encodeThrow, parseThrow } from '../core/fetch.js';
 import { L } from '../ui/pocha-ui.js';
 
 export const FRISBEE_TEXT = {
-  throw: { en: 'Throw the frisbee for {name}', ko: '{name}에게 원반 던지기', ja: '{name}にフリスビーを投げる', zh: '给{name}扔飞盘', es: 'Lanzar el frisbi a {name}', id: 'Lempar frisbee untuk {name}', vi: 'Ném đĩa bay cho {name}', hi: '{name} के लिए फ्रिस्बी फेंकें', fr: 'Lancer le frisbee à {name}', th: 'โยนจานร่อนให้ {name}', ar: 'ارمِ الفريسبي لـ{name}' },
+  throw: { en: 'Throw the frisbee for {name}', ko: '{name}에게 원반 던지기', ja: '{name}にフリスビーを投げる', zh: '给{name}扔飞盘', es: 'Lanzar el frisbi a {name}', id: 'Lempar frisbee untuk {name}', vi: 'Ném đĩa bay cho {name}', fr: 'Lancer le frisbee à {name}', th: 'โยนจานร่อนให้ {name}', ar: 'ارمِ الفريسبي لـ{name}' },
   room: { en: 'Face the open grass to throw it.', ko: '탁 트인 잔디 쪽을 보고 던져 주세요.', ja: '開けた芝生の方を向いて投げてね。', zh: '请面向空旷的草地扔。', es: 'Mira hacia el césped abierto para lanzarlo.', fr: 'Tourne-toi vers la pelouse dégagée pour le lancer.' },
   caught: { en: '{name} leapt and caught it in the air! 🥏', ko: '{name}, 점프해서 공중에서 잡았어요! 🥏', ja: '{name}がジャンプして空中でキャッチ！🥏', zh: '{name}跳起来在空中接住了！🥏', es: '¡{name} saltó y lo atrapó en el aire! 🥏', fr: '{name} a sauté et l\'a attrapé en plein vol ! 🥏' },
   caughtHands: { en: '{name} jumped up and snatched it with one hand! 🥏', ko: '{name}, 펄쩍 뛰어서 한 손으로 낚아챘어요! 🥏', ja: '{name}がぴょんと跳んで片手でキャッチ！🥏', zh: '{name}跳起来单手接住了！🥏', es: '¡{name} saltó y lo atrapó con una mano! 🥏', fr: '{name} a bondi et l\'a attrapé d\'une main ! 🥏' },

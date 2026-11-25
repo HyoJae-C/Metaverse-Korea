@@ -40,19 +40,19 @@ test('the new rides: each has a gate, an attendant, a price, a name in every lan
   for (const k of NEW) {
     assert.ok(RIDE_GATES[k] && RIDE_GATES[k].staff, `${k} gate`);
     assert.ok(P.RIDE_PRICE[k] > 0 && P.RIDE_SECONDS[k] > 0, `${k} price and time`);
-    assert.equal(Object.keys(RIDE_NAME[k]).length, 11, `${k}: 11 names`);
+    assert.equal(Object.keys(RIDE_NAME[k]).length, 10, `${k}: 10 names`);
     assert.ok(P.RIDE_EMOJI[k], `${k} emoji`);
     assert.equal(ridePhase(k, at(k, 'load', 1)).phase, 'load');
     assert.ok(canBoard(k, at(k, 'load', 1)) && !rideLocked(k, 0, at(k, 'load', 1)));
     assert.ok(rideLocked(k, 0, at(k, 'run', 3)), `${k}: held in while it runs`);
     for (const s of GUEST_SEATS[k]) assert.ok(s < RIDES[k].seats, `${k}: guest seat ${s} exists`);
   }
-  assert.equal(Object.keys(RIDE_NAME.maze).length, 11);
+  assert.equal(Object.keys(RIDE_NAME.maze).length, 10);
 });
 
 test('gyro swing: still and low to get on, swings up past level while the ring turns, held in, back down at the end', () => {
   const G = RIDES.gyro, k = 'gyro';
-  assert.ok(RIDE_GATES[k].staff && P.RIDE_PRICE[k] > 0 && Object.keys(RIDE_NAME[k]).length === 11 && P.RIDE_EMOJI[k]);
+  assert.ok(RIDE_GATES[k].staff && P.RIDE_PRICE[k] > 0 && Object.keys(RIDE_NAME[k]).length === 10 && P.RIDE_EMOJI[k]);
   for (const s of GUEST_SEATS[k]) assert.ok(s < G.seats);
   const rest = seatAt(k, 0, at(k, 'load', 2));
   assert.equal(P.gyroAngle(at(k, 'load', 2)), 0);

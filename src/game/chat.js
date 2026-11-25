@@ -46,7 +46,7 @@ const NOTICE_TEXT = {
 // The silent dharma halls' only word.
 export const SILENT = '🙏';
 const SILENT_TEXT = {
-  placeholder: { en: 'A silent hall: only 🙏 is sent', ko: '침묵의 법당: 🙏만 보낼 수 있어요', ja: '沈黙のお堂：🙏だけ送れます', zh: '静默的法堂：只能发送🙏', es: 'Sala en silencio: solo se envía 🙏', id: 'Aula hening: hanya 🙏 yang terkirim', vi: 'Điện tĩnh lặng: chỉ gửi được 🙏', hi: 'मौन कक्ष: केवल 🙏 भेजा जाता है', fr: 'Salle du silence : seul 🙏 est envoyé', th: 'ห้องแห่งความเงียบ: ส่งได้แค่ 🙏', ar: 'قاعة صامتة: يُرسل 🙏 فقط' },
+  placeholder: { en: 'A silent hall: only 🙏 is sent', ko: '침묵의 법당: 🙏만 보낼 수 있어요', ja: '沈黙のお堂：🙏だけ送れます', zh: '静默的法堂：只能发送🙏', es: 'Sala en silencio: solo se envía 🙏', id: 'Aula hening: hanya 🙏 yang terkirim', vi: 'Điện tĩnh lặng: chỉ gửi được 🙏', fr: 'Salle du silence : seul 🙏 est envoyé', th: 'ห้องแห่งความเงียบ: ส่งได้แค่ 🙏', ar: 'قاعة صامتة: يُرسل 🙏 فقط' },
 };
 
 export function createChat(game) {

@@ -9,7 +9,7 @@ import { TK, TTEOK_LINES } from '../src/ui/tteok-text.js';
 import { BK, BIBIMBAP_LINES } from '../src/ui/bibimbap-text.js';
 import { GIFT_LOOKS } from '../src/core/held.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'fr', 'th', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'fr', 'th', 'ar'];
 const CLASSES = [['tteok', tteok, TK, TTEOK_LINES], ['bibimbap', bibimbap, BK, BIBIMBAP_LINES]];
 
 // The best answer for each step: the card amounts, the classic picks, the

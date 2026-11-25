@@ -6,7 +6,7 @@ import {
 } from '../src/core/basketball-game.js';
 import { BT } from '../src/ui/basketball-text.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar'];
 
 test('four shots, three levels each; free throw and dunk as asked', () => {
   assert.equal(SHOTS.length, 4);

@@ -430,7 +430,7 @@ export function buildMap() {
       { type: 'blossoms', p: [[38, 7], [48, 7]], gap: 5 },
       {
         type: 'sign', x: 42, z: -15, ry: -1.5708,
-        title: { ko: '서울어른도대공원', en: "Seoul Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园', es: 'Gran Parque para Adultos También de Seúl', id: 'Taman Raya Dewasa Juga Seoul', vi: 'Công viên Cả Người lớn Seoul', hi: 'सियोल बड़ों का भी ग्रैंड पार्क', fr: 'Grand Parc des grands aussi de Séoul', th: 'สวนผู้ใหญ่ก็เล่นได้ โซล', ar: 'حديقة الكبار أيضًا في سيول' },
+        title: { ko: '서울어른도대공원', en: "Seoul Grown-ups' Grand Park", ja: 'ソウル大人も大公園', zh: '首尔大人也大公园', es: 'Gran Parque para Adultos También de Seúl', id: 'Taman Raya Dewasa Juga Seoul', vi: 'Công viên Cả Người lớn Seoul', fr: 'Grand Parc des grands aussi de Séoul', th: 'สวนผู้ใหญ่ก็เล่นได้ โซล', ar: 'حديقة الكبار أيضًا في سيول' },
         text: {
           ko: '1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.',
           en: "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.",
@@ -439,7 +439,6 @@ export function buildMap() {
           es: 'Abrió el Día del Niño de 1973. El parque real y su zoo son gratuitos. Los animales del juego pueden ser distintos a los del zoo real.',
           id: 'Dibuka pada Hari Anak 1973. Taman dan kebun binatang aslinya gratis. Hewan di game bisa berbeda dari kebun binatang aslinya.',
           vi: 'Mở cửa vào Ngày Thiếu nhi năm 1973. Công viên và sở thú thật đều miễn phí vào cửa. Động vật trong game có thể khác sở thú thật.',
-          hi: '1973 के बाल दिवस पर खुला। असली पार्क और चिड़ियाघर में प्रवेश मुफ़्त है। गेम के जानवर असली चिड़ियाघर से अलग हो सकते हैं।',
           fr: 'Ouvert le jour des enfants 1973. Le vrai parc et son zoo sont gratuits. Les animaux du jeu peuvent différer du vrai zoo.',
           th: 'เปิดในวันเด็กปี 1973 สวนและสวนสัตว์จริงเข้าชมฟรี สัตว์ในเกมอาจต่างจากสวนสัตว์จริง',
           ar: 'افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية.',
@@ -454,7 +453,7 @@ export function buildMap() {
   if (!ZOO_OPEN) {
     map.landmarks.push({
       type: 'sign', x: 48, z: 12, ry: -1.5708,
-      title: { ko: '동물원 개장 준비 중', en: 'The zoo is opening soon', ja: '動物園はまもなくオープン', zh: '动物园即将开放', es: 'El zoo abrirá pronto', id: 'Kebun binatang segera dibuka', vi: 'Sở thú sắp mở cửa', hi: 'चिड़ियाघर जल्द खुलेगा', fr: 'Le zoo ouvre bientôt', th: 'สวนสัตว์ใกล้เปิดแล้ว', ar: 'حديقة الحيوان ستفتح قريبًا' },
+      title: { ko: '동물원 개장 준비 중', en: 'The zoo is opening soon', ja: '動物園はまもなくオープン', zh: '动物园即将开放', es: 'El zoo abrirá pronto', id: 'Kebun binatang segera dibuka', vi: 'Sở thú sắp mở cửa', fr: 'Le zoo ouvre bientôt', th: 'สวนสัตว์ใกล้เปิดแล้ว', ar: 'حديقة الحيوان ستفتح قريبًا' },
       text: {
         ko: '동물 친구들이 이사 오는 중이에요. 곧 문을 열게요!',
         en: 'The animals are moving in. We open soon!',
@@ -463,7 +462,6 @@ export function buildMap() {
         es: 'Los animales se están mudando. ¡Abrimos pronto!',
         id: 'Para hewan sedang pindah ke sini. Segera dibuka!',
         vi: 'Các bạn thú đang chuyển đến. Sắp mở cửa rồi!',
-        hi: 'जानवर यहाँ आ रहे हैं। हम जल्द खुलेंगे!',
         fr: 'Les animaux emménagent. Ouverture bientôt !',
         th: 'สัตว์ต่างๆ กำลังย้ายเข้ามา เร็วๆ นี้จะเปิดแล้ว!',
         ar: 'الحيوانات تنتقل إلى هنا. سنفتح قريبًا!',

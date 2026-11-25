@@ -117,7 +117,7 @@ export function buildGrounds(scene, block, seats, { X0, X1, Z0, Z1 }) {
   for (const [ax, az, bx, bz] of [[X0, Z0, X1, Z0], [X0, Z0, X0, Z1], [X1, Z0, X1, Z1], [X0, Z1, -4.2, Z1], [4.2, Z1, X1, Z1]]) fenceLine(ax, az, bx, bz, 1.2, HOT);
 
   // The entrance arch over Main Street: two candy towers and the park's name.
-  const s = gateSign({ ko: '모두랜드', en: 'Modu Land', ja: 'モドゥランド', zh: 'Modu乐园', es: 'Modu Land', id: 'Modu Land', vi: 'Modu Land', hi: 'मोडू लैंड', fr: 'Modu Land', th: 'โมดูแลนด์', ar: 'مودو لاند' }, '🍭', 768, 200);
+  const s = gateSign({ ko: '모두랜드', en: 'Modu Land', ja: 'モドゥランド', zh: 'Modu乐园', es: 'Modu Land', id: 'Modu Land', vi: 'Modu Land', fr: 'Modu Land', th: 'โมดูแลนด์', ar: 'مودو لاند' }, '🍭', 768, 200);
   signs.push(s);
   const AZ = Z1 - 2.2;
   for (const k of [-1, 1]) {

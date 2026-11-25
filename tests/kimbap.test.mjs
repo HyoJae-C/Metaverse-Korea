@@ -7,7 +7,7 @@ import {
 import { medalFor } from '../src/core/grill-game.js';
 import { BT, KIMBAP_LINES } from '../src/ui/kimbap-text.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar'];
 const pref = Object.fromEntries(FILLINGS.map((f) => [f.id, f.pref]));
 const goodRice = { salt: 1, sesameoil: 1, sesame: 1 };
 const fullSheet = () => { const c = []; for (let r = 0; r < ROWS - 1; r++) for (let k = 0; k < COLS; k++) c.push(`${r},${k}`); return c; };

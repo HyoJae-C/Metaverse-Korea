@@ -10,10 +10,9 @@ import { ES } from './es.js';
 import { ID } from './id.js';
 import { AR } from './ar.js';
 import { VI } from './vi.js';
-import { HI } from './hi.js';
 import { FR } from './fr.js';
 import { TH } from './th.js';
 
 export { LANGUAGES, REGION_NAMES } from './languages.js';
 
-export const STRINGS = { en: EN, ko: KO, ja: JA, zh: ZH, es: ES, id: ID, ar: AR, vi: VI, hi: HI, fr: FR, th: TH };
+export const STRINGS = { en: EN, ko: KO, ja: JA, zh: ZH, es: ES, id: ID, ar: AR, vi: VI, fr: FR, th: TH };
