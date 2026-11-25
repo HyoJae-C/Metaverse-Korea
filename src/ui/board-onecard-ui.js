@@ -74,7 +74,10 @@ function help(el, L, ui) {
   const d = el('details', 'oc-help');
   d.open = !!ui.ocHelp;
   d.addEventListener('toggle', () => { ui.ocHelp = d.open; });
-  d.append(el('summary', null, L(OC.help)));
+  const sum = el('summary', null, L(OC.help));
+  // The toggle event comes a moment after the tap; a redraw in between must not fold it shut again.
+  sum.addEventListener('click', () => { ui.ocHelp = !d.open; });
+  d.append(sum);
   const list = el('ul');
   const row = (label, text, cls = null) => {
     const li = el('li'), b = el('b', cls);
