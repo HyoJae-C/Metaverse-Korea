@@ -1227,8 +1227,10 @@ export class Gimbap {
 // nothing but a hollow win).
 export const BINGO_KINDS = 56; // the fish book's pictures (core/fishing.js FISH_SHEET)
 export const BINGO_SIZES = [5, 4]; // opt 0 / 1 (the host picks in the lobby)
-export const BINGO_POOL = { 5: 30, 4: 20 };
-export const BINGO_GOAL = { 5: 3, 4: 2 };
+// 4×4 was 20 fish and 2 lines: over after three or four calls each (Yozi 2026-11-25). With 32 fish fewer of the
+// others' calls land on my board, and 4 lines take about twice the calls (15-18 in all, by simulation).
+export const BINGO_POOL = { 5: 30, 4: 32 };
+export const BINGO_GOAL = { 5: 3, 4: 4 };
 export const BINGO_SETUP_S = { 5: 120, 4: 90 }; // seconds to fill a board; then the empty cells fill at random
 export const BINGO_ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123';
 export const bingoCode = (cells) => cells.map((f) => BINGO_ABC[f]).join('');
