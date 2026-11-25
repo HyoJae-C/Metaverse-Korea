@@ -230,6 +230,12 @@ export class OneCard {
     this.dir = 1;
     this.attack = 0; // cards waiting for whoever can't defend
     this.out = new Array(players).fill(false); // bust or left
+    // Places (Yozi 2026-11-26: "keep going after the first"): whoever empties their hand takes the next place
+    // and plays no more; the rest play on until one is left. Whoever went bust comes after them, the last to
+    // go bust first. 0 = still playing, or left the table.
+    this.ranks = new Array(players).fill(0);
+    this.place = 1;
+    this.busted = []; // seats, in the order they went bust
     this.winner = -1;
     this.over = false;
     this.last = null; // what just happened, for the screen
@@ -271,12 +277,25 @@ export class OneCard {
   next(from = this.turn, skip = 0) {
     let t = from;
     for (let k = 0; k <= skip; k++) {
-      do t = (t + this.dir + this.n) % this.n; while (this.out[t]);
+      let guard = this.n;
+      do t = (t + this.dir + this.n) % this.n; while (!this.playing(t) && guard-- > 0);
     }
     return t;
   }
 
-  alive() { return this.out.map((o, p) => (o ? -1 : p)).filter((p) => p >= 0); }
+  playing(p) { return !this.out[p] && !this.ranks[p]; }
+  alive() { return this.out.map((_, p) => (this.playing(p) ? p : -1)).filter((p) => p >= 0); }
+
+  // One player (or nobody) is still playing: the places are handed out and the game is over.
+  settle() {
+    const alive = this.alive();
+    if (alive.length > 1) return false;
+    for (const p of alive) this.ranks[p] = this.place++;
+    for (const p of this.busted.slice().reverse()) if (!this.ranks[p]) this.ranks[p] = this.place++;
+    this.winner = this.ranks.indexOf(1);
+    this.over = true;
+    return true;
+  }
 
   // Put card c (suit: the new suit when c is a 7). Returns true if taken.
   put(p, c, suit = null) {
@@ -290,15 +309,21 @@ export class OneCard {
     const r = cardRank(c);
     this.attack += attackOf(c);
     this.last = { p, put: c };
-    if (!h.length) { this.winner = p; this.over = true; return true; }
+    const done = !h.length;
+    if (done) {
+      // Out of cards: the next place. The others play on, and the last card still does what it does to them.
+      this.ranks[p] = this.place++;
+      this.last.done = this.ranks[p];
+      if (this.settle()) return true;
+    }
     if (r === '7') {
       this.suit = SUITS.includes(suit) ? suit : this.suit;
       this.last.suit = this.suit;
     }
-    if (r === 'K') return true; // one more turn
+    if (r === 'K' && !done) return true; // one more turn
     if (r === 'Q') {
       this.dir = -this.dir;
-      if (this.alive().length === 2) return true; // with two left, Q is like K
+      if (this.alive().length === 2 && !done) return true; // with two left, Q is like K
     }
     this.turn = this.next(p, r === 'J' ? 1 : 0);
     return true;
@@ -313,24 +338,25 @@ export class OneCard {
     this.last = { p, drew: k };
     if (this.hands[p].length > ONECARD_BUST) {
       this.last.bust = true;
-      this.knockOut(p);
+      this.knockOut(p, true);
       return true;
     }
     this.turn = this.next(p);
     return true;
   }
 
-  knockOut(p) {
+  knockOut(p, bust = false) {
     this.out[p] = true;
+    if (bust) this.busted.push(p);
     this.stock.unshift(...this.hands[p]);
     this.hands[p] = [];
-    const alive = this.alive();
-    if (alive.length === 1) { this.winner = alive[0]; this.over = true; return; }
+    if (this.settle()) return;
     if (this.turn === p) { this.turn = this.next(p); }
   }
 
   leave(p) {
     if (this.over || this.out[p]) return;
+    if (this.ranks[p]) { this.out[p] = true; return; } // (they had their place already: it stays)
     this.knockOut(p);
   }
 

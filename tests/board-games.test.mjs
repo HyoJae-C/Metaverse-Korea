@@ -165,6 +165,59 @@ test('one card: attacks stack and must be defended or drawn', () => {
   assert.equal(g.attack, 0);
 });
 
+test('one card: the game goes on after the first is out of cards, and everyone gets a place (Yozi 2026-11-26)', () => {
+  const g = new OneCard({ players: 4, seed: 9 });
+  g.pile = ['5♥']; g.suit = '♥'; g.turn = 0;
+  g.hands[0] = ['9♥']; g.hands[1] = ['3♥', '4♣']; g.hands[2] = ['6♥', '8♣']; g.hands[3] = ['K♥', '10♥', '9♣'];
+  assert.ok(g.put(0, '9♥')); // seat 0 is out of cards: first, and the others play on
+  assert.equal(g.ranks[0], 1);
+  assert.equal(g.last.done, 1);
+  assert.equal(g.over, false);
+  assert.equal(g.turn, 1);
+  assert.equal(g.put(0, '9♥'), false);
+  assert.ok(g.put(1, '3♥'));
+  assert.equal(g.turn, 2);
+  assert.ok(g.put(2, '6♥'));
+  assert.ok(g.put(3, 'K♥')); // K: one more turn
+  assert.equal(g.turn, 3);
+  assert.ok(g.put(3, '10♥'));
+  assert.equal(g.turn, 1); // (seat 0 is passed over)
+  // Seat 1 goes bust; seat 2 runs out: second. Seat 3 is the last one playing: third, and the bust seat is fourth.
+  g.hands[1] = Array.from({ length: 20 }, () => 'x'); g.stock.push('y');
+  g.hands[1] = g.hands[1].map((_, i) => g.stock[i % g.stock.length]);
+  g.pile.push('2♥'); g.attack = 2;
+  assert.ok(g.draw(1));
+  assert.ok(g.last.bust);
+  assert.equal(g.over, false);
+  assert.equal(g.turn, 2);
+  g.hands[2] = [g.top];
+  g.attack = 0;
+  assert.ok(g.put(2, g.top));
+  assert.ok(g.over);
+  assert.deepEqual(g.ranks, [1, 4, 2, 3]);
+  assert.equal(g.winner, 0);
+
+  // Two players: over at once, first and second. A K as the last card gives no extra turn to someone who is done.
+  const d = new OneCard({ players: 2, seed: 2 });
+  d.pile = ['5♥']; d.suit = '♥'; d.turn = 0; d.hands[0] = ['K♥'];
+  assert.ok(d.put(0, 'K♥'));
+  assert.ok(d.over);
+  assert.deepEqual(d.ranks, [1, 2]);
+  // Three: a K to finish hands the turn on; someone with a place who leaves keeps it; one of the last two leaving ends it.
+  const e = new OneCard({ players: 3, seed: 2 });
+  e.pile = ['5♥']; e.suit = '♥'; e.turn = 0; e.hands[0] = ['K♥'];
+  assert.ok(e.put(0, 'K♥'));
+  assert.equal(e.over, false);
+  assert.equal(e.turn, 1);
+  e.leave(0);
+  assert.equal(e.ranks[0], 1);
+  assert.equal(e.over, false);
+  e.leave(1);
+  assert.ok(e.over);
+  assert.deepEqual(e.ranks, [1, 0, 2]);
+  assert.equal(e.winner, 0);
+});
+
 test('every game can be made and fed actions', () => {
   const r = newGame('bulldog', 2, 1);
   assert.ok(applyAction(r, 0, ['p', r.bad === 0 ? 1 : 0]));

@@ -122,7 +122,7 @@ export function drawOneCard(c, { p, act, el, L, ui }) {
   c.append(help(el, L, ui));
   if (g.attack && !g.over) { const hit = el('div', 'oc-hit', fill(OC.attacked, { n: g.attack })); hit.dataset.attack = String(g.attack); c.append(hit); }
 
-  if (me < 0 || g.out[me] || g.over) return;
+  if (me < 0 || g.out[me] || g.ranks[me] || g.over) return; // (watching, out, or done with a place)
   if (ui.ocSeven) {
     // A 7 is in my fingers: which suit next?
     c.append(el('div', 'bg-sub', L(OC.pickSuit)));
