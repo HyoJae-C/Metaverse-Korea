@@ -323,7 +323,7 @@ try {
   if ((await a.getAttribute('#bg-panel .bb-board', 'data-filled')) !== '16') throw new Error('the rest did not fill');
   await a.click('#bg-panel [data-act="bb-ready"]');
   await a.waitForFunction(() => window.__bgUi.play?.g?.phase === 'call', null, { timeout: 15000 });
-  for (let k = 0; k < 30; k++) {
+  for (let k = 0; k < 50; k++) {
     await a.waitForFunction(() => { const p = window.__bgUi.play, g = p.g; return g.over || g.turn === p.seat; }, null, { timeout: 30000 });
     if (await a.evaluate(() => window.__bgUi.play.g.over)) break;
     // My turn: a fish of my own board nobody called yet; picked, then called.
@@ -337,7 +337,10 @@ try {
   const shouted = await a.evaluate(() => { const p = window.__bgUi.play; return !!p.bbShout || p.g.winners.length > 0 && p.g.boards.every((_, s) => p.g.winners.includes(s) || p.g.linesOf(s) === 0); });
   if (!shouted) throw new Error('a first line was not called out');
   const bingo = await a.evaluate(() => { const g = window.__bgUi.play.g; return { over: g.over, winners: g.winners, lines: g.winners.map((s) => g.linesOf(s)), status: document.querySelector('#bg-panel .bg-status')?.textContent }; });
-  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 3) || !bingo.status) throw new Error('the bingo did not end on three lines: ' + JSON.stringify(bingo));
+  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 4) || !bingo.status) throw new Error('the 4×4 bingo did not end on four lines: ' + JSON.stringify(bingo));
+  // Everyone's place is listed, first on top.
+  const places = await a.evaluate(() => [...document.querySelectorAll('#bg-panel .bg-ranks [data-rank]')].map((r) => +r.dataset.rank));
+  if (places.length !== 2 || places[0] !== 1) throw new Error('the bingo places are not listed: ' + JSON.stringify(places));
   if (shotDir) await a.screenshot({ path: shotDir + '/bingo-end.png' });
   await a.click('#bg-panel .bg-x');
 

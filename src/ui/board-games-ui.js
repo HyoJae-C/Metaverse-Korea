@@ -49,6 +49,7 @@ const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell tab
 // Gimbap: a computer takes [a start, then between these two for each press]; the round is called this long after
 // the first finish; and with nobody done, after [this, plus this for each press].
 const GIMBAP_BOT = [900, 620, 980], GIMBAP_GRACE = 1500, GIMBAP_WAIT = [8000, 3000];
+const medal = (r) => ['🥇', '🥈', '🥉'][r - 1] || r + '.';
 // Bingo: a computer fills its board this long after the start, and calls no sooner than this after the last call.
 const BINGO_BOT_FILL = 1500, BINGO_BOT_WAIT = 2200;
 
@@ -650,7 +651,7 @@ export class BoardGamesUI {
       p.bbLines = now;
       const up = now.map((n, s) => (n > (was[s] || 0) && !g.out[s] ? s : -1)).filter((s) => s >= 0);
       if (up.length && !g.over && this.bingo) {
-        p.bbShout = { text: up.map((s) => this.bingo.lineUp(p.names[s], now[s], L)).join(' · '), until: performance.now() + 2600 };
+        p.bbShout = { text: up.map((s) => this.bingo.lineUp(p.names[s], now[s], L) + (g.ranks[s] ? ' ' + medal(g.ranks[s]) : '')).join(' · '), until: performance.now() + 2600 };
         setTimeout(() => { if (this.play === p) this.render(); }, 2700);
         this.onEvent('ring', p.game);
       } else this.onEvent(g.last?.hit.includes(p.seat) ? 'pair' : 'move', p.game);
@@ -971,7 +972,7 @@ export class BoardGamesUI {
       let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
       if (p.game === 'onecard' && !out) label += ` · ${g.hands[s].length}`;
       if (p.game === 'gimbap') label += ` · ${g.score[s]}/${GIMBAP_GOAL}`;
-      if (p.game === 'bingo' && !out) label += g.phase === 'setup' ? (g.boards[s] ? ' · ✓' : ' · ✏️') : ` · ${g.linesOf(s)}/${g.goal}`;
+      if (p.game === 'bingo' && !out) label += g.phase === 'setup' ? (g.boards[s] ? ' · ✓' : ' · ✏️') : g.ranks[s] ? ` · ${medal(g.ranks[s])}` : ` · ${g.linesOf(s)}/${g.goal}`;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -994,9 +995,19 @@ export class BoardGamesUI {
       // Everyone's place, first to last (the same square shares a place).
       const list = el('div', 'bg-ranks');
       g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, s]) => {
-        const row = el('div', s === p.seat ? 'me' : null, `${['🥇', '🥈', '🥉'][r - 1] || r + '.'} ${PAWN_DOT[s]} ${p.names[s]} · ${g.pos[s] === LADDERS_END ? '🏁' : g.pos[s]}`);
+        const row = el('div', s === p.seat ? 'me' : null, `${medal(r)} ${PAWN_DOT[s]} ${p.names[s]} · ${g.pos[s] === LADDERS_END ? '🏁' : g.pos[s]}`);
         row.dataset.rank = String(r);
         list.append(row);
+      });
+      c.append(list);
+    }
+    if (p.game === 'bingo' && g.over && g.ranks.filter((r) => r > 0).length > 1) {
+      // Everyone's place, first to last (bingo on the same call shares a place).
+      const list = el('div', 'bg-ranks');
+      g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, s]) => {
+        const line = el('div', s === p.seat ? 'me' : null, `${medal(r)} ${p.names[s]} · ${g.linesOf(s)}/${g.goal}`);
+        line.dataset.rank = String(r);
+        list.append(line);
       });
       c.append(list);
     }

@@ -724,12 +724,27 @@ test('fish book bingo: a pool a little bigger than the board, everyone fills the
   assert.equal(applyAction(g, g.turn, ['w', mine[0]]), false); // called already
   assert.equal(g.turn, (c + 1) % 3);
 
-  // Seat 0's first three rows: 3 lines, bingo (unless someone else gets there on the same call: then they share it).
-  for (const f of mine.slice(0, 15)) if (!g.over && !g.called.includes(f)) applyAction(g, g.turn, ['w', f]);
-  assert.ok(g.over);
+  // Seat 0's rows one after another: five lines is bingo and first place (shared if someone gets there on the
+  // same call). The game is not over: the other two play on for second.
+  for (const f of mine) if (!g.ranks[0] && !g.called.includes(f)) applyAction(g, g.turn, ['w', f]);
+  assert.equal(g.goal, BINGO_GOAL[5]);
+  assert.equal(BINGO_GOAL[5], 5);
+  assert.equal(BINGO_GOAL[4], 4);
+  assert.equal(g.ranks[0], 1);
+  assert.ok(g.linesOf(0) >= 5);
+  assert.ok(g.last.done.includes(0));
+  if (g.ranks.filter((r) => r === 1).length === 1) {
+    assert.equal(g.over, false);
+    assert.notEqual(g.turn, 0); // whoever has a place calls no more
+    assert.equal(applyAction(g, 0, ['w', g.pool.find((f) => !g.called.includes(f))]), false);
+  }
+  while (!g.over) assert.ok(applyAction(g, g.turn, ['w', g.botCall(g.turn, () => 0.5)]));
+  // Everyone has a place, 1 to 3 (a shared place skips the next), and the first is the winner.
+  assert.ok(g.ranks.every((r) => r >= 1 && r <= 3));
+  assert.deepEqual(g.winners, g.ranks.map((r, s) => (r === 1 ? s : -1)).filter((s) => s >= 0));
   assert.ok(g.winners.includes(0));
-  assert.ok(g.linesOf(0) >= BINGO_GOAL[5]);
   if (g.winners.length > 1) assert.equal(g.winner, -1); else assert.equal(g.winner, 0);
+  assert.equal(Math.max(...g.ranks), g.ranks.filter((r) => r < Math.max(...g.ranks)).length + 1);
 
   // The same seed: the same pool and the same random boards everywhere.
   const a = new Bingo({ players: 2, seed: 8, size: 4 }), b = new Bingo({ players: 2, seed: 8, size: 4 });
@@ -750,4 +765,17 @@ test('fish book bingo: a pool a little bigger than the board, everyone fills the
   d.leave(d.turn);
   assert.ok(d.over);
   assert.equal(d.winners.length, 1);
+  // Someone with a place leaves: the place stays and the others play on.
+  const e = new Bingo({ players: 3, seed: 5, size: 4 });
+  e.close();
+  while (!e.ranks.some((r) => r)) e.call(e.turn, e.botCall(e.turn, () => 0.5));
+  if (!e.over) {
+    const first = e.ranks.indexOf(1);
+    e.leave(first);
+    assert.equal(e.ranks[first], 1);
+    assert.equal(e.over, false);
+    e.leave(e.turn); // one of the two still playing goes: the other takes second
+    assert.ok(e.over);
+    assert.equal(e.ranks.filter((r) => r === 2).length, 1);
+  }
 });
