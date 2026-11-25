@@ -17,7 +17,7 @@
 //   The sun and the moon over the ridge behind the tower, both always there
 //     (the verse: "the sun and the moon shall keep this hill"), and a soft
 //     light on the tower after dark.
-//   The ridge behind (closed land, landmark `ridge`): its treetops as one
+//   The ridge behind (closed land, landmark `ridge`): a bare green hill, one
 //     mesh, so the grounds do not end in flat land.
 //   The wood: pines mostly (OSM: needleleaved), some round trees in the
 //     season's colours.
@@ -51,8 +51,7 @@ export const HC_PARK = {
   skyFar: 330, // m from you: where the sun and the moon over the ridge are drawn
   sun: [-0.33, 0.17, 38], // to one side of the tower: turn and height (radians), size (m)
   moon: [0.33, 0.15, 30], // to the other
-  canopy: 4.5, // m: the treetops over the ridge's ground
-  wood: { cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
+  wood: { drawn: false, cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
   belt: { fill: 3.1, reach: 24, close: 1.8, lawn: 13, dots: 0.07, clear: 22 }, // the wood round the court: a tree every `fill` m on the free ground out to `reach` m; `close` to the terrace and the gate, `lawn` m back from the paved way (open lawn, with a tree on `dots` of its spots); no headstones within `clear` m of the court
   rim: { step: 3, deep: 8, clump: 9, share: 0.5, court: 9 }, // the lawn before the gate: trees within `deep` m of its rim, in clumps (`share` of the `clump` m cells), none this near the court
   flowers: 120, // s: the incense burns
@@ -753,7 +752,9 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   const stairU = (l.stairs.p[0][0] - l.gate.at[0]) * beltU[0] + (l.stairs.p[0][1] - l.gate.at[1]) * beltU[1];
   const byTerrace = (x, z) => { const u = beltAt(x, z); return u > stairU || u < l.gate.d / 2 + 4; }; // (beside or behind the tower's terrace, or beside Hyeonchungmun: the wood closes in round both)
   const inBelt = (x, z) => behindGate(x, z) && inBox(x, z, courtBox0, P.belt.clear) && !inPoly(x, z, l.court) && ringDist(x, z, l.court) < P.belt.clear;
-  { // the wood's mesh
+  // The wood's treetops are not drawn (Yozi 2026-11-25: bare slopes behind, like Namsan): the slopes show their
+  // ground, and the trees stand only round the court, the gate and along the ways.
+  if (P.wood.drawn) { // the wood's mesh
     const hash = (a, b) => { const s = Math.sin(a * 53.9 + b * 71.3) * 43758.5453; return s - Math.floor(s); };
     const { c, w, h, x0, z0 } = wood, pos = [], col = [];
     const pines = ['#3f6f3a', '#467a40', '#39653a'].map((v) => new THREE.Color(v)), leaves = ['#5f9a4a', '#6fae55', '#4f8a43'].map((v) => new THREE.Color(v));
@@ -787,18 +788,18 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     group.userData.counts.woodTris = pos.length / 9;
   }
 
-  if (l.ridge) { // The wooded ridge behind the grounds (closed land): its treetops as one mesh.
+  if (l.ridge) { // The ridge behind the grounds (closed land), one mesh.
     const k = l.ridge, c = k.cell, pos = [], col = [];
     const hash = (a, b) => { const s = Math.sin(a * 91.7 + b * 47.3) * 43758.5453; return s - Math.floor(s); };
     const at = (i, j) => (i < 0 || j < 0 || i >= k.w || j >= k.h ? 0 : k.m[j * k.w + i]);
-    // (a treetop's height over the ground, uneven; down to the ground where the ridge ends)
-    const top = (i, j) => { const h = at(i, j); return h <= 0 ? 0 : h + Math.min(P.canopy, h * 1.5) * (0.6 + 0.8 * hash(i, j)); };
-    const pines = ['#3f6f3a', '#467a40', '#39653a'].map((h) => new THREE.Color(h)), leaves = ['#5f9a4a', '#6fae55', '#4f8a43'].map((h) => new THREE.Color(h));
+    // A bare green hill like Namsan (Yozi 2026-11-25: no treetops behind): the ground's own shape in calm greens.
+    const top = (i, j) => Math.max(0, at(i, j));
+    const greens = ['#7fae5c', '#86b562', '#78a657'].map((h) => new THREE.Color(h));
     for (let j = 0; j < k.h - 1; j++) for (let i = 0; i < k.w - 1; i++) {
       if (!at(i, j) && !at(i + 1, j) && !at(i, j + 1) && !at(i + 1, j + 1)) continue;
       const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => [l.x + k.x0 + a * c, top(a, b), l.z + k.z0 + b * c]);
       for (const [n, tri] of [[0, [0, 3, 2]], [1, [0, 2, 1]]]) {
-        const r = hash(i * 2 + n, j + 0.5), on = r < 0.7 ? pines[Math.floor(r * 40) % 3] : leafColor(leaves[Math.floor(r * 40) % 3], leafHash(i * k.h + j, 5 + n), MIX.wood);
+        const on = greens[Math.floor(hash(i * 2 + n, j + 0.5) * 3)];
         for (const v of tri) { pos.push(...q[v]); col.push(on.r, on.g, on.b); }
       }
     }

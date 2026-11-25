@@ -151,7 +151,7 @@ await go([0, 10]);
 await cam({ yaw: front, pitch: 0.28, dist: 130 }, 2500);
 await shot('13-ridge');
 const counts = await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts);
-assert(counts?.woodTris > 500 && counts?.belt > 60, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
+assert(!counts?.woodTris && counts?.belt > 60, `bare slopes behind (no treetop mesh) and ${counts?.belt} trees round the court`);
 console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
 // The memorials: each stands by its way; you look at it from the way and cannot walk into it.
 for (const m of l.memorials || []) {
