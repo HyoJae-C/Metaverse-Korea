@@ -26,6 +26,10 @@ export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'tw
 // shaved head (core/hair-styles.js).
 export const NPC_HAIR_STYLES = ['shaved'];
 export const START_HAIR_STYLES = ['short', 'bob', 'long', 'pony', 'comma', 'curly'];
+// T-shirt colours on the first character screen: one row on a phone. The
+// rest of the clothes, hair and looks are found in town (Yozi 2026-11-26:
+// "you shop inside anyway; fewer first choices, less to take in up front").
+export const START_SHIRTS = ['coral', 'mint', 'butter', 'lilac', 'sky'];
 // Eye shapes from the two cosmetic clinics (core/hair-styles.js shapes them).
 export const EYE_SHAPE_IDS = ['big', 'round', 'cat', 'puppy'];
 export const NOSE_IDS = ['big', 'small', 'high'];
