@@ -15,7 +15,7 @@ import { L } from '../ui/pocha-ui.js';
 
 export const PRAYER_TEXT = {
   pray: { en: 'Pray', ko: '기도하기', ja: 'お祈りする', zh: '祈祷', es: 'Rezar', id: 'Berdoa', vi: 'Cầu nguyện', hi: 'प्रार्थना करें', fr: 'Prier', th: 'สวดมนต์', ar: 'صلِّ' },
-  tribute: { en: 'Lay a flower and bow in silence', ko: '헌화하고 묵념하기', ja: '献花して黙祷する', zh: '献花并默哀', es: 'Dejar una flor y guardar silencio', id: 'Letakkan bunga dan mengheningkan cipta', vi: 'Dâng hoa và mặc niệm', hi: 'फूल चढ़ाएँ और मौन रखें', fr: 'Déposer une fleur et se recueillir', th: 'วางดอกไม้และยืนไว้อาลัย', ar: 'ضع زهرة وقف دقيقة صمت' },
+  tribute: { en: 'Burn incense and bow in silence', ko: '분향하고 묵념하기', ja: '焼香して黙祷する', zh: '上香并默哀', es: 'Ofrecer incienso y guardar silencio', id: 'Membakar dupa dan mengheningkan cipta', vi: 'Thắp hương và mặc niệm', hi: 'धूप अर्पित करें और मौन रखें', fr: "Offrir de l'encens et se recueillir", th: 'จุดธูปและยืนไว้อาลัย', ar: 'أشعل البخور وقف دقيقة صمت' },
   tributeStop: { en: 'Finish', ko: '묵념 마치기', ja: '黙祷を終える', zh: '结束默哀', es: 'Terminar', id: 'Selesai', vi: 'Kết thúc', hi: 'समाप्त करें', fr: 'Terminer', th: 'เสร็จสิ้น', ar: 'إنهاء' },
   stop: { en: 'Stop praying', ko: '기도 마치기', ja: 'お祈りを終える', zh: '结束祈祷', es: 'Terminar de rezar', id: 'Selesai berdoa', vi: 'Kết thúc cầu nguyện', hi: 'प्रार्थना पूरी करें', fr: 'Finir de prier', th: 'สวดมนต์เสร็จ', ar: 'أنهِ الصلاة' },
 };
@@ -53,9 +53,9 @@ export function createPrayer(game) {
       if (pose) return quiet ? { key: 'tribute-stop', label: L(PRAYER_TEXT.tributeStop), run: stop } : { key: 'pray-stop', label: '🙏 ' + L(PRAYER_TEXT.stop), run: stop };
       const s = near(p);
       if (!s) return null;
-      if (s.tribute) { // (the Memorial Tower: a flower and a silent bow; no bubble)
+      if (s.tribute) { // (the Memorial Tower: incense and a silent bow; no bubble)
         return {
-          key: 'tribute', label: '💐 ' + L(PRAYER_TEXT.tribute), run: () => {
+          key: 'tribute', label: '🙏 ' + L(PRAYER_TEXT.tribute), run: () => {
             game.me.root.rotation.y = s.face ?? game.me.root.rotation.y;
             pose = s.pose;
             quiet = true;

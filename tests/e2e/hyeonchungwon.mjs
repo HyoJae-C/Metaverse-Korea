@@ -78,6 +78,14 @@ for (let k = 0; k < 16 && u <= 2.5; k++) { // (a slow machine walks slowly: up t
 await page.keyboard.up('KeyW');
 assert(u > 2, `walked through the gate's open hall (${u.toFixed(1)} m past its middle)`);
 await shot('5-through-gate');
+await go([0, 0], 800);
+assert(Math.abs((await me()).y - 0.45) < 0.05, `standing on the gate's stone floor (${(await me()).y.toFixed(2)} m)`);
+assert((await page.evaluate(() => __mk.hyeonchungwon.group.userData.counts.guards)) === 2, 'two honour guards at the gate');
+await cam({ yaw: front, pitch: 0.12, dist: 5 }, 1200);
+await shot('5b-on-gate-floor');
+await go([fx * 7, fz * 7], 800);
+await cam({ yaw: front, pitch: 0.02, dist: 5 }, 1200);
+await shot('5c-guards');
 // The terrace: up the stairs, at the altar.
 const [sa, sb] = l.stairs.p;
 await go([(sa[0] + sb[0]) / 2, (sa[1] + sb[1]) / 2], 500);
@@ -88,10 +96,10 @@ assert(Math.abs((await me()).y - l.tribute.y) < 0.05, `on the terrace at ${l.tri
 await cam({ yaw: front, pitch: 0.3, dist: 9 });
 await shot('6-tower');
 const label = await page.evaluate(() => document.querySelector('#action-btn')?.textContent || '');
-assert(/flower|헌화/i.test(label), `the action here is the tribute ("${label}")`);
+assert(/incense|분향/i.test(label), `the action here is the tribute ("${label}")`);
 await page.keyboard.press('Space');
 await page.waitForTimeout(1500);
-assert(await page.evaluate(() => __mk.hyeonchungwon.group.getObjectByName('hyeonchung-flowers').visible), 'white chrysanthemums on the altar');
+assert(await page.evaluate(() => __mk.hyeonchungwon.group.getObjectByName('hyeonchung-incense').visible), 'incense burns at the altar');
 await cam({ yaw: front + 2.4, pitch: 0.25, dist: 5 });
 await shot('7-tribute');
 await cam({ yaw: front, pitch: 0.12, dist: 4.5 }, 1200);
@@ -143,7 +151,7 @@ await go([0, 10]);
 await cam({ yaw: front, pitch: 0.28, dist: 130 }, 2500);
 await shot('13-ridge');
 const counts = await page.evaluate(() => __mk.hyeonchungwon?.group?.userData.counts);
-assert(counts?.woodTris > 500 && counts?.belt > 60, `the wood round the plots (${counts?.woodTris} triangles) and ${counts?.belt} trees round the court`);
+assert(!counts?.woodTris && counts?.belt > 60, `bare slopes behind (no treetop mesh) and ${counts?.belt} trees round the court`);
 console.log('render', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())), JSON.stringify(counts));
 // The memorials: each stands by its way; you look at it from the way and cannot walk into it.
 for (const m of l.memorials || []) {

@@ -15,11 +15,23 @@
 //     sky()           { dark 0-1, wet }: how the sun and the moon over the hill show
 //   hc.y(x, z)        ground height on the grounds (0 off them)
 //   hc.update(p, dt)  every frame on the street
-//   hc.tribute()      you paid your respects: white chrysanthemums on the altar
+//   hc.tribute()      you paid your respects: incense burns at the altar
 //   hc.group          what loaded (main.js FarCull), or null
 import { hyeonchungHeight, hyeonchungBox } from '../core/hyeonchung-ground.js';
 
 const inPolygonXZ = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i][1] > z) !== (p[j][1] > z) && x < ((p[j][0] - p[i][0]) * (z - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; return c; };
+
+// Hyeonchungmun's stone floor (drawn in hyeonchungwon-park.js): the open hall is `hall` of the gate's width, on a
+// platform `plat` m up that reaches `out` m past the hall's front and back, with `steps` m of steps there, `stair` of the hall wide.
+export const HC_GATE = { hall: 0.52, plat: 0.45, side: 0.8, out: 0.7, steps: 1.2, stair: 0.7 };
+// How high you stand at (x, z), landmark metres: on the platform, on its steps, or 0.
+export function gateFloor(l, x, z) {
+  const g = l.gate, G = HC_GATE, dx = x - g.at[0], dz = z - g.at[1], c = Math.cos(g.ry), sn = Math.sin(g.ry);
+  const u = Math.abs(dx * c - dz * sn), v = Math.abs(dx * sn + dz * c), hallW = g.w * G.hall, edge = g.d / 2 + G.out;
+  if (u > hallW / 2 + G.side || v > edge + G.steps) return 0;
+  if (v <= edge) return G.plat;
+  return u <= (hallW * G.stair) / 2 ? G.plat * (1 - (v - edge) / G.steps) : 0;
+}
 
 export const HC_NEAR = 480; // m: past the fog (it ends at 420 m), so it is there before you see it
 
@@ -36,7 +48,7 @@ export function hyeonchungSolids(l) {
   const wing = (g.w - g.w * 0.52) / 2; // (the hall in the middle is open: you walk through)
   for (const k of [-1, 1]) { const u = k * (g.w / 2 - wing / 2); out.push(boxRing(g.at[0] + u * c, g.at[1] - u * s, wing, g.d * 0.62, g.ry)); }
   out.push(boxRing(t.at[0], t.at[1], t.w + 1.2, t.w + 1.2, t.ry));
-  out.push(boxRing(l.altar.at[0], l.altar.at[1], 3.4, 3.2, l.altar.ry)); // (the burner and the stone, the verse wall behind, the flower table in front)
+  out.push(boxRing(l.altar.at[0], l.altar.at[1], 3.4, 3.2, l.altar.ry)); // (the burner and the stone, the verse wall behind)
   for (const [a, b] of l.walls) { const len = Math.hypot(b[0] - a[0], b[1] - a[1]); out.push(boxRing((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, len, 0.5, Math.atan2(-(b[1] - a[1]), b[0] - a[0]))); }
   if (l.flag) out.push(boxRing(l.flag.at[0], l.flag.at[1], 0.6, 0.6, 0));
   for (const m of l.memorials || []) out.push(boxRing(m.at[0], m.at[1], m.size[0], m.size[1], m.ry));
@@ -70,7 +82,7 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
   if (!l) return { y: () => 0, update() {}, tribute() {}, group: null, landmark: null, inside: false };
   const [bx0, bz0, bx1, bz1] = hyeonchungBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
-  const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : hyeonchungHeight(l, x - l.x, z - l.z));
+  const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : gateFloor(l, x - l.x, z - l.z) || hyeonchungHeight(l, x - l.x, z - l.z)); // (the gate's stone floor is 0.45 m up: you stand on it, not in it)
   const W = ([x, z]) => [l.x + x, l.z + z];
   collision?.add(ridgeSolids(l.ridge).map((p) => ({ p: p.map(W), low: true })));
   for (const f of l.flats) collision?.addDeck(f.p.map(W));
