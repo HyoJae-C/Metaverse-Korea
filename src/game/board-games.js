@@ -220,6 +220,9 @@ export function createBoardGames(game) {
       return passLeft() > 0 ? { key: 'boardPass', label: leftText(), run: () => game.toast(leftText()) } : { key: 'boardPass', label: game.t('boardPass.buy', { n: won(BOARD_PASS.fee) }), run: () => buyPass() };
     },
     get seated() { return !!table?.on; },
+    // The game I am in right now (its id), or null: sent to the room so people
+    // not in it see a 🎲 bubble over my head (core/players.js).
+    get playing() { const p = ui?.play; return p && !p.g.over && /^[0-9a-z]{1,12}$/.test(p.gid) ? p.gid : null; },
     get watching() { return table?.watched || []; }, // (for the e2e tests)
     // Walked out of the room.
     leftRoom() { watchQueue = watchQueue.then(() => { for (const id of [...watched.keys()]) unwatch(id); }); closeAsk(); if (ui?.open || ui?.busy) ui.close(); },

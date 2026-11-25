@@ -188,6 +188,7 @@ export const AR = {
   'beauty.saved': 'حُفظ مظهرك الجديد!',
   'beauty.suits': 'يليق بك كثيرًا!',
   'book.reading': '📖 يقرأ...',
+  'boardGame.playing': '🎲 يلعب لعبة لوحية',
   'haircut.start': 'سأقصّ لك شعرك بشكل جميل!',
   'salon.open': 'اختر تسريحة',
   'clinic.open': 'استشر الطبيب',

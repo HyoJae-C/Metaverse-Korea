@@ -191,6 +191,7 @@ export const JA = {
   "beauty.saved": "新しい見た目を保存しました！",
   "beauty.suits": "本当によく似合います！",
   "book.reading": "📖 読書中...",
+  "boardGame.playing": "🎲 ボードゲーム中",
   "haircut.start": "素敵にカットしますね！",
   "salon.open": "スタイルを選ぶ",
   "clinic.open": "カウンセリング",

@@ -188,6 +188,7 @@ export const TH = {
   'beauty.saved': 'บันทึกลุคใหม่แล้ว!',
   'beauty.suits': 'เข้ากับคุณมากเลย!',
   'book.reading': '📖 กำลังอ่าน...',
+  'boardGame.playing': '🎲 กำลังเล่นบอร์ดเกม',
   'haircut.start': 'เดี๋ยวตัดผมให้สวยเลยนะ!',
   'salon.open': 'เลือกทรง',
   'clinic.open': 'ปรึกษาแพทย์',

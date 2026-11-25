@@ -230,6 +230,12 @@ export class OneCard {
     this.dir = 1;
     this.attack = 0; // cards waiting for whoever can't defend
     this.out = new Array(players).fill(false); // bust or left
+    // Places (Yozi 2026-11-26: "keep going after the first"): whoever empties their hand takes the next place
+    // and plays no more; the rest play on until one is left. Whoever went bust comes after them, the last to
+    // go bust first. 0 = still playing, or left the table.
+    this.ranks = new Array(players).fill(0);
+    this.place = 1;
+    this.busted = []; // seats, in the order they went bust
     this.winner = -1;
     this.over = false;
     this.last = null; // what just happened, for the screen
@@ -271,12 +277,25 @@ export class OneCard {
   next(from = this.turn, skip = 0) {
     let t = from;
     for (let k = 0; k <= skip; k++) {
-      do t = (t + this.dir + this.n) % this.n; while (this.out[t]);
+      let guard = this.n;
+      do t = (t + this.dir + this.n) % this.n; while (!this.playing(t) && guard-- > 0);
     }
     return t;
   }
 
-  alive() { return this.out.map((o, p) => (o ? -1 : p)).filter((p) => p >= 0); }
+  playing(p) { return !this.out[p] && !this.ranks[p]; }
+  alive() { return this.out.map((_, p) => (this.playing(p) ? p : -1)).filter((p) => p >= 0); }
+
+  // One player (or nobody) is still playing: the places are handed out and the game is over.
+  settle() {
+    const alive = this.alive();
+    if (alive.length > 1) return false;
+    for (const p of alive) this.ranks[p] = this.place++;
+    for (const p of this.busted.slice().reverse()) if (!this.ranks[p]) this.ranks[p] = this.place++;
+    this.winner = this.ranks.indexOf(1);
+    this.over = true;
+    return true;
+  }
 
   // Put card c (suit: the new suit when c is a 7). Returns true if taken.
   put(p, c, suit = null) {
@@ -290,15 +309,21 @@ export class OneCard {
     const r = cardRank(c);
     this.attack += attackOf(c);
     this.last = { p, put: c };
-    if (!h.length) { this.winner = p; this.over = true; return true; }
+    const done = !h.length;
+    if (done) {
+      // Out of cards: the next place. The others play on, and the last card still does what it does to them.
+      this.ranks[p] = this.place++;
+      this.last.done = this.ranks[p];
+      if (this.settle()) return true;
+    }
     if (r === '7') {
       this.suit = SUITS.includes(suit) ? suit : this.suit;
       this.last.suit = this.suit;
     }
-    if (r === 'K') return true; // one more turn
+    if (r === 'K' && !done) return true; // one more turn
     if (r === 'Q') {
       this.dir = -this.dir;
-      if (this.alive().length === 2) return true; // with two left, Q is like K
+      if (this.alive().length === 2 && !done) return true; // with two left, Q is like K
     }
     this.turn = this.next(p, r === 'J' ? 1 : 0);
     return true;
@@ -313,24 +338,25 @@ export class OneCard {
     this.last = { p, drew: k };
     if (this.hands[p].length > ONECARD_BUST) {
       this.last.bust = true;
-      this.knockOut(p);
+      this.knockOut(p, true);
       return true;
     }
     this.turn = this.next(p);
     return true;
   }
 
-  knockOut(p) {
+  knockOut(p, bust = false) {
     this.out[p] = true;
+    if (bust) this.busted.push(p);
     this.stock.unshift(...this.hands[p]);
     this.hands[p] = [];
-    const alive = this.alive();
-    if (alive.length === 1) { this.winner = alive[0]; this.over = true; return; }
+    if (this.settle()) return;
     if (this.turn === p) { this.turn = this.next(p); }
   }
 
   leave(p) {
     if (this.over || this.out[p]) return;
+    if (this.ranks[p]) { this.out[p] = true; return; } // (they had their place already: it stays)
     this.knockOut(p);
   }
 
@@ -1216,8 +1242,10 @@ export class Gimbap {
 // your board). Everyone fills their own board from the pool at once, in
 // any order (or lets the rest fill at random), then in turn each calls one
 // fish of the pool nobody has called yet: it is marked on every board that
-// has it. Rows, columns and the two diagonals count; 3 lines on a 5×5 (2 on
-// a 4×4) is bingo. Whoever gets there on a call wins; two at once share it.
+// has it. Rows, columns and the two diagonals count; 5 lines on a 5×5 (4 on
+// a 4×4) is bingo. Whoever gets there on a call takes the next place (two at
+// once share it) and calls no more; the rest play on for 2nd, 3rd... until
+// one player is left, who takes the last place.
 // No hurry anywhere: a turn has the table's usual clock, and filling the
 // board has its own long one (BINGO_SETUP_S).
 //
@@ -1227,11 +1255,10 @@ export class Gimbap {
 // nothing but a hollow win).
 export const BINGO_KINDS = 56; // the fish book's pictures (core/fishing.js FISH_SHEET)
 export const BINGO_SIZES = [5, 4]; // opt 0 / 1 (the host picks in the lobby)
-// 50 of the book's fish for either board, 3 lines to win (Yozi 2026-11-25: "50, to keep it clean"; a 4×4 game
-// of 20 fish and 2 lines was over after three or four calls each). By simulation a 4×4 game takes 14-19 calls
-// in all and a 5×5 game 18-23.
+// 50 of the book's fish for either board (Yozi 2026-11-25: "50, to keep it clean"), and as many lines as the
+// board is wide: 5 on a 5×5, 4 on a 4×4 (Yozi 2026-11-26).
 export const BINGO_POOL = { 5: 50, 4: 50 };
-export const BINGO_GOAL = { 5: 3, 4: 3 };
+export const BINGO_GOAL = { 5: 5, 4: 4 };
 export const BINGO_SETUP_S = { 5: 120, 4: 90 }; // seconds to fill a board; then the empty cells fill at random
 export const BINGO_ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123';
 export const bingoCode = (cells) => cells.map((f) => BINGO_ABC[f]).join('');
@@ -1263,8 +1290,10 @@ export class Bingo {
     this.called = []; // fish, in the order called
     this.phase = 'setup'; // 'setup' | 'call'
     this.caller = this.first;
-    this.winners = [];
+    this.winners = []; // whoever is first (two or more when they got there on the same call)
     this.winner = -1;
+    this.ranks = new Array(players).fill(0); // each seat's place once it has bingo (1 = first; 0 = not yet, or left)
+    this.place = 1; // the next place to hand out
     this.over = false;
     this.last = null; // { p, fish, hit: [seats whose board has it] } after a call
   }
@@ -1308,9 +1337,25 @@ export class Bingo {
     if (this.over || this.phase !== 'call' || p !== this.caller || !this.pool.includes(fish) || this.called.includes(fish)) return false;
     this.called.push(fish);
     this.last = { p, fish, hit: this.boards.map((b, s) => (b && !this.out[s] && b.includes(fish) ? s : -1)).filter((s) => s >= 0) };
-    this.winners = this.boards.map((_, s) => s).filter((s) => !this.out[s] && this.linesOf(s) >= this.goal);
-    if (this.winners.length) { this.winner = this.winners.length === 1 ? this.winners[0] : -1; this.over = true; return true; }
-    this.caller = this.nextIn(this.caller);
+    const done = this.boards.map((_, s) => s).filter((s) => !this.out[s] && !this.ranks[s] && this.linesOf(s) >= this.goal);
+    for (const s of done) this.ranks[s] = this.place;
+    this.place += done.length;
+    this.last.done = done;
+    if (!this.settle()) this.caller = this.nextIn(this.caller);
+    return true;
+  }
+
+  // Still playing for a place.
+  playing(s) { return !this.out[s] && !this.ranks[s]; }
+
+  // One player (or nobody) left without a place: they take the last one and the game is over.
+  settle() {
+    const left = this.ranks.map((_, s) => s).filter((s) => this.playing(s));
+    if (left.length > 1) return false;
+    for (const s of left) this.ranks[s] = this.place++;
+    this.winners = this.ranks.map((r, s) => (r === 1 ? s : -1)).filter((s) => s >= 0);
+    this.winner = this.winners.length === 1 ? this.winners[0] : -1;
+    this.over = true;
     return true;
   }
 
@@ -1335,15 +1380,15 @@ export class Bingo {
 
   nextIn(p) {
     let t = p;
-    do t = (t + 1) % this.n; while (this.out[t] && t !== p);
+    do t = (t + 1) % this.n; while (!this.playing(t) && t !== p);
     return t;
   }
 
   leave(p) {
     if (this.over || this.out[p]) return;
     this.out[p] = true;
-    const left = this.out.map((o, s) => (o ? -1 : s)).filter((s) => s >= 0);
-    if (left.length < 2) { this.winner = left[0] ?? -1; this.winners = left.slice(0, 1); this.over = true; return; }
+    if (this.ranks[p]) return; // (they had their place already: it stays)
+    if (this.settle()) return;
     if (this.phase === 'setup') { if (this.boards.every((b, s) => b || this.out[s])) this.begin(); } else if (this.caller === p) this.caller = this.nextIn(p);
   }
 }

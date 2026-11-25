@@ -1552,7 +1552,7 @@ const rocking = lazyPanel(() => import('./game/rocking.js').then(({ createRockin
 const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => {
   sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q);
   if (q.target.rk) rocking.ready().catch(() => {}); rocking.peer(q, dt);
-} };
+}, boardGame: () => boardGames.playing };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you. The badge shows today's visitors (real
@@ -7786,6 +7786,7 @@ renderer.setAnimationLoop((now) => {
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
+    if (boardGames.playing) st.bg = boardGames.playing; // in a board game: others see 🎲 over our head
     if (umbrellaOpen()) st.um = 1;
     if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us
@@ -7799,7 +7800,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik || st.ip !== lastSent.ip;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik || st.ip !== lastSent.ip || st.bg !== lastSent.bg;
     // Flying (operators) is sent like walking, so others see us in the sky
     // (game/sky-flight.js; same send rates, no name tag or map dot).
     if (changed || idleTimer <= 0) {

@@ -188,6 +188,7 @@ export const VI = {
   'beauty.saved': 'Đã lưu diện mạo mới!',
   'beauty.suits': 'Hợp với bạn lắm!',
   'book.reading': '📖 Đang đọc...',
+  'boardGame.playing': '🎲 Đang chơi board game',
   'haircut.start': 'Để tôi cắt cho bạn một kiểu thật đẹp!',
   'salon.open': 'Chọn kiểu',
   'clinic.open': 'Tư vấn bác sĩ',
