@@ -1271,4 +1271,11 @@ export const ZH = {
   "career.busy": "这个小时干了很多活，休息一下吧！",
   "career.offline": "连不上服务器，请稍后再试。",
   "career.close": "关闭",
+  "invite.title": "喜欢 Modu Seoul 吗？",
+  "invite.why": "邀请朋友和你一起逛首尔。朋友通过你的链接加入，你就能获得 ₩50,000。",
+  "invite.message": "来 Modu Seoul 和我一起逛首尔吧！浏览器里免费玩，不用装应用。",
+  "invite.share": "分享",
+  "invite.copy": "复制链接",
+  "invite.copied": "链接已复制",
+  "invite.later": "以后再说",
 };

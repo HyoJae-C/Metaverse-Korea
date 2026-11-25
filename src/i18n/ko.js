@@ -1271,4 +1271,11 @@ export const KO = {
   "career.busy": "이번 시간에 일을 많이 했어요. 잠깐 쉬었다 해요!",
   "career.offline": "서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.",
   "career.close": "닫기",
+  "invite.title": "모두서울, 재밌게 즐기고 있어요?",
+  "invite.why": "친구를 불러 같이 서울을 걸어 봐요. 친구가 내 링크로 들어오면 50,000원을 받아요.",
+  "invite.message": "모두서울에서 나랑 같이 서울 걷자! 설치 없이 브라우저에서 무료로 돼.",
+  "invite.share": "공유하기",
+  "invite.copy": "링크 복사",
+  "invite.copied": "링크를 복사했어요",
+  "invite.later": "나중에",
 };

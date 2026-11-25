@@ -15,6 +15,7 @@ import { SquareQuests, QUEST_REWARD, STARTER, STARTER_REWARD, tripOf } from './c
 import { STARTER_TEXT, TRIP_TEXT, BUKCHON_TRIP_CARD, ROUTE_TIP } from './data/starter-quests.js';
 import { startList, startSpot, firstStopSpot, busiestStart, askCrowds, savedStart, saveStart, ANY } from './game/first-stop.js';
 import { keepPending, retryPending } from './game/referral-retry.js';
+import { createShareInvite, refFromSearch } from './game/share-invite.js';
 import { HighFives, CookPairs, hi5Msg, parseHi5, crowdBonus, TOGETHER_RADIUS } from './core/together.js';
 import { parseContest } from './core/fish-contest.js';
 import { createFishContest } from './game/fish-contest.js';
@@ -663,6 +664,8 @@ await new Promise((resolve) => {
     }
     if (await referral()) resolve();
   };
+  // Came from a friend's invite link (game/share-invite.js): their name is filled in.
+  if (!isReturning() && !$('referrer').value) $('referrer').value = refFromSearch(location.search, cleanName);
   $('referrer').addEventListener('input', (e) => {
     if (!e.isComposing) { const v = cleanName(e.target.value); if (v !== e.target.value) e.target.value = v; }
     $('referrer').classList.remove('bad');
@@ -6561,6 +6564,12 @@ walletReady.then(async () => {
   };
   news();
   setInterval(news, 10 * 60 * 1000);
+  // After 30 minutes of play in all, once: a link to invite friends (game/share-invite.js).
+  createShareInvite({
+    $, t, toast: (m) => shop.toast(m), name: () => identity.name,
+    playing: () => !document.hidden && !tabParked && !!me?.root,
+    busy: () => !!interior || spaceBusy() || !!document.querySelector('.overlay:not([hidden])'),
+  });
   // Seoul Bank: money other players sent me (game/bank.js).
   bankGame.checkNews();
   setInterval(bankGame.checkNews, 3 * 60 * 1000);
