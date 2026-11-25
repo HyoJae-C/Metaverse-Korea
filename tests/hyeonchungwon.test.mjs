@@ -292,3 +292,14 @@ test("Hyeonchungmun's stone floor: you stand on it, and go up its steps", async 
   const walk = createHyeonchungwonWalk({ landmarks: hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })) });
   assert.equal(walk.y(ox + l.x + g.at[0], oz + l.z + g.at[1]), HC_GATE.plat);
 });
+
+test('near the gate and the tower the view may tilt up (tower-look)', async () => {
+  const { createHyeonchungwonWalk: make } = await import('../src/game/hyeonchungwon-walk.js');
+  const { createTowerLook, TOWER_LOOK } = await import('../src/game/tower-look.js');
+  const l = hc.landmarks.find((q) => q.type === 'hyeonchung');
+  const walk = make({ landmarks: [l], collision: null });
+  assert.equal(walk.lookUp.length, 2);
+  const look = createTowerLook(() => null, () => null, () => walk.lookUp);
+  for (const k of ['gate', 'tower']) assert.equal(look.min({ x: l.x + l[k].at[0] + 5, z: l.z + l[k].at[1] }), TOWER_LOOK.minPitch, `by the ${k}`);
+  assert.equal(look.min({ x: l.x + l.mainGate.at[0], z: l.z + l.mainGate.at[1] }), null, 'not at the main gate');
+});

@@ -1473,6 +1473,9 @@ Before the altar you burn incense and bow (`game/prayer.js`, no reward; the
 burner and the 충 혼 stone stand clear, nothing in front). Hyeonchungmun is
 white on four square columns with a blue-green roof and two honour guards in
 black (made up: their look), and its stone floor is walked on (`HC_GATE`). The
+Memorial Tower is four granite slabs in a cross on a thick round canopy over
+the offering place (Seoul's, from Yozi's photos; not Daejeon's), and near the
+gate and the tower the view tilts up when dragged (`HC_LOOK`). The
 slopes behind are bare green (no treetop mesh, Yozi 2026-11-25); trees stand
 round the court, the gate and along the ways. A
 note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)

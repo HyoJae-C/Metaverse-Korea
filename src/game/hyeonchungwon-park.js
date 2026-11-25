@@ -431,6 +431,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16, 1, false, -Math.PI / 2.6, Math.PI / 1.3), black); visor.position.set(0, 0.26, 0.14);
       const badge = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.03), gold); badge.position.set(0, 0.38, 0.34);
       cap.add(crown, band, visor, badge);
+      cap.position.y = -0.1; // (down onto the head: it sat above the forehead, Yozi 2026-11-25)
       ch.addProp('head', cap);
       const kit = new THREE.Group(); // a white belt with a gold buckle
       const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.25, 0.05, 14), white); belt.position.y = 0.44;
@@ -448,36 +449,33 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
   }
 
   let flowers = null;
-  { // The Memorial Tower: a round base, a cross-shaped granite shaft of cut blocks stepping up to the middle; before it
-    // the verse wall, the incense burner, the "충혼" stone (nothing in front of them, so they are seen).
-    const t = l.tower, yT = l.tribute.y, m = frame(t.at, t.ry, yT), w = t.w, R = w * 0.56;
-    B.add(new THREE.CylinderGeometry(R + 0.9, R + 1.1, 0.3, 28).translate(0, 0.15, 0), C.stone, m);
-    B.add(new THREE.CylinderGeometry(R, R, 1.5, 28).translate(0, 1.05, 0), C.granite, m); // the round base
-    B.add(new THREE.CylinderGeometry(R + 0.45, R + 0.2, 0.34, 28).translate(0, 1.97, 0), C.white, m); // its wide rim
-    for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2 + 0.22; B.box(0.1, 1.5, 0.06, Math.sin(a) * (R + 0.01), 1.05, Math.cos(a) * (R + 0.01), C.stone, m, a); } // (the base's joints)
-    const y0 = 2.14, H = t.h - y0, r0 = w * 0.3, r1 = w * 0.15;
-    const half = (r) => r / Math.SQRT2; // (a 4-sided cylinder turned 45°: half its face)
-    B.add(new THREE.CylinderGeometry(r1, r0, H, 4, 1).rotateY(Math.PI / 4).translate(0, y0 + H / 2, 0), C.granite, m);
-    const arms = [[0.86, 1.0], [0.7, 1.55]]; // each arm of the cross in two steps: how high, how far out
-    for (let k = 0; k < 4; k++) for (const [hh, out] of arms) {
-      const fin = new THREE.CylinderGeometry(r1 * 0.5, r0 * 0.62, H * hh, 4, 1).rotateY(Math.PI / 4).scale(1, 1, 0.5).translate(0, y0 + (H * hh) / 2, half(r0) * out * 0.8).rotateY((k * Math.PI) / 2);
-      B.add(fin, out > 1.2 ? C.stone : C.granite, m);
+  { // The Memorial Tower (Seoul's, from Yozi's two photos, 2026-11-25): a thick round stone canopy on a drum, wide
+    // over the offering place, and on it the tower: four smooth granite slabs in a cross, their outer edges leaning
+    // in and their tops cut on a slope up to the middle, each with a low sloping foot out over the canopy. No courses.
+    // The back is not in the photos: drawn the same as the front (made up). Before it the verse wall, the burner, the
+    // "충혼" stone.
+    const t = l.tower, yT = l.tribute.y, m = frame(t.at, t.ry, yT), w = t.w;
+    const yD = 3.2, R = w * 0.82, fh = 1.25; // (the canopy's underside over the verse wall, its radius, its face's height)
+    B.add(new THREE.CylinderGeometry(w * 0.52, w * 0.52, yD, 24).translate(0, yD / 2, 0), C.stone, m); // the drum under it, in its shade
+    B.box(w * 1.12, yD, 0.5, 0, yD / 2, w * 0.5, C.dark, m); // (the shade behind the verse wall)
+    B.add(new THREE.CylinderGeometry(R, R - 0.35, fh, 32).translate(0, yD + fh / 2, 0), C.granite, m); // the canopy
+    B.add(new THREE.CylinderGeometry(R - 0.5, R - 0.5, 0.08, 32).translate(0, yD + fh + 0.04, 0), C.lawn, m); // (grass on its top, as from the air)
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2 + 0.17, r = R - 0.165; bar([Math.sin(a) * (r - 0.175), yD, Math.cos(a) * (r - 0.175)], [Math.sin(a) * (r + 0.175), yD + fh, Math.cos(a) * (r + 0.175)], 0.03, C.joint, m, 0.05); } // (its face's joints)
+    const y0 = yD + fh + 0.08, H = t.h - y0, th = w * 0.155, a0 = w * 0.3, a1 = w * 0.14;
+    // a slab from the middle out along +z, turned k quarter turns: out to r0 at its foot and r1 at its top, hIn high
+    // at the middle and hOut at its outer edge, th thick
+    const slab = (z0, r0, r1, hIn, hOut, k, color) => {
+      const g = new THREE.BoxGeometry(th, 1, 1), p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) { const up = p.getY(i) > 0, out = p.getZ(i) > 0; p.setY(i, y0 + (up ? (out ? hOut : hIn) : 0)); p.setZ(i, out ? (up ? r1 : r0) : z0); }
+      g.computeVertexNormals();
+      B.add(g.rotateY((k * Math.PI) / 2), color, m);
+    };
+    for (let k = 0; k < 4; k++) {
+      slab(0, a0, a1, H, H * 0.9, k, k % 2 ? C.stone : C.granite); // the tower's slab (two tones, so the cross reads)
+      slab(a0 - 0.05, R - 1.0, R - 1.0, 1.3, 0.3, k, C.granite); // its low foot, sloping out over the canopy
+      const q = ((k + 0.5) * Math.PI) / 2, d = (th / 2 + 0.01) * Math.SQRT2; // (the dark corner between two slabs, to the top)
+      bar([Math.sin(q) * d, y0, Math.cos(q) * d], [Math.sin(q) * d, y0 + H * 0.97, Math.cos(q) * d], 0.07, C.joint, m);
     }
-    const rows = Math.round(H / 0.95); // the blocks' courses: a thin dark line round the shaft and the arms
-    for (let i = 1; i < rows; i++) {
-      const f = i / rows, y = y0 + H * f, s = 2 * half(r0 + (r1 - r0) * f) + 0.03;
-      B.box(s, 0.035, s, 0, y, 0, C.joint, m);
-      for (let k = 0; k < 4; k++) for (const [hh, out] of arms) {
-        if (f > hh - 0.02) continue;
-        const fr = (r0 * 0.62 + (r1 * 0.5 - r0 * 0.62) * (f / hh)), sw = 2 * half(fr) + 0.03;
-        B.box(k % 2 ? sw * 0.5 : sw, 0.035, k % 2 ? sw : sw * 0.5, Math.sin((k * Math.PI) / 2) * half(r0) * out * 0.8, y, Math.cos((k * Math.PI) / 2) * half(r0) * out * 0.8, C.joint, m);
-      }
-    }
-    for (let k = 0; k < 4; k++) { // (the upright joint down each face of the middle shaft)
-      const a = (k * Math.PI) / 2, top = half(r1) + 0.012, bot = half(r0) + 0.012;
-      bar([Math.sin(a) * bot, y0 + H * 0.72, Math.cos(a) * bot * 1.0], [Math.sin(a) * top, y0 + H, Math.cos(a) * top], 0.03, C.joint, m);
-    }
-    B.box(2 * half(r1) + 0.1, 0.22, 2 * half(r1) + 0.1, 0, t.h + 0.11, 0, C.stone, m);
     for (const s of [1, -1]) { // the stone walls with bronze figures before them
       const wm = frame(t.at, t.ry + s * 0.35, yT);
       B.box(6.5, 2.3, 0.7, s * (w / 2 + 5.4), 1.15, -0.4, C.granite, wm);
@@ -513,8 +511,8 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     holder.add(verse, soul);
     group.add(holder);
     // Wreaths on stands either side (nothing stands before the burner and the stone: they are seen whole, Yozi 2026-11-25).
-    for (const s of [1, -1]) for (let i = 0; i < 3; i++) {
-      const x = s * (vw / 2 + 1.1 + i * 0.75);
+    for (const s of [1, -1]) for (let i = 0; i < 4; i++) {
+      const x = s * (vw / 2 + 1.0 + i * 0.8);
       bar([x, 0, vz + 0.45], [x, 1.05, vz + 0.6], 0.04, C.dark, am);
       B.add(new THREE.CylinderGeometry(0.27, 0.27, 0.06, 12).rotateX(Math.PI / 2 - 0.13).translate(x, 0.9, vz + 0.63), C.white, am);
       B.add(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 10).rotateX(Math.PI / 2 - 0.13).translate(x, 0.9, vz + 0.65), i % 2 ? C.ochre : C.white, am);
