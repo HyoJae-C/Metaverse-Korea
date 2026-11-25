@@ -973,12 +973,13 @@ let welcomeNpc = null;
 const farExtras = [];
 // Big screens on building walls (region.json "screens").
 const wallScreens = [];
+const screenView = new THREE.Frustum(), screenViewM = new THREE.Matrix4(); // (which big screens are on camera)
 for (const sc of region.screens || []) {
   const near = wallNear(map.buildings, sc.at[0], sc.at[1]);
   if (!near || near.d > 6) continue; // its building is gone: no screen in the air
   const { x, z, w, h, y } = screenSpot(near, sc); // inside the wall's ends, under the roof
   const wall = { ...near, x, z };
-  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave });
+  const ws = new WallScreen({ w, h, image: sc.image ? (import.meta.env.BASE_URL || '/') + sc.image : null, city: sc.city, text: sc.text, wave: sc.wave, px: lowSpec || softwareGL ? 512 : 1024 });
   ws.mount(wall, y, h);
   scene.add(ws.root);
   farExtras.push(ws.root);
@@ -7865,9 +7866,15 @@ renderer.setAnimationLoop((now) => {
   }
   billboard?.update(dt);
   if (newsTags[0]?.visible) { const ts = performance.now() / 1000; for (const tag of newsTags) { if (!tag.parent?.visible) continue; tag.position.y = 3.75 + Math.sin(ts * 3.3) * 0.12; tag.userData.tick(ts); } }
-  for (const ws of wallScreens) { // only the ones you can see are drawn; far ones let their canvas go (WallScreen.sleep)
+  // Big screens: only the ones on camera are redrawn, the far ones less
+  // often; far ones let their canvas go (WallScreen.sleep). Gangnam
+  // Station's six were all redrawn 15 times a second, behind you too, and
+  // each redraw sends the whole canvas to the graphics chip (walking out of
+  // the station stuttered, Yozi 2026-11-25).
+  if (wallScreens.length) screenView.setFromProjectionMatrix(screenViewM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+  for (const ws of wallScreens) {
     const d = Math.hypot(ws.root.position.x - me.root.position.x, ws.root.position.z - me.root.position.z);
-    if (mode === 'street' && d < 300) ws.update(dt);
+    if (mode === 'street' && d < 300) { if (ws.root.visible && screenView.intersectsObject(ws.screen)) ws.update(dt, d < 120 ? 15 : 5); }
     else if (d > 340) ws.sleep();
   }
   if (mode === 'store') interior.pets?.update(dt, me.root.position);
