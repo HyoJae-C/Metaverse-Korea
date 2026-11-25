@@ -676,6 +676,8 @@ export const FR = {
   'start.nickname': 'Ton pseudo',
   'start.referrer': "Ami qui t'a invité (facultatif)",
   'start.referrerHint': "Écris son nom et il recevra ₩50,000. Tu peux laisser vide.",
+  'start.haveSave': "💾 Déjà joué ? Connecte-toi avec Google",
+  'start.invited': "🎁 Invité par un ami ?",
   'referral.nobody': "Aucun joueur n'a ce nom. Vérifie-le ou laisse vide.",
   'referral.self': "Tu ne peux pas écrire ton propre nom. Laisse vide si personne ne t'a invité.",
   'referral.sent': "🎁 Merci d'être venu ! Ton ami a reçu ₩50,000.",

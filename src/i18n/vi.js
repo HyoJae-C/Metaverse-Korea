@@ -676,6 +676,8 @@ export const VI = {
   'start.nickname': 'Biệt danh của bạn',
   'start.referrer': "Bạn bè đã mời bạn (không bắt buộc)",
   'start.referrerHint': "Nhập tên của họ, họ sẽ nhận ₩50,000. Có thể để trống.",
+  'start.haveSave': "💾 Đã chơi rồi? Đăng nhập bằng Google",
+  'start.invited': "🎁 Được bạn bè mời?",
   'referral.nobody': "Không có người chơi nào tên đó. Hãy kiểm tra hoặc để trống.",
   'referral.self': "Bạn không thể nhập tên của chính mình. Để trống nếu không ai mời bạn.",
   'referral.sent': "🎁 Cảm ơn bạn đã đến! Bạn của bạn đã nhận ₩50,000.",

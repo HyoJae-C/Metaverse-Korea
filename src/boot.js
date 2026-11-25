@@ -7,7 +7,7 @@
 // main.js has set up the following steps (it enables the button).
 import './core/phone-preview.js'; // operators' phone view (admin.html): before anything reads the device
 import './core/domain-move.js'; // first: brings a save over from the old address
-import { setLanguage, getSavedLanguage, loadLanguage } from './core/i18n.js';
+import { setLanguage, getSavedLanguage, loadLanguage, detectLanguage } from './core/i18n.js';
 import { renderLangDropdown } from './ui/lang-picker.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,7 +17,7 @@ if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add
 const game = import('./main.js'); // start downloading now; main.js takes over when it runs
 $('next-btn').disabled = true;
 
-const code = getSavedLanguage() || 'en'; // English until you pick one
+const code = getSavedLanguage() || detectLanguage(); // the browser's language until you pick one
 await loadLanguage(code);
 // main.js may already be running on a fast connection: then it drew the picker.
 if (!document.body.dataset.gameUp) {

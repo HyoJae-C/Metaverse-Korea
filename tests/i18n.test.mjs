@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LANGUAGES, STRINGS } from '../src/i18n/strings.js';
-import { localName, languageFromBrowser } from '../src/core/i18n.js';
+import { localName, languageFromBrowser, detectLanguage } from '../src/core/i18n.js';
 import { s2t } from '../src/i18n/hant.js';
 
 test('twelve languages in the order the picker shows them, English first', () => {
@@ -37,6 +37,16 @@ test('browser language to ours', () => {
   assert.equal(languageFromBrowser('zh-Hant-HK'), 'zht');
   assert.equal(languageFromBrowser('zh-CN'), 'zh');
   assert.equal(languageFromBrowser('es-MX'), 'es');
+});
+
+test('a first visit starts in the browser language when the game speaks it', () => {
+  assert.equal(detectLanguage(['ja-JP', 'en-US']), 'ja');
+  assert.equal(detectLanguage(['zh-TW']), 'zht');
+  assert.equal(detectLanguage(['ko']), 'ko');
+  assert.equal(detectLanguage(['de-DE', 'fr-FR']), 'fr', 'the first language we speak');
+  assert.equal(detectLanguage(['de-DE']), 'en');
+  assert.equal(detectLanguage([]), 'en');
+  assert.equal(detectLanguage([undefined]), 'en');
 });
 
 test('Vietnamese and Hindi: browser tags and every inline name object that has Arabic', async () => {

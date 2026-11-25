@@ -682,6 +682,8 @@ export const JA = {
   'start.nickname': 'ニックネーム',
   'start.referrer': "招待してくれた友だち（任意）",
   'start.referrerHint': "友だちの名前を入れると、友だちに₩50,000が届きます。空欄でもOKです。",
+  'start.haveSave': "💾 前に遊んだことがある？ Googleでログイン",
+  'start.invited': "🎁 友だちに招待された？",
   'referral.nobody': "その名前のプレイヤーはいません。確認するか、空欄にしてください。",
   'referral.self': "自分の名前は入れられません。招待がなければ空欄にしてください。",
   'referral.sent': "🎁 来てくれてありがとう！友だちに₩50,000が届きました。",

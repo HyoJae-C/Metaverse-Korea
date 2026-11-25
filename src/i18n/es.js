@@ -675,6 +675,8 @@ export const ES = {
   'start.nickname': 'Tu apodo',
   'start.referrer': "Amigo que te invitó (opcional)",
   'start.referrerHint': "Escribe su nombre y recibirá ₩50,000. Puedes dejarlo vacío.",
+  'start.haveSave': "💾 ¿Ya jugaste? Inicia sesión con Google",
+  'start.invited': "🎁 ¿Te invitó un amigo?",
   'referral.nobody': "Nadie tiene ese nombre. Revísalo o déjalo vacío.",
   'referral.self': "No puedes escribir tu propio nombre. Déjalo vacío si nadie te invitó.",
   'referral.sent': "🎁 ¡Gracias por venir! Tu amigo recibió ₩50,000.",

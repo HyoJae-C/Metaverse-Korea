@@ -430,13 +430,22 @@ export class CloudSave {
   // Report how far this page visit got, for the loading funnel
   // (core/sessions.js createVisit, supabase/014_retention_more.sql).
   // Resolves false when the server can't take it (SQL not run yet).
-  async reportVisit({ id, stage, loadMs, isNew, failed, device, src }) {
+  async reportVisit({ id, stage, step, loadMs, readyMs, isNew, failed, device, src }) {
     if (!this.client || !this.user || PHONE_PREVIEW) return true;
-    const { error } = await this.client.rpc('report_visit', {
+    const args = {
       p_id: id, p_stage: stage | 0, p_load_ms: Math.max(0, Math.round(Number(loadMs) || 0)), p_new: !!isNew,
       p_failed: !!failed, p_device: String(device || '').slice(0, 8), p_src: String(src || '').slice(0, 16),
-    });
-    return !(error && (error.code === 'PGRST202' || error.code === '42883' || error.code === '42501'));
+    };
+    const missing = (e) => e && (e.code === 'PGRST202' || e.code === '42883' || e.code === '42501');
+    // The start-screen step needs supabase/076_start_steps.sql; until it is
+    // run, the visit is sent the old way (and keeps being counted).
+    if (!this.noVisitStep) {
+      const { error } = await this.client.rpc('report_visit', { ...args, p_step: step | 0, p_ready_ms: Math.max(0, Math.round(Number(readyMs) || 0)) });
+      if (!missing(error)) return true;
+      this.noVisitStep = true;
+    }
+    const { error } = await this.client.rpc('report_visit', args);
+    return !missing(error);
   }
 
   // One error message (already cleaned: core/sessions.js cleanError) for the

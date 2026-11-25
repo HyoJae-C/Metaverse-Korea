@@ -84,6 +84,17 @@ export function languageFromBrowser(tag = '') {
   return t2.slice(0, 2);
 }
 
+// A first visit with no saved language: the browser's own language when the
+// game speaks it (a Japanese phone starts in 日本語), otherwise English.
+// The picker still shows it, so it is one tap to change.
+export function detectLanguage(tags = globalThis.navigator?.languages || [globalThis.navigator?.language]) {
+  for (const tag of tags || []) {
+    const code = languageFromBrowser(String(tag || ''));
+    if (LANGUAGES.some((l) => l.code === code)) return code;
+  }
+  return 'en';
+}
+
 // Fill every element that has data-i18n="key".
 export function applyTranslations(root) {
   root.querySelectorAll('[data-i18n]').forEach((el) => {
