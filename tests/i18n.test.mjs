@@ -5,10 +5,10 @@ import { localName, languageFromBrowser } from '../src/core/i18n.js';
 import { s2t } from '../src/i18n/hant.js';
 
 test('twelve languages in the order the picker shows them, English first', () => {
-  assert.deepEqual(LANGUAGES.map((l) => l.code), ['ko', 'ja', 'zht', 'zh', 'id', 'fr', 'vi', 'th', 'hi', 'ar', 'en', 'es']);
+  assert.deepEqual(LANGUAGES.map((l) => l.code), ['ko', 'ja', 'zht', 'zh', 'id', 'fr', 'vi', 'th', 'pt', 'ar', 'en', 'es']);
 });
 
-for (const code of ['id', 'ar', 'vi', 'hi', 'fr', 'th']) {
+for (const code of ['id', 'ar', 'vi', 'fr', 'th']) {
   test(`${code} covers every English key, with the same {placeholders}`, () => {
     const vars = (s) => (s.match(/\{\w+\}/g) || []).sort().join();
     for (const [k, v] of Object.entries(STRINGS.en)) {
@@ -39,9 +39,8 @@ test('browser language to ours', () => {
   assert.equal(languageFromBrowser('es-MX'), 'es');
 });
 
-test('Vietnamese and Hindi: browser tags and every inline name object that has Arabic', async () => {
+test('Vietnamese, French and Thai: browser tags and every inline name object that has Arabic', async () => {
   assert.equal(languageFromBrowser('vi-VN'), 'vi');
-  assert.equal(languageFromBrowser('hi-IN'), 'hi');
   assert.equal(languageFromBrowser('fr-CA'), 'fr');
   assert.equal(languageFromBrowser('th-TH'), 'th');
   const { readFileSync } = await import('node:fs');
@@ -51,7 +50,7 @@ test('Vietnamese and Hindi: browser tags and every inline name object that has A
     const src = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
     const n = (re) => (src.match(re) || []).length;
     assert.equal(n(/\bvi: ['[]/g), n(/\bar: ['[]/g), f);
-    assert.equal(n(/\bhi: ['[]/g), n(/\bar: ['[]/g), f);
+    assert.equal(n(/\bhi: ['[]/g), 0, f); // Hindi was dropped (2026-11-25)
     assert.equal(n(/\bfr: ['[]/g), n(/\bar: ['[]/g), f);
     assert.equal(n(/\bth: ['[]/g), n(/\bar: ['[]/g), f);
   }
@@ -67,6 +66,7 @@ test('French and Thai reach the class and game texts built from positional lists
   const { readFileSync } = await import('node:fs');
   const stores = readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url), 'utf8');
   const count = (k) => (stores.match(new RegExp(`"${k}":\\s?"`, 'g')) || []).length;
-  assert.equal(count('fr'), count('hi'));
-  assert.equal(count('th'), count('hi'));
+  assert.equal(count('hi'), 0); // Hindi was dropped (2026-11-25)
+  assert.ok(count('fr') > 0);
+  assert.equal(count('th'), count('fr'));
 });

@@ -22,7 +22,7 @@ test('every painting is a National Museum of Korea item with Korean and English 
     assert.ok(p.no && p.w > 0 && p.h > 0, p.id);
   }
   assert.equal(CREDIT.ko, '국립중앙박물관, 공공누리 제1유형');
-  for (const l of ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar']) assert.ok(DISCLAIMER[l], l);
+  for (const l of ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar']) assert.ok(DISCLAIMER[l], l);
 });
 
 test('image files, once fetched, stay small (about 100 KB)', () => {

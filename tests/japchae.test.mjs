@@ -7,7 +7,7 @@ import {
 import { medalFor } from '../src/core/grill-game.js';
 import { JT, JAPCHAE_LINES } from '../src/ui/japchae-text.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar'];
 const card = (list) => Object.fromEntries(list.filter((g) => !g.decoy).map((g) => [g.id, g.target]));
 
 test('slicing: thin matchsticks score best', () => {

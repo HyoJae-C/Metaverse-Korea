@@ -1015,7 +1015,7 @@
    "z": 300,
    "name": {
     "ko": "올림픽공원",
-    "en": "Olympic Park",
+    "en": "Olympic Park", "pt": "Parque Olímpico",
     "ja": "オリンピック公園",
     "zh": "奥林匹克公园"
    }
@@ -1072,7 +1072,7 @@
    "z": 285,
    "label": {
     "ko": "스케이트파크",
-    "en": "Skate Park",
+    "en": "Skate Park", "pt": "Pista de skate",
     "ja": "スケートパーク",
     "zh": "滑板公园"
    }
@@ -1123,26 +1123,24 @@
    "ry": 3.14159,
    "title": {
     "ko": "올림픽공원",
-    "en": "Olympic Park",
+    "en": "Olympic Park", "pt": "Parque Olímpico",
     "ja": "オリンピック公園",
     "zh": "奥林匹克公园",
     "es": "Parque Olímpico",
     "id": "Taman Olimpiade",
     "vi": "Công viên Olympic",
-    "hi": "ओलंपिक पार्क",
     "fr": "Parc olympique",
     "th": "สวนโอลิมปิก",
     "ar": "الحديقة الأولمبية"
    },
    "text": {
     "ko": "1988 서울올림픽을 위해 만든 공원이에요. 평화의광장의 평화의문, 잔디 언덕 위 나홀로나무가 유명해요. 광장 동쪽 스케이트파크에서는 보드, 인라인, 자전거로 묘기를 부릴 수 있어요.",
-    "en": "A park built for the 1988 Seoul Olympics, known for the Peace Gate on the Peace Plaza and the lone tree on its grassy hill. In the skate park east of the plaza you can do tricks on boards, inline skates and bikes.",
+    "en": "A park built for the 1988 Seoul Olympics, known for the Peace Gate on the Peace Plaza and the lone tree on its grassy hill. In the skate park east of the plaza you can do tricks on boards, inline skates and bikes.", "pt": "Um parque construído para as Olimpíadas de Seul de 1988, conhecido pelo Portão da Paz na Praça da Paz e pela árvore solitária no morro gramado. Na pista de skate a leste da praça dá para fazer manobras de skate, patins e bicicleta.",
     "ja": "1988年ソウル五輪のために造られた公園。平和の広場の平和の門と、芝生の丘のひとりぼっちの木で有名です。広場東のスケートパークではスケボー・インライン・自転車で技を決められます。",
     "zh": "为1988年首尔奥运会建造的公园，以和平广场上的和平之门和草坡上的孤独树闻名。广场东边的滑板公园可以用滑板、轮滑和自行车秀技巧。",
     "es": "Parque construido para los Juegos Olímpicos de Seúl 1988, famoso por la Puerta de la Paz y el árbol solitario. En el skatepark puedes hacer trucos.",
     "id": "Taman yang dibangun untuk Olimpiade Seoul 1988, terkenal dengan Gerbang Perdamaian dan pohon tunggal di bukit rumput. Di skatepark kamu bisa melakukan trik.",
     "vi": "Công viên xây cho Thế vận hội Seoul 1988, nổi tiếng với Cổng Hòa bình và cây cô đơn trên đồi cỏ. Ở công viên trượt bạn có thể biểu diễn.",
-    "hi": "1988 सियोल ओलंपिक के लिए बना पार्क, पीस गेट और घास की पहाड़ी पर अकेले पेड़ के लिए मशहूर। स्केट पार्क में करतब दिखाइए।",
     "fr": "Un parc construit pour les Jeux olympiques de Séoul 1988, connu pour la porte de la Paix sur la place de la Paix et l'arbre solitaire sur sa colline herbeuse. Au skatepark à l'est de la place, tu peux faire des figures en planche, en rollers et à vélo.",
     "th": "สวนที่สร้างขึ้นเพื่อโอลิมปิกโซลปี 1988 ขึ้นชื่อเรื่องประตูสันติภาพบนลานพีซพลาซ่าและต้นไม้ต้นเดียวบนเนินหญ้า ที่สเกตพาร์กทางตะวันออกของลาน คุณเล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต และจักรยานได้",
     "ar": "حديقة بُنيت لأولمبياد سيول 1988، تشتهر ببوابة السلام والشجرة الوحيدة على التل العشبي. في حديقة التزلج يمكنك أداء الحركات."
@@ -1155,26 +1153,24 @@
    "ry": 3.14159,
    "title": {
     "ko": "스케이트파크",
-    "en": "Skate Park",
+    "en": "Skate Park", "pt": "Pista de skate",
     "ja": "スケートパーク",
     "zh": "滑板公园",
     "es": "Skatepark",
     "id": "Skatepark",
     "vi": "Công viên trượt",
-    "hi": "स्केट पार्क",
     "fr": "Skatepark",
     "th": "สเกตพาร์ก",
     "ar": "حديقة التزلج"
    },
    "text": {
     "ko": "보드, 인라인, 자전거, 킥보드로 묘기를 부려 보세요. 탈것을 타고 묘기 버튼을 누르면 점프해요. 램프를 타고 날아오르고, 레일 위에 내려앉으면 그라인드! 탈것은 가방이나 자전거 가게에서.",
-    "en": "Do tricks on a board, inline skates, a bike or a kick scooter. Ride in and tap Trick to jump. Fly off the ramps, land on a rail to grind! Rides: your bag or a bike shop.",
+    "en": "Do tricks on a board, inline skates, a bike or a kick scooter. Ride in and tap Trick to jump. Fly off the ramps, land on a rail to grind! Rides: your bag or a bike shop.", "pt": "Faça manobras de skate, patins, bicicleta ou patinete. Entre andando e toque em Manobra para pular. Voe das rampas e caia num corrimão para deslizar! Veículos: sua bolsa ou uma loja de veículos.",
     "ja": "スケボー、インライン、自転車、キックボードで技を決めよう。乗ったまま「トリック」でジャンプ。ランプで飛び、レールに乗ればグラインド！乗り物はバッグか自転車店で。",
     "zh": "用滑板、轮滑、自行车或滑板车来秀技巧吧。骑着按“技巧”就能跳。冲上坡道飞起来，落在栏杆上就能滑杆！车辆可在背包或自行车店获取。",
     "es": "Haz trucos en tabla, patines, bici o patinete. Entra montado y pulsa Truco para saltar. ¡Vuela en las rampas y grindea en los rieles!",
     "id": "Lakukan trik dengan papan, sepatu roda, sepeda atau skuter. Masuk sambil naik dan tekan Trik untuk melompat. Terbang dari ramp, mendarat di rel untuk grind!",
     "vi": "Biểu diễn trên ván, giày patin, xe đạp hoặc xe trượt. Đi vào và bấm Mẹo để nhảy. Bay khỏi dốc, đáp lên thanh để trượt!",
-    "hi": "बोर्ड, इनलाइन स्केट, साइकिल या किक स्कूटर पर करतब दिखाइए। सवारी करते हुए ट्रिक दबाइए और कूदिए। रैंप से उड़िए, रेल पर उतरकर ग्राइंड कीजिए!",
     "fr": "Fais des figures en planche, en rollers, à vélo ou en trottinette. Entre en roulant et touche Figure pour sauter. Décolle des rampes, atterris sur une rampe de grind pour glisser ! Véhicules : ton sac ou un magasin de vélos.",
     "th": "เล่นทริกด้วยสเกตบอร์ด อินไลน์สเกต จักรยาน หรือสกู๊ตเตอร์ ขี่เข้าไปแล้วแตะ ทริก เพื่อกระโดด ลอยจากทางลาด ลงบนราวเพื่อไถล! ยานพาหนะ: ในกระเป๋าหรือร้านจักรยาน",
     "ar": "قم بالحركات على اللوح أو الزلاجات أو الدراجة أو السكوتر. ادخل راكبًا واضغط «حركة» للقفز. حلّق من المنحدرات وانزلق على القضبان!"

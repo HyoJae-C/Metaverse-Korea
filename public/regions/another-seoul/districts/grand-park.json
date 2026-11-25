@@ -376,7 +376,7 @@
    "z": 0,
    "name": {
     "ko": "서울어른도대공원",
-    "en": "Seoul Grown-ups' Grand Park",
+    "en": "Seoul Grown-ups' Grand Park", "pt": "Grande Parque dos Adultos de Seul",
     "ja": "ソウル大人も大公園",
     "zh": "首尔大人也大公园"
    }
@@ -430,26 +430,24 @@
    "ry": -1.5708,
    "title": {
     "ko": "서울어른도대공원",
-    "en": "Seoul Grown-ups' Grand Park",
+    "en": "Seoul Grown-ups' Grand Park", "pt": "Grande Parque dos Adultos de Seul",
     "ja": "ソウル大人も大公園",
     "zh": "首尔大人也大公园",
     "es": "Gran Parque para Adultos También de Seúl",
     "id": "Taman Raya Dewasa Juga Seoul",
     "vi": "Công viên Cả Người lớn Seoul",
-    "hi": "सियोल बड़ों का भी ग्रैंड पार्क",
     "fr": "Grand Parc des grands aussi de Séoul",
     "th": "สวนผู้ใหญ่ก็เล่นได้ โซล",
     "ar": "حديقة الكبار أيضًا في سيول"
    },
    "text": {
     "ko": "1973년 어린이날에 문을 연 공원이에요. 실제 공원과 동물원은 입장료가 없어요. 게임 속 동물은 실제 동물원과 다를 수 있어요.",
-    "en": "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.",
+    "en": "Opened on Children's Day 1973. The real park and its zoo are free to enter. Animals in the game may differ from the real zoo.", "pt": "Inaugurado no Dia das Crianças de 1973. A entrada no parque real e no zoológico é grátis. Os animais do jogo podem ser diferentes dos do zoológico real.",
     "ja": "1973年のこどもの日に開園した公園です。実際の公園と動物園は入場無料。ゲームの動物は実際の動物園と違うことがあります。",
     "zh": "1973年儿童节开园。真实的公园和动物园免费入场。游戏中的动物可能与真实动物园不同。",
     "es": "Abrió el Día del Niño de 1973. El parque real y su zoo son gratuitos. Los animales del juego pueden ser distintos a los del zoo real.",
     "id": "Dibuka pada Hari Anak 1973. Taman dan kebun binatang aslinya gratis. Hewan di game bisa berbeda dari kebun binatang aslinya.",
     "vi": "Mở cửa vào Ngày Thiếu nhi năm 1973. Công viên và sở thú thật đều miễn phí vào cửa. Động vật trong game có thể khác sở thú thật.",
-    "hi": "1973 के बाल दिवस पर खुला। असली पार्क और चिड़ियाघर में प्रवेश मुफ़्त है। गेम के जानवर असली चिड़ियाघर से अलग हो सकते हैं।",
     "fr": "Ouvert le jour des enfants 1973. Le vrai parc et son zoo sont gratuits. Les animaux du jeu peuvent différer du vrai zoo.",
     "th": "เปิดในวันเด็กปี 1973 สวนและสวนสัตว์จริงเข้าชมฟรี สัตว์ในเกมอาจต่างจากสวนสัตว์จริง",
     "ar": "افتُتحت في يوم الطفل عام 1973. الحديقة الحقيقية وحديقة الحيوان فيها مجانيتان. قد تختلف الحيوانات في اللعبة عن حديقة الحيوان الحقيقية."

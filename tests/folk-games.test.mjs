@@ -6,7 +6,7 @@ import { JegiRound, kickQuality, jegiMedal, SWEET, KICK_TOP } from '../src/core/
 import { NeolRound, pushQuality, neolMedal, JUMPS, WINDOW } from '../src/core/neol-game.js';
 import { FT, FOLK_LINES, koCount } from '../src/ui/folk-text.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar'];
 const seq = (vals) => { let i = 0; return () => vals[i++ % vals.length]; };
 
 // ---------- Yutnori ----------

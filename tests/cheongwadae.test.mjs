@@ -94,7 +94,7 @@ test('the fountain, the plaza and Sarangchae are where they really are', () => {
 });
 
 test('at the gate a note says it is a security facility, in every language, and the sign says so too', () => {
-  for (const code of ['en', 'ko', 'ja', 'zh', 'es', 'fr', 'id', 'th', 'vi', 'ar', 'hi']) assert.ok(STRINGS[code]['cheongwadae.note'], code);
+  for (const code of ['en', 'ko', 'ja', 'zh', 'es', 'fr', 'id', 'th', 'vi', 'ar']) assert.ok(STRINGS[code]['cheongwadae.note'], code);
   const shown = [];
   const world = { ...gate, x: gate.x + ox, z: gate.z + oz };
   const note = createCheongwadaeNote({ landmarks: [world], toast: (m) => shown.push(m), text: () => 'note' });

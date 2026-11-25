@@ -75,7 +75,7 @@ test('hiring posters: "알바급구!", the shop, the job, where and the pay, in 
   const ko = hiringLines('mart', 'ko', { shopNames: { en: 'SODA 24', ko: '소다24' }, district: 'hongdae' });
   assert.equal(ko.shop, '소다24');
   assert.equal(ko.where, '📍 홍대');
-  for (const l of ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'ar']) {
+  for (const l of ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'ar']) {
     assert.ok(JOB_TEXT.help[l] && JOB_TEXT.pay[l] && JOB_TEXT.walkIn[l] && JOB_TEXT.sticker[l], l);
     for (const k of ['delivery', 'mart', 'serving']) assert.ok(JOB_TEXT.role[k][l], `${k} ${l}`);
   }
