@@ -9,6 +9,7 @@
 // floor cushions) or 'bed' (two lie down); see furnitureSeats in furniture.js.
 import * as THREE from 'three';
 import { APPLIANCES } from './appliances.js';
+import { GANGNAM_FURNITURE } from './furniture-gangnam.js';
 
 export const SHOP_FURNITURE = [
   // --- Traditional: 전통 가구 ---
@@ -383,6 +384,8 @@ export const SHOP_FURNITURE = [
   }],
   // --- Home appliances: 테헤란로, Gangnam (core/appliances.js) ---
   ...APPLIANCES,
+  // --- 화이트 무드 and gaming, Gangnam (core/furniture-gangnam.js) ---
+  ...GANGNAM_FURNITURE,
 ];
 
 // The big flower quilt (꽃무늬 이불): big pink and red peonies with green

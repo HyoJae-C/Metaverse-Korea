@@ -3112,6 +3112,78 @@
       ]
     },
     {
+      "id": "white-mood-living",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-693.3, 900.6],
+      "sign": {"shape": "tall"},
+      "district": "gangnam",
+      "name": {"ko": "화이트 무드 리빙", "en": "White Mood Living", "ja": "ホワイトムード・リビング", "zh": "白色情调家居"},
+      "tagline": {"en": "All-white furniture with light oak, for a bright clean home", "ko": "연한 원목을 더한 올 화이트 가구, 밝고 깔끔한 집", "ja": "明るいオークを添えたオールホワイトの家具", "zh": "搭配浅橡木的全白家具，明亮整洁的家"},
+      "why": "Fictional showroom on the real Nonhyeon furniture street (Hakdong-ro east of Nonhyeon Station). Yozi 2026-11-25: a white-tone interior, furniture, wallpaper and floors, in Gangnam; a little dearer than Euljiro.",
+      "colors": {"sign": "#b8a888", "awning": "#f7f5f0", "accent": "#ffffff"},
+      "products": [
+        {"id": "buy-f-white-sofa", "model": "furniture", "furniture": "f-white-sofa", "color": "#f3e5c8", "name": {"en": "White fabric sofa", "ko": "화이트 패브릭 소파", "ja": "白いファブリックソファ", "zh": "白色布艺沙发"}, "price": 300000, "desc": {"en": "A deep white three-seater with round arms, soft back pillows and oak legs. Two can sit.", "ko": "둥근 팔걸이와 푹신한 등쿠션, 원목 다리의 깊은 흰 3인 소파예요. 두 명이 앉을 수 있어요."}},
+        {"id": "buy-f-white-dining", "model": "furniture", "furniture": "f-white-dining", "color": "#f3e5c8", "name": {"en": "Round white table and chairs", "ko": "화이트 원형 식탁과 의자", "ja": "白い丸テーブルと椅子", "zh": "白色圆桌和椅子"}, "price": 220000, "desc": {"en": "A round white table on one oak pillar, with two white chairs. A vase and a plate come with it.", "ko": "원목 기둥 하나로 선 흰 원형 식탁과 흰 의자 두 개예요. 꽃병과 접시도 함께예요."}},
+        {"id": "buy-f-white-shelf", "model": "furniture", "furniture": "f-white-shelf", "color": "#f3e5c8", "name": {"en": "White open shelf", "ko": "화이트 오픈 선반", "ja": "白いオープンシェルフ", "zh": "白色开放式书架"}, "price": 150000, "desc": {"en": "A tall white shelf with an oak bottom, styled like a show home: books, vases, a frame and a little plant.", "ko": "바닥만 원목인 키 큰 흰 선반이에요. 책·꽃병·액자·작은 화분으로 모델하우스처럼 꾸며져 있어요."}}
+      ]
+    },
+    {
+      "id": "white-mood-interior",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-685.9, 911],
+      "sign": {"shape": "tall"},
+      "district": "gangnam",
+      "name": {"ko": "화이트 무드 인테리어", "en": "White Mood Interior", "ja": "ホワイトムード・インテリア", "zh": "白色情调室内装修"},
+      "tagline": {"en": "White walls, pale floors and a glass door", "ko": "하얀 벽, 밝은 바닥, 유리문", "ja": "白い壁、明るい床、ガラスの扉", "zh": "白墙、浅色地板和玻璃门"},
+      "why": "Fictional showroom on the real Nonhyeon furniture street (Hakdong-ro east of Nonhyeon Station). Yozi 2026-11-25: a white-tone interior, furniture, wallpaper and floors, in Gangnam; a little dearer than Euljiro.",
+      "colors": {"sign": "#b8a888", "awning": "#f7f5f0", "accent": "#ffffff"},
+      "products": [
+        {"id": "buy-wall-wainscot", "model": "finish", "furniture": "wall-wainscot", "color": "#f7f5f0", "name": {"en": "White wainscot panels", "ko": "화이트 웨인스코팅 패널", "ja": "白い腰壁パネル", "zh": "白色护墙板"}, "price": 90000, "desc": {"en": "Raised white panels up to the waist with a rail, plain white above. Classic and bright.", "ko": "허리 높이까지 몰딩 패널, 위는 하얀 벽이에요. 클래식하고 밝아요."}},
+        {"id": "buy-wall-whitebrick", "model": "finish", "furniture": "wall-whitebrick", "color": "#f4f2ee", "name": {"en": "White painted brick", "ko": "화이트 벽돌 벽", "ja": "白いレンガの壁", "zh": "白色砖墙"}, "price": 160000, "desc": {"en": "Brick painted white, like a Seongsu café turned into a home.", "ko": "하얗게 칠한 벽돌, 집이 된 성수 카페 느낌이에요."}},
+        {"id": "buy-floor-whiteoak", "model": "finish", "furniture": "floor-whiteoak", "color": "#e8dcc6", "name": {"en": "White oak boards", "ko": "화이트 오크 마루", "ja": "ホワイトオークの床", "zh": "白橡木地板"}, "price": 140000, "desc": {"en": "Long pale oak boards that make the room feel wide.", "ko": "방이 넓어 보이는 길고 밝은 오크 마루예요."}},
+        {"id": "buy-floor-whitehex", "model": "finish", "furniture": "floor-whitehex", "color": "#f6f5f2", "name": {"en": "White hexagon tiles", "ko": "화이트 육각 타일", "ja": "白い六角タイル", "zh": "白色六角砖"}, "price": 200000, "desc": {"en": "Small white hexagon tiles with pale grout, crisp and bright.", "ko": "연한 줄눈의 작은 흰 육각 타일, 산뜻하고 밝아요."}},
+        {"id": "buy-door-glass-arch", "model": "finish", "furniture": "door-glass-arch", "color": "#f6f5f1", "name": {"en": "White arched glass door", "ko": "화이트 아치 유리문", "ja": "白いアーチのガラス扉", "zh": "白色拱形玻璃门"}, "price": 160000, "desc": {"en": "A white arched door with nine glass panes and a brass knob.", "ko": "유리창 아홉 칸과 황동 손잡이가 달린 흰 아치문이에요."}}
+      ]
+    },
+    {
+      "id": "fullpower-gaming",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-576.1, 1290],
+      "sign": {"shape": "tall"},
+      "district": "gangnam",
+      "name": {"ko": "풀파워 게이밍", "en": "Full Power Gaming", "ja": "フルパワー・ゲーミング", "zh": "全力电竞"},
+      "tagline": {"en": "Black and neon gaming furniture: a chair, a two-screen desk, an arcade", "ko": "블랙과 네온 게이밍 가구: 의자, 모니터 2대 책상, 오락기", "ja": "黒とネオンのゲーミング家具：チェア、2画面デスク、アーケード", "zh": "黑色霓虹电竞家具：电竞椅、双屏桌、街机"},
+      "why": "Fictional shop beside Teheran Appliance Mart at the Gangnam Station corner of Teheran-ro (Yozi 2026-11-25: a gaming-style interior; Yozi picked the spot next to the appliance mart so home shopping is one stop).",
+      "colors": {"sign": "#1c1d22", "awning": "#2ee6ff", "accent": "#e8fcff"},
+      "products": [
+        {"id": "buy-f-gaming-chair", "model": "furniture", "furniture": "f-gaming-chair", "color": "#f3e5c8", "name": {"en": "Gaming chair", "ko": "게이밍 의자", "ja": "ゲーミングチェア", "zh": "电竞椅"}, "price": 150000, "desc": {"en": "A tall black racing chair with neon stripes and a head pillow. Sit in it.", "ko": "네온 줄무늬와 목쿠션이 달린 키 큰 블랙 레이싱 의자예요. 앉을 수 있어요."}},
+        {"id": "buy-f-gaming-desk", "model": "furniture", "furniture": "f-gaming-desk", "color": "#f3e5c8", "name": {"en": "Gaming desk with two monitors", "ko": "게이밍 책상과 모니터 2대", "ja": "モニター2台のゲーミングデスク", "zh": "双屏电竞桌"}, "price": 200000, "desc": {"en": "A black desk with two monitors showing a game, a glowing keyboard, a lit PC tower and a neon strip.", "ko": "게임 화면이 켜진 모니터 2대, 빛나는 키보드, 불 켜진 본체, 네온 줄이 있는 블랙 책상이에요."}},
+        {"id": "buy-f-arcade-mini", "model": "furniture", "furniture": "f-arcade-mini", "color": "#f3e5c8", "name": {"en": "Mini arcade machine", "ko": "미니 오락기", "ja": "ミニアーケード筐体", "zh": "迷你街机"}, "price": 180000, "desc": {"en": "A black arcade cabinet with neon edges, a joystick and three buttons, its screen on.", "ko": "네온 테두리, 조이스틱과 버튼 세 개, 화면이 켜진 블랙 오락기예요."}}
+      ]
+    },
+    {
+      "id": "fullpower-gaming-room",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-565.5, 1268.4],
+      "sign": {"shape": "tall"},
+      "district": "gangnam",
+      "name": {"ko": "풀파워 게이밍 룸", "en": "Full Power Gaming Room", "ja": "フルパワー・ゲーミングルーム", "zh": "全力电竞房"},
+      "tagline": {"en": "Dark walls with neon, carbon and carpet floors, a neon door", "ko": "네온 들어간 어두운 벽, 카본·카펫 바닥, 네온 문", "ja": "ネオン入りの暗い壁、カーボンとカーペットの床、ネオンの扉", "zh": "带霓虹的深色墙、碳纤维和地毯地板、霓虹门"},
+      "why": "Fictional shop beside Teheran Appliance Mart at the Gangnam Station corner of Teheran-ro (Yozi 2026-11-25: a gaming-style interior; Yozi picked the spot next to the appliance mart so home shopping is one stop).",
+      "colors": {"sign": "#1c1d22", "awning": "#2ee6ff", "accent": "#e8fcff"},
+      "products": [
+        {"id": "buy-wall-hexpanel", "model": "finish", "furniture": "wall-hexpanel", "color": "#23252c", "name": {"en": "Black hexagon sound panels", "ko": "블랙 육각 흡음 패널", "ja": "黒い六角吸音パネル", "zh": "黑色六角吸音板"}, "price": 100000, "desc": {"en": "Black felt hexagons like a streamer's room, a few lit in neon.", "ko": "스트리머 방 같은 검은 펠트 육각 패널, 몇 칸은 네온으로 빛나요."}},
+        {"id": "buy-wall-neonline", "model": "finish", "furniture": "wall-neonline", "color": "#1c1d22", "name": {"en": "Neon line wall", "ko": "네온 라인 벽", "ja": "ネオンラインの壁", "zh": "霓虹线条墙"}, "price": 150000, "desc": {"en": "A dark wall with two neon lines running across like a circuit.", "ko": "회로처럼 가로지르는 네온 줄 두 개가 있는 어두운 벽이에요."}},
+        {"id": "buy-floor-carbon", "model": "finish", "furniture": "floor-carbon", "color": "#22242a", "name": {"en": "Carbon tiles", "ko": "카본 타일", "ja": "カーボンタイル", "zh": "碳纤维地砖"}, "price": 100000, "desc": {"en": "Black tiles with a carbon weave.", "ko": "카본 결이 있는 검은 타일이에요."}},
+        {"id": "buy-floor-carpettile", "model": "finish", "furniture": "floor-carpettile", "color": "#5a5d66", "name": {"en": "Grey carpet tiles", "ko": "회색 카펫 타일", "ja": "グレーのタイルカーペット", "zh": "灰色方块地毯"}, "price": 80000, "desc": {"en": "Soft grey carpet tiles, quiet under a gaming chair.", "ko": "게이밍 의자 밑에서 조용한 부드러운 회색 카펫 타일이에요."}},
+        {"id": "buy-door-neon", "model": "finish", "furniture": "door-neon", "color": "#1c1d22", "name": {"en": "Black door with neon edge", "ko": "네온 테두리 블랙 문", "ja": "ネオン縁の黒い扉", "zh": "霓虹边黑门"}, "price": 130000, "desc": {"en": "A black door with a neon tube round its edge and a lit handle.", "ko": "테두리에 네온관이 둘리고 손잡이가 빛나는 블랙 문이에요."}}
+      ]
+    },
+    {
       "id": "hanok-jimulpo",
       "category": "lifestyle",
       "size": "small",

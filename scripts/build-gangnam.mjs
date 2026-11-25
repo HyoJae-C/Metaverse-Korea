@@ -187,22 +187,29 @@ export const SCREENS = [
 export const GROUPS = [
   [['gdE', 'gdW'], ['info-gangnam'], { near: 'exits' }],
   [['teheranN', 'gdE'], ['teheran-appliances'], { near: 'teheran' }],
+  [['teheranN', 'teheranS'], ['fullpower-gaming', 'fullpower-gaming-room'], { near: 'teheran' }], // (Yozi 2026-11-25: gaming beside the appliance mart)
   [['gdW', 'gdE', 'teheranN', 'seochoN'], ['wide-pants', 'tteugae-knit', 'cap-yard'], { near: 'crossroads' }],
   [['gdE', 'gdW'], ['bitna-clinic', 'saebom-clinic'], { near: 'clinics' }],
-  [['hakdongN', 'hakdongS'], ['saebyeok-living', 'saebyeok-bedroom', 'kkotjam-beds', 'danjang-dressroom'], { near: 'furniture' }],
+  [['hakdongN', 'hakdongS'], ['saebyeok-living', 'saebyeok-bedroom', 'kkotjam-beds', 'danjang-dressroom', 'white-mood-living', 'white-mood-interior'], { near: 'furniture' }],
 ];
 // Why each moved shop is here (stores.json "why"). The clothes shops are
 // three of Euljiro's that belonged to no group there: its skirt shops and the
 // Dongdaemun Fashion Town mall stay together.
 const FURNITURE = 'Fictional showroom on the real Nonhyeon furniture street: Hakdong-ro east of Nonhyeon Station, towards Hakdong Station. Moved here from Euljiro\'s furniture street, which keeps the traditional furniture and the lamps (Yozi 2026-11-24).';
 const CLOTHES = 'Fictional shop by the Gangnam Station crossroads. Moved here from Euljiro, which had more clothes shops than its share (Yozi 2026-11-24).';
+const WHITE_MOOD = 'Fictional showroom on the real Nonhyeon furniture street (Hakdong-ro east of Nonhyeon Station). Yozi 2026-11-25: a white-tone interior, furniture, wallpaper and floors, in Gangnam; a little dearer than Euljiro.';
+const GAMING = 'Fictional shop beside Teheran Appliance Mart at the Gangnam Station corner of Teheran-ro (Yozi 2026-11-25: a gaming-style interior; Yozi picked the spot next to the appliance mart so home shopping is one stop).';
 export const WHY = {
   'teheran-appliances': 'Fictional shop on the Gangnam Station corner where Teheran-ro starts (Yozi 2026-11-22: home appliances like a fridge and a washer, somewhere like Gangnam, not Sewoon Sangga; moved here from the Samseong end of Teheran-ro when Gangnam Station was built, Yozi 2026-11-24). The real Gangnam-daero has big electronics showrooms.',
   'bitna-clinic': 'Fictional clinic on Gangnam-daero between Gangnam Station and Sinnonhyeon, the real stretch with one of Seoul\'s biggest clusters of cosmetic clinics. Moved here from Seongsu (Yozi 2026-11-24).',
   'saebom-clinic': 'Fictional clinic on Gangnam-daero between Gangnam Station and Sinnonhyeon, by Bitna. Moved here from Seongsu (Yozi 2026-11-24).',
   'wide-pants': CLOTHES, 'tteugae-knit': CLOTHES, 'cap-yard': CLOTHES,
   'saebyeok-living': FURNITURE, 'saebyeok-bedroom': FURNITURE, 'kkotjam-beds': FURNITURE, 'danjang-dressroom': FURNITURE,
+  'white-mood-living': WHITE_MOOD, 'white-mood-interior': WHITE_MOOD,
+  'fullpower-gaming': GAMING, 'fullpower-gaming-room': GAMING,
 };
+// The shops made new here, not moved from elsewhere.
+export const NEW_SHOPS = ['white-mood-living', 'white-mood-interior', 'fullpower-gaming', 'fullpower-gaming-room'];
 
 // The lots each shop gets (local metres), and the screens' wall spots.
 export function placeShops(stores = readJson('stores.json').stores) {

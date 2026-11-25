@@ -34,6 +34,20 @@ function flower(g, x, y, r, petal, middle, n = 5) {
   g.beginPath(); g.arc(x, y, r * 0.25, 0, Math.PI * 2); g.fill();
 }
 
+// Pointy-topped hexagons that repeat: two columns and `rows` rows (even) a
+// canvas, odd rows shifted half a hexagon. fill(row, col) gives each colour.
+function hexTiles(g, w, h, rows, gap, fill) {
+  const dx = w / 2, dy = h / rows, R = dy / 1.5, rx = dx / 2 - gap, ry = R - gap;
+  for (let rr = 0; rr < rows; rr++) for (let c = 0; c < 2; c++) {
+    const cx = c * dx + (rr % 2 ? dx / 2 : 0), cy = rr * dy, col = fill(rr, c);
+    wrap(w, h, cx, cy, (x, y) => {
+      g.fillStyle = col; g.beginPath();
+      g.moveTo(x, y - ry); g.lineTo(x + rx, y - ry / 2); g.lineTo(x + rx, y + ry / 2); g.lineTo(x, y + ry); g.lineTo(x - rx, y + ry / 2); g.lineTo(x - rx, y - ry / 2);
+      g.fill();
+    });
+  }
+}
+
 // [width of the strip (walls) or square (floors) in metres, canvas w, h, draw]
 const ART = {
   // --- walls (canvas top = top of the wall) ---
@@ -248,6 +262,100 @@ const ART = {
     g.strokeStyle = '#8a6440'; g.lineWidth = 3; g.stroke();
     g.restore();
     g.fillStyle = '#c9a227'; g.beginPath(); g.arc(w - 22, 112, 6, 0, Math.PI * 2); g.fill(); // brass knob
+  }],
+  // --- 화이트 무드 ---
+  // Raised panels up to 1 m with a rail, plain white above.
+  'wall-wainscot': [0.8, 128, 512, (g, w, h) => {
+    g.fillStyle = '#f7f5f0'; g.fillRect(0, 0, w, h);
+    speckle(g, w, h, 40, 'rgba(200,195,185,0.1)', 3, 61);
+    const top = Math.round(h * 0.75); // 1 m up a 4 m wall
+    g.fillStyle = '#f1eee8'; g.fillRect(0, top, w, h - top);
+    g.fillStyle = '#e4dfd6'; g.fillRect(0, top - 8, w, 10); // the chair rail
+    g.fillStyle = '#ffffff'; g.fillRect(0, top - 10, w, 3);
+    g.strokeStyle = '#ddd8ce'; g.lineWidth = 3; g.strokeRect(16, top + 16, w - 32, h - top - 40); // a raised panel
+    g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.strokeRect(19, top + 19, w - 38, h - top - 46);
+    g.fillStyle = '#e4dfd6'; g.fillRect(0, h - 12, w, 12); // skirting
+  }],
+  'wall-whitebrick': [1.0, 256, 512, (g, w, h) => {
+    g.fillStyle = '#dcd8d0'; g.fillRect(0, 0, w, h); // mortar
+    const bw = 64, bh = 16, r = rand(63); // 0.25 × 0.125 m bricks
+    for (let y = 0, row = 0; y < h; y += bh, row++) for (let x = row % 2 ? -bw / 2 : 0; x < w; x += bw) {
+      const t = 240 + r() * 12;
+      g.fillStyle = `rgb(${t},${t - 2},${t - 6})`; g.fillRect(x + 2, y + 2, bw - 4, bh - 4);
+    }
+    speckle(g, w, h, 200, 'rgba(180,175,165,0.18)', 2, 64);
+  }],
+  // Long pale planks, the joints staggered.
+  'floor-whiteoak': [2.4, 256, 256, (g, w, h) => {
+    const pw = 32, r = rand(65); // 0.3 m planks
+    for (let x = 0, k = 0; x < w; x += pw, k++) {
+      const off = (k * 97) % h;
+      for (const y0 of [off - h, off]) {
+        const t = r() * 14;
+        g.fillStyle = `rgb(${226 + t},${214 + t},${190 + t})`; g.fillRect(x, y0, pw, h);
+        g.fillStyle = 'rgba(160,140,110,0.5)'; g.fillRect(x, y0, pw, 2); // the end joint
+      }
+      g.fillStyle = 'rgba(160,140,110,0.45)'; g.fillRect(x, 0, 2, h); // the long joint
+      g.fillStyle = 'rgba(170,150,120,0.18)'; for (let i = 0; i < 3; i++) g.fillRect(x + 6 + r() * 20, 0, 1, h); // grain
+    }
+  }],
+  'floor-whitehex': [0.6, 128, 222, (g, w, h) => { // hexagons about 0.25 m across
+    g.fillStyle = '#d8d4cc'; g.fillRect(0, 0, w, h); // grout
+    hexTiles(g, w, h, 4, 2.5, () => '#f6f5f2');
+  }],
+  // A white arched door with nine glass panes.
+  'door-glass-arch': [1.6, 128, 192, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.save(); g.beginPath(); g.moveTo(0, h); g.lineTo(0, w / 2); g.arc(w / 2, w / 2, w / 2, Math.PI, 0); g.lineTo(w, h); g.closePath(); g.clip();
+    g.fillStyle = '#f6f5f1'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#d8e8ee'; g.beginPath(); g.moveTo(18, 128); g.lineTo(18, w / 2); g.arc(w / 2, w / 2, w / 2 - 18, Math.PI, 0); g.lineTo(w - 18, 128); g.fill(); // glass, arched like the door
+    g.fillStyle = 'rgba(255,255,255,0.55)'; g.beginPath(); g.moveTo(30, 120); g.lineTo(60, 30); g.lineTo(72, 30); g.lineTo(42, 120); g.fill(); // a shine
+    g.fillStyle = '#f6f5f1'; for (const x of [w / 2 - 15, w / 2 + 11]) g.fillRect(x, 10, 4, 120); for (const y of [64, 96]) g.fillRect(18, y, w - 36, 4); // glazing bars
+    g.strokeStyle = 'rgba(0,0,0,0.08)'; g.lineWidth = 2; g.strokeRect(20, 140, w - 40, 40); // a panel below
+    g.restore();
+    g.fillStyle = '#c9a227'; g.beginPath(); g.arc(w - 20, 134, 5, 0, Math.PI * 2); g.fill(); // brass knob
+  }],
+  // --- 게이밍 ---
+  'wall-hexpanel': [0.78, 100, 512, (g, w, h) => { // felt hexagons about 0.35 m across, a few lit
+    g.fillStyle = '#1c1d22'; g.fillRect(0, 0, w, h);
+    hexTiles(g, w, h, 12, 4, (rr, c) => ((rr * 2 + c) * 7) % 11 === 3 ? '#2ee6ff' : (rr + c) % 3 ? '#26282f' : '#2e3038');
+  }],
+  'wall-neonline': [2.0, 256, 512, (g, w, h) => {
+    g.fillStyle = '#1c1d22'; g.fillRect(0, 0, w, h);
+    speckle(g, w, h, 120, 'rgba(60,62,70,0.4)', 2, 67);
+    const line = (pts) => {
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      for (const [lw, c] of [[12, 'rgba(46,230,255,0.18)'], [6, 'rgba(46,230,255,0.4)'], [2.5, '#c8fbff']]) { // glow, then the tube
+        g.strokeStyle = c; g.lineWidth = lw; g.beginPath(); g.moveTo(...pts[0]); for (const p of pts.slice(1)) g.lineTo(...p); g.stroke();
+      }
+    };
+    line([[0, 300], [90, 300], [130, 260], [256, 260]]); // a circuit-like line across, at eye height
+    line([[0, 340], [60, 340], [100, 380], [256, 380]]);
+  }],
+  'floor-carbon': [1.0, 256, 256, (g, w, h) => {
+    for (let y = 0; y < h; y += 8) for (let x = 0; x < w; x += 8) { // a carbon weave
+      const k = ((x + y) / 8) % 2;
+      const gr = g.createLinearGradient(x, y, x + (k ? 8 : 0), y + (k ? 0 : 8));
+      gr.addColorStop(0, '#1e2025'); gr.addColorStop(0.5, '#34373f'); gr.addColorStop(1, '#1e2025');
+      g.fillStyle = gr; g.fillRect(x, y, 8, 8);
+    }
+    g.fillStyle = '#121317'; g.fillRect(0, 0, w, 2); g.fillRect(0, 0, 2, h); g.fillRect(0, 127, w, 2); g.fillRect(127, 0, 2, h); // 0.5 m tiles
+  }],
+  'floor-carpettile': [1.0, 256, 256, (g, w, h) => {
+    for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) { // 0.5 m tiles, the pile turned each time
+      const x0 = tx * 128, y0 = ty * 128, across = (tx + ty) % 2;
+      g.fillStyle = across ? '#5a5d66' : '#52555e'; g.fillRect(x0, y0, 128, 128);
+      g.fillStyle = 'rgba(30,32,38,0.25)';
+      for (let i = 2; i < 128; i += 5) across ? g.fillRect(x0, y0 + i, 128, 1.5) : g.fillRect(x0 + i, y0, 1.5, 128);
+    }
+    speckle(g, w, h, 500, 'rgba(120,124,134,0.25)', 1.5, 69);
+  }],
+  'door-neon': [1.6, 128, 192, (g, w, h) => {
+    g.fillStyle = '#1c1d22'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(46,230,255,0.25)'; g.fillRect(0, 0, w, h); g.fillStyle = '#1c1d22'; g.fillRect(8, 8, w - 16, h - 8); // glow round the edge
+    g.strokeStyle = '#c8fbff'; g.lineWidth = 3; g.strokeRect(5, 5, w - 10, h); // the neon tube
+    g.strokeStyle = '#2a2c33'; g.lineWidth = 2; for (const y of [40, 80, 120, 160]) { g.beginPath(); g.moveTo(20, y); g.lineTo(w - 20, y); g.stroke(); } // grooves
+    g.fillStyle = '#2ee6ff'; g.fillRect(w - 26, 80, 5, 40); // a lit bar handle
   }],
 };
 export const FINISH_ART_IDS = Object.keys(ART);
