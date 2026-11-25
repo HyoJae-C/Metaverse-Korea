@@ -1552,7 +1552,7 @@ const rocking = lazyPanel(() => import('./game/rocking.js').then(({ createRockin
 const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => {
   sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q);
   if (q.target.rk) rocking.ready().catch(() => {}); rocking.peer(q, dt);
-} };
+}, boardGame: () => boardGames.playing };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you. The badge shows today's visitors (real
@@ -7786,6 +7786,7 @@ renderer.setAnimationLoop((now) => {
     if (riding === 3) { st.on = tandemDriver; st.seat = mySeat; }
     if (heldKind()) st.hd = heldKind();
     if (me.activityName) st.ac = me.activityName;
+    if (boardGames.playing) st.bg = boardGames.playing; // in a board game: others see 🎲 over our head
     if (umbrellaOpen()) st.um = 1;
     if (petCare.pet && !petIndoors()) st.pt = petCare.pet.id; // (not seen indoors)
     if (myScent) st.sc = myScent; // others show the perfume's effect next to us

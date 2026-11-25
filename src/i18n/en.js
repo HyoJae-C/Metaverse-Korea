@@ -190,6 +190,7 @@ export const EN = {
   "beauty.saved": "New look saved!",
   "beauty.suits": "It really suits you!",
   "book.reading": "📖 Reading...",
+  "boardGame.playing": "🎲 In a board game",
   "haircut.start": "I'll give you a lovely cut!",
   "salon.open": "Pick a style",
   "clinic.open": "Consult the doctor",

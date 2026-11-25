@@ -188,6 +188,7 @@ export const HI = {
   'beauty.saved': 'नया लुक सहेजा गया!',
   'beauty.suits': 'आप पर बहुत जँचता है!',
   'book.reading': '📖 पढ़ रहे हैं...',
+  'boardGame.playing': '🎲 बोर्ड गेम खेल रहे हैं',
   'haircut.start': 'मैं आपको बढ़िया कट दूँगा!',
   'salon.open': 'स्टाइल चुनें',
   'clinic.open': 'डॉक्टर से सलाह लें',
