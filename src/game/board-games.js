@@ -12,11 +12,11 @@ import { BOARD_SETS_ON_SALE } from '../core/board-game-sets.js';
 import { BOARD_PASS, passLeft, startPass } from '../core/board-pass.js';
 
 const L = (o) => localName(o, getLanguage());
-export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
+export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', fr: 'Jeux de société', pt: "Jogos de tabuleiro", th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
 const ASK = {
-  text: { en: '🎲 {name} asks you to play {game}!', ko: '🎲 {name}님이 {game} 같이 하재요!', ja: '🎲 {name}さんが{game}に誘っています！', zh: '🎲 {name}邀请你玩{game}！', es: '🎲 ¡{name} te invita a jugar a {game}!', id: '🎲 {name} mengajakmu main {game}!', vi: '🎲 {name} rủ bạn chơi {game}!', fr: '🎲 {name} t\'invite à jouer à {game} !', th: '🎲 {name} ชวนคุณเล่น {game}!', ar: '🎲 {name} يدعوك للعب {game}!' },
-  yes: { en: 'Play', ko: '같이 하기', ja: '遊ぶ', zh: '一起玩', es: 'Jugar', id: 'Main', vi: 'Chơi', fr: 'Jouer', th: 'เล่น', ar: 'العب' },
-  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不用了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Thôi', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
+  text: { en: '🎲 {name} asks you to play {game}!', ko: '🎲 {name}님이 {game} 같이 하재요!', ja: '🎲 {name}さんが{game}に誘っています！', zh: '🎲 {name}邀请你玩{game}！', es: '🎲 ¡{name} te invita a jugar a {game}!', id: '🎲 {name} mengajakmu main {game}!', vi: '🎲 {name} rủ bạn chơi {game}!', fr: '🎲 {name} t\'invite à jouer à {game} !', pt: "🎲 {name} chamou você para jogar {game}!", th: '🎲 {name} ชวนคุณเล่น {game}!', ar: '🎲 {name} يدعوك للعب {game}!' },
+  yes: { en: 'Play', ko: '같이 하기', ja: '遊ぶ', zh: '一起玩', es: 'Jugar', id: 'Main', vi: 'Chơi', fr: 'Jouer', pt: "Jogar", th: 'เล่น', ar: 'العب' },
+  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不用了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Thôi', fr: 'Non merci', pt: "Não, obrigado", th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
 };
 const ASK_MS = 28000; // a little under the host's 30 s wait (ui/board-games-ui.js)
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:56;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';

@@ -10,7 +10,7 @@ import { L, fmt } from './pocha-ui.js';
 import { startGalleryFps } from './gallery-fps.js';
 
 const T = {
-  title: { en: 'Balloon shooting gallery', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', fr: 'Stand de tir aux ballons', th: 'ซุ้มยิงลูกโป่ง', ar: 'رماية البالونات' },
+  title: { en: 'Balloon shooting gallery', ko: '풍선 사격', ja: '風船射的', zh: '气球射击', es: 'Tiro al globo', id: 'Tembak balon', vi: 'Bắn bóng bay', fr: 'Stand de tir aux ballons', pt: "Tiro aos balões", th: 'ซุ้มยิงลูกโป่ง', ar: 'رماية البالونات' },
   howTo: {
     en: 'A cork air rifle, in first person: aim and pop the targets. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} corks, {s} seconds. Free to play.',
     ko: '1인칭으로 코르크 공기총을 쏴요. 조준해서 과녁을 맞혀요. 🎈 10 · 🦆 20 · ⭐ 50점. 코르크 {n}발, {s}초. 무료예요.',
@@ -19,15 +19,15 @@ const T = {
     es: 'Una escopeta de corcho de juguete: toca los blancos. 🎈 10 · 🦆 20 · ⭐ 50 puntos. {n} corchos, {s} segundos. Gratis.',
     id: 'Pistol gabus mainan: ketuk target untuk menembaknya. 🎈 10 · 🦆 20 · ⭐ 50 poin. {n} gabus, {s} detik. Gratis.',
     vi: 'Súng nút bần đồ chơi: chạm vào mục tiêu để bắn. 🎈 10 · 🦆 20 · ⭐ 50 điểm. {n} viên, {s} giây. Miễn phí.',
-    fr: 'Un pistolet à bouchon : touche les cibles pour les faire éclater. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} bouchons, {s} secondes. Gratuit.',
+    fr: 'Un pistolet à bouchon : touche les cibles pour les faire éclater. 🎈 10 · 🦆 20 · ⭐ 50 points. {n} bouchons, {s} secondes. Gratuit.', pt: "Uma espingarda de rolha, em primeira pessoa: mire e estoure os alvos. 🎈 10 · 🦆 20 · ⭐ 50 pontos. {n} rolhas, {s} segundos. Grátis.",
     th: 'ปืนจุกก๊อกของเล่น แตะเป้าเพื่อยิงให้แตก 🎈 10 · 🦆 20 · ⭐ 50 คะแนน มี {n} นัด {s} วินาที เล่นฟรี',
     ar: 'بندقية فلين لعبة: انقر على الأهداف لإصابتها. 🎈 10 · 🦆 20 · ⭐ 50 نقطة. {n} طلقات، {s} ثانية. مجاني.',
   },
-  best: { en: 'Your best: {n}', ko: '내 최고 점수: {n}', ja: '自己ベスト：{n}', zh: '我的最高分：{n}', es: 'Tu récord: {n}', id: 'Skor terbaikmu: {n}', vi: 'Điểm cao nhất: {n}', fr: 'Ton record : {n}', th: 'สถิติดีที่สุด: {n}', ar: 'أفضل نتيجة لك: {n}' },
-  start: { en: 'Start', ko: '시작', ja: 'スタート', zh: '开始', es: 'Empezar', id: 'Mulai', vi: 'Bắt đầu', fr: 'Commencer', th: 'เริ่ม', ar: 'ابدأ' },
-  hud: { en: 'Score {p} · corks {n} · {s} s', ko: '점수 {p} · 코르크 {n} · {s}초', ja: '得点 {p}・残り {n}発・{s}秒', zh: '得分 {p} · 剩 {n} 发 · {s}秒', es: 'Puntos {p} · corchos {n} · {s} s', id: 'Skor {p} · gabus {n} · {s} dtk', vi: 'Điểm {p} · còn {n} viên · {s} giây', fr: 'Score {p} · bouchons {n} · {s} s', th: 'คะแนน {p} · กระสุน {n} · {s} วิ', ar: 'النقاط {p} · الطلقات {n} · {s} ث' },
-  done: { en: '{p} points · {h} hits out of {n}', ko: '{p}점 · {n}발 중 {h}발 명중', ja: '{p}点・{n}発中{h}発命中', zh: '{p}分 · {n}发中{h}发', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', fr: '{p} points · {h} touchés sur {n}', th: '{p} คะแนน · ยิงโดน {h} จาก {n}', ar: '{p} نقطة · {h} إصابات من {n}' },
-  record: { en: '🏆 New best!', ko: '🏆 신기록!', ja: '🏆 自己ベスト更新！', zh: '🏆 新纪录！', es: '🏆 ¡Nuevo récord!', id: '🏆 Rekor baru!', vi: '🏆 Kỷ lục mới!', fr: '🏆 Nouveau record !', th: '🏆 สถิติใหม่!', ar: '🏆 رقم جديد!' },
+  best: { en: 'Your best: {n}', ko: '내 최고 점수: {n}', ja: '自己ベスト：{n}', zh: '我的最高分：{n}', es: 'Tu récord: {n}', id: 'Skor terbaikmu: {n}', vi: 'Điểm cao nhất: {n}', fr: 'Ton record : {n}', pt: "Seu recorde: {n}", th: 'สถิติดีที่สุด: {n}', ar: 'أفضل نتيجة لك: {n}' },
+  start: { en: 'Start', ko: '시작', ja: 'スタート', zh: '开始', es: 'Empezar', id: 'Mulai', vi: 'Bắt đầu', fr: 'Commencer', pt: "Começar", th: 'เริ่ม', ar: 'ابدأ' },
+  hud: { en: 'Score {p} · corks {n} · {s} s', ko: '점수 {p} · 코르크 {n} · {s}초', ja: '得点 {p}・残り {n}発・{s}秒', zh: '得分 {p} · 剩 {n} 发 · {s}秒', es: 'Puntos {p} · corchos {n} · {s} s', id: 'Skor {p} · gabus {n} · {s} dtk', vi: 'Điểm {p} · còn {n} viên · {s} giây', fr: 'Score {p} · bouchons {n} · {s} s', pt: "Pontos {p} · rolhas {n} · {s} s", th: 'คะแนน {p} · กระสุน {n} · {s} วิ', ar: 'النقاط {p} · الطلقات {n} · {s} ث' },
+  done: { en: '{p} points · {h} hits out of {n}', ko: '{p}점 · {n}발 중 {h}발 명중', ja: '{p}点・{n}発中{h}発命中', zh: '{p}分 · {n}发中{h}发', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', fr: '{p} points · {h} touchés sur {n}', pt: "{p} pontos · {h} acertos de {n}", th: '{p} คะแนน · ยิงโดน {h} จาก {n}', ar: '{p} نقطة · {h} إصابات من {n}' },
+  record: { en: '🏆 New best!', ko: '🏆 신기록!', ja: '🏆 自己ベスト更新！', zh: '🏆 新纪录！', es: '🏆 ¡Nuevo récord!', id: '🏆 Rekor baru!', vi: '🏆 Kỷ lục mới!', fr: '🏆 Nouveau record !', pt: "🏆 Novo recorde!", th: '🏆 สถิติใหม่!', ar: '🏆 رقم جديد!' },
   medals: {
     en: 'Medals: {b} · {s} · {g} points. A gold medal wins a small teddy bear 🧸 for your home!',
     ko: '메달: {b} · {s} · {g}점. 금메달을 따면 작은 곰인형 🧸을 선물로 드려요! 내 집에 놓을 수 있어요.',
@@ -36,11 +36,11 @@ const T = {
     es: 'Medallas: {b} · {s} · {g} puntos. ¡Con la medalla de oro te llevas un osito de peluche 🧸 para tu casa!',
     id: 'Medali: {b} · {s} · {g} poin. Medali emas dapat hadiah boneka beruang kecil 🧸 untuk rumahmu!',
     vi: 'Huy chương: {b} · {s} · {g} điểm. Huy chương vàng được tặng một chú gấu bông nhỏ 🧸 để đặt trong nhà!',
-    fr: 'Médailles : {b} · {s} · {g} points. La médaille d’or gagne un petit ours en peluche 🧸 pour ta maison !',
+    fr: 'Médailles : {b} · {s} · {g} points. La médaille d’or gagne un petit ours en peluche 🧸 pour ta maison !', pt: "Medalhas: {b} · {s} · {g} pontos. Uma medalha de ouro ganha um ursinho de pelúcia 🧸 para sua casa!",
     th: 'เหรียญ: {b} · {s} · {g} คะแนน ได้เหรียญทองรับตุ๊กตาหมีตัวเล็ก 🧸 ไปวางที่บ้าน!',
     ar: 'الميداليات: {b} · {s} · {g} نقطة. الميدالية الذهبية تربح دبًا محشوًا صغيرًا 🧸 لبيتك!',
   },
-  medal: { en: '{m} medal!', ko: '{m} 메달!', ja: '{m}メダル！', zh: '{m}奖牌！', es: '¡Medalla {m}!', id: 'Medali {m}!', vi: 'Huy chương {m}!', fr: 'Médaille {m} !', th: 'เหรียญ{m}!', ar: 'ميدالية {m}!' },
+  medal: { en: '{m} medal!', ko: '{m} 메달!', ja: '{m}メダル！', zh: '{m}奖牌！', es: '¡Medalla {m}!', id: 'Medali {m}!', vi: 'Huy chương {m}!', fr: 'Médaille {m} !', pt: "Medalha de {m}!", th: 'เหรียญ{m}!', ar: 'ميدالية {m}!' },
   gotBear: {
     en: '🎁 Here is a small teddy bear! Put it in your home with Decorate.',
     ko: '🎁 작은 곰인형을 선물로 받았어요! 내 집 꾸미기에서 놓을 수 있어요.',
@@ -49,7 +49,7 @@ const T = {
     es: '🎁 ¡Aquí tienes un osito de peluche! Ponlo en tu casa con Decorar.',
     id: '🎁 Ini boneka beruang kecil untukmu! Taruh di rumahmu lewat Dekorasi.',
     vi: '🎁 Tặng bạn một chú gấu bông nhỏ! Đặt nó trong nhà bằng Trang trí.',
-    fr: '🎁 Voici un petit ours en peluche ! Place-le chez toi avec Décorer.',
+    fr: '🎁 Voici un petit ours en peluche ! Place-le chez toi avec Décorer.', pt: "🎁 Aqui está um ursinho de pelúcia! Coloque na sua casa com Decorar.",
     th: '🎁 รับตุ๊กตาหมีตัวเล็กไปเลย! วางในบ้านได้ด้วยปุ่มตกแต่ง',
     ar: '🎁 إليك دب محشو صغير! ضعه في بيتك من خلال التزيين.',
   },
@@ -61,7 +61,7 @@ const T = {
     es: 'Ya tienes el osito de peluche. ¡Buen tiro!',
     id: 'Kamu sudah punya boneka beruang kecil. Tembakan hebat!',
     vi: 'Bạn đã có gấu bông nhỏ rồi. Bắn giỏi lắm!',
-    fr: 'Tu as déjà le petit ours. Joli tir !',
+    fr: 'Tu as déjà le petit ours. Joli tir !', pt: "Você já tem o ursinho de pelúcia. Belo tiro!",
     th: 'คุณมีตุ๊กตาหมีตัวเล็กแล้ว ยิงเก่งมาก!',
     ar: 'لديك الدب الصغير بالفعل. تصويب رائع!',
   },
@@ -73,13 +73,13 @@ const T = {
     es: '¡Escopeta de aire! Mueve el ratón para apuntar, clic o Espacio para disparar. En el móvil: arrastra y toca 🔫.',
     id: 'Senapan angin! Gerakkan mouse untuk membidik, klik atau Spasi untuk menembak. Di HP: geser lalu ketuk 🔫.',
     vi: 'Súng hơi! Di chuột để ngắm, bấm chuột hoặc Space để bắn. Trên điện thoại: kéo để ngắm, chạm 🔫.',
-    fr: 'Carabine à bouchon ! Bouge la souris pour viser, clic ou Espace pour tirer. Sur mobile : glisse et touche 🔫.',
+    fr: 'Carabine à bouchon ! Bouge la souris pour viser, clic ou Espace pour tirer. Sur mobile : glisse et touche 🔫.', pt: "Espingarda de rolha! Mova o mouse para mirar, clique ou Espaço para atirar. No celular: arraste para mirar e toque em 🔫.",
     th: 'ปืนอัดลม! ขยับเมาส์เล็ง คลิกหรือกด Space เพื่อยิง บนมือถือ: ลากเพื่อเล็ง แตะ 🔫',
     ar: 'بندقية هواء! حرّك الفأرة للتصويب، وانقر أو اضغط المسافة للإطلاق. على الهاتف: اسحب للتصويب واضغط 🔫.',
   },
-  fire: { en: 'Fire', ko: '발사', ja: '発射', zh: '射击', es: 'Disparar', id: 'Tembak', vi: 'Bắn', fr: 'Tirer', th: 'ยิง', ar: 'أطلق' },
-  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', fr: 'Rejouer', th: 'อีกครั้ง', ar: 'مرة أخرى' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', fr: 'Fermer', th: 'ปิด', ar: 'إغلاق' },
+  fire: { en: 'Fire', ko: '발사', ja: '発射', zh: '射击', es: 'Disparar', id: 'Tembak', vi: 'Bắn', fr: 'Tirer', pt: "Atirar", th: 'ยิง', ar: 'أطلق' },
+  again: { en: 'Again', ko: '한 번 더', ja: 'もう一回', zh: '再来一次', es: 'Otra vez', id: 'Lagi', vi: 'Lần nữa', fr: 'Rejouer', pt: "De novo", th: 'อีกครั้ง', ar: 'مرة أخرى' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', id: 'Tutup', vi: 'Đóng', fr: 'Fermer', pt: "Fechar", th: 'ปิด', ar: 'إغلاق' },
 };
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -88,9 +88,9 @@ const el = (tag, cls, text) => {
   return e;
 };
 const MEDAL = {
-  gold: { en: 'Gold', ko: '금', ja: '金', zh: '金', es: 'de oro', id: 'emas', vi: 'vàng', fr: 'd’or', th: 'ทอง', ar: 'ذهبية' },
-  silver: { en: 'Silver', ko: '은', ja: '銀', zh: '银', es: 'de plata', id: 'perak', vi: 'bạc', fr: 'd’argent', th: 'เงิน', ar: 'فضية' },
-  bronze: { en: 'Bronze', ko: '동', ja: '銅', zh: '铜', es: 'de bronce', id: 'perunggu', vi: 'đồng', fr: 'de bronze', th: 'ทองแดง', ar: 'برونزية' },
+  gold: { en: 'Gold', ko: '금', ja: '金', zh: '金', es: 'de oro', id: 'emas', vi: 'vàng', fr: 'd’or', pt: "Ouro", th: 'ทอง', ar: 'ذهبية' },
+  silver: { en: 'Silver', ko: '은', ja: '銀', zh: '银', es: 'de plata', id: 'perak', vi: 'bạc', fr: 'd’argent', pt: "Prata", th: 'เงิน', ar: 'فضية' },
+  bronze: { en: 'Bronze', ko: '동', ja: '銅', zh: '铜', es: 'de bronce', id: 'perunggu', vi: 'đồng', fr: 'de bronze', pt: "Bronze", th: 'ทองแดง', ar: 'برونزية' },
 };
 const W = 600, H = 360;
 const COLORS = ['#ff5a5f', '#ffd36e', '#8fd0ff', '#c9a8ff', '#8fe3c7'];
@@ -293,7 +293,7 @@ export const BALLOON_THEME = {
 // lantern. Big ghosts 10, bats 20, little cursed stars 50. Each shape fills
 // the same hit circle as the target it replaces.
 const HT = {
-  title: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', fr: 'Lanterne à fantômes', th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
+  title: { en: 'Ghost lantern', ko: '유령 랜턴', ja: 'おばけランタン', zh: '幽灵灯笼', es: 'Farol de fantasmas', id: 'Lentera hantu', vi: 'Đèn lồng ma', fr: 'Lanterne à fantômes', pt: "Lanterna fantasma", th: 'โคมไฟล่าผี', ar: 'فانوس الأشباح' },
   howTo: {
     en: 'Tap the ghosts your lantern finds! Your lantern shines where you last tapped. 👻 10 · 🦇 20 · ✴️ 50 points. {n} taps, {s} seconds. Free to play.',
     ko: '랜턴에 나타나는 유령을 탭해요! 랜턴은 마지막으로 탭한 곳을 비춰요. 👻 10 · 🦇 20 · ✴️ 50점. {n}번 탭, {s}초. 무료예요.',
@@ -302,12 +302,12 @@ const HT = {
     es: '¡Toca los fantasmas que encuentre tu farol! El farol alumbra donde tocaste por última vez. 👻 10 · 🦇 20 · ✴️ 50 puntos. {n} toques, {s} segundos. Gratis.',
     id: 'Ketuk hantu yang ditemukan lenteramu! Lentera menyinari tempat ketukan terakhirmu. 👻 10 · 🦇 20 · ✴️ 50 poin. {n} ketukan, {s} detik. Gratis.',
     vi: 'Chạm vào bóng ma mà đèn lồng tìm thấy! Đèn lồng chiếu sáng chỗ bạn chạm lần cuối. 👻 10 · 🦇 20 · ✴️ 50 điểm. {n} lần chạm, {s} giây. Miễn phí.',
-    fr: 'Touche les fantômes que ta lanterne trouve ! Ta lanterne éclaire là où tu as touché en dernier. 👻 10 · 🦇 20 · ✴️ 50 points. {n} touches, {s} secondes. Gratuit.',
+    fr: 'Touche les fantômes que ta lanterne trouve ! Ta lanterne éclaire là où tu as touché en dernier. 👻 10 · 🦇 20 · ✴️ 50 points. {n} touches, {s} secondes. Gratuit.', pt: "Toque nos fantasmas que sua lanterna encontrar! A lanterna ilumina onde você tocou por último. 👻 10 · 🦇 20 · ✴️ 50 pontos. {n} toques, {s} segundos. Grátis.",
     th: 'แตะผีที่โคมไฟส่องเจอ! โคมจะส่องตรงจุดที่คุณแตะล่าสุด 👻 10 · 🦇 20 · ✴️ 50 คะแนน แตะได้ {n} ครั้ง {s} วินาที เล่นฟรี',
     ar: 'انقر على الأشباح التي يجدها فانوسك! يضيء الفانوس حيث نقرت آخر مرة. 👻 10 · 🦇 20 · ✴️ 50 نقطة. {n} نقرات، {s} ثانية. مجاني.',
   },
-  hud: { en: 'Score {p} · taps {n} · {s} s', ko: '점수 {p} · 남은 탭 {n} · {s}초', ja: '得点 {p}・残り {n}回・{s}秒', zh: '得分 {p} · 剩 {n} 次 · {s}秒', es: 'Puntos {p} · toques {n} · {s} s', id: 'Skor {p} · ketukan {n} · {s} dtk', vi: 'Điểm {p} · còn {n} lần · {s} giây', fr: 'Score {p} · touches {n} · {s} s', th: 'คะแนน {p} · แตะ {n} · {s} วิ', ar: 'النقاط {p} · النقرات {n} · {s} ث' },
-  done: { en: '{p} points · {h} ghosts caught out of {n} taps', ko: '{p}점 · {n}번 중 {h}번 명중', ja: '{p}点・{n}回中{h}回命中', zh: '{p}分 · {n}次中{h}次', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', fr: '{p} points · {h} fantômes attrapés en {n} touches', th: '{p} คะแนน · จับผีได้ {h} ตัวจาก {n} ครั้ง', ar: '{p} نقطة · {h} إصابات من {n}' },
+  hud: { en: 'Score {p} · taps {n} · {s} s', ko: '점수 {p} · 남은 탭 {n} · {s}초', ja: '得点 {p}・残り {n}回・{s}秒', zh: '得分 {p} · 剩 {n} 次 · {s}秒', es: 'Puntos {p} · toques {n} · {s} s', id: 'Skor {p} · ketukan {n} · {s} dtk', vi: 'Điểm {p} · còn {n} lần · {s} giây', fr: 'Score {p} · touches {n} · {s} s', pt: "Pontos {p} · toques {n} · {s} s", th: 'คะแนน {p} · แตะ {n} · {s} วิ', ar: 'النقاط {p} · النقرات {n} · {s} ث' },
+  done: { en: '{p} points · {h} ghosts caught out of {n} taps', ko: '{p}점 · {n}번 중 {h}번 명중', ja: '{p}点・{n}回中{h}回命中', zh: '{p}分 · {n}次中{h}次', es: '{p} puntos · {h} aciertos de {n}', id: '{p} poin · {h} kena dari {n}', vi: '{p} điểm · trúng {h}/{n}', fr: '{p} points · {h} fantômes attrapés en {n} touches', pt: "{p} pontos · {h} fantasmas pegos em {n} toques", th: '{p} คะแนน · จับผีได้ {h} ตัวจาก {n} ครั้ง', ar: '{p} نقطة · {h} إصابات من {n}' },
 };
 function hauntTarget(c, tg, x, y, r, t) {
   if (tg.kind === 'balloon') { // a big friendly ghost, bobbing

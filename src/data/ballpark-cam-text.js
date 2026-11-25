@@ -2,7 +2,7 @@
 // every language the game speaks (English is the fallback). Downloaded with
 // the stadium, not with the street.
 
-const tr = ([en, ko, ja, zh, es, id, vi, fr, th, ar]) => ({ en, ko, ja, zh, es, id, vi, fr, th, ar });
+const tr = ([en, ko, ja, zh, es, id, vi, fr, th, ar, pt]) => ({ en, ko, ja, zh, es, id, vi, fr, th, ar, pt });
 
 export const CAM_TEXT = {
   kissOn: tr([
@@ -15,7 +15,7 @@ export const CAM_TEXT = {
     '💋 Kiss Cam! Nhìn lên màn hình lớn.',
     '💋 Kiss Cam ! Regarde l\'écran géant.',
     '💋 คิสแคม! ดูจอใหญ่สิ',
-    '💋 كاميرا القبلة! انظر إلى الشاشة الكبيرة.',
+    '💋 كاميرا القبلة! انظر إلى الشاشة الكبيرة.', "💋 Kiss Cam! Olhe para o telão.",
   ]),
   kissYou: tr([
     '💋 Kiss Cam! You and {name} are on the big screen.',
@@ -27,7 +27,7 @@ export const CAM_TEXT = {
     '💋 Kiss Cam! Bạn và {name} đang lên màn hình lớn.',
     '💋 Kiss Cam ! Toi et {name} êtes sur l\'écran géant.',
     '💋 คิสแคม! คุณกับ {name} ขึ้นจอใหญ่แล้ว',
-    '💋 كاميرا القبلة! أنت و{name} على الشاشة الكبيرة.',
+    '💋 كاميرا القبلة! أنت و{name} على الشاشة الكبيرة.', "💋 Kiss Cam! Você e {name} estão no telão.",
   ]),
   kiss: tr([
     'Cheek kiss for {name}',
@@ -39,7 +39,7 @@ export const CAM_TEXT = {
     'Hôn má {name}',
     'Bisou sur la joue de {name}',
     'หอมแก้ม {name}',
-    'قبلة على خد {name}',
+    'قبلة على خد {name}', "Beijo no rosto de {name}",
   ]),
   kissBack: tr([
     'Kiss {name} back',
@@ -51,7 +51,7 @@ export const CAM_TEXT = {
     'Hôn lại {name}',
     'Rendre son bisou à {name}',
     'หอมแก้มกลับ {name}',
-    'رد القبلة إلى {name}',
+    'رد القبلة إلى {name}', "Retribuir o beijo de {name}",
   ]),
   no: tr([
     'No thanks',
@@ -63,7 +63,7 @@ export const CAM_TEXT = {
     'Thôi, cảm ơn',
     'Non merci',
     'ไม่เป็นไร',
-    'لا، شكرًا',
+    'لا، شكرًا', "Não, obrigado",
   ]),
   asked: tr([
     '💋 {name} wants to kiss your cheek!',
@@ -75,7 +75,7 @@ export const CAM_TEXT = {
     '💋 {name} muốn hôn má bạn!',
     '💋 {name} veut te faire un bisou sur la joue !',
     '💋 {name} อยากหอมแก้มคุณ!',
-    '💋 {name} يريد تقبيل خدك!',
+    '💋 {name} يريد تقبيل خدك!', "💋 {name} quer dar um beijo no seu rosto!",
   ]),
   waiting: tr([
     'Asked {name}. Waiting for a yes…',
@@ -87,7 +87,7 @@ export const CAM_TEXT = {
     'Đã hỏi {name}. Đang chờ trả lời…',
     'Demandé à {name}. On attend un oui…',
     'ถาม {name} แล้ว รอคำตอบ…',
-    'سألت {name}. بانتظار الموافقة…',
+    'سألت {name}. بانتظار الموافقة…', "Pediu a {name}. Esperando um sim…",
   ]),
   danceOn: tr([
     '💃 Dance Cam! Look at the big screen.',
@@ -99,7 +99,7 @@ export const CAM_TEXT = {
     '💃 Dance Cam! Nhìn lên màn hình lớn.',
     '💃 Dance Cam ! Regarde l\'écran géant.',
     '💃 แดนซ์แคม! ดูจอใหญ่สิ',
-    '💃 كاميرا الرقص! انظر إلى الشاشة الكبيرة.',
+    '💃 كاميرا الرقص! انظر إلى الشاشة الكبيرة.', "💃 Dance Cam! Olhe para o telão.",
   ]),
   danceYou: tr([
     '💃 Dance Cam! You are on the big screen: dance!',
@@ -111,9 +111,9 @@ export const CAM_TEXT = {
     '💃 Dance Cam! Bạn đang trên màn hình lớn: nhảy đi!',
     '💃 Dance Cam ! Tu es sur l\'écran géant : danse !',
     '💃 แดนซ์แคม! คุณขึ้นจอใหญ่แล้ว เต้นเลย!',
-    '💃 كاميرا الرقص! أنت على الشاشة الكبيرة: ارقص!',
+    '💃 كاميرا الرقص! أنت على الشاشة الكبيرة: ارقص!', "💃 Dance Cam! Você está no telão: dance!",
   ]),
-  dance: tr(['Dance!', '춤추기!', '踊る！', '跳舞！', '¡Bailar!', 'Joget!', 'Nhảy!', 'Danser !', 'เต้น!', 'ارقص!']),
+  dance: tr(['Dance!', '춤추기!', '踊る！', '跳舞！', '¡Bailar!', 'Joget!', 'Nhảy!', 'Danser !', 'เต้น!', 'ارقص!', "Dançar!"]),
   waveOn: tr([
     '🌊 The wave is coming round! Stand up when it reaches you.',
     '🌊 파도타기가 와요! 내 자리에 오면 일어나요.',
@@ -124,10 +124,10 @@ export const CAM_TEXT = {
     '🌊 Sóng người đang tới! Đứng dậy khi nó tới chỗ bạn.',
     '🌊 La ola arrive ! Lève-toi quand elle arrive à toi.',
     '🌊 เวฟมาแล้ว! พอถึงที่นั่งคุณให้ลุกขึ้น',
-    '🌊 الموجة قادمة! قف عندما تصل إليك.',
+    '🌊 الموجة قادمة! قف عندما تصل إليك.', "🌊 A ola está chegando! Levante quando ela passar por você.",
   ]),
-  wave: tr(['Stand up for the wave!', '파도타기 일어나기!', 'ウェーブで立つ！', '站起来跟上人浪！', '¡Levántate para la ola!', 'Berdiri untuk ombak!', 'Đứng lên theo sóng!', 'Debout pour la ola !', 'ลุกขึ้นเวฟ!', 'قف مع الموجة!']),
-  clap: tr(['Clap!', '짝!', 'パン！', '拍手！', '¡Aplaude!', 'Tepuk!', 'Vỗ tay!', 'Tape !', 'ปรบมือ!', 'صفّق!']),
+  wave: tr(['Stand up for the wave!', '파도타기 일어나기!', 'ウェーブで立つ！', '站起来跟上人浪！', '¡Levántate para la ola!', 'Berdiri untuk ombak!', 'Đứng lên theo sóng!', 'Debout pour la ola !', 'ลุกขึ้นเวฟ!', 'قف مع الموجة!', "Levante para a ola!"]),
+  clap: tr(['Clap!', '짝!', 'パン！', '拍手！', '¡Aplaude!', 'Tepuk!', 'Vỗ tay!', 'Tape !', 'ปรบมือ!', 'صفّق!', "Palmas!"]),
   clapTip: tr([
     '👏 Clap along with the cheer leader: clap clap, clap clap clap!',
     '👏 응원단장 박자에 맞춰 짝짝, 짝짝짝!',
@@ -138,7 +138,7 @@ export const CAM_TEXT = {
     '👏 Vỗ tay theo trưởng đoàn cổ vũ: bộp bộp, bộp bộp bộp!',
     '👏 Tape avec le chef des supporters : clap clap, clap clap clap !',
     '👏 ปรบมือตามหัวหน้ากองเชียร์: แปะแปะ แปะแปะแปะ!',
-    '👏 صفّق مع قائد التشجيع: تصفيق تصفيق، تصفيق تصفيق تصفيق!',
+    '👏 صفّق مع قائد التشجيع: تصفيق تصفيق، تصفيق تصفيق تصفيق!', "👏 Bata palmas com o líder de torcida: clap clap, clap clap clap!",
   ]),
   mvp: tr([
     '📣 Cheer MVP! The cheer leader is calling your name.',
@@ -150,9 +150,9 @@ export const CAM_TEXT = {
     '📣 MVP cổ vũ! Trưởng đoàn đang gọi tên bạn.',
     '📣 MVP des supporters ! Le chef crie ton nom.',
     '📣 MVP กองเชียร์! หัวหน้ากองเชียร์เรียกชื่อคุณ',
-    '📣 أفضل مشجع! قائد التشجيع ينادي اسمك.',
+    '📣 أفضل مشجع! قائد التشجيع ينادي اسمك.', "📣 MVP da torcida! O líder de torcida está chamando seu nome.",
   ]),
-  catch: tr(['Catch it!', '잡기!', 'キャッチ！', '接住！', '¡Atrápala!', 'Tangkap!', 'Bắt lấy!', 'Attrape-la !', 'รับเลย!', 'التقطها!']),
+  catch: tr(['Catch it!', '잡기!', 'キャッチ！', '接住！', '¡Atrápala!', 'Tangkap!', 'Bắt lấy!', 'Attrape-la !', 'รับเลย!', 'التقطها!', "Pegar!"]),
   foulComing: tr([
     '⚾ Foul ball! It is coming down near you: press 🧤 just before it lands.',
     '⚾ 파울볼! 근처로 떨어져요. 떨어지기 직전에 🧤를 눌러요.',
@@ -163,7 +163,7 @@ export const CAM_TEXT = {
     '⚾ Bóng lỗi! Rơi gần bạn: bấm 🧤 ngay trước khi chạm đất.',
     '⚾ Fausse balle ! Elle tombe près de toi : appuie sur 🧤 juste avant.',
     '⚾ ลูกฟาวล์! กำลังตกใกล้คุณ กด 🧤 ก่อนลูกตกนิดเดียว',
-    '⚾ كرة خطأ! ستسقط قربك: اضغط 🧤 قبل أن تهبط مباشرة.',
+    '⚾ كرة خطأ! ستسقط قربك: اضغط 🧤 قبل أن تهبط مباشرة.', "⚾ Bola fora! Está caindo perto de você: aperte 🧤 logo antes de cair.",
   ]),
   caught: tr([
     '⚾ You caught the foul ball! Signed balls caught: {n}',
@@ -175,8 +175,8 @@ export const CAM_TEXT = {
     '⚾ Bạn đã bắt được bóng lỗi! Bóng có chữ ký: {n}',
     '⚾ Tu as attrapé la fausse balle ! Balles signées : {n}',
     '⚾ รับลูกฟาวล์ได้! ลูกเซ็นชื่อ: {n} ลูก',
-    '⚾ التقطت كرة الخطأ! كرات موقّعة: {n}',
+    '⚾ التقطت كرة الخطأ! كرات موقّعة: {n}', "⚾ Você pegou a bola fora! Bolas autografadas pegas: {n}",
   ]),
-  missed: tr(['So close! 😅', '아깝다! 😅', '惜しい！😅', '差一点！😅', '¡Casi! 😅', 'Hampir! 😅', 'Suýt nữa! 😅', 'Presque ! 😅', 'เกือบแล้ว! 😅', 'كدت! 😅']),
-  score: tr(['Scoreboard', '점수 보기', 'スコアを見る', '看比分', 'Marcador', 'Papan skor', 'Bảng điểm', 'Tableau des scores', 'ดูสกอร์', 'لوحة النتائج']),
+  missed: tr(['So close! 😅', '아깝다! 😅', '惜しい！😅', '差一点！😅', '¡Casi! 😅', 'Hampir! 😅', 'Suýt nữa! 😅', 'Presque ! 😅', 'เกือบแล้ว! 😅', 'كدت! 😅', "Quase! 😅"]),
+  score: tr(['Scoreboard', '점수 보기', 'スコアを見る', '看比分', 'Marcador', 'Papan skor', 'Bảng điểm', 'Tableau des scores', 'ดูสกอร์', 'لوحة النتائج', "Placar"]),
 };

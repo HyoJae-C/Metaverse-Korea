@@ -5,7 +5,7 @@ import { RIDE_SECONDS, clock } from '../core/duck-boat.js';
 import { L, fmt } from './pocha-ui.js';
 
 const T = {
-  title: { en: 'Duck boat', ko: '한강 오리배', ja: 'アヒルボート', zh: '鸭子船', es: 'Bote pato', ar: 'قارب البطة', vi: 'Thuyền vịt', fr: 'Pédalo canard', th: 'เรือเป็ด', id: 'Perahu bebek' },
+  title: { en: 'Duck boat', ko: '한강 오리배', ja: 'アヒルボート', zh: '鸭子船', es: 'Bote pato', ar: 'قارب البطة', vi: 'Thuyền vịt', fr: 'Pédalo canard', pt: "Pedalinho de pato", th: 'เรือเป็ด', id: 'Perahu bebek' },
   howTo: {
     en: 'Free ride! Pedal anywhere on the river for up to 1 minute. Steer with the joystick (or WASD / arrow keys). When time is up, the boat brings you back to the dock.',
     ko: '무료예요! 최대 1분 동안 강 위를 자유롭게 다녀요. 조이스틱(또는 WASD·방향키)으로 움직이고, 시간이 끝나면 배가 선착장으로 돌아와요.',
@@ -14,18 +14,18 @@ const T = {
     es: '¡Gratis! Pedalea por el río hasta 1 minuto. Dirige con el joystick (o WASD / flechas). Al acabar el tiempo, el bote vuelve solo al muelle.',
     ar: 'مجانًا! جدّف في النهر بحرّية لمدة دقيقة واحدة كحدّ أقصى. وجّه القارب بعصا التحكم (أو WASD / الأسهم). عند انتهاء الوقت يعود القارب إلى الرصيف.',
     vi: 'Miễn phí! Đạp thuyền tự do trên sông tối đa 1 phút. Điều khiển bằng cần điều khiển (hoặc WASD / phím mũi tên). Hết giờ, thuyền tự quay về bến.',
-    fr: 'Balade gratuite ! Pédale où tu veux sur le fleuve pendant 1 minute maximum. Dirige avec le joystick (ou WASD / flèches). Quand le temps est écoulé, le bateau te ramène au quai.',
+    fr: 'Balade gratuite ! Pédale où tu veux sur le fleuve pendant 1 minute maximum. Dirige avec le joystick (ou WASD / flèches). Quand le temps est écoulé, le bateau te ramène au quai.', pt: "Passeio grátis! Pedale por onde quiser no rio por até 1 minuto. Dirija com o joystick (ou WASD / setas). Quando o tempo acabar, o pedalinho leva você de volta ao cais.",
     th: 'นั่งฟรี! ปั่นไปที่ไหนก็ได้บนแม่น้ำนานสูงสุด 1 นาที บังคับด้วยจอยสติก (หรือ WASD / ปุ่มลูกศร) เมื่อหมดเวลาเรือจะพากลับท่าเอง',
     id: 'Gratis! Kayuh bebas di sungai hingga 1 menit. Kemudikan dengan joystick (atau WASD / tombol panah). Saat waktu habis, perahu kembali sendiri ke dermaga.',
   },
-  go: { en: 'Set off (free · 1 min)', ko: '출발 (무료 · 1분)', ja: '出発（無料・1分）', zh: '出发（免费 · 1分钟）', es: 'Salir (gratis · 1 min)', ar: 'انطلق (مجانًا · دقيقة)', vi: 'Xuất phát (miễn phí · 1 phút)', fr: 'Partir (gratuit · 1 min)', th: 'ออกเรือ (ฟรี · 1 นาที)', id: 'Berangkat (gratis · 1 mnt)' },
-  partner: { en: '{name} is steering. Enjoy the view!', ko: '{name}님이 운전 중이에요. 경치를 즐겨요!', ja: '{name}さんが運転中。景色を楽しんで！', zh: '{name}正在掌舵，欣赏风景吧！', es: '{name} lleva el timón. ¡Disfruta la vista!', ar: '{name} يقود القارب. استمتع بالمنظر!', vi: '{name} đang lái. Ngắm cảnh nhé!', fr: '{name} dirige. Profite de la vue !', th: '{name} กำลังบังคับเรือ ชมวิวให้เพลินนะ!', id: '{name} sedang mengemudi. Nikmati pemandangannya!' },
-  steer: { en: 'Steer with the joystick', ko: '조이스틱으로 움직여요', ja: 'ジョイスティックで操作', zh: '用摇杆掌舵', es: 'Dirige con el joystick', ar: 'وجّه بعصا التحكم', vi: 'Lái bằng cần điều khiển', fr: 'Dirige avec le joystick', th: 'บังคับด้วยจอยสติก', id: 'Kemudikan dengan joystick' },
-  steerKeys: { en: 'Steer with WASD / arrow keys', ko: 'WASD·방향키로 움직여요', ja: 'WASD・矢印キーで操作', zh: '用WASD/方向键掌舵', es: 'Dirige con WASD / flechas', ar: 'وجّه بـ WASD / الأسهم', vi: 'Lái bằng WASD / phím mũi tên', fr: 'Dirige avec WASD / flèches', th: 'บังคับด้วย WASD / ปุ่มลูกศร', id: 'Kemudikan dengan WASD / panah' },
-  riding: { en: 'Riding with {name}', ko: '{name}님과 같이 타는 중', ja: '{name}さんと乗っています', zh: '和{name}一起坐船', es: 'Paseando con {name}', ar: 'مع {name}', vi: 'Đang đi cùng {name}', fr: 'En balade avec {name}', th: 'นั่งเรือกับ {name}', id: 'Naik bersama {name}' },
-  returning: { en: 'Heading back to the dock…', ko: '선착장으로 돌아가는 중…', ja: '乗り場に戻っています…', zh: '正在返回码头…', es: 'Volviendo al muelle…', ar: 'العودة إلى الرصيف…', vi: 'Đang quay về bến…', fr: 'Retour au quai…', th: 'กำลังกลับท่าเรือ…', id: 'Kembali ke dermaga…' },
-  leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', vi: 'Xuống', fr: 'Descendre', th: 'ลง', id: 'Turun' },
-  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', fr: 'Fermer', th: 'ปิด', id: 'Tutup' },
+  go: { en: 'Set off (free · 1 min)', ko: '출발 (무료 · 1분)', ja: '出発（無料・1分）', zh: '出发（免费 · 1分钟）', es: 'Salir (gratis · 1 min)', ar: 'انطلق (مجانًا · دقيقة)', vi: 'Xuất phát (miễn phí · 1 phút)', fr: 'Partir (gratuit · 1 min)', pt: "Partir (grátis · 1 min)", th: 'ออกเรือ (ฟรี · 1 นาที)', id: 'Berangkat (gratis · 1 mnt)' },
+  partner: { en: '{name} is steering. Enjoy the view!', ko: '{name}님이 운전 중이에요. 경치를 즐겨요!', ja: '{name}さんが運転中。景色を楽しんで！', zh: '{name}正在掌舵，欣赏风景吧！', es: '{name} lleva el timón. ¡Disfruta la vista!', ar: '{name} يقود القارب. استمتع بالمنظر!', vi: '{name} đang lái. Ngắm cảnh nhé!', fr: '{name} dirige. Profite de la vue !', pt: "{name} está dirigindo. Aproveite a vista!", th: '{name} กำลังบังคับเรือ ชมวิวให้เพลินนะ!', id: '{name} sedang mengemudi. Nikmati pemandangannya!' },
+  steer: { en: 'Steer with the joystick', ko: '조이스틱으로 움직여요', ja: 'ジョイスティックで操作', zh: '用摇杆掌舵', es: 'Dirige con el joystick', ar: 'وجّه بعصا التحكم', vi: 'Lái bằng cần điều khiển', fr: 'Dirige avec le joystick', pt: "Dirija com o joystick", th: 'บังคับด้วยจอยสติก', id: 'Kemudikan dengan joystick' },
+  steerKeys: { en: 'Steer with WASD / arrow keys', ko: 'WASD·방향키로 움직여요', ja: 'WASD・矢印キーで操作', zh: '用WASD/方向键掌舵', es: 'Dirige con WASD / flechas', ar: 'وجّه بـ WASD / الأسهم', vi: 'Lái bằng WASD / phím mũi tên', fr: 'Dirige avec WASD / flèches', pt: "Dirija com WASD / setas", th: 'บังคับด้วย WASD / ปุ่มลูกศร', id: 'Kemudikan dengan WASD / panah' },
+  riding: { en: 'Riding with {name}', ko: '{name}님과 같이 타는 중', ja: '{name}さんと乗っています', zh: '和{name}一起坐船', es: 'Paseando con {name}', ar: 'مع {name}', vi: 'Đang đi cùng {name}', fr: 'En balade avec {name}', pt: "Passeando com {name}", th: 'นั่งเรือกับ {name}', id: 'Naik bersama {name}' },
+  returning: { en: 'Heading back to the dock…', ko: '선착장으로 돌아가는 중…', ja: '乗り場に戻っています…', zh: '正在返回码头…', es: 'Volviendo al muelle…', ar: 'العودة إلى الرصيف…', vi: 'Đang quay về bến…', fr: 'Retour au quai…', pt: "Voltando ao cais…", th: 'กำลังกลับท่าเรือ…', id: 'Kembali ke dermaga…' },
+  leave: { en: 'Get off', ko: '내리기', ja: '降りる', zh: '下船', es: 'Bajar', ar: 'انزل', vi: 'Xuống', fr: 'Descendre', pt: "Descer", th: 'ลง', id: 'Turun' },
+  close: { en: 'Close', ko: '닫기', ja: '閉じる', zh: '关闭', es: 'Cerrar', ar: 'إغلاق', vi: 'Đóng', fr: 'Fermer', pt: "Fechar", th: 'ปิด', id: 'Tutup' },
 };
 const tt = (k, v) => fmt(L(T[k]), v);
 const el = (tag, cls, text) => {

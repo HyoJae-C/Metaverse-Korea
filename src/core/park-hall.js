@@ -8,7 +8,7 @@ import * as THREE from 'three';
 
 const ICING = '#fffaf3', PINK = '#ff8fb8', HOT = '#ff5f9e', MINT = '#8fe3c7', LEMON = '#ffe27a', LILAC = '#c9a8ff', SKY = '#8fd0ff', BISCUIT = '#e8d2b0', STAIR = '#6b3f2a';
 const GUMS = [PINK, LEMON, LILAC, SKY, HOT];
-export const UNDER_SIGN = { ko: '모두랜드 지하', en: 'MODU LAND ▼', ja: 'モドゥランド地下', zh: 'Modu乐园地下', es: 'MODU LAND ▼', id: 'MODU LAND ▼', vi: 'MODU LAND ▼', fr: 'MODU LAND ▼', th: 'MODU LAND ▼', ar: 'MODU LAND ▼' };
+export const UNDER_SIGN = { ko: '모두랜드 지하', en: 'MODU LAND ▼', ja: 'モドゥランド地下', zh: 'Modu乐园地下', es: 'MODU LAND ▼', id: 'MODU LAND ▼', vi: 'MODU LAND ▼', fr: 'MODU LAND ▼', pt: "MODU LAND ▼", th: 'MODU LAND ▼', ar: 'MODU LAND ▼' };
 // Its size: 8 m across, walls 4.5 m high, the lollipop's top at about 11 m.
 export const HALL = { r: 4, wall: 4.5, door: 2.4, doorH: 3.2 };
 

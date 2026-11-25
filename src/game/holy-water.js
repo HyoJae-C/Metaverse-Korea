@@ -12,7 +12,7 @@ import { L } from '../ui/pocha-ui.js';
 import { HOLY_SIGN } from '../core/studio-moves.js';
 
 export const HOLY_WATER_TEXT = {
-  use: { en: 'Holy water', ko: '성수 찍기', ja: '聖水をつける', zh: '蘸圣水', es: 'Agua bendita', id: 'Air suci', vi: 'Nước thánh', fr: 'Eau bénite', th: 'น้ำมนต์', ar: 'الماء المقدّس' },
+  use: { en: 'Holy water', ko: '성수 찍기', ja: '聖水をつける', zh: '蘸圣水', es: 'Agua bendita', id: 'Air suci', vi: 'Nước thánh', fr: 'Eau bénite', pt: "Água benta", th: 'น้ำมนต์', ar: 'الماء المقدّس' },
   about: {
     en: '💧 Catholics dip their fingertips in holy water and make the sign of the cross as they come in.',
     ko: '💧 가톨릭 신자들은 성당에 들어올 때 성수를 손끝에 찍고 성호를 그어요.',
@@ -21,7 +21,7 @@ export const HOLY_WATER_TEXT = {
     es: '💧 Al entrar, los católicos mojan la punta de los dedos en agua bendita y se santiguan.',
     id: '💧 Umat Katolik mencelupkan ujung jari ke air suci dan membuat tanda salib saat masuk.',
     vi: '💧 Người Công giáo chấm đầu ngón tay vào nước thánh và làm dấu thánh giá khi bước vào.',
-    fr: '💧 En entrant, les catholiques trempent le bout des doigts dans l\'eau bénite et font le signe de croix.',
+    fr: '💧 En entrant, les catholiques trempent le bout des doigts dans l\'eau bénite et font le signe de croix.', pt: "💧 Os católicos molham as pontas dos dedos na água benta e fazem o sinal da cruz ao entrar.",
     th: '💧 ชาวคาทอลิกจุ่มปลายนิ้วในน้ำมนต์แล้วทำเครื่องหมายกางเขนเมื่อเข้ามา',
     ar: '💧 يغمس الكاثوليك أطراف أصابعهم في الماء المقدّس ويرسمون إشارة الصليب عند الدخول.',
   },

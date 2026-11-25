@@ -26,27 +26,27 @@ export const pickPerfect = (rnd = Math.random) => PERFECT_FX[Math.floor(rnd() * 
 // The words over your head when a photo is taken: one at random each time,
 // each in its own colour (Yozi's list). Korean as written; the others say
 // the same feel, without gendered endings where the language has them.
-const W = (c, en, es, fr, ko, zh, id, vi, th, ar, ja) => ({ c, en, es, fr, ko, zh, id, vi, th, ar, ja });
+const W = (c, en, es, fr, ko, zh, id, vi, th, ar, ja, pt) => ({ c, en, es, fr, ko, zh, id, vi, th, ar, ja, pt });
 export const WORDS = {
-  sexy: W('#ff3b5c', 'Sexy!', '¡Sexy!', 'Sexy !', '섹시!', '性感！', 'Seksi!', 'Gợi cảm!', 'เซ็กซี่!', 'إثارة!', 'セクシー！'),
-  cute: W('#ff8fc7', 'Cute!', '¡Cuqui!', 'Trop cute !', '큐트!', '可爱！', 'Imut!', 'Dễ thương!', 'น่ารัก!', 'لطافة!', 'キュート！'),
-  chic: W('#b8a4ff', 'Chic!', '¡Chic!', 'Chic !', '도도!', '高冷！', 'Chic!', 'Kiêu kỳ!', 'ชิค!', 'أناقة باردة!', 'ツンとクール！'),
-  confident: W('#ffb703', 'Confident!', '¡Con confianza!', 'Confiance !', '자신감!', '自信！', 'Percaya diri!', 'Tự tin!', 'มั่นใจ!', 'ثقة!', '自信満々！'),
-  charming: W('#ff6f91', 'Charming!', '¡Qué encanto!', 'Du charme !', '매력적!', '有魅力！', 'Menawan!', 'Cuốn hút!', 'มีเสน่ห์!', 'جاذبية!', '魅力的！'),
-  cool: W('#4cc9f0', 'Cool!', '¡Qué cool!', 'Cool !', '쿨!', '酷！', 'Keren!', 'Ngầu!', 'เท่!', 'روعة!', 'クール！'),
-  alluring: W('#c651ff', 'Alluring!', '¡Fascinante!', 'Irrésistible !', '매혹적!', '迷人！', 'Memikat!', 'Mê hoặc!', 'น่าหลงใหล!', 'فتنة!', '魅惑的！'),
-  lovely: W('#ff85e4', 'Lovely!', '¡Adorable!', 'Adorable !', '러블리!', '惹人爱！', 'Cantik!', 'Đáng yêu!', 'เลิฟลี่!', 'جمال!', 'ラブリー！'),
-  sweet: W('#ffd6a5', 'Sweet!', '¡Dulce!', 'Tout doux !', '스위트!', '甜美！', 'Manis!', 'Ngọt ngào!', 'หวาน!', 'حلاوة!', 'スイート！'),
-  funky: W('#a3ff4f', 'Funky!', '¡Funky!', 'Funky !', '펑키!', '好潮！', 'Funky!', 'Funky!', 'ฟังกี้!', 'فانكي!', 'ファンキー！'),
-  presence: W('#ffd700', 'Star power!', '¡Presencia!', 'Quelle présence !', '존재감!', '气场全开！', 'Berkharisma!', 'Thần thái!', 'ออร่าพุ่ง!', 'حضور!', '存在感！'),
-  unique: W('#00f5d4', 'Unique!', '¡Original!', 'Unique !', '독특한!', '独特！', 'Unik!', 'Độc đáo!', 'ไม่เหมือนใคร!', 'تميّز!', 'ユニーク！'),
-  elegant: W('#f1e3ff', 'Elegant!', '¡Elegante!', 'Élégance !', '우아하게!', '优雅！', 'Anggun!', 'Thanh lịch!', 'สง่างาม!', 'أناقة!', 'エレガント！'),
-  classy: W('#e9c46a', 'Classy!', '¡Con clase!', 'Quelle classe !', '기품있는!', '高贵！', 'Berkelas!', 'Quý phái!', 'มีระดับ!', 'رُقيّ!', '気品！'),
-  free: W('#7ae582', 'Free spirit!', '¡Espíritu libre!', 'Esprit libre !', '자유롭게!', '自由自在！', 'Bebas!', 'Tự do!', 'อิสระ!', 'حرية!', '自由に！'),
-  mystic: W('#8b8cff', 'Mysterious!', '¡Misterio!', 'Quel mystère !', '신비롭게!', '神秘！', 'Misterius!', 'Bí ẩn!', 'ลึกลับ!', 'غموض!', 'ミステリアス！'),
-  bubbly: W('#ff9f1c', 'Bubbly!', '¡Con chispa!', 'Du peps !', '발랄!', '活泼！', 'Ceria!', 'Tươi tắn!', 'สดใส!', 'حيوية!', 'ハツラツ！'),
-  adorable: W('#ffe066', 'Adorable!', '¡Qué ternura!', 'Trop chou !', '깜찍!', '萌！', 'Gemas!', 'Xinh xắn!', 'น่าเอ็นดู!', 'ظرافة!', 'かわいい！'),
-  bold: W('#ff5400', 'Fierce!', '¡Con actitud!', 'Quelle assurance !', '당당하게!', '霸气！', 'Berani!', 'Hiên ngang!', 'สง่าผ่าเผย!', 'شموخ!', '堂々と！'),
+  sexy: W('#ff3b5c', 'Sexy!', '¡Sexy!', 'Sexy !', '섹시!', '性感！', 'Seksi!', 'Gợi cảm!', 'เซ็กซี่!', 'إثارة!', 'セクシー！', "Sexy!"),
+  cute: W('#ff8fc7', 'Cute!', '¡Cuqui!', 'Trop cute !', '큐트!', '可爱！', 'Imut!', 'Dễ thương!', 'น่ารัก!', 'لطافة!', 'キュート！', "Fofo!"),
+  chic: W('#b8a4ff', 'Chic!', '¡Chic!', 'Chic !', '도도!', '高冷！', 'Chic!', 'Kiêu kỳ!', 'ชิค!', 'أناقة باردة!', 'ツンとクール！', "Chique!"),
+  confident: W('#ffb703', 'Confident!', '¡Con confianza!', 'Confiance !', '자신감!', '自信！', 'Percaya diri!', 'Tự tin!', 'มั่นใจ!', 'ثقة!', '自信満々！', "Confiante!"),
+  charming: W('#ff6f91', 'Charming!', '¡Qué encanto!', 'Du charme !', '매력적!', '有魅力！', 'Menawan!', 'Cuốn hút!', 'มีเสน่ห์!', 'جاذبية!', '魅力的！', "Charmoso!"),
+  cool: W('#4cc9f0', 'Cool!', '¡Qué cool!', 'Cool !', '쿨!', '酷！', 'Keren!', 'Ngầu!', 'เท่!', 'روعة!', 'クール！', "Estiloso!"),
+  alluring: W('#c651ff', 'Alluring!', '¡Fascinante!', 'Irrésistible !', '매혹적!', '迷人！', 'Memikat!', 'Mê hoặc!', 'น่าหลงใหล!', 'فتنة!', '魅惑的！', "Sedutor!"),
+  lovely: W('#ff85e4', 'Lovely!', '¡Adorable!', 'Adorable !', '러블리!', '惹人爱！', 'Cantik!', 'Đáng yêu!', 'เลิฟลี่!', 'جمال!', 'ラブリー！', "Encantador!"),
+  sweet: W('#ffd6a5', 'Sweet!', '¡Dulce!', 'Tout doux !', '스위트!', '甜美！', 'Manis!', 'Ngọt ngào!', 'หวาน!', 'حلاوة!', 'スイート！', "Docinho!"),
+  funky: W('#a3ff4f', 'Funky!', '¡Funky!', 'Funky !', '펑키!', '好潮！', 'Funky!', 'Funky!', 'ฟังกี้!', 'فانكي!', 'ファンキー！', "Funky!"),
+  presence: W('#ffd700', 'Star power!', '¡Presencia!', 'Quelle présence !', '존재감!', '气场全开！', 'Berkharisma!', 'Thần thái!', 'ออร่าพุ่ง!', 'حضور!', '存在感！', "Estrela!"),
+  unique: W('#00f5d4', 'Unique!', '¡Original!', 'Unique !', '독특한!', '独特！', 'Unik!', 'Độc đáo!', 'ไม่เหมือนใคร!', 'تميّز!', 'ユニーク！', "Único!"),
+  elegant: W('#f1e3ff', 'Elegant!', '¡Elegante!', 'Élégance !', '우아하게!', '优雅！', 'Anggun!', 'Thanh lịch!', 'สง่างาม!', 'أناقة!', 'エレガント！', "Elegante!"),
+  classy: W('#e9c46a', 'Classy!', '¡Con clase!', 'Quelle classe !', '기품있는!', '高贵！', 'Berkelas!', 'Quý phái!', 'มีระดับ!', 'رُقيّ!', '気品！', "Classe!"),
+  free: W('#7ae582', 'Free spirit!', '¡Espíritu libre!', 'Esprit libre !', '자유롭게!', '自由自在！', 'Bebas!', 'Tự do!', 'อิสระ!', 'حرية!', '自由に！', "Espírito livre!"),
+  mystic: W('#8b8cff', 'Mysterious!', '¡Misterio!', 'Quel mystère !', '신비롭게!', '神秘！', 'Misterius!', 'Bí ẩn!', 'ลึกลับ!', 'غموض!', 'ミステリアス！', "Misterioso!"),
+  bubbly: W('#ff9f1c', 'Bubbly!', '¡Con chispa!', 'Du peps !', '발랄!', '活泼！', 'Ceria!', 'Tươi tắn!', 'สดใส!', 'حيوية!', 'ハツラツ！', "Animado!"),
+  adorable: W('#ffe066', 'Adorable!', '¡Qué ternura!', 'Trop chou !', '깜찍!', '萌！', 'Gemas!', 'Xinh xắn!', 'น่าเอ็นดู!', 'ظرافة!', 'かわいい！', "Adorável!"),
+  bold: W('#ff5400', 'Fierce!', '¡Con actitud!', 'Quelle assurance !', '당당하게!', '霸气！', 'Berani!', 'Hiên ngang!', 'สง่าผ่าเผย!', 'شموخ!', '堂々と！', "Poderoso!"),
 };
 const WORD_IDS = Object.keys(WORDS);
 export const pickWord = (rnd = Math.random) => WORD_IDS[Math.floor(rnd() * WORD_IDS.length) % WORD_IDS.length];
