@@ -24,6 +24,7 @@ import { MIX, leafColor, leafHash } from '../core/season.js';
 import { seasonAt } from '../core/weather-roll.js';
 import { inPoly, trailNear } from '../core/skypark-ground.js';
 import { islandRing, dalmajiBox } from '../core/dalmaji-ground.js';
+import { heightGrid } from '../core/height-grid.js';
 
 export const OKSU_PARK = {
   cell: 2, // m: the hill's ground grid
@@ -99,8 +100,10 @@ export function buildOksuPark({ scene, l, y, lowSpec = false }) {
     const [bx0, bz0, bx1, bz1] = dalmajiBox(l);
     const pos = [], col = [], c = P.cell;
     const shades = ['#6f8f4f', '#7a9a55', '#647f47', '#82995c'].map((h) => new THREE.Color(h));
-    for (let z = l.z + bz0; z < l.z + bz1; z += c) for (let x = l.x + bx0; x < l.x + bx1; x += c) {
-      const q = [[x, z], [x + c, z], [x + c, z + c], [x, z + c]].map(([a, b]) => [a, y(a, b), b]);
+    const hg = heightGrid(l.x + bx0, l.z + bz0, l.x + bx1, l.z + bz1, c, y); // (each corner's height once, not once per cell)
+    for (let j = 0; j < hg.zs.length - 1; j++) for (let i = 0; i < hg.xs.length - 1; i++) {
+      const x = hg.xs[i], z = hg.zs[j], x2 = hg.xs[i + 1], z2 = hg.zs[j + 1];
+      const q = [[x, hg.y(i, j), z], [x2, hg.y(i + 1, j), z], [x2, hg.y(i + 1, j + 1), z2], [x, hg.y(i, j + 1), z2]];
       if (Math.max(q[0][1], q[1][1], q[2][1], q[3][1]) < P.sink) continue;
       const on = shades[Math.floor(hash(Math.round(x), Math.round(z)) * shades.length) % shades.length];
       for (const k of [0, 3, 2, 0, 2, 1]) { const [a, h, b] = q[k]; pos.push(a, h - P.sink, b); col.push(on.r, on.g, on.b); }

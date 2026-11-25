@@ -34,6 +34,7 @@ import { inPoly } from '../core/skypark-ground.js';
 import { wayNear, flatAt, hyeonchungBox } from '../core/hyeonchung-ground.js';
 import { createCharacter } from '../core/character.js';
 import { hyeonchungSolids, HC_GATE } from './hyeonchungwon-walk.js';
+import { heightGrid, polyRow } from '../core/height-grid.js';
 
 export const HC_PARK = {
   cell: 3, // m: the ground's grid
@@ -227,14 +228,19 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     const turf = ['#8cb866', '#93be6c', '#86b160'].map((h) => new THREE.Color(h));
     const hash = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
     const yy = (x, z) => { const h = LY(x, z); return Math.max(h - P.sink, 0.035); }; // (level ground: just over the map's park green)
-    for (let z = bz0; z < bz1; z += c) for (let x = bx0; x < bx1; x += c) {
-      const mx = x + c / 2, mz = z + c / 2;
-      if (!inPoly(mx, mz, l.foot) && !inPoly(x, z, l.foot)) continue;
-      if (flatAt(l, mx, mz)) continue; // (the court and the lawn have their own floor)
-      const q = [[x, z], [x + c, z], [x + c, z + c], [x, z + c]].map(([a, b]) => [a, yy(a, b), b]);
-      const light = inAny(plots, mx, mz) || inAny(lawns, mx, mz);
-      const list = light ? turf : wood, on = list[Math.floor(hash(Math.round(x), Math.round(z)) * list.length) % list.length];
-      for (const k of [0, 3, 2, 0, 2, 1]) { const [a, h, b] = q[k]; pos.push(l.x + a, h, l.z + b); col.push(on.r, on.g, on.b); }
+    const hg = heightGrid(bx0, bz0, bx1, bz1, c, yy); // (each corner's height once, not once per cell)
+    for (let j = 0; j < hg.zs.length - 1; j++) {
+      const z = hg.zs[j], z2 = hg.zs[j + 1], mz = z + c / 2;
+      const inMid = polyRow(l.foot, mz), inCorner = polyRow(l.foot, z); // (inPoly along this row, the foot's crossings found once)
+      for (let i = 0; i < hg.xs.length - 1; i++) {
+        const x = hg.xs[i], x2 = hg.xs[i + 1], mx = x + c / 2;
+        if (!inMid(mx) && !inCorner(x)) continue;
+        if (flatAt(l, mx, mz)) continue; // (the court and the lawn have their own floor)
+        const q = [[x, hg.y(i, j), z], [x2, hg.y(i + 1, j), z], [x2, hg.y(i + 1, j + 1), z2], [x, hg.y(i, j + 1), z2]];
+        const light = inAny(plots, mx, mz) || inAny(lawns, mx, mz);
+        const list = light ? turf : wood, on = list[Math.floor(hash(Math.round(x), Math.round(z)) * list.length) % list.length];
+        for (const k of [0, 3, 2, 0, 2, 1]) { const [a, h, b] = q[k]; pos.push(l.x + a, h, l.z + b); col.push(on.r, on.g, on.b); }
+      }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));

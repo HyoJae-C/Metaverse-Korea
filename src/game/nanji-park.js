@@ -20,6 +20,7 @@ import * as THREE from 'three';
 import { addSnowCover } from '../core/snow-cover.js';
 import { SEASON } from '../core/season.js';
 import { inPoly, skyparkBox, trailNear } from '../core/skypark-ground.js';
+import { heightGrid } from '../core/height-grid.js';
 
 export const NANJI_PARK = {
   cell: 3, // m: the hill's ground grid
@@ -145,8 +146,10 @@ export function buildNanjiPark({ scene, l, camp, y, lowSpec = false }) {
     const [bx0, bz0, bx1, bz1] = skyparkBox(l);
     const pos = [], col = [], green = new THREE.Color('#8fbf6e'), dark = new THREE.Color('#6f9f55'), straw = new THREE.Color(C.top), under = new THREE.Color(C.under);
     const c = P.cell;
-    for (let z = l.z + bz0; z < l.z + bz1; z += c) for (let x = l.x + bx0; x < l.x + bx1; x += c) {
-      const q = [[x, z], [x + c, z], [x + c, z + c], [x, z + c]].map(([a, b]) => [a, y(a, b), b]);
+    const hg = heightGrid(l.x + bx0, l.z + bz0, l.x + bx1, l.z + bz1, c, y); // (each corner's height once, not once per cell)
+    for (let j = 0; j < hg.zs.length - 1; j++) for (let i = 0; i < hg.xs.length - 1; i++) {
+      const x = hg.xs[i], z = hg.zs[j], x2 = hg.xs[i + 1], z2 = hg.zs[j + 1];
+      const q = [[x, hg.y(i, j), z], [x2, hg.y(i + 1, j), z], [x2, hg.y(i + 1, j + 1), z2], [x, hg.y(i, j + 1), z2]];
       if (Math.max(q[0][1], q[1][1], q[2][1], q[3][1]) < P.sink) continue;
       for (const k of [0, 3, 2, 0, 2, 1]) {
         const [a, h, b] = q[k];
@@ -212,7 +215,11 @@ export function buildNanjiPark({ scene, l, camp, y, lowSpec = false }) {
 
   // Fields: scatter on the top, off the paths, the ways up, the turbines and the bowl.
   const bowlAt = W(l.bowl), turbines = l.turbines.map(W);
-  const clear = (x, z) => paths.some((p) => nearLine(x, z, p, 0.7 + P.pathClear)) || trails.some((t) => trailNear({ p: t.p }, x, z).d < t.w / 2 + P.pathClear) || turbines.some(([a, b]) => Math.hypot(x - a, z - b) < 1.6);
+  // (a box round each path and way first: most spots are far from all of them)
+  const boxed = (p, m) => { const b = [Infinity, Infinity, -Infinity, -Infinity]; for (const [x, z] of p) { b[0] = Math.min(b[0], x - m); b[1] = Math.min(b[1], z - m); b[2] = Math.max(b[2], x + m); b[3] = Math.max(b[3], z + m); } return b; };
+  const inB = (b, x, z) => x >= b[0] && x <= b[2] && z >= b[1] && z <= b[3];
+  const pathBoxes = paths.map((p) => boxed(p, 0.7 + P.pathClear)), trailBoxes = trails.map((t) => boxed(t.p, t.w / 2 + P.pathClear));
+  const clear = (x, z) => paths.some((p, i) => inB(pathBoxes[i], x, z) && nearLine(x, z, p, 0.7 + P.pathClear)) || trails.some((t, i) => inB(trailBoxes[i], x, z) && trailNear({ p: t.p }, x, z).d < t.w / 2 + P.pathClear) || turbines.some(([a, b]) => Math.hypot(x - a, z - b) < 1.6);
   const fill = (inside, room) => {
     const out = [], xs = top.map((q) => q[0]), zs = top.map((q) => q[1]);
     const step = Math.sqrt(room * (lowSpec ? 2 : 1));
