@@ -1469,7 +1469,10 @@ download; heights in `core/hyeonchung-ground.js`). The gate, tower, fountain,
 woods and headstones load near (`game/hyeonchungwon-park.js`): plain white
 stones in rows on OSM's plot outlines, no names; the presidents' graves and
 single graves are not drawn. A place of remembrance: nothing to play or win.
-Before the altar you lay a flower and bow (`game/prayer.js`, no reward), and a
+Before the altar you burn incense and bow (`game/prayer.js`, no reward; the
+burner and the 충 혼 stone stand clear, nothing in front). Hyeonchungmun is
+white on four square columns with a blue-green roof and two honour guards in
+black (made up: their look), and its stone floor is walked on (`HC_GATE`). A
 note of dates shows at the main gate. Dongjak Station (drawn on Line 4 only)
 has exits 8 and 6 at the main gate. Made-up things are in `meta.approx`.
 After rebuilding it, run `build-base.mjs` and `build-closed.mjs`.

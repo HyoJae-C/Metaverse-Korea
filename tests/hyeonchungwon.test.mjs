@@ -278,3 +278,17 @@ test('the court is the same on both sides of the line from the gate to the tower
   for (const [u, v] of q) assert.ok(q.some(([a, b]) => Math.abs(a - u) < 0.35 && Math.abs(b + v) < 0.35), `corner ${u.toFixed(1)}, ${v.toFixed(1)} has its mirror`);
   for (const k of [0, 1]) assert.ok(Math.abs(Math.abs(l.walls[k][0][0] * -U[1] + l.walls[k][0][1] * U[0]) - Math.abs(l.walls[1 - k][1][0] * -U[1] + l.walls[1 - k][1][1] * U[0])) < 0.35, 'the terrace walls too');
 });
+
+test("Hyeonchungmun's stone floor: you stand on it, and go up its steps", async () => {
+  const { gateFloor, HC_GATE } = await import('../src/game/hyeonchungwon-walk.js');
+  const l = hc.landmarks.find((q) => q.type === 'hyeonchung'), g = l.gate, f = [Math.sin(g.ry), Math.cos(g.ry)];
+  assert.equal(gateFloor(l, g.at[0], g.at[1]), HC_GATE.plat, 'in the hall');
+  const edge = g.d / 2 + HC_GATE.out;
+  for (const s of [1, -1]) {
+    const mid = gateFloor(l, g.at[0] + s * f[0] * (edge + HC_GATE.steps / 2), g.at[1] + s * f[1] * (edge + HC_GATE.steps / 2));
+    assert.ok(mid > 0.1 && mid < HC_GATE.plat - 0.1, `half way up the steps (${mid.toFixed(2)} m)`);
+    assert.equal(gateFloor(l, g.at[0] + s * f[0] * (edge + HC_GATE.steps + 0.2), g.at[1] + s * f[1] * (edge + HC_GATE.steps + 0.2)), 0, 'the court past the steps');
+  }
+  const walk = createHyeonchungwonWalk({ landmarks: hc.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })) });
+  assert.equal(walk.y(ox + l.x + g.at[0], oz + l.z + g.at[1]), HC_GATE.plat);
+});

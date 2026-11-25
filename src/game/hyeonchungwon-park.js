@@ -21,7 +21,7 @@
 //     mesh, so the grounds do not end in flat land.
 //   The wood: pines mostly (OSM: needleleaved), some round trees in the
 //     season's colours.
-//   White chrysanthemums on the altar after you pay your respects.
+//   Incense burns at the altar after you pay your respects.
 //
 // The gate, the tower and the fountain are from Yozi's photos; their
 // outlines are approximate (meta.approx). About 90k triangles near
@@ -32,7 +32,8 @@ import { addSnowCover } from '../core/snow-cover.js';
 import { MIX, leafColor, leafHash } from '../core/season.js';
 import { inPoly } from '../core/skypark-ground.js';
 import { wayNear, flatAt, hyeonchungBox } from '../core/hyeonchung-ground.js';
-import { hyeonchungSolids } from './hyeonchungwon-walk.js';
+import { createCharacter } from '../core/character.js';
+import { hyeonchungSolids, HC_GATE } from './hyeonchungwon-walk.js';
 
 export const HC_PARK = {
   cell: 3, // m: the ground's grid
@@ -54,7 +55,7 @@ export const HC_PARK = {
   wood: { cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
   belt: { fill: 3.1, reach: 24, close: 1.8, lawn: 13, dots: 0.07, clear: 22 }, // the wood round the court: a tree every `fill` m on the free ground out to `reach` m; `close` to the terrace and the gate, `lawn` m back from the paved way (open lawn, with a tree on `dots` of its spots); no headstones within `clear` m of the court
   rim: { step: 3, deep: 8, clump: 9, share: 0.5, court: 9 }, // the lawn before the gate: trees within `deep` m of its rim, in clumps (`share` of the `clump` m cells), none this near the court
-  flowers: 120, // s: the chrysanthemums stay on the altar
+  flowers: 120, // s: the incense burns
 };
 
 // The verse on the wall before the Memorial Tower (the offering place's dedication, by Yi Eun-sang), as it is cut there.
@@ -192,7 +193,7 @@ function instanced(geo, mat, list, name, set) {
 
 const C = {
   granite: '#d2cdc2', stone: '#bdb8ad', paving: '#d9d3c6', pavingDark: '#c4bdae', white: '#f3f0e8', tile: '#2e7f86', tileDark: '#256a70',
-  bronze: '#5b4a34', bronzeDark: '#43372a', cream: '#efe6cf', dan: '#3d8f7a', red: '#c8452f', ochre: '#e0b84a', blue: '#2f6fa8', joint: '#9c978c', verse: '#27324a', patina: '#4f6f63', dark: '#3a3936', wall: '#ebe7dc', base: '#8f8b84', basin: '#9fd2c2', water: '#6fb7d6', lawn: '#8dba63',
+  bronze: '#5b4a34', bronzeDark: '#43372a', cream: '#efe6cf', dan: '#3d8f7a', red: '#c8452f', ochre: '#e0b84a', silver: '#b4b8bd', blue: '#2f6fa8', joint: '#9c978c', verse: '#27324a', patina: '#4f6f63', dark: '#3a3936', wall: '#ebe7dc', base: '#8f8b84', basin: '#9fd2c2', water: '#6fb7d6', lawn: '#8dba63',
 };
 
 export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = null }) {
@@ -321,7 +322,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     B.add(g, color, m);
   };
   // A tiled hipped roof at (ox, 0): the tiles' ribs down every slope, white ridges, raised eave tips.
-  const tiledRoof = (w, d, y0, y1, ridge, ox, m, step = 0.55) => {
+  const tiledRoof = (w, d, y0, y1, ridge, ox, m, step = 0.55, lift = 0.45) => { // (lift: how far the corners sweep up, m)
     const a = w / 2, b = d / 2, r = ridge / 2, up = 0.05;
     B.box(w + 0.12, 0.12, d + 0.12, ox, y0 - 0.05, 0, C.white, m); // the eaves' white edge
     B.add(hipRoof(w, d, y0, y1, ridge).translate(ox, 0, 0), C.tile, m);
@@ -337,38 +338,48 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     for (const s of [1, -1]) B.box(0.3, 0.5, 0.4, ox + s * (r + 0.2), y1 + 0.3, 0, C.white, m);
     for (const sx of [1, -1]) for (const sz of [1, -1]) {
       bar([ox + sx * r, y1 + 0.08, 0], [ox + sx * a, y0 + 0.1, sz * b], 0.2, C.white, m); // the hips
-      bar([ox + sx * (a - 0.5), y0 + 0.12, sz * (b - 0.5)], [ox + sx * (a + 0.45), y0 + 0.55, sz * (b + 0.45)], 0.2, C.white, m); // the raised tips
+      // the raised tip: the corner's ridge curves up and out in four short pieces, steeper each time; a finial on its end
+      const N = 4, reach = 0.45 + lift * 0.25, at = (k) => { const f = k / N; return [ox + sx * (a - 0.6 + (reach + 0.6) * f), y0 + 0.12 + lift * f * f, sz * (b - 0.6 + (reach + 0.6) * f)]; };
+      for (let k = 0; k < N; k++) bar(at(k), at(k + 1), 0.2, C.white, m);
+      if (lift > 0.8) { // (a big roof: the eaves' own edge lifts to the tip too, and the tip's end tile)
+        const tip = at(N);
+        const e = [tip[0], tip[1] - 0.1, tip[2]], h = lift * 0.16; // (two pieces a side, so the edge bends)
+        bar([ox + sx * (a - 3.2), y0 + 0.02, sz * b], [ox + sx * (a - 1.3), y0 + h, sz * (b + 0.05)], 0.16, C.white, m, 0.22);
+        bar([ox + sx * (a - 1.3), y0 + h, sz * (b + 0.05)], e, 0.16, C.white, m, 0.22);
+        bar([ox + sx * a, y0 + 0.02, sz * (b - 2.6)], [ox + sx * (a + 0.05), y0 + h, sz * (b - 1.1)], 0.16, C.white, m, 0.22);
+        bar([ox + sx * (a + 0.05), y0 + h, sz * (b - 1.1)], e, 0.16, C.white, m, 0.22);
+        B.box(0.24, 0.3, 0.24, tip[0], tip[1] + 0.12, tip[2], C.white, m);
+      }
     }
   };
 
-  { // Hyeonchungmun: the open hall on white columns under a blue-green tiled roof, a low wing either side.
-    const g = l.gate, m = frame(g.at, g.ry), hallW = g.w * 0.52, d = g.d, colH = g.h * 0.5, plat = 0.45;
-    B.box(hallW + 1.6, plat, d + 1.4, 0, plat / 2, 0, C.stone, m);
-    for (let k = 1; k <= 3; k++) for (const s of [1, -1]) B.box(hallW * 0.7, plat * (1 - k / 4), 0.4, 0, (plat * (1 - k / 4)) / 2, s * (d / 2 + 0.7 + 0.4 * k - 0.2), C.stone, m); // (steps, front and back)
-    for (const s of [1, -1]) for (const e of [1, -1]) B.box(0.4, plat + 0.2, 1.7, e * (hallW * 0.35 + 0.2), (plat + 0.2) / 2, s * (d / 2 + 1.35), C.granite, m); // (the steps' side stones)
-    const colZ = d / 2 - 0.9, colX = (i) => -hallW / 2 + 0.5 + (i * (hallW - 1)) / 5;
-    for (let i = 0; i < 6; i++) for (const s of [1, -1]) {
-      B.add(new THREE.CylinderGeometry(0.27, 0.3, colH, 10).translate(colX(i), plat + colH / 2, s * colZ), C.white, m);
-      B.box(0.78, 0.16, 0.78, colX(i), plat + 0.08, s * colZ, C.granite, m); // its base stone
-      B.box(0.7, 0.16, 0.7, colX(i), plat + colH - 0.08, s * colZ, C.cream, m); // its capital
+  { // Hyeonchungmun (Yozi's photo, 2026-11-25): the open hall on four white square columns, white beams and white
+    // brackets under the eaves (no painted colours), a blue-green tiled roof whose corners sweep up, a low wing either side.
+    const g = l.gate, G = HC_GATE, m = frame(g.at, g.ry), hallW = g.w * G.hall, d = g.d, colH = g.h * 0.5, plat = G.plat, COLS = 4;
+    B.box(hallW + 2 * G.side, plat, d + 2 * G.out, 0, plat / 2, 0, C.stone, m);
+    for (let k = 1; k <= 3; k++) for (const s of [1, -1]) B.box(hallW * G.stair, plat * (1 - k / 4), G.steps / 3, 0, (plat * (1 - k / 4)) / 2, s * (d / 2 + G.out + (G.steps / 3) * (k - 0.5)), C.stone, m); // (steps, front and back)
+    for (const s of [1, -1]) for (const e of [1, -1]) B.box(0.4, plat + 0.2, 1.7, e * (hallW * G.stair / 2 + 0.2), (plat + 0.2) / 2, s * (d / 2 + 1.35), C.granite, m); // (the steps' side stones)
+    const colZ = d / 2 - 0.9, colX = (i) => -hallW / 2 + 0.6 + (i * (hallW - 1.2)) / (COLS - 1);
+    for (let i = 0; i < COLS; i++) for (const s of [1, -1]) {
+      B.box(0.62, colH, 0.62, colX(i), plat + colH / 2, s * colZ, C.white, m); // a square white column
+      B.box(0.9, 0.16, 0.9, colX(i), plat + 0.08, s * colZ, C.granite, m); // its base stone
+      B.box(0.8, 0.16, 0.8, colX(i), plat + colH - 0.08, s * colZ, C.white, m); // its capital
     }
     const top = plat + colH, fz = d / 2 - 0.6;
     B.box(hallW + 0.2, 0.42, d - 1.2, 0, top + 0.21, 0, C.white, m); // the beams
-    B.box(hallW + 0.3, 0.34, d - 1.1, 0, top + 0.59, 0, C.dan, m); // the painted band (dancheong) over them
-    const paint = [C.red, C.ochre, C.blue, C.white], nx = Math.round(hallW / 0.5), nz = Math.round((d - 1.1) / 0.5);
-    for (let i = 0; i < nx; i++) for (const s of [1, -1]) B.box(0.26, 0.2, 0.06, -hallW / 2 + 0.3 + (i * (hallW - 0.6)) / (nx - 1), top + 0.59, s * (fz + 0.06), paint[i % 4], m);
-    for (let i = 0; i < nz; i++) for (const s of [1, -1]) B.box(0.06, 0.2, 0.26, s * (hallW / 2 + 0.16), top + 0.59, -fz + 0.3 + (i * (2 * fz - 0.6)) / (nz - 1), paint[i % 4], m);
-    for (let i = 0; i < 6; i++) for (const s of [1, -1]) { // the brackets over each column
-      B.box(0.5, 0.26, 1.0, colX(i), top + 0.89, s * (colZ + 0.3), C.cream, m);
-      B.box(0.3, 0.2, 0.5, colX(i), top + 1.08, s * (colZ + 0.75), C.dan, m);
+    B.box(hallW + 0.3, 0.34, d - 1.1, 0, top + 0.59, 0, C.white, m); // the band over them, white as the rest
+    const nb = Math.round(hallW / 1.05); // a row of white brackets under the eaves, front and back
+    for (let i = 0; i <= nb; i++) for (const s of [1, -1]) {
+      const x = -hallW / 2 + 0.3 + (i * (hallW - 0.6)) / nb;
+      B.box(0.5, 0.26, 1.0, x, top + 0.89, s * (colZ + 0.3), C.white, m);
+      B.box(0.3, 0.2, 0.5, x, top + 1.08, s * (colZ + 0.75), C.cream, m);
     }
     const y0 = top + 1.2, rw = hallW + 3.6, rd = d + 3.0, nr = Math.round(rw / 0.5);
-    for (let i = 0; i <= nr; i++) for (const s of [1, -1]) { // rafter ends under the eaves, red-tipped
+    for (let i = 0; i <= nr; i++) for (const s of [1, -1]) { // rafter ends under the eaves, white
       const x = -rw / 2 + 0.25 + (i * (rw - 0.5)) / nr;
-      bar([x, y0 - 0.3, s * (colZ + 0.2)], [x, y0 - 0.12, s * (rd / 2 - 0.1)], 0.1, C.cream, m, 0.12);
-      B.box(0.13, 0.11, 0.05, x, y0 - 0.12, s * (rd / 2 - 0.08), C.red, m);
+      bar([x, y0 - 0.3, s * (colZ + 0.2)], [x, y0 - 0.12, s * (rd / 2 - 0.1)], 0.1, C.white, m, 0.12);
     }
-    tiledRoof(rw, rd, y0, g.h + 0.7, hallW * 0.55, 0, m);
+    tiledRoof(rw, rd, y0, g.h + 0.7, hallW * 0.55, 0, m, 0.55, 0.95);
     const wingW = (g.w - hallW) / 2, wd = d * 0.62, wh = g.h * 0.36, bays = 4;
     for (const s of [1, -1]) {
       const x = s * (g.w / 2 - wingW / 2);
@@ -384,12 +395,8 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
         B.box(0.05, hh, 0.09, wx, wy, f * (wd / 2 + 0.01), C.white, m);
         B.box(ww, 0.05, 0.09, wx, wy, f * (wd / 2 + 0.01), C.white, m);
       }
-      B.box(wingW + 0.3, 0.2, wd + 0.3, x, wh + 0.02, 0, C.dan, m); // (the painted band under the wing's eaves)
+      B.box(wingW + 0.3, 0.2, wd + 0.3, x, wh + 0.02, 0, C.white, m); // (the white band under the wing's eaves)
       tiledRoof(wingW + 1.4, wd + 1.8, wh + 0.14, wh + 1.5, wingW * 0.55, x, m);
-      // a stone guardian either side of the front steps
-      B.box(0.9, 0.7, 1.3, s * (hallW * 0.35 + 1.5), 0.35, d / 2 + 2.6, C.stone, m);
-      B.box(0.6, 0.6, 0.9, s * (hallW * 0.35 + 1.5), 1.0, d / 2 + 2.6, C.granite, m);
-      B.box(0.45, 0.45, 0.45, s * (hallW * 0.35 + 1.5), 1.45, d / 2 + 2.95, C.granite, m);
     }
     for (const s of [1, -1]) { // the name board in its white frame, front and back
       B.box(3.0, 1.2, 0.1, 0, top + 0.5, s * (fz + 0.12), C.white, m);
@@ -403,9 +410,38 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     }
   }
 
+  // Two honour guards in black dress uniform stand at the gate's front, one before each inner column (Yozi's photo).
+  const guards = [];
+  {
+    const g = l.gate, hallW = g.w * HC_GATE.hall, gx = (hallW - 1.2) / 6, gz = g.d / 2 - 0.9 + 0.75, c = Math.cos(g.ry), sn = Math.sin(g.ry);
+    const black = new THREE.MeshLambertMaterial({ color: 0x17171c }), white = new THREE.MeshLambertMaterial({ color: 0xf2f0ea }), gold = new THREE.MeshLambertMaterial({ color: 0xd9b24a });
+    for (const e of [1, -1]) {
+      const ch = createCharacter({ model: 'jacket-black', pants: 'black', skirt: null, tee: null, hair: 'black', dye: 'black', hairStyle: 'shaved', skin: 'light' });
+      const cap = new THREE.Group(); // a peaked cap: black crown, white band, a short visor, a gold badge
+      const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.31, 0.16, 16), black); crown.position.y = 0.4;
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.315, 0.315, 0.07, 16), white); band.position.y = 0.3;
+      const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16, 1, false, -Math.PI / 2.6, Math.PI / 1.3), black); visor.position.set(0, 0.26, 0.14);
+      const badge = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.03), gold); badge.position.set(0, 0.38, 0.34);
+      cap.add(crown, band, visor, badge);
+      ch.addProp('head', cap);
+      const kit = new THREE.Group(); // a white belt with a gold buckle
+      const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.25, 0.05, 14), white); belt.position.y = 0.44;
+      const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.03), gold); buckle.position.set(0, 0.44, 0.22);
+      kit.add(belt, buckle);
+      ch.addProp('body', kit);
+      ch.root.position.set(l.x + g.at[0] + e * gx * c + gz * sn, HC_GATE.plat, l.z + g.at[1] - e * gx * sn + gz * c);
+      ch.root.rotation.y = g.ry;
+      ch.root.name = 'hyeonchung-guard';
+      ch.animate(0, 0);
+      group.add(ch.root);
+      guards.push(ch);
+    }
+    group.userData.counts.guards = guards.length;
+  }
+
   let flowers = null;
   { // The Memorial Tower: a round base, a cross-shaped granite shaft of cut blocks stepping up to the middle; before it
-    // the verse wall, the incense burner, the "충혼" stone and the table for flowers.
+    // the verse wall, the incense burner, the "충혼" stone (nothing in front of them, so they are seen).
     const t = l.tower, yT = l.tribute.y, m = frame(t.at, t.ry, yT), w = t.w, R = w * 0.56;
     B.add(new THREE.CylinderGeometry(R + 0.9, R + 1.1, 0.3, 28).translate(0, 0.15, 0), C.stone, m);
     B.add(new THREE.CylinderGeometry(R, R, 1.5, 28).translate(0, 1.05, 0), C.granite, m); // the round base
@@ -454,42 +490,54 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     const bx = -0.75;
     for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2 + Math.PI / 3; bar([bx + Math.sin(a) * 0.3, 0.16, Math.cos(a) * 0.3], [bx + Math.sin(a) * 0.24, 0.6, Math.cos(a) * 0.24], 0.1, C.patina, am); }
     B.add(new THREE.CylinderGeometry(0.44, 0.32, 0.5, 12).translate(bx, 0.8, 0), C.patina, am);
-    B.add(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 12).translate(bx, 1.07, 0), C.ochre, am); // its lid's rim
-    B.add(new THREE.CylinderGeometry(0.12, 0.42, 0.14, 12).translate(bx, 1.17, 0), C.ochre, am);
+    B.add(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 12).translate(bx, 1.07, 0), C.silver, am); // its lid's rim (silver: Yozi 2026-11-25)
+    B.add(new THREE.CylinderGeometry(0.12, 0.42, 0.14, 12).translate(bx, 1.17, 0), C.silver, am);
     for (const s of [1, -1]) B.box(0.08, 0.22, 0.2, bx + s * 0.5, 1.0, 0, C.patina, am); // (its two ears)
     B.box(1.25, 0.82, 0.8, 0.85, 0.57, 0, C.verse, am);
     B.box(1.35, 0.08, 0.9, 0.85, 1.02, 0, C.granite, am);
     B.add(new THREE.CylinderGeometry(0.2, 0.14, 0.14, 10).translate(0.7, 1.13, 0), C.patina, am); // (the small incense bowl on it)
-    const soul = textLines(['충혼'], 0.95, 0.5, { bg: C.verse, fg: '#d9d2b8' });
+    const soul = textLines(['충 혼'], 1.2, 0.72, { bg: C.verse, fg: '#d9d2b8' }); // (the two letters apart and large, as on the stone)
     soul.position.set(0.85, 0.6, 0.405);
     const holder = new THREE.Group();
     holder.applyMatrix4(am);
     holder.add(verse, soul);
     group.add(holder);
-    // The table for flowers, and wreaths on stands either side.
-    B.box(2.4, 0.5, 0.7, 0, 0.25, 1.15, C.granite, am);
-    B.box(2.6, 0.1, 0.85, 0, 0.55, 1.15, C.stone, am);
+    // Wreaths on stands either side (nothing stands before the burner and the stone: they are seen whole, Yozi 2026-11-25).
     for (const s of [1, -1]) for (let i = 0; i < 3; i++) {
       const x = s * (vw / 2 + 1.1 + i * 0.75);
       bar([x, 0, vz + 0.45], [x, 1.05, vz + 0.6], 0.04, C.dark, am);
       B.add(new THREE.CylinderGeometry(0.27, 0.27, 0.06, 12).rotateX(Math.PI / 2 - 0.13).translate(x, 0.9, vz + 0.63), C.white, am);
       B.add(new THREE.CylinderGeometry(0.12, 0.12, 0.08, 10).rotateX(Math.PI / 2 - 0.13).translate(x, 0.9, vz + 0.65), i % 2 ? C.ochre : C.white, am);
     }
-    // white chrysanthemums on the table (shown after a tribute)
+    // Incense (shown after you burn some): three sticks in the small bowl on the stone, their tips aglow, smoke rising.
     flowers = new THREE.Group();
-    const stem = new THREE.CylinderGeometry(0.012, 0.012, 0.34, 4).rotateZ(Math.PI / 2), head = new THREE.IcosahedronGeometry(0.075, 0);
-    const sm = new THREE.MeshLambertMaterial({ color: 0x4f7f45 }), hm = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
-    for (let i = 0; i < 9; i++) {
-      const f = new THREE.Group(), a = new THREE.Mesh(stem, sm), b = new THREE.Mesh(head, hm);
-      b.position.x = 0.2;
-      f.add(a, b);
-      f.position.set(-0.9 + i * 0.225, 0.66, 1.1 + (i % 2) * 0.1);
-      f.rotation.y = Math.PI / 2 + (i % 3 - 1) * 0.25;
-      flowers.add(f);
+    const stick = new THREE.CylinderGeometry(0.008, 0.008, 0.3, 4), tip = new THREE.SphereGeometry(0.018, 6, 4);
+    const stickM = new THREE.MeshLambertMaterial({ color: 0x6d5a3a }), tipM = new THREE.MeshBasicMaterial({ color: 0xff7a3a });
+    for (let i = 0; i < 3; i++) {
+      const a = new THREE.Mesh(stick, stickM), b = new THREE.Mesh(tip, tipM);
+      a.position.set(0.7 + (i - 1) * 0.06, 1.33, 0); a.rotation.z = (i - 1) * 0.12;
+      b.position.set(0.7 + (i - 1) * 0.078, 1.48, 0);
+      flowers.add(a, b);
     }
+    const puff = new THREE.SphereGeometry(0.09, 7, 5);
+    flowers.userData.smoke = Array.from({ length: 6 }, (_, i) => {
+      const q = new THREE.Mesh(puff, new THREE.MeshBasicMaterial({ color: 0xe9e6df, transparent: true, opacity: 0.4, depthWrite: false }));
+      q.userData.f = i / 6;
+      flowers.add(q);
+      return q;
+    });
+    flowers.userData.rise = (t) => { // the smoke: each puff rises 1.6 m, drifts, widens and fades
+      for (const q of flowers.userData.smoke) {
+        const f = (q.userData.f + t * 0.22) % 1;
+        q.position.set(0.7 + Math.sin(f * 5 + q.userData.f * 9) * 0.12 * f, 1.52 + f * 1.6, Math.cos(f * 4 + q.userData.f * 7) * 0.1 * f);
+        q.scale.setScalar(0.5 + f * 1.6);
+        q.material.opacity = 0.42 * (1 - f);
+      }
+    };
+    flowers.userData.rise(0);
     flowers.applyMatrix4(am);
     flowers.visible = false;
-    flowers.name = 'hyeonchung-flowers';
+    flowers.name = 'hyeonchung-incense';
     group.add(flowers);
   }
 
@@ -917,8 +965,10 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     counts: group.userData.counts,
     tribute() { flowersLeft = P.flowers; flowers.visible = true; },
     update(p, dt = 0) {
-      if (flowersLeft > 0 && (flowersLeft -= dt) <= 0) flowers.visible = false;
+      if (flowersLeft > 0) { if ((flowersLeft -= dt) <= 0) flowers.visible = false; else flowers.userData.rise(P.flowers - flowersLeft); }
       if (group.visible) lights(p);
+      if (group.visible && Math.hypot(p.x - l.x - l.gate.at[0], p.z - l.z - l.gate.at[1]) < 60) for (const ch of guards) ch.animate(dt, 0); // (they stand still: a breath, a blink)
+      { const nearGate = group.visible && Math.hypot(p.x - l.x - l.gate.at[0], p.z - l.z - l.gate.at[1]) < 60; for (const ch of guards) ch.root.visible = nearGate; }
       if (flag && group.visible) { sway += dt; flag.userData.cloth.rotation.y = Math.sin(sway * 1.3) * 0.22 + Math.sin(sway * 3.1) * 0.06; }
       if ((wait -= dt) > 0) return;
       wait = 0.25;
