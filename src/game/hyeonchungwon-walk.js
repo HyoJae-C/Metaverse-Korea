@@ -23,6 +23,7 @@ const inPolygonXZ = (x, z, p) => { let c = false; for (let i = 0, j = p.length -
 
 // Hyeonchungmun's stone floor (drawn in hyeonchungwon-park.js): the open hall is `hall` of the gate's width, on a
 // platform `plat` m up that reaches `out` m past the hall's front and back, with `steps` m of steps there, `stair` of the hall wide.
+export const HC_LOOK = { gate: { range: 38, gain: 2.2 }, tower: { range: 45, gain: 3.6 } }; // (m from each; how far the view lifts: less than Namsan's tower, these are low and near)
 export const HC_GATE = { hall: 0.52, plat: 0.45, side: 0.8, out: 0.7, steps: 1.2, stair: 0.7 };
 // How high you stand at (x, z), landmark metres: on the platform, on its steps, or 0.
 export function gateFloor(l, x, z) {
@@ -105,6 +106,8 @@ export function createHyeonchungwonWalk({ landmarks = [], collision = null, scen
   return {
     y,
     landmark: l,
+    // Near the gate and the tower, dragging the view up tilts it up at them (game/tower-look.js; Yozi 2026-11-25).
+    lookUp: [{ x: l.x + l.gate.at[0], z: l.z + l.gate.at[1], ...HC_LOOK.gate }, { x: l.x + l.tower.at[0], z: l.z + l.tower.at[1], ...HC_LOOK.tower }],
     update(p, dt) {
       const d = Math.hypot(p.x - gx, p.z - gz);
       if (d < gr) { if (!shown && toast && !busy()) { shown = true; toast(text()); } } else if (shown && d > gr * 2.5) shown = false;
