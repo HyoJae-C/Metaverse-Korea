@@ -69,7 +69,7 @@ export const GANGNAM_FURNITURE = [
   ['f-white-shelf', '📚', [1.0, 0.36], false, { en: 'White open shelf', ko: '화이트 오픈 선반', ja: '白いオープンシェルフ', zh: '白色开放式书架' }, (g, part, box) => {
     for (const x of [-0.49, 0.49]) box(0.025, 1.6, 0.36, x, 0.8, 0, WHITE); // sides
     for (const y of [0.04, 0.42, 0.8, 1.18, 1.58]) box(1.0, 0.025, 0.36, 0, y, 0, y === 0.04 ? OAK : WHITE); // shelves, oak at the bottom
-    box(0.95, 1.56, 0.01, 0, 0.8, -0.175, WHITE2); // the back
+    box(0.95, 1.56, 0.01, 0, 0.8, -0.17, WHITE2); // the back (just inside the sides, so its face doesn't flicker against theirs)
     // A few white and oak things, like a show home.
     for (const [x, h] of [[-0.3, 0.2], [-0.2, 0.26], [-0.1, 0.18]]) box(0.06, h, 0.22, x, 0.055 + h / 2 + 0.38, 0, x === -0.2 ? OAK : '#fbfaf7'); // books
     part(new THREE.SphereGeometry(0.1, 16, 10), '#ffffff', 0.25, 0.53, 0); // round vase
