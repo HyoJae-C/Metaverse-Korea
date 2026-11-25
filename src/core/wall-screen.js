@@ -228,13 +228,15 @@ export function drawWave(g, t) {
 export class WallScreen {
   // image: a picture to show (url), instead of the "coming soon" card.
   // city / text: see the region.json note at the top.
-  constructor({ w = 20, h = 10, image = null, city = null, text = null, wave = false } = {}) {
+  // px: the canvas's longer side (phones: 512, a quarter of the pixels to
+  // draw and send to the graphics chip each time it changes).
+  constructor({ w = 20, h = 10, image = null, city = null, text = null, wave = false, px = 1024 } = {}) {
     this.t = 0;
     this.frameT = 0;
     this.city = city; this.text = text; this.wave = wave;
     this.canvas = document.createElement('canvas');
-    // The longer side gets 1024 pixels; the canvas has the screen's shape.
-    const k = 1024 / Math.max(w, h);
+    // The longer side gets `px` pixels; the canvas has the screen's shape.
+    const k = px / Math.max(w, h);
     this.canvas.width = Math.round(w * k); this.canvas.height = Math.round(h * k);
     this.g = this.canvas.getContext('2d');
     this.tex = new THREE.CanvasTexture(this.canvas);
@@ -254,6 +256,7 @@ export class WallScreen {
     screen.position.z = 0.42;
     root.add(frame, screen);
     this.root = root;
+    this.screen = screen;
   }
 
   // Fix it on a wall from wallNear(), its bottom edge `y` metres up.
@@ -291,11 +294,13 @@ export class WallScreen {
     this.frameT = 1; // draw at once
   }
 
-  update(dt) {
+  // dt; fps: how often to redraw (15 is plenty for a sign near you; a far
+  // one gets fewer: each redraw sends the whole canvas to the graphics chip).
+  update(dt, fps = 15) {
     this.wake();
     this.t += dt;
     this.frameT += dt;
-    if (this.frameT < 1 / 15) return; // 15 fps is plenty for a sign
+    if (this.frameT < 1 / fps) return;
     this.frameT = 0;
     if (this.img) drawImage(this.g, this.img, this.t);
     else if (this.city) drawCity(this.g, this.city, this.t);
