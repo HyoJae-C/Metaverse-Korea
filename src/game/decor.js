@@ -64,10 +64,14 @@ export function createDecor(game) {
   }
   function rebuildDecor() {
     decor.group.clear();
+    let rugs = 0;
     for (const it of decor.items) {
       const g = buildFurniture(it.id, { off: it.off });
       if (isPlant(it.id)) g.scale.setScalar(plantScale(it, g));
-      g.position.set(it.x, it.y || 0, it.z);
+      // Rugs can overlap each other (×2 copies): each next one lies 8 mm
+      // higher so two rugs never share a plane and flicker (Yozi 2026-11-25).
+      const lift = furnitureById(it.id)?.walkable ? 0.008 * rugs++ : 0;
+      g.position.set(it.x, (it.y || 0) + lift, it.z);
       g.rotation.y = it.ry;
       decor.group.add(g);
       it.mesh = g;
