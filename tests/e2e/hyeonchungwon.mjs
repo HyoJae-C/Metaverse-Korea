@@ -115,6 +115,11 @@ await page.waitForTimeout(1500);
 assert(await page.evaluate(() => __mk.hyeonchungwon.group.getObjectByName('hyeonchung-incense').visible), 'incense burns at the altar');
 await cam({ yaw: front + 2.4, pitch: 0.25, dist: 5 });
 await shot('7-tribute');
+await page.waitForTimeout(4500);
+await cam({ yaw: front + 2.4, pitch: 0.42, dist: 3.4 });
+await shot('7a-smoke');
+await page.waitForFunction(() => !__mk.hyeonchungwon.group.getObjectByName('hyeonchung-incense').visible, null, { timeout: 60000 }); // (15 game seconds: the test's software renderer runs slow)
+assert(true, 'the incense goes out by itself');
 await cam({ yaw: front, pitch: 0.12, dist: 4.5 }, 1200);
 await shot('7b-verse');
 await go([fx * 16, fz * 16]);

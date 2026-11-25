@@ -55,7 +55,8 @@ export const HC_PARK = {
   wood: { drawn: false, cell: 6, clear: 5, way: 4, top: [4.6, 2.4], foot: 1.2 }, // the wood inside the grounds, drawn whole: m from plots and lawns, m from a way's edge, treetop height (least, spread)
   belt: { fill: 3.1, reach: 24, close: 1.8, lawn: 13, dots: 0.07, clear: 22 }, // the wood round the court: a tree every `fill` m on the free ground out to `reach` m; `close` to the terrace and the gate, `lawn` m back from the paved way (open lawn, with a tree on `dots` of its spots); no headstones within `clear` m of the court
   rim: { step: 3, deep: 8, clump: 9, share: 0.5, court: 9 }, // the lawn before the gate: trees within `deep` m of its rim, in clumps (`share` of the `clump` m cells), none this near the court
-  flowers: 120, // s: the incense burns
+  flowers: 15, // s: the incense burns, then it is out so the next visitor can light theirs (Yozi 2026-11-25; was 120)
+  smoke: { n: 14, life: 8, h: 1.3, op: 0.5, out: 3 }, // wisps; s for one to climb h m; its strongest opacity; s over which it thins at the end
 };
 
 // The verse on the wall before the Memorial Tower (the offering place's dedication, by Yi Eun-sang), as it is cut there.
@@ -533,19 +534,25 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       b.position.set(0.7 + (i - 1) * 0.078, 1.48, 0);
       flowers.add(a, b);
     }
-    const puff = new THREE.SphereGeometry(0.09, 7, 5);
-    flowers.userData.smoke = Array.from({ length: 6 }, (_, i) => {
-      const q = new THREE.Mesh(puff, new THREE.MeshBasicMaterial({ color: 0xe9e6df, transparent: true, opacity: 0.4, depthWrite: false }));
-      q.userData.f = i / 6;
+    // The smoke: thin wisps that leave the tips one after another, climb slowly, curl to one side, spread and fade
+    // (Yozi 2026-11-25: not round puffs shooting up).
+    const puff = new THREE.SphereGeometry(0.03, 6, 5), S = P.smoke;
+    flowers.userData.smoke = Array.from({ length: S.n }, (_, i) => {
+      const q = new THREE.Mesh(puff, new THREE.MeshBasicMaterial({ color: 0xe6e3dc, transparent: true, opacity: 0, depthWrite: false }));
+      q.userData.i = i;
       flowers.add(q);
       return q;
     });
-    flowers.userData.rise = (t) => { // the smoke: each puff rises 1.6 m, drifts, widens and fades
+    flowers.userData.rise = (t, left = 9) => {
+      const out = Math.min(1, left / S.out); // (the last seconds: it thins away)
       for (const q of flowers.userData.smoke) {
-        const f = (q.userData.f + t * 0.22) % 1;
-        q.position.set(0.7 + Math.sin(f * 5 + q.userData.f * 9) * 0.12 * f, 1.52 + f * 1.6, Math.cos(f * 4 + q.userData.f * 7) * 0.1 * f);
-        q.scale.setScalar(0.5 + f * 1.6);
-        q.material.opacity = 0.42 * (1 - f);
+        const i = q.userData.i, age = t / S.life - i / S.n;
+        if (age < 0) { q.material.opacity = 0; continue; } // (not yet off the tip)
+        const f = age % 1, k = (i % 3) - 1, curl = Math.sin(f * 4.2 + i * 1.7 + t * 0.35) * 0.05 + f * f * 0.16;
+        q.position.set(0.7 + k * 0.078 * (1 - f) + curl, 1.5 + f * S.h, Math.cos(f * 3.1 + i * 2.3) * 0.05 * f);
+        const w = 0.5 + f * 3.4;
+        q.scale.set(w, w * (1.9 - f * 0.6), w);
+        q.material.opacity = S.op * Math.min(1, f * 8) * (1 - f) * (1 - f) * out;
       }
     };
     flowers.userData.rise(0);
@@ -981,7 +988,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     counts: group.userData.counts,
     tribute() { flowersLeft = P.flowers; flowers.visible = true; },
     update(p, dt = 0) {
-      if (flowersLeft > 0) { if ((flowersLeft -= dt) <= 0) flowers.visible = false; else flowers.userData.rise(P.flowers - flowersLeft); }
+      if (flowersLeft > 0) { if ((flowersLeft -= dt) <= 0) flowers.visible = false; else flowers.userData.rise(P.flowers - flowersLeft, flowersLeft); }
       if (group.visible) lights(p);
       if (group.visible && Math.hypot(p.x - l.x - l.gate.at[0], p.z - l.z - l.gate.at[1]) < 60) for (const ch of guards) ch.animate(dt, 0); // (they stand still: a breath, a blink)
       { const nearGate = group.visible && Math.hypot(p.x - l.x - l.gate.at[0], p.z - l.z - l.gate.at[1]) < 60; for (const ch of guards) ch.root.visible = nearGate; }
