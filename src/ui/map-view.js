@@ -6,6 +6,7 @@ import { CATEGORY_ICON, storeIcon } from '../core/store-icons.js';
 import { inPoly } from '../core/geom.js';
 import { DISTRICT_NAME } from './district-names.js';
 import { landmarkPlaces, landmarkMatches } from '../game/landmark-search.js';
+import { loadFavs, saveFavs, hasFav, toggleFav, addSpot, removeFav } from './map-favs.js';
 
 export { CATEGORY_ICON, DISTRICT_NAME };
 
@@ -52,6 +53,9 @@ export function nearestExit(exits, x, z) {
   }
   return best;
 }
+
+// A station's id for ⭐ my places: its English name (the index can shift when stations are added).
+export const stationId = (st) => String(st.name?.en || st.key);
 
 // The middle of each district's buildings.
 export function districtCentres(map) {
@@ -167,6 +171,7 @@ export class MapView {
     this.districts = districtCentres(map);
     this.landmarkPlaces = landmarkPlaces(map?.landmarks); // gates, statues, towers (game/landmark-search.js)
     this.badges = []; // edge badges for districts off screen: { x, y, r, d }
+    this.favs = loadFavs(); // ⭐ my places (ui/map-favs.js)
     this._bindInput();
     root.querySelector('.map-close').onclick = () => this.hide();
     // Back to where you are (after dragging the map away).
@@ -486,6 +491,26 @@ export class MapView {
         if (onScreen(sx, sy)) labels.push({ text: `${PARK_ICON[l.type] || '📍'} ${localName(l.label, lang)}`, sx, sy, gap: far ? 6 * dpr : 0, weight: 700, size: far ? 12 : 11, color: '#2f6b3f', pri: far ? 2 : 4 });
       }
     }
+    // ⭐ My places: a gold star over whatever is there, so you find it at a glance.
+    for (const f of this.favs) {
+      const p = this._favPlace(f);
+      const [sx, sy] = this.toScreen(p.x, p.z);
+      if (!onScreen(sx, sy)) continue;
+      const r = 11 * dpr, cx = sx + 10 * dpr, cy = sy - 12 * dpr; // up and right of the place's own pin
+      g.fillStyle = '#ffc93c';
+      g.strokeStyle = '#fffaf0';
+      g.lineWidth = 2.5 * dpr;
+      g.beginPath();
+      g.arc(cx, cy, r, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      g.fillStyle = '#7a4b00';
+      g.font = `900 ${13 * dpr}px system-ui, sans-serif`;
+      g.fillText('★', cx, cy + dpr);
+      mark(cx, cy, r + dpr);
+      this.hits.push({ sx: cx, sy: cy, r: r + 5 * dpr, kind: 'fav', item: { f, p } });
+      if (f.kind === 'spot') labels.push({ text: p.label, sx: cx, sy: cy, gap: r + 2 * dpr, weight: 800, size: 12, color: '#7a4b00', pri: 1 });
+    }
     // Players
     const { me, others } = this.getPlayers();
     for (const o of others) {
@@ -748,6 +773,67 @@ export class MapView {
     requestAnimationFrame(step);
   }
 
+  // ⭐ A saved place as it is now: its name in your language and where it
+  // is (a shop that moved is found by its id).
+  _favPlace(f) {
+    const lang = getLanguage();
+    if (f.kind === 'store') {
+      const s = this.stores.find((q) => q.store.id === f.id);
+      if (s) { const p = s.go || s.door; return { x: p.x, z: p.z, label: localName(s.store.name, lang), icon: storeIcon(s.store) }; }
+    } else if (f.kind === 'landmark') {
+      const l = this.landmarkPlaces.find((q) => q.key === f.id);
+      if (l) return { x: l.x, z: l.z, label: localName(l.name, lang), icon: l.icon };
+    } else if (f.kind === 'zone') {
+      const z = this.zones.find((q) => q.zone.id === f.id);
+      if (z) return { x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}`, icon: f.icon || '📍' };
+    } else if (f.kind === 'station') {
+      const st = stationList(this.marks).find((q) => stationId(q) === f.id);
+      if (st) { const ex = nearestExit(st.exits, f.x, f.z), p = ex.go || ex; return { x: p.x, z: p.z, label: localName(st.name, lang), icon: '🚇' }; }
+    }
+    // A spot you saved (or a place since taken off the map): named after the nearest shop or sight.
+    const near = this._nearName(f.x, f.z);
+    return { x: f.x, z: f.z, label: near ? t('map.favNear', { name: near }) : t('map.favSpot'), icon: f.icon || '📍' };
+  }
+
+  _nearName(x, z, within = 60) {
+    let best = null, bd = within;
+    for (const s of this.stores) {
+      const d = Math.hypot(s.door.x - x, s.door.z - z);
+      if (d < bd) { bd = d; best = s.store.name; }
+    }
+    for (const l of this.landmarkPlaces) {
+      const d = Math.hypot(l.x - x, l.z - z);
+      if (d < bd) { bd = d; best = l.name; }
+    }
+    return best && localName(best, getLanguage());
+  }
+
+  _setFavs(list) {
+    this.favs = list;
+    saveFavs(list);
+    this._renderResults();
+    this.draw();
+  }
+
+  _toggleFav(place) {
+    const r = toggleFav(this.favs, place);
+    if (r.full) { this._say(t('map.favFull', { n: this.favs.length })); return; }
+    this._setFavs(r.list);
+  }
+
+  // ☆ / ★ beside a place in the list.
+  _favBtn(place) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    const on = hasFav(this.favs, place);
+    b.className = 'map-fav' + (on ? ' on' : '');
+    b.textContent = on ? '★' : '☆';
+    b.title = b.ariaLabel = t(on ? 'map.favRemove' : 'map.favAdd');
+    b.setAttribute('aria-pressed', String(on));
+    b.onclick = (e) => { e.stopPropagation(); this._toggleFav(place); };
+    return b;
+  }
+
   _match(s) {
     return storeMatches(s.store, this.query, this.category, t('cat.' + s.store.category));
   }
@@ -887,7 +973,8 @@ export class MapView {
       h.textContent = t(key);
       out.appendChild(h);
     };
-    const row = (icon, color, title, sub, onClick) => {
+    // side: a button beside the row (☆ my places, ✕ take off).
+    const row = (icon, color, title, sub, onClick, side = null) => {
       const b = document.createElement('button');
       b.className = 'map-row';
       const i = document.createElement('span');
@@ -904,7 +991,11 @@ export class MapView {
       tx.append(t1, t2);
       b.append(i, tx);
       b.onclick = onClick;
-      out.appendChild(b);
+      if (!side) { out.appendChild(b); return; }
+      const line = document.createElement('div');
+      line.className = 'map-row-line';
+      line.append(b, side);
+      out.appendChild(line);
     };
     const { me } = this.getPlayers();
     const dist = (x, z) => `${Math.round(Math.hypot(x - me.x, z - me.z))} m`;
@@ -912,6 +1003,42 @@ export class MapView {
     const zones = this.category ? [] : this.zones.filter((z) => !filtering || [z.zone.id, ...Object.values(z.zone.name || {})].some((x) => norm(x).includes(norm(this.query))));
     // Districts by name (Seongsu, Gyeongbokgung, Itaewon): jump the map there.
     const dists = norm(this.query) && !this.category ? this.districts.filter((d) => [d.id, ...Object.values(d.name)].some((x) => norm(x).includes(norm(this.query)))) : [];
+    let favShown = 0;
+    // ⭐ My places first (ui/map-favs.js): what you go back to, a tap away.
+    if (!this.category) {
+      const q = norm(this.query);
+      const favs = this.favs.map((f) => ({ f, p: this._favPlace(f) })).filter(({ p }) => !q || norm(p.label).includes(q));
+      favShown = favs.length;
+      if (favs.length || !q) head('map.favs');
+      for (const { f, p } of favs) {
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'map-fav on';
+        x.textContent = '★';
+        x.title = x.ariaLabel = t('map.favRemove');
+        x.onclick = (e) => { e.stopPropagation(); this._setFavs(removeFav(this.favs, f)); };
+        row(p.icon, '#fff3c4', p.label, dist(p.x, p.z), () => this._pick({ kind: f.kind, id: f.id, x: p.x, z: p.z, label: p.label }), x);
+      }
+      if (!q) {
+        // Save the spot you're standing on (a pier, a view, a bench).
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'map-fav-here';
+        add.textContent = `📍 ${t('map.favHere')}`;
+        add.onclick = () => {
+          const r = addSpot(this.favs, me.x, me.z);
+          if (r.full) this._say(t('map.favFull', { n: this.favs.length }));
+          else this._setFavs(r.list);
+        };
+        out.appendChild(add);
+        if (!this.favs.length) {
+          const e = document.createElement('p');
+          e.className = 'map-empty map-fav-hint';
+          e.textContent = t('map.favHint');
+          out.appendChild(e);
+        }
+      }
+    }
     for (const d of dists) {
       row('🗺️', '#fffaf0', localName(d.name, lang), dist(d.x, d.z), () => this.goTo(d.x, d.z));
     }
@@ -921,13 +1048,14 @@ export class MapView {
     if (sights.length) head('map.landmarks');
     for (const l of sights) {
       const label = localName(l.name, lang);
-      row(l.icon, '#fffaf0', label, dist(l.x, l.z), () => this._pick({ kind: 'landmark', id: l.key, x: l.x, z: l.z, label }));
+      row(l.icon, '#fffaf0', label, dist(l.x, l.z), () => this._pick({ kind: 'landmark', id: l.key, x: l.x, z: l.z, label }),
+        this._favBtn({ kind: 'landmark', id: l.key, x: l.x, z: l.z, icon: l.icon }));
     }
     if (zones.length) head('map.zones');
     for (const z of zones) {
       row(z.zone.id, z.zone.color, localName(z.zone.name, lang), dist(z.x, z.z), () => {
         this._pick({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, label: `${z.zone.id} · ${localName(z.zone.name, lang)}` });
-      });
+      }, this._favBtn({ kind: 'zone', id: z.zone.id, x: z.x, z: z.z, icon: '🤝' }));
     }
     // Subway stations in every district: guide to the nearest exit.
     const stations = this.category ? [] : stationList(this.marks)
@@ -937,11 +1065,12 @@ export class MapView {
     if (stations.length) head('map.stations');
     for (const { st, ex } of stations) {
       // One look for every station, no line names: no transfers to think about for now.
-      row('🚇', '#5d6470', localName(st.name, lang), dist(ex.x, ex.z), () => this._pickStation(ex, localName(st.name, lang)));
+      row('🚇', '#5d6470', localName(st.name, lang), dist(ex.x, ex.z), () => this._pickStation(ex, localName(st.name, lang)),
+        this._favBtn({ kind: 'station', id: stationId(st), x: ex.x, z: ex.z, icon: '🚇' }));
     }
     const shops = this.stores.filter((s) => this._match(s));
     if (shops.length) head('map.shops');
-    if (!shops.length && !zones.length && !dists.length && !stations.length && !sights.length) {
+    if (!shops.length && !zones.length && !dists.length && !stations.length && !sights.length && !favShown) {
       const e = document.createElement('p');
       e.className = 'map-empty';
       e.textContent = t('map.noResults');
@@ -952,7 +1081,7 @@ export class MapView {
       row(storeIcon(s.store), '#fffaf0', localName(s.store.name, lang),
         `${t('cat.' + s.store.category)} · ${dist(s.door.x, s.door.z)}`, () => {
           this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
-        });
+        }, this._favBtn({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, icon: storeIcon(s.store) }));
     }
   }
 
@@ -1036,6 +1165,9 @@ export class MapView {
         const first = hit.item[0], { me } = this.getPlayers();
         const ex = hit.item.length > 1 ? nearestExit(hit.item.filter((m) => m.station === first.station), me.x, me.z) : first;
         this._pickStation(ex, hit.item.length > 1 ? ex.group?.() : ex.label?.());
+      } else if (hit.kind === 'fav') {
+        const { f, p } = hit.item;
+        this._pick({ kind: f.kind, id: f.id, x: p.x, z: p.z, label: p.label });
       } else if (hit.kind === 'store') {
         const s = hit.item;
         this._pick({ kind: 'store', id: s.store.id, x: (s.go || s.door).x, z: (s.go || s.door).z, label: localName(s.store.name, lang) }); // (go: a temple's gate, not its hall)
@@ -1073,9 +1205,14 @@ export class MapView {
 
   // A closed gu was tapped: say so for a moment.
   _soon(d, lang) {
+    this._say(`🚧 ${localName(d.name, lang)} · ${t('map.soon')}`);
+  }
+
+  // A short note over the map for a moment.
+  _say(text) {
     const el = this.root.querySelector('.map-soon');
     if (!el) return;
-    el.textContent = `🚧 ${localName(d.name, lang)} · ${t('map.soon')}`;
+    el.textContent = text;
     el.hidden = false;
     clearTimeout(this._soonT);
     this._soonT = setTimeout(() => { el.hidden = true; }, 1800);
