@@ -3,7 +3,7 @@
 // (OneCard): match the top card by suit or number; 2, A and the jokers make
 // the next player draw; J skips, Q turns the table round, K plays again, a 7
 // names the next suit. The cards carry the café's animal suits.
-import { cardRank, cardSuit, isJoker, attackOf, SUITS } from '../core/board-games.js';
+import { cardRank, cardSuit, isJoker, attackOf, SUITS, ONECARD_BUST } from '../core/board-games.js';
 import { suitArt } from './board-card-suits.js';
 import { OC } from './board-onecard-text.js';
 
@@ -31,6 +31,15 @@ const CSS = `
 #bg-panel .oc-suits { display: flex; justify-content: center; gap: 10px; margin: 6px 0; }
 #bg-panel .oc-suits button { width: 56px; height: 56px; border: 0; border-radius: 14px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 #bg-panel .oc-suits svg { width: 38px; height: 38px; }
+#bg-panel .oc-help { margin: 6px 0; border-radius: 12px; background: #f3e6cc; font-size: 13px; font-weight: 600; }
+#bg-panel .oc-help summary { padding: 8px 12px; cursor: pointer; font-weight: 800; }
+#bg-panel .oc-help ul { list-style: none; margin: 0; padding: 0 12px 10px; display: grid; gap: 5px; }
+#bg-panel .oc-help li { display: flex; align-items: center; gap: 8px; line-height: 1.25; }
+#bg-panel .oc-help li > b { flex: 0 0 44px; height: 26px; border-radius: 6px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; gap: 1px; font-size: 14px; }
+#bg-panel .oc-help li > b svg { width: 16px; height: 16px; }
+#bg-panel .oc-help li > b.dark { background: #2b2230; }
+#bg-panel .oc-help li > b.bright { background: linear-gradient(135deg, #ffe08a, #ff9ec4 55%, #9ecbff); }
+#bg-panel .oc-help p { margin: 0; padding: 0 12px 10px; font-weight: 500; opacity: .85; }
 `;
 let styled = false;
 
@@ -58,6 +67,37 @@ export function saidOneCard(g, names, L, tt) {
   return parts.join(' ');
 }
 
+// What each special card does, folded away until it is wanted (Yozi 2026-11-25). The panel keeps it open or
+// shut across redraws (ui.ocHelp).
+function help(el, L, ui) {
+  const fill = (row, v) => L(row).replace(/\{(\w+)\}/g, (_, k) => v[k] ?? '');
+  const d = el('details', 'oc-help');
+  d.open = !!ui.ocHelp;
+  d.addEventListener('toggle', () => { ui.ocHelp = d.open; });
+  const sum = el('summary', null, L(OC.help));
+  // The toggle event comes a moment after the tap; a redraw in between must not fold it shut again.
+  sum.addEventListener('click', () => { ui.ocHelp = !d.open; });
+  d.append(sum);
+  const list = el('ul');
+  const row = (label, text, cls = null) => {
+    const li = el('li'), b = el('b', cls);
+    for (const part of label) b.append(typeof part === 'string' ? document.createTextNode(part) : part);
+    li.append(b, el('span', null, text));
+    list.append(li);
+  };
+  row(['2'], fill(OC.helpDraw, { n: attackOf('2♥') }));
+  row(['A'], fill(OC.helpDraw, { n: attackOf('A♥') }));
+  row(['A', suitArt('♠')], fill(OC.helpDraw, { n: attackOf('A♠') }));
+  row(['🃏'], fill(OC.helpDraw, { n: attackOf('JB') }), 'dark');
+  row(['🃏'], fill(OC.helpDraw, { n: attackOf('JC') }), 'bright');
+  row(['7'], L(OC.helpSeven));
+  row(['J'], L(OC.helpJ));
+  row(['Q'], L(OC.helpQ));
+  row(['K'], L(OC.helpK));
+  d.append(list, el('p', null, `${L(OC.helpBlock)} ${fill(OC.helpBust, { n: ONECARD_BUST })}`));
+  return d;
+}
+
 // c: the card to draw into. p: the panel's game ({ g, seat, names }). act(a): my move.
 // ui: the panel (it keeps which 7 waits for its suit across redraws).
 export function drawOneCard(c, { p, act, el, L, ui }) {
@@ -79,6 +119,7 @@ export function drawOneCard(c, { p, act, el, L, ui }) {
   now.append(el('span', 'oc-dir', g.dir > 0 ? '↻' : '↺'));
   mid.append(stock, top, now);
   c.append(mid);
+  c.append(help(el, L, ui));
   if (g.attack && !g.over) { const hit = el('div', 'oc-hit', fill(OC.attacked, { n: g.attack })); hit.dataset.attack = String(g.attack); c.append(hit); }
 
   if (me < 0 || g.out[me] || g.over) return;

@@ -236,6 +236,13 @@ try {
   // The cards carry the café's animal suits, and seven are dealt.
   if ((await a.locator('#bg-panel .oc-hand .oc-card').count()) !== 7) throw new Error('One Card did not deal seven cards');
   if (!(await a.locator('#bg-panel .oc-hand .oc-card:not(.joker) svg').count())) throw new Error('One Card has no animal suits');
+  // What the cards do: folded away, opened with a tap, and still open after the card is drawn again.
+  if (await a.evaluate(() => document.querySelector('#bg-panel .oc-help').open)) throw new Error('the card guide starts open');
+  await a.click('#bg-panel .oc-help summary');
+  await a.evaluate(() => window.__bgUi.render());
+  if (!(await a.evaluate(() => document.querySelector('#bg-panel .oc-help').open)) || (await a.locator('#bg-panel .oc-help li').count()) !== 9) throw new Error('the card guide did not stay open with its nine cards');
+  if (shotDir) await a.screenshot({ path: shotDir + '/onecard-help.png' });
+  await a.click('#bg-panel .oc-help summary');
   for (let k = 0; k < 6; k++) {
     await a.waitForFunction(() => { const g = window.__bgUi.play?.g; return g && (g.over || g.turn === window.__bgUi.play.seat); }, null, { timeout: 30000 });
     if (await a.evaluate(() => window.__bgUi.play.g.over)) break;
@@ -303,7 +310,7 @@ try {
   if ((await a.getAttribute('#bg-panel [data-act="bingo-size"]', 'data-size')) !== '4') throw new Error('the host could not pick a 4×4 board');
   await a.click('#bg-panel [data-act="start"]');
   await a.waitForSelector('#bg-panel .bb-pool button', { timeout: 15000 });
-  if ((await a.locator('#bg-panel .bb-pool button').count()) !== 20) throw new Error('a 4×4 game should have 20 fish');
+  if ((await a.locator('#bg-panel .bb-pool button').count()) !== 50) throw new Error('a 4×4 game should have 50 fish');
   // Two fish by hand (into the first cells), one taken back out, then the rest at random.
   const pool = a.locator('#bg-panel .bb-pool button');
   await pool.nth(0).click();
@@ -330,7 +337,7 @@ try {
   const shouted = await a.evaluate(() => { const p = window.__bgUi.play; return !!p.bbShout || p.g.winners.length > 0 && p.g.boards.every((_, s) => p.g.winners.includes(s) || p.g.linesOf(s) === 0); });
   if (!shouted) throw new Error('a first line was not called out');
   const bingo = await a.evaluate(() => { const g = window.__bgUi.play.g; return { over: g.over, winners: g.winners, lines: g.winners.map((s) => g.linesOf(s)), status: document.querySelector('#bg-panel .bg-status')?.textContent }; });
-  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 2) || !bingo.status) throw new Error('the bingo did not end on two lines: ' + JSON.stringify(bingo));
+  if (!bingo.over || !bingo.winners.length || bingo.lines.some((n) => n < 3) || !bingo.status) throw new Error('the bingo did not end on three lines: ' + JSON.stringify(bingo));
   if (shotDir) await a.screenshot({ path: shotDir + '/bingo-end.png' });
   await a.click('#bg-panel .bg-x');
 
