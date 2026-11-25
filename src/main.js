@@ -5409,7 +5409,7 @@ for (const e of enclosures) {
 // stream's lanterns and stones, the zoo's pens and the wall posters past the
 // fog are not drawn. (The zoo alone was ~1,500 draw calls a frame from
 // Bukchon, 2 km away behind the fog.)
-const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => nanji.group, () => oksu.group, () => hyeonchungwon.group, () => mokdong.group, () => farm.group, () => seedShop.group, () => botanic.group, () => gimpo.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
+const farCull = new FarCull([...storefronts.items.map((i) => i.group), ...subwayEntrances.flatMap((e) => e.items.map((i) => i.group)), ...stampStands.items.map((i) => i.mesh), ...zones.signs.map((i) => i.group), ...landmarks.children, ...openHanok, scene.getObjectByName('streams'), adPosters.root, ...(folkYard.props || []), bukchonMarks?.group, ...farExtras, basketball.court, hanBridges.group], () => (scene.fog ? scene.fog.far + 30 : Infinity), [landmarks], [() => naksan.group, () => northWall.group, () => namsanWalk.wallGroup, () => namsanWalk.summitGroup, () => nanji.group, () => oksu.group, () => hyeonchungwon.group, () => mokdong.group, () => farm.group, () => seedShop.group, () => botanic.group, () => gimpo.group]); // (the hills and city walls load later: their woods and stretches are hidden past the fog too)
 let bukchonWelcomed = false, wasInBukchon = null;
 // Gyeongbokgung: from just outside Gwanghwamun, 'Enter' takes you into the
 // front court (the fan dance and the king are on the lawns past it),
@@ -7428,6 +7428,10 @@ function guardPosition() {
 // Big instanced meshes (trees, reeds, flowers…) cut into tiles so the ones
 // out of view are skipped (core/split-instances.js). Same picture, far less work.
 splitInstances(scene);
+// The street trees' tiles (one per 80 m) past the fog too: three.js only
+// skips the ones off screen, and ~50 tiles of trees behind the fog were
+// still drawn every frame from most places (far-draw-audit, 2026-11-25).
+for (const o of scene.getObjectByName('world')?.children || []) if (o.isInstancedMesh && o.material.fog !== false) farCull.add(o);
 const farPeople = new FarPeople();
 coverScene(scene);
 let snowCoverAt = 0;
@@ -8078,6 +8082,8 @@ if (new URLSearchParams(location.search).has('debug')) {
     cam: (o) => Object.assign(cam, o),
     graphics: () => gfx.state(),
     sceneRef: () => scene,
+    cameraRef: () => camera,
+    frustumClass: () => THREE.Frustum,
     renderInfo: () => { let tris = 0; scene.traverseVisible((o) => { if (o.isMesh && o.geometry) { const g = o.geometry; const n = (g.index ? g.index.count : g.attributes.position.count) / 3; tris += n * (o.isInstancedMesh ? o.count : 1); } }); return { calls: renderer.info.render.calls, frameTris: renderer.info.render.triangles, sceneTris: Math.round(tris), geometries: renderer.info.memory.geometries }; },
     ride: (k) => startRide(k),
     place: (x, z) => me.root.position.set(x, 0, z),
