@@ -89,6 +89,9 @@ await shot('5b-on-gate-floor');
 await go([fx * 7, fz * 7], 800);
 await cam({ yaw: front, pitch: 0.02, dist: 5 }, 1200);
 await shot('5c-guards');
+await go([fx * 5.6 - fz * 2.2, fz * 5.6 + fx * 2.2], 800);
+await cam({ yaw: front + 0.5, pitch: 0.1, dist: 2.2 }, 1200); // (close by a guard: the cap sits on the head)
+await shot('5d-guard-close');
 // The terrace: up the stairs, at the altar.
 const [sa, sb] = l.stairs.p;
 await go([(sa[0] + sb[0]) / 2, (sa[1] + sb[1]) / 2], 500);

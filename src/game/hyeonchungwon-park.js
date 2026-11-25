@@ -431,6 +431,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
       const visor = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 16, 1, false, -Math.PI / 2.6, Math.PI / 1.3), black); visor.position.set(0, 0.26, 0.14);
       const badge = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.09, 0.03), gold); badge.position.set(0, 0.38, 0.34);
       cap.add(crown, band, visor, badge);
+      cap.position.y = -0.1; // (down onto the head: it sat above the forehead, Yozi 2026-11-25)
       ch.addProp('head', cap);
       const kit = new THREE.Group(); // a white belt with a gold buckle
       const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.25, 0.05, 14), white); belt.position.y = 0.44;
