@@ -177,6 +177,15 @@ function textLines(lines, w, h, { bg = '#27324a', fg = '#d9d2b8' } = {}) {
   return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: t }));
 }
 
+// The same words in brush script (public/hyeonchungwon/*.png, drawn once with the JS Arirang font, Jeongseon County's
+// free font; Yozi 2026-11-25). The canvas text above stays until the picture is in, and if it never comes.
+function brush(mesh, file) {
+  new THREE.TextureLoader().load((import.meta.env?.BASE_URL || '/') + 'hyeonchungwon/' + file, (t) => {
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    mesh.material.map.dispose(); mesh.material.map = t; mesh.material.needsUpdate = true;
+  }, undefined, () => {});
+}
+
 function instanced(geo, mat, list, name, set) {
   const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length));
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), s = new THREE.Vector3();
@@ -484,6 +493,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     B.box(vw + 0.9, 0.18, 0.6, 0, vb + vh + 0.09, vz, C.granite, am);
     const verse = textLines(HC_VERSE, vw - 0.3, vh - 0.2, { bg: C.verse, fg: '#d9d2b8' });
     verse.position.set(0, vb + vh / 2, vz + 0.215);
+    brush(verse, 'verse.png');
     // The incense burner (bronze, three legs, a lid) and the "충혼" stone beside it, on one low slab.
     B.box(3.3, 0.16, 1.3, 0, 0.08, 0, C.stone, am);
     const bx = -0.75;
@@ -497,6 +507,7 @@ export function buildHyeonchungwonPark({ scene, l, y, lowSpec = false, sky = nul
     B.add(new THREE.CylinderGeometry(0.2, 0.14, 0.14, 10).translate(0.7, 1.13, 0), C.patina, am); // (the small incense bowl on it)
     const soul = textLines(['충 혼'], 1.2, 0.72, { bg: C.verse, fg: '#d9d2b8' }); // (the two letters apart and large, as on the stone)
     soul.position.set(0.85, 0.6, 0.405);
+    brush(soul, 'soul.png');
     const holder = new THREE.Group();
     holder.applyMatrix4(am);
     holder.add(verse, soul);
