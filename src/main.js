@@ -2,7 +2,7 @@ import { haptics, buzz, shake } from './core/haptics.js';
 import { RodSkins, rodKind, baitedRod, rodSkin } from './core/rod-skins.js';
 import * as THREE from 'three';
 import {
-  t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage,
+  t, setLanguage, getSavedLanguage, getLanguage, onLanguageChange, localName, loadLanguage, detectLanguage,
 } from './core/i18n.js';
 import { REGION_NAMES } from './i18n/languages.js';
 import { renderLangList, renderLangDropdown } from './ui/lang-picker.js';
@@ -105,7 +105,7 @@ import { watchOnline } from './net/online.js';
 import { sendRate } from './net/rate.js';
 import { rt as rtMeter } from './net/meter.js';
 import { startWhereReports } from './net/where.js';
-import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
+import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, looksAutomated, someoneNear, STAGE, STEP, startSessionReports } from './core/sessions.js';
 import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
@@ -402,9 +402,10 @@ const playCounts = createCounts(rtMeter);
 let firstVisit = true;
 try { firstVisit = !localStorage.getItem('mk.made'); } catch { /* storage blocked */ }
 const visitDevice = deviceClass({ touch: navigator.maxTouchPoints > 0, width: screen.width, height: screen.height });
+const automated = looksAutomated(); // crawlers stay out of the funnel (core/sessions.js)
 const visit = createVisit({
-  send: (r) => cloud.reportVisit(r),
-  isNew: firstVisit, device: visitDevice, src: firstSrc(location.search),
+  send: (r) => (automated ? true : cloud.reportVisit(r)),
+  isNew: firstVisit, device: visitDevice, src: firstSrc(location.search), readyMs: performance.now(),
 });
 visit.reach(STAGE.OPEN);
 // Errors: counted in the session and the message (digits removed, no
@@ -441,8 +442,7 @@ function refreshStartText() {
 
 // Only the saved language is downloaded (i18n/languages.js); wait for it so
 // the start screen doesn't flash English first.
-await loadLanguage(getSavedLanguage() || 'en');
-setLanguage(getSavedLanguage() || 'en'); // English until you pick one
+{ const code = getSavedLanguage() || detectLanguage(); await loadLanguage(code); setLanguage(code); } // the browser's language until you pick one (boot.js)
 document.getElementById('boot-note')?.remove(); // index.html's "Loading…" line: the game is up
 document.body.dataset.gameUp = '1'; // (boot.js stops drawing the language picker)
 const pickLang = (code) => {
@@ -490,6 +490,7 @@ function showLook() {
   $('step-lang').hidden = true;
   $('step-login').hidden = true;
   $('step-look').hidden = false;
+  visit.toStep(STEP.LOOK);
   editor ||= createLookEditor({ optionsEl: $('look-options'), canvas: $('look-preview'), randomBtn: $('look-random') });
   // Coming back: the character is already made, so no clothes to pick here
   // (change them later at the clothes shop or from your items).
@@ -531,8 +532,19 @@ let startPick = savedStart(); // where a new player starts (region.json spawn.st
 let startNow = null;
 const lookOrStart = () => (isReturning() && startNow ? startNow() : showLook());
 $('next-btn').disabled = false; // (boot.js kept it off until now)
+visit.toStep(STEP.READY);
+// Sign-in is offered, not asked: new players go straight to their character
+// (a "keep your progress?" screen before seeing the game lost players), and
+// Google sits in a small link here for anyone with a save on another device
+// (?login opens it as before). Linking later: ⚙️ Settings.
+$('login-link').hidden = !askLogin();
+$('login-link').onclick = (e) => { e.preventDefault(); showLogin(); };
 $('next-btn').onclick = () => {
-  if (!askLogin()) { lookOrStart(); return; }
+  visit.toStep(STEP.NEXT);
+  if (new URLSearchParams(location.search).has('login')) showLogin();
+  else lookOrStart();
+};
+function showLogin() {
   $('step-lang').hidden = true;
   $('step-login').hidden = false;
   $('login-title').textContent = L(LOGIN_TEXT.title);
@@ -546,7 +558,7 @@ $('next-btn').onclick = () => {
     locale: gisLocale(),
     onError: (err) => { $('login-note').textContent = t(err === 'taken' ? 'cloud.taken' : 'cloud.notReady'); },
   }).then((ok) => { $('login-google').hidden = ok; });
-};
+}
 $('login-guest').onclick = lookOrStart;
 // Operator badge (🛡️): on the name tag; others see it only once the server
 // confirms the name is an operator's (supabase/005_operators.sql).
@@ -565,6 +577,9 @@ const tidyName = (e) => {
   if (v !== el.value) { el.value = v; $('look-lock').textContent = '✏️ ' + L(NAME_HINT); $('look-lock').hidden = false; }
 };
 $('nickname').addEventListener('input', tidyName);
+// The funnel's "changed something" step: a colour, a hairstyle, 🎲 or a name.
+for (const id of ['look-options', 'look-random']) $(id).addEventListener('click', () => visit.toStep(STEP.TOUCHED));
+$('nickname').addEventListener('input', () => visit.toStep(STEP.TOUCHED));
 $('nickname').addEventListener('compositionend', tidyName);
 $('nickname').value = cleanName($('nickname').value);
 // Progress on this device: link it to Google (same save). A fresh start:
@@ -608,6 +623,8 @@ await new Promise((resolve) => {
     $('start-btn').disabled = false;
     if (r === 'nobody' || r === 'self') {
       $('status').textContent = t(r === 'self' ? 'referral.self' : 'referral.nobody');
+      $('referrer-field').hidden = false;
+      $('referrer-open').hidden = true;
       el.classList.add('bad');
       el.focus();
       return false;
@@ -662,6 +679,11 @@ await new Promise((resolve) => {
       cloud.claimName(name);
     }
     if (await referral()) resolve();
+  };
+  $('referrer-open').onclick = () => {
+    $('referrer-open').hidden = true;
+    $('referrer-field').hidden = false;
+    $('referrer').focus();
   };
   $('referrer').addEventListener('input', (e) => {
     if (!e.isComposing) { const v = cleanName(e.target.value); if (v !== e.target.value) e.target.value = v; }

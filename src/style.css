@@ -1949,7 +1949,12 @@ body:has(#gym-panel:not([hidden])) :is(#notice-pin, #action-btn, #action-menu) {
 .acc.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
 /* Returning players: no clothes to pick on the start screen */
 #step-look.returning #look-options, #step-look.returning #look-random { display: none; }
-#step-look.returning .referrer-field { display: none; } /* only a new player names who invited them */
+#step-look.returning .referrer-field, #step-look.returning .referrer-open { display: none; } /* only a new player names who invited them */
+/* First visit: the friend's name folds into a small link, and the name rule
+   shows once you start typing a name (one less block of red text up front). */
+.referrer-open { display: block; margin: 10px 0 0; padding: 6px 2px; background: none; border: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; text-align: start; }
+#step-look:not(.returning) .name-field:not(:focus-within) .name-rule { display: none; }
+.login-link { display: block; width: fit-content; max-width: 100%; margin: 10px auto 0; padding: 6px 8px; font-size: 13px; font-weight: 700; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 2px; text-align: center; line-height: 1.3; }
 .referrer-field { margin-top: 10px; }
 #referrer.bad { border-color: #d64545; box-shadow: 0 0 0 2px rgba(214, 69, 69, 0.25); }
 /* Returning players going straight in: only the loading line shows */

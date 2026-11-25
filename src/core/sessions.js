@@ -177,27 +177,51 @@ export function createErrorSender(send, max = 3) {
 // yet), which stops the reports for this visit. Each stage is sent once, in
 // order; a later stage implies the earlier ones.
 export const STAGE = { OPEN: 1, PRESSED: 2, LOADED: 3, MINUTE: 4 };
-export function createVisit({ send, isNew = false, device = '', src = '', newId = newSessionId, now = () => performance.now() }) {
+// How far a visit got on the start screen before Play (the gap the funnel
+// above can't see): 1 the language screen is ready (Next works), 2 pressed
+// Next, 3 the character screen is up, 4 changed the look or typed a name,
+// 5 pressed Start. Kept as the furthest one reached (supabase/076_start_steps.sql).
+export const STEP = { READY: 1, NEXT: 2, LOOK: 3, TOUCHED: 4, START: 5 };
+export function createVisit({ send, isNew = false, device = '', src = '', readyMs = 0, newId = newSessionId, now = () => performance.now() }) {
   const id = newId();
-  let stage = 0, failed = false, off = false, pressedAt = null, loadMs = 0;
+  let stage = 0, step = 0, failed = false, off = false, pressedAt = null, loadMs = 0;
+  const ready = Math.max(0, Math.round(Number(readyMs) || 0));
   const post = () => {
-    if (off) return;
-    const report = { id, stage, loadMs, isNew, failed, device, src };
+    if (off || !stage) return;
+    const report = { id, stage, step, loadMs, readyMs: ready, isNew, failed, device, src };
     Promise.resolve().then(() => send(report))
       .then((ok) => { if (ok === false) off = true; }).catch(() => {});
   };
   return {
     id,
     get stage() { return stage; },
+    get step() { return step; },
     get loadMs() { return loadMs; },
     reach(n) {
       if (n <= stage) return false;
       if (n === STAGE.PRESSED) pressedAt = now();
       if (n === STAGE.LOADED && pressedAt !== null) loadMs = Math.max(1, Math.round(now() - pressedAt));
       stage = n;
+      if (n >= STAGE.PRESSED && step < STEP.START) step = STEP.START;
+      post();
+      return true;
+    },
+    // A start-screen step (STEP). Sent only once the visit is open.
+    toStep(n) {
+      if (n <= step) return false;
+      step = n;
       post();
       return true;
     },
     fail() { if (failed) return; failed = true; post(); },
   };
+}
+
+// Crawlers and automated browsers (Google's renderer, the AdSense and Naver
+// bots, headless test runs) open the page like a visitor but never play, so
+// they are left out of the funnel instead of counting as visitors who left.
+export function looksAutomated(nav = globalThis.navigator) {
+  if (!nav) return false;
+  if (nav.webdriver) return true;
+  return /bot\b|bot\/|crawl|spider|slurp|mediapartners|google-inspectiontool|lighthouse|headlesschrome|yeti|bingpreview|facebookexternalhit|embedly|preview/i.test(String(nav.userAgent || ''));
 }

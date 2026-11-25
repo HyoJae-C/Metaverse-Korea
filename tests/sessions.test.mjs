@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  cleanError, cleanSrc, createCounts, createErrorSender, createVisit, deviceClass, firstSrc, newSessionId, someoneNear, STAGE, startSessionReports,
+  cleanError, cleanSrc, createCounts, createErrorSender, createVisit, deviceClass, firstSrc, looksAutomated, newSessionId, someoneNear, STAGE, STEP, startSessionReports,
 } from '../src/core/sessions.js';
 import { countryLabel, funnelRow, ratio, sumCohorts } from '../src/admin/retention.js';
 
@@ -222,4 +222,38 @@ test('016 SQL keeps operators out of every statistics table', () => {
     assert.match(sql, new RegExp(`create trigger skip_operator before insert on public\\.${t}\\b`), t);
   }
   assert.match(sql, /revoke all on function public\.stats_skip_operator\(\) from public, anon, authenticated/);
+});
+
+test('start-screen steps go forward only, ride along with the visit, and Play counts as Start', async () => {
+  const got = [];
+  const v = createVisit({ send: (r) => { got.push({ ...r }); return true; }, isNew: true, readyMs: 2345.6, newId: () => 'v3' });
+  assert.equal(v.toStep(STEP.READY), true);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(got.length, 0, 'nothing is sent before the visit is open');
+  v.reach(STAGE.OPEN);
+  v.toStep(STEP.NEXT); v.toStep(STEP.LOOK);
+  assert.equal(v.toStep(STEP.NEXT), false, 'never goes back');
+  v.reach(STAGE.PRESSED);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(got.map((r) => [r.stage, r.step]), [[1, 1], [1, 2], [1, 3], [2, 5]]);
+  assert.equal(got[0].readyMs, 2346);
+});
+
+test('crawlers and automated browsers stay out of the funnel', () => {
+  assert.equal(looksAutomated({ webdriver: true, userAgent: 'Mozilla/5.0' }), true);
+  for (const ua of ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', 'Mediapartners-Google', 'Mozilla/5.0 HeadlessChrome/120.0', 'Mozilla/5.0 (compatible; Yeti/1.1; +https://naver.me/spd)', 'Mozilla/5.0 (Windows NT 10.0) Chrome-Lighthouse']) {
+    assert.equal(looksAutomated({ userAgent: ua }), true, ua);
+  }
+  for (const ua of ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1', 'Mozilla/5.0 (Linux; Android 14; SM-S918N) AppleWebKit/537.36 Chrome/131.0 Mobile Safari/537.36 SamsungBrowser/26.0', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36 NAVER(inapp; search)']) {
+    assert.equal(looksAutomated({ userAgent: ua }), false, ua);
+  }
+});
+
+test('076 SQL adds the step columns and keeps report_visit callable the old way', () => {
+  const sql = readFileSync(new URL('../supabase/076_start_steps.sql', import.meta.url), 'utf8');
+  assert.match(sql, /add column if not exists step smallint/);
+  assert.match(sql, /add column if not exists ready_ms integer/);
+  assert.match(sql, /p_step int default 0, p_ready_ms int default 0/);
+  assert.match(sql, /revoke all on function public\.report_visit\(uuid, int, int, boolean, boolean, text, text, int, int\) from public, anon/);
+  assert.match(sql, /step = greatest\(v\.step, excluded\.step\)/);
 });

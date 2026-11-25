@@ -447,6 +447,8 @@
         <div class="lang-grid" id="lang-grid"></div>
         <p class="region" id="start-region"></p>
         <button class="primary" id="next-btn" data-i18n="start.next"></button>
+        <!-- Google sign-in is offered here, not asked as a screen of its own (main.js showLogin) -->
+        <a class="login-link" id="login-link" href="#" hidden data-i18n="start.haveSave"></a>
         <p class="disclaimer" data-i18n="app.disclaimer"></p>
         <!-- Google Form for players who want to help build the game (opens in a new tab): a small link
              under the fine print, so "Next" is the only button on this screen (UI check 2026-11-19) -->
@@ -470,21 +472,23 @@
           </div>
           <div class="look-options" id="look-options"></div>
         </div>
+        <div class="start-pick" id="start-pick" hidden>
+          <span class="start-pick-title" data-i18n="start.where"></span>
+          <div class="start-pick-list" id="start-pick-list" role="radiogroup"></div>
+        </div>
         <label class="name-field">
           <span data-i18n="start.nickname"></span>
           <input id="nickname" maxlength="16" autocomplete="off" />
           <small class="name-face" data-i18n="name.face"></small>
           <small class="name-rule" data-i18n="name.rule"></small>
         </label>
-        <label class="name-field referrer-field">
+        <!-- The friend's name field stays folded: one less thing on a first visit -->
+        <button type="button" class="referrer-open" id="referrer-open" data-i18n="start.invited"></button>
+        <label class="name-field referrer-field" id="referrer-field" hidden>
           <span data-i18n="start.referrer"></span>
           <input id="referrer" maxlength="16" autocomplete="off" />
           <small class="name-face" data-i18n="start.referrerHint"></small>
         </label>
-        <div class="start-pick" id="start-pick" hidden>
-          <span class="start-pick-title" data-i18n="start.where"></span>
-          <div class="start-pick-list" id="start-pick-list" role="radiogroup"></div>
-        </div>
         <p class="look-lock" id="look-lock" hidden></p>
         <div class="look-actions">
           <button class="chip" id="back-btn" data-i18n="start.back"></button>
@@ -632,7 +636,8 @@
           <p class="wallet-balance"><b id="welcome-coins">₩0</b></p>
         </div>
         <p id="welcome-body"></p>
-        <ul class="welcome-tips">
+        <!-- (tips kept for the ❓ guide; the first card stays short: one line and the button) -->
+        <ul class="welcome-tips" hidden>
           <li data-i18n="welcome.tip1"></li>
           <li data-i18n="welcome.tip2"></li>
           <li data-i18n="welcome.tip3"></li>

@@ -681,6 +681,8 @@ export const EN = {
   'start.nickname': 'Your nickname',
   'start.referrer': "Friend who invited you (optional)",
   'start.referrerHint': "Type their name and they get ₩50,000. You can leave it empty.",
+  'start.haveSave': "💾 Played before? Sign in with Google",
+  'start.invited': "🎁 Invited by a friend?",
   'referral.nobody': "No player has that name. Check it, or leave it empty.",
   'referral.self': "You can't name yourself. Leave it empty if nobody invited you.",
   'referral.sent': "🎁 Thanks for coming! Your friend got ₩50,000.",

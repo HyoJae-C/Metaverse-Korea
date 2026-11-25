@@ -676,6 +676,8 @@ export const ID = {
   'start.nickname': 'Nama panggilanmu',
   'start.referrer': "Teman yang mengundangmu (opsional)",
   'start.referrerHint': "Ketik namanya dan dia dapat ₩50,000. Boleh dikosongkan.",
+  'start.haveSave': "💾 Pernah main? Masuk dengan Google",
+  'start.invited': "🎁 Diundang teman?",
   'referral.nobody': "Tidak ada pemain dengan nama itu. Periksa lagi atau kosongkan.",
   'referral.self': "Kamu tidak bisa menulis namamu sendiri. Kosongkan jika tidak ada yang mengundang.",
   'referral.sent': "🎁 Terima kasih sudah datang! Temanmu dapat ₩50,000.",

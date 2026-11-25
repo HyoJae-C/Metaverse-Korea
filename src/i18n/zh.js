@@ -682,6 +682,8 @@ export const ZH = {
   'start.nickname': '你的昵称',
   'start.referrer': "邀请你的朋友（可不填）",
   'start.referrerHint': "填写朋友的昵称，朋友会得到₩50,000。也可以不填。",
+  'start.haveSave': "💾 玩过吗？用 Google 登录",
+  'start.invited': "🎁 是朋友邀请你来的吗？",
   'referral.nobody': "没有使用这个昵称的玩家。请检查，或留空。",
   'referral.self': "不能填写自己。没有人邀请你就留空吧。",
   'referral.sent': "🎁 谢谢你来玩！你的朋友得到了₩50,000。",

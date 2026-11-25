@@ -682,6 +682,8 @@ export const KO = {
   'start.nickname': '닉네임',
   'start.referrer': "추천인 닉네임 (선택)",
   'start.referrerHint': "친구 닉네임을 넣으면 친구가 ₩50,000을 받아요. 비워 둬도 돼요.",
+  'start.haveSave': "💾 전에 해 봤나요? 구글로 로그인",
+  'start.invited': "🎁 친구가 초대했나요?",
   'referral.nobody': "그 닉네임을 쓰는 플레이어가 없어요. 다시 확인하거나 비워 두세요.",
   'referral.self': "자기 자신은 추천할 수 없어요. 추천인이 없으면 비워 두세요.",
   'referral.sent': "🎁 와 줘서 고마워요! 친구가 ₩50,000을 받았어요.",
