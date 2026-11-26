@@ -922,18 +922,49 @@ from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
 
 The models are `core/palace-model.js`: Gwanghwamun, Heungnyemun and
 Geunjeongmun, Yeongjegyo over the palace stream, Geunjeongjeon on its
-terraces with the rank stones, Gyeonghoeru, Hyangwonjeong and Amisan have
-their own; all other halls are one merged `palacehalls` landmark and all the
+terraces with the rank stones, Gyeonghoeru and Amisan have
+their own (Hyangwonjeong: `core/palace-garden.js`, below); all other halls are one merged `palacehalls` landmark and all the
 corridors one `cloister` (a few draw calls for the lot). Each ring of
 corridors gets a door on its middle line (OSM draws most gates as part of
 the corridor), and the script checks that every hall and yard can be walked
-to from Gwanghwamun (`--check`, also a test). Where the old halls were pulled
-down (west of the throne hall, north of the ponds) there are lawns, and the
-palace woods line the wall round the north half. The royal procession keeps
+to from Gwanghwamun (`--check`, also a test). The royal procession keeps
 to Geunjeongjeon's court (the 30% gates are too narrow for it two abreast).
 Inside the wall the camera drops and looks up (`game/palace-view.js`), more
 so in the courts, until the player steers it. Visitors in rented hanbok
 stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
+
+### The palace's green and Hyangwonjeong (Yozi, 2026-11-26)
+
+The lawns, woods and trees inside the wall come from OSM too
+(`scripts/extract-gyeongbokgung-grounds.mjs` cuts them out of a Korea extract
+into `scripts/data/gyeongbokgung-grounds-osm.json`;
+`scripts/lib/palace-grounds.mjs` lays them out, drawn by
+`core/palace-garden.js`, which is downloaded when you first walk in):
+
+- **Real:** the lawns (`grass` areas) and woods (`park` areas) on OSM's
+  outlines, cut back from the ponds and paved yards; the trees OSM maps one
+  by one (the first `real` entries of the `palacetrees` landmark: the willows
+  round Gyeonghoeji, the pines on its islets); Hyangwonjeong, the pond,
+  Chwihyanggyo's line to the north bank and Yeolsangjinwon spring.
+- **Made up** (marked `approx`): where the trees stand inside the woods (a
+  loose grid, each thrown off its spot), the clumps along the lawns' edges
+  (the middles stay open, never rows: Yozi 2026-11-24), the ring round
+  Hyangwonji (the south bank is left open: the view of the pavilion), the
+  lotus leaves, the size of Gyeonghoeji's islets, and the two rectangles of
+  lawn the fan dance and the royal procession use (`SHOW_LAWNS`, Yozi
+  2026-11-10; OSM has packed earth and a grove there).
+- Trees keep off buildings, yards, water, the shows and the visitors. They
+  are one `palacetrees` landmark of instanced meshes (a draw call per shape:
+  round, red pine, maple, willow, ginkgo, bush), not the city's street trees
+  (those are capped city-wide). Kinds are told apart by shape; pines stay
+  green, the rest take the season's colours (`core/season.js`).
+- **Hyangwonjeong** is a two-storey hexagonal pavilion at 50% like the other
+  halls. Its island is drawn 4.2 m in radius (OSM: 3.45 m at 1/4) because the
+  pavilion at 50% filled the real one, and Chwihyanggyo is 1.5 m wide (0.4 m
+  at 1/4) so you can walk over its arch to the island: the pond's blocker has
+  the island and the bridge cut out of it, and `isleHeight`
+  (`core/temple-terrace.js`) lifts your feet. In Seoul the bridge is usually
+  shut to visitors. The ponds have a dressed-stone kerb (`pondbank`).
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 

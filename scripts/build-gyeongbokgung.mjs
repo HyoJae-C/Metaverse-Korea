@@ -18,6 +18,10 @@
 //     Geunjeongjeon, Gyeonghoeru and Hyangwonjeong have their own models;
 //     all other buildings are one merged "palacehalls" landmark and the
 //     corridors one "cloister".
+//   - The green is the real one too (scripts/lib/palace-grounds.mjs): the
+//     lawns and woods on OSM's outlines, OSM's trees on their spots and
+//     made-up ones inside the woods and along the lawns' edges; you walk
+//     over Chwihyanggyo to Hyangwonjeong's island.
 //
 // What it writes is marked "gb": 1 (landmarks, blockers, areas), so it can
 // be run again; everything else in the district map is left alone.
@@ -29,11 +33,14 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
 import { obb, rect, sat, inside, planPalace } from './lib/palace-plan.mjs';
-import { ROYAL_ROUTE, ROYAL_ORDER } from '../src/core/palace-show.js';
+import { planGrounds, KIND } from './lib/palace-grounds.mjs';
+import { ROYAL_ROUTE, ROYAL_ORDER, PALACE_VISITORS } from '../src/core/palace-show.js';
+import { FAN_AT, FAN_KEEP } from '../src/core/palace-fan.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'gyeongbokgung.json');
 const osm = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-osm.json'), 'utf8'));
+const green = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-grounds-osm.json'), 'utf8'));
 
 export const FOOT = 2; // footprints: 50% of the real size = 2 × the 1/4 map (Yozi, 2026-11-11; was 30%)
 export const UP = 1; // heights: the palace models are drawn at half the real height (UP 1 = 50%)
@@ -72,7 +79,7 @@ export const OUTLINE = (() => {
 })(); // the palace wall, in the district's metres
 const inPalace = (x, z) => inside(OUTLINE, x, z) && !(x > 45 && z < -95 && x > 45 + (-95 - z) * 0.1); // (the Folk Museum's grounds)
 // Buildings with their own model: name -> how.
-const OWN = { 광화문: 'gwanghwamun', 흥례문: 'palacegate', 근정문: 'palacegate', 근정전: 'throne', 경회루: 'pavilion', 향원정: 'hexpavilion' };
+const OWN = { 광화문: 'gwanghwamun', 흥례문: 'palacegate', 근정문: 'palacegate', 근정전: 'throne', 경회루: 'pavilion', 향원정: 'hyangwonjeong' };
 const NO_RIDGE = new Set(['강녕전', '교태전']);
 const BOARDS = { 사정전: '思政殿', 강녕전: '康寧殿', 교태전: '交泰殿', 자경전: '慈慶殿', 수정전: '修政殿', 흥복전: '興福殿', 집옥재: '集玉齋', 태원전: '泰元殿' };
 
@@ -147,12 +154,10 @@ for (const n of ['흥례문', '근정문']) {
   const cs = Math.cos(a.a), sn = Math.sin(a.a);
   for (const s of [-1, 1]) { const u = s * (2 + (W / 2 - 2) / 2) + 0; blockers.push({ p: rect(x + u * cs, z + u * sn, W / 2 - 2, ch, a.a) }); } // the water either side of the bridge
 }
-// Gyeonghoeru on its pond, Hyangwonjeong on its island.
+// Gyeonghoeru on its pond (Hyangwonjeong on its island: the grounds, below).
 {
   const o = O['경회루'];
   lm.push({ type: 'pavilion', x: r1(o.x), z: r1(o.z), ry: r2(Math.PI / 2 - o.a), sc: [r2(FOOT / 4), 0.5], name: { ko: '경회루', en: 'Gyeonghoeru' }, gb: 1 });
-  const h = O['향원정'];
-  lm.push({ type: 'hexpavilion', x: r1(h.x), z: r1(h.z), sc: SC, bridge: 6, name: { ko: '향원정', en: 'Hyangwonjeong Pavilion' }, gb: 1 });
 }
 logSizes();
 // Amisan (kept at 30%: it fills the gap between two rings of corridors): the garden terraces behind Gyotaejeon (between its corridors and Heungbokjeon's).
@@ -169,11 +174,7 @@ const water = osm.elements.filter((e) => e.kind === 'water').map((e) => ({ name:
 
 // ---------- Write ----------
 const map = JSON.parse(readFileSync(MAP, 'utf8'));
-const OLD = new Set(['gwanghwamun', 'palacegate', 'yeongjegyo', 'cloister', 'throne', 'rankstones', 'pavilion', 'palacehall', 'palacehalls', 'amisan', 'hexpavilion']);
-const inOld = (p) => p.every(([x, z]) => x > -80 && x < 90 && z > -280 && z < 1.5);
-map.landmarks = map.landmarks.filter((l) => !l.gb && !OLD.has(l.type) && !(l.type === 'wall' && inOld(l.p)) && !(l.type === 'blossoms' && inOld(l.p)));
-map.blockers = map.blockers.filter((b) => !b.gb && !inOld(b.p));
-map.areas = map.areas.filter((a) => !a.gb && !inOld(a.p) && !(a.k === 'park' && /palace site/.test(a.why || '')));
+for (const k of ['landmarks', 'blockers', 'areas']) map[k] = map[k].filter((it) => !it.gb); // (only its own: Deoksugung's gate and Cheong Wa Dae are other scripts')
 const wallH = 3.5;
 const gaps = []; // the wall's gates: Gwanghwamun (south), Geonchunmun (east), Sinmumun (north), Yeongchumun (west)
 const wallPts = OUTLINE.map(([x, z]) => [r1(x), r1(z)]);
@@ -197,48 +198,40 @@ map.blockers.push(...blockers.map((b) => ({ ...b, gb: 1 })));
   map.areas.push({ k: 'park', gb: 1, p: [[X0, -440], [X1, -440], [X1, Z1], [X0, Z1]] });
   map.areas.push({ k: 'park', gb: 1, p: [[r1(wallPts.at(-1)[0]), 0.9], [X0, 0.9], [X0, Z1], [X1, Z1], [X1, 0.9], [r1(wallPts[0][0]), 0.9], ...wallPts] });
 }
-// Lawns inside the wall, where the old halls stood (most were pulled down in
-// the 1910s; today they are grass between gravel paths).
-export const LAWNS = [
-  [-56, -30, -18, -83], // west of the throne hall's courts (the old government offices, 궐내각사)
-  [23, -30, 52, -76], // east of them, before the crown prince's quarters
-  [-45, -126, -14, -200], // north of Gyeonghoeru's pond
-  [20, -132, 52, -200], // north of Jagyeongjeon
-];
-for (const [x0, z0, x1, z1] of LAWNS) {
-  const P = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
-  map.areas.push({ k: 'grass', gb: 1, p: P });
-}
-// The palace woods: trees inside the wall round the north half (green in
-// summer, red in autumn), every 7 m along a line 4.5 m in from the wall,
-// leaving out the spots on a building (so the woods come in a few runs).
-{
-  const line = [];
-  for (const [x, z] of wallPts) if (z < -105) { const dx = x - 2, dz = z + 110, l = Math.hypot(dx, dz) || 1; line.push([x - (dx / l) * 4.5, z - (dz / l) * 4.5]); }
-  const near = (x, z) => blockers.some((b) => [[0, 0], [2.5, 0], [-2.5, 0], [0, 2.5], [0, -2.5]].some(([dx, dz]) => inside(b.p, x + dx, z + dz))) || water.some((w) => inside(w.p, x, z));
-  let run = [];
-  const runs2 = [];
-  for (let i = 1; i < line.length; i++) {
-    const [x0, z0] = line[i - 1], [x1, z1] = line[i], n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / 7));
-    for (let k = 0; k < n; k++) {
-      const x = x0 + ((x1 - x0) * k) / n, z = z0 + ((z1 - z0) * k) / n;
-      if (near(x, z)) { if (run.length > 1) runs2.push(run); run = []; } else run.push([r1(x), r1(z)]);
-    }
-  }
-  if (run.length > 1) runs2.push(run);
-  for (const p of runs2) map.landmarks.push({ type: 'blossoms', seasonal: true, gap: 7, inner: true, gb: 1, why: 'the palace woods along the wall', p });
-}
+// ---------- The grounds: lawns, woods, trees, Hyangwonjeong's island ----------
+// The island is drawn bigger than the 1/4 map (OSM: 3.45 m across its
+// radius; the pavilion on it is at 50%, twice the map, and filled it), and
+// the bridge wider (0.4 m at 1/4: you could not walk over it).
+export const ISLE = [4.2, 0.4], BRIDGE = [1.5, 0.55]; // [radius, its top above the water], [width, the arch's rise]
+const amisan = lm.find((l) => l.type === 'amisan');
+// The two lawns the shows stand on, either side of the corridors round
+// Heungnyemun and Geunjeongjeon (Yozi, 2026-11-10): drawn as plain
+// rectangles. Made up: OSM has packed earth, smaller lawns and a grove here.
+export const SHOW_LAWNS = { fan: [-56, -30, -18, -83], king: [23, -30, 52, -76] };
+const grounds = planGrounds({
+  grounds: green, local, wall: wallPts, solids: blockers.map((b) => b.p), yards: yards.map((y) => rect(y.x, y.z, y.w, y.d, y.a)), ponds: water,
+  keepRects: routeClear,
+  keepCircles: [[FAN_AT[0], FAN_AT[1], FAN_KEEP + 1.5], ...PALACE_VISITORS.map(([x, z]) => [x, z, 2.2]), [0, -79, 3], [amisan.x, amisan.z - 3, 7]],
+  stages: Object.entries(SHOW_LAWNS).map(([show, [x0, z0, x1, z1]]) => ({ p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], show, approx: 1, why: `the ${show === 'fan' ? 'fan dance' : 'royal procession'}'s lawn (Yozi 2026-11-10): a made-up rectangle, not OSM's lawns` })),
+  hyang: { x: r1(O['향원정'].x), z: r1(O['향원정'].z) }, ISLE, BRIDGE,
+});
+export { KIND };
+map.areas.push(...grounds.areas);
+map.landmarks.push(...grounds.landmarks);
 for (const y of yards) map.areas.push({ k: 'stone', p: rect(y.x, y.z, y.w, y.d, y.a), gb: 1 });
+const hyangji = water.find((w) => inside(w.p, O['향원정'].x, O['향원정'].z));
 for (const w of water) {
   map.areas.push({ k: 'water', p: w.p, gb: 1, why: w.name });
-  map.blockers.push({ p: w.p, gb: 1 });
+  if (w !== hyangji) map.blockers.push({ p: w.p, gb: 1 });
 }
+map.blockers.push(...grounds.blockers.map((b) => ({ ...b, gb: 1 }))); // Hyangwonji with the island and the bridge cut out, the pavilion, the spring
 const xs = wallPts.map((p) => p[0]), zs = wallPts.map((p) => p[1]);
 map.meta.enclosure.box = [Math.floor(Math.min(...xs)), 0, Math.ceil(Math.max(...xs)), Math.floor(Math.min(...zs))];
 // (leaf arrays such as a point [x, z] or a box on one line, the rest indented)
 const pretty = (o) => JSON.stringify(o, null, 2).replace(/\[\s*([^\[\]{}]*?)\s*\]/g, (m, body) => '[' + body.split(/,\s*/).join(', ') + ']');
 if (!process.argv.includes('--dry')) writeFileSync(MAP, pretty(map) + '\n');
 console.log(`halls ${halls.length}, corridor runs ${runs.length}, own models ${own.length}, blockers ${blockers.length}, yards ${yards.length}, water ${water.length}`);
+console.log('grounds:', JSON.stringify(grounds.stats));
 
 // ---------- A plan, to compare with the real map ----------
 const si = process.argv.indexOf('--svg');
@@ -247,10 +240,15 @@ if (si > 0) {
   let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${Hh}"><rect width="100%" height="100%" fill="#f4f1ea"/>`;
   s += `<polygon points="${wallPts.map(P).join(' ')}" fill="#e9e2d2" stroke="#555" stroke-width="4"/>`;
   for (const y of yards) s += `<polygon points="${rect(y.x, y.z, y.w, y.d, y.a).map(P).join(' ')}" fill="#d9d0bd"/>`;
+  const holed = (a) => [a.p, ...(a.holes || [])].map((r) => 'M' + r.map(P).join('L') + 'Z').join('');
+  for (const a of grounds.lawns) s += `<path d="${holed(a)}" fill="#cfe8a8" fill-rule="evenodd"/>`;
+  for (const a of grounds.woods) s += `<path d="${holed(a)}" fill="#9cc98a" fill-rule="evenodd"/>`;
   for (const w of water) s += `<polygon points="${w.p.map(P).join(' ')}" fill="#9cc7e8"/>`;
+  for (const b of grounds.pondBlockers) s += `<polygon points="${b.p.map(P).join(' ')}" fill="#5aa0d6"/>`;
   for (const e of osm.elements) if (e.kind === 'building') s += `<polygon points="${e.pts.map(local).map(P).join(' ')}" fill="none" stroke="#b5562f" stroke-width="1.5"/>`;
   for (const b of blockers) s += `<polygon points="${b.p.map(P).join(' ')}" fill="#1f5fbf" fill-opacity="0.55"/>`;
   for (const h of halls) if (h.kind === 'r') s += `<polygon points="${rect(h.x, h.z, h.w, h.d, -h.ry).map(P).join(' ')}" fill="#e08a1e" fill-opacity="0.85"/>`; // the plain blocks
+  grounds.trees.forEach(([x, z, sz, kind], i) => { s += `<circle cx="${(x - X0) * K}" cy="${(z - Z0) * K}" r="${(kind === KIND.bush ? 0.6 : 1.25) * sz * K}" fill="${i < grounds.real ? '#1f7a36' : '#e0559a'}" fill-opacity="0.7"/>`; }); // green: OSM's trees; pink: made up
   s += '</svg>';
   writeFileSync(process.argv[si + 1], s);
 }
@@ -262,7 +260,7 @@ if (si > 0) {
 {
   const R = 0.4, X0 = -80, Z0 = -230, nx = Math.ceil(170 / R), nz = Math.ceil(235 / R);
   const bad = new Uint8Array(nx * nz);
-  const all = blockers.concat(water.map((w) => ({ p: w.p })));
+  const all = blockers.concat(water.filter((w) => w !== hyangji).map((w) => ({ p: w.p })), grounds.blockers);
   for (const b of all) {
     const xs = b.p.map((q) => q[0]), zs = b.p.map((q) => q[1]);
     for (let i = Math.max(0, Math.floor((Math.min(...xs) - 0.4 - X0) / R)); i <= Math.min(nx - 1, Math.ceil((Math.max(...xs) + 0.4 - X0) / R)); i++)
@@ -296,6 +294,10 @@ if (si > 0) {
     let ok = false;
     for (let u = -y.w / 2 + 2.5; u < y.w / 2 - 2.5 && !ok; u += 0.8) for (let v = -y.d / 2 + 2.5; v < y.d / 2 - 2.5 && !ok; v += 0.8) ok = !!seen[cell(y.x + u * cs - v * sn, y.z + u * sn + v * cs)];
     if (!ok) shut.push(`yard at ${r1(y.x)},${r1(y.z)}`);
+  }
+  { // over Chwihyanggyo to the island, beside the pavilion
+    const [sx, sz] = grounds.span, L = Math.hypot(sx, sz), h = O['향원정'], d = ISLE[0] - 0.7;
+    if (!reach(h.x + (sz / L) * d, h.z - (sx / L) * d)) shut.push("Hyangwonjeong's island");
   }
   console.log(shut.length ? 'cannot walk to: ' + shut.join('; ') : 'every hall and yard can be walked to');
   if (process.argv.includes('--check') && shut.length) process.exitCode = 1;
