@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 globalThis.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
-const { checkSend, parseAmount, MEMOS } = await import('../src/core/bank.js');
-const { BANK_TEXT } = await import('../src/ui/bank-ui.js');
+const { checkSend, parseAmount, sendCap, MEMOS } = await import('../src/core/bank.js');
+const { BANK_TEXT, whyText } = await import('../src/ui/bank-ui.js');
 const { CloudSave } = await import('../src/core/cloud-save.js');
 
 const read = (f) => readFileSync(new URL('../' + f, import.meta.url), 'utf8');
@@ -41,7 +41,14 @@ test('closed ("coming soon") unless the server says this account may send', asyn
   assert.equal((await cloudWith({}, null).bankStatus()).open, false, 'not signed in');
   assert.equal((await cloudWith({ bank_status: { data: { status: 'ok', open: false, min: 1000, max: 500000 } } }).bankStatus()).open, false);
   assert.equal((await cloudWith({ bank_status: { data: { status: 'ok', open: 'yes' } } }).bankStatus()).open, false, 'only a real true opens it');
-  assert.deepEqual(await cloudWith({ bank_status: { data: { status: 'ok', open: true, min: 1000, max: 500000 } } }).bankStatus(), { open: true, min: 1000, max: 500000 });
+  const before077 = await cloudWith({ bank_status: { data: { status: 'ok', open: true, min: 1000, max: 500000 } } }).bankStatus();
+  assert.equal(before077.open, true);
+  assert.equal(before077.max, 500000);
+  assert.equal(before077.ready, true, 'before 077: no rules');
+  assert.equal(before077.left, null);
+  assert.equal(before077.keep, 0);
+  const st = await cloudWith({ bank_status: { data: { status: 'ok', open: true, min: 1000, max: 250000, op: false, ready: false, days: 3, missions: 12, min_days: 7, min_missions: 35, keep: 1000000, day_max: 250000, left: 50000, friends_only: true } } }).bankStatus();
+  assert.deepEqual(st, { open: true, min: 1000, max: 250000, op: false, ready: false, days: 3, missions: 12, minDays: 7, minMissions: 35, keep: 1000000, dayMax: 250000, left: 50000, friendsOnly: true });
 });
 
 test('sending asks the server once, and news of money sent to me', async () => {
@@ -76,4 +83,41 @@ test('Seoul Bank stands in Euljiro, and the teller speaks every language', () =>
     for (const [k, v] of Object.entries(o)) walk(v, `${path}.${k}`);
   };
   walk(BANK_TEXT, 'BANK_TEXT');
+});
+
+test('side-account rules: keep 1,000,000 and send 250,000 a day at most (077)', () => {
+  const base = { to: 'Mina', n: 200000, balance: 1300000, min: 1000, max: 250000, me: 'Yozi', keep: 1000000, left: 250000 };
+  assert.equal(checkSend(base), null);
+  assert.equal(checkSend({ ...base, n: 250001 }), 'amount', 'over one transfer');
+  assert.equal(checkSend({ ...base, balance: 1150000 }), 'keep', 'would leave 950,000');
+  assert.equal(checkSend({ ...base, balance: 1200000 }), null, 'leaves exactly 1,000,000');
+  assert.equal(checkSend({ ...base, left: 100000 }), 'daylimit');
+  assert.equal(checkSend({ ...base, balance: 5000000, keep: 0, left: null, n: 250000 }), null, 'operators: no keep, no daily limit');
+  assert.equal(sendCap({ balance: 1150000, max: 250000, keep: 1000000, left: 250000 }), 150000);
+  assert.equal(sendCap({ balance: 3000000, max: 250000, keep: 1000000, left: 40000 }), 40000);
+  assert.equal(sendCap({ balance: 900000, max: 250000, keep: 1000000, left: 250000 }), 0);
+  assert.equal(sendCap({ balance: 9000000, max: 250000 }), 250000);
+});
+
+test('the bank says why, with the numbers', () => {
+  globalThis.localStorage = { getItem: () => 'en', setItem: () => {}, removeItem: () => {} };
+  for (const k of ['young', 'keep', 'daylimit', 'notfriend']) assert.ok(BANK_TEXT.why[k]?.ko, k);
+  const t = whyText('young', { days: 3, missions: 12, minDays: 7, minMissions: 35 });
+  assert.ok(t.includes('7') && t.includes('35') && t.includes('12'), t);
+  assert.ok(!whyText('keep', { keep: 1000000, cap: 150000 }).includes('{'));
+  assert.ok(!whyText('daylimit', { dayMax: 250000, left: 0 }).includes('{'));
+});
+
+test('the server checks the side-account rules, not just the form (077)', () => {
+  const sql = read('supabase/077_bank_rules.sql');
+  assert.match(sql, /bank_keep bigint not null default 1000000/);
+  assert.match(sql, /bank_day_max bigint not null default 250000/);
+  assert.match(sql, /bank_friends_only boolean not null default true/);
+  assert.match(sql, /not v_op and not public\.gift_ready\(uid\)/, '7 days + 35 missions, same as gifts');
+  assert.match(sql, /not public\.are_friends\(uid, v_to\)/);
+  assert.match(sql, /w\.coins - p_n < s\.bank_keep/);
+  assert.match(sql, /bank_sent_today\(uid\) \+ p_n > s\.bank_day_max/);
+  assert.match(sql, /at time zone 'Asia\/Seoul'/, 'a Korean day');
+  // The rules are checked after the sender's wallet is locked, so two sends at once can't both fit.
+  assert.ok(sql.indexOf('for update') < sql.indexOf('bank_sent_today(uid) + p_n'));
 });

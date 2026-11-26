@@ -1,7 +1,9 @@
 // Seoul Bank (서울은행): talk to the teller to send won to another player.
 // The server moves the money (supabase/028_bank.sql) and decides who may:
-// operators only for now, so everyone else hears "coming soon".
-import { checkSend, parseAmount } from '../core/bank.js';
+// operators only for now, so everyone else hears "coming soon". Once open,
+// 077_bank_rules.sql holds side accounts back (7 days + 35 missions,
+// 1,000,000 kept, 250,000 a day, friends only).
+import { checkSend, parseAmount, sendCap } from '../core/bank.js';
 import { BankUI, BANK_TEXT, L, fmt, memoText, whyText } from '../ui/bank-ui.js';
 import { localName, getLanguage } from '../core/i18n.js';
 import { newOpId } from '../core/wallet.js';
@@ -20,21 +22,26 @@ export function createBank(game) {
     const st = await cloud.bankStatus();
     if (my !== asking || !ui.open || !inBank()) return;
     if (!st.open) { ui.soon(bankName()); return; }
+    if (!st.ready) { ui.notYet(bankName(), st); return; } // 077: 7 days + 35 missions
     await game.wallet.flush?.(); // so the balance shown is the server's
     if (my !== asking || !ui.open) return;
     ui.form({
       bank: bankName(), coins: game.wallet.coins, min: st.min, max: st.max,
+      keep: st.keep, left: st.left, friendsOnly: st.friendsOnly, op: st.op,
       people: game.peopleHere(),
       onSend: async ({ to, amountText, memo }) => {
         const n = parseAmount(amountText);
         const name = String(to).trim();
-        const why = checkSend({ to: name, n, balance: game.wallet.coins, min: st.min, max: st.max, me: game.nickname });
-        if (why) return whyText(why, st);
+        const balance = game.wallet.coins;
+        const why = checkSend({ to: name, n, balance, min: st.min, max: st.max, me: game.nickname, keep: st.keep, left: st.left });
+        const ctx = { ...st, cap: sendCap({ balance, max: st.max, keep: st.keep, left: st.left }) };
+        if (why) return whyText(why, ctx);
         // Asked like any payment (it goes to the server, not wallet.spend()).
         // A no keeps the form open (a blank, non-empty answer).
         if (game.wallet.askSpend && !game.wallet.askSpend(n, { k: 'ledger.bankOut', v: { name } })) return ' ';
         const r = await cloud.bankSend({ op: newOpId(), to: name, n, memo });
-        if (r.status !== 'ok') return whyText(r.status, st);
+        if (r.status !== 'ok') return whyText(r.status, ctx);
+        if (st.left != null) st.left = Math.max(0, st.left - n);
         const shown = r.name || name;
         game.wallet.charged(n, r, { k: 'ledger.bankOut', v: { name: shown } });
         refreshWallet();

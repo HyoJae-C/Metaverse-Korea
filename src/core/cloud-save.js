@@ -342,7 +342,8 @@ export class CloudSave {
     } catch { return null; }
   }
 
-  // Seoul Bank (028_bank.sql). Can I send? { open, min, max }; open is false
+  // Seoul Bank (028_bank.sql, rules 077). Can I send? { open, min, max, op,
+  // ready, days, missions, minDays, minMissions, keep, dayMax, left, friendsOnly }; open is false
   // when it can't be asked (SQL not run, offline, not signed in): then the
   // teller only says transfers are coming soon.
   async bankStatus(timeoutMs = 4000) {
@@ -352,7 +353,14 @@ export class CloudSave {
       const call = this.client.rpc('bank_status');
       const { data, error } = await Promise.race([call, new Promise((r) => setTimeout(() => r({ error: 'timeout' }), timeoutMs))]);
       if (error || data?.status !== 'ok') return closed;
-      return { open: data.open === true, min: Math.max(1, Math.round(Number(data.min) || 0)), max: Math.max(0, Math.round(Number(data.max) || 0)) };
+      const num = (v) => Math.max(0, Math.round(Number(v) || 0));
+      // 077_bank_rules.sql: who may send and how much (before 077: no rules).
+      return {
+        open: data.open === true, min: Math.max(1, num(data.min)), max: num(data.max),
+        op: data.op === true, ready: data.ready !== false,
+        days: num(data.days), missions: num(data.missions), minDays: num(data.min_days), minMissions: num(data.min_missions),
+        keep: num(data.keep), dayMax: num(data.day_max), left: data.left == null ? null : num(data.left), friendsOnly: data.friends_only === true,
+      };
     } catch { return closed; }
   }
 
