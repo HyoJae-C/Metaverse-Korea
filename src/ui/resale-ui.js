@@ -86,8 +86,11 @@ export class ResaleUI {
   // to show in the panel (or nothing). The rack: rack() → { pct, rows: [{
   // item, price, n, have }] } or null (closed); onOpen() → Promise (fetch the
   // rack); onBuy(row) → Promise of a message.
-  constructor({ root, pct, list, wearing, onSell, rack = () => null, onOpen = null, onBuy = null }) {
+  // ask(question) → Promise of true/false: the game's own yes/no panel
+  // (game/spend-ask.js wallet.askYes), not the browser's confirm().
+  constructor({ root, pct, list, wearing, onSell, rack = () => null, onOpen = null, onBuy = null, ask = null }) {
     Object.assign(this, { root, pct, list, wearing, onSell, rack, onOpen, onBuy });
+    this.ask = ask || ((q) => Promise.resolve(confirm(q)));
     this.busy = false;
   }
 
@@ -120,7 +123,8 @@ export class ResaleUI {
       const sell = el('button', 'chip', fmt(L(RESALE_TEXT.sell), { n: r.coins }));
       sell.disabled = this.busy;
       sell.onclick = async () => {
-        if (this.busy || !confirm(fmt(L(RESALE_TEXT.ask), { name, n: r.coins }))) return;
+        if (this.busy || !(await this.ask(fmt(L(RESALE_TEXT.ask), { name, n: r.coins })))) return;
+        if (this.busy || !this.open) return;
         this.busy = true;
         list.querySelectorAll('button').forEach((b) => { b.disabled = true; });
         sell.textContent = L(RESALE_TEXT.checking);
@@ -151,7 +155,8 @@ export class ResaleUI {
       const buy = el('button', 'chip', t('used.buy', { n: r.price }));
       buy.disabled = this.busy || r.have;
       buy.onclick = async () => {
-        if (this.busy || !confirm(t('used.ask', { name, n: r.price }))) return;
+        if (this.busy || !(await this.ask(t('used.ask', { name, n: r.price })))) return;
+        if (this.busy || !this.open) return;
         this.busy = true;
         this.root.querySelectorAll('button.chip').forEach((b) => { b.disabled = true; });
         buy.textContent = L(RESALE_TEXT.checking);

@@ -4552,6 +4552,7 @@ const resaleUi = lazyPanel(() => import('./ui/resale-ui.js').then(({ ResaleUI })
   rack: () => usedRack.view(),
   onOpen: () => usedRack.refresh(),
   onBuy: (r) => usedRack.buy(r),
+  ask: (q) => (wallet.askYes ? wallet.askYes(q) : Promise.resolve(confirm(q))),
 })));
 let selling = false; // one sale at a time
 async function sellClothes({ id }) {

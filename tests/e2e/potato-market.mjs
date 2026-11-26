@@ -25,6 +25,7 @@ await page.waitForTimeout(1500);
 await page.evaluate(() => __mk.product(2));
 await page.waitForSelector('#product-adopt:not([hidden])');
 await page.click('#product-adopt');
+if (await page.waitForSelector('.spend-ask:not([hidden])', { timeout: 2000 }).catch(() => null)) await page.click('.spend-ask .primary'); // "Spend ₩…?" (game/spend-ask.js)
 await page.waitForTimeout(500);
 await page.evaluate(() => __mk.leave());
 await page.waitForTimeout(1000);
@@ -79,6 +80,7 @@ await page.waitForSelector('.potato-panel:not([hidden]) .fish-row button.chip', 
 console.log('panel:', (await page.textContent('.potato-panel')).replace(/\s+/g, ' '));
 if (S) await page.screenshot({ path: S + '/potato-panel.png' });
 await page.click('.potato-panel .fish-row button.chip');
+await page.click('.spend-ask:not([hidden]) .primary', { timeout: 3000 }); // (the game's own question, not the browser's)
 await page.waitForFunction(() => __mk.items().includes('acc-cap-red'), null, { timeout: 8000 }).catch(() => {});
 assert((await page.evaluate(() => __mk.items())).includes('acc-cap-red'), 'bought Mina\'s cap');
 assert((await page.evaluate(() => __mk.coins())) === 430000 - 9000, 'paid ₩9,000');
