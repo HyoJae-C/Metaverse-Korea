@@ -22,9 +22,9 @@ const roundS = (top) => top / TREE_TOP, pineS = (top) => top / PINE_TOP;
 const treeWidth = (s) => (s < 1 ? s ** 0.6 : s);
 const HALF_TREE_DISTRICTS = new Set(['seongsu', 'olympic-park', 'mangwon', 'banpo-jamwon', 'yeouido', 'grand-park']);
 const HALF_TREE_MIN_AREA = 2000; // m2: a park this big in those districts is a "big park"
-// Gyeongbokgung's district keeps its old trees for now: its palace grounds
-// are being redrawn on their own (PR #946), and get rule 13 there.
-const OLD_TREE_DISTRICTS = new Set(['gyeongbokgung']);
+// Districts still on the old tree sizes (none now: the palace grounds draw
+// their own trees at real / 4, PR #946, and these follow the same rule).
+const OLD_TREE_DISTRICTS = new Set();
 const TEMPLE_SCALE = 0.375; // temples are drawn whole at 37.5% (map rule 10)
 // A ginkgo's crown (Yozi 2026-11-20, from a photo of an old ginkgo): a wide,
 // lumpy crown of four clumps spreading out over a thick trunk. Four plain
