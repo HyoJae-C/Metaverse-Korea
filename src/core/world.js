@@ -221,12 +221,65 @@ function makeGround(b, holes = []) {
   const x0 = b.minX - pad, x1 = b.maxX + pad, z0 = b.minZ - pad, z1 = b.maxZ + pad;
   const shape = toShape([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
   for (const h of holes) shape.holes.push(new THREE.Path(h.map(([x, z]) => new THREE.Vector2(x, -z))));
-  const geo = new THREE.ShapeGeometry(shape);
-  geo.rotateX(-Math.PI / 2);
+  const flat = new THREE.ShapeGeometry(shape);
+  flat.rotateX(-Math.PI / 2);
+  const geo = splitLongEdges(flat, GROUND_EDGE);
+  flat.dispose();
   const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORS.ground }));
   mesh.name = 'ground';
   mesh.receiveShadow = true;
   return mesh;
+}
+
+// The ground is one rectangle over the whole city with holes in it, and the
+// triangles joining a hole to a far corner are kilometres long. Across such a
+// triangle the depth the GPU works out is off by more than the 2 cm a lawn or
+// a pond lies above the ground, so from some spots they vanished under it
+// (Hyangwonji from its east bank). So every edge longer than `max` is halved
+// until none is left. An edge is split at the same point for both triangles
+// on it, so no gaps open.
+export const GROUND_EDGE = 800;
+export function splitLongEdges(geo, max) {
+  const pos = Array.from(geo.attributes.position.array);
+  let idx = Array.from(geo.index.array);
+  const long = (a, b) => Math.hypot(pos[a * 3] - pos[b * 3], pos[a * 3 + 2] - pos[b * 3 + 2]) > max;
+  for (let pass = 0; pass < 16; pass++) {
+    const mids = new Map();
+    const mid = (a, b) => {
+      if (!long(a, b)) return -1;
+      const k = a < b ? a * 1e7 + b : b * 1e7 + a;
+      if (!mids.has(k)) {
+        mids.set(k, pos.length / 3);
+        pos.push((pos[a * 3] + pos[b * 3]) / 2, (pos[a * 3 + 1] + pos[b * 3 + 1]) / 2, (pos[a * 3 + 2] + pos[b * 3 + 2]) / 2);
+      }
+      return mids.get(k);
+    };
+    const next = [];
+    for (let i = 0; i < idx.length; i += 3) {
+      const a = idx[i], b = idx[i + 1], c = idx[i + 2];
+      const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a);
+      const n = (ab >= 0) + (bc >= 0) + (ca >= 0);
+      if (!n) next.push(a, b, c);
+      else if (n === 3) next.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
+      else if (n === 1) {
+        if (ab >= 0) next.push(a, ab, c, ab, b, c);
+        else if (bc >= 0) next.push(a, b, bc, a, bc, c);
+        else next.push(a, b, ca, ca, b, c);
+      } else if (ab < 0) next.push(c, ca, bc, a, b, bc, a, bc, ca);
+      else if (bc < 0) next.push(a, ab, ca, ab, b, c, ab, c, ca);
+      else next.push(b, bc, ab, a, ab, bc, a, bc, c);
+    }
+    idx = next;
+    if (!mids.size) break;
+  }
+  const out = new THREE.BufferGeometry();
+  const count = pos.length / 3, normal = new Float32Array(count * 3), uv = new Float32Array(count * 2);
+  for (let i = 0; i < count; i++) { normal[i * 3 + 1] = 1; uv[i * 2] = pos[i * 3]; uv[i * 2 + 1] = -pos[i * 3 + 2]; }
+  out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(normal, 3));
+  out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  out.setIndex(idx);
+  return out;
 }
 
 // Polygon in [x,z] → THREE.Shape in (x, -z) so that rotating the shape

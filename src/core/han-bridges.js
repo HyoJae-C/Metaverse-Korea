@@ -16,6 +16,16 @@ export const TOP = 5.5; // m: the deck's top over the river (underside 1.4 m low
 export const RAMP = 60; // m: up from each bank
 export const JAMSU = { top: 5, flat: 16, ramp: 34, low: 0.3, end: 6 };
 const MAJOR = new Set(['motorway', 'trunk', 'primary', 'secondary']);
+// A bridge whose road changes name halfway (scripts/build-base.mjs joins the
+// two: n, then n2 past it) is called by the bridge's own name over the river.
+// (Seongsu and Yeongdong Bridges, Yozi 2026-11-26: the first between Seongsu
+// and Gangnam. Both on OpenStreetMap's line, median 0.1 m; why: Yeongdong's
+// north end is up to 14 m east of it, where it meets Seongsu's Dongil-ro,
+// which runs 17-21 m east of the real road.)
+const NAMES = {
+  '고산자로|언주로': { ko: '성수대교', en: 'Seongsu Bridge', ja: '聖水大橋', zh: '圣水大桥' },
+  '동일로|영동대로': { ko: '영동대교', en: 'Yeongdong Bridge', ja: '永東大橋', zh: '永东大桥' },
+};
 const LAND_GAP = 150; // m of land along it that still counts as one bridge (an island it crosses)
 const smooth = (k) => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
 
@@ -83,7 +93,8 @@ export function raiseHanBridges(map, route, paths = [route]) {
     };
     const a = Math.max(0, reach(-1) - 2), b = Math.min(len, reach(1) + 2);
     if (b - a < 30) continue;
-    const name = r.n?.ko || '';
+    const own = NAMES[`${r.n?.ko}|${r.n2?.ko}`];
+    const name = own?.ko || r.n?.ko || '';
     const jamsu = name === '잠수교';
     const pts = [at(a)];
     for (let i = 1; i < r.p.length - 1; i++) if (lens[i] > a && lens[i] < b) pts.push(r.p[i]);
@@ -123,13 +134,18 @@ export function raiseHanBridges(map, route, paths = [route]) {
       }
     }
     const first = Math.min(...hits.filter((h) => h > 0 && h < blen)), last = Math.max(...hits.filter((h) => h > 0 && h < blen));
-    const ramp = [Math.max(14, Math.min(RAMP, blen / 3, (first - 6) / 0.8)), Math.max(14, Math.min(RAMP, blen / 3, (blen - last - 6) / 0.8))];
-    bridges.push({ name, en: r.n?.en || '', w: (r.w || 14) + 1, pts, len: blen, top: TOP, ramp, low: jamsu ? JAMSU.low : 0, jamsu, mid: sc - a, d: r.d });
+    // (and all the way up where the boat line crosses: Seongsu Bridge's channel
+    // is 54 m from its south end, 2026-11-26)
+    const at0 = sc - a;
+    const ramp = [Math.max(14, Math.min(RAMP, blen / 3, (first - 6) / 0.8, at0 - 4)), Math.max(14, Math.min(RAMP, blen / 3, (blen - last - 6) / 0.8, blen - at0 - 4))];
+    bridges.push({ name, en: own?.en || r.n?.en || '', w: (r.w || 14) + 1, pts, len: blen, top: TOP, ramp, low: jamsu ? JAMSU.low : 0, jamsu, mid: sc - a, d: r.d });
     // The road: the land before, the bridge (not drawn flat), the land after.
     const before = r.p.filter((_, i) => lens[i] < a), after = r.p.filter((_, i) => lens[i] > b);
     // (split: an extra piece of a road cut in three; the first piece stays the road itself)
-    const mid = { ...r, p: pts, bridge: bridges.length, split: before.length > 0 };
-    if (after.length) add.push({ ...r, p: [ends[1], ...after], split: true });
+    const { n2, ...road } = r;
+    const mid = { ...road, ...(own ? { n: own } : {}), p: pts, bridge: bridges.length, split: before.length > 0 };
+    if (after.length) add.push({ ...road, ...(n2 ? { n: n2 } : {}), p: [ends[1], ...after], split: true });
+    delete r.n2;
     r.p = before.length ? [...before, ends[0]] : null;
     add.push(mid);
   }
