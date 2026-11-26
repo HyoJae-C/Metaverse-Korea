@@ -6564,7 +6564,7 @@ walletReady.then(async () => {
   };
   news();
   setInterval(news, 10 * 60 * 1000);
-  // After 30 minutes of play in all, once: a link to invite friends (game/share-invite.js).
+  // After 15 minutes of play in all, once: a link to invite friends (game/share-invite.js).
   createShareInvite({
     $, t, toast: (m) => shop.toast(m), name: () => identity.name,
     playing: () => !document.hidden && !tabParked && !!me?.root,

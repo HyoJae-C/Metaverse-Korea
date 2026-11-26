@@ -15,13 +15,13 @@ test('the invite link carries my name and marks the friend as invited', () => {
   assert.equal(refFromSearch('', cleanName), '');
 });
 
-test('the card is due after 30 minutes in all, and never again once asked', () => {
+test('the card is due after 15 minutes in all, and never again once asked', () => {
   let m = 0;
   let due = false;
   for (let i = 0; i < ASK_AFTER_MIN - 1; i++) ({ minutes: m, due } = tickMinute(m, false));
   assert.equal(due, false);
   ({ minutes: m, due } = tickMinute(m, false));
-  assert.equal(m, 30);
+  assert.equal(m, 15);
   assert.equal(due, true);
   assert.deepEqual(tickMinute(45, true), { minutes: 45, due: false });
 });

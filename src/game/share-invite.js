@@ -1,4 +1,4 @@
-// "Invite a friend": once a player has played 30 minutes in all, a card
+// "Invite a friend": once a player has played 15 minutes in all, a card
 // offers them a link to share, once ever. The link carries their name
 // (?ref=), and the start screen fills it into "Friend who invited you", so a
 // friend who joins with it pays them through the existing friend invites
@@ -10,7 +10,7 @@
 // save. Counting stops once the card has been shown. The card itself loads
 // with import() when it's due (ui/share-invite-ui.js).
 
-export const ASK_AFTER_MIN = 30;
+export const ASK_AFTER_MIN = 15;
 const MIN_KEY = 'mk.playMin';
 const ASKED_KEY = 'mk.shareAsked';
 
