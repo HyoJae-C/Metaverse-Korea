@@ -3,7 +3,8 @@
 // through the palace wall, and this file is downloaded then):
 //   hyangwonjeong  Hyangwonjeong (향원정) on its round island in Hyangwonji,
 //                  and Chwihyanggyo (취향교), the white arched bridge to the
-//                  north bank. l.isle = [r, top], l.span = [dx, dz, w, rise]
+//                  north bank. l.isle = [r, top], l.span = [dx, dz, w, rise],
+//                  l.sc = [across, up]: the pavilion's size (1 = half the real one)
 //                  (the bridge's shore end from the pavilion; the same
 //                  numbers lift your feet: core/temple-terrace.js isleHeight)
 //   pondbank       the dressed-stone banks of the ponds (l.rings: lines of corners),
@@ -13,8 +14,9 @@
 //                  meshes: l.t = [x, z, size, kind, ...] (KIND below);
 //                  l.up = [[x, z, r, y]]: those within r of a spot stand
 //                  y up (on Hyangwonjeong's island)
-// The pavilion is drawn at half the real size (about 9 m high and 11 m
-// across the eaves in Seoul), like the palace's other buildings.
+// The pavilion's model is half the real size (about 9 m high and 11 m
+// across the eaves in Seoul); the map's l.sc makes it smaller, so its island
+// has room round it as the real one has.
 // Visual only: collision comes from the map's blockers.
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -26,7 +28,7 @@ import { isleHeight } from './temple-terrace.js';
 const mat = matCache({ flatShading: true });
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 const C = {
-  stone: '#d6cdb8', stoneDark: '#b1a690', post: '#a8392b', frame: '#8a4a32', paper: '#f1e8d4', floor: '#8a5a3a',
+  stone: '#d6cdb8', stoneDark: '#b1a690', post: '#a8392b', sill: '#8a3a2c', rail: '#9a4630', panel: '#3f9079', panelDark: '#2c705e', floor: '#8a5a3a', fence: '#5c4a3a',
   beam: '#2f8a68', bracket: '#2a6f5a', rafter: '#8a3a2c', roof: '#474c55', ridge: '#353a42', bronze: '#5f6a55', gold: '#d4a73a',
   white: '#f4f1ea', deck: '#e3d8c0', grass: '#a9d18a', rock: '#9a958a', pad: '#5f9a55', lotus: '#f29cb8', water: '#4d8fb5',
 };
@@ -73,12 +75,12 @@ function bar(g, a, b, w, h, c) {
 }
 const corner = (k, r) => [Math.sin(FLAT + (k * Math.PI) / 3) * r, Math.cos(FLAT + (k * Math.PI) / 3) * r]; // side k runs from corner k - 1 to corner k; side 0 faces +z
 
-// One storey: six posts, paper lattice doors between them, a floor that
-// runs out past the posts as a veranda, and a railing round it (open: the
-// sides without a railing).
+// One storey: six posts, green lattice doors in red frames between them (four
+// leaves a side, a red sill below), a floor that runs out past the posts as a
+// veranda, and a railing round it (open: the sides without a railing).
 function storey(g, y, H, R, veranda, open = []) {
   hex(g, veranda, veranda, 0.07, y - 0.07, C.floor);
-  hex(g, R - 0.05, R - 0.05, H, y, C.paper);
+  hex(g, R - 0.05, R - 0.05, H, y, C.panel);
   const ap = R * Math.cos(Math.PI / 6);
   for (let k = 0; k < 6; k++) {
     const [px, pz] = corner(k, R);
@@ -88,104 +90,131 @@ function storey(g, y, H, R, veranda, open = []) {
     const side = new THREE.Group(); // (its own frame: +z out through the side's middle)
     side.rotation.y = (k * Math.PI) / 3;
     g.add(side);
-    box(side, R - 0.16, 0.09, 0.06, 0, y + 0.045, ap, C.frame);
-    box(side, R - 0.16, 0.09, 0.06, 0, y + H - 0.045, ap, C.frame);
-    box(side, R - 0.16, 0.035, 0.05, 0, y + H * 0.36, ap, C.frame);
-    for (const u of [-1, 0, 1]) box(side, 0.045, H - 0.1, 0.05, (u * (R - 0.16)) / 3.2, y + H / 2, ap, C.frame);
+    box(side, R - 0.16, 0.2, 0.05, 0, y + 0.1, ap, C.sill); // the sill (머름)
+    box(side, R - 0.16, 0.08, 0.06, 0, y + H - 0.04, ap, C.post);
+    box(side, R - 0.16, 0.03, 0.05, 0, y + H * 0.72, ap, C.panelDark); // (the lattice: a band across the leaves)
+    box(side, R - 0.16, 0.03, 0.05, 0, y + H * 0.45, ap, C.panelDark);
+    for (const u of [-1.5, -0.5, 0.5, 1.5]) box(side, 0.02, H - 0.3, 0.05, (u * (R - 0.16)) / 4, y + H / 2 + 0.08, ap, C.panelDark);
+    for (const u of [-1, 0, 1]) box(side, 0.045, H - 0.26, 0.06, (u * (R - 0.16)) / 4, y + H / 2 + 0.08, ap, C.post);
     if (open.includes(k)) continue;
-    // the veranda's railing (난간): two rails and a post at each corner
+    // the veranda's railing (난간): two rails and short posts
     const va = veranda * Math.cos(Math.PI / 6) - 0.05;
-    for (const ry of [0.36, 0.2]) box(side, veranda - 0.08, 0.04, 0.04, 0, y + ry, va, C.post);
-    for (const u of [-0.3, 0, 0.3]) box(side, 0.035, 0.34, 0.035, u * veranda, y + 0.17, va, C.post);
+    for (const ry of [0.36, 0.2]) box(side, veranda - 0.08, 0.04, 0.04, 0, y + ry, va, C.rail);
+    box(side, veranda - 0.1, 0.1, 0.03, 0, y + 0.07, va, C.rail);
+    for (const u of [-0.3, 0, 0.3]) box(side, 0.035, 0.34, 0.035, u * veranda, y + 0.17, va, C.rail);
   }
-  for (let k = 0; k < 6; k++) { const [px, pz] = corner(k, veranda - 0.06); box(g, 0.06, 0.42, 0.06, px, y + 0.21, pz, C.post); }
+  for (let k = 0; k < 6; k++) { const [px, pz] = corner(k, veranda - 0.06); box(g, 0.06, 0.42, 0.06, px, y + 0.21, pz, C.rail); }
 }
 
 // The pavilion itself, its floor at y 0 (the island's top), front to +z.
 function pavilion(g) {
   const R = 1.45, V = 1.95; // the posts' ring and the veranda's edge (corner radius)
-  hex(g, 2.5, 2.6, 0.1, 0, C.stoneDark);
-  hex(g, 2.2, 2.25, 0.17, 0.1, C.stone);
-  const y1 = 0.34, H1 = 1.36, y2 = y1 + H1 + 0.24, H2 = 1.16, ye = y2 + H2;
-  for (const u of [-1, 1]) box(g, 0.5, 0.1, 0.34, u * 0.02, 0.22, V * Math.cos(Math.PI / 6) + 0.2, C.stone); // the step up at the front
+  // three courses of dressed stone, and the steps up at the front
+  hex(g, 2.55, 2.6, 0.14, 0, C.stoneDark);
+  hex(g, 2.32, 2.36, 0.17, 0.14, C.stone);
+  hex(g, 2.1, 2.14, 0.15, 0.31, C.stone);
+  const y1 = 0.5, H1 = 1.3, y2 = y1 + H1 + 0.24, H2 = 1.12, ye = y2 + H2, front = 2.1 * Math.cos(Math.PI / 6);
+  for (let i = 0; i < 3; i++) box(g, 0.9, 0.15, 0.24, 0, 0.385 - i * 0.15, front + 0.12 + i * 0.22, C.stone);
   storey(g, y1, H1, R, V, [0]);
   // between the storeys: the beam, and the brackets under the upper veranda
   hex(g, R + 0.1, R + 0.1, 0.1, y1 + H1, C.beam);
   hex(g, V + 0.02, R + 0.08, 0.14, y1 + H1 + 0.1, C.bracket);
   storey(g, y2, H2, R, V + 0.05);
-  // the eaves: beam, brackets, the rafters' ends
+  // the eaves: beam, painted brackets, the rafters' red ends under a green edge
   hex(g, R + 0.1, R + 0.1, 0.1, ye, C.beam);
-  hex(g, R + 0.45, R + 0.08, 0.15, ye + 0.1, C.bracket);
-  hex(g, 2.62, R + 0.45, 0.07, ye + 0.25, C.rafter);
-  // the roof: a low skirt and a steeper cap, a ridge down each corner that
-  // turns up at the eaves, and the finial (절병통)
-  const yr = ye + 0.3, skirt = 0.42, cap = 0.66, Re = 2.78, Rm = 1.3;
-  hex(g, Rm, Re, skirt, yr, C.roof);
-  hex(g, 0.14, Rm, cap, yr + skirt, C.roof);
+  hex(g, R + 0.5, R + 0.08, 0.16, ye + 0.1, C.bracket);
+  hex(g, 2.5, R + 0.5, 0.06, ye + 0.26, C.rafter);
+  hex(g, 2.66, 2.5, 0.05, ye + 0.32, C.beam);
+  // the roof: three slopes, flat at the eaves and steep at the top (the
+  // tiled roof's curve), a ridge down each corner that turns up at the
+  // eaves, and the bronze finial (절병통)
+  const yr = ye + 0.37, tiers = [[2.82, 0], [1.9, 0.26], [0.95, 0.72], [0.16, 1.3]]; // [corner radius, height]
+  for (let i = 0; i < 3; i++) hex(g, tiers[i + 1][0], tiers[i][0], tiers[i + 1][1] - tiers[i][1], yr + tiers[i][1], C.roof);
   for (let k = 0; k < 6; k++) {
-    const [ex, ez] = corner(k, Re), [mx, mz] = corner(k, Rm), [tx, tz] = corner(k, 0.14), [ux, uz] = corner(k, Re + 0.3);
-    bar(g, [ex, yr + 0.04, ez], [mx, yr + skirt + 0.04, mz], 0.1, 0.09, C.ridge);
-    bar(g, [mx, yr + skirt + 0.04, mz], [tx, yr + skirt + cap + 0.02, tz], 0.1, 0.09, C.ridge);
-    bar(g, [ex, yr + 0.03, ez], [ux, yr + 0.2, uz], 0.14, 0.08, C.roof); // the corner's upturn
+    for (let i = 0; i < 3; i++) { const [ax, az] = corner(k, tiers[i][0]), [bx, bz] = corner(k, tiers[i + 1][0]); bar(g, [ax, yr + tiers[i][1] + 0.05, az], [bx, yr + tiers[i + 1][1] + 0.05, bz], 0.11, 0.1, C.ridge); }
+    const [ex, ez] = corner(k, 2.82), [ux, uz] = corner(k, 3.2);
+    bar(g, [ex, yr + 0.03, ez], [ux, yr + 0.3, uz], 0.16, 0.09, C.roof); // the corner's upturn
+    bar(g, [ex, yr + 0.08, ez], [ux, yr + 0.36, uz], 0.09, 0.08, C.ridge);
   }
-  const yt = yr + skirt + cap;
-  hex(g, 0.11, 0.17, 0.12, yt - 0.02, C.ridge);
-  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mat(C.bronze));
-  ball.position.y = yt + 0.2;
-  g.add(ball);
-  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.22, 6), mat(C.gold));
-  tip.position.y = yt + 0.42;
-  g.add(tip);
-  return { boardY: y1 + H1 - 0.22, boardZ: R * Math.cos(Math.PI / 6) + 0.07 };
+  const yt = yr + 1.3;
+  hex(g, 0.13, 0.2, 0.14, yt - 0.02, C.ridge);
+  for (const [r, sy, dy, c] of [[0.17, 0.75, 0.22, C.bronze], [0.11, 1, 0.42, C.bronze], [0.07, 1, 0.56, C.gold]]) {
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), mat(c));
+    ball.scale.y = sy;
+    ball.position.y = yt + dy;
+    g.add(ball);
+  }
+  return { boardY: y2 + H2 - 0.2, boardZ: R * Math.cos(Math.PI / 6) + 0.07 };
 }
 
 export function buildHyangwonjeong(g, l) {
-  const [r, top] = l.isle, [sx, sz, w] = l.span, L = Math.hypot(sx, sz), ux = sx / L, uz = sz / L;
-  // The island: a ring of dressed stone, turf on top, a few rocks at the water's edge.
-  const cyl = (rt, rb, h, y, c, seg = 20) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c)); m.position.y = y + h / 2; g.add(m); };
-  cyl(r, r + 0.12, top, 0, C.stoneDark);
-  cyl(r - 0.02, r - 0.02, 0.05, top - 0.02, C.stone);
-  cyl(r - 0.35, r - 0.35, 0.05, top, C.grass);
-  for (let i = 0; i < 7; i++) {
-    const a = i * 0.9 + 0.4, s = 0.22 + leafHash(i, 3) * 0.2;
+  const [r, top] = l.isle, [sx, sz, w] = l.span, L = Math.hypot(sx, sz), ux = sx / L, uz = sz / L, sc = l.sc || [1, 1];
+  const th = Math.atan2(ux, uz), dir = (deg) => { const a = th + (deg * Math.PI) / 180; return [Math.sin(a), Math.cos(a)]; }; // (0°: towards the bridge)
+  // The island: two courses of stone round it, turf on top, rocks at the
+  // water's edge, a low wooden fence round its rim (open at the bridge) and
+  // stone steps down to the water.
+  const cyl = (rt, rb, h, y, c, seg = 24) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c)); m.position.y = y + h / 2; g.add(m); };
+  cyl(r + 0.08, r + 0.16, top * 0.55, 0, C.stoneDark);
+  cyl(r, r + 0.04, top * 0.45 + 0.02, top * 0.55, C.stone);
+  cyl(r - 0.3, r - 0.3, 0.05, top, C.grass);
+  for (let i = 0; i < 8; i++) {
+    const a = i * 0.83 + 0.4, s = 0.2 + leafHash(i, 3) * 0.2;
     const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(C.rock));
-    rock.position.set(Math.sin(a) * (r + 0.25), 0.08, Math.cos(a) * (r + 0.25));
+    rock.position.set(Math.sin(a) * (r + 0.3), 0.08, Math.cos(a) * (r + 0.3));
     rock.scale.y = 0.6;
     g.add(rock);
   }
+  const fr = r - 0.22, N = Math.round((2 * Math.PI * fr) / 0.8), gap = (w / 2 + 0.35) / fr; // the fence: a post every 0.8 m
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2, off = (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));
+    const p = (a, y) => [Math.sin(th + a) * fr, top + y, Math.cos(th + a) * fr];
+    if (off(a0) < gap) continue;
+    box(g, 0.06, 0.36, 0.06, p(a0, 0)[0], top + 0.2, p(a0, 0)[2], C.fence);
+    if (off(a1) < gap) continue;
+    for (const y of [0.33, 0.18]) bar(g, p(a0, y), p(a1, y), 0.035, 0.04, C.fence);
+  }
+  { // the steps down to the water, on the side
+    const [dx, dz] = dir(115), step = new THREE.Group();
+    step.rotation.y = Math.atan2(dx, dz);
+    g.add(step);
+    for (let i = 0; i < 3; i++) box(step, 0.9, 0.13, 0.26, 0, top - 0.06 - i * 0.13, r + 0.05 + i * 0.24, C.stone);
+  }
   const P = new THREE.Group();
   P.position.y = top + 0.03;
-  P.rotation.y = Math.atan2(ux, uz); // its front to the bridge
+  P.rotation.y = th; // its front to the bridge
+  P.scale.set(sc[0], sc[1], sc[0]);
   g.add(P);
   const { boardY, boardZ } = pavilion(P);
-  // Chwihyanggyo: a white wooden bridge in a low arch, on trestles in the water.
+  // Chwihyanggyo: a white wooden bridge in a low arch, on trestles in the
+  // water, its railing filled with crossed slats.
   const B = new THREE.Group();
   g.add(B);
-  const N = 12, t0 = (r - 0.15) / L, at = (t) => { const v = (t0 + (1 - t0) * t) * L; return [ux * v, isleHeight(l, ux * v, uz * v) + 0.03, uz * v]; };
+  const M = 12, t0 = (r - 0.15) / L, at = (t) => { const v = (t0 + (1 - t0) * t) * L; return [ux * v, isleHeight(l, ux * v, uz * v) + 0.03, uz * v]; };
   const side = (p, s, up = 0) => [p[0] + uz * s, p[1] + up, p[2] - ux * s];
-  for (let i = 0; i < N; i++) {
-    const a = at(i / N), b = at((i + 1) / N);
+  for (let i = 0; i < M; i++) {
+    const a = at(i / M), b = at((i + 1) / M);
     bar(B, a, b, w, 0.07, C.deck);
     for (const s of [-1, 1]) {
       bar(B, side(a, (s * w) / 2, 0.02), side(b, (s * w) / 2, 0.02), 0.09, 0.12, C.white); // the deck's edge beam
-      bar(B, side(a, (s * w) / 2, 0.5), side(b, (s * w) / 2, 0.5), 0.07, 0.06, C.white);
-      bar(B, side(a, (s * w) / 2, 0.28), side(b, (s * w) / 2, 0.28), 0.04, 0.04, C.white);
+      bar(B, side(a, (s * w) / 2, 0.52), side(b, (s * w) / 2, 0.52), 0.07, 0.06, C.white);
+      bar(B, side(a, (s * w) / 2, 0.12), side(b, (s * w) / 2, 0.46), 0.03, 0.035, C.white); // the crossed slats
+      bar(B, side(a, (s * w) / 2, 0.46), side(b, (s * w) / 2, 0.12), 0.03, 0.035, C.white);
     }
   }
-  for (let i = 0; i <= N; i++) {
-    const p = at(i / N), end = i === 0 || i === N;
+  for (let i = 0; i <= M; i++) {
+    const p = at(i / M), end = i === 0 || i === M;
     for (const s of [-1, 1]) {
       const [x, y, z] = side(p, (s * w) / 2);
-      box(B, end ? 0.13 : 0.07, end ? 0.7 : 0.56, end ? 0.13 : 0.07, x, y + (end ? 0.35 : 0.28), z, C.white);
-      if (end) box(B, 0.17, 0.05, 0.17, x, y + 0.72, z, C.white);
+      box(B, end ? 0.13 : 0.07, end ? 0.72 : 0.58, end ? 0.13 : 0.07, x, y + (end ? 0.36 : 0.29), z, C.white);
+      if (end) box(B, 0.17, 0.05, 0.17, x, y + 0.74, z, C.white);
       if (!end && i % 3 === 0) box(B, 0.11, y + 0.1, 0.11, x, y / 2 - 0.05, z, C.white); // a trestle's leg down into the water
     }
-    if (i > 0 && i < N && i % 3 === 0) bar(B, side(p, -w / 2, -0.12), side(p, w / 2, -0.12), 0.08, 0.08, C.white);
+    if (i > 0 && i < M && i % 3 === 0) bar(B, side(p, -w / 2, -0.12), side(p, w / 2, -0.12), 0.08, 0.08, C.white);
   }
   bake(g);
-  const sign = nameBoard('香遠亭', 0.62, 0.25);
-  sign.position.set(Math.sin(P.rotation.y) * boardZ, P.position.y + boardY, Math.cos(P.rotation.y) * boardZ);
-  sign.rotation.y = P.rotation.y;
+  const sign = nameBoard('香遠亭', 0.62 * sc[0], 0.25 * sc[0]);
+  sign.position.set(Math.sin(th) * boardZ * sc[0], P.position.y + boardY * sc[1], Math.cos(th) * boardZ * sc[0]);
+  sign.rotation.y = th;
   g.add(sign);
 }
 

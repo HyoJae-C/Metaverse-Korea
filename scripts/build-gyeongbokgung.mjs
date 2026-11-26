@@ -41,6 +41,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MAP = path.join(root, 'public', 'regions', 'another-seoul', 'districts', 'gyeongbokgung.json');
 const osm = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-osm.json'), 'utf8'));
 const green = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-grounds-osm.json'), 'utf8'));
+const canopy = JSON.parse(readFileSync(path.join(root, 'scripts', 'data', 'gyeongbokgung-canopy.json'), 'utf8')); // where a satellite photo shows trees
 
 export const FOOT = 2; // footprints: 50% of the real size = 2 × the 1/4 map (Yozi, 2026-11-11; was 30%)
 export const UP = 1; // heights: the palace models are drawn at half the real height (UP 1 = 50%)
@@ -199,21 +200,24 @@ map.blockers.push(...blockers.map((b) => ({ ...b, gb: 1 })));
   map.areas.push({ k: 'park', gb: 1, p: [[r1(wallPts.at(-1)[0]), 0.9], [X0, 0.9], [X0, Z1], [X1, Z1], [X1, 0.9], [r1(wallPts[0][0]), 0.9], ...wallPts] });
 }
 // ---------- The grounds: lawns, woods, trees, Hyangwonjeong's island ----------
-// The island is drawn bigger than the 1/4 map (OSM: 3.45 m across its
-// radius; the pavilion on it is at 50%, twice the map, and filled it), and
-// the bridge wider (0.4 m at 1/4: you could not walk over it).
-export const ISLE = [4.2, 0.4], BRIDGE = [1.5, 0.55]; // [radius, its top above the water], [width, the arch's rise]
+// Hyangwonjeong is 37.5% of the real one across and 45% high, not 50% like
+// the other halls: at 50% it filled its island, and in Seoul the island is
+// two and a half times as wide as the pavilion's roof (Yozi's photos,
+// 2026-11-26). The island is drawn a little bigger than the 1/4 map too
+// (OSM: 3.45 m in radius), and the bridge wider (0.4 m at 1/4: you could not
+// walk over it).
+export const ISLE = [4.6, 0.4], BRIDGE = [1.5, 0.55], HYANG_SC = [0.75, 0.9]; // [radius, its top above the water], [width, the arch's rise], the pavilion [across, up] (1 = 50%)
 const amisan = lm.find((l) => l.type === 'amisan');
 // The two lawns the shows stand on, either side of the corridors round
 // Heungnyemun and Geunjeongjeon (Yozi, 2026-11-10): drawn as plain
 // rectangles. Made up: OSM has packed earth, smaller lawns and a grove here.
 export const SHOW_LAWNS = { fan: [-56, -30, -18, -83], king: [23, -30, 52, -76] };
 const grounds = planGrounds({
-  grounds: green, local, wall: wallPts, solids: blockers.map((b) => b.p), yards: yards.map((y) => rect(y.x, y.z, y.w, y.d, y.a)), ponds: water,
-  keepRects: routeClear,
+  grounds: green, canopy, local, wall: wallPts, solids: blockers.map((b) => b.p), yards: yards.map((y) => rect(y.x, y.z, y.w, y.d, y.a)), ponds: water,
+  keepRects: [...routeClear, (() => { const xs = ROYAL_ROUTE.stops.map((q) => q[0]), zs = ROYAL_ROUTE.stops.map((q) => q[1]); return [[Math.min(...xs), Math.min(...zs)], [Math.max(...xs), Math.min(...zs)], [Math.max(...xs), Math.max(...zs)], [Math.min(...xs), Math.max(...zs)]]; })()], // the king's way, and the lawn inside it (he stays in sight)
   keepCircles: [[FAN_AT[0], FAN_AT[1], FAN_KEEP + 1.5], ...PALACE_VISITORS.map(([x, z]) => [x, z, 2.2]), [0, -79, 3], [amisan.x, amisan.z - 3, 7]],
   stages: Object.entries(SHOW_LAWNS).map(([show, [x0, z0, x1, z1]]) => ({ p: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], show, approx: 1, why: `the ${show === 'fan' ? 'fan dance' : 'royal procession'}'s lawn (Yozi 2026-11-10): a made-up rectangle, not OSM's lawns` })),
-  hyang: { x: r1(O['향원정'].x), z: r1(O['향원정'].z) }, ISLE, BRIDGE,
+  hyang: { x: r1(O['향원정'].x), z: r1(O['향원정'].z) }, ISLE, BRIDGE, SC: HYANG_SC,
 });
 export { KIND };
 map.areas.push(...grounds.areas);

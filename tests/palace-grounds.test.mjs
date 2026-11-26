@@ -8,10 +8,13 @@ import { toGame } from '../src/core/seoul-grid.js';
 import { isleHeight, terraceY } from '../src/core/temple-terrace.js';
 import { ROYAL_ROUTE, FAN_AT, FAN_KEEP } from '../src/core/palace-show.js';
 import { landmarkBuilders } from '../src/core/landmarks.js';
+import { treeMeshes } from '../src/core/palace-garden.js';
+import { TREE_H } from '../scripts/lib/palace-grounds.mjs';
+import * as THREE from 'three';
 
 const read = (f) => JSON.parse(readFileSync(new URL(f, import.meta.url)));
 const map = read('../public/regions/another-seoul/districts/gyeongbokgung.json');
-const osm = read('../scripts/data/gyeongbokgung-osm.json'), green = read('../scripts/data/gyeongbokgung-grounds-osm.json');
+const osm = read('../scripts/data/gyeongbokgung-osm.json'), green = read('../scripts/data/gyeongbokgung-grounds-osm.json'), canopy = read('../scripts/data/gyeongbokgung-canopy.json');
 const [gx, gz] = (() => { const g = osm.elements.find((e) => e.name === '광화문').pts.slice(0, -1), c = g.reduce((a, p) => [a[0] + p[0] / g.length, a[1] + p[1] / g.length], [0, 0]); return toGame(...c); })();
 const local = ([la, lo]) => { const [x, z] = toGame(la, lo); return [x - gx, z - gz]; };
 const at = (type) => map.landmarks.find((l) => l.type === type && l.gb);
@@ -45,24 +48,29 @@ test('the palace lawns and woods are OpenStreetMap\'s, inside the wall, off the 
   assert.ok(missed <= 3, `${missed} of ${seen} are not drawn (only slivers under 1.5 m² are dropped)`);
 });
 
-test('the palace trees: OSM\'s on their spots, the made-up ones in the woods and at the lawns\' edges, none in the way', () => {
+test('the palace trees: OSM\'s on their spots, the made-up ones where the satellite photo shows trees, none in the way', () => {
   const l = at('palacetrees'), T = [];
   for (let i = 0; i < l.t.length; i += 4) T.push(l.t.slice(i, i + 4));
   assert.ok(l.inner, 'built when you walk in (core/enclosure.js)');
-  assert.ok(T.length >= 150 && T.length <= 320, `trees ${T.length}`);
+  assert.ok(T.length >= 150 && T.length <= 420, `trees ${T.length}`);
   assert.ok(l.real >= 40 && l.why && l.approx, 'says which are real and which are made up');
   assert.match(l.approx, new RegExp(`the other ${T.length - l.real} are made up`));
   // the first l.real: within 1.7 m of a tree OSM maps (moved only off a building drawn bigger than the real one)
   const nodes = green.trees.map(([la, lo]) => local([la, lo]));
   T.slice(0, l.real).forEach(([x, z]) => assert.ok(nodes.some(([nx, nz]) => Math.hypot(nx - x, nz - z) < 1.7), `OSM tree at ${x},${z}`));
-  // the others: in a wood or on a lawn, on Hyangwonji's bank or on its island
-  const greens = map.areas.filter((a) => (a.k === 'grass' || a.k === 'park') && a.gb), hy = at('hyangwonjeong'), pond = water.find((w) => pointInPoly(hy.x, hy.z, w));
-  T.slice(l.real).forEach(([x, z]) => assert.ok(greens.some((a) => inArea(a, x, z)) || edge(pond, x, z) < 5 || Math.hypot(x - hy.x, z - hy.z) < hy.isle[0], `made-up tree on the green (${x},${z})`));
+  // the others: on a cell where the satellite photo shows trees (or on Hyangwonjeong's island)
+  const hy = at('hyangwonjeong'), isTree = (x, z) => [-0.06, 0.06].some((dx) => [-0.06, 0.06].some((dz) => canopy.rows[Math.floor(z + dz - canopy.z0)]?.[Math.floor(x + dx - canopy.x0)] === 'T'));
+  T.slice(l.real).forEach(([x, z]) => assert.ok(isTree(x, z) || Math.hypot(x - hy.x, z - hy.z) < hy.isle[0], `made-up tree where the photo has trees (${x},${z})`));
+  // a quarter of the real height (Yozi 2026-11-26: buildings are 1/4, trees had no rule and all stood tall)
+  const high = T.filter((t) => t[3] !== KIND.bush).map(([, , sz, k]) => sz * TREE_H[k] * 4); // real metres
+  assert.ok(Math.min(...high) > 3.5 && Math.max(...high) < 18.5, `between a young maple and an old ginkgo (${Math.min(...high).toFixed(1)}..${Math.max(...high).toFixed(1)} m)`);
+  assert.ok(high.filter((h) => h < 12).length > high.length * 0.6, `most under 12 m (${high.filter((h) => h < 12).length} of ${high.length})`);
+  assert.ok(high.filter((h) => h > 12).length > high.length * 0.05, 'a few tall ones');
   const solid = new CollisionMap(map.blockers.filter((b) => b.gb && !b.low && !water.some((w) => b.p.length === w.length && b.p.every((q, i) => q[0] === w[i][0] && q[1] === w[i][1]))));
   const islets = at('pondbank').turf, stone = map.areas.filter((a) => a.k === 'stone' && a.gb);
   for (const [x, z, s, k] of T) {
     assert.ok(pointInPoly(x, z, wall) && edge(wall, x, z) > 1.4, `inside the wall (${x},${z})`);
-    assert.ok(s > 0.4 && s < 1.8 && Object.values(KIND).includes(k), `size and kind (${s}, ${k})`);
+    assert.ok(s >= 0.25 && s < 1.4 && Object.values(KIND).includes(k), `size and kind (${s}, ${k})`);
     const wet = water.some((w) => pointInPoly(x, z, w));
     if (wet) assert.ok((k === KIND.pine && islets.some((p) => pointInPoly(x, z, p))) || l.up.some(([ux, uz, r]) => Math.hypot(x - ux, z - uz) < r - 0.3), `in the water only on Gyeonghoeji's islets and Hyangwonjeong's island (${x},${z})`);
     else assert.ok(!solid.blocked(x, z, 0.8), `clear of the buildings (${x},${z})`);
@@ -90,6 +98,8 @@ test('Hyangwonjeong stands on its island, and you walk over Chwihyanggyo to it',
   for (const t of ['hyangwonjeong', 'pondbank', 'palacetrees']) assert.equal(typeof b[t], 'function', t);
   const real = osm.elements.find((e) => e.name === '향원정').pts.slice(0, -1).map(local), c = real.reduce((a, p) => [a[0] + p[0] / real.length, a[1] + p[1] / real.length], [0, 0]);
   assert.ok(Math.hypot(l.x - c[0], l.z - c[1]) < 1, `on its real spot (${l.x},${l.z} vs ${c.map((v) => v.toFixed(1))})`);
+  // 37.5% across, not 50% like the other halls: the island is at least twice as wide as the roof, as in Seoul (2.5 times)
+  assert.ok(l.sc[0] >= 0.6 && l.sc[0] <= 1 && l.sc[1] >= 0.8 && l.sc[1] <= 1 && l.isle[0] / (2.82 * l.sc[0]) >= 2, `the island is roomy (${(l.isle[0] / (2.82 * l.sc[0])).toFixed(2)} roofs wide)`);
   const pond = water.find((w) => pointInPoly(l.x, l.z, w)), [r, top] = l.isle, [sx, sz, w, rise] = l.span, L = Math.hypot(sx, sz), ux = sx / L, uz = sz / L;
   // the island: OSM's is 3.45 m in radius at 1/4; drawn a little bigger for the pavilion at 50%, inside the pond
   const isle = green.garden[0].pts.map(local), ir = Math.max(...isle.map(([x, z]) => Math.hypot(x - l.x, z - l.z)));
@@ -118,10 +128,26 @@ test('Hyangwonjeong stands on its island, and you walk over Chwihyanggyo to it',
   const trees = at('palacetrees'), own = [];
   assert.deepEqual(trees.up, [[l.x, l.z, r, top]], 'the trees on the island stand on its top');
   for (let i = 0; i < trees.t.length; i += 4) { const d = Math.hypot(trees.t[i] - l.x, trees.t[i + 1] - l.z); if (d < r + 1) own.push(d); }
-  assert.ok(own.length >= 3 && own.every((d) => d < r - 0.3 && d > 2.6), 'a few small trees on the island, off the pavilion');
+  assert.ok(own.length >= 3 && own.every((d) => d < r - 0.3 && d > 2.6 * l.sc[0] + 0.8), 'shrubs on the island inside its fence, off the pavilion');
   const bank = at('pondbank');
   assert.ok(bank.approx && bank.rings.length >= 2 && bank.pads.length > 10);
   for (const [x, z] of bank.pads) assert.ok(pointInPoly(x, z, pond) && Math.hypot(x - l.x, z - l.z) > r, 'lotus leaves on the water');
   const spring = local(green.spring.pt);
   assert.ok(Math.hypot(bank.spring[0] - spring[0], bank.spring[1] - spring[1]) < 0.5, 'Yeolsangjinwon spring on its real spot');
+});
+
+test("each kind of tree's model is as high as the size table says (so real height / 4 holds)", () => {
+  const t = [];
+  for (let k = 0; k < TREE_H.length; k++) t.push(k * 10, 0, 1, k);
+  const top = TREE_H.map(() => 0), m4 = new THREE.Matrix4(), b = new THREE.Box3(), c = new THREE.Vector3();
+  for (const m of treeMeshes(t)) {
+    m.geometry.computeBoundingBox();
+    for (let i = 0; i < m.count; i++) {
+      m.getMatrixAt(i, m4);
+      b.copy(m.geometry.boundingBox).applyMatrix4(m4);
+      const k = Math.round(b.getCenter(c).x / 10);
+      top[k] = Math.max(top[k], b.max.y);
+    }
+  }
+  top.forEach((h, k) => assert.ok(Math.abs(h - TREE_H[k]) < 0.05, `kind ${k}: ${h.toFixed(2)} m, table ${TREE_H[k]}`));
 });

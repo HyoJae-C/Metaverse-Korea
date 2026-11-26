@@ -946,25 +946,44 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   by one (the first `real` entries of the `palacetrees` landmark: the willows
   round Gyeonghoeji, the pines on its islets); Hyangwonjeong, the pond,
   Chwihyanggyo's line to the north bank and Yeolsangjinwon spring.
-- **Made up** (marked `approx`): where the trees stand inside the woods (a
-  loose grid, each thrown off its spot), the clumps along the lawns' edges
-  (the middles stay open, never rows: Yozi 2026-11-24), the ring round
-  Hyangwonji (the south bank is left open: the view of the pavilion), the
-  lotus leaves, the size of Gyeonghoeji's islets, and the two rectangles of
-  lawn the fan dance and the royal procession use (`SHOW_LAWNS`, Yozi
-  2026-11-10; OSM has packed earth and a grove there).
+- **From a satellite photo** (`scripts/data/gyeongbokgung-canopy.json`):
+  where the trees are. Yozi sent a satellite capture (2026-11-26); its dark
+  green pixels were laid on the map (Gwanghwamun, the corridors and the
+  ponds line up to about 1 m) and kept as 1 m cells. The made-up trees are
+  thrown onto those cells, so the clumps and the open ground are the real
+  ones (the ring round Hyangwonji, the groves west of the ponds, Noksan).
+- **Made up** (marked `approx`): each of those trees' own spot, kind and
+  height; the lotus leaves; the size of Gyeonghoeji's islets; the shrubs on
+  Hyangwonjeong's island; and the two rectangles of lawn the fan dance and
+  the royal procession use (`SHOW_LAWNS`, Yozi 2026-11-10; OSM has packed
+  earth and a grove there, and no tree is planted on the king's lawn or in
+  the dancers' ring). The south bank in front of Hyangwonjeong is kept open.
 - Trees keep off buildings, yards, water, the shows and the visitors. They
   are one `palacetrees` landmark of instanced meshes (a draw call per shape:
   round, red pine, maple, willow, ginkgo, bush), not the city's street trees
   (those are capped city-wide). Kinds are told apart by shape; pines stay
   green, the rest take the season's colours (`core/season.js`).
-- **Hyangwonjeong** is a two-storey hexagonal pavilion at 50% like the other
-  halls. Its island is drawn 4.2 m in radius (OSM: 3.45 m at 1/4) because the
-  pavilion at 50% filled the real one, and Chwihyanggyo is 1.5 m wide (0.4 m
-  at 1/4) so you can walk over its arch to the island: the pond's blocker has
-  the island and the bridge cut out of it, and `isleHeight`
-  (`core/temple-terrace.js`) lifts your feet. In Seoul the bridge is usually
-  shut to visitors. The ponds have a dressed-stone kerb (`pondbank`).
+- A tree is a quarter of its real height, like the buildings (Yozi
+  2026-11-26: "buildings are 1/4 and trees have no rule; always only tall
+  trees"). `TREE_REAL` (`scripts/lib/palace-grounds.mjs`) is how high each
+  kind grows in real metres: broadleaf 8 to 13, pine 7 to 11, maple 4.5 to 7,
+  willow 8 to 11, ginkgo 10 to 14, shrubs 1.5 to 2.6 (typical figures, not
+  measured tree by tree). Trees at a clump's edge are 15% lower, about one in
+  five inside a clump 25% higher, and the old trees OSM maps one by one 20%
+  higher. In the game that is 1 to 4.1 m, half of them under 2.2 m. This rule
+  is the palace's only; the city's street trees are as they were.
+- **Hyangwonjeong** is a two-storey hexagonal pavilion with green lattice
+  doors in red frames, on three courses of stone. It is 37.5% of the real one
+  across and 45% high (`HYANG_SC`), not 50% like the other halls: at 50% it
+  filled its island, and in Seoul the island is two and a half times as wide
+  as the roof (Yozi's photos, 2026-11-26). The island is 4.6 m in radius
+  (OSM: 3.45 m at 1/4), with a low fence round its rim, shrubs and steps down
+  to the water. Chwihyanggyo, white with crossed slats in its railing, is
+  1.5 m wide (0.4 m at 1/4) so you can walk over its arch to the island: the
+  pond's blocker has the island and the bridge cut out of it, and
+  `isleHeight` (`core/temple-terrace.js`) lifts your feet. In Seoul the
+  bridge is usually shut to visitors. The ponds have a dressed-stone kerb
+  (`pondbank`).
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 

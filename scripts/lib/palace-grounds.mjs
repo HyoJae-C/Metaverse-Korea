@@ -2,10 +2,10 @@
 // © OpenStreetMap contributors, ODbL: scripts/extract-gyeongbokgung-grounds.mjs):
 //   - the lawns and the woods on their real outlines (map areas),
 //   - the trees: OSM's own single trees on their real spots first, then the
-//     made-up ones (OSM draws a wood's outline, not its trees): the woods
-//     filled on a loose grid, clumps along the lawns' edges with the middles
-//     left open, a ring round Hyangwonji that leaves the view from the south
-//     bank open (Yozi 2026-11-24: clumps at the edges, never rows),
+//     made-up ones, thrown onto the places where a satellite photo shows
+//     trees (scripts/data/gyeongbokgung-canopy.json), so the clumps and the
+//     open ground are the real ones (Yozi 2026-11-24: as the satellite photo
+//     has them, never rows),
 //   - Hyangwonjeong's island and Chwihyanggyo: the pond's blocker with the
 //     island and the bridge cut out of it, so you walk over to the pavilion,
 //   - the ponds' stone banks, lotus leaves and Yeolsangjinwon spring.
@@ -15,6 +15,10 @@ import { inside } from './palace-plan.mjs';
 
 const r1 = (v) => Math.round(v * 10) / 10, r2 = (v) => Math.round(v * 100) / 100;
 export const KIND = { round: 0, pine: 1, maple: 2, willow: 3, ginkgo: 4, bush: 5 }; // (core/palace-garden.js KIND)
+// How high each kind's model stands at size 1 (core/palace-garden.js; the test
+// measures them), and how high it grows in the palace in real metres.
+export const TREE_H = [3.75, 4.32, 3.07, 4.5, 5.23, 1.05];
+export const TREE_REAL = { 0: [8, 13], 1: [7, 11], 2: [4.5, 7], 3: [8, 11], 4: [10, 14], 5: [1.5, 2.6] };
 const signed = (P) => { let s = 0; for (let i = 0, j = P.length - 1; i < P.length; j = i++) s += P[j][0] * P[i][1] - P[i][0] * P[j][1]; return s / 2; };
 const segDist = (x, z, [x1, z1], [x2, z2]) => {
   const dx = x2 - x1, dz = z2 - z1, l2 = dx * dx + dz * dz, t = l2 ? Math.max(0, Math.min(1, ((x - x1) * dx + (z - z1) * dz) / l2)) : 0;
@@ -48,10 +52,14 @@ function rng(seed) { // (mulberry32)
 // the palace wall's line; solids: the buildings' and walls' blockers
 // (polygons); yards: the paved yards (polygons); ponds: [{ name, p }];
 // keepRects, keepCircles ([x, z, r]): where the shows and visitors stand;
-// hyang: Hyangwonjeong's middle { x, z }; ISLE = [r, top], BRIDGE = [w, rise];
+// canopy: { x0, z0, rows }, where the satellite photo shows trees; GAP: how
+// far apart the made-up trees stand at a clump's edge, inside it and round
+// Hyangwonji;
+// hyang: Hyangwonjeong's middle { x, z }; ISLE = [r, top], BRIDGE = [w, rise],
+// SC = [across, up]: the pavilion's size (1 = half the real one);
 // stages: lawns that stay as they are drawn, whatever OSM has there
 // ([{ p, ... }]: where the shows are).
-export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRects = [], keepCircles = [], stages = [], hyang, ISLE, BRIDGE, SIMPLIFY = 0.4 }) {
+export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRects = [], keepCircles = [], stages = [], canopy, GAP = [3.4, 4.4, 2.4], hyang, ISLE, BRIDGE, SC = [1, 1], SIMPLIFY = 0.4 }) {
   const rand = rng(20261126), pick = (a, b) => a + rand() * (b - a);
   const ring = (pts) => opened(pts.map(local));
   const geo = (list) => list.map((e) => [closed(ring(e.pts)), ...(e.holes || []).map((h) => closed(ring(h)))]);
@@ -73,13 +81,12 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
   };
   const lawns = [...stages.map((t) => ({ k: 'grass', ...t, gb: 1 })), ...toAreas(lawnsMP, 'grass', 'the palace lawns on their real outlines (OpenStreetMap landuse=grass: scripts/data/gyeongbokgung-grounds-osm.json)')];
   const woods = toAreas(woodsMP, 'park', 'the palace woods on their real outlines (OpenStreetMap natural=wood)');
-  const inArea = (a, x, z) => inside(a.p, x, z) && !(a.holes || []).some((h) => inside(h, x, z));
 
   // ---------- Trees ----------
   const boxOf = (p) => { const xs = p.map((q) => q[0]), zs = p.map((q) => q[1]); return [Math.min(...xs), Math.min(...zs), Math.max(...xs), Math.max(...zs)]; };
   const S = solids.map((p) => ({ p, b: boxOf(p) }));
   const trees = []; // [x, z, size, kind]
-  const from = { osm: 0, rows: 0, woods: 0, rims: 0, pond: 0, isle: 0 }, dropped = [];
+  const from = { osm: 0, rows: 0, canopy: 0, isle: 0 }, dropped = [];
   const ok = (x, z, { wet = false, gap = 2.2, off = 1.5 } = {}) => {
     if (!inside(wall, x, z) || edgeDist(wall, x, z) < 1.6) return false;
     if (!wet && ponds.some((w) => inside(w.p, x, z) || edgeDist(w.p, x, z) < 0.8)) return false;
@@ -89,7 +96,11 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
     if (keepCircles.some(([cx, cz, r]) => Math.hypot(x - cx, z - cz) < r)) return false;
     return trees.every((t) => Math.hypot(t[0] - x, t[1] - z) >= gap);
   };
-  const SIZE = { [KIND.round]: [1.0, 1.4], [KIND.pine]: [0.95, 1.3], [KIND.maple]: [0.85, 1.15], [KIND.willow]: [1.05, 1.3], [KIND.ginkgo]: [0.85, 1.1], [KIND.bush]: [0.7, 1.1] };
+  // Sizes: a tree is a quarter of its real height like everything else
+  // (Yozi 2026-11-26: buildings are 1/4, trees had no rule and all stood
+  // tall). TREE_REAL is how high each kind grows in the palace, in real
+  // metres (typical figures, not measured tree by tree).
+  const SIZE = Object.fromEntries(Object.entries(TREE_REAL).map(([kind, m]) => [kind, m.map((h) => h / 4 / TREE_H[kind])]));
   const plant = (x, z, kind, k = 1) => trees.push([r1(x), r1(z), r2(pick(...SIZE[kind]) * k), kind]);
   const mix = (table) => { let u = rand(); for (const [kind, share] of table) { if ((u -= share) < 0) return kind; } return table[0][0]; };
 
@@ -106,7 +117,7 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
     let at = null;
     for (const [dx, dz] of [[0, 0], [0.8, 0], [-0.8, 0], [0, 0.8], [0, -0.8], [1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6], [1.1, 1.1], [-1.1, 1.1], [1.1, -1.1], [-1.1, -1.1]]) if (ok(x + dx, z + dz, { wet: onIslet, gap: 1.3, off: 1.0 })) { at = [x + dx, z + dz]; break; }
     if (!at) { dropped.push([r1(x), r1(z)]); continue; }
-    plant(at[0], at[1], kind, onIslet ? 0.8 : 1.08);
+    plant(at[0], at[1], kind, onIslet ? 0.9 : 1.2); // (the trees OSM maps one by one are the big old ones)
     if (onIslet) islets.push(at);
     from.osm++;
   }
@@ -119,18 +130,6 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
     }
   }
   const real = trees.length;
-  // The woods, filled: a loose grid, each tree thrown off its spot (a big wood wider apart, with bigger trees).
-  for (const a of woods) {
-    const b = boxOf(a.p), wide = Math.abs(signed(a.p)) > 500, step = wide ? 5.4 : 4.2;
-    for (let x = b[0] + pick(0, step); x < b[2]; x += step) for (let z = b[1] + pick(0, step); z < b[3]; z += step) {
-      const tx = x + pick(-1.5, 1.5), tz = z + pick(-1.5, 1.5);
-      if (!inArea(a, tx, tz) || edgeDist(a.p, tx, tz) < 0.5 || !ok(tx, tz, { gap: 2.6 })) continue;
-      plant(tx, tz, mix([[KIND.round, 0.46], [KIND.pine, 0.38], [KIND.maple, 0.16]]), wide ? 1.2 : 1);
-      from.woods++;
-    }
-  }
-  // Round Hyangwonji: maples, pines and a willow or two on the bank, the
-  // south bank left open (where you stand to look at the pavilion).
   const hy = ponds.find((w) => inside(w.p, hyang.x, hyang.z));
   const walk = (P, each) => { // along a ring: each(x, z, nx, nz, d) with the normal pointing out of it; returns the next step
     const sgn = signed(P) > 0 ? 1 : -1;
@@ -151,40 +150,35 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
   const ux = (bx - hyang.x) / L, uz = (bz - hyang.z) / L;
   while (inside(hy.p, hyang.x + ux * (L - 0.6), hyang.z + uz * (L - 0.6))) L += 0.1; // (its end 0.6 m up the bank)
   const offBridge = (x, z) => { const dx = x - hyang.x, dz = z - hyang.z; return Math.abs(dx * uz - dz * ux); }; // how far from the bridge's line
-  const spring = grounds.spring && local(grounds.spring.pt);
-  const zs = hy.p.map((q) => q[1]), south = Math.max(...zs);
+  const spring = grounds.spring && local(grounds.spring.pt), south = Math.max(...hy.p.map((q) => q[1]));
+  // The made-up trees stand where the satellite photo shows trees
+  // (scripts/data/gyeongbokgung-canopy.json, 1 m cells): thrown onto those
+  // cells in a random order, each keeping its distance from the ones before.
+  // So the clumps and the open ground are the real ones; a tree's own spot,
+  // kind and height are not. Small ones at a clump's edge, a tall one now and
+  // then inside (Yozi 2026-11-26: not all of them tall).
   {
-    const o = outward(hy.p);
-    walk(hy.p, (x, z, nx, nz) => {
-      const out = pick(2.0, 3.6), tx = x + nx * o * out + pick(-0.6, 0.6), tz = z + nz * o * out + pick(-0.6, 0.6);
-      const view = tz > south - 1 && tx > hyang.x - 6.5 && tx < hyang.x + 6.5; // the south bank, in front of the pavilion
-      const landing = offBridge(tx, tz) < 4.5 && (tx - hyang.x) * ux + (tz - hyang.z) * uz > 0; // (the way up to the bridge stays open)
-      if (!view && !landing && !(spring && Math.hypot(tx - spring[0], tz - spring[1]) < 2.2) && rand() < 0.9 && ok(tx, tz, { gap: 2.4 })) {
-        plant(tx, tz, mix([[KIND.maple, 0.46], [KIND.pine, 0.22], [KIND.round, 0.2], [KIND.willow, 0.12]]));
-        from.pond++;
-      }
-      return pick(3.4, 6.2);
-    });
-  }
-  // Along the lawns' edges: a clump of one to three every so often, the
-  // middle of each lawn left open.
-  for (const a of lawns) {
-    if (Math.abs(signed(a.p)) < 70) continue;
-    const o = -outward(a.p);
-    let first = true;
-    walk(a.p, (x, z, nx, nz) => {
-      if (first) { first = false; return pick(2, 14); }
-      if (rand() < 0.36) return pick(6, 11); // a gap
-      const cx = x + nx * o * pick(1.4, 2.8), cz = z + nz * o * pick(1.4, 2.8), n = 1 + Math.floor(rand() * 2.6);
-      const kind = mix([[KIND.round, 0.42], [KIND.pine, 0.28], [KIND.maple, 0.22], [KIND.ginkgo, 0.08]]);
-      for (let k = 0; k < n; k++) {
-        const tx = cx + (k ? pick(-2.6, 2.6) : 0), tz = cz + (k ? pick(-2.6, 2.6) : 0);
-        if (!inArea(a, tx, tz) || edgeDist(a.p, tx, tz) < 0.9 || edgeDist(a.p, tx, tz) > 4.5 || !ok(tx, tz, { gap: 2.3 })) continue;
-        plant(tx, tz, k && rand() < 0.3 ? KIND.bush : rand() < 0.75 ? kind : mix([[KIND.round, 0.5], [KIND.maple, 0.5]]));
-        from.rims++;
-      }
-      return pick(7, 14);
-    });
+    const { x0, z0, rows } = canopy, T = (i, j) => rows[j]?.[i] === 'T';
+    const deep = (i, j) => { for (let d = 1; d <= 3; d++) for (let a = -d; a <= d; a++) for (let b = -d; b <= d; b++) if (!T(i + a, j + b)) return d; return 4; }; // 1: the clump's edge ... 4: well inside
+    const cells = [];
+    for (let j = 0; j < rows.length; j++) for (let i = 0; i < rows[j].length; i++) {
+      if (!T(i, j)) continue;
+      let n = 0;
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) n += T(i + a, j + b) ? 1 : 0;
+      if (n >= 4) cells.push([i, j, rand()]); // (not a stray dark pixel)
+    }
+    cells.sort((a, b) => a[2] - b[2]);
+    for (const [i, j] of cells) {
+      const x = x0 + i + rand(), z = z0 + j + rand(), d = deep(i, j);
+      if (offBridge(x, z) < 2.5 && (x - hyang.x) * ux + (z - hyang.z) * uz > 0) continue; // (the way up to the bridge stays open)
+      if (spring && Math.hypot(x - spring[0], z - spring[1]) < 2) continue;
+      if (z > south && z < south + 7 && Math.abs(x - hyang.x) < 5) continue; // (and the south bank in front of the pavilion: where you stand to look at it)
+      const byPond = edgeDist(hy.p, x, z) < 8, tall = d >= 2 && rand() < 0.22; // (round Hyangwonji they stand close: the pond is ringed with trees)
+      if (!ok(x, z, { gap: byPond ? GAP[2] : d >= 3 ? GAP[1] : GAP[0] })) continue;
+      const kind = d === 1 && rand() < 0.14 ? KIND.bush : byPond ? mix([[KIND.maple, 0.45], [KIND.pine, 0.25], [KIND.round, 0.22], [KIND.ginkgo, 0.08]]) : mix([[KIND.round, 0.42], [KIND.pine, 0.32], [KIND.maple, 0.18], [KIND.ginkgo, 0.08]]);
+      plant(x, z, kind, kind === KIND.bush ? 1 : tall ? 1.25 : d === 1 ? 0.85 : 1);
+      from.canopy++;
+    }
   }
 
   // ---------- Hyangwonjeong's island and Chwihyanggyo ----------
@@ -194,12 +188,12 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
   const cut = polygonClipping.difference([closed(hy.p)], [closed(circle(hyang.x, hyang.z, isleR, 24))], [closed(corridor(bw + 0.2, 1.5))]);
   if (cut.some((pg) => pg.length > 1)) throw new Error('Hyangwonji: the bridge does not reach the bank (the island is still a hole in the water)');
   const pondBlockers = cut.map((pg) => ({ p: opened(pg[0]).map(([x, z]) => [r2(x), r2(z)]) }));
-  const th = Math.atan2(ux, uz), hexR = 2.6; // the pavilion's stone base (core/palace-garden.js), its flat side to the bridge
+  const th = Math.atan2(ux, uz), hexR = 2.6 * SC[0]; // the pavilion's stone base (core/palace-garden.js), its flat side to the bridge
   const blockers = [...pondBlockers, { p: Array.from({ length: 6 }, (_, k) => [r2(hyang.x + Math.sin(th + Math.PI / 6 + (k * Math.PI) / 3) * hexR), r2(hyang.z + Math.cos(th + Math.PI / 6 + (k * Math.PI) / 3) * hexR)]) }];
-  // the island's own small trees and bushes, clear of the bridge's end (made up)
-  for (const [deg, kind, s] of [[100, KIND.maple, 0.6], [-128, KIND.maple, 0.55], [48, KIND.bush, 0.6], [-62, KIND.bush, 0.7], [172, KIND.bush, 0.65]]) { const a = th + (deg * Math.PI) / 180, r = isleR - 0.55; trees.push([r2(hyang.x + Math.sin(a) * r), r2(hyang.z + Math.cos(a) * r), s, kind]); from.isle++; }
+  // the island's own shrubs and two small trees inside its fence, clear of the bridge's end and the steps (made up)
+  for (const [deg, kind, sz] of [[52, KIND.bush, 0.55], [84, KIND.maple, 0.52], [150, KIND.bush, 0.6], [178, KIND.bush, 0.5], [-155, KIND.bush, 0.62], [-122, KIND.maple, 0.48], [-88, KIND.bush, 0.55], [-50, KIND.bush, 0.5]]) { const a = th + (deg * Math.PI) / 180, r = isleR - 0.85; trees.push([r2(hyang.x + Math.sin(a) * r), r2(hyang.z + Math.cos(a) * r), sz, kind]); from.isle++; }
   const hyangwonjeong = {
-    type: 'hyangwonjeong', x: r1(hyang.x), z: r1(hyang.z), isle: ISLE, span, inner: true, gb: 1,
+    type: 'hyangwonjeong', x: r1(hyang.x), z: r1(hyang.z), isle: ISLE, span, sc: SC, inner: true, gb: 1,
     name: { ko: '향원정', en: 'Hyangwonjeong Pavilion' },
   };
 
@@ -249,7 +243,7 @@ export function planGrounds({ grounds, local, wall, solids, yards, ponds, keepRe
   const palacetrees = {
     type: 'palacetrees', x: 0, z: 0, t: trees.flat(), real, up: [[r1(hyang.x), r1(hyang.z), isleR, top]], inner: true, gb: 1,
     why: `the first ${real} trees stand where OpenStreetMap maps a tree or a tree row`,
-    approx: `the other ${trees.length - real} are made up inside the real woods and lawns: OSM draws their outlines, not their trees (woods ${from.woods}, lawn edges ${from.rims}, round Hyangwonji ${from.pond}, on its island ${from.isle})`,
+    approx: `the other ${trees.length - real} are made up: ${from.canopy} stand where a satellite photo shows trees (scripts/data/gyeongbokgung-canopy.json: the clumps are real, each tree's spot, kind and height are not), ${from.isle} on Hyangwonjeong's island`,
   };
   return {
     areas: [...lawns, ...woods], lawns, woods, trees, real, landmarks: [hyangwonjeong, pondbank, palacetrees], blockers, pondBlockers, span, L,
