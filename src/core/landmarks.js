@@ -187,6 +187,12 @@ const OWN_BUILD = {
   bigak(g, l) { import('./royal-tomb-model.js').then((m) => m.buildBigak(g, l)); },
   tombhall(g, l) { import('./royal-tomb-model.js').then((m) => m.buildTombHall(g, l)); },
   oldginkgo(g, l) { import('./royal-tomb-model.js').then((m) => m.buildOldGinkgo(g, l)); },
+  // Gyeongbokgung's gardens (core/palace-garden.js, loaded when you first
+  // walk in through the palace wall): Hyangwonjeong on its island with its
+  // bridge, the ponds' stone banks, and the palace's trees.
+  hyangwonjeong(g, l) { import('./palace-garden.js').then((m) => m.buildHyangwonjeong(g, l)); },
+  pondbank(g, l) { import('./palace-garden.js').then((m) => m.buildPondBank(g, l)); },
+  palacetrees(g, l) { import('./palace-garden.js').then((m) => m.buildPalaceTrees(g, l)); },
   // Huwon, Changdeokgung's garden (core/huwon-model.js, loaded when you
   // first walk in through Donhwamun): its pavilions, and Buyongji's bank and island.
   jeongja(g, l) {
