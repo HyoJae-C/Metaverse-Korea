@@ -503,28 +503,12 @@ function showLook() {
   }
   $('look-lock').textContent = (returning ? '👋 ' : '✨ ') + L(returning ? ID_TEXT.back : ID_TEXT.first);
   $('look-lock').hidden = false;
-  // New players pick where to start (game/first-stop.js): one tap, the first is on.
-  const starts = startList(region);
-  $('start-pick').hidden = returning || !starts.length;
-  if (!returning && starts.length) {
-    const keys = [...starts.map((it) => it.k), ANY];
-    if (!keys.includes(startPick)) startPick = keys[0];
-    $('start-pick-list').replaceChildren(...keys.map((k) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', String(k === startPick));
-      const ic = document.createElement('span');
-      ic.className = 'ic';
-      ic.textContent = k === ANY ? '🎲' : starts.find((it) => it.k === k).icon || '📍';
-      b.append(ic, t('start.' + k));
-      b.onclick = () => {
-        startPick = k;
-        for (const o of $('start-pick-list').children) o.setAttribute('aria-checked', String(o === b));
-      };
-      return b;
-    }));
-  }
+  // New players all start in front of the welcome guide on Gwanghwamun
+  // Square (the first start in region.json): no "where first?" choice up
+  // front (Yozi 2026-11-27: fewer first choices; the guide shows the way).
+  // A start kept from a refresh mid-welcome stays (game/first-stop.js).
+  const keys = startList(region).map((it) => it.k);
+  if (!keys.includes(startPick)) startPick = keys[0] || null;
 }
 let startPick = savedStart(); // where a new player starts (region.json spawn.starts, or ANY)
 // Made a character already: go straight into town after the language (and
