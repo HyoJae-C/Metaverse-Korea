@@ -324,13 +324,15 @@ export function loopOrder(stations) {
   return order.map((i) => stations[i]);
 }
 
-// Route map for the pillar on the platform: every station where it really
-// is on the map (nudged apart where they crowd), joined in the order the
-// trains run by one line drawn metro style (straight and 45° pieces). The
-// current station has a red ring; a red arrow shows the way Up trains go
-// (clockwise) and a blue one the way Down trains go.
-// stops: [{ name, at: [x, z] }] in loop order. lang: the second line's
-// language (null = English).
+// Route map for the pillar on the platform: a simple diagram, not the real
+// map (with 20+ stations the real shapes crowded and overlapped). The loop is
+// a tall rounded rectangle; the stations stand evenly down its two long
+// sides, the first station top right, Up trains going clockwise (down the
+// right side, up the left). Every name is full size and beside its station,
+// so it reads on a phone, and a new station just adds a row.
+// The current station has a red ring; a red arrow shows the way Up trains go
+// and a blue one the way Down trains go.
+// stops: [{ name }] in loop order. lang: the second line's language (null = English).
 export const ROUTE_MAP_TEXT = {
   title: { en: 'Route Map', ko: '노선도', ja: '路線図', zh: '线路图' },
   here: { en: 'You are here', ko: '현재 역', ja: '現在地', zh: '当前站' },
@@ -341,250 +343,152 @@ export const ROUTE_MAP_TEXT = {
   view: { en: 'View route map', ko: '노선도 자세히 보기', ja: '路線図を詳しく見る', zh: '查看线路图' },
   warn: { en: 'Riding the wrong way round can take longer!', ko: '반대 방향으로 타면 시간이 더 오래 걸릴 수 있어요!', ja: '逆方向に乗ると時間がもっとかかることがあります！', zh: '坐反方向可能要花更长时间！' },
   check: { en: 'Check the direction before you board.', ko: '타기 전에 방향을 확인하세요.', ja: '乗る前に方向を確認してください。', zh: '上车前请确认方向。' },
-  north: { en: 'N', ko: '북', ja: '北', zh: '北' },
 };
-export const ROUTE_MAP = { w: 1600, h: 1140 };
 const UP_C = '#e02424', DOWN_C = '#1f6fd1';
-const MAP_BOX = { x0: 230, y0: 210, x1: 1290, y1: 780 };
+const RM = { w: 1000, x0: 340, x1: 660, y0: 200, rad: 90, row: 112 };
 
-// Stations on the canvas: the map fitted into the box (north up), then
-// pushed apart until no two are closer than gap px.
-export function routeLayout(stops, box = MAP_BOX, gap = 150) {
-  const raw = stops.map((s) => s.at || [0, 0]);
-  if (!raw.length) return [];
-  const xs = raw.map((p) => p[0]), zs = raw.map((p) => p[1]);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
-  const bw = box.x1 - box.x0, bh = box.y1 - box.y0;
-  const k = Math.min(bw / Math.max(1, maxX - minX), bh / Math.max(1, maxZ - minZ));
-  const ox = box.x0 + (bw - (maxX - minX) * k) / 2, oy = box.y0 + (bh - (maxZ - minZ) * k) / 2;
-  const home = raw.map(([x, z]) => [ox + (x - minX) * k, oy + (z - minZ) * k]);
-  const pts = home.map((p) => p.slice());
-  for (let it = 0; it < 600; it++) {
-    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
-      let dx = pts[j][0] - pts[i][0], dy = pts[j][1] - pts[i][1];
-      let dd = Math.hypot(dx, dy);
-      if (dd >= gap) continue;
-      if (dd < 1e-3) { dx = 1; dy = 0; dd = 1; }
-      const push = (gap - dd) / 2;
-      pts[i][0] -= dx / dd * push; pts[i][1] -= dy / dd * push;
-      pts[j][0] += dx / dd * push; pts[j][1] += dy / dd * push;
-    }
-    for (let i = 0; i < pts.length; i++) {
-      pts[i][0] += (home[i][0] - pts[i][0]) * 0.01; pts[i][1] += (home[i][1] - pts[i][1]) * 0.01;
-      pts[i][0] = Math.min(box.x1, Math.max(box.x0, pts[i][0]));
-      pts[i][1] = Math.min(box.y1, Math.max(box.y0, pts[i][1]));
-    }
-  }
-  return pts;
+// The canvas size and the loop for n stations: { w, h, rows, y1, legendY }.
+export function routeMapSize(n) {
+  const rows = Math.max(1, Math.ceil(n / 2));
+  const y1 = RM.y0 + 2 * RM.rad + (rows - 1) * RM.row;
+  const legendY = y1 + 90;
+  return { w: RM.w, h: legendY + 3 * 64 + 230, rows, y1, legendY };
 }
 
-// One leg of the line, metro style: a 45° piece and a straight piece, with
-// the bend on the outside of the loop (away from cx, cy).
-function legPath(a, b, cx, cy) {
-  const dx = b[0] - a[0], dy = b[1] - a[1], m = Math.min(Math.abs(dx), Math.abs(dy));
-  const diag = [Math.sign(dx) * m, Math.sign(dy) * m];
-  const c1 = [a[0] + diag[0], a[1] + diag[1]]; // diagonal first
-  const c2 = [b[0] - diag[0], b[1] - diag[1]]; // straight first
-  const far = (p) => Math.hypot(p[0] - cx, p[1] - cy);
-  return [a, far(c1) >= far(c2) ? c1 : c2, b];
+// The loop as a walk along its middle line, clockwise from the top middle:
+// at(s) = { x, y, nx, ny } (n points out of the loop), L = its length.
+function routeLoop(n) {
+  const { x0, x1, y0, rad } = RM, { y1 } = routeMapSize(n);
+  const side = y1 - y0 - 2 * rad, top = x1 - x0 - 2 * rad, q = Math.PI * rad / 2;
+  const legs = [ // [length, at(t)] in order round the loop
+    [top / 2, (t) => [x0 + rad + top / 2 + t, y0, 0, -1]],
+    [q, (t) => { const a = -Math.PI / 2 + t / rad; return [x1 - rad + Math.cos(a) * rad, y0 + rad + Math.sin(a) * rad, Math.cos(a), Math.sin(a)]; }],
+    [side, (t) => [x1, y0 + rad + t, 1, 0]],
+    [q, (t) => { const a = t / rad; return [x1 - rad + Math.cos(a) * rad, y1 - rad + Math.sin(a) * rad, Math.cos(a), Math.sin(a)]; }],
+    [top, (t) => [x1 - rad - t, y1, 0, 1]],
+    [q, (t) => { const a = Math.PI / 2 + t / rad; return [x0 + rad + Math.cos(a) * rad, y1 - rad + Math.sin(a) * rad, Math.cos(a), Math.sin(a)]; }],
+    [side, (t) => [x0, y1 - rad - t, -1, 0]],
+    [q, (t) => { const a = Math.PI + t / rad; return [x0 + rad + Math.cos(a) * rad, y0 + rad + Math.sin(a) * rad, Math.cos(a), Math.sin(a)]; }],
+    [top / 2, (t) => [x0 + rad + t, y0, 0, -1]],
+  ];
+  const L = legs.reduce((a, [len]) => a + len, 0);
+  const at = (s) => {
+    s = ((s % L) + L) % L;
+    for (const [len, f] of legs) { if (s <= len) { const [x, y, nx, ny] = f(s); return { x, y, nx, ny }; } s -= len; }
+    const [x, y, nx, ny] = legs[0][1](0); return { x, y, nx, ny };
+  };
+  // Where each station sits (distance along the loop): right side top to
+  // bottom, then left side bottom to top.
+  const nr = Math.ceil(n / 2), nl = n - nr, startR = top / 2 + q, startL = startR + side + q + top + q;
+  const down = (k, cnt) => (cnt === 1 ? side / 2 : side * k / (cnt - 1));
+  const S = Array.from({ length: n }, (_, i) => (i < nr ? startR + down(i, nr) : startL + down(i - nr, nl)));
+  return { L, at, S, gap: RM.row, legs };
 }
-// Points every step px along a polyline, up to len px from its start.
-function alongPath(path, len, step = 6) {
-  const out = [path[0].slice()];
-  let left = len;
-  for (let i = 1; i < path.length && left > 0; i++) {
-    const [ax, ay] = path[i - 1], [bx, by] = path[i];
-    const seg = Math.hypot(bx - ax, by - ay);
-    for (let t = step; t <= Math.min(seg, left); t += step) out.push([ax + (bx - ax) * t / seg, ay + (by - ay) * t / seg]);
-    left -= seg;
-  }
-  return out;
+
+// Where each station is on the canvas ([x, y]), e.g. to scroll the map to it.
+export function routeLayout(stops) {
+  const { at, S } = routeLoop(stops.length);
+  return S.map((s) => { const p = at(s); return [p.x, p.y]; });
 }
 
 export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2fb24a' } = {}) {
-  const { w, h } = ROUTE_MAP;
+  const n = stops.length, { w, h, legendY } = routeMapSize(n);
   c.width = w; c.height = h;
   const g = c.getContext('2d');
   const tx = (o) => o[lang] || o.en;
   const second = (nm) => (lang && lang !== 'ko' && nm[lang]) || nm.en || '';
   const both = (o) => [o.ko, lang && lang !== 'ko' && lang !== 'en' ? tx(o) : o.en];
+  const font = (wt, px) => { g.font = `${wt} ${px}px system-ui, sans-serif`; };
+  // Shrink a font until txt fits in maxW (down to 60%).
+  const fit = (txt, wt, px, maxW) => { let f = px; font(wt, f); while (f > px * 0.6 && g.measureText(txt).width > maxW) font(wt, --f); };
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
   // Header.
-  g.fillStyle = '#2f3540'; g.fillRect(0, 0, w, 120);
+  g.fillStyle = '#2f3540'; g.fillRect(0, 0, w, 110);
   g.textAlign = 'center'; g.textBaseline = 'middle';
   const [t1, t2] = both(ROUTE_MAP_TEXT.title);
-  g.fillStyle = '#ffffff'; g.font = '900 58px system-ui, sans-serif'; g.fillText(t1, w / 2 - 110, 62);
-  g.fillStyle = '#ffd34d'; g.font = '600 40px system-ui, sans-serif'; g.fillText(t2, w / 2 + 110, 64);
-  // North arrow, top left of the map.
-  g.fillStyle = '#9aa1ab';
-  g.beginPath(); g.moveTo(70, 150); g.lineTo(54, 196); g.lineTo(70, 186); g.lineTo(86, 196); g.closePath(); g.fill();
-  g.font = '800 26px system-ui, sans-serif'; g.fillText(both(ROUTE_MAP_TEXT.north)[0] === '북' ? '북 N' : 'N', 70, 222);
+  g.fillStyle = '#ffffff'; font(900, 54); g.fillText(t1, w / 2 - 100, 58);
+  g.fillStyle = '#ffd34d'; font(600, 38); g.fillText(t2, w / 2 + 110, 60, 300);
 
-  const n = stops.length;
-  const pts = routeLayout(stops);
-  const cx = pts.reduce((a, p) => a + p[0], 0) / Math.max(1, n), cy = pts.reduce((a, p) => a + p[1], 0) / Math.max(1, n);
-  const legs = pts.map((p, i) => legPath(p, pts[(i + 1) % n], cx, cy));
+  const { at, S, gap, legs } = routeLoop(n);
   // The line.
-  if (n > 1) {
-    g.strokeStyle = line; g.lineWidth = 22; g.lineJoin = 'round'; g.lineCap = 'round';
-    g.beginPath();
-    legs.forEach((leg, i) => { if (!i) g.moveTo(...leg[0]); g.lineTo(...leg[1]); g.lineTo(...leg[2]); });
-    g.closePath(); g.stroke();
+  g.strokeStyle = line; g.lineWidth = 22; g.lineJoin = 'round';
+  g.beginPath();
+  let first = true;
+  for (let s = 0, L = legs.reduce((a, [len]) => a + len, 0); s <= L; s += 4) {
+    const p = at(s);
+    if (first) { g.moveTo(p.x, p.y); first = false; } else g.lineTo(p.x, p.y);
   }
-  const linePts = legs.flatMap((leg) => alongPath(leg, 1e9, 10));
+  g.closePath(); g.stroke();
 
-  // Arrows from here along the line, just inside it: red towards the next
-  // station (Up), blue towards the previous one (Down), each labelled.
-  const arrowLabels = [], arrowDraws = [];
+  // Arrows from here, just inside the loop: red towards the next station
+  // (Up), blue towards the previous one (Down), each labelled.
   if (n > 1) {
-    const arrow = (path, color, label) => {
-      const segLen = Math.hypot(path[1][0] - path[0][0], path[1][1] - path[0][1]) + Math.hypot(path[2][0] - path[1][0], path[2][1] - path[1][1]);
-      const pts2 = alongPath(path, Math.min(200, segLen * 0.62)).slice(Math.round(52 / 6));
-      if (pts2.length < 4) return;
-      const inner = pts2.map(([px, py], i) => {
-        const [qx, qy] = pts2[Math.min(pts2.length - 1, i + 1)], [rx, ry] = pts2[Math.max(0, i - 1)];
-        let nx = -(qy - ry), ny = qx - rx;
-        const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-        if ((cx - px) * nx + (cy - py) * ny < 0) { nx = -nx; ny = -ny; } // towards the inside of the loop
-        return [px + nx * 32, py + ny * 32, nx, ny];
-      });
-      for (const [x, y] of inner) linePts.push([x, y]); // keep names off the arrows too
-      arrowDraws.push(() => {
-        g.strokeStyle = color; g.fillStyle = color; g.lineWidth = 12; g.lineCap = 'round'; g.lineJoin = 'round';
-        g.beginPath(); inner.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
-        const [ax, ay] = inner[inner.length - 1], [bx, by] = inner[inner.length - 3];
-        const ang = Math.atan2(ay - by, ax - bx);
-        g.beginPath();
-        g.moveTo(ax + Math.cos(ang) * 26, ay + Math.sin(ang) * 26);
-        g.lineTo(ax + Math.cos(ang + 2.3) * 26, ay + Math.sin(ang + 2.3) * 26);
-        g.lineTo(ax + Math.cos(ang - 2.3) * 26, ay + Math.sin(ang - 2.3) * 26);
-        g.closePath(); g.fill();
-      });
-      const mid = inner[Math.floor(inner.length * 0.6)];
-      arrowLabels.push({ x: mid[0] + mid[2] * 46, y: mid[1] + mid[3] * 46, color, label });
+    // Each label in the middle of the loop, level with its arrow; when the
+    // two would meet (here near a corner), each moves the way its arrow goes.
+    const arrow = (dir, color, label) => {
+      const pts = [];
+      for (let t = 0.25; t <= 0.751; t += 0.025) { const p = at(S[index] + dir * t * gap); pts.push([p.x - p.nx * 36, p.y - p.ny * 36]); }
+      g.strokeStyle = color; g.fillStyle = color; g.lineWidth = 11; g.lineCap = 'round';
+      g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.stroke();
+      const [ax, ay] = pts[pts.length - 1], [bx, by] = pts[pts.length - 3], an = Math.atan2(ay - by, ax - bx);
+      g.beginPath(); for (const d of [0, 2.3, -2.3]) g.lineTo(ax + Math.cos(an + d) * 24, ay + Math.sin(an + d) * 24); g.closePath(); g.fill();
+      return { color, label, y: pts[Math.floor(pts.length / 2)][1], tip: ay };
     };
-    const prevLeg = legs[(index - 1 + n) % n];
-    arrow(legs[index], UP_C, both(ROUTE_MAP_TEXT.upShort));
-    arrow([prevLeg[2], prevLeg[1], prevLeg[0]], DOWN_C, both(ROUTE_MAP_TEXT.downShort));
+    const tags = [arrow(1, UP_C, both(ROUTE_MAP_TEXT.upShort)), arrow(-1, DOWN_C, both(ROUTE_MAP_TEXT.downShort))];
+    if (Math.abs(tags[0].y - tags[1].y) < 64) {
+      const mid = (tags[0].y + tags[1].y) / 2, [lo, hi] = tags[0].tip > tags[1].tip ? [tags[1], tags[0]] : tags;
+      lo.y = mid - 32; hi.y = mid + 32;
+    }
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.strokeStyle = '#ffffff'; g.lineWidth = 7;
+    const cx = (RM.x0 + RM.x1) / 2 + (at(S[index]).nx > 0 ? -20 : 20);
+    for (const { color, label, y } of tags) {
+      g.fillStyle = color;
+      font(900, 26); g.strokeText(label[0], cx, y - 12, 150); g.fillText(label[0], cx, y - 12, 150);
+      font(700, 19); g.strokeText(label[1], cx, y + 13, 150); g.fillText(label[1], cx, y + 13, 150);
+    }
   }
 
-  // Stations: a white circle on the line; the name where it fits best
-  // (clear of the line, the other stations and names, preferably outside).
-  const hit = (r, x, y) => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1;
-  const meet = (r, o) => !(r.x1 < o.x0 || r.x0 > o.x1 || r.y1 < o.y0 || r.y0 > o.y1);
-  const order = pts.map((_, i) => i).sort((a, b) => (a === index ? -1 : b === index ? 1 : 0));
-  const labels = [];
-  for (const i of order) {
-    const [px, py] = pts[i], nm = stops[i].name || {}, cur = i === index;
-    const big = cur ? 40 : 34, small = cur ? 25 : 22, rr = cur ? 46 : 30;
-    g.font = `900 ${big}px system-ui, sans-serif`;
-    const w1 = g.measureText(nm.ko || nm.en || '').width;
-    g.font = `600 ${small}px system-ui, sans-serif`;
-    const w2 = g.measureText(second(nm)).width;
-    const lw = Math.min(330, Math.max(w1, w2)), lh = big + small + 10;
-    const ox = px - cx, oy = py - cy, ol = Math.hypot(ox, oy) || 1;
-    const near = [
-      [rr, -lh / 2, 'left'], [-rr, -lh / 2, 'right'], [0, -rr - lh, 'center'], [0, rr, 'center'],
-      [rr * 0.8, -rr * 0.8 - lh, 'left'], [-rr * 0.8, -rr * 0.8 - lh, 'right'], [rr * 0.8, rr * 0.8, 'left'], [-rr * 0.8, rr * 0.8, 'right'],
-    ];
-    // Also a little further out (a small cost), for crowded corners where
-    // stations sit close together (Seoul Station, Myeongdong, Gwanghwamun).
-    const far = near.map(([dx, dy, align]) => [dx * 1.6, dy === -lh / 2 ? dy : dy < 0 ? dy - rr * 0.6 : dy + rr * 0.6, align, 10]);
-    const cands = [...near, ...far].map(([dx, dy, align, extra = 0]) => {
-      const x0 = align === 'left' ? px + dx : align === 'right' ? px + dx - lw : px - lw / 2;
-      const r = { x0: x0 - 4, x1: x0 + lw + 4, y0: py + dy - 2, y1: py + dy + lh + 2 };
-      let bad = extra;
-      for (const [qx, qy] of linePts) if (hit(r, qx, qy)) bad += 8;
-      for (const [k, q] of pts.entries()) if (k !== i && q[0] > r.x0 - 26 && q[0] < r.x1 + 26 && q[1] > r.y0 - 26 && q[1] < r.y1 + 26) bad += 150;
-      for (const a of arrowLabels) if (hit({ x0: r.x0 - 50, x1: r.x1 + 50, y0: r.y0 - 32, y1: r.y1 + 32 }, a.x, a.y)) bad += 150;
-      if (r.x0 < 8 || r.x1 > w - 8 || r.y0 < 128 || r.y1 > 860) bad += 200;
-      const mx = (r.x0 + r.x1) / 2 - px, my = (r.y0 + r.y1) / 2 - py;
-      const outward = (mx * ox + my * oy) / ol / (Math.hypot(mx, my) || 1);
-      return { r, x0, y: py + dy, align, score: bad - outward * 3 };
-    });
-    labels.push({ i, cands, best: null, big, small, lw, cur, nm });
-  }
-  // Names don't sit on each other: place them one by one, then go round a
-  // few times letting each move to its best spot given where the others are.
-  const LABEL_HIT = 160;
-  const pick = (L, others) => L.cands.reduce((a, b) => {
-    const sa = a.score + others.filter((o) => meet(a.r, o)).length * LABEL_HIT, sb = b.score + others.filter((o) => meet(b.r, o)).length * LABEL_HIT;
-    return sb < sa ? b : a;
-  });
-  for (const [k, L] of labels.entries()) L.best = pick(L, labels.slice(0, k).map((o) => o.best.r));
-  for (let pass = 0; pass < 4; pass++) {
-    let moved = false;
-    for (const L of labels) {
-      const b = pick(L, labels.filter((o) => o !== L).map((o) => o.best.r));
-      if (b !== L.best) { L.best = b; moved = true; }
-    }
-    if (!moved) break;
-  }
-  // A thin grey tie from a station to its name when the name had to sit a
-  // little away from it, so it's clear which circle it belongs to (e.g.
-  // Dongdaemun History & Culture Park, its name up beside Dongmyo's leg).
-  g.strokeStyle = '#6b717c'; g.lineWidth = 4; g.lineCap = 'round';
-  for (const { i, best, cur } of labels) {
-    const [px, py] = pts[i], r = best.r, rr = cur ? 46 : 26;
-    const nx = Math.min(r.x1, Math.max(r.x0, px)), ny = Math.min(r.y1, Math.max(r.y0, py)), d = Math.hypot(nx - px, ny - py);
-    if (d < rr + 6) continue;
-    g.beginPath(); g.moveTo(px + ((nx - px) / d) * rr, py + ((ny - py) / d) * rr); g.lineTo(nx, ny); g.stroke();
-  }
-  // Circles on top of the line, then the names.
-  pts.forEach(([px, py], i) => {
-    const cur = i === index;
+  // Stations: a white circle on the line, the name beside it outside.
+  const big = 42, small = 27;
+  for (let i = 0; i < n; i++) {
+    const p = at(S[i]), cur = i === index, nm = stops[i].name || {};
     g.fillStyle = '#ffffff'; g.strokeStyle = cur ? UP_C : '#3b3f47'; g.lineWidth = cur ? 9 : 7;
-    g.beginPath(); g.arc(px, py, cur ? 24 : 18, 0, Math.PI * 2); g.fill(); g.stroke();
-    if (cur) { g.lineWidth = 7; g.beginPath(); g.arc(px, py, 40, 0, Math.PI * 2); g.stroke(); }
-  });
-  g.textBaseline = 'top'; g.textAlign = 'left';
-  for (const { best, big, small, lw, cur, nm } of labels) {
-    g.fillStyle = cur ? UP_C : '#22252b';
-    g.font = `900 ${big}px system-ui, sans-serif`;
-    const tw1 = Math.min(lw, g.measureText(nm.ko || nm.en || '').width);
-    const ax = (tw) => (best.align === 'left' ? best.x0 : best.align === 'right' ? best.x0 + lw - tw : best.x0 + (lw - tw) / 2);
-    g.fillText(nm.ko || nm.en || '', ax(tw1), best.y, lw);
-    g.fillStyle = cur ? UP_C : '#555b66';
-    g.font = `600 ${small}px system-ui, sans-serif`;
-    const tw2 = Math.min(lw, g.measureText(second(nm)).width);
-    g.fillText(second(nm), ax(tw2), best.y + big + 6, lw);
-  }
-  // Arrow labels.
-  g.textAlign = 'center'; g.textBaseline = 'middle';
-  for (const f of arrowDraws) f();
-  g.lineJoin = 'round'; g.strokeStyle = '#ffffff';
-  for (const a of arrowLabels) {
-    g.fillStyle = a.color; g.lineWidth = 7;
-    g.font = '900 28px system-ui, sans-serif'; g.strokeText(a.label[0], a.x, a.y - 12, 92); g.fillText(a.label[0], a.x, a.y - 12, 92);
-    g.font = '700 20px system-ui, sans-serif'; g.strokeText(a.label[1], a.x, a.y + 15, 92); g.fillText(a.label[1], a.x, a.y + 15, 92);
+    g.beginPath(); g.arc(p.x, p.y, cur ? 22 : 16, 0, Math.PI * 2); g.fill(); g.stroke();
+    if (cur) { g.lineWidth = 6; g.beginPath(); g.arc(p.x, p.y, 36, 0, Math.PI * 2); g.stroke(); }
+    const right = p.nx > 0, ax = p.x + (right ? 1 : -1) * (cur ? 48 : 32), maxW = right ? w - ax - 14 : ax - 14;
+    const top = p.y - (big + small + 6) / 2;
+    g.textAlign = right ? 'left' : 'right'; g.textBaseline = 'top';
+    const n1 = nm.ko || nm.en || '', n2 = second(nm);
+    g.fillStyle = cur ? UP_C : '#22252b'; fit(n1, 900, big, maxW); g.fillText(n1, ax, top, maxW);
+    g.fillStyle = cur ? UP_C : '#555b66'; fit(n2, 600, small, maxW); g.fillText(n2, ax, top + big + 6, maxW);
   }
 
   // Legend: the red ring, the red (Up) and blue (Down) arrows.
-  const lgY = 905;
   g.textAlign = 'left'; g.textBaseline = 'middle';
-  const here = both(ROUTE_MAP_TEXT.here);
-  g.strokeStyle = UP_C; g.fillStyle = '#fff'; g.lineWidth = 7;
-  g.beginPath(); g.arc(80, lgY, 20, 0, Math.PI * 2); g.fill(); g.stroke();
-  g.fillStyle = UP_C; g.font = '800 30px system-ui, sans-serif'; g.fillText(here[0], 116, lgY - 15, 300);
-  g.font = '600 24px system-ui, sans-serif'; g.fillText(here[1], 116, lgY + 17, 300);
-  const legendArrow = (x, color, txt) => {
-    g.strokeStyle = color; g.lineWidth = 10; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(x, lgY); g.lineTo(x + 46, lgY); g.stroke();
-    g.fillStyle = color; g.beginPath(); g.moveTo(x + 66, lgY); g.lineTo(x + 42, lgY - 16); g.lineTo(x + 42, lgY + 16); g.closePath(); g.fill();
-    g.font = '800 28px system-ui, sans-serif'; g.fillText(txt[0], x + 86, lgY - 15, 470);
-    g.fillStyle = '#555b66'; g.font = '600 22px system-ui, sans-serif'; g.fillText(txt[1], x + 86, lgY + 17, 470);
+  const lx = 60, row = (y, draw, txt, color, color2 = '#555b66') => {
+    draw(y);
+    g.fillStyle = color; fit(txt[0], 800, 30, w - lx - 130); g.fillText(txt[0], lx + 70, y - 15, w - lx - 130);
+    g.fillStyle = color2; fit(txt[1], 600, 23, w - lx - 130); g.fillText(txt[1], lx + 70, y + 16, w - lx - 130);
   };
-  legendArrow(420, UP_C, both(ROUTE_MAP_TEXT.up));
-  legendArrow(1000, DOWN_C, both(ROUTE_MAP_TEXT.down));
+  const here = both(ROUTE_MAP_TEXT.here);
+  row(legendY, (y) => { g.strokeStyle = UP_C; g.fillStyle = '#fff'; g.lineWidth = 7; g.beginPath(); g.arc(lx + 22, y, 20, 0, Math.PI * 2); g.fill(); g.stroke(); }, here, UP_C, UP_C);
+  const legendArrow = (color) => (y) => {
+    g.strokeStyle = color; g.lineWidth = 10; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(lx - 4, y); g.lineTo(lx + 30, y); g.stroke();
+    g.fillStyle = color; g.beginPath(); g.moveTo(lx + 50, y); g.lineTo(lx + 26, y - 16); g.lineTo(lx + 26, y + 16); g.closePath(); g.fill();
+  };
+  row(legendY + 64, legendArrow(UP_C), both(ROUTE_MAP_TEXT.up), UP_C);
+  row(legendY + 128, legendArrow(DOWN_C), both(ROUTE_MAP_TEXT.down), DOWN_C);
   // Warning at the bottom: the wrong way round takes longer.
-  const by0 = 955;
+  const by0 = legendY + 180;
   g.fillStyle = '#fff4d6'; g.strokeStyle = '#f2b01e'; g.lineWidth = 6;
-  g.beginPath(); g.roundRect(40, by0, w - 80, 160, 22); g.fill(); g.stroke();
+  g.beginPath(); g.roundRect(30, by0, w - 60, 190, 22); g.fill(); g.stroke();
   g.textAlign = 'center';
   const wn = both(ROUTE_MAP_TEXT.warn), ck = both(ROUTE_MAP_TEXT.check);
-  g.fillStyle = '#b3261e'; g.font = '900 40px system-ui, sans-serif'; g.fillText('⚠ ' + wn[0], w / 2, by0 + 40, w - 130);
-  g.fillStyle = '#22252b'; g.font = '700 30px system-ui, sans-serif'; g.fillText(wn[1], w / 2, by0 + 84, w - 130);
-  g.fillStyle = '#555b66'; g.font = '600 26px system-ui, sans-serif'; g.fillText(`${ck[0]} · ${ck[1]}`, w / 2, by0 + 126, w - 130);
+  g.fillStyle = '#b3261e'; fit('⚠ ' + wn[0], 900, 36, w - 100); g.fillText('⚠ ' + wn[0], w / 2, by0 + 42, w - 100);
+  g.fillStyle = '#22252b'; fit(wn[1], 700, 28, w - 100); g.fillText(wn[1], w / 2, by0 + 88, w - 100);
+  g.fillStyle = '#555b66'; font(600, 25); g.fillText(ck[0], w / 2, by0 + 128, w - 100);
+  g.fillText(ck[1], w / 2, by0 + 160, w - 100);
 }
 
 export function signMesh(tex, w, h) {

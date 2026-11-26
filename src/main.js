@@ -229,7 +229,7 @@ import { createBeauty } from './game/beauty.js';
 import { NavGrid, nearestOnPoly, trimPoly, pointAhead } from './core/nav-grid.js';
 import { createNavWindow, createRoutePlanner } from './core/nav-window.js';
 import { LocalFriends } from './core/friends.js';
-import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, ROUTE_MAP, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
+import { SubwayEntrances, VENDING_DRINKS, ROUTE_MAP_TEXT, loopOrder, gateAt, GATE_X, DOOR_Z, FARE, blockersOf, holeOf, footprintOf, toWorld, outsideOf, PIT } from './core/subway.js';
 import { createBikeShop } from './ui/bike-shop-ui.js';
 import { createPool } from './game/pool.js';
 import { createTarot } from './game/tarot.js';
@@ -3756,14 +3756,14 @@ function openRouteMap() {
   const img = document.createElement('img');
   img.src = rm.canvas.toDataURL();
   img.alt = L(ROUTE_MAP_TEXT.title);
-  // On a narrow phone the map is shown larger and scrolls sideways, starting
-  // at your station.
+  // The map is tall: it fills the panel's width and scrolls up and down,
+  // starting at your station.
   const wrap = document.createElement('div');
   wrap.className = 'route-scroll';
   wrap.append(img);
   root.replaceChildren(x, title, wrap);
   root.hidden = false;
-  const fit = () => { if (rm.here && wrap.scrollWidth > wrap.clientWidth) wrap.scrollLeft = rm.here[0] / ROUTE_MAP.w * img.clientWidth - wrap.clientWidth / 2; };
+  const fit = () => { if (rm.here && wrap.scrollHeight > wrap.clientHeight) wrap.scrollTop = rm.here[1] / rm.canvas.height * img.clientHeight - wrap.clientHeight / 2; };
   if (img.complete) fit(); else img.onload = fit;
 }
 const nearRouteMap = (p) => {
