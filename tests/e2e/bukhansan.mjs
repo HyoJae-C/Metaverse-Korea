@@ -73,6 +73,16 @@ await cam({ yaw: 2.2, pitch: 0.1, dist: 7 }); await page.waitForTimeout(1500); a
 await look('peak', '8-top', { yaw: 0.4, pitch: 0.3, dist: 9 });
 await cam({ yaw: 2.6, pitch: 0.55, dist: 60 }); await page.waitForTimeout(1500); await shot('9-top-from-above');
 
+// The top's own drawing (game/bukhansan-summit.js): the far country all round, the sea of clouds, the wind.
+await page.waitForFunction(() => __mk.bukhan.park?.summit?.ready, null, { timeout: 20000 });
+assert(await page.evaluate(() => __mk.bukhan.park.summit.open > 0.99), 'at the top the far country, the clouds and the wind are fully shown');
+for (const [i, yaw] of [0, Math.PI / 2, Math.PI, -Math.PI / 2].entries()) { await cam({ yaw, pitch: 0.12, dist: 7 }); await page.waitForTimeout(900); await shot(`9${'abcd'[i]}-top-round`); }
+await cam({ yaw: 2.9, pitch: 0.3, dist: 16 }); await page.waitForTimeout(900); await shot('9e-top-wide');
+console.log('render at the top', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
+await go(l.pads.find((q) => q.k === 'gate').at, 1200);
+assert(await page.evaluate(() => __mk.bukhan.park.summit.open === 0), 'at the gate it is the street as usual');
+await go(l.pads.find((q) => q.k === 'peak').at, 1200);
+
 // The view from the top.
 const acts = await page.evaluate(() => __mk.bukhan.acts({ x: __mk.me()[0], z: __mk.me()[1] }).map((a) => a.key));
 assert(acts.includes('bukhan-view'), 'at the flag: the view\'s button');

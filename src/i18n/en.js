@@ -482,6 +482,8 @@ export const EN = {
   'bukhan.viewHint': "Drag to look around",
   'bukhan.viewNote': "A drawing in the game's style, shaped from the real terrain. Not a photo.",
   'bukhan.viewClose': "Close",
+  'bukhan.noRide': "🚲 No bikes or cars on Bukhansan. From here you go on foot.",
+  'bukhan.noTaxi': "🚕 Taxis don't come up the mountain. Walk down to Bukhansan Ui Station first.",
   'bike.offShort': 'Get off',
   'bike.off': 'Get off the bike',
   'car.off': 'Get out of the car',

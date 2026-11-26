@@ -1591,3 +1591,17 @@ on its real place.
 - Data: `scripts/data/bukhansan-{osm,dem,horizon}.json`, made by
   `/mnt/project-files/bukhansan/data-prep/`. After rebuilding, run
   `build-base.mjs` and `build-closed.mjs`.
+- Above the gate the top is drawn its own way, with no cut
+  (`game/bukhansan-summit.js`, loaded within 140 m of the top; it opens as
+  you climb the steps): the haze pulls back to about 590 m, the far country
+  (the painted view's real skyline, 1.35 times taller) stands on a ring 900 m
+  out, a sea of clouds lies 90 m under the top, and the wind blows (streaks,
+  wisps, its sound, the flag). From the top what is under the clouds is not
+  drawn.
+- No bikes, cars or taxis on the mountain (inside its outline): you get off
+  at its edge, and no taxi picks you up there.
+- Away from the way (18 m) the wood is one mass: the ground in the canopy's
+  greens with clumps on it, not trees (Yozi 2026-11-27).
+- From elsewhere nothing of it is drawn: it loads within 480 m, and past the
+  haze (600 m and more) it hands the renderer 0 triangles
+  (`tests/e2e/bukhansan-far.mjs`).

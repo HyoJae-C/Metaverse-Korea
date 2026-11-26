@@ -483,6 +483,8 @@ export const KO = {
   'bukhan.viewHint': "화면을 끌어서 둘러보세요",
   'bukhan.viewNote': "실제 지형을 바탕으로 게임 스타일로 그린 그림이에요. 사진이 아니에요.",
   'bukhan.viewClose': "닫기",
+  'bukhan.noRide': "🚲 북한산에서는 자전거·차를 탈 수 없어요. 여기서부터는 걸어서 올라가요.",
+  'bukhan.noTaxi': "🚕 산에는 택시가 못 올라와요. 북한산우이역까지 걸어 내려가서 타요.",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',
   'car.off': '차에서 내리기',

@@ -905,7 +905,7 @@ const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seat
 // Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
 const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Bukhansan's Baegundae course (game/bukhansan-walk.js): the way up is decks, the mountain loads near, the top opens a painted view.
-const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k) => t(k), lang: () => getLanguage(), busy: () => spaceBusy() });
+const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k) => t(k), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m) => shop.toast(m), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
 // Seoul National Cemetery (game/hyeonchungwon-walk.js): a place of remembrance; its roads, court and lawn are decks, the rest loads near.
 const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }), music: () => music, riding: () => riding, getOff: () => setRiding(false), noRide: () => t('hyeonchung.noRide') });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
@@ -3899,6 +3899,7 @@ const taxi = lazyPanel(() => import('./game/taxi.js').then(({ createTaxi }) => c
   get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop, shops: () => storefronts.items,
+  noTaxiHere: () => (mode === 'street' && bukhan.on(me.root.position.x, me.root.position.z) ? t('bukhan.noTaxi') : null), // (no taxi comes up the mountain)
   // The shop or place nearest (x, z), for a shared taxi's "going to …".
   placeName: (x, z) => {
     let best = null, bd = 80;

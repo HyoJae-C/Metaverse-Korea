@@ -482,6 +482,8 @@ export const ES = {
   'bukhan.viewHint': "Arrastra para mirar alrededor",
   'bukhan.viewNote': "Un dibujo con el estilo del juego, hecho a partir del relieve real. No es una foto.",
   'bukhan.viewClose': "Cerrar",
+  'bukhan.noRide': "🚲 Nada de bicis ni coches en Bukhansan. Desde aquí se sube a pie.",
+  'bukhan.noTaxi': "🚕 Los taxis no suben a la montaña. Baja primero a la estación Bukhansan Ui.",
   'bike.offShort': 'Bajar',
   'bike.off': 'Bajar de la bici',
   'car.off': 'Salir del coche',

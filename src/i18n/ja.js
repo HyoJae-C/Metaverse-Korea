@@ -483,6 +483,8 @@ export const JA = {
   'bukhan.viewHint': "ドラッグして見回せます",
   'bukhan.viewNote': "実際の地形をもとに、ゲームの絵柄で描いた絵です。写真ではありません。",
   'bukhan.viewClose': "閉じる",
+  'bukhan.noRide': "🚲 北漢山では自転車・車に乗れません。ここからは歩いて登ろう。",
+  'bukhan.noTaxi': "🚕 山にはタクシーが来られません。北漢山牛耳駅まで歩いて下りてから乗ろう。",
   'bike.offShort': '降りる',
   'bike.off': '自転車を降りる',
   'car.off': '車を降りる',

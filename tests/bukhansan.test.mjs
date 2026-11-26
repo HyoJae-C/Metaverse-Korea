@@ -6,6 +6,9 @@ import { inPoly, trailNear } from '../src/core/skypark-ground.js';
 import { bukhanHeight, padRing } from '../src/core/bukhan-ground.js';
 import { createBukhansanWalk, SUMMIT_R, climbPace, CLIMB } from '../src/game/bukhansan-walk.js';
 import { BUKHAN, OFFSET, EXITS } from '../scripts/build-bukhansan.mjs';
+import { summitOpen, woodColor, BUKHAN_PARK } from '../src/game/bukhansan-park.js';
+import { SUMMIT, ringGeometry } from '../src/game/bukhansan-summit.js';
+import { VIEW } from '../src/game/bukhansan-view.js';
 
 // Bukhansan (북한산), the Baegundae course from Bukhansan Ui Station
 // (scripts/build-bukhansan.mjs): at 1/4 on its real place, the mountain its
@@ -152,4 +155,61 @@ test('the steeper the way the slower you go: full pace on the flat and the stops
   for (const t of l.trails) for (let i = 1; i < t.p.length; i++) s += Math.hypot(t.p[i][0] - t.p[i - 1][0], t.p[i][1] - t.p[i - 1][1]) / (6.5 * at([(t.p[i][0] + t.p[i - 1][0]) / 2, (t.p[i][1] + t.p[i - 1][1]) / 2]));
   console.log(`the climb on foot: ${Math.round(s)} s`);
   assert.ok(s > 180 && s < 300, `the climb takes ${Math.round(s)} s on foot`);
+});
+
+test('on the mountain you go on foot: you get off a bike or a car at its edge, a friend\'s seat is left alone', () => {
+  const landmarks = bh.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz }));
+  let riding = 1;
+  const said = [];
+  const walk = createBukhansanWalk({ landmarks, riding: () => riding, getOff: () => { riding = 0; }, toast: (m) => said.push(m), text: (k) => k });
+  assert.equal(walk.on(ox, oz), false, 'the station is in town');
+  for (const p of l.pads) assert.ok(walk.on(p.at[0] + ox, p.at[1] + oz), `${p.k} is on the mountain`);
+  walk.update({ x: ox, z: oz }, 0.016);
+  assert.equal(riding, 1, 'in town you ride');
+  const [x, z] = l.trails[0].p[30];
+  walk.update({ x: x + ox, z: z + oz }, 0.016);
+  assert.equal(riding, 0);
+  assert.deepEqual(said, ['bukhan.noRide']);
+  riding = 3;
+  walk.update({ x: x + ox, z: z + oz }, 0.016);
+  assert.equal(riding, 3);
+});
+
+test('the top is drawn its own way only above the gate: it opens as you climb the steps', () => {
+  const gate = pad('gate'), hut = pad('hut');
+  assert.equal(summitOpen(gate.y, gate.y), 0, 'at the gate: the street as usual');
+  assert.equal(summitOpen(hut.y, gate.y), 0);
+  assert.equal(summitOpen(l.summit.y, gate.y), 1, 'at the top: all of it');
+  const steps = l.trails.at(-1).p;
+  for (let i = 1; i < steps.length; i++) assert.ok(summitOpen(steps[i][2], gate.y) >= summitOpen(steps[i - 1][2], gate.y), 'more of it the higher you are');
+  // the sea of clouds lies under every stop you can stand on up there, and over the valleys
+  const seaY = l.summit.y - SUMMIT.seaUnder;
+  assert.ok(seaY < hut.y - 20 && seaY > pad('haru').y - 10, `the clouds at ${seaY.toFixed(0)} m`);
+  for (const name of ['인수봉', '만경대']) assert.ok(l.peaks.find((q) => q.name === name).y > seaY + 40, `${name} stands out of the clouds`);
+  // looking down past the sea's rim you see the far country, not the ground: the ring reaches lower than the rim
+  const rim = Math.atan(SUMMIT.seaUnder / SUMMIT.seaR) * 180 / Math.PI;
+  assert.ok(rim < -SUMMIT.low * SUMMIT.tall - 3, `the sea's rim is ${rim.toFixed(1)}° down, the ring goes to ${(-SUMMIT.low * SUMMIT.tall).toFixed(1)}°`);
+  assert.ok(SUMMIT.ring < 2000 && SUMMIT.seaR < SUMMIT.ring, 'inside what the camera sees');
+  assert.ok(BUKHAN_PARK.lift > 0 && BUKHAN_PARK.lift <= 0.4, 'the haze pulls back past the peaks next door, not over the city');
+});
+
+test('the far country stands where it is: north of the top is north in the picture', () => {
+  const R = 100, g = ringGeometry(R, 10, 8, 2), pos = g.getAttribute('position'), uv = g.getAttribute('uv');
+  // column 2 of 8 = bearing 90° = east (+x), a quarter of the way along the strip
+  assert.ok(Math.abs(pos.getX(2) - R) < 1e-6 && Math.abs(pos.getZ(2)) < 1e-6 && uv.getX(2) === 0.25);
+  assert.ok(Math.abs(pos.getZ(0) + R) < 1e-6, 'bearing 0 is north (-z)');
+  // Insubong's own bearing in the picture's data matches where the game has it
+  const insu = l.peaks.find((q) => q.name === '인수봉'), b = (Math.atan2(insu.at[0] - l.summit.at[0], -(insu.at[1] - l.summit.at[1])) * 180 / Math.PI + 360) % 360;
+  assert.ok(Math.abs(b - view.places.find((q) => q.k === 'insubong').az) < 2, `Insubong at ${b.toFixed(1)}°`);
+  // level in the picture is level on the ring
+  const rows = 2, top = 3 * 9 - 1;
+  assert.ok(uv.getY(top) <= 1 && uv.getY(0) >= 0 && uv.getY(0) === (SUMMIT.low - VIEW.bottom) / (VIEW.top - VIEW.bottom));
+  assert.equal(rows, 2);
+});
+
+test('the far woods are one mass: clumps in the wood\'s greens or the season\'s colour, never mud', () => {
+  let green = 0;
+  for (let n = 0; n < 400; n++) { const c = woodColor(n, 0.5); assert.ok(c.r >= 0 && c.g > 0.02 && c.g <= 1, `a colour (${c.getHexString()})`); if (c.g > c.r) green++; }
+  assert.ok(green > 200, `most clumps stay green (${green} of 400)`);
+  assert.ok(BUKHAN_PARK.woodFrom >= 12, 'by the way you still walk among trees');
 });
