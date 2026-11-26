@@ -7576,7 +7576,7 @@ renderer.setAnimationLoop((now) => {
     if (walkedFor > 0.8) dismissHelp();
     const inStore = mode === 'store' && !interior.store.open; // (an open-air park is the street's: its pace too, or you'd lurch at its edge)
     const walkPace = steady ? (inStore ? STORE_STEADY : STEADY) : (inStore ? STORE_WALK : WALK);
-    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed; // (slower in the pool's water, or rolling a big snowball)
+    const speed = (riding ? rideSpeed() : (running ? (inStore ? STORE_RUN : RUN) : walkPace) * gymLog.boost) * Math.min(1, mag) * wxSpeed() * pool.slow * snowman.speed * (mode === 'street' ? bukhan.pace(p) : 1); // (slower in the pool's water, rolling a big snowball, or up a steep mountain path)
     const fx = -Math.sin(moveRef.yaw), fz = -Math.cos(moveRef.yaw); // forward
     const rx = Math.cos(moveRef.yaw), rz = -Math.sin(moveRef.yaw); // right
     const dx = (fx * my + rx * mx) * speed * dt;
@@ -7606,7 +7606,7 @@ renderer.setAnimationLoop((now) => {
     const [tx, tz] = pointAhead(routePoly, p.x, p.z, 2.5);
     const ddx = tx - p.x, ddz = tz - p.z, dl = Math.hypot(ddx, ddz) || 1;
     const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, true);
-    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed() * snowman.speed;
+    const speed = (riding ? rideSpeed() : (running ? RUN : steady ? STEADY : WALK) * gymLog.boost) * wxSpeed() * snowman.speed * bukhan.pace(p);
     // Stuck on a wall corner? Side-step for a moment, then try again.
     let ux = ddx / dl, uz = ddz / dl;
     if (autoSide.t > 0) { autoSide.t -= dt; [ux, uz] = [ux * 0.3 - uz * autoSide.dir, uz * 0.3 + ux * autoSide.dir]; }

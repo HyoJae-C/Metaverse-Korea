@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { toGame } from '../src/core/seoul-grid.js';
 import { inPoly, trailNear } from '../src/core/skypark-ground.js';
 import { bukhanHeight, padRing } from '../src/core/bukhan-ground.js';
-import { createBukhansanWalk, SUMMIT_R } from '../src/game/bukhansan-walk.js';
+import { createBukhansanWalk, SUMMIT_R, climbPace, CLIMB } from '../src/game/bukhansan-walk.js';
 import { BUKHAN, OFFSET, EXITS } from '../scripts/build-bukhansan.mjs';
 
 // Bukhansan (북한산), the Baegundae course from Bukhansan Ui Station
@@ -130,4 +130,26 @@ test('the view from the top: the real skyline all the way round, and real places
   assert.ok(view.places.length >= 4);
   for (const p of view.places) assert.ok(p.az >= 0 && p.az < 360 && p.km > 0 && p.name?.en && p.name?.ko, JSON.stringify(p));
   assert.ok(view.places.some((p) => p.name.en.includes('Namsan')));
+});
+
+test('the steeper the way the slower you go: full pace on the flat and the stops, slowest on the steps', () => {
+  assert.equal(climbPace(0), 1);
+  assert.equal(climbPace(CLIMB.easy), 1);
+  assert.ok(Math.abs(climbPace(CLIMB.path) - CLIMB.pathPace) < 1e-9 && climbPace(2) === CLIMB.stepsPace);
+  for (let g = 0; g < 1; g += 0.02) assert.ok(climbPace(g + 0.02) <= climbPace(g), 'never faster on a steeper slope');
+  const landmarks = bh.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz }));
+  const walk = createBukhansanWalk({ landmarks });
+  const at = ([x, z]) => walk.pace({ x: x + ox, z: z + oz });
+  assert.equal(at([10, 0]), 1, 'by the station');
+  for (const p of l.pads) assert.equal(at(p.at), 1, `${p.k} is level`);
+  const mid = (t) => t.p[Math.floor(t.p.length / 2)];
+  const road = at(l.trails[0].p[20]), path = at(mid(l.trails[1])), steps = at(mid(l.trails[4]));
+  assert.ok(road > 0.9, `the valley road's start ${road.toFixed(2)}`);
+  assert.ok(path < 0.75 && path >= CLIMB.pathPace - 0.08, `the path to Harujae ${path.toFixed(2)}`);
+  assert.ok(steps < path && steps >= CLIMB.stepsPace, `the steps ${steps.toFixed(2)}`);
+  // how long the climb takes on foot (6.5 m/s on the flat)
+  let s = 0;
+  for (const t of l.trails) for (let i = 1; i < t.p.length; i++) s += Math.hypot(t.p[i][0] - t.p[i - 1][0], t.p[i][1] - t.p[i - 1][1]) / (6.5 * at([(t.p[i][0] + t.p[i - 1][0]) / 2, (t.p[i][1] + t.p[i - 1][1]) / 2]));
+  console.log(`the climb on foot: ${Math.round(s)} s`);
+  assert.ok(s > 180 && s < 300, `the climb takes ${Math.round(s)} s on foot`);
 });

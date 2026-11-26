@@ -1578,6 +1578,9 @@ on its real place.
   and stops are `game/bukhansan-park.js`, loaded within 480 m).
 - Paths climb at most about 18°; the last stretch, up the bare rock, is steps
   with a handrail (about 30°).
+- The steeper the way, the slower you go (`climbPace`): full pace up to about
+  7°, 60% at 18°, 45% on the steps. Station to top takes about 3 min 20 s on
+  foot.
 - At the flag on top a button opens a painted 360° view
   (`game/bukhansan-view.js`, loaded when asked for): the real skyline from the
   terrain, drawn in the game's style, and it says it is a drawing, not a photo.

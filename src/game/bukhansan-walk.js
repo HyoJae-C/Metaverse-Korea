@@ -11,6 +11,7 @@
 //
 //   const bukhan = createBukhansanWalk({ landmarks, collision, scene, text, lang });
 //   bukhan.y(x, z)       ground height on the mountain (0 off it)
+//   bukhan.pace(p)       how fast you go here (1 on the flat, less the steeper it is)
 //   bukhan.update(p, dt) every frame on the street
 //   bukhan.acts(p)       at the top: the button that opens the view
 //   bukhan.group         what loaded (main.js FarCull), or null
@@ -18,10 +19,18 @@ import { bukhanHeight, bukhanBox, padRing } from '../core/bukhan-ground.js';
 
 export const BUKHAN_NEAR = 480; // m: past the fog (it ends at 420 m), so it is there before you see it
 export const SUMMIT_R = 4; // m from the flag: where the view's button shows
+// The steeper the way, the slower you go (Yozi 2026-11-27): full pace up to
+// about 7°, 60% on the steepest paths (18°), 45% on the steps up the rock.
+export const CLIMB = { easy: 0.12, path: 0.33, pathPace: 0.6, steps: 0.55, stepsPace: 0.45 };
+export function climbPace(g) {
+  if (g <= CLIMB.easy) return 1;
+  if (g <= CLIMB.path) return 1 - (1 - CLIMB.pathPace) * (g - CLIMB.easy) / (CLIMB.path - CLIMB.easy);
+  return Math.max(CLIMB.stepsPace, CLIMB.pathPace - (CLIMB.pathPace - CLIMB.stepsPace) * (g - CLIMB.path) / (CLIMB.steps - CLIMB.path));
+}
 
 export function createBukhansanWalk({ landmarks = [], collision = null, scene = null, seats = null, lowSpec = false, text = (k) => k, lang = () => 'en', busy = () => false }) {
   const l = landmarks.find((q) => q.type === 'bukhansan');
-  if (!l) return { y: () => 0, update() {}, acts: () => [], group: null, landmark: null, summit: null };
+  if (!l) return { y: () => 0, pace: () => 1, update() {}, acts: () => [], group: null, landmark: null, summit: null };
   const [bx0, bz0, bx1, bz1] = bukhanBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
   const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : bukhanHeight(l, x - l.x, z - l.z));
@@ -46,8 +55,15 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
       .catch((e) => console.warn('bukhansan view', e))
       .finally(() => { opening = false; });
   };
+  // The ground's own slope where you stand (the ground under the way is the way: core/bukhan-ground.js).
+  const pace = (p) => {
+    if (p.x < x0 || p.x > x1 || p.z < z0 || p.z > z1) return 1;
+    const d = 1.5, gx = (y(p.x + d, p.z) - y(p.x - d, p.z)) / (2 * d), gz = (y(p.x, p.z + d) - y(p.x, p.z - d)) / (2 * d);
+    return climbPace(Math.hypot(gx, gz));
+  };
   return {
     y,
+    pace,
     landmark: l,
     summit,
     update(p, dt) {
