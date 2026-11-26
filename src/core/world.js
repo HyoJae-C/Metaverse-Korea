@@ -6,6 +6,26 @@ import { SEASON, MIX, leafColor, leafHash, ginkgoColor } from './season.js';
 
 const GINKGO_STREET = 0.55, GINKGO_PARK = 0.12; // shares of the street and park round trees that are ginkgos
 const GINKGO_TRUNK = [1.6, 1.45]; // a ginkgo's trunk against a round tree's: thicker, taller
+// Tree heights (Yozi 2026-11-26, map rule 13): a tree is its real height / 4,
+// like the buildings (a street tree of 7 to 14 m stands 1.75 to 3.5 m), with
+// only the odd big old tree near 4 m. Big parks where the trees are the
+// point and few buildings stand near (Seoul Forest, the Han River parks,
+// Olympic Park, Yeouido Park, the Grand Park) take real / 2 instead.
+// Every tree is sized by its top in metres: TREE_TOP is a round tree's top
+// at scale 1 (trunk 1.6 m, crown 1.25 m round at 2.5 m); a pine's top at
+// scale 1 is PINE_TOP and a ginkgo's GINKGO_TOP (a ginkgo stands 15% over a
+// round tree of the same size, as the tallest street tree in Seoul).
+const TREE_TOP = 3.75, PINE_TOP = 4.9 * 1.1, GINKGO_TOP = 5.45, GINKGO_OVER = 1.15;
+const roundS = (top) => top / TREE_TOP, pineS = (top) => top / PINE_TOP;
+// Small trees keep a fuller crown than a straight shrink would give (a
+// young street tree is wide for its height): sideways a tree is s ** 0.6.
+const treeWidth = (s) => (s < 1 ? s ** 0.6 : s);
+const HALF_TREE_DISTRICTS = new Set(['seongsu', 'olympic-park', 'mangwon', 'banpo-jamwon', 'yeouido', 'grand-park']);
+const HALF_TREE_MIN_AREA = 2000; // m2: a park this big in those districts is a "big park"
+// Gyeongbokgung's district keeps its old trees for now: its palace grounds
+// are being redrawn on their own (PR #946), and get rule 13 there.
+const OLD_TREE_DISTRICTS = new Set(['gyeongbokgung']);
+const TEMPLE_SCALE = 0.375; // temples are drawn whole at 37.5% (map rule 10)
 // A ginkgo's crown (Yozi 2026-11-20, from a photo of an old ginkgo): a wide,
 // lumpy crown of four clumps spreading out over a thick trunk. Four plain
 // icosahedra: 80 triangles, the same as a round tree's crown.
@@ -575,8 +595,8 @@ function makeRail(rails) {
 // not map data: placed where nothing else is in the way (clear: [x, z, r] or (x, z, r) => inside,
 // circles kept free, e.g. a rose garden).
 function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
-  const spots = []; // [x, z, scale] round trees
-  const pines = []; // [x, z, scale] pointed trees (parks)
+  const spots = []; // [x, z, scale, colour, ginkgo, old] round trees
+  const pines = []; // [x, z, scale, null, false, old] pointed trees (parks)
   const bushes = []; // [x, z, scale] (parks)
   const hash = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h); };
   const isClear = (x, z, r) => clear.every((c) => (typeof c === 'function' ? !c(x, z, r) : (x - c[0]) ** 2 + (z - c[1]) ** 2 > (c[2] + r) ** 2)); // (a function: inside an outline, e.g. Namsan's foot)
@@ -592,16 +612,25 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   for (const a of areas) {
     if (!a.trees) continue;
     const xs = a.p.map((q) => q[0]), zs = a.p.map((q) => q[1]);
+    // div: real metres to game metres for this park's trees (rule 13 above);
+    // old: a district still on the old sizes.
+    const old = OLD_TREE_DISTRICTS.has(a.d);
+    // (A temple wood, its low beds and clumps (Bongeunsa) take the temple's
+    // own scale, 37.5%, so they keep their size against its halls: rule 11.)
+    const div = a.dense || a.trees === 'low' || a.trees === 'clump' ? 1 / TEMPLE_SCALE
+      : a.trees === true && HALF_TREE_DISTRICTS.has(a.d) && polyArea(a.p) >= HALF_TREE_MIN_AREA ? 2 : 4;
+    const pushRound = (x, z, oldS, real, c) => spots.push([x, z, old ? oldS : roundS(real / div), c, false, old]);
+    const pushPine = (x, z, oldS, real) => pines.push([x, z, old ? oldS : pineS(real / div), null, false, old]);
     if (a.trees === 'clump') {
       // A clump of trees in a temple yard (Bongeunsa): one big tree, smaller
       // ones round it, bushes at the edge. The clump is its own blocker.
       const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2, r = (Math.max(...xs) - Math.min(...xs)) / 2, h = hash(cx, cz);
-      spots.push([cx, cz, 2.2 + h * 0.7, crownColor(h)]);
+      pushRound(cx, cz, 2.2 + h * 0.7, 14 + h * 3, crownColor(h)); // (the big one: real 14 to 17 m)
       const n = 3 + Math.floor(h * 2);
       for (let i = 0; i < n; i++) {
         const t = (i / n) * Math.PI * 2 + h * 6, k = hash(cx + i, cz - i);
         const x = cx + Math.cos(t) * r * 0.62, z = cz + Math.sin(t) * r * 0.62;
-        if (k < 0.3) pines.push([x, z, 1.2 + k]); else spots.push([x, z, 1.1 + k * 0.6, crownColor(k)]);
+        if (k < 0.3) pushPine(x, z, 1.2 + k, 8 + k * 12); else pushRound(x, z, 1.1 + k * 0.6, 7 + k * 5, crownColor(k));
         bushes.push([cx + Math.cos(t + 0.5) * r * 0.85, cz + Math.sin(t + 0.5) * r * 0.85, 0.7 + k * 0.4]);
       }
       continue;
@@ -615,7 +644,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
         for (let z = Math.min(...zs) + G / 2; z < Math.max(...zs); z += G) {
           const h = hash(x, z), h2 = hash(z, x), px = x + (h - 0.5) * G * 0.6, pz = z + (h2 - 0.5) * G * 0.6;
           if (!pointInPolygon(px, pz, a.p) || onAnyRoad(roads, px, pz)) continue;
-          if (h2 < 0.2 && edgeDist(px, pz, a.p) > 1 && isClear(px, pz, 1)) spots.push([px, pz, 0.62 + h * 0.2, crownColor(h)]);
+          if (h2 < 0.2 && edgeDist(px, pz, a.p) > 1 && isClear(px, pz, 1)) pushRound(px, pz, 0.62 + h * 0.2, 5 + h * 3.5, crownColor(h)); // (real 5 to 8.5 m)
           else if (isClear(px, pz, 0.7)) bushes.push([px, pz, 0.85 + h * 0.5]);
         }
       }
@@ -633,8 +662,10 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
             const h = hash(x1 + d, z1 + inset), h2 = hash(z1 + d * 1.3, x1 + inset);
             const px = x1 + ux * d - uz * inset * side + (h - 0.5) * 2, pz = z1 + uz * d + ux * inset * side + (h2 - 0.5) * 2;
             if (!pointInPolygon(px, pz, a.p) || edgeDist(px, pz, a.p) < inset - 2.5) continue;
-            const pine = h2 < 0.3, s = pine ? 2.2 + h * 1.0 : 2.3 + h * 1.1;
-            if (isClear(px, pz, 0.9 * s) && !collision.blocked(px, pz, 1.2) && !onAnyRoad(roads, px, pz, 2)) (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(h2)]);
+            // (real: big parks' edge trees 14 to 20 m, smaller parks' 11 to 16 m)
+            const pine = h2 < 0.3, real = div === 2 ? 14 + h * 6 : 11 + h * 5;
+            const s = old ? (pine ? 2.2 + h * 1.0 : 2.3 + h * 1.1) : pine ? pineS(real / div) : roundS(real / div);
+            if (isClear(px, pz, 0.9 * s) && !collision.blocked(px, pz, 1.2) && !onAnyRoad(roads, px, pz, 2)) (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(h2), false, old]);
           }
         }
       }
@@ -647,11 +678,15 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
         if (edgeDist(x, z, a.p) < (a.dense ? 2.5 : 12)) continue; // (the edge rows are there)
         const jx = (h - 0.5) * step * 0.7, jz = (((h * 7) % 1 + 1) % 1 - 0.5) * step * 0.7;
         const px = x + jx, pz = z + jz;
-        // Sizes from a young tree to a big old one; about one in four pointed.
-        const pine = h2 < 0.26, s = pine ? 1.3 + ((h2 * 13) % 1) * 1.2 : 1.1 + ((h2 * 17) % 1) ** 1.3 * 1.8;
-        const r = 0.9 * s;
+        // Sizes from a young tree to a big old one, most of them small; about
+        // one in four pointed. (Real: big parks' round 8 to 20 m, pines 10 to
+        // 19 m; smaller parks' round 6 to 15 m, pines 7 to 14 m.)
+        const pine = h2 < 0.26, u = pine ? (h2 * 13) % 1 : ((h2 * 17) % 1) ** 1.3;
+        const real = div === 2 ? (pine ? 10 + u * 9 : 8 + u * 12) : pine ? 7 + u * 7 : 6 + u * 9;
+        const s = old ? (pine ? 1.3 + u * 1.2 : 1.1 + u * 1.8) : pine ? pineS(real / div) : roundS(real / div);
+        const r = 0.9 * Math.max(s, treeWidth(s));
         if (pointInPolygon(px, pz, a.p) && isClear(px, pz, r) && !collision.blocked(px, pz, r) && !onAnyRoad(roads, px, pz, r - 0.6)) {
-          (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(hash(px, pz))]);
+          (pine ? pines : spots).push([px, pz, s, pine ? null : crownColor(hash(px, pz)), false, old]);
         }
         // A bush or two between the trees.
         for (let k = 0; k < 2; k++) {
@@ -679,7 +714,11 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
         for (const side of [1, -1]) {
           const x = x1 + ux * d - uz * off * side;
           const z = z1 + uz * d + ux * off * side;
-          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z) && isClear(x, z, 1.4)) spots.push([x, z, 0.85 + ((spots.length * 37) % 10) / 25]);
+          if (!collision.blocked(x, z, 1.4) && !onAnyRoad(roads, x, z) && isClear(x, z, 1.4)) {
+            // (rule 13: real 7 to 14 m, most near 9; the old trees were 3.2 to 4.5 m)
+            const old = OLD_TREE_DISTRICTS.has(r.d);
+            spots.push([x, z, old ? 0.85 + ((spots.length * 37) % 10) / 25 : roundS((7 + hash(z, x) ** 1.4 * 7) / 4), null, false, old]);
+          }
         }
       }
       carry = d - len;
@@ -700,6 +739,7 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
   // street trees, and a few in the parks.
   spots.forEach((t, i) => {
     t[4] = leafHash(t[0] * 1.7, t[1] * 0.3) < (i < parkRound ? GINKGO_PARK : GINKGO_STREET);
+    if (t[4] && !t[5]) t[2] *= (TREE_TOP * GINKGO_OVER) / GINKGO_TOP; // (a ginkgo the size its height says)
     if (t[4]) t[3] = ginkgoColor(greens[i % greens.length], leafHash(t[0], t[1]));
     else if (!t[3]) t[3] = leafColor(greens[i % greens.length], leafHash(t[0], t[1]), MIX.street);
   });
@@ -713,7 +753,8 @@ function makeStreetTrees(roads, collision, max, areas = [], clear = []) {
     list.forEach(([x, z, s], i) => {
       q.setFromAxisAngle(up, i * 1.7);
       const k = trunkFat && list[i][4] ? GINKGO_TRUNK : null; // (a ginkgo's trunk: the same mesh, thicker and taller)
-      m.compose(pos.set(x, 0, z), q, k ? sc.set(s * k[0], s * k[1], s * k[0]) : sc.set(s, s * yScale, s));
+      const w = list[i][5] === false ? treeWidth(s) : s; // (rule-13 trees: fuller when small)
+      m.compose(pos.set(x, 0, z), q, k ? sc.set(w * k[0], s * k[1], w * k[0]) : sc.set(w, s * yScale, w));
       mesh.setMatrixAt(i, m);
       if (colors) mesh.setColorAt(i, list[i][3] || colors[i % colors.length]);
     });
