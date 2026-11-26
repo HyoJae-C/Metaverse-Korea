@@ -9,7 +9,7 @@ const GINKGO_TRUNK = [1.6, 1.45]; // a ginkgo's trunk against a round tree's: th
 // Tree heights (Yozi 2026-11-26, map rule 13): a tree is its real height / 4,
 // like the buildings (a street tree of 7 to 14 m stands 1.75 to 3.5 m), with
 // only the odd big old tree near 4 m. Big parks where the trees are the
-// point and few buildings stand near (Seoul Forest, the Han River parks,
+// point and few buildings stand near (Seoul Forest, the Han River parks, the Gyeongui Line Forest Park,
 // Olympic Park, Yeouido Park, the Grand Park) take real / 2 instead.
 // Every tree is sized by its top in metres: TREE_TOP is a round tree's top
 // at scale 1 (trunk 1.6 m, crown 1.25 m round at 2.5 m); a pine's top at
@@ -20,7 +20,7 @@ const roundS = (top) => top / TREE_TOP, pineS = (top) => top / PINE_TOP;
 // Small trees keep a fuller crown than a straight shrink would give (a
 // young street tree is wide for its height): sideways a tree is s ** 0.6.
 const treeWidth = (s) => (s < 1 ? s ** 0.6 : s);
-const HALF_TREE_DISTRICTS = new Set(['seongsu', 'olympic-park', 'mangwon', 'banpo-jamwon', 'yeouido', 'grand-park']);
+const HALF_TREE_DISTRICTS = new Set(['seongsu', 'olympic-park', 'mangwon', 'banpo-jamwon', 'yeouido', 'grand-park', 'yeonnam']); // (yeonnam: the Gyeongui Line Forest Park, its trees are the point, Yozi 2026-11-26)
 const HALF_TREE_MIN_AREA = 2000; // m2: a park this big in those districts is a "big park"
 // Districts still on the old tree sizes (none now: the palace grounds draw
 // their own trees at real / 4, PR #946, and these follow the same rule).
