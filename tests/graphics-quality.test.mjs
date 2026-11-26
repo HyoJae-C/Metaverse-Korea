@@ -122,3 +122,16 @@ test('standing-still stretches at 30 do not count as a slow phone', () => {
   run(gfx, 0, 60000); // never touched: 30 the whole minute
   assert.equal(gfx.state().slow, false);
 });
+
+// Board games (Yozi 2026-11-27, hot phones): 30 even while cards are tapped.
+test('a phone at a board game stays at 30 while tapping; 60 again once it is closed; computers keep 60', () => {
+  const gfx = fakeGfx({ phone: true });
+  gfx.setCalm(true);
+  const tapping = run(gfx, 0, 5000, { onFrame: (t) => gfx.active(t) });
+  assert.ok(tapping > 28 && tapping < 31, 'tapping at the table: ' + tapping);
+  gfx.setCalm(false);
+  assert.ok(run(gfx, 6000, 1500, { onFrame: (t) => gfx.active(t) }) > 58, 'panel closed, touched: 60');
+  const pc = fakeGfx({ phone: false });
+  pc.setCalm(true);
+  assert.ok(run(pc, 0, 3000) > 58);
+});

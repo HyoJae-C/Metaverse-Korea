@@ -7826,6 +7826,7 @@ renderer.setAnimationLoop((now) => {
   const mapUp = mapView.open;
   camera.updateMatrixWorld(); // (this frame's camera for the name tags: set above, but three.js only rebuilds its matrix when drawing)
   gfx.watch(camera.matrixWorld.elements, now); gfx.setStill(weather.nightMix <= 0.05); // (phones: a moving view, or a show in the sky, keeps 60)
+  gfx.setCalm(boardGames.panel.open); // (phones: a board game is a turn game, 30 even while cards are tapped)
   if (!mapUp || mapPause >= 0.25) { others.update(mapUp ? mapPause : dt, streetCam(), w, h); mapPause = 0; }
   if (iceRink.loaded) iceRink.after(); // (a skater led by a friend stays at their side)
   updateBuskMusic(p);
