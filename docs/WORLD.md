@@ -1559,3 +1559,35 @@ tune, `data/tracks.js`), and your own song comes back as you leave.
 A sun and a moon always stand
 over the hill (sprites that follow you; the sun fades at night, the moon by
 day), after the verse "the sun and the moon will guard this hill".
+
+## Bukhansan: the Baegundae course (Gangbuk-gu, 2026-11-26)
+
+`scripts/build-bukhansan.mjs` writes `districts/bukhansan.json` and
+`bukhansan-view.json`: the way up Bukhansan (북한산) from Bukhansan Ui Station
+(the district's anchor, the end of the Ui-Sinseol Line) to Baegundae, at 1/4
+on its real place.
+
+- The way (1,081 m in the game, 4.3 km really): the station → Samyang-ro
+  173-gil up the valley → the Baegundae Visitor Support Center → Harujae →
+  Baegun Hut → Baegunbongammun (위문) → the top. Every stretch is on its OSM
+  line (the open ways only), within 1 m (`tests/bukhansan.test.mjs`).
+- The mountain is the real ground (AWS Terrain Tiles) at 1/4 above the
+  station: Baegundae stands 191.9 m over it (835.6 m really). You walk on the
+  way only: the mountain is a blocker and the way is decks through it
+  (`game/bukhansan-walk.js`, in the first download; the ground, rock, woods
+  and stops are `game/bukhansan-park.js`, loaded within 480 m).
+- Paths climb at most about 18°; the last stretch, up the bare rock, is steps
+  with a handrail (about 30°).
+- The steeper the way, the slower you go (`climbPace`): full pace up to about
+  7°, 60% at 18°, 45% on the steps. Station to top takes about 3 min 20 s on
+  foot.
+- At the flag on top a button opens a painted 360° view
+  (`game/bukhansan-view.js`, loaded when asked for): the real skyline from the
+  terrain, drawn in the game's style, and it says it is a drawing, not a photo.
+- Made up (`meta.approx`): the mountain's outline (the real one has no edge
+  here), the level stops, the steps over the whole last stretch, the even
+  climb. Baegun Hut and the Visitor Support Center are plain game-size houses
+  until there are photos of them.
+- Data: `scripts/data/bukhansan-{osm,dem,horizon}.json`, made by
+  `/mnt/project-files/bukhansan/data-prep/`. After rebuilding, run
+  `build-base.mjs` and `build-closed.mjs`.

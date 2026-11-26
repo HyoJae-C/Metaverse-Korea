@@ -31,6 +31,7 @@ export const STATION_THEMES = {
   'childrens-grand-park-station': ['park'],
   'ichon-station': ['culture', 'park'], // the art museum, Yongsan Family Park's weekend farm
   'dongjak-station': ['culture'], // Seoul National Cemetery
+  'bukhansan-ui-station': ['park'], // Bukhansan, the Baegundae course
   'magongnaru-station': ['park'], // Seoul Botanic Park
   'gimpo-airport-station': ['culture'], // planes from the roof deck
 };
