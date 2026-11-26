@@ -248,8 +248,11 @@ export function buildOksuPark({ scene, l, y, lowSpec = false }) {
       const g = y(x, z);
       if (g < 0.4) continue;
       if (nearTrail(x, z, P.treeClear) || onIsland(x, z, 2) || gazebos.some((q) => Math.hypot(x - q.at[0], z - q.at[1]) < 3.5)) continue;
-      const sc = 0.8 + rnd() * 0.6;
-      (rnd() < 0.22 ? pines : round).push([x, g - 0.1, z, rnd() * 6, sc, sc, sc]);
+      // Map rule 13 (Yozi 2026-11-26): real height / 4, like the hill (a park
+      // among flats, not a big wood): real 9 to 16 m, 2.2 to 4.2 m here (were
+      // 4.1 to 7.6 m); sideways a little fuller than a straight shrink.
+      const sc = (0.8 + rnd() * 0.6) * 0.55, w = sc * 0.55 ** -0.4;
+      (rnd() < 0.22 ? pines : round).push([x, g - 0.1, z, rnd() * 6, w, sc, w]);
     }
     const trunk = new THREE.CylinderGeometry(0.14, 0.2, 2.4, 5, 1, true).translate(0, 1.2, 0);
     const crown = new THREE.IcosahedronGeometry(1.8, 0).translate(0, 3.3, 0);

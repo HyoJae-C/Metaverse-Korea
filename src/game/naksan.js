@@ -228,8 +228,13 @@ export function createNaksan(game) {
     const crowns = new THREE.InstancedMesh(crown, new THREE.MeshLambertMaterial({ color: '#ffffff', flatShading: true }), spots.length);
     const greens = ['#5f9a4a', '#6fae55', '#4f8a43', '#7bb463'].map((c) => new THREE.Color(c));
     const m4 = new THREE.Matrix4(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), q = new THREE.Quaternion();
+    // Map rule 13 (Yozi 2026-11-26): trees at real height / 4 like the houses
+    // round the park: real 9 to 16 m, 2.2 to 3.9 m here (were 3.6 to 6.5 m).
+    // Sideways a little fuller than a straight shrink.
+    const H = 0.6;
     spots.forEach(([x, z, y, sc], i) => {
-      m4.compose(p3.set(x, y - 0.1, z), q, s3.set(sc, sc, sc));
+      const w = sc * H ** 0.6;
+      m4.compose(p3.set(x, y - 0.1, z), q, s3.set(w, sc * H, w));
       trunks.setMatrixAt(i, m4);
       crowns.setMatrixAt(i, m4);
       crowns.setColorAt(i, leafColor(greens[i % greens.length], leafHash(i, 3), MIX.wood)); // (the season's colours, core/season.js)

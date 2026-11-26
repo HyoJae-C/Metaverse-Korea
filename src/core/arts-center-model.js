@@ -182,7 +182,9 @@ export function buildArtsCenter(g, l) {
     const leaves = new THREE.InstancedMesh(cone, new THREE.MeshLambertMaterial({ color: C.leaf, flatShading: true }), T.length);
     T.forEach(([x, z], i) => {
       const k = 0.85 + ((Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1 + 1) % 1 * 0.5;
-      dummy.position.set(x, 0, z); dummy.scale.set(k, k, k); dummy.updateMatrix();
+      // (map rule 13, Yozi 2026-11-26: real height / 4 like the halls, real 10 to
+      // 16 m, 2.5 to 3.9 m here; were 4.9 to 7.8 m. Sideways a little fuller.)
+      dummy.position.set(x, 0, z); dummy.scale.set(k * 0.5 ** 0.6, k * 0.5, k * 0.5 ** 0.6); dummy.updateMatrix();
       trunk.setMatrixAt(i, dummy.matrix); leaves.setMatrixAt(i, dummy.matrix);
     });
     g.add(trunk, leaves);
