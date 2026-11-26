@@ -16,6 +16,9 @@ export const BANK_TEXT = {
   asking: { en: 'One moment…', ko: '잠시만요…', ja: '少々お待ちください…', zh: '请稍等…', es: 'Un momento…', ar: 'لحظة…', vi: 'Chờ một chút…', fr: 'Un instant…', pt: "Um momento…", th: 'รอสักครู่…', id: 'Sebentar…' },
   send: { en: 'Send money', ko: '송금하기', ja: '送金する', zh: '转账', es: 'Enviar dinero', ar: 'أرسل مالًا', vi: 'Gửi tiền', fr: 'Envoyer de l\'argent', pt: "Enviar dinheiro", th: 'โอนเงิน', id: 'Kirim uang' },
   opOnly: { en: 'Testing: only operators can send for now.', ko: '테스트 중: 지금은 운영자만 보낼 수 있어요.', ja: 'テスト中：今は運営者だけが送れます。', zh: '测试中：目前只有运营者可以转账。', es: 'En pruebas: por ahora solo los operadores pueden enviar.', ar: 'تجربة: الإرسال للمشرفين فقط حاليًا.', vi: 'Đang thử nghiệm: hiện chỉ quản trị viên gửi được.', fr: 'En test : pour l\'instant seuls les opérateurs peuvent envoyer.', pt: "Em teste: por enquanto só operadores podem enviar.", th: 'กำลังทดสอบ: ตอนนี้เฉพาะผู้ดูแลเท่านั้นที่โอนได้', id: 'Uji coba: saat ini hanya operator yang bisa mengirim.' },
+  notYet: { en: '⏳ Not yet', ko: '⏳ 아직 송금할 수 없어요', ja: '⏳ まだ送金できません', zh: '⏳ 暂时还不能转账', es: '⏳ Todavía no', ar: '⏳ ليس بعد', vi: '⏳ Chưa gửi được', fr: '⏳ Pas encore', pt: "⏳ Ainda não", th: '⏳ ยังโอนไม่ได้', id: '⏳ Belum bisa' },
+  rules: { en: 'Left to send today: {left} · keep at least {keep} after sending', ko: '오늘 더 보낼 수 있는 돈: {left} · 보낸 뒤 {keep}은 남겨야 해요', ja: '今日あと送れる額：{left}・送金後も{keep}は残す', zh: '今天还能转：{left} · 转账后至少留{keep}', es: 'Puedes enviar hoy: {left} · conserva al menos {keep}', ar: 'المتبقي للإرسال اليوم: {left} · أبقِ {keep} على الأقل', vi: 'Hôm nay còn gửi được: {left} · phải còn ít nhất {keep}', fr: 'Encore envoyable aujourd\'hui : {left} · garde au moins {keep}', pt: "Ainda pode enviar hoje: {left} · fique com pelo menos {keep}", th: 'วันนี้โอนได้อีก: {left} · หลังโอนต้องเหลือ {keep}', id: 'Sisa kirim hari ini: {left} · sisakan minimal {keep}' },
+  friendsOnly: { en: 'Only friends can be sent money.', ko: '친구에게만 보낼 수 있어요.', ja: '友だちにだけ送れます。', zh: '只能转给好友。', es: 'Solo se puede enviar a amigos.', ar: 'الإرسال للأصدقاء فقط.', vi: 'Chỉ gửi được cho bạn bè.', fr: 'Envoi possible seulement à des amis.', pt: "Só é possível enviar para amigos.", th: 'โอนได้เฉพาะเพื่อน', id: 'Hanya bisa dikirim ke teman.' },
   balance: { en: 'Your money: {n}', ko: '내 돈: {n}', ja: '所持金：{n}', zh: '我的钱：{n}', es: 'Tu dinero: {n}', ar: 'مالك: {n}', vi: 'Tiền của bạn: {n}', fr: 'Ton argent : {n}', pt: "Seu dinheiro: {n}", th: 'เงินของคุณ: {n}', id: 'Uangmu: {n}' },
   to: { en: 'To (player name)', ko: '받는 사람 (플레이어 이름)', ja: '送り先（プレイヤー名）', zh: '收款人（玩家名）', es: 'Para (nombre del jugador)', ar: 'إلى (اسم اللاعب)', vi: 'Gửi đến (tên người chơi)', fr: 'À (nom du joueur)', pt: "Para (nome do jogador)", th: 'ถึง (ชื่อผู้เล่น)', id: 'Kepada (nama pemain)' },
   amount: { en: 'Amount ({min}–{max})', ko: '금액 ({min}~{max})', ja: '金額（{min}〜{max}）', zh: '金额（{min}–{max}）', es: 'Cantidad ({min}–{max})', ar: 'المبلغ ({min}–{max})', vi: 'Số tiền ({min}–{max})', fr: 'Montant ({min}–{max})', pt: "Valor ({min}–{max})", th: 'จำนวน ({min}–{max})', id: 'Jumlah ({min}–{max})' },
@@ -40,14 +43,22 @@ export const BANK_TEXT = {
     poor: { en: 'You don\'t have enough money.', ko: '돈이 부족해요.', ja: 'お金が足りません。', zh: '钱不够。', es: 'No tienes suficiente dinero.', ar: 'ليس لديك مال كافٍ.', vi: 'Bạn không đủ tiền.', fr: 'Tu n\'as pas assez d\'argent.', pt: "Você não tem dinheiro suficiente.", th: 'เงินไม่พอ', id: 'Uangmu tidak cukup.' },
     nobody: { en: 'There\'s no player with that name.', ko: '그 이름의 플레이어가 없어요.', ja: 'その名前のプレイヤーはいません。', zh: '没有叫这个名字的玩家。', es: 'No hay ningún jugador con ese nombre.', ar: 'لا يوجد لاعب بهذا الاسم.', vi: 'Không có người chơi nào tên như vậy.', fr: 'Aucun joueur ne porte ce nom.', pt: "Não há nenhum jogador com esse nome.", th: 'ไม่มีผู้เล่นชื่อนี้', id: 'Tidak ada pemain dengan nama itu.' },
     nowallet: { en: 'That player can\'t receive money yet.', ko: '그 플레이어는 아직 돈을 받을 수 없어요.', ja: 'そのプレイヤーはまだ受け取れません。', zh: '该玩家暂时无法收款。', es: 'Ese jugador aún no puede recibir dinero.', ar: 'لا يمكن لهذا اللاعب استلام المال بعد.', vi: 'Người chơi đó chưa thể nhận tiền.', fr: 'Ce joueur ne peut pas encore recevoir d\'argent.', pt: "Esse jogador ainda não pode receber dinheiro.", th: 'ผู้เล่นคนนั้นยังรับเงินไม่ได้', id: 'Pemain itu belum bisa menerima uang.' },
+    young: { en: 'You can send money once your account is {minDays} days old and you have done {minMissions} daily missions. You now: {days} days, {missions} missions.', ko: '가입 {minDays}일이 지나고 일일 미션을 {minMissions}개 하면 송금할 수 있어요. 지금: {days}일, 미션 {missions}개.', ja: '登録から{minDays}日たち、デイリーミッションを{minMissions}個こなすと送金できます。今：{days}日、ミッション{missions}個。', zh: '注册满{minDays}天并完成{minMissions}个每日任务后才能转账。现在：{days}天，任务{missions}个。', es: 'Podrás enviar dinero cuando tu cuenta tenga {minDays} días y hayas hecho {minMissions} misiones diarias. Ahora: {days} días, {missions} misiones.', ar: 'يمكنك إرسال المال بعد مرور {minDays} أيام على حسابك وإكمال {minMissions} مهمة يومية. الآن: {days} يوم، {missions} مهمة.', vi: 'Bạn gửi tiền được khi tài khoản đủ {minDays} ngày và đã làm {minMissions} nhiệm vụ hằng ngày. Hiện tại: {days} ngày, {missions} nhiệm vụ.', fr: 'Tu pourras envoyer de l\'argent quand ton compte aura {minDays} jours et que tu auras fait {minMissions} missions du jour. Pour l\'instant : {days} jours, {missions} missions.', pt: "Você poderá enviar dinheiro quando sua conta tiver {minDays} dias e você tiver feito {minMissions} missões diárias. Agora: {days} dias, {missions} missões.", th: 'โอนเงินได้เมื่อบัญชีครบ {minDays} วันและทำภารกิจประจำวันครบ {minMissions} ภารกิจ ตอนนี้: {days} วัน, {missions} ภารกิจ', id: 'Kamu bisa kirim uang setelah akunmu berumur {minDays} hari dan sudah menyelesaikan {minMissions} misi harian. Sekarang: {days} hari, {missions} misi.' },
+    keep: { en: 'You need to keep at least {keep} after sending. You can send up to {cap}.', ko: '보낸 뒤에도 {keep}은 남아 있어야 해요. 지금은 {cap}까지 보낼 수 있어요.', ja: '送金後も{keep}は残しておく必要があります。今は{cap}まで送れます。', zh: '转账后至少要留{keep}。现在最多可转{cap}。', es: 'Debes conservar al menos {keep} después de enviar. Puedes enviar hasta {cap}.', ar: 'يجب أن يبقى معك {keep} على الأقل بعد الإرسال. يمكنك إرسال حتى {cap}.', vi: 'Sau khi gửi bạn phải còn ít nhất {keep}. Bạn có thể gửi tối đa {cap}.', fr: 'Il doit te rester au moins {keep} après l\'envoi. Tu peux envoyer jusqu\'à {cap}.', pt: "Você precisa ficar com pelo menos {keep} depois de enviar. Pode enviar até {cap}.", th: 'หลังโอนต้องเหลือเงินอย่างน้อย {keep} ตอนนี้โอนได้สูงสุด {cap}', id: 'Setelah mengirim, uangmu harus tersisa minimal {keep}. Kamu bisa kirim sampai {cap}.' },
+    daylimit: { en: 'You can send up to {dayMax} a day. Left today: {left}.', ko: '하루에 {dayMax}까지 보낼 수 있어요. 오늘 남은 금액: {left}.', ja: '1日{dayMax}まで送れます。今日の残り：{left}。', zh: '每天最多转{dayMax}。今天还剩：{left}。', es: 'Puedes enviar hasta {dayMax} al día. Te queda hoy: {left}.', ar: 'يمكنك إرسال حتى {dayMax} يوميًا. المتبقي اليوم: {left}.', vi: 'Mỗi ngày gửi tối đa {dayMax}. Hôm nay còn: {left}.', fr: 'Tu peux envoyer jusqu\'à {dayMax} par jour. Reste aujourd\'hui : {left}.', pt: "Você pode enviar até {dayMax} por dia. Resta hoje: {left}.", th: 'โอนได้วันละไม่เกิน {dayMax} วันนี้เหลือ: {left}', id: 'Kamu bisa kirim sampai {dayMax} per hari. Sisa hari ini: {left}.' },
+    notfriend: { en: 'You can only send money to friends.', ko: '송금은 친구에게만 할 수 있어요.', ja: '送金は友だちにだけできます。', zh: '只能给好友转账。', es: 'Solo puedes enviar dinero a amigos.', ar: 'يمكنك إرسال المال إلى الأصدقاء فقط.', vi: 'Bạn chỉ gửi tiền được cho bạn bè.', fr: 'Tu ne peux envoyer de l\'argent qu\'à tes amis.', pt: "Você só pode enviar dinheiro para amigos.", th: 'โอนเงินได้เฉพาะเพื่อนเท่านั้น', id: 'Kamu hanya bisa mengirim uang ke teman.' },
     offline: { en: 'Couldn\'t reach the bank. Try again in a moment.', ko: '은행에 연결하지 못했어요. 잠시 후 다시 해 주세요.', ja: '銀行につながりませんでした。少し後でもう一度。', zh: '无法连接银行，请稍后再试。', es: 'No se pudo contactar con el banco. Inténtalo en un momento.', ar: 'تعذّر الوصول إلى البنك. حاول بعد قليل.', vi: 'Không kết nối được ngân hàng. Thử lại sau nhé.', fr: 'Impossible de joindre la banque. Réessaie dans un instant.', pt: "Não foi possível acessar o banco. Tente de novo daqui a pouco.", th: 'เชื่อมต่อธนาคารไม่ได้ ลองใหม่อีกครั้ง', id: 'Tidak bisa terhubung ke bank. Coba lagi sebentar.' },
   },
 };
 // Server answers that share a message.
 const WHY_OF = { closed: 'offline', open: 'offline', bad: 'offline', signin: 'offline' };
-export function whyText(reason, { min = 0, max = 0 } = {}) {
+// st: bank status (cloud-save bankStatus) and, for 'keep', balance.
+export function whyText(reason, { min = 0, max = 0, keep = 0, left = null, dayMax = 0, cap = 0, days = 0, missions = 0, minDays = 0, minMissions = 0 } = {}) {
   const k = BANK_TEXT.why[reason] ? reason : WHY_OF[reason] || 'offline';
-  return fmt(L(BANK_TEXT.why[k]), { min: won(min), max: won(max) });
+  return fmt(L(BANK_TEXT.why[k]), {
+    min: won(min), max: won(max), keep: won(keep), left: won(left ?? 0), dayMax: won(dayMax), cap: won(cap),
+    days, missions, minDays, minMissions,
+  });
 }
 export const memoText = (m) => L(BANK_TEXT.memos[m] || BANK_TEXT.memos.thanks);
 
@@ -86,9 +97,16 @@ export class BankUI {
     this._frame(bank, el('p', 'bank-soon', L(BANK_TEXT.soon)), el('p', 'order-hint', L(BANK_TEXT.soonBody)), ok);
   }
 
+  // Open, but this account can't send yet (077: 7 days and 35 missions).
+  notYet(bank, st) {
+    const ok = el('button', 'primary', L(BANK_TEXT.close));
+    ok.onclick = () => this.close();
+    this._frame(bank, el('p', 'bank-soon', L(BANK_TEXT.notYet)), el('p', 'order-hint', whyText('young', st)), ok);
+  }
+
   // The transfer form. people: [{ name }] here (tap to fill the name).
   // onSend({ to, amountText, memo }) resolves to an error text or '' (sent).
-  form({ bank, coins, min, max, people, onSend }) {
+  form({ bank, coins, min, max, people, onSend, keep = 0, left = null, friendsOnly = false, op = false }) {
     const err = el('p', 'bank-err');
     const name = el('input', 'bank-name');
     Object.assign(name, { type: 'text', maxLength: 16, autocomplete: 'off', placeholder: L(BANK_TEXT.to) });
@@ -133,6 +151,8 @@ export class BankUI {
       label(fmt(L(BANK_TEXT.amount), { min: won(min), max: won(max) })), amt, quick,
       label(L(BANK_TEXT.memo)), memos,
       err, go,
-      el('p', 'fine', L(BANK_TEXT.opOnly)));
+      ...(left != null || keep > 0 ? [el('p', 'fine', fmt(L(BANK_TEXT.rules), { left: left == null ? '-' : won(left), keep: won(keep) }))] : []),
+      ...(friendsOnly ? [el('p', 'fine', L(BANK_TEXT.friendsOnly))] : []),
+      ...(op ? [el('p', 'fine', L(BANK_TEXT.opOnly))] : []));
   }
 }
