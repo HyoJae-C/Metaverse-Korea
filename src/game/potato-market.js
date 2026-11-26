@@ -291,7 +291,8 @@ export function createPotatoMarket(game) {
         const it = items[th.item], name = L(it.name), have = game.inventory.has(th.item);
         const b = el('button', 'chip', t('used.buy', { n: th.price }));
         b.disabled = busy || m.mine || have;
-        b.onclick = () => confirm(t('potato.ask', { name, seller, n: th.price })) && tap(b, () => buy(th))();
+        const q = t('potato.ask', { name, seller, n: th.price });
+        b.onclick = async () => { if (await (game.wallet?.askYes ? game.wallet.askYes(q) : confirm(q))) tap(b, () => buy(th))(); };
         box.append(row(it.emoji, name, have ? t('used.have') : t('potato.new', { n: th.list }), b));
       }
       root.append(box);
