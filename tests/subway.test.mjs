@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { loopOrder, stationAt, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, footprintOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
+import { loopOrder, stationAt, routeLayout, routeMapSize, PIT, ENTER_AT, toLocal, toWorld, holeOf, blockersOf, footprintOf, outsideOf, streetStairs, hallStairs, hallStairsAt, HALL, HALL_EXIT_AT, trainPhase, HEADWAY, DOORS, stopsBetween, lineAhead, gateAt, GATE_X, TRACKS } from '../src/core/subway.js';
 
 const region = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/region.json', import.meta.url)));
 const stations = region.subway.stations;
@@ -273,4 +273,20 @@ test('Ichon (Line 4, 430): exits within 15 m of the real 2 and 3, either side of
   const farm = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/' + d.map, import.meta.url))).landmarks.find((l) => l.type === 'farm');
   const far = Math.hypot(farm.x + d.offset[0] - st.exits[0].at[0], farm.z + d.offset[1] - st.exits[0].at[1]);
   assert.ok(far > 150 && far < 260, `the farm is ${far} m from exit 2`);
+});
+
+test('route map: a simple tall loop, two stations a row, nothing on top of anything', () => {
+  for (const n of [2, 3, 24, 25, 31]) {
+    const pts = routeLayout(Array.from({ length: n }, () => ({ name: {} })));
+    const { w, h, rows, y1, legendY } = routeMapSize(n);
+    assert.equal(pts.length, n);
+    assert.equal(rows, Math.ceil(n / 2));
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) assert.ok(Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]) >= 100, `${n}: stations ${i} and ${j} too close`);
+    for (const [x, y] of pts) assert.ok(x > 0 && x < w && y > 110 && y < y1 && y1 < legendY && legendY < h);
+    // Up trains go clockwise: the first station top right, down the right side.
+    assert.ok(pts[0][0] > w / 2);
+    if (n > 3) assert.ok(pts[1][1] > pts[0][1] && pts[1][0] === pts[0][0]);
+  }
+  // One more station only ever makes it taller, never denser.
+  assert.ok(routeMapSize(26).h > routeMapSize(24).h);
 });
