@@ -18,6 +18,10 @@
 //   60. A phone that can't keep up (under 45 drawn frames a second for 8 s,
 //   after the first 10 s) stays at a steady 30 until the page is reloaded:
 //   jumping between 40 and 50 looks rougher than an even 30.
+// - Phones at a board game (Yozi, 2026-11-27: hot playing Find the Skull and
+//   Bingo): setCalm(true) holds 30 even while cards are tapped. A turn game
+//   taps every few seconds, and each tap had been 60 again for 2 s, so the
+//   phone was at 60 the whole game.
 
 // Quality levels, best first. ratio: the most pixels per CSS pixel; shadow:
 // the shadow map's size (0: no shadows).
@@ -105,10 +109,10 @@ export function createGraphicsQuality({ renderer, sun, capable = true, saver = f
   const pacer = new FramePacer(saver ? SAVER_FPS : FPS);
   const auto = new AutoQuality();
   const slowPhone = new SlowPhone();
-  let last = null, applied = null, lastActive = -Infinity, stillOk = true;
+  let last = null, applied = null, lastActive = -Infinity, stillOk = true, calm = false;
   const seen = new Float64Array(16);
   const target = (now) => {
-    if (saver || (phone && slowPhone.slow)) return SAVER_FPS;
+    if (saver || (phone && (slowPhone.slow || calm))) return SAVER_FPS;
     if (phone && stillOk && now - lastActive > IDLE_AFTER) return SAVER_FPS;
     return FPS;
   };
@@ -149,6 +153,8 @@ export function createGraphicsQuality({ renderer, sun, capable = true, saver = f
     },
     // false: never drop to 30 for standing still (a show is on).
     setStill(ok) { stillOk = !!ok; },
+    // true: phones stay at 30 even when touched (a board game's panel is up).
+    setCalm(on) { calm = !!on; },
     setSaver(on) {
       saver = !!on;
       pacer.setFps(target(globalThis.performance?.now() ?? 0));
