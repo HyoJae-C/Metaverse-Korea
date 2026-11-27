@@ -489,6 +489,8 @@ export const EN = {
   'bukhan.viewClose': "Close",
   'bukhan.noRide': "🚲 No bikes or cars on Bukhansan. From here you go on foot.",
   'bukhan.noTaxi': "🚕 Taxis don't come up the mountain. Walk down to Bukhansan Ui Station first.",
+  'bukhan.alt': "⛰️ {n} m above sea level",
+  'bukhan.fell': "🤕 You tripped! Rest a moment. The mountain is for walking.",
   'bike.offShort': 'Get off',
   'bike.off': 'Get off the bike',
   'car.off': 'Get out of the car',

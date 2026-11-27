@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { toGame } from '../src/core/seoul-grid.js';
 import { inPoly, trailNear } from '../src/core/skypark-ground.js';
 import { bukhanHeight, padRing } from '../src/core/bukhan-ground.js';
-import { createBukhansanWalk, SUMMIT_R, climbPace, CLIMB } from '../src/game/bukhansan-walk.js';
+import { createBukhansanWalk, SUMMIT_R, climbPace, CLIMB, TRIP } from '../src/game/bukhansan-walk.js';
 import { BUKHAN, OFFSET, EXITS } from '../scripts/build-bukhansan.mjs';
 import { summitOpen, woodColor, BUKHAN_PARK } from '../src/game/bukhansan-park.js';
 import { SUMMIT, ringGeometry } from '../src/game/bukhansan-summit.js';
@@ -96,7 +96,7 @@ test('the mountain: its height above the station at 1/4, walkable all the way, 0
 test('the stops are level, on the way, and the ground under the way is the way', () => {
   assert.deepEqual(l.pads.map((p) => p.k), ['center', 'haru', 'hut', 'gate', 'peak']);
   for (const p of l.pads) {
-    for (const [x, z] of [p.at, ...padRing(p, 8).map(([a, b]) => [p.at[0] + (a - p.at[0]) * 0.9, p.at[1] + (b - p.at[1]) * 0.9])]) assert.equal(bukhanHeight(l, x, z), p.y, `${p.k} is level`);
+    for (const [x, z] of [p.at, ...padRing(p, 8).map(([a, b]) => [p.at[0] + (a - p.at[0]) * 0.9, p.at[1] + (b - p.at[1]) * 0.9])]) { const h = bukhanHeight(l, x, z); assert.ok(h >= p.y && h < p.y + 0.5, `${p.k} is level (${h}; at its rim the way coming in may stand a little over it, and you stand on the way)`); }
     const n = Math.min(...l.trails.map((t) => trailNear(t, p.at[0], p.at[1]).d));
     assert.ok(n < p.r, `${p.k} is on the way (${n.toFixed(1)} m)`);
     assert.ok(inPoly(p.at[0], p.at[1], l.foot), `${p.k} is on the mountain`);
@@ -233,4 +233,28 @@ test('round the level top you can walk out onto the rock: as far as it is walkab
     if (d > 0.4) assert.ok(Math.abs(bukhanHeight(l, ...a) - bukhanHeight(l, ...b)) / d < 0.9, `walkable out to ${x}, ${z}`);
   }
   assert.ok(bh.meta.approx.some((a) => a.what.includes('rock') && a.why));
+});
+
+test('running on the hiking paths you may trip and sit a while; the road and the plaza are safe', () => {
+  const said = [];
+  const landmarks = bh.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz })), L = landmarks[0];
+  const walk = createBukhansanWalk({ landmarks, text: (k) => k, toast: (m) => said.push(m) });
+  const at = ([x, z]) => ({ x: L.x + x, z: L.z + z });
+  const road = l.trails.find((t) => t.k === 'road').p, path = l.trails.filter((t) => t.k === 'path')[1].p;
+  const onRoad = at(road[Math.floor(road.length / 2)]), onPath = at(path[Math.floor(path.length / 2)]), plaza = at(l.pads.find((q) => q.k === 'center').at);
+  assert.equal(walk.noRun(onRoad), false, 'the road up from the station');
+  assert.equal(walk.noRun(plaza), false, 'the plaza');
+  assert.equal(walk.noRun(onPath), true, 'a hiking path');
+  const never = () => 0.999999, always = () => 0;
+  for (let i = 0; i < 600; i++) walk.run(onRoad, 1 / 60, true, always); // (the worst luck there is, on the road)
+  assert.equal(walk.fallen, false, 'no fall on the road');
+  for (let i = 0; i < 600; i++) walk.run(onPath, 1 / 60, true, never);
+  assert.equal(walk.fallen, false, 'with luck, no fall on the path');
+  walk.run(onPath, 1 / 60, false, always);
+  assert.equal(walk.fallen, false, 'walking, no fall');
+  walk.run(onPath, 1 / 60, true, always);
+  assert.equal(walk.fallen, true, 'out of luck: down');
+  assert.equal(walk.pace(onPath), 0, 'down: you can\'t move');
+  assert.deepEqual(said, ['bukhan.fell']);
+  assert.ok(TRIP.rest[0] >= 1 && TRIP.rest[1] <= 10 && TRIP.chance[1] <= 0.2, 'a short rest, a small chance');
 });

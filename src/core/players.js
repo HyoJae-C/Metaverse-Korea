@@ -17,6 +17,7 @@ import { ITEMS, isPet } from './inventory.js';
 import { styleNameTag } from './emblems.js';
 import { sanitizeLook } from '../data/appearance.js';
 
+const GROUND_SNAP = 1.5; // m: someone this near a hill's ground is walking on it (not flying over, not on a seat far above)
 export class RemotePlayers {
   // isOperator(name) → Promise<boolean>: asks the server whether that name
   // belongs to an operator (only asked when a player shows the badge).
@@ -26,7 +27,8 @@ export class RemotePlayers {
   // flying costumes, game/sky-flight.js).
   // boardGame() → the id of the board game I am playing, or null: people in
   // another game (or none) get a 🎲 bubble over their heads (game/board-games.js).
-  constructor(scene, labelLayer, { isOperator, coasterSeat, tick, boardGame } = {}) {
+  constructor(scene, labelLayer, { isOperator, coasterSeat, tick, boardGame, groundAt } = {}) {
+    this.groundAt = groundAt || null; // (x, z) → the ground's height on a steep hill (0: none)
     this.coasterSeat = coasterSeat || null;
     this.boardGame = boardGame || (() => null);
     this.scene = scene;
@@ -276,7 +278,15 @@ export class RemotePlayers {
         const ahead = Math.min(0.3, (performance.now() - (p.lastAt || 0)) / 1000) + 0.1; // + the smoothing delay
         r.position.x += (p.target.x + (p.vx || 0) * ahead - r.position.x) * k;
         r.position.z += (p.target.z + (p.vz || 0) * ahead - r.position.z) * k;
-        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(p.target.fl || p.target.cr ? 260 : 140, p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit, Seoul Dal
+        const hill = this.groundAt ? this.groundAt(p.target.x, p.target.z) : 0; // (a hill higher than the cap: Baegundae's steps and top are 159-192 m up, and friends there were drawn at 140 m, inside the rock. Yozi 2026-11-27: "my friend disappears")
+        r.position.y += ((Number.isFinite(p.target.y) ? Math.max(-6, Math.min(Math.max(p.target.fl || p.target.cr ? 260 : 140, hill + GROUND_SNAP), p.target.y)) : 0) - r.position.y) * k; // subway stairs, the Namsan cable car and summit, Seoul Dal
+        // On a steep hill (Bukhansan): where they are drawn runs a little ahead of where they said they were, and their height
+        // comes a few times a second, so going up they sank to the knees (Yozi 2026-11-27: "my friend's legs still look sunk").
+        // If they are walking on the ground there, they stand on the ground where you see them.
+        if (this.groundAt && Number.isFinite(p.target.y) && !p.target.fl && !p.target.cr) {
+          const there = hill;
+          if (there && Math.abs(p.target.y - there) < GROUND_SNAP) { const here = this.groundAt(r.position.x, r.position.z); if (here) r.position.y = here; }
+        }
         const dalY = p.target.dl ? dalRiderY(p.target.dl, dalClock()) : null; // in Seoul Dal's gondola: its height from the clock, not their stepped updates
         if (dalY !== null) r.position.y = dalY;
         let d = p.target.ry - r.rotation.y;
