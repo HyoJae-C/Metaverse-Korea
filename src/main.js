@@ -291,6 +291,7 @@ import { createSeoulDalNear } from './game/seoul-dal-near.js';
 import { createBoatTaxiNear } from './game/boat-taxi-near.js';
 import { createPotatoMarketNear } from './game/potato-market-near.js';
 import { createTandemRentalNear } from './game/tandem-rental-near.js';
+import { createClimbWallNear } from './game/climb-wall-near.js';
 import { createFarmNear } from './game/farm-near.js';
 import { createSeedShopNear } from './game/seed-shop-near.js';
 import { FarmJournal } from './core/farm-journal.js';
@@ -4532,6 +4533,8 @@ const potatoMarket = createPotatoMarketNear({ spot: map.landmarks.find((l) => l.
 const tandemRent = createTandemRentalNear({ spot: map.landmarks.find((l) => l.type === 'tandemrental'), ready: walletReady,
   scene, collision, areas: map.areas, wallet, refreshWallet, sfx, chip: $('tandem-chip'), toast: (m) => shop.toast(m),
   riding: () => riding, setRiding, mode: () => mode, passengers: () => passengers.size, driverKind: () => (riding === 3 ? others.kindOf(tandemDriver) : 0) });
+// Ttukseom's outdoor climbing wall, to look at for now (game/climb-wall-near.js).
+const climbWall = createClimbWallNear({ spot: map.landmarks.find((l) => l.type === 'climbwall'), scene, collision, mode: () => mode, toast: (m) => shop.toast(m) });
 // The weekend farm at Yongsan Family Park (game/farm-near.js).
 // The farmer's journal in the notebook: a stamp for each crop you harvested.
 const farmJournal = new FarmJournal();
@@ -6951,6 +6954,7 @@ function moreActions(p, door) {
     const fy = !seated && folkYard.act(p); if (fy) out.push(fy);
     const ptm = !seated && potatoMarket.act(p); if (ptm) out.push(ptm);
     const tdr = !seated && tandemRent.act(p); if (tdr) out.push(tdr);
+    const cwl = !seated && climbWall.act(p); if (cwl) out.push(cwl);
     const frm = !seated && !riding && (farm.act(p) || seedShop.act(p)); if (frm) out.push(frm);
     const bsg = bosingakAct(p); if (bsg) out.push(bsg, bosingakAboutAct());
     if (namsanWalk.nearHeart(p)) out.push(...loveLockActs());
@@ -7072,6 +7076,7 @@ function updateAction(p, tSec) {
     else if (!riding && !seated && folkYard.act(p)) next = folkYard.act(p); // Namsangol's folk games
     else if (!riding && !seated && potatoMarket.act(p)) next = potatoMarket.act(p); // Potato Market's mats
     else if (!riding && !seated && tandemRent.act(p)) next = tandemRent.act(p); // Seoul Forest's tandem rental
+    else if (!riding && !seated && climbWall.act(p)) next = climbWall.act(p); // Ttukseom's climbing wall (not open yet)
     else if (!riding && !seated && farm.act(p)) next = farm.act(p); // the weekend farm's beds and stall
     else if (!riding && !seated && seedShop.act(p)) next = seedShop.act(p); // the seed shop by Heunginjimun
     else if (guideAct(p)) next = guideAct(p);
@@ -7248,8 +7253,6 @@ function updateAction(p, tSec) {
       next = { key: 'batting', label: '⚾ ' + L(ARCADE_OPEN.batting), run: () => openArcade('batting') };
     } else if (nearStation(p, 'bowling', 1.4)) {
       next = arcadeGame.camOn() ? null : { key: 'bowling', label: '🎳 ' + L(ARCADE_OPEN.bowling) + (arcadeGame.bowlInvite() ? ' ⚔️' : ''), run: () => openArcade('bowling') };
-    } else if (nearStation(p, 'climbing', 1.8)) {
-      next = arcadeGame.camOn() ? null : { key: 'climbing', label: '🧗 ' + L(ARCADE_OPEN.climbing), run: () => openArcade('climbing') };
     } else if (nearStation(p, 'gallery', 2.2)) {
       next = { key: 'gallery', label: '🎯 ' + L(ARCADE_OPEN.gallery), run: () => openArcade('gallery') };
     } else if (nearStation(p, 'hauntGallery', 2)) {
@@ -7573,6 +7576,7 @@ renderer.setAnimationLoop((now) => {
   seoulDal.update(p, dt); // (carries me up and down in the gondola)
   boatTaxi.update(p, dt); // (carries me down the river on the boat)
   tandemRent.update(p, dt); // (the rented tandem's meter; given back on getting off)
+  climbWall.update(p);
   farm.update(p, dt); // (the weekend farm: loads when near, the crops grow)
   seedShop.update(p, dt);
   updateOpenParks(dt);

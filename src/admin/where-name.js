@@ -29,6 +29,7 @@ export const PLACES = [
   { name: 'Seoul Forest', box: [-614, -200, -243, 190] },
   { name: 'Seoul Forest', lm: 'rosegarden', r: 30 }, { name: 'Seoul Forest', lm: 'greenhouse', r: 30 }, { name: 'Seoul Forest', lm: 'hill', r: 30 }, { name: 'Seoul Forest', lm: 'pond', r: 20 }, { name: 'Seoul Forest', lm: 'deerpen', r: 30 }, { name: 'Seoul Forest', lm: 'lawn', r: 50 }, { name: 'Seoul Forest', lm: 'tandemrental', r: 20 },
   { name: 'Seoul Forest', lm: 'avenue', r: 0 }, // (no spot of its own: inside the box above)
+  { name: 'Ttukseom Climbing Wall', lm: 'climbwall', r: 25 },
   // Gyeongbokgung, Gwanghwamun, Cheonggyecheon, Jongno
   { name: 'Gwanghwamun Gate', lm: 'gwanghwamun', r: 25 },
   { name: 'Gwanghwamun Gate', lm: 'palacehalls', r: 0 }, { name: 'Gwanghwamun Gate', lm: 'cloister', r: 0 }, // (the palace's and Changdeokgung's halls: their own box/district names it)

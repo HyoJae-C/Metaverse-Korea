@@ -1294,4 +1294,6 @@ export const ID = {
   "invite.copy": "Salin tautan",
   "invite.copied": "Tautan disalin",
   "invite.later": "Nanti",
+  "climbWall.name": "Dinding Panjat Ttukseom",
+  "climbWall.soon": "Sedang disiapkan. Belum dibuka.",
 };

@@ -1297,4 +1297,6 @@ export const KO = {
   "invite.copy": "링크 복사",
   "invite.copied": "링크를 복사했어요",
   "invite.later": "나중에",
+  "climbWall.name": "뚝섬 인공암벽장",
+  "climbWall.soon": "준비 중입니다",
 };

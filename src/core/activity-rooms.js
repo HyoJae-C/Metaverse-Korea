@@ -1,19 +1,18 @@
 // Interiors for the modern activities (rules in core/activities.js):
 //   bowling   볼링장: eight lanes, ball returns, score screens over the pins, benches
-//   climbing  클라이밍짐: a bouldering wall with colour-coded holds and mats
 //   pcbang    PC방: rows of gaming desks with glowing screens
 //   arcade    오락실: four fighting-game cabinets and two wall screens that show the matches
 // Every room already has people in it (stations.patrons, which main.js
 // stands, seats or sets to an activity), so it never looks empty.
 // Called from buildInterior (core/interior.js) with its helpers.
 import * as THREE from 'three';
-import { PINS, CLIMB_ROUTES } from './activities.js';
+import { PINS } from './activities.js';
 import { LANE_HALF, LANE_LEN, BALL_R, rackSpot } from './bowling-physics.js';
 import { pinGeometry, pinMaterial } from './bowling-pin.js';
 import { laneScreen } from './bowling-screen.js';
 import { mergeStatic } from './merge-static.js';
 
-export const ACTIVITY_ROOMS = new Set(['bowling', 'climbing', 'pcbang', 'arcade']);
+export const ACTIVITY_ROOMS = new Set(['bowling', 'pcbang', 'arcade']);
 const SEAT_H = 0.38; // (same chair height as core/interior.js)
 
 const FONT = '"Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -41,8 +40,7 @@ function sign(scene, tex, sw, sh, x, y, z, ry = 0) {
 
 export function decorateActivityRoom(store, ctx) {
   if (store.workshop === 'bowling') return bowling(store, ctx);
-  if (store.workshop === 'climbing') return climbing(store, ctx);
-  if (store.workshop === 'pcbang') return pcbang(store, ctx);
+    if (store.workshop === 'pcbang') return pcbang(store, ctx);
   if (store.workshop === 'arcade') return arcade(store, ctx);
   return null;
 }
@@ -169,86 +167,6 @@ function bowling(store, { scene, mat, block, stations, seats, w, d, h }) {
   for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) slab(0.34, 0.14, 0.2, w / 2 - 0.3, 0.5 + r * 0.42, d / 2 - 4.6 + k * 0.4, ['#d9473c', '#2f6fb5', '#f2c94c', '#3a3f47'][(r + k) % 4]);
   block(w / 2 - 0.3, d / 2 - 3.6, 0.4, 2.6);
   mergeStatic(still);
-  return null;
-}
-
-// ── Climbing ─────────────────────────────────────────────────────────────
-// A wide bouldering wall along the back, in three panels (the middle one
-// leans out), dotted with holds in the six grade colours. Thick blue mats
-// in front. Someone is on the wall, others watch from the mats.
-function climbing(store, { scene, box, block, mat, stations, seats, w, d, h }) {
-  const wz = -d / 2 + 0.2, panelW = 6, wallH = h - 0.3;
-  const panels = [-panelW, 0, panelW];
-  panels.forEach((px, i) => {
-    const lean = i === 1 ? 0.28 : 0; // the overhang
-    const g = new THREE.Group();
-    g.position.set(px, 0, wz);
-    g.rotation.x = lean; // (the top leans out over the mat)
-    scene.add(g);
-    const face = new THREE.Mesh(new THREE.BoxGeometry(panelW - 0.05, wallH, 0.12), mat(i === 1 ? '#e8e2d6' : '#d7d1c4'));
-    face.position.y = wallH / 2;
-    g.add(face);
-    // Holds: little lumps of every grade's colour, the same each visit.
-    let s = 17 + i * 101;
-    const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
-    for (let k = 0; k < 46; k++) {
-      const r = CLIMB_ROUTES[k % CLIMB_ROUTES.length];
-      const hold = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07 + rnd() * 0.08, 0), mat(r.color));
-      hold.position.set((rnd() - 0.5) * (panelW - 0.6), 0.35 + rnd() * (wallH - 0.6), 0.1);
-      hold.scale.z = 0.6;
-      g.add(hold);
-    }
-    const top = new THREE.Mesh(new THREE.BoxGeometry(panelW, 0.1, 0.5), mat('#3a3f47'));
-    top.position.set(0, wallH, 0.2);
-    g.add(top);
-  });
-  block(0, wz + 0.5, panelW * 3, 1.2);
-  // Mats: a long soft strip in front of the wall.
-  box(panelW * 3, 0.3, 3.2, 0, 0.15, wz + 2.3, '#2f6fb5');
-  for (const px of panels) box(0.04, 0.31, 3.2, px - panelW / 2, 0.16, wz + 2.3, '#24579a');
-  // Grade chart on the left wall: colour = grade.
-  const c = document.createElement('canvas');
-  c.width = 256; c.height = 512;
-  const g2 = c.getContext('2d');
-  g2.fillStyle = '#fffaf0'; g2.fillRect(0, 0, 256, 512);
-  g2.fillStyle = '#2b2b2e'; g2.font = `900 34px ${FONT}`; g2.textAlign = 'center';
-  g2.fillText('난이도 GRADES', 128, 48);
-  CLIMB_ROUTES.forEach((r, k) => {
-    g2.fillStyle = r.color; g2.fillRect(28, 80 + k * 70, 70, 50);
-    g2.fillStyle = '#2b2b2e'; g2.font = '800 40px system-ui'; g2.textAlign = 'left';
-    g2.fillText(r.grade, 120, 120 + k * 70);
-  });
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  sign(scene, tex, 1.2, 2.4, -w / 2 + 0.03, 2.0, -1, Math.PI / 2);
-  // Where you start a problem: in front of each panel, on the mat.
-  // (wall, lean, top: the panel's foot, its lean and its height, for the
-  // climb on the wall itself, game/climb-view.js.)
-  stations.climbing = panels.map((px, i) => ({ x: px, z: wz + 2.6, ry: Math.PI, wall: wz, lean: i === 1 ? 0.28 : 0, top: wallH }));
-  // Chalk bucket stands and a bench by the right wall.
-  for (const px of [-3, 3]) {
-    box(0.3, 0.9, 0.3, px, 0.45, wz + 4.4, '#9ca9af');
-    const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.22, 12), mat('#fbfaf6'));
-    bucket.position.set(px, 1.0, wz + 4.4);
-    scene.add(bucket);
-    block(px, wz + 4.4, 0.35, 0.35);
-  }
-  const bx = w / 2 - 0.8;
-  box(0.6, SEAT_H, 3, bx, SEAT_H / 2, 1, '#8a5a3a');
-  block(bx, 1, 0.7, 3.1);
-  for (const z of [0, 1, 2]) seats.push({ x: bx - 0.05, z, ry: -Math.PI / 2, stand: [bx - 0.9, z] });
-  // The people: two climbers on the wall (hanging: 'pullup'), one chalking
-  // up, two watching from the mat, one resting on the bench.
-  const patrons = (stations.patrons ||= []);
-  patrons.push(
-    { x: -panelW + 1.2, y: 1.3, z: wz + 0.35, ry: 0, act: 'pullup' },
-    { x: panelW - 0.8, y: 2.1, z: wz + 0.35, ry: 0, act: 'pullup' },
-    { x: -panelW - 1.4, z: wz + 2.9, ry: Math.PI * 0.9 },
-    { x: 1.6, z: wz + 3.1, ry: Math.PI },
-  );
-  const [rest] = seats.splice(seats.length - 2, 1); // the middle of the bench
-  patrons.push({ x: rest.x, z: rest.z, ry: rest.ry, sit: true });
-  for (const p of patrons) if (!p.sit && !p.y) block(p.x, p.z, 0.5, 0.5);
   return null;
 }
 

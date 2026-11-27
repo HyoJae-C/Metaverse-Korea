@@ -1471,7 +1471,7 @@ export function buildInterior(store) {
       // Sinchon's live café: a stage with a mic for players (core/live-cafe-room.js).
       barkeep = decorateLiveCafe(store, { scene, box, block, mat, stations, seats, w, d }).barkeep;
     } else if (ACTIVITY_ROOMS.has(store.workshop)) {
-      // Bowling alley, climbing gym, PC방 (core/activity-rooms.js).
+      // Bowling alley, PC방 (core/activity-rooms.js).
       animate = decorateActivityRoom(store, { scene, box, block, mat, stations, seats, w, d, h })?.animate || null;
     } else if (store.workshop === 'batting') {
       // 야구 연습장: three netted lanes, a pitching machine at the far end of
