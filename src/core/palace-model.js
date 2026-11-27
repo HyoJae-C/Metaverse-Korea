@@ -12,19 +12,60 @@
 // courtyard costs a handful of draw calls. Visual only: collision comes
 // from the map's blockers. l.s scales a building (default 1).
 import * as THREE from 'three';
-import { matCache, addBox } from './three-kit.js';
+import { matCache, addBox, canvasTex } from './three-kit.js';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
+import { PALACE_PAINT } from './palace-paint.js';
 
 const mat = matCache({ flatShading: true });
-const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
 const C = {
   stone: '#d6cdb8', stoneDark: '#b1a690', stoneLight: '#e4ddcc', post: '#a8392b', door: '#7a2c22', wall: '#efe6d2',
   beam: '#2f8a68', beamBlue: '#3f6f9a', beamRed: '#b2402f', bracket: '#2a6f5a', water: '#5b9fc4', bronze: '#5f6a55', gold: '#d4a73a',
   roof: new THREE.Color('#474c55'), roofEnd: new THREE.Color('#8a3a2c'),
 };
 const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+
+// The palace's surfaces (Yozi 2026-11-27: "it is a palace: more texture"):
+// roof tiles in rows, painted beams (단청), lattice doors (창살), dressed
+// stone in courses and plaster, each a small canvas drawn once and repeated
+// (core/palace-paint.js; nothing to download). A box of one of these colours
+// gets the texture, its UVs in metres so the pattern is the same size on
+// every building. A material marked userData.metres is merged like the plain
+// ones (bukchon-models.js mergeStatic), so the draw calls stay what they were.
+const TEXTURED = { [C.beam]: 'dancheong', [C.door]: 'lattice', [C.stone]: 'stone', [C.stoneDark]: 'stone', [C.stoneLight]: 'stone', [C.wall]: 'plaster' };
+const paints = {}, painted = {};
+function paint(kind) {
+  if (kind in paints) return paints[kind];
+  if (typeof document === 'undefined') return (paints[kind] = null);
+  const P = PALACE_PAINT[kind];
+  return (paints[kind] = canvasTex(P.px[0], P.px[1], P.draw, { anisotropy: 4, repeat: [1, 1] }));
+}
+function paintedMat(kind, c) {
+  const key = kind + c;
+  if (key in painted) return painted[key];
+  const map = paint(kind);
+  if (!map) return (painted[key] = null);
+  const m = new THREE.MeshLambertMaterial({ map, color: PALACE_PAINT[kind].tint ? c : '#ffffff', flatShading: true });
+  m.userData.metres = PALACE_PAINT[kind].m; // metres one repeat covers [across, up]; 0: once over the face
+  return (painted[key] = m);
+}
+// A box's UVs in metres. BoxGeometry's faces: +x, -x (z across, y up), +y, -y (x, z), +z, -z (x, y).
+function metreUV(geo, sx, sy, sz, [mu, mv]) {
+  const uv = geo.attributes.uv, dims = [[sz, sy], [sz, sy], [sx, sz], [sx, sz], [sx, sy], [sx, sy]];
+  for (let f = 0; f < 6; f++) for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * (mu ? dims[f][0] / mu : 1), uv.getY(i) * (mv ? dims[f][1] / mv : 1));
+}
+const box = (g, sx, sy, sz, x, y, z, c) => {
+  const kind = TEXTURED[c], m = kind && paintedMat(kind, c), mesh = addBox(g, mat, sx, sy, sz, x, y, z, m || c);
+  if (m) metreUV(mesh.geometry, sx, sy, sz, m.userData.metres);
+  return mesh;
+};
 export function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
+  if (!tileMat.map && paint('tile')) { // the tiles' rows: light round tiles, dark channels (the texture darkens; the colour makes up for it)
+    tileMat.map = paint('tile');
+    tileMat.map.repeat.set(1 / PALACE_PAINT.tile.m[0], 1 / PALACE_PAINT.tile.m[1]);
+    tileMat.color.setScalar(1.3);
+    tileMat.userData.metres = PALACE_PAINT.tile.m;
+  }
   const geos = curvedRoof(w, d, h, { color: C.roof, end: C.roofEnd, ...o });
   for (const geo of o.noRidge ? geos.slice(0, 1) : geos) { // (noRidge: the king's and queen's halls have no ridge, 무량각)
     const m = new THREE.Mesh(geo, tileMat);

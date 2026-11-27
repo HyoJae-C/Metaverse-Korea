@@ -11,22 +11,24 @@ import { BUKCHON, ground } from '../data/bukchon.js';
 import { SEASON } from './season.js';
 
 // Many small boxes cost a draw call each: merge a landmark's plain meshes
-// into one per material (the ones with a texture or several materials stay).
+// into one per material (the ones with a texture or several materials stay,
+// but for a texture laid in metres, material.userData.metres: palace-model.js).
 export function mergeStatic(g) {
   g.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(g.matrixWorld).invert();
   const byMat = new Map(), drop = [];
   g.traverse((o) => {
-    if (!o.isMesh || Array.isArray(o.material) || o.material.map) return;
+    if (!o.isMesh || Array.isArray(o.material) || (o.material.map && !o.material.userData.metres)) return;
+    const keep = o.material.map ? ['position', 'normal', 'color', 'uv'] : ['position', 'normal', 'color'];
     const geo = (o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone()).applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
-    for (const a of Object.keys(geo.attributes)) if (!['position', 'normal', 'color'].includes(a)) geo.deleteAttribute(a);
+    for (const a of Object.keys(geo.attributes)) if (!keep.includes(a)) geo.deleteAttribute(a);
     if (!byMat.has(o.material)) byMat.set(o.material, []);
     byMat.get(o.material).push({ geo, noShadow: o.userData.noShadow });
     drop.push(o);
   });
   for (const o of drop) o.parent.remove(o);
   for (const [m, list] of byMat) {
-    const ok = list.filter((x) => !!x.geo.attributes.color === !!list[0].geo.attributes.color);
+    const ok = list.filter((x) => !!x.geo.attributes.color === !!list[0].geo.attributes.color && !!x.geo.attributes.uv === !!list[0].geo.attributes.uv);
     const merged = mergeGeometries(ok.map((x) => x.geo));
     if (!merged) continue;
     const mesh = new THREE.Mesh(merged, m);

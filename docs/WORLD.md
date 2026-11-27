@@ -993,6 +993,16 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   a plane, which one is drawn changes pixel by pixel as the camera moves
   (Yozi saw the walls flicker, 2026-11-27). `tests/palace-flicker.test.mjs`
   checks every side face of the palace's buildings.
+- The palace's surfaces are small canvases drawn once (`core/palace-paint.js`,
+  nothing to download): roof tiles in rows, the painted beam under the eaves
+  (단청), lattice doors (창살), dressed stone in courses and plaster. A box of
+  one of those colours gets the texture with its UVs in metres, so a tile or
+  a stone is the same size on every building. Changdeokgung, Bongeunsa,
+  Jogyesa and the Blue House's roofs use the same parts and get it too. A
+  textured material is marked `userData.metres` and merged like the plain
+  ones (`mergeStatic`, bukchon-models.js), so the draw calls are what they
+  were (`tests/palace-paint.test.mjs`). The patterns are drawn by hand, not
+  copied from one building's real paintwork.
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 

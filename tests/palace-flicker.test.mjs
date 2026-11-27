@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import polygonClipping from 'polygon-clipping';
 
 // (name boards draw on a canvas; none is needed here)
-const ctx = new Proxy({}, { get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : k === 'createImageData' ? (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : k === 'createLinearGradient' ? () => ({ addColorStop() {} }) : typeof k === 'string' ? () => {} : undefined), set: () => true });
+const ctx = new Proxy({}, { get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : k === 'createImageData' ? (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) : k === 'createLinearGradient' || k === 'createRadialGradient' ? () => ({ addColorStop() {} }) : typeof k === 'string' ? () => {} : undefined), set: () => true });
 globalThis.document ||= { createElement: () => ({ width: 0, height: 0, getContext: () => ctx, style: {} }) };
 await import('../src/core/palace-model.js');
 await import('../src/core/bukchon-models.js');
