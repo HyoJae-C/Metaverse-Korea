@@ -339,8 +339,8 @@ south-east of Yanghwa-ro; Yeonnam is north-west of it.
 - Shops stay in their groups (`GROUPS` in the script: each group takes the
   free lots of its rows in order): the info centre and name tags at the top
   of Hongik-ro, salons, tarot cafés and clothes round the plaza, the perfume
-  alley, animal cafés and desserts down the walking street, the sauna, gym,
-  climbing wall and yoga on Wausan-ro, Korean restaurants on Jandari-ro.
+  alley, animal cafés and desserts down the walking street, the sauna, gym
+  and yoga on Wausan-ro, Korean restaurants on Jandari-ro.
 - Run the script again after changing the map; it rewrites the shops' `at`.
 - `meta.parts` (25 m strips) let Hongdae and Yeonnam meet along the diagonal
   Yanghwa-ro without their boxes overlapping (`strips()` in

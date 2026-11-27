@@ -323,6 +323,7 @@ export const PARK = {
     rail: [-122, 122],
     pier: { x: 100, len: 9 },
     fishBuy: [92, 4.2, 0],
+    bait: [95.2, 4.2, 0],
     fishing: [[114, 0.75], [106, 0.75], [100, -8.2], [84, 0.75]],
     kiosk: [68, 6.6, Math.PI], // DAILY MART, facing the river
     tables: [[59.6, 3.4], [76.4, 3.4]],
@@ -624,6 +625,15 @@ for (const w of SF.ponds) BLOCKERS.push({ p: w.p });
 // The park itself (game/han-parks.js): at the bank's edge, in its own frame (not part of the forest).
 LANDMARKS.push({ type: 'hanpark', store: 'ttukseom-hangang', x: PARK_X, z: PARK_BANK, ry: +PARK_RY.toFixed(4), bounds: PARK.bounds, layout: PARK.layout });
 BLOCKERS.unshift({ p: [...RIVER_EDGE.map(([x, z]) => [x, z + 2]), ...RIVER_SOUTH] }); // the river
+// Ttukseom's outdoor climbing wall (game/climb-wall-near.js; real: 15 m high,
+// 40 m wide, hangang.seoul.go.kr). The whole place at 50% (Yozi 2026-11-27:
+// 7.5 m x 20 m), its back to the block that stands where Gangbyeonbuk-ro
+// runs, facing the river like the real one. x, z: the middle of the wall's
+// back; ry turns its front to the river side of that block's edge.
+export const CLIMB_WALL = { lat: 37.5322000488, lon: 127.0623844126, x: 147.4, z: 344.9, ry: -0.2127 };
+LANDMARKS.push({ type: 'climbwall', x: CLIMB_WALL.x, z: CLIMB_WALL.z, ry: CLIMB_WALL.ry, clear: 19, real: [CLIMB_WALL.lat, CLIMB_WALL.lon],
+  label: name('뚝섬 인공암벽장', 'Ttukseom Climbing Wall', 'トゥクソム人工岩壁', '纛岛人工攀岩墙'),
+  why: 'the wall and its plaza are 50% of real (the land round them 1/4), so the plaza reaches further towards the river than the real one' });
 // The Han River path, and the riverside walk above Ttukseom Han River Park
 // (from the path at the park's west end to Jamsil Bridge) with its two ways
 // down and a way up to the road to Jamsil Bridge (region.json).

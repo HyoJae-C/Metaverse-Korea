@@ -1296,4 +1296,6 @@ export const TH = {
   "invite.copy": "คัดลอกลิงก์",
   "invite.copied": "คัดลอกลิงก์แล้ว",
   "invite.later": "ไว้ทีหลัง",
+  "climbWall.name": "ผาจำลองตุกซอม",
+  "climbWall.soon": "กำลังเตรียมการ ยังไม่เปิด",
 };

@@ -1299,4 +1299,6 @@ export const JA = {
   "invite.copy": "リンクをコピー",
   "invite.copied": "リンクをコピーしました",
   "invite.later": "あとで",
+  "climbWall.name": "トゥクソム人工岩壁",
+  "climbWall.soon": "準備中です",
 };

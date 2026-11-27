@@ -1295,4 +1295,6 @@ export const ES = {
   "invite.copy": "Copiar enlace",
   "invite.copied": "Enlace copiado",
   "invite.later": "Más tarde",
+  "climbWall.name": "Muro de escalada de Ttukseom",
+  "climbWall.soon": "En preparación. Aún no está abierto.",
 };

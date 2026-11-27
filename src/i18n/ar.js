@@ -1296,4 +1296,6 @@ export const AR = {
   "invite.copy": "نسخ الرابط",
   "invite.copied": "تم نسخ الرابط",
   "invite.later": "لاحقًا",
+  "climbWall.name": "جدار التسلق في تتوكسوم",
+  "climbWall.soon": "قيد التحضير. لم يُفتح بعد.",
 };

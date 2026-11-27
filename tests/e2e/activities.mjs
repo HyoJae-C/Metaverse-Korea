@@ -1,4 +1,4 @@
-// End-to-end check: the bowling alley, the climbing gym and the PC방.
+// End-to-end check: the bowling alley and the PC방.
 // Each room opens with people in it; the station's action opens its game.
 //   npm run build && npx vite preview --port 4173 &
 //   node tests/e2e/activities.mjs http://localhost:4173/ [screenshot dir]
@@ -18,7 +18,7 @@ await page.waitForSelector('#hud:not([hidden])', { timeout: 60000 });
 if (await page.isVisible('#welcome-panel')) await page.click('#welcome-close');
 const shot = async (n) => { if (S) await page.screenshot({ path: `${S}/${n}.png` }); };
 
-for (const [id, kind, panel] of [['strike-lane-bowling', 'bowling', 'bowling-panel'], ['boulder-bloc', 'climbing', 'climb-panel']]) {
+for (const [id, kind, panel] of [['strike-lane-bowling', 'bowling', 'bowling-panel']]) {
   await page.evaluate((i) => __mk.enter(i), id);
   await page.waitForTimeout(1500);
   await shot(kind + '-room');

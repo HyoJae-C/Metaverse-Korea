@@ -1299,4 +1299,6 @@ export const ZH = {
   "invite.copy": "复制链接",
   "invite.copied": "链接已复制",
   "invite.later": "以后再说",
+  "climbWall.name": "纛岛人工攀岩墙",
+  "climbWall.soon": "正在准备中",
 };

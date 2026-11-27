@@ -1296,4 +1296,6 @@ export const VI = {
   "invite.copy": "Sao chép liên kết",
   "invite.copied": "Đã sao chép liên kết",
   "invite.later": "Để sau",
+  "climbWall.name": "Tường leo núi Ttukseom",
+  "climbWall.soon": "Đang chuẩn bị. Chưa mở cửa.",
 };
