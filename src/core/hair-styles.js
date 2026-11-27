@@ -499,7 +499,7 @@ export function buildGlow(at, geo) {
     }
     glowGeos.set(geo, decals);
   }
-  const shimmer = () => { glowMat.opacity = 0.5 + 0.18 * Math.sin(performance.now() / 1625); };
+  const shimmer = () => { glowMat.opacity = 0.5 + 0.18 * Math.sin(performance.now() / 1300); };
   for (const d of glowGeos.get(geo)) {
     if (!d.attributes.position.count) continue;
     const m = new THREE.Mesh(d, glowMat);
@@ -507,7 +507,7 @@ export function buildGlow(at, geo) {
     g.add(m);
   }
   // Little stars that twinkle by the face in turn (slowly: Yozi 2026-11-27
-  // asked for a 2-3x longer cycle; 2.5x), so the shine reads from
+  // asked for a 2-3x longer cycle; 2x), so the shine reads from
   // across the street too.
   starMat ||= new THREE.SpriteMaterial({ map: starTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const { ey, cheeks } = at;
@@ -515,7 +515,7 @@ export function buildGlow(at, geo) {
     const star = new THREE.Sprite(starMat);
     star.position.set(x, y, cheeks[0].z + 0.08);
     star.onBeforeRender = () => {
-      const k = Math.max(0, Math.sin(performance.now() / 1050 + ph)) ** 3;
+      const k = Math.max(0, Math.sin(performance.now() / 840 + ph)) ** 3;
       star.scale.setScalar(0.02 + 0.16 * k);
     };
     g.add(star);
