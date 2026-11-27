@@ -23,6 +23,7 @@ import { saveLook } from '../core/look-editor.js';
 import { showBubble } from '../core/players.js';
 import { opIdFor } from '../core/wallet.js';
 import { skyCode } from './sky-codes.js';
+import { heliCode } from '../core/helicopter.js';
 import { SHOW_NOW, startShowNow } from '../core/show-now.js';
 import { nextShow, showNoticeText, nextSunset, sunsetNoticeText } from '../core/show-notice.js';
 
@@ -250,6 +251,8 @@ export function createChat(game) {
       // Sky view (operators only, game/sky-flight.js): /서울맨, /스카이슈트, /날개, /신천옹, /독수리,
       // /양탄자, /손오공, /착지.
       if (skyCode(code) && await game.sky?.command(skyCode(code))) return;
+      // The operators' helicopter (game/helicopter.js): /헬기 calls it, /헬기보내기 sends it off.
+      if (heliCode(code) && await game.heli?.command(heliCode(code))) return;
       // Fishing code: the next bite (fishing by hand) is that fish, once.
       const fishFromCode = await fishCode(code);
       if (fishFromCode === TOUR) {

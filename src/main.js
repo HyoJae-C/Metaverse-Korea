@@ -1558,6 +1558,7 @@ const rocking = lazyPanel(() => import('./game/rocking.js').then(({ createRockin
 // ---------- Multiplayer ----------
 const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => {
   sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q);
+  if (q.target.he && !heli.loaded) heli.ready().catch(() => {}); // an operator's helicopter (game/helicopter.js)
   if (q.target.rk) rocking.ready().catch(() => {}); rocking.peer(q, dt);
 }, boardGame: () => boardGames.playing };
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
@@ -1726,7 +1727,7 @@ async function joinRoom(room, roomScene, area = null) {
       homeVisitsLoaded?.onJoin(p.id); // a visitor in my home: the furniture, or out (game/home-visits.js)
       liveStage.onJoin(p.id); // a singer on the live café's stage sends them the voice
     },
-    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); folkYard.peerGone(id); liveStage.onLeave(id); sky.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
+    onLeave: (id) => { homeVisitsLoaded?.onLeave(id); boardGames.peerGone(id); folkYard.peerGone(id); liveStage.onLeave(id); sky.gone(id); heli.gone(id); if (iceRink.loaded) iceRink.gone(id); tandemGone(id); taxi.onLeave(id); others.leave(id); interior?.dartPins?.clear(id); refreshOnline(); },
     onState: (id, st) => others.state(id, st),
     onEmote: (id, e) => {
       if (homeVisitsLoaded?.onMsg(id, e)) return; // someone's home: its furniture (game/home-visits.js)
@@ -2000,8 +2001,15 @@ const sky = lazyPanel(() => import('./game/sky-flight.js').then(({ createSkyFlig
     return true;
   },
 });
+// The operators' helicopter (game/helicopter.js): "/헬기" calls it. Downloaded
+// at an operator's first call, or when an operator near us has one.
+const heli = lazyPanel(() => import('./game/helicopter.js').then(({ createHelicopter }) => createHelicopter({
+  get me() { return me; }, get mode() { return mode; }, get shop() { return shop; }, get others() { return others; }, get sfx() { return sfx; },
+  get busy() { return !!(riding || seated || ride || namsanCable.busy || boatTaxi.busy || sky.busy); },
+  cloud, scene, blocked: (x, z, r) => collision.blocked(x, z, r), isOperatorName, resend: () => { sendTimer = 0; },
+})), { state: () => {}, update: () => {}, gone: () => {}, mine: null, count: 0 });
 const chat = createChat({
-  sky,
+  sky, heli,
   get others() { return others; }, get shop() { return shop; }, get googleFail() { return googleFail; },
   get CODE_TEXT() { return CODE_TEXT; }, get wallet() { return wallet; },
   get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get inventory() { return inventory; },
@@ -7731,6 +7739,7 @@ renderer.setAnimationLoop((now) => {
   skateTick(dt, p);
   if (riding !== 3 && !seated && !sky.busy && !seoulDal.busy && !namsanCable.busy && !boatTaxi.busy) updateSubway(dt, p, px0, pz0); // (the street ground under you, not in the balloon or the cable car)
   sky.update(dt);
+  heli.update(dt);
   if (mode === 'store' && interior?.floorAt && !seated) p.y = interior.floorAt(p.x, p.z); // the summit plaza is up the hill
   poolTick(dt, p, mag); // Olympic Park Pool: the water, a race, a dive
   updateMeal();
@@ -7790,6 +7799,7 @@ renderer.setAnimationLoop((now) => {
     if (tarot.myTicket && interior?.store.workshop === 'tarot') st.tq = tarot.myTicket; // our place in the tarot café line
     if ((Math.abs(p.y) > 0.05 || seated) && ride?.kind !== 'coaster') st.y = Math.round(p.y * 100) / 100; // on subway stairs (not on the coaster: others place us from the clock)
     sky.state(st); // flying, carried, on a roof
+    heli.state(st); // an operator's helicopter: where it lands, and when
     if (riding) st.bk = riding;
     if (riding === 1) st.bv = rideCode(garage.rideSpec()); // which ride and skin
     if (skateTk && performance.now() - skateTk.at < 1500) st.tk = skateTk.code; // a skate park trick: others play it too
@@ -7819,7 +7829,7 @@ renderer.setAnimationLoop((now) => {
     if (snowman.duckSync && mode === 'street') st.sd = snowman.duckSync; // our snow ducks
     if (myWish) st.wl = encodeLantern(myWish); // our wish lantern on Cheonggyecheon, while it floats
     if (dining.meal?.mesh && interior) st.ml = mealSync(dining.meal, interior.seats, interior.store.products);
-    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik || st.ip !== lastSent.ip || st.bg !== lastSent.bg;
+    const changed = !lastSent || st.x !== lastSent.x || st.z !== lastSent.z || st.ry !== lastSent.ry || st.s !== lastSent.s || st.sit !== lastSent.sit || st.y !== lastSent.y || st.bk !== lastSent.bk || st.bx !== lastSent.bx || st.bz !== lastSent.bz || st.bo !== lastSent.bo || st.bv !== lastSent.bv || st.db !== lastSent.db || st.on !== lastSent.on || st.seat !== lastSent.seat || st.hd !== lastSent.hd || st.um !== lastSent.um || st.pt !== lastSent.pt || st.ml !== lastSent.ml || st.sc !== lastSent.sc || st.tq !== lastSent.tq || st.mt !== lastSent.mt || st.mf !== lastSent.mf || st.sb !== lastSent.sb || st.sh !== lastSent.sh || st.sg !== lastSent.sg || st.sd !== lastSent.sd || st.wl !== lastSent.wl || st.tk !== lastSent.tk || st.bc !== lastSent.bc || st.br !== lastSent.br || st.bh !== lastSent.bh || st.bq !== lastSent.bq || st.fb !== lastSent.fb || st.tp !== lastSent.tp || st.fl !== lastSent.fl || st.cr !== lastSent.cr || st.cs !== lastSent.cs || st.cm !== lastSent.cm || st.dl !== lastSent.dl || st.dq !== lastSent.dq || st.ik !== lastSent.ik || st.ip !== lastSent.ip || st.bg !== lastSent.bg || st.he !== lastSent.he;
     // Flying (operators) is sent like walking, so others see us in the sky
     // (game/sky-flight.js; same send rates, no name tag or map dot).
     if (changed || idleTimer <= 0) {
@@ -8105,6 +8115,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     decorAt: () => decorGame.decor?.items.map((i) => [i.id, +i.x.toFixed(2), +i.z.toFixed(2), i === decorGame.decor.carry, +(i.mesh?.scale.y ?? 1).toFixed(3)]) ?? null,
     roomSize: () => (interior?.room ? [interior.room.w, interior.room.d] : null), // (a home's size by its level)
     riding: () => riding,
+    heli: () => heli, // (the operators' helicopter: tests/e2e and screenshots)
     sky: () => ({ sky, me }), // (the flight and our character: tests/e2e and screenshots)
     skyPieces: () => { const out = []; me.root.traverse((o) => { if (o.userData.skyPiece) { const v = o.getWorldPosition(new THREE.Vector3()); me.root.worldToLocal(v); let vis = true; for (let q = o; q; q = q.parent) vis &&= q.visible; out.push([o.userData.skyPiece, vis, ...v.toArray().map((n) => +n.toFixed(2))]); } }); return out; },
     cam: (o) => Object.assign(cam, o),
