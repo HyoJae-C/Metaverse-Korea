@@ -30,7 +30,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame, anchorOffset } from '../src/core/seoul-grid.js';
-import { obb, rect, sat, inside, area, rectangles, planPalace } from './lib/palace-plan.mjs';
+import { obb, rect, sat, inside, area, rectangles, planPalace, terraceEdges } from './lib/palace-plan.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REGION = path.join(root, 'public', 'regions', 'another-seoul', 'region.json');
@@ -84,7 +84,9 @@ export const COUNT = Number(process.env.COUNT) || 30;
 const KEEP = [ // the way in and the throne hall's line first, then the king's and queen's halls, Nakseonjae, the offices
   '진선문', '숙장문', '선정전', '희정당', '대조전', '성정각', '낙선재', '석복헌', '수강재', '구선원전', '규장각', '경훈각', '관물헌',
   '승화루', '내의원', '신선원전', '의효전', '선정문', '금호문', '단봉문', '옥당(홍문관)', '검서청', '한정당', '상량정', '취운정', '예문관', '정청', '내병조'];
-const plan = planPalace({ elements: front, local, inPalace, OUTLINE: RAW, OWN, NO_RIDGE: new Set(['대조전']), BOARDS, KEEP, COUNT, FOOT, HALLS: new Set(['낙선재', '석복헌', '수강재']) });
+const plan = planPalace({ elements: front, local, inPalace, OUTLINE: RAW, OWN, NO_RIDGE: new Set(['대조전']), BOARDS, KEEP, COUNT, FOOT, HALLS: new Set(['낙선재', '석복헌', '수강재']),
+  // (the gates' real ground, the shut side bays of a small gate: see scripts/build-gyeongbokgung.mjs)
+  ownSolid: (n, o) => (n === '돈화문' || n === '인정문' ? rect(o.x, o.z, o.w * FOOT + 1.2, o.d * FOOT + 1.2, o.a) : null), gateBays: true });
 const { own, halls, runs, blockers, yards, sides, corridorP } = plan;
 
 // ---------- Doors ----------
@@ -203,6 +205,7 @@ for (const n of ['돈화문', '인정문']) {
   sides.push(['인정전', Math.round(ts * 50)]);
   lm.push({ type: 'throne', x: r1(x), z: r1(z), ry: r2(-o.a), hs: r2(hs), sc: [r2(ts), UP], name: { ko: '인정전', en: 'Injeongjeon', han: '仁政殿' }, inner: 1 });
   blockers.push({ p: rect(o.x, o.z, o.w * FOOT * ts + 1, o.d * FOOT * ts + 1, o.a) });
+  blockers.push(...terraceEdges({ x: r1(x), z: r1(z), a: -r2(-o.a), hs: r2(hs), ts: r2(ts) })); // (up by the front steps only: your feet rise with them, core/temple-terrace.js)
   yards.push({ x, z, w: T1[0], d: T1[1], a: o.a, terrace: 1 });
   pois.push({ kind: 'landmark', x: r1(o.x), z: r1(o.z + 6), name: N('인정전', 'Injeongjeon Hall', '仁政殿', '仁政殿') });
 }
@@ -552,14 +555,19 @@ for (const g of GARDENS) console.log(`garden ${g.id}: real (${g.c.map(r1)}) -> (
     if (![at(0, h.d / 2 + 1.2), at(0, -h.d / 2 - 1.2), at(h.w / 2 + 1.2, 0), at(-h.w / 2 - 1.2, 0)].some(([x, z]) => reach(x, z))) shut.push(h.name || `hall at ${r1(h.x)},${r1(h.z)}`);
   }
   for (const y of yards) {
-    if (y.terrace) continue;
     const cs = Math.cos(y.a), sn = Math.sin(y.a);
+    if (y.terrace) { // up by its front steps: the apron before the upper terrace must be reached
+      if (!reach(y.x - (y.d / 2 - 0.6) * sn, y.z + (y.d / 2 - 0.6) * cs, 0.4)) shut.push(`terrace at ${r1(y.x)},${r1(y.z)}`);
+      continue;
+    }
     let ok = false;
     for (let u = -y.w / 2 + 1.5; u < y.w / 2 - 1.5 && !ok; u += 0.8) for (let v = -y.d / 2 + 1.5; v < y.d / 2 - 1.5 && !ok; v += 0.8) ok = !!seen[cell(y.x + u * cs - v * sn, y.z + u * sn + v * cs)];
     if (!ok) shut.push(`yard at ${r1(y.x)},${r1(y.z)}`);
   }
   let cut = 0;
-  for (const r of roads) if (r.k === 'walk') for (const [x, z] of r.p) if (!reach(x, z, 1.6)) { cut++; if (process.env.DBG) console.log('shut path point', x, z, r.k); }
+  // (a real path over the throne hall's terrace: you get there by the steps, and the strips beside the upper terrace are narrower than this grid sees)
+  const onTerrace = (x, z) => yards.some((y) => y.terrace && inside(rect(y.x, y.z, y.w, y.d, y.a), x, z));
+  for (const r of roads) if (r.k === 'walk') for (const [x, z] of r.p) if (!reach(x, z, 1.6) && !onTerrace(x, z)) { cut++; if (process.env.DBG) console.log('shut path point', x, z, r.k); }
   console.log(shut.length ? 'cannot walk to: ' + shut.join('; ') : 'every hall, yard, pavilion and garden can be walked to', cut ? `; ${cut} path points are shut in` : '');
   if (process.argv.includes('--check') && (shut.length || cut)) process.exitCode = 1;
   const ri = process.argv.indexOf('--reach');

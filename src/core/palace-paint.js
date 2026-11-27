@@ -1,6 +1,8 @@
 // The palace's surfaces, each drawn once on a small canvas and repeated
 // (core/palace-model.js lays them on its boxes and roofs). px: the canvas;
 // m: the metres one repeat covers [across, up], 0 for "once over the face";
+// whole: a face takes a whole number of repeats, so both its ends match
+// (Yozi 2026-11-27: the pattern was cut at one end and not the other);
 // tint: drawn in greys and coloured by the piece it is on. The city's great
 // and small gates wear the same stone, tiles, plaster and painted beam
 // (core/euljiro-models.js, game/city-wall-parts.js).
@@ -28,7 +30,7 @@ export const PALACE_PAINT = {
   // The painted beam under the eaves (단청): green ground, gold lines, and
   // at each end of a unit a lotus between bands of colour (머리초, 휘).
   dancheong: {
-    px: [256, 64], m: [2.2, 0],
+    px: [256, 64], m: [2.2, 0], whole: true,
     draw(x, w, h) {
       x.fillStyle = '#2f8a68'; x.fillRect(0, 0, w, h);
       x.fillStyle = '#1f6a52'; x.fillRect(0, 0, w, 7); x.fillRect(0, h - 7, w, 7);
@@ -53,13 +55,13 @@ export const PALACE_PAINT = {
   // A door leaf (창호): a red frame, a solid panel at the foot (궁창), and
   // above it the lattice over paper (띠살: close uprights, three bands across).
   lattice: {
-    px: [128, 256], m: [0.9, 0],
+    px: [128, 256], m: [0.9, 0], whole: true,
     draw(x, w, h) {
       x.fillStyle = '#8f3024'; x.fillRect(0, 0, w, h); // the frame
       const top = 14, foot = h * 0.72, l = 10, r = w - 10;
       x.fillStyle = '#eadfc6'; x.fillRect(l, top, r - l, foot - top); // paper
       x.fillStyle = '#8f3024';
-      for (let u = l + 9; u < r - 4; u += 12) x.fillRect(u, top, 3, foot - top);
+      for (let u = l + 10.5; u < r - 4; u += 12) x.fillRect(u, top, 3, foot - top); // (the same margin either side)
       for (const band of [0.1, 0.5, 0.9]) for (let k = -1; k <= 1; k++) x.fillRect(l, top + (foot - top) * band + k * 7 - 1, r - l, 3);
       x.fillStyle = '#7a2a20'; x.fillRect(l, foot + 8, r - l, h - foot - 20); // the foot panel
       x.strokeStyle = '#b05a48'; x.lineWidth = 3; x.strokeRect(l + 9, foot + 17, r - l - 18, h - foot - 38);
@@ -130,9 +132,10 @@ export function paintedMat(kind, c, side = THREE.FrontSide) {
 // A box's UVs in metres. BoxGeometry's faces: +x, -x (z across, y up), +y,
 // -y (x, z), +z, -z (x, y). k: the scale the box is drawn at (its landmark's
 // "sc"), so a stone is as big on a gate at half size as on a hall.
-export function metreUV(geo, sx, sy, sz, [mu, mv], k = 1) {
+export function metreUV(geo, sx, sy, sz, [mu, mv], k = 1, whole = false) {
   const uv = geo.attributes.uv, dims = [[sz, sy], [sz, sy], [sx, sz], [sx, sz], [sx, sy], [sx, sy]];
-  for (let f = 0; f < 6; f++) for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * (mu ? dims[f][0] * k / mu : 1), uv.getY(i) * (mv ? dims[f][1] * k / mv : 1));
+  const n = (len, m) => (!m ? 1 : whole ? Math.max(1, Math.round((len * k) / m)) : (len * k) / m);
+  for (let f = 0; f < 6; f++) for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * n(dims[f][0], mu), uv.getY(i) * n(dims[f][1], mv));
 }
 // UVs in metres for any other shape (a roof's slopes, the block over an
 // arch): on each face, u runs level along it and v up it. Returns a copy.
@@ -153,8 +156,8 @@ export function faceUV(geo, kind, k = 1) {
 // other metres a repeat than the texture's own.
 export function paintedBox(g, mat, kind, sx, sy, sz, x, y, z, c, k = 1, m = null) {
   const pm = kind && paintedMat(kind, c), mesh = addBox(g, mat, sx, sy, sz, x, y, z, pm || c);
-  if (pm) metreUV(mesh.geometry, sx, sy, sz, m || pm.userData.metres, k);
+  if (pm) metreUV(mesh.geometry, sx, sy, sz, m || (kind === 'dancheong' ? beamMetres(sy * k) : pm.userData.metres), k, PALACE_PAINT[kind].whole); // (the beam's lotuses stay round on a low band)
   return mesh;
 }
 // The painted beam's repeat for a band h metres high (drawn for one 0.7 m high).
-export const beamMetres = (h) => [PALACE_PAINT.dancheong.m[0] * h / 0.7, 0];
+export function beamMetres(h) { return [PALACE_PAINT.dancheong.m[0] * h / 0.7, 0]; }

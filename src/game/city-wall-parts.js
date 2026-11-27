@@ -42,7 +42,7 @@ export function smallGate({ W, D, H: Hb, A, S }, name) {
   const box = (w, hh, d, px, py, pz, color) => {
     const kind = color ? WEAR[color] : 'stone', pm = kind && paintedMat(kind, color || STONE);
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), pm || (color ? new THREE.MeshLambertMaterial({ color }) : stone));
-    if (pm) metreUV(m.geometry, w, hh, d, kind === 'dancheong' ? beamMetres(hh) : pm.userData.metres);
+    if (pm) metreUV(m.geometry, w, hh, d, kind === 'dancheong' ? beamMetres(hh) : pm.userData.metres, 1, kind === 'dancheong');
     m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m;
   };
   for (const sx of [-1, 1]) box(W / 2 - A, Hb, D, sx * (A + (W / 2 - A) / 2), Hb / 2, 0); // either side of the arch
