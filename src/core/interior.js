@@ -6,6 +6,7 @@ import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
 import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
+import { lieSpot } from './lie-spot.js';
 import { finishSample } from './home-finish-art.js';
 import { finishById } from './home-finish.js';
 import { RING, BOARD_ORDER } from './arcade.js';
@@ -1055,7 +1056,8 @@ export function buildInterior(store) {
         box(0.9, bedTop, 2.1, bx, bedTop / 2, bz, '#f6f8fa');
         box(0.8, 0.1, 0.4, bx, bedTop + 0.05, bz - 0.8, '#ffffff'); // pillow
         box(0.92, 0.04, 1.2, bx, bedTop + 0.02, bz + 0.35, store.colors.awning); // blanket
-        seats.push({ x: bx, z: bz + 0.15, ry: 0, stand: [bx + 0.95, bz + 0.3], beauty: store.workshop, lie: true });
+        const [lx, lz] = lieSpot(bx, bz - 0.8); // head on the pillow (core/lie-spot.js); reach: as far as from the old spot
+        seats.push({ x: lx, z: lz, ry: 0, reach: bz + 0.15 - lz, stand: [bx + 0.95, bz + 0.3], beauty: store.workshop, lie: true });
         block(bx, bz, 1, 2.2);
       }
       // Operating room: x from ox0 to the right wall, z from the back wall to oz1.
@@ -1126,7 +1128,8 @@ export function buildInterior(store) {
         const led = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20).rotateX(Math.PI / 2), lampMat);
         led.position.set(bx, 1.625, bz - 0.85);
         scene.add(led);
-        seats.push({ x: bx, z: bz + 0.15, ry: 0, stand: [bx + 0.95, bz + 0.3], lie: true, derm: true, lamp: [bx, 1.6, bz - 0.85] });
+        const [lx, lz] = lieSpot(bx, bz - 0.8); // head on the pillow, under the lamp (core/lie-spot.js)
+        seats.push({ x: lx, z: lz, ry: 0, reach: bz + 0.15 - lz, stand: [bx + 0.95, bz + 0.3], lie: true, derm: true, lamp: [bx, 1.6, bz - 0.85] });
         block(bx, bz, 1, 2.2);
       }
       const shx = w / 2 - 0.45; // skincare on the right wall's shelf

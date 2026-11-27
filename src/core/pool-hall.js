@@ -11,6 +11,7 @@ import { POOL_ROOM, WATER_Y, SWIM_Y, COMP, LANE_W, DIVE, LEISURE, BOARDS, laneZ 
 import { createCharacter } from './character.js';
 import { drawSupport } from './support-poster.js';
 import { matCache, canvasTex as canvasTexture } from './three-kit.js';
+import { lieSpot } from './lie-spot.js';
 
 const mat = matCache();
 
@@ -336,7 +337,8 @@ export function buildPoolHall(store, ROOM = POOL_ROOM, EXIT = { x: 0, z: ROOM.d 
     box(1.9, 0.12, 0.8, x, 0.48, z, ['#ffd93d', '#7cd3c7', '#ff9bb3'][i % 3]); // cushion (top at 0.54)
     const back = box(0.7, 0.1, 0.8, x + 0.85, 0.72, z, ['#ffd93d', '#7cd3c7', '#ff9bb3'][i % 3]);
     back.rotation.z = 0.5;
-    seats.push({ x: x - 0.25, z, ry: -Math.PI / 2, stand: [x - 1.7, z], lie: true, lounger: true });
+    const [lx] = lieSpot(x + 0.2, z, -Math.PI / 2); // the head up to the foot of the back rest, not into it (core/lie-spot.js)
+    seats.push({ x: lx, z, ry: -Math.PI / 2, reach: lx - (x - 0.25), stand: [x - 1.7, z], lie: true, lounger: true });
     block(x, z, 2.1, 0.9);
     if (i < 5) { // a side table with a drink between loungers
       box(0.45, 0.5, 0.45, x + 0.4, 0.25, z + 1.3, '#ffffff');
