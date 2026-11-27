@@ -112,7 +112,7 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
   streaks.name = 'bukhansan-wind';
   streaks.frustumCulled = false;
   const streakAt = Array.from({ length: nS }, (_, i) => ({ u: hash(i + 100) * 40, side: (hash(i + 200) - 0.5) * 26, up: 0.4 + hash(i + 300) * 5, len: 1.6 + hash(i + 400) * 2.6, v: 0.75 + hash(i + 500) * 0.6 }));
-  const wisps = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), mat(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, fog: false, opacity: 0 }), 0.22), S.wisps * 3);
+  const wisps = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), mat(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, fog: false, opacity: 0 }), 0.13), S.wisps * 3);
   wisps.name = 'bukhansan-wisps';
   wisps.frustumCulled = false;
   const world = new THREE.Group(); // (these follow you)
@@ -179,7 +179,7 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
       for (let i = 0; i < S.wisps; i++) {
         const u = ((hash(i + 600) * 90 + t * (5 + hash(i + 700) * 4)) % 90) - 45, side = (hash(i + 800) - 0.5) * 40, up = top.y - 3 + hash(i + 900) * 7;
         for (let k = 0; k < 3; k++) {
-          m4.compose(v3.set(l.x + top.at[0] + wx * (u + k * 3.2) - wz * side, up + (k === 1 ? 0.6 : 0), l.z + top.at[1] + wz * (u + k * 3.2) + wx * side), q, sc.set(4.5 - k * 0.6, 1.2, 2.6).multiplyScalar(1 - Math.abs(u) / 45));
+          m4.compose(v3.set(l.x + top.at[0] + wx * (u + k * 3.2) - wz * side, up + (k === 1 ? 0.6 : 0), l.z + top.at[1] + wz * (u + k * 3.2) + wx * side), q, sc.set(5.5 - k * 0.8, 0.7, 2.4).multiplyScalar(1 - Math.abs(u) / 45));
           wisps.setMatrixAt(i * 3 + k, m4);
         }
       }
