@@ -1602,6 +1602,20 @@ on its real place.
   at its edge, and no taxi picks you up there.
 - Away from the way (18 m) the wood is one mass: the ground in the canopy's
   greens with clumps on it, not trees (Yozi 2026-11-27).
+- You stand on what is drawn (`core/bukhan-ground.js` `wayTop`): each stretch
+  of the way is a strip, level across, running on at its own slope a little
+  past its ends; the steps are blocks along their line. (Before, the ground
+  eased towards every way near by and you sank up to half a metre into the
+  path.) The camera stays 0.8 m over the mountain's ground (`camOver`), so
+  turning the view never shows under it.
+- Round the top you can walk out on the rock (`summit.rock`, made up from the
+  real ground: out to where it has dropped 4.5 m or is steeper than 32°, 5 to
+  15 m from the flag); the fence (posts and one cable) stands on its edge. The
+  rock floor is carved as it really is: 北漢山 白雲臺 836m.
+- Sunrise and sunset (`core/sunset-sky.js`): on the mountain a big sun and a
+  warm glow on the ground (`BUKHAN_PARK.sun`, `glow`); at the top more: the
+  far country and the sea of clouds take the sun's colour and its path of
+  light lies over the clouds (`SUMMIT.warm`, `path`).
 - From elsewhere nothing of it is drawn: it loads within 480 m, and past the
   haze (600 m and more) it hands the renderer 0 triangles
   (`tests/e2e/bukhansan-far.mjs`).

@@ -20,6 +20,7 @@ import { bukhanHeight, bukhanBox, padRing } from '../core/bukhan-ground.js';
 import { inPoly } from '../core/skypark-ground.js';
 
 export const BUKHAN_NEAR = 480; // m: past the fog (it ends at 420 m), so it is there before you see it
+export const CAM_OVER = 0.8; // m over the mountain's ground the camera keeps (main.js): the slope uphill of you is higher than you are
 export const SUMMIT_R = 4; // m from the flag: where the view's button shows
 // The steeper the way, the slower you go (Yozi 2026-11-27): full pace up to
 // about 7°, 60% on the steepest paths (18°), 45% on the steps up the rock.
@@ -32,12 +33,13 @@ export function climbPace(g) {
 
 export function createBukhansanWalk({ landmarks = [], collision = null, scene = null, seats = null, lowSpec = false, text = (k) => k, lang = () => 'en', busy = () => false, toast = null, riding = null, getOff = null, daylight = () => 1, sfx = () => null, weather = () => null }) {
   const l = landmarks.find((q) => q.type === 'bukhansan');
-  if (!l) return { y: () => 0, pace: () => 1, on: () => false, update() {}, acts: () => [], group: null, landmark: null, summit: null };
+  if (!l) return { y: () => 0, pace: () => 1, on: () => false, camOver: CAM_OVER, update() {}, acts: () => [], group: null, landmark: null, summit: null };
   const [bx0, bz0, bx1, bz1] = bukhanBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
   const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : bukhanHeight(l, x - l.x, z - l.z));
   const W = ([x, z]) => [l.x + x, l.z + z];
   for (const p of l.pads) collision?.addDeck(padRing(p).map(W));
+  if (l.summit.rock) collision?.addDeck(l.summit.rock.map(W)); // (the bare rock round the top)
   for (const t of l.trails) {
     for (let i = 1; i < t.p.length; i++) {
       const a = W(t.p[i - 1]), b = W(t.p[i]), len = Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -69,6 +71,7 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
     y,
     pace,
     on,
+    camOver: CAM_OVER,
     landmark: l,
     summit,
     update(p, dt) {

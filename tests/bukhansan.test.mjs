@@ -115,7 +115,7 @@ test('the walk: decks on the way and the stops, height on the mountain, the view
   const decks = [];
   const landmarks = bh.landmarks.map((q) => ({ ...q, x: q.x + ox, z: q.z + oz }));
   const walk = createBukhansanWalk({ landmarks, collision: { addDeck: (p) => decks.push(p) }, text: (k) => k });
-  assert.equal(decks.length, l.pads.length + l.trails.reduce((n, t) => n + t.p.length - 1, 0));
+  assert.equal(decks.length, l.pads.length + 1 + l.trails.reduce((n, t) => n + t.p.length - 1, 0), 'the stops, the top\'s rock and the way');
   const t = l.trails[2], mid = t.p[Math.floor(t.p.length / 2)];
   assert.ok(Math.abs(walk.y(mid[0] + ox, mid[1] + oz) - mid[2]) < 0.8, 'on the path at its height');
   assert.equal(walk.y(ox + 300, oz + 300), 0);
@@ -212,4 +212,25 @@ test('the far woods are one mass: clumps in the wood\'s greens or the season\'s 
   for (let n = 0; n < 400; n++) { const c = woodColor(n, 0.5); assert.ok(c.r >= 0 && c.g > 0.02 && c.g <= 1, `a colour (${c.getHexString()})`); if (c.g > c.r) green++; }
   assert.ok(green > 200, `most clumps stay green (${green} of 400)`);
   assert.ok(BUKHAN_PARK.woodFrom >= 12, 'by the way you still walk among trees');
+});
+
+test('round the level top you can walk out onto the rock: as far as it is walkable, and listed as made up', () => {
+  const rock = l.summit.rock, top = pad('peak');
+  assert.ok(rock.length >= 24);
+  let far = 0;
+  for (const [x, z] of rock) {
+    const r = Math.hypot(x - top.at[0], z - top.at[1]), h = bukhanHeight(l, x, z);
+    assert.ok(r >= top.r && r <= BUKHAN.rock.r + 0.1, `the edge at ${x}, ${z} is ${r.toFixed(1)} m out`);
+    assert.ok(top.y - h <= BUKHAN.rock.drop + 0.3 && h <= top.y + 0.01, `the edge at ${x}, ${z} is ${(top.y - h).toFixed(1)} m under the top`);
+    assert.ok(inPoly(x, z, l.foot));
+    far = Math.max(far, r);
+  }
+  assert.ok(far > 10, `somewhere it reaches ${far.toFixed(1)} m out`);
+  // from the middle straight out to the edge you never meet a wall of rock
+  for (const [x, z] of rock) for (let k = 1; k <= 10; k++) {
+    const a = [top.at[0] + (x - top.at[0]) * (k - 1) / 10, top.at[1] + (z - top.at[1]) * (k - 1) / 10], b = [top.at[0] + (x - top.at[0]) * k / 10, top.at[1] + (z - top.at[1]) * k / 10];
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (d > 0.4) assert.ok(Math.abs(bukhanHeight(l, ...a) - bukhanHeight(l, ...b)) / d < 0.9, `walkable out to ${x}, ${z}`);
+  }
+  assert.ok(bh.meta.approx.some((a) => a.what.includes('rock') && a.why));
 });

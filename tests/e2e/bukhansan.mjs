@@ -70,6 +70,20 @@ await look('gate', '6-gate', { yaw: 2.4, pitch: 0.15, dist: 8 });
 const steps = l.trails.find((t) => t.steps).p;
 await go(steps[Math.floor(steps.length / 2)], 1200);
 await cam({ yaw: 2.2, pitch: 0.1, dist: 7 }); await page.waitForTimeout(1500); await shot('7-rock-steps');
+// Turning the view all the way round on the steep steps: the camera never goes inside the mountain (Yozi 2026-11-27: you saw under the ground).
+{
+  let worst = Infinity, at = null;
+  for (const q of [steps[Math.floor(steps.length / 2)], steps[4], l.trails[3].p[8], l.trails[1].p[20]]) {
+    await go(q, 600);
+    for (let k = 0; k < 8; k++) for (const pitch of [-0.2, 0.05, 0.4]) {
+      await cam({ yaw: (k / 8) * Math.PI * 2, pitch, dist: 14 }); await page.waitForTimeout(450);
+      const over = await page.evaluate(() => { const c = __mk.camPos(); return c[1] - __mk.bukhan.y(c[0], c[2]); });
+      if (over < worst) { worst = over; at = [k, pitch]; }
+    }
+  }
+  assert(worst > 0.3, `the camera stays over the ground all the way round (lowest ${worst.toFixed(2)} m over it, at ${at})`);
+  await cam({ yaw: 5.5, pitch: -0.1, dist: 12 }); await go(steps[Math.floor(steps.length / 2)], 900); await shot('7b-steps-from-uphill');
+}
 await look('peak', '8-top', { yaw: 0.4, pitch: 0.3, dist: 9 });
 await cam({ yaw: 2.6, pitch: 0.55, dist: 60 }); await page.waitForTimeout(1500); await shot('9-top-from-above');
 

@@ -10,6 +10,10 @@
 //     on a ring 900 m out: the ridges, the city, the Han;
 //   - a sea of clouds lies under the peaks (it also covers where the
 //     mountain's made-up outline ends);
+//   - at sunrise and sunset (core/sunset-sky.js) the far country and the
+//     sea of clouds take the sun's colour, and its light lies in a path over
+//     the clouds (Yozi 2026-11-27, from a photo of the top at dawn: pink and
+//     orange clouds under the rock); the big sun itself is the park's;
 //   - the wind: streaks blowing past, wisps of cloud over the rock, its
 //     sound, and the flag flapping hard (game/bukhansan-park.js).
 //
@@ -34,6 +38,8 @@ export const SUMMIT = {
   wisps: 5, // wisps of cloud over the rock
   wind: [0.94, 0.34], // where it blows to (x, z): from the west-north-west, as it mostly does up there
   speed: 16, // m/s: the streaks
+  warm: [0.75, 0.3, 0.3], // at sunrise and sunset: how far the far country and the clouds take the sun's colour, how much white is in it, and the lumps' own glow
+  path: [150, 0.8], // the sun's path of light over the clouds: m wide, how bright
   loud: 0.16, // the wind's sound at the top
 };
 
@@ -60,7 +66,7 @@ export function ringGeometry(R, eyeY, cols = 96, rows = 8) {
 
 const hash = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 
-export function createBukhanSummit({ group, l, lowSpec = false, daylight = () => 1, sfx = () => null, url = 'regions/another-seoul/bukhansan-view.json' }) {
+export function createBukhanSummit({ group, l, lowSpec = false, daylight = () => 1, sfx = () => null, sun = () => null, url = 'regions/another-seoul/bukhansan-view.json' }) {
   const S = SUMMIT, top = l.summit, eyeY = top.y + 1.6;
   const root = new THREE.Group();
   root.name = 'bukhansan-summit-sky';
@@ -105,6 +111,22 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
   puffs.frustumCulled = false;
   const puffAt = Array.from({ length: nP }, (_, i) => { const a = hash(i) * Math.PI * 2, d = 60 + Math.sqrt(hash(i + 50)) * 330; return { x: Math.cos(a) * d, z: Math.sin(a) * d, r: 18 + hash(i + 9) * 34, h: 6 + hash(i + 3) * 12, v: 0.5 + hash(i + 7) * 0.8 }; });
   root.add(puffs);
+
+  // The low sun's path of light over the sea, towards where it stands.
+  const beam = document.createElement('canvas');
+  beam.width = 64; beam.height = 128;
+  { // bright along the middle, fading to the sides, to you and to the rim
+    const g = beam.getContext('2d'), im = g.createImageData(64, 128);
+    for (let yy = 0; yy < 128; yy++) for (let xx = 0; xx < 64; xx++) { const sx = 1 - Math.abs(xx - 31.5) / 32, v = yy / 127, a = sx * sx * Math.min(1, v * 5) * Math.min(1, (1 - v) * 2.2); im.data.set([255, 236, 200, a * 255], (yy * 64 + xx) * 4); }
+    g.putImageData(im, 0, 0);
+  }
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(S.path[0], S.seaR * 0.9).rotateX(-Math.PI / 2).translate(0, 0, -S.seaR * 0.45), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(beam), transparent: true, fog: false, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  path.name = 'bukhansan-sun-path';
+  path.position.y = seaY + 0.5;
+  path.renderOrder = -1.5;
+  path.visible = false;
+  root.add(path);
+  const tint = new THREE.Color(), white = new THREE.Color(0xffffff);
 
   // The wind round you: thin streaks blowing past, and wisps of cloud over the rock.
   const nS = lowSpec ? 16 : S.streaks;
@@ -159,6 +181,19 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
       if (!on) return;
       const day = Math.max(0.16, daylight());
       for (const m of mats) { m.opacity = m.userData.a * open; if (!m.isMeshLambertMaterial) m.color.copy(m.userData.c).multiplyScalar(day); } // (unlit things dim with the day; the lit ones do by themselves)
+      // the low sun colours it all
+      const ss = sun(), k = ss?.mix || 0, u = ss?.dome.material.uniforms;
+      path.visible = k > 0.01;
+      puffs.material.emissive.setScalar(0);
+      if (k > 0.01 && u) {
+        tint.copy(u.uGlow.value).lerp(white, S.warm[1]);
+        if (ring) ring.material.color.lerp(tint.clone().multiply(ring.material.userData.c).multiplyScalar(day), k * S.warm[0]);
+        sheet.material.color.lerp(tint.multiplyScalar(day), k * S.warm[0]);
+        puffs.material.emissive.copy(u.uGlow.value).multiplyScalar(k * S.warm[2]);
+        path.rotation.y = Math.atan2(-u.uSun.value.x, -u.uSun.value.z);
+        path.material.color.copy(u.uGlow.value).lerp(white, 0.4);
+        path.material.opacity = k * open * S.path[1] * Math.min(1, Math.max(0, (u.uSun.value.y + 0.035) / 0.05));
+      }
       // the sea drifts
       for (let i = 0; i < nP; i++) {
         const a = puffAt[i], wrap = S.seaR * 0.86, x = ((((a.x + wx * t * a.v * 2.2 + wrap) % (2 * wrap)) + 2 * wrap) % (2 * wrap)) - wrap, z = ((((a.z + wz * t * a.v * 2.2 + wrap) % (2 * wrap)) + 2 * wrap) % (2 * wrap)) - wrap;

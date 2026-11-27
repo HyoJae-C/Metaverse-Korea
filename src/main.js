@@ -7664,7 +7664,9 @@ renderer.setAnimationLoop((now) => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
+  if (mode === 'street') { const gy = bukhan.y(cx, cz); if (gy) cy = Math.max(cy, gy + bukhan.camOver); } // (on Bukhansan the slope behind you is higher than you are: the camera stays over it, not inside the mountain)
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
+  if (mode === 'street') { const gy = bukhan.y(camera.position.x, camera.position.z); if (gy && camera.position.y < gy + bukhan.camOver) camera.position.y = gy + bukhan.camOver; } // (and on its way there: by a ledge of the steps the ground under it jumps)
   // Working out: look lower so your pose sits above the gym panel (more on a
   // tall phone screen, where the panel takes more of the height).
   gymLow += ((gymUi.open ? (innerHeight > innerWidth ? 1.7 : 1.1) : 0) - gymLow) * Math.min(1, dt * 6);
