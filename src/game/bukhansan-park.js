@@ -540,8 +540,8 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
       const w = weather();
       if (w && (open > 0 || lifted)) { w.lift = open * P.lift; lifted = open > 0; } // (as on Seoul Dal: core/weather.js)
       if (flag) { // the flag in the wind: it ripples, harder the higher you are
-        const a = flag.geometry.attributes.position, k = 0.5 + open * 0.9;
-        for (let i = 0; i < a.count; i++) { const x = flagAt[i * 3]; a.setZ(i, (Math.sin(x * 5.5 - t * (7 + open * 6)) * 0.07 + Math.sin(x * 2.3 - t * 3.1) * 0.05) * x * k); }
+        const a = flag.geometry.attributes.position, k = 0.5 + open * 0.35; // (a breeze, not a gale: Yozi 2026-11-27)
+        for (let i = 0; i < a.count; i++) { const x = flagAt[i * 3]; a.setZ(i, (Math.sin(x * 5.5 - t * (7 + open * 2)) * 0.07 + Math.sin(x * 2.3 - t * 3.1) * 0.05) * x * k); }
         a.needsUpdate = true;
         flag.rotation.y = -0.35 + Math.sin(t * 1.3) * 0.12;
       }
