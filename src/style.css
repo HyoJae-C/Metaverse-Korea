@@ -1210,6 +1210,16 @@ a.setting-row { text-decoration: none; color: inherit; }
 .train-tab { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,0.7); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .train-tab.on { background: var(--ink); color: #fff; }
 .train-panel #train-off { width: 100%; margin-top: 10px; }
+.train-find { display: flex; gap: 6px; margin: 0 0 8px; flex: 0 0 auto; }
+.train-search { flex: 1 1 auto; min-width: 0; box-sizing: border-box; margin: 0; padding: 9px 14px; border: 1.5px solid rgba(0,0,0,0.15); border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-size: 16px; outline: none; }
+.train-search:focus { border-color: var(--accent); }
+.train-map-btn { flex: 0 0 auto; border: 1.5px solid var(--accent); border-radius: 999px; padding: 0 14px; background: #fff; color: var(--ink); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.train-panel.on-map { max-height: min(80vh, 720px); }
+.train-map-btn.on { background: var(--accent); color: #fff; }
+.train-panel #train-options.map { display: block; }
+.train-map { display: block; width: 100%; height: auto; border-radius: 12px; cursor: pointer; touch-action: pan-y; }
+.train-map-hint { display: block; text-align: center; font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+.train-panel .train-none { grid-column: 1 / -1; text-align: center; margin: 12px 0; }
 .train-panel #train-status { margin: 2px 0 8px; }
 .train-progress { display: grid; gap: 4px; margin: -2px 0 10px; flex: 0 0 auto; }
 .train-progress-bar { height: 10px; border-radius: 999px; background: rgba(0,0,0,0.1); overflow: hidden; }

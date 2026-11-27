@@ -7,7 +7,9 @@ import { localName, getLanguage, t } from '../core/i18n.js';
 import {
   GATE_X, TRACKS as METRO_TRACKS, DOOR_Z, STOP_SECONDS, FARE, lineAhead, stopsBetween,
   streetStairs, hallStairsAt, outsideOf, ENTER_AT, HALL_EXIT_AT, stationAt, createReentry, stationName as withStationSuffix,
+  drawRouteMap, routeLayout, routeStationAt,
 } from '../core/subway.js';
+import { stationMatches } from '../core/station-search.js';
 import { L, fmt } from '../ui/pocha-ui.js';
 import { SUBWAY_THEMES, STATION_THEMES } from '../data/subway-themes.js';
 
@@ -138,6 +140,8 @@ export function createSubway(stations, game) {
     if (from < 0 || stationStores.length < 2) return;
     const dir = METRO_TRACKS[t].dir;
     metroTab = 'all';
+    metroQuery = '';
+    $('train-search').value = '';
     metro = { from, t, dir, leaveAt: Date.now() + left * 1000, dest: null, arriveAt: 0 };
     const front = exitFront(from, 0);
     game.enterStore({ ...front, store: TRAIN_STORE });
@@ -150,9 +154,44 @@ export function createSubway(stations, game) {
     showProgress(Date.now());
     $('train-panel').hidden = false;
   }
-  // The "where do you get off?" picker: recent stations on top, theme tabs,
-  // then the stations ahead in two columns (name, and how many stops).
-  let metroTab = 'all';
+  // The "where do you get off?" picker: a search box, recent stations, theme
+  // tabs (and the route map to tap a station on), then the stations ahead in
+  // two columns (name, and how many stops).
+  let metroTab = 'all', metroQuery = '';
+  let mapCanvas = null; // made the first time the map tab opens
+  function routeMapCanvas() {
+    if (mapCanvas) return mapCanvas;
+    mapCanvas = document.createElement('canvas');
+    mapCanvas.className = 'train-map';
+    mapCanvas.onclick = (e) => {
+      const r = mapCanvas.getBoundingClientRect();
+      const k = routeStationAt(stations.length, (e.clientX - r.left) * mapCanvas.width / r.width, (e.clientY - r.top) * mapCanvas.height / r.height);
+      if (metro && k >= 0 && k !== metro.from) pickStop(k);
+    };
+    return mapCanvas;
+  }
+  const search = $('train-search');
+  search.oninput = () => {
+    metroQuery = search.value;
+    if (metroQuery.trim() && metroTab === 'map') metroTab = 'all';
+    renderMetro();
+    $('train-options').scrollTop = 0;
+  };
+  // The route map button: tap a station on the map; tap again for the list.
+  $('train-map-btn').onclick = () => {
+    if (!metro) return;
+    metroTab = metroTab === 'map' ? 'all' : 'map';
+    if (metroQuery) { metroQuery = ''; search.value = ''; }
+    renderMetro();
+    $('train-options').scrollTop = 0;
+    if (metroTab === 'map') scrollMapTo(metro.dest ?? metro.from);
+  };
+  search.onkeydown = (e) => {
+    e.stopPropagation(); // don't walk or honk while typing
+    if (e.key !== 'Enter' || e.isComposing) return;
+    const only = [...$('train-options').querySelectorAll('.train-stop')];
+    if (only.length === 1) { only[0].click(); search.blur(); }
+  };
   const RECENT_KEY = 'modu.metroRecent';
   const stationId = (k) => stations[k].id || stations[k].name?.en || String(k);
   function recentIds() {
@@ -178,7 +217,9 @@ export function createSubway(stations, game) {
     $('train-title').textContent = `🚇 ${L(metro.dir > 0 ? METRO_TEXT.up : METRO_TEXT.down)} · ${L(METRO_TEXT.pick)}`;
     const ahead = lineAhead(metro.from, metro.dir, n);
     const recent = recentIds().map((id) => ahead.find((k) => stationId(k) === id)).filter((k) => k != null);
-    $('train-recent').hidden = !recent.length;
+    search.placeholder = '🔍 ' + t('metro.search');
+    const searching = !!metroQuery.trim();
+    $('train-recent').hidden = !recent.length || searching;
     $('train-recent-label').textContent = t('metro.recent');
     $('train-recent-list').replaceChildren(...recent.map((k) => {
       const b = document.createElement('button');
@@ -189,20 +230,56 @@ export function createSubway(stations, game) {
     }));
     const tabs = [{ id: 'all', icon: '', key: 'metro.tab.all' }, ...SUBWAY_THEMES]
       .filter((th) => th.id === 'all' || ahead.some((k) => STATION_THEMES[stationId(k)]?.includes(th.id)));
-    if (!tabs.some((th) => th.id === metroTab)) metroTab = 'all';
-    $('train-tabs').hidden = tabs.length < 2;
+    if (metroTab !== 'map' && !tabs.some((th) => th.id === metroTab)) metroTab = 'all';
+    $('train-tabs').hidden = tabs.length < 2 || metroTab === 'map';
+    $('train-panel').classList.toggle('on-map', metroTab === 'map');
     $('train-tabs').replaceChildren(...tabs.map((th) => {
       const b = document.createElement('button');
-      b.className = 'train-tab' + (th.id === metroTab ? ' on' : '');
-      b.setAttribute('aria-pressed', th.id === metroTab);
+      const on = th.id === metroTab && !searching;
+      b.className = 'train-tab' + (on ? ' on' : '');
+      b.setAttribute('aria-pressed', on);
       b.textContent = (th.icon ? th.icon + ' ' : '') + t(th.key);
-      b.onclick = () => { metroTab = th.id; renderMetro(); $('train-options').scrollTop = 0; };
+      b.onclick = () => {
+        metroTab = th.id;
+        if (metroQuery) { metroQuery = ''; search.value = ''; }
+        renderMetro();
+        $('train-options').scrollTop = 0;
+      };
       return b;
     }));
-    const shown = metroTab === 'all' ? ahead : ahead.filter((k) => STATION_THEMES[stationId(k)]?.includes(metroTab));
-    $('train-options').replaceChildren(...shown.map(stopChip));
+    const mapBtn = $('train-map-btn'), onMap = metroTab === 'map';
+    mapBtn.textContent = onMap ? '📋 ' + t('metro.tab.all') : '🗺️ ' + t('metro.tab.map');
+    mapBtn.classList.toggle('on', onMap);
+    mapBtn.setAttribute('aria-pressed', onMap);
+    const opts = $('train-options');
+    opts.classList.toggle('map', metroTab === 'map');
+    if (metroTab === 'map') {
+      drawRouteMap(routeMapCanvas(), { stops: stations.map((x) => ({ name: x.name || {} })), index: metro.from, dest: metro.dest, lang: getLanguage() });
+      if (mapCanvas.parentNode !== opts) { // redrawn in place after a tap: keep the scroll
+        const hint = document.createElement('small');
+        hint.className = 'train-map-hint';
+        hint.textContent = '👆 ' + t('metro.mapTap');
+        opts.replaceChildren(hint, mapCanvas);
+      }
+    } else {
+      const shown = searching ? ahead.filter((k) => stationMatches(stations[k].name, metroQuery))
+        : metroTab === 'all' ? ahead : ahead.filter((k) => STATION_THEMES[stationId(k)]?.includes(metroTab));
+      if (shown.length) opts.replaceChildren(...shown.map(stopChip));
+      else {
+        const none = document.createElement('p');
+        none.className = 'fine train-none';
+        none.textContent = t('metro.none');
+        opts.replaceChildren(none);
+      }
+    }
     $('train-off').hidden = Date.now() >= metro.leaveAt;
     $('train-off').textContent = '🚪 ' + L(METRO_TEXT.getOff);
+  }
+  // Open the map with the picked (or your) station in the middle.
+  function scrollMapTo(k) {
+    const opts = $('train-options'), p = routeLayout(stations)[k];
+    if (!p) return;
+    requestAnimationFrame(() => { opts.scrollTop = Math.max(0, mapCanvas.offsetTop + p[1] / mapCanvas.height * mapCanvas.clientHeight - opts.clientHeight / 2); });
   }
   $('train-off').onclick = () => metroGetOff();
   function pickStop(k) {

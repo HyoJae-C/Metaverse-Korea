@@ -344,7 +344,7 @@ export const ROUTE_MAP_TEXT = {
   warn: { en: 'Riding the wrong way round can take longer!', ko: '반대 방향으로 타면 시간이 더 오래 걸릴 수 있어요!', ja: '逆方向に乗ると時間がもっとかかることがあります！', zh: '坐反方向可能要花更长时间！' },
   check: { en: 'Check the direction before you board.', ko: '타기 전에 방향을 확인하세요.', ja: '乗る前に方向を確認してください。', zh: '上车前请确认方向。' },
 };
-const UP_C = '#e02424', DOWN_C = '#1f6fd1';
+const UP_C = '#e02424', DOWN_C = '#1f6fd1', DEST_C = '#f28c00';
 const RM = { w: 1000, x0: 340, x1: 660, y0: 200, rad: 90, row: 112 };
 
 // The canvas size and the loop for n stations: { w, h, rows, y1, legendY }.
@@ -391,7 +391,23 @@ export function routeLayout(stops) {
   return S.map((s) => { const p = at(s); return [p.x, p.y]; });
 }
 
-export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2fb24a' } = {}) {
+// Which station a tap at canvas point (x, y) means: the nearest one on that
+// side of the loop (the names sit beside the dots, outside), within half a
+// row; or -1.
+export function routeStationAt(n, x, y) {
+  const { at, S } = routeLoop(n), right = x >= RM.w / 2;
+  let best = -1, bestD = RM.row / 2;
+  for (let i = 0; i < n; i++) {
+    const p = at(S[i]);
+    if ((p.nx > 0) !== right) continue;
+    const d = Math.abs(p.y - y);
+    if (d < bestD) { best = i; bestD = d; }
+  }
+  return best;
+}
+
+// dest (optional): the station picked on the train's map, ringed in orange.
+export function drawRouteMap(c, { stops = [], index = 0, dest = null, lang = null, line = '#2fb24a' } = {}) {
   const n = stops.length, { w, h, legendY } = routeMapSize(n);
   c.width = w; c.height = h;
   const g = c.getContext('2d');
@@ -451,16 +467,17 @@ export function drawRouteMap(c, { stops = [], index = 0, lang = null, line = '#2
   // Stations: a white circle on the line, the name beside it outside.
   const big = 42, small = 27;
   for (let i = 0; i < n; i++) {
-    const p = at(S[i]), cur = i === index, nm = stops[i].name || {};
-    g.fillStyle = '#ffffff'; g.strokeStyle = cur ? UP_C : '#3b3f47'; g.lineWidth = cur ? 9 : 7;
-    g.beginPath(); g.arc(p.x, p.y, cur ? 22 : 16, 0, Math.PI * 2); g.fill(); g.stroke();
-    if (cur) { g.lineWidth = 6; g.beginPath(); g.arc(p.x, p.y, 36, 0, Math.PI * 2); g.stroke(); }
-    const right = p.nx > 0, ax = p.x + (right ? 1 : -1) * (cur ? 48 : 32), maxW = right ? w - ax - 14 : ax - 14;
+    const p = at(S[i]), cur = i === index, nm = stops[i].name || {}, picked = i === dest && !cur;
+    const ink = cur ? UP_C : picked ? DEST_C : null;
+    g.fillStyle = picked ? DEST_C : '#ffffff'; g.strokeStyle = ink || '#3b3f47'; g.lineWidth = cur ? 9 : 7;
+    g.beginPath(); g.arc(p.x, p.y, cur || picked ? 22 : 16, 0, Math.PI * 2); g.fill(); g.stroke();
+    if (cur || picked) { g.lineWidth = 6; g.beginPath(); g.arc(p.x, p.y, 36, 0, Math.PI * 2); g.stroke(); }
+    const right = p.nx > 0, ax = p.x + (right ? 1 : -1) * (cur || picked ? 48 : 32), maxW = right ? w - ax - 14 : ax - 14;
     const top = p.y - (big + small + 6) / 2;
     g.textAlign = right ? 'left' : 'right'; g.textBaseline = 'top';
     const n1 = nm.ko || nm.en || '', n2 = second(nm);
-    g.fillStyle = cur ? UP_C : '#22252b'; fit(n1, 900, big, maxW); g.fillText(n1, ax, top, maxW);
-    g.fillStyle = cur ? UP_C : '#555b66'; fit(n2, 600, small, maxW); g.fillText(n2, ax, top + big + 6, maxW);
+    g.fillStyle = ink || '#22252b'; fit(n1, 900, big, maxW); g.fillText(n1, ax, top, maxW);
+    g.fillStyle = ink || '#555b66'; fit(n2, 600, small, maxW); g.fillText(n2, ax, top + big + 6, maxW);
   }
 
   // Legend: the red ring, the red (Up) and blue (Down) arrows.
