@@ -107,7 +107,7 @@ import { sendRate } from './net/rate.js';
 import { rt as rtMeter } from './net/meter.js';
 import { startWhereReports } from './net/where.js';
 import { createCounts, createErrorSender, createFpsMeter, createVisit, deviceClass, firstSrc, someoneNear, STAGE, startSessionReports } from './core/sessions.js';
-import { startUpdateCheck, watchMissingFiles } from './core/update-check.js';
+import { startUpdateCheck, watchMissingFiles, isMissingFileError } from './core/update-check.js';
 import { showUpdateBanner } from './ui/update-banner.js';
 import { config } from './config.js';
 import { getEmote } from './data/emotes.js';
@@ -347,7 +347,13 @@ addEventListener('error', (e) => {
   if (!/\/(assets|src)\//.test(e.filename || '')) { console.warn('[mk] page script:', msg); onProblem?.('ext: ' + msg); return; }
   reportProblem(msg);
 });
-addEventListener('unhandledrejection', (e) => reportProblem('promise: ' + (e.reason?.message || e.reason)));
+addEventListener('unhandledrejection', (e) => {
+  const msg = 'promise: ' + (e.reason?.message || e.reason);
+  // A game file that didn't download: the refresh banner says so (see
+  // watchMissingFiles below); counted, but no "small problem" box.
+  if (isMissingFileError(msg)) { console.warn('[mk]', msg); if (onProblem) onProblem(msg); else if (earlyProblems.length < 5) earlyProblems.push(msg); return; }
+  reportProblem(msg);
+});
 
 // Google ads (AdSense): the script for the rewarded "Watch an ad" button,
 // loaded early so the start screen's banner (wide computer screens) can fill.
@@ -1623,7 +1629,7 @@ setTimeout(() => {
 {
   const deployed = { current: __BUILD_ID__, fetchVersion: () => fetch(`${BASE}version.json?t=${Date.now()}`, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => j?.v) };
   startUpdateCheck({ ...deployed, onNew: () => { if (!tabParked) showUpdateBanner(); } });
-  watchMissingFiles({ ...deployed, onNew: () => showUpdateBanner() });
+  watchMissingFiles({ ...deployed, onNew: () => showUpdateBanner(), onBroken: () => showUpdateBanner({ text: { title: () => t('error.partLoad'), sub: () => t('error.partLoadSub') } }) });
 }
 // Our spot on the map for operators' live view (net/where.js, admin.html).
 // Inside a shop we report the street spot we came in from, and the shop.

@@ -12,21 +12,26 @@ export const UPDATE_TEXT = {
 
 export const LATER_MS = 10 * 60 * 1000;
 
-export function showUpdateBanner({ parent = document.body, reload = () => location.reload() } = {}) {
+// text: { title, sub } in the player's language, to say something else (a
+// part of the game that didn't download); the new-version words otherwise.
+// Showing it again while it is up switches it to the new-version words only.
+export function showUpdateBanner({ parent = document.body, reload = () => location.reload(), text = null } = {}) {
   let box = document.getElementById('update-banner');
-  if (box) { box.hidden = false; return box; }
+  if (box) { if (!text) { box.custom = null; box.render?.(); } box.hidden = false; return box; }
   box = document.createElement('div');
   box.id = 'update-banner';
   box.className = 'update-banner';
   box.setAttribute('role', 'status');
   box.innerHTML = '<div class="ub-text"><b></b><span></span></div><button class="ub-go" type="button"></button><button class="ub-later" type="button"></button>';
   const L = (o) => localName(o, getLanguage());
+  box.custom = text;
   const render = () => {
-    box.querySelector('b').textContent = L(UPDATE_TEXT.title);
-    box.querySelector('span').textContent = L(UPDATE_TEXT.sub);
+    box.querySelector('b').textContent = box.custom ? box.custom.title() : L(UPDATE_TEXT.title);
+    box.querySelector('span').textContent = box.custom ? box.custom.sub() : L(UPDATE_TEXT.sub);
     box.querySelector('.ub-go').textContent = '🔄 ' + L(UPDATE_TEXT.go);
     box.querySelector('.ub-later').textContent = L(UPDATE_TEXT.later);
   };
+  box.render = render;
   render();
   onLanguageChange(render);
   box.querySelector('.ub-go').onclick = () => reload();

@@ -746,6 +746,8 @@ export const PT = {
   "error.noMap": "Os dados do mapa desta área ainda não estão prontos. Volte em breve.",
   "error.generic": "Algo deu errado ao carregar. Atualize a página.",
   "error.soft": "Surgiu um pequeno problema, mas você pode continuar jogando.",
+  "error.partLoad": "⚠️ Uma parte do jogo não carregou.",
+  "error.partLoadSub": "A conexão caiu por um instante. Atualize para resolver.",
   "help.desktop": "Mover: WASD ou setas · Correr: Shift · Olhar: arrastar · Zoom: rolar",
   "help.mobile": "Mover: joystick esquerdo · Olhar: arrastar · Zoom: pinçar",
   "help.dismiss": "Entendi",

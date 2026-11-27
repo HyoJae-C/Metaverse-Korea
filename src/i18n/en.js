@@ -748,6 +748,8 @@ export const EN = {
   'error.noMap': "Map data for this area isn't ready yet. Please check back soon.",
   'error.generic': 'Something went wrong while loading. Please refresh the page.',
   'error.soft': 'A small problem came up, but you can keep playing.',
+  'error.partLoad': "⚠️ Part of the game didn't load.",
+  'error.partLoadSub': 'The connection dropped for a moment. Refresh to fix it.',
   'help.desktop': 'Move: WASD or arrow keys · Run: Shift · Look: drag · Zoom: scroll',
   'help.mobile': 'Move: left stick · Look: drag · Zoom: pinch',
   'help.dismiss': 'Got it',

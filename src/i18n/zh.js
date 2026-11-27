@@ -749,6 +749,8 @@ export const ZH = {
   'error.noMap': '该地区的地图数据尚未准备好，请稍后再来。',
   'error.generic': '加载时出现问题，请刷新页面。',
   'error.soft': '出现了一个小问题，但可以继续玩。',
+  'error.partLoad': '⚠️ 游戏的一部分没有加载成功。',
+  'error.partLoadSub': '网络暂时中断了。刷新页面即可恢复。',
   'help.desktop': '移动：WASD 或方向键 · 奔跑：Shift · 环视：拖动 · 缩放：滚轮',
   'help.mobile': '移动：左侧摇杆 · 环视：拖动 · 缩放：双指',
   'help.dismiss': '知道了',
