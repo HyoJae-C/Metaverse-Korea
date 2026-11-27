@@ -58,10 +58,10 @@ test('Gangnam Station (Line 2): exits 10 and 11 on the pavement near the real on
   });
 });
 
-test('the shops moved here, none made new: clinics, clothes, the appliance mart and four furniture showrooms', () => {
+test('the shops moved here (and the few made new): clinics, a skin clinic, clothes, the appliance mart and furniture showrooms', () => {
   const moved = GROUPS.flatMap(([, ids]) => ids).filter((id) => id !== 'info-gangnam');
   assert.deepEqual(here.map((s) => s.id).sort(), [...moved, 'info-gangnam'].sort());
-  assert.equal(moved.length, 14);
+  assert.equal(moved.length, 15); // (14, and the skin clinic made new, Yozi 2026-11-27)
   for (const id of moved.filter((m) => !NEW_SHOPS.includes(m))) assert.match(stores.find((s) => s.id === id).why, /Moved here|moved here/, id);
   assert.deepEqual(Object.keys(WHY).sort(), [...moved].sort());
   // every shop's spot: on the pavement in front of a building, off the streets

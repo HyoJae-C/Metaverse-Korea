@@ -1108,6 +1108,38 @@ export function buildInterior(store) {
       box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.awning);
       for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
       block(fx, fz, 0.9, 2.3);
+    } else if (store.workshop === 'derm') {
+      // Skin clinic (물광, game/derm.js): treatment beds along the back wall,
+      // each under an LED care lamp on an arm over the pillow; a shelf of
+      // skincare by the right wall and a waiting sofa by the door.
+      const bedTop = 0.55, bz = -d / 2 + 1.5;
+      const lampMat = new THREE.MeshBasicMaterial({ color: '#ffd1e3' });
+      for (const bx of [-w / 2 + 1.8, -w / 2 + 4.4, -w / 2 + 7]) {
+        box(0.9, bedTop, 2.1, bx, bedTop / 2, bz, '#fbf7f9');
+        box(0.8, 0.1, 0.4, bx, bedTop + 0.05, bz - 0.8, '#ffffff'); // pillow
+        box(0.92, 0.04, 1.2, bx, bedTop + 0.02, bz + 0.35, store.colors.awning); // towel over the legs
+        box(0.06, 1.7, 0.06, bx - 0.6, 0.85, bz - 0.95, '#c9ced3'); // the lamp's stand
+        box(0.6, 0.05, 0.06, bx - 0.3, 1.7, bz - 0.95, '#c9ced3'); // its arm
+        const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 20), mat('#e9eef2'));
+        lamp.position.set(bx, 1.66, bz - 0.85);
+        scene.add(lamp);
+        const led = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20).rotateX(Math.PI / 2), lampMat);
+        led.position.set(bx, 1.625, bz - 0.85);
+        scene.add(led);
+        seats.push({ x: bx, z: bz + 0.15, ry: 0, stand: [bx + 0.95, bz + 0.3], lie: true, derm: true, lamp: [bx, 1.6, bz - 0.85] });
+        block(bx, bz, 1, 2.2);
+      }
+      const shx = w / 2 - 0.45; // skincare on the right wall's shelf
+      box(0.4, 1.6, 2.4, shx, 0.8, -0.6, '#fffaf0');
+      ['#f7c6d9', '#cfe6f5', '#fff1c9', '#d8f0e0', '#f3d9f7', '#ffffff'].forEach((c, i) => {
+        for (const y of [0.75, 1.15]) box(0.12, 0.2, 0.12, shx - 0.05, y + 0.1, -1.5 + i * 0.36, c);
+      });
+      block(shx, -0.6, 0.5, 2.5);
+      const fx = -w / 2 + 1.2, fz = d / 2 - 3.2; // waiting sofa
+      box(0.8, 0.42, 2.2, fx, 0.21, fz, store.colors.sign);
+      box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.sign);
+      for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
+      block(fx, fz, 0.9, 2.3);
     } else if (store.workshop === 'ddp-hall') {
       // DDP Hall: DDP's bright lobby, entered from the plaza. White curving
       // forms (a few design pieces on plinths), benches, people already

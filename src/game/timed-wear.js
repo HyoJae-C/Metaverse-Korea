@@ -1,15 +1,25 @@
-// Limited-time clothes (core/timed-wear.js): the clock starts when you buy
+// Limited-time clothes (core/timed-wear.js) and the skin clinic's 7-day shine: the clock starts when you buy
 // one; when its days are up it leaves the closet (taken off first if worn),
 // with a note. Checked now and every 5 seconds.
 import { loadTimed, saveTimed, startTimed, dueTimed, daysLeft } from '../core/timed-wear.js';
 import { ITEMS, isWorn, unownedWorn } from '../core/inventory.js';
 import { saveLook } from '../core/look-editor.js';
 import { t, getLanguage, localName } from '../core/i18n.js';
+import { glowOver } from '../core/glow.js';
 
 export function createTimedWear(game) {
   const { inventory, receipts, setLook, shop } = game;
   let map = loadTimed();
   function tick(now = Date.now()) {
+    // The skin clinic's shine (core/glow.js) is over: it leaves the face (and
+    // others' screens, with the look).
+    const plain = glowOver(game.myLook, now);
+    if (plain) {
+      game.myLook = plain;
+      saveLook(plain);
+      setLook(plain);
+      shop.toast(t('derm.over'));
+    }
     const r = dueTimed(map, inventory.list(), ITEMS, now);
     if (r.map !== map) { map = r.map; saveTimed(map); }
     // Worn but not in the closet any more (the server took it out of the

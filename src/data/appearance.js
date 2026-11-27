@@ -15,6 +15,7 @@ import { PACK } from './characters/index.js';
 import { emblemById, nameColorById } from '../core/emblems.js';
 import { skirtById } from './skirts.js';
 import { TEAM_LIST } from './ballpark-teams.js';
+import { glowLeft } from '../core/glow.js';
 
 // Hairstyles from the hair salon (built in core/hair-styles.js).
 export const HAIR_STYLES = ['short', 'crop', 'bangs', 'bob', 'long', 'pony', 'twin', 'bun', 'curly', 'pomp',
@@ -282,6 +283,7 @@ export const DEFAULT_LOOK = {
   dye: null, hairStyle: null, // hair salon
   lip: null, // lip tint from Petal Lip
   blush: null, // blush from the lip shops
+  glow: null, // 물광: dewy skin from the skin clinic, until this time (ms; core/glow.js)
   eyeShape: null, nose: null, jaw: null, // cosmetic clinics
   eyes: null, tone: null, // clinic
   tee: null, // printed T-shirt (an item from the bag)
@@ -329,6 +331,7 @@ export function sanitizeLook(raw) {
   if (typeof raw.jaw === 'string' && JAW_IDS.includes(raw.jaw)) look.jaw = raw.jaw;
   if (typeof raw.lip === 'string' && Object.hasOwn(PALETTES.lip, raw.lip)) look.lip = raw.lip;
   if (typeof raw.blush === 'string' && Object.hasOwn(PALETTES.blush, raw.blush)) look.blush = raw.blush;
+  if (glowLeft(raw) > 0) look.glow = Math.round(raw.glow);
   if (typeof raw.eyes === 'string' && Object.hasOwn(PALETTES.eyes, raw.eyes)) look.eyes = raw.eyes;
   if (typeof raw.tone === 'string' && Object.hasOwn(PALETTES.skin, raw.tone)) look.tone = raw.tone;
   if (typeof raw.tee === 'string' && TEE_IDS.includes(raw.tee)) look.tee = raw.tee;

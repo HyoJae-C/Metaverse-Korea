@@ -17,7 +17,8 @@
 //    clothes shops from Euljiro (it had 15, two over its share) and Teheran
 //    Appliance Mart from Samseong, at the corner where Teheran-ro starts.
 //  - Gangnam-daero up to Sinnonhyeon: the two cosmetic clinics from Seongsu
-//    (the real stretch is Seoul's second clinic street, after Apgujeong).
+//    (the real stretch is Seoul's second clinic street, after Apgujeong),
+//    and a skin clinic made new for them (Yozi 2026-11-27).
 //  - Hakdong-ro east of Nonhyeon Station: four furniture showrooms from
 //    Euljiro, on the real Nonhyeon furniture street (Hakdong-ro from Nonhyeon
 //    to Hakdong Station). Euljiro keeps its traditional furniture and lamps.
@@ -189,7 +190,7 @@ export const GROUPS = [
   [['teheranN', 'gdE'], ['teheran-appliances'], { near: 'teheran' }],
   [['teheranN', 'teheranS'], ['fullpower-gaming', 'fullpower-gaming-room'], { near: 'teheran' }], // (Yozi 2026-11-25: gaming beside the appliance mart)
   [['gdW', 'gdE', 'teheranN', 'seochoN'], ['wide-pants', 'tteugae-knit', 'cap-yard'], { near: 'crossroads' }],
-  [['gdE', 'gdW'], ['bitna-clinic', 'saebom-clinic'], { near: 'clinics' }],
+  [['gdE', 'gdW'], ['bitna-clinic', 'saebom-clinic', 'yunseul-derm'], { near: 'clinics' }],
   [['hakdongN', 'hakdongS'], ['saebyeok-living', 'saebyeok-bedroom', 'kkotjam-beds', 'danjang-dressroom', 'white-mood-living', 'white-mood-interior'], { near: 'furniture' }],
 ];
 // Why each moved shop is here (stores.json "why"). The clothes shops are
@@ -203,13 +204,14 @@ export const WHY = {
   'teheran-appliances': 'Fictional shop on the Gangnam Station corner where Teheran-ro starts (Yozi 2026-11-22: home appliances like a fridge and a washer, somewhere like Gangnam, not Sewoon Sangga; moved here from the Samseong end of Teheran-ro when Gangnam Station was built, Yozi 2026-11-24). The real Gangnam-daero has big electronics showrooms.',
   'bitna-clinic': 'Fictional clinic on Gangnam-daero between Gangnam Station and Sinnonhyeon, the real stretch with one of Seoul\'s biggest clusters of cosmetic clinics. Moved here from Seongsu (Yozi 2026-11-24).',
   'saebom-clinic': 'Fictional clinic on Gangnam-daero between Gangnam Station and Sinnonhyeon, by Bitna. Moved here from Seongsu (Yozi 2026-11-24).',
+  'yunseul-derm': 'Fictional skin clinic on Gangnam-daero by the two cosmetic clinics, between Gangnam Station and Sinnonhyeon (Yozi 2026-11-27: a skin clinic in Gangnam, just for fun: one treatment and your face glows for 7 days).',
   'wide-pants': CLOTHES, 'tteugae-knit': CLOTHES, 'cap-yard': CLOTHES,
   'saebyeok-living': FURNITURE, 'saebyeok-bedroom': FURNITURE, 'kkotjam-beds': FURNITURE, 'danjang-dressroom': FURNITURE,
   'white-mood-living': WHITE_MOOD, 'white-mood-interior': WHITE_MOOD,
   'fullpower-gaming': GAMING, 'fullpower-gaming-room': GAMING,
 };
 // The shops made new here, not moved from elsewhere.
-export const NEW_SHOPS = ['white-mood-living', 'white-mood-interior', 'fullpower-gaming', 'fullpower-gaming-room'];
+export const NEW_SHOPS = ['yunseul-derm', 'white-mood-living', 'white-mood-interior', 'fullpower-gaming', 'fullpower-gaming-room'];
 
 // The lots each shop gets (local metres), and the screens' wall spots.
 export function placeShops(stores = readJson('stores.json').stores) {
