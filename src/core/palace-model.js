@@ -150,8 +150,8 @@ export const PALACE_BUILD = {
       const x0 = xs[i], x1 = xs[i + 1], bw = x1 - x0;
       for (const sx of [x0 + 0.5, x1 - 0.5]) box(g, 0.15, H - 1.4, bw / 2 - 0.4, sx, 0.75 + (H - 1.4) / 2, -bw / 4 + 0.2, C.door);
     }
-    box(g, w, 1.1 * s, 0.4, 0, 0.75 + H - 0.55 * s, -hd, C.wall); // the plastered strips over the doors
-    box(g, w, 1.1 * s, 0.4, 0, 0.75 + H - 0.55 * s, hd, C.wall);
+    box(g, w, 1.1 * s, 0.5 * s, 0, 0.75 + H - 0.55 * s, -hd, C.wall); // the plastered strips over the doors (thinner than the posts)
+    box(g, w, 1.1 * s, 0.5 * s, 0, 0.75 + H - 0.55 * s, hd, C.wall);
     band(g, w, d, 0.75 + H);
     tiles(g, w + 7 * s, d + 7 * s, 4.2 * s, 0.75 + H + 1.75, { hip: true, lift: 1.4 * s, seg: 6, rows: 3 });
     mergeStatic(g);
@@ -171,7 +171,7 @@ export const PALACE_BUILD = {
     box(g, W, 0.1, ch, 0, -0.9, 0, C.water);
     for (const z of [-ch / 2, ch / 2]) for (const sx of [-1, 1]) {
       const len = W / 2 - bw / 2;
-      box(g, len, 1.0, 0.4, sx * (bw / 2 + len / 2), -0.45, z, C.stoneDark); // the banks
+      box(g, len, 0.95, 0.4, sx * (bw / 2 + len / 2), -0.475, z, C.stoneDark); // the banks (up to the coping's foot, not into it)
       box(g, len, 0.12, 0.7, sx * (bw / 2 + len / 2), 0.06, z + Math.sign(z) * 0.15, C.stoneLight); // their coping
     }
     // The deck: a gentle hump in three steps, and the arches underneath.
@@ -198,15 +198,17 @@ export const PALACE_BUILD = {
       const seg = new THREE.Group();
       const n = Math.max(2, Math.round(len / 3.2));
       box(seg, len, 0.45, D, 0, 0.22, 0, C.stone); // the floor
-      box(seg, len, H, 0.5, 0, 0.45 + H / 2, -inward * (D / 2 - 0.25), C.wall); // the back wall
-      box(seg, len, 0.9, 0.55, 0, 0.45 + 0.45, -inward * (D / 2 - 0.25), C.post); // its red dado
+      // the back wall and its red dado: one above the other, never one
+      // inside the other (two colours on one plane flicker: Yozi 2026-11-27)
+      box(seg, len, H - 0.9, 0.5, 0, 1.35 + (H - 0.9) / 2, -inward * (D / 2 - 0.25), C.wall);
+      box(seg, len, 0.9, 0.5, 0, 0.45 + 0.45, -inward * (D / 2 - 0.25), C.post);
       for (let i = 0; i <= n; i++) {
         const x = -len / 2 + (i * len) / n;
-        box(seg, 0.5, H, 0.5, x, 0.45 + H / 2, inward * (D / 2 - 0.4), C.post); // the open side
+        box(seg, 0.44, H, 0.44, x, 0.45 + H / 2, inward * (D / 2 - 0.4), C.post); // the open side (slimmer than the beam on them: faces on one plane flicker)
         box(seg, 0.45, H, 0.45, x, 0.45 + H / 2, -inward * (D / 2 - 0.7), C.post);
       }
-      box(seg, len, 0.5, 0.5, 0, 0.45 + H + 0.1, inward * (D / 2 - 0.4), C.beam);
-      box(seg, len, 0.14, 0.55, 0, 0.45 + H - 0.2, inward * (D / 2 - 0.4), C.beamRed);
+      box(seg, len - 0.08, 0.5, 0.5, 0, 0.45 + H + 0.1, inward * (D / 2 - 0.4), C.beam); // (each a little shorter than the wall: their ends are not on one plane)
+      box(seg, len - 0.04, 0.14, 0.55, 0, 0.45 + H - 0.2, inward * (D / 2 - 0.4), C.beamRed);
       tiles(seg, len + 1.5, D + Math.min(2.6, D), Math.min(2.0, 0.4 + D * 0.5), 0.45 + H + 0.35, { hip: false, lift: 0.4, seg: Math.max(4, Math.round(len / 8)), rows: 2, ridgeEnds: false });
       seg.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2);
       seg.rotation.y = -Math.atan2(z1 - z0, x1 - x0);
@@ -300,8 +302,8 @@ export const PALACE_BUILD = {
       if (kind === 'r') { // a plain block where a real building was left out: walls and a big roof only
         const k = Math.min(w, d), B = 0.35, H = Math.min(3.2, Math.max(2, 1.2 + k * 0.25)) * V, e = Math.min(1.4, Math.max(0.5, k * 0.18 + 0.3));
         box(h, w + 0.5, B, d + 0.5, 0, B / 2, 0, C.stone);
-        box(h, w, H, d, 0, B + H / 2, 0, C.wall);
-        box(h, w + 0.04, 0.5 * V, d + 0.04, 0, B + 0.25 * V, 0, C.post); // the red dado
+        box(h, w, H - 0.5 * V, d, 0, B + 0.5 * V + (H - 0.5 * V) / 2, 0, C.wall);
+        box(h, w, 0.5 * V, d, 0, B + 0.25 * V, 0, C.post); // the red dado, under the wall (not inside it: it flickered)
         box(h, w + 0.3, 0.3 * V, d + 0.3, 0, B + H + 0.15 * V, 0, C.beam);
         tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3, k * 0.45)) * V, B + H + 0.3 * V, { hip: true, lift: Math.min(0.8, 0.2 + k * 0.08), seg: 4, rows: 1 });
         h.position.set(x, 0, z);
@@ -314,9 +316,9 @@ export const PALACE_BUILD = {
       const post = Math.min(0.45, Math.max(0.22, k * 0.07)), e = Math.min(1.6, Math.max(0.55, d * 0.22 + 0.35));
       box(h, w + 0.7, B, d + 0.7, 0, B / 2, 0, C.stone);
       if (!gate) {
-        box(h, w - post, H, d - post, 0, B + H / 2, 0, C.wall);
-        box(h, w - post * 2, H * 0.8, 0.08, 0, B + H * 0.4, d / 2 - post / 2 + 0.03, C.door); // the doors along the front
-        box(h, w - post, 0.5 * V, d - post + 0.02, 0, B + 0.25 * V, 0, C.post); // the red dado
+        box(h, w - post, H - 0.5 * V, d - post, 0, B + 0.5 * V + (H - 0.5 * V) / 2, 0, C.wall);
+        box(h, w - post * 2, H * 0.8, 0.08, 0, B + H * 0.4, d / 2 - post / 2 + 0.05, C.door); // the doors along the front
+        box(h, w - post, 0.5 * V, d - post, 0, B + 0.25 * V, 0, C.post); // the red dado, under the wall (not inside it: it flickered)
       } else box(h, w - post, 0.6 * V, 0.2, 0, B + H - 0.3 * V, 0, C.wall);
       const nx = Math.max(1, Math.round(w / 1.7));
       // (l.gateMid: a gate of three bays, its middle one that wide between the

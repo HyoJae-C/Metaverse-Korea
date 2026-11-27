@@ -98,12 +98,12 @@ test('Hyangwonjeong stands on its island, and you walk over Chwihyanggyo to it',
   for (const t of ['hyangwonjeong', 'pondbank', 'palacetrees']) assert.equal(typeof b[t], 'function', t);
   const real = osm.elements.find((e) => e.name === '향원정').pts.slice(0, -1).map(local), c = real.reduce((a, p) => [a[0] + p[0] / real.length, a[1] + p[1] / real.length], [0, 0]);
   assert.ok(Math.hypot(l.x - c[0], l.z - c[1]) < 1, `on its real spot (${l.x},${l.z} vs ${c.map((v) => v.toFixed(1))})`);
-  // 37.5% across, not 50% like the other halls: the island is at least twice as wide as the roof, as in Seoul (2.5 times)
-  assert.ok(l.sc[0] >= 0.6 && l.sc[0] <= 1 && l.sc[1] >= 0.8 && l.sc[1] <= 1 && l.isle[0] / (2.82 * l.sc[0]) >= 2, `the island is roomy (${(l.isle[0] / (2.82 * l.sc[0])).toFixed(2)} roofs wide)`);
+  // the island is at least twice as wide as the roof, as in Seoul (2.5 times), and the pavilion is not drawn taller than it is wide (Yozi 2026-11-27: too upright and small at 37.5% across, 45% high)
+  assert.ok(l.sc[0] >= 0.6 && l.sc[0] <= 1 && l.sc[1] >= 0.8 && l.sc[1] <= 1 && l.sc[1] <= l.sc[0] && l.isle[0] / (2.82 * l.sc[0]) >= 2, `the island is roomy (${(l.isle[0] / (2.82 * l.sc[0])).toFixed(2)} roofs wide)`);
   const pond = water.find((w) => pointInPoly(l.x, l.z, w)), [r, top] = l.isle, [sx, sz, w, rise] = l.span, L = Math.hypot(sx, sz), ux = sx / L, uz = sz / L;
-  // the island: OSM's is 3.45 m in radius at 1/4; drawn a little bigger for the pavilion at 50%, inside the pond
+  // the island: OSM's is about 4 m in radius at 1/4; drawn up to 2 m bigger for the pavilion at 50% across (Yozi 2026-11-27: the pavilion wider, the island bigger), inside the pond
   const isle = green.garden[0].pts.map(local), ir = Math.max(...isle.map(([x, z]) => Math.hypot(x - l.x, z - l.z)));
-  assert.ok(r >= ir - 0.3 && r <= ir + 1.2, `the island ${r} m (OSM ${ir.toFixed(2)})`);
+  assert.ok(r >= ir - 0.3 && r <= ir + 2.2, `the island ${r} m (OSM ${ir.toFixed(2)})`);
   for (let a = 0; a < 6.28; a += 0.2) assert.ok(pointInPoly(l.x + Math.sin(a) * (r + 1.5), l.z + Math.cos(a) * (r + 1.5), pond), 'water all round the island');
   // the bridge: from the island to the north bank, where OSM's Chwihyanggyo lands
   const end = green.bridge.map(local).sort((p, q) => Math.hypot(q[0] - l.x, q[1] - l.z) - Math.hypot(p[0] - l.x, p[1] - l.z))[0];
@@ -115,14 +115,15 @@ test('Hyangwonjeong stands on its island, and you walk over Chwihyanggyo to it',
   assert.ok(Math.abs(isleHeight(l, sx, sz)) < 1e-9, 'level with the ground at the bank');
   let peak = 0, prev = top;
   for (let v = r; v <= L; v += 0.1) { const y = isleHeight(l, ux * v, uz * v); assert.ok(Math.abs(y - prev) < 0.06, `no step on the bridge (${v.toFixed(1)} m)`); prev = y; peak = Math.max(peak, y); }
-  assert.ok(peak > top + rise * 0.6 && peak < 1.2, `the arch (${peak.toFixed(2)} m)`);
-  assert.equal(isleHeight(l, ux * (L / 2) + uz * (w / 2 + 0.3), uz * (L / 2) - ux * (w / 2 + 0.3)), 0, 'beside the bridge: the water');
+  assert.ok(peak > top + rise * 0.5 && peak < 1.2, `the arch (${peak.toFixed(2)} m)`);
+  const mid = r + (L - r) * 0.3; // (on the bridge, nearer the island: by the bank the shore comes close on one side)
+  assert.equal(isleHeight(l, ux * mid + uz * (w / 2 + 0.3), uz * mid - ux * (w / 2 + 0.3)), 0, 'beside the bridge: the water');
   // collision: along the bridge and round the pavilion, but not into the water or the pavilion
   const col = new CollisionMap(map.blockers), R = 0.35;
   for (let v = r - 0.6; v <= L + 0.5; v += 0.25) assert.ok(!col.blocked(l.x + ux * v, l.z + uz * v, R), `on the bridge (${v.toFixed(2)} m)`);
   for (let a = 0; a < 6.28; a += 0.3) assert.ok(!col.blocked(l.x + Math.sin(a) * (r - 0.7), l.z + Math.cos(a) * (r - 0.7), R), 'round the pavilion');
   assert.ok(col.blocked(l.x, l.z, R), 'not through the pavilion');
-  for (const s of [-1, 1]) assert.ok(col.blocked(l.x + ux * (L / 2) + uz * s * (w / 2 + 0.6), l.z + uz * (L / 2) - ux * s * (w / 2 + 0.6), R), 'not off the bridge\'s side');
+  for (const s of [-1, 1]) assert.ok(col.blocked(l.x + ux * mid + uz * s * (w / 2 + 0.6), l.z + uz * mid - ux * s * (w / 2 + 0.6), R), 'not off the bridge\'s side');
   for (let a = 0; a < 6.28; a += 0.3) { const x = l.x + Math.sin(a) * (r + 0.6), z = l.z + Math.cos(a) * (r + 0.6); if (Math.abs((x - l.x) * uz - (z - l.z) * ux) > w / 2 + 0.6 || (x - l.x) * ux + (z - l.z) * uz < 0) assert.ok(col.blocked(x, z, R), 'not off the island into the water'); }
   // the island's own trees stand on it, and it says what is made up
   const trees = at('palacetrees'), own = [];
