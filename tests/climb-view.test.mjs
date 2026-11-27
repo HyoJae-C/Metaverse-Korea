@@ -1,36 +1,70 @@
-// The climb on the gym's real wall (game/climb-view.js): the poses of a
-// route and the two-bone IK that puts hands and feet on the holds.
+// The climb on the gym's real wall (game/climb-view.js): the problem you
+// read, its poses and the two-bone IK that puts hands and feet on the holds.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { climbPoses, reachIK } from '../src/game/climb-view.js';
-import { CLIMB_ROUTES, routeHolds } from '../src/core/activities.js';
+import { climbProblem, climbStart, climbOptions, climbMove, climbTopped, climbPose, climbDrain, HOLD_TYPES, reachIK } from '../src/game/climb-view.js';
+import { CLIMB_ROUTES } from '../src/core/activities.js';
 
 const M = { shoulder: 0.62, arm: 0.3, leg: 0.32 };
+// Every state you can get into on a problem.
+function states(P) {
+  const seen = new Map(), todo = [climbStart()];
+  while (todo.length) {
+    const st = todo.pop(), key = `${st.a},${st.b},${st.mover}`;
+    if (seen.has(key)) continue;
+    seen.set(key, st);
+    if (!climbTopped(P, st)) for (const o of climbOptions(P, st)) todo.push(climbMove(st, o));
+  }
+  return [...seen.values()];
+}
 
-test('every route: hands go hold by hold, alternating, out to the sides, both on the top jug', () => {
+test('every problem: taped jugs to start, always a next hold in reach, and it tops out', () => {
   for (const r of CLIMB_ROUTES) {
-    const holds = routeHolds(r), poses = climbPoses(holds, M);
-    assert.equal(poses.length, holds.length);
-    assert.equal(poses[0].mover, null);
-    assert.equal(poses[0].hands[0].v, poses[0].hands[1].v, `${r.id}: two start holds side by side`);
-    for (let i = 1; i < poses.length; i++) {
-      const p = poses[i], hand = p.hands[p.mover === 'B' ? 1 : 0];
-      assert.deepEqual(hand, p.hold, `${r.id} ${i}: the reaching hand is on the new hold`);
-      assert.ok(p.body.v > poses[i - 1].body.v - 1e-9, `${r.id} ${i}: the body goes up`);
-      // Out beside the big head (A left, B right), and within a chibi's
-      // short reach of the shoulders.
-      assert.ok(p.hands[1].u - p.hands[0].u > 0.45, `${r.id} ${i}: hands apart`);
+    const P = climbProblem(r, 14);
+    assert.deepEqual(climbProblem(r, 14).holds, P.holds, `${r.id}: the same every visit`);
+    assert.deepEqual(P.holds.filter((h) => h.level === 0).map((h) => h.type), ['jug', 'jug'], `${r.id}: both hands start on jugs`);
+    assert.ok(P.holds.every((h) => h.level < P.n), `${r.id}: the top is the only hold at the top`);
+    const all = states(P);
+    assert.ok(all.some((st) => climbTopped(P, st)), `${r.id}: can be topped`);
+    for (const st of all) {
+      if (climbTopped(P, st)) continue;
+      const opts = climbOptions(P, st);
+      assert.ok(opts.length >= 1 && opts.length <= 2, `${r.id} ${st.a},${st.b}: ${opts.length} holds to go for`);
+      assert.ok(opts.every((o) => o.side === st.mover), `${r.id}: the reaching hand's own side`);
+      assert.ok(opts.every((o) => o.window > 0 && (!o.long || o.window < HOLD_TYPES[o.type].window)), `${r.id}: a long reach is a tighter catch`);
+    }
+  }
+});
+
+test('every pose on every problem: hands out beside the head and within a chibi\'s reach, feet under the hips', () => {
+  for (const r of CLIMB_ROUTES) {
+    const P = climbProblem(r, 14);
+    for (const st of states(P)) {
+      const p = climbPose(P, st, M, st.mover === 'A' ? 'B' : 'A');
+      assert.ok(p.hands[1].u - p.hands[0].u > 0.42, `${r.id} ${st.a},${st.b}: hands apart`);
+      assert.ok(Math.abs(p.hands[0].v - p.hands[1].v) <= 0.4 + 1e-9, `${r.id} ${st.a},${st.b}: hands at most two steps apart`);
       for (const h of p.hands) {
         const du = Math.abs(h.u - p.body.u) - 0.12, dv = h.v - (p.body.v + M.shoulder);
-        assert.ok(Math.hypot(du, dv) < M.arm + 0.04, `${r.id} ${i}: hand in reach (${Math.hypot(du, dv).toFixed(2)})`);
+        assert.ok(Math.hypot(du, dv) < M.arm + 0.04, `${r.id} ${st.a},${st.b}: hand in reach (${Math.hypot(du, dv).toFixed(2)})`);
       }
-      assert.ok(p.feet.every((f) => f.v < p.body.v + M.leg), `${r.id} ${i}: feet under the hips`);
+      assert.ok(p.feet.every((f) => f.v < p.body.v + M.leg), `${r.id}: feet under the hips`);
+      if (climbTopped(P, st)) assert.equal(p.hands[0].v, p.hands[1].v, `${r.id}: both hands on the top hold`);
     }
-    const top = poses.at(-1);
-    assert.equal(top.hands[0].v, top.hands[1].v, `${r.id}: both hands on the top jug`);
-    assert.ok(top.top && Math.abs((top.hands[0].u + top.hands[1].u) / 2 - top.top.u) < 1e-9);
   }
+});
+
+test('reading matters: harder grades have fewer jugs, crimps tire you, jugs rest you', () => {
+  const share = (r, type) => { const P = climbProblem(r, 14); return P.holds.filter((h) => h.type === type).length / P.holds.length; };
+  assert.ok(share(CLIMB_ROUTES[0], 'jug') > share(CLIMB_ROUTES[5], 'jug'));
+  assert.ok(share(CLIMB_ROUTES[5], 'crimp') > share(CLIMB_ROUTES[0], 'crimp'));
+  assert.ok(HOLD_TYPES.jug.drain < 1 && HOLD_TYPES.crimp.drain > 1 && HOLD_TYPES.jug.window > HOLD_TYPES.crimp.window);
+  const P = climbProblem(CLIMB_ROUTES[0], 14);
+  assert.ok(climbDrain(P, climbStart()) < 1, 'resting on the start jugs');
+  // Somewhere on every grade from V1 there is a real choice: two holds lit.
+  for (const r of CLIMB_ROUTES.slice(1)) assert.ok(states(climbProblem(r, 14)).some((st) => climbOptions(climbProblem(r, 14), st).length === 2), `${r.id}: a choice`);
+  // A low wall still gets a whole problem.
+  assert.equal(climbProblem(CLIMB_ROUTES[5], 6).n, 6);
 });
 
 test('two-bone IK puts the end of the chain on a target in reach', () => {

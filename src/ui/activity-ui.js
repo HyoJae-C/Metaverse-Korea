@@ -85,6 +85,25 @@ const T = {
     th: 'แต่ละโจทย์ใช้โฮลด์สีเดียว สีคือระดับความยาก วงแหวนจะหดเข้าหาโฮลด์ถัดไป กด คว้า (หรือ Space) ตอนที่มันหดสุด แรงบีบลดลงเรื่อย ๆ จับเป๊ะได้คืนนิดหน่อย ลื่นเสียเยอะ ปีนจบระดับหนึ่งเพื่อปลดล็อกระดับถัดไป',
     ar: 'كل مسار يستخدم مقابض بلون واحد، واللون هو الدرجة. تنغلق حلقة على المقبض التالي: اضغط «امسك» (أو المسافة) لحظة انغلاقها. قوة القبضة تنفد باستمرار، والحركة النظيفة تعيد بعضها، والانزلاق يكلّف كثيرًا. أنهِ درجة لتفتح التالية.',
   },
+  // (on the gym's real wall: reading the problem)
+  cRead: {
+    en: 'Use only your colour: start on the two taped holds, finish on the wide TOP hold. A ring closes on each hold you can go for: tap that hold (or REACH / Space) as it closes. Big jugs are easy and rest your grip, small crimps are hard and tire you, and the higher of two lit holds is a long reach: quicker, but a tighter catch. No grip left and you drop. Drag to look around.',
+    ko: '내 색 홀드만 써요. 테이프가 붙은 두 홀드에서 시작해 넓은 TOP 홀드에서 끝나요. 잡을 수 있는 홀드마다 링이 좁혀져요. 링이 닫힐 때 그 홀드를 누르세요(또는 잡기 / 스페이스). 큰 저그는 쉽고 악력이 쉬어요. 작은 크림프는 어렵고 빨리 지쳐요. 두 개에 불이 들어오면 위쪽은 멀리 뻗기예요. 빠르지만 타이밍이 빡빡해요. 악력이 다 떨어지면 떨어져요. 화면을 끌면 시점이 돌아가요.',
+    ja: '自分の色だけを使います。テープ付きの2つのホールドからスタートし、幅広いTOPホールドでゴール。つかめるホールドにリングが閉じます：閉じる瞬間にそのホールドをタップ（または「つかむ」/ スペース）。大きいガバは簡単で握力が休まり、小さいカチは難しく疲れます。2つ光ったら上は遠い一手：速いけれどシビア。握力が尽きると落ちます。ドラッグで視点を回せます。',
+    zh: '只用自己颜色的岩点：从贴胶带的两个岩点起步，在宽大的 TOP 点完攀。能抓的岩点上会有圆环收紧：收紧时点那个岩点（或点“抓”/ 空格）。大把手点好抓，还能让握力休息；小抠点难抓也更累；亮起两个时，上面的是远伸：更快，但时机更紧。握力用完就会掉下来。拖动画面可以转视角。',
+    es: 'Usa solo tu color: empieza en las dos presas con cinta y acaba en la presa ancha TOP. Un anillo se cierra sobre cada presa a tu alcance: toca esa presa (o AGARRAR / Espacio) cuando se cierre. Los cazos grandes son fáciles y descansan el agarre, las regletas pequeñas cuestan y cansan, y la más alta de dos es un lance largo: más rápido, pero más justo. Sin agarre, caes. Arrastra para mirar alrededor.',
+    id: 'Pakai warnamu saja: mulai di dua pegangan berselotip, selesai di pegangan TOP yang lebar. Cincin mengecil di tiap pegangan yang bisa kamu raih: ketuk pegangan itu (atau RAIH / Spasi) saat menutup. Jug besar mudah dan mengistirahatkan genggaman, crimp kecil sulit dan melelahkan, dan yang lebih tinggi dari dua pegangan menyala adalah raihan jauh: lebih cepat tapi lebih ketat. Genggaman habis, kamu jatuh. Seret untuk melihat sekeliling.',
+    vi: 'Chỉ dùng mấu màu của bạn: bắt đầu ở hai mấu dán băng keo, kết thúc ở mấu TOP rộng. Vòng tròn thu lại trên mỗi mấu bạn với tới được: chạm vào mấu đó (hoặc VỚI / Space) khi nó khép lại. Jug to thì dễ và cho tay nghỉ, crimp nhỏ thì khó và mau mỏi, còn mấu cao hơn trong hai mấu sáng là cú với xa: nhanh hơn nhưng phải canh chuẩn hơn. Hết sức nắm là rơi. Kéo để xoay góc nhìn.',
+    fr: 'N\'utilise que ta couleur : départ sur les deux prises scotchées, arrivée sur la large prise TOP. Un cercle se referme sur chaque prise à ta portée : touche cette prise (ou ATTRAPER / Espace) quand il se ferme. Les gros bacs sont faciles et reposent ta force, les petites réglettes sont dures et fatiguent, et la plus haute de deux prises allumées est un grand mouvement : plus rapide, mais plus juste. Plus de force, tu tombes. Fais glisser pour regarder autour.',
+    pt: 'Use só a sua cor: comece nas duas agarras com fita e termine na agarra larga TOP. Um anel se fecha em cada agarra ao seu alcance: toque nela (ou AGARRAR / Espaço) quando fechar. Jugs grandes são fáceis e descansam a pegada, crimps pequenos são difíceis e cansam, e a mais alta de duas agarras acesas é um lance longo: mais rápido, mas mais justo. Sem pegada, você cai. Arraste para olhar em volta.',
+    th: 'ใช้เฉพาะสีของคุณ: เริ่มที่โฮลด์สองอันที่ติดเทป จบที่โฮลด์ TOP อันกว้าง วงแหวนจะหดเข้าหาโฮลด์ที่เอื้อมถึง: แตะโฮลด์นั้น (หรือกดคว้า / Space) ตอนวงแหวนปิด จั๊กใหญ่จับง่ายและได้พักแรงบีบ คริมป์เล็กจับยากและเหนื่อยเร็ว ถ้าสว่างสองอัน อันบนคือเอื้อมไกล: เร็วกว่าแต่จังหวะแคบกว่า แรงบีบหมดก็ตก ลากเพื่อหมุนมุมมอง',
+    ar: 'استخدم لونك فقط: ابدأ من المقبضين المعلَّمين بالشريط وانتهِ عند مقبض TOP العريض. تنغلق حلقة على كل مقبض في متناولك: المس ذلك المقبض (أو «امسك» / المسافة) عند انغلاقها. المقابض الكبيرة سهلة وتريح قبضتك، والصغيرة صعبة ومتعبة، والأعلى من مقبضين مضيئين مدّة طويلة: أسرع لكن أدق توقيتًا. إذا نفدت قبضتك سقطت. اسحب لتدير المنظر.',
+  },
+  hJug: { en: 'Jug', ko: '저그', ja: 'ガバ', zh: '把手点', es: 'Cazo', id: 'Jug', vi: 'Jug', fr: 'Bac', pt: 'Jug', th: 'จั๊ก', ar: 'مقبض كبير' },
+  hEdge: { en: 'Edge', ko: '엣지', ja: 'エッジ', zh: '边点', es: 'Canto', id: 'Edge', vi: 'Edge', fr: 'Plat', pt: 'Borda', th: 'เอดจ์', ar: 'حافة' },
+  hCrimp: { en: 'Crimp', ko: '크림프', ja: 'カチ', zh: '抠点', es: 'Regleta', id: 'Crimp', vi: 'Crimp', fr: 'Réglette', pt: 'Crimp', th: 'คริมป์', ar: 'مقبض صغير' },
+  hTop: { en: 'TOP', ko: 'TOP', ja: 'TOP', zh: 'TOP', es: 'TOP', id: 'TOP', vi: 'TOP', fr: 'TOP', pt: 'TOP', th: 'TOP', ar: 'TOP' },
+  hLong: { en: 'long reach', ko: '멀리 뻗기', ja: '遠い一手', zh: '远伸', es: 'lance largo', id: 'raihan jauh', vi: 'với xa', fr: 'grand mouvement', pt: 'lance longo', th: 'เอื้อมไกล', ar: 'مدّة طويلة' },
   cStart: { en: 'Climb {g}', ko: '{g} 도전', ja: '{g}に挑戦', zh: '挑战 {g}', es: 'Escalar {g}', id: 'Panjat {g}', vi: 'Leo {g}', fr: 'Grimper {g}', pt: "Escalar {g}", th: 'ปีน {g}', ar: 'تسلّق {g}' },
   cBest: { en: 'Topped · best {s}s', ko: '완등 · 최고 {s}초', ja: '完登・ベスト{s}秒', zh: '已完攀 · 最快{s}秒', es: 'Hecho · mejor {s} s', id: 'Selesai · terbaik {s} dtk', vi: 'Đã leo · nhanh nhất {s} giây', fr: 'Réussi · record {s} s', pt: "Completo · melhor {s}s", th: 'ปีนจบ · ดีสุด {s} วิ', ar: 'أُنجز · الأفضل {s} ث' },
   cOpen: { en: 'Not topped yet', ko: '아직 완등 전', ja: 'まだ完登していない', zh: '还没完攀', es: 'Aún sin hacer', id: 'Belum selesai', vi: 'Chưa leo xong', fr: 'Pas encore réussi', pt: "Ainda não completo", th: 'ยังไม่จบ', ar: 'لم يُنجز بعد' },
@@ -693,10 +712,17 @@ export class ClimbUI extends Panel {
     super({ root, store, icon: '🧗', title: 'cTitle' });
     Object.assign(this, { onTop, onFall, view });
     this.route = CLIMB_ROUTES[0];
+    const tapKey = this.onKey;
+    this.onKey = (e) => {
+      if (this.game?.live && /^(ArrowUp|ArrowDown|KeyW|KeyS)$/.test(e.code)) {
+        e.preventDefault(); e.stopPropagation();
+        if (!e.repeat) this.pickNext(e.code === 'ArrowUp' || e.code === 'KeyW' ? 1 : -1);
+      } else tapKey(e);
+    };
   }
   renderStart(note) {
     this._frame();
-    this.root.append(el('p', 'order-hint', tt('cHow')));
+    this.root.append(el('p', 'order-hint', tt(this.view ? 'cRead' : 'cHow'))); // (cRead: the problem on the real wall)
     if (note) this.root.append(el('p', 'order-hint claw-note', note));
     const rec = loadActivity(this.store);
     const row = el('div', 'arcade-speeds');
@@ -721,22 +747,55 @@ export class ClimbUI extends Panel {
     const r = this.route;
     const g = this._play({ route: r, holds: routeHolds(r), at: 0, grip: 1, t0: now(), start: now(), last: now(), flash: null }, '✋ ' + tt('reach'));
     g.status.textContent = `${r.grade} · ${tt('reach')}!`;
-    // On the room's real wall: the panel keeps a strip (your grip and how
-    // far up you are) and the button; tapping the world reaches too.
-    g.live = !!this.view?.start(this.root, r, g.holds);
+    // On the room's real wall (game/climb-view.js): a problem you read.
+    // The panel keeps a strip (your grip and how far up you are), which
+    // hold Reach goes for, and the button. Dragging the world turns the
+    // view; a tap on a lit hold goes for that hold.
+    g.live = !!this.view?.start(this.root, r);
     if (g.live) {
       this.root.classList.add('arcade-live');
       g.cv.height = 52;
       g.cv.classList.add('bowl-sheet');
-      const surface = this.view.surface, down = (e) => { if (e.isPrimary !== false) this.tap(); };
+      g.target = this._button('', false, () => this.pickNext());
+      g.target.className = 'chip';
+      g.target.style.cssText = 'display:block;margin:0 auto 6px;padding:6px 12px';
+      g.status.after(g.target);
+      const surface = this.view.surface;
+      let at = null;
+      const down = (e) => { if (e.isPrimary !== false) at = { x: e.clientX, y: e.clientY, t: now() }; };
+      const up = (e) => {
+        const a = at; at = null;
+        if (!a || now() - a.t > 0.35 || Math.hypot(e.clientX - a.x, e.clientY - a.y) > 10) return; // (a drag: looking round)
+        const i = this.view.pick(e.clientX, e.clientY);
+        if (i >= 0) this.tap(i);
+      };
       surface.addEventListener('pointerdown', down);
-      g.unswipe = () => surface.removeEventListener('pointerdown', down);
+      surface.addEventListener('pointerup', up);
+      g.unswipe = () => { surface.removeEventListener('pointerdown', down); surface.removeEventListener('pointerup', up); };
     }
   }
-  tap() {
+  // Which lit hold Reach goes for: the next one round.
+  pickNext(d = 1) {
+    const n = this.view.options.length;
+    if (this.game?.live && n > 1) this.view.select((this.view.selected + d + n) % n);
+  }
+  tap(i = this.view?.selected ?? 0) {
     const g = this.game;
     if (!g || g.over) return;
     const phase = ((now() - g.t0) / g.route.period) % 1;
+    if (g.live) {
+      // The hold you go for sets how tight the catch is and what it does to your grip.
+      const o = this.view.options[i];
+      if (!o) return;
+      const res = judgeReach(phase, { window: g.route.window * o.window });
+      g.grip = Math.max(0, Math.min(1, gripAfter(g.grip, res) + (res === 'slip' ? 0 : o.gain)));
+      g.flash = { res, at: now() };
+      g.status.textContent = tt(res);
+      g.t0 = now();
+      if (this.view.reach(res, i)) this.top();
+      else if (g.grip <= 0) this.fall();
+      return;
+    }
     const res = judgeReach(phase, g.route);
     g.grip = gripAfter(g.grip, res);
     g.flash = { res, at: now() };
@@ -766,7 +825,8 @@ export class ClimbUI extends Panel {
   draw(t) {
     const g = this.game, c = g.c;
     if (!g.over) {
-      g.grip = gripDrain(g.grip, g.route, t - g.last);
+      // (On the real wall, what your hands are on sets how fast you tire.)
+      g.grip = gripDrain(g.grip, { drain: g.route.drain * (g.live ? this.view.drain : 1) }, t - g.last);
       if (g.grip <= 0) this.fall();
     }
     g.last = t;
@@ -819,12 +879,16 @@ export class ClimbUI extends Panel {
     c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(x0, h / 2 - 12, bw, 24);
     c.fillStyle = g.grip < 0.25 ? '#d9473c' : g.grip < 0.5 ? '#ffb84a' : '#4caf7a';
     c.fillRect(x0, h / 2 - 12, bw * g.grip, 24);
-    const n = g.holds.length, gap = Math.min(30, (W - x0 - bw - 40) / (n - 1));
-    for (let i = 0; i < n; i++) {
-      c.fillStyle = i <= g.at ? g.route.color : 'rgba(255,255,255,0.22)';
-      c.beginPath(); c.arc(x0 + bw + 26 + i * gap, h / 2, i === n - 1 ? 10 : 7, 0, Math.PI * 2); c.fill();
-    }
+    // How far up: a bar to the TOP.
+    const x1 = x0 + bw + 24, pw = W - x1 - 64;
+    c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(x1, h / 2 - 5, pw, 10);
+    c.fillStyle = g.route.color === '#2b2b2e' ? '#9aa0ad' : g.route.color; c.fillRect(x1, h / 2 - 5, pw * this.view.progress, 10);
+    c.fillStyle = '#fff'; c.font = 'bold 16px system-ui'; c.fillText('TOP', x1 + pw + 8, h / 2);
     c.textBaseline = 'alphabetic';
+    // The hold Reach goes for, on its chip (tap it, or ↑ ↓, for the other one).
+    const opts = this.view.options, o = opts[this.view.selected];
+    const label = !o || g.over ? '' : `🎯 ${tt({ jug: 'hJug', edge: 'hEdge', crimp: 'hCrimp', top: 'hTop' }[o.type])}${o.long ? ' · ' + tt('hLong') : ''}${opts.length > 1 ? '  ⇅' : ''}`;
+    if (g.target.textContent !== label) { g.target.textContent = label; g.target.style.visibility = label ? 'visible' : 'hidden'; }
   }
 }
 
