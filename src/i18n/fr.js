@@ -1276,4 +1276,11 @@ export const FR = {
   "career.busy": "Tu as beaucoup travaillé cette heure-ci. Fais une petite pause !",
   "career.offline": "Impossible de joindre le serveur. Réessaie dans un instant.",
   "career.close": "Fermer",
+  "invite.title": "Vous aimez Modu Seoul ?",
+  "invite.why": "Invitez un ami à se promener dans Séoul avec vous. S’il rejoint avec votre lien, vous recevez 50 000 ₩.",
+  "invite.message": "Viens te promener dans Séoul avec moi sur Modu Seoul ! Gratuit dans le navigateur, sans appli.",
+  "invite.share": "Partager",
+  "invite.copy": "Copier le lien",
+  "invite.copied": "Lien copié",
+  "invite.later": "Plus tard",
 };

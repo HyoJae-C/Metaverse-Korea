@@ -1279,4 +1279,11 @@ export const JA = {
   "career.busy": "この1時間でたくさん働きました。少し休んでね！",
   "career.offline": "サーバーにつながりませんでした。少ししてからもう一度。",
   "career.close": "閉じる",
+  "invite.title": "Modu Seoul、楽しんでいますか？",
+  "invite.why": "友だちを誘って一緒にソウルを歩こう。友だちがあなたのリンクから始めると、₩50,000がもらえます。",
+  "invite.message": "Modu Seoulで一緒にソウルを歩こう！ブラウザで無料、アプリ不要だよ。",
+  "invite.share": "シェア",
+  "invite.copy": "リンクをコピー",
+  "invite.copied": "リンクをコピーしました",
+  "invite.later": "あとで",
 };

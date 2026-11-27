@@ -1276,4 +1276,11 @@ export const AR = {
   "career.busy": "عملت كثيرًا هذه الساعة. خذ استراحة قصيرة!",
   "career.offline": "تعذّر الوصول إلى الخادم. حاول بعد قليل.",
   "career.close": "إغلاق",
+  "invite.title": "هل تستمتع بـ Modu Seoul؟",
+  "invite.why": "ادعُ صديقًا ليتجول معك في سيول. إذا انضم عبر رابطك، تحصل على ₩50,000.",
+  "invite.message": "تعال تجوّل معي في سيول في Modu Seoul! مجانًا في المتصفح، بلا تطبيق.",
+  "invite.share": "مشاركة",
+  "invite.copy": "نسخ الرابط",
+  "invite.copied": "تم نسخ الرابط",
+  "invite.later": "لاحقًا",
 };

@@ -1276,4 +1276,11 @@ export const ID = {
   "career.busy": "Kamu sudah banyak bekerja jam ini. Istirahat sebentar!",
   "career.offline": "Tidak bisa terhubung ke server. Coba lagi sebentar lagi.",
   "career.close": "Tutup",
+  "invite.title": "Suka Modu Seoul?",
+  "invite.why": "Ajak teman jalan-jalan di Seoul bersamamu. Kalau dia masuk lewat tautanmu, kamu dapat ₩50.000.",
+  "invite.message": "Ayo jalan-jalan di Seoul bareng aku di Modu Seoul! Gratis di browser, tanpa aplikasi.",
+  "invite.share": "Bagikan",
+  "invite.copy": "Salin tautan",
+  "invite.copied": "Tautan disalin",
+  "invite.later": "Nanti",
 };

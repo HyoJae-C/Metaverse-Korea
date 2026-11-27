@@ -1276,4 +1276,11 @@ export const VI = {
   "career.busy": "Giờ này bạn làm nhiều rồi. Nghỉ một chút nhé!",
   "career.offline": "Không kết nối được máy chủ. Thử lại sau giây lát.",
   "career.close": "Đóng",
+  "invite.title": "Bạn thích Modu Seoul chứ?",
+  "invite.why": "Mời bạn bè cùng dạo Seoul với bạn. Nếu họ vào bằng liên kết của bạn, bạn nhận ₩50.000.",
+  "invite.message": "Cùng mình dạo Seoul trong Modu Seoul nhé! Miễn phí trên trình duyệt, không cần cài app.",
+  "invite.share": "Chia sẻ",
+  "invite.copy": "Sao chép liên kết",
+  "invite.copied": "Đã sao chép liên kết",
+  "invite.later": "Để sau",
 };

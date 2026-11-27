@@ -1278,4 +1278,11 @@ export const EN = {
   "career.busy": "You've worked a lot this hour. Take a short break!",
   "career.offline": "Couldn't reach the server. Try again in a moment.",
   "career.close": "Close",
+  "invite.title": "Enjoying Modu Seoul?",
+  "invite.why": "Invite a friend to walk Seoul with you. If they join with your link, you get ₩50,000.",
+  "invite.message": "Come walk around Seoul with me in Modu Seoul! Free in your browser, no app needed.",
+  "invite.share": "Share",
+  "invite.copy": "Copy link",
+  "invite.copied": "Link copied",
+  "invite.later": "Later",
 };
