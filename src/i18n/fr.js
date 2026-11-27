@@ -743,6 +743,8 @@ export const FR = {
   'error.noMap': 'Les données de carte de cette zone ne sont pas encore prêtes. Reviens bientôt.',
   'error.generic': 'Un problème est survenu pendant le chargement. Actualise la page.',
   'error.soft': 'Un petit souci est survenu, mais tu peux continuer à jouer.',
+  'error.partLoad': "⚠️ Une partie du jeu ne s'est pas chargée.",
+  'error.partLoadSub': 'La connexion a coupé un instant. Actualise pour réparer.',
   'help.desktop': 'Bouger : ZQSD/WASD ou flèches · Courir : Maj · Regarder : glisser · Zoom : molette',
   'help.mobile': 'Bouger : stick gauche · Regarder : glisser · Zoom : pincer',
   'help.dismiss': 'Compris',

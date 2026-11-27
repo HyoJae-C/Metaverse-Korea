@@ -32,21 +32,34 @@ export function startUpdateCheck({ current, fetchVersion, onNew, interval = UPDA
   return () => { done = true; clearInterval(timer); doc?.removeEventListener?.('visibilitychange', onVisible); };
 }
 
-// A file of the game that failed to download (a shop, a minigame…, loaded
-// with import() when first used). Usually a new build went live and the old
-// one's files are gone: then offer the refresh banner at once, instead of a
-// tap that does nothing. Vite reports these as 'vite:preloadError'.
-export function watchMissingFiles({ current, fetchVersion, onNew, win = globalThis }) {
-  let asked = false;
+// A file of the game that failed to download (a shop, a minigame, a
+// district…, loaded with import() when first used). Vite reports these as
+// 'vite:preloadError'. Two causes:
+// - a new build went live and the old one's files are gone: onNew(), the
+//   "new version, refresh" banner;
+// - the same build, but the download dropped (a phone on shaky wifi; Safari
+//   says "Importing a module script failed."). The browser remembers the
+//   failure, so that part stays broken until the page reloads: onBroken(), a
+//   "part of the game didn't load, refresh" banner. Asked once per page.
+export function watchMissingFiles({ current, fetchVersion, onNew, onBroken = () => {}, win = globalThis }) {
+  let asked = false, broken = false;
   const onFail = async () => {
     if (asked) return;
     asked = true;
-    try {
-      const remote = await fetchVersion();
-      if (isNewBuild(current, remote)) { onNew(remote); return; }
-    } catch { /* offline */ }
-    asked = false; // same build (a dropped connection): the next tap tries again
+    let remote = null;
+    try { remote = await fetchVersion(); } catch { /* offline */ }
+    if (isNewBuild(current, remote)) { onNew(remote); return; }
+    asked = false; // a later deploy can still offer the new-version banner
+    if (!broken) { broken = true; onBroken(); }
   };
   win.addEventListener?.('vite:preloadError', onFail);
   return () => win.removeEventListener?.('vite:preloadError', onFail);
+}
+
+// The browsers' words for a game file that didn't download (Safari, Chrome,
+// Firefox). The refresh banner above handles these, so the game shows no
+// "small problem" box for them.
+const MODULE_FAIL = /Importing a module script failed|Failed to fetch dynamically imported module|error loading dynamically imported module|Unable to preload CSS/i;
+export function isMissingFileError(msg) {
+  return MODULE_FAIL.test(String(msg || ''));
 }
