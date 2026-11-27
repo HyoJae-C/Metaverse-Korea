@@ -1,7 +1,12 @@
 // The palace's surfaces, each drawn once on a small canvas and repeated
 // (core/palace-model.js lays them on its boxes and roofs). px: the canvas;
 // m: the metres one repeat covers [across, up], 0 for "once over the face";
-// tint: drawn in greys and coloured by the piece it is on.
+// tint: drawn in greys and coloured by the piece it is on. The city's great
+// and small gates wear the same stone, tiles, plaster and painted beam
+// (core/euljiro-models.js, game/city-wall-parts.js).
+import * as THREE from 'three';
+import { addBox, canvasTex } from './three-kit.js';
+
 const rnd = (seed) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 export const PALACE_PAINT = {
@@ -9,7 +14,7 @@ export const PALACE_PAINT = {
   // the flat tiles between them as dark channels, a line where one tile
   // ends and the next begins.
   tile: {
-    px: [64, 64], m: [0.5, 0.7], tint: true,
+    px: [64, 64], m: [0.5, 0.7], tint: true, roof: true, // (roof: its UVs come in metres, the texture's repeat divides)
     draw(x, w, h) {
       x.fillStyle = '#8f8f8f'; x.fillRect(0, 0, w, h); // the channel
       const g = x.createLinearGradient(w * 0.14, 0, w * 0.66, 0);
@@ -99,3 +104,57 @@ export const PALACE_PAINT = {
     },
   },
 };
+
+// ---- Laying them on.
+const paints = {}, painted = {};
+export function paint(kind) {
+  if (kind in paints) return paints[kind];
+  if (typeof document === 'undefined') return (paints[kind] = null);
+  const P = PALACE_PAINT[kind];
+  return (paints[kind] = canvasTex(P.px[0], P.px[1], P.draw, { anisotropy: 4, repeat: P.roof ? [1 / P.m[0], 1 / P.m[1]] : [1, 1] }));
+}
+// The material for a piece of colour c wearing `kind` (null where there is
+// no canvas: tests). userData.metres lets mergeStatic (bukchon-models.js)
+// merge it like a plain one. Tiles darken their colour, so it is lifted.
+export function paintedMat(kind, c, side = THREE.FrontSide) {
+  const key = kind + c + side;
+  if (key in painted) return painted[key];
+  const map = paint(kind), P = PALACE_PAINT[kind];
+  if (!map) return (painted[key] = null);
+  const color = new THREE.Color(P.tint ? c : '#ffffff');
+  if (P.roof) color.multiplyScalar(1.3);
+  const m = new THREE.MeshLambertMaterial({ map, color, flatShading: true, side });
+  m.userData.metres = P.m;
+  return (painted[key] = m);
+}
+// A box's UVs in metres. BoxGeometry's faces: +x, -x (z across, y up), +y,
+// -y (x, z), +z, -z (x, y). k: the scale the box is drawn at (its landmark's
+// "sc"), so a stone is as big on a gate at half size as on a hall.
+export function metreUV(geo, sx, sy, sz, [mu, mv], k = 1) {
+  const uv = geo.attributes.uv, dims = [[sz, sy], [sz, sy], [sx, sz], [sx, sz], [sx, sy], [sx, sy]];
+  for (let f = 0; f < 6; f++) for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * (mu ? dims[f][0] * k / mu : 1), uv.getY(i) * (mv ? dims[f][1] * k / mv : 1));
+}
+// UVs in metres for any other shape (a roof's slopes, the block over an
+// arch): on each face, u runs level along it and v up it. Returns a copy.
+export function faceUV(geo, kind, k = 1) {
+  const g = geo.index ? geo.toNonIndexed() : geo.clone(), p = g.attributes.position, uv = new Float32Array(p.count * 2);
+  const P = PALACE_PAINT[kind], mu = P.roof ? 1 : P.m[0], mv = P.roof ? 1 : P.m[1] || 1;
+  const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), n = new THREE.Vector3(), e = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < p.count; i += 3) {
+    A.fromBufferAttribute(p, i); B.fromBufferAttribute(p, i + 1); C.fromBufferAttribute(p, i + 2);
+    n.crossVectors(B.clone().sub(A), C.clone().sub(A)).normalize();
+    if (Math.abs(n.y) > 0.98) { e.set(1, 0, 0); s.set(0, 0, 1); } else { e.crossVectors(up, n).normalize(); s.crossVectors(n, e); }
+    [A, B, C].forEach((v, j) => { uv[(i + j) * 2] = v.dot(e) * k / mu; uv[(i + j) * 2 + 1] = v.dot(s) * k / mv; });
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+// A box of colour c wearing `kind` (plain where there is no canvas). m:
+// other metres a repeat than the texture's own.
+export function paintedBox(g, mat, kind, sx, sy, sz, x, y, z, c, k = 1, m = null) {
+  const pm = kind && paintedMat(kind, c), mesh = addBox(g, mat, sx, sy, sz, x, y, z, pm || c);
+  if (pm) metreUV(mesh.geometry, sx, sy, sz, m || pm.userData.metres, k);
+  return mesh;
+}
+// The painted beam's repeat for a band h metres high (drawn for one 0.7 m high).
+export const beamMetres = (h) => [PALACE_PAINT.dancheong.m[0] * h / 0.7, 0];

@@ -12,10 +12,10 @@
 // courtyard costs a handful of draw calls. Visual only: collision comes
 // from the map's blockers. l.s scales a building (default 1).
 import * as THREE from 'three';
-import { matCache, addBox, canvasTex } from './three-kit.js';
+import { matCache } from './three-kit.js';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
-import { PALACE_PAINT } from './palace-paint.js';
+import { PALACE_PAINT, paint, paintedBox } from './palace-paint.js';
 
 const mat = matCache({ flatShading: true });
 const C = {
@@ -33,36 +33,10 @@ const tileMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading:
 // every building. A material marked userData.metres is merged like the plain
 // ones (bukchon-models.js mergeStatic), so the draw calls stay what they were.
 const TEXTURED = { [C.beam]: 'dancheong', [C.door]: 'lattice', [C.stone]: 'stone', [C.stoneDark]: 'stone', [C.stoneLight]: 'stone', [C.wall]: 'plaster' };
-const paints = {}, painted = {};
-function paint(kind) {
-  if (kind in paints) return paints[kind];
-  if (typeof document === 'undefined') return (paints[kind] = null);
-  const P = PALACE_PAINT[kind];
-  return (paints[kind] = canvasTex(P.px[0], P.px[1], P.draw, { anisotropy: 4, repeat: [1, 1] }));
-}
-function paintedMat(kind, c) {
-  const key = kind + c;
-  if (key in painted) return painted[key];
-  const map = paint(kind);
-  if (!map) return (painted[key] = null);
-  const m = new THREE.MeshLambertMaterial({ map, color: PALACE_PAINT[kind].tint ? c : '#ffffff', flatShading: true });
-  m.userData.metres = PALACE_PAINT[kind].m; // metres one repeat covers [across, up]; 0: once over the face
-  return (painted[key] = m);
-}
-// A box's UVs in metres. BoxGeometry's faces: +x, -x (z across, y up), +y, -y (x, z), +z, -z (x, y).
-function metreUV(geo, sx, sy, sz, [mu, mv]) {
-  const uv = geo.attributes.uv, dims = [[sz, sy], [sz, sy], [sx, sz], [sx, sz], [sx, sy], [sx, sy]];
-  for (let f = 0; f < 6; f++) for (let i = f * 4; i < f * 4 + 4; i++) uv.setXY(i, uv.getX(i) * (mu ? dims[f][0] / mu : 1), uv.getY(i) * (mv ? dims[f][1] / mv : 1));
-}
-const box = (g, sx, sy, sz, x, y, z, c) => {
-  const kind = TEXTURED[c], m = kind && paintedMat(kind, c), mesh = addBox(g, mat, sx, sy, sz, x, y, z, m || c);
-  if (m) metreUV(mesh.geometry, sx, sy, sz, m.userData.metres);
-  return mesh;
-};
+const box = (g, sx, sy, sz, x, y, z, c) => paintedBox(g, mat, TEXTURED[c], sx, sy, sz, x, y, z, c);
 export function tiles(g, w, d, h, y, o, x = 0, z = 0, ry = 0) {
   if (!tileMat.map && paint('tile')) { // the tiles' rows: light round tiles, dark channels (the texture darkens; the colour makes up for it)
     tileMat.map = paint('tile');
-    tileMat.map.repeat.set(1 / PALACE_PAINT.tile.m[0], 1 / PALACE_PAINT.tile.m[1]);
     tileMat.color.setScalar(1.3);
     tileMat.userData.metres = PALACE_PAINT.tile.m;
   }

@@ -52,3 +52,29 @@ test('each texture is small and says how many metres it covers', () => {
     assert.equal(typeof p.draw, 'function');
   }
 });
+
+// The city's gates wear the same surfaces (Yozi 2026-11-27: "Heunginjimun,
+// Hyehwamun and the other gates too").
+test("the city's gates wear the palace's stone, plaster, painted beam and tiles", async () => {
+  const { EULJIRO_BUILD } = await import('../src/core/euljiro-models.js');
+  const { smallGate } = await import('../src/game/city-wall-parts.js');
+  const great = new THREE.Group(), heung = new THREE.Group();
+  EULJIRO_BUILD.sungnyemun(great, { sc: [0.5] });
+  EULJIRO_BUILD.heunginjimun(heung, {});
+  const small = smallGate({ W: 5.1, D: 3.3, H: 1.7, A: 0.6, S: 0.9 }, 'changuimun');
+  for (const [name, g, most] of [['sungnyemun', great, 43], ['heunginjimun', heung, 61], ['a small gate', small, 14]]) {
+    const kinds = new Set();
+    let meshes = 0;
+    g.traverse((o) => {
+      if (!o.isMesh) return;
+      meshes++;
+      if (!o.material.userData?.metres) return;
+      const uv = o.geometry.attributes.uv, p = o.geometry.attributes.position;
+      assert.ok(uv && uv.count === p.count, `${name}: a textured mesh without a UV a vertex`);
+      for (let i = 0; i < uv.count; i++) assert.ok(Number.isFinite(uv.getX(i)) && Number.isFinite(uv.getY(i)), `${name}: a UV that is not a number`);
+      for (const [k, P] of Object.entries(PALACE_PAINT)) if (o.material.userData.metres === P.m) kinds.add(k);
+    });
+    for (const k of ['stone', 'plaster', 'dancheong', 'tile']) assert.ok(kinds.has(k), `${name}: no ${k}`);
+    assert.ok(meshes <= most, `${name}: ${meshes} meshes (no more than before the textures)`);
+  }
+});

@@ -997,8 +997,12 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   nothing to download): roof tiles in rows, the painted beam under the eaves
   (단청), lattice doors (창살), dressed stone in courses and plaster. A box of
   one of those colours gets the texture with its UVs in metres, so a tile or
-  a stone is the same size on every building. Changdeokgung, Bongeunsa,
-  Jogyesa and the Blue House's roofs use the same parts and get it too. A
+  a stone is the same size on every building. Changdeokgung, Deoksugung's
+  Daehanmun, Bongeunsa, Jogyesa and the Blue House's roofs use the same parts
+  and get it too; the city's gates (Sungnyemun, Heunginjimun, and the small
+  ones: Hyehwamun, Changuimun, Sukjeongmun, Gwanghuimun) have their own
+  models and wear the stone, plaster, beam and tiles through `paintedBox` and
+  `faceUV`. Jongmyo, Bosingak, the royal tombs and Bukchon's hanok do not. A
   textured material is marked `userData.metres` and merged like the plain
   ones (`mergeStatic`, bukchon-models.js), so the draw calls are what they
   were (`tests/palace-paint.test.mjs`). The patterns are drawn by hand, not

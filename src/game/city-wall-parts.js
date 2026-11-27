@@ -3,6 +3,7 @@
 // stone face's texture and a small gate (Hyehwamun, Gwanghuimun).
 import * as THREE from 'three';
 import { hipRoofGeometry } from '../core/landmarks.js';
+import { paintedMat, metreUV, faceUV, beamMetres } from '../core/palace-paint.js';
 
 export const WALL_STONE = '#cdc5b3';
 // The parapet's blocks (여장), on the wall's top.
@@ -34,21 +35,30 @@ export function stoneTexture() {
 // Its own group, at (0, 0, 0), the arch along z.
 export function smallGate({ W, D, H: Hb, A, S }, name) {
   const g = new THREE.Group();
-  const stone = new THREE.MeshLambertMaterial({ color: '#cfc6b2' });
-  const box = (w, hh, d, px, py, pz, color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), color ? new THREE.MeshLambertMaterial({ color }) : stone); m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m; };
+  // (It wears the palace's dressed stone, plaster, painted beam and tiles:
+  // core/palace-paint.js.)
+  const STONE = '#cfc6b2', ROOF = '#3d4450', WEAR = { '#f1e7d2': 'plaster', '#2f8f6b': 'dancheong' };
+  const dressed = paintedMat('stone', STONE), stone = dressed || new THREE.MeshLambertMaterial({ color: STONE });
+  const box = (w, hh, d, px, py, pz, color) => {
+    const kind = color ? WEAR[color] : 'stone', pm = kind && paintedMat(kind, color || STONE);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), pm || (color ? new THREE.MeshLambertMaterial({ color }) : stone));
+    if (pm) metreUV(m.geometry, w, hh, d, kind === 'dancheong' ? beamMetres(hh) : pm.userData.metres);
+    m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m;
+  };
   for (const sx of [-1, 1]) box(W / 2 - A, Hb, D, sx * (A + (W / 2 - A) / 2), Hb / 2, 0); // either side of the arch
   const sh = new THREE.Shape(); // over the arch: its round top
   sh.moveTo(-A, S); sh.lineTo(-A, Hb); sh.lineTo(A, Hb); sh.lineTo(A, S);
   sh.absarc(0, S, A, 0, Math.PI, false);
   const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 }).translate(0, 0, -D / 2);
-  const over = new THREE.Mesh(top, stone);
+  const over = new THREE.Mesh(dressed ? faceUV(top, 'stone') : top, stone);
   over.castShadow = true;
   g.add(over);
   const pw = W * 0.78, pd = D * 0.72, ph = Math.max(0.9, W * 0.2);
   box(pw * 0.92, ph, pd * 0.86, 0, Hb + ph / 2, 0, '#f1e7d2');
   for (let i = 0; i < 4; i++) for (const sz of [-1, 1]) box(0.14, ph, 0.14, -pw / 2 + (i * pw) / 3, Hb + ph / 2, sz * pd / 2, '#a23a2c');
   box(pw + 0.2, 0.18, pd + 0.2, 0, Hb + ph + 0.09, 0, '#2f8f6b');
-  const roof = new THREE.Mesh(hipRoofGeometry(pw + 1.2, pd + 1.0, Math.max(0.7, W * 0.16)), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
+  const tiled = paintedMat('tile', ROOF, THREE.DoubleSide), hip = hipRoofGeometry(pw + 1.2, pd + 1.0, Math.max(0.7, W * 0.16));
+  const roof = new THREE.Mesh(tiled ? faceUV(hip, 'tile') : hip, tiled || new THREE.MeshLambertMaterial({ color: ROOF, flatShading: true, side: THREE.DoubleSide }));
   roof.position.y = Hb + ph + 0.18;
   roof.castShadow = true;
   g.add(roof);
