@@ -2,6 +2,9 @@
 // as a function of time, and the line in the operator's state that lets
 // everyone near draw the same flight. No three.js here (tests/helicopter.test.mjs).
 //
+// Then the operator can get in and fly it, with two passengers behind
+// (SEATS; the "heli:" messages below ask them aboard).
+//
 // "/헬기" (/heli): it comes out of the haze far away, high up, slows down
 // over the landing spot next to the operator and sinks slowly onto its
 // skids; the blades then run down. "/헬기보내기" (/helioff): the blades
@@ -86,6 +89,7 @@ export function encodeHeli(h) {
 }
 export function parseHeli(s) {
   if (typeof s !== 'string' || s.length > 80) return null;
+  if (s[0] === 'F') return parseCrewed(s);
   const v = s.split(',').map(Number);
   if (v.length !== 6 || !v.every(Number.isFinite)) return null;
   const [x, z, y, dir, t0, t1] = v;
@@ -114,4 +118,44 @@ export function findPad(x, z, yaw, free) {
     }
   }
   return null;
+}
+
+// ---------- Flying it ----------
+// Where people sit, in the helicopter's frame (x: its left, y up from the
+// skids, z toward the nose): the pilot in front, two passengers behind.
+export const SEATS = { pilot: [-0.42, 0.98, 1.05], riders: [[-0.44, 0.98, -0.2], [0.44, 0.98, -0.2]] };
+export const FLY = { speed: 24, fast: 42, climb: 9, top: 120, board: 5.5, ask: 7 }; // m/s; the highest (m: others draw people up to 140); how close to get in (m), to ask someone aboard (m)
+
+// A seat's place in the world for a helicopter at (x, y, z) heading `yaw`.
+export function seatAt(seat, x, y, z, yaw) {
+  const s = Math.sin(yaw), c = Math.cos(yaw);
+  return [x + seat[0] * c + seat[2] * s, y + seat[1], z - seat[0] * s + seat[2] * c];
+}
+// The helicopter under a pilot whose feet are at (x, y, z), facing `yaw`.
+export function craftUnder(x, y, z, yaw) {
+  const [sx, sy, sz] = seatAt(SEATS.pilot, 0, 0, 0, yaw);
+  return [x - sx, y - sy, z - sz];
+}
+
+// With the operator aboard the state line is "F,<blades 0..10>,<ground y>":
+// the helicopter is wherever they are (their own position is sent as usual).
+export function encodeCrewed(rotor, groundY) {
+  return `F,${Math.round(Math.min(1, Math.max(0, rotor)) * 10)},${Math.round((groundY || 0) * 10) / 10}`;
+}
+function parseCrewed(s) {
+  const m = /^F,(\d{1,2}),(-?\d{1,3}(?:\.\d)?)$/.exec(s);
+  return m && +m[1] <= 10 ? { crewed: true, rotor: +m[1] / 10, ground: +m[2] } : null;
+}
+// A passenger's state ("hr"): whose helicopter, and which seat.
+export const encodeRider = (pilot, slot) => `${pilot}:${slot ? 1 : 0}`;
+export function parseRider(s) {
+  const m = typeof s === 'string' && /^([\w-]{1,64}):([01])$/.exec(s);
+  return m ? { pilot: m[1], slot: +m[2] } : null;
+}
+
+// Asking someone aboard, on the emote channel: 'heli:<verb>:<target>[:<seat>]'.
+export const heliMsg = (verb, target, slot) => `heli:${verb}:${target}` + (slot == null ? '' : `:${slot ? 1 : 0}`);
+export function parseHeliMsg(e) {
+  const m = /^heli:(invite|join|no|leave|end):([\w-]{1,64})(?::([01]))?$/.exec(String(e));
+  return m ? { verb: m[1], target: m[2], slot: m[3] == null ? null : +m[3] } : null;
 }

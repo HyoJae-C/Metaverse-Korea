@@ -5,7 +5,10 @@ import { readFileSync } from 'node:fs';
 // The operators' helicopter (core/helicopter.js, game/helicopter.js): the
 // chat codes, the flight in from far away, the slow landing and the line in
 // the operator's state that others draw it from.
-const { HELI, LANDED_AT, LEAVE_LEN, heliCode, heliAt, heliPose, encodeHeli, parseHeli, findPad } = await import('../src/core/helicopter.js');
+const {
+  HELI, LANDED_AT, LEAVE_LEN, FLY, SEATS, heliCode, heliAt, heliPose, encodeHeli, parseHeli, findPad,
+  seatAt, craftUnder, encodeCrewed, encodeRider, parseRider, heliMsg, parseHeliMsg,
+} = await import('../src/core/helicopter.js');
 
 test('chat codes: /헬기 calls it, /헬기보내기 sends it off', () => {
   assert.equal(heliCode('헬기'), 'call');
@@ -93,10 +96,43 @@ test('the landing spot: in front of the operator first, clear of buildings', () 
   assert.ok(findPad(0, 0, 0, (x, z, r) => r >= HELI.pad));
 });
 
+test('seats: the pilot in front, two passengers side by side behind', () => {
+  assert.equal(SEATS.riders.length, 2);
+  assert.ok(SEATS.pilot[2] > SEATS.riders[0][2] + 0.8, 'the bench is behind the pilot');
+  assert.ok(Math.abs(SEATS.riders[0][0] - SEATS.riders[1][0]) > 0.7, 'room for two');
+  for (const s of [SEATS.pilot, ...SEATS.riders]) assert.ok(Math.abs(s[0]) < 0.8 && s[2] > -0.9 && s[2] < 1.9, 'inside the cabin');
+  // Heading +x (yaw 90°): the nose is toward +x, its left toward -z.
+  const [x, y, z] = seatAt([1, 0.5, 2], 10, 3, 20, Math.PI / 2);
+  assert.ok(Math.abs(x - 12) < 1e-9 && Math.abs(y - 3.5) < 1e-9 && Math.abs(z - 19) < 1e-9);
+  // The helicopter others draw under the pilot puts the pilot back on the pilot's seat.
+  for (const yaw of [0, 1, -2.5]) {
+    const [cx, cy, cz] = craftUnder(5, 40, -7, yaw);
+    const back = seatAt(SEATS.pilot, cx, cy, cz, yaw);
+    assert.ok(Math.hypot(back[0] - 5, back[1] - 40, back[2] + 7) < 1e-9);
+  }
+  assert.ok(FLY.top + SEATS.pilot[1] < 140, 'others draw people no higher than 140 m (core/players.js)');
+});
+
+test('flying it: the state line, and a passenger\'s', () => {
+  assert.deepEqual(parseHeli(encodeCrewed(1, 0)), { crewed: true, rotor: 1, ground: 0 });
+  assert.deepEqual(parseHeli(encodeCrewed(0.52, 12.34)), { crewed: true, rotor: 0.5, ground: 12.3 });
+  assert.equal(parseHeli(encodeCrewed(7, -3)).rotor, 1);
+  for (const bad of ['F', 'F,11,0', 'F,5', 'F,5,x', 'F,5,0,1']) assert.equal(parseHeli(bad), null);
+  assert.deepEqual(parseRider(encodeRider('abc-123', 1)), { pilot: 'abc-123', slot: 1 });
+  for (const bad of [null, '', 'abc', 'abc:2', 'a b:0']) assert.equal(parseRider(bad), null);
+});
+
+test('asking someone aboard: the messages', () => {
+  assert.deepEqual(parseHeliMsg(heliMsg('invite', 'p1', 1)), { verb: 'invite', target: 'p1', slot: 1 });
+  assert.deepEqual(parseHeliMsg(heliMsg('join', 'p1', 0)), { verb: 'join', target: 'p1', slot: 0 });
+  assert.deepEqual(parseHeliMsg(heliMsg('end', 'p1')), { verb: 'end', target: 'p1', slot: null });
+  for (const bad of ['heli:fly:p1', 'heli:invite:p1:2', 'sky:invite:p1', 'heli:invite']) assert.equal(parseHeliMsg(bad), null);
+});
+
 test('kept out of the first download, and out of main.js', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.ok(main.includes("import('./game/helicopter.js')"));
-  assert.ok(!/^import .*helicopter/m.test(main));
+  assert.ok(!/^import .*game\/helicopter/m.test(main));
   const core = readFileSync(new URL('../src/core/helicopter.js', import.meta.url), 'utf8');
   assert.ok(!core.includes("from 'three'"), 'the chat only needs the codes');
 });
