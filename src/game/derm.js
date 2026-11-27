@@ -1,6 +1,6 @@
 // The skin clinic in Gangnam (Yozi 2026-11-27): lie on a treatment bed, pay
 // for the 물광 (glass-skin) care, and the LED lamp over the pillow glows pink
-// while sparkles rise off your face; you get up with a dewy shine that lasts
+// while sparkles rise off your face and its light washes over the screen; you get up with a dewy shine that lasts
 // 7 days (core/glow.js) and shows on everyone's screen (it rides in the look).
 // Downloaded the first time you lie on one of its beds (main.js lazyPanel).
 //
@@ -11,7 +11,13 @@ import { GLOW_PRICE, canTreat, glowDays, treated } from '../core/glow.js';
 import { saveLook } from '../core/look-editor.js';
 import { won } from '../core/money.js';
 
-const TREAT_SECS = 4.5;
+const TREAT_SECS = 5.5;
+// The light scene change (Yozi 2026-11-27: like the clinic's, but lighter and
+// different): no dark and no view from the table. The lamp's pink light washes
+// over the screen and pulses while the care goes on, a white sparkle flash
+// as it ends (the shine goes on under it), and it clears onto your face.
+const WASH = { in: 0.8, flash: 3.6, flashLen: 0.35 }; // seconds into the care
+const SWAP_AT = WASH.flash + WASH.flashLen / 2;
 // The ledger's line, in every language the shop's name is in.
 const NOTE_NAME = { ko: '물광 피부 관리 (7일)', en: 'Glass-skin glow (7 days)', ja: '水光肌ケア（7日）', zh: '水光肌护理（7天）' };
 
@@ -19,6 +25,19 @@ export function createDerm(game) {
   const { t } = game;
   let run = null; // the treatment under way: { t, seat, cam, light, beam, sparks }
   const kit = {};
+  const wash = document.createElement('div');
+  wash.style.cssText = 'position:fixed;inset:0;pointer-events:none;opacity:0;z-index:30;transition:none';
+  document.body.append(wash);
+  const pink = 'radial-gradient(circle at 50% 42%, rgba(255,230,242,0.15) 0%, rgba(255,150,196,0.7) 60%, rgba(225,95,155,0.95) 100%)';
+  const white = 'radial-gradient(circle at 50% 45%, #fff 0%, #fff6fb 60%, #ffd9ea 100%)';
+  function paint(tt) { // the overlay at tt seconds into the care
+    const { in: tin, flash, flashLen } = WASH;
+    if (tt < tin) { wash.style.background = pink; wash.style.opacity = String(0.6 * (tt / tin)); return; }
+    if (tt < flash) { wash.style.background = pink; wash.style.opacity = String(0.5 + 0.1 * Math.sin((tt - tin) * 5)); return; }
+    if (tt < flash + flashLen) { wash.style.background = white; wash.style.opacity = '1'; return; }
+    wash.style.background = white;
+    wash.style.opacity = String(Math.max(0, 1 - (tt - flash - flashLen) / (TREAT_SECS - flash - flashLen)));
+  }
 
   function begin() {
     const seat = game.seated;
@@ -51,17 +70,21 @@ export function createDerm(game) {
     game.shop.toast(t('derm.start'));
   }
 
+  function shine() {
+    const look = treated(game.myLook);
+    game.myLook = look;
+    saveLook(look);
+    game.setLook(look); // (others get the new look, shine and all)
+  }
   function finish() {
     const r = run;
     if (!r) return;
     run = null;
     for (const o of [r.light, r.beam, r.sparks]) o.removeFromParent();
     r.sparks.geometry.dispose();
+    wash.style.opacity = '0';
     Object.assign(game.cam, r.cam);
-    const look = treated(game.myLook);
-    game.myLook = look;
-    saveLook(look);
-    game.setLook(look); // (others get the new look, shine and all)
+    if (!r.swapped) shine();
     game.sfx.pop?.();
     game.shop.toast(t('derm.done'), 4000);
   }
@@ -81,6 +104,12 @@ export function createDerm(game) {
       const r = run;
       if (!r) return;
       r.t += dt;
+      paint(r.t);
+      if (!r.swapped && r.t >= SWAP_AT) { // under the white flash: the shine goes on, the camera comes in on the face
+        r.swapped = true;
+        shine();
+        Object.assign(game.cam, { dist: 1.7, pitch: 0.95 });
+      }
       r.beam.material.opacity = 0.16 + 0.1 * Math.sin(r.t * 6);
       const p = r.sparks.geometry.attributes.position;
       const [fx, fy, fz] = r.face;

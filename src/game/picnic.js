@@ -106,7 +106,7 @@ export function createPicnic(game, street = null) {
       d?.mesh.removeFromParent();
       const mesh = makeMat(m.c);
       if (f.length) mesh.add(makeFood(f, tier)); // (in the mat's own space: it turns with it)
-      mesh.position.set(m.x, 0, m.z);
+      mesh.position.set(m.x, room === street ? 0.012 : 0, m.z); // (on the street a little up, over Seoul Plaza's drawn lawn)
       mesh.rotation.y = matAngle(m); // the way its owner faced (square with a lawn laid at an angle)
       room.scene.add(mesh);
       drawn.set(id, { key, mesh, mat: m, food: f, name, me: id === game.myId });

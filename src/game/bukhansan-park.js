@@ -39,6 +39,7 @@ export const BUKHAN_PARK = {
   glow: [0.07, 0.16], // how much the mountain warms in the low sun, on the way up and at the top
   lift: 0.25, // how far the haze pulls back at the top (core/weather.js lift): to about 590 m, past the peaks next door
   trees: 1500, // by the way (lowSpec: half)
+  pathColor: 0xa66f48, // the hiking paths: red-brown earth, apart from the town's grey roads and the pale rock (it was a tan near the rock's colour; Yozi 2026-11-27)
   treeNear: 13, // m from the way: single trees (it was 34; past this the wood is thickets, one shape each: game/thicket.js)
   thicket: { every: 10, from: 11, to: 26, clear: 9 }, // thickets beside the way: one every 10 m a side, 11-26 m off it, none within 9 m of the way or a stop
   treeClear: 2.4, // m from the way's edge
@@ -165,7 +166,7 @@ export const STOP_NAMES = {
   peak: ['백운대', 'Baegundae'],
 };
 
-export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = () => 1, sfx = () => null, weather = () => null }) {
+export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = () => 1, sfx = () => null, weather = () => null, text = (k) => k }) {
   const P = BUKHAN_PARK;
   const woods = []; // the far slopes' tiles (those under the clouds are not drawn from the top)
   const group = new THREE.Group();
@@ -245,7 +246,7 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
       group.add(m);
     };
     mesh(road, 0x8f9094, 'bukhansan-road');
-    mesh(path, 0xb89c78, 'bukhansan-paths');
+    mesh(path, P.pathColor, 'bukhansan-paths');
     mesh(stone, 0xc9c2b4, 'bukhansan-rock-floors');
     const steps = [], posts = [], rails = [];
     for (const t of trails) if (t.steps) {
@@ -529,12 +530,32 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
     sunGlow.scale.set(size, size, 1);
     sunGlow.material.opacity = k * up * (0.7 + 0.3 * open);
   };
+  // On the hiking paths: how high you are, really (Yozi 2026-11-27). The game's height is the real one above the station / 4.
+  const seaBase = l.summit.ele - l.summit.y * 4;
+  let altEl = null, altShown = null, altAt = 0, altWatch = null;
+  const altitude = (py) => {
+    const m = py == null ? null : Math.round(seaBase + py * 4);
+    altAt = performance.now();
+    if (m != null && !altWatch) altWatch = setInterval(() => { if (performance.now() - altAt > 1500) { clearInterval(altWatch); altWatch = null; altitude(null); } }, 1000); // (you left the street, for home or a room: nobody calls this any more)
+    if (m === altShown) return;
+    altShown = m;
+    if (m == null) { if (altEl) altEl.hidden = true; return; }
+    if (!altEl) {
+      altEl = document.createElement('div');
+      altEl.id = 'bukhan-altitude';
+      altEl.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom, 0px) + 44px);padding:5px 12px;border-radius:999px;background:rgba(255,250,240,0.88);color:#4a3b2a;font:600 13px/1.2 inherit;font-family:inherit;pointer-events:none;z-index:5;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.15)';
+      (document.getElementById('hud') || document.body).appendChild(altEl);
+    }
+    altEl.hidden = false;
+    altEl.textContent = text('bukhan.alt', { n: m.toLocaleString('en-US') });
+  };
   return {
     group,
     counts,
     seats,
     get summit() { return summit; },
-    update(p, dt = 0) {
+    update(p, dt = 0, hiking = false) {
+      altitude(hiking ? p.y : null);
       const d = Math.hypot(Math.max(l.x + bx0 - p.x, 0, p.x - l.x - bx1), Math.max(l.z + bz0 - p.z, 0, p.z - l.z - bz1));
       group.visible = d < P.hide;
       if (!group.visible) return;

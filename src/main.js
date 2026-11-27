@@ -909,7 +909,7 @@ const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seat
 // Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
 const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Bukhansan's Baegundae course (game/bukhansan-walk.js): the way up is decks, the mountain loads near, the top opens a painted view.
-const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k) => t(k), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m) => shop.toast(m), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
+const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k, v) => t(k, v), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m) => shop.toast(m), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
 // Seoul National Cemetery (game/hyeonchungwon-walk.js): a place of remembrance; its roads, court and lawn are decks, the rest loads near.
 const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }), music: () => music, riding: () => riding, getOff: () => setRiding(false), noRide: () => t('hyeonchung.noRide') });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
@@ -1568,7 +1568,9 @@ const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => pla
   sky.remote(q, all, dt); zooVisit.peer(q); boatTaxi.peer(q);
   if ((q.target.he || q.target.hr) && !heli.loaded) heli.ready().catch(() => {}); // an operator's helicopter (game/helicopter.js)
   if (q.target.rk) rocking.ready().catch(() => {}); rocking.peer(q, dt);
-}, boardGame: () => boardGames.playing };
+}, boardGame: () => boardGames.playing,
+  groundAt: (x, z) => (mode === 'street' ? bukhan.y(x, z) : 0), // (on Bukhansan's steep way they stand on the ground where you see them: core/players.js)
+};
 let others = new RemotePlayers(scene, $('labels'), remoteOpts);
 // Everyone online on the whole map (net/online.js); without a server that
 // can count, the people around you. The badge shows today's visitors (real
@@ -3138,7 +3140,7 @@ function enterStore(item, walkIn = null) {
   if (built.stations?.patrons && !built.patronNpcs) {
     built.scene.updateMatrixWorld();
     built.patronNpcs = built.stations.patrons.map((s) => {
-      const o = makeNpc($('labels'), '');
+      const o = makeNpc($('labels'), '', s.glow ? { ...randomLook(), glow: Date.now() + 3 * 864e5 } : undefined); // (glow: the skin clinic's customer, core/glow.js)
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
       const f = s.sit ? seatFit(built.scene, s) : null;
       o.ch.root.position.set(f?.x ?? s.x, f?.y ?? (s.y || 0), f?.z ?? s.z); // (y: up in the stands at Modu Ballpark)
@@ -5213,6 +5215,7 @@ function currentActivity() {
   if (prayer.pose) return prayer.pose; // praying at an altar (game/prayer.js)
   if (holyWater.pose) return holyWater.pose; // the sign of the cross at the cathedral's font (game/holy-water.js)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
+  if (mode === 'street' && bukhan.fallen) return 'matsit'; // tripped running on Bukhansan: sat on the ground a moment
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
   if (seated && !seated.lie && held?.kind === 'book' && bookUi.open) return 'read'; // reading on any seat (a bench, a picnic mat, a café chair)
@@ -7613,6 +7616,7 @@ renderer.setAnimationLoop((now) => {
   if (inCathedral && interior.massNpcs && input.run && mag > 0.05 && interior.massNpcs.shh()) { showBubble(myLabel, $('labels'), '🤫'); shop.toast(L(roomKit().CATHEDRAL_TEXT.shh)); }
   const quiet = updateQuiet(p, mag > 0.05 || !!autoWalk) || inCathedral;
   const running = updateStamina(dt, input.run && !riding && !steadyWalk && !quiet, mag > 0.05 && !seated);
+  if (mode === 'street') bukhan.run(p, dt, running); // (running on Bukhansan's paths you may trip: game/bukhansan-walk.js)
   if (sky.busy) speed01 = sky.fly(dt, p, mx, my, moveRef.yaw, input.run); // flying (operators)
   else if (heli.busy) speed01 = heli.fly(dt, p, mx, my, moveRef.yaw, input.run); // in an operator's helicopter
   else if (mag > 0.05 && !seated && !ride && !namsanCable.busy && !seoulDal.busy && !boatTaxi.busy && riding !== 3 && !(runwayUi.walking && mode === 'store') && !iceRink.skating) {
@@ -8162,7 +8166,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     mirror: () => { Object.assign(cam, { dist: 2.6, pitch: 0.12 }); me.root.rotation.y = cam.yaw; }, // close-up, facing the camera
     pets: () => interior?.pets?.list.map((p) => [p.name, p.state, +p.root.position.x.toFixed(2), +p.root.position.z.toFixed(2)]) ?? null,
     npcs: () => npcs.list.map((o) => [o.name, o.ch.root.position.x, o.ch.root.position.z, o.zone]),
-    peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, shown: !p.hidden && p.ch.root.visible && p.ch.root.parent === activeScene, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
+    peers: () => [...others.players.values()].map((p) => ({ name: p.name, model: p.model, ...p.target, x: p.ch.root.position.x, z: p.ch.root.position.z, drawnY: p.ch.root.position.y, shown: !p.hidden && p.ch.root.visible && p.ch.root.parent === activeScene, pet: p.pet ? { id: p.pet.id, x: p.pet.root.position.x, z: p.pet.root.position.z, visible: p.pet.root.visible } : null })),
     goto: (x, z, ry = 0) => moveMeTo(activeScene, x, z, ry),
     taxi: (x, z, label = 'test') => rideTaxi({ x, z, label }),
     skate: () => ({ in: inSkate, y: +skateY.toFixed(2), air: skater.air, grind: !!skater.grind, combo: skater.comboPts, riding, type: garage.current.type, at: [+me.root.position.x.toFixed(1), +me.root.position.z.toFixed(1)], ry: +me.root.rotation.y.toFixed(2) }),

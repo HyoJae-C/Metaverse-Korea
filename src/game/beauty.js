@@ -10,6 +10,7 @@ import { createCharacter } from '../core/character.js';
 import { saveLook } from '../core/look-editor.js';
 import { PALETTES } from '../data/appearance.js';
 import { say, placeLabels } from '../core/npcs.js';
+import { LIE_HEAD } from '../core/lie-spot.js';
 
 const $ = (id) => document.getElementById(id);
 // The surgery team and the hairdresser are plain characters with no name tag;
@@ -38,7 +39,7 @@ export function createBeauty(game) {
     document.body.classList.add('beauty-mode'); // hides the shop banner so your face shows
     if (game.seated?.lie) { // lying on the bed: look down at the face from the foot end
       Object.assign(game.cam, { yaw: game.seated.ry, dist: 2.0, pitch: 0.85 });
-      beautyCam.look = [game.seated.x, 0.7, game.seated.z - 0.75];
+      beautyCam.look = [game.seated.x, 0.7, game.seated.z - LIE_HEAD]; // the face (core/lie-spot.js)
     } else if (game.seated?.mirrorZ != null) { // in the chair: what the mirror sees, your face up close
       // The mirror is only a metre away, so a wider lens fits your head in.
       Object.assign(game.cam, { yaw: game.seated.ry + 0.12, dist: 1.05, pitch: 0.12 });
