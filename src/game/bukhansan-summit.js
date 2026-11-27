@@ -33,14 +33,15 @@ export const SUMMIT = {
   tall: 1.35, // the far country drawn this much taller than it is (it is 4-70 km away: true to scale it is a thin line)
   seaUnder: 90, // m under the top: the sea of clouds (under the gate and the hut too, over the valleys)
   seaR: 470, // m: how far the sea reaches; past its rim you look over it at the far country
-  puffs: 110, // lumps on the sea (lowSpec: 40)
-  streaks: 36, // streaks of wind round you (lowSpec: 16)
+  puffs: 70, // soft sheets of cloud lying on the sea and up round the rock (lowSpec: 30). (They were lumps: they looked like icebergs, Yozi 2026-11-27)
+  streaks: 14, // streaks of wind round you (lowSpec: 8). (36 at half strength was too much wind, Yozi 2026-11-27)
   wisps: 5, // wisps of cloud over the rock
   wind: [0.94, 0.34], // where it blows to (x, z): from the west-north-west, as it mostly does up there
-  speed: 16, // m/s: the streaks
-  warm: [0.75, 0.3, 0.3], // at sunrise and sunset: how far the far country and the clouds take the sun's colour, how much white is in it, and the lumps' own glow
+  speed: 9, // m/s: the streaks
+  warm: [0.75, 0.3], // at sunrise and sunset: how far the far country and the clouds take the sun's colour, and how much white is in it
+  hug: 38, // m: how far up the rock's sides the nearest sheets of cloud lie
   path: [150, 0.8], // the sun's path of light over the clouds: m wide, how bright
-  loud: 0.16, // the wind's sound at the top
+  loud: 0.07, // the wind's sound at the top
 };
 
 // The ring's geometry: a strip of a cylinder whose rows are at even angles
@@ -104,12 +105,20 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
   sheet.position.y = seaY;
   sheet.renderOrder = -2;
   root.add(sheet);
-  const nP = lowSpec ? 40 : S.puffs;
-  const puffs = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), mat(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, transparent: true, fog: false, opacity: 0 }), 1), nP);
+  const nP = lowSpec ? 30 : S.puffs;
+  const soft = document.createElement('canvas');
+  soft.width = soft.height = 128;
+  { // thick in the middle, thinning out to nothing
+    const g = soft.getContext('2d'), f = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    f.addColorStop(0, 'rgba(255,255,255,0.9)'); f.addColorStop(0.45, 'rgba(255,255,255,0.5)'); f.addColorStop(0.8, 'rgba(255,255,255,0.12)'); f.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = f; g.fillRect(0, 0, 128, 128);
+  }
+  const puffs = new THREE.InstancedMesh(new THREE.CircleGeometry(1, 14).rotateX(-Math.PI / 2), mat(new THREE.MeshBasicMaterial({ color: 0xffffff, map: new THREE.CanvasTexture(soft), transparent: true, depthWrite: false, fog: false, opacity: 0 }), 0.5), nP);
   puffs.name = 'bukhansan-cloud-sea';
   puffs.renderOrder = -1;
   puffs.frustumCulled = false;
-  const puffAt = Array.from({ length: nP }, (_, i) => { const a = hash(i) * Math.PI * 2, d = 60 + Math.sqrt(hash(i + 50)) * 330; return { x: Math.cos(a) * d, z: Math.sin(a) * d, r: 18 + hash(i + 9) * 34, h: 6 + hash(i + 3) * 12, v: 0.5 + hash(i + 7) * 0.8 }; });
+  // (flat sheets, thin, one over another; nearer the rock they lie higher, up its sides)
+  const puffAt = Array.from({ length: nP }, (_, i) => { const a = hash(i) * Math.PI * 2, d = 45 + Math.sqrt(hash(i + 50)) * 345; return { x: Math.cos(a) * d, z: Math.sin(a) * d, r: 45 + hash(i + 9) * 75, h: 1 + hash(i + 3) * 9, v: 0.3 + hash(i + 7) * 0.5 }; });
   root.add(puffs);
 
   // The low sun's path of light over the sea, towards where it stands.
@@ -129,8 +138,8 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
   const tint = new THREE.Color(), white = new THREE.Color(0xffffff);
 
   // The wind round you: thin streaks blowing past, and wisps of cloud over the rock.
-  const nS = lowSpec ? 16 : S.streaks;
-  const streaks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 0.035), mat(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, fog: false, side: THREE.DoubleSide, opacity: 0 }), 0.5), nS);
+  const nS = lowSpec ? 8 : S.streaks;
+  const streaks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 0.035), mat(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, fog: false, side: THREE.DoubleSide, opacity: 0 }), 0.24), nS);
   streaks.name = 'bukhansan-wind';
   streaks.frustumCulled = false;
   const streakAt = Array.from({ length: nS }, (_, i) => ({ u: hash(i + 100) * 40, side: (hash(i + 200) - 0.5) * 26, up: 0.4 + hash(i + 300) * 5, len: 1.6 + hash(i + 400) * 2.6, v: 0.75 + hash(i + 500) * 0.6 }));
@@ -184,12 +193,11 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
       // the low sun colours it all
       const ss = sun(), k = ss?.mix || 0, u = ss?.dome.material.uniforms;
       path.visible = k > 0.01;
-      puffs.material.emissive.setScalar(0);
       if (k > 0.01 && u) {
         tint.copy(u.uGlow.value).lerp(white, S.warm[1]);
         if (ring) ring.material.color.lerp(tint.clone().multiply(ring.material.userData.c).multiplyScalar(day), k * S.warm[0]);
         sheet.material.color.lerp(tint.multiplyScalar(day), k * S.warm[0]);
-        puffs.material.emissive.copy(u.uGlow.value).multiplyScalar(k * S.warm[2]);
+        puffs.material.color.lerp(tint, k * S.warm[0]);
         path.rotation.y = Math.atan2(-u.uSun.value.x, -u.uSun.value.z);
         path.material.color.copy(u.uGlow.value).lerp(white, 0.4);
         path.material.opacity = k * open * S.path[1] * Math.min(1, Math.max(0, (u.uSun.value.y + 0.035) / 0.05));
@@ -197,8 +205,9 @@ export function createBukhanSummit({ group, l, lowSpec = false, daylight = () =>
       // the sea drifts
       for (let i = 0; i < nP; i++) {
         const a = puffAt[i], wrap = S.seaR * 0.86, x = ((((a.x + wx * t * a.v * 2.2 + wrap) % (2 * wrap)) + 2 * wrap) % (2 * wrap)) - wrap, z = ((((a.z + wz * t * a.v * 2.2 + wrap) % (2 * wrap)) + 2 * wrap) % (2 * wrap)) - wrap;
-        const edge = Math.max(0, 1 - Math.hypot(x, z) / wrap); // (small at the rim, so none pops)
-        m4.compose(v3.set(x, seaY + a.h * 0.25, z), q.identity(), sc.set(a.r, a.h * Math.min(1, edge * 4), a.r * 0.8));
+        const far = Math.hypot(x, z) / wrap, edge = Math.max(0, 1 - far); // (small at the rim, so none pops)
+        const k2 = Math.min(1, edge * 4);
+        m4.compose(v3.set(x, seaY + a.h + Math.max(0, 1 - far * 2.2) * S.hug, z), q.identity(), sc.set(a.r * k2, 1, a.r * 0.75 * k2));
         puffs.setMatrixAt(i, m4);
       }
       puffs.instanceMatrix.needsUpdate = true;
