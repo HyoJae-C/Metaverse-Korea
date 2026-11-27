@@ -3,7 +3,7 @@
 // with the room builder (core/interior.js) and not in the first download;
 // the street's stair exits and the shared numbers stay in core/subway.js.
 import * as THREE from 'three';
-import { mat, glass, signMesh, signTexture, nameBoardTexture, directionSignTexture, drawRouteMap, routeLayout, hallStairs, trainPhase, STAIR, DOORS, DOOR_Z, GATE_LANES, GATE_X, ROUTE_MAP, TRACKS } from './subway.js';
+import { mat, glass, signMesh, signTexture, nameBoardTexture, directionSignTexture, drawRouteMap, routeLayout, routeMapSize, hallStairs, trainPhase, STAIR, DOORS, DOOR_Z, GATE_LANES, GATE_X, TRACKS } from './subway.js';
 
 const PLAT_X = [-8.5, 25.5];
 const ROUTE_PILLAR_X = -1.6; // the route map pillar on the platform, between two benches
@@ -229,7 +229,10 @@ export function buildStation(store, ROOM) {
     const mapTex = new THREE.CanvasTexture(mapC);
     mapTex.colorSpace = THREE.SRGBColorSpace;
     mapTex.anisotropy = 4;
-    const mw = 1.4, mh = mw * ROUTE_MAP.h / ROUTE_MAP.w, my = 0.9 + mh / 2;
+    // The map is tall (a row for every two stations): as tall as the pillar
+    // allows, no wider than it.
+    const ms = routeMapSize(loop.stops.length);
+    const mh = Math.min(h - 1.2, 1.2 * ms.h / ms.w), mw = mh * ms.w / ms.h, my = 0.6 + mh / 2;
     for (const s of [-1, 1]) {
       box(0.04, mh + 0.08, mw + 0.08, px + s * (pd / 2 + 0.01), my, 0, '#5d6470'); // frame
       sign(mapTex, mw, mh, px + s * (pd / 2 + 0.035), my, 0, s < 0 ? -Math.PI / 2 : Math.PI / 2);

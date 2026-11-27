@@ -102,8 +102,9 @@ export function createSpendAsk({ wallet, shop }) {
     }, true);
   }
 
-  let ok = null;
-  const close = () => { box.hidden = true; ok = null; gate.close(); };
+  let ok = null, onNo = null;
+  let asking = false; // a yes/no question (askYes) is showing
+  const close = () => { box.hidden = true; ok = null; const f = onNo; onNo = null; asking = false; gate.close(); f?.(); };
   const gate = createSpendGate({
     input: () => now,
     show: (n, note, yesFn) => {
@@ -113,11 +114,12 @@ export function createSpendAsk({ wallet, shop }) {
       no.textContent = t('spend.no');
       yes.textContent = t('spend.yes');
       ok = yesFn;
+      onNo = null;
       box.hidden = false;
     },
     replay: playAgain,
   });
-  yes.onclick = () => { const f = ok; box.hidden = true; ok = null; f?.(); };
+  yes.onclick = () => { const f = ok; box.hidden = true; ok = null; onNo = null; asking = false; f?.(); };
   no.onclick = close;
   box.addEventListener('click', (e) => { if (e.target === box) close(); });
   addEventListener('keydown', (e) => {
@@ -126,11 +128,28 @@ export function createSpendAsk({ wallet, shop }) {
     else if (e.key === 'Enter') { e.preventDefault(); e.stopImmediatePropagation(); yes.click(); }
   }, true);
 
+  // A yes/no question in the same panel, for things that aren't wallet.spend()
+  // (selling clothes back, a rack or mat purchase the server takes itself).
+  // The browser's confirm() felt like a real payment (Yozi 2026-11-19) and
+  // some phone browsers skip it without asking, so the tap did nothing.
+  // Resolves true on OK; false on Cancel, or if a question is already open.
+  wallet.askYes = (question, detail = '') => new Promise((resolve) => {
+    if (asking || gate.open) { resolve(false); return; }
+    asking = true;
+    amount.textContent = question;
+    what.textContent = detail || '';
+    what.hidden = !what.textContent;
+    no.textContent = t('spend.no');
+    yes.textContent = t('spend.yes');
+    ok = () => resolve(true);
+    onNo = () => resolve(false);
+    box.hidden = false;
+  });
   wallet.askSpend = (n, note) => gate.ask(n, note);
   wallet.confirmSpend = (n, note, yes) => gate.confirm(n, note, yes);
   if (shop?.toast) {
     const toast = shop.toast.bind(shop);
     shop.toast = (...a) => (wallet.justDeclined ? undefined : toast(...a));
   }
-  return { get open() { return gate.open; } };
+  return { get open() { return gate.open || asking; } };
 }

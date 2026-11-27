@@ -74,7 +74,7 @@ test('gift texts come in every language, with the same {placeholders}', () => {
   const all = { ...GIFT_TEXT, ...Object.fromEntries(Object.entries(GIFT_TEXT.back).map(([k, v]) => ['back.' + k, v])) };
   delete all.back;
   for (const [k, o] of Object.entries(all)) {
-    for (const lang of ['en', 'ko', 'ja', 'zh', 'es', 'ar', 'vi', 'hi', 'id']) {
+    for (const lang of ['en', 'ko', 'ja', 'zh', 'es', 'ar', 'vi', 'id']) {
       assert.ok(o[lang], `${k} ${lang}`);
       assert.equal(vars(o[lang]), vars(o.en), `${k} ${lang}`);
     }

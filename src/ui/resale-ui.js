@@ -7,8 +7,8 @@ import { ITEMS } from '../core/inventory.js';
 import { t } from '../core/i18n.js';
 
 export const RESALE_TEXT = {
-  open: { en: 'Sell clothes', ko: '옷 팔기', ja: '服を売る', zh: '卖衣服', es: 'Vender ropa', ar: 'بيع الملابس', vi: 'Bán quần áo', hi: 'कपड़े बेचें', fr: 'Vendre des vêtements', th: 'ขายเสื้อผ้า', id: 'Jual baju' },
-  title: { en: 'Sell your clothes', ko: '내 옷 팔기', ja: '服を売る', zh: '卖掉你的衣服', es: 'Vende tu ropa', ar: 'بِع ملابسك', vi: 'Bán quần áo của bạn', hi: 'अपने कपड़े बेचें', fr: 'Vends tes vêtements', th: 'ขายเสื้อผ้าของคุณ', id: 'Jual bajumu' },
+  open: { en: 'Sell clothes', ko: '옷 팔기', ja: '服を売る', zh: '卖衣服', es: 'Vender ropa', ar: 'بيع الملابس', vi: 'Bán quần áo', fr: 'Vendre des vêtements', pt: "Vender roupas", th: 'ขายเสื้อผ้า', id: 'Jual baju' },
+  title: { en: 'Sell your clothes', ko: '내 옷 팔기', ja: '服を売る', zh: '卖掉你的衣服', es: 'Vende tu ropa', ar: 'بِع ملابسك', vi: 'Bán quần áo của bạn', fr: 'Vends tes vêtements', pt: "Venda suas roupas", th: 'ขายเสื้อผ้าของคุณ', id: 'Jual bajumu' },
   rule: {
     en: 'We pay {p}% of what you paid. Only clothes you bought yourself: gifts and code items can\'t be sold.',
     ko: '산 가격의 {p}%를 드려요. 내가 직접 산 옷만 팔 수 있어요. 선물받은 옷과 코드로 받은 옷은 팔 수 없어요.',
@@ -17,8 +17,7 @@ export const RESALE_TEXT = {
     es: 'Pagamos el {p}% de lo que pagaste. Solo ropa que compraste tú: los regalos y los artículos de códigos no se pueden vender.',
     ar: 'ندفع {p}% مما دفعته. فقط الملابس التي اشتريتها بنفسك: لا يمكن بيع الهدايا وعناصر الرموز.',
     vi: 'Chúng tôi trả {p}% giá bạn đã mua. Chỉ bán được đồ bạn tự mua: quà tặng và đồ nhận từ mã không bán được.',
-    hi: 'आपने जितने में ख़रीदा, उसका {p}% देते हैं। सिर्फ़ आपके ख़ुद ख़रीदे कपड़े: तोहफ़े और कोड वाले आइटम नहीं बिकते।',
-    fr: 'Nous payons {p} % de ce que tu as payé. Seulement les vêtements achetés toi-même : les cadeaux et les objets de code ne peuvent pas être vendus.',
+    fr: 'Nous payons {p} % de ce que tu as payé. Seulement les vêtements achetés toi-même : les cadeaux et les objets de code ne peuvent pas être vendus.', pt: "Pagamos {p}% do que você pagou. Só roupas que você mesmo comprou: presentes e itens de código não podem ser vendidos.",
     th: 'เรารับซื้อ {p}% ของราคาที่คุณจ่าย เฉพาะเสื้อผ้าที่ซื้อเองเท่านั้น ของขวัญและไอเทมจากโค้ดขายไม่ได้',
     id: 'Kami bayar {p}% dari harga belimu. Hanya baju yang kamu beli sendiri: hadiah dan item dari kode tidak bisa dijual.',
   },
@@ -30,8 +29,7 @@ export const RESALE_TEXT = {
     es: 'Aún no hay nada que vender. Trae la ropa que compraste cuando ya no la uses.',
     ar: 'لا شيء للبيع بعد. أحضر الملابس التي اشتريتها عندما تنتهي منها.',
     vi: 'Chưa có gì để bán. Mang đồ bạn đã mua đến đây khi không mặc nữa.',
-    hi: 'अभी बेचने को कुछ नहीं। ख़रीदे कपड़ों से मन भर जाए तो यहाँ ले आइए।',
-    fr: 'Rien à vendre pour l\'instant. Apporte les vêtements achetés ici quand tu n\'en veux plus.',
+    fr: 'Rien à vendre pour l\'instant. Apporte les vêtements achetés ici quand tu n\'en veux plus.', pt: "Nada para vender ainda. Traga as roupas que comprou quando não quiser mais.",
     th: 'ยังไม่มีอะไรให้ขาย นำเสื้อผ้าที่ซื้อมาเมื่อไม่ใช้แล้ว',
     id: 'Belum ada yang bisa dijual. Bawa baju yang kamu beli ke sini kalau sudah tidak dipakai.',
   },
@@ -43,8 +41,7 @@ export const RESALE_TEXT = {
     es: 'Todavía no compramos ropa. ¡Vuelve pronto!',
     ar: 'لا نشتري الملابس بعد. عُد قريبًا!',
     vi: 'Chúng tôi chưa thu mua quần áo. Hãy quay lại sau nhé!',
-    hi: 'हम अभी कपड़े नहीं ख़रीदते। जल्द फिर आइए!',
-    fr: 'Nous n\'achetons pas encore de vêtements. Reviens bientôt !',
+    fr: 'Nous n\'achetons pas encore de vêtements. Reviens bientôt !', pt: "Ainda não estamos comprando roupas. Volte em breve!",
     th: 'เรายังไม่รับซื้อเสื้อผ้า แวะมาใหม่เร็วๆ นี้นะ!',
     id: 'Kami belum membeli baju. Datang lagi nanti ya!',
   },
@@ -56,8 +53,7 @@ export const RESALE_TEXT = {
     es: 'Ahora no podemos revisar tu recibo. Inténtalo de nuevo en un momento.',
     ar: 'لا يمكننا التحقق من إيصالك الآن. حاول مرة أخرى بعد قليل.',
     vi: 'Hiện chưa kiểm tra được hóa đơn. Vui lòng thử lại sau giây lát.',
-    hi: 'अभी आपकी रसीद नहीं देख सकते। थोड़ी देर बाद फिर कोशिश करें।',
-    fr: 'Impossible de vérifier ton reçu pour l\'instant. Réessaie dans un moment.',
+    fr: 'Impossible de vérifier ton reçu pour l\'instant. Réessaie dans un moment.', pt: "Não conseguimos conferir seu recibo agora. Tente de novo daqui a pouco.",
     th: 'ตอนนี้ตรวจใบเสร็จไม่ได้ โปรดลองใหม่อีกสักครู่',
     id: 'Kami belum bisa memeriksa struknya sekarang. Coba lagi sebentar lagi.',
   },
@@ -69,18 +65,17 @@ export const RESALE_TEXT = {
     es: 'No encontramos el recibo de {name}, así que no podemos comprarlo.',
     ar: 'لم نجد إيصال {name}، لذا لا يمكننا شراؤه.',
     vi: 'Không tìm thấy hóa đơn của {name} nên chúng tôi không mua được.',
-    hi: '{name} की रसीद नहीं मिली, इसलिए हम इसे नहीं ख़रीद सकते।',
-    fr: 'Impossible de trouver le reçu de {name}, donc nous ne pouvons pas l\'acheter.',
+    fr: 'Impossible de trouver le reçu de {name}, donc nous ne pouvons pas l\'acheter.', pt: "Não encontramos o recibo de {name}, então não podemos comprar.",
     th: 'ไม่พบใบเสร็จของ {name} จึงรับซื้อไม่ได้',
     id: 'Struk {name} tidak ditemukan, jadi kami tidak bisa membelinya.',
   },
-  checking: { en: 'Checking…', ko: '확인 중…', ja: '確認中…', zh: '核对中…', es: 'Revisando…', ar: 'جارٍ التحقق…', vi: 'Đang kiểm tra…', hi: 'जाँच हो रही है…', fr: 'Vérification…', th: 'กำลังตรวจสอบ…', id: 'Memeriksa…' },
-  paid: { en: 'Paid 🪙 {n}', ko: '산 가격 🪙 {n}', ja: '購入 🪙 {n}', zh: '买入 🪙 {n}', es: 'Pagaste 🪙 {n}', ar: 'دفعت 🪙 {n}', vi: 'Giá mua 🪙 {n}', hi: 'ख़रीदा 🪙 {n}', fr: 'Payé 🪙 {n}', th: 'จ่ายไป 🪙 {n}', id: 'Dibeli 🪙 {n}' },
-  sell: { en: 'Sell 🪙 {n}', ko: '🪙 {n}에 팔기', ja: '🪙 {n}で売る', zh: '🪙 {n} 卖出', es: 'Vender 🪙 {n}', ar: 'بِع 🪙 {n}', vi: 'Bán 🪙 {n}', hi: '🪙 {n} में बेचें', fr: 'Vendre 🪙 {n}', th: 'ขาย 🪙 {n}', id: 'Jual 🪙 {n}' },
-  wearing: { en: 'wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'puesto', ar: 'ترتديه', vi: 'đang mặc', hi: 'पहना हुआ', fr: 'porté', th: 'กำลังใส่', id: 'dipakai' },
-  ask: { en: 'Sell {name} for 🪙 {n}?', ko: '{name}을(를) 🪙 {n}에 팔까요?', ja: '{name}を🪙 {n}で売りますか？', zh: '要以 🪙 {n} 卖掉{name}吗？', es: '¿Vender {name} por 🪙 {n}?', ar: 'هل تبيع {name} مقابل 🪙 {n}؟', vi: 'Bán {name} với giá 🪙 {n}?', hi: '{name} को 🪙 {n} में बेचें?', fr: 'Vendre {name} pour 🪙 {n} ?', th: 'ขาย {name} ในราคา 🪙 {n} ไหม?', id: 'Jual {name} seharga 🪙 {n}?' },
-  sold: { en: 'Sold! +🪙 {n}', ko: '팔았어요! +🪙 {n}', ja: '売れました！ +🪙 {n}', zh: '卖掉了！+🪙 {n}', es: '¡Vendido! +🪙 {n}', ar: 'تم البيع! +🪙 {n}', vi: 'Đã bán! +🪙 {n}', hi: 'बिक गया! +🪙 {n}', fr: 'Vendu ! +🪙 {n}', th: 'ขายแล้ว! +🪙 {n}', id: 'Terjual! +🪙 {n}' },
-  thanks: { en: 'Thank you! Someone will love it.', ko: '감사해요! 좋은 주인 만날 거예요.', ja: 'ありがとう！きっと新しい持ち主が見つかります。', zh: '谢谢！它会遇到喜欢它的人。', es: '¡Gracias! A alguien le encantará.', ar: 'شكرًا! سيحبها شخص ما.', vi: 'Cảm ơn! Sẽ có người thích nó.', hi: 'धन्यवाद! किसी को यह ज़रूर पसंद आएगा।', fr: 'Merci ! Quelqu\'un va l\'adorer.', th: 'ขอบคุณ! ต้องมีคนชอบแน่นอน', id: 'Terima kasih! Pasti ada yang suka.' },
+  checking: { en: 'Checking…', ko: '확인 중…', ja: '確認中…', zh: '核对中…', es: 'Revisando…', ar: 'جارٍ التحقق…', vi: 'Đang kiểm tra…', fr: 'Vérification…', pt: "Conferindo…", th: 'กำลังตรวจสอบ…', id: 'Memeriksa…' },
+  paid: { en: 'Paid 🪙 {n}', ko: '산 가격 🪙 {n}', ja: '購入 🪙 {n}', zh: '买入 🪙 {n}', es: 'Pagaste 🪙 {n}', ar: 'دفعت 🪙 {n}', vi: 'Giá mua 🪙 {n}', fr: 'Payé 🪙 {n}', pt: "Pago 🪙 {n}", th: 'จ่ายไป 🪙 {n}', id: 'Dibeli 🪙 {n}' },
+  sell: { en: 'Sell 🪙 {n}', ko: '🪙 {n}에 팔기', ja: '🪙 {n}で売る', zh: '🪙 {n} 卖出', es: 'Vender 🪙 {n}', ar: 'بِع 🪙 {n}', vi: 'Bán 🪙 {n}', fr: 'Vendre 🪙 {n}', pt: "Vender 🪙 {n}", th: 'ขาย 🪙 {n}', id: 'Jual 🪙 {n}' },
+  wearing: { en: 'wearing', ko: '착용 중', ja: '着用中', zh: '穿着中', es: 'puesto', ar: 'ترتديه', vi: 'đang mặc', fr: 'porté', pt: "vestindo", th: 'กำลังใส่', id: 'dipakai' },
+  ask: { en: 'Sell {name} for 🪙 {n}?', ko: '{name}을(를) 🪙 {n}에 팔까요?', ja: '{name}を🪙 {n}で売りますか？', zh: '要以 🪙 {n} 卖掉{name}吗？', es: '¿Vender {name} por 🪙 {n}?', ar: 'هل تبيع {name} مقابل 🪙 {n}؟', vi: 'Bán {name} với giá 🪙 {n}?', fr: 'Vendre {name} pour 🪙 {n} ?', pt: "Vender {name} por 🪙 {n}?", th: 'ขาย {name} ในราคา 🪙 {n} ไหม?', id: 'Jual {name} seharga 🪙 {n}?' },
+  sold: { en: 'Sold! +🪙 {n}', ko: '팔았어요! +🪙 {n}', ja: '売れました！ +🪙 {n}', zh: '卖掉了！+🪙 {n}', es: '¡Vendido! +🪙 {n}', ar: 'تم البيع! +🪙 {n}', vi: 'Đã bán! +🪙 {n}', fr: 'Vendu ! +🪙 {n}', pt: "Vendido! +🪙 {n}", th: 'ขายแล้ว! +🪙 {n}', id: 'Terjual! +🪙 {n}' },
+  thanks: { en: 'Thank you! Someone will love it.', ko: '감사해요! 좋은 주인 만날 거예요.', ja: 'ありがとう！きっと新しい持ち主が見つかります。', zh: '谢谢！它会遇到喜欢它的人。', es: '¡Gracias! A alguien le encantará.', ar: 'شكرًا! سيحبها شخص ما.', vi: 'Cảm ơn! Sẽ có người thích nó.', fr: 'Merci ! Quelqu\'un va l\'adorer.', pt: "Obrigado! Alguém vai adorar.", th: 'ขอบคุณ! ต้องมีคนชอบแน่นอน', id: 'Terima kasih! Pasti ada yang suka.' },
 };
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -91,8 +86,11 @@ export class ResaleUI {
   // to show in the panel (or nothing). The rack: rack() → { pct, rows: [{
   // item, price, n, have }] } or null (closed); onOpen() → Promise (fetch the
   // rack); onBuy(row) → Promise of a message.
-  constructor({ root, pct, list, wearing, onSell, rack = () => null, onOpen = null, onBuy = null }) {
+  // ask(question) → Promise of true/false: the game's own yes/no panel
+  // (game/spend-ask.js wallet.askYes), not the browser's confirm().
+  constructor({ root, pct, list, wearing, onSell, rack = () => null, onOpen = null, onBuy = null, ask = null }) {
     Object.assign(this, { root, pct, list, wearing, onSell, rack, onOpen, onBuy });
+    this.ask = ask || ((q) => Promise.resolve(confirm(q)));
     this.busy = false;
   }
 
@@ -125,7 +123,8 @@ export class ResaleUI {
       const sell = el('button', 'chip', fmt(L(RESALE_TEXT.sell), { n: r.coins }));
       sell.disabled = this.busy;
       sell.onclick = async () => {
-        if (this.busy || !confirm(fmt(L(RESALE_TEXT.ask), { name, n: r.coins }))) return;
+        if (this.busy || !(await this.ask(fmt(L(RESALE_TEXT.ask), { name, n: r.coins })))) return;
+        if (this.busy || !this.open) return;
         this.busy = true;
         list.querySelectorAll('button').forEach((b) => { b.disabled = true; });
         sell.textContent = L(RESALE_TEXT.checking);
@@ -156,7 +155,8 @@ export class ResaleUI {
       const buy = el('button', 'chip', t('used.buy', { n: r.price }));
       buy.disabled = this.busy || r.have;
       buy.onclick = async () => {
-        if (this.busy || !confirm(t('used.ask', { name, n: r.price }))) return;
+        if (this.busy || !(await this.ask(t('used.ask', { name, n: r.price })))) return;
+        if (this.busy || !this.open) return;
         this.busy = true;
         this.root.querySelectorAll('button.chip').forEach((b) => { b.disabled = true; });
         buy.textContent = L(RESALE_TEXT.checking);

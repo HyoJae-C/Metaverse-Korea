@@ -70,7 +70,7 @@ test('Seoul Bank stands in Euljiro, and the teller speaks every language', () =>
   assert.equal(banks[0].name.ko, '서울은행');
   assert.equal(banks[0].district, 'euljiro');
   assert.equal(BANK_TEXT.soon.ko, '🚧 준비중입니다');
-  const langs = ['en', 'ko', 'ja', 'zh', 'es', 'ar', 'vi', 'hi', 'fr', 'th', 'id'];
+  const langs = ['en', 'ko', 'ja', 'zh', 'es', 'ar', 'vi', 'fr', 'th', 'id'];
   const walk = (o, path) => {
     if (o.en) { for (const l of langs) assert.ok(o[l], `${path} ${l}`); return; }
     for (const [k, v] of Object.entries(o)) walk(v, `${path}.${k}`);

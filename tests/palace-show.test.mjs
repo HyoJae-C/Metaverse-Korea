@@ -132,15 +132,15 @@ test('the palace stands on its real ground at 1/4, and the fan dance and the kin
   // The fan dance and the king fill the two lawns either side of the
   // corridors round Heungnyemun and Geunjeongjeon (Yozi, 2026-11-10): the
   // dancers' ring on the west lawn, the king's walk on the east one.
-  const lawn = (side) => map.areas.find((a) => a.k === 'grass' && a.p.every(([x, z]) => z > -90 && z < -25 && Math.sign(x) === side)).p;
-  const west = lawn(-1), east = lawn(1);
+  const lawn = (show) => map.areas.find((a) => a.k === 'grass' && a.show === show).p;
+  const west = lawn('fan'), east = lawn('king');
   for (const [x, z] of ringPoly(FAN[0], FAN[1], FAN_NOTE)) assert.ok(pointInPoly(x, z, west), `the fan dance's ring is on the west lawn (${x.toFixed(0)},${z.toFixed(0)})`);
   for (const [x, z] of ROYAL_ROUTE.stops) assert.ok(pointInPoly(x, z, east), `stop ${x},${z} is on the east lawn`);
 });
 
 test('palace buildings: footprints at 50% of the real ones where they fit (never under 30%), heights at half', () => {
-  const at = (type) => map.landmarks.find((l) => l.type === type);
-  for (const t of ['palacegate', 'yeongjegyo', 'hexpavilion']) assert.deepEqual(at(t).sc, [1, 1], t + ': drawn at 50% both ways');
+  const at = (type) => map.landmarks.find((l) => l.type === type && l.gb); // (gb: Gyeongbokgung's own, not Deoksugung's gate)
+  for (const t of ['palacegate', 'yeongjegyo']) assert.deepEqual(at(t).sc, [1, 1], t + ': drawn at 50% both ways'); // (Hyangwonjeong: tests/palace-grounds.test.mjs)
   assert.deepEqual(at('amisan').sc, [0.6, 1], 'Amisan stays at 30%: it fills the gap between two rings of corridors');
   // Geunjeongjeon's terraces at 50% would be wider than its court: as big as fits, 30-50%.
   const th = at('throne');

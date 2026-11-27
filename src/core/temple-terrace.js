@@ -39,6 +39,20 @@ export function gateHeight(h, mid, dx, dz) {
   return 0;
 }
 
+// Hyangwonjeong's island and Chwihyanggyo, its arched bridge (Gyeongbokgung,
+// landmark "hyangwonjeong", drawn by core/palace-garden.js): l.isle = [r, top],
+// the island's radius and its top over the ground; l.span = [dx, dz, w, rise],
+// the bridge's shore end from the pavilion, its width, and how high the arch
+// stands over the straight line. (dx, dz): from the pavilion.
+export function isleHeight(l, dx, dz) {
+  const [r, top] = l.isle;
+  if (dx * dx + dz * dz <= r * r) return top;
+  const [sx, sz, w, rise] = l.span, L = Math.hypot(sx, sz), v = (dx * sx + dz * sz) / L;
+  if (v < 0 || v > L || Math.abs(dx * sz - dz * sx) / L > w / 2) return 0;
+  const t = (v - r) / (L - r); // 0 at the island's edge, 1 on the shore
+  return top * (1 - t) + rise * Math.sin(Math.PI * t);
+}
+
 const lists = new WeakMap();
 const raised = (list) => {
   let ts = lists.get(list);
@@ -46,6 +60,7 @@ const raised = (list) => {
     ts = [];
     for (const l of list) {
       if (l.type === 'maitreya' && l.lift) ts.push(l);
+      if (l.type === 'hyangwonjeong') ts.push(l);
       if (l.type === 'bongeunsa' && l.gateMid) {
         const h = (l.halls || []).find((q) => q[5] === 'g');
         if (!h) continue;
@@ -61,6 +76,10 @@ const raised = (list) => {
 export function terraceY(list = [], x, z) {
   for (const l of raised(list)) {
     const dx = x - l.x, dz = z - l.z;
+    if (l.isle) {
+      if (dx * dx + dz * dz < 400) { const y = isleHeight(l, dx, dz); if (y) return y; }
+      continue;
+    }
     if (l.gate) {
       if (dx * dx + dz * dz > 64) continue;
       const c = Math.cos(l.ry), s = Math.sin(l.ry); // (back into the landmark's frame)
@@ -78,7 +97,7 @@ export function terraceY(list = [], x, z) {
 // The raised plaza's landmark if (x, z) is up on it (not on its stairs), or null.
 export function onTerrace(list = [], x, z) {
   for (const l of raised(list)) {
-    if (l.gate) continue;
+    if (l.gate || l.isle) continue;
     const dx = x - l.x, dz = z - l.z;
     if (dx * dx + dz * dz < 900 && terraceHeight(l, dx, dz) === l.lift) return l;
   }

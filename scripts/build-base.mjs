@@ -128,7 +128,12 @@ export function buildBase({ region, maps, data }) {
 
   const old = new SegGrid(), walls = new SegGrid(), base = new SegGrid();
   for (const r of city.roads) if (r.k !== 'walk') for (let i = 1; i < r.p.length; i++) old.add(r.p[i - 1], r.p[i], r);
-  const solid = city.buildings.map((b) => b.p).concat((city.blockers || []).filter((b) => b.d !== 'link').map((b) => b.p));
+  // (Seongsu's blocker over its Han River is not a wall: a bridge crosses it,
+  // on a deck. Yozi 2026-11-26: Seongsu Bridge and Yeongdong Bridge were cut
+  // off there, so nothing joined Seongsu to Gangnam.)
+  const waterAreas = city.areas.filter((a) => a.k === 'water' && a.d === 'seongsu');
+  const overWater = (p) => { const [cx, cz] = p.reduce(([x, z], q) => [x + q[0] / p.length, z + q[1] / p.length], [0, 0]); return polyArea(p) > 20000 && waterAreas.some((a) => inPolygon(cx, cz, a.p)); };
+  const solid = city.buildings.map((b) => b.p).concat((city.blockers || []).filter((b) => b.d !== 'link' && !overWater(b.p)).map((b) => b.p));
   const solidBox = solid.map((p) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of p) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); } return { p, x0, x1, z0, z1 }; });
   solidBox.forEach((s, id) => { for (let i = 0; i < s.p.length; i++) walls.add(s.p[i], s.p[(i + 1) % s.p.length], id); });
   // The hills the game has (Namsan, Inwangsan and Bugaksan, Naksan, the
@@ -218,6 +223,13 @@ export function buildBase({ region, maps, data }) {
         let p = simplify(run, 0.8);
         if (head) p = [head, ...p];
         if (tail) p = [...p, tail];
+        // (A joint by the river that bends back more than 60° (the district
+        // road ends beside the real line, which the run then starts on): that
+        // bend goes, so the road runs straight on to its bridge. Dongil-ro at
+        // Yeongdong Bridge's north end, 2026-11-26.)
+        const sharp = (a, b, c) => { const ux = b[0] - a[0], uz = b[1] - a[1], vx = c[0] - b[0], vz = c[1] - b[1]; return (ux * vx + uz * vz) / ((Math.hypot(ux, uz) * Math.hypot(vx, vz)) || 1) < 0.5; };
+        const byRiver = (q) => [0, 10, -10].some((d) => inRawWater([q[0] + d, q[1] + d]) || inRawWater([q[0] - d, q[1] + d]) || inRawWater([q[0], q[1] + d * 2]));
+        if (head && p.length > 2 && byRiver(p[1]) && sharp(p[0], p[1], p[2])) p.splice(1, 1);
         for (let k = 1; k < run.length; k++) base.add(run[k - 1], run[k], c);
         roads.push({ k: c.k, w: WIDTH[c.k], p: p.map(([x, z]) => [r1(x), r1(z)]), ...(c.n ? { n: { ko: c.n, ...(c.en ? { en: c.en } : {}) } } : {}), base: true });
       }
@@ -237,7 +249,9 @@ export function buildBase({ region, maps, data }) {
       for (const rev of [false, true]) {
         const q = rev ? roads[j].p.slice().reverse() : roads[j].p, b = q[0];
         if (Math.hypot(a[0] - b[0], a[1] - b[1]) > 16 || !inRawWater(a) || !inRawWater(b)) continue;
-        roads[i] = { ...roads[i], p: roads[i].p.concat(q) };
+        // (n2: the far road's own name, for the land past the bridge: core/han-bridges.js)
+        const n2 = roads[j].n && roads[j].n.ko !== roads[i].n?.ko ? roads[j].n : roads[i].n2;
+        roads[i] = { ...roads[i], p: roads[i].p.concat(q), ...(n2 ? { n2 } : {}) };
         roads.splice(j, 1);
         again = true;
         break;

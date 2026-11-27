@@ -922,18 +922,68 @@ from Gwanghwamun (the district's (0, 0)) at 1/4. Yozi's calls (2026-11-09):
 
 The models are `core/palace-model.js`: Gwanghwamun, Heungnyemun and
 Geunjeongmun, Yeongjegyo over the palace stream, Geunjeongjeon on its
-terraces with the rank stones, Gyeonghoeru, Hyangwonjeong and Amisan have
-their own; all other halls are one merged `palacehalls` landmark and all the
+terraces with the rank stones, Gyeonghoeru and Amisan have
+their own (Hyangwonjeong: `core/palace-garden.js`, below); all other halls are one merged `palacehalls` landmark and all the
 corridors one `cloister` (a few draw calls for the lot). Each ring of
 corridors gets a door on its middle line (OSM draws most gates as part of
 the corridor), and the script checks that every hall and yard can be walked
-to from Gwanghwamun (`--check`, also a test). Where the old halls were pulled
-down (west of the throne hall, north of the ponds) there are lawns, and the
-palace woods line the wall round the north half. The royal procession keeps
+to from Gwanghwamun (`--check`, also a test). The royal procession keeps
 to Geunjeongjeon's court (the 30% gates are too narrow for it two abreast).
 Inside the wall the camera drops and looks up (`game/palace-view.js`), more
 so in the courts, until the player steers it. Visitors in rented hanbok
 stand about the courts (`PALACE_VISITORS`, core/palace-show.js).
+
+### The palace's green and Hyangwonjeong (Yozi, 2026-11-26)
+
+The lawns, woods and trees inside the wall come from OSM too
+(`scripts/extract-gyeongbokgung-grounds.mjs` cuts them out of a Korea extract
+into `scripts/data/gyeongbokgung-grounds-osm.json`;
+`scripts/lib/palace-grounds.mjs` lays them out, drawn by
+`core/palace-garden.js`, which is downloaded when you first walk in):
+
+- **Real:** the lawns (`grass` areas) and woods (`park` areas) on OSM's
+  outlines, cut back from the ponds and paved yards; the trees OSM maps one
+  by one (the first `real` entries of the `palacetrees` landmark: the willows
+  round Gyeonghoeji, the pines on its islets); Hyangwonjeong, the pond,
+  Chwihyanggyo's line to the north bank and Yeolsangjinwon spring.
+- **From a satellite photo** (`scripts/data/gyeongbokgung-canopy.json`):
+  where the trees are. Yozi sent a satellite capture (2026-11-26); its dark
+  green pixels were laid on the map (Gwanghwamun, the corridors and the
+  ponds line up to about 1 m) and kept as 1 m cells. The made-up trees are
+  thrown onto those cells, so the clumps and the open ground are the real
+  ones (the ring round Hyangwonji, the groves west of the ponds, Noksan).
+- **Made up** (marked `approx`): each of those trees' own spot, kind and
+  height; the lotus leaves; the size of Gyeonghoeji's islets; the shrubs on
+  Hyangwonjeong's island; and the two rectangles of lawn the fan dance and
+  the royal procession use (`SHOW_LAWNS`, Yozi 2026-11-10; OSM has packed
+  earth and a grove there, and no tree is planted on the king's lawn or in
+  the dancers' ring). The south bank in front of Hyangwonjeong is kept open.
+- Trees keep off buildings, yards, water, the shows and the visitors. They
+  are one `palacetrees` landmark of instanced meshes (a draw call per shape:
+  round, red pine, maple, willow, ginkgo, bush), not the city's street trees
+  (those are capped city-wide). Kinds are told apart by shape; pines stay
+  green, the rest take the season's colours (`core/season.js`).
+- A tree is a quarter of its real height, like the buildings (Yozi
+  2026-11-26: "buildings are 1/4 and trees have no rule; always only tall
+  trees"). `TREE_REAL` (`scripts/lib/palace-grounds.mjs`) is how high each
+  kind grows in real metres: broadleaf 8 to 13, pine 7 to 11, maple 4.5 to 7,
+  willow 8 to 11, ginkgo 10 to 14, shrubs 1.5 to 2.6 (typical figures, not
+  measured tree by tree). Trees at a clump's edge are 15% lower, about one in
+  five inside a clump 25% higher, and the old trees OSM maps one by one 20%
+  higher. In the game that is 1 to 4.1 m, half of them under 2.2 m. This rule
+  is the palace's only; the city's street trees are as they were.
+- **Hyangwonjeong** is a two-storey hexagonal pavilion with green lattice
+  doors in red frames, on three courses of stone. It is 37.5% of the real one
+  across and 45% high (`HYANG_SC`), not 50% like the other halls: at 50% it
+  filled its island, and in Seoul the island is two and a half times as wide
+  as the roof (Yozi's photos, 2026-11-26). The island is 4.6 m in radius
+  (OSM: 3.45 m at 1/4), with a low fence round its rim, shrubs and steps down
+  to the water. Chwihyanggyo, white with crossed slats in its railing, is
+  1.5 m wide (0.4 m at 1/4) so you can walk over its arch to the island: the
+  pond's blocker has the island and the bridge cut out of it, and
+  `isleHeight` (`core/temple-terrace.js`) lifts your feet. In Seoul the
+  bridge is usually shut to visitors. The ponds have a dressed-stone kerb
+  (`pondbank`).
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 
@@ -1509,3 +1559,35 @@ tune, `data/tracks.js`), and your own song comes back as you leave.
 A sun and a moon always stand
 over the hill (sprites that follow you; the sun fades at night, the moon by
 day), after the verse "the sun and the moon will guard this hill".
+
+## Bukhansan: the Baegundae course (Gangbuk-gu, 2026-11-26)
+
+`scripts/build-bukhansan.mjs` writes `districts/bukhansan.json` and
+`bukhansan-view.json`: the way up Bukhansan (북한산) from Bukhansan Ui Station
+(the district's anchor, the end of the Ui-Sinseol Line) to Baegundae, at 1/4
+on its real place.
+
+- The way (1,081 m in the game, 4.3 km really): the station → Samyang-ro
+  173-gil up the valley → the Baegundae Visitor Support Center → Harujae →
+  Baegun Hut → Baegunbongammun (위문) → the top. Every stretch is on its OSM
+  line (the open ways only), within 1 m (`tests/bukhansan.test.mjs`).
+- The mountain is the real ground (AWS Terrain Tiles) at 1/4 above the
+  station: Baegundae stands 191.9 m over it (835.6 m really). You walk on the
+  way only: the mountain is a blocker and the way is decks through it
+  (`game/bukhansan-walk.js`, in the first download; the ground, rock, woods
+  and stops are `game/bukhansan-park.js`, loaded within 480 m).
+- Paths climb at most about 18°; the last stretch, up the bare rock, is steps
+  with a handrail (about 30°).
+- The steeper the way, the slower you go (`climbPace`): full pace up to about
+  7°, 60% at 18°, 45% on the steps. Station to top takes about 3 min 20 s on
+  foot.
+- At the flag on top a button opens a painted 360° view
+  (`game/bukhansan-view.js`, loaded when asked for): the real skyline from the
+  terrain, drawn in the game's style, and it says it is a drawing, not a photo.
+- Made up (`meta.approx`): the mountain's outline (the real one has no edge
+  here), the level stops, the steps over the whole last stretch, the even
+  climb. Baegun Hut and the Visitor Support Center are plain game-size houses
+  until there are photos of them.
+- Data: `scripts/data/bukhansan-{osm,dem,horizon}.json`, made by
+  `/mnt/project-files/bukhansan/data-prep/`. After rebuilding, run
+  `build-base.mjs` and `build-closed.mjs`.

@@ -19,7 +19,7 @@ import * as THREE from 'three';
 import { createCharacter } from '../core/character.js';
 import { BOARD_CAFE_TABLES } from '../core/board-cafe-room.js';
 import { furnitureById } from '../core/furniture.js';
-import { backTexture, label, CARD_W, CARD_H } from '../ui/board-thief-3d.js';
+import { backTexture, label, cardGeometry, CARD_W } from '../ui/board-thief-3d.js';
 
 const TABLE_TOP = 0.75; // (core/board-cafe-room.js: the table's top)
 const TOY_SIZE = { croc: 0.11, bulldog: 0.1, pirate: 0.12, tower: 0.1 }; // the panel's toys, shrunk to stand on the table
@@ -32,7 +32,7 @@ const EYE = 1.2, HAND = 0.79, REACH = 0.45, SMALL = 0.75; // (eyes a little abov
 export function createBoardTable(game) {
   let on = null; // the game at the table: { chair, mine, people, group, ... }
   const watching = new Map(); // games of other people in this room, by their host's id
-  const mats = () => { const plain = new THREE.MeshLambertMaterial({ color: '#fffdf6' }); return [plain, plain, plain, plain, new THREE.MeshLambertMaterial({ map: backTexture() }), plain]; };
+  const mats = () => [new THREE.MeshLambertMaterial({ color: '#fffdf6' }), new THREE.MeshLambertMaterial({ map: backTexture() })]; // (cardGeometry: the rest, the back)
   const chairsOf = (t) => {
     const [tx, tz] = BOARD_CAFE_TABLES[t] || [];
     return tx == null ? [] : (game.interior?.seats || []).filter((s) => Math.abs(s.x - tx) < 1.1 && Math.abs(s.z - tz) < 1.1);
@@ -83,7 +83,7 @@ export function createBoardTable(game) {
         y0 = game.me.root.position.y;
       }
       const group = new THREE.Group();
-      const geo = new THREE.BoxGeometry(CARD_W, CARD_H, 0.006), mat = mats();
+      const geo = cardGeometry(), mat = mats();
       const people = ids.map((id, s) => {
         const c = chairs[order[s]], fx = Math.sin(c.ry), fz = Math.cos(c.ry); // (the way the chair faces: to the table)
         const p = { s, c, cards: [], hand: new THREE.Group(), count: -1, faceText: '', face: null, ch: null, yaw: c.ry };

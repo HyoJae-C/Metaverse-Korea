@@ -12,18 +12,19 @@ import { BOARD_SETS_ON_SALE } from '../core/board-game-sets.js';
 import { BOARD_PASS, passLeft, startPass } from '../core/board-pass.js';
 
 const L = (o) => localName(o, getLanguage());
-export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', hi: 'बोर्ड गेम', fr: 'Jeux de société', th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
+export const BOARD_GAMES_OPEN = { en: 'Board games', ko: '보드게임', ja: 'ボードゲーム', zh: '桌游', es: 'Juegos de mesa', id: 'Permainan papan', vi: 'Board game', fr: 'Jeux de société', pt: "Jogos de tabuleiro", th: 'บอร์ดเกม', ar: 'ألعاب لوحية' };
 const ASK = {
-  text: { en: '🎲 {name} asks you to play {game}!', ko: '🎲 {name}님이 {game} 같이 하재요!', ja: '🎲 {name}さんが{game}に誘っています！', zh: '🎲 {name}邀请你玩{game}！', es: '🎲 ¡{name} te invita a jugar a {game}!', id: '🎲 {name} mengajakmu main {game}!', vi: '🎲 {name} rủ bạn chơi {game}!', hi: '🎲 {name} आपको {game} खेलने बुला रहे हैं!', fr: '🎲 {name} t\'invite à jouer à {game} !', th: '🎲 {name} ชวนคุณเล่น {game}!', ar: '🎲 {name} يدعوك للعب {game}!' },
-  yes: { en: 'Play', ko: '같이 하기', ja: '遊ぶ', zh: '一起玩', es: 'Jugar', id: 'Main', vi: 'Chơi', hi: 'खेलें', fr: 'Jouer', th: 'เล่น', ar: 'العب' },
-  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不用了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Thôi', hi: 'नहीं, धन्यवाद', fr: 'Non merci', th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
+  text: { en: '🎲 {name} asks you to play {game}!', ko: '🎲 {name}님이 {game} 같이 하재요!', ja: '🎲 {name}さんが{game}に誘っています！', zh: '🎲 {name}邀请你玩{game}！', es: '🎲 ¡{name} te invita a jugar a {game}!', id: '🎲 {name} mengajakmu main {game}!', vi: '🎲 {name} rủ bạn chơi {game}!', fr: '🎲 {name} t\'invite à jouer à {game} !', pt: "🎲 {name} chamou você para jogar {game}!", th: '🎲 {name} ชวนคุณเล่น {game}!', ar: '🎲 {name} يدعوك للعب {game}!' },
+  yes: { en: 'Play', ko: '같이 하기', ja: '遊ぶ', zh: '一起玩', es: 'Jugar', id: 'Main', vi: 'Chơi', fr: 'Jouer', pt: "Jogar", th: 'เล่น', ar: 'العب' },
+  no: { en: 'No thanks', ko: '괜찮아요', ja: 'やめておく', zh: '不用了', es: 'No, gracias', id: 'Tidak, terima kasih', vi: 'Thôi', fr: 'Non merci', pt: "Não, obrigado", th: 'ไม่เป็นไร', ar: 'لا، شكرًا' },
 };
 const ASK_MS = 28000; // a little under the host's 30 s wait (ui/board-games-ui.js)
 const ASK_CSS = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:56;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const ASK_BTN = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;color:#2b2230;cursor:pointer';
 
-// Mafia is being built (special roles, ghost chat and its long table are to come): on the menu only with ?debug until then.
-const MAFIA_OPEN = false;
+// Mafia is on the menu as a trial, marked 🧪 (Yozi 2026-11-26: "merge the mafia test version"); special roles,
+// ghost chat and its long table are still to come. (false: only with ?debug.)
+const MAFIA_OPEN = true;
 const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
 
 export function createBoardGames(game) {
@@ -220,6 +221,9 @@ export function createBoardGames(game) {
       return passLeft() > 0 ? { key: 'boardPass', label: leftText(), run: () => game.toast(leftText()) } : { key: 'boardPass', label: game.t('boardPass.buy', { n: won(BOARD_PASS.fee) }), run: () => buyPass() };
     },
     get seated() { return !!table?.on; },
+    // The game I am in right now (its id), or null: sent to the room so people
+    // not in it see a 🎲 bubble over my head (core/players.js).
+    get playing() { const p = ui?.play; return p && !p.g.over && /^[0-9a-z]{1,12}$/.test(p.gid) ? p.gid : null; },
     get watching() { return table?.watched || []; }, // (for the e2e tests)
     // Walked out of the room.
     leftRoom() { watchQueue = watchQueue.then(() => { for (const id of [...watched.keys()]) unwatch(id); }); closeAsk(); if (ui?.open || ui?.busy) ui.close(); },

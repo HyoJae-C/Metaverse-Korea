@@ -24,8 +24,11 @@ export class RemotePlayers {
   // train and seat, sent once; the train itself runs on the shared clock).
   // tick(p, players, dt): more to draw on each player every frame (the
   // flying costumes, game/sky-flight.js).
-  constructor(scene, labelLayer, { isOperator, coasterSeat, tick } = {}) {
+  // boardGame() → the id of the board game I am playing, or null: people in
+  // another game (or none) get a 🎲 bubble over their heads (game/board-games.js).
+  constructor(scene, labelLayer, { isOperator, coasterSeat, tick, boardGame } = {}) {
     this.coasterSeat = coasterSeat || null;
+    this.boardGame = boardGame || (() => null);
     this.scene = scene;
     this.layer = labelLayer;
     this.players = new Map();
@@ -298,6 +301,7 @@ export class RemotePlayers {
         p.ch.setUmbrella(p.target.um === 1);
         p.ch.activity?.(ACTIVITIES.has(p.target.ac) ? p.target.ac : null); // gym, fishing, dancing
         if (p.target.ac === 'read' && !p.bubble) showBubble(p, this.layer, t('book.reading'), 3000); // 📖 reading…
+        else if (playingBoard(p.target.bg) && p.target.bg !== this.boardGame() && !p.bubble) showBubble(p, this.layer, t('boardGame.playing'), 3000); // 🎲 in a board game (not mine)
         p.ch.animate(dt, p.target.sit ? 0 : p.target.s || 0, !!p.target.sit);
         this._pet(p);
       }
@@ -330,6 +334,9 @@ export class RemotePlayers {
     }
   }
 }
+
+// "bg": the board game someone is playing (its game id, a few letters).
+const playingBoard = (bg) => typeof bg === 'string' && /^[0-9a-z]{1,12}$/.test(bg);
 
 // A new bubble starts where its speaker's name tag already is, so it never
 // shows for a moment at the corner of the screen before the next frame

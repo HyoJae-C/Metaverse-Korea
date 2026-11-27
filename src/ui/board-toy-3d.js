@@ -12,6 +12,7 @@
 // createToyView(kind, { spots, onPick(i) }) → { el, sync({ pressed, bang,
 //   canPick }), dispose() }; null if the browser gives no WebGL.
 import * as THREE from 'three';
+import { createViewPace } from './board-view-pace.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const lam = (color) => new THREE.MeshLambertMaterial({ color });
@@ -387,7 +388,8 @@ export const bangDelay = (kind, placing) => (kind === 'croc' ? 140 : kind === 't
 
 export function createToyView(kind, { spots, onPick, figure = null }) {
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
+  const pace = createViewPace(); // (phones: 30 frames; a toy may move on its own, so it is drawn while shown)
+  try { renderer = new THREE.WebGLRenderer({ antialias: pace.smooth, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
   const el = renderer.domElement;
   el.className = 'bg-toy3d';
   const scene = new THREE.Scene();
@@ -433,11 +435,11 @@ export function createToyView(kind, { spots, onPick, figure = null }) {
   const frame = () => {
     if (gone) return;
     raf = requestAnimationFrame(frame);
-    if (!el.isConnected) return;
+    if (!el.isConnected || !pace.ready(performance.now())) return;
     const cw = el.clientWidth, ch = el.clientHeight;
     if (cw && ch && (cw !== w || ch !== h)) {
       w = cw; h = ch;
-      renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+      renderer.setPixelRatio(pace.ratio());
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();

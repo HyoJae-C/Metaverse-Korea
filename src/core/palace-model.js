@@ -7,7 +7,7 @@
 //   rankstones  the officials' rank stones (품계석) either side of the path
 //   palacehalls every other hall and gate, from the real map, merged into one
 //   amisan      the terraced garden behind Gyotaejeon with its brick chimneys
-//   hexpavilion Hyangwonjeong, the two-storey hexagonal pavilion on its pond
+//   (Hyangwonjeong, the ponds' banks and the trees: core/palace-garden.js)
 // Each model is merged into a few meshes (one per material), so a whole
 // courtyard costs a handful of draw calls. Visual only: collision comes
 // from the map's blockers. l.s scales a building (default 1).
@@ -353,29 +353,6 @@ export const PALACE_BUILD = {
       g.add(c);
       box(g, 1.5, 0.35, 1.5, x, 1.8 + 3.05, -6.6, '#4a4f57');
     }
-    mergeStatic(g);
-  },
-  // Hyangwonjeong (향원정): a small two-storey hexagonal pavilion on an
-  // island in its pond, Chwihyanggyo bridge to the north shore.
-  hexpavilion(g, l) {
-    const s = l.s || 1, r = 1.9 * s;
-    const isle = new THREE.Mesh(new THREE.CylinderGeometry(r + 1.6, r + 1.9, 0.6, 12), mat(C.stone));
-    isle.position.y = 0.1;
-    g.add(isle);
-    const post = (y, h) => { for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; box(g, 0.22, h, 0.22, Math.sin(a) * r, y + h / 2, Math.cos(a) * r, C.post); } };
-    const floor = (y, rr, c) => { const f = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, 0.18, 6), mat(c)); f.position.y = y; g.add(f); };
-    post(0.4, 1.8); floor(2.2, r + 0.3, C.door); post(2.3, 1.5);
-    floor(3.9, r + 0.3, C.beam);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(r + 1.3, 1.9, 6), mat('#474c55'));
-    roof.position.y = 4.9;
-    g.add(roof);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), mat(C.gold));
-    tip.position.y = 5.95;
-    g.add(tip);
-    // Chwihyanggyo: a wooden bridge north to the shore (l.bridge: its length).
-    const L = l.bridge || 6;
-    box(g, 1.3, 0.15, L, 0, 0.55, -(r + 1.4 + L / 2), '#8a5a3a');
-    for (const sx of [-1, 1]) box(g, 0.08, 0.5, L, sx * 0.62, 0.85, -(r + 1.4 + L / 2), C.post);
     mergeStatic(g);
   },
 };

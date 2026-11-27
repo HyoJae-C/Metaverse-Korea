@@ -173,15 +173,19 @@ const BUILD = {
     const leafM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.8, 0).translate(0, 5.6, 0), mat(SEASON === 'autumn' ? '#e6e6e6' : '#5d8f4a'), leafy.length); // (autumn: the instance colours show true, a little muted)
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
     const greens = ['#5d8f4a', '#6f9a52', '#4f8045', '#7aa35a'].map((c) => new THREE.Color(c));
+    // Map rule 13 (Yozi 2026-11-26): Jongmyo is drawn at 1/4, its trees too
+    // (real old pines and oaks 14 to 20 m stand 3.6 to 4.9 m; were 6.4 to
+    // 11.7 m). H: height, W: sideways (a little fuller than a straight shrink).
+    const H = 0.42, W = 0.42 ** 0.6;
     l.spots.forEach(([x, z], i) => {
       const s = 0.85 + ((i * 37) % 10) / 25;
-      m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 1.3), sc.set(s, s * 1.1, s));
+      m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 1.3), sc.set(s * W, s * 1.1 * H, s * W));
       trunks.setMatrixAt(i, m4);
     });
-    pines.forEach(([x, z], i) => { const s = 0.9 + ((i * 13) % 7) / 18; pineM.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i), sc.set(s, s * 1.15, s))); });
+    pines.forEach(([x, z], i) => { const s = 0.9 + ((i * 13) % 7) / 18; pineM.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i), sc.set(s * W, s * 1.15 * H, s * W))); });
     leafy.forEach(([x, z], i) => {
       const s = 0.85 + ((i * 29) % 9) / 20;
-      leafM.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 0.7), sc.set(s, s * 0.9, s)));
+      leafM.setMatrixAt(i, m4.compose(v.set(x, 0, z), q.setFromAxisAngle(up, i * 0.7), sc.set(s * W, s * 0.9 * H, s * W)));
       leafM.setColorAt(i, leafColor(greens[i % greens.length], leafHash(i, 5), MIX.wood)); // (the season's colours, core/season.js; the pines stay green)
     });
     g.add(trunks, pineM, leafM);

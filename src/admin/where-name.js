@@ -32,7 +32,7 @@ export const PLACES = [
   // Gyeongbokgung, Gwanghwamun, Cheonggyecheon, Jongno
   { name: 'Gwanghwamun Gate', lm: 'gwanghwamun', r: 25 },
   { name: 'Gwanghwamun Gate', lm: 'palacehalls', r: 0 }, { name: 'Gwanghwamun Gate', lm: 'cloister', r: 0 }, // (the palace's and Changdeokgung's halls: their own box/district names it)
-  { name: 'Gyeongbokgung Palace', lm: 'yeongjegyo', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'rankstones', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'pavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'hexpavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'amisan', r: 30 },
+  { name: 'Gyeongbokgung Palace', lm: 'yeongjegyo', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'rankstones', r: 40 }, { name: 'Gyeongbokgung Palace', lm: 'pavilion', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'hyangwonjeong', r: 50 }, { name: 'Gyeongbokgung Palace', lm: 'amisan', r: 30 },
   { name: 'Seoul Plaza & City Hall', lm: 'cityhall', r: 70 }, { name: 'Seoul Plaza & City Hall', lm: 'oldcityhall', r: 70 }, // (scripts/build-city-hall.mjs)
   { name: 'Cheong Wa Dae', lm: 'bluehouse', r: 60 }, { name: 'Cheong Wa Dae', lm: 'bluegate', r: 30 }, { name: 'Cheong Wa Dae', lm: 'bhfountain', r: 20 }, { name: 'Cheong Wa Dae', lm: 'bhfence', r: 0 }, // (the street side: scripts/build-cheongwadae.mjs)
   { name: 'Gyeongbokgung Palace', box: [-2001, -1331, -1639, -885] },
@@ -71,6 +71,7 @@ export const PLACES = [
   { name: 'Haneul Park', lm: 'skypark', r: 160 },
   { name: 'Nanji Camping Ground', lm: 'nanjicamp', r: 110 },
   { name: 'Dalmaji Park', lm: 'dalmaji', r: 90 },
+  { name: 'Bukhansan (Baegundae course)', lm: 'bukhansan', r: 60 },
   { name: 'Seoul National Cemetery', lm: 'hyeonchung', r: 230 },
   // West: Gimpo, Mokdong, Magok
   { name: 'Gimpo Airport Terminal', lm: 'gimpoairport', r: 120 },
@@ -103,7 +104,7 @@ export const PLACES = [
 
 // Landmark types that are street furniture or part of a place named above
 // (a bench, a sign, a stretch of wall): no place of their own.
-export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark', 'tombvisitors', 'woodmass', 'plazalawn'];
+export const NOT_A_PLACE = ['bench', 'sign', 'meadow', 'blossoms', 'arch', 'wall', 'citywall', 'icecream', 'flowergarden', 'palacegate', 'throne', 'shrinehall', 'jongmyogate', 'shrinetrees', 'hanpark', 'tombvisitors', 'woodmass', 'plazalawn', 'pondbank', 'palacetrees'];
 
 // Rooms that sit on the street big enough to be a place (a park's
 // greenhouse, a museum); shops are named by the "In …" line instead.

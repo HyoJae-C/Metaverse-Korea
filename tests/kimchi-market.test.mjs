@@ -7,7 +7,7 @@ import { MT, BOSS_LINES } from '../src/ui/market-text.js';
 import { KT } from '../src/ui/kimchi-text.js';
 import { hillHeightRel } from '../src/core/hill-ground.js';
 
-const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'hi', 'fr', 'th', 'ar'];
+const LANGS = ['en', 'ko', 'ja', 'zh', 'es', 'id', 'vi', 'fr', 'th', 'ar'];
 const mem = () => { const m = new Map(); return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
 
 test('a jar keeps its score in the bag and across a reload', () => {

@@ -14,10 +14,10 @@
 import { L } from '../ui/pocha-ui.js';
 
 export const PRAYER_TEXT = {
-  pray: { en: 'Pray', ko: '기도하기', ja: 'お祈りする', zh: '祈祷', es: 'Rezar', id: 'Berdoa', vi: 'Cầu nguyện', hi: 'प्रार्थना करें', fr: 'Prier', th: 'สวดมนต์', ar: 'صلِّ' },
-  tribute: { en: 'Burn incense and bow in silence', ko: '분향하고 묵념하기', ja: '焼香して黙祷する', zh: '上香并默哀', es: 'Ofrecer incienso y guardar silencio', id: 'Membakar dupa dan mengheningkan cipta', vi: 'Thắp hương và mặc niệm', hi: 'धूप अर्पित करें और मौन रखें', fr: "Offrir de l'encens et se recueillir", th: 'จุดธูปและยืนไว้อาลัย', ar: 'أشعل البخور وقف دقيقة صمت' },
-  tributeStop: { en: 'Finish', ko: '묵념 마치기', ja: '黙祷を終える', zh: '结束默哀', es: 'Terminar', id: 'Selesai', vi: 'Kết thúc', hi: 'समाप्त करें', fr: 'Terminer', th: 'เสร็จสิ้น', ar: 'إنهاء' },
-  stop: { en: 'Stop praying', ko: '기도 마치기', ja: 'お祈りを終える', zh: '结束祈祷', es: 'Terminar de rezar', id: 'Selesai berdoa', vi: 'Kết thúc cầu nguyện', hi: 'प्रार्थना पूरी करें', fr: 'Finir de prier', th: 'สวดมนต์เสร็จ', ar: 'أنهِ الصلاة' },
+  pray: { en: 'Pray', ko: '기도하기', ja: 'お祈りする', zh: '祈祷', es: 'Rezar', id: 'Berdoa', vi: 'Cầu nguyện', fr: 'Prier', pt: "Rezar", th: 'สวดมนต์', ar: 'صلِّ' },
+  tribute: { en: 'Burn incense and bow in silence', ko: '분향하고 묵념하기', ja: '焼香して黙祷する', zh: '上香并默哀', es: 'Ofrecer incienso y guardar silencio', id: 'Membakar dupa dan mengheningkan cipta', vi: 'Thắp hương và mặc niệm', fr: "Offrir de l'encens et se recueillir", pt: "Acender incenso e se curvar em silêncio", th: 'จุดธูปและยืนไว้อาลัย', ar: 'أشعل البخور وقف دقيقة صمت' },
+  tributeStop: { en: 'Finish', ko: '묵념 마치기', ja: '黙祷を終える', zh: '结束默哀', es: 'Terminar', id: 'Selesai', vi: 'Kết thúc', fr: 'Terminer', pt: "Terminar", th: 'เสร็จสิ้น', ar: 'إنهاء' },
+  stop: { en: 'Stop praying', ko: '기도 마치기', ja: 'お祈りを終える', zh: '结束祈祷', es: 'Terminar de rezar', id: 'Selesai berdoa', vi: 'Kết thúc cầu nguyện', fr: 'Finir de prier', pt: "Parar de rezar", th: 'สวดมนต์เสร็จ', ar: 'أنهِ الصلاة' },
 };
 
 // The street's prayer spots, from the map's landmarks (world metres):

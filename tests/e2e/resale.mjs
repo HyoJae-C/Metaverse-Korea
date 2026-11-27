@@ -10,7 +10,9 @@ const assert = (ok, msg) => { if (!ok) { console.error('FAIL', msg); process.exi
 const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await (await browser.newContext({ viewport: { width: 900, height: 640 }, deviceScaleFactor: 2 })).newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
-page.on('dialog', (d) => d.accept());
+// Asking happens in the game's own panel, never the browser's (some phone
+// browsers skip confirm() without asking: 'selling does nothing', 2026-11-27).
+const dialogs = []; page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
 await page.goto(url + (url.includes('?') ? '&' : '?') + 'debug&room=e2eresale' + Math.random().toString(36).slice(2, 8));
 await page.click('#next-btn');
 await page.fill('#nickname', 'Tester');
@@ -23,6 +25,7 @@ await page.waitForTimeout(1500);
 await page.evaluate(() => __mk.product(2));
 await page.waitForSelector('#product-adopt:not([hidden])');
 await page.click('#product-adopt');
+if (await page.waitForSelector('.spend-ask:not([hidden])', { timeout: 2000 }).catch(() => null)) await page.click('.spend-ask .primary'); // "Spend ₩…?" (game/spend-ask.js)
 const items = await page.evaluate(() => __mk.items());
 console.log('bought:', items, 'coins', await page.evaluate(() => __mk.coins()));
 assert(items.includes('outfit-jacket-black') && (await page.evaluate(() => __mk.coins())) === 430000, 'bought the ₩70,000 jacket');
@@ -39,11 +42,15 @@ await page.waitForSelector('#resale-panel:not([hidden])');
 console.log('panel:', (await page.textContent('#resale-panel')).replace(/\s+/g, ' '));
 if (S) await page.screenshot({ path: S + '/resale.png' });
 await page.click('#resale-panel .fish-row .chip');
+await page.waitForSelector('.spend-ask:not([hidden])', { timeout: 3000 });
+console.log('asked:', (await page.textContent('.spend-ask')).replace(/\s+/g, ' '));
+await page.click('.spend-ask .primary');
 await page.waitForFunction(() => !__mk.items().includes('outfit-jacket-black'), null, { timeout: 5000 }).catch(() => {});
 console.log('after:', (await page.textContent('#resale-panel')).replace(/\s+/g, ' '), 'coins', await page.evaluate(() => __mk.coins()), 'items', await page.evaluate(() => __mk.items()));
 if (S) await page.screenshot({ path: S + '/sold.png' });
 assert((await page.evaluate(() => __mk.coins())) === 447500 && !(await page.evaluate(() => __mk.items())).includes('outfit-jacket-black'), 'sold for 25% (₩17,500)');
 assert((await page.evaluate(() => __mk.look())).model === 'basic', 'took the jacket off first');
+assert(!dialogs.length, 'no browser pop-up: ' + dialogs.join(' | '));
 assert(!errors.length, 'no page errors');
 console.log('errors', errors);
 await browser.close();

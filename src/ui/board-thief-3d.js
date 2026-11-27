@@ -12,6 +12,7 @@
 // createThiefView({ n, seat, figures, names, onPick(i) }) → { el, sync({ counts,
 //   from, turn, sel, faces, gone, over, canPick }), dispose() }; null with no WebGL.
 import * as THREE from 'three';
+import { createViewPace } from './board-view-pace.js';
 
 const lam = (color) => new THREE.MeshLambertMaterial({ color });
 const R = 1.05; // seats' distance from the middle of the table
@@ -53,9 +54,25 @@ export function label(text, { size = 44, bg = 'rgba(255,255,255,.9)', pad = 14 }
   return s;
 }
 
+// A card: a thin box drawn in two parts, its back (material 1, the +z face)
+// and the rest (material 0). A plain box with six materials took six draws a
+// card, the biggest part of the table's draws (Yozi 2026-11-27, hot phones).
+export function cardGeometry() {
+  const g = new THREE.BoxGeometry(CARD_W, CARD_H, 0.006);
+  const idx = g.index.array, back = g.groups[4];
+  const front = [], rest = [];
+  for (const gr of g.groups) for (let i = gr.start; i < gr.start + gr.count; i++) (gr === back ? front : rest).push(idx[i]);
+  g.setIndex([...rest, ...front]);
+  g.clearGroups();
+  g.addGroup(0, rest.length, 0);
+  g.addGroup(rest.length, front.length, 1);
+  return g;
+}
+
 export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
+  const pace = createViewPace({ idle: true });
+  try { renderer = new THREE.WebGLRenderer({ antialias: pace.smooth, alpha: true, powerPreference: 'low-power' }); } catch { return null; }
   const el = renderer.domElement;
   el.className = 'bg-toy3d bg-thief3d';
   const scene = new THREE.Scene();
@@ -75,8 +92,8 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
   // Where a seat is, seen from mine: I sit at +z, the others go round.
   const angle = (s) => ((s - seat + n) % n) / n * Math.PI * 2;
   const at = (s, r = R) => { const a = angle(s); return new THREE.Vector3(Math.sin(a) * r, 0, Math.cos(a) * r); };
-  const BACK = [null, null, null, null, new THREE.MeshLambertMaterial({ map: backTexture() }), lam('#fffdf6')].map((m) => m || lam('#fffdf6'));
-  const cardGeo = new THREE.BoxGeometry(CARD_W, CARD_H, 0.006);
+  const BACK = [lam('#fffdf6'), new THREE.MeshLambertMaterial({ map: backTexture() })];
+  const cardGeo = cardGeometry();
   const people = [];
   for (let s = 0; s < n; s++) {
     const p = { s, cards: [], hand: new THREE.Group(), who: new THREE.Group(), face: null, faceText: '', count: -1 };
@@ -135,8 +152,8 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
     });
     return best;
   };
-  el.addEventListener('pointermove', (e) => { hot = hit(e); el.style.cursor = hot >= 0 ? 'pointer' : 'default'; });
-  el.addEventListener('pointerleave', () => { hot = -1; });
+  el.addEventListener('pointermove', (e) => { pace.wake(); hot = hit(e); el.style.cursor = hot >= 0 ? 'pointer' : 'default'; });
+  el.addEventListener('pointerleave', () => { pace.wake(); hot = -1; });
   el.addEventListener('pointerdown', (e) => { const i = hit(e); if (i >= 0) { e.preventDefault(); onPick(i); } });
 
   let raf = 0, w = 0, h = 0, gone = false, last = performance.now();
@@ -145,9 +162,12 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
     raf = requestAnimationFrame(frame);
     if (!el.isConnected) return;
     const cw = el.clientWidth, ch = el.clientHeight;
+    if (cw && ch && (cw !== w || ch !== h)) pace.wake(); // (a new size: drawn again)
+    pace.moving = flying.length > 0 || people.some((p) => p.face);
+    if (!pace.ready(performance.now())) return;
     if (cw && ch && (cw !== w || ch !== h)) {
       w = cw; h = ch;
-      renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+      renderer.setPixelRatio(pace.ratio());
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -208,6 +228,7 @@ export function createThiefView({ n, seat, figures = [], names = [], onPick }) {
         }
       }
       state = { from, turn, sel, tip, canPick: canPick && !over, over };
+      pace.wake();
       if (!state.canPick) hot = -1;
       // Where my eyes go.
       const head = (s, y = HAND_Y) => at(s, R - 0.3).setY(y);

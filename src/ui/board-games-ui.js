@@ -37,6 +37,8 @@ const TURN_WARN = 10; // the last seconds of the clock are red
 const TICK_FROM = 5; // the last seconds of a clock tick
 const PAWN = ['#e8402a', '#2f7de1', '#27a35a', '#f0a81c']; // snakes and ladders pieces, by seat
 const PAWN_DOT = ['🔴', '🔵', '🟢', '🟡'];
+const PAWN_DARK = ['#a82a18', '#1d57a8', '#187540', '#b57a0c'];
+const DIE_PIPS = [[4], [2, 6], [2, 4, 6], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]]; // which of a die's nine spots show, by face
 const WALK_STEP = 150; // ms a piece takes for one square
 const RIDE_MS = 650; // ms to climb a ladder or slide down a snake
 const DICE_MS = 750; // ms the dice tumbles in the middle of the board before the piece walks
@@ -49,6 +51,8 @@ const BOT_BELL = [900, 1900]; // ms a computer takes to see five on the bell tab
 // Gimbap: a computer takes [a start, then between these two for each press]; the round is called this long after
 // the first finish; and with nobody done, after [this, plus this for each press].
 const GIMBAP_BOT = [900, 620, 980], GIMBAP_GRACE = 1500, GIMBAP_WAIT = [8000, 3000];
+const TRIAL = ['mafia']; // on the menu as a trial (🧪): played by few people yet, more to come (Yozi 2026-11-26)
+const medal = (r) => ['🥇', '🥈', '🥉'][r - 1] || r + '.';
 // Bingo: a computer fills its board this long after the start, and calls no sooner than this after the last call.
 const BINGO_BOT_FILL = 1500, BINGO_BOT_WAIT = 2200;
 
@@ -67,11 +71,14 @@ const CSS = `
 #bg-panel .bg-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 #bg-panel .bg-btn { border: 0; border-radius: 12px; padding: 10px 14px; background: #eee3cf; }
 #bg-panel .bg-go { background: #ffd36b; }
-#bg-panel [data-act="roll"] { position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#bg-panel [data-act="roll"] { position: relative; overflow: hidden; min-width: 168px; padding: 9px 16px 21px; font-weight: 800; box-shadow: 0 3px 0 #d9a93c; transition: transform .08s; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#bg-panel [data-act="roll"]:disabled { opacity: .5; box-shadow: none; }
+#bg-panel [data-act="roll"]::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 7px; height: 9px; border-radius: 999px; background: rgba(90,60,10,.22); box-shadow: inset 0 1px 2px rgba(0,0,0,.25); }
 #bg-panel .bg-away { color: #c2331d; font-weight: 800; }
-#bg-panel .bg-gauge { position: absolute; left: 0; bottom: 0; height: 6px; width: var(--g, 0%); background: linear-gradient(90deg, #5bd17a, #ffb800 60%, #ff5a3c); pointer-events: none; }
-#bg-panel [data-act="roll"].held { transform: scale(.96); }
-#bg-panel [data-act="roll"].held .bg-gauge { height: 100%; opacity: .55; }
+#bg-panel .bg-gauge { position: absolute; z-index: 1; left: 10px; right: 10px; bottom: 7px; height: 9px; border-radius: 999px; overflow: hidden; pointer-events: none; }
+#bg-panel .bg-gauge::before { content: ''; position: absolute; inset: 0; width: var(--g, 0%); border-radius: 999px; background: linear-gradient(90deg, #4fc56f, #ffd23c 55%, #ff5a3c); background-size: 148px 100%; box-shadow: inset 0 1px 0 rgba(255,255,255,.6); }
+#bg-panel .bg-gauge::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 19%, rgba(60,40,10,.35) 19% 20%); }
+#bg-panel [data-act="roll"].held { transform: translateY(2px) scale(.98); box-shadow: 0 1px 0 #d9a93c, 0 0 0 3px rgba(255,184,0,.45); }
 #bg-panel .bg-line { padding: 6px 0; }
 #bg-panel .bg-status { min-height: 22px; margin: 8px 0; text-align: center; }
 #bg-panel .bg-clock { float: right; font-size: 16px; font-weight: 800; color: #e8402a; }
@@ -83,8 +90,12 @@ const CSS = `
 #bg-panel .bg-seat.on { background: #ffd36b; }
 #bg-panel .bg-seat.gone { opacity: .45; text-decoration: line-through; }
 #bg-panel canvas.bg-omok { display: block; margin: 0 auto; width: min(100%, 420px); aspect-ratio: 1; touch-action: manipulation; border-radius: 8px; }
-#bg-panel canvas.bg-ladders { display: block; margin: 0 auto; width: min(100%, 420px, 50vh); border-radius: 10px; }
-#bg-panel .bg-dice { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.25); font-size: 30px; line-height: 1; }
+#bg-panel canvas.bg-ladders { display: block; margin: 10px auto 16px; width: min(calc(100% - 20px), 420px, 50vh); border-radius: 8px; background: #fbf3df; box-shadow: 0 0 0 3px #f3dcae, 0 0 0 9px #b9824a, 0 0 0 10px #8a5a2c, 0 8px 14px rgba(60,40,10,.3); }
+#bg-panel .bg-dice { display: inline-grid; grid-template-columns: repeat(3, 1fr); place-items: center; width: 46px; height: 46px; padding: 7px; box-sizing: border-box; border-radius: 11px; background: linear-gradient(145deg, #fff, #f1e9da); box-shadow: 0 3px 0 #d5c7ab, 0 4px 8px rgba(0,0,0,.2); font-size: 26px; line-height: 1; }
+#bg-panel .bg-dice i { width: 8px; height: 8px; border-radius: 50%; background: #2b2230; }
+#bg-panel .bg-dice i.off { visibility: hidden; }
+#bg-panel .bg-dice[data-dice="1"] i { background: #e8402a; transform: scale(1.5); }
+#bg-panel .bg-dice[data-dice="0"] { display: inline-flex; align-items: center; justify-content: center; padding: 0; }
 #bg-panel .bg-fruits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 #bg-panel .bg-pile { background: #f6ecd8; border-radius: 12px; padding: 8px; text-align: center; }
 #bg-panel .bg-pile.on { outline: 3px solid #ffb800; }
@@ -198,10 +209,10 @@ const FACE_MS = 2600, FACE_GAP = 1500; // (Yozi 2026-11-23: 1.2 s was spammed, 3
 const FACE_BURST = 10, FACE_BURST_MS = 25000, FACE_REST = 15000; // ten faces inside 25 seconds (as fast as they go, or nearly): the buttons rest for 15 (Yozi 2026-11-23)
 // What the toys shout when you find the bad spot.
 const SHOUT = {
-  croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', hi: 'चप!', ar: 'هَم!' },
-  pirate: { en: 'YARRR!', ko: '으악!', ja: 'うわあ！', zh: '哇啊！', es: '¡ARRR!', fr: 'ARRR !', th: 'ว้าก!', vi: 'ÁÁÁ!', id: 'ARRR!', hi: 'अरे!', ar: 'آآآه!' },
-  tower: { en: 'CRASH!', ko: '와르르!', ja: 'ガラガラ！', zh: '哗啦！', es: '¡CATAPLUM!', fr: 'PATATRAS !', th: 'โครม!', vi: 'RẦM!', id: 'BRUK!', hi: 'धड़ाम!', ar: 'طاخ!' },
-  bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', hi: 'भौं! भौं!', ar: 'هَو! هَو!' },
+  croc: { en: 'CHOMP!', ko: '콱!', ja: 'ガブッ！', zh: '咔嚓！', es: '¡ÑAM!', fr: 'CROC !', pt: "NHAC!", th: 'งับ!', vi: 'NGOẠM!', id: 'HAP!', ar: 'هَم!' },
+  pirate: { en: 'YARRR!', ko: '으악!', ja: 'うわあ！', zh: '哇啊！', es: '¡ARRR!', fr: 'ARRR !', pt: "ARRR!", th: 'ว้าก!', vi: 'ÁÁÁ!', id: 'ARRR!', ar: 'آآآه!' },
+  tower: { en: 'CRASH!', ko: '와르르!', ja: 'ガラガラ！', zh: '哗啦！', es: '¡CATAPLUM!', fr: 'PATATRAS !', pt: "CRASH!", th: 'โครม!', vi: 'RẦM!', id: 'BRUK!', ar: 'طاخ!' },
+  bulldog: { en: 'WOOF! WOOF!', ko: '왈! 왈!', ja: 'ワン！ワン！', zh: '汪！汪！', es: '¡GUAU! ¡GUAU!', fr: 'OUAF ! OUAF !', pt: "AU! AU!", th: 'โฮ่ง! โฮ่ง!', vi: 'GÂU! GÂU!', id: 'GUK! GUK!', ar: 'هَو! هَو!' },
 };
 
 export class BoardGamesUI {
@@ -650,7 +661,7 @@ export class BoardGamesUI {
       p.bbLines = now;
       const up = now.map((n, s) => (n > (was[s] || 0) && !g.out[s] ? s : -1)).filter((s) => s >= 0);
       if (up.length && !g.over && this.bingo) {
-        p.bbShout = { text: up.map((s) => this.bingo.lineUp(p.names[s], now[s], L)).join(' · '), until: performance.now() + 2600 };
+        p.bbShout = { text: up.map((s) => this.bingo.lineUp(p.names[s], now[s], L) + (g.ranks[s] ? ' ' + medal(g.ranks[s]) : '')).join(' · '), until: performance.now() + 2600 };
         setTimeout(() => { if (this.play === p) this.render(); }, 2700);
         this.onEvent('ring', p.game);
       } else this.onEvent(g.last?.hit.includes(p.seat) ? 'pair' : 'move', p.game);
@@ -660,7 +671,9 @@ export class BoardGamesUI {
       this.onEvent('ring', p.game);
     } else if (p.game === 'onecard' && (act[0] === 'c' || act[0] === 'd')) {
       this.status = this.onecard?.saidOneCard(g, p.names, L) || '';
-      this.onEvent(g.last?.bust ? 'wrong' : 'move', p.game);
+      // Someone is out of cards and the game goes on: their place is called out.
+      if (g.last?.done && !g.over) this.status = `${medal(g.last.done)} ${p.names[g.last.p]} ${this.status}`.trim();
+      this.onEvent(g.last?.bust ? 'wrong' : g.last?.done && !g.over ? 'ring' : 'move', p.game);
     } else if (act[0] === 'a') { this.status = ''; p.pick = null; this.onEvent('move', p.game); }
     else if (act[0] === 'm') { this.status = seat === p.seat ? '' : tt('shuffled', { name: p.names[seat] }); this.onEvent('move', p.game); this.render(); return; } // (the clock keeps running)
     else if (act[0] === 'u') { if (seat !== p.seat && g.turn === p.seat) this.status = g.tip < 0 ? '' : tt('tipped', { name: p.names[seat] }); this.render(); return; } // (a card pushed up: the clock keeps running)
@@ -835,7 +848,7 @@ export class BoardGamesUI {
       const b = el('button', 'bg-game');
       b.type = 'button';
       b.dataset.game = id;
-      b.append(el('b', null, g.icon), document.createTextNode(L(GAME_NAME[id])), el('small', null, g.min === g.max ? L(T.two) : tt('players', { a: g.min, b: g.max })));
+      b.append(el('b', null, g.icon), document.createTextNode(L(GAME_NAME[id]) + (TRIAL.includes(id) ? ' 🧪' : '')), el('small', null, g.min === g.max ? L(T.two) : tt('players', { a: g.min, b: g.max })));
       b.onclick = () => this.choose(id);
       list.append(b);
     }
@@ -969,9 +982,9 @@ export class BoardGamesUI {
     p.names.forEach((n, s) => {
       const out = p.gone?.[s] || g.out?.[s];
       let label = p.game === 'omok' ? `${s === 0 ? '⚫' : '⚪'} ${n}` : p.game === 'ladders' ? `${PAWN_DOT[s]} ${n} · ${g.setup ? `🪜${g.stock[s][0]} 🐍${g.stock[s][1]}` : g.pos[s]}` : n;
-      if (p.game === 'onecard' && !out) label += ` · ${g.hands[s].length}`;
+      if (p.game === 'onecard' && (!out || g.ranks[s])) label += g.ranks[s] ? ` · ${medal(g.ranks[s])}` : ` · ${g.hands[s].length}`;
       if (p.game === 'gimbap') label += ` · ${g.score[s]}/${GIMBAP_GOAL}`;
-      if (p.game === 'bingo' && !out) label += g.phase === 'setup' ? (g.boards[s] ? ' · ✓' : ' · ✏️') : ` · ${g.linesOf(s)}/${g.goal}`;
+      if (p.game === 'bingo' && !out) label += g.phase === 'setup' ? (g.boards[s] ? ' · ✓' : ' · ✏️') : g.ranks[s] ? ` · ${medal(g.ranks[s])}` : ` · ${g.linesOf(s)}/${g.goal}`;
       if (p.game === 'thief' && !out) label += g.hands[s].length ? ` · ${g.hands[s].length}` : ` · ✓ ${L(T.safe)}`;
       const chip = el('span', 'bg-seat' + (turnOf(g) === s ? ' on' : '') + (out ? ' gone' : ''), label);
       chip.dataset.seat = String(s);
@@ -994,9 +1007,29 @@ export class BoardGamesUI {
       // Everyone's place, first to last (the same square shares a place).
       const list = el('div', 'bg-ranks');
       g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, s]) => {
-        const row = el('div', s === p.seat ? 'me' : null, `${['🥇', '🥈', '🥉'][r - 1] || r + '.'} ${PAWN_DOT[s]} ${p.names[s]} · ${g.pos[s] === LADDERS_END ? '🏁' : g.pos[s]}`);
+        const row = el('div', s === p.seat ? 'me' : null, `${medal(r)} ${PAWN_DOT[s]} ${p.names[s]} · ${g.pos[s] === LADDERS_END ? '🏁' : g.pos[s]}`);
         row.dataset.rank = String(r);
         list.append(row);
+      });
+      c.append(list);
+    }
+    if (p.game === 'onecard' && g.over && g.ranks.filter((r) => r > 0).length > 1) {
+      // Everyone's place: out of cards first, then whoever is left, then whoever went bust.
+      const list = el('div', 'bg-ranks');
+      g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0]).forEach(([r, s]) => {
+        const line = el('div', s === p.seat ? 'me' : null, `${medal(r)} ${p.names[s]}`);
+        line.dataset.rank = String(r);
+        list.append(line);
+      });
+      c.append(list);
+    }
+    if (p.game === 'bingo' && g.over && g.ranks.filter((r) => r > 0).length > 1) {
+      // Everyone's place, first to last (bingo on the same call shares a place).
+      const list = el('div', 'bg-ranks');
+      g.ranks.map((r, s) => [r, s]).filter(([r]) => r > 0).sort((a, b) => a[0] - b[0] || a[1] - b[1]).forEach(([r, s]) => {
+        const line = el('div', s === p.seat ? 'me' : null, `${medal(r)} ${p.names[s]} · ${g.linesOf(s)}/${g.goal}`);
+        line.dataset.rank = String(r);
+        list.append(line);
       });
       c.append(list);
     }
@@ -1244,8 +1277,12 @@ export class BoardGamesUI {
       };
       return;
     }
-    const dice = el('span', 'bg-dice', g.last?.dice && !(p.dice && performance.now() - p.dice.at < p.dice.ms) ? '⚀⚁⚂⚃⚄⚅'[g.last.dice - 1] : '🎲');
+    // The last roll as a die with pips (while it is still tumbling on the board: a plain 🎲).
+    const shown = g.last?.dice && !(p.dice && performance.now() - p.dice.at < p.dice.ms) ? g.last.dice : 0;
+    const dice = el('span', 'bg-dice', shown ? '' : '🎲');
+    if (shown) for (let i = 0; i < 9; i++) dice.append(el('i', DIE_PIPS[shown - 1].includes(i) ? null : 'off'));
     dice.dataset.dice = String(g.last?.dice ?? 0);
+    if (!shown) dice.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;padding:0';
     row.append(dice);
     if (!g.over && !g.out[p.seat]) {
       row.append(this.rollButton());
@@ -1329,45 +1366,75 @@ export class BoardGamesUI {
       return [((r % 2 ? N - 1 - i : i) + 0.5) * S, H - (r + 0.5) * S];
     };
     x.clearRect(0, 0, cv.width, cv.height);
-    x.textAlign = 'left'; x.textBaseline = 'top';
+    // The squares: rounded tiles in two soft colours, the start green and the end gold.
     for (let k = 1; k <= LADDERS_END; k++) {
-      const [cx, cy] = at(k);
-      x.fillStyle = k === LADDERS_END ? '#ffd36b' : Math.round((cx + cy) / S) % 2 ? '#f6ecd8' : '#e9f3df';
-      x.fillRect(cx - S / 2, cy - S / 2, S, S);
-      x.fillStyle = 'rgba(43,34,48,.55)';
-      x.font = '600 13px system-ui, sans-serif';
-      x.fillText(k === LADDERS_END ? '🏁' : String(k), cx - S / 2 + 4, cy - S / 2 + 4);
+      const [cx, cy] = at(k), end = k === LADDERS_END, odd = Math.round((cx + cy) / S) % 2;
+      x.fillStyle = end ? '#e2a92c' : k === 1 ? '#8fc98a' : odd ? '#e6d3ad' : '#bfd9b4';
+      x.beginPath(); x.roundRect(cx - S / 2 + 2, cy - S / 2 + 3, S - 4, S - 4, 9); x.fill(); // (the tile's lower edge)
+      x.fillStyle = end ? '#ffd76e' : k === 1 ? '#c5ecbd' : odd ? '#fbf0d6' : '#e6f4dc';
+      x.beginPath(); x.roundRect(cx - S / 2 + 2, cy - S / 2 + 1, S - 4, S - 5, 9); x.fill();
+      x.textAlign = 'left'; x.textBaseline = 'top';
+      x.fillStyle = end ? '#8a5a0c' : 'rgba(70,52,40,.6)';
+      x.font = '700 12px system-ui, sans-serif';
+      x.fillText(String(k), cx - S / 2 + 7, cy - S / 2 + 6);
+      if (end || k === 1) { x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = '26px system-ui, sans-serif'; x.globalAlpha = end ? 1 : 0.55; x.fillText(end ? '🏁' : '🚩', cx, cy + 5); x.globalAlpha = 1; }
     }
-    x.lineCap = 'round';
+    // Where the pieces wait before their first roll.
+    x.fillStyle = '#efe0bd';
+    x.beginPath(); x.roundRect(4, H + 5, cv.width - 8, cv.height - H - 9, 10); x.fill();
+    x.lineCap = 'round'; x.lineJoin = 'round';
+    // Ladders: a soft shadow, then two rails and the rungs, each a dark line with a lighter one on it.
     for (const [a, b] of Object.entries(g.up)) {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
-      const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len * 8, ny = (x2 - x1) / len * 8;
-      x.strokeStyle = '#a8703a'; x.lineWidth = 4;
-      for (const m of [1, -1]) { x.beginPath(); x.moveTo(x1 + nx * m, y1 + ny * m); x.lineTo(x2 + nx * m, y2 + ny * m); x.stroke(); }
-      x.lineWidth = 3;
-      for (let t = 14; t < len - 6; t += 16) {
-        const px = x1 + (x2 - x1) * t / len, py = y1 + (y2 - y1) * t / len;
-        x.beginPath(); x.moveTo(px + nx, py + ny); x.lineTo(px - nx, py - ny); x.stroke();
-      }
+      const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len * 9, ny = (x2 - x1) / len * 9;
+      const ladder = (dx, dy, rail, rung) => {
+        x.lineWidth = rung;
+        for (let t = 14; t < len - 8; t += 15) {
+          const px = x1 + (x2 - x1) * t / len + dx, py = y1 + (y2 - y1) * t / len + dy;
+          x.beginPath(); x.moveTo(px + nx, py + ny); x.lineTo(px - nx, py - ny); x.stroke();
+        }
+        x.lineWidth = rail;
+        for (const m of [1, -1]) { x.beginPath(); x.moveTo(x1 + nx * m + dx, y1 + ny * m + dy); x.lineTo(x2 + nx * m + dx, y2 + ny * m + dy); x.stroke(); }
+      };
+      x.strokeStyle = 'rgba(60,40,10,.18)'; ladder(2, 4, 7, 5);
+      x.strokeStyle = '#8a5526'; ladder(0, 0, 7, 5);
+      x.strokeStyle = '#d99a52'; ladder(0, 0, 3.5, 2.5);
     }
-    const SNAKE = ['#4caf6a', '#e06aa0', '#5a8ad0', '#e39b3a', '#8d6ad0', '#3fb0a8'];
+    // Snakes: a body that thins to the tail, darker at the edge, with pale bands, and a head with eyes and a tongue.
+    const SNAKE = [['#4caf6a', '#2c7a45'], ['#e06aa0', '#a83d70'], ['#5a8ad0', '#345c9c'], ['#e39b3a', '#a86a14'], ['#8d6ad0', '#5c3f9c'], ['#3fb0a8', '#1f7a74']];
     Object.entries(g.down).forEach(([a, b], n) => {
       const [x1, y1] = at(+a), [x2, y2] = at(b);
       const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / len, ny = (x2 - x1) / len;
-      x.strokeStyle = SNAKE[n % SNAKE.length]; x.lineWidth = 9;
-      x.beginPath(); x.moveTo(x1, y1);
-      const waves = Math.max(2, Math.round(len / 60));
-      for (let t = 1; t <= 24; t++) {
-        const f = t / 24, w = Math.sin(f * Math.PI * waves) * 12 * (1 - f * 0.4);
-        x.lineTo(x1 + (x2 - x1) * f + nx * w, y1 + (y2 - y1) * f + ny * w);
+      const waves = Math.max(2, Math.round(len / 60)), [body, edge] = SNAKE[n % SNAKE.length];
+      const M = 36, pt = [];
+      for (let t = 0; t <= M; t++) {
+        const f = t / M, w = Math.sin(f * Math.PI * waves) * 12 * (1 - f * 0.4);
+        pt.push([x1 + (x2 - x1) * f + nx * w, y1 + (y2 - y1) * f + ny * w]);
       }
-      x.stroke();
-      x.fillStyle = SNAKE[n % SNAKE.length];
-      x.beginPath(); x.arc(x1, y1, 10, 0, Math.PI * 2); x.fill();
-      x.fillStyle = '#fff';
-      for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 2.6, 0, Math.PI * 2); x.fill(); }
-      x.fillStyle = '#2b2230';
-      for (const m of [1, -1]) { x.beginPath(); x.arc(x1 + nx * 4 * m, y1 + ny * 4 * m - 2, 1.3, 0, Math.PI * 2); x.fill(); }
+      const stroke = (dx, dy, wide, color, every = 1) => {
+        x.strokeStyle = color;
+        for (let t = 0; t < M; t += every) {
+          x.lineWidth = Math.max(2, wide * (1 - (t / M) ** 2 * 0.72));
+          x.beginPath(); x.moveTo(pt[t][0] + dx, pt[t][1] + dy); x.lineTo(pt[t + 1][0] + dx, pt[t + 1][1] + dy); x.stroke();
+        }
+      };
+      stroke(2, 4, 13, 'rgba(40,30,10,.16)');
+      stroke(0, 0, 13, edge);
+      stroke(0, 0, 9, body);
+      x.lineCap = 'butt'; stroke(0, 0, 9, 'rgba(255,255,255,.38)', 4); x.lineCap = 'round';
+      // (the head looks the way the body leaves it)
+      const hx = pt[0][0] - pt[2][0], hy = pt[0][1] - pt[2][1], hl = Math.hypot(hx, hy) || 1, ux = hx / hl, uy = hy / hl;
+      x.strokeStyle = '#e8402a'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(x1 + ux * 9, y1 + uy * 9); x.lineTo(x1 + ux * 17, y1 + uy * 17);
+      x.moveTo(x1 + ux * 17, y1 + uy * 17); x.lineTo(x1 + ux * 20 - uy * 3, y1 + uy * 20 + ux * 3);
+      x.moveTo(x1 + ux * 17, y1 + uy * 17); x.lineTo(x1 + ux * 20 + uy * 3, y1 + uy * 20 - ux * 3); x.stroke();
+      x.fillStyle = edge; x.beginPath(); x.ellipse(x1, y1, 13.5, 11.5, Math.atan2(uy, ux), 0, Math.PI * 2); x.fill();
+      x.fillStyle = body; x.beginPath(); x.ellipse(x1, y1, 11.5, 9.5, Math.atan2(uy, ux), 0, Math.PI * 2); x.fill();
+      for (const m of [1, -1]) {
+        const ex = x1 + ux * 3 - uy * 5 * m, ey = y1 + uy * 3 + ux * 5 * m;
+        x.fillStyle = '#fff'; x.beginPath(); x.arc(ex, ey, 3.4, 0, Math.PI * 2); x.fill();
+        x.fillStyle = '#2b2230'; x.beginPath(); x.arc(ex + ux * 1.1, ey + uy * 1.1, 1.7, 0, Math.PI * 2); x.fill();
+      }
     });
     if (g.setup && p.pick?.first) { const [hx, hy] = at(p.pick.first); x.strokeStyle = '#ffb800'; x.lineWidth = 5; x.strokeRect(hx - S / 2 + 3, hy - S / 2 + 3, S - 6, S - 6); }
     // The pieces (several on one square stand side by side).
@@ -1392,11 +1459,20 @@ export class BoardGamesUI {
       if (g.out[s] || p.gone?.[s]) return;
       const same = g.pos.filter((v, q) => v === k && q < s && !(w && (w.seat === q || w.seat === s))).length;
       const [cx, cy] = [spot[s][0] + (k <= 0 ? s * 30 : same * 9), spot[s][1] + (k <= 0 ? 0 : 6)];
-      x.fillStyle = 'rgba(0,0,0,.2)';
-      x.beginPath(); x.ellipse(cx, cy + 11, 11, 4, 0, 0, Math.PI * 2); x.fill();
-      x.fillStyle = PAWN[s]; x.strokeStyle = '#fff'; x.lineWidth = 2.5;
-      x.beginPath(); x.arc(cx, cy, 11, 0, Math.PI * 2); x.fill(); x.stroke();
-      if (s === p.seat) { x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill(); }
+      // A playing piece: a round head on a skirt, a white edge, a shine; mine has a white dot.
+      x.fillStyle = 'rgba(0,0,0,.22)';
+      x.beginPath(); x.ellipse(cx + 1, cy + 12, 12, 4.5, 0, 0, Math.PI * 2); x.fill();
+      const piece = (grow, color) => {
+        x.fillStyle = color;
+        x.beginPath(); x.moveTo(cx - 4 - grow, cy - 4); x.lineTo(cx + 4 + grow, cy - 4); x.lineTo(cx + 10 + grow, cy + 11 + grow); x.lineTo(cx - 10 - grow, cy + 11 + grow); x.closePath(); x.fill();
+        x.beginPath(); x.ellipse(cx, cy + 11, 10 + grow, 3.5 + grow, 0, 0, Math.PI * 2); x.fill();
+        x.beginPath(); x.arc(cx, cy - 8, 7.5 + grow, 0, Math.PI * 2); x.fill();
+      };
+      x.lineJoin = 'round';
+      piece(2, '#fff'); piece(0, PAWN[s]);
+      x.fillStyle = PAWN_DARK[s]; x.beginPath(); x.ellipse(cx, cy + 11, 10, 3.5, 0, 0, Math.PI); x.fill();
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.arc(cx - 2.5, cy - 10.5, 2.4, 0, Math.PI * 2); x.fill();
+      if (s === p.seat) { x.fillStyle = '#fff'; x.beginPath(); x.arc(cx, cy + 4, 3, 0, Math.PI * 2); x.fill(); }
     });
     // The dice, thrown into the middle of the board: it tumbles, bounces,
     // and comes to rest on the number rolled.
