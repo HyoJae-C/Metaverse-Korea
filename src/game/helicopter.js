@@ -10,6 +10,9 @@
 //               seats inside, a windscreen, skids, a tail boom with a fin:
 //               one baked mesh, plus the glass, the two rotors and the blur
 //               of the blades (about 7 draw calls)
+//   the captain its own pilot, in a black cap and sunglasses, in the left
+//               front seat: the helicopter never flies by itself. The
+//               operator sits next to them
 //   the wind    near the ground the blades blow rings of dust out across
 //               it, hair flies on everyone close by, and whoever stands on
 //               the spot is pushed off it before the skids touch
@@ -33,6 +36,7 @@
 import * as THREE from 'three';
 import { matCache, addBox } from '../core/three-kit.js';
 import { bakeColors } from '../core/merge-static.js';
+import { createCharacter } from '../core/character.js';
 import { L } from '../ui/pocha-ui.js';
 import { t as tr } from '../core/i18n.js';
 import {
@@ -65,6 +69,8 @@ const BTN = 'width:52px;height:52px;border-radius:50%;border:0;font-size:22px;ba
 const PANEL = 'position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:40;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.2);font:600 15px system-ui,sans-serif;color:#2b2230;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 32px)';
 const CHOICE = 'border:0;border-radius:12px;padding:10px 14px;font:600 15px system-ui,sans-serif;background:#ffe3d9;color:#2b2230;cursor:pointer';
 
+// The helicopter's own pilot.
+const CAPTAIN_LOOK = { shirt: 'cream', pants: 'navy', hair: 'black', head: 'cap-black', face: 'sunglasses' };
 const WIND_R = 13; // m: hair flies this close to the spot
 const mat = matCache();
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
@@ -184,7 +190,11 @@ export function createHelicopter(game) {
   function craftFor(id) {
     let c = crafts.get(id);
     if (!c) {
-      c = { ...buildModel(), wash: buildWash(), spin: 0, pose: null };
+      c = { ...buildModel(), wash: buildWash(), spin: 0, pose: null, captain: createCharacter(CAPTAIN_LOOK) };
+      // The captain rides in it (a part of the helicopter, so not culled as a person on the street).
+      c.captain.root.userData.person = false;
+      c.captain.root.position.set(...SEATS.captain);
+      c.g.add(c.captain.root);
       game.scene.add(c.g, c.wash.g);
       crafts.set(id, c);
     }
@@ -194,6 +204,7 @@ export function createHelicopter(game) {
     const c = crafts.get(id);
     if (!c) return;
     game.scene.remove(c.g, c.wash.g);
+    c.g.remove(c.captain.root); // (the character's own shapes are shared: not ours to free)
     c.g.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); if (o.material.transparent || o.material.isMeshBasicMaterial) o.material.dispose(); } });
     c.wash.geo.dispose();
     for (const r of c.wash.rings) r.material.dispose();
@@ -218,6 +229,7 @@ export function createHelicopter(game) {
     c.blur.material.opacity = 0.28 * clamp01((p.rotor - 0.45) / 0.4);
     for (const b of c.blades) b.visible = p.rotor < 0.85; // (at full speed only the blur)
     c.beacon.visible = (time * 1.4) % 1 < 0.35;
+    c.captain.animate(dt, 0, true); // seated at the controls
     // The wind on the ground under it.
     const w = c.wash, k = p.wash;
     w.g.position.set(p.x, p.ground, p.z);
@@ -344,8 +356,8 @@ export function createHelicopter(game) {
     savedFog = null;
   }
 
-  // A place to stand next to a helicopter at p: beside the door (side: -1
-  // its right, 1 its left), or anywhere free round it.
+  // A place to stand next to a helicopter at p: beside the door (side: the
+  // sign of the seat's x), or anywhere free round it.
   function besides(p, side, seat) {
     for (const r of [2.4, 3.2, 4.2]) {
       for (const s of [side, -side]) {
@@ -403,7 +415,7 @@ export function createHelicopter(game) {
     // It stands there as if it had just landed by itself: the blades run down.
     mine = { x: p.x, z: p.z, y: crew.land.y, dir: Math.round(toDeg(crew.yaw) - 180), t0: now() - LANDED_AT, t1: null };
     crew = null;
-    standAt(...besides(p, 1, SEATS.pilot));
+    standAt(...besides(p, -1, SEATS.pilot));
     toast(TEXT.landed);
   }
   // Each frame while aboard, in place of walking (main.js). → the walk speed
@@ -503,7 +515,7 @@ export function createHelicopter(game) {
     const r = riding, p = crafts.get(r.pilot)?.pose, me = game.me.root.position;
     riding = null;
     if (tell) send('leave', r.pilot);
-    standAt(...(p ? besides(p, r.slot ? -1 : 1, SEATS.riders[r.slot]) : [me.x, me.z]));
+    standAt(...(p ? besides(p, r.slot ? 1 : -1, SEATS.riders[r.slot]) : [me.x, me.z]));
   }
   // 🪂 (a passenger): only once it is down.
   function getOut() {
