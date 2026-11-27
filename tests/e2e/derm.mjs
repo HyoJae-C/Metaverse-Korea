@@ -25,7 +25,7 @@ const wait = (ms) => page.waitForTimeout(ms);
 const label = () => page.evaluate(() => document.getElementById('action-btn')?.textContent || '');
 await page.evaluate(() => __mk.enter('yunseul-derm'));
 await wait(2500);
-if (S) { await page.evaluate(() => { __mk.goto(2, 2, Math.PI); __mk.cam?.({ yaw: 0.5, pitch: 0.35, dist: 7 }); }); await wait(800); await page.screenshot({ path: `${S}/1-derm-room.png` }); }
+if (S) { await page.evaluate(() => { __mk.goto(-3, 1.5, Math.PI); __mk.cam?.({ yaw: 0.5, pitch: 0.35, dist: 7 }); }); await wait(800); await page.screenshot({ path: `${S}/1-derm-room.png` }); }
 
 // The first bed: lie down, then the care button.
 await page.evaluate(() => __mk.goto(-4.25, -3.7, Math.PI));
@@ -39,7 +39,9 @@ await page.waitForSelector('.spend-ask .primary', { timeout: 5000 });
 await page.click('.spend-ask .primary');
 await wait(1800);
 if (S) await page.screenshot({ path: `${S}/2-led-care.png` });
-await wait(3500);
+await wait(2000);
+if (S) await page.screenshot({ path: `${S}/2b-flash.png` });
+await wait(2500);
 const look = await page.evaluate(() => __mk.look());
 const days = (look.glow - Date.now()) / 86400000;
 assert(days > 6.9 && days <= 7, `the shine lasts 7 days (${days.toFixed(3)})`);
