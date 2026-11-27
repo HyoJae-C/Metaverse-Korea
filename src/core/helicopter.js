@@ -122,8 +122,10 @@ export function findPad(x, z, yaw, free) {
 
 // ---------- Flying it ----------
 // Where people sit, in the helicopter's frame (x: its left, y up from the
-// skids, z toward the nose): the pilot in front, two passengers behind.
-export const SEATS = { pilot: [-0.42, 0.98, 1.05], riders: [[-0.44, 0.98, -0.2], [0.44, 0.98, -0.2]] };
+// skids, z toward the nose): its own pilot (the captain, who brings it and
+// takes it away) in the left front seat, the operator next to them at the
+// second set of controls, two passengers behind.
+export const SEATS = { captain: [0.42, 0.98, 1.05], pilot: [-0.42, 0.98, 1.05], riders: [[-0.44, 0.98, -0.2], [0.44, 0.98, -0.2]] };
 export const FLY = { speed: 24, fast: 42, climb: 9, top: 120, board: 5.5, ask: 7 }; // m/s; the highest (m: others draw people up to 140); how close to get in (m), to ask someone aboard (m)
 
 // A seat's place in the world for a helicopter at (x, y, z) heading `yaw`.

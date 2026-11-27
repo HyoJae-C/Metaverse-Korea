@@ -98,9 +98,13 @@ test('the landing spot: in front of the operator first, clear of buildings', () 
 
 test('seats: the pilot in front, two passengers side by side behind', () => {
   assert.equal(SEATS.riders.length, 2);
+  // Its own pilot has a front seat too: nobody sits on anybody.
+  const all = [SEATS.captain, SEATS.pilot, ...SEATS.riders];
+  for (const [i, p] of all.entries()) for (const q of all.slice(i + 1)) assert.ok(Math.hypot(p[0] - q[0], p[2] - q[2]) > 0.7);
+  assert.equal(SEATS.captain[2], SEATS.pilot[2]);
   assert.ok(SEATS.pilot[2] > SEATS.riders[0][2] + 0.8, 'the bench is behind the pilot');
   assert.ok(Math.abs(SEATS.riders[0][0] - SEATS.riders[1][0]) > 0.7, 'room for two');
-  for (const s of [SEATS.pilot, ...SEATS.riders]) assert.ok(Math.abs(s[0]) < 0.8 && s[2] > -0.9 && s[2] < 1.9, 'inside the cabin');
+  for (const s of all) assert.ok(Math.abs(s[0]) < 0.8 && s[2] > -0.9 && s[2] < 1.9, 'inside the cabin');
   // Heading +x (yaw 90°): the nose is toward +x, its left toward -z.
   const [x, y, z] = seatAt([1, 0.5, 2], 10, 3, 20, Math.PI / 2);
   assert.ok(Math.abs(x - 12) < 1e-9 && Math.abs(y - 3.5) < 1e-9 && Math.abs(z - 19) < 1e-9);
