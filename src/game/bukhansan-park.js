@@ -25,6 +25,7 @@ import { addSnowCover } from '../core/snow-cover.js';
 import { MIX, leafColor, leafHash } from '../core/season.js';
 import { inPoly, trailNear } from '../core/skypark-ground.js';
 import { bukhanBox, WAY_PAST } from '../core/bukhan-ground.js';
+import { thicketGeometry, thicketSpots } from './thicket.js';
 import { heightGrid } from '../core/height-grid.js';
 
 export const BUKHAN_PARK = {
@@ -38,7 +39,8 @@ export const BUKHAN_PARK = {
   glow: [0.07, 0.16], // how much the mountain warms in the low sun, on the way up and at the top
   lift: 0.25, // how far the haze pulls back at the top (core/weather.js lift): to about 590 m, past the peaks next door
   trees: 1500, // by the way (lowSpec: half)
-  treeNear: 34, // m from the way: single trees
+  treeNear: 13, // m from the way: single trees (it was 34; past this the wood is thickets, one shape each: game/thicket.js)
+  thicket: { every: 10, from: 11, to: 26, clear: 9 }, // thickets beside the way: one every 10 m a side, 11-26 m off it, none within 9 m of the way or a stop
   treeClear: 2.4, // m from the way's edge
   mass: 13, // m between the far slopes' clumps of crowns (lowSpec: 18)
   woodFrom: 18, // m from the way: past this the wood is one mass (the ground in the canopy's colours, with clumps on it), not trees
@@ -366,6 +368,18 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
     let n = 0;
     for (const [key, list] of tiles) { group.add(instanced(blob, massMat, list, `bukhansan-wood-${key}`, (m, i) => m.setColorAt(i, woodColor((i + n) * 7 + 1, hash(i, n))))); const tile = group.children.at(-1); tile.userData.topY = Math.max(...list.map((q) => q[1])); woods.push(tile); n += list.length; }
     counts.mass = n; counts.massTiles = tiles.size;
+    // between the two: thickets, a big mass of leaves as one shape (Yozi 2026-11-27), in tiles too
+    const T = P.thicket, bushTiles = new Map();
+    const spots = thicketSpots(lines, { every: lowSpec ? T.every * 1.6 : T.every, from: T.from, to: T.to, r: [3, 4.8], h: [2.4, 3.8], ok: (x, z) => inPoly(x, z, foot) && !rockXZ(x, z) && trailD(x, z) > T.clear && padD(x, z) > T.clear && y(x, z) > 0.6 });
+    for (const [x, z, r, h, turn] of spots) {
+      const key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
+      if (!bushTiles.has(key)) bushTiles.set(key, []);
+      bushTiles.get(key).push([x, y(x, z) - 0.3, z, turn, r, h, r]);
+    }
+    const bush = thicketGeometry();
+    let nb = 0;
+    for (const [key, list] of bushTiles) { group.add(instanced(bush, massMat, list, `bukhansan-thicket-${key}`, (m, i) => m.setColorAt(i, woodColor((i + nb) * 5 + 3, hash(i + 40, nb))))); const tile = group.children.at(-1); tile.userData.topY = Math.max(...list.map((q) => q[1] + q[5])); woods.push(tile); nb += list.length; }
+    counts.thickets = nb;
   }
 
   // --- The stops -------------------------------------------------------------

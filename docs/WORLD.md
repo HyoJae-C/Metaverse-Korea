@@ -1616,6 +1616,10 @@ on its real place.
   warm glow on the ground (`BUKHAN_PARK.sun`, `glow`); at the top more: the
   far country and the sea of clouds take the sun's colour and its path of
   light lies over the clouds (`SUMMIT.warm`, `path`).
+- Between the trees by the way (13 m) and the far clumps stand thickets: a
+  big mass of leaves as one shape (`game/thicket.js`: `thicketGeometry`,
+  `thicketSpots`, 40 triangles for 6-10 m of wood). Any park or hill can use
+  them.
 - From elsewhere nothing of it is drawn: it loads within 480 m, and past the
   haze (600 m and more) it hands the renderer 0 triangles
   (`tests/e2e/bukhansan-far.mjs`).
