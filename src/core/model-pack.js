@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { PACK } from '../data/characters/index.js';
 import { PALETTES, PANTS_CUT, LOAFERS, accessory, shapeOf } from '../data/appearance.js';
-import { buildBlush, buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
+import { buildBlush, buildGlow, buildHair, buildLips, jawMove, isScalpHair, EYE_TRANSFORM, NOSE_TRANSFORM } from './hair-styles.js';
 import { buildOutfit } from './outfit-mesh.js';
 import { addSkirt, printMaterial } from './skirt-mesh.js';
 import { makeEars } from './animal-wear.js';
@@ -542,6 +542,7 @@ function faceExtras(id, headMesh, headBone, look) {
     extras.add(buildLips(PALETTES.lip[look.lip], facts.mouth.clone().add(new THREE.Vector3(0, 0, LIP_FWD - 0.04))));
   }
   if (look.blush && PALETTES.blush[look.blush] != null) extras.add(buildBlush(PALETTES.blush[look.blush], facts.cheeks, geo));
+  if (look.glow) extras.add(buildGlow(facts, geo)); // 물광 (core/glow.js; the look is checked as it comes in)
   headBone.add(extras);
   return hair;
 }
@@ -824,7 +825,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   }
 
   let styledHair = null; // (setWind blows its locks back)
-  if (headMesh && headBone && (look.hairStyle || look.lip || look.blush || look.eyeShape || look.nose || look.jaw)) {
+  if (headMesh && headBone && (look.hairStyle || look.lip || look.blush || look.glow || look.eyeShape || look.nose || look.jaw)) {
     const hair = faceExtras(id, headMesh, headBone, look);
     if (hair && look.head) tuckHair(hair, headAcc, look);
     if (hair && !look.head) styledHair = hair; // (tucked under a hat: stays put)

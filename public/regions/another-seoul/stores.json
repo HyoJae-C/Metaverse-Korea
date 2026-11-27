@@ -471,6 +471,17 @@
       "products": []
     },
     {
+      "id": "yunseul-derm",
+      "category": "beauty",
+      "workshop": "derm",
+      "size": "medium",
+      "name": { "ko": "윤슬 피부과", "en": "Yunseul Skin Clinic", "ja": "ユンスル皮膚科", "zh": "粼光皮肤科" },
+      "tagline": { "en": "Glass-skin glow care: your face shines for 7 days", "ko": "물광 피부 관리, 7일 동안 반짝반짝", "ja": "水光肌ケアで7日間つやつや", "zh": "水光肌护理，闪亮7天" },
+      "at": [-667, 1128.1], "district": "gangnam", "why": "Fictional skin clinic on Gangnam-daero by the two cosmetic clinics, between Gangnam Station and Sinnonhyeon (Yozi 2026-11-27: a skin clinic in Gangnam, just for fun: one treatment and your face glows for 7 days).",
+      "colors": { "sign": "#d0678f", "awning": "#fbe0ea", "accent": "#fff6f9" },
+      "products": []
+    },
+    {
       "id": "lens-village",
       "category": "beauty",
       "workshop": "lens",

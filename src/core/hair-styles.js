@@ -462,6 +462,86 @@ export function buildBlush(color, cheeks, geo) {
   return g;
 }
 
+// 물광 (core/glow.js): dewy skin. Soft white highlights where light catches
+// a shiny face (the forehead, the cheekbones above the blush, down the
+// nose), laid on the skin like the blush and added onto it, so the face
+// looks lit. They shimmer slowly (one shared material for everyone).
+// at: { ey, mouth, cheeks, cx } of the head (core/model-pack.js headFacts).
+let glowMat = null;
+const glowGeos = new WeakMap(); // head geometry -> its highlight decals
+function surfaceZ(geo, x, y, r = 0.08) {
+  const pos = geo.attributes.position;
+  let z = -Infinity;
+  for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getX(i) - x) < r && Math.abs(pos.getY(i) - y) < r) z = Math.max(z, pos.getZ(i));
+  return Number.isFinite(z) ? z : null;
+}
+export function buildGlow(at, geo) {
+  const g = new THREE.Group();
+  g.name = 'glow';
+  glowMat ||= new THREE.MeshBasicMaterial({
+    color: 0xffffff, map: blushGradient(), transparent: true, opacity: 0.4, depthWrite: false,
+    blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -5, polygonOffsetUnits: -5,
+  });
+  if (!glowGeos.has(geo)) {
+    const head = { geometry: geo, matrixWorld: _id };
+    const { ey, mouth, cheeks, cx } = at;
+    // [x, y, size x, size y, turn]: forehead, the two cheekbones, the nose's bridge and tip.
+    const spots = [
+      [cx, ey + 0.24, 0.42, 0.14, 0],
+      ...cheeks.map((c) => [c.x * 1.02, c.y + 0.03, 0.26, 0.17, Math.sign(c.x) * 0.45]),
+      [cx, (ey + mouth.y) / 2 + 0.06, 0.08, 0.16, 0],
+    ];
+    const decals = [];
+    for (const [x, y, sx, sy, ry] of spots) {
+      const z = surfaceZ(geo, x, y);
+      if (z == null) continue;
+      decals.push(new DecalGeometry(head, new THREE.Vector3(x, y, z), new THREE.Euler(0, ry, 0), new THREE.Vector3(sx, sy, 0.4)));
+    }
+    glowGeos.set(geo, decals);
+  }
+  const shimmer = () => { glowMat.opacity = 0.5 + 0.18 * Math.sin(performance.now() / 650); };
+  for (const d of glowGeos.get(geo)) {
+    if (!d.attributes.position.count) continue;
+    const m = new THREE.Mesh(d, glowMat);
+    m.onBeforeRender = shimmer;
+    g.add(m);
+  }
+  // Little stars that twinkle by the face in turn, so the shine reads from
+  // across the street too.
+  starMat ||= new THREE.SpriteMaterial({ map: starTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+  const { ey, cheeks } = at;
+  [[cheeks[1].x * 1.35, ey - 0.02, 0], [cheeks[0].x * 1.2, ey + 0.32, 2.1], [cheeks[0].x * 1.45, cheeks[0].y - 0.1, 4.2]].forEach(([x, y, ph]) => {
+    const star = new THREE.Sprite(starMat);
+    star.position.set(x, y, cheeks[0].z + 0.08);
+    star.onBeforeRender = () => {
+      const k = Math.max(0, Math.sin(performance.now() / 420 + ph)) ** 3;
+      star.scale.setScalar(0.02 + 0.16 * k);
+    };
+    g.add(star);
+  });
+  return g;
+}
+let starMat = null;
+function starTexture() { // a soft four-pointed sparkle
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const grad = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.25, 'rgba(255,240,250,0.8)');
+  grad.addColorStop(1, 'rgba(255,240,250,0)');
+  x.fillStyle = grad;
+  x.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2, r = i % 2 ? 6 : 32;
+    x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r);
+  }
+  x.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 // Petal Lip tints: a soft upper and lower lip, a little wider than the
 // model's own small mouth so the colour reads from the street.
 export function buildLips(color, at) {

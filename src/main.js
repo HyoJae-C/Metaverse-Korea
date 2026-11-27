@@ -1554,6 +1554,13 @@ const rocking = lazyPanel(() => import('./game/rocking.js').then(({ createRockin
   get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
   get me() { return me; }, get others() { return others; }, t, resend: () => { sendTimer = 0; },
 })), { tick: () => {}, state: () => {}, stop: () => {}, peer: () => {}, action: () => null });
+// The skin clinic's 물광 care (game/derm.js): downloaded the first time you
+// lie on one of its beds. The 7-day shine itself is core/glow.js.
+const derm = lazyPanel(() => import('./game/derm.js').then(({ createDerm }) => createDerm({
+  get me() { return me; }, get cam() { return cam; }, get interior() { return mode === 'store' ? interior : null; }, get seated() { return seated; },
+  get myLook() { return myLook; }, set myLook(v) { myLook = v; }, get wallet() { return wallet; }, get shop() { return shop; }, get sfx() { return sfx; },
+  setLook, refreshWallet: () => refreshWallet(), t,
+})), { tick: () => {}, stop: () => {}, action: () => null, busy: false });
 
 // ---------- Multiplayer ----------
 const remoteOpts = { isOperator: isOperatorName, coasterSeat: (ch, cs, q) => placeRemoteRider(ch, cs, q), tick: (q, all, dt) => {
@@ -6834,6 +6841,7 @@ function sitDown(seat) {
   if (seat.sauna) saunaUi.show(seat.sauna); // the kiln or ice room bench
   else if (held?.kind === 'book' && !seat.academy && !seat.lie) shop.toast(L(BOOK_SIT_TEXT)); // a book in hand reads on any seat
   if (seat.rock) rocking.ready().catch(() => {}); // a rocking chair: the Rock button
+  if (seat.derm) derm.ready().catch(() => {}); // a skin clinic bed: the 물광 button
 }
 function standUp() {
   if (!seated) return;
@@ -6845,6 +6853,7 @@ function standUp() {
   if (seated.tarot && tarotUi.open) tarotUi.close(); // (a friend reading with us is told)
   if (seated.bumper != null) bumper.onStandUp();
   if (seated.rock) rocking.stop();
+  if (seated.derm) derm.stop(); // (got up mid-care: it's paid for)
   seated = null;
   decorGame.unstick(true); // (a home: never up into a gap between other pieces, game/decor.js)
   sendTimer = 0;
@@ -7139,6 +7148,8 @@ function updateAction(p, tSec) {
       next = parkRideAction(st);
     } else if (seated?.surgery) {
       next = null; // lie still: the team is at work
+    } else if (seated?.derm) { // a skin clinic bed (game/derm.js)
+      next = derm.loaded ? derm.action() : null;
     } else if (seated?.beauty) {
       const kind = seated.beauty;
       next = { key: 'beauty:' + kind, label: BEAUTY_ICON[kind] + ' ' + t(kind + '.open'), run: () => openBeauty(kind) };
@@ -7552,6 +7563,7 @@ renderer.setAnimationLoop((now) => {
   if (!bumper.loaded && mode === 'store' && interior?.bumper) bumper.ready().catch(() => {});
   bumper.tick(dt);
   rocking.tick(dt); // (sat in a rocking chair)
+  derm.tick(dt); // (the skin clinic's care)
   if (!iceRink.loaded && mode === 'store' && interior?.iceRink) iceRink.ready().catch(() => {});
   iceRink.tick(dt, p, mx, my); // (on the ice it does the moving: no walking below)
   updateSurgery(dt);
