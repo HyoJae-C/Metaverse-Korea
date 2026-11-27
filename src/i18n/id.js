@@ -490,6 +490,8 @@ export const ID = {
   'bukhan.viewClose': "Tutup",
   'bukhan.noRide': "🚲 Tidak boleh naik sepeda atau mobil di Bukhansan. Dari sini jalan kaki.",
   'bukhan.noTaxi': "🚕 Taksi tidak bisa naik ke gunung. Turun dulu ke Stasiun Bukhansan Ui.",
+  'bukhan.alt': "⛰️ {n} m di atas permukaan laut",
+  'bukhan.fell': "🤕 Kamu tersandung! Istirahat sebentar. Di gunung, jalan pelan-pelan.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',
@@ -1294,4 +1296,6 @@ export const ID = {
   "invite.copy": "Salin tautan",
   "invite.copied": "Tautan disalin",
   "invite.later": "Nanti",
+  "climbWall.name": "Dinding Panjat Ttukseom",
+  "climbWall.soon": "Sedang disiapkan. Belum dibuka.",
 };

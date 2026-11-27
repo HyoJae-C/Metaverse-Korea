@@ -490,6 +490,8 @@ export const PT = {
   "bukhan.viewClose": "Fechar",
   "bukhan.noRide": "🚲 Nada de bicicletas ou carros no Bukhansan. Daqui em diante, vai-se a pé.",
   "bukhan.noTaxi": "🚕 Os táxis não sobem a montanha. Desça primeiro até a estação Bukhansan Ui.",
+  "bukhan.alt": "⛰️ {n} m de altitude",
+  "bukhan.fell": "🤕 Você tropeçou! Descanse um pouco. Na montanha, anda-se devagar.",
   "bike.offShort": "Descer",
   "bike.off": "Descer da bicicleta",
   "car.off": "Sair do carro",
@@ -1294,4 +1296,6 @@ export const PT = {
   "invite.copy": "Copiar link",
   "invite.copied": "Link copiado",
   "invite.later": "Depois",
+  "climbWall.name": "Muro de escalada de Ttukseom",
+  "climbWall.soon": "Em preparação. Ainda não abriu.",
 };

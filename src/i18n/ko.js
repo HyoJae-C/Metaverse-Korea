@@ -490,6 +490,8 @@ export const KO = {
   'bukhan.viewClose': "닫기",
   'bukhan.noRide': "🚲 북한산에서는 자전거·차를 탈 수 없어요. 여기서부터는 걸어서 올라가요.",
   'bukhan.noTaxi': "🚕 산에는 택시가 못 올라와요. 북한산우이역까지 걸어 내려가서 타요.",
+  'bukhan.alt': "⛰️ 해발 {n} m",
+  'bukhan.fell': "🤕 넘어졌어요! 잠깐 쉬어요. 산에서는 천천히 걸어요.",
   'bike.offShort': '내리기',
   'bike.off': '자전거에서 내리기',
   'car.off': '차에서 내리기',
@@ -1297,4 +1299,6 @@ export const KO = {
   "invite.copy": "링크 복사",
   "invite.copied": "링크를 복사했어요",
   "invite.later": "나중에",
+  "climbWall.name": "뚝섬 인공암벽장",
+  "climbWall.soon": "준비 중입니다",
 };

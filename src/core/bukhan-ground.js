@@ -51,11 +51,12 @@ export function bukhanHeight(l, x, z) {
   for (const p of l.pads || []) {
     const d = Math.hypot(x - p.at[0], z - p.at[1]) - p.r;
     if (d >= PAD_EASE) continue;
-    if (d <= 0) return p.y;
+    if (d <= 0) return Math.max(p.y, top ?? 0);
     const k = d / PAD_EASE, s = k * k * (3 - 2 * k);
     y = p.y * (1 - s) + y * s;
   }
-  return y;
+  // (by a stop the ground eases down to it, but the way coming out of it already climbs: you stay on the way, not under it. Yozi 2026-11-27: legs sunk in the path by the Visitor Center)
+  return top != null ? Math.max(y, top) : y;
 }
 
 export const bukhanBox = skyparkBox;

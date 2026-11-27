@@ -64,6 +64,7 @@ try {
   await wait(800);
   const far = await craft(a);
   if (!far || far.y < 50 || Math.hypot(far.x - mine.x, far.z - mine.z) < 250) throw new Error('it should start far away, high up: ' + JSON.stringify(far));
+  if (!await a.evaluate(() => { const c = window.__mk.heli().craft(); return c.captain.root.parent === c.g && c.captain.root.visible; })) throw new Error('nobody is flying it');
   console.log(`called: the spot is ${pad.toFixed(1)} m from the operator; it starts ${Math.hypot(far.x - mine.x, far.z - mine.z).toFixed(0)} m out, ${far.y} m up`);
   await age(a, 14); await wait(1200); await shot(a, 'heli-1-coming');
 

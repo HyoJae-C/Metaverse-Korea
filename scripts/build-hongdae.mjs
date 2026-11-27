@@ -170,7 +170,7 @@ map.meta.parts = strips(map, 25, 'Hongdae, south-east of Yanghwa-ro');
 // order. Kept together the way they were: the info centre and name tags by
 // the station, salons, tarot and clothes round the busking plaza, the
 // perfume alley, animal cafés and desserts down the walking street, the big
-// rooms (sauna, gym, yoga, climbing) on Wausan-ro, and the Korean
+// rooms (sauna, gym, yoga) on Wausan-ro, and the Korean
 // restaurants facing each other on Jandari-ro.
 const GROUPS = [
   // By the station: the top of Hongik-ro, and Yanghwa-ro by it.
@@ -183,7 +183,8 @@ const GROUPS = [
   // Animal cafés and desserts, down the walking street and the lane by it.
   [['walkW', 'walkE', 'hongikW', 'hongikE', 'jandariN'], ['gogo-cat-cafe', 'neoguri-raccoon-cafe', 'big-paws-dog-cafe', 'haemjji-hamster-cafe', 'bingsu-lab', 'moonbeam-dessert', 'starlight-tarot', 'street-kick', 'ear-candy', 'nyang-meong-to-pan']],
   // Wausan-ro: the big rooms and the shops by the campus.
-  [['wausanW', 'dongmak'], ['onsaem-jjimjil', 'boulder-bloc', 'muscle-gym', 'sum-yoga', 'vintage-garage', 'glow-lab', 'indie-beans', 'sticker-planet', 'byeolbit-mart', 'gil-coffee']],
+  // (null: the lot the climbing gym had, a plain building since 2026-11-27, so the others keep theirs)
+  [['wausanW', 'dongmak'], ['onsaem-jjimjil', null, 'muscle-gym', 'sum-yoga', 'vintage-garage', 'glow-lab', 'indie-beans', 'sticker-planet', 'byeolbit-mart', 'gil-coffee']],
   // Korean restaurants on Jandari-ro, facing each other. (Deumppuk Yukhoe
   // moved to Seongsu, where My Mala stood: Yozi 2026-11-11.)
   [['jandariS', 'jandariN', 'lane3W', 'lane3E', 'lane1W', 'dongmak'], ['baro-imat-galbitang', 'siwon-kalguksu', 'chuncheon-dakgalbi', 'mujeok-samgyeopsal', 'haengbok-gopchang', 'masitda-chadolbagi', 'chammat-gejang', 'tojong-sundae-gukbap', 'gungmin-seolleongtang']],
@@ -226,7 +227,7 @@ if (isMain) {
     let free = rows.flatMap((rowId) => (t.lots[rowId] || []).map((at, i) => ({ key: `${rowId}:${i}`, at }))).filter((l) => !used.has(l.key) && ok(l.at));
     if (opt?.near === 'HONGIK_FOOT') free.sort((a, b) => Math.hypot(a.at[0] - HONGIK_FOOT[0], a.at[1] - HONGIK_FOOT[1]) - Math.hypot(b.at[0] - HONGIK_FOOT[0], b.at[1] - HONGIK_FOOT[1]));
     if (free.length < ids.length) throw new Error(`${rows}: ${free.length} free lots for ${ids.length} shops`);
-    ids.forEach((sid, i) => { used.add(free[i].key); setAt(sid, [r1(free[i].at[0] + ox), r1(free[i].at[1] + oz)]); if (process.argv.includes('--lots')) console.log('  ', sid, free[i].key); });
+    ids.forEach((sid, i) => { used.add(free[i].key); if (!sid) return; setAt(sid, [r1(free[i].at[0] + ox), r1(free[i].at[1] + oz)]); if (process.argv.includes('--lots')) console.log('  ', sid, free[i].key); });
   }
   writeFileSync(path.join(R, 'stores.json'), stores);
   console.log(`hongdae: ${t.buildings.length} buildings, ${used.size} shops placed; stage at [${STAGE[0] + ox}, ${STAGE[1] + oz}]`);

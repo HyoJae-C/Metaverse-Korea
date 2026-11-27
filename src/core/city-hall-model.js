@@ -50,28 +50,50 @@ export function buildOldCityHall(g, l) {
   const out = signedArea(P) > 0 ? 1 : -1; // which way is outside
   let front = null; // the longest wall facing south
   const tu = l.tower ? l.tower[0] : null; // the entrance is under the clock tower, the middle of the real front
+  // OSM breaks a straight wall into short pieces: join the pieces that run
+  // on in the same direction, so each wall gets one even row of windows.
+  const walls = [];
   for (let i = 0; i < P.length; i++) {
     const a = P[i], b = P[(i + 1) % P.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (L < 0.01) continue;
+    const w = walls[walls.length - 1], dir = [(b[0] - a[0]) / L, (b[1] - a[1]) / L];
+    if (w && w.dir[0] * dir[0] + w.dir[1] * dir[1] > 0.998) { w.b = b; const l2 = Math.hypot(b[0] - w.a[0], b[1] - w.a[1]); w.dir = [(b[0] - w.a[0]) / l2, (b[1] - w.a[1]) / l2]; } else walls.push({ a, b, dir });
+  }
+  if (walls.length > 1) { const f = walls[0], z = walls[walls.length - 1]; if (z.b === f.a && z.dir[0] * f.dir[0] + z.dir[1] * f.dir[1] > 0.998) { f.a = z.a; walls.pop(); } }
+  const PITCH = 1.25, PORCH = 5.4;
+  for (const w of walls) {
+    w.L = Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]);
+    if (-w.dir[0] * out > 0.9 && (!front || w.L > front.L)) front = w;
+  }
+  for (const w of walls) {
+    const { a, b, L } = w;
     if (L < 1.6) continue;
     const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, nx = uz * out, nz = -ux * out; // outward
-    if (nz > 0.9 && (!front || L > front.L)) front = { a, b, L };
+    const ry = Math.atan2(nx, nz), mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+    const ax = [Math.cos(ry), -Math.sin(ry)]; // the wall's own x along the ground
+    // Windows in mirror pairs about the wall's middle, or about the clock
+    // tower on the front (the door is under it): the same count each side.
+    const odd = w === front && tu != null; // a window column right over the door
+    const c = odd ? (tu - mx) * ax[0] : 0;
+    const half = Math.min(L / 2 - c, L / 2 + c) - 0.45;
+    const xs = [];
+    if (odd) { for (let k = 0; k * PITCH <= half - 0.3; k++) { xs.push(c + k * PITCH); if (k) xs.push(c - k * PITCH); } } else for (let k = 0; (k + 0.5) * PITCH <= half - 0.3; k++) xs.push(c + (k + 0.5) * PITCH, c - (k + 0.5) * PITCH);
     const wall = new THREE.Group();
-    const n = Math.max(1, Math.floor((L - 0.6) / 1.25));
-    for (let k = 0; k < n; k++) {
-      const x = -L / 2 + ((k + 0.5) * L) / n;
-      for (let f = 0; f < floors; f++) box(wall, 0.55, fh * 0.62, 0.08, x, 1.25 + f * fh + fh * 0.36, 0.03, C.window);
+    for (const x of xs) for (let f = 0; f < floors; f++) {
+      if (odd && f === 0 && Math.abs(x - c) < PORCH / 2 + 0.2) continue; // (behind the porch)
+      box(wall, 0.55, fh * 0.62, 0.08, x, 1.25 + f * fh + fh * 0.36, 0.03, C.window);
     }
     box(wall, L, 0.14, 0.14, 0, 1.0 + fh, 0.05, C.stoneLight); // a string course over the ground floor
-    wall.position.set((a[0] + b[0]) / 2 + nx * 0.02, 0, (a[1] + b[1]) / 2 + nz * 0.02);
-    wall.rotation.y = Math.atan2(nx, nz);
+    wall.position.set(mx + nx * 0.02, 0, mz + nz * 0.02);
+    wall.rotation.y = ry;
     g.add(wall);
   }
   // The entrance: a stone porch with three doors, steps down to the plaza.
   if (front) {
     const fx = tu ?? (front.a[0] + front.b[0]) / 2;
     const fz = tu == null ? Math.max(front.a[1], front.b[1]) : Math.max(...P.filter(([u]) => Math.abs(u - tu) < 8).map((q) => q[1]));
-    box(g, 5.4, fh + 1.3, 1.1, fx, (fh + 1.3) / 2, fz + 0.5, C.stoneLight);
-    box(g, 5.8, 0.3, 1.4, fx, fh + 1.45, fz + 0.5, C.stoneDark);
+    box(g, 5.4, fh + 1.0, 1.1, fx, (fh + 1.0) / 2, fz + 0.5, C.stoneLight); // (its cap stays under the first-floor windows)
+    box(g, 5.8, 0.3, 1.4, fx, fh + 1.15, fz + 0.5, C.stoneDark);
     for (const k of [-1, 0, 1]) box(g, 1.1, fh * 0.95, 0.12, fx + k * 1.6, 0.5 + (fh * 0.95) / 2, fz + 1.06, k ? C.window : C.door);
     for (let i = 0; i < 3; i++) box(g, 6.6 - i * 0.3, 0.14, 0.4, fx, 0.07 + i * 0.13, fz + 2.0 - i * 0.38, C.stoneDark);
   }
@@ -245,6 +267,9 @@ export function buildCityHall(g, l) {
 // The Korean peninsula for the lawn, [longitude, latitude] round the coast, and Jeju.
 const KOREA = [[124.3, 39.9], [125, 40.5], [126, 41], [126.9, 41.8], [128, 41.5], [128.3, 42], [129.2, 42.2], [129.9, 43], [130.6, 42.4], [129.8, 41.5], [129.7, 40.9], [128.6, 40.2], [127.6, 39.8], [127.5, 39.3], [128.3, 38.6], [129, 37.7], [129.4, 37], [129.5, 36], [129.4, 35.5], [129.1, 35.1], [128.4, 34.9], [127.7, 34.7], [126.9, 34.4], [126.3, 34.4], [126.1, 34.8], [126.4, 35.5], [126.5, 36.3], [126.2, 36.8], [126.8, 37], [126.6, 37.6], [125.6, 37.8], [124.9, 38.1], [125.3, 38.7], [125.2, 39.3], [124.6, 39.6]];
 const JEJU = [126.55, 33.38];
+// Ulleungdo and Dokdo in the East Sea, on their real spots; drawn about 2.5
+// times their real size (Ulleungdo ~10 km across) so they show on the grass.
+const ULLEUNG = [130.87, 37.5], DOKDO = [[131.865, 37.243], [131.871, 37.241]];
 
 // The lawn's grass, laid just over the map's flat green (l.outline: [u, v] round the lawn, v south).
 export function buildPlazaLawn(g, l) {
@@ -266,17 +291,22 @@ export function buildPlazaLawn(g, l) {
     path.closePath();
     const [jx, jy] = at(JEJU);
     path.ellipse(jx, jy, 0.45 * kx * s, 0.2 * s, 0, 0, Math.PI * 2);
+    const [ux, uy] = at(ULLEUNG);
+    path.moveTo(ux + 0.12 * kx * s, uy); path.ellipse(ux, uy, 0.12 * kx * s, 0.1 * s, 0, 0, Math.PI * 2);
     c.fillStyle = '#a9d86a'; c.fill(path);
     blades(16000, ['#b9e37a', '#98cc5c', '#c6ea8a', '#8fc455'], (x, y) => c.isPointInPath(path, x, y));
+    // Dokdo's two islets (Dongdo, Seodo), pulled a little apart so both show; too small for blades
+    c.fillStyle = '#b9e37a';
+    DOKDO.forEach((d, i) => { const [x, y] = at(d), r = 3 - i * 0.5; c.beginPath(); c.arc(x + (i ? 3.8 : -3.8), y, r, 0, Math.PI * 2); c.fill(); });
   }, { anisotropy: 4 });
   const shape = new THREE.Shape(l.outline.map(([u, v]) => new THREE.Vector2(u, -v)));
   const geo = new THREE.ShapeGeometry(shape);
   const pos = geo.attributes.position, uv = geo.attributes.uv;
   for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) - u0) / (u1 - u0), (pos.getY(i) + v1) / (v1 - v0)); // (picture's top = north)
-  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
   m.name = 'lawn';
   m.rotation.x = -Math.PI / 2;
-  m.position.y = l.y || 0.03;
+  m.position.y = l.y || 0.026; // (over the grass area under it, 0.022, as the map's layers are; no depth offset, which drew it over picnic mats)
   m.receiveShadow = true;
   g.add(m);
 }

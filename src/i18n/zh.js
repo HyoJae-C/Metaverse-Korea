@@ -490,6 +490,8 @@ export const ZH = {
   'bukhan.viewClose': "关闭",
   'bukhan.noRide': "🚲 北汉山上不能骑车或开车，从这里开始步行上山吧。",
   'bukhan.noTaxi': "🚕 出租车上不了山，请先走下山到北汉山牛耳站再打车。",
+  'bukhan.alt': "⛰️ 海拔 {n} 米",
+  'bukhan.fell': "🤕 摔倒了！休息一下吧。山上要慢慢走。",
   'bike.offShort': '下车',
   'bike.off': '下车',
   'car.off': '下车',
@@ -1297,4 +1299,6 @@ export const ZH = {
   "invite.copy": "复制链接",
   "invite.copied": "链接已复制",
   "invite.later": "以后再说",
+  "climbWall.name": "纛岛人工攀岩墙",
+  "climbWall.soon": "正在准备中",
 };

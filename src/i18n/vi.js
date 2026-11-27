@@ -490,6 +490,8 @@ export const VI = {
   'bukhan.viewClose': "Đóng",
   'bukhan.noRide': "🚲 Không được đi xe đạp hay ô tô trên núi Bukhansan. Từ đây hãy đi bộ.",
   'bukhan.noTaxi': "🚕 Taxi không lên núi được. Hãy đi bộ xuống ga Bukhansan Ui trước.",
+  'bukhan.alt': "⛰️ Độ cao {n} m so với mực nước biển",
+  'bukhan.fell': "🤕 Bạn bị vấp ngã! Nghỉ một chút. Trên núi hãy đi chậm thôi.",
   'bike.offShort': 'Xuống xe',
   'bike.off': 'Xuống xe đạp',
   'car.off': 'Xuống ô tô',
@@ -1294,4 +1296,6 @@ export const VI = {
   "invite.copy": "Sao chép liên kết",
   "invite.copied": "Đã sao chép liên kết",
   "invite.later": "Để sau",
+  "climbWall.name": "Tường leo núi Ttukseom",
+  "climbWall.soon": "Đang chuẩn bị. Chưa mở cửa.",
 };

@@ -3,6 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { LIE_HEAD } from '../src/core/lie-spot.js';
 
 const grad = { addColorStop() {} };
 const ctx = new Proxy({}, { get: (o, k) => (k === 'measureText' ? () => ({ width: 100 }) : /Gradient|Pattern/.test(k) ? () => grad : /ImageData/.test(k) ? () => ({ data: new Uint8ClampedArray(4 * 64 * 64) }) : k in o ? o[k] : () => {}), set: (o, k, v) => { o[k] = v; return true; } });
@@ -57,6 +58,6 @@ test('the skin clinic is in Gangnam by the two cosmetic clinics, with treatment 
   assert.equal(beds.length, 3);
   for (const b of beds) {
     assert.ok(b.lie && b.lamp?.length === 3);
-    assert.ok(Math.hypot(b.lamp[0] - b.x, b.lamp[2] - (b.z - 1)) < 0.3, 'the lamp is over the pillow');
+    assert.ok(Math.hypot(b.lamp[0] - b.x, b.lamp[2] - (b.z - LIE_HEAD)) < 0.1, 'the lamp is over the face (the head on the pillow, core/lie-spot.js)');
   }
 });

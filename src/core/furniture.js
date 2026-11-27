@@ -6,6 +6,7 @@ import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE as SHOP_PIECES } from './furniture-shop.js';
 import { APPLIANCE_KIND } from './appliances.js';
 import { PARTITIONS } from './partitions.js';
+import { PILLOW_TO_SPOT } from './lie-spot.js';
 // The furniture shops' pieces, with the room dividers (core/partitions.js).
 const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
 import { TANKS, buildTank } from './fish-tank-pieces.js';
@@ -143,7 +144,7 @@ const LAMPS = [
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
 // The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
 // hammock: one lies down; vanity: one sits on the stool in front, facing the mirror.
-const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2 }, hammock: { lie: 1 }, vanity: { seat: true, seatAt: 0.2, faceMirror: true } };
+const SEAT_KIND = { true: { seat: true }, 2: { seat: 2 }, floor: { seat: 2, floor: true }, bed: { lie: 2, pillow: -0.745 }, hammock: { lie: 1, pillow: -0.62 }, vanity: { seat: true, seatAt: 0.2, faceMirror: true } };
 export const SHOP_FURNITURE_IDS = SHOP_FURNITURE.map((f) => [f[0], f[1], f[4]]);
 export const TANK_IDS = TANKS.map((t) => [t.id, t.emoji, t.name]);
 
@@ -152,7 +153,7 @@ export const FURNITURE = [
   // stained, patched and a little crooked, so the furniture shops on
   // Euljiro have something to replace (Yozi 2026-11-16). Ids stay the same,
   // so rooms already decorated keep their pieces.
-  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], lie: 2, name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
+  { id: 'bed', emoji: '🛏️', size: [1.6, 2.1], lie: 2, pillow: -0.75, name: { en: 'Old bed', ko: '낡은 침대', ja: '古いベッド', zh: '旧床' },
     build(g) {
       box(g, 1.6, 0.35, 2.1, 0, 0.18, 0, '#a99278');
       box(g, 1.5, 0.15, 2.0, 0, 0.42, 0, '#e8e2d4'); // yellowed mattress
@@ -299,6 +300,18 @@ export const FURNITURE = [
       }
     } },
 ];
+// Beds are shorter than they were drawn (Yozi 2026-11-27: a 2.1 m bed was far
+// too long for our 1.2 m people): each one is drawn as before and squeezed
+// lengthwise, footprint and pillow with it. A bed already in a home keeps
+// its middle, so it stays where it was, a little shorter.
+export const BED_SQUEEZE = 1.75 / 2.1;
+for (const f of FURNITURE) {
+  if (f.lie !== 2) continue;
+  const make = f.build, k = BED_SQUEEZE;
+  f.size = [f.size[0], +(f.size[1] * k).toFixed(3)];
+  f.pillow *= k;
+  f.build = (g) => { const inner = new THREE.Group(); inner.scale.z = k; g.add(inner); make(inner); };
+}
 
 // A ride photo in a frame (core/ride-photos.js): 'ph:<photo id>', made on
 // demand. Its picture comes from setPhotoSrc (my own photos, or the ones a
@@ -361,12 +374,13 @@ export function furnitureSeats(it) {
   const [w, d] = f.size, c = Math.cos(it.ry), s = Math.sin(it.ry);
   const at = (lx, lz) => [it.x + lx * c + lz * s, it.z - lx * s + lz * c]; // the piece's own x (right) and z (front)
   const xs = n === 2 ? [-w / 4, w / 4] : [0];
-  // Head on the pillow at the back. A bed often stands against a wall, so
-  // both places are offered from either side or the foot (reach), and you
-  // get up at the foot, never on the wall side.
+  // Head on the pillow at the back (pillow: its middle, in the piece's z;
+  // core/lie-spot.js). A bed often stands against a wall, so both places are
+  // offered from either side or the foot (reach: as far as from the bed's
+  // middle), and you get up at the foot, never on the wall side.
   if (f.lie) return xs.map((lx) => {
-    const [x, z] = at(lx, 0.15);
-    return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6, stand: at(lx, d / 2 + 0.55) };
+    const lz = f.pillow + PILLOW_TO_SPOT, [x, z] = at(lx, lz);
+    return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6 + 0.15 - lz, stand: at(lx, d / 2 + 0.55) };
   });
   return xs.map((lx) => {
     const [x, z] = at(lx, f.seatAt ?? 0.05);
