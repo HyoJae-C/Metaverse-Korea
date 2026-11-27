@@ -184,6 +184,8 @@ export function createTaxi(game) {
   // ---- The host: pick a place, maybe ask the people close by.
   let host = null; // { h: TaxiHost, dest, fx, fz, timer, until }
   function rideTaxi(dest) {
+    const no = game.noTaxiHere?.(); // (somewhere no taxi comes: up Bukhansan)
+    if (no) { shop.toast(no); return; }
     if (closedAt(dest.x, dest.z)) { shop.toast(st('closed')); return; }
     // Drop-off: the nearest point on a road a car can use, on free ground.
     const [rx, rz] = taxiDropOff(dest.x, dest.z);

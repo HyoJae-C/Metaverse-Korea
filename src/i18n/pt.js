@@ -483,6 +483,8 @@ export const PT = {
   "bukhan.viewHint": "Arraste para olhar ao redor",
   "bukhan.viewNote": "Um desenho no estilo do jogo, feito a partir do relevo real. Não é uma foto.",
   "bukhan.viewClose": "Fechar",
+  "bukhan.noRide": "🚲 Nada de bicicletas ou carros no Bukhansan. Daqui em diante, vai-se a pé.",
+  "bukhan.noTaxi": "🚕 Os táxis não sobem a montanha. Desça primeiro até a estação Bukhansan Ui.",
   "bike.offShort": "Descer",
   "bike.off": "Descer da bicicleta",
   "car.off": "Sair do carro",

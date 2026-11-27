@@ -483,6 +483,8 @@ export const ID = {
   'bukhan.viewHint': "Geser untuk melihat sekeliling",
   'bukhan.viewNote': "Gambar bergaya game yang dibuat dari bentuk medan asli. Bukan foto.",
   'bukhan.viewClose': "Tutup",
+  'bukhan.noRide': "🚲 Tidak boleh naik sepeda atau mobil di Bukhansan. Dari sini jalan kaki.",
+  'bukhan.noTaxi': "🚕 Taksi tidak bisa naik ke gunung. Turun dulu ke Stasiun Bukhansan Ui.",
   'bike.offShort': 'Turun',
   'bike.off': 'Turun dari sepeda',
   'car.off': 'Keluar dari mobil',

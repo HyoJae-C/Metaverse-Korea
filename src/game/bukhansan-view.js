@@ -38,17 +38,21 @@ const pickName = (n, lang) => n[lang] || (lang === 'zht' ? n.zh : null) || n.en;
 const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 
 // The whole turn as one strip (a canvas 360° wide).
-export function paintStrip(data, makeCanvas = (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h })) {
-  const V = VIEW, N = data.n, W = 360 * V.px, H = (V.top - V.bottom) * V.px;
+// backdrop (game/bukhansan-summit.js): the far country only, on a clear
+// ground, to stand round the real top: no sky (the game's own shows), none of
+// the mountain's own ridges, woods and rock (they are there in 3D). px: strip
+// pixels per degree.
+export function paintStrip(data, makeCanvas = (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h }), { backdrop = false, px = VIEW.px } = {}) {
+  const V = { ...VIEW, px }, N = data.n, W = 360 * V.px, H = (V.top - V.bottom) * V.px;
   const c = makeCanvas(W, H), g = c.getContext('2d');
   const X = (i) => (i / N) * W, Y = (deg) => (V.top - deg) * V.px;
   const rnd = mulberry(836);
   // The sky.
   const sky = g.createLinearGradient(0, 0, 0, Y(-2));
   sky.addColorStop(0, '#5fa8e6'); sky.addColorStop(0.7, '#a9d3f2'); sky.addColorStop(1, '#dcecf4');
-  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  if (!backdrop) { g.fillStyle = sky; g.fillRect(0, 0, W, H); }
   g.fillStyle = 'rgba(255,255,255,0.85)';
-  for (let k = 0; k < 16; k++) { // clouds: a few flat puffs (drawn twice at the seam)
+  for (let k = 0; k < (backdrop ? 0 : 16); k++) { // clouds: a few flat puffs (drawn twice at the seam)
     const x = rnd() * W, y = Y(3 + rnd() * 8), w = 60 + rnd() * 110;
     for (const dx of [0, -W, W]) for (let q = 0; q < 4; q++) { g.beginPath(); g.ellipse(x + dx + (q - 1.5) * w * 0.24, y - (q % 2) * 5, w * 0.2, 9 + (q % 2) * 5, 0, 0, Math.PI * 2); g.fill(); }
   }
@@ -62,7 +66,7 @@ export function paintStrip(data, makeCanvas = (w, h) => Object.assign(document.c
   };
   const lines = data.ridge.map((_, b) => line(b));
   const lineY = (b, x) => { const p = lines[b]; let k = 1; while (k < p.length - 1 && p[k][0] < x) k++; const a = p[k - 1], q = p[k]; return a[1] + ((q[1] - a[1]) * (x - a[0])) / (q[0] - a[0] || 1); };
-  for (let b = data.ridge.length - 1; b >= 0; b--) {
+  for (let b = data.ridge.length - 1; b >= (backdrop ? 1 : 0); b--) {
     const p = lines[b], [top, foot] = BAND_COLORS[b];
     const fill = g.createLinearGradient(0, Y(b ? 1 : 0), 0, Y(b ? -12 : V.bottom));
     fill.addColorStop(0, top); fill.addColorStop(1, foot);
@@ -111,7 +115,7 @@ export function paintStrip(data, makeCanvas = (w, h) => Object.assign(document.c
   for (const [i, lo, hi] of data.han || []) g.fillRect(X(i) - 1, Y(hi / 100) - 1, W / N + 2, Math.max(2.5, Y(lo / 100) - Y(hi / 100) + 2));
   // The bare granite of the peaks next door (Insubong, Mangyeongdae): the
   // nearest band's own outline round each, in flat rock colours.
-  for (const pl of data.places) {
+  for (const pl of backdrop ? [] : data.places) {
     if (pl.km > 1) continue;
     const i0 = Math.round((pl.az / 360) * N), half = 26, base = Y(pl.an - 7.5);
     const pts = [];
@@ -127,6 +131,7 @@ export function paintStrip(data, makeCanvas = (w, h) => Object.assign(document.c
       g.beginPath(); g.moveTo(top[0] + dx, top[1]); for (const [x, y] of pts.filter((q) => q[0] >= top[0])) g.lineTo(x + dx, y); g.lineTo(top[0] + (end[0] - top[0]) * 0.3 + dx, base); g.closePath(); g.fill();
     }
   }
+  if (backdrop) return c;
   // Under your feet: the top's own rock, all the way round.
   const edge = (x) => Y(-27.5) + Math.round((Math.sin((x / W) * Math.PI * 2 * 7) * 12 + Math.sin((x / W) * Math.PI * 2 * 19) * 6) / 6) * 6;
   g.fillStyle = '#c9c2b4';

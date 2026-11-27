@@ -70,8 +70,32 @@ await look('gate', '6-gate', { yaw: 2.4, pitch: 0.15, dist: 8 });
 const steps = l.trails.find((t) => t.steps).p;
 await go(steps[Math.floor(steps.length / 2)], 1200);
 await cam({ yaw: 2.2, pitch: 0.1, dist: 7 }); await page.waitForTimeout(1500); await shot('7-rock-steps');
+// Turning the view all the way round on the steep steps: the camera never goes inside the mountain (Yozi 2026-11-27: you saw under the ground).
+{
+  let worst = Infinity, at = null;
+  for (const q of [steps[Math.floor(steps.length / 2)], steps[4], l.trails[3].p[8], l.trails[1].p[20]]) {
+    await go(q, 600);
+    for (let k = 0; k < 8; k++) for (const pitch of [-0.2, 0.05, 0.4]) {
+      await cam({ yaw: (k / 8) * Math.PI * 2, pitch, dist: 14 }); await page.waitForTimeout(450);
+      const over = await page.evaluate(() => { const c = __mk.camPos(); return c[1] - __mk.bukhan.y(c[0], c[2]); });
+      if (over < worst) { worst = over; at = [k, pitch]; }
+    }
+  }
+  assert(worst > 0.3, `the camera stays over the ground all the way round (lowest ${worst.toFixed(2)} m over it, at ${at})`);
+  await cam({ yaw: 5.5, pitch: -0.1, dist: 12 }); await go(steps[Math.floor(steps.length / 2)], 900); await shot('7b-steps-from-uphill');
+}
 await look('peak', '8-top', { yaw: 0.4, pitch: 0.3, dist: 9 });
 await cam({ yaw: 2.6, pitch: 0.55, dist: 60 }); await page.waitForTimeout(1500); await shot('9-top-from-above');
+
+// The top's own drawing (game/bukhansan-summit.js): the far country all round, the sea of clouds, the wind.
+await page.waitForFunction(() => __mk.bukhan.park?.summit?.ready, null, { timeout: 20000 });
+assert(await page.evaluate(() => __mk.bukhan.park.summit.open > 0.99), 'at the top the far country, the clouds and the wind are fully shown');
+for (const [i, yaw] of [0, Math.PI / 2, Math.PI, -Math.PI / 2].entries()) { await cam({ yaw, pitch: 0.12, dist: 7 }); await page.waitForTimeout(900); await shot(`9${'abcd'[i]}-top-round`); }
+await cam({ yaw: 2.9, pitch: 0.3, dist: 16 }); await page.waitForTimeout(900); await shot('9e-top-wide');
+console.log('render at the top', JSON.stringify(await page.evaluate(() => __mk.renderInfo?.())));
+await go(l.pads.find((q) => q.k === 'gate').at, 1200);
+assert(await page.evaluate(() => __mk.bukhan.park.summit.open === 0), 'at the gate it is the street as usual');
+await go(l.pads.find((q) => q.k === 'peak').at, 1200);
 
 // The view from the top.
 const acts = await page.evaluate(() => __mk.bukhan.acts({ x: __mk.me()[0], z: __mk.me()[1] }).map((a) => a.key));

@@ -24,18 +24,24 @@ import * as THREE from 'three';
 import { addSnowCover } from '../core/snow-cover.js';
 import { MIX, leafColor, leafHash } from '../core/season.js';
 import { inPoly, trailNear } from '../core/skypark-ground.js';
-import { bukhanBox } from '../core/bukhan-ground.js';
+import { bukhanBox, WAY_PAST } from '../core/bukhan-ground.js';
 import { heightGrid } from '../core/height-grid.js';
 
 export const BUKHAN_PARK = {
   fine: 2, // m: the ground's cells along the way
-  fineNear: 14, // m from the way's middle: cells this near are cut fine
+  fineNear: 8, // m from the way's middle: cells this near are cut fine (14 m cost 6k triangles more for nothing you could see)
   sink: 0.1, // the ground is drawn this much lower (you walk on the true height)
   hide: 900, // m from the mountain's box: past this it is not drawn
+  summitNear: 140, // m from the top: the top's own drawing loads, and shows as you climb above the gate
+  sun: [330, 560], // m across: the sun's glow at sunrise and sunset, on the way up and at the top (its disc is a tenth of that)
+  sunFar: 1000, // m from you (past the top's ring of far country)
+  glow: [0.07, 0.16], // how much the mountain warms in the low sun, on the way up and at the top
+  lift: 0.25, // how far the haze pulls back at the top (core/weather.js lift): to about 590 m, past the peaks next door
   trees: 1500, // by the way (lowSpec: half)
   treeNear: 34, // m from the way: single trees
   treeClear: 2.4, // m from the way's edge
-  mass: 7, // m between the far slopes' crowns (lowSpec: 11)
+  mass: 13, // m between the far slopes' clumps of crowns (lowSpec: 18)
+  woodFrom: 18, // m from the way: past this the wood is one mass (the ground in the canopy's colours, with clumps on it), not trees
   post: 2.2, // m between the handrail's posts
   railH: 1.05,
 };
@@ -73,6 +79,19 @@ export function rockAt(l, i, j) {
   return !!((parseInt(l.rock[k >> 2] || '0', 16) >> (3 - (k & 3))) & 1);
 }
 
+const WOOD = ['#4f8045', '#5d8f4a', '#46733f', '#6a9550', '#3c6b3e'].map((c) => new THREE.Color(c)); // the wood's canopy (the last: its pines, green all year)
+
+// A clump of the wood seen from far: green, or the season's colour, b (0-1) a little lighter or darker.
+export function woodColor(n, b = 0.5) {
+  const h = hash(n, 3), base = WOOD[Math.floor(h * 29) % 4];
+  // (most clumps stay green, some take the season's colour whole: mixing the two makes mud)
+  const c = h > 0.84 ? WOOD[4].clone() : hash(n, 11) < 0.62 ? base.clone() : leafColor(base, leafHash(n, 5), MIX.wood).clone();
+  return c.multiplyScalar(0.93 + b * 0.14);
+}
+
+// How far up (0-1) you are at height y, the gate at gateY: 0 until 4 m above the gate, 1 from 20 m above it.
+export const summitOpen = (y, gateY) => { const k = Math.max(0, Math.min(1, (y - gateY - 4) / 16)); return k * k * (3 - 2 * k); };
+
 // The Taegeukgi (the flag at the top), drawn.
 function flagTexture() {
   const c = document.createElement('canvas');
@@ -95,6 +114,26 @@ function flagTexture() {
     bars.forEach((whole, k) => { const yy = -10 + k * 8; if (whole) g.fillRect(-13, yy, 26, 5); else { g.fillRect(-13, yy, 11, 5); g.fillRect(2, yy, 11, 5); } });
     g.restore();
   }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// The carving on the rock at the top, as it really is: 北漢山 over 白雲臺, the height under it, cut dark into the granite.
+function carvedTexture(height) {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 288;
+  const g = c.getContext('2d');
+  g.fillStyle = '#bdb6a9'; g.fillRect(0, 0, 512, 288);
+  for (let i = 0; i < 90; i++) { g.fillStyle = `rgba(${i % 2 ? 255 : 90},${i % 2 ? 250 : 84},${i % 2 ? 240 : 76},0.07)`; g.fillRect(hash(i, 1) * 512, hash(i, 2) * 288, 14 + hash(i, 3) * 60, 3 + hash(i, 4) * 10); } // (the granite's grain)
+  g.fillStyle = '#2f2b27'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  const serif = '"Noto Serif KR", "Noto Serif CJK KR", "Nanum Myeongjo", "Songti SC", "SimSun", "MS Mincho", serif';
+  g.font = `600 44px ${serif}`;
+  ['北', '漢', '山'].forEach((ch, i) => g.fillText(ch, 196 + i * 62, 52));
+  g.font = `700 112px ${serif}`;
+  ['白', '雲', '臺'].forEach((ch, i) => g.fillText(ch, 106 + i * 150, 152));
+  g.font = '600 46px Georgia, serif';
+  g.fillText(height, 372, 246);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -124,8 +163,9 @@ export const STOP_NAMES = {
   peak: ['백운대', 'Baegundae'],
 };
 
-export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
+export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = () => 1, sfx = () => null, weather = () => null }) {
   const P = BUKHAN_PARK;
+  const woods = []; // the far slopes' tiles (those under the clouds are not drawn from the top)
   const group = new THREE.Group();
   group.name = 'bukhansan-park';
   const counts = {};
@@ -147,11 +187,13 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
     const greens = ['#6f8f4f', '#7a9a55', '#647f47', '#82995c'].map((h) => new THREE.Color(h));
     const greys = ['#b9b2a6', '#c4bdb0', '#aea79b', '#cbc5ba'].map((h) => new THREE.Color(h));
     const c = g.cell, f = P.fine, n = c / f;
+    // (greens only: an 8 m triangle in an autumn colour reads as a flag, not a tree; the season shows on the clumps that stand on it)
+    const canopy = (i, j, k) => WOOD[Math.floor(hash(i * 3 + k, j * 5 + 1) * 4)].clone().multiplyScalar(0.94 + hash(i * 2 + k, j * 2 + 7) * 0.12);
     const hg = heightGrid(l.x + bx0, l.z + bz0, l.x + bx1, l.z + bz1, f, y); // (fine corners, asked only where used)
-    const quad = (i0, j0, i1, j1, shade) => {
+    const quad = (i0, j0, i1, j1, shade, shade2 = shade) => {
       const q = [[hg.xs[i0], hg.y(i0, j0), hg.zs[j0]], [hg.xs[i1], hg.y(i1, j0), hg.zs[j0]], [hg.xs[i1], hg.y(i1, j1), hg.zs[j1]], [hg.xs[i0], hg.y(i0, j1), hg.zs[j1]]];
       if (Math.max(q[0][1], q[1][1], q[2][1], q[3][1]) < P.sink) return;
-      for (const k of [0, 3, 2, 0, 2, 1]) { const [a, h, b] = q[k]; pos.push(a, h - P.sink, b); col.push(shade.r, shade.g, shade.b); }
+      [0, 3, 2, 0, 2, 1].forEach((k, t) => { const [a, h, b] = q[k], s = t < 3 ? shade : shade2; pos.push(a, h - P.sink, b); col.push(s.r, s.g, s.b); });
     };
     for (let j = 0; j < g.h - 1; j++) for (let i = 0; i < g.w - 1; i++) {
       const cx = gx0 + (i + 0.5) * c, cz = gz0 + (j + 0.5) * c;
@@ -159,6 +201,9 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
       const pick = (a, b) => (rock ? greys : greens)[Math.floor(hash(a, b) * 4) % 4];
       if (Math.min(trailD(cx, cz), padD(cx, cz)) < P.fineNear) {
         for (let b = 0; b < n; b++) for (let a = 0; a < n; a++) quad(i * n + a, j * n + b, i * n + a + 1, j * n + b + 1, pick(i * n + a, j * n + b));
+      } else if (!rock && Math.min(trailD(cx, cz), padD(cx, cz)) > P.woodFrom) {
+        // Away from the way the wood is one mass, not trees (Yozi 2026-11-27: from up a mountain you see it in clumps): the ground itself in the canopy's colours, a patch a triangle.
+        quad(i * n, j * n, (i + 1) * n, (j + 1) * n, canopy(i, j, 0), canopy(i, j, 1));
       } else quad(i * n, j * n, (i + 1) * n, (j + 1) * n, pick(i, j));
     }
     const geo = new THREE.BufferGeometry();
@@ -178,8 +223,8 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
       for (let i = 1; i < p.length; i++) {
         const a = p[i - 1], b = p[i], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
         if (len < 0.01) continue;
-        const e = Math.min(w / 2, 1.2) / len, ax = a[0] - (b[0] - a[0]) * e, az = a[1] - (b[1] - a[1]) * e, bx = b[0] + (b[0] - a[0]) * e, bz = b[1] + (b[1] - a[1]) * e; // (a little past both ends, so the bends close)
-        const nx = (-(b[1] - a[1]) / len) * w / 2, nz = ((b[0] - a[0]) / len) * w / 2, ya = a[2] + lift, yb = b[2] + lift;
+        const e = Math.min(w / 2, WAY_PAST) / len, ax = a[0] - (b[0] - a[0]) * e, az = a[1] - (b[1] - a[1]) * e, bx = b[0] + (b[0] - a[0]) * e, bz = b[1] + (b[1] - a[1]) * e; // (a little past both ends, so the bends close)
+        const nx = (-(b[1] - a[1]) / len) * w / 2, nz = ((b[0] - a[0]) / len) * w / 2, rise = (b[2] - a[2]) * e, ya = a[2] - rise + lift, yb = b[2] + rise + lift; // (the same slope past the ends: the stretches meet with no ledge)
         out.push(ax + nx, ya, az + nz, bx + nx, yb, bz + nz, bx - nx, yb, bz - nz, ax + nx, ya, az + nz, bx - nx, yb, bz - nz, ax - nx, ya, az - nz);
       }
     };
@@ -223,24 +268,27 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
     const st = instanced(block, addSnowCover(new THREE.MeshLambertMaterial({ color: 0xc2bbad }), 0.8), steps, 'bukhansan-steps');
     st.receiveShadow = true;
     group.add(st);
-    // The top's fence: steel posts round the pad's edge, open where the steps come up.
+    // The top's fence: steel posts and one cable round the edge of the rock you can walk on (summit.rock; the level top if there is none), open where the steps come up.
     const top = pad('peak'), tEnd = trails.find((t) => t.steps)?.p.at(-2);
     const gap = tEnd ? Math.atan2(tEnd[1] - top.at[1], tEnd[0] - top.at[0]) : 0;
+    const edge = l.summit.rock ? l.summit.rock.map(W) : Array.from({ length: 23 }, (_, k) => { const a = (k / 23) * Math.PI * 2; return [top.at[0] + Math.cos(a) * top.r, top.at[1] + Math.sin(a) * top.r]; });
     let lastTop = null;
-    for (let k = 0; k <= 22; k++) {
-      const a = gap + 0.42 + ((Math.PI * 2 - 0.84) * k) / 22, px = top.at[0] + Math.cos(a) * (top.r - 0.15), pz = top.at[1] + Math.sin(a) * (top.r - 0.15);
-      posts.push([px, top.y, pz]);
-      if (lastTop) rails.push([(px + lastTop[0]) / 2, top.y + P.railH, (pz + lastTop[1]) / 2, Math.atan2(px - lastTop[0], pz - lastTop[1]), Math.hypot(px - lastTop[0], pz - lastTop[1]), 0]);
-      lastTop = [px, pz];
+    for (let k = 0; k <= edge.length; k++) {
+      const [ex, ez] = edge[k % edge.length], a = Math.atan2(ez - top.at[1], ex - top.at[0]), r = Math.hypot(ex - top.at[0], ez - top.at[1]) - 0.2;
+      if (Math.abs(((a - gap + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.42) { lastTop = null; continue; } // (the way in)
+      const px = top.at[0] + Math.cos(a) * r, pz = top.at[1] + Math.sin(a) * r, py = y(px, pz);
+      posts.push([px, py, pz]);
+      if (lastTop) { const len = Math.hypot(px - lastTop[0], pz - lastTop[2]); rails.push([(px + lastTop[0]) / 2, (py + lastTop[1]) / 2 + P.railH - 0.12, (pz + lastTop[2]) / 2, Math.atan2(px - lastTop[0], pz - lastTop[2]), Math.hypot(len, py - lastTop[1]), Math.atan2(py - lastTop[1], len), 1]); }
+      lastTop = [px, py, pz];
     }
     const steel = new THREE.MeshLambertMaterial({ color: 0x8b8f96 });
     group.add(instanced(new THREE.CylinderGeometry(0.035, 0.035, P.railH, 5).translate(0, P.railH / 2, 0), steel, posts, 'bukhansan-posts'));
     const railMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.04, 0.04, 1), steel, Math.max(1, rails.length * 2));
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3();
-    rails.forEach(([x, yy, z, ry, len, pitch], i) => {
+    rails.forEach(([x, yy, z, ry, len, pitch, one], i) => {
       e.set(-pitch, ry, 0, 'YXZ'); q.setFromEuler(e);
       railMesh.setMatrixAt(i * 2, m4.compose(v.set(x, yy, z), q, s.set(1, 1, len)));
-      railMesh.setMatrixAt(i * 2 + 1, m4.compose(v.set(x, yy - 0.45, z), q, s.set(1, 1, len))); // (two lines, like the cables)
+      railMesh.setMatrixAt(i * 2 + 1, m4.compose(v.set(x, yy - (one ? 0 : 0.45), z), q, s.set(1, 1, len))); // (two lines, like the cables; round the top one cable, as it really is)
     });
     railMesh.count = rails.length * 2;
     railMesh.computeBoundingSphere();
@@ -301,23 +349,22 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
     group.add(instanced(cone, addSnowCover(new THREE.MeshLambertMaterial({ color: 0x3f6f3a, flatShading: true })), pines, 'bukhansan-pines'));
     counts.trees = round.length + pines.length;
     // the far slopes, in tiles (so the ones out of view are skipped)
-    const step = lowSpec ? 11 : P.mass, TILE = 160, tiles = new Map();
+    const step = lowSpec ? 18 : P.mass, TILE = 160, tiles = new Map();
     const xs = foot.map((q) => q[0]), zs = foot.map((q) => q[1]);
     for (let z = Math.min(...zs); z < Math.max(...zs); z += step) for (let x = Math.min(...xs); x < Math.max(...xs); x += step) {
       const tx = x + hash(x, z) * step * 0.8, tz = z + hash(z, x) * step * 0.8;
-      if (!inPoly(tx, tz, foot) || rockXZ(tx, tz) || trailD(tx, tz) < 6 || padD(tx, tz) < 6) continue;
+      if (!inPoly(tx, tz, foot) || rockXZ(tx, tz) || trailD(tx, tz) < P.woodFrom - 4 || padD(tx, tz) < P.woodFrom - 4) continue;
       const gy = y(tx, tz);
       if (gy < 0.6) continue;
-      const r = 1.5 + hash(tx, tz) * 0.9, h = 1.4 + hash(tz, tx) * 1.0; // (3-5 m across, their tops 2-4 m up)
+      const r = 3.2 + hash(tx, tz) * 2.6, h = 1.6 + hash(tz, tx) * 1.2; // (a clump of crowns: 6-12 m across, 2-3 m up)
       const key = Math.floor(tx / TILE) + ',' + Math.floor(tz / TILE);
       if (!tiles.has(key)) tiles.set(key, []);
-      tiles.get(key).push([tx, gy + h * 0.55, tz, hash(tx, tz) * 6, r, h, r]);
+      tiles.get(key).push([tx, gy + h * 0.3, tz, hash(tx, tz) * 6, r, h, r * (0.7 + hash(tx + 1, tz) * 0.5)]);
     }
-    const blob = new THREE.IcosahedronGeometry(1, 0);
+    const blob = new THREE.OctahedronGeometry(1, 0).rotateY(0.6); // (8 triangles a clump: flattened and seen from far, as good as 20)
     const massMat = addSnowCover(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }));
-    const dark = ['#4f8045', '#5d8f4a', '#46733f', '#6a9550', '#3c6b3e'].map((c) => new THREE.Color(c));
     let n = 0;
-    for (const [key, list] of tiles) { group.add(instanced(blob, massMat, list, `bukhansan-wood-${key}`, (m, i) => m.setColorAt(i, (i + n) % 5 === 4 ? dark[4] : leafColor(dark[(i + n) % 4], leafHash(i + n, 5), MIX.wood)))); n += list.length; }
+    for (const [key, list] of tiles) { group.add(instanced(blob, massMat, list, `bukhansan-wood-${key}`, (m, i) => m.setColorAt(i, woodColor((i + n) * 7 + 1, hash(i, n))))); const tile = group.children.at(-1); tile.userData.topY = Math.max(...list.map((q) => q[1])); woods.push(tile); n += list.length; }
     counts.mass = n; counts.massTiles = tiles.size;
   }
 
@@ -417,14 +464,18 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
     const rockMat = new THREE.MeshLambertMaterial({ color: 0xbdb6a9, flatShading: true });
     const knob = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8, 0).scale(1.3, 0.55, 1.1).translate(0, 0.15, 0), rockMat); // (the last knob of rock the pole stands on)
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 3.2, 6).translate(0, 2.2, 0), new THREE.MeshLambertMaterial({ color: 0xd9dadc }));
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 0.9).translate(0.7, 3.3, 0), new THREE.MeshLambertMaterial({ map: flagTexture(), side: THREE.DoubleSide }));
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 0.9, 9, 3).translate(0.7, 3.3, 0), new THREE.MeshLambertMaterial({ map: flagTexture(), side: THREE.DoubleSide }));
     flag.name = 'bukhansan-flag';
     grp.add(knob, pole, flag);
     grp.name = 'bukhansan-summit';
     group.add(grp);
-    const [ko, en] = STOP_NAMES.peak, f = awayFromWay('peak'), [dx, dz] = [Math.cos(f) * (top.r - 1), Math.sin(f) * (top.r - 1)];
-    const stele = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.14), [0, 1, 2, 3].map(() => rockMat).concat([new THREE.MeshLambertMaterial({ map: boardTexture(ko, en, `${l.summit.ele.toFixed(1)} m`) }), rockMat]));
-    stele.position.set(top.at[0] + dx, top.y + 0.55, top.at[1] + dz);
+    const f = awayFromWay('peak'), [dx, dz] = [Math.cos(f) * (top.r - 1), Math.sin(f) * (top.r - 1)];
+    // The carving, as it really is: cut big into a sloping face of the rock floor itself (北漢山 白雲臺 836m), read from the middle of the top.
+    const carved = new THREE.MeshLambertMaterial({ map: carvedTexture(`${Math.round(l.summit.ele)}m`) });
+    const stele = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.6, 1.92), [rockMat, rockMat, carved, rockMat, rockMat, rockMat]);
+    stele.rotation.order = 'YXZ';
+    stele.position.set(top.at[0] + dx, top.y + 0.12, top.at[1] + dz);
+    stele.rotation.x = 0.4; // (its far edge up: a slab of the rock, sloping to you)
     stele.rotation.y = Math.atan2(-dx, -dz);
     stele.name = 'bukhansan-post-peak';
     group.add(stele);
@@ -434,15 +485,66 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false }) {
   scene.add(group);
   const [bx0, bz0, bx1, bz1] = bukhanBox(l);
   const flag = group.getObjectByName('bukhansan-flag');
-  let t = 0;
+  const flagAt = flag && Float32Array.from(flag.geometry.attributes.position.array);
+  const gate = l.pads.find((q) => q.k === 'gate'), sx = l.x + l.summit.at[0], sz = l.z + l.summit.at[1];
+  const trunks = group.getObjectByName('bukhansan-trunks');
+  let t = 0, summit = null, summitLoading = false, lifted = false, hidUnder = -Infinity;
+  // Sunrise and sunset on the mountain (Yozi 2026-11-27: strong on the mountain, stronger at the top): a big sun with its glow
+  // where core/sunset-sky.js has the sun, and the rock and woods warm in its light. (The top adds its own: game/bukhansan-summit.js.)
+  const sunTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d'), f = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    f.addColorStop(0, 'rgba(255,255,255,1)'); f.addColorStop(0.085, 'rgba(255,250,225,1)'); f.addColorStop(0.11, 'rgba(255,214,150,0.62)'); f.addColorStop(0.3, 'rgba(255,170,100,0.26)'); f.addColorStop(0.62, 'rgba(255,140,90,0.07)'); f.addColorStop(1, 'rgba(255,120,80,0)');
+    g.fillStyle = f; g.fillRect(0, 0, 128, 128);
+    const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace; return tx;
+  })();
+  const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTex, transparent: true, depthWrite: false, fog: false, blending: THREE.AdditiveBlending, opacity: 0 }));
+  sunGlow.name = 'bukhansan-sun';
+  sunGlow.renderOrder = -4; // (before the top's far country: it comes up from behind the ridges)
+  sunGlow.visible = false;
+  group.add(sunGlow);
+  const groundMat = group.getObjectByName('ground-bukhansan')?.material, warm = new THREE.Color();
+  const sunrise = (p, open) => {
+    const ss = weather()?.sunset, k = ss?.mix || 0, u = ss?.dome.material.uniforms;
+    const up = u ? Math.min(1, Math.max(0, (u.uSun.value.y + 0.035) / 0.05)) : 0; // (not while it is under the horizon)
+    sunGlow.visible = k * up > 0.01;
+    if (groundMat) groundMat.emissive.copy(u ? warm.copy(u.uGlow.value) : warm.set(0)).multiplyScalar(k * (P.glow[0] + (P.glow[1] - P.glow[0]) * open));
+    if (!sunGlow.visible) return;
+    const size = P.sun[0] + (P.sun[1] - P.sun[0]) * open;
+    sunGlow.position.copy(u.uSun.value).multiplyScalar(P.sunFar).add(p);
+    sunGlow.scale.set(size, size, 1);
+    sunGlow.material.opacity = k * up * (0.7 + 0.3 * open);
+  };
   return {
     group,
     counts,
     seats,
+    get summit() { return summit; },
     update(p, dt = 0) {
       const d = Math.hypot(Math.max(l.x + bx0 - p.x, 0, p.x - l.x - bx1), Math.max(l.z + bz0 - p.z, 0, p.z - l.z - bz1));
       group.visible = d < P.hide;
-      if (group.visible && flag) { t += dt; flag.rotation.y = Math.sin(t * 1.7) * 0.25; } // (the flag in the wind)
+      if (!group.visible) return;
+      t += dt;
+      // Above the gate the top is drawn its own way (game/bukhansan-summit.js): the haze pulls back, the far country, the clouds, the wind.
+      const near = Math.hypot(p.x - sx, p.z - sz);
+      if (!summit && !summitLoading && near < P.summitNear) {
+        summitLoading = true;
+        import('./bukhansan-summit.js').then(({ createBukhanSummit }) => { summit = createBukhanSummit({ group, l, lowSpec, daylight, sfx, sun: () => weather()?.sunset }); }).catch((e) => { summitLoading = false; console.warn('bukhansan summit', e); });
+      }
+      const open = near < P.summitNear ? summitOpen(p.y, gate.y) : 0;
+      summit?.update(p, dt, open);
+      // From the top, what lies under the sea of clouds is not drawn (the woods of the valleys, the trunks).
+      const under = summit && open > 0.97 ? summit.seaY - 3 : -Infinity;
+      if (under !== hidUnder) { hidUnder = under; for (const w of woods) w.visible = w.userData.topY > under; if (trunks) trunks.visible = under === -Infinity; }
+      sunrise(p, open);
+      const w = weather();
+      if (w && (open > 0 || lifted)) { w.lift = open * P.lift; lifted = open > 0; } // (as on Seoul Dal: core/weather.js)
+      if (flag) { // the flag in the wind: it ripples, harder the higher you are
+        const a = flag.geometry.attributes.position, k = 0.5 + open * 0.9;
+        for (let i = 0; i < a.count; i++) { const x = flagAt[i * 3]; a.setZ(i, (Math.sin(x * 5.5 - t * (7 + open * 6)) * 0.07 + Math.sin(x * 2.3 - t * 3.1) * 0.05) * x * k); }
+        a.needsUpdate = true;
+        flag.rotation.y = -0.35 + Math.sin(t * 1.3) * 0.12;
+      }
     },
   };
 }

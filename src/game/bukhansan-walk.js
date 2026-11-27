@@ -11,13 +11,16 @@
 //
 //   const bukhan = createBukhansanWalk({ landmarks, collision, scene, text, lang });
 //   bukhan.y(x, z)       ground height on the mountain (0 off it)
+//   bukhan.on(x, z)      on the mountain: no bikes, cars or taxis
 //   bukhan.pace(p)       how fast you go here (1 on the flat, less the steeper it is)
 //   bukhan.update(p, dt) every frame on the street
 //   bukhan.acts(p)       at the top: the button that opens the view
 //   bukhan.group         what loaded (main.js FarCull), or null
 import { bukhanHeight, bukhanBox, padRing } from '../core/bukhan-ground.js';
+import { inPoly } from '../core/skypark-ground.js';
 
 export const BUKHAN_NEAR = 480; // m: past the fog (it ends at 420 m), so it is there before you see it
+export const CAM_OVER = 0.8; // m over the mountain's ground the camera keeps (main.js): the slope uphill of you is higher than you are
 export const SUMMIT_R = 4; // m from the flag: where the view's button shows
 // The steeper the way, the slower you go (Yozi 2026-11-27): full pace up to
 // about 7°, 60% on the steepest paths (18°), 45% on the steps up the rock.
@@ -28,14 +31,15 @@ export function climbPace(g) {
   return Math.max(CLIMB.stepsPace, CLIMB.pathPace - (CLIMB.pathPace - CLIMB.stepsPace) * (g - CLIMB.path) / (CLIMB.steps - CLIMB.path));
 }
 
-export function createBukhansanWalk({ landmarks = [], collision = null, scene = null, seats = null, lowSpec = false, text = (k) => k, lang = () => 'en', busy = () => false }) {
+export function createBukhansanWalk({ landmarks = [], collision = null, scene = null, seats = null, lowSpec = false, text = (k) => k, lang = () => 'en', busy = () => false, toast = null, riding = null, getOff = null, daylight = () => 1, sfx = () => null, weather = () => null }) {
   const l = landmarks.find((q) => q.type === 'bukhansan');
-  if (!l) return { y: () => 0, pace: () => 1, update() {}, acts: () => [], group: null, landmark: null, summit: null };
+  if (!l) return { y: () => 0, pace: () => 1, on: () => false, camOver: CAM_OVER, update() {}, acts: () => [], group: null, landmark: null, summit: null };
   const [bx0, bz0, bx1, bz1] = bukhanBox(l);
   const x0 = l.x + bx0, z0 = l.z + bz0, x1 = l.x + bx1, z1 = l.z + bz1;
   const y = (x, z) => (x < x0 || x > x1 || z < z0 || z > z1 ? 0 : bukhanHeight(l, x - l.x, z - l.z));
   const W = ([x, z]) => [l.x + x, l.z + z];
   for (const p of l.pads) collision?.addDeck(padRing(p).map(W));
+  if (l.summit.rock) collision?.addDeck(l.summit.rock.map(W)); // (the bare rock round the top)
   for (const t of l.trails) {
     for (let i = 1; i < t.p.length; i++) {
       const a = W(t.p[i - 1]), b = W(t.p[i]), len = Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -61,18 +65,24 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
     const d = 1.5, gx = (y(p.x + d, p.z) - y(p.x - d, p.z)) / (2 * d), gz = (y(p.x, p.z + d) - y(p.x, p.z - d)) / (2 * d);
     return climbPace(Math.hypot(gx, gz));
   };
+  // On the mountain (inside its outline): you go on foot (Yozi 2026-11-27: no bikes, no taxis).
+  const on = (x, z) => x >= x0 && x <= x1 && z >= z0 && z <= z1 && inPoly(x - l.x, z - l.z, l.foot);
   return {
     y,
     pace,
+    on,
+    camOver: CAM_OVER,
     landmark: l,
     summit,
     update(p, dt) {
+      const r = riding?.();
+      if (r && r !== 3 && on(p.x, p.z)) { getOff?.(); toast?.(text('bukhan.noRide')); } // (you get off at the mountain's edge; a seat in a friend's car is theirs to stop)
       if (park) { park.update(p, dt); return; }
       if (loading || !scene || near(p) > BUKHAN_NEAR) return;
       loading = true;
       import('./bukhansan-park.js')
         .then(({ buildBukhansanPark }) => {
-          park = buildBukhansanPark({ scene, l, y, lowSpec });
+          park = buildBukhansanPark({ scene, l, y, lowSpec, daylight, sfx, weather });
           if (seats) seats.push(...park.seats); // the benches at Harujae and the hut (main.js streetSeats)
         })
         .catch((e) => { loading = false; console.warn('bukhansan', e); });
@@ -81,5 +91,6 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
     acts: (p) => (Math.hypot(p.x - summit[0], p.z - summit[1]) < SUMMIT_R ? [{ key: 'bukhan-view', label: text('bukhan.view'), run: openView }] : []),
     get viewOpen() { return !!view?.open; },
     get group() { return park?.group || null; },
+    get park() { return park; },
   };
 }

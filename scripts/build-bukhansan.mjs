@@ -56,6 +56,7 @@ export const BUKHAN = {
   band: 70, // m each side of the valley road: the mountain's ground there
   edge: 45, // m inside the outline over which the ground comes down to 0 (made up: the far sides are cut)
   lift: 22, // m: how far round a peak the lift to its surveyed height reaches
+  rock: { r: 17, drop: 4.5, max: 0.62, clear: 0.6 }, // the top's walkable rock: at most r m out, down to `drop` m under the top, no steeper than `max` (32°), not within `clear` rad of the steps
   // Level places (game-size, m across): where you stop on the way.
   pads: { center: 9, haru: 5, hut: 5, gate: 3, peak: 4.5 },
 };
@@ -250,6 +251,27 @@ const landmark = {
   office: { ...office, y: pads.find((p) => p.k === 'center').y },
   summit: { at: pads.find((p) => p.k === 'peak').at, y: pads.find((p) => p.k === 'peak').y, ele: TOP.ele },
 };
+// The top's rock: round the level top you can walk out onto the bare rock as
+// far as it is walkable (Yozi 2026-11-27). Made up: every 10° of bearing, out
+// to where the rock has dropped `rockDrop` or gets steeper than a walk, at
+// most `rockR` from the middle; not towards the steps (you come up by them).
+{
+  const top = pads.find((p) => p.k === 'peak'), [sx, sz] = top.at, R = BUKHAN.rock, ring = [];
+  const end = trails.at(-1).p.at(-4), way = Math.atan2(end[0] - sx, -(end[1] - sz));
+  for (let b = 0; b < 360; b += 10) {
+    const a = (b * Math.PI) / 180, dx = Math.sin(a), dz = -Math.cos(a);
+    let r = top.r + 0.4, off = Math.abs(((a - way + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+    if (off > R.clear) for (let q = r + 0.5, last = top.y; q <= R.r; q += 0.5) {
+      const h = bukhanHeight(landmark, sx + dx * q, sz + dz * q);
+      if (top.y - h > R.drop || Math.abs(last - h) / 0.5 > R.max) break;
+      r = q; last = h;
+    }
+    ring.push(r);
+  }
+  // (no spikes: a bearing reaches no further than its neighbours by more than 2.5 m)
+  for (let k = 0; k < 3; k++) for (let i = 0; i < ring.length; i++) ring[i] = Math.min(ring[i], Math.min(ring[(i + 1) % ring.length], ring[(i + ring.length - 1) % ring.length]) + 2.5);
+  landmark.summit.rock = ring.map((r, i) => { const a = (i * 10 * Math.PI) / 180; return [r1(sx + Math.sin(a) * r), r1(sz - Math.cos(a) * r)]; });
+}
 const pad = 6;
 const map = {
   meta: {
@@ -259,6 +281,7 @@ const map = {
       { what: "the mountain's outline", why: 'The real mountain has no edge here (it goes on to Goyang and Dobongsan): a 70 m band along the valley road and a box round the course and its peaks, the ground coming down to 0 over 45 m along it.' },
       { what: 'the peaks\' lift', why: 'The terrain tiles (30 m) round sharp peaks off: Baegundae, Insubong, Mangyeongdae and Yeongbong are lifted to OSM\'s surveyed heights over about 22 m round each.' },
       { what: 'the way\'s climb', why: 'Each stretch runs between the real heights of its two ends, eased to an even climb where the real one is steeper than a walk allows (paths 18°, the summit steps 31°).' },
+      { what: 'the top\'s rock', why: 'Round the level top you can walk out onto the bare rock (summit.rock), as far as it stays walkable: at most 17 m out and 4.5 m down. The real top is a broad slab with a railing round it; its true outline is not in OSM.' },
       { what: 'the summit steps', why: 'OSM has steps for the middle of the gate-to-top stretch only; the whole stretch is drawn as steps with a handrail (really steel cables on bare rock).' },
       { what: 'level places', why: 'The plaza at the Visitor Support Center, Harujae, the hut\'s yard, the gate and the top are game-size level pads on their real spots.' },
       { what: 'Baegun Hut, the Visitor Support Center', why: 'On their OSM spots, drawn game-size and plain (no photos of them yet).' },

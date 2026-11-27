@@ -483,6 +483,8 @@ export const VI = {
   'bukhan.viewHint': "Kéo để nhìn xung quanh",
   'bukhan.viewNote': "Tranh vẽ theo phong cách của game, dựa trên địa hình thật. Không phải ảnh chụp.",
   'bukhan.viewClose': "Đóng",
+  'bukhan.noRide': "🚲 Không được đi xe đạp hay ô tô trên núi Bukhansan. Từ đây hãy đi bộ.",
+  'bukhan.noTaxi': "🚕 Taxi không lên núi được. Hãy đi bộ xuống ga Bukhansan Ui trước.",
   'bike.offShort': 'Xuống xe',
   'bike.off': 'Xuống xe đạp',
   'car.off': 'Xuống ô tô',

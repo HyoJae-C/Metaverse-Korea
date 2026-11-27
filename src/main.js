@@ -905,7 +905,7 @@ const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seat
 // Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
 const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Bukhansan's Baegundae course (game/bukhansan-walk.js): the way up is decks, the mountain loads near, the top opens a painted view.
-const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k) => t(k), lang: () => getLanguage(), busy: () => spaceBusy() });
+const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k) => t(k), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m) => shop.toast(m), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
 // Seoul National Cemetery (game/hyeonchungwon-walk.js): a place of remembrance; its roads, court and lawn are decks, the rest loads near.
 const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }), music: () => music, riding: () => riding, getOff: () => setRiding(false), noRide: () => t('hyeonchung.noRide') });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).
@@ -3899,6 +3899,7 @@ const taxi = lazyPanel(() => import('./game/taxi.js').then(({ createTaxi }) => c
   get others() { return others; }, get net() { return net; }, safety, place: () => myPlace(), outdoors: () => outdoors(),
   clearGuide, findFreeSpot, input, leaveStore, mapView, missionEvent, moveMeTo, myLabel, refreshWallet, scene,
   setGuide, setRiding, shop, shops: () => storefronts.items,
+  noTaxiHere: () => (mode === 'street' && bukhan.on(me.root.position.x, me.root.position.z) ? t('bukhan.noTaxi') : null), // (no taxi comes up the mountain)
   // The shop or place nearest (x, z), for a shared taxi's "going to …".
   placeName: (x, z) => {
     let best = null, bd = 80;
@@ -7664,7 +7665,9 @@ renderer.setAnimationLoop((now) => {
   // Lower the camera with the distance so a close camera doesn't look straight down.
   let cy = p.y + 1 + Math.sin(cam.pitch) * cam.dist * Math.min(1, camHoriz / (Math.cos(cam.pitch) * cam.dist));
   if (cam.pitch < 0.12) cy = Math.max(cy, p.y + 0.35); // looking up at the drones: not under the grass
+  if (mode === 'street') { const gy = bukhan.y(cx, cz); if (gy) cy = Math.max(cy, gy + bukhan.camOver); } // (on Bukhansan the slope behind you is higher than you are: the camera stays over it, not inside the mountain)
   camera.position.lerp(tmp.set(cx, cy, cz), 1 - Math.exp(-dt * 12));
+  if (mode === 'street') { const gy = bukhan.y(camera.position.x, camera.position.z); if (gy && camera.position.y < gy + bukhan.camOver) camera.position.y = gy + bukhan.camOver; } // (and on its way there: by a ledge of the steps the ground under it jumps)
   // Working out: look lower so your pose sits above the gym panel (more on a
   // tall phone screen, where the panel takes more of the height).
   gymLow += ((gymUi.open ? (innerHeight > innerWidth ? 1.7 : 1.1) : 0) - gymLow) * Math.min(1, dt * 6);
