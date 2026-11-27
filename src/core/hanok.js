@@ -84,10 +84,10 @@ function paint(g, c) {
 // else a gable (맞배: two slopes and triangle ends in `end` colour).
 export function curvedRoof(w, d, h, { hip = true, lift = 0.5, seg = 6, rows = 2, color, end, ridgeEnds = true }) {
   const hw = w / 2, hd = d / 2, r = hip ? Math.max(0.4, hw - hd * 0.95) : hw;
-  const pos = [], col = [];
+  const pos = [], col = [], uv = []; // (uv in metres: along the eaves, up the slope, for a tile texture)
   const dark = color.clone().multiplyScalar(0.82), ridgeC = color.clone().multiplyScalar(0.62);
   const Y = (u, v) => h * Math.pow(v, 1.4) + lift * Math.pow(Math.abs(u), 3) * (1 - v) * (1 - v);
-  const slope = (eave, ridge, n, stripes) => {
+  const slope = (eave, ridge, n, stripes, end = false) => {
     for (let i = 0; i < n; i++) for (let j = 0; j < rows; j++) {
       const P = (ii, jj) => {
         const u = -1 + (2 * ii) / n, v = jj / rows, e = eave(u), q = ridge(u);
@@ -95,6 +95,7 @@ export function curvedRoof(w, d, h, { hip = true, lift = 0.5, seg = 6, rows = 2,
       };
       const a = P(i, j), b = P(i + 1, j), c = P(i + 1, j + 1), dd = P(i, j + 1);
       pos.push(...a, ...b, ...c, ...a, ...c, ...dd);
+      for (const p of [a, b, c, a, c, dd]) uv.push(end ? p[2] : p[0], (end ? hw - Math.abs(p[0]) : hd - Math.abs(p[2])) * 1.15);
       const k = stripes && i % 2 ? dark : j === 0 ? dark : color; // tile rows, and a darker eave edge
       for (let t = 0; t < 6; t++) col.push(k.r, k.g, k.b);
     }
@@ -102,18 +103,19 @@ export function curvedRoof(w, d, h, { hip = true, lift = 0.5, seg = 6, rows = 2,
   slope((u) => [u * hw, hd], (u) => [u * r, 0], seg * 2, true);
   slope((u) => [-u * hw, -hd], (u) => [-u * r, 0], seg * 2, true);
   if (hip) {
-    slope((u) => [hw, -u * hd], () => [r, 0], seg, true);
-    slope((u) => [-hw, u * hd], () => [-r, 0], seg, true);
+    slope((u) => [hw, -u * hd], () => [r, 0], seg, true, true);
+    slope((u) => [-hw, u * hd], () => [-r, 0], seg, true, true);
   } else {
     const e = end || color, y0 = Y(1, 0) + 0.15, x = hw - 0.7;
     for (const sx of [-1, 1]) {
       pos.push(sx * x, y0, hd - 0.6, sx * x, y0, -hd + 0.6, sx * x, h - 0.1, 0);
-      for (let t = 0; t < 3; t++) col.push(e.r, e.g, e.b);
+      for (let t = 0; t < 3; t++) { col.push(e.r, e.g, e.b); uv.push(0.2, 0); }
     }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.computeVertexNormals();
   // The ridge (용마루), a little higher at the ends.
   const ridge = [new THREE.BoxGeometry(2 * r + 0.5, h * 0.14, h * 0.18).translate(0, h + h * 0.05, 0)];

@@ -88,7 +88,7 @@ function hall(g, w, d, h, y, z = 0, cols = 7) {
     const x = -w / 2 + (i * w) / (cols - 1);
     for (const sz of [-1, 1]) box(g, 0.6, h, 0.6, x, y + h / 2, z + sz * (d / 2 + 0.2), C.wood);
   }
-  box(g, w + 1, h * 0.18, d + 1, 0, y + h * 0.95, z, C.green);
+  box(g, w + 1, h * 0.18, d + 1.12, 0, y + h * 0.95, z, C.green); // (out past the posts' faces: on one plane they flicker)
   roof(g, w * 1.35, d * 1.6, h * 0.9, y + h);
 }
 

@@ -7,10 +7,20 @@
 import * as THREE from 'three';
 import { addBox } from './three-kit.js';
 import { hipRoofGeometry } from './landmarks.js';
+import { paintedBox, paintedMat, faceUV, beamMetres } from './palace-paint.js';
 
 const mats = {};
 const mat = (c, smooth = false) => (mats[c + smooth] ||= new THREE.MeshLambertMaterial({ color: c, flatShading: !smooth }));
 const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c);
+// The great gates wear the palace's surfaces (core/palace-paint.js; Yozi
+// 2026-11-27: "the gates too"): dressed stone, plaster, the painted beam and
+// roof tiles. k: the scale the gate is drawn at, so a stone or a tile is as
+// big as on the palace.
+const WEAR = { '#cfc4ae': 'stone', '#bfb298': 'stone', '#b9ae98': 'stone', '#f1e7d2': 'plaster', '#2f8f6b': 'dancheong' };
+const wornBox = (k) => (g, sx, sy, sz, x, y, z, c) => paintedBox(g, mat, WEAR[c], sx, sy, sz, x, y, z, c, k, WEAR[c] === 'dancheong' ? beamMetres(sy * k) : null);
+const worn = (geo, kind, c, k, side) => { const m = paintedMat(kind, c, side); return m && new THREE.Mesh(faceUV(geo, kind, k), m); };
+const ROOF = '#3d4450';
+const tileRoof = (geo, k) => worn(geo, 'tile', ROOF, k, THREE.DoubleSide) || new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: ROOF, flatShading: true, side: THREE.DoubleSide }));
 
 // A closed outline ([[x, z], …], metres) as a shape in the x / -z plane,
 // pulled in towards its centre by `inset` metres (an extrusion's bevel grows
@@ -34,6 +44,7 @@ function outlineShape(p, inset = 0) {
 // name's characters, top to bottom.
 function greatGate(g, o) {
   const stone = '#cfc4ae', W = o.W, D = 12, B = 8.5, A = 2.5; // base width, depth, height; arch half-width
+  const k = o.k || 1, box = wornBox(k), dressed = !!paintedMat('stone', stone);
   for (const sx of [-1, 1]) box(g, W / 2 - A, B, D, sx * (A + (W / 2 - A) / 2), B / 2, 0, stone);
   // Above the arch: a block with the round top cut out.
   const s = new THREE.Shape();
@@ -41,8 +52,8 @@ function greatGate(g, o) {
   s.absarc(0, 4.2, A, 0, Math.PI, false);
   const top = new THREE.ExtrudeGeometry(s, { depth: D, bevelEnabled: false, curveSegments: 10 });
   top.translate(0, 0, -D / 2);
-  g.add(new THREE.Mesh(top, mat(stone)));
-  for (let y = 1.4; y < B; y += 1.4) box(g, W + 0.06, 0.06, D + 0.06, 0, y, 0, '#b3a78f'); // courses
+  g.add(worn(top, 'stone', stone, k) || new THREE.Mesh(top, mat(stone)));
+  if (!dressed) for (let y = 1.4; y < B; y += 1.4) box(g, W + 0.06, 0.06, D + 0.06, 0, y, 0, '#b3a78f'); // courses (the stone texture has its own)
   // The parapet round the top, a gap at each end for the stairs.
   for (const sz of [-1, 1]) box(g, W - 4, 1, 0.6, 0, B + 0.5, sz * (D / 2 - 0.3), '#bfb298');
   // Lower storey.
@@ -52,7 +63,7 @@ function greatGate(g, o) {
   box(g, 18.6, 3.4, 7, 0, B + 2.4, 0, wall);
   box(g, 21, 0.8, 9.4, 0, B + 4.9, 0, green); // painted brackets
   const roof = (w, d, h, y) => {
-    const r = new THREE.Mesh(hipRoofGeometry(w, d, h), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
+    const r = tileRoof(hipRoofGeometry(w, d, h), k);
     r.position.y = y;
     g.add(r);
     box(g, Math.max(1, w - d * 0.9) + 0.6, h * 0.15, h * 0.15, 0, y + h * 1.04, 0, '#2b3038'); // ridge
@@ -93,16 +104,18 @@ export const HEUNG_GATE = { W: 13, D: 8, H: 3.8, A: 1.3, wing: 3.6 };
 function heungGate(g) {
   const { W, D, H, A, wing } = HEUNG_GATE, S = 2.0; // S: where the arch's round top starts
   const stone = '#cfc4ae', line = '#b3a78f', grass = '#6f9a52';
+  const box = wornBox(1), dressed = !!paintedMat('stone', stone);
   for (const sx of [-1, 1]) box(g, W / 2 - A, H, D, sx * (A + (W / 2 - A) / 2), H / 2, 0, stone);
   const sh = new THREE.Shape();
   sh.moveTo(-A, S); sh.lineTo(-A, H); sh.lineTo(A, H); sh.lineTo(A, S);
   sh.absarc(0, S, A, 0, Math.PI, false);
   const top = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 10 });
   top.translate(0, 0, -D / 2);
-  g.add(new THREE.Mesh(top, mat(stone)));
+  g.add(worn(top, 'stone', stone, 1) || new THREE.Mesh(top, mat(stone)));
   // The courses: on the walls either side of the arch, never across its
-  // opening (a full-width line drew a bar through the passage).
-  for (let y = 0.95; y < H; y += 0.95) {
+  // opening (a full-width line drew a bar through the passage). (Only
+  // without the stone texture, which has its own.)
+  for (let y = 0.95; y < H && !dressed; y += 0.95) {
     const half = y < S ? A : y < S + A ? Math.sqrt(A * A - (y - S) * (y - S)) : 0;
     if (!half) { box(g, W + 0.04, 0.04, D + 0.04, 0, y, 0, line); continue; }
     const w = W / 2 + 0.02 - half;
@@ -123,7 +136,7 @@ function heungGate(g) {
   box(g, 9.2, 1.6, 5, 0, H + 1.1, 0, wall);
   box(g, 10.4, 0.4, 6.2, 0, H + 2.2, 0, green); // painted brackets
   const roof = (w, d, h, y) => {
-    const r = new THREE.Mesh(hipRoofGeometry(w, d, h), new THREE.MeshLambertMaterial({ color: '#3d4450', flatShading: true, side: THREE.DoubleSide }));
+    const r = tileRoof(hipRoofGeometry(w, d, h), 1);
     r.position.y = y;
     g.add(r);
     box(g, Math.max(0.6, w - d * 0.9) + 0.3, h * 0.15, h * 0.15, 0, y + h * 1.04, 0, '#2b3038'); // ridge
@@ -313,7 +326,7 @@ export const EULJIRO_BUILD = {
     }
   },
   // Sungnyemun (숭례문): its arch runs north-south, the board faces south.
-  sungnyemun: (g) => greatGate(g, { W: 28, board: ['崇', '禮', '門'] }),
+  sungnyemun: (g, l) => greatGate(g, { W: 28, board: ['崇', '禮', '門'], k: l?.sc?.[0] || 1 }),
   // Heunginjimun (흥인지문): at half the real size, the real one's
   // proportions (heungGate), its four-character name board (the only great
   // gate with four); the ongseong round its front is its own landmark.

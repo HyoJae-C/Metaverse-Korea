@@ -30,7 +30,7 @@ const box = (g, sx, sy, sz, x, y, z, c) => addBox(g, mat, sx, sy, sz, x, y, z, c
 const C = {
   stone: '#d6cdb8', stoneDark: '#b1a690', post: '#a8392b', sill: '#8a3a2c', rail: '#9a4630', panel: '#3f9079', panelDark: '#2c705e', floor: '#8a5a3a', fence: '#5c4a3a',
   beam: '#2f8a68', bracket: '#2a6f5a', rafter: '#8a3a2c', roof: '#474c55', ridge: '#353a42', bronze: '#5f6a55', gold: '#d4a73a',
-  white: '#f4f1ea', deck: '#e3d8c0', grass: '#a9d18a', rock: '#9a958a', pad: '#5f9a55', lotus: '#f29cb8', water: '#4d8fb5',
+  white: '#f4f1ea', deck: '#e3d8c0', grass: '#a9d18a', earth: '#e6d8b8', rock: '#9a958a', pad: '#5f9a55', lotus: '#f29cb8', water: '#4d8fb5',
 };
 const FLAT = Math.PI / 6; // a six-sided cylinder turned so a flat side faces +z
 
@@ -95,7 +95,7 @@ function storey(g, y, H, R, veranda, open = []) {
     box(side, R - 0.16, 0.03, 0.05, 0, y + H * 0.72, ap, C.panelDark); // (the lattice: a band across the leaves)
     box(side, R - 0.16, 0.03, 0.05, 0, y + H * 0.45, ap, C.panelDark);
     for (const u of [-1.5, -0.5, 0.5, 1.5]) box(side, 0.02, H - 0.3, 0.05, (u * (R - 0.16)) / 4, y + H / 2 + 0.08, ap, C.panelDark);
-    for (const u of [-1, 0, 1]) box(side, 0.045, H - 0.26, 0.06, (u * (R - 0.16)) / 4, y + H / 2 + 0.08, ap, C.post);
+    for (const u of [-1, 0, 1]) box(side, 0.045, H - 0.26, 0.08, (u * (R - 0.16)) / 4, y + H / 2 + 0.08, ap, C.post);
     if (open.includes(k)) continue;
     // the veranda's railing (난간): two rails and short posts
     const va = veranda * Math.cos(Math.PI / 6) - 0.05;
@@ -118,7 +118,7 @@ function pavilion(g) {
   storey(g, y1, H1, R, V, [0]);
   // between the storeys: the beam, and the brackets under the upper veranda
   hex(g, R + 0.1, R + 0.1, 0.1, y1 + H1, C.beam);
-  hex(g, V + 0.02, R + 0.08, 0.14, y1 + H1 + 0.1, C.bracket);
+  hex(g, V + 0.02, R + 0.08, 0.07, y1 + H1 + 0.1, C.bracket); // (up to the upper floor's underside, not into it)
   storey(g, y2, H2, R, V + 0.05);
   // the eaves: beam, painted brackets, the rafters' red ends under a green edge
   hex(g, R + 0.1, R + 0.1, 0.1, ye, C.beam);
@@ -155,8 +155,12 @@ export function buildHyangwonjeong(g, l) {
   // stone steps down to the water.
   const cyl = (rt, rb, h, y, c, seg = 24) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat(c)); m.position.y = y + h / 2; g.add(m); };
   cyl(r + 0.08, r + 0.16, top * 0.55, 0, C.stoneDark);
-  cyl(r, r + 0.04, top * 0.45 + 0.02, top * 0.55, C.stone);
-  cyl(r - 0.3, r - 0.3, 0.05, top, C.grass);
+  cyl(r, r + 0.04, top * 0.45 - 0.04, top * 0.55, C.stone);
+  // packed earth inside the kerb (the walk along the fence), and the turf
+  // round the pavilion a step in from it (Yozi 2026-11-27: less green). Each
+  // layer stands 4 cm over the one below: closer, and they flicker.
+  cyl(r - 0.25, r - 0.25, 0.1, top - 0.1, C.earth);
+  cyl(r - 1.25, r - 1.3, 0.04, top, C.grass);
   for (let i = 0; i < 8; i++) {
     const a = i * 0.83 + 0.4, s = 0.2 + leafHash(i, 3) * 0.2;
     const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), mat(C.rock));
@@ -164,7 +168,7 @@ export function buildHyangwonjeong(g, l) {
     rock.scale.y = 0.6;
     g.add(rock);
   }
-  const fr = r - 0.22, N = Math.round((2 * Math.PI * fr) / 0.8), gap = (w / 2 + 0.35) / fr; // the fence: a post every 0.8 m
+  const fr = r - 0.38, N = Math.round((2 * Math.PI * fr) / 0.8), gap = (w / 2 + 0.35) / fr; // the fence: a post every 0.8 m
   for (let i = 0; i < N; i++) {
     const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2, off = (a) => Math.abs(Math.atan2(Math.sin(a), Math.cos(a)));
     const p = (a, y) => [Math.sin(th + a) * fr, top + y, Math.cos(th + a) * fr];

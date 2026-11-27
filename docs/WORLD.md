@@ -973,17 +973,40 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   higher. In the game that is 1 to 4.1 m, half of them under 2.2 m. This rule
   is the palace's only; the city's street trees are as they were.
 - **Hyangwonjeong** is a two-storey hexagonal pavilion with green lattice
-  doors in red frames, on three courses of stone. It is 37.5% of the real one
-  across and 45% high (`HYANG_SC`), not 50% like the other halls: at 50% it
-  filled its island, and in Seoul the island is two and a half times as wide
-  as the roof (Yozi's photos, 2026-11-26). The island is 4.6 m in radius
-  (OSM: 3.45 m at 1/4), with a low fence round its rim, shrubs and steps down
-  to the water. Chwihyanggyo, white with crossed slats in its railing, is
-  1.5 m wide (0.4 m at 1/4) so you can walk over its arch to the island: the
-  pond's blocker has the island and the bridge cut out of it, and
-  `isleHeight` (`core/temple-terrace.js`) lifts your feet. In Seoul the
+  doors in red frames, on three courses of stone. It is 60% of the real one
+  across and 54% high (`HYANG_SC`), bigger than the palace's other halls:
+  it is what you come to this pond to see. (It was 37.5% across for a day so
+  the island would not look full, then 50%; Yozi, 2026-11-27: "too upright
+  and small", then "a little bigger, the island a little smaller".) The
+  island is 5.4 m in radius (OSM: about 4 m at 1/4), 1.6 times the roof (in
+  Seoul two and a half times), with a low fence, a walk of packed earth
+  inside it, turf round the pavilion, shrubs and steps down to the water.
+  Chwihyanggyo, white with crossed slats in its railing, is 1.5 m wide
+  (0.4 m at 1/4) and 4.8 m long, so you can walk over its arch to the
+  island: the pond's blocker has the island and the bridge cut out of it,
+  and `isleHeight` (`core/temple-terrace.js`) lifts your feet. In Seoul the
   bridge is usually shut to visitors. The ponds have a dressed-stone kerb
   (`pondbank`).
+- No two colours on one plane. A hall's red dado is a box under the wall's
+  box, not inside it; beams are a little shorter or deeper than what they sit
+  on; flat layers lie 4 cm apart. Where two faces of different colours share
+  a plane, which one is drawn changes pixel by pixel as the camera moves
+  (Yozi saw the walls flicker, 2026-11-27). `tests/palace-flicker.test.mjs`
+  checks every side face of the palace's buildings.
+- The palace's surfaces are small canvases drawn once (`core/palace-paint.js`,
+  nothing to download): roof tiles in rows, the painted beam under the eaves
+  (단청), lattice doors (창살), dressed stone in courses and plaster. A box of
+  one of those colours gets the texture with its UVs in metres, so a tile or
+  a stone is the same size on every building. Changdeokgung, Deoksugung's
+  Daehanmun, Bongeunsa, Jogyesa and the Blue House's roofs use the same parts
+  and get it too; the city's gates (Sungnyemun, Heunginjimun, and the small
+  ones: Hyehwamun, Changuimun, Sukjeongmun, Gwanghuimun) have their own
+  models and wear the stone, plaster, beam and tiles through `paintedBox` and
+  `faceUV`. Jongmyo, Bosingak, the royal tombs and Bukchon's hanok do not. A
+  textured material is marked `userData.metres` and merged like the plain
+  ones (`mergeStatic`, bukchon-models.js), so the draw calls are what they
+  were (`tests/palace-paint.test.mjs`). The patterns are drawn by hand, not
+  copied from one building's real paintwork.
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 
