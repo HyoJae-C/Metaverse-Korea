@@ -98,8 +98,8 @@ test('Hyangwonjeong stands on its island, and you walk over Chwihyanggyo to it',
   for (const t of ['hyangwonjeong', 'pondbank', 'palacetrees']) assert.equal(typeof b[t], 'function', t);
   const real = osm.elements.find((e) => e.name === '향원정').pts.slice(0, -1).map(local), c = real.reduce((a, p) => [a[0] + p[0] / real.length, a[1] + p[1] / real.length], [0, 0]);
   assert.ok(Math.hypot(l.x - c[0], l.z - c[1]) < 1, `on its real spot (${l.x},${l.z} vs ${c.map((v) => v.toFixed(1))})`);
-  // the island is at least twice as wide as the roof, as in Seoul (2.5 times), and the pavilion is not drawn taller than it is wide (Yozi 2026-11-27: too upright and small at 37.5% across, 45% high)
-  assert.ok(l.sc[0] >= 0.6 && l.sc[0] <= 1 && l.sc[1] >= 0.8 && l.sc[1] <= 1 && l.sc[1] <= l.sc[0] && l.isle[0] / (2.82 * l.sc[0]) >= 2, `the island is roomy (${(l.isle[0] / (2.82 * l.sc[0])).toFixed(2)} roofs wide)`);
+  // the pavilion is not drawn taller than it is wide (Yozi 2026-11-27: too upright and small at 37.5% across, 45% high; then bigger still, 60% and 54%), and the island is at least one and a half times as wide as the roof (in Seoul 2.5 times)
+  assert.ok(l.sc[0] >= 0.6 && l.sc[0] <= 1.3 && l.sc[1] >= 0.8 && l.sc[1] <= 1.2 && l.sc[1] <= l.sc[0] && l.isle[0] / (2.82 * l.sc[0]) >= 1.5, `the island is roomy (${(l.isle[0] / (2.82 * l.sc[0])).toFixed(2)} roofs wide)`);
   const pond = water.find((w) => pointInPoly(l.x, l.z, w)), [r, top] = l.isle, [sx, sz, w, rise] = l.span, L = Math.hypot(sx, sz), ux = sx / L, uz = sz / L;
   // the island: OSM's is about 4 m in radius at 1/4; drawn up to 2 m bigger for the pavilion at 50% across (Yozi 2026-11-27: the pavilion wider, the island bigger), inside the pond
   const isle = green.garden[0].pts.map(local), ir = Math.max(...isle.map(([x, z]) => Math.hypot(x - l.x, z - l.z)));

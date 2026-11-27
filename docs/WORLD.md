@@ -973,19 +973,20 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   higher. In the game that is 1 to 4.1 m, half of them under 2.2 m. This rule
   is the palace's only; the city's street trees are as they were.
 - **Hyangwonjeong** is a two-storey hexagonal pavilion with green lattice
-  doors in red frames, on three courses of stone. It is 50% of the real one
-  across like the other halls and 45% high (`HYANG_SC`). (For a day it was
-  37.5% across so the island would not look full; Yozi, 2026-11-27: "too
-  upright and small", so the pavilion went back to 50% across and the island
-  grew instead.) The island is 6.0 m in radius (OSM: about 4 m at 1/4), a
-  little over twice the roof (in Seoul two and a half times), with a low
-  fence, a walk of packed earth inside it, turf round the pavilion, shrubs
-  and steps down to the water. Chwihyanggyo, white with crossed slats in its
-  railing, is 1.5 m wide (0.4 m at 1/4) and 4.2 m long, so you can walk over
-  its arch to the island: the pond's blocker has the island and the bridge
-  cut out of it, and `isleHeight` (`core/temple-terrace.js`) lifts your feet.
-  In Seoul the bridge is usually shut to visitors. The ponds have a
-  dressed-stone kerb (`pondbank`).
+  doors in red frames, on three courses of stone. It is 60% of the real one
+  across and 54% high (`HYANG_SC`), bigger than the palace's other halls:
+  it is what you come to this pond to see. (It was 37.5% across for a day so
+  the island would not look full, then 50%; Yozi, 2026-11-27: "too upright
+  and small", then "a little bigger, the island a little smaller".) The
+  island is 5.4 m in radius (OSM: about 4 m at 1/4), 1.6 times the roof (in
+  Seoul two and a half times), with a low fence, a walk of packed earth
+  inside it, turf round the pavilion, shrubs and steps down to the water.
+  Chwihyanggyo, white with crossed slats in its railing, is 1.5 m wide
+  (0.4 m at 1/4) and 4.8 m long, so you can walk over its arch to the
+  island: the pond's blocker has the island and the bridge cut out of it,
+  and `isleHeight` (`core/temple-terrace.js`) lifts your feet. In Seoul the
+  bridge is usually shut to visitors. The ponds have a dressed-stone kerb
+  (`pondbank`).
 - No two colours on one plane. A hall's red dado is a box under the wall's
   box, not inside it; beams are a little shorter or deeper than what they sit
   on; flat layers lie 4 cm apart. Where two faces of different colours share

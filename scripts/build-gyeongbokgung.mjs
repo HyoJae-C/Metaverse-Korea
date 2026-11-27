@@ -206,7 +206,7 @@ map.blockers.push(...blockers.map((b) => ({ ...b, gb: 1 })));
 // 2026-11-26). The island is drawn a little bigger than the 1/4 map too
 // (OSM: 3.45 m in radius), and the bridge wider (0.4 m at 1/4: you could not
 // walk over it).
-export const ISLE = [6.0, 0.4], BRIDGE = [1.5, 0.42], HYANG_SC = [1, 0.9]; // [radius, its top above the water], [width, the arch's rise], the pavilion [across, up] (1 = 50%)
+export const ISLE = [5.4, 0.4], BRIDGE = [1.5, 0.48], HYANG_SC = [1.2, 1.08]; // [radius, its top above the water], [width, the arch's rise], the pavilion [across, up] (1 = 50%)
 const amisan = lm.find((l) => l.type === 'amisan');
 // The two lawns the shows stand on, either side of the corridors round
 // Heungnyemun and Geunjeongjeon (Yozi, 2026-11-10): drawn as plain
