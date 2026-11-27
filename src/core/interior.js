@@ -6,7 +6,7 @@ import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
 import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
-import { lieSpot } from './lie-spot.js';
+import { lieSpot, ON_PILLOW } from './lie-spot.js';
 import { finishSample } from './home-finish-art.js';
 import { finishById } from './home-finish.js';
 import { RING, BOARD_ORDER } from './arcade.js';
@@ -1053,12 +1053,13 @@ export function buildInterior(store) {
       const bedTop = 0.55;
       for (const bx of [-w / 2 + 1.8, -w / 2 + 4.3]) {
         const bz = -d / 2 + 1.45;
-        box(0.9, bedTop, 2.1, bx, bedTop / 2, bz, '#f6f8fa');
+        // 1.75 m long (Yozi 2026-11-27: 2.1 m was too long), the head end where it was.
+        box(0.9, bedTop, 1.75, bx, bedTop / 2, bz - 0.175, '#f6f8fa');
         box(0.8, 0.1, 0.4, bx, bedTop + 0.05, bz - 0.8, '#ffffff'); // pillow
-        box(0.92, 0.04, 1.2, bx, bedTop + 0.02, bz + 0.35, store.colors.awning); // blanket
+        box(0.92, 0.04, 0.95, bx, bedTop + 0.02, bz + 0.2, store.colors.awning); // blanket
         const [lx, lz] = lieSpot(bx, bz - 0.8); // head on the pillow (core/lie-spot.js); reach: as far as from the old spot
         seats.push({ x: lx, z: lz, ry: 0, reach: bz + 0.15 - lz, stand: [bx + 0.95, bz + 0.3], beauty: store.workshop, lie: true });
-        block(bx, bz, 1, 2.2);
+        block(bx, bz - 0.175, 1, 1.85);
       }
       // Operating room: x from ox0 to the right wall, z from the back wall to oz1.
       const ox0 = 0.6, oz1 = -0.4, oxm = (ox0 + w / 2) / 2, ozm = (-d / 2 + oz1) / 2;
@@ -1117,20 +1118,22 @@ export function buildInterior(store) {
       const bedTop = 0.55, bz = -d / 2 + 1.5;
       const lampMat = new THREE.MeshBasicMaterial({ color: '#ffd1e3' });
       for (const bx of [-w / 2 + 1.8, -w / 2 + 4.4, -w / 2 + 7]) {
-        box(0.9, bedTop, 2.1, bx, bedTop / 2, bz, '#fbf7f9');
+        // 1.75 m long (Yozi 2026-11-27: 2.1 m was too long), the head end where it was.
+        const faceZ = bz - 0.8 + ON_PILLOW; // the lamp is over the face (core/lie-spot.js)
+        box(0.9, bedTop, 1.75, bx, bedTop / 2, bz - 0.175, '#fbf7f9');
         box(0.8, 0.1, 0.4, bx, bedTop + 0.05, bz - 0.8, '#ffffff'); // pillow
-        box(0.92, 0.04, 1.2, bx, bedTop + 0.02, bz + 0.35, store.colors.awning); // towel over the legs
-        box(0.06, 1.7, 0.06, bx - 0.6, 0.85, bz - 0.95, '#c9ced3'); // the lamp's stand
-        box(0.6, 0.05, 0.06, bx - 0.3, 1.7, bz - 0.95, '#c9ced3'); // its arm
+        box(0.92, 0.04, 0.95, bx, bedTop + 0.02, bz + 0.2, store.colors.awning); // towel over the legs
+        box(0.06, 1.7, 0.06, bx - 0.6, 0.85, faceZ, '#c9ced3'); // the lamp's stand
+        box(0.6, 0.05, 0.06, bx - 0.3, 1.7, faceZ, '#c9ced3'); // its arm
         const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 20), mat('#e9eef2'));
-        lamp.position.set(bx, 1.66, bz - 0.85);
+        lamp.position.set(bx, 1.66, faceZ);
         scene.add(lamp);
         const led = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20).rotateX(Math.PI / 2), lampMat);
-        led.position.set(bx, 1.625, bz - 0.85);
+        led.position.set(bx, 1.625, faceZ);
         scene.add(led);
         const [lx, lz] = lieSpot(bx, bz - 0.8); // head on the pillow, under the lamp (core/lie-spot.js)
-        seats.push({ x: lx, z: lz, ry: 0, reach: bz + 0.15 - lz, stand: [bx + 0.95, bz + 0.3], lie: true, derm: true, lamp: [bx, 1.6, bz - 0.85] });
-        block(bx, bz, 1, 2.2);
+        seats.push({ x: lx, z: lz, ry: 0, reach: bz + 0.15 - lz, stand: [bx + 0.95, bz + 0.3], lie: true, derm: true, lamp: [bx, 1.6, faceZ] });
+        block(bx, bz - 0.175, 1, 1.85);
       }
       const shx = w / 2 - 0.45; // skincare on the right wall's shelf
       box(0.4, 1.6, 2.4, shx, 0.8, -0.6, '#fffaf0');

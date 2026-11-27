@@ -6,7 +6,7 @@ import { matCache, addBox } from './three-kit.js';
 import { SHOP_FURNITURE as SHOP_PIECES } from './furniture-shop.js';
 import { APPLIANCE_KIND } from './appliances.js';
 import { PARTITIONS } from './partitions.js';
-import { LIE_HEAD } from './lie-spot.js';
+import { PILLOW_TO_SPOT } from './lie-spot.js';
 // The furniture shops' pieces, with the room dividers (core/partitions.js).
 const SHOP_FURNITURE = [...SHOP_PIECES, ...PARTITIONS];
 import { TANKS, buildTank } from './fish-tank-pieces.js';
@@ -300,6 +300,18 @@ export const FURNITURE = [
       }
     } },
 ];
+// Beds are shorter than they were drawn (Yozi 2026-11-27: a 2.1 m bed was far
+// too long for our 1.2 m people): each one is drawn as before and squeezed
+// lengthwise, footprint and pillow with it. A bed already in a home keeps
+// its middle, so it stays where it was, a little shorter.
+export const BED_SQUEEZE = 1.75 / 2.1;
+for (const f of FURNITURE) {
+  if (f.lie !== 2) continue;
+  const make = f.build, k = BED_SQUEEZE;
+  f.size = [f.size[0], +(f.size[1] * k).toFixed(3)];
+  f.pillow *= k;
+  f.build = (g) => { const inner = new THREE.Group(); inner.scale.z = k; g.add(inner); make(inner); };
+}
 
 // A ride photo in a frame (core/ride-photos.js): 'ph:<photo id>', made on
 // demand. Its picture comes from setPhotoSrc (my own photos, or the ones a
@@ -367,7 +379,7 @@ export function furnitureSeats(it) {
   // offered from either side or the foot (reach: as far as from the bed's
   // middle), and you get up at the foot, never on the wall side.
   if (f.lie) return xs.map((lx) => {
-    const lz = f.pillow + LIE_HEAD, [x, z] = at(lx, lz);
+    const lz = f.pillow + PILLOW_TO_SPOT, [x, z] = at(lx, lz);
     return { x, z, ry: it.ry, lie: true, bed: true, reach: 0.6 + 0.15 - lz, stand: at(lx, d / 2 + 0.55) };
   });
   return xs.map((lx) => {
