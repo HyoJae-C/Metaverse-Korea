@@ -1620,6 +1620,17 @@ on its real place.
   big mass of leaves as one shape (`game/thicket.js`: `thicketGeometry`,
   `thicketSpots`, 40 triangles for 6-10 m of wood). Any park or hill can use
   them.
+- Other players stand on the ground where you see them (`core/players.js`
+  `groundAt`): their height comes a few times a second and their place runs
+  ahead, so going up they sank; and the cap on a player's height (140 m) is
+  lifted on the mountain, whose steps and top are 159-192 m up
+  (`tests/e2e/bukhansan-friend.mjs`).
+- The hiking paths are red-brown earth (`BUKHAN_PARK.pathColor`), apart from
+  the town's grey roads. Running on them or on the steps you may trip
+  (`TRIP`: each run has its own chance, 2-12% a second, more the steeper it
+  is; you sit 2-8 s, each fall its own; the road up from the station and the
+  plaza are safe), and a chip
+  shows how high you really are (`bukhan.alt`: the game's height x 4 + 68 m).
 - From elsewhere nothing of it is drawn: it loads within 480 m, and past the
   haze (600 m and more) it hands the renderer 0 triangles
   (`tests/e2e/bukhansan-far.mjs`).
