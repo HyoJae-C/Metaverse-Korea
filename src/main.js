@@ -3140,7 +3140,7 @@ function enterStore(item, walkIn = null) {
   if (built.stations?.patrons && !built.patronNpcs) {
     built.scene.updateMatrixWorld();
     built.patronNpcs = built.stations.patrons.map((s) => {
-      const o = makeNpc($('labels'), '');
+      const o = makeNpc($('labels'), '', s.glow ? { ...randomLook(), glow: Date.now() + 3 * 864e5 } : undefined); // (glow: the skin clinic's customer, core/glow.js)
       o.tag.style.visibility = 'hidden'; // (speech bubbles still show)
       const f = s.sit ? seatFit(built.scene, s) : null;
       o.ch.root.position.set(f?.x ?? s.x, f?.y ?? (s.y || 0), f?.z ?? s.z); // (y: up in the stands at Modu Ballpark)

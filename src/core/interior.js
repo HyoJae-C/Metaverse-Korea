@@ -1144,7 +1144,10 @@ export function buildInterior(store) {
       const fx = -w / 2 + 1.2, fz = d / 2 - 3.2; // waiting sofa
       box(0.8, 0.42, 2.2, fx, 0.21, fz, store.colors.sign);
       box(0.2, 0.5, 2.2, fx - 0.35, 0.6, fz, store.colors.sign);
-      for (const o of [-0.5, 0.5]) seats.push({ x: fx, z: fz + o, ry: Math.PI / 2, stand: [fx + 1, fz + o] });
+      // A customer already done, waiting with a new shine (main.js gives the
+      // look; Yozi 2026-11-27), and the other place free for you.
+      stations.patrons = [{ x: fx, z: fz - 0.5, ry: Math.PI / 2, sit: true, glow: true }];
+      seats.push({ x: fx, z: fz + 0.5, ry: Math.PI / 2, stand: [fx + 1, fz + 0.5] });
       block(fx, fz, 0.9, 2.3);
     } else if (store.workshop === 'ddp-hall') {
       // DDP Hall: DDP's bright lobby, entered from the plaza. White curving
