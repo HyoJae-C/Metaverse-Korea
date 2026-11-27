@@ -16,10 +16,11 @@ import { matCache } from './three-kit.js';
 import { curvedRoof } from './hanok.js';
 import { mergeStatic } from './bukchon-models.js';
 import { PALACE_PAINT, paint, paintedBox } from './palace-paint.js';
+import { gateMid, gateStep, GATE_BASE } from './temple-terrace.js';
 
 const mat = matCache({ flatShading: true });
 const C = {
-  stone: '#d6cdb8', stoneDark: '#b1a690', stoneLight: '#e4ddcc', post: '#a8392b', door: '#7a2c22', wall: '#efe6d2',
+  stone: '#d6cdb8', stoneDark: '#b1a690', stoneLight: '#e4ddcc', post: '#a8392b', door: '#7a2c22', leaf: '#8a2f24', wall: '#efe6d2', // (door: lattice doors; leaf: a gate's plank doors)
   beam: '#2f8a68', beamBlue: '#3f6f9a', beamRed: '#b2402f', bracket: '#2a6f5a', water: '#5b9fc4', bronze: '#5f6a55', gold: '#d4a73a',
   roof: new THREE.Color('#474c55'), roofEnd: new THREE.Color('#8a3a2c'),
 };
@@ -59,15 +60,19 @@ export function band(g, w, d, y) {
 // A hall's body: posts all round, red lattice doors set in behind the front
 // row, plastered walls at the back and the ends.
 export function body(g, w, d, H, y, bays = 5) {
-  const hw = w / 2, hd = d / 2;
+  const hw = w / 2, hd = d / 2, P = 0.75;
   box(g, w - 1.2, H, d - 1.2, 0, y + H / 2, 0, C.wall);
-  box(g, w - 1.4, H * 0.82, 0.2, 0, y + H * 0.41, hd - 0.55, C.door);
   for (let i = 0; i <= bays; i++) {
     const x = -hw + (i * w) / bays;
-    for (const z of [-hd, hd]) box(g, 0.75, H, 0.75, x, y + H / 2, z, C.post);
-    box(g, 0.08, H * 0.82, 0.1, x * 0.97, y + H * 0.41, hd - 0.4, C.gold); // the door frames' lines
+    for (const z of [-hd, hd]) box(g, P, H, P, x, y + H / 2, z, C.post);
+    // each bay's doors, between its posts: whole leaves, the same in every
+    // bay (one long door behind the posts was cut differently at each)
+    if (i < bays) {
+      box(g, w / bays - P, H * 0.82, 0.2, x + w / (2 * bays), y + H * 0.41, hd - 0.2, C.door);
+      box(g, w / bays - P, H * 0.18, 0.2, x + w / (2 * bays), y + H * 0.91, hd - 0.2, C.wall); // the plaster over them, as wide as the bay (the wall behind stops short of the end bays)
+    }
   }
-  for (let i = 1; i < Math.round(d / 4); i++) for (const x of [-hw, hw]) box(g, 0.75, H, 0.75, x, y + H / 2, -hd + (i * d) / Math.round(d / 4), C.post);
+  for (let i = 1; i < Math.round(d / 4); i++) for (const x of [-hw, hw]) box(g, P, H, P, x, y + H / 2, -hd + (i * d) / Math.round(d / 4), C.post);
 }
 // A stone railing (난간) along a line, posts every ~2 m.
 function railing(g, x0, z0, x1, z1, y, h = 0.9) {
@@ -106,7 +111,21 @@ export function nameBoard(han, w, h, ground = '#1d2a3a', ink = '#f2e6c4') {
   x.fillText([...han].reverse().join(''), 128, 50);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex }));
+  // A plank, not a sheet: its edges and back take the frame's gold. It hangs
+  // out in front of the beam, its top leaning forward (hang() below).
+  const geo = new THREE.BoxGeometry(w, h, Math.min(0.1, h * 0.12)), uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) if (i < 16 || i >= 20) uv.setXY(i, 0.016, 0.04); // (faces: +x, -x, +y, -y, +z the front, -z)
+  return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex }));
+}
+// Hangs a board at (x, y, z) facing ry, its top leaning out (Yozi 2026-11-27:
+// "the boards look sunk in: bring them forward").
+function hang(g, sign, x, y, z, ry = 0) {
+  const pivot = new THREE.Group();
+  pivot.position.set(x, y, z);
+  pivot.rotation.y = ry;
+  sign.rotation.x = 0.13;
+  pivot.add(sign);
+  g.add(pivot);
 }
 
 export const PALACE_BUILD = {
@@ -149,8 +168,7 @@ export const PALACE_BUILD = {
     tiles(t, 15, 8.4, 3.0, y2 + 1.9 + 1.75, { hip: true, lift: 1.1, seg: 6, rows: 3 });
     mergeStatic(g);
     const sign = nameBoard('光化門', 1.9, 0.75, '#141414', '#e3b54a'); // the 2023 board: gold letters on black
-    sign.position.set(0, y1 + (y2 + 1.4) * TOWER, 1.75);
-    g.add(sign);
+    hang(g, sign, 0, y1 + (y2 + 2.5) * TOWER, 2.56); // in front of the brackets (their face: z 2.4), under the blue beam
   },
   // A palace gate with three passages under one hipped roof: the middle one
   // taller (the king's), the side ones for officials. l.w: width, l.d: depth.
@@ -163,19 +181,16 @@ export const PALACE_BUILD = {
     // Open red doors folded against the middle row of posts.
     for (let i = 0; i < 3; i++) {
       const x0 = xs[i], x1 = xs[i + 1], bw = x1 - x0;
-      for (const sx of [x0 + 0.5, x1 - 0.5]) box(g, 0.15, H - 1.4, bw / 2 - 0.4, sx, 0.75 + (H - 1.4) / 2, -bw / 4 + 0.2, C.door);
+      for (const sx of [x0 + 0.5, x1 - 0.5]) box(g, 0.15, H - 1.4, bw / 2 - 0.4, sx, 0.75 + (H - 1.4) / 2, -bw / 4 + 0.2, C.leaf);
     }
     box(g, w, 1.1 * s, 0.5 * s, 0, 0.75 + H - 0.55 * s, -hd, C.wall); // the plastered strips over the doors (thinner than the posts)
     box(g, w, 1.1 * s, 0.5 * s, 0, 0.75 + H - 0.55 * s, hd, C.wall);
+    // Two steps up to the base, front and back (your feet follow them: temple-terrace.js palaceHeight).
+    for (const sz of [-1, 1]) for (let i = 0; i < 2; i++) box(g, w + 2.6, (GATE_BASE.low * (2 - i)) / 3, GATE_BASE.run / 2, 0, (GATE_BASE.low * (2 - i)) / 6, sz * (hd + 1.5 + (i + 0.5) * (GATE_BASE.run / 2)), C.stoneDark);
     band(g, w, d, 0.75 + H);
     tiles(g, w + 7 * s, d + 7 * s, 4.2 * s, 0.75 + H + 1.75, { hip: true, lift: 1.4 * s, seg: 6, rows: 3 });
     mergeStatic(g);
-    if (l.name?.han) for (const z of [hd + 1.25, -hd - 1.25]) {
-      const sign = nameBoard(l.name.han, 3.4 * s, 1.3 * s);
-      sign.position.set(0, 0.75 + H + 1.1, z);
-      if (z < 0) sign.rotation.y = Math.PI;
-      g.add(sign);
-    }
+    if (l.name?.han) for (const z of [hd + 1.3, -hd - 1.3]) hang(g, nameBoard(l.name.han, 3.4 * s, 1.3 * s), 0, 0.75 + H + 1.1, z, z < 0 ? Math.PI : 0);
   },
   // The palace stream (금천) across the court, sunk between dressed-stone
   // banks, and Yeongjegyo: a wide stone bridge with railings and a stone
@@ -195,6 +210,7 @@ export const PALACE_BUILD = {
     box(g, bw - 2, 0.2, L - 5.4, 0, 0.72, 0, C.stoneLight);
     for (const x of [-bw / 3, 0, bw / 3]) box(g, bw / 3 - 1.2, 0.8, ch + 0.2, x, -0.55, 0, '#3f5f6e'); // the dark arches
     box(g, 2.2, 0.06, L - 0.4, 0, 0.84, 0, C.stoneDark); // the king's middle strip
+    for (const sz of [-1, 1]) box(g, bw - 0.4, 0.2, 0.5, 0, 0.1, sz * (L / 2 + 0.25), C.stoneDark); // a low step at each end (bridgeDeck in temple-terrace.js)
     for (const sx of [-1, 1]) {
       railing(g, sx * (bw / 2 - 0.3), -L / 2 + 0.6, sx * (bw / 2 - 0.3), L / 2 - 0.6, 0.4);
       for (const sz of [-1, 1]) beast(g, sx * (bw / 2 + 1.0), 0, sz * (ch / 2 + 1.0), sz > 0 ? Math.PI : 0, 1.1);
@@ -286,8 +302,7 @@ export const PALACE_BUILD = {
     g.add(hall);
     mergeStatic(g);
     const sign = nameBoard('勤政殿', 4.8 * s, 1.8 * s); // the name board between the two roofs
-    sign.position.set(0, y3 + H2 * 0.55, zH + D2 / 2 + 0.6);
-    g.add(sign);
+    hang(g, sign, 0, y3 + H2 * 0.55, zH + D2 / 2 + 0.7);
   },
   // The rank stones (품계석): two rows down the courtyard either side of the
   // middle path, first rank nearest the hall. l.rows, l.gap, l.off (offset of
@@ -314,46 +329,60 @@ export const PALACE_BUILD = {
     const V = l.v || 1, boards = [];
     for (const [x, z, w, d, ry, kind = 'h', han] of l.halls) {
       const h = new THREE.Group();
-      if (kind === 'r') { // a plain block where a real building was left out: walls and a big roof only
-        const k = Math.min(w, d), B = 0.35, H = Math.min(3.2, Math.max(2, 1.2 + k * 0.25)) * V, e = Math.min(1.4, Math.max(0.5, k * 0.18 + 0.3));
-        box(h, w + 0.5, B, d + 0.5, 0, B / 2, 0, C.stone);
-        box(h, w, H - 0.5 * V, d, 0, B + 0.5 * V + (H - 0.5 * V) / 2, 0, C.wall);
-        box(h, w, 0.5 * V, d, 0, B + 0.25 * V, 0, C.post); // the red dado, under the wall (not inside it: it flickered)
+      const gate = kind === 'g', plain = kind === 'r', k = Math.min(w, d);
+      const B = plain ? 0.35 : Math.min(0.6, 0.25 + k * 0.05);
+      const H = (plain ? Math.min(3.2, Math.max(2, 1.2 + k * 0.25)) : gate ? Math.max(2.4, 1.6 + k * 0.25) : Math.min(4, Math.max(2.1, 1.1 + d * 0.3))) * V;
+      const post = Math.min(0.45, Math.max(0.22, k * 0.07));
+      const e = plain ? Math.min(1.4, Math.max(0.5, k * 0.18 + 0.3)) : Math.min(1.6, Math.max(0.55, d * 0.22 + 0.35));
+      box(h, w + (plain ? 0.5 : 0.7), B, d + (plain ? 0.5 : 0.7), 0, B / 2, 0, C.stone);
+      const bays = (len) => { const n = Math.max(1, Math.round(len / 1.7)); return Array.from({ length: n + 1 }, (_, i) => -len / 2 + (i * len) / n); };
+      if (gate) {
+        // A gate: the middle bay open, its plank doors folded back; in a gate
+        // of three bays the side ones are shut. (l.gateMid: Bongeunsa's
+        // Jinyeomun says how wide its middle bay is.) No post stands in the way.
+        const mid = gateMid(w, l.gateMid), xs = mid < w ? [-w / 2, -mid / 2, mid / 2, w / 2] : [-w / 2, w / 2], top = 0.6 * V, dh = H - top;
+        for (const px of xs) for (const sz of [-1, 0, 1]) box(h, post, H, post, px, B + H / 2, (sz * d) / 2, C.post);
+        box(h, w - post, top, 0.2, 0, B + H - top / 2, 0, C.wall); // the plastered strip over the doors
+        const leaf = Math.min(mid / 2 - 0.1, d / 2 - post);
+        if (!l.gateMid) for (const sx of [-1, 1]) box(h, 0.07, dh, leaf, sx * (mid / 2 - post / 2 - 0.06), B + dh / 2, -post / 2 - leaf / 2, C.leaf);
+        if (mid < w && !l.gateMid) for (const sx of [-1, 1]) box(h, (w - mid) / 2 - post, dh, 0.08, (sx * (w + mid)) / 4, B + dh / 2, 0, C.leaf); // the side bays' doors, shut
+        if (!l.gateMid) { // steps up to the base, front and back (Bongeunsa draws its own; the feet: temple-terrace.js gateHeight)
+          const { n, tread, bd, sw } = gateStep([0, 0, w, d], mid);
+          for (const sz of [-1, 1]) for (let i = 0; i < n - 1; i++) box(h, sw, (B * (n - 1 - i)) / n, tread, 0, (B * (n - 1 - i)) / (2 * n), sz * (bd + tread * (i + 0.5)), C.stoneDark);
+        }
+      } else {
+        // A hall: plaster over a red dado, posts all round, and lattice doors
+        // in every bay of the front (and down both sides of a building that
+        // is longer than it is wide). A plain block ('r') has the same, under
+        // a simpler eave: Yozi 2026-11-27, "ugly, too much blank wall".
+        box(h, w - post, H - 0.5 * V, d - post, 0, B + 0.5 * V + (H - 0.5 * V) / 2, 0, C.wall);
+        box(h, w - post, 0.5 * V, d - post, 0, B + 0.25 * V, 0, C.post); // the red dado, under the wall (not inside it: it flickered)
+        const xs = bays(w), zs = bays(d), long = d > w * 1.25;
+        for (const px of xs) for (const sz of [-1, 1]) box(h, post, H, post, px, B + H / 2, (sz * d) / 2, C.post);
+        for (const pz of zs.slice(1, -1)) for (const sx of [-1, 1]) box(h, post, H, post, (sx * w) / 2, B + H / 2, pz, C.post);
+        for (let i = 0; i < xs.length - 1; i++) box(h, xs[i + 1] - xs[i] - post, H * 0.8, 0.08, (xs[i] + xs[i + 1]) / 2, B + H * 0.4, d / 2 - post / 2 + 0.05, C.door);
+        if (long) for (let i = 0; i < zs.length - 1; i++) for (const sx of [-1, 1]) box(h, 0.08, H * 0.8, zs[i + 1] - zs[i] - post, sx * (w / 2 - post / 2 + 0.05), B + H * 0.4, (zs[i] + zs[i + 1]) / 2, C.door);
+        // and a window in each bay of the walls that have no door (the back, and the ends of a wide hall)
+        for (let i = 0; i < xs.length - 1; i++) box(h, (xs[i + 1] - xs[i] - post) * 0.7, H * 0.42, 0.08, (xs[i] + xs[i + 1]) / 2, B + H * 0.56, -(d / 2 - post / 2 + 0.05), C.door);
+        if (!long) for (let i = 0; i < zs.length - 1; i++) for (const sx of [-1, 1]) box(h, 0.08, H * 0.42, (zs[i + 1] - zs[i] - post) * 0.7, sx * (w / 2 - post / 2 + 0.05), B + H * 0.56, (zs[i] + zs[i + 1]) / 2, C.door);
+      }
+      if (plain) {
         box(h, w + 0.3, 0.3 * V, d + 0.3, 0, B + H + 0.15 * V, 0, C.beam);
         tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3, k * 0.45)) * V, B + H + 0.3 * V, { hip: true, lift: Math.min(0.8, 0.2 + k * 0.08), seg: 4, rows: 1 });
-        h.position.set(x, 0, z);
-        h.rotation.y = ry;
-        g.add(h);
-        continue;
+      } else {
+        box(h, w + 0.25, 0.32 * V, d + 0.25, 0, B + H + 0.16 * V, 0, C.beam);
+        box(h, w + 0.6, 0.3 * V, d + 0.6, 0, B + H + 0.47 * V, 0, C.bracket);
+        tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3.4, d * 0.5)) * V, B + H + 0.62 * V, { hip: true, lift: Math.min(0.9, 0.25 + k * 0.1), seg: k > 4 ? 6 : 4, rows: 2, ridgeEnds: k > 3, noRidge: kind === 'n' });
       }
-      const gate = kind === 'g', k = Math.min(w, d);
-      const B = Math.min(0.6, 0.25 + k * 0.05), H = (gate ? Math.max(2.4, 1.6 + k * 0.25) : Math.min(4, Math.max(2.1, 1.1 + d * 0.3))) * V;
-      const post = Math.min(0.45, Math.max(0.22, k * 0.07)), e = Math.min(1.6, Math.max(0.55, d * 0.22 + 0.35));
-      box(h, w + 0.7, B, d + 0.7, 0, B / 2, 0, C.stone);
-      if (!gate) {
-        box(h, w - post, H - 0.5 * V, d - post, 0, B + 0.5 * V + (H - 0.5 * V) / 2, 0, C.wall);
-        box(h, w - post * 2, H * 0.8, 0.08, 0, B + H * 0.4, d / 2 - post / 2 + 0.05, C.door); // the doors along the front
-        box(h, w - post, 0.5 * V, d - post, 0, B + 0.25 * V, 0, C.post); // the red dado, under the wall (not inside it: it flickered)
-      } else box(h, w - post, 0.6 * V, 0.2, 0, B + H - 0.3 * V, 0, C.wall);
-      const nx = Math.max(1, Math.round(w / 1.7));
-      // (l.gateMid: a gate of three bays, its middle one that wide between the
-      // posts' lines, so no post stands in the way through: Bongeunsa's Jinyeomun)
-      const xs = gate && l.gateMid ? [-w / 2, -l.gateMid / 2, l.gateMid / 2, w / 2] : Array.from({ length: nx + 1 }, (_, i) => -w / 2 + (i * w) / nx);
-      for (const px of xs) for (const sz of gate ? [-1, 0, 1] : [-1, 1]) box(h, post, H, post, px, B + H / 2, (sz * d) / 2, C.post);
-      box(h, w + 0.25, 0.32 * V, d + 0.25, 0, B + H + 0.16 * V, 0, C.beam);
-      box(h, w + 0.6, 0.3 * V, d + 0.6, 0, B + H + 0.47 * V, 0, C.bracket);
-      tiles(h, w + 2 * e, d + 2 * e, Math.max(1, Math.min(3.4, d * 0.5)) * V, B + H + 0.62 * V, { hip: true, lift: Math.min(0.9, 0.25 + k * 0.1), seg: k > 4 ? 6 : 4, rows: 2, ridgeEnds: k > 3, noRidge: kind === 'n' });
       h.position.set(x, 0, z);
       h.rotation.y = ry;
       g.add(h);
-      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.88, d / 2 + Math.max(post / 2, 0.13) + 0.06]); // (out in front of the posts and the beam)
+      if (han) boards.push([han, x, z, w, d, ry, B + H * 0.86, d / 2 + 0.3 + 0.12]); // (out in front of the brackets: their face is 0.3 out)
     }
     mergeStatic(g);
     for (const [han, x, z, w, , ry, y, out] of boards) { // name boards on the main halls (one draw call each)
       const bw = Math.min(2.4, w * 0.35), sign = nameBoard(han, bw, bw * 0.38);
-      sign.position.set(x + Math.sin(ry) * out, y, z + Math.cos(ry) * out);
-      sign.rotation.y = ry;
-      g.add(sign);
+      hang(g, sign, x + Math.sin(ry) * out, y, z + Math.cos(ry) * out, ry);
     }
   },
   // Amisan (아미산): four stepped flower terraces behind Gyotaejeon with the
@@ -365,10 +394,12 @@ export const PALACE_BUILD = {
       for (let k = 0; k < 6; k++) box(g, 0.8, 0.35, 0.8, -w / 2 + 1.5 + (k * (w - 3)) / 5, 0.62 + i * 0.45, -i * 2.4 + 0.4, ['#e58aa3', '#f2c14e', '#d9534f', '#9bc26a'][(i + k) % 4]); // flowers
     }
     for (const x of [-4.5, -1.5, 1.5, 4.5]) {
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.65, 3.4, 6), mat('#b5523b'));
-      c.position.set(x, 1.8 + 1.35, -6.6);
+      // (2 m, not 3.4: they stood as thin poles into the roofs behind them; approx, the real ones are 2.6 m)
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.86, 2, 6), mat('#b5523b'));
+      c.position.set(x, 1.8 + 1, -6.6);
       g.add(c);
-      box(g, 1.5, 0.35, 1.5, x, 1.8 + 3.05, -6.6, '#4a4f57');
+      box(g, 1.9, 0.14, 1.9, x, 1.8 + 1.5, -6.6, C.stoneLight); // the pale band of patterns
+      box(g, 2.1, 0.3, 2.1, x, 1.8 + 2.15, -6.6, '#4a4f57');
     }
     mergeStatic(g);
   },

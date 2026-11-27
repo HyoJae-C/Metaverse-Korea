@@ -32,7 +32,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { toGame } from '../src/core/seoul-grid.js';
-import { obb, rect, sat, inside, planPalace } from './lib/palace-plan.mjs';
+import { obb, rect, sat, inside, planPalace, terraceEdges } from './lib/palace-plan.mjs';
 import { planGrounds, KIND } from './lib/palace-grounds.mjs';
 import { ROYAL_ROUTE, ROYAL_ORDER, PALACE_VISITORS } from '../src/core/palace-show.js';
 import { FAN_AT, FAN_KEEP } from '../src/core/palace-fan.js';
@@ -105,6 +105,12 @@ const { own, halls, runs, blockers, yards, sides, corridorP } = planPalace({
   keepClear: routeClear,
   ponds: osm.elements.filter((e) => e.kind === 'water').map((e) => e.pts.map(local)),
   skipBlock: (u) => !u.e.name && u.o.x > 25 && u.o.z < -150, // (unnamed, beside the Folk Museum: Yozi wants its grounds left empty)
+  // Untangled (Yozi 2026-11-27: "buildings overlap"): the gates are drawn at
+  // 50%, wider than their plots, so corridors stop at them and the wing
+  // beside Heungnyemun is cut back; Geunjeongjeon's west corridor is a
+  // corridor, not a 40 m hall; a building OSM maps twice is drawn once.
+  ownSolid: (n, o) => (n === '광화문' ? rect(0, 0, o.w * 2 * GATE_SC[0] + 0.6, 7 * GATE_SC[0] + 0.6, o.a) : n === '흥례문' || n === '근정문' ? rect(o.x, o.z, o.w * FOOT + 1.2, o.d * FOOT + 1.2, o.a) : null),
+  LONG: 8, dedupe: true, gateBays: true,
 });
 const logSizes = () => console.log('hall sizes (% of real):', sides.map(([n, p]) => `${n} ${p}`).join(', '));
 
@@ -142,6 +148,7 @@ for (const n of ['흥례문', '근정문']) {
   sides.push(['근정전', Math.round(ts * 50)]);
   lm.push({ type: 'throne', x: r1(x), z: r1(z), ry: r2(-o.a), hs: r2(hs), sc: tsc, name: { ko: '근정전', en: 'Geunjeongjeon' }, gb: 1 });
   blockers.push({ p: rect(o.x, o.z, o.w * 2 * ts + 1, o.d * 2 * ts + 1, o.a) }); // the hall (the terraces are walked on: their steps)
+  blockers.push(...terraceEdges({ x: r1(x), z: r1(z), a: -r2(-o.a), hs: r2(hs), ts: tsc[0] })); // (up by the front steps only: your feet rise with them, core/temple-terrace.js)
   // The rank stones: rows down the court from the lower terrace's steps to Geunjeongmun.
   const gate = O['근정문'], front = z + T1[1] / 2 + 1.2, rows = 12, gap = Math.max(1, (gate.z - gate.d * FOOT / 2 - 1.5 - front) / (rows - 1));
   lm.push({ type: 'rankstones', x: r1(x + (front - z) * Math.tan(o.a) * -1), z: r1(front), ry: r2(-o.a), rows, gap: r2(gap), off: 3.2, gb: 1 });
@@ -165,6 +172,9 @@ logSizes();
 {
   const k = halls.find((h) => h.name === '교태전');
   lm.push({ type: 'amisan', x: r1(k.x), z: r1(k.z - 7.5), ry: r2(k.ry), w: 16, sc: [FOOT_MIN / 2, UP], name: { ko: '아미산', en: 'Amisan Garden' }, gb: 1 });
+  // Its flower terraces are beds, not steps (they had no blocker: you walked through them): 16 wide, 9.6 deep from 1.2 in front of the landmark back.
+  const f = FOOT_MIN / 2, a = -k.ry;
+  blockers.push({ p: rect(k.x + Math.sin(a) * 3.6 * f, k.z - 7.5 - Math.cos(a) * 3.6 * f, 16 * f, 9.6 * f, a) });
 }
 lm.push({ type: 'palacehalls', x: 0, z: 0, v: UP, halls: halls.map((h) => { const e = [r1(h.x), r1(h.z), r1(h.w), r1(h.d), r2(h.ry), h.kind]; if (h.han) e.push(h.han); return e; }), gb: 1 });
 lm.push({ type: 'cloister', x: 0, z: 0, h: 2.6, runs, gb: 1 });

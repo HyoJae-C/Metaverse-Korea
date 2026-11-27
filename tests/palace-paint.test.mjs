@@ -78,3 +78,29 @@ test("the city's gates wear the palace's stone, plaster, painted beam and tiles"
     assert.ok(meshes <= most, `${name}: ${meshes} meshes (no more than before the textures)`);
   }
 });
+
+// Yozi 2026-11-27: "make the patterns symmetric". A painted beam and a lattice
+// door take a whole number of repeats on every face, so the pattern ends the
+// same way at both ends (it used to start at one end and be cut at the other).
+test('the painted beams and the lattice doors: whole repeats on every face', async () => {
+  const { metreUV } = await import('../src/core/palace-paint.js');
+  const geo = new THREE.BoxGeometry(5.3, 0.7, 1);
+  metreUV(geo, 5.3, 0.7, 1, [2.2, 0], 1, true);
+  for (let i = 0; i < geo.attributes.uv.count; i++) assert.ok(Number.isInteger(geo.attributes.uv.getX(i)) && Number.isInteger(geo.attributes.uv.getY(i)), 'a box 5.3 m long takes 2 whole repeats, not 2.4');
+  const b = landmarkBuilders(), whole = [PALACE_PAINT.dancheong.m, PALACE_PAINT.lattice.m];
+  let checked = 0;
+  for (const id of ['gyeongbokgung', 'changdeokgung']) for (const l of district(id).landmarks) {
+    if (!KIT.includes(l.type)) continue;
+    const g = new THREE.Group();
+    b[l.type](g, l);
+    g.traverse((o) => {
+      if (!o.isMesh || !o.material.map || !o.geometry.attributes.uv) return;
+      const img = o.material.map.image, kind = Object.values(PALACE_PAINT).find((P) => P.whole && P.px[0] === img?.width && P.px[1] === img?.height);
+      if (!kind || !whole.includes(kind.m)) return;
+      const uv = o.geometry.attributes.uv;
+      for (let i = 0; i < uv.count; i++) assert.ok(Math.abs(uv.getX(i) - Math.round(uv.getX(i))) < 1e-4, `${id} ${l.type}: a pattern cut part way (u = ${uv.getX(i)})`);
+      checked += uv.count;
+    });
+  }
+  assert.ok(checked > 1000, `${checked} corners checked`);
+});

@@ -1007,6 +1007,30 @@ into `scripts/data/gyeongbokgung-grounds-osm.json`;
   ones (`mergeStatic`, bukchon-models.js), so the draw calls are what they
   were (`tests/palace-paint.test.mjs`). The patterns are drawn by hand, not
   copied from one building's real paintwork.
+- A pattern is symmetric: the painted beam and the lattice door take a whole
+  number of repeats on every face (`whole` in palace-paint.js), and a hall
+  has one door box a bay, between its posts, never one long door behind
+  them. A name board is a plank hung in front of the bracket course, tipped a
+  little forward (`hang`, palace-model.js): set back behind the brackets it
+  looked sunk into the band (Yozi, 2026-11-27).
+- Stone you walk on lifts your feet: the throne hall's two terraces and their
+  steps, a big gate's base and Yeongjegyo's deck (`palaceHeight`,
+  core/temple-terrace.js), and a small gate's base. The terraces are walled
+  along their edges (`terraceEdges`, scripts/lib/palace-plan.mjs), open only
+  at the front steps, so nobody pops 0.8 m up through a railing; Amisan's
+  flower beds are a blocker. The real terraces also have steps at the sides:
+  those are not built. `tests/palace-walk.test.mjs`.
+- The plan untangles what OSM overlaps (`planPalace`: `ownSolid`, `LONG`,
+  `dedupe`, `gateBays`): a corridor or a hall is cut back where it enters a
+  gate that has a model of its own, a long thin "building" is a corridor, a
+  building mapped twice is drawn once. A small gate (`'g'`) is walked through
+  across its short side, so one mapped longer front to back is turned a
+  quarter (Yuhwamun, Geonchunmun, Changdeokgung's Jinseonmun and
+  Sukjangmun open east-west); its middle bay is open with plank doors folded
+  back, and in a gate of three bays the side ones are shut. Halls and the
+  plain blocks have posts, a lattice door in every front bay and a window in
+  every other one (the windows and the blocks' doors are made up: OSM has only
+  the footprint).
 
 ## Cheong Wa Dae from the street (Jongno-gu)
 
