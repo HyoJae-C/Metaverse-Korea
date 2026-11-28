@@ -143,6 +143,27 @@ function carvedTexture(height) {
   return t;
 }
 
+// The wildlife notice by the Visitor Center and the hut (Yozi 2026-11-28: the boar advice on a board, not only a message),
+// in Korean as on the real mountain; next to it a button reads it out in your language (bukhan.notice).
+export const NOTICE_LINES = ['멧돼지를 만나면', '· 소리 지르거나 뛰지 마세요', '· 눈을 보며 천천히 뒷걸음질', '· 나무나 바위 뒤로 피하세요', '· 야생동물에게 먹이 주지 마세요'];
+function noticeTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 288;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2f5a3c'; g.fillRect(0, 0, 512, 288);
+  g.strokeStyle = '#e9dcc0'; g.lineWidth = 6; g.strokeRect(8, 8, 496, 272);
+  g.fillStyle = '#f2c94c'; g.fillRect(8, 8, 496, 62);
+  g.fillStyle = '#2b2b2b'; g.textAlign = 'center'; g.font = 'bold 38px sans-serif';
+  g.fillText('⚠ ' + NOTICE_LINES[0], 256, 52, 480);
+  g.fillStyle = '#f4ead2'; g.textAlign = 'left'; g.font = 'bold 30px sans-serif';
+  NOTICE_LINES.slice(1).forEach((t, i) => g.fillText(t, 34, 116 + i * 44, 450));
+  g.font = '18px sans-serif'; g.textAlign = 'right'; g.fillStyle = '#cfe0cf';
+  g.fillText('If you meet a wild boar · Bukhansan National Park', 494, 268);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 // A brown guide post's board: the place's name in Korean and English.
 function boardTexture(ko, en, sub) {
   const c = document.createElement('canvas');
@@ -419,6 +440,25 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
   const ele = (m) => `${Math.round(m)} m`;
   const BASE_ELE = l.summit.ele - l.summit.y * 4; // (the station's height above the sea)
   for (const k of ['center', 'haru', 'hut', 'gate']) { const f = awayFromWay(k), [dx, dz] = out(k, f); post(k, dx, dz, ele(BASE_ELE + pad(k).y * 4)); }
+  const notices = []; // where the wildlife notices stand (world x, z): the button to read one shows near it
+  { // The wildlife notice: beside the guide post at the Visitor Center and at the hut, a little round the pad's edge.
+    const tex = noticeTexture(), wood = new THREE.MeshLambertMaterial({ color: 0x5b4030 });
+    const face = new THREE.MeshLambertMaterial({ map: tex });
+    for (const k of ['center', 'hut']) {
+      const p = pad(k), base = awayFromWay(k);
+      let f = base + 0.55;
+      for (const df of [0.55, -0.55, 0.9, -0.9]) { const q = base + df, x = p.at[0] + Math.cos(q) * (p.r - 0.7), z = p.at[1] + Math.sin(q) * (p.r - 0.7); if (trailD(x, z) > 1.2) { f = q; break; } }
+      const [dx, dz] = out(k, f), x = p.at[0] + dx, z = p.at[1] + dz;
+      const grp = new THREE.Group();
+      grp.position.set(x, p.y, z);
+      grp.rotation.y = Math.atan2(p.at[0] - x, p.at[1] - z);
+      grp.add(new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.1).translate(-0.85, 0.75, 0), wood), new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 0.1).translate(0.85, 0.75, 0), wood));
+      grp.add(new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.07, 0.06).translate(0, 1.55, 0.04), [wood, wood, wood, wood, face, wood]));
+      grp.name = `bukhansan-notice-${k}`;
+      group.add(grp);
+      notices.push([x, z]);
+    }
+  }
 
   { // Benches at Harujae and the hut's yard (you can sit: main.js streetSeats).
     const list = [];
@@ -559,6 +599,7 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
     group,
     counts,
     seats,
+    notices,
     animals,
     get summit() { return summit; },
     update(p, dt = 0, hiking = false) {

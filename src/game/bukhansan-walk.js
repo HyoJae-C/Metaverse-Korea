@@ -16,7 +16,7 @@
 //   bukhan.noRun(p)      on the hiking paths and steps (running there you may trip)
 //   bukhan.run(p, dt, running), bukhan.fallen   the tripping
 //   bukhan.update(p, dt) every frame on the street
-//   bukhan.acts(p)       at the top: the button that opens the view
+//   bukhan.acts(p)       at the top: the button that opens the view; by the wildlife notice: read it
 //   bukhan.group         what loaded (main.js FarCull), or null
 import { bukhanHeight, bukhanBox, padRing } from '../core/bukhan-ground.js';
 import { inPoly, trailNear } from '../core/skypark-ground.js';
@@ -28,6 +28,7 @@ export const RUN_NEAR = 6; // m beside the road (and round the plaza) where runn
 export const TRIP = { chance: [0.02, 0.12], steep: 2, rest: [2, 8] };
 export const CAM_OVER = 0.8; // m over the mountain's ground the camera keeps (main.js): the slope uphill of you is higher than you are
 export const SUMMIT_R = 4; // m from the flag: where the view's button shows
+export const NOTICE_R = 2.8; // m from the wildlife notice: where its button shows
 // The steeper the way, the slower you go (Yozi 2026-11-27): full pace up to
 // about 7°, 60% on the steepest paths (18°), 45% on the steps up the rock.
 export const CLIMB = { easy: 0.12, path: 0.33, pathPace: 0.6, steps: 0.55, stepsPace: 0.45 };
@@ -96,7 +97,7 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
       if (rnd() >= risk * (1 + slope(p) * TRIP.steep) * dt) return;
       restUntil = performance.now() + (TRIP.rest[0] + rnd() * (TRIP.rest[1] - TRIP.rest[0])) * 1000;
       risk = null;
-      toast?.(text('bukhan.fell'));
+      toast?.(text('bukhan.fell'), 3000);
     },
     get fallen() { return performance.now() < restUntil; },
     on,
@@ -117,7 +118,9 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
         .catch((e) => { loading = false; console.warn('bukhansan', e); });
     },
     // At the top, by the flag: look out over Seoul (a painted view).
-    acts: (p) => (Math.hypot(p.x - summit[0], p.z - summit[1]) < SUMMIT_R ? [{ key: 'bukhan-view', label: text('bukhan.view'), run: openView }] : []),
+    // By the wildlife notice (the Visitor Center, the hut): read it in your language.
+    acts: (p) => (Math.hypot(p.x - summit[0], p.z - summit[1]) < SUMMIT_R ? [{ key: 'bukhan-view', label: text('bukhan.view'), run: openView }]
+      : park?.notices?.some(([x, z]) => Math.hypot(p.x - x, p.z - z) < NOTICE_R) ? [{ key: 'bukhan-notice', label: text('bukhan.noticeRead'), run: () => toast?.(text('bukhan.notice'), 9000) }] : []),
     get viewOpen() { return !!view?.open; },
     get group() { return park?.group || null; },
     get park() { return park; },
