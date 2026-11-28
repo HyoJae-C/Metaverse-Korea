@@ -2947,7 +2947,8 @@
       "products": [
         { "id": "buy-lamp-neon-heart", "model": "furniture", "furniture": "lamp-neon-heart", "color": "#ffe9b8", "name": { "en": "Neon heart sign", "ko": "네온 하트 사인", "ja": "ネオンハートサイン", "zh": "霓虹爱心灯牌" }, "price": 42000, "desc": { "en": "A pink neon heart on a stand.", "ko": "받침대에 세운 분홍 네온 하트예요." } },
         { "id": "buy-lamp-neon-hi", "model": "furniture", "furniture": "lamp-neon-hi", "color": "#ffe9b8", "name": { "en": "Neon “안녕” sign", "ko": "네온 “안녕” 사인", "ja": "ネオン「アンニョン」サイン", "zh": "霓虹“안녕”灯牌" }, "price": 48000, "desc": { "en": "안녕 (annyeong) means both hi and bye. Here it glows blue.", "ko": "파랗게 빛나는 \"안녕\" 네온사인이에요." } },
-        { "id": "buy-lamp-tube", "model": "furniture", "furniture": "lamp-tube", "color": "#ffe9b8", "name": { "en": "Rainbow LED tube lamp", "ko": "무지개 LED 튜브등", "ja": "虹色LEDチューブライト", "zh": "彩虹LED灯管" }, "price": 25000, "desc": { "en": "A stack of rainbow LED rings.", "ko": "무지개색 LED를 층층이 쌓은 조명이에요." } }
+        { "id": "buy-lamp-tube", "model": "furniture", "furniture": "lamp-tube", "color": "#ffe9b8", "name": { "en": "Rainbow LED tube lamp", "ko": "무지개 LED 튜브등", "ja": "虹色LEDチューブライト", "zh": "彩虹LED灯管" }, "price": 25000, "desc": { "en": "A stack of rainbow LED rings.", "ko": "무지개색 LED를 층층이 쌓은 조명이에요." } },
+        { "id": "buy-lamp-disco-ball", "model": "furniture", "furniture": "lamp-disco-ball", "color": "#ffe9b8", "name": { "en": "Mirror ball party light", "ko": "미러볼 파티 조명", "ja": "ミラーボールのパーティーライト", "zh": "镜面球派对灯" }, "price": 120000, "desc": { "en": "Hang it from the ceiling, then flip the party switch by the door: the room goes dim and spots of colour sweep round.", "ko": "천장에 달고 문 옆 스위치로 파티 조명을 켜면 방이 어두워지고 알록달록한 빛이 빙글빙글 돌아요." } }
       ]
     },
     {
@@ -2976,6 +2977,21 @@
         { "id": "buy-lamp-string", "model": "furniture", "furniture": "lamp-string", "color": "#ffe9b8", "name": { "en": "Fairy light arch", "ko": "전구 줄조명 아치", "ja": "電球ガーランドのアーチ", "zh": "串灯拱门" }, "price": 26000, "desc": { "en": "Warm little bulbs strung over an arch.", "ko": "아치에 따뜻한 작은 전구를 줄줄이 달았어요." } },
         { "id": "buy-lamp-bulb", "model": "furniture", "furniture": "lamp-bulb", "color": "#ffe9b8", "name": { "en": "Big Edison bulb lamp", "ko": "대형 에디슨 전구 램프", "ja": "大きなエジソン電球ランプ", "zh": "大号爱迪生灯泡灯" }, "price": 22000, "desc": { "en": "One giant old-style bulb with a glowing filament.", "ko": "필라멘트가 빛나는 커다란 옛날식 전구예요." } },
         { "id": "buy-lamp-candle", "model": "furniture", "furniture": "lamp-candle", "color": "#ffe9b8", "name": { "en": "Candle lantern", "ko": "캔들 랜턴", "ja": "キャンドルランタン", "zh": "烛台灯笼" }, "price": 19000, "desc": { "en": "A black metal lantern with a candle inside.", "ko": "초가 들어 있는 검은 철제 랜턴이에요." } }
+      ]
+    },
+    {
+      "id": "chandelier-house",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1180.3, -667.7], "district": "euljiro",
+      "name": { "ko": "샹들리에 하우스", "en": "Chandelier House", "ja": "シャンデリアハウス", "zh": "吊灯之家" },
+      "tagline": { "en": "Chandeliers to hang from your ceiling", "ko": "천장에 거는 샹들리에", "ja": "天井から吊るすシャンデリア", "zh": "挂在天花板上的吊灯" },
+      "why": "Fictional shop next in the row of lighting shops; the real Euljiro/Cheonggyecheon lighting street is known for its chandelier shops (Yozi 2026-11-28).",
+      "colors": { "sign": "#3a2a4a", "awning": "#e8d9a8", "accent": "#fff8e6" },
+      "products": [
+        { "id": "buy-lamp-chandelier", "model": "furniture", "furniture": "lamp-chandelier", "color": "#ffe9b8", "name": { "en": "Crystal chandelier", "ko": "크리스탈 샹들리에", "ja": "クリスタルのシャンデリア", "zh": "水晶吊灯" }, "price": 280000, "desc": { "en": "Gold arms, six candle bulbs and strings of crystal drops. It hangs from the ceiling, so it can go over a table or a bed.", "ko": "금빛 팔 여섯 개에 촛불 전구와 크리스탈이 줄줄이 달렸어요. 천장에 걸어서 식탁이나 침대 위에도 달 수 있어요." } },
+        { "id": "buy-lamp-iron-chandelier", "model": "furniture", "furniture": "lamp-iron-chandelier", "color": "#ffe9b8", "name": { "en": "Iron candle chandelier", "ko": "철제 캔들 샹들리에", "ja": "アイアンのキャンドルシャンデリア", "zh": "铁艺蜡烛吊灯" }, "price": 140000, "desc": { "en": "A black iron wheel of eight candles on three chains, like an old hall's.", "ko": "쇠사슬 세 줄에 매단 검은 철제 바퀴에 초 여덟 개. 오래된 홀처럼요." } },
+        { "id": "buy-lamp-ring-chandelier", "model": "furniture", "furniture": "lamp-ring-chandelier", "color": "#ffe9b8", "name": { "en": "Ring light chandelier", "ko": "링 조명 샹들리에", "ja": "リングライトのシャンデリア", "zh": "环形吊灯" }, "price": 180000, "desc": { "en": "Three brass rings of soft light on thin wires, at three heights.", "ko": "가는 줄에 높이를 달리해 매단 황동 링 세 개가 은은하게 빛나요." } }
       ]
     },
     {

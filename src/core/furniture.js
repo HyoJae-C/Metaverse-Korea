@@ -13,8 +13,10 @@ import { TANKS, buildTank } from './fish-tank-pieces.js';
 import { photoOfFrame } from './ride-photos.js';
 import { PLANTS, THEME_PLANTS, PLANT_IDS } from './house-plants.js';
 import { BOARD_SETS, BOARD_SET_IDS } from './board-game-sets.js';
+import { CHANDELIERS, hangs } from './chandeliers.js';
 
 export { PLANT_IDS, BOARD_SET_IDS };
+export { hangs, hangY, isPartyLight } from './chandeliers.js';
 
 const mat = matCache();
 
@@ -140,6 +142,8 @@ const LAMPS = [
     part(g, new THREE.CylinderGeometry(0.04, 0.04, 0.1, 10), '#fff6e6', 0, 0.09, 0);
     part(g, new THREE.SphereGeometry(0.025, 6, 4).scale(1, 1.6, 1), glow('#ffb347'), 0, 0.17, 0);
   }],
+  // Chandeliers that hang from the ceiling (core/chandeliers.js).
+  ...CHANDELIERS.map(([id, emoji, size, name, make]) => [id, emoji, size, name, (g) => make(g, (geo, m, x, y, z) => part(g, geo, m, x, y, z), glow)]),
 ];
 export const LAMP_IDS = LAMPS.map((l) => [l[0], l[1], l[3]]);
 // The shop pieces' seat field (furniture-shop.js) as FURNITURE fields.
@@ -454,7 +458,7 @@ export function outsideRoom(item, w, d) {
 // Collision polygon for a placed piece, or null for walkable ones (rugs) and
 // things standing on a table (the table blocks you already).
 export function furnitureCollider(item) {
-  if (item.y) return null;
+  if (item.y || hangs(item.id)) return null; // (a chandelier hangs over your head)
   const def = furnitureById(item.id);
   if (!def || def.walkable) return null;
   const [w, d] = def.size;
@@ -483,10 +487,13 @@ function polysOverlap(a, b) {
 // Room kept round a player when a piece is placed, carried or turned.
 export const WHO_R = 0.45;
 export function pieceBlocked(item, others, who = null) {
-  const me = piecePoly(item), lvl = item.y || 0;
+  // A chandelier's level is the ceiling (-1): it goes over a table or a bed,
+  // only another chandelier is in its way, and never you.
+  const level = (o) => (hangs(o.id) ? -1 : o.y || 0);
+  const me = piecePoly(item), lvl = level(item);
   if (!me) return false;
-  // Pieces only bump into pieces at the same height: the floor, or the same top.
-  if (others.some((o) => o !== item && o.id !== item.id && (o.y || 0) === lvl && piecePoly(o) && polysOverlap(me.p, piecePoly(o).p))) return true;
+  // Pieces only bump into pieces at the same height: the floor, the same top, or the ceiling.
+  if (others.some((o) => o !== item && o.id !== item.id && level(o) === lvl && piecePoly(o) && polysOverlap(me.p, piecePoly(o).p))) return true;
   if (who && !lvl) {
     const r = WHO_R; // (a little more than a player's radius, 0.35: a piece set down against you mustn't overlap you)
     if (polysOverlap(me.p, [[who.x - r, who.z - r], [who.x + r, who.z - r], [who.x + r, who.z + r], [who.x - r, who.z + r]])) return true;

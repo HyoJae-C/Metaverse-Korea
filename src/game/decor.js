@@ -5,7 +5,7 @@
 import { CollisionMap } from '../core/collision.js';
 import { foldHomes } from '../core/home-fold.js';
 import { PlantCare, growScale, isPlant } from '../core/plant-growth.js';
-import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, isLamp, outsideRoom, pieceBlocked, isSmall, placeRiders, ridersOf, setPhotoSrc, starterLayout, topUnder } from '../core/furniture.js';
+import { FURNITURE, buildFurniture, furnitureById, furnitureCollider, furnitureSeats, hangs, hangY, isLamp, isPartyLight, outsideRoom, pieceBlocked, isSmall, placeRiders, ridersOf, setPhotoSrc, starterLayout, topUnder } from '../core/furniture.js';
 import { frameId, photoOfFrame } from '../core/ride-photos.js';
 import * as THREE from 'three';
 import { getLanguage, localName, onLanguageChange, t } from '../core/i18n.js';
@@ -19,6 +19,16 @@ import { canHaveMany } from '../core/inventory.js';
 export function createDecor(game) {
   const { $, STALE, inventory, shop } = game;
   const MAX_PIECES = 60;
+  // The switch by the door: room lights and party lights (game/home-lights.js,
+  // loaded with the first home opened).
+  let lights = null, lightsLoad = null;
+  function openLights(built, guest) {
+    (lightsLoad ||= import('./home-lights.js').then((m) => (lights = m.createHomeLights()))).then((l) => {
+      if (decor?.built !== built) return; // (left meanwhile)
+      l.open(built, guest);
+      l.refresh(decor.items);
+    }, () => { lightsLoad = null; });
+  }
   let decor = null; // { home, built, items: [{ id, x, z, ry }], group, editing, piece, carry }
   const homeKey = (id) => 'mk.home.' + id;
   // How many of a piece can stand in the room: free pieces and photos one
@@ -62,6 +72,7 @@ export function createDecor(game) {
     const height = plantH[it.id] ||= new THREE.Box3().setFromObject(g).max.y;
     return growScale(grown, { small: isSmall(it.id), height, room: (game.interior?.room?.h || 3.6) - 0.12 - (it.y || 0) });
   }
+  const roomH = () => game.interior?.room?.h || 3.6;
   function rebuildDecor() {
     decor.group.clear();
     let rugs = 0;
@@ -71,7 +82,7 @@ export function createDecor(game) {
       // Rugs can overlap each other (×2 copies): each next one lies 8 mm
       // higher so two rugs never share a plane and flicker (Yozi 2026-11-25).
       const lift = furnitureById(it.id)?.walkable ? 0.008 * rugs++ : 0;
-      g.position.set(it.x, (it.y || 0) + lift, it.z);
+      g.position.set(it.x, (it.y || 0) + lift + hangY(it.id, roomH()), it.z); // (a chandelier: up at the ceiling)
       g.rotation.y = it.ry;
       decor.group.add(g);
       it.mesh = g;
@@ -84,6 +95,7 @@ export function createDecor(game) {
     saveDecor();
     markPlaced();
     fillTanks();
+    lights?.refresh(decor.items);
     if (appl || (!decor.guest && decor.items.some((i) => furnitureById(i.id)?.appliance === 'fridge'))) appliances().then((a) => a.refill(), () => {}); // (what's in the fridge, on its shelves)
   }
   // The fish in this room's tanks (core/tank-fish.js, loaded with the first
@@ -105,6 +117,7 @@ export function createDecor(game) {
   }
   function tick(dt) {
     appl?.tick(dt); // (appliance doors, a spinning washer)
+    lights?.tick(dt); // (party lights)
     if (!swimming.length) return;
     swimT += dt;
     for (const f of swimming) f.tick(swimT);
@@ -133,7 +146,7 @@ export function createDecor(game) {
   // every frame while a piece is carried, so the answer is kept until it moves.
   let shutKey = '', shutVal = false;
   function shutsIn(it) {
-    if (it.y || !game.interior?.room || !(isPartition(it.id) || decor.items.some((o) => isPartition(o.id)))) return false;
+    if (it.y || hangs(it.id) || !game.interior?.room || !(isPartition(it.id) || decor.items.some((o) => isPartition(o.id)))) return false;
     const key = [it.id, it.x, it.z, it.ry, ...decor.items.flatMap((o) => (o === it ? [] : [o.id, o.x, o.z, o.ry]))].join();
     if (key === shutKey) return shutVal;
     const others = decor.items.filter((o) => o !== it).map(furnitureCollider).filter(Boolean);
@@ -160,6 +173,7 @@ export function createDecor(game) {
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
     decor = { home: store.id, built, items: loadDecor(store.id, game.interior?.room), group: built.decorGroup, editing: false, piece: null, carry: null };
     rebuildDecor();
+    openLights(built, false);
     finish.open(built, false);
     $('decor-btn').hidden = false;
   }
@@ -169,6 +183,7 @@ export function createDecor(game) {
     if (!built.decorGroup) { built.decorGroup = new THREE.Group(); built.scene.add(built.decorGroup); }
     decor = { home: store.id, built, items: [], group: built.decorGroup, editing: false, piece: null, carry: null, guest: true };
     rebuildDecor();
+    openLights(built, true);
     finish.open(built, true);
     $('decor-btn').hidden = true;
   }
@@ -197,6 +212,7 @@ export function createDecor(game) {
     appl?.close();
     setDecorating(false);
     finish.close();
+    lights?.close();
     hideFootprint();
     showGrid(false);
     $('decor-btn').hidden = true;
@@ -246,7 +262,7 @@ export function createDecor(game) {
     if (!fitsHome(def, readHomeLevel())) return shop.toast(t('home.needLevel', { n: def.needsHomeLevel })); // (a big fish tank: a bigger home first)
     if (decor.items.length >= MAX_PIECES) return shop.toast(t('home.full'));
     const [x, z, ry] = spotInFront();
-    const it = { id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4) };
+    const it = { id, x, z, ry: Math.round(ry / (Math.PI / 4)) * (Math.PI / 4), ...(isPartyLight(id) ? { off: true } : {}) }; // (a mirror ball comes switched off: the switch by the door turns it on)
     const { w: rw, d: rd } = game.interior.room;
     if (Math.min(...def.size) > Math.min(rw, rd) - 1 || Math.max(...def.size) > Math.max(rw, rd) - 1) return shop.toast(t('home.noRoom')); // (bigger than the room)
     if (!freeSpot(it)) return shop.toast(t('home.blocked'));
@@ -356,7 +372,7 @@ export function createDecor(game) {
     if (!it?.mesh) return;
     [it.x, it.z] = carrySpot(it);
     settle(it);
-    it.mesh.position.set(it.x, it.y + 0.08, it.z); // lifted a little while carried (over a table: above it)
+    it.mesh.position.set(it.x, it.y + (hangs(it.id) ? hangY(it.id, roomH()) : 0.08), it.z); // lifted a little while carried (over a table: above it; a chandelier stays at the ceiling)
     showFootprint(it);
     if (decor.riders?.length) { // what stands on it comes along
       placeRiders(it, decor.riders);
@@ -444,15 +460,19 @@ export function createDecor(game) {
   // Standing by a piece in my own home (not decorating): carry it or put it
   // away right there, without opening Decorate first. Two choices on the
   // action button's list; a carried piece is put down with the same button.
+  // The switch by the door's choices (both on the button's list).
+  const switchActs = (p) => (decor && !decor.guest && !decor.editing && !decor.carry && lights ? lights.acts(p, (rebuild) => { if (rebuild) rebuildDecor(); game.action = STALE; }) : []);
   function pieceActs(p) {
     if (!decor || decor.guest || decor.editing || decor.carry) return [];
+    const sw = switchActs(p);
+    if (sw.length) return sw;
     // Two pieces at most: the one whose edge is nearest (a rug underfoot
     // counts last) and the one whose middle is nearest, so a little teddy
     // on a table or a lamp by the sofa gets its own buttons too.
     let byEdge = null, be = 1.1, byMid = null, bm = 0.9;
     for (const it of decor.items) {
       const f = furnitureById(it.id), mid = Math.hypot(p.x - it.x, p.z - it.z);
-      const edge = mid - Math.max(...f.size) / 2 + (f.walkable ? 1 : 0);
+      const edge = mid - Math.max(...f.size) / 2 + (f.walkable || hangs(it.id) ? 1 : 0);
       if (edge < be) { be = edge; byEdge = it; }
       if (mid < bm) { bm = mid; byMid = it; }
     }
@@ -484,9 +504,11 @@ export function createDecor(game) {
   // in my own home). Saved with the room, and visitors see it.
   function lampAct(p) {
     if (!decor || decor.guest || decor.editing || decor.carry) return null;
+    const sw = switchActs(p)[0];
+    if (sw) return sw; // (the switch by the door)
     let best = null, bd = 1.2;
     for (const it of decor.items) {
-      if (!isLamp(it.id)) continue;
+      if (!isLamp(it.id) || isPartyLight(it.id)) continue; // (the mirror ball goes on at the switch)
       const d = Math.hypot(p.x - it.x, p.z - it.z);
       if (d < bd) { bd = d; best = it; }
     }
