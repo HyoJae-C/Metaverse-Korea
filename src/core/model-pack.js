@@ -82,6 +82,8 @@ const STRIDE = {
 };
 
 const LIE_MAT = { y: 0.16, z: 0.6 }; // lying on a picnic mat on the grass
+// Tripping (Bukhansan): a lurch forward for the first 0.35 s (radians), easing off by 0.8 s into sitting on the ground.
+export const TRIP_FALL = (t) => (t < 0.35 ? 0.9 * Math.sin((t / 0.35) * Math.PI / 2) : t < 0.8 ? 0.9 * (1 - (t - 0.35) / 0.45) : 0);
 const SIT_MAT = { y: 0.02, z: 0 }; // sitting on a picnic mat (the floor-sitting clip)
 export const MODEL_IDS = Object.keys(PACK.models);
 export const SIT_UNDER = PACK.sitUnder || [[0, 0.33]]; // (game/seat-fit.js)
@@ -881,6 +883,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
   let extMoves = null; // a scripted move (basketball shots): () => bone offsets
   let umbrellaUp = false; // left hand up by the head, holding the umbrella's pole
   let pullT = 0;
+  let tripT = -1; // seconds since you tripped (-1: not down): the tumble forward, then sat on the ground
   let swimT = 0, swimPr = 0; // swimming: stroke phase, and how flat on the water (0 upright .. 1)
   const handL = m.getObjectByName('handl'), handR = m.getObjectByName('handr');
   let bells = null; // dumbbells, made the first time you do curls
@@ -898,7 +901,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
     scale: PACK.scale,
     // Hold an activity pose while standing still: one of our anim names, or
     // 'dance'. null stops it.
-    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
+    setActivity(name) { activity = name && (name === 'dance' || name === 'kpop' || name === 'kpopb' || name === 'strum' || name === 'pullup' || name === 'curl' || name === 'snip' || name === 'mat' || name === 'matsit' || name === 'trip' || name === 'swim' || name === 'tube' || name === 'dive' || name === 'listen' || name === 'bumper' || FOLK_DANCES[name] || SNOW_MOVES[name] || STUDIO_MOVES[name] || PACK.anims[name]) ? name : null; },
     // Raise the left hand beside the head to hold an open umbrella.
     setUmbrella(on) { umbrellaUp = !!on; },
     // A scripted move laid over the clip: fn() → bone offsets, or null.
@@ -946,6 +949,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       else if (sit && (activity === 'lie' || activity === 'mat')) key = 'lie'; // lying on a bed (clinic) or a picnic mat
       else if (sit && activity === 'matsit' && action('floor')) key = 'floor'; // sitting on a picnic mat
       else if (sit) key = 'sit'; // on a chair, bench or pew
+      else if (activity === 'trip') key = action('floor') ? 'floor' : 'idle'; // tripped (Bukhansan): down on the ground, not standing frozen as if the game hung
       else if (speed01 > 0.55) key = 'run';
       else if (speed01 > 0.01) key = 'walk';
       else if (activity && activity !== 'dance' && !KPOP_ACTS.has(activity) && action(activity)) key = activity;
@@ -994,7 +998,7 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
       swimPr += ((swimming && speed01 > 0.05 ? 1 : 0) - swimPr) * Math.min(1, dt * 4);
       // (Sitting on a chair, by the sit flag or the 'sit' activity (NPCs): up
       // onto the seat and forward so the hips are over the spot.)
-      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : key === 'sit' ? PACK.sit : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : null;
+      const off = studio ? { y: studio.y || 0, z: studio.z || 0 } : tubing ? TUBE_SIT : swimming ? { y: SWIM_POSE.lift * swimPr, z: -SWIM_POSE.back * swimPr } : board || kick ? { y: boardY + (stroke?.y || 0) } : skates ? { y: RIDE_CLEAR + SKATE_LIFT + (stroke?.y || 0) } : seated ? (bumper ? BUMPER_SIT : PACK.ride) : key === 'sit' ? PACK.sit : sit ? (key === 'lie' ? (activity === 'mat' ? PACK.lieMat || LIE_MAT : PACK.lie) : key === 'floor' ? PACK.sitMat || SIT_MAT : PACK.sit) : activity === 'trip' && key === 'floor' ? PACK.sitMat || SIT_MAT : null;
       const k = Math.min(1, dt * 10);
       let bob = 0, turn = 0, moves = null;
       if (studio) {
@@ -1022,7 +1026,9 @@ export async function attachModel(look, { root, body, headAcc, bodyAcc }) {
         turn = moves.turn || 0;
       }
       m.rotation.y += (turn - m.rotation.y) * Math.min(1, dt * 12);
-      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : studio?.pitch || 0) - m.rotation.x) * Math.min(1, dt * 12);
+      tripT = activity === 'trip' && !sit && !riding ? Math.max(0, tripT) + dt : -1;
+      const tumble = tripT >= 0 ? TRIP_FALL(tripT) : 0; // (pitched forward as you go down, then back upright, sitting)
+      m.rotation.x += ((key === 'lie' ? -Math.PI / 2 : swimming ? SWIM_POSE.tilt * swimPr : tumble || studio?.pitch || 0) - m.rotation.x) * Math.min(1, dt * (tumble ? 25 : 12));
       let pull = 0;
       if (hanging) {
         pullT += dt;

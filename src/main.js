@@ -5224,7 +5224,7 @@ function currentActivity() {
   if (prayer.pose) return prayer.pose; // praying at an altar (game/prayer.js)
   if (holyWater.pose) return holyWater.pose; // the sign of the cross at the cathedral's font (game/holy-water.js)
   if (mode === 'street' && snowman.pose) return snowman.pose; // gathering snow, rolling a snowball
-  if (mode === 'street' && bukhan.fallen) return 'matsit'; // tripped running on Bukhansan: sat on the ground a moment
+  if (mode === 'street' && bukhan.fallen) return 'trip'; // tripped running on Bukhansan: a tumble, then sat on the ground a moment (core/model-pack.js)
   if (pool.act) return pool.act; // in the pool: swimming, a tube, arms up for a dive
   if (listenBar.listening) return 'listen'; // headphones on at the record café
   if (seated && !seated.lie && held?.kind === 'book' && bookUi.open) return 'read'; // reading on any seat (a bench, a picnic mat, a café chair)
