@@ -5,7 +5,7 @@ import { buildCraftBench } from './craft-room.js';
 import { isDining } from './dining.js';
 import * as THREE from 'three';
 import { productModel, mat } from './product-model.js';
-import { buildFurniture, furnitureById, furnitureSeats } from './furniture.js';
+import { buildFurniture, furnitureById, furnitureSeats, hangs, hangY } from './furniture.js';
 import { lieSpot, ON_PILLOW } from './lie-spot.js';
 import { finishSample } from './home-finish-art.js';
 import { finishById } from './home-finish.js';
@@ -449,12 +449,13 @@ export function buildInterior(store) {
       const g = buildFurniture(piece.id);
       const c = new THREE.Vector3(0, 0, lz).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
       g.position.copy(c);
+      g.position.y = hangY(piece.id, ROOM.h || 3.6); // (a chandelier hangs from the shop's ceiling)
       g.rotation.y = ry;
       scene.add(g);
       const front = new THREE.Vector3(0, 0, lz + fd / 2 + 0.6).applyAxisAngle(new THREE.Vector3(0, 1, 0), ry).add(new THREE.Vector3(x, 0, z));
       products.push({ product, mesh: g, pos: front });
       const [cx, cz] = Math.abs(Math.sin(ry)) > 0.5 ? [fd, fw] : [fw, fd];
-      block(c.x, c.z, cx, cz);
+      if (!hangs(piece.id)) block(c.x, c.z, cx, cz);
       triedSeats.push(...furnitureSeats({ id: piece.id, x: c.x, z: c.z, ry, mesh: g })); // (mesh: a rocking chair rocks)
       return;
     }

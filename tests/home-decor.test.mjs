@@ -136,3 +136,59 @@ test('a lamp switched off dims its glow', async () => {
   assert.ok(off.every((c, i) => c < on[i]));
   assert.deepEqual(colors(buildFurniture('lamp-moon')), on, 'the shared glow materials are untouched');
 });
+
+test('chandeliers hang from the ceiling: over a table or a bed, never in your way, only another chandelier blocks one', async () => {
+  const { furnitureById, furnitureCollider, pieceBlocked, outsideRoom, hangs, hangY, isLamp } = await import('../src/core/furniture.js');
+  const { ITEMS } = await import('../src/core/inventory.js');
+  const { readFileSync } = await import('node:fs');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  const shop = stores.find((s) => s.id === 'chandelier-house');
+  assert.equal(shop.products.length, 4);
+  for (const p of shop.products) {
+    const id = p.furniture;
+    assert.ok(hangs(id) && isLamp(id) && furnitureById(id)?.item === id && ITEMS[id]?.lamp, id);
+    assert.ok(p.price >= 100000 && p.price <= 300000, id);
+    const it = { id, x: 0, z: 0, ry: 0 };
+    assert.equal(furnitureCollider(it), null, 'walk under it');
+    assert.ok(!pieceBlocked(it, [{ id: 'bed', x: 0, z: 0, ry: 0 }], { x: 0, z: 0 }), 'over a bed, over you');
+    assert.ok(!pieceBlocked({ id: 'table', x: 0, z: 0, ry: 0 }, [it]), 'a table goes under it');
+    assert.ok(outsideRoom({ ...it, x: 4.4 }, 9, 8), 'still inside the walls');
+    // In the smallest home (3.6 m) its bottom is well over a head, and it reaches the ceiling.
+    const g = new (await import('three')).Box3().setFromObject((await import('../src/core/furniture.js')).buildFurniture(id));
+    assert.ok(hangY(id, 3.6) >= 2.3 && Math.abs(g.max.y + hangY(id, 3.6) - 3.6) < 0.02, id + ' meets the ceiling');
+  }
+  const [a, b] = shop.products.map((p) => p.furniture); // (two chandeliers can't share a spot)
+  assert.ok(pieceBlocked({ id: a, x: 0, z: 0, ry: 0 }, [{ id: b, x: 0.3, z: 0, ry: 0 }]), 'two chandeliers in one place');
+  assert.equal(hangY('table', 3.6), 0);
+});
+
+test('the party light: a turning mirror ball chandelier, sold at the chandelier shop, switched at the door', async () => {
+  const { furnitureById, hangs, isPartyLight, isLamp } = await import('../src/core/furniture.js');
+  const { createHomeLights } = await import('../src/game/home-lights.js');
+  const { readFileSync } = await import('node:fs');
+  const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
+  assert.ok(stores.find((s) => s.id === 'chandelier-house').products.some((p) => p.furniture === 'lamp-disco-ball' && p.price > 0));
+  assert.ok(!stores.find((s) => s.id === 'neon-golmok').products.some((p) => p.furniture === 'lamp-disco-ball'));
+  assert.ok(isPartyLight('lamp-disco-ball') && hangs('lamp-disco-ball') && isLamp('lamp-disco-ball') && furnitureById('lamp-disco-ball').item);
+  // By the switch: room lights, and party lights once a ball is up; a visitor gets no switch.
+  const THREE = await import('three');
+  const scene = new THREE.Scene(), hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 2);
+  scene.add(hemi);
+  const L = createHomeLights(), built = { scene, room: { w: 9, d: 8, h: 3.6 }, exit: { x: 0, z: 3.1 } };
+  L.open(built, false);
+  const by = { x: 2.1, z: 3.3 };
+  assert.equal(L.acts(by, () => {}).length, 1, 'no ball: just the room lights');
+  assert.equal(L.acts({ x: -3, z: -3 }, () => {}).length, 0, 'away from the door');
+  const ball = { id: 'lamp-disco-ball', x: 0, z: 0, ry: 0, off: true, mesh: new THREE.Group() };
+  L.refresh([ball]);
+  const acts = L.acts(by, () => {});
+  assert.equal(acts.length, 2);
+  acts[1].run();
+  assert.equal(ball.off, false, 'the party switch turns the ball on');
+  L.refresh([ball]);
+  assert.ok(L.party && hemi.intensity < 1, 'party: the room goes dim');
+  L.open(built, true);
+  assert.equal(L.acts(by, () => {}).length, 0, 'a visitor has no switch');
+  L.close();
+  assert.equal(hemi.intensity, 2, 'leaving puts the room back');
+});

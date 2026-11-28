@@ -2979,6 +2979,22 @@
       ]
     },
     {
+      "id": "chandelier-house",
+      "category": "lifestyle",
+      "size": "small",
+      "at": [-1180.3, -667.7], "district": "euljiro",
+      "name": { "ko": "샹들리에 하우스", "en": "Chandelier House", "ja": "シャンデリアハウス", "zh": "吊灯之家" },
+      "tagline": { "en": "Chandeliers to hang from your ceiling", "ko": "천장에 거는 샹들리에", "ja": "天井から吊るすシャンデリア", "zh": "挂在天花板上的吊灯" },
+      "why": "Fictional shop next in the row of lighting shops; the real Euljiro/Cheonggyecheon lighting street is known for its chandelier shops (Yozi 2026-11-28).",
+      "colors": { "sign": "#3a2a4a", "awning": "#e8d9a8", "accent": "#fff8e6" },
+      "products": [
+        { "id": "buy-lamp-chandelier", "model": "furniture", "furniture": "lamp-chandelier", "color": "#ffe9b8", "name": { "en": "Crystal chandelier", "ko": "크리스탈 샹들리에", "ja": "クリスタルのシャンデリア", "zh": "水晶吊灯" }, "price": 280000, "desc": { "en": "Gold arms, six candle bulbs and strings of crystal drops. It hangs from the ceiling, so it can go over a table or a bed.", "ko": "금빛 팔 여섯 개에 촛불 전구와 크리스탈이 줄줄이 달렸어요. 천장에 걸어서 식탁이나 침대 위에도 달 수 있어요." } },
+        { "id": "buy-lamp-iron-chandelier", "model": "furniture", "furniture": "lamp-iron-chandelier", "color": "#ffe9b8", "name": { "en": "Iron candle chandelier", "ko": "철제 캔들 샹들리에", "ja": "アイアンのキャンドルシャンデリア", "zh": "铁艺蜡烛吊灯" }, "price": 140000, "desc": { "en": "A black iron wheel of eight candles on three chains, like an old hall's.", "ko": "쇠사슬 세 줄에 매단 검은 철제 바퀴에 초 여덟 개. 오래된 홀처럼요." } },
+        { "id": "buy-lamp-ring-chandelier", "model": "furniture", "furniture": "lamp-ring-chandelier", "color": "#ffe9b8", "name": { "en": "Ring light chandelier", "ko": "링 조명 샹들리에", "ja": "リングライトのシャンデリア", "zh": "环形吊灯" }, "price": 180000, "desc": { "en": "Three brass rings of soft light on thin wires, at three heights.", "ko": "가는 줄에 높이를 달리해 매단 황동 링 세 개가 은은하게 빛나요." } },
+        { "id": "buy-lamp-disco-ball", "model": "furniture", "furniture": "lamp-disco-ball", "color": "#ffe9b8", "name": { "en": "Turning mirror ball chandelier", "ko": "회전 미러볼 샹들리에", "ja": "回転ミラーボールのシャンデリア", "zh": "旋转镜面球吊灯" }, "price": 160000, "desc": { "en": "A mirror ball under a brass crown of coloured bulbs. Flip the party switch by the door: it all turns, the room goes dim and spots of colour sweep round.", "ko": "알록달록한 전구가 달린 황동 크라운 아래 미러볼을 매단 샹들리에예요. 문 옆 스위치로 파티 조명을 켜면 통째로 빙글빙글 돌고, 방이 어두워지면서 색색의 빛이 방을 돌아요." } }
+      ]
+    },
+    {
       "id": "eulji-somok",
       "category": "lifestyle",
       "size": "small",
