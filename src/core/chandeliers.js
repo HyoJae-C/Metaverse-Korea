@@ -10,8 +10,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Height from the bottom to the ceiling plate, in metres.
-export const HANG = { 'lamp-chandelier': 1.1, 'lamp-iron-chandelier': 1.2, 'lamp-ring-chandelier': 1.2, 'lamp-disco-ball': 0.9 };
-// The party light (Yozi 2026-11-28): a mirror ball, switched by the switch by
+export const HANG = { 'lamp-chandelier': 1.1, 'lamp-iron-chandelier': 1.2, 'lamp-ring-chandelier': 1.2, 'lamp-disco-ball': 1.1 };
+// The mirror ball chandelier (Yozi 2026-11-28) is the party light, switched by the switch by
 // the door (game/home-lights.js), not by walking up to it like a lamp.
 export const isPartyLight = (id) => id === 'lamp-disco-ball';
 export const hangs = (id) => id in HANG;
@@ -131,13 +131,34 @@ export const CHANDELIERS = [
     part(merged(brass), '#c9a24a');
     part(merged(light), glow('#fff6e0'));
   }],
-  // The party light: a mirror ball on a short rod. It turns and throws
-  // spots of colour round the room while the party lights are on
-  // (game/home-lights.js). Silver and a black rod.
-  ['lamp-disco-ball', '🪩', [0.6, 0.6], { en: 'Mirror ball party light', ko: '미러볼 파티 조명', ja: 'ミラーボールのパーティーライト', zh: '镜面球派对灯' }, (g, part) => {
-    const H = HANG['lamp-disco-ball'];
-    part(merged([at(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 12), 0, H - 0.015, 0), at(new THREE.CylinderGeometry(0.01, 0.01, H - 0.5, 5), 0, (H + 0.5) / 2, 0)]), '#1c1c20');
-    const ball = part(new THREE.SphereGeometry(0.25, 16, 12), new THREE.MeshLambertMaterial({ map: mirrorTiles(), emissive: '#5a5a66' }), 0, 0.27, 0);
-    ball.name = 'mirror-ball'; // (turned by game/home-lights.js)
+  // The mirror ball chandelier (Yozi 2026-11-28: a chandelier made for the
+  // mirror ball, and one that turns): on a chain, a brass crown with four
+  // arms of coloured bulbs, the ball hung under it. While the party lights
+  // are on the whole crown, bulbs and ball turn and the ball throws spots of
+  // colour round the room (game/home-lights.js). Brass and silver.
+  ['lamp-disco-ball', '🪩', [0.8, 0.8], { en: 'Turning mirror ball chandelier', ko: '회전 미러볼 샹들리에', ja: '回転ミラーボールのシャンデリア', zh: '旋转镜面球吊灯' }, (g, part, glow) => {
+    const H = HANG['lamp-disco-ball'], rotorBrass = [];
+    part(merged([at(new THREE.CylinderGeometry(0.1, 0.12, 0.04, 14), 0, H - 0.02, 0), ...chain(0.76, H - 0.04)]), '#b8933a'); // the plate and chain stay still
+    rotorBrass.push(at(new THREE.SphereGeometry(0.035, 8, 6), 0, 0.74, 0)); // the swivel
+    rotorBrass.push(at(new THREE.TorusGeometry(0.2, 0.014, 5, 28), 0, 0.68, 0, Math.PI / 2)); // the crown ring
+    rotorBrass.push(at(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 6), 0, 0.64, 0)); // the stem down to the ball
+    rotorBrass.push(at(new THREE.CylinderGeometry(0.05, 0.03, 0.05, 10), 0, 0.535, 0)); // the collar the ball hangs from
+    const rotor = new THREE.Group();
+    rotor.name = 'mirror-ball'; // (turned by game/home-lights.js)
+    g.add(rotor);
+    const add = (geo, m) => { const o = new THREE.Mesh(geo, typeof m === 'string' ? new THREE.MeshLambertMaterial({ color: m }) : m); rotor.add(o); return o; };
+    const colours = ['#ff5fb4', '#4ad8ff', '#b47bff', '#ffd34a'], bulbs = colours.map(() => []);
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2, c = Math.cos(a), s2 = Math.sin(a);
+      const arm = new THREE.CatmullRomCurve3([[0, 0.66], [0.2, 0.68], [0.32, 0.64], [0.38, 0.7]].map(([r, y]) => new THREE.Vector3(c * r, y, s2 * r)));
+      rotorBrass.push(new THREE.TubeGeometry(arm, 8, 0.012, 5)); // an arm curling out past the ring
+      rotorBrass.push(at(new THREE.CylinderGeometry(0.03, 0.02, 0.035, 8), c * 0.38, 0.72, s2 * 0.38)); // its cup
+      bulbs[i].push(at(new THREE.SphereGeometry(0.035, 8, 6), c * 0.38, 0.765, s2 * 0.38));
+    }
+    add(merged(rotorBrass), '#b8933a');
+    bulbs.forEach((b, i) => add(merged(b), glow(colours[i])));
+    const ball = add(new THREE.SphereGeometry(0.25, 16, 12), new THREE.MeshLambertMaterial({ map: mirrorTiles(), emissive: '#b8b8cc', emissiveMap: mirrorTiles() }));
+    ball.position.y = 0.27;
+    ball.name = 'mirror-sphere';
   }],
 ];

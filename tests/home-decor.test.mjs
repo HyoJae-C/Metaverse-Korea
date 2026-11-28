@@ -143,7 +143,7 @@ test('chandeliers hang from the ceiling: over a table or a bed, never in your wa
   const { readFileSync } = await import('node:fs');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
   const shop = stores.find((s) => s.id === 'chandelier-house');
-  assert.equal(shop.products.length, 3);
+  assert.equal(shop.products.length, 4);
   for (const p of shop.products) {
     const id = p.furniture;
     assert.ok(hangs(id) && isLamp(id) && furnitureById(id)?.item === id && ITEMS[id]?.lamp, id);
@@ -157,17 +157,18 @@ test('chandeliers hang from the ceiling: over a table or a bed, never in your wa
     const g = new (await import('three')).Box3().setFromObject((await import('../src/core/furniture.js')).buildFurniture(id));
     assert.ok(hangY(id, 3.6) >= 2.3 && Math.abs(g.max.y + hangY(id, 3.6) - 3.6) < 0.02, id + ' meets the ceiling');
   }
-  const [a, b] = shop.products.map((p) => p.furniture);
+  const [a, b] = shop.products.map((p) => p.furniture); // (two chandeliers can't share a spot)
   assert.ok(pieceBlocked({ id: a, x: 0, z: 0, ry: 0 }, [{ id: b, x: 0.3, z: 0, ry: 0 }]), 'two chandeliers in one place');
   assert.equal(hangY('table', 3.6), 0);
 });
 
-test('the party light: a mirror ball that hangs, sold at Neon Golmok, switched at the door', async () => {
+test('the party light: a turning mirror ball chandelier, sold at the chandelier shop, switched at the door', async () => {
   const { furnitureById, hangs, isPartyLight, isLamp } = await import('../src/core/furniture.js');
   const { createHomeLights } = await import('../src/game/home-lights.js');
   const { readFileSync } = await import('node:fs');
   const stores = JSON.parse(readFileSync(new URL('../public/regions/another-seoul/stores.json', import.meta.url))).stores;
-  assert.ok(stores.find((s) => s.id === 'neon-golmok').products.some((p) => p.furniture === 'lamp-disco-ball' && p.price > 0));
+  assert.ok(stores.find((s) => s.id === 'chandelier-house').products.some((p) => p.furniture === 'lamp-disco-ball' && p.price > 0));
+  assert.ok(!stores.find((s) => s.id === 'neon-golmok').products.some((p) => p.furniture === 'lamp-disco-ball'));
   assert.ok(isPartyLight('lamp-disco-ball') && hangs('lamp-disco-ball') && isLamp('lamp-disco-ball') && furnitureById('lamp-disco-ball').item);
   // By the switch: room lights, and party lights once a ball is up; a visitor gets no switch.
   const THREE = await import('three');

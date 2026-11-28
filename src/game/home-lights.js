@@ -55,7 +55,7 @@ export function createHomeLights() {
   // After the furniture is (re)built: is a mirror ball up and switched on?
   function refresh(items) {
     if (!room) return;
-    room.balls = items.filter((it) => isPartyLight(it.id) && it.mesh).map((it) => ({ it, ball: it.mesh.getObjectByName('mirror-ball') }));
+    room.balls = items.filter((it) => isPartyLight(it.id) && it.mesh).map((it) => ({ it, ball: it.mesh.getObjectByName('mirror-ball'), sphere: it.mesh.getObjectByName('mirror-sphere') }));
     party = room.balls.some((b) => !b.it.off);
     apply();
   }
@@ -110,7 +110,7 @@ export function createHomeLights() {
     const { w, d, h = 3.6 } = room.dims;
     let n = 0;
     for (const b of on) {
-      b.ball.getWorldPosition(pos);
+      (b.sphere || b.ball).getWorldPosition(pos); // (spots start at the ball's middle)
       const p0 = pos.clone();
       for (const { a, e } of s.userData.dirs) {
         if (n >= s.userData.cap) break;

@@ -54,6 +54,9 @@ await page.evaluate(() => { const c = __mk.choices() || []; __mk.pick(c.findInde
 await page.evaluate(() => { __mk.goto(0, 2.6, Math.PI); __mk.cam?.({ yaw: 0.2, pitch: 0.1, dist: 5.5 }); });
 await page.waitForTimeout(1500);
 if (S) await page.screenshot({ path: `${S}/6-party.png` });
+await page.evaluate(() => { __mk.goto(0.4, 2.6, Math.PI); __mk.cam?.({ yaw: 0.3, pitch: -0.6, dist: 1.6 }); document.getElementById('decor-btn').style.visibility = 'hidden'; });
+await page.waitForTimeout(1200);
+if (S) await page.screenshot({ path: `${S}/7-party-ball.png` });
 console.log('party draw', await page.evaluate(() => JSON.stringify(__mk.renderInfo?.())));
 console.log('draw', await page.evaluate(() => JSON.stringify(__mk.renderInfo?.())));
 await page.evaluate(() => __mk.leave());
