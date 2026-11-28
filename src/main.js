@@ -916,7 +916,7 @@ const nanji = createNanjiWalk({ landmarks: map.landmarks, collision, scene, seat
 // Dalmaji Park's hill by Oksu Station (game/oksu-walk.js): the ways up are decks, the woods and railings load near.
 const oksu = createOksuWalk({ landmarks: map.landmarks, collision, scene, lowSpec });
 // Bukhansan's Baegundae course (game/bukhansan-walk.js): the way up is decks, the mountain loads near, the top opens a painted view.
-const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k, v) => t(k, v), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m) => shop.toast(m), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
+const bukhan = createBukhansanWalk({ landmarks: map.landmarks, collision, scene, seats: streetSeats, lowSpec, text: (k, v) => t(k, v), lang: () => getLanguage(), busy: () => spaceBusy() , toast: (m, ms) => shop.toast(m, ms), riding: () => riding, getOff: () => setRiding(false), daylight: () => 1 - darkness(), sfx: () => sfx, weather: () => weather });
 // Seoul National Cemetery (game/hyeonchungwon-walk.js): a place of remembrance; its roads, court and lawn are decks, the rest loads near.
 const hyeonchungwon = createHyeonchungwonWalk({ landmarks: map.landmarks, collision, scene, lowSpec, toast: (m) => shop.toast(m), text: () => t('hyeonchung.note'), busy: () => spaceBusy(), sky: () => ({ dark: darkness(), wet: WET.has(weather.kind) }), music: () => music, riding: () => riding, getOff: () => setRiding(false), noRide: () => t('hyeonchung.noRide') });
 // Mokdong Ice Rink and the stadiums beside it: what they look like loads near (game/mokdong-near.js).

@@ -12,8 +12,8 @@
 //   고라니 water deer (Hydropotes inermis): no antlers (the males have
 //     tusks); in the lower woods, more at dusk and at night; it bounds away.
 //   멧돼지 wild boar (Sus scrofa): the rarest here, in the lower woods, more
-//     at night; it keeps its distance and trots off. The first time, the
-//     park's real advice: don't run, back away slowly.
+//     at night; it keeps its distance and trots off. What to do if you meet
+//     one is on the notice at the Visitor Center and the hut (game/bukhansan-park.js).
 // Sizes are the street's (people are 1.2 m chibis): the chipmunk and the
 // squirrel are drawn about 1.5x (size) or you would miss them on a phone; the
 // deer and the boar stand about at a person's waist.
@@ -202,7 +202,7 @@ export function createBukhanAnimals({ group, l, y, ok = () => true, trees = [], 
       const o = one, a = o.a, dx = o.x - p.x, dz = o.z - p.z, d = Math.hypot(dx, dz);
       if (d > A.far) { end(); return; }
       o.life -= dt;
-      if (!seen.has(o.k) && d < a.near[1] + 3) { seen.add(o.k); toast?.(text(`bukhan.see.${o.k}`)); }
+      if (!seen.has(o.k) && d < a.near[1] + 3) { seen.add(o.k); toast?.(text(`bukhan.see.${o.k}`), 5000); }
       if (o.climb) { // up the trunk and into the leaves
         o.climb.h = Math.min(o.climb.top, o.climb.h + dt * 1.6);
         if (o.climb.h >= o.climb.top) { o.gone += dt; if (o.gone > 0.4) { end(); return; } }
