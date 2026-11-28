@@ -111,7 +111,7 @@ export function createBukhansanWalk({ landmarks = [], collision = null, scene = 
       loading = true;
       import('./bukhansan-park.js')
         .then(({ buildBukhansanPark }) => {
-          park = buildBukhansanPark({ scene, l, y, lowSpec, daylight, sfx, weather, text });
+          park = buildBukhansanPark({ scene, l, y, lowSpec, daylight, sfx, weather, text, toast });
           if (seats) seats.push(...park.seats); // the benches at Harujae and the hut (main.js streetSeats)
         })
         .catch((e) => { loading = false; console.warn('bukhansan', e); });

@@ -21,11 +21,12 @@
 // About 90k triangles with everything in view (lowSpec: about half the
 // trees), about 25 draw calls.
 import * as THREE from 'three';
-import { addSnowCover } from '../core/snow-cover.js';
+import { addSnowCover, snowUniform } from '../core/snow-cover.js';
 import { MIX, leafColor, leafHash } from '../core/season.js';
 import { inPoly, trailNear } from '../core/skypark-ground.js';
 import { bukhanBox, WAY_PAST } from '../core/bukhan-ground.js';
 import { thicketGeometry, thicketSpots } from './thicket.js';
+import { createBukhanAnimals } from './bukhansan-animals.js';
 import { heightGrid } from '../core/height-grid.js';
 
 export const BUKHAN_PARK = {
@@ -166,8 +167,9 @@ export const STOP_NAMES = {
   peak: ['백운대', 'Baegundae'],
 };
 
-export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = () => 1, sfx = () => null, weather = () => null, text = (k) => k }) {
+export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = () => 1, sfx = () => null, weather = () => null, text = (k) => k, toast = null }) {
   const P = BUKHAN_PARK;
+  const treeSpots = []; // the single trees by the way: [x, y, z, trunk's height] (a squirrel runs up one)
   const woods = []; // the far slopes' tiles (those under the clouds are not drawn from the top)
   const group = new THREE.Group();
   group.name = 'bukhansan-park';
@@ -351,6 +353,7 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
     group.add(instanced(crown, addSnowCover(new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true })), round, 'bukhansan-crowns', (m, i) => m.setColorAt(i, leafColor(greens[i % greens.length], leafHash(i, 13), MIX.wood))));
     group.add(instanced(cone, addSnowCover(new THREE.MeshLambertMaterial({ color: 0x3f6f3a, flatShading: true })), pines, 'bukhansan-pines'));
     counts.trees = round.length + pines.length;
+    for (const [x, gy, z, , sc] of round.concat(pines)) treeSpots.push([x, gy, z, 1.45 * sc]);
     // the far slopes, in tiles (so the ones out of view are skipped)
     const step = lowSpec ? 18 : P.mass, TILE = 160, tiles = new Map();
     const xs = foot.map((q) => q[0]), zs = foot.map((q) => q[1]);
@@ -549,10 +552,14 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
     altEl.hidden = false;
     altEl.textContent = text('bukhan.alt', { n: m.toLocaleString('en-US') });
   };
+  // Now and then a chipmunk, a squirrel, in the lower woods a water deer or a wild boar (game/bukhansan-animals.js).
+  const animals = createBukhanAnimals({ group, l, y, trees: treeSpots, daylight, snow: () => snowUniform.value, toast, text,
+    ok: (x, z, clear) => inPoly(x, z, foot) && !rockXZ(x, z) && (clear === -Infinity || (trailD(x, z) > clear && padD(x, z) > clear)) });
   return {
     group,
     counts,
     seats,
+    animals,
     get summit() { return summit; },
     update(p, dt = 0, hiking = false) {
       altitude(hiking ? p.y : null);
@@ -560,6 +567,7 @@ export function buildBukhansanPark({ scene, l, y, lowSpec = false, daylight = ()
       group.visible = d < P.hide;
       if (!group.visible) return;
       t += dt;
+      animals.update(p, dt);
       // Above the gate the top is drawn its own way (game/bukhansan-summit.js): the haze pulls back, the far country, the clouds, the wind.
       const near = Math.hypot(p.x - sx, p.z - sz);
       if (!summit && !summitLoading && near < P.summitNear) {
